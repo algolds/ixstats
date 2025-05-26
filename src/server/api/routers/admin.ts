@@ -3,33 +3,49 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { IxSheetzCalculator } from "~/lib/enhanced-calculations";
+import type { EconomicTier, PopulationTier } from "~/types/ixstats";
+
+// Helper function for tier calculation (consistent with types)
+function determineEconomicTier(gdpPerCapita: number): EconomicTier {
+    if (gdpPerCapita >= 50000) return "Advanced" as EconomicTier.ADVANCED;
+    if (gdpPerCapita >= 35000) return "Developed" as EconomicTier.DEVELOPED;
+    if (gdpPerCapita >= 15000) return "Emerging" as EconomicTier.EMERGING;
+    return "Developing" as EconomicTier.DEVELOPING;
+}
+
+function determinePopulationTier(population: number): PopulationTier {
+    if (population >= 200000000) return "Massive" as PopulationTier.MASSIVE;
+    if (population >= 50000000) return "Large" as PopulationTier.LARGE;
+    if (population >= 10000000) return "Medium" as PopulationTier.MEDIUM;
+    if (population >= 1000000) return "Small" as PopulationTier.SMALL;
+    return "Micro" as PopulationTier.MICRO;
+}
 
 export const adminRouter = createTRPCRouter({
-  // Get system configuration
   getSystemConfig: publicProcedure.query(async ({ ctx }) => {
-    const configs = await ctx.db.systemConfig.findMany();
+    let configs = await ctx.db.systemConfig.findMany();
     
-    // Ensure default configs exist
-    const defaultConfigs = [
-      { key: 'time_multiplier', value: '4.0', description: 'IxTime speed multiplier' },
-      { key: 'global_growth_factor', value: '1.0321', description: 'Global economic growth factor' },
-      { key: 'auto_update', value: 'true', description: 'Enable automatic calculations' },
-    ];
-    
-    for (const defaultConfig of defaultConfigs) {
-      const existing = configs.find(c => c.key === defaultConfig.key);
-      if (!existing) {
-        await ctx.db.systemConfig.create({
-          data: defaultConfig
-        });
+    const defaultConfigsMap = new Map([
+      ['time_multiplier', { value: '4.0', description: 'IxTime speed multiplier' }],
+      ['global_growth_factor', { value: '1.0321', description: 'Global economic growth factor' }],
+      ['auto_update', { value: 'true', description: 'Enable automatic calculations' }],
+      // Add ixtime_override if it's managed here, though IxTime class handles it internally now
+    ]);
+
+    let createdNewConfig = false;
+    for (const [key, defaultConfig] of defaultConfigsMap) {
+      if (!configs.find(c => c.key === key)) {
+        await ctx.db.systemConfig.create({ data: { key, ...defaultConfig } });
+        createdNewConfig = true;
       }
     }
     
-    // Return fresh config
-    return await ctx.db.systemConfig.findMany();
+    if (createdNewConfig) {
+      configs = await ctx.db.systemConfig.findMany(); // Refetch if new configs were added
+    }
+    return configs;
   }),
 
-  // Update system configuration
   updateSystemConfig: publicProcedure
     .input(z.object({
       configs: z.array(z.object({
@@ -40,43 +56,39 @@ export const adminRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx, input }) => {
       const results = [];
-      
       for (const config of input.configs) {
         const result = await ctx.db.systemConfig.upsert({
           where: { key: config.key },
-          update: { 
-            value: config.value,
-            description: config.description,
-            updatedAt: new Date()
-          },
-          create: {
-            key: config.key,
-            value: config.value,
-            description: config.description || `System configuration for ${config.key}`,
-          }
+          update: { value: config.value, description: config.description, updatedAt: new Date() },
+          create: { key: config.key, value: config.value, description: config.description || `System config for ${config.key}` }
         });
         
+        // Apply IxTime specific overrides if changed
+        if (config.key === 'time_multiplier') {
+          IxTime.setMultiplierOverride(parseFloat(config.value));
+        }
+        // If 'ixtime_override' is managed via DB:
+        // if (config.key === 'ixtime_override' && config.value) {
+        //   IxTime.setTimeOverride(parseFloat(config.value));
+        // } else if (config.key === 'ixtime_override' && !config.value) {
+        //   IxTime.clearTimeOverride();
+        // }
         results.push(result);
       }
-      
       return results;
     }),
 
-  // Get calculation logs
   getCalculationLogs: publicProcedure.query(async ({ ctx }) => {
-    const logs = await ctx.db.calculationLog.findMany({
+    return ctx.db.calculationLog.findMany({
       orderBy: { timestamp: 'desc' },
       take: 50
     });
-    return logs;
   }),
 
-  // Force calculation update for all countries
   forceCalculation: publicProcedure.mutation(async ({ ctx }) => {
-    const startTime = Date.now();
-    const currentIxTime = IxTime.getCurrentIxTime();
+    const startTimeMs = Date.now(); // Real-world start time
+    const currentIxTimeMs = IxTime.getCurrentIxTime(); // Current IxTime
     
-    // Get all countries and update them
     const countries = await ctx.db.country.findMany({
       include: { dmInputs: { where: { isActive: true } } }
     });
@@ -84,14 +96,15 @@ export const adminRouter = createTRPCRouter({
     const calculator = new IxSheetzCalculator();
     let updatedCount = 0;
     
-    // Get global growth factor
     const globalGrowthConfig = await ctx.db.systemConfig.findUnique({
       where: { key: 'global_growth_factor' }
     });
     const globalGrowthFactor = parseFloat(globalGrowthConfig?.value || "1.0321");
     
     for (const country of countries) {
-      const timeElapsed = IxTime.getYearsElapsed(country.lastCalculated.getTime(), currentIxTime);
+      // country.lastCalculated is a Date object. Convert to IxTime ms for comparison
+      const lastCalculatedIxTimeMs = country.lastCalculated.getTime(); // Assuming this IS an IxTime epoch value
+      const timeElapsed = IxTime.getYearsElapsed(lastCalculatedIxTimeMs, currentIxTimeMs);
       
       if (timeElapsed > 0) {
         const growthParams = {
@@ -108,15 +121,8 @@ export const adminRouter = createTRPCRouter({
         };
 
         const result = calculator.calculateEnhancedGrowth(growthParams);
-        
-        const newEconomicTier = result.gdpPerCapita >= 50000 ? "Advanced" :
-                               result.gdpPerCapita >= 35000 ? "Developed" :
-                               result.gdpPerCapita >= 15000 ? "Emerging" : "Developing";
-        
-        const newPopulationTier = result.population >= 200000000 ? "Massive" :
-                                 result.population >= 50000000 ? "Large" :
-                                 result.population >= 10000000 ? "Medium" :
-                                 result.population >= 1000000 ? "Small" : "Micro";
+        const newEconomicTier = determineEconomicTier(result.gdpPerCapita);
+        const newPopulationTier = determinePopulationTier(result.population);
 
         await ctx.db.country.update({
           where: { id: country.id },
@@ -126,14 +132,14 @@ export const adminRouter = createTRPCRouter({
             currentTotalGdp: result.totalGdp,
             economicTier: newEconomicTier,
             populationTier: newPopulationTier,
-            lastCalculated: new Date(currentIxTime)
+            lastCalculated: new Date(currentIxTimeMs) // Store as Date object
           }
         });
 
         await ctx.db.historicalData.create({
           data: {
             countryId: country.id,
-            ixTimeTimestamp: new Date(currentIxTime),
+            ixTimeTimestamp: new Date(currentIxTimeMs), // Store as Date object
             population: result.population,
             gdpPerCapita: result.gdpPerCapita,
             totalGdp: result.totalGdp,
@@ -141,120 +147,84 @@ export const adminRouter = createTRPCRouter({
             gdpGrowthRate: result.gdpGrowthRate
           }
         });
-
         updatedCount++;
       }
     }
     
-    const executionTime = Date.now() - startTime;
+    const executionTimeMs = Date.now() - startTimeMs;
     
-    // Log the calculation
     await ctx.db.calculationLog.create({
       data: {
-        ixTimeTimestamp: new Date(currentIxTime),
+        ixTimeTimestamp: new Date(currentIxTimeMs),
         countriesUpdated: updatedCount,
-        executionTimeMs: executionTime,
+        executionTimeMs: executionTimeMs,
         globalGrowthFactor,
       }
     });
     
-    return {
-      updated: updatedCount,
-      executionTime,
-      ixTime: currentIxTime,
-      timeElapsed: "Manual calculation"
-    };
+    return { updated: updatedCount, executionTime: executionTimeMs, ixTime: currentIxTimeMs, message: `Forced calculation completed for ${updatedCount} countries.` };
   }),
 
-  // Set current IxTime (admin override)
   setCurrentIxTime: publicProcedure
-    .input(z.object({
-      ixTime: z.number()
-    }))
-    .mutation(async ({ ctx, input }) => {
-      // Store the time override in system config
-      await ctx.db.systemConfig.upsert({
-        where: { key: 'ixtime_override' },
-        update: { 
-          value: input.ixTime.toString(),
-          updatedAt: new Date()
-        },
-        create: {
-          key: 'ixtime_override',
-          value: input.ixTime.toString(),
-          description: 'Admin override for current IxTime',
-        }
-      });
-      
-      return { success: true, ixTime: input.ixTime };
+    .input(z.object({ ixTime: z.number() })) // Expecting IxTime timestamp
+    .mutation(async ({ input }) => {
+      IxTime.setTimeOverride(input.ixTime);
+      // Optionally, persist this to DB if needed for recovery or distributed systems
+      // await ctx.db.systemConfig.upsert({ where: {key: 'ixtime_override'}, update: {value: input.ixTime.toString()}, create: {key: 'ixtime_override', value: input.ixTime.toString()}})
+      return { success: true, newIxTime: IxTime.formatIxTime(input.ixTime, true) };
     }),
 
-  // Reset IxTime to normal flow
-  resetIxTime: publicProcedure.mutation(async ({ ctx }) => {
-    await ctx.db.systemConfig.deleteMany({
-      where: { key: 'ixtime_override' }
-    });
-    
-    return { success: true };
+  resetIxTime: publicProcedure.mutation(async () => {
+    IxTime.clearTimeOverride();
+    IxTime.clearMultiplierOverride(); // Also reset multiplier if it was part of an override scenario
+     // Optionally, remove from DB if persisted
+    // await ctx.db.systemConfig.deleteMany({ where: { key: 'ixtime_override' }});
+    // await ctx.db.systemConfig.upsert({ where: {key: 'time_multiplier'}, update: {value: '4.0'}, create: {key: 'time_multiplier', value: '4.0'}}) // Reset multiplier to default
+    return { success: true, message: "IxTime override cleared. Resuming normal flow." };
   }),
 
-  // Get current system status
   getSystemStatus: publicProcedure.query(async ({ ctx }) => {
     const countryCount = await ctx.db.country.count();
-    const activeDmInputs = await ctx.db.dmInput.count({
-      where: { isActive: true }
-    });
+    const activeDmInputs = await ctx.db.dmInput.count({ where: { isActive: true } });
+    const lastCalculation = await ctx.db.calculationLog.findFirst({ orderBy: { timestamp: 'desc' } });
     
-    const lastCalculation = await ctx.db.calculationLog.findFirst({
-      orderBy: { timestamp: 'desc' }
-    });
-    
+    const ixtimeStatus = IxTime.getStatus(); // Get status directly from IxTime class
+
     return {
-      ixTime: {
-        currentTime: IxTime.getCurrentIxTime(),
-        multiplier: 4.0, // Default multiplier
-        isPaused: false,
-        hasTimeOverride: false,
-        hasMultiplierOverride: false,
-      },
+      ixTime: ixtimeStatus,
       countryCount,
       activeDmInputs,
       lastCalculation: lastCalculation ? {
-        timestamp: lastCalculation.timestamp,
-        ixTimeTimestamp: lastCalculation.ixTimeTimestamp,
+        timestamp: lastCalculation.timestamp.toISOString(),
+        ixTimeTimestamp: lastCalculation.ixTimeTimestamp.toISOString(),
         countriesUpdated: lastCalculation.countriesUpdated,
-        executionTime: lastCalculation.executionTimeMs,
+        executionTimeMs: lastCalculation.executionTimeMs,
       } : null,
     };
   }),
 
-  // Emergency stop (pause all calculations)
   emergencyStop: publicProcedure.mutation(async ({ ctx }) => {
+    IxTime.setMultiplierOverride(0); // Pause IxTime progression
+    // Persist this to DB
     await ctx.db.systemConfig.upsert({
       where: { key: 'time_multiplier' },
       update: { value: '0', updatedAt: new Date() },
-      create: {
-        key: 'time_multiplier',
-        value: '0',
-        description: 'Emergency stop - system paused',
-      }
+      create: { key: 'time_multiplier', value: '0', description: 'IxTime speed multiplier (0 = PAUSED)'}
     });
-    
-    return { success: true, message: "System paused via emergency stop" };
+    return { success: true, message: "System paused via emergency stop. Time multiplier set to 0." };
   }),
 
-  // Resume normal operations
   resumeOperations: publicProcedure.mutation(async ({ ctx }) => {
+    IxTime.clearMultiplierOverride(); // Resume normal multiplier
+    // Persist this to DB
+    const defaultConfig = await ctx.db.systemConfig.findFirst({where: {key: 'time_multiplier_default'}}); // Assuming a default stored
+    const defaultMultiplier = defaultConfig?.value ?? '4.0';
+
     await ctx.db.systemConfig.upsert({
       where: { key: 'time_multiplier' },
-      update: { value: '4.0', updatedAt: new Date() },
-      create: {
-        key: 'time_multiplier',
-        value: '4.0',
-        description: 'Normal IxTime operations',
-      }
+      update: { value: defaultMultiplier, updatedAt: new Date() },
+      create: { key: 'time_multiplier', value: defaultMultiplier, description: 'IxTime speed multiplier' }
     });
-    
-    return { success: true, message: "System resumed normal operations" };
+    return { success: true, message: `System resumed normal operations. Time multiplier reset to ${defaultMultiplier}.` };
   }),
 });
