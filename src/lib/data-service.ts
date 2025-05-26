@@ -81,7 +81,7 @@ export class IxStatsDataService {
   async parseRosterFile(fileBuffer: ArrayBuffer): Promise<BaseCountryData[]> {
     const workbook = XLSX.read(fileBuffer, {
       cellStyles: true,
-      cellFormulas: true,
+      cellFormula: true,
       cellDates: true,
       cellNF: true,
       sheetStubs: true
@@ -92,6 +92,9 @@ export class IxStatsDataService {
       throw new Error('No worksheets found in the file');
     }
     const worksheet = workbook.Sheets[sheetName];
+    if (!worksheet) {
+      throw new Error('Worksheet not found in the file');
+    }
 
     const rawData = XLSX.utils.sheet_to_json(worksheet) as any[];
     return this.processRawData(rawData);
