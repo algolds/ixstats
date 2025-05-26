@@ -2,19 +2,83 @@
 // Core calculation engine for IxStats
 
 import { IxTime } from './ixtime';
-import type {
-  CountryStats,
-  BaseCountryData,
-  EconomicConfig,
-  DmInputs,
-  StatsCalculationResult,
-  HistoricalDataPoint
-} from '~/types/ixstats';
-import { EconomicTier, PopulationTier, DmInputType } from '~/types/ixstats';
+
+// Define types locally to avoid import issues
+export interface BaseCountryData {
+  country: string;
+  population: number;
+  gdpPerCapita: number;
+  maxGdpGrowthRate: number;
+  adjustedGdpGrowth: number;
+  populationGrowthRate: number;
+  projected2040Population: number;
+  projected2040Gdp: number;
+  projected2040GdpPerCapita: number;
+  actualGdpGrowth: number;
+}
+
+export interface CountryStats extends BaseCountryData {
+  totalGdp: number;
+  currentPopulation: number;
+  currentGdpPerCapita: number;
+  currentTotalGdp: number;
+  lastCalculated: number;
+  baselineDate: number;
+  economicTier: string;
+  populationTier: string;
+  localGrowthFactor: number;
+  globalGrowthFactor: number;
+}
+
+export interface EconomicConfig {
+  globalGrowthFactor: number;
+  baseInflationRate: number;
+  economicTierThresholds: {
+    developing: number;
+    emerging: number;
+    developed: number;
+    advanced: number;
+  };
+  populationTierThresholds: {
+    micro: number;
+    small: number;
+    medium: number;
+    large: number;
+  };
+  tierGrowthModifiers: Record<string, number>;
+  calculationIntervalMs: number;
+  ixTimeUpdateFrequency: number;
+}
+
+export interface DmInputs {
+  countryName: string;
+  ixTimeTimestamp: number;
+  inputType: string;
+  value: number;
+  description?: string;
+  duration?: number;
+}
+
+export interface StatsCalculationResult {
+  country: string;
+  oldStats: Partial<CountryStats>;
+  newStats: CountryStats;
+  timeElapsed: number;
+  calculationDate: number;
+}
+
+export interface HistoricalDataPoint {
+  ixTimeTimestamp: number;
+  population: number;
+  gdpPerCapita: number;
+  totalGdp: number;
+  populationGrowthRate: number;
+  gdpGrowthRate: number;
+}
 
 export class IxStatsCalculator {
   private config: EconomicConfig;
-  private baselineDate: number; // IxTime timestamp
+  private baselineDate: number;
 
   constructor(config: EconomicConfig, baselineDate?: number) {
     this.config = config;
@@ -129,12 +193,11 @@ export class IxStatsCalculator {
     
     // Apply DM adjustments
     dmInputs.forEach(input => {
-      if (input.inputType === DmInputType.POPULATION_ADJUSTMENT) {
+      if (input.inputType === 'population_adjustment') {
         adjustedRate += input.value;
       }
     });
 
-    // Compound growth formula: P = P₀ * (1 + r)^t
     return basePopulation * Math.pow(1 + adjustedRate, years);
   }
 
@@ -145,7 +208,7 @@ export class IxStatsCalculator {
     baseGdpPerCapita: number,
     adjustedGrowth: number,
     maxGrowthRate: number,
-    tier: EconomicTier,
+    tier: string,
     years: number,
     dmInputs: DmInputs[]
   ): number {
@@ -160,16 +223,16 @@ export class IxStatsCalculator {
 
     // Apply DM adjustments
     dmInputs.forEach(input => {
-      if (input.inputType === DmInputType.GDP_ADJUSTMENT) {
+      if (input.inputType === 'gdp_adjustment') {
         effectiveGrowthRate += input.value;
-      } else if (input.inputType === DmInputType.GROWTH_RATE_MODIFIER) {
+      } else if (input.inputType === 'growth_rate_modifier') {
         effectiveGrowthRate *= (1 + input.value);
       }
     });
 
     // Cap growth rate
     effectiveGrowthRate = Math.min(effectiveGrowthRate, maxGrowthRate);
-    effectiveGrowthRate = Math.max(effectiveGrowthRate, -0.1); // Prevent extreme negative growth
+    effectiveGrowthRate = Math.max(effectiveGrowthRate, -0.1);
 
     // Apply logarithmic growth for very high GDP countries
     if (baseGdpPerCapita > 60000) {
@@ -183,26 +246,26 @@ export class IxStatsCalculator {
   /**
    * Determine economic tier based on GDP per capita
    */
-  private calculateEconomicTier(gdpPerCapita: number): EconomicTier {
+  private calculateEconomicTier(gdpPerCapita: number): string {
     const thresholds = this.config.economicTierThresholds;
     
-    if (gdpPerCapita >= thresholds.advanced) return EconomicTier.ADVANCED;
-    if (gdpPerCapita >= thresholds.developed) return EconomicTier.DEVELOPED;
-    if (gdpPerCapita >= thresholds.emerging) return EconomicTier.EMERGING;
-    return EconomicTier.DEVELOPING;
+    if (gdpPerCapita >= thresholds.advanced) return "Advanced";
+    if (gdpPerCapita >= thresholds.developed) return "Developed";
+    if (gdpPerCapita >= thresholds.emerging) return "Emerging";
+    return "Developing";
   }
 
   /**
    * Determine population tier based on population size
    */
-  private calculatePopulationTier(population: number): PopulationTier {
+  private calculatePopulationTier(population: number): string {
     const thresholds = this.config.populationTierThresholds;
     
-    if (population >= thresholds.large) return PopulationTier.MASSIVE;
-    if (population >= thresholds.medium) return PopulationTier.LARGE;
-    if (population >= thresholds.small) return PopulationTier.MEDIUM;
-    if (population >= thresholds.micro) return PopulationTier.SMALL;
-    return PopulationTier.MICRO;
+    if (population >= thresholds.large) return "Massive";
+    if (population >= thresholds.medium) return "Large";
+    if (population >= thresholds.small) return "Medium";
+    if (population >= thresholds.micro) return "Small";
+    return "Micro";
   }
 
   /**
@@ -227,19 +290,16 @@ export class IxStatsCalculator {
 
     dmInputs.forEach(input => {
       switch (input.inputType) {
-        case DmInputType.NATURAL_DISASTER:
-          // Temporary negative impact on population and GDP
+        case 'natural_disaster':
           modifiedStats.currentPopulation *= (1 + input.value);
-          modifiedStats.currentTotalGdp *= (1 + input.value * 1.5); // GDP hit harder
+          modifiedStats.currentTotalGdp *= (1 + input.value * 1.5);
           break;
           
-        case DmInputType.TRADE_AGREEMENT:
-          // Boost to GDP growth
+        case 'trade_agreement':
           modifiedStats.currentGdpPerCapita *= (1 + input.value);
           break;
           
-        case DmInputType.ECONOMIC_POLICY:
-          // Various effects depending on value
+        case 'economic_policy':
           modifiedStats.localGrowthFactor *= (1 + input.value);
           break;
       }

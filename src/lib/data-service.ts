@@ -2,14 +2,69 @@
 // Data service for parsing Excel files and managing country data
 
 import * as XLSX from 'xlsx';
-import type {
-  BaseCountryData,
-  CountryStats,
-  EconomicConfig,
-  IxStatsConfig
-} from '~/types/ixstats';
-import { EconomicTier, PopulationTier } from '~/types/ixstats';
 import { IxStatsCalculator } from './calculations';
+
+// Define types locally to avoid import issues
+export interface BaseCountryData {
+  country: string;
+  population: number;
+  gdpPerCapita: number;
+  maxGdpGrowthRate: number;
+  adjustedGdpGrowth: number;
+  populationGrowthRate: number;
+  projected2040Population: number;
+  projected2040Gdp: number;
+  projected2040GdpPerCapita: number;
+  actualGdpGrowth: number;
+}
+
+export interface CountryStats extends BaseCountryData {
+  totalGdp: number;
+  currentPopulation: number;
+  currentGdpPerCapita: number;
+  currentTotalGdp: number;
+  lastCalculated: number;
+  baselineDate: number;
+  economicTier: string;
+  populationTier: string;
+  localGrowthFactor: number;
+  globalGrowthFactor: number;
+}
+
+export interface EconomicConfig {
+  globalGrowthFactor: number;
+  baseInflationRate: number;
+  economicTierThresholds: {
+    developing: number;
+    emerging: number;
+    developed: number;
+    advanced: number;
+  };
+  populationTierThresholds: {
+    micro: number;
+    small: number;
+    medium: number;
+    large: number;
+  };
+  tierGrowthModifiers: Record<string, number>;
+  calculationIntervalMs: number;
+  ixTimeUpdateFrequency: number;
+}
+
+export interface IxStatsConfig {
+  economic: EconomicConfig;
+  timeSettings: {
+    baselineYear: number;
+    currentIxTimeMultiplier: number;
+    updateIntervalSeconds: number;
+  };
+  displaySettings: {
+    defaultCurrency: string;
+    numberFormat: "standard" | "scientific" | "compact";
+    showHistoricalData: boolean;
+    chartTimeRange: number;
+  };
+}
 
 export class IxStatsDataService {
   private calculator: IxStatsCalculator;
@@ -26,22 +81,19 @@ export class IxStatsDataService {
   async parseRosterFile(fileBuffer: ArrayBuffer): Promise<BaseCountryData[]> {
     const workbook = XLSX.read(fileBuffer, {
       cellStyles: true,
-      cellFormula: true,
+      cellFormulas: true,
       cellDates: true,
       cellNF: true,
       sheetStubs: true
     });
 
-    // Assume the first sheet contains the roster data
     const sheetName = workbook.SheetNames[0];
     if (!sheetName) {
       throw new Error('No worksheets found in the file');
     }
     const worksheet = workbook.Sheets[sheetName];
 
-    // Convert to JSON with headers
     const rawData = XLSX.utils.sheet_to_json(worksheet) as any[];
-
     return this.processRawData(rawData);
   }
 
@@ -52,7 +104,6 @@ export class IxStatsDataService {
     const countries: BaseCountryData[] = [];
 
     for (const row of rawData) {
-      // Skip rows without country data
       if (!row.Country || typeof row.Country !== 'string') {
         continue;
       }
@@ -60,18 +111,36 @@ export class IxStatsDataService {
       try {
         const countryData: BaseCountryData = {
           country: row.Country.trim(),
-          population: this.parseNumber(row.Population),
-          gdpPerCapita: this.parseNumber(row['GDP PC']),
-          maxGdpGrowthRate: this.parseNumber(row['Max GDPPC Grow Rt']),
-          adjustedGdpGrowth: this.parseNumber(row['Adj GDPPC Growth']),
-          populationGrowthRate: this.parseNumber(row['Pop Growth Rate']),
-          projected2040Population: this.parseNumber(row['2040 Population']),
-          projected2040Gdp: this.parseNumber(row['2040 GDP']),
-          projected2040GdpPerCapita: this.parseNumber(row['2040 GDP PC']),
-          actualGdpGrowth: this.parseNumber(row['Actual GDP Growth'])
+          population: this.parseNumber(row.Population || row['Current Population'] || row.Pop),
+          gdpPerCapita: this.parseNumber(row['GDP PC'] || row['GDP per Capita'] || row.GDPPC),
+          maxGdpGrowthRate: this.parseNumber(row['Max GDPPC Grow Rt'] || row['Max Growth Rate'] || 0.05),
+          adjustedGdpGrowth: this.parseNumber(row['Adj GDPPC Growth'] || row['GDP Growth'] || 0.03),
+          populationGrowthRate: this.parseNumber(row['Pop Growth Rate'] || row['Population Growth'] || 0.01),
+          projected2040Population: this.parseNumber(row['2040 Population'] || 0),
+          projected2040Gdp: this.parseNumber(row['2040 GDP'] || 0),
+          projected2040GdpPerCapita: this.parseNumber(row['2040 GDP PC'] || 0),
+          actualGdpGrowth: this.parseNumber(row['Actual GDP Growth'] || 0)
         };
 
-        // Validate the data
+        // Auto-calculate missing projections if not provided
+        if (countryData.projected2040Population === 0) {
+          const years = 2040 - this.config.timeSettings.baselineYear;
+          countryData.projected2040Population = countryData.population * Math.pow(1 + countryData.populationGrowthRate, years);
+        }
+        
+        if (countryData.projected2040GdpPerCapita === 0) {
+          const years = 2040 - this.config.timeSettings.baselineYear;
+          countryData.projected2040GdpPerCapita = countryData.gdpPerCapita * Math.pow(1 + countryData.adjustedGdpGrowth, years);
+        }
+        
+        if (countryData.projected2040Gdp === 0) {
+          countryData.projected2040Gdp = countryData.projected2040Population * countryData.projected2040GdpPerCapita;
+        }
+        
+        if (countryData.actualGdpGrowth === 0) {
+          countryData.actualGdpGrowth = countryData.populationGrowthRate + countryData.adjustedGdpGrowth;
+        }
+
         if (this.validateCountryData(countryData)) {
           countries.push(countryData);
         } else {
@@ -107,8 +176,8 @@ export class IxStatsDataService {
       data.population > 0 &&
       data.gdpPerCapita > 0 &&
       data.maxGdpGrowthRate >= 0 &&
-      data.populationGrowthRate >= -0.1 && // Allow some negative growth
-      data.populationGrowthRate <= 0.1 // Reasonable upper bound
+      data.populationGrowthRate >= -0.1 &&
+      data.populationGrowthRate <= 0.2
     );
   }
 
@@ -124,7 +193,7 @@ export class IxStatsDataService {
    */
   static getDefaultEconomicConfig(): EconomicConfig {
     return {
-      globalGrowthFactor: 1.0321, // 3.21% as shown in spreadsheet
+      globalGrowthFactor: 1.0321,
       baseInflationRate: 0.02,
       
       economicTierThresholds: {
@@ -142,14 +211,14 @@ export class IxStatsDataService {
       },
       
       tierGrowthModifiers: {
-        [EconomicTier.DEVELOPING]: 1.2, // Higher growth potential
-        [EconomicTier.EMERGING]: 1.1,
-        [EconomicTier.DEVELOPED]: 1.0,
-        [EconomicTier.ADVANCED]: 0.9 // Slower growth for mature economies
+        "Developing": 1.2,
+        "Emerging": 1.1,
+        "Developed": 1.0,
+        "Advanced": 0.9
       },
       
-      calculationIntervalMs: 60000, // Update every minute
-      ixTimeUpdateFrequency: 4 // 4x faster than real time
+      calculationIntervalMs: 60000,
+      ixTimeUpdateFrequency: 4
     };
   }
 
@@ -168,7 +237,7 @@ export class IxStatsDataService {
         defaultCurrency: "USD",
         numberFormat: "compact",
         showHistoricalData: true,
-        chartTimeRange: 5 // 5 years
+        chartTimeRange: 5
       }
     };
   }
@@ -196,36 +265,6 @@ export class IxStatsDataService {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'IxStats Export');
 
     return XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  }
-
-  /**
-   * Add new country to the system
-   */
-  addNewCountry(countryData: Omit<BaseCountryData, 'projected2040Population' | 'projected2040Gdp' | 'projected2040GdpPerCapita' | 'actualGdpGrowth'>): BaseCountryData {
-    // Calculate missing projections based on growth rates
-    const years = 2040 - this.config.timeSettings.baselineYear;
-    const projected2040Population = countryData.population * Math.pow(1 + countryData.populationGrowthRate, years);
-    const projected2040GdpPerCapita = countryData.gdpPerCapita * Math.pow(1 + countryData.adjustedGdpGrowth, years);
-    const projected2040Gdp = projected2040Population * projected2040GdpPerCapita;
-    
-    // Calculate actual GDP growth (simplified)
-    const actualGdpGrowth = countryData.populationGrowthRate + countryData.adjustedGdpGrowth;
-
-    return {
-      ...countryData,
-      projected2040Population,
-      projected2040Gdp,
-      projected2040GdpPerCapita,
-      actualGdpGrowth
-    };
-  }
-
-  /**
-   * Update economic configuration
-   */
-  updateEconomicConfig(newConfig: Partial<EconomicConfig>): void {
-    this.config.economic = { ...this.config.economic, ...newConfig };
-    this.calculator.updateConfig(this.config.economic);
   }
 
   /**
