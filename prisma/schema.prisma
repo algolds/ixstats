@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Country {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Base data
+  baselinePopulation        Float
+  baselineGdpPerCapita     Float
+  maxGdpGrowthRate         Float
+  adjustedGdpGrowth        Float
+  populationGrowthRate     Float
+  projected2040Population  Float
+  projected2040Gdp         Float
+  projected2040GdpPerCapita Float
+  actualGdpGrowth          Float
+
+  // Current calculated values
+  currentPopulation     Float
+  currentGdpPerCapita  Float
+  currentTotalGdp      Float
+  
+  // System fields
+  lastCalculated       DateTime
+  baselineDate         DateTime
+  economicTier         String
+  populationTier       String
+  localGrowthFactor    Float   @default(1.0)
+  
+  // Relationships
+  historicalData       HistoricalData[]
+  dmInputs            DmInput[]
+  
+  @@map("countries")
+}
+
+model HistoricalData {
+  id               String   @id @default(cuid())
+  countryId        String
+  ixTimeTimestamp  DateTime
+  population       Float
+  gdpPerCapita     Float
+  totalGdp         Float
+  populationGrowthRate Float
+  gdpGrowthRate    Float
+  
+  country          Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  
+  @@map("historical_data")
+  @@index([countryId, ixTimeTimestamp])
+}
+
+model DmInput {
+  id               String   @id @default(cuid())
+  countryId        String?
+  ixTimeTimestamp  DateTime
+  inputType        String
+  value            Float
+  description      String?
+  duration         Float?
+  isActive         Boolean  @default(true)
+  createdBy        String?
+  
+  country          Country? @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  
+  @@map("dm_inputs")
+  @@index([countryId, ixTimeTimestamp])
+}
+
+model SystemConfig {
+  id                    String   @id @default(cuid())
+  key                   String   @unique
+  value                 String
+  description           String?
+  updatedAt            DateTime @updatedAt
+  
+  @@map("system_config")
+}
+
+model CalculationLog {
+  id               String   @id @default(cuid())
+  timestamp        DateTime @default(now())
+  ixTimeTimestamp  DateTime
+  countriesUpdated Int
+  executionTimeMs  Int
+  globalGrowthFactor Float
+  
+  @@map("calculation_logs")
+}
