@@ -2,14 +2,13 @@
 // Data service for parsing Excel files and managing country data
 
 import * as XLSX from 'xlsx';
-import {
+import type {
   BaseCountryData,
   CountryStats,
   EconomicConfig,
-  EconomicTier,
-  PopulationTier,
   IxStatsConfig
-} from '../types/ixstats';
+} from '~/types/ixstats';
+import { EconomicTier, PopulationTier } from '~/types/ixstats';
 import { IxStatsCalculator } from './calculations';
 
 export class IxStatsDataService {
@@ -27,7 +26,7 @@ export class IxStatsDataService {
   async parseRosterFile(fileBuffer: ArrayBuffer): Promise<BaseCountryData[]> {
     const workbook = XLSX.read(fileBuffer, {
       cellStyles: true,
-      cellFormulas: true,
+      cellFormula: true,
       cellDates: true,
       cellNF: true,
       sheetStubs: true
@@ -35,6 +34,9 @@ export class IxStatsDataService {
 
     // Assume the first sheet contains the roster data
     const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
+      throw new Error('No worksheets found in the file');
+    }
     const worksheet = workbook.Sheets[sheetName];
 
     // Convert to JSON with headers

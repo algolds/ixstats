@@ -2,17 +2,15 @@
 // Core calculation engine for IxStats
 
 import { IxTime } from './ixtime';
-import {
+import type {
   CountryStats,
   BaseCountryData,
-  EconomicTier,
-  PopulationTier,
   EconomicConfig,
   DmInputs,
-  DmInputType,
   StatsCalculationResult,
   HistoricalDataPoint
-} from '../types/ixstats';
+} from '~/types/ixstats';
+import { EconomicTier, PopulationTier, DmInputType } from '~/types/ixstats';
 
 export class IxStatsCalculator {
   private config: EconomicConfig;

@@ -157,7 +157,7 @@ export const countriesRouter = createTRPCRouter({
           globalGrowthFactor: 1.0321
         };
 
-        const dmInputs: DmInputs[] = country.dmInputs.map(input => ({
+        const dmInputs: DmInputs[] = country.dmInputs.map((input: any) => ({
           countryName: country.name,
           ixTimeTimestamp: input.ixTimeTimestamp.getTime(),
           inputType: input.inputType as any,
@@ -201,7 +201,7 @@ export const countriesRouter = createTRPCRouter({
           include: { dmInputs: { where: { isActive: true } } }
         });
         
-        const results = [];
+        const results: any[] = [];
         for (const country of countries) {
           // Similar logic as above for each country
           // ... (implementation would be similar to single country update)
@@ -236,11 +236,11 @@ export const countriesRouter = createTRPCRouter({
   getGlobalStats: publicProcedure.query(async ({ ctx }) => {
     const countries = await ctx.db.country.findMany();
     
-    const totalPopulation = countries.reduce((sum, c) => sum + c.currentPopulation, 0);
-    const totalGdp = countries.reduce((sum, c) => sum + c.currentTotalGdp, 0);
+    const totalPopulation = countries.reduce((sum: number, c: any) => sum + c.currentPopulation, 0);
+    const totalGdp = countries.reduce((sum: number, c: any) => sum + c.currentTotalGdp, 0);
     const avgGdpPerCapita = totalGdp / totalPopulation;
     
-    const economicTierCounts = countries.reduce((acc, c) => {
+    const economicTierCounts = countries.reduce((acc: Record<string, number>, c: any) => {
       acc[c.economicTier] = (acc[c.economicTier] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);

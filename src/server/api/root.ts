@@ -1,4 +1,6 @@
+// src/server/api/root.ts
 import { postRouter } from "~/server/api/routers/post";
+import { countriesRouter } from "~/server/api/routers/countries";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -8,6 +10,7 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
  */
 export const appRouter = createTRPCRouter({
   post: postRouter,
+  countries: countriesRouter,
 });
 
 // export type definition of API
