@@ -10,7 +10,7 @@ export default async function Home() {
             <span className="text-[hsl(280,100%,70%)]">IxStats™</span>
           </h1>
           <p className="text-xl text-center max-w-2xl">
-            Economic Statistics for the Ixnay Community
+             Automated statistics for Ixnay Worldbuilding Community
           </p>
           
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
@@ -20,7 +20,7 @@ export default async function Home() {
             >
               <h3 className="text-2xl font-bold">📊 IxStats Dashboard →</h3>
               <div className="text-lg">
-                View and manage economic statistics for all Ixnay countries. 
+                View and manage economic statistics for all countries. 
                 Upload roster files and track growth over IxTime.
               </div>
             </Link>

@@ -151,16 +151,31 @@ function CountryCard({ country, onUpdate }: CountryCardProps) {
   );
 }
 
-// Enhanced Country Stats interface to match what comes from the database
-interface EnhancedCountryStats extends CountryStats {
-  // Add missing properties that come from the database
-  baselinePopulation: number;
-  baselineGdpPerCapita: number;
+// Fixed chart data processing interface
+interface ProcessedCountryData {
+  id: string;
+  name: string;
+  currentPopulation: number;
+  currentGdpPerCapita: number;
+  currentTotalGdp: number;
+  economicTier: string;
+  populationTier: string;
+  landArea: number | null;
+  populationDensity: number | null;
+  gdpDensity: number | null;
 }
 
-function GlobalAnalytics({ countries }: { countries: EnhancedCountryStats[] }) {
-  const economicTierData = countries.reduce((acc, country) => {
-    const tier = country.economicTier;
+function GlobalAnalytics({ countries }: { countries: ProcessedCountryData[] }) {
+  // Filter countries with valid data for charts
+  const validCountries = countries.filter(country => 
+    country.currentPopulation > 0 && 
+    country.currentGdpPerCapita > 0 && 
+    country.currentTotalGdp > 0
+  );
+
+  // Economic tier distribution with better data handling
+  const economicTierData = validCountries.reduce((acc, country) => {
+    const tier = country.economicTier || 'Unknown';
     const existing = acc.find(item => item.name === tier);
     if (existing) {
       existing.value += 1;
@@ -177,22 +192,25 @@ function GlobalAnalytics({ countries }: { countries: EnhancedCountryStats[] }) {
     return acc;
   }, [] as Array<{ name: string; value: number; totalGdp: number; totalArea: number }>);
 
-  const densityDistribution = countries
-    .filter(c => c.populationDensity && c.landArea)
+  // Fixed density distribution data
+  const densityDistribution = validCountries
+    .filter(c => c.populationDensity != null && c.populationDensity > 0 && c.landArea != null && c.landArea > 0)
     .map(c => ({
-      name: c.name,
-      populationDensity: c.populationDensity,
-      gdpDensity: (c.gdpDensity || 0) / 1000000, // Convert to millions
+      name: c.name.length > 10 ? c.name.substring(0, 10) + '...' : c.name, // Truncate long names
+      populationDensity: Number((c.populationDensity || 0).toFixed(1)),
+      gdpDensity: Number(((c.gdpDensity || 0) / 1000000).toFixed(2)), // Convert to millions per km²
       economicTier: c.economicTier,
+      fullName: c.name // Keep full name for tooltip
     }))
-    .sort((a, b) => b.populationDensity! - a.populationDensity!)
+    .sort((a, b) => b.populationDensity - a.populationDensity)
     .slice(0, 10); // Top 10 by population density
 
-  const TIER_COLORS = {
+  const TIER_COLORS: Record<string, string> = {
     'Advanced': '#8B5CF6',
     'Developed': '#3B82F6', 
     'Emerging': '#10B981',
-    'Developing': '#F59E0B'
+    'Developing': '#F59E0B',
+    'Unknown': '#6B7280'
   };
 
   return (
@@ -202,23 +220,36 @@ function GlobalAnalytics({ countries }: { countries: EnhancedCountryStats[] }) {
           <BarChart3 className="h-5 w-5 mr-2" />
           Economic Tier Distribution
         </h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={economicTierData}
-              cx="50%"
-              cy="50%"
-              outerRadius={80}
-              dataKey="value"
-              label={({ name, value }) => `${name}: ${value}`}
-            >
-              {economicTierData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={TIER_COLORS[entry.name as keyof typeof TIER_COLORS] || '#6B7280'} />
-              ))}
-            </Pie>
-            <Tooltip />
-          </PieChart>
-        </ResponsiveContainer>
+        {economicTierData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={economicTierData}
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                dataKey="value"
+                label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
+                labelLine={false}
+              >
+                {economicTierData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={TIER_COLORS[entry.name] || '#6B7280'} />
+                ))}
+              </Pie>
+              <Tooltip 
+                formatter={(value, name) => [value, 'Countries']}
+                labelFormatter={(label) => `Economic Tier: ${label}`}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+            <div className="text-center">
+              <BarChart3 className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p>No economic tier data available</p>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
@@ -226,22 +257,76 @@ function GlobalAnalytics({ countries }: { countries: EnhancedCountryStats[] }) {
           <Target className="h-5 w-5 mr-2" />
           Top 10 Countries by Population Density
         </h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={densityDistribution} layout="horizontal">
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis type="number" />
-            <YAxis dataKey="name" type="category" width={80} fontSize={10} />
-            <Tooltip 
-              formatter={(value: number, name: string) => [
-                name === 'populationDensity' ? `${value.toFixed(1)}/km²` : `$${value.toFixed(1)}M/km²`,
-                name === 'populationDensity' ? 'Population Density' : 'GDP Density'
-              ]}
-            />
-            <Legend />
-            <Bar dataKey="populationDensity" fill="#3B82F6" name="Pop. Density" />
-            <Bar dataKey="gdpDensity" fill="#10B981" name="GDP Density (M$/km²)" />
-          </BarChart>
-        </ResponsiveContainer>
+        {densityDistribution.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart 
+              data={densityDistribution} 
+              margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+              <XAxis 
+                dataKey="name" 
+                tick={{ fontSize: 10, fill: '#6B7280' }} 
+                angle={-45} 
+                textAnchor="end" 
+                height={80}
+                interval={0}
+              />
+              <YAxis 
+                yAxisId="density"
+                tick={{ fontSize: 10, fill: '#6B7280' }} 
+                stroke="#6B7280"
+                label={{ value: 'Pop./km²', angle: -90, position: 'insideLeft' }}
+              />
+              <YAxis 
+                yAxisId="gdpDensity" 
+                orientation="right" 
+                tick={{ fontSize: 10, fill: '#6B7280' }} 
+                stroke="#6B7280"
+                label={{ value: 'M$/km²', angle: 90, position: 'insideRight' }}
+              />
+              <Tooltip 
+                formatter={(value: number, name: string) => [
+                  name === 'populationDensity' ? `${value}/km²` : `$${value}M/km²`,
+                  name === 'populationDensity' ? 'Population Density' : 'GDP Density'
+                ]}
+                labelFormatter={(label, payload) => {
+                  const data = payload?.[0]?.payload;
+                  return data?.fullName || label;
+                }}
+                contentStyle={{
+                  backgroundColor: 'rgba(31, 41, 55, 0.9)',
+                  color: '#E5E7EB',
+                  border: '1px solid #374151',
+                  borderRadius: '0.375rem'
+                }}
+              />
+              <Legend />
+              <Bar 
+                yAxisId="density" 
+                dataKey="populationDensity" 
+                fill="#3B82F6" 
+                name="Pop. Density"
+                radius={[2, 2, 0, 0]}
+              />
+              <Bar 
+                yAxisId="gdpDensity" 
+                dataKey="gdpDensity" 
+                fill="#10B981" 
+                name="GDP Density (M$/km²)"
+                radius={[2, 2, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+            <div className="text-center">
+              <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p>No density data available</p>
+              <p className="text-xs mt-1">Countries need land area data</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -259,8 +344,22 @@ export default function IxStatsDashboard() {
   const { data: countries, refetch: refetchCountries, isLoading: countriesLoading } = api.countries.getAll.useQuery();
   const { data: globalStats, refetch: refetchGlobalStats, isLoading: globalStatsLoading } = api.countries.getGlobalStats.useQuery();
 
-  // Transform countries data to match CountryStats interface
-  const transformedCountries: EnhancedCountryStats[] = countries?.map(country => ({
+  // Process countries data for charts with proper type safety
+  const processedCountries: ProcessedCountryData[] = countries?.map(country => ({
+    id: country.id,
+    name: country.name || country.country || 'Unknown',
+    currentPopulation: country.currentPopulation || 0,
+    currentGdpPerCapita: country.currentGdpPerCapita || 0,
+    currentTotalGdp: country.currentTotalGdp || 0,
+    economicTier: country.economicTier || 'Unknown',
+    populationTier: country.populationTier || 'Unknown',
+    landArea: country.landArea || null,
+    populationDensity: country.populationDensity || null,
+    gdpDensity: country.gdpDensity || null,
+  })) || [];
+
+  // Transform countries data to match CountryStats interface for CountryCard
+  const transformedCountries: CountryStats[] = countries?.map(country => ({
     ...country,
     // Map database fields to CountryStats interface
     population: country.baselinePopulation,
@@ -477,8 +576,8 @@ export default function IxStatsDashboard() {
         )}
 
         {/* Global Analytics Charts */}
-        {transformedCountries && transformedCountries.length > 0 && (
-          <GlobalAnalytics countries={transformedCountries} />
+        {processedCountries && processedCountries.length > 0 && (
+          <GlobalAnalytics countries={processedCountries} />
         )}
 
         {/* Controls */}
