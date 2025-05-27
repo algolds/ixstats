@@ -1,5 +1,5 @@
 // src/types/ixstats.ts
-// Data models and types for IxStats
+// Data models and types for IxStats - Fixed to match Prisma exactly
 
 export interface BaseCountryData {
   country: string;
@@ -15,6 +15,47 @@ export interface BaseCountryData {
   landArea?: number; // Land area in square kilometers
 }
 
+// Database types (matching Prisma exactly)
+export interface CountryFromDB {
+  id: string;
+  name: string;
+  createdAt: Date;
+  updatedAt: Date;
+  
+  // Base data
+  baselinePopulation: number;
+  baselineGdpPerCapita: number;
+  maxGdpGrowthRate: number;
+  adjustedGdpGrowth: number;
+  populationGrowthRate: number;
+  projected2040Population: number;
+  projected2040Gdp: number;
+  projected2040GdpPerCapita: number;
+  actualGdpGrowth: number;
+  
+  // Current calculated values
+  currentPopulation: number;
+  currentGdpPerCapita: number;
+  currentTotalGdp: number;
+  
+  // Geography and density fields
+  landArea: number | null;
+  populationDensity: number | null;
+  gdpDensity: number | null;
+  
+  // System fields
+  lastCalculated: Date;
+  baselineDate: Date;
+  economicTier: string;
+  populationTier: string;
+  localGrowthFactor: number;
+  
+  // Relationships (when included)
+  historicalData?: HistoricalDataFromDB[];
+  dmInputs?: DmInputFromDB[];
+}
+
+// Computed interface for business logic (with timestamp helpers)
 export interface CountryStats extends BaseCountryData {
   id?: string; // Optional if it comes from DB
   name: string; // Add name property for component compatibility
@@ -24,8 +65,13 @@ export interface CountryStats extends BaseCountryData {
   currentGdpPerCapita: number;
   currentTotalGdp: number;
   
-  lastCalculated: number; // IxTime timestamp (milliseconds)
-  baselineDate: number; // IxTime timestamp (milliseconds) when baseline was set
+  // Keep as Date objects to match Prisma
+  lastCalculated: Date;
+  baselineDate: Date;
+  
+  // Add computed timestamp properties for backward compatibility
+  lastCalculatedTimestamp?: number; // Helper: lastCalculated.getTime()
+  baselineDateTimestamp?: number; // Helper: baselineDate.getTime()
   
   economicTier: EconomicTier;
   populationTier: PopulationTier;
@@ -33,8 +79,8 @@ export interface CountryStats extends BaseCountryData {
   localGrowthFactor: number;
   globalGrowthFactor: number; // This might be better managed globally or passed in
 
-  populationDensity?: number; // Population per square kilometer
-  gdpDensity?: number; // GDP per square kilometer
+  populationDensity?: number | null; // Population per square kilometer
+  gdpDensity?: number | null; // GDP per square kilometer
   
   // Add historicalData and dmInputs for full compatibility
   historicalData?: HistoricalDataPoint[];
@@ -83,10 +129,28 @@ export interface EconomicConfig {
   ixTimeUpdateFrequency: number; // (e.g., how many real seconds per IxTime second if multiplier changes)
 }
 
-export interface DmInputs { // Represents a record of a DM Input
+// Database type for DM Inputs (matching Prisma exactly)
+export interface DmInputFromDB {
+  id: string;
+  countryId: string | null;
+  ixTimeTimestamp: Date;
+  inputType: string;
+  value: number;
+  description: string | null;
+  duration: number | null;
+  isActive: boolean;
+  createdBy: string | null;
+  
+  // Relationship
+  country?: CountryFromDB | null;
+}
+
+// Business logic interface for DM Inputs (backward compatibility)
+export interface DmInputs {
   id: string;
   countryId?: string | null; // Can be null for global inputs (match Prisma)
-  ixTimeTimestamp: Date; // Change to Date to match Prisma
+  ixTimeTimestamp: Date; // Keep as Date to match Prisma
+  ixTimeTimestampMs?: number; // Helper: ixTimeTimestamp.getTime()
   inputType: string;
   value: number;
   description?: string | null; // Change to match Prisma (string | null)
@@ -105,10 +169,32 @@ export enum DmInputType {
   ECONOMIC_POLICY = "economic_policy"              // Can be positive or negative
 }
 
+// Database type for Historical Data (matching Prisma exactly)
+export interface HistoricalDataFromDB {
+  id: string;
+  countryId: string;
+  ixTimeTimestamp: Date;
+  population: number;
+  gdpPerCapita: number;
+  totalGdp: number;
+  populationGrowthRate: number;
+  gdpGrowthRate: number;
+  
+  // Add geography and density tracking
+  landArea: number | null;
+  populationDensity: number | null;
+  gdpDensity: number | null;
+  
+  // Relationship
+  country: CountryFromDB;
+}
+
+// Business logic interface for Historical Data
 export interface HistoricalDataPoint {
   id?: string; // Optional if it comes from DB
   countryId?: string; // Link to country
-  ixTimeTimestamp: number; // IxTime timestamp (milliseconds)
+  ixTimeTimestamp: Date; // Keep as Date to match Prisma
+  ixTimeTimestampMs?: number; // Helper: ixTimeTimestamp.getTime()
   population: number;
   gdpPerCapita: number;
   totalGdp: number;
@@ -155,11 +241,71 @@ export interface GlobalEconomicSnapshot {
   averageGdpDensity?: number;
 }
 
-// Add SystemConfig interface to match Prisma exactly
+// SystemConfig interface to match Prisma exactly
 export interface SystemConfig {
   id: string;
   key: string;
   value: string;
   description: string | null; // Match Prisma: string | null, not string | undefined
   updatedAt: Date;
+}
+
+// Database type for Calculation Logs (matching Prisma exactly)
+export interface CalculationLogFromDB {
+  id: string;
+  timestamp: Date;
+  ixTimeTimestamp: Date;
+  countriesUpdated: number;
+  executionTimeMs: number;
+  globalGrowthFactor: number;
+}
+
+// Utility type for transforming DB dates to timestamps
+export type WithTimestamps<T> = T & {
+  [K in keyof T as T[K] extends Date ? `${K & string}Timestamp` : never]: number;
+};
+
+// Helper function type for converting Date objects to timestamps
+export interface TimestampConverter {
+  toTimestamp(date: Date): number;
+  fromTimestamp(timestamp: number): Date;
+  formatIxTime(timestamp: number, includeTime?: boolean): string;
+}
+
+// Bot Status Types (for Discord bot integration)
+export interface BotTimeResponse {
+  realTime: string;
+  ixTimeTimestamp: number;
+  ixTimeFormatted: string;
+  multiplier: number;
+  isPaused: boolean;
+  hasTimeOverride: boolean;
+  hasMultiplierOverride: boolean;
+  epoch: string;
+  pausedAt?: string | null;
+  pauseTimestamp?: string | null;
+}
+
+export interface BotStatusResponse extends BotTimeResponse {
+  ixTimeFormattedShort: string;
+  baseMultiplier: number;
+  timeOverrideValue: number | null;
+  multiplierOverrideValue: number | null;
+  pausedTime: number | null;
+  epochTimestamp: number;
+  botStatus: {
+    ready: boolean;
+    readyAt: string | null;
+    uptime: number | null;
+    user: {
+      id: string;
+      username: string;
+      tag: string;
+    } | null;
+  };
+}
+
+export interface BotHealthResponse {
+  available: boolean;
+  message: string;
 }

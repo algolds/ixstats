@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
-import { Upload, RefreshCw, Clock, Globe, TrendingUp, Users, MapPin, Scaling, BarChart3, Target, Layers, AlertCircle } from "lucide-react";
+import { Upload, RefreshCw, Clock, Globe, TrendingUp, Users, MapPin, Scaling, BarChart3, Target, Layers, AlertCircle, Wifi, WifiOff } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { ImportPreviewDialog } from "./import-preview-dialog";
 import type { CountryStats } from "~/types/ixstats";
@@ -144,7 +144,9 @@ function CountryCard({ country, onUpdate }: CountryCardProps) {
           {country.economicTier}
         </span>
         <span className="text-gray-500 dark:text-gray-400">
-          Last updated: {new Date(country.lastCalculated).toLocaleDateString()}
+          Last updated: {country.lastCalculated instanceof Date 
+            ? country.lastCalculated.toLocaleDateString() 
+            : new Date(country.lastCalculated).toLocaleDateString()}
         </span>
       </div>
     </div>
@@ -334,6 +336,7 @@ function GlobalAnalytics({ countries }: { countries: ProcessedCountryData[] }) {
 
 export default function IxStatsDashboard() {
   const [currentIxTime, setCurrentIxTime] = useState<string>("");
+  const [botConnected, setBotConnected] = useState<boolean>(true);
   const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showImportPreview, setShowImportPreview] = useState(false);
@@ -344,7 +347,7 @@ export default function IxStatsDashboard() {
   const { data: countries, refetch: refetchCountries, isLoading: countriesLoading } = api.countries.getAll.useQuery();
   const { data: globalStats, refetch: refetchGlobalStats, isLoading: globalStatsLoading } = api.countries.getGlobalStats.useQuery();
 
-  // Process countries data for charts with proper type safety
+  // Process countries data for charts with proper type safety  
   const processedCountries: ProcessedCountryData[] = countries?.map(country => ({
     id: country.id,
     name: country.name || country.country || 'Unknown',
@@ -364,7 +367,7 @@ export default function IxStatsDashboard() {
     // Map database fields to CountryStats interface
     population: country.baselinePopulation,
     gdpPerCapita: country.baselineGdpPerCapita,
-    lastCalculated: country.lastCalculated.getTime(), // Convert Date to number
+    lastCalculated: country.lastCalculated, // Keep as Date object
     totalGdp: country.currentTotalGdp,
     globalGrowthFactor: 1.0, // Default value, could be fetched from system config
   })) || [];
@@ -415,15 +418,39 @@ export default function IxStatsDashboard() {
     },
   });
 
-  // Update IxTime display
+  // Update IxTime display with bot sync - FIXED VERSION
   useEffect(() => {
-    const updateTime = () => {
-      setCurrentIxTime(IxTime.formatIxTime(IxTime.getCurrentIxTime(), true));
+    let isActive = true;
+    
+    const updateTime = async () => {
+      try {
+        // Try to get time from bot first
+        const currentTime = await IxTime.getCurrentIxTimeFromBot();
+        if (isActive) {
+          setCurrentIxTime(IxTime.formatIxTime(currentTime, true));
+          setBotConnected(true);
+        }
+      } catch (error) {
+        // Fallback to local time calculation
+        if (isActive) {
+          const localTime = IxTime.getCurrentIxTime();
+          setCurrentIxTime(IxTime.formatIxTime(localTime, true));
+          setBotConnected(false);
+          console.warn('[Dashboard] Using local time fallback:', error);
+        }
+      }
     };
 
+    // Initial update
     updateTime();
+    
+    // Update every second
     const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
+    
+    return () => {
+      isActive = false;
+      clearInterval(interval);
+    };
   }, []);
 
   const handleFileUpload = async (file: File) => {
@@ -499,8 +526,18 @@ export default function IxStatsDashboard() {
             </div>
             <div className="flex items-center space-x-4">
               <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
-                <Clock className="h-4 w-4 mr-2" />
-                {currentIxTime}
+                <div className="flex items-center space-x-2">
+                  <Clock className="h-4 w-4" />
+                  <span>{currentIxTime}</span>
+                  {!botConnected ? (
+                    <div className="flex items-center text-yellow-600 dark:text-yellow-400">
+                      <WifiOff className="h-3 w-3 ml-1" />
+                      <span className="text-xs ml-1">(Local)</span>
+                    </div>
+                  ) : (
+                    <Wifi className="h-3 w-3 ml-1 text-green-600 dark:text-green-400" />
+                  )}
+                </div>
               </div>
               <button
                 onClick={handleRefresh}

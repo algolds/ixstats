@@ -1,39 +1,15 @@
 // lib/ixtime.ts
 // IxTime system - JavaScript/TypeScript implementation with Discord Bot sync
 
-interface BotTimeResponse {
-  realTime: string;
-  ixTimeTimestamp: number;
-  ixTimeFormatted: string;
-  multiplier: number;
-  isPaused: boolean;
-  hasTimeOverride: boolean;
-  hasMultiplierOverride: boolean;
-  epoch: string;
-}
-
-interface BotStatusResponse extends BotTimeResponse {
-  ixTimeFormattedShort: string;
-  baseMultiplier: number;
-  timeOverrideValue: number | null;
-  multiplierOverrideValue: number | null;
-  epochTimestamp: number;
-  botStatus: {
-    ready: boolean;
-    readyAt: string | null;
-    uptime: number | null;
-    user: {
-      id: string;
-      username: string;
-      tag: string;
-    } | null;
-  };
-}
+import { env } from "~/env";
+import type { BotTimeResponse, BotStatusResponse } from "~/types/ixstats";
 
 export class IxTime {
   private static readonly EPOCH = new Date(2020, 9, 4, 0, 0, 0, 0).getTime(); // October 4, 2020 (Month is 0-indexed)
   private static readonly BASE_TIME_MULTIPLIER = 4.0; // 4x faster than real time
-  private static readonly BOT_API_URL = process.env.IXTIME_BOT_URL || 'http://localhost:3001';
+  private static readonly BOT_API_URL = typeof window !== 'undefined' 
+    ? env.NEXT_PUBLIC_IXTIME_BOT_URL 
+    : env.IXTIME_BOT_URL;
   
   // Fallback values if bot is unavailable
   private static timeOverride: number | null = null;
@@ -325,16 +301,19 @@ export class IxTime {
   /**
    * Calculate years elapsed between two IxTime timestamps.
    */
-  static getYearsElapsed(startIxTime: number, endIxTime?: number): number {
-    const end = endIxTime || this.getCurrentIxTime();
+  static getYearsElapsed(startIxTime: number | Date, endIxTime?: number | Date): number {
+    // Handle both Date objects and timestamps
+    const startMs = startIxTime instanceof Date ? startIxTime.getTime() : startIxTime;
+    const endMs = endIxTime instanceof Date ? endIxTime.getTime() : (endIxTime || this.getCurrentIxTime());
+    
     const millisecondsPerYear = 365.25 * 24 * 60 * 60 * 1000;
-    return (end - startIxTime) / millisecondsPerYear;
+    return (endMs - startMs) / millisecondsPerYear;
   }
 
-  static addYears(ixTime: number, years: number): number {
-    const date = new Date(ixTime);
+  static addYears(ixTime: number | Date, years: number): number {
+    const timeMs = ixTime instanceof Date ? ixTime.getTime() : ixTime;
     const millisecondsPerYear = 365.25 * 24 * 60 * 60 * 1000;
-    return date.getTime() + (years * millisecondsPerYear);
+    return timeMs + (years * millisecondsPerYear);
   }
 
   /**
@@ -383,6 +362,8 @@ export class IxTime {
         isPaused: botStatus.isPaused,
         hasTimeOverride: botStatus.hasTimeOverride,
         hasMultiplierOverride: botStatus.hasMultiplierOverride,
+        pausedAt: botStatus.pausedAt,
+        pauseTimestamp: botStatus.pauseTimestamp,
         botReady: botStatus.botStatus.ready,
         botUser: botStatus.botStatus.user
       } : null
@@ -404,7 +385,7 @@ export class IxTime {
         this.botAvailable = true;
         return { 
           available: true, 
-          message: `Bot is ${data.botReady ? 'ready' : 'starting up'}` 
+          message: `Bot is ${data.botReady ? 'ready' : 'starting up'}${data.isPaused ? ' (PAUSED)' : ''}` 
         };
       } else {
         this.botAvailable = false;
@@ -420,5 +401,19 @@ export class IxTime {
         message: `Bot unreachable: ${error instanceof Error ? error.message : 'Unknown error'}` 
       };
     }
+  }
+
+  /**
+   * Helper method to convert Date to timestamp (for type compatibility)
+   */
+  static dateToTimestamp(date: Date): number {
+    return date.getTime();
+  }
+
+  /**
+   * Helper method to convert timestamp to Date (for type compatibility)
+   */
+  static timestampToDate(timestamp: number): Date {
+    return new Date(timestamp);
   }
 }

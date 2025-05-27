@@ -11,6 +11,16 @@ export const env = createEnv({
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
+    // Discord Bot IxTime API Configuration
+    IXTIME_BOT_URL: z
+      .string()
+      .url()
+      .optional()
+      .default("http://localhost:3001"),
+    // Optional: Discord Bot Configuration (if needed for direct bot integration)
+    DISCORD_BOT_TOKEN: z.string().optional(),
+    DISCORD_CLIENT_ID: z.string().optional(),
+    DISCORD_GUILD_ID: z.string().optional(),
   },
 
   /**
@@ -20,6 +30,12 @@ export const env = createEnv({
    */
   client: {
     // NEXT_PUBLIC_CLIENTVAR: z.string(),
+    // If you need the bot URL on the client side for direct API calls:
+    NEXT_PUBLIC_IXTIME_BOT_URL: z
+      .string()
+      .url()
+      .optional()
+      .default("http://localhost:3001"),
   },
 
   /**
@@ -29,6 +45,11 @@ export const env = createEnv({
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
+    IXTIME_BOT_URL: process.env.IXTIME_BOT_URL,
+    DISCORD_BOT_TOKEN: process.env.DISCORD_BOT_TOKEN,
+    DISCORD_CLIENT_ID: process.env.DISCORD_CLIENT_ID,
+    DISCORD_GUILD_ID: process.env.DISCORD_GUILD_ID,
+    NEXT_PUBLIC_IXTIME_BOT_URL: process.env.NEXT_PUBLIC_IXTIME_BOT_URL,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   /**
