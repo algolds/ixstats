@@ -1,4 +1,5 @@
 // src/app/dm-dashboard/page.tsx
+// src/app/dm-dashboard/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -17,16 +18,19 @@ import {
   Clock,
   Target,
   Activity,
+  Save,
+  XCircle,
+  Users,
 } from "lucide-react";
 
 const DM_INPUT_TYPES = [
-  { value: "population_adjustment", label: "Population Adjustment", icon: Globe, color: "blue" },
+  { value: "population_adjustment", label: "Population Adjustment", icon: Users, color: "blue" }, // Changed Icon
   { value: "gdp_adjustment", label: "GDP Adjustment", icon: TrendingUp, color: "green" },
   { value: "growth_rate_modifier", label: "Growth Rate Modifier", icon: Activity, color: "purple" },
   { value: "special_event", label: "Special Event", icon: Zap, color: "yellow" },
   { value: "trade_agreement", label: "Trade Agreement", icon: Target, color: "indigo" },
   { value: "natural_disaster", label: "Natural Disaster", icon: AlertTriangle, color: "red" },
-  { value: "economic_policy", label: "Economic Policy", icon: TrendingDown, color: "orange" },
+  { value: "economic_policy", label: "Economic Policy", icon: TrendingDown, color: "orange" }, // Changed Icon
 ] as const;
 
 type DmInputType = typeof DM_INPUT_TYPES[number]["value"];
@@ -62,8 +66,8 @@ export default function DmDashboard() {
   });
 
   // Queries
-  const { data: countries } = api.countries.getAll.useQuery();
-  const { data: dmInputs, refetch: refetchDmInputs } = api.countries.getDmInputs.useQuery({
+  const { data: countries, isLoading: countriesLoading } = api.countries.getAll.useQuery();
+  const { data: dmInputs, refetch: refetchDmInputs, isLoading: inputsLoading } = api.countries.getDmInputs.useQuery({
     countryId: selectedCountry === "global" ? undefined : selectedCountry,
   });
 
@@ -78,19 +82,23 @@ export default function DmDashboard() {
         description: "",
       });
     },
+    onError: (error) => alert(`Error adding input: ${error.message}`),
   });
 
   const updateDmInputMutation = api.countries.updateDmInput.useMutation({
     onSuccess: () => {
       refetchDmInputs();
       setEditingInput(null);
+      setShowForm(false);
     },
+    onError: (error) => alert(`Error updating input: ${error.message}`),
   });
 
   const deleteDmInputMutation = api.countries.deleteDmInput.useMutation({
     onSuccess: () => {
       refetchDmInputs();
     },
+    onError: (error) => alert(`Error deleting input: ${error.message}`),
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -117,6 +125,7 @@ export default function DmDashboard() {
 
   const handleEdit = (input: DmInput) => {
     setEditingInput(input.id);
+    setSelectedCountry(input.countryId || "global"); // Ensure dropdown reflects edited item's scope
     setFormData({
       inputType: input.inputType as DmInputType,
       value: input.value,
@@ -127,7 +136,7 @@ export default function DmDashboard() {
   };
 
   const handleDelete = (inputId: string) => {
-    if (confirm("Are you sure you want to delete this DM input?")) {
+    if (confirm("Are you sure you want to delete this DM input? This action is reversible by an admin.")) {
       deleteDmInputMutation.mutate({ id: inputId });
     }
   };
@@ -150,7 +159,7 @@ export default function DmDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -168,18 +177,21 @@ export default function DmDashboard() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-center space-x-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label htmlFor="targetScope" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Target Scope
                 </label>
                 <select
+                  id="targetScope"
                   value={selectedCountry}
                   onChange={(e) => setSelectedCountry(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  disabled={editingInput !== null} // Disable if editing an existing item
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400"
                 >
                   <option value="global">🌍 Global Effects</option>
+                  {countriesLoading && <option disabled>Loading countries...</option>}
                   {countries?.map((country) => (
                     <option key={country.id} value={country.id}>
-                      🏴 {country.name}
+                       {country.name}
                     </option>
                   ))}
                 </select>
@@ -189,14 +201,16 @@ export default function DmDashboard() {
             <button
               onClick={() => {
                 setShowForm(true);
-                setEditingInput(null);
+                setEditingInput(null); // Clear editing state
+                 // Reset form for selected country or global, keep selectedCountry
                 setFormData({
                   inputType: "population_adjustment",
                   value: 0,
                   description: "",
+                  countryId: selectedCountry === "global" ? undefined : selectedCountry,
                 });
               }}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium flex items-center"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white rounded-md font-medium flex items-center"
             >
               <Plus className="h-4 w-4 mr-2" />
               Add DM Input
@@ -209,18 +223,20 @@ export default function DmDashboard() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               {editingInput ? "Edit DM Input" : "Add New DM Input"}
+              {editingInput && countries?.find(c=>c.id === formData.countryId) ? ` for ${countries?.find(c=>c.id === formData.countryId)?.name}` : (selectedCountry !== "global" && countries?.find(c=>c.id === selectedCountry) ? ` for ${countries?.find(c=>c.id === selectedCountry)?.name}` : ' (Global)')}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label htmlFor="inputType" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Input Type
                   </label>
                   <select
+                    id="inputType"
                     value={formData.inputType}
                     onChange={(e) => setFormData({ ...formData, inputType: e.target.value as DmInputType })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400"
                     required
                   >
                     {DM_INPUT_TYPES.map((type) => (
@@ -232,56 +248,62 @@ export default function DmDashboard() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Value
+                  <label htmlFor="inputValue" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Value <span className="text-xs text-gray-400 dark:text-gray-500">(e.g., 0.05 for +5%, -0.1 for -10%)</span>
                   </label>
                   <input
+                    id="inputValue"
                     type="number"
                     step="0.001"
                     value={formData.value}
                     onChange={(e) => setFormData({ ...formData, value: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="0.05 for +5% or -0.1 for -10%"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Duration (Years)
+                  <label htmlFor="duration" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Duration (Years) <span className="text-xs text-gray-400 dark:text-gray-500">(Optional)</span>
                   </label>
                   <input
+                    id="duration"
                     type="number"
                     step="0.1"
                     value={formData.duration || ""}
                     onChange={(e) => setFormData({ ...formData, duration: parseFloat(e.target.value) || undefined })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="Leave empty for permanent effect"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400"
+                    placeholder="Leave empty for permanent"
                   />
                 </div>
+                
+                { editingInput && ( // Show target only when editing, otherwise it's taken from selectedCountry
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Target
+                        </label>
+                        <input
+                        type="text"
+                        value={formData.countryId ? countries?.find(c => c.id === formData.countryId)?.name : "Global Effect"}
+                        disabled
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300"
+                        />
+                    </div>
+                )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Target
-                  </label>
-                  <input
-                    type="text"
-                    value={selectedCountry === "global" ? "Global Effect" : countries?.find(c => c.id === selectedCountry)?.name || ""}
-                    disabled
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white"
-                  />
-                </div>
+
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Description
                 </label>
                 <textarea
+                  id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400"
                   placeholder="Describe the effect (e.g., 'Trade war impacts', 'Natural disaster recovery')"
                   required
                 />
@@ -294,16 +316,18 @@ export default function DmDashboard() {
                     setShowForm(false);
                     setEditingInput(null);
                   }}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center"
                 >
+                  <XCircle className="h-4 w-4 mr-2" />
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={addDmInputMutation.isPending || updateDmInputMutation.isPending}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white rounded-md"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 disabled:opacity-50 text-white rounded-md flex items-center"
                 >
-                  {editingInput ? "Update" : "Add"} Input
+                  <Save className="h-4 w-4 mr-2" />
+                  {editingInput ? "Update Input" : "Add Input"}
                 </button>
               </div>
             </form>
@@ -314,17 +338,18 @@ export default function DmDashboard() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Active DM Inputs {selectedCountry === "global" ? "(Global)" : `(${countries?.find(c => c.id === selectedCountry)?.name})`}
+              Active DM Inputs {selectedCountry === "global" ? "(Global)" : `(${countries?.find(c => c.id === selectedCountry)?.name || '...'})`}
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {dmInputs?.length || 0} active inputs affecting economic calculations
+              {inputsLoading ? 'Loading inputs...' : `${dmInputs?.length || 0} active inputs affecting economic calculations`}
             </p>
           </div>
 
           <div className="overflow-x-auto">
-            {dmInputs && dmInputs.length > 0 ? (
+            {inputsLoading && <div className="p-6 text-center text-gray-500 dark:text-gray-400">Loading inputs...</div>}
+            {!inputsLoading && dmInputs && dmInputs.length > 0 ? (
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-900">
+                <thead className="bg-gray-50 dark:bg-gray-850">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Type
@@ -339,7 +364,7 @@ export default function DmDashboard() {
                       Duration
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Created
+                      Created (IxTime)
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Actions
@@ -355,7 +380,7 @@ export default function DmDashboard() {
                       <tr key={input.id} className="hover:bg-gray-50 dark:hover:bg-gray-750">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <Icon className={`h-4 w-4 mr-2 text-${typeInfo.color}-500`} />
+                            <Icon className={`h-5 w-5 mr-2 text-${typeInfo.color}-500 dark:text-${typeInfo.color}-400`} />
                             <span className="text-sm font-medium text-gray-900 dark:text-white">
                               {typeInfo.label}
                             </span>
@@ -388,13 +413,15 @@ export default function DmDashboard() {
                           <div className="flex space-x-2">
                             <button
                               onClick={() => handleEdit(input)}
-                              className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                              className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-1 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-700"
+                              aria-label="Edit Input"
                             >
                               <Edit3 className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handleDelete(input.id)}
-                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1 rounded-md hover:bg-red-100 dark:hover:bg-red-700"
+                              aria-label="Delete Input"
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
@@ -406,16 +433,18 @@ export default function DmDashboard() {
                 </tbody>
               </table>
             ) : (
+             !inputsLoading && (
               <div className="text-center py-12">
-                <Database className="mx-auto h-12 w-12 text-gray-400" />
+                <Database className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
                 <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No DM inputs</h3>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   {selectedCountry === "global" 
                     ? "No global economic modifiers are currently active."
-                    : "No country-specific modifiers are currently active."
+                    : "No country-specific modifiers are currently active for the selected nation."
                   }
                 </p>
               </div>
+             )
             )}
           </div>
         </div>
@@ -425,7 +454,7 @@ export default function DmDashboard() {
           {[
             {
               title: "Economic Crisis",
-              description: "Apply -15% GDP growth globally",
+              description: "Apply -15% GDP adjustment globally",
               action: () => setFormData({
                 inputType: "gdp_adjustment",
                 value: -0.15,
@@ -437,7 +466,7 @@ export default function DmDashboard() {
             },
             {
               title: "Trade Boom",
-              description: "Apply +10% GDP growth globally",
+              description: "Apply +10% GDP adjustment globally",
               action: () => setFormData({
                 inputType: "gdp_adjustment",
                 value: 0.10,
@@ -448,7 +477,7 @@ export default function DmDashboard() {
               icon: TrendingUp,
             },
             {
-              title: "Technological Revolution",
+              title: "Technological Leap",
               description: "Apply +25% growth rate modifier",
               action: () => setFormData({
                 inputType: "growth_rate_modifier",
@@ -465,13 +494,14 @@ export default function DmDashboard() {
               <button
                 key={index}
                 onClick={() => {
+                  setSelectedCountry("global"); // Quick actions are global
                   preset.action();
                   setShowForm(true);
                   setEditingInput(null);
                 }}
-                className={`p-4 border-2 border-dashed border-${preset.color}-300 dark:border-${preset.color}-700 rounded-lg hover:border-${preset.color}-400 dark:hover:border-${preset.color}-600 transition-colors text-left`}
+                className={`p-4 border-2 border-dashed border-${preset.color}-300 dark:border-${preset.color}-700 rounded-lg hover:border-${preset.color}-400 dark:hover:border-${preset.color}-600 transition-colors text-left bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750`}
               >
-                <Icon className={`h-6 w-6 text-${preset.color}-500 mb-2`} />
+                <Icon className={`h-6 w-6 text-${preset.color}-500 dark:text-${preset.color}-400 mb-2`} />
                 <h3 className={`font-medium text-${preset.color}-700 dark:text-${preset.color}-300`}>
                   {preset.title}
                 </h3>

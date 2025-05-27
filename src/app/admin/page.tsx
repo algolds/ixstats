@@ -1,4 +1,5 @@
 // src/app/admin/page.tsx
+// src/app/admin/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -15,6 +16,9 @@ import {
   Zap,
   Globe,
   TrendingUp,
+  Server,
+  Users,
+  RefreshCw,
 } from "lucide-react";
 
 interface SystemConfig {
@@ -44,8 +48,12 @@ export default function AdminDashboard() {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
   // Get system configuration
-  const { data: systemConfig, refetch: refetchConfig } = api.admin.getSystemConfig.useQuery();
-  const { data: calculationLogs } = api.admin.getCalculationLogs.useQuery();
+  const { data: systemConfig, refetch: refetchConfig, isLoading: configLoading } = api.admin.getSystemConfig.useQuery();
+  const { data: calculationLogs, refetch: refetchLogs, isLoading: logsLoading } = api.admin.getCalculationLogs.useQuery();
+  const { data: systemStatus, refetch: refetchStatus, isLoading: statusLoading } = api.admin.getSystemStatus.useQuery(undefined, {
+    refetchInterval: 5000, // Refetch status every 5 seconds
+  });
+
 
   // Mutations
   const updateConfigMutation = api.admin.updateSystemConfig.useMutation({
@@ -56,27 +64,38 @@ export default function AdminDashboard() {
   });
 
   const forceCalculationMutation = api.admin.forceCalculation.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       setLastUpdate(new Date());
+      refetchLogs();
+      alert(`Calculation complete: ${data?.updated} countries updated in ${data?.executionTime}ms.`);
     },
+    onError: (error) => {
+        alert(`Calculation error: ${error.message}`);
+    }
   });
 
   const setIxTimeMutation = api.admin.setCurrentIxTime.useMutation({
     onSuccess: () => {
       setLastUpdate(new Date());
+      refetchStatus(); // Refetch status to show new time override
     },
   });
 
-  // Update IxTime display
+  // Update IxTime display from systemStatus if available, otherwise local IxTime
   useEffect(() => {
-    const updateTime = () => {
-      setCurrentIxTime(IxTime.formatIxTime(IxTime.getCurrentIxTime(), true));
+    const updateTimeDisplay = () => {
+      if (systemStatus?.ixTime?.formattedIxTime) {
+        setCurrentIxTime(systemStatus.ixTime.formattedIxTime);
+      } else {
+        setCurrentIxTime(IxTime.formatIxTime(IxTime.getCurrentIxTime(), true));
+      }
     };
 
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
+    updateTimeDisplay(); // Initial
+    const interval = setInterval(updateTimeDisplay, 1000); // Keep local clock ticking for display
     return () => clearInterval(interval);
-  }, []);
+  }, [systemStatus]);
+
 
   // Load system config into state
   useEffect(() => {
@@ -105,10 +124,18 @@ export default function AdminDashboard() {
     if (customDate && customTime) {
       const [year, month, day] = customDate.split('-').map(Number);
       const [hour, minute] = customTime.split(':').map(Number);
-      const customIxTime = IxTime.createIxTime(year!, month!, day!, hour, minute);
       
+      // Create a real-world Date object from the custom inputs (UTC to be safe)
+      const realWorldDateForOverride = new Date(Date.UTC(year!, month! -1, day!, hour, minute));
+      // Then this real-world date needs to be used to *set* the IxTime epoch effectively,
+      // or the IxTime.setOverride should take this Date object and calculate the IxTime value itself.
+      // For simplicity, if setIxTime expects an IxTime timestamp, we might need a conversion step.
+      // Assuming setIxTime takes a real-world timestamp to set the IxTime *as if* it were that real time:
+      // This is tricky. Let's assume `setIxTimeMutation` takes the *desired IxTime epoch value*
+      const desiredIxTimeEpoch = IxTime.createIxTime(year!, month!, day!, hour, minute);
+
       setIxTimeMutation.mutate({
-        ixTime: customIxTime,
+        ixTime: desiredIxTimeEpoch,
       });
     }
   };
@@ -118,9 +145,12 @@ export default function AdminDashboard() {
   };
 
   const handleResetToRealTime = () => {
-    setTimeMultiplier(4);
-    setGlobalGrowthFactor(1.0321);
+    setTimeMultiplier(4); // Default multiplier
+    setGlobalGrowthFactor(1.0321); // Default growth
     setAutoUpdate(true);
+    api.admin.resetIxTime.useMutation().mutate(); // Call reset endpoint
+    refetchConfig(); // To get potentially reset values from DB
+    refetchStatus();
   };
 
   const getMultiplierColor = (multiplier: number) => {
@@ -130,15 +160,9 @@ export default function AdminDashboard() {
     return "text-blue-600 dark:text-blue-400";
   };
 
-  const getMultiplierBg = (multiplier: number) => {
-    if (multiplier === 0) return "bg-red-100 dark:bg-red-900";
-    if (multiplier < 2) return "bg-yellow-100 dark:bg-yellow-900";
-    if (multiplier === 4) return "bg-green-100 dark:bg-green-900";
-    return "bg-blue-100 dark:bg-blue-900";
-  };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -152,26 +176,26 @@ export default function AdminDashboard() {
         </div>
 
         {/* Current Status */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className={`bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700`}>
             <div className="flex items-center">
-              <Clock className="h-8 w-8 text-blue-500" />
+              <Clock className={`h-8 w-8 ${getMultiplierColor(systemStatus?.ixTime?.multiplier ?? timeMultiplier)}`} />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Current IxTime</p>
                 <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {currentIxTime}
+                  {statusLoading ? "Loading..." : currentIxTime}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+          <div className={`bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700`}>
             <div className="flex items-center">
-              <Zap className={`h-8 w-8 ${getMultiplierColor(timeMultiplier)}`} />
+              <Zap className={`h-8 w-8 ${getMultiplierColor(systemStatus?.ixTime?.multiplier ?? timeMultiplier)}`} />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Time Multiplier</p>
-                <p className={`text-lg font-semibold ${getMultiplierColor(timeMultiplier)}`}>
-                  {timeMultiplier === 0 ? "PAUSED" : `${timeMultiplier}x Speed`}
+                <p className={`text-lg font-semibold ${getMultiplierColor(systemStatus?.ixTime?.multiplier ?? timeMultiplier)}`}>
+                  {statusLoading ? "Loading..." : (systemStatus?.ixTime?.isPaused ? "PAUSED" : `${systemStatus?.ixTime?.multiplier ?? timeMultiplier}x Speed`)}
                 </p>
               </div>
             </div>
@@ -183,11 +207,47 @@ export default function AdminDashboard() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Global Growth</p>
                 <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {((globalGrowthFactor - 1) * 100).toFixed(2)}%
+                  {configLoading ? "Loading..." : ((globalGrowthFactor - 1) * 100).toFixed(2)}%
                 </p>
               </div>
             </div>
           </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center">
+                <Server className="h-8 w-8 text-cyan-500" />
+                <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Last Calculation</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {statusLoading || !systemStatus?.lastCalculation ? "N/A" : new Date(systemStatus.lastCalculation.timestamp).toLocaleTimeString()}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                         {statusLoading || !systemStatus?.lastCalculation ? "" : `${systemStatus.lastCalculation.countriesUpdated} countries`}
+                    </p>
+                </div>
+            </div>
+           </div>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center">
+                    <Users className="h-8 w-8 text-purple-500" />
+                    <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Countries</p>
+                        <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                            {statusLoading || systemStatus?.countryCount === undefined ? "N/A" : systemStatus.countryCount}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center">
+                    <AlertTriangle className="h-8 w-8 text-orange-500" />
+                    <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Active DM Inputs</p>
+                        <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                            {statusLoading || systemStatus?.activeDmInputs === undefined ? "N/A" : systemStatus.activeDmInputs}
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         {/* Time Control Panel */}
@@ -215,7 +275,7 @@ export default function AdminDashboard() {
                     step="0.1"
                     value={timeMultiplier}
                     onChange={(e) => setTimeMultiplier(parseFloat(e.target.value))}
-                    className="w-full"
+                    className="w-full accent-indigo-600 dark:accent-indigo-400"
                   />
                   <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
                     <span>Paused</span>
@@ -228,24 +288,24 @@ export default function AdminDashboard() {
                 <div className="flex space-x-2">
                   <button
                     onClick={() => setTimeMultiplier(0)}
-                    className="flex items-center px-3 py-2 bg-red-100 hover:bg-red-200 dark:bg-red-900 dark:hover:bg-red-800 text-red-700 dark:text-red-300 rounded-md text-sm"
+                    className="flex items-center px-3 py-2 bg-red-100 hover:bg-red-200 dark:bg-red-700 dark:hover:bg-red-600 text-red-700 dark:text-red-100 rounded-md text-sm"
                   >
                     <Pause className="h-4 w-4 mr-1" />
                     Pause
                   </button>
                   <button
                     onClick={() => setTimeMultiplier(4)}
-                    className="flex items-center px-3 py-2 bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800 text-green-700 dark:text-green-300 rounded-md text-sm"
+                    className="flex items-center px-3 py-2 bg-green-100 hover:bg-green-200 dark:bg-green-700 dark:hover:bg-green-600 text-green-700 dark:text-green-100 rounded-md text-sm"
                   >
                     <Play className="h-4 w-4 mr-1" />
                     Normal (4x)
                   </button>
                   <button
                     onClick={handleResetToRealTime}
-                    className="flex items-center px-3 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md text-sm"
+                    className="flex items-center px-3 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md text-sm"
                   >
                     <RotateCcw className="h-4 w-4 mr-1" />
-                    Reset
+                    Reset Time
                   </button>
                 </div>
               </div>
@@ -284,7 +344,7 @@ export default function AdminDashboard() {
                 <button
                   onClick={handleSetCustomTime}
                   disabled={!customDate || !customTime || setIxTimeMutation.isPending}
-                  className="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white rounded-md text-sm font-medium"
+                  className="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 disabled:opacity-50 text-white rounded-md text-sm font-medium"
                 >
                   {setIxTimeMutation.isPending ? "Setting..." : "Set IxTime"}
                 </button>
@@ -326,7 +386,7 @@ export default function AdminDashboard() {
                 step="0.001"
                 value={globalGrowthFactor}
                 onChange={(e) => setGlobalGrowthFactor(parseFloat(e.target.value))}
-                className="w-full"
+                className="w-full accent-indigo-600 dark:accent-indigo-400"
               />
               <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
                 <span>-50% (Recession)</span>
@@ -343,7 +403,7 @@ export default function AdminDashboard() {
                   id="autoUpdate"
                   checked={autoUpdate}
                   onChange={(e) => setAutoUpdate(e.target.checked)}
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-400 border-gray-300 dark:border-gray-600 rounded"
                 />
                 <label htmlFor="autoUpdate" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
                   Enable automatic calculations
@@ -352,8 +412,9 @@ export default function AdminDashboard() {
               <button
                 onClick={handleForceCalculation}
                 disabled={forceCalculationMutation.isPending}
-                className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white rounded-md text-sm font-medium"
+                className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 disabled:opacity-50 text-white rounded-md text-sm font-medium flex items-center justify-center"
               >
+                 {forceCalculationMutation.isPending ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Zap className="h-4 w-4 mr-2" /> }
                 {forceCalculationMutation.isPending ? "Calculating..." : "Force Recalculation"}
               </button>
             </div>
@@ -366,10 +427,10 @@ export default function AdminDashboard() {
             <div>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Save Configuration</h2>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Apply your changes to the system
+                Apply your changes to the system.
                 {lastUpdate && (
-                  <span className="ml-2 text-green-600 dark:text-green-400">
-                    Last updated: {lastUpdate.toLocaleTimeString()}
+                  <span className="ml-2 text-xs text-green-600 dark:text-green-400">
+                    (Last saved: {lastUpdate.toLocaleTimeString()})
                   </span>
                 )}
               </p>
@@ -377,7 +438,7 @@ export default function AdminDashboard() {
             <button
               onClick={handleSaveConfig}
               disabled={updateConfigMutation.isPending}
-              className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white rounded-md font-medium flex items-center"
+              className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 disabled:opacity-50 text-white rounded-md font-medium flex items-center"
             >
               <Save className="h-4 w-4 mr-2" />
               {updateConfigMutation.isPending ? "Saving..." : "Save Changes"}
@@ -386,6 +447,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Recent Calculation Logs */}
+        {logsLoading && <p className="text-center text-gray-500 dark:text-gray-400">Loading calculation logs...</p>}
         {calculationLogs && calculationLogs.length > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -393,7 +455,7 @@ export default function AdminDashboard() {
             </h2>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-900">
+                <thead className="bg-gray-50 dark:bg-gray-850">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Timestamp
@@ -439,10 +501,10 @@ export default function AdminDashboard() {
         )}
 
         {/* Warning Panel */}
-        {timeMultiplier === 0 && (
-          <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg p-4 mt-6">
+        {systemStatus?.ixTime?.isPaused && (
+          <div className="bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-lg p-4 mt-6">
             <div className="flex">
-              <AlertTriangle className="h-5 w-5 text-red-400" />
+              <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400" />
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
                   IxTime is currently paused

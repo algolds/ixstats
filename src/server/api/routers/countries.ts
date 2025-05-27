@@ -1,10 +1,11 @@
 // src/server/api/routers/countries.ts
+// src/server/api/routers/countries.ts
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { IxStatsDataService } from "~/lib/data-service";
 import { IxTime } from "~/lib/ixtime";
 import { IxSheetzCalculator } from "~/lib/enhanced-calculations";
-import type { EconomicTier, PopulationTier, DmInputType as DmInputTypeEnum } from "~/types/ixstats"; // For stricter typing
+import type { EconomicTier, PopulationTier, DmInputType as DmInputTypeEnum, GlobalEconomicSnapshot } from "~/types/ixstats"; // For stricter typing
 
 const countryInputSchema = z.object({
   name: z.string().min(1),
@@ -17,6 +18,7 @@ const countryInputSchema = z.object({
   projected2040Gdp: z.number().positive().optional(), // Made optional
   projected2040GdpPerCapita: z.number().positive().optional(), // Made optional
   actualGdpGrowth: z.number().optional(), // Made optional
+  landArea: z.number().positive().optional(), // Added Land Area
 });
 
 const dmInputTypeValues = [
@@ -68,7 +70,8 @@ export const countriesRouter = createTRPCRouter({
           where: { isActive: true },
           orderBy: { ixTimeTimestamp: 'desc' }
         }
-      }
+      },
+      orderBy: { name: 'asc' }
     });
   }),
 
@@ -79,7 +82,7 @@ export const countriesRouter = createTRPCRouter({
         where: { id: input.id },
         include: {
           historicalData: {
-            orderBy: { ixTimeTimestamp: 'desc' },
+            orderBy: { ixTimeTimestamp: 'asc' }, // Keep chronological for charts
             // take: 100 // Consider pagination if this list gets very long
           },
           dmInputs: {
@@ -109,6 +112,10 @@ export const countriesRouter = createTRPCRouter({
         projected2040Population * projected2040GdpPerCapita;
         
       const actualGdpGrowth = input.actualGdpGrowth ?? input.populationGrowthRate + input.adjustedGdpGrowth;
+      
+      const landArea = input.landArea || 0;
+      const populationDensity = landArea > 0 ? input.baselinePopulation / landArea : undefined;
+      const gdpDensity = landArea > 0 ? (input.baselinePopulation * input.baselineGdpPerCapita) / landArea : undefined;
 
 
       const country = await ctx.db.country.create({
@@ -123,10 +130,13 @@ export const countriesRouter = createTRPCRouter({
           projected2040Gdp,
           projected2040GdpPerCapita,
           actualGdpGrowth,
+          landArea: input.landArea,
           
           currentPopulation: input.baselinePopulation,
           currentGdpPerCapita: input.baselineGdpPerCapita,
           currentTotalGdp: input.baselinePopulation * input.baselineGdpPerCapita,
+          populationDensity,
+          gdpDensity,
           
           lastCalculated: baselineDate,
           baselineDate: baselineDate,
@@ -179,6 +189,10 @@ export const countriesRouter = createTRPCRouter({
         
         const newEconomicTier = determineEconomicTier(result.gdpPerCapita);
         const newPopulationTier = determinePopulationTier(result.population);
+        const landArea = country.landArea || 0;
+        const newPopulationDensity = landArea > 0 ? result.population / landArea : undefined;
+        const newGdpDensity = landArea > 0 ? result.totalGdp / landArea : undefined;
+
 
         await ctx.db.country.update({
           where: { id: country.id },
@@ -188,6 +202,8 @@ export const countriesRouter = createTRPCRouter({
             currentTotalGdp: result.totalGdp,
             economicTier: newEconomicTier,
             populationTier: newPopulationTier,
+            populationDensity: newPopulationDensity,
+            gdpDensity: newGdpDensity,
             lastCalculated: new Date(targetIxTimeMs) // Store as Date object
           }
         });
@@ -200,7 +216,10 @@ export const countriesRouter = createTRPCRouter({
             gdpPerCapita: result.gdpPerCapita,
             totalGdp: result.totalGdp,
             populationGrowthRate: result.populationGrowthRate,
-            gdpGrowthRate: result.gdpGrowthRate
+            gdpGrowthRate: result.gdpGrowthRate,
+            landArea: country.landArea,
+            populationDensity: newPopulationDensity,
+            gdpDensity: newGdpDensity,
           }
         });
         return { countryName: country.name, oldStats: { population: country.currentPopulation, gdpPerCapita: country.currentGdpPerCapita, totalGdp: country.currentTotalGdp }, newStats: result, timeElapsed, calculationDate: targetIxTimeMs };
@@ -223,7 +242,6 @@ export const countriesRouter = createTRPCRouter({
       }
     }),
 
-  // Hypothetical forecast endpoint for CountryDetailPage
   getForecast: publicProcedure
     .input(z.object({
         countryId: z.string(),
@@ -246,6 +264,8 @@ export const countriesRouter = createTRPCRouter({
                 population: country.currentPopulation,
                 gdpPerCapita: country.currentGdpPerCapita,
                 totalGdp: country.currentTotalGdp,
+                populationDensity: country.populationDensity,
+                gdpDensity: country.gdpDensity,
                 forecastDate: new Date(input.targetTime),
             };
         }
@@ -268,8 +288,14 @@ export const countriesRouter = createTRPCRouter({
             timeElapsed,
         };
         const forecastResult = calculator.calculateEnhancedGrowth(growthParams);
+        const landArea = country.landArea || 0;
+        const populationDensity = landArea > 0 ? forecastResult.population / landArea : undefined;
+        const gdpDensity = landArea > 0 ? forecastResult.totalGdp / landArea : undefined;
+        
         return {
             ...forecastResult,
+            populationDensity,
+            gdpDensity,
             forecastDate: new Date(input.targetTime),
         };
     }),
@@ -332,22 +358,60 @@ export const countriesRouter = createTRPCRouter({
       });
     }),
 
-  getGlobalStats: publicProcedure.query(async ({ ctx }) => {
+  getGlobalStats: publicProcedure.query(async ({ ctx }): Promise<GlobalEconomicSnapshot> => {
     const countries = await ctx.db.country.findMany();
     if (countries.length === 0) {
-      return { totalPopulation: 0, totalGdp: 0, avgGdpPerCapita: 0, countryCount: 0, economicTierDistribution: {}, lastUpdated: IxTime.getCurrentIxTime() };
+      return { 
+        totalPopulation: 0, 
+        totalGdp: 0, 
+        averageGdpPerCapita: 0, 
+        countryCount: 0, 
+        economicTierDistribution: {} as Record<EconomicTier, number>,
+        populationTierDistribution: {} as Record<PopulationTier, number>,
+        averagePopulationDensity: 0,
+        averageGdpDensity: 0,
+        globalGrowthRate: 0, // Default or fetch from config
+        ixTimeTimestamp: IxTime.getCurrentIxTime() 
+      };
     }
     const totalPopulation = countries.reduce((sum, c) => sum + c.currentPopulation, 0);
     const totalGdp = countries.reduce((sum, c) => sum + c.currentTotalGdp, 0);
-    const avgGdpPerCapita = totalPopulation > 0 ? totalGdp / totalPopulation : 0;
+    const totalLandArea = countries.reduce((sum, c) => sum + (c.landArea || 0), 0);
     
+    const avgGdpPerCapita = totalPopulation > 0 ? totalGdp / totalPopulation : 0;
+    const averagePopulationDensity = totalLandArea > 0 ? totalPopulation / totalLandArea : 0;
+    const averageGdpDensity = totalLandArea > 0 ? totalGdp / totalLandArea : 0;
+
     const economicTierDistribution = countries.reduce((acc, c) => {
       const tier = c.economicTier as EconomicTier;
       acc[tier] = (acc[tier] || 0) + 1;
       return acc;
     }, {} as Record<EconomicTier, number>);
 
-    return { totalPopulation, totalGdp, avgGdpPerCapita, countryCount: countries.length, economicTierDistribution, lastUpdated: IxTime.getCurrentIxTime() };
+    const populationTierDistribution = countries.reduce((acc, c) => {
+        const tier = c.populationTier as PopulationTier;
+        acc[tier] = (acc[tier] || 0) + 1;
+        return acc;
+      }, {} as Record<PopulationTier, number>);
+
+    const globalGrowthConfig = await ctx.db.systemConfig.findUnique({
+        where: { key: 'global_growth_factor' }
+    });
+    const globalGrowthRate = parseFloat(globalGrowthConfig?.value || "1.0321") -1; // as a rate, not factor
+
+
+    return { 
+        totalPopulation, 
+        totalGdp, 
+        averageGdpPerCapita, 
+        countryCount: countries.length, 
+        economicTierDistribution, 
+        populationTierDistribution,
+        averagePopulationDensity,
+        averageGdpDensity,
+        globalGrowthRate,
+        ixTimeTimestamp: IxTime.getCurrentIxTime() 
+    };
   }),
 
   importFromExcel: publicProcedure
@@ -380,6 +444,9 @@ export const countriesRouter = createTRPCRouter({
           }
           if(existingCountry && input.replaceExisting) {
             // If replacing, delete existing before creating anew to avoid unique constraint issues on `name`
+            // Need to also delete related historical data and dm inputs specifically for this country
+            await ctx.db.historicalData.deleteMany({ where: { countryId: existingCountry.id } });
+            await ctx.db.dmInput.deleteMany({ where: { countryId: existingCountry.id } });
             await ctx.db.country.delete({ where: { id: existingCountry.id } });
           }
 
@@ -395,14 +462,32 @@ export const countriesRouter = createTRPCRouter({
               projected2040Gdp: countryStats.projected2040Gdp,
               projected2040GdpPerCapita: countryStats.projected2040GdpPerCapita,
               actualGdpGrowth: countryStats.actualGdpGrowth,
+              landArea: countryStats.landArea, // Store land area
               currentPopulation: countryStats.currentPopulation,
               currentGdpPerCapita: countryStats.currentGdpPerCapita,
               currentTotalGdp: countryStats.currentTotalGdp,
+              populationDensity: countryStats.populationDensity, // Store initial pop density
+              gdpDensity: countryStats.gdpDensity, // Store initial gdp density
               lastCalculated: new Date(countryStats.lastCalculated),
               baselineDate: new Date(countryStats.baselineDate),
               economicTier: countryStats.economicTier as EconomicTier,
               populationTier: countryStats.populationTier as PopulationTier,
               localGrowthFactor: countryStats.localGrowthFactor,
+            }
+          });
+          // Create initial historical data point
+          await ctx.db.historicalData.create({
+            data: {
+                countryId: createdCountry.id,
+                ixTimeTimestamp: new Date(countryStats.baselineDate),
+                population: countryStats.currentPopulation,
+                gdpPerCapita: countryStats.currentGdpPerCapita,
+                totalGdp: countryStats.currentTotalGdp,
+                populationGrowthRate: countryStats.populationGrowthRate,
+                gdpGrowthRate: countryStats.adjustedGdpGrowth,
+                landArea: countryStats.landArea,
+                populationDensity: countryStats.populationDensity,
+                gdpDensity: countryStats.gdpDensity,
             }
           });
           results.push(createdCountry);

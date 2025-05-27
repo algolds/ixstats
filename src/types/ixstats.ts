@@ -1,4 +1,4 @@
-// types/ixstats.ts
+// src/types/ixstats.ts
 // Data models and types for IxStats
 
 export interface BaseCountryData {
@@ -12,6 +12,7 @@ export interface BaseCountryData {
   projected2040Gdp: number; // 2040 GDP
   projected2040GdpPerCapita: number; // 2040 GDP PC
   actualGdpGrowth: number; // Actual GDP Growth
+  landArea?: number; // Land area in square kilometers
 }
 
 export interface CountryStats extends BaseCountryData {
@@ -30,6 +31,9 @@ export interface CountryStats extends BaseCountryData {
   
   localGrowthFactor: number;
   globalGrowthFactor: number; // This might be better managed globally or passed in
+
+  populationDensity?: number; // Population per square kilometer
+  gdpDensity?: number; // GDP per square kilometer
 }
 
 export enum EconomicTier {
@@ -105,6 +109,9 @@ export interface HistoricalDataPoint {
   totalGdp: number;
   populationGrowthRate: number; // Rate during the period leading to this point
   gdpGrowthRate: number; // Rate during the period leading to this point
+  landArea?: number;
+  populationDensity?: number;
+  gdpDensity?: number;
 }
   
 export interface IxStatsConfig {
@@ -138,4 +145,6 @@ export interface GlobalEconomicSnapshot {
   globalGrowthRate: number; // The current effective global growth rate
   economicTierDistribution: Record<EconomicTier, number>; // Count of countries in each tier
   populationTierDistribution: Record<PopulationTier, number>; // Count of countries in each tier
+  averagePopulationDensity?: number;
+  averageGdpDensity?: number;
 }

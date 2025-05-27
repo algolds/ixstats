@@ -9,7 +9,7 @@ import { ThemeProvider } from "~/context/theme-context"; // Only ThemeProvider a
 import { Navigation } from "~/app/_components/navigation"; // Import Navigation
 
 export const metadata: Metadata = {
-  title: "IxStats",
+  title: "IxStats - Alpha 1.0",
   description: "IxStats - Automated Economic Statistics for Ixnay",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };

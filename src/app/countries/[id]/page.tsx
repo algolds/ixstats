@@ -1,4 +1,5 @@
 // src/app/countries/[id]/page.tsx
+// src/app/countries/[id]/page.tsx
 "use client";
 
 import { useState, useMemo } from "react";
@@ -15,6 +16,7 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
+  Legend,
 } from "recharts";
 import {
   ArrowLeft,
@@ -26,6 +28,9 @@ import {
   Rewind,
   FastForward,
   Play,
+  Map,
+  Scaling,
+  DollarSign,
 } from "lucide-react";
 import { useTheme } from "~/context/theme-context";
 
@@ -57,60 +62,60 @@ export default function CountryDetailPage() {
     }
   );
 
-  const formatNumber = (num: number | null | undefined): string => {
-    if (num == null) return '$0.00';
-    if (num >= 1e12) return `$${(num / 1e12).toFixed(2)}T`;
-    if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
-    if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
-    if (num >= 1e3) return `$${(num / 1e3).toFixed(2)}K`;
-    return `$${num.toFixed(2)}`;
-  };
+ const formatNumber = (num: number | null | undefined, isCurrency = true, precision = 2): string => {
+    if (num == null) return isCurrency ? '$0.00' : '0';
+    const prefix = isCurrency ? '$' : '';
+    if (Math.abs(num) >= 1e12) return `${prefix}${(num / 1e12).toFixed(precision)}T`;
+    if (Math.abs(num) >= 1e9) return `${prefix}${(num / 1e9).toFixed(precision)}B`;
+    if (Math.abs(num) >= 1e6) return `${prefix}${(num / 1e6).toFixed(precision)}M`;
+    if (Math.abs(num) >= 1e3) return `${prefix}${(num / 1e3).toFixed(precision)}K`;
+    return `${prefix}${num.toFixed(isCurrency ? precision : 0)}`;
+};
 
-  const formatPopulation = (num: number | null | undefined): string => {
-    if (num == null) return '0';
-    if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
-    if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
-    if (num >= 1e3) return `${(num / 1e3).toFixed(2)}K`;
-    return num.toFixed(0);
-  };
 
   const chartData = useMemo(() => {
     if (!country?.historicalData) return [];
     return country.historicalData
       .slice()
+      // Ensure chronological order for charts
       .sort((a, b) => new Date(a.ixTimeTimestamp).getTime() - new Date(b.ixTimeTimestamp).getTime())
       .map((point) => ({
-        date: IxTime.formatIxTime(new Date(point.ixTimeTimestamp).getTime()),
-        population: point.population / 1000000,
+        date: IxTime.formatIxTime(new Date(point.ixTimeTimestamp).getTime()), // Keep simple date for X-axis
+        population: point.population / 1000000, // In millions
         gdpPerCapita: point.gdpPerCapita,
-        totalGdp: point.totalGdp / 1000000000,
+        totalGdp: point.totalGdp / 1000000000, // In billions
+        populationDensity: point.populationDensity,
+        gdpDensity: point.gdpDensity,
       }));
   }, [country]);
 
+  const axisAndGridColor = theme === 'dark' ? '#4A5568' : '#CBD5E0'; // gray-600 for dark, gray-400 for light
+  const textColor = theme === 'dark' ? '#E2E8F0' : '#2D3748'; // gray-200 for dark, gray-800 for light
+
   const tooltipStyle = {
-    backgroundColor: theme === 'dark' ? 'rgba(31, 41, 55, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-    color: theme === 'dark' ? '#f3f4f6' : '#1f2937',
-    borderRadius: '0.375rem',
-    borderColor: theme === 'dark' ? '#4b5563' : '#e5e7eb',
+    backgroundColor: theme === 'dark' ? 'rgba(31, 41, 55, 0.9)' : 'rgba(255, 255, 255, 0.9)', // gray-800 with opacity or white
+    color: textColor,
+    borderRadius: '0.375rem', // rounded-md
+    borderColor: axisAndGridColor,
     borderWidth: '1px',
     padding: '0.5rem 0.75rem',
   };
   
   const tooltipLabelStyle = {
-    color: theme === 'dark' ? '#d1d5db' : '#374151',
+    color: textColor, // Adjusted for better contrast
     marginBottom: '0.25rem',
     fontWeight: '600',
   };
   
   const tooltipItemStyle = {
-     color: theme === 'dark' ? '#9ca3af' : '#4b5563',
+     color: theme === 'dark' ? '#A0AEC0' : '#4A5568', // gray-400 for dark, gray-600 for light
   };
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600 dark:border-indigo-500 mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-400">Loading country data...</p>
         </div>
       </div>
@@ -129,7 +134,7 @@ export default function CountryDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <button
@@ -169,7 +174,7 @@ export default function CountryDetailPage() {
                   step="0.1"
                   value={timeOffset}
                   onChange={(e) => setTimeOffset(parseFloat(e.target.value))}
-                  className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                  className="flex-1 h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer"
                 />
                 <button
                   onClick={() => setTimeOffset(0)}
@@ -194,7 +199,7 @@ export default function CountryDetailPage() {
                   step="0.1"
                   value={forecastYears}
                   onChange={(e) => setForecastYears(parseFloat(e.target.value))}
-                  className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                  className="flex-1 h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer"
                 />
                 <FastForward className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
               </div>
@@ -206,29 +211,27 @@ export default function CountryDetailPage() {
               <p className="text-sm font-medium text-gray-900 dark:text-white">
                 {IxTime.formatIxTime(IxTime.addYears(targetTime, forecastYears))}
               </p>
-              {/* Corrected forecastData access */}
               {forecastData && (
                 <div className="mt-2 text-xs text-green-600 dark:text-green-400">
-                  Forecasted Pop: {formatPopulation(forecastData.population)} <br/>
-                  Forecasted GDP p.c.: {formatNumber(forecastData.gdpPerCapita)}
+                  Pop: {formatNumber(forecastData.population, false)} <br/>
+                  GDP p.c.: {formatNumber(forecastData.gdpPerCapita)}
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Current Stats at targetTime (assuming country object reflects this if timeOffset is used for display) */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center">
               <Users className="h-8 w-8 text-blue-500" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Population</p>
                 <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-                  {formatPopulation(country.currentPopulation)}
+                  {formatNumber(country.currentPopulation, false)}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {country.populationTier}
+                  {country.populationTier} ({((country.populationGrowthRate ?? 0) * 100).toFixed(1)}% growth)
                 </p>
               </div>
             </div>
@@ -251,7 +254,7 @@ export default function CountryDetailPage() {
 
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center">
-              <Globe className="h-8 w-8 text-purple-500" />
+              <DollarSign className="h-8 w-8 text-purple-500" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total GDP</p>
                 <p className="text-2xl font-semibold text-gray-900 dark:text-white">
@@ -260,87 +263,106 @@ export default function CountryDetailPage() {
               </div>
             </div>
           </div>
-
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center">
-              <BarChart3 className="h-8 w-8 text-orange-500" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Economic Tier</p>
-                <p className="text-xl font-semibold text-gray-900 dark:text-white">
-                  {country.economicTier}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Pop Growth: {((country.populationGrowthRate ?? 0) * 100).toFixed(1)}%
-                </p>
-              </div>
+                <Map className="h-8 w-8 text-yellow-500" />
+                <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Land Area</p>
+                    <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+                        {country.landArea ? formatNumber(country.landArea, false, 0) + ' km²' : 'N/A'}
+                    </p>
+                </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center">
+                <Scaling className="h-8 w-8 text-teal-500" />
+                <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Population Density</p>
+                    <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+                        {country.populationDensity ? country.populationDensity.toFixed(2) + ' /km²' : 'N/A'}
+                    </p>
+                </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center">
+                <BarChart3 className="h-8 w-8 text-orange-500" />
+                <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">GDP Density</p>
+                    <p className="text-xl font-semibold text-gray-900 dark:text-white">
+                        {country.gdpDensity ? formatNumber(country.gdpDensity) + ' /km²' : 'N/A'}
+                    </p>
+                     <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Tier: {country.economicTier}
+                    </p>
+                </div>
             </div>
           </div>
         </div>
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Population Chart */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Population Over Time (Millions)
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700 opacity-50" />
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: theme === 'dark' ? '#9ca3af' : '#6b7280' }} angle={-45} textAnchor="end" height={70} interval="preserveStartEnd" />
-                <YAxis tick={{ fontSize: 10, fill: theme === 'dark' ? '#9ca3af' : '#6b7280' }} />
-                <Tooltip
-                  contentStyle={tooltipStyle}
-                  labelStyle={tooltipLabelStyle}
-                  itemStyle={tooltipItemStyle}
-                  formatter={(value: number) => [`${value.toFixed(2)}M`, "Population"]}
-                />
-                <Area type="monotone" dataKey="population" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.3} name="Population (Millions)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* GDP per Capita Chart */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              GDP per Capita Over Time
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700 opacity-50" />
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: theme === 'dark' ? '#9ca3af' : '#6b7280' }} angle={-45} textAnchor="end" height={70} interval="preserveStartEnd" />
-                <YAxis tick={{ fontSize: 10, fill: theme === 'dark' ? '#9ca3af' : '#6b7280' }} />
-                <Tooltip
-                  contentStyle={tooltipStyle}
-                  labelStyle={tooltipLabelStyle}
-                  itemStyle={tooltipItemStyle}
-                  formatter={(value: number) => [`$${value.toLocaleString()}`, "GDP per Capita"]}
-                />
-                <Line type="monotone" dataKey="gdpPerCapita" stroke="#10B981" strokeWidth={2} dot={{ fill: "#10B981", r: 3 }} name="GDP per Capita" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Total GDP Chart */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700 lg:col-span-2">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Total GDP Over Time (Billions)
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700 opacity-50" />
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: theme === 'dark' ? '#9ca3af' : '#6b7280' }} angle={-45} textAnchor="end" height={70} interval="preserveStartEnd" />
-                <YAxis tick={{ fontSize: 10, fill: theme === 'dark' ? '#9ca3af' : '#6b7280' }} />
-                <Tooltip
-                  contentStyle={tooltipStyle}
-                  labelStyle={tooltipLabelStyle}
-                  itemStyle={tooltipItemStyle}
-                  formatter={(value: number) => [`$${value.toFixed(2)}B`, "Total GDP"]}
-                />
-                <Area type="monotone" dataKey="totalGdp" stroke="#8B5CF6" fill="#8B5CF6" fillOpacity={0.3} name="Total GDP (Billions)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          {[
+            { title: "Population Over Time (Millions)", dataKey: "population", color: "#3B82F6", unit: "M" },
+            { title: "GDP per Capita Over Time", dataKey: "gdpPerCapita", color: "#10B981", unit: "$" },
+            { title: "Total GDP Over Time (Billions)", dataKey: "totalGdp", color: "#8B5CF6", unit: "B", colSpan: "lg:col-span-2" },
+            { title: "Population Density Over Time (/km²)", dataKey: "populationDensity", color: "#06B6D4", unit: "/km²" },
+            { title: "GDP Density Over Time ($/km²)", dataKey: "gdpDensity", color: "#F59E0B", unit: "$/km²" },
+          ].map(chart => (
+            <div key={chart.title} className={`bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700 ${chart.colSpan || ''}`}>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                {chart.title}
+              </h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id={`color${chart.dataKey}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={chart.color} stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor={chart.color} stopOpacity={0.1}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke={axisAndGridColor} opacity={0.5} />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 10, fill: textColor }} 
+                    angle={-45} 
+                    textAnchor="end" 
+                    height={70} 
+                    stroke={axisAndGridColor}
+                    interval="preserveStartEnd" 
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 10, fill: textColor }} 
+                    stroke={axisAndGridColor}
+                    tickFormatter={(value) => chart.unit === "M" || chart.unit === "B" ? `${value}` : formatNumber(value, chart.unit === "$")} 
+                  />
+                  <Tooltip
+                    contentStyle={tooltipStyle}
+                    labelStyle={tooltipLabelStyle}
+                    itemStyle={tooltipItemStyle}
+                    formatter={(value: number, name: string) => {
+                        const formattedName = name.replace(" (Millions)", "M").replace(" (Billions)", "B");
+                        if (chart.unit === "$") return [formatNumber(value), formattedName];
+                        if (chart.unit === "M" || chart.unit === "B") return [`${value.toFixed(2)}${chart.unit}`, formattedName];
+                        return [`${value.toFixed(2)}${chart.unit || ''}`, formattedName];
+                    }}
+                  />
+                  <Legend wrapperStyle={{ color: textColor, paddingTop: '10px' }} />
+                  <Area 
+                    type="monotone" 
+                    dataKey={chart.dataKey} 
+                    stroke={chart.color}
+                    fillOpacity={1} 
+                    fill={`url(#color${chart.dataKey})`}
+                    name={`${chart.title.split(" Over Time")[0]}${chart.unit ? ` (${chart.unit})` : ''}`}
+                    strokeWidth={2}
+                    dot={{ fill: chart.color, r: 2, strokeWidth: 0 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          ))}
         </div>
       </div>
     </div>

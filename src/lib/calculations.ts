@@ -1,4 +1,5 @@
 // src/lib/calculations.ts
+// src/lib/calculations.ts
 import { IxTime } from './ixtime';
 // Corrected import for enums used as values
 import { 
@@ -37,8 +38,13 @@ export class IxStatsCalculator {
     const totalGdp = baseData.population * baseData.gdpPerCapita;
     const currentIxTimeMs = IxTime.getCurrentIxTime();
     
+    const landArea = baseData.landArea || 0;
+    const populationDensity = landArea > 0 ? baseData.population / landArea : undefined;
+    const gdpDensity = landArea > 0 ? totalGdp / landArea : undefined;
+
     return {
       ...baseData,
+      landArea,
       totalGdp,
       currentPopulation: baseData.population,
       currentGdpPerCapita: baseData.gdpPerCapita,
@@ -47,6 +53,8 @@ export class IxStatsCalculator {
       baselineDate: currentIxTimeMs,
       economicTier: this.calculateEconomicTier(baseData.gdpPerCapita),
       populationTier: this.calculatePopulationTier(baseData.population),
+      populationDensity,
+      gdpDensity,
       localGrowthFactor: 1.0, 
       globalGrowthFactor: this.config.globalGrowthFactor || 1.0
     };
@@ -92,6 +100,11 @@ export class IxStatsCalculator {
     const newTotalGdp = newPopulation * newGdpPerCapita;
     const newEconomicTier = this.calculateEconomicTier(newGdpPerCapita);
     const newPopulationTier = this.calculatePopulationTier(newPopulation);
+    
+    const landArea = currentStats.landArea || 0;
+    const newPopulationDensity = landArea > 0 ? newPopulation / landArea : undefined;
+    const newGdpDensity = landArea > 0 ? newTotalGdp / landArea : undefined;
+
 
     const updatedBaseStats: CountryStats = {
       ...currentStats,
@@ -100,10 +113,19 @@ export class IxStatsCalculator {
       currentTotalGdp: newTotalGdp,
       economicTier: newEconomicTier,
       populationTier: newPopulationTier,
+      populationDensity: newPopulationDensity,
+      gdpDensity: newGdpDensity,
       lastCalculated: nowIxTimeMs
     };
     
     const modifiedStats = this.applySpecialModifiers(updatedBaseStats, activeDmInputs);
+    
+    // Recalculate densities if modifiers changed population or GDP
+    if (modifiedStats.currentPopulation !== updatedBaseStats.currentPopulation || modifiedStats.currentTotalGdp !== updatedBaseStats.currentTotalGdp) {
+        modifiedStats.populationDensity = landArea > 0 ? modifiedStats.currentPopulation / landArea : undefined;
+        modifiedStats.gdpDensity = landArea > 0 ? modifiedStats.currentTotalGdp / landArea : undefined;
+    }
+
 
     return {
       country: currentStats.country,
@@ -211,6 +233,7 @@ export class IxStatsCalculator {
     }
     modifiedStats.economicTier = this.calculateEconomicTier(modifiedStats.currentGdpPerCapita);
     modifiedStats.populationTier = this.calculatePopulationTier(modifiedStats.currentPopulation);
+    // Densities will be recalculated after this if needed
 
     return modifiedStats;
   }
@@ -222,7 +245,10 @@ export class IxStatsCalculator {
       gdpPerCapita: stats.currentGdpPerCapita,
       totalGdp: stats.currentTotalGdp,
       populationGrowthRate: stats.populationGrowthRate,
-      gdpGrowthRate: stats.adjustedGdpGrowth 
+      gdpGrowthRate: stats.adjustedGdpGrowth,
+      landArea: stats.landArea,
+      populationDensity: stats.populationDensity,
+      gdpDensity: stats.gdpDensity,
     };
   }
 

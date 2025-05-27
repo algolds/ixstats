@@ -75,7 +75,8 @@ export class IxStatsDataService {
         projected2040Population: findHeaderIndex(['2040 Population']),
         projected2040Gdp: findHeaderIndex(['2040 GDP']),
         projected2040GdpPerCapita: findHeaderIndex(['2040 GDP PC']),
-        actualGdpGrowth: findHeaderIndex(['Actual GDP Growth'])
+        actualGdpGrowth: findHeaderIndex(['Actual GDP Growth']),
+        landArea: findHeaderIndex(['Land Area', 'Area', 'SqKm', 'Area (SqKm)'])
     };
 
     if (headerMap.country === -1 || headerMap.population === -1 || headerMap.gdpPerCapita === -1) {
@@ -99,7 +100,8 @@ export class IxStatsDataService {
           projected2040Population: this.parseNumber(row[headerMap.projected2040Population], 0),
           projected2040Gdp: this.parseNumber(row[headerMap.projected2040Gdp], 0),
           projected2040GdpPerCapita: this.parseNumber(row[headerMap.projected2040GdpPerCapita], 0),
-          actualGdpGrowth: this.parseNumber(row[headerMap.actualGdpGrowth], 0)
+          actualGdpGrowth: this.parseNumber(row[headerMap.actualGdpGrowth], 0),
+          landArea: headerMap.landArea !== -1 ? this.parseNumber(row[headerMap.landArea], undefined) : undefined,
         };
         
         const baselineYear = this.config.timeSettings.baselineYear;
@@ -130,8 +132,10 @@ export class IxStatsDataService {
     return countries;
   }
 
-  private parseNumber(value: any, defaultValue = 0): number {
-    if (value === null || value === undefined || String(value).trim() === "") return defaultValue;
+  private parseNumber(value: any, defaultValue: number | undefined = 0): number | undefined {
+    if (value === null || value === undefined || String(value).trim() === "") {
+        return defaultValue === undefined && (String(value).trim() === "" || value === null) ? undefined : defaultValue;
+    }
     if (typeof value === 'number') return isNaN(value) ? defaultValue : value;
     if (typeof value === 'string') {
       const cleaned = value.replace(/[,%$]/g, '');
@@ -179,9 +183,12 @@ export class IxStatsDataService {
   exportToExcel(countries: CountryStats[]): ArrayBuffer {
     const exportData = countries.map(country => ({
       'Country': country.country,
+      'Land Area (SqKm)': country.landArea,
       'Current Population': country.currentPopulation,
+      'Population Density': country.populationDensity?.toFixed(2),
       'Current GDP per Capita': country.currentGdpPerCapita,
       'Current Total GDP': country.currentTotalGdp,
+      'GDP Density': country.gdpDensity?.toFixed(2),
       'Economic Tier': country.economicTier,
       'Population Tier': country.populationTier,
       'Population Growth Rate': country.populationGrowthRate,
