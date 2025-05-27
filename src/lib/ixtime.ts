@@ -261,7 +261,7 @@ export class IxTime {
       return this.timeOverride ?? this.EPOCH + ((Date.now() - this.EPOCH) / this.BASE_TIME_MULTIPLIER);
     }
     const secondsSinceEpochReal = (realWorldTimestamp - this.EPOCH) / 1000;
-    const ixSecondsSinceEpoch = secondsSinceEpochReal / multiplier;
+    const ixSecondsSinceEpoch = secondsSinceEpochReal * multiplier;
     return this.EPOCH + (ixSecondsSinceEpoch * 1000);
   }
 
