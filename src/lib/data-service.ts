@@ -1,5 +1,5 @@
 // lib/data-service.ts
-// Data service for parsing Excel files and managing country data
+// Enhanced data service for parsing Excel files with area data
 
 import * as XLSX from 'xlsx';
 import { IxStatsCalculator } from './calculations';
@@ -70,6 +70,10 @@ export class IxStatsDataService {
         projected2040Gdp: findHeaderIndex(['2040 GDP']),
         projected2040GdpPerCapita: findHeaderIndex(['2040 GDP PC']),
         actualGdpGrowth: findHeaderIndex(['Actual GDP Growth']),
+        // Enhanced area parsing - support both km² and sq mi
+        landAreaKm: findHeaderIndex(['Area (km²)', 'Area (SqKm)', 'Land Area (km²)', 'Area km²', 'SqKm']),
+        landAreaMi: findHeaderIndex(['Area (sq mi)', 'Area (SqMi)', 'Land Area (sq mi)', 'Area sq mi', 'SqMi']),
+        // Fallback for generic area column
         landArea: findHeaderIndex(['Land Area', 'Area', 'SqKm', 'Area (SqKm)'])
     };
 
@@ -84,6 +88,23 @@ export class IxStatsDataService {
       }
 
       try {
+        // Parse area data with priority: km² > sq mi > generic area
+        let landAreaKm: number | undefined = undefined;
+        
+        if (headerMap.landAreaKm !== -1) {
+          // Direct km² data available
+          landAreaKm = this.parseNumberOptional(row[headerMap.landAreaKm]);
+        } else if (headerMap.landAreaMi !== -1) {
+          // Convert from sq mi to km²
+          const landAreaMi = this.parseNumberOptional(row[headerMap.landAreaMi]);
+          if (landAreaMi !== undefined) {
+            landAreaKm = landAreaMi * 2.58999; // 1 sq mi = 2.58999 km²
+          }
+        } else if (headerMap.landArea !== -1) {
+          // Generic area column (assume km²)
+          landAreaKm = this.parseNumberOptional(row[headerMap.landArea]);
+        }
+
         const countryData: BaseCountryData = {
           country: String(row[headerMap.country]).trim(),
           population: this.parseNumberRequired(row[headerMap.population]),
@@ -95,7 +116,7 @@ export class IxStatsDataService {
           projected2040Gdp: this.parseNumberRequired(row[headerMap.projected2040Gdp], 0),
           projected2040GdpPerCapita: this.parseNumberRequired(row[headerMap.projected2040GdpPerCapita], 0),
           actualGdpGrowth: this.parseNumberRequired(row[headerMap.actualGdpGrowth], 0),
-          landArea: headerMap.landArea !== -1 ? this.parseNumberOptional(row[headerMap.landArea]) : undefined,
+          landArea: landAreaKm, // Store in km² for consistency
         };
         
         const baselineYear = this.config.timeSettings.baselineYear;
@@ -189,12 +210,13 @@ export class IxStatsDataService {
   exportToExcel(countries: CountryStats[]): ArrayBuffer {
     const exportData = countries.map(country => ({
       'Country': country.country,
-      'Land Area (SqKm)': country.landArea,
+      'Land Area (km²)': country.landArea?.toFixed(2),
+      'Land Area (sq mi)': country.landArea ? (country.landArea / 2.58999).toFixed(2) : undefined,
       'Current Population': country.currentPopulation,
-      'Population Density': country.populationDensity?.toFixed(2),
+      'Population Density (per km²)': country.populationDensity?.toFixed(2),
       'Current GDP per Capita': country.currentGdpPerCapita,
       'Current Total GDP': country.currentTotalGdp,
-      'GDP Density': country.gdpDensity?.toFixed(2),
+      'GDP Density (per km²)': country.gdpDensity?.toFixed(2),
       'Economic Tier': country.economicTier,
       'Population Tier': country.populationTier,
       'Population Growth Rate': country.populationGrowthRate,

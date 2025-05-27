@@ -419,6 +419,110 @@ export const countriesRouter = createTRPCRouter({
     };
   }),
 
+  analyzeImport: publicProcedure
+    .input(z.object({ 
+      fileData: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const buffer = Buffer.from(input.fileData, 'base64');
+        const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+
+        const dataService = new IxStatsDataService(IxStatsDataService.getDefaultConfig());
+        const baseDataArray = await dataService.parseRosterFile(arrayBuffer);
+        
+        // Get existing countries
+        const existingCountries = await ctx.db.country.findMany();
+        const existingCountriesMap = new Map(existingCountries.map(c => [c.name.toLowerCase(), c]));
+        
+        const changes: Array<{
+          type: 'new' | 'update';
+          country: any;
+          existingData?: any;
+          changes?: Array<{
+            field: string;
+            oldValue: any;
+            newValue: any;
+            fieldLabel: string;
+          }>;
+        }> = [];
+
+        for (const countryData of baseDataArray) {
+          const existing = existingCountriesMap.get(countryData.country.toLowerCase());
+          
+          if (!existing) {
+            // New country
+            changes.push({
+              type: 'new',
+              country: countryData
+            });
+          } else {
+            // Check for changes
+            const fieldChanges: Array<{
+              field: string;
+              oldValue: any;
+              newValue: any;
+              fieldLabel: string;
+            }> = [];
+
+            // Compare key fields
+            const fieldsToCompare = [
+              { field: 'population', dbField: 'baselinePopulation', label: 'Population' },
+              { field: 'gdpPerCapita', dbField: 'baselineGdpPerCapita', label: 'GDP per Capita' },
+              { field: 'landArea', dbField: 'landArea', label: 'Land Area' },
+              { field: 'maxGdpGrowthRate', dbField: 'maxGdpGrowthRate', label: 'Max GDP Growth Rate' },
+              { field: 'adjustedGdpGrowth', dbField: 'adjustedGdpGrowth', label: 'Adjusted GDP Growth' },
+              { field: 'populationGrowthRate', dbField: 'populationGrowthRate', label: 'Population Growth Rate' },
+              { field: 'projected2040Population', dbField: 'projected2040Population', label: '2040 Population Projection' },
+              { field: 'projected2040Gdp', dbField: 'projected2040Gdp', label: '2040 GDP Projection' },
+              { field: 'projected2040GdpPerCapita', dbField: 'projected2040GdpPerCapita', label: '2040 GDP per Capita Projection' },
+              { field: 'actualGdpGrowth', dbField: 'actualGdpGrowth', label: 'Actual GDP Growth' },
+            ];
+
+            for (const { field, dbField, label } of fieldsToCompare) {
+              const newValue = (countryData as any)[field];
+              const oldValue = (existing as any)[dbField];
+              
+              // Check for meaningful differences (handle floating point precision)
+              const isDifferent = typeof newValue === 'number' && typeof oldValue === 'number'
+                ? Math.abs(newValue - oldValue) > 0.001
+                : newValue !== oldValue;
+              
+              if (isDifferent && newValue !== null && newValue !== undefined) {
+                fieldChanges.push({
+                  field,
+                  oldValue,
+                  newValue,
+                  fieldLabel: label
+                });
+              }
+            }
+
+            if (fieldChanges.length > 0) {
+              changes.push({
+                type: 'update',
+                country: countryData,
+                existingData: existing,
+                changes: fieldChanges
+              });
+            }
+          }
+        }
+
+        return {
+          totalCountries: baseDataArray.length,
+          changes,
+          newCountries: changes.filter(c => c.type === 'new').length,
+          updatedCountries: changes.filter(c => c.type === 'update').length,
+          unchangedCountries: baseDataArray.length - changes.length
+        };
+      } catch (error) {
+        console.error('Import analysis error:', error);
+        const message = error instanceof Error ? error.message : 'Unknown error during import analysis';
+        throw new Error(`Failed to analyze import file: ${message}`);
+      }
+    }),
+
   importFromExcel: publicProcedure
     .input(z.object({ 
       fileData: z.string(),
