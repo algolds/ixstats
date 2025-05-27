@@ -53,6 +53,29 @@ function determinePopulationTier(population: number): PopulationTier {
     return "Micro" as PopulationTier.MICRO;
 }
 
+// Helper function to get current IxTime with bot sync
+async function getCurrentIxTime(ctx: any): Promise<number> {
+  try {
+    // Check if bot sync is enabled
+    const botSyncConfig = await ctx.db.systemConfig.findUnique({
+      where: { key: 'bot_sync_enabled' }
+    });
+    
+    if (botSyncConfig?.value === 'true') {
+      // Try to get time from bot
+      const botTime = await IxTime.getCurrentIxTimeFromBot();
+      return botTime;
+    } else {
+      // Use local time calculation
+      return IxTime.getCurrentIxTime();
+    }
+  } catch (error) {
+    // Fallback to local time if bot is unavailable
+    console.warn('[IxTime] Bot sync failed, using local time:', error);
+    return IxTime.getCurrentIxTime();
+  }
+}
+
 export const countriesRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
     const countries = await ctx.db.country.findMany({
@@ -72,8 +95,8 @@ export const countriesRouter = createTRPCRouter({
     // Transform to include both 'name' and 'country' for compatibility
     return countries.map(country => ({
       ...country,
-      name: country.name, // Ensure name property exists
-      country: country.name, // Also map to country for BaseCountryData compatibility
+      name: country.name,
+      country: country.name,
     }));
   }),
 
@@ -94,7 +117,6 @@ export const countriesRouter = createTRPCRouter({
 
       if (!country) return null;
 
-      // Transform to include compatibility properties
       return {
         ...country,
         name: country.name,
@@ -105,7 +127,7 @@ export const countriesRouter = createTRPCRouter({
   create: publicProcedure
     .input(countryInputSchema)
     .mutation(async ({ ctx, input }) => {
-      const currentIxTimeMs = IxTime.getCurrentIxTime();
+      const currentIxTimeMs = await getCurrentIxTime(ctx);
       const baselineDate = new Date(currentIxTimeMs);
 
       const baselineYear = new Date(currentIxTimeMs).getUTCFullYear();
@@ -153,6 +175,23 @@ export const countriesRouter = createTRPCRouter({
           localGrowthFactor: 1.0,
         }
       });
+      
+      // Create initial historical data point using bot time
+      await ctx.db.historicalData.create({
+        data: {
+          countryId: country.id,
+          ixTimeTimestamp: baselineDate,
+          population: input.baselinePopulation,
+          gdpPerCapita: input.baselineGdpPerCapita,
+          totalGdp: input.baselinePopulation * input.baselineGdpPerCapita,
+          populationGrowthRate: input.populationGrowthRate,
+          gdpGrowthRate: input.adjustedGdpGrowth,
+          landArea: input.landArea,
+          populationDensity,
+          gdpDensity,
+        }
+      });
+      
       return country;
     }),
 
@@ -163,7 +202,7 @@ export const countriesRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx, input }) => {
       const calculator = new IxSheetzCalculator();
-      const targetIxTimeMs = input.targetTime || IxTime.getCurrentIxTime();
+      const targetIxTimeMs = input.targetTime || await getCurrentIxTime(ctx);
       
       const processCountryUpdate = async (country: any) => {
         const lastCalculatedIxTimeMs = country.lastCalculated.getTime();
@@ -227,7 +266,19 @@ export const countriesRouter = createTRPCRouter({
             gdpDensity: newGdpDensity,
           }
         });
-        return { countryName: country.name, oldStats: { population: country.currentPopulation, gdpPerCapita: country.currentGdpPerCapita, totalGdp: country.currentTotalGdp }, newStats: result, timeElapsed, calculationDate: targetIxTimeMs };
+        
+        return { 
+          countryName: country.name, 
+          oldStats: { 
+            population: country.currentPopulation, 
+            gdpPerCapita: country.currentGdpPerCapita, 
+            totalGdp: country.currentTotalGdp 
+          }, 
+          newStats: result, 
+          timeElapsed, 
+          calculationDate: targetIxTimeMs,
+          timeSource: 'bot-sync' // Indicate time source
+        };
       };
 
       if (input.countryId) {
@@ -243,7 +294,7 @@ export const countriesRouter = createTRPCRouter({
           include: { dmInputs: { where: { isActive: true } } }
         });
         const results = (await Promise.all(countries.map(processCountryUpdate))).filter(r => r !== null);
-        return { updated: results.length, results };
+        return { updated: results.length, results, timeSource: 'bot-sync' };
       }
     }),
 
@@ -264,7 +315,7 @@ export const countriesRouter = createTRPCRouter({
         const lastCalculatedIxTimeMs = country.lastCalculated.getTime();
         const timeElapsed = IxTime.getYearsElapsed(lastCalculatedIxTimeMs, input.targetTime);
 
-        if (timeElapsed <=0) {
+        if (timeElapsed <= 0) {
             return {
                 population: country.currentPopulation,
                 gdpPerCapita: country.currentGdpPerCapita,
@@ -272,6 +323,7 @@ export const countriesRouter = createTRPCRouter({
                 populationDensity: country.populationDensity,
                 gdpDensity: country.gdpDensity,
                 forecastDate: new Date(input.targetTime),
+                forecastSource: 'current-data'
             };
         }
         
@@ -292,6 +344,7 @@ export const countriesRouter = createTRPCRouter({
             localGrowthFactor: country.localGrowthFactor,
             timeElapsed,
         };
+        
         const forecastResult = calculator.calculateEnhancedGrowth(growthParams);
         const landArea = country.landArea || 0;
         const populationDensity = landArea > 0 ? forecastResult.population / landArea : undefined;
@@ -302,6 +355,7 @@ export const countriesRouter = createTRPCRouter({
             populationDensity,
             gdpDensity,
             forecastDate: new Date(input.targetTime),
+            forecastSource: 'calculated'
         };
     }),
 
@@ -320,7 +374,7 @@ export const countriesRouter = createTRPCRouter({
   addDmInput: publicProcedure
     .input(dmInputSchema)
     .mutation(async ({ ctx, input }) => {
-      const currentIxTimeMs = IxTime.getCurrentIxTime();
+      const currentIxTimeMs = await getCurrentIxTime(ctx);
       return ctx.db.dmInput.create({
         data: {
           countryId: input.countryId,
@@ -365,6 +419,8 @@ export const countriesRouter = createTRPCRouter({
 
   getGlobalStats: publicProcedure.query(async ({ ctx }): Promise<GlobalEconomicSnapshot> => {
     const countries = await ctx.db.country.findMany();
+    const currentIxTimeMs = await getCurrentIxTime(ctx);
+    
     if (countries.length === 0) {
       return { 
         totalPopulation: 0, 
@@ -376,7 +432,7 @@ export const countriesRouter = createTRPCRouter({
         averagePopulationDensity: 0,
         averageGdpDensity: 0,
         globalGrowthRate: 0,
-        ixTimeTimestamp: IxTime.getCurrentIxTime() 
+        ixTimeTimestamp: currentIxTimeMs
       };
     }
     
@@ -415,10 +471,11 @@ export const countriesRouter = createTRPCRouter({
         averagePopulationDensity,
         averageGdpDensity,
         globalGrowthRate,
-        ixTimeTimestamp: IxTime.getCurrentIxTime() 
+        ixTimeTimestamp: currentIxTimeMs
     };
   }),
 
+  // Enhanced import with bot time sync
   analyzeImport: publicProcedure
     .input(z.object({ 
       fileData: z.string(),
@@ -431,7 +488,6 @@ export const countriesRouter = createTRPCRouter({
         const dataService = new IxStatsDataService(IxStatsDataService.getDefaultConfig());
         const baseDataArray = await dataService.parseRosterFile(arrayBuffer);
         
-        // Get existing countries
         const existingCountries = await ctx.db.country.findMany();
         const existingCountriesMap = new Map(existingCountries.map(c => [c.name.toLowerCase(), c]));
         
@@ -451,13 +507,11 @@ export const countriesRouter = createTRPCRouter({
           const existing = existingCountriesMap.get(countryData.country.toLowerCase());
           
           if (!existing) {
-            // New country
             changes.push({
               type: 'new',
               country: countryData
             });
           } else {
-            // Check for changes
             const fieldChanges: Array<{
               field: string;
               oldValue: any;
@@ -465,7 +519,6 @@ export const countriesRouter = createTRPCRouter({
               fieldLabel: string;
             }> = [];
 
-            // Compare key fields
             const fieldsToCompare = [
               { field: 'population', dbField: 'baselinePopulation', label: 'Population' },
               { field: 'gdpPerCapita', dbField: 'baselineGdpPerCapita', label: 'GDP per Capita' },
@@ -483,7 +536,6 @@ export const countriesRouter = createTRPCRouter({
               const newValue = (countryData as any)[field];
               const oldValue = (existing as any)[dbField];
               
-              // Check for meaningful differences (handle floating point precision)
               const isDifferent = typeof newValue === 'number' && typeof oldValue === 'number'
                 ? Math.abs(newValue - oldValue) > 0.001
                 : newValue !== oldValue;
@@ -514,7 +566,8 @@ export const countriesRouter = createTRPCRouter({
           changes,
           newCountries: changes.filter(c => c.type === 'new').length,
           updatedCountries: changes.filter(c => c.type === 'update').length,
-          unchangedCountries: baseDataArray.length - changes.length
+          unchangedCountries: baseDataArray.length - changes.length,
+          analysisTime: await getCurrentIxTime(ctx)
         };
       } catch (error) {
         console.error('Import analysis error:', error);
@@ -537,6 +590,8 @@ export const countriesRouter = createTRPCRouter({
         const baseDataArray = await dataService.parseRosterFile(arrayBuffer);
         const initializedCountries = dataService.initializeCountries(baseDataArray);
         
+        const currentIxTimeMs = await getCurrentIxTime(ctx);
+        
         if (input.replaceExisting) {
           await ctx.db.historicalData.deleteMany({});
           await ctx.db.dmInput.deleteMany({});
@@ -555,49 +610,63 @@ export const countriesRouter = createTRPCRouter({
             await ctx.db.country.delete({ where: { id: existingCountry.id } });
           }
 
+          // Use current bot time for all new countries
+          const countryWithBotTime = {
+            ...countryStats,
+            lastCalculated: currentIxTimeMs,
+            baselineDate: currentIxTimeMs,
+          };
+
           const createdCountry = await ctx.db.country.create({
             data: {
-              name: countryStats.country,
-              baselinePopulation: countryStats.population,
-              baselineGdpPerCapita: countryStats.gdpPerCapita,
-              maxGdpGrowthRate: countryStats.maxGdpGrowthRate,
-              adjustedGdpGrowth: countryStats.adjustedGdpGrowth,
-              populationGrowthRate: countryStats.populationGrowthRate,
-              projected2040Population: countryStats.projected2040Population,
-              projected2040Gdp: countryStats.projected2040Gdp,
-              projected2040GdpPerCapita: countryStats.projected2040GdpPerCapita,
-              actualGdpGrowth: countryStats.actualGdpGrowth,
-              landArea: countryStats.landArea,
-              currentPopulation: countryStats.currentPopulation,
-              currentGdpPerCapita: countryStats.currentGdpPerCapita,
-              currentTotalGdp: countryStats.currentTotalGdp,
-              populationDensity: countryStats.populationDensity,
-              gdpDensity: countryStats.gdpDensity,
-              lastCalculated: new Date(countryStats.lastCalculated),
-              baselineDate: new Date(countryStats.baselineDate),
-              economicTier: countryStats.economicTier as EconomicTier,
-              populationTier: countryStats.populationTier as PopulationTier,
-              localGrowthFactor: countryStats.localGrowthFactor,
+              name: countryWithBotTime.country,
+              baselinePopulation: countryWithBotTime.population,
+              baselineGdpPerCapita: countryWithBotTime.gdpPerCapita,
+              maxGdpGrowthRate: countryWithBotTime.maxGdpGrowthRate,
+              adjustedGdpGrowth: countryWithBotTime.adjustedGdpGrowth,
+              populationGrowthRate: countryWithBotTime.populationGrowthRate,
+              projected2040Population: countryWithBotTime.projected2040Population,
+              projected2040Gdp: countryWithBotTime.projected2040Gdp,
+              projected2040GdpPerCapita: countryWithBotTime.projected2040GdpPerCapita,
+              actualGdpGrowth: countryWithBotTime.actualGdpGrowth,
+              landArea: countryWithBotTime.landArea,
+              currentPopulation: countryWithBotTime.currentPopulation,
+              currentGdpPerCapita: countryWithBotTime.currentGdpPerCapita,
+              currentTotalGdp: countryWithBotTime.currentTotalGdp,
+              populationDensity: countryWithBotTime.populationDensity,
+              gdpDensity: countryWithBotTime.gdpDensity,
+              lastCalculated: new Date(countryWithBotTime.lastCalculated),
+              baselineDate: new Date(countryWithBotTime.baselineDate),
+              economicTier: countryWithBotTime.economicTier as EconomicTier,
+              populationTier: countryWithBotTime.populationTier as PopulationTier,
+              localGrowthFactor: countryWithBotTime.localGrowthFactor,
             }
           });
           
           await ctx.db.historicalData.create({
             data: {
                 countryId: createdCountry.id,
-                ixTimeTimestamp: new Date(countryStats.baselineDate),
-                population: countryStats.currentPopulation,
-                gdpPerCapita: countryStats.currentGdpPerCapita,
-                totalGdp: countryStats.currentTotalGdp,
-                populationGrowthRate: countryStats.populationGrowthRate,
-                gdpGrowthRate: countryStats.adjustedGdpGrowth,
-                landArea: countryStats.landArea,
-                populationDensity: countryStats.populationDensity,
-                gdpDensity: countryStats.gdpDensity,
+                ixTimeTimestamp: new Date(countryWithBotTime.baselineDate),
+                population: countryWithBotTime.currentPopulation,
+                gdpPerCapita: countryWithBotTime.currentGdpPerCapita,
+                totalGdp: countryWithBotTime.currentTotalGdp,
+                populationGrowthRate: countryWithBotTime.populationGrowthRate,
+                gdpGrowthRate: countryWithBotTime.adjustedGdpGrowth,
+                landArea: countryWithBotTime.landArea,
+                populationDensity: countryWithBotTime.populationDensity,
+                gdpDensity: countryWithBotTime.gdpDensity,
             }
           });
           results.push(createdCountry);
         }
-        return { imported: results.length, totalInFile: initializedCountries.length, countries: results.map(c => c.name) };
+        
+        return { 
+          imported: results.length, 
+          totalInFile: initializedCountries.length, 
+          countries: results.map(c => c.name),
+          importTime: currentIxTimeMs,
+          timeSource: 'bot-sync'
+        };
       } catch (error) {
         console.error('Import error:', error);
         const message = error instanceof Error ? error.message : 'Unknown error during Excel import';

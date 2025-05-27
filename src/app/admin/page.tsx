@@ -18,6 +18,13 @@ import {
   Server,
   Users,
   RefreshCw,
+  Wifi,
+  WifiOff,
+  Sync,
+  Bot,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
 } from "lucide-react";
 
 // Import SystemConfig from types
@@ -40,12 +47,16 @@ export default function AdminDashboard() {
   const [globalGrowthFactor, setGlobalGrowthFactor] = useState(1.0321);
   const [autoUpdate, setAutoUpdate] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [botSyncEnabled, setBotSyncEnabled] = useState(true);
 
   // Get system configuration
   const { data: systemConfig, refetch: refetchConfig, isLoading: configLoading } = api.admin.getSystemConfig.useQuery();
   const { data: calculationLogs, refetch: refetchLogs, isLoading: logsLoading } = api.admin.getCalculationLogs.useQuery();
   const { data: systemStatus, refetch: refetchStatus, isLoading: statusLoading } = api.admin.getSystemStatus.useQuery(undefined, {
-    refetchInterval: 5000, // Refetch status every 5 seconds
+    refetchInterval: 5000,
+  });
+  const { data: botStatus, refetch: refetchBotStatus } = api.admin.getBotStatus.useQuery(undefined, {
+    refetchInterval: 10000, // Check bot status every 10 seconds
   });
 
   // Mutations
@@ -60,17 +71,51 @@ export default function AdminDashboard() {
     onSuccess: (data) => {
       setLastUpdate(new Date());
       void refetchLogs();
-      alert(`Calculation complete: ${data?.updated} countries updated in ${data?.executionTime}ms.`);
+      alert(`Calculation complete: ${data?.updated} countries updated in ${data?.executionTime}ms using ${data.message.includes('bot') ? 'bot' : 'local'} time.`);
     },
     onError: (error) => {
         alert(`Calculation error: ${error.message}`);
     }
   });
 
-  const setIxTimeMutation = api.admin.setCurrentIxTime.useMutation({
+  const setBotTimeMutation = api.admin.setBotTimeOverride.useMutation({
     onSuccess: () => {
       setLastUpdate(new Date());
-      void refetchStatus(); // Refetch status to show new time override
+      void refetchStatus();
+      void refetchBotStatus();
+    },
+  });
+
+  const syncWithBotMutation = api.admin.syncWithBot.useMutation({
+    onSuccess: (data) => {
+      setLastUpdate(new Date());
+      void refetchStatus();
+      void refetchBotStatus();
+      alert(data.success ? 'Successfully synced with Discord bot!' : `Sync failed: ${data.message}`);
+    },
+    onError: (error) => {
+      alert(`Sync error: ${error.message}`);
+    }
+  });
+
+  const pauseBotMutation = api.admin.pauseBotTime.useMutation({
+    onSuccess: () => {
+      void refetchStatus();
+      void refetchBotStatus();
+    },
+  });
+
+  const resumeBotMutation = api.admin.resumeBotTime.useMutation({
+    onSuccess: () => {
+      void refetchStatus();
+      void refetchBotStatus();
+    },
+  });
+
+  const clearBotOverridesMutation = api.admin.clearBotOverrides.useMutation({
+    onSuccess: () => {
+      void refetchStatus();
+      void refetchBotStatus();
     },
   });
 
@@ -84,8 +129,8 @@ export default function AdminDashboard() {
       }
     };
 
-    updateTimeDisplay(); // Initial
-    const interval = setInterval(updateTimeDisplay, 1000); // Keep local clock ticking for display
+    updateTimeDisplay();
+    const interval = setInterval(updateTimeDisplay, 1000);
     return () => clearInterval(interval);
   }, [systemStatus]);
 
@@ -95,10 +140,12 @@ export default function AdminDashboard() {
       const multiplier = systemConfig.find((c) => c.key === 'time_multiplier');
       const growth = systemConfig.find((c) => c.key === 'global_growth_factor');
       const autoUpd = systemConfig.find((c) => c.key === 'auto_update');
+      const botSync = systemConfig.find((c) => c.key === 'bot_sync_enabled');
 
       if (multiplier) setTimeMultiplier(parseFloat(multiplier.value));
       if (growth) setGlobalGrowthFactor(parseFloat(growth.value));
       if (autoUpd) setAutoUpdate(autoUpd.value === 'true');
+      if (botSync) setBotSyncEnabled(botSync.value === 'true');
     }
   }, [systemConfig]);
 
@@ -108,6 +155,7 @@ export default function AdminDashboard() {
         { key: 'time_multiplier', value: timeMultiplier.toString() },
         { key: 'global_growth_factor', value: globalGrowthFactor.toString() },
         { key: 'auto_update', value: autoUpdate.toString() },
+        { key: 'bot_sync_enabled', value: botSyncEnabled.toString() },
       ]
     });
   };
@@ -117,18 +165,24 @@ export default function AdminDashboard() {
       const [year, month, day] = customDate.split('-').map(Number);
       const [hour, minute] = customTime.split(':').map(Number);
       
-      // Create a real-world Date object from the custom inputs (UTC to be safe)
-      const realWorldDateForOverride = new Date(Date.UTC(year!, month! -1, day!, hour, minute));
-      // Then this real-world date needs to be used to *set* the IxTime epoch effectively,
-      // or the IxTime.setOverride should take this Date object and calculate the IxTime value itself.
-      // For simplicity, if setIxTime expects an IxTime timestamp, we might need a conversion step.
-      // Assuming setIxTime takes a real-world timestamp to set the IxTime *as if* it were that real time:
-      // This is tricky. Let's assume `setIxTimeMutation` takes the *desired IxTime epoch value*
       const desiredIxTimeEpoch = IxTime.createIxTime(year!, month!, day!, hour, minute);
 
-      setIxTimeMutation.mutate({
-        ixTime: desiredIxTimeEpoch,
-      });
+      if (botSyncEnabled && botStatus?.botHealth?.available) {
+        setBotTimeMutation.mutate({
+          ixTime: desiredIxTimeEpoch,
+        });
+      } else {
+        // Fallback to legacy method
+        const setIxTimeMutation = api.admin.setCurrentIxTime.useMutation({
+          onSuccess: () => {
+            void refetchConfig();
+            void refetchStatus();
+          }
+        });
+        setIxTimeMutation.mutate({
+          ixTime: desiredIxTimeEpoch,
+        });
+      }
     }
   };
 
@@ -136,17 +190,37 @@ export default function AdminDashboard() {
     forceCalculationMutation.mutate();
   };
 
+  const handleSyncWithBot = () => {
+    syncWithBotMutation.mutate();
+  };
+
+  const handlePauseBot = () => {
+    pauseBotMutation.mutate();
+  };
+
+  const handleResumeBot = () => {
+    resumeBotMutation.mutate();
+  };
+
+  const handleClearBotOverrides = () => {
+    clearBotOverridesMutation.mutate();
+  };
+
   const handleResetToRealTime = () => {
-    setTimeMultiplier(4); // Default multiplier
-    setGlobalGrowthFactor(1.0321); // Default growth
-    setAutoUpdate(true);
-    const resetMutation = api.admin.resetIxTime.useMutation({
-      onSuccess: () => {
-        void refetchConfig();
-        void refetchStatus();
-      }
-    });
-    resetMutation.mutate();
+    if (botSyncEnabled && botStatus?.botHealth?.available) {
+      clearBotOverridesMutation.mutate();
+    } else {
+      setTimeMultiplier(4);
+      setGlobalGrowthFactor(1.0321);
+      setAutoUpdate(true);
+      const resetMutation = api.admin.resetIxTime.useMutation({
+        onSuccess: () => {
+          void refetchConfig();
+          void refetchStatus();
+        }
+      });
+      resetMutation.mutate();
+    }
   };
 
   const getMultiplierColor = (multiplier: number) => {
@@ -154,6 +228,18 @@ export default function AdminDashboard() {
     if (multiplier < 2) return "text-yellow-600 dark:text-yellow-400";
     if (multiplier === 4) return "text-green-600 dark:text-green-400";
     return "text-blue-600 dark:text-blue-400";
+  };
+
+  const getBotStatusColor = (available: boolean, ready?: boolean) => {
+    if (!available) return "text-red-600 dark:text-red-400";
+    if (ready === false) return "text-yellow-600 dark:text-yellow-400";
+    return "text-green-600 dark:text-green-400";
+  };
+
+  const getBotStatusIcon = (available: boolean, ready?: boolean) => {
+    if (!available) return <WifiOff className="h-5 w-5" />;
+    if (ready === false) return <AlertCircle className="h-5 w-5" />;
+    return <Wifi className="h-5 w-5" />;
   };
 
   return (
@@ -170,6 +256,47 @@ export default function AdminDashboard() {
           </p>
         </div>
 
+        {/* Bot Status Banner */}
+        {botStatus && (
+          <div className={`mb-6 p-4 rounded-lg border ${
+            botStatus.botHealth.available 
+              ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
+              : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Bot className={`h-6 w-6 mr-3 ${getBotStatusColor(botStatus.botHealth.available, botStatus.botStatus?.botReady)}`} />
+                <div>
+                  <h3 className={`font-medium ${getBotStatusColor(botStatus.botHealth.available, botStatus.botStatus?.botReady)}`}>
+                    Discord Bot Status: {botStatus.botHealth.available ? 'Connected' : 'Disconnected'}
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {botStatus.botHealth.message}
+                    {botStatus.botStatus?.botUser && ` • ${botStatus.botStatus.botUser.tag}`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={handleSyncWithBot}
+                  disabled={syncWithBotMutation.isPending}
+                  className="px-3 py-1 bg-blue-100 hover:bg-blue-200 dark:bg-blue-700 dark:hover:bg-blue-600 text-blue-700 dark:text-blue-100 rounded-md text-sm flex items-center"
+                >
+                  <Sync className={`h-4 w-4 mr-1 ${syncWithBotMutation.isPending ? 'animate-spin' : ''}`} />
+                  Sync
+                </button>
+                <button
+                  onClick={() => void refetchBotStatus()}
+                  className="px-3 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md text-sm flex items-center"
+                >
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  Refresh
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Current Status */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <div className={`bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700`}>
@@ -180,6 +307,11 @@ export default function AdminDashboard() {
                 <p className="text-lg font-semibold text-gray-900 dark:text-white">
                   {statusLoading ? "Loading..." : currentIxTime}
                 </p>
+                {botStatus?.botAvailable && (
+                  <p className="text-xs text-green-600 dark:text-green-400">
+                    Synced with bot
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -191,6 +323,9 @@ export default function AdminDashboard() {
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Time Multiplier</p>
                 <p className={`text-lg font-semibold ${getMultiplierColor(systemStatus?.ixTime?.multiplier ?? timeMultiplier)}`}>
                   {statusLoading ? "Loading..." : (systemStatus?.ixTime?.isPaused ? "PAUSED" : `${systemStatus?.ixTime?.multiplier ?? timeMultiplier}x Speed`)}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {botStatus?.botAvailable ? "Bot controlled" : "Local fallback"}
                 </p>
               </div>
             </div>
@@ -207,6 +342,7 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
+
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center">
                 <Server className="h-8 w-8 text-cyan-500" />
@@ -221,6 +357,7 @@ export default function AdminDashboard() {
                 </div>
             </div>
            </div>
+
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center">
                     <Users className="h-8 w-8 text-purple-500" />
@@ -232,24 +369,83 @@ export default function AdminDashboard() {
                     </div>
                 </div>
             </div>
+
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center">
-                    <AlertTriangle className="h-8 w-8 text-orange-500" />
+                    {getBotStatusIcon(botStatus?.botHealth?.available ?? false, botStatus?.botStatus?.botReady)}
                     <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Active DM Inputs</p>
-                        <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                            {statusLoading || systemStatus?.activeDmInputs === undefined ? "N/A" : systemStatus.activeDmInputs}
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Bot Sync Status</p>
+                        <p className={`text-lg font-semibold ${getBotStatusColor(botStatus?.botHealth?.available ?? false, botStatus?.botStatus?.botReady)}`}>
+                            {botStatus?.botHealth?.available ? 'Online' : 'Offline'}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {botStatus?.lastSyncTime ? `Last sync: ${new Date(botStatus.lastSyncTime).toLocaleTimeString()}` : 'Never synced'}
                         </p>
                     </div>
                 </div>
             </div>
         </div>
 
+        {/* Bot Control Panel */}
+        {botStatus && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <Bot className="h-5 w-5 mr-2" />
+              Discord Bot Time Control
+            </h2>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <button
+                onClick={handlePauseBot}
+                disabled={pauseBotMutation.isPending || !botStatus.botHealth.available}
+                className="flex items-center justify-center px-4 py-2 bg-red-100 hover:bg-red-200 dark:bg-red-700 dark:hover:bg-red-600 text-red-700 dark:text-red-100 rounded-md disabled:opacity-50"
+              >
+                <Pause className="h-4 w-4 mr-2" />
+                Pause Bot Time
+              </button>
+
+              <button
+                onClick={handleResumeBot}
+                disabled={resumeBotMutation.isPending || !botStatus.botHealth.available}
+                className="flex items-center justify-center px-4 py-2 bg-green-100 hover:bg-green-200 dark:bg-green-700 dark:hover:bg-green-600 text-green-700 dark:text-green-100 rounded-md disabled:opacity-50"
+              >
+                <Play className="h-4 w-4 mr-2" />
+                Resume Bot Time
+              </button>
+
+              <button
+                onClick={handleClearBotOverrides}
+                disabled={clearBotOverridesMutation.isPending || !botStatus.botHealth.available}
+                className="flex items-center justify-center px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md disabled:opacity-50"
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Clear Bot Overrides
+              </button>
+            </div>
+
+            {botStatus.botStatus?.hasTimeOverride && (
+              <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+                <div className="flex">
+                  <AlertTriangle className="h-5 w-5 text-yellow-400 mr-2" />
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                    Bot has active time override. Click "Clear Bot Overrides" to return to normal time flow.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Time Control Panel */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
             <Clock className="h-5 w-5 mr-2" />
             IxTime Control Panel
+            {!botSyncEnabled && (
+              <span className="ml-2 px-2 py-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 text-xs rounded">
+                Local Mode
+              </span>
+            )}
           </h2>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -338,10 +534,10 @@ export default function AdminDashboard() {
                 </div>
                 <button
                   onClick={handleSetCustomTime}
-                  disabled={!customDate || !customTime || setIxTimeMutation.isPending}
+                  disabled={!customDate || !customTime || setBotTimeMutation.isPending}
                   className="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 disabled:opacity-50 text-white rounded-md text-sm font-medium"
                 >
-                  {setIxTimeMutation.isPending ? "Setting..." : "Set IxTime"}
+                  {setBotTimeMutation.isPending ? "Setting..." : "Set IxTime"}
                 </button>
                 {customDate && customTime && (
                   <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -354,6 +550,9 @@ export default function AdminDashboard() {
                         parseInt(customTime.split(':')[1]!)
                       ),
                       true
+                    )}
+                    {botSyncEnabled && botStatus?.botHealth?.available && (
+                      <span className="ml-2 text-green-600 dark:text-green-400">(via bot)</span>
                     )}
                   </p>
                 )}
@@ -392,26 +591,42 @@ export default function AdminDashboard() {
             </div>
 
             <div>
-              <div className="flex items-center mb-4">
-                <input
-                  type="checkbox"
-                  id="autoUpdate"
-                  checked={autoUpdate}
-                  onChange={(e) => setAutoUpdate(e.target.checked)}
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-400 border-gray-300 dark:border-gray-600 rounded"
-                />
-                <label htmlFor="autoUpdate" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                  Enable automatic calculations
-                </label>
+              <div className="space-y-4">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="autoUpdate"
+                    checked={autoUpdate}
+                    onChange={(e) => setAutoUpdate(e.target.checked)}
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-400 border-gray-300 dark:border-gray-600 rounded"
+                  />
+                  <label htmlFor="autoUpdate" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                    Enable automatic calculations
+                  </label>
+                </div>
+                
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="botSync"
+                    checked={botSyncEnabled}
+                    onChange={(e) => setBotSyncEnabled(e.target.checked)}
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-400 border-gray-300 dark:border-gray-600 rounded"
+                  />
+                  <label htmlFor="botSync" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                    Enable Discord bot time sync
+                  </label>
+                </div>
+
+                <button
+                  onClick={handleForceCalculation}
+                  disabled={forceCalculationMutation.isPending}
+                  className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 disabled:opacity-50 text-white rounded-md text-sm font-medium flex items-center justify-center"
+                >
+                  {forceCalculationMutation.isPending ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Zap className="h-4 w-4 mr-2" />}
+                  {forceCalculationMutation.isPending ? "Calculating..." : "Force Recalculation"}
+                </button>
               </div>
-              <button
-                onClick={handleForceCalculation}
-                disabled={forceCalculationMutation.isPending}
-                className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 disabled:opacity-50 text-white rounded-md text-sm font-medium flex items-center justify-center"
-              >
-                 {forceCalculationMutation.isPending ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Zap className="h-4 w-4 mr-2" /> }
-                {forceCalculationMutation.isPending ? "Calculating..." : "Force Recalculation"}
-              </button>
             </div>
           </div>
         </div>

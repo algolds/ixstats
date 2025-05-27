@@ -29,7 +29,8 @@ export const adminRouter = createTRPCRouter({
       ['time_multiplier', { value: '4.0', description: 'IxTime speed multiplier' }],
       ['global_growth_factor', { value: '1.0321', description: 'Global economic growth factor' }],
       ['auto_update', { value: 'true', description: 'Enable automatic calculations' }],
-      // Add ixtime_override if it's managed here, though IxTime class handles it internally now
+      ['bot_sync_enabled', { value: 'true', description: 'Enable Discord bot time sync' }],
+      ['bot_api_url', { value: 'http://localhost:3001', description: 'Discord bot API URL' }],
     ]);
 
     let createdNewConfig = false;
@@ -41,7 +42,7 @@ export const adminRouter = createTRPCRouter({
     }
     
     if (createdNewConfig) {
-      configs = await ctx.db.systemConfig.findMany(); // Refetch if new configs were added
+      configs = await ctx.db.systemConfig.findMany();
     }
     return configs;
   }),
@@ -63,20 +64,78 @@ export const adminRouter = createTRPCRouter({
           create: { key: config.key, value: config.value, description: config.description || `System config for ${config.key}` }
         });
         
-        // Apply IxTime specific overrides if changed
+        // Apply IxTime specific overrides via bot if possible
         if (config.key === 'time_multiplier') {
-          IxTime.setMultiplierOverride(parseFloat(config.value));
+          const multiplier = parseFloat(config.value);
+          if (multiplier === 0) {
+            await IxTime.pauseBotTime();
+          } else {
+            await IxTime.setBotTimeOverride(undefined, multiplier);
+          }
         }
-        // If 'ixtime_override' is managed via DB:
-        // if (config.key === 'ixtime_override' && config.value) {
-        //   IxTime.setTimeOverride(parseFloat(config.value));
-        // } else if (config.key === 'ixtime_override' && !config.value) {
-        //   IxTime.clearTimeOverride();
-        // }
+        
         results.push(result);
       }
       return results;
     }),
+
+  // New bot sync endpoints
+  syncWithBot: publicProcedure.mutation(async () => {
+    const syncResult = await IxTime.syncWithBot();
+    return syncResult;
+  }),
+
+  getBotStatus: publicProcedure.query(async () => {
+    const status = await IxTime.getStatus();
+    const health = await IxTime.checkBotHealth();
+    
+    return {
+      ...status,
+      botHealth: health
+    };
+  }),
+
+  setBotTimeOverride: publicProcedure
+    .input(z.object({ 
+      ixTime: z.number(),
+      multiplier: z.number().optional()
+    }))
+    .mutation(async ({ input }) => {
+      const result = await IxTime.setBotTimeOverride(input.ixTime, input.multiplier);
+      if (result.success) {
+        // Update local config to reflect the change
+        return { success: true, newIxTime: IxTime.formatIxTime(input.ixTime, true) };
+      } else {
+        throw new Error(result.message);
+      }
+    }),
+
+  clearBotOverrides: publicProcedure.mutation(async () => {
+    const result = await IxTime.clearBotOverrides();
+    if (result.success) {
+      return { success: true, message: result.message };
+    } else {
+      throw new Error(result.message);
+    }
+  }),
+
+  pauseBotTime: publicProcedure.mutation(async () => {
+    const result = await IxTime.pauseBotTime();
+    if (result.success) {
+      return { success: true, message: result.message };
+    } else {
+      throw new Error(result.message);
+    }
+  }),
+
+  resumeBotTime: publicProcedure.mutation(async () => {
+    const result = await IxTime.resumeBotTime();
+    if (result.success) {
+      return { success: true, message: result.message };
+    } else {
+      throw new Error(result.message);
+    }
+  }),
 
   getCalculationLogs: publicProcedure.query(async ({ ctx }) => {
     return ctx.db.calculationLog.findMany({
@@ -86,8 +145,8 @@ export const adminRouter = createTRPCRouter({
   }),
 
   forceCalculation: publicProcedure.mutation(async ({ ctx }) => {
-    const startTimeMs = Date.now(); // Real-world start time
-    const currentIxTimeMs = IxTime.getCurrentIxTime(); // Current IxTime
+    const startTimeMs = Date.now();
+    const currentIxTimeMs = await IxTime.getCurrentIxTimeFromBot(); // Use bot time
     
     const countries = await ctx.db.country.findMany({
       include: { dmInputs: { where: { isActive: true } } }
@@ -102,8 +161,7 @@ export const adminRouter = createTRPCRouter({
     const globalGrowthFactor = parseFloat(globalGrowthConfig?.value || "1.0321");
     
     for (const country of countries) {
-      // country.lastCalculated is a Date object. Convert to IxTime ms for comparison
-      const lastCalculatedIxTimeMs = country.lastCalculated.getTime(); // Assuming this IS an IxTime epoch value
+      const lastCalculatedIxTimeMs = country.lastCalculated.getTime();
       const timeElapsed = IxTime.getYearsElapsed(lastCalculatedIxTimeMs, currentIxTimeMs);
       
       if (timeElapsed > 0) {
@@ -132,14 +190,14 @@ export const adminRouter = createTRPCRouter({
             currentTotalGdp: result.totalGdp,
             economicTier: newEconomicTier,
             populationTier: newPopulationTier,
-            lastCalculated: new Date(currentIxTimeMs) // Store as Date object
+            lastCalculated: new Date(currentIxTimeMs)
           }
         });
 
         await ctx.db.historicalData.create({
           data: {
             countryId: country.id,
-            ixTimeTimestamp: new Date(currentIxTimeMs), // Store as Date object
+            ixTimeTimestamp: new Date(currentIxTimeMs),
             population: result.population,
             gdpPerCapita: result.gdpPerCapita,
             totalGdp: result.totalGdp,
@@ -162,25 +220,42 @@ export const adminRouter = createTRPCRouter({
       }
     });
     
-    return { updated: updatedCount, executionTime: executionTimeMs, ixTime: currentIxTimeMs, message: `Forced calculation completed for ${updatedCount} countries.` };
+    return { 
+      updated: updatedCount, 
+      executionTime: executionTimeMs, 
+      ixTime: currentIxTimeMs, 
+      message: `Forced calculation completed for ${updatedCount} countries using bot time.` 
+    };
   }),
 
+  // Legacy endpoints (kept for backward compatibility, but prefer bot methods)
   setCurrentIxTime: publicProcedure
-    .input(z.object({ ixTime: z.number() })) // Expecting IxTime timestamp
+    .input(z.object({ ixTime: z.number() }))
     .mutation(async ({ input }) => {
-      IxTime.setTimeOverride(input.ixTime);
-      // Optionally, persist this to DB if needed for recovery or distributed systems
-      // await ctx.db.systemConfig.upsert({ where: {key: 'ixtime_override'}, update: {value: input.ixTime.toString()}, create: {key: 'ixtime_override', value: input.ixTime.toString()}})
-      return { success: true, newIxTime: IxTime.formatIxTime(input.ixTime, true) };
+      // Try to set via bot first
+      const botResult = await IxTime.setBotTimeOverride(input.ixTime);
+      if (botResult.success) {
+        return { success: true, newIxTime: IxTime.formatIxTime(input.ixTime, true), source: 'bot' };
+      } else {
+        // Fall back to local override
+        IxTime.setTimeOverride(input.ixTime);
+        return { success: true, newIxTime: IxTime.formatIxTime(input.ixTime, true), source: 'local', warning: botResult.message };
+      }
     }),
 
   resetIxTime: publicProcedure.mutation(async () => {
+    // Try to clear bot overrides first
+    const botResult = await IxTime.clearBotOverrides();
+    
+    // Also clear local overrides
     IxTime.clearTimeOverride();
-    IxTime.clearMultiplierOverride(); // Also reset multiplier if it was part of an override scenario
-     // Optionally, remove from DB if persisted
-    // await ctx.db.systemConfig.deleteMany({ where: { key: 'ixtime_override' }});
-    // await ctx.db.systemConfig.upsert({ where: {key: 'time_multiplier'}, update: {value: '4.0'}, create: {key: 'time_multiplier', value: '4.0'}}) // Reset multiplier to default
-    return { success: true, message: "IxTime override cleared. Resuming normal flow." };
+    IxTime.clearMultiplierOverride();
+    
+    if (botResult.success) {
+      return { success: true, message: "IxTime overrides cleared on bot and locally. Resuming normal flow.", source: 'bot' };
+    } else {
+      return { success: true, message: "Local IxTime overrides cleared. Bot override clear failed - check bot connection.", source: 'local', warning: botResult.message };
+    }
   }),
 
   getSystemStatus: publicProcedure.query(async ({ ctx }) => {
@@ -188,7 +263,7 @@ export const adminRouter = createTRPCRouter({
     const activeDmInputs = await ctx.db.dmInput.count({ where: { isActive: true } });
     const lastCalculation = await ctx.db.calculationLog.findFirst({ orderBy: { timestamp: 'desc' } });
     
-    const ixtimeStatus = IxTime.getStatus(); // Get status directly from IxTime class
+    const ixtimeStatus = await IxTime.getStatus();
 
     return {
       ixTime: ixtimeStatus,
@@ -204,20 +279,35 @@ export const adminRouter = createTRPCRouter({
   }),
 
   emergencyStop: publicProcedure.mutation(async ({ ctx }) => {
-    IxTime.setMultiplierOverride(0); // Pause IxTime progression
+    // Try to pause via bot first
+    const botResult = await IxTime.pauseBotTime();
+    
+    // Also set local multiplier to 0 as fallback
+    IxTime.setMultiplierOverride(0);
+    
     // Persist this to DB
     await ctx.db.systemConfig.upsert({
       where: { key: 'time_multiplier' },
       update: { value: '0', updatedAt: new Date() },
       create: { key: 'time_multiplier', value: '0', description: 'IxTime speed multiplier (0 = PAUSED)'}
     });
-    return { success: true, message: "System paused via emergency stop. Time multiplier set to 0." };
+    
+    if (botResult.success) {
+      return { success: true, message: "System paused via bot and locally. Time multiplier set to 0.", source: 'bot' };
+    } else {
+      return { success: true, message: "System paused locally. Bot pause failed - check bot connection.", source: 'local', warning: botResult.message };
+    }
   }),
 
   resumeOperations: publicProcedure.mutation(async ({ ctx }) => {
-    IxTime.clearMultiplierOverride(); // Resume normal multiplier
-    // Persist this to DB
-    const defaultConfig = await ctx.db.systemConfig.findFirst({where: {key: 'time_multiplier_default'}}); // Assuming a default stored
+    // Try to resume via bot first
+    const botResult = await IxTime.resumeBotTime();
+    
+    // Clear local overrides
+    IxTime.clearMultiplierOverride();
+    
+    // Get default multiplier from config or use 4.0
+    const defaultConfig = await ctx.db.systemConfig.findFirst({where: {key: 'time_multiplier_default'}});
     const defaultMultiplier = defaultConfig?.value ?? '4.0';
 
     await ctx.db.systemConfig.upsert({
@@ -225,6 +315,11 @@ export const adminRouter = createTRPCRouter({
       update: { value: defaultMultiplier, updatedAt: new Date() },
       create: { key: 'time_multiplier', value: defaultMultiplier, description: 'IxTime speed multiplier' }
     });
-    return { success: true, message: `System resumed normal operations. Time multiplier reset to ${defaultMultiplier}.` };
+    
+    if (botResult.success) {
+      return { success: true, message: `System resumed normal operations via bot and locally. Time multiplier reset to ${defaultMultiplier}.`, source: 'bot' };
+    } else {
+      return { success: true, message: `System resumed locally. Bot resume failed - check bot connection. Multiplier set to ${defaultMultiplier}.`, source: 'local', warning: botResult.message };
+    }
   }),
 });
