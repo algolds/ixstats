@@ -20,7 +20,7 @@ import {
   RefreshCw,
   Wifi,
   WifiOff,
-  Sync,
+  ArrowLeftRight, // Using this instead of Sync
   Bot,
   CheckCircle,
   XCircle,
@@ -282,7 +282,7 @@ export default function AdminDashboard() {
                   disabled={syncWithBotMutation.isPending}
                   className="px-3 py-1 bg-blue-100 hover:bg-blue-200 dark:bg-blue-700 dark:hover:bg-blue-600 text-blue-700 dark:text-blue-100 rounded-md text-sm flex items-center"
                 >
-                  <Sync className={`h-4 w-4 mr-1 ${syncWithBotMutation.isPending ? 'animate-spin' : ''}`} />
+                  <ArrowLeftRight className={`h-4 w-4 mr-1 ${syncWithBotMutation.isPending ? 'animate-spin' : ''}`} />
                   Sync
                 </button>
                 <button

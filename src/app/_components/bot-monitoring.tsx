@@ -17,7 +17,8 @@ import {
   Zap,
   Bot,
   AlertTriangle,
-  Info
+  Info,
+  ArrowLeftRight
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
 
@@ -46,6 +47,30 @@ export function BotMonitoringDashboard() {
     refetchInterval: 5000, // Check every 5 seconds
   });
 
+  const syncWithBotMutation = api.admin.syncWithBot.useMutation({
+    onSuccess: (data) => {
+      refetchBotStatus();
+      const event: SyncEvent = {
+        timestamp: new Date().toISOString(),
+        eventType: 'Manual Sync',
+        source: 'Admin Dashboard',
+        success: data.success,
+        errorMessage: data.success ? undefined : data.message
+      };
+      setRecentEvents(prev => [event, ...prev.slice(0, 9)]);
+    },
+    onError: (error) => {
+      const event: SyncEvent = {
+        timestamp: new Date().toISOString(),
+        eventType: 'Manual Sync',
+        source: 'Admin Dashboard',
+        success: false,
+        errorMessage: error.message
+      };
+      setRecentEvents(prev => [event, ...prev.slice(0, 9)]);
+    }
+  });
+
   // Simulate metrics collection (in real implementation, this would come from your API)
   useEffect(() => {
     const collectMetrics = () => {
@@ -64,7 +89,12 @@ export function BotMonitoringDashboard() {
       }
     };
 
+    // Initial update
+    collectMetrics();
+    
+    // Update every 5 seconds
     const interval = setInterval(collectMetrics, 5000);
+    
     return () => clearInterval(interval);
   }, [botStatus]);
 
@@ -82,6 +112,10 @@ export function BotMonitoringDashboard() {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     return `${hours}h ${minutes}m`;
+  };
+
+  const handleSyncWithBot = () => {
+    syncWithBotMutation.mutate();
   };
 
   if (!botStatus) {
@@ -139,7 +173,7 @@ export function BotMonitoringDashboard() {
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Bot Ready</p>
               <p className="font-medium text-gray-900 dark:text-white">
-                {botStatus.botStatus?.botReady ? "Yes" : "No"}
+                {botStatus.botStatus?.ready ? "Yes" : "No"}
               </p>
             </div>
           </div>
@@ -149,7 +183,7 @@ export function BotMonitoringDashboard() {
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Uptime</p>
               <p className="font-medium text-gray-900 dark:text-white">
-                {formatUptime(botStatus.botStatus?.botReady ? 86400000 : null)}
+                {formatUptime(botStatus.botStatus?.uptime)}
               </p>
             </div>
           </div>
@@ -159,7 +193,7 @@ export function BotMonitoringDashboard() {
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Multiplier</p>
               <p className="font-medium text-gray-900 dark:text-white">
-                {botStatus.botStatus?.multiplier ? `${botStatus.botStatus.multiplier}x` : "N/A"}
+                {botStatus.multiplier ? `${botStatus.multiplier}x` : "N/A"}
               </p>
             </div>
           </div>
@@ -168,18 +202,25 @@ export function BotMonitoringDashboard() {
         {/* Quick Actions */}
         <div className="flex space-x-2">
           <button
-            onClick={() => api.admin.syncWithBot.useMutation().mutate()}
-            disabled={!botStatus.botHealth.available}
+            onClick={handleSyncWithBot}
+            disabled={!botStatus.botHealth.available || syncWithBotMutation.isPending}
             className="px-3 py-1 text-sm bg-blue-100 hover:bg-blue-200 dark:bg-blue-700 dark:hover:bg-blue-600 text-blue-700 dark:text-blue-100 rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
           >
-            <RefreshCw className="h-3 w-3 mr-1" />
-            Force Sync
+            <ArrowLeftRight className={`h-3 w-3 mr-1 ${syncWithBotMutation.isPending ? 'animate-spin' : ''}`} />
+            {syncWithBotMutation.isPending ? 'Syncing...' : 'Force Sync'}
           </button>
           
-          {botStatus.botStatus?.hasTimeOverride && (
+          {botStatus.hasTimeOverride && (
             <div className="flex items-center px-3 py-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 rounded-md text-sm">
               <AlertTriangle className="h-3 w-3 mr-1" />
               Time Override Active
+            </div>
+          )}
+
+          {botStatus.isPaused && (
+            <div className="flex items-center px-3 py-1 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200 rounded-md text-sm">
+              <AlertCircle className="h-3 w-3 mr-1" />
+              Time Paused
             </div>
           )}
         </div>
@@ -271,14 +312,14 @@ export function BotMonitoringDashboard() {
             </h4>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {botStatus.botStatus?.botUser && (
+              {botStatus.botStatus?.user && (
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Bot User</p>
                   <p className="font-medium text-gray-900 dark:text-white">
-                    {botStatus.botStatus.botUser.tag}
+                    {botStatus.botStatus.user.tag}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    ID: {botStatus.botStatus.botUser.id}
+                    ID: {botStatus.botStatus.user.id}
                   </p>
                 </div>
               )}
@@ -303,7 +344,7 @@ export function BotMonitoringDashboard() {
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Current IxTime</p>
                 <p className="font-medium text-gray-900 dark:text-white text-sm">
-                  {botStatus.formattedIxTime || "Unknown"}
+                  {botStatus.ixTimeFormatted || "Unknown"}
                 </p>
               </div>
 

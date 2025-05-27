@@ -101,6 +101,7 @@ export const adminRouter = createTRPCRouter({
       multiplier: z.number().optional()
     }))
     .mutation(async ({ input }) => {
+      // Fixed: Ensure ixTime is always a number
       const result = await IxTime.setBotTimeOverride(input.ixTime, input.multiplier);
       if (result.success) {
         // Update local config to reflect the change
@@ -182,6 +183,11 @@ export const adminRouter = createTRPCRouter({
         const newEconomicTier = determineEconomicTier(result.gdpPerCapita);
         const newPopulationTier = determinePopulationTier(result.population);
 
+        // Calculate densities if land area exists
+        const landArea = country.landArea || 0;
+        const newPopulationDensity = landArea > 0 ? result.population / landArea : null;
+        const newGdpDensity = landArea > 0 ? result.totalGdp / landArea : null;
+
         await ctx.db.country.update({
           where: { id: country.id },
           data: {
@@ -190,6 +196,8 @@ export const adminRouter = createTRPCRouter({
             currentTotalGdp: result.totalGdp,
             economicTier: newEconomicTier,
             populationTier: newPopulationTier,
+            populationDensity: newPopulationDensity,
+            gdpDensity: newGdpDensity,
             lastCalculated: new Date(currentIxTimeMs)
           }
         });
@@ -202,7 +210,10 @@ export const adminRouter = createTRPCRouter({
             gdpPerCapita: result.gdpPerCapita,
             totalGdp: result.totalGdp,
             populationGrowthRate: result.populationGrowthRate,
-            gdpGrowthRate: result.gdpGrowthRate
+            gdpGrowthRate: result.gdpGrowthRate,
+            landArea: country.landArea,
+            populationDensity: newPopulationDensity,
+            gdpDensity: newGdpDensity,
           }
         });
         updatedCount++;

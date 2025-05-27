@@ -7,7 +7,7 @@ import { IxTime } from "~/lib/ixtime";
 import { Upload, RefreshCw, Clock, Globe, TrendingUp, Users, MapPin, Scaling, BarChart3, Target, Layers, AlertCircle, Wifi, WifiOff } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { ImportPreviewDialog } from "./import-preview-dialog";
-import type { CountryStats } from "~/types/ixstats";
+import type { CountryStats, EconomicTier, PopulationTier } from "~/types/ixstats";
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
@@ -347,7 +347,7 @@ export default function IxStatsDashboard() {
   const { data: countries, refetch: refetchCountries, isLoading: countriesLoading } = api.countries.getAll.useQuery();
   const { data: globalStats, refetch: refetchGlobalStats, isLoading: globalStatsLoading } = api.countries.getGlobalStats.useQuery();
 
-  // Process countries data for charts with proper type safety  
+  // Process countries data for charts with proper type safety and casting
   const processedCountries: ProcessedCountryData[] = countries?.map(country => ({
     id: country.id,
     name: country.name || country.country || 'Unknown',
@@ -361,7 +361,7 @@ export default function IxStatsDashboard() {
     gdpDensity: country.gdpDensity || null,
   })) || [];
 
-  // Transform countries data to match CountryStats interface for CountryCard
+  // Transform countries data to match CountryStats interface for CountryCard with proper casting
   const transformedCountries: CountryStats[] = countries?.map(country => ({
     ...country,
     // Map database fields to CountryStats interface
@@ -370,6 +370,9 @@ export default function IxStatsDashboard() {
     lastCalculated: country.lastCalculated, // Keep as Date object
     totalGdp: country.currentTotalGdp,
     globalGrowthFactor: 1.0, // Default value, could be fetched from system config
+    // Cast enum types properly
+    economicTier: country.economicTier as EconomicTier,
+    populationTier: country.populationTier as PopulationTier,
   })) || [];
 
   // Mutations

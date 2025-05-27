@@ -221,7 +221,10 @@ export class IxStatsDataService {
       'Population Tier': country.populationTier,
       'Population Growth Rate': country.populationGrowthRate,
       'GDP Growth Rate': country.adjustedGdpGrowth,
-      'Last Updated (IxTime)': IxTime.formatIxTime(country.lastCalculated, true),
+      'Last Updated (IxTime)': IxTime.formatIxTime(
+        country.lastCalculated instanceof Date ? country.lastCalculated.getTime() : country.lastCalculated, 
+        true
+      ),
       'Baseline Population': country.population,
       'Baseline GDP per Capita': country.gdpPerCapita
     }));
