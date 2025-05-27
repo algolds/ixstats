@@ -1,13 +1,10 @@
 // src/lib/calculations.ts
-// src/lib/calculations.ts
 import { IxTime } from './ixtime';
-// Corrected import for enums used as values
 import { 
   DmInputType, 
   EconomicTier, 
   PopulationTier 
 } from '../types/ixstats';
-// Types that are only used as types can remain `import type`
 import type { 
   BaseCountryData, 
   CountryStats, 
@@ -15,7 +12,6 @@ import type {
   DmInputs as DmInputRecord,
   HistoricalDataPoint 
 } from '../types/ixstats';
-
 
 export interface StatsCalculationResult {
   country: string;
@@ -44,6 +40,7 @@ export class IxStatsCalculator {
 
     return {
       ...baseData,
+      name: baseData.country, // Add name property for compatibility
       landArea,
       totalGdp,
       currentPopulation: baseData.population,
@@ -105,7 +102,6 @@ export class IxStatsCalculator {
     const newPopulationDensity = landArea > 0 ? newPopulation / landArea : undefined;
     const newGdpDensity = landArea > 0 ? newTotalGdp / landArea : undefined;
 
-
     const updatedBaseStats: CountryStats = {
       ...currentStats,
       currentPopulation: newPopulation,
@@ -125,7 +121,6 @@ export class IxStatsCalculator {
         modifiedStats.populationDensity = landArea > 0 ? modifiedStats.currentPopulation / landArea : undefined;
         modifiedStats.gdpDensity = landArea > 0 ? modifiedStats.currentTotalGdp / landArea : undefined;
     }
-
 
     return {
       country: currentStats.country,
@@ -203,7 +198,7 @@ export class IxStatsCalculator {
 
   private getActiveDmInputs(dmInputs: DmInputRecord[], startTime: number, endTime: number): DmInputRecord[] {
     return dmInputs.filter(input => {
-      const inputTime = input.ixTimeTimestamp;
+      const inputTime = input.ixTimeTimestamp instanceof Date ? input.ixTimeTimestamp.getTime() : input.ixTimeTimestamp;
       const inputEndTime = input.duration 
         ? IxTime.addYears(inputTime, input.duration)
         : inputTime;
@@ -233,7 +228,6 @@ export class IxStatsCalculator {
     }
     modifiedStats.economicTier = this.calculateEconomicTier(modifiedStats.currentGdpPerCapita);
     modifiedStats.populationTier = this.calculatePopulationTier(modifiedStats.currentPopulation);
-    // Densities will be recalculated after this if needed
 
     return modifiedStats;
   }

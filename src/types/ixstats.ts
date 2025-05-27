@@ -17,6 +17,7 @@ export interface BaseCountryData {
 
 export interface CountryStats extends BaseCountryData {
   id?: string; // Optional if it comes from DB
+  name: string; // Add name property for component compatibility
   totalGdp: number; // Calculated: population * gdpPerCapita (baseline)
   
   currentPopulation: number;
@@ -34,6 +35,10 @@ export interface CountryStats extends BaseCountryData {
 
   populationDensity?: number; // Population per square kilometer
   gdpDensity?: number; // GDP per square kilometer
+  
+  // Add historicalData and dmInputs for full compatibility
+  historicalData?: HistoricalDataPoint[];
+  dmInputs?: DmInputs[];
 }
 
 export enum EconomicTier {
@@ -79,15 +84,15 @@ export interface EconomicConfig {
 }
 
 export interface DmInputs { // Represents a record of a DM Input
-  id?: string; // Optional if it comes from DB
-  countryId?: string | null; // Can be global (null) or country-specific
-  ixTimeTimestamp: number; // IxTime timestamp of when input was applied/created
-  inputType: DmInputType;
-  value: number; // The actual value of the adjustment/modifier
-  description?: string | null;
-  duration?: number | null; // Duration in IxTime years, null for permanent
-  isActive?: boolean; // To soft delete or deactivate inputs
-  createdBy?: string | null; // User who created it
+  id: string;
+  countryId?: string | null; // Can be null for global inputs (match Prisma)
+  ixTimeTimestamp: Date; // Change to Date to match Prisma
+  inputType: string;
+  value: number;
+  description?: string | null; // Change to match Prisma (string | null)
+  duration?: number | null; // Change to match Prisma (number | null)
+  isActive: boolean;
+  createdBy?: string | null; // Change to match Prisma (string | null)
 }
 
 export enum DmInputType {
@@ -109,9 +114,9 @@ export interface HistoricalDataPoint {
   totalGdp: number;
   populationGrowthRate: number; // Rate during the period leading to this point
   gdpGrowthRate: number; // Rate during the period leading to this point
-  landArea?: number;
-  populationDensity?: number;
-  gdpDensity?: number;
+  landArea?: number | null;
+  populationDensity?: number | null;
+  gdpDensity?: number | null;
 }
   
 export interface IxStatsConfig {
@@ -139,12 +144,22 @@ export interface StatsCalculationResult {
 
 export interface GlobalEconomicSnapshot {
   ixTimeTimestamp: number;
-  totalWorldPopulation: number;
-  totalWorldGdp: number;
+  totalPopulation: number; // Keep this name for component compatibility
+  totalGdp: number; // Add this property
+  countryCount: number; // Add this property
   averageGdpPerCapita: number;
   globalGrowthRate: number; // The current effective global growth rate
   economicTierDistribution: Record<EconomicTier, number>; // Count of countries in each tier
   populationTierDistribution: Record<PopulationTier, number>; // Count of countries in each tier
   averagePopulationDensity?: number;
   averageGdpDensity?: number;
+}
+
+// Add SystemConfig interface to match Prisma exactly
+export interface SystemConfig {
+  id: string;
+  key: string;
+  value: string;
+  description: string | null; // Match Prisma: string | null, not string | undefined
+  updatedAt: Date;
 }

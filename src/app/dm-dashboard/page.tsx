@@ -1,5 +1,4 @@
 // src/app/dm-dashboard/page.tsx
-// src/app/dm-dashboard/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -24,13 +23,13 @@ import {
 } from "lucide-react";
 
 const DM_INPUT_TYPES = [
-  { value: "population_adjustment", label: "Population Adjustment", icon: Users, color: "blue" }, // Changed Icon
+  { value: "population_adjustment", label: "Population Adjustment", icon: Users, color: "blue" },
   { value: "gdp_adjustment", label: "GDP Adjustment", icon: TrendingUp, color: "green" },
   { value: "growth_rate_modifier", label: "Growth Rate Modifier", icon: Activity, color: "purple" },
   { value: "special_event", label: "Special Event", icon: Zap, color: "yellow" },
   { value: "trade_agreement", label: "Trade Agreement", icon: Target, color: "indigo" },
   { value: "natural_disaster", label: "Natural Disaster", icon: AlertTriangle, color: "red" },
-  { value: "economic_policy", label: "Economic Policy", icon: TrendingDown, color: "orange" }, // Changed Icon
+  { value: "economic_policy", label: "Economic Policy", icon: TrendingDown, color: "orange" },
 ] as const;
 
 type DmInputType = typeof DM_INPUT_TYPES[number]["value"];
@@ -43,16 +42,17 @@ interface DmInputFormData {
   duration?: number;
 }
 
+// Match the Prisma type exactly
 interface DmInput {
   id: string;
-  countryId?: string;
+  countryId: string | null; // Prisma returns null, not undefined
   ixTimeTimestamp: Date;
   inputType: string;
   value: number;
-  description?: string;
-  duration?: number;
+  description: string | null; // Prisma returns null, not undefined
+  duration: number | null; // Prisma returns null, not undefined
   isActive: boolean;
-  createdBy?: string;
+  createdBy: string | null; // Prisma returns null, not undefined
 }
 
 export default function DmDashboard() {
@@ -74,7 +74,7 @@ export default function DmDashboard() {
   // Mutations
   const addDmInputMutation = api.countries.addDmInput.useMutation({
     onSuccess: () => {
-      refetchDmInputs();
+      void refetchDmInputs();
       setShowForm(false);
       setFormData({
         inputType: "population_adjustment",
@@ -87,7 +87,7 @@ export default function DmDashboard() {
 
   const updateDmInputMutation = api.countries.updateDmInput.useMutation({
     onSuccess: () => {
-      refetchDmInputs();
+      void refetchDmInputs();
       setEditingInput(null);
       setShowForm(false);
     },
@@ -96,7 +96,7 @@ export default function DmDashboard() {
 
   const deleteDmInputMutation = api.countries.deleteDmInput.useMutation({
     onSuccess: () => {
-      refetchDmInputs();
+      void refetchDmInputs();
     },
     onError: (error) => alert(`Error deleting input: ${error.message}`),
   });
@@ -125,12 +125,12 @@ export default function DmDashboard() {
 
   const handleEdit = (input: DmInput) => {
     setEditingInput(input.id);
-    setSelectedCountry(input.countryId || "global"); // Ensure dropdown reflects edited item's scope
+    setSelectedCountry(input.countryId || "global"); // Convert null to "global"
     setFormData({
       inputType: input.inputType as DmInputType,
       value: input.value,
-      description: input.description || "",
-      duration: input.duration || undefined,
+      description: input.description || "", // Convert null to empty string
+      duration: input.duration || undefined, // Convert null to undefined
     });
     setShowForm(true);
   };
@@ -291,7 +291,6 @@ export default function DmDashboard() {
                     </div>
                 )}
 
-
               </div>
 
               <div>
@@ -372,7 +371,7 @@ export default function DmDashboard() {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {dmInputs.map((input: DmInput) => {
+                  {dmInputs.map((input) => {
                     const typeInfo = getInputTypeInfo(input.inputType);
                     const Icon = typeInfo.icon;
                     
@@ -393,7 +392,7 @@ export default function DmDashboard() {
                         </td>
                         <td className="px-6 py-4">
                           <span className="text-sm text-gray-900 dark:text-white">
-                            {input.description}
+                            {input.description || "No description"}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">

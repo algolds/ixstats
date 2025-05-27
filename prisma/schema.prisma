@@ -29,6 +29,11 @@ model Country {
   currentGdpPerCapita  Float
   currentTotalGdp      Float
   
+  // Geography and density fields
+  landArea             Float?
+  populationDensity    Float?
+  gdpDensity          Float?
+  
   // System fields
   lastCalculated       DateTime
   baselineDate         DateTime
@@ -52,6 +57,11 @@ model HistoricalData {
   totalGdp         Float
   populationGrowthRate Float
   gdpGrowthRate    Float
+  
+  // Add geography and density tracking
+  landArea         Float?
+  populationDensity Float?
+  gdpDensity       Float?
   
   country          Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
   

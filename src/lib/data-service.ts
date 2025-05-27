@@ -3,9 +3,7 @@
 
 import * as XLSX from 'xlsx';
 import { IxStatsCalculator } from './calculations';
-import { IxTime }
-from './ixtime'; // Assuming IxTime is also in this lib folder or path is adjusted
-// Assuming types are correctly defined in this path
+import { IxTime } from './ixtime';
 import type { 
   BaseCountryData, 
   CountryStats, 
@@ -13,22 +11,20 @@ import type {
   IxStatsConfig 
 } from '../types/ixstats';
 
-
 export class IxStatsDataService {
   private calculator: IxStatsCalculator;
   private config: IxStatsConfig;
 
   constructor(config: IxStatsConfig) {
     this.config = config;
-    // Pass baselineDate from config if available, otherwise IxTime.getCurrentIxTime() will be used by calculator
     const baselineDateForCalc = config.timeSettings.baselineYear 
-        ? IxTime.createIxTime(config.timeSettings.baselineYear, 1, 1) // Jan 1st of baselineYear
+        ? IxTime.createIxTime(config.timeSettings.baselineYear, 1, 1)
         : undefined;
     this.calculator = new IxStatsCalculator(config.economic, baselineDateForCalc);
   }
 
   async parseRosterFile(fileBuffer: ArrayBuffer): Promise<BaseCountryData[]> {
-    const workbook = XLSX.read(fileBuffer, { type: 'buffer' }); // Use type 'buffer' for ArrayBuffer
+    const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
 
     const sheetName = workbook.SheetNames[0];
     if (!sheetName) {
@@ -39,14 +35,13 @@ export class IxStatsDataService {
       throw new Error('Worksheet not found in the file');
     }
 
-    const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][]; // Get raw rows
+    const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
     return this.processRawDataWithHeaderRecognition(rawData);
   }
 
-  // More robust data processing that tries to find headers
   private processRawDataWithHeaderRecognition(rawData: any[][]): BaseCountryData[] {
     const countries: BaseCountryData[] = [];
-    if (rawData.length < 2) { // Need at least one header row and one data row
+    if (rawData.length < 2) {
         console.warn("Spreadsheet has insufficient data (less than 2 rows).");
         return countries;
     }
@@ -64,7 +59,6 @@ export class IxStatsDataService {
         return -1;
     };
     
-    // Map column names to their indices
     const headerMap = {
         country: findHeaderIndex(['Country', 'Nation Name']),
         population: findHeaderIndex(['Population', 'Current Population', 'Pop']),
@@ -83,25 +77,25 @@ export class IxStatsDataService {
         throw new Error("Required headers (Country, Population, GDP per Capita) not found in the spreadsheet.");
     }
 
-    for (let i = 1; i < rawData.length; i++) { // Start from row 1 (after headers)
+    for (let i = 1; i < rawData.length; i++) {
       const row = rawData[i];
       if (!row || !row[headerMap.country] || typeof row[headerMap.country] !== 'string') {
-        continue; // Skip empty or invalid rows
+        continue;
       }
 
       try {
         const countryData: BaseCountryData = {
           country: String(row[headerMap.country]).trim(),
-          population: this.parseNumber(row[headerMap.population]),
-          gdpPerCapita: this.parseNumber(row[headerMap.gdpPerCapita]),
-          maxGdpGrowthRate: this.parseNumber(row[headerMap.maxGdpGrowthRate], 0.05), // Default 5%
-          adjustedGdpGrowth: this.parseNumber(row[headerMap.adjustedGdpGrowth], 0.03), // Default 3%
-          populationGrowthRate: this.parseNumber(row[headerMap.populationGrowthRate], 0.01), // Default 1%
-          projected2040Population: this.parseNumber(row[headerMap.projected2040Population], 0),
-          projected2040Gdp: this.parseNumber(row[headerMap.projected2040Gdp], 0),
-          projected2040GdpPerCapita: this.parseNumber(row[headerMap.projected2040GdpPerCapita], 0),
-          actualGdpGrowth: this.parseNumber(row[headerMap.actualGdpGrowth], 0),
-          landArea: headerMap.landArea !== -1 ? this.parseNumber(row[headerMap.landArea], undefined) : undefined,
+          population: this.parseNumberRequired(row[headerMap.population]),
+          gdpPerCapita: this.parseNumberRequired(row[headerMap.gdpPerCapita]),
+          maxGdpGrowthRate: this.parseNumberRequired(row[headerMap.maxGdpGrowthRate], 0.05),
+          adjustedGdpGrowth: this.parseNumberRequired(row[headerMap.adjustedGdpGrowth], 0.03),
+          populationGrowthRate: this.parseNumberRequired(row[headerMap.populationGrowthRate], 0.01),
+          projected2040Population: this.parseNumberRequired(row[headerMap.projected2040Population], 0),
+          projected2040Gdp: this.parseNumberRequired(row[headerMap.projected2040Gdp], 0),
+          projected2040GdpPerCapita: this.parseNumberRequired(row[headerMap.projected2040GdpPerCapita], 0),
+          actualGdpGrowth: this.parseNumberRequired(row[headerMap.actualGdpGrowth], 0),
+          landArea: headerMap.landArea !== -1 ? this.parseNumberOptional(row[headerMap.landArea]) : undefined,
         };
         
         const baselineYear = this.config.timeSettings.baselineYear;
@@ -132,9 +126,9 @@ export class IxStatsDataService {
     return countries;
   }
 
-  private parseNumber(value: any, defaultValue: number | undefined = 0): number | undefined {
+  private parseNumberRequired(value: any, defaultValue: number = 0): number {
     if (value === null || value === undefined || String(value).trim() === "") {
-        return defaultValue === undefined && (String(value).trim() === "" || value === null) ? undefined : defaultValue;
+        return defaultValue;
     }
     if (typeof value === 'number') return isNaN(value) ? defaultValue : value;
     if (typeof value === 'string') {
@@ -145,11 +139,24 @@ export class IxStatsDataService {
     return defaultValue;
   }
 
+  private parseNumberOptional(value: any): number | undefined {
+    if (value === null || value === undefined || String(value).trim() === "") {
+        return undefined;
+    }
+    if (typeof value === 'number') return isNaN(value) ? undefined : value;
+    if (typeof value === 'string') {
+      const cleaned = value.replace(/[,%$]/g, '');
+      const parsed = parseFloat(cleaned);
+      return isNaN(parsed) ? undefined : parsed;
+    }
+    return undefined;
+  }
+
   private validateCountryData(data: BaseCountryData): boolean {
     return (
       data.country.length > 0 &&
       data.population > 0 &&
-      data.gdpPerCapita > 0 // Basic validation, can be expanded
+      data.gdpPerCapita > 0
     );
   }
 
@@ -158,7 +165,6 @@ export class IxStatsDataService {
   }
 
   static getDefaultEconomicConfig(): EconomicConfig {
-    // This should align with the type `EconomicConfig` from `src/types/ixstats.ts`
     return {
       globalGrowthFactor: 1.0321,
       baseInflationRate: 0.02,
@@ -166,9 +172,9 @@ export class IxStatsDataService {
       populationTierThresholds: { micro: 1000000, small: 10000000, medium: 50000000, large: 200000000 },
       tierGrowthModifiers: {
         "Developing": 1.2, "Emerging": 1.1, "Developed": 1.0, "Advanced": 0.9
-      } as Record<"Developing" | "Emerging" | "Developed" | "Advanced", number>, // Type assertion for safety
-      calculationIntervalMs: 60000, // 1 minute
-      ixTimeUpdateFrequency: 4 // Placeholder, meaning not clearly defined here
+      } as Record<"Developing" | "Emerging" | "Developed" | "Advanced", number>,
+      calculationIntervalMs: 60000,
+      ixTimeUpdateFrequency: 4
     };
   }
 
@@ -193,7 +199,7 @@ export class IxStatsDataService {
       'Population Tier': country.populationTier,
       'Population Growth Rate': country.populationGrowthRate,
       'GDP Growth Rate': country.adjustedGdpGrowth,
-      'Last Updated (IxTime)': IxTime.formatIxTime(country.lastCalculated, true), // Format IxTime
+      'Last Updated (IxTime)': IxTime.formatIxTime(country.lastCalculated, true),
       'Baseline Population': country.population,
       'Baseline GDP per Capita': country.gdpPerCapita
     }));

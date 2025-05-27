@@ -1,5 +1,4 @@
 // src/app/admin/page.tsx
-// src/app/admin/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -21,13 +20,8 @@ import {
   RefreshCw,
 } from "lucide-react";
 
-interface SystemConfig {
-  id: string;
-  key: string;
-  value: string;
-  description?: string;
-  updatedAt: Date;
-}
+// Import SystemConfig from types
+import type { SystemConfig } from "~/types/ixstats";
 
 interface CalculationLog {
   id: string;
@@ -54,11 +48,10 @@ export default function AdminDashboard() {
     refetchInterval: 5000, // Refetch status every 5 seconds
   });
 
-
   // Mutations
   const updateConfigMutation = api.admin.updateSystemConfig.useMutation({
     onSuccess: () => {
-      refetchConfig();
+      void refetchConfig();
       setLastUpdate(new Date());
     },
   });
@@ -66,7 +59,7 @@ export default function AdminDashboard() {
   const forceCalculationMutation = api.admin.forceCalculation.useMutation({
     onSuccess: (data) => {
       setLastUpdate(new Date());
-      refetchLogs();
+      void refetchLogs();
       alert(`Calculation complete: ${data?.updated} countries updated in ${data?.executionTime}ms.`);
     },
     onError: (error) => {
@@ -77,7 +70,7 @@ export default function AdminDashboard() {
   const setIxTimeMutation = api.admin.setCurrentIxTime.useMutation({
     onSuccess: () => {
       setLastUpdate(new Date());
-      refetchStatus(); // Refetch status to show new time override
+      void refetchStatus(); // Refetch status to show new time override
     },
   });
 
@@ -96,13 +89,12 @@ export default function AdminDashboard() {
     return () => clearInterval(interval);
   }, [systemStatus]);
 
-
-  // Load system config into state
+  // Load system config into state with proper type handling
   useEffect(() => {
     if (systemConfig) {
-      const multiplier = systemConfig.find((c: SystemConfig) => c.key === 'time_multiplier');
-      const growth = systemConfig.find((c: SystemConfig) => c.key === 'global_growth_factor');
-      const autoUpd = systemConfig.find((c: SystemConfig) => c.key === 'auto_update');
+      const multiplier = systemConfig.find((c) => c.key === 'time_multiplier');
+      const growth = systemConfig.find((c) => c.key === 'global_growth_factor');
+      const autoUpd = systemConfig.find((c) => c.key === 'auto_update');
 
       if (multiplier) setTimeMultiplier(parseFloat(multiplier.value));
       if (growth) setGlobalGrowthFactor(parseFloat(growth.value));
@@ -141,16 +133,20 @@ export default function AdminDashboard() {
   };
 
   const handleForceCalculation = () => {
-    forceCalculationMutation.mutate({});
+    forceCalculationMutation.mutate();
   };
 
   const handleResetToRealTime = () => {
     setTimeMultiplier(4); // Default multiplier
     setGlobalGrowthFactor(1.0321); // Default growth
     setAutoUpdate(true);
-    api.admin.resetIxTime.useMutation().mutate(); // Call reset endpoint
-    refetchConfig(); // To get potentially reset values from DB
-    refetchStatus();
+    const resetMutation = api.admin.resetIxTime.useMutation({
+      onSuccess: () => {
+        void refetchConfig();
+        void refetchStatus();
+      }
+    });
+    resetMutation.mutate();
   };
 
   const getMultiplierColor = (multiplier: number) => {
@@ -159,7 +155,6 @@ export default function AdminDashboard() {
     if (multiplier === 4) return "text-green-600 dark:text-green-400";
     return "text-blue-600 dark:text-blue-400";
   };
-
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white">
