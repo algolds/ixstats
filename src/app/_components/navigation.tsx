@@ -65,18 +65,7 @@ export function Navigation() {
             </div>
           </div>
           <div className="flex items-center">
-            <button
-              onClick={toggleTheme}
-              type="button"
-              className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              aria-label="Toggle theme"
-            >
-              {theme === "light" ? (
-                <Moon className="h-5 w-5" aria-hidden="true" />
-              ) : (
-                <Sun className="h-5 w-5" aria-hidden="true" />
-              )}
-            </button>
+           
           </div>
         </div>
       </div>

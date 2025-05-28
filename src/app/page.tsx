@@ -39,10 +39,10 @@ export default async function Home() {
 
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-300 mb-2">
-              Current IxTime runs 4x faster than real time
+              Alpha version 0.3.0
             </p>
             <p className="text-xs text-gray-400">
-              Based on epoch: October 4, 2020
+              build version: d32bd7e
             </p>
           </div>
         </div>

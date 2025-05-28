@@ -522,10 +522,8 @@ export default function IxStatsDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">IxStats Dashboard</h1>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Automated Economic Statistics for Ixnay with Geographic Analysis
-              </p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+              
             </div>
             <div className="flex items-center space-x-4">
               <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
