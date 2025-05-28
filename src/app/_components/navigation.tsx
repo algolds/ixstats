@@ -1,14 +1,15 @@
-// src/app/_components/navigation.tsx - Updated to include Economy page
+// src/app/_components/navigation.tsx
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Moon, Sun, BarChart3, Globe, Settings, Database, Building } from "lucide-react";
-import { useTheme } from "~/context/theme-context";
+import { useTheme, useThemeClasses } from "~/context/theme-context";
 
 export function Navigation() {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
+  const themeClasses = useThemeClasses();
 
   const navigationItems = [
     {
@@ -22,7 +23,7 @@ export function Navigation() {
       icon: Globe,
     },
     {
-      name: "Economy Builder", // New Economy page
+      name: "Economy Builder",
       href: "/economy",
       icon: Building,
     },
@@ -38,29 +39,36 @@ export function Navigation() {
     },
   ];
 
+  const isCurrentPage = (href: string) => {
+    return pathname === href || (href !== "/" && pathname.startsWith(href + "/"));
+  };
+
   return (
-    <nav className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-700">
+    <nav className="border-b border-[var(--color-border-primary)] bg-[var(--color-bg-surface)] shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
+            {/* Logo */}
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+              <Link 
+                href="/" 
+                className="text-2xl font-bold text-gradient hover:opacity-80 transition-opacity"
+              >
                 IxStats™
               </Link>
             </div>
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+            
+            {/* Navigation Links */}
+            <div className="hidden sm:ml-6 sm:flex sm:space-x-2">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
-                const current = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href + "/"));
+                const current = isCurrentPage(item.href);
+                
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
-                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                      current
-                        ? "border-indigo-500 dark:border-indigo-400 text-gray-900 dark:text-white"
-                        : "border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-700 hover:text-gray-700 dark:hover:text-gray-300"
-                    }`}
+                    className={`nav-link ${current ? 'active' : ''}`}
                     aria-current={current ? "page" : undefined}
                   >
                     <Icon className="h-4 w-4 mr-2" aria-hidden="true" />
@@ -70,9 +78,43 @@ export function Navigation() {
               })}
             </div>
           </div>
+          
+          {/* Theme Toggle */}
           <div className="flex items-center">
-           
+            <button
+              onClick={toggleTheme}
+              className="btn-secondary p-2 rounded-md"
+              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
+            </button>
           </div>
+        </div>
+      </div>
+      
+      {/* Mobile Navigation */}
+      <div className="sm:hidden border-t border-[var(--color-border-primary)]">
+        <div className="px-2 pt-2 pb-3 space-y-1">
+          {navigationItems.map((item) => {
+            const Icon = item.icon;
+            const current = isCurrentPage(item.href);
+            
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`nav-link block w-full ${current ? 'active' : ''}`}
+                aria-current={current ? "page" : undefined}
+              >
+                <Icon className="h-4 w-4 mr-2 inline" aria-hidden="true" />
+                {item.name}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </nav>

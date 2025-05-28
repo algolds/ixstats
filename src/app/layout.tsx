@@ -5,8 +5,8 @@ import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
-import { ThemeProvider } from "~/context/theme-context"; // Only ThemeProvider and useTheme (if needed here)
-import { Navigation } from "~/app/_components/navigation"; // Import Navigation
+import { ThemeProvider } from "~/context/theme-context";
+import { Navigation } from "~/app/_components/navigation";
 
 export const metadata: Metadata = {
   title: "IxStats - Alpha version",
@@ -24,12 +24,14 @@ const RootLayout = ({
 }: Readonly<{ children: React.ReactNode }>) => {
   return (
     <html lang="en" className={`${geist.variable}`} suppressHydrationWarning>
-      <body className="transition-colors duration-200 bg-gray-50 dark:bg-gray-900">
+      <body className="min-h-screen transition-colors duration-200">
         <TRPCReactProvider>
           <ThemeProvider>
-            <div className="min-h-screen">
-              <Navigation /> {/* Use the imported Navigation component */}
-              <main>{children}</main>
+            <div className="min-h-screen flex flex-col">
+              <Navigation />
+              <main className="flex-1">
+                {children}
+              </main>
             </div>
           </ThemeProvider>
         </TRPCReactProvider>

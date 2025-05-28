@@ -22,6 +22,6 @@ export default function IxStatsPage() {
 }
 
 export const metadata = {
-  title: "IxStats Dashboard",
+  title: "IxStats - Dashboard",
   description: "Automated Economic Statistics for Ixnay",
 };
