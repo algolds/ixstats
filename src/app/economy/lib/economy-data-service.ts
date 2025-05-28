@@ -54,7 +54,7 @@ export async function parseEconomyData(): Promise<RealCountryData[]> {
     
     const workbook = XLSX.read(arrayBuffer, {
       cellStyles: true,
-      cellFormulas: true,
+      cellFormula: true,
       cellDates: true,
     });
 
