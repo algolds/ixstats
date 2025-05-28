@@ -43,9 +43,16 @@ export async function parseEconomyData(): Promise<RealCountryData[]> {
   }
 
   try {
-    // Read the Excel file
-    const fileContent = await window.fs.readFile('/public/IxEconomy.xlsx');
-    const workbook = XLSX.read(fileContent, {
+    // Fetch the Excel file from the public directory using the standard fetch API
+    const response = await fetch('/IxEconomy.xlsx');
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch Excel file: ${response.status} ${response.statusText}`);
+    }
+    
+    const arrayBuffer = await response.arrayBuffer();
+    
+    const workbook = XLSX.read(arrayBuffer, {
       cellStyles: true,
       cellFormulas: true,
       cellDates: true,
@@ -53,6 +60,10 @@ export async function parseEconomyData(): Promise<RealCountryData[]> {
 
     // Parse the RLData sheet
     const rlDataSheet = workbook.Sheets["RLData"];
+    if (!rlDataSheet) {
+      throw new Error('RLData sheet not found in the Excel file');
+    }
+    
     const rawData = XLSX.utils.sheet_to_json(rlDataSheet, { header: 1 }) as any[][];
 
     // Skip header row and process data
@@ -92,7 +103,7 @@ export async function parseEconomyData(): Promise<RealCountryData[]> {
     return countries;
   } catch (error) {
     console.error('Error parsing economy data:', error);
-    throw new Error('Failed to load economic data from Excel file');
+    throw new Error(`Failed to load economic data from Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
