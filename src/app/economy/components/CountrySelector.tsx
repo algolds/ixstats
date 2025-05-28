@@ -125,7 +125,7 @@ export function CountrySelector({ countries, onCountrySelect, selectedCountry }:
       </div>
 
       {/* Country List */}
-      <div className="max-h-96 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+      <div className="max-h-96 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg scrollbar-hide">
         {filteredCountries.length === 0 ? (
           <div className="p-8 text-center text-gray-500 dark:text-gray-400">
             <Globe className="h-8 w-8 mx-auto mb-2 opacity-50" />

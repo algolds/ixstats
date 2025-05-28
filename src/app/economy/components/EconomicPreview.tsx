@@ -61,10 +61,10 @@ export function EconomicPreview({
 
   const getTierColor = (tier: string) => {
     switch (tier) {
-      case "Advanced": return "bg-purple-100 text-purple-800 dark:bg-purple-700 dark:text-purple-100";
-      case "Developed": return "bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-100";
-      case "Emerging": return "bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-100";
-      default: return "bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-100";
+      case "Advanced": return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-200";
+      case "Developed": return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200";
+      case "Emerging": return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200";
+      default: return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200";
     }
   };
 
@@ -237,7 +237,7 @@ export function EconomicPreview({
             ].map((item, index) => {
               const Icon = item.icon;
               return (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-750 rounded-lg">
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-750 rounded-lg border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center">
                     <Icon className={`h-5 w-5 mr-3 text-${item.color}-600 dark:text-${item.color}-400`} />
                     <div>
@@ -274,7 +274,7 @@ export function EconomicPreview({
                   </h5>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                     {comparison.comparableCountries.slice(0, 6).map((country, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-750 rounded">
+                      <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-750 rounded border border-gray-200 dark:border-gray-700">
                         <span className="text-sm font-medium text-gray-900 dark:text-white">
                           {country.name}
                         </span>

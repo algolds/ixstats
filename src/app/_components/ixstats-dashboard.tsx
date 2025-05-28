@@ -1,10 +1,10 @@
 // src/app/_components/ixstats-dashboard.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
-import { Upload, RefreshCw, Clock, Globe, TrendingUp, Users, MapPin, Scaling, BarChart3, Target, Layers, AlertCircle, Wifi, WifiOff } from "lucide-react";
+import { Upload, RefreshCw, Clock, Globe, TrendingUp, Users, MapPin, Scaling, BarChart3, Target, Layers, AlertCircle, Wifi, WifiOff, X, Filter } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { ImportPreviewDialog } from "./import-preview-dialog";
 import type { CountryStats, EconomicTier, PopulationTier } from "~/types/ixstats";
@@ -153,6 +153,60 @@ function CountryCard({ country, onUpdate }: CountryCardProps) {
   );
 }
 
+// Interactive modal for showing countries in selected tier
+interface TierDetailsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  tier: string | null;
+  countries: ProcessedCountryData[];
+}
+
+function TierDetailsModal({ isOpen, onClose, tier, countries }: TierDetailsModalProps) {
+  if (!isOpen || !tier) return null;
+
+  const tierCountries = countries.filter(country => country.economicTier === tier);
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            {tier} Countries ({tierCountries.length})
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+        
+        <div className="p-6 overflow-y-auto max-h-[60vh] scrollbar-thin">
+          <div className="grid grid-cols-1 gap-3">
+            {tierCountries.map((country, index) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-750 rounded-lg">
+                <div>
+                  <h3 className="font-medium text-gray-900 dark:text-white">{country.name}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Pop: {(country.currentPopulation / 1e6).toFixed(1)}M | 
+                    GDP p.c.: ${country.currentGdpPerCapita.toLocaleString()}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                    ${(country.currentTotalGdp / 1e9).toFixed(1)}B
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Total GDP</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Fixed chart data processing interface
 interface ProcessedCountryData {
   id: string;
@@ -167,7 +221,13 @@ interface ProcessedCountryData {
   gdpDensity: number | null;
 }
 
+type MetricFilter = 'populationDensity' | 'gdpDensity' | 'currentPopulation' | 'currentGdpPerCapita' | 'currentTotalGdp';
+
 function GlobalAnalytics({ countries }: { countries: ProcessedCountryData[] }) {
+  const [selectedTier, setSelectedTier] = useState<string | null>(null);
+  const [showTierModal, setShowTierModal] = useState(false);
+  const [selectedMetric, setSelectedMetric] = useState<MetricFilter>('populationDensity');
+
   // Filter countries with valid data for charts
   const validCountries = countries.filter(country => 
     country.currentPopulation > 0 && 
@@ -194,18 +254,57 @@ function GlobalAnalytics({ countries }: { countries: ProcessedCountryData[] }) {
     return acc;
   }, [] as Array<{ name: string; value: number; totalGdp: number; totalArea: number }>);
 
-  // Fixed density distribution data
-  const densityDistribution = validCountries
-    .filter(c => c.populationDensity != null && c.populationDensity > 0 && c.landArea != null && c.landArea > 0)
-    .map(c => ({
-      name: c.name.length > 10 ? c.name.substring(0, 10) + '...' : c.name, // Truncate long names
-      populationDensity: Number((c.populationDensity || 0).toFixed(1)),
-      gdpDensity: Number(((c.gdpDensity || 0) / 1000000).toFixed(2)), // Convert to millions per km²
-      economicTier: c.economicTier,
-      fullName: c.name // Keep full name for tooltip
-    }))
-    .sort((a, b) => b.populationDensity - a.populationDensity)
-    .slice(0, 10); // Top 10 by population density
+  // Enhanced top countries data with different metrics
+  const topCountriesData = useMemo(() => {
+    let filteredCountries = validCountries;
+    let dataKey = selectedMetric;
+    let label = '';
+    let unit = '';
+
+    switch (selectedMetric) {
+      case 'populationDensity':
+        filteredCountries = validCountries.filter(c => c.populationDensity != null && c.populationDensity > 0);
+        label = 'Population Density';
+        unit = '/km²';
+        break;
+      case 'gdpDensity':
+        filteredCountries = validCountries.filter(c => c.gdpDensity != null && c.gdpDensity > 0);
+        label = 'GDP Density';
+        unit = 'M$/km²';
+        break;
+      case 'currentPopulation':
+        label = 'Population';
+        unit = 'M';
+        break;
+      case 'currentGdpPerCapita':
+        label = 'GDP per Capita';
+        unit = '$';
+        break;
+      case 'currentTotalGdp':
+        label = 'Total GDP';
+        unit = 'B$';
+        break;
+    }
+
+    return filteredCountries
+      .map(c => ({
+        name: c.name.length > 10 ? c.name.substring(0, 10) + '...' : c.name,
+        value: selectedMetric === 'gdpDensity' ? Number(((c.gdpDensity || 0) / 1000000).toFixed(2)) :
+               selectedMetric === 'currentPopulation' ? Number((c.currentPopulation / 1000000).toFixed(1)) :
+               selectedMetric === 'currentTotalGdp' ? Number((c.currentTotalGdp / 1000000000).toFixed(1)) :
+               Number((c[selectedMetric] || 0)),
+        fullName: c.name,
+        economicTier: c.economicTier,
+        [dataKey]: c[selectedMetric]
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 10);
+  }, [validCountries, selectedMetric]);
+
+  const handlePieClick = (data: any) => {
+    setSelectedTier(data.name);
+    setShowTierModal(true);
+  };
 
   const TIER_COLORS: Record<string, string> = {
     'Advanced': '#8B5CF6',
@@ -215,122 +314,146 @@ function GlobalAnalytics({ countries }: { countries: ProcessedCountryData[] }) {
     'Unknown': '#6B7280'
   };
 
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-          <BarChart3 className="h-5 w-5 mr-2" />
-          Economic Tier Distribution
-        </h3>
-        {economicTierData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={economicTierData}
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                dataKey="value"
-                label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
-                labelLine={false}
-              >
-                {economicTierData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={TIER_COLORS[entry.name] || '#6B7280'} />
-                ))}
-              </Pie>
-              <Tooltip 
-                formatter={(value, name) => [value, 'Countries']}
-                labelFormatter={(label) => `Economic Tier: ${label}`}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
-            <div className="text-center">
-              <BarChart3 className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>No economic tier data available</p>
-            </div>
-          </div>
-        )}
-      </div>
+  const metricOptions = [
+    { key: 'populationDensity', label: 'Population Density', icon: Users },
+    { key: 'gdpDensity', label: 'GDP Density', icon: TrendingUp },
+    { key: 'currentPopulation', label: 'Total Population', icon: Users },
+    { key: 'currentGdpPerCapita', label: 'GDP per Capita', icon: TrendingUp },
+    { key: 'currentTotalGdp', label: 'Total GDP', icon: Globe },
+  ] as const;
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-          <Target className="h-5 w-5 mr-2" />
-          Top 10 Countries by Population Density
-        </h3>
-        {densityDistribution.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart 
-              data={densityDistribution} 
-              margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
-              <XAxis 
-                dataKey="name" 
-                tick={{ fontSize: 10, fill: '#6B7280' }} 
-                angle={-45} 
-                textAnchor="end" 
-                height={80}
-                interval={0}
-              />
-              <YAxis 
-                yAxisId="density"
-                tick={{ fontSize: 10, fill: '#6B7280' }} 
-                stroke="#6B7280"
-                label={{ value: 'Pop./km²', angle: -90, position: 'insideLeft' }}
-              />
-              <YAxis 
-                yAxisId="gdpDensity" 
-                orientation="right" 
-                tick={{ fontSize: 10, fill: '#6B7280' }} 
-                stroke="#6B7280"
-                label={{ value: 'M$/km²', angle: 90, position: 'insideRight' }}
-              />
-              <Tooltip 
-                formatter={(value: number, name: string) => [
-                  name === 'populationDensity' ? `${value}/km²` : `$${value}M/km²`,
-                  name === 'populationDensity' ? 'Population Density' : 'GDP Density'
-                ]}
-                labelFormatter={(label, payload) => {
-                  const data = payload?.[0]?.payload;
-                  return data?.fullName || label;
-                }}
-                contentStyle={{
-                  backgroundColor: 'rgba(31, 41, 55, 0.9)',
-                  color: '#E5E7EB',
-                  border: '1px solid #374151',
-                  borderRadius: '0.375rem'
-                }}
-              />
-              <Legend />
-              <Bar 
-                yAxisId="density" 
-                dataKey="populationDensity" 
-                fill="#3B82F6" 
-                name="Pop. Density"
-                radius={[2, 2, 0, 0]}
-              />
-              <Bar 
-                yAxisId="gdpDensity" 
-                dataKey="gdpDensity" 
-                fill="#10B981" 
-                name="GDP Density (M$/km²)"
-                radius={[2, 2, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
-            <div className="text-center">
-              <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>No density data available</p>
-              <p className="text-xs mt-1">Countries need land area data</p>
+  return (
+    <>
+      <TierDetailsModal 
+        isOpen={showTierModal}
+        onClose={() => setShowTierModal(false)}
+        tier={selectedTier}
+        countries={countries}
+      />
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+            <BarChart3 className="h-5 w-5 mr-2" />
+            Economic Tier Distribution (Click to explore)
+          </h3>
+          {economicTierData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={economicTierData}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  dataKey="value"
+                  label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
+                  labelLine={false}
+                  onClick={handlePieClick}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {economicTierData.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={TIER_COLORS[entry.name] || '#6B7280'}
+                      style={{ cursor: 'pointer' }}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  formatter={(value, name) => [value, 'Countries']}
+                  labelFormatter={(label) => `Economic Tier: ${label}`}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+              <div className="text-center">
+                <BarChart3 className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>No economic tier data available</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+              <Target className="h-5 w-5 mr-2" />
+              Top 10 Countries
+            </h3>
+            <div className="relative">
+              <select
+                value={selectedMetric}
+                onChange={(e) => setSelectedMetric(e.target.value as MetricFilter)}
+                className="bg-gray-50 dark:bg-gray-750 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2 appearance-none pr-8"
+              >
+                {metricOptions.map((option) => (
+                  <option key={option.key} value={option.key}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <Filter className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
             </div>
           </div>
-        )}
+          
+          {topCountriesData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart 
+                data={topCountriesData} 
+                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+                <XAxis 
+                  dataKey="name" 
+                  tick={{ fontSize: 10, fill: '#6B7280' }} 
+                  angle={-45} 
+                  textAnchor="end" 
+                  height={80}
+                  interval={0}
+                />
+                <YAxis 
+                  tick={{ fontSize: 10, fill: '#6B7280' }} 
+                  stroke="#6B7280"
+                />
+                <Tooltip 
+                  formatter={(value: number) => {
+                    const unit = selectedMetric === 'populationDensity' ? '/km²' :
+                                selectedMetric === 'gdpDensity' ? 'M$/km²' :
+                                selectedMetric === 'currentPopulation' ? 'M' :
+                                selectedMetric === 'currentGdpPerCapita' ? '$' : 'B$';
+                    return [`${value}${unit}`, metricOptions.find(m => m.key === selectedMetric)?.label];
+                  }}
+                  labelFormatter={(label, payload) => {
+                    const data = payload?.[0]?.payload;
+                    return data?.fullName || label;
+                  }}
+                  contentStyle={{
+                    backgroundColor: 'rgba(31, 41, 55, 0.9)',
+                    color: '#E5E7EB',
+                    border: '1px solid #374151',
+                    borderRadius: '0.375rem'
+                  }}
+                />
+                <Bar 
+                  dataKey="value" 
+                  fill="#3B82F6" 
+                  radius={[2, 2, 0, 0]}
+                  style={{ cursor: 'pointer' }}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+              <div className="text-center">
+                <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>No data available for selected metric</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
