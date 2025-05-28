@@ -1,15 +1,16 @@
-"use client"; // Directive at the top
+// src/app/_components/navigation.tsx - Updated to include Economy page
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Moon, Sun, BarChart3, Globe, Settings, Database } from "lucide-react";
-import { useTheme } from "~/context/theme-context"; // Corrected import if useTheme is exported from theme-context
+import { Moon, Sun, BarChart3, Globe, Settings, Database, Building } from "lucide-react";
+import { useTheme } from "~/context/theme-context";
 
 export function Navigation() {
   const pathname = usePathname();
-  const { theme, toggleTheme } = useTheme(); // useTheme should be imported from theme-context
+  const { theme, toggleTheme } = useTheme();
 
-  const navigationItems = [ // Renamed to avoid conflict if 'navigation' is a common variable name
+  const navigationItems = [
     {
       name: "Dashboard",
       href: "/ixstats",
@@ -19,6 +20,11 @@ export function Navigation() {
       name: "Countries",
       href: "/countries",
       icon: Globe,
+    },
+    {
+      name: "Economy Builder", // New Economy page
+      href: "/economy",
+      icon: Building,
     },
     {
       name: "DM Controls",
