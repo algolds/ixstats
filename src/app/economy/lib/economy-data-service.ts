@@ -44,7 +44,7 @@ export async function parseEconomyData(): Promise<RealCountryData[]> {
 
   try {
     // Read the Excel file
-    const fileContent = await window.fs.readFile('IxEconomy.xlsx');
+    const fileContent = await window.fs.readFile('/public/IxEconomy.xlsx');
     const workbook = XLSX.read(fileContent, {
       cellStyles: true,
       cellFormulas: true,
