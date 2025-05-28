@@ -54,7 +54,7 @@ export function CountryListCard({ country }: CountryListCardProps) {
     loadFlag();
   }, [country.name]);
 
-  const formatNumber = (num: number | null | undefined): string => {
+  const formatNumber = (num: number | null | undefined, p0: boolean): string => {
     if (num == null) return '$0.00';
     if (num >= 1e12) return `$${(num / 1e12).toFixed(2)}T`;
     if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;

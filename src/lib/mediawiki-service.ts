@@ -264,7 +264,7 @@ class MediaWikiService {
 }
 
 // Default instance for the Ixnay MediaWiki
-const IXNAY_MEDIAWIKI_URL = env.NEXT_PUBLIC_MEDIAWIKI_URL;
+const IXNAY_MEDIAWIKI_URL = process.env.NEXT_PUBLIC_MEDIAWIKI_URL ?? '';
 
 export const ixnayWiki = new MediaWikiService(IXNAY_MEDIAWIKI_URL);
 
