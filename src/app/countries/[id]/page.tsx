@@ -115,9 +115,7 @@ export default function CountryDetailPage() {
   // Get forecast data
   const { data: forecastData } = api.countries.getForecast.useQuery({
     countryId,
-    startTime: targetTime,
-    endTime: forecastTime,
-    steps: 10,
+    targetTime: forecastTime, // Corrected: pass forecastTime as targetTime
   }, {
     enabled: !!countryId && forecastYears > 0 && !!timeContext,
   });
@@ -437,10 +435,10 @@ export default function CountryDetailPage() {
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
                     {IxTime.formatIxTime(forecastTime)}
                   </p>
-                  {forecastData && forecastData.dataPoints.length > 0 && (
+                  {forecastData && (
                     <div className="mt-2 text-xs text-green-600 dark:text-green-400">
-                      Pop: {formatNumber(forecastData.dataPoints[forecastData.dataPoints.length - 1]?.population * 1000000, false)} <br/>
-                      GDP p.c.: {formatNumber(forecastData.dataPoints[forecastData.dataPoints.length - 1]?.gdpPerCapita)}
+                      Pop: {formatNumber(forecastData.population, false)} <br/>
+                      GDP p.c.: {formatNumber(forecastData.gdpPerCapita)}
                     </div>
                   )}
                 </div>
@@ -730,7 +728,7 @@ export default function CountryDetailPage() {
                         {comparisonData.map((entry, index) => (
                           <Scatter 
                             key={`scatter-${index}`}
-                            data={[entry]}
+                            data={[entry]} // Scatter expects an array of data for each scatter element
                             fill={getScatterPointColor(entry)}
                           />
                         ))}
@@ -757,7 +755,7 @@ export default function CountryDetailPage() {
                                   <p className="font-semibold">{data.name}</p>
                                   <p>Land Area: {formatArea(data.landArea)}</p>
                                   <p>Total GDP: {formatNumber(data.totalGdp * 1000000000)}</p>
-                                  <p>GDP Density: {formatNumber(data.gdpDensity, true, 0)}/km²</p>
+                                  <p>GDP Density: {formatNumber(data.gdpDensity ?? 0, true, 0)}/km²</p>
                                   {data.isCurrentCountry && <p className="text-red-500 font-semibold">← This Country</p>}
                                 </div>
                               );
@@ -766,11 +764,11 @@ export default function CountryDetailPage() {
                           }}
                         />
                         {comparisonData.map((entry, index) => (
-                          <Scatter 
-                            key={`scatter-area-${index}`}
-                            data={[entry]}
-                            fill={getScatterPointColor(entry)}
-                          />
+                           <Scatter 
+                             key={`scatter-area-${index}`}
+                             data={[entry]} // Scatter expects an array of data for each scatter element
+                             fill={getScatterPointColor(entry)}
+                           />
                         ))}
                       </ScatterChart>
                     </ResponsiveContainer>

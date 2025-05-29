@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { api } from "~/trpc/react";
-import { useGlobalFlagPreloader } from "~/hooks/useFlagPreloader";
+import { useGlobalFlagPreloader } from "~/hooks/useFlagPreloader"; // Ensure this path is correct
 import { 
   CountriesPageHeader,
   CountriesSearch,
@@ -24,23 +24,25 @@ export default function CountriesPage() {
   const { data: countries, isLoading, error } = api.countries.getAll.useQuery();
 
   // Flag preloader
-  const { preloadAllFlags, getGlobalStats } = useGlobalFlagPreloader();
+  const { preloadAllFlags, currentStats: flagPreloaderStats } = useGlobalFlagPreloader();
 
   // Preload flags when countries data is loaded
   useEffect(() => {
     if (countries && countries.length > 0) {
       const countryNames = countries.map(c => c.name);
-      preloadAllFlags(countryNames);
-      
-      // Log cache stats in development
-      if (process.env.NODE_ENV === 'development') {
-        setTimeout(() => {
-          const stats = getGlobalStats();
-          console.log('[Countries] Flag cache stats:', stats);
-        }, 2000);
-      }
+      // preloadAllFlags is a stable callback that will update stats internally
+      void preloadAllFlags(countryNames); 
     }
-  }, [countries, preloadAllFlags, getGlobalStats]);
+  }, [countries, preloadAllFlags]); // preloadAllFlags is stable
+
+  // For logging development stats, react to changes in flagPreloaderStats
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && countries && countries.length > 0) {
+      // This log will run when flagPreloaderStats changes (e.g., after preloading)
+      console.log('[Countries] Flag cache stats (updated):', flagPreloaderStats);
+    }
+  }, [flagPreloaderStats, countries]);
+
 
   // Filter and sort countries
   const filteredAndSortedCountries = useMemo(() => {
@@ -174,10 +176,10 @@ export default function CountriesPage() {
               Flag Cache Stats (Development)
             </h4>
             <div className="text-xs text-[var(--color-text-muted)] space-x-4">
-              <span>Total: {getGlobalStats().flags}</span>
-              <span>Preloaded: {getGlobalStats().preloadedFlags}</span>
-              <span>Failed: {getGlobalStats().failedFlags}</span>
-              <span>Efficiency: {getGlobalStats().cacheEfficiency}%</span>
+              <span>Total: {flagPreloaderStats.flags}</span>
+              <span>Preloaded: {flagPreloaderStats.preloadedFlags}</span>
+              <span>Failed: {flagPreloaderStats.failedFlags}</span>
+              <span>Efficiency: {flagPreloaderStats.cacheEfficiency}%</span>
             </div>
           </div>
         )}

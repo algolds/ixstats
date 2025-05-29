@@ -11,11 +11,13 @@ interface PreloaderStats {
   cacheEfficiency: number;
 }
 
+// Modified interface to include currentStats
 interface GlobalFlagPreloader {
   preloadAllFlags: (countryNames: string[]) => Promise<void>;
-  getGlobalStats: () => PreloaderStats;
+  getGlobalStats: () => PreloaderStats; // Kept for potential direct use, but be cautious with effects
   clearCache: () => void;
   isPreloading: boolean;
+  currentStats: PreloaderStats; // Added to directly access stats
 }
 
 /**
@@ -57,15 +59,16 @@ export function useGlobalFlagPreloader(): GlobalFlagPreloader {
       console.error('[FlagPreloader] Preload failed:', error);
     } finally {
       setIsPreloading(false);
-      updateStats();
+      updateStats(); // Update stats after preloading is done
     }
   }, [updateStats]);
 
-  // Get current cache statistics
+  // Get current cache statistics - this function now explicitly calls updateStats first.
+  // If used as an effect dependency, ensure it doesn't cause loops.
   const getGlobalStats = useCallback(() => {
-    updateStats();
+    updateStats(); 
     return stats;
-  }, [stats, updateStats]);
+  }, [stats, updateStats]); // This callback changes if stats or updateStats change. updateStats is stable.
 
   // Clear the cache
   const clearCache = useCallback(() => {
@@ -76,13 +79,14 @@ export function useGlobalFlagPreloader(): GlobalFlagPreloader {
   // Update stats on mount
   useEffect(() => {
     updateStats();
-  }, [updateStats]);
+  }, [updateStats]); // updateStats is stable, so this runs once on mount.
 
   return {
     preloadAllFlags,
     getGlobalStats,
     clearCache,
     isPreloading,
+    currentStats: stats, // Return current stats directly
   };
 }
 
