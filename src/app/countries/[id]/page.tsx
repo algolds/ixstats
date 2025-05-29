@@ -5,6 +5,7 @@ import { useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
+import { CountryInfobox } from "../_components/CountryInfobox";
 import {
   LineChart,
   Line,
@@ -44,7 +45,8 @@ import {
   Target,
   Zap,
   Compass,
-  Layers
+  Layers,
+  Info
 } from "lucide-react";
 import { useTheme } from "~/context/theme-context";
 
@@ -71,6 +73,7 @@ export default function CountryDetailPage() {
   const [timeOffset, setTimeOffset] = useState(0);
   const [forecastYears, setForecastYears] = useState(1);
   const [selectedMetric, setSelectedMetric] = useState<'density' | 'efficiency' | 'growth' | 'comparison'>('density');
+  const [infoboxExpanded, setInfoboxExpanded] = useState(false);
 
   const { data: country, isLoading } = api.countries.getById.useQuery({
     id: countryId,
@@ -188,6 +191,10 @@ export default function CountryDetailPage() {
     return TIER_COLORS[dataPoint.economicTier] || "#6B7280"; // Tier color or gray fallback
   };
 
+  const handleInfoboxToggle = (expanded: boolean) => {
+    setInfoboxExpanded(expanded);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
@@ -227,396 +234,424 @@ export default function CountryDetailPage() {
           </p>
         </div>
 
-        {/* Time Travel Controls */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-            <Calendar className="h-5 w-5 mr-2" />
-            Time Travel / Forecast Controls
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Current View: {IxTime.formatIxTime(targetTime)}
-              </label>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setTimeOffset(timeOffset - 1)}
-                  className="p-2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 rounded-md border border-indigo-300 dark:border-indigo-700"
-                >
-                  <Rewind className="h-4 w-4" />
-                </button>
-                <input
-                  type="range"
-                  min="-10"
-                  max="0"
-                  step="0.1"
-                  value={timeOffset}
-                  onChange={(e) => setTimeOffset(parseFloat(e.target.value))}
-                  className="flex-1 h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer"
-                />
-                <button
-                  onClick={() => setTimeOffset(0)}
-                  className="p-2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 rounded-md border border-indigo-300 dark:border-indigo-700"
-                >
-                  <Play className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Forecast: +{forecastYears.toFixed(1)} years
-              </label>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="range"
-                  min="0"
-                  max="5"
-                  step="0.1"
-                  value={forecastYears}
-                  onChange={(e) => setForecastYears(parseFloat(e.target.value))}
-                  className="flex-1 h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer"
-                />
-                <FastForward className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Forecasted Date
-              </label>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                {IxTime.formatIxTime(IxTime.addYears(targetTime, forecastYears))}
-              </p>
-              {forecastData && (
-                <div className="mt-2 text-xs text-green-600 dark:text-green-400">
-                  Pop: {formatNumber(forecastData.population, false)} <br/>
-                  GDP p.c.: {formatNumber(forecastData.gdpPerCapita)}
+        {/* Main Content Layout - Responsive to infobox state */}
+        <div className={`grid gap-8 transition-all duration-300 ${
+          infoboxExpanded 
+            ? 'lg:grid-cols-12' 
+            : 'lg:grid-cols-3'
+        }`}>
+          {/* Main Content Area */}
+          <div className={`${
+            infoboxExpanded 
+              ? 'lg:col-span-8' 
+              : 'lg:col-span-2'
+          } space-y-8`}>
+            {/* Time Travel Controls */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                <Calendar className="h-5 w-5 mr-2" />
+                Time Travel / Forecast Controls
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Current View: {IxTime.formatIxTime(targetTime)}
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setTimeOffset(timeOffset - 1)}
+                      className="p-2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 rounded-md border border-indigo-300 dark:border-indigo-700"
+                    >
+                      <Rewind className="h-4 w-4" />
+                    </button>
+                    <input
+                      type="range"
+                      min="-10"
+                      max="0"
+                      step="0.1"
+                      value={timeOffset}
+                      onChange={(e) => setTimeOffset(parseFloat(e.target.value))}
+                      className="flex-1 h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <button
+                      onClick={() => setTimeOffset(0)}
+                      className="p-2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 rounded-md border border-indigo-300 dark:border-indigo-700"
+                    >
+                      <Play className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Forecast: +{forecastYears.toFixed(1)} years
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="range"
+                      min="0"
+                      max="5"
+                      step="0.1"
+                      value={forecastYears}
+                      onChange={(e) => setForecastYears(parseFloat(e.target.value))}
+                      className="flex-1 h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <FastForward className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Forecasted Date
+                  </label>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {IxTime.formatIxTime(IxTime.addYears(targetTime, forecastYears))}
+                  </p>
+                  {forecastData && (
+                    <div className="mt-2 text-xs text-green-600 dark:text-green-400">
+                      Pop: {formatNumber(forecastData.population, false)} <br/>
+                      GDP p.c.: {formatNumber(forecastData.gdpPerCapita)}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Enhanced Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center">
+                  <Users className="h-8 w-8 text-blue-500" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Population</p>
+                    <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+                      {formatNumber(country.currentPopulation, false)}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {country.populationTier} ({((country.populationGrowthRate ?? 0) * 100).toFixed(1)}% growth)
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center">
+                  <TrendingUp className="h-8 w-8 text-green-500" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">GDP per Capita</p>
+                    <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+                      {formatNumber(country.currentGdpPerCapita)}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {((country.adjustedGdpGrowth ?? 0) * 100).toFixed(1)}% growth
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center">
+                  <Map className="h-8 w-8 text-yellow-500" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Land Area</p>
+                    <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+                      {formatArea(country.landArea)}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {country.landArea ? `${formatNumber(country.landArea / 2.58999, false, 0)} sq mi` : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center">
+                  <Scaling className="h-8 w-8 text-purple-500" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Pop. Density</p>
+                    <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+                      {country.populationDensity ? `${country.populationDensity.toFixed(1)}/km²` : 'N/A'}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {efficiencyMetrics ? `${efficiencyMetrics.populationPerSqMi.toFixed(1)}/sq mi` : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Enhanced Efficiency Metrics */}
+            {efficiencyMetrics && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                  <Target className="h-5 w-5 mr-2" />
+                  Economic & Geographic Efficiency Metrics
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                      {formatNumber(efficiencyMetrics.landProductivity, true, 1)}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">GDP per km² (Millions)</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+                      {formatNumber(efficiencyMetrics.populationEfficiency, true, 0)}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">GDP per Capita per Density</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                      {formatNumber(efficiencyMetrics.spatialGdpRatio, true, 0)}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Spatial GDP Efficiency</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Chart Type Selector */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-8 border border-gray-200 dark:border-gray-700">
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { key: 'density', label: 'Density Analysis', icon: Scaling },
+                  { key: 'efficiency', label: 'Economic Efficiency', icon: Target },
+                  { key: 'growth', label: 'Growth Trends', icon: TrendingUp },
+                  { key: 'comparison', label: 'Global Comparison', icon: Globe }
+                ].map(({ key, label, icon: Icon }) => (
+                  <button
+                    key={key}
+                    onClick={() => setSelectedMetric(key as any)}
+                    className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      selectedMetric === key
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 mr-2" />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Enhanced Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {selectedMetric === 'density' && (
+                <>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      Population & GDP Density Over Time
+                    </h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <ComposedChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={axisAndGridColor} opacity={0.5} />
+                        <XAxis dataKey="date" tick={{ fontSize: 10, fill: textColor }} angle={-45} textAnchor="end" height={70} stroke={axisAndGridColor} />
+                        <YAxis yAxisId="density" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} />
+                        <YAxis yAxisId="gdpDensity" orientation="right" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} />
+                        <Tooltip contentStyle={tooltipStyle} />
+                        <Legend />
+                        <Bar yAxisId="density" dataKey="populationDensity" fill="#3B82F6" name="Pop. Density (/km²)" />
+                        <Line yAxisId="gdpDensity" type="monotone" dataKey="gdpDensity" stroke="#10B981" strokeWidth={3} name="GDP Density (M$/km²)" />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      Area Utilization Efficiency
+                    </h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <AreaChart data={chartData}>
+                        <defs>
+                          <linearGradient id="areaUtilization" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.1}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke={axisAndGridColor} opacity={0.5} />
+                        <XAxis dataKey="date" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} />
+                        <YAxis tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} />
+                        <Tooltip contentStyle={tooltipStyle} />
+                        <Area type="monotone" dataKey="areaUtilization" stroke="#8B5CF6" fillOpacity={1} fill="url(#areaUtilization)" name="GDP per km² (M$)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </>
+              )}
+
+              {selectedMetric === 'efficiency' && (
+                <>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      Economic Efficiency Over Time
+                    </h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={axisAndGridColor} opacity={0.5} />
+                        <XAxis dataKey="date" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} />
+                        <YAxis tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} />
+                        <Tooltip contentStyle={tooltipStyle} />
+                        <Legend />
+                        <Line type="monotone" dataKey="economicEfficiency" stroke="#F59E0B" strokeWidth={3} name="Economic Efficiency" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      GDP vs Population Distribution
+                    </h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <ScatterChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={axisAndGridColor} opacity={0.5} />
+                        <XAxis dataKey="population" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} name="Population (M)" />
+                        <YAxis dataKey="gdpPerCapita" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} name="GDP per Capita" />
+                        <Tooltip contentStyle={tooltipStyle} />
+                        <Scatter dataKey="gdpPerCapita" fill="#8B5CF6" />
+                      </ScatterChart>
+                    </ResponsiveContainer>
+                  </div>
+                </>
+              )}
+
+              {selectedMetric === 'growth' && (
+                <>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      Population Growth Over Time
+                    </h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <AreaChart data={chartData}>
+                        <defs>
+                          <linearGradient id="populationGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke={axisAndGridColor} opacity={0.5} />
+                        <XAxis dataKey="date" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} />
+                        <YAxis tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} />
+                        <Tooltip contentStyle={tooltipStyle} />
+                        <Area type="monotone" dataKey="population" stroke="#3B82F6" fillOpacity={1} fill="url(#populationGradient)" name="Population (M)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      Total GDP Growth Over Time
+                    </h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <AreaChart data={chartData}>
+                        <defs>
+                          <linearGradient id="gdpGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#10B981" stopOpacity={0.1}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke={axisAndGridColor} opacity={0.5} />
+                        <XAxis dataKey="date" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} />
+                        <YAxis tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} />
+                        <Tooltip contentStyle={tooltipStyle} />
+                        <Area type="monotone" dataKey="totalGdp" stroke="#10B981" fillOpacity={1} fill="url(#gdpGradient)" name="Total GDP (B$)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </>
+              )}
+
+              {selectedMetric === 'comparison' && comparisonData.length > 0 && (
+                <>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      Global Population vs GDP per Capita
+                    </h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <ScatterChart data={comparisonData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={axisAndGridColor} opacity={0.5} />
+                        <XAxis dataKey="population" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} name="Population (M)" />
+                        <YAxis dataKey="gdpPerCapita" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} name="GDP per Capita" />
+                        <Tooltip 
+                          contentStyle={tooltipStyle}
+                          content={({ active, payload }) => {
+                            if (active && payload && payload[0]) {
+                              const data = payload[0].payload as ComparisonDataPoint;
+                              return (
+                                <div style={tooltipStyle}>
+                                  <p className="font-semibold">{data.name}</p>
+                                  <p>Population: {data.population.toFixed(1)}M</p>
+                                  <p>GDP per Capita: {formatNumber(data.gdpPerCapita)}</p>
+                                  <p>Economic Tier: {data.economicTier}</p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        {comparisonData.map((entry, index) => (
+                          <Scatter 
+                            key={`scatter-${index}`}
+                            data={[entry]}
+                            fill={getScatterPointColor(entry)}
+                          />
+                        ))}
+                      </ScatterChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      Land Area vs Economic Output
+                    </h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <ScatterChart data={comparisonData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={axisAndGridColor} opacity={0.5} />
+                        <XAxis dataKey="landArea" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} name="Land Area (km²)" scale="log" domain={['dataMin', 'dataMax']} />
+                        <YAxis dataKey="totalGdp" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} name="Total GDP (B$)" scale="log" domain={['dataMin', 'dataMax']} />
+                        <Tooltip 
+                          contentStyle={tooltipStyle}
+                          content={({ active, payload }) => {
+                            if (active && payload && payload[0]) {
+                              const data = payload[0].payload as ComparisonDataPoint;
+                              return (
+                                <div style={tooltipStyle}>
+                                  <p className="font-semibold">{data.name}</p>
+                                  <p>Land Area: {formatArea(data.landArea)}</p>
+                                  <p>Total GDP: {formatNumber(data.totalGdp * 1000000000)}</p>
+                                  <p>GDP Density: {formatNumber(data.gdpDensity, true, 0)}/km²</p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        {comparisonData.map((entry, index) => (
+                          <Scatter 
+                            key={`scatter-area-${index}`}
+                            data={[entry]}
+                            fill={getScatterPointColor(entry)}
+                          />
+                        ))}
+                      </ScatterChart>
+                    </ResponsiveContainer>
+                  </div>
+                </>
               )}
             </div>
           </div>
-        </div>
 
-        {/* Enhanced Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center">
-              <Users className="h-8 w-8 text-blue-500" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Population</p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-                  {formatNumber(country.currentPopulation, false)}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {country.populationTier} ({((country.populationGrowthRate ?? 0) * 100).toFixed(1)}% growth)
-                </p>
-              </div>
+          {/* Sidebar - Country Infobox */}
+          <div className={`${
+            infoboxExpanded 
+              ? 'lg:col-span-4' 
+              : 'lg:col-span-1'
+          } transition-all duration-300`}>
+            <div className="sticky top-8">
+              <CountryInfobox 
+                countryName={country.name}
+                onToggle={handleInfoboxToggle}
+              />
             </div>
           </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center">
-              <TrendingUp className="h-8 w-8 text-green-500" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">GDP per Capita</p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-                  {formatNumber(country.currentGdpPerCapita)}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {((country.adjustedGdpGrowth ?? 0) * 100).toFixed(1)}% growth
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center">
-              <Map className="h-8 w-8 text-yellow-500" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Land Area</p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-                  {formatArea(country.landArea)}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {country.landArea ? `${formatNumber(country.landArea / 2.58999, false, 0)} sq mi` : 'N/A'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center">
-              <Scaling className="h-8 w-8 text-purple-500" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Pop. Density</p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-                  {country.populationDensity ? `${country.populationDensity.toFixed(1)}/km²` : 'N/A'}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {efficiencyMetrics ? `${efficiencyMetrics.populationPerSqMi.toFixed(1)}/sq mi` : 'N/A'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Enhanced Efficiency Metrics */}
-        {efficiencyMetrics && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <Target className="h-5 w-5 mr-2" />
-              Economic & Geographic Efficiency Metrics
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                  {formatNumber(efficiencyMetrics.landProductivity, true, 1)}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">GDP per km² (Millions)</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600 dark:text-green-400">
-                  {formatNumber(efficiencyMetrics.populationEfficiency, true, 0)}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">GDP per Capita per Density</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-                  {formatNumber(efficiencyMetrics.spatialGdpRatio, true, 0)}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Spatial GDP Efficiency</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Chart Type Selector */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-8 border border-gray-200 dark:border-gray-700">
-          <div className="flex flex-wrap gap-2">
-            {[
-              { key: 'density', label: 'Density Analysis', icon: Scaling },
-              { key: 'efficiency', label: 'Economic Efficiency', icon: Target },
-              { key: 'growth', label: 'Growth Trends', icon: TrendingUp },
-              { key: 'comparison', label: 'Global Comparison', icon: Globe }
-            ].map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => setSelectedMetric(key as any)}
-                className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  selectedMetric === key
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }`}
-              >
-                <Icon className="h-4 w-4 mr-2" />
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Enhanced Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {selectedMetric === 'density' && (
-            <>
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Population & GDP Density Over Time
-                </h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <ComposedChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={axisAndGridColor} opacity={0.5} />
-                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: textColor }} angle={-45} textAnchor="end" height={70} stroke={axisAndGridColor} />
-                    <YAxis yAxisId="density" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} />
-                    <YAxis yAxisId="gdpDensity" orientation="right" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} />
-                    <Tooltip contentStyle={tooltipStyle} />
-                    <Legend />
-                    <Bar yAxisId="density" dataKey="populationDensity" fill="#3B82F6" name="Pop. Density (/km²)" />
-                    <Line yAxisId="gdpDensity" type="monotone" dataKey="gdpDensity" stroke="#10B981" strokeWidth={3} name="GDP Density (M$/km²)" />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Area Utilization Efficiency
-                </h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={chartData}>
-                    <defs>
-                      <linearGradient id="areaUtilization" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.1}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke={axisAndGridColor} opacity={0.5} />
-                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} />
-                    <YAxis tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} />
-                    <Tooltip contentStyle={tooltipStyle} />
-                    <Area type="monotone" dataKey="areaUtilization" stroke="#8B5CF6" fillOpacity={1} fill="url(#areaUtilization)" name="GDP per km² (M$)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </>
-          )}
-
-          {selectedMetric === 'efficiency' && (
-            <>
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Economic Efficiency Over Time
-                </h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={axisAndGridColor} opacity={0.5} />
-                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} />
-                    <YAxis tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} />
-                    <Tooltip contentStyle={tooltipStyle} />
-                    <Legend />
-                    <Line type="monotone" dataKey="economicEfficiency" stroke="#F59E0B" strokeWidth={3} name="Economic Efficiency" />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  GDP vs Population Distribution
-                </h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <ScatterChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={axisAndGridColor} opacity={0.5} />
-                    <XAxis dataKey="population" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} name="Population (M)" />
-                    <YAxis dataKey="gdpPerCapita" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} name="GDP per Capita" />
-                    <Tooltip contentStyle={tooltipStyle} />
-                    <Scatter dataKey="gdpPerCapita" fill="#8B5CF6" />
-                  </ScatterChart>
-                </ResponsiveContainer>
-              </div>
-            </>
-          )}
-
-          {selectedMetric === 'growth' && (
-            <>
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Population Growth Over Time
-                </h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={chartData}>
-                    <defs>
-                      <linearGradient id="populationGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke={axisAndGridColor} opacity={0.5} />
-                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} />
-                    <YAxis tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} />
-                    <Tooltip contentStyle={tooltipStyle} />
-                    <Area type="monotone" dataKey="population" stroke="#3B82F6" fillOpacity={1} fill="url(#populationGradient)" name="Population (M)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Total GDP Growth Over Time
-                </h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={chartData}>
-                    <defs>
-                      <linearGradient id="gdpGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#10B981" stopOpacity={0.1}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke={axisAndGridColor} opacity={0.5} />
-                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} />
-                    <YAxis tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} />
-                    <Tooltip contentStyle={tooltipStyle} />
-                    <Area type="monotone" dataKey="totalGdp" stroke="#10B981" fillOpacity={1} fill="url(#gdpGradient)" name="Total GDP (B$)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </>
-          )}
-
-          {selectedMetric === 'comparison' && comparisonData.length > 0 && (
-            <>
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Global Population vs GDP per Capita
-                </h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <ScatterChart data={comparisonData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={axisAndGridColor} opacity={0.5} />
-                    <XAxis dataKey="population" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} name="Population (M)" />
-                    <YAxis dataKey="gdpPerCapita" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} name="GDP per Capita" />
-                    <Tooltip 
-                      contentStyle={tooltipStyle}
-                      content={({ active, payload }) => {
-                        if (active && payload && payload[0]) {
-                          const data = payload[0].payload as ComparisonDataPoint;
-                          return (
-                            <div style={tooltipStyle}>
-                              <p className="font-semibold">{data.name}</p>
-                              <p>Population: {data.population.toFixed(1)}M</p>
-                              <p>GDP per Capita: {formatNumber(data.gdpPerCapita)}</p>
-                              <p>Economic Tier: {data.economicTier}</p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    {comparisonData.map((entry, index) => (
-                      <Scatter 
-                        key={`scatter-${index}`}
-                        data={[entry]}
-                        fill={getScatterPointColor(entry)}
-                      />
-                    ))}
-                  </ScatterChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Land Area vs Economic Output
-                </h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <ScatterChart data={comparisonData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={axisAndGridColor} opacity={0.5} />
-                    <XAxis dataKey="landArea" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} name="Land Area (km²)" scale="log" domain={['dataMin', 'dataMax']} />
-                    <YAxis dataKey="totalGdp" tick={{ fontSize: 10, fill: textColor }} stroke={axisAndGridColor} name="Total GDP (B$)" scale="log" domain={['dataMin', 'dataMax']} />
-                    <Tooltip 
-                      contentStyle={tooltipStyle}
-                      content={({ active, payload }) => {
-                        if (active && payload && payload[0]) {
-                          const data = payload[0].payload as ComparisonDataPoint;
-                          return (
-                            <div style={tooltipStyle}>
-                              <p className="font-semibold">{data.name}</p>
-                              <p>Land Area: {formatArea(data.landArea)}</p>
-                              <p>Total GDP: {formatNumber(data.totalGdp * 1000000000)}</p>
-                              <p>GDP Density: {formatNumber(data.gdpDensity, true, 0)}/km²</p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    {comparisonData.map((entry, index) => (
-                      <Scatter 
-                        key={`scatter-area-${index}`}
-                        data={[entry]}
-                        fill={getScatterPointColor(entry)}
-                      />
-                    ))}
-                  </ScatterChart>
-                </ResponsiveContainer>
-              </div>
-            </>
-          )}
         </div>
       </div>
     </div>
