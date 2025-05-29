@@ -44,10 +44,15 @@ export function CountryListCard({ country }: CountryListCardProps) {
     const loadFlag = async () => {
       try {
         setFlagState('loading');
+        // Get the flag URL from the cache or from the MediaWiki API
         const url = await ixnayWiki.getFlagUrl(country.name);
-        setFlagUrl(url);
-        // Don't set state to loaded yet - wait for image onLoad
-        if (!url) {
+        
+        // Only update the flagUrl state if we got a valid URL
+        if (url) {
+          setFlagUrl(url);
+          // Don't set the state to loaded yet - we'll do that when the image loads
+        } else {
+          // If we didn't get a URL, set the state to error
           setFlagState('error');
         }
       } catch (error) {
@@ -56,8 +61,11 @@ export function CountryListCard({ country }: CountryListCardProps) {
       }
     };
 
-    loadFlag();
-  }, [country.name]);
+    // Only load the flag if we don't already have it
+    if (!flagUrl) {
+      loadFlag();
+    }
+  }, [country.name, flagUrl]);
 
   const formatNumber = (num: number | null | undefined, isCurrency = true): string => {
     if (num == null) return isCurrency ? '$0.00' : '0';
@@ -163,24 +171,28 @@ export function CountryListCard({ country }: CountryListCardProps) {
           <div className="flex items-center min-w-0 flex-1">
             {/* Fixed Flag Container - Single state-managed element */}
             <div className="flex-shrink-0 mr-3 w-8 h-6 relative">
-              {flagState === 'loading' ? (
-                <div className="w-8 h-6 bg-[var(--color-bg-tertiary)] rounded animate-pulse flex items-center justify-center border border-[var(--color-border-primary)]">
+              {/* Loading state */}
+              {flagState === 'loading' && (
+                <div className="w-8 h-6 bg-[var(--color-bg-tertiary)] rounded animate-pulse flex items-center justify-center border border-[var(--color-border-primary)] absolute inset-0 z-10">
                   <Flag className="h-3 w-3 text-[var(--color-text-muted)]" />
                 </div>
-              ) : flagUrl && flagState !== 'error' ? (
+              )}
+              
+              {/* Image - Always render but control visibility with CSS */}
+              {flagUrl && (
                 <img
                   src={flagUrl}
                   alt={`Flag of ${country.name}`}
                   className="w-8 h-6 object-cover rounded shadow-sm border border-[var(--color-border-primary)]"
-                  onLoad={handleImageLoad}
-                  onError={handleImageError}
-                  style={{ display: flagState === 'loaded' ? 'block' : 'none' }}
+                  style={{ visibility: flagState === 'loaded' ? 'visible' : 'hidden' }}
+                  onLoad={() => setFlagState('loaded')}
+                  onError={() => setFlagState('error')}
                 />
-              ) : null}
+              )}
               
-              {/* Fallback flag icon - only shown when error or before image loads */}
-              {(flagState === 'error' || (flagUrl && flagState === 'loading')) && (
-                <div className="w-8 h-6 bg-[var(--color-bg-tertiary)] rounded flex items-center justify-center border border-[var(--color-border-primary)] absolute inset-0">
+              {/* Error state */}
+              {flagState === 'error' && (
+                <div className="w-8 h-6 bg-[var(--color-bg-tertiary)] rounded flex items-center justify-center border border-[var(--color-border-primary)] absolute inset-0 z-10">
                   <Flag className="h-3 w-3 text-[var(--color-text-muted)]" />
                 </div>
               )}

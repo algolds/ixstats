@@ -18,9 +18,11 @@ import {
   Navigation,
   Info,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  Flag
 } from "lucide-react";
-import { ixnayWiki, type CountryInfobox } from "~/lib/mediawiki-service";
+import { ixnayWiki } from "~/lib/mediawiki-service";
+import type { CountryInfobox } from "~/lib/mediawiki-service";
 
 interface CountryInfoboxProps {
   countryName: string;
@@ -43,6 +45,7 @@ interface LoadingState {
 
 export function CountryInfobox({ countryName, onToggle }: CountryInfoboxProps) {
   const [infobox, setInfobox] = useState<CountryInfobox | null>(null);
+  const [flagUrl, setFlagUrl] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [loadingState, setLoadingState] = useState<LoadingState>({
     isLoading: true,
@@ -63,9 +66,15 @@ export function CountryInfobox({ countryName, onToggle }: CountryInfoboxProps) {
       }
 
       console.log(`[CountryInfobox] Loading data for: ${countryName}`);
-      const data = await ixnayWiki.getCountryInfobox(countryName);
       
+      // Get the flag URL
+      const flag = await ixnayWiki.getFlagUrl(countryName);
+      setFlagUrl(flag);
+      
+      // Get the infobox data
+      const data = await ixnayWiki.getCountryInfobox(countryName);
       setInfobox(data);
+      
       setLoadingState(prev => ({ ...prev, isLoading: false, error: null }));
       
       if (data) {
@@ -112,18 +121,25 @@ export function CountryInfobox({ countryName, onToggle }: CountryInfoboxProps) {
       formatter?: (value: string) => string;
     }> = [
       { keys: ['capital'], label: 'Capital', icon: Building, priority: 1 },
-      { keys: ['continent'], label: 'Continent', icon: Globe, priority: 2 },
-      { keys: ['area', 'area_km2'], label: 'Area', icon: MapPin, priority: 3, formatter: (v) => v.includes('km') ? v : `${v} km²` },
-      { keys: ['population', 'population_estimate'], label: 'Population', icon: Users, priority: 4 },
-      { keys: ['currency', 'currency_code'], label: 'Currency', icon: DollarSign, priority: 5 },
-      { keys: ['government', 'government_type'], label: 'Government', icon: Building, priority: 6 },
-      { keys: ['leader', 'leader_name1'], label: 'Leader', icon: Users, priority: 7 },
-      { keys: ['gdp', 'GDP_PPP', 'GDP_nominal'], label: 'GDP', icon: DollarSign, priority: 8 },
-      { keys: ['languages', 'official_languages'], label: 'Languages', icon: Languages, priority: 9 },
-      { keys: ['timezone', 'time_zone'], label: 'Timezone', icon: Clock, priority: 10 },
-      { keys: ['callingCode', 'calling_code'], label: 'Calling Code', icon: Phone, priority: 11 },
-      { keys: ['internetTld', 'cctld'], label: 'Internet TLD', icon: Wifi, priority: 12 },
-      { keys: ['drivingSide', 'drives_on'], label: 'Driving Side', icon: Navigation, priority: 13 },
+      { keys: ['largest_city'], label: 'Largest City', icon: Building, priority: 2 },
+      { keys: ['official_name', 'conventional_long_name'], label: 'Official Name', icon: Globe, priority: 3 },
+      { keys: ['motto'], label: 'Motto', icon: Info, priority: 4 },
+      { keys: ['continent'], label: 'Continent', icon: Globe, priority: 5 },
+      { keys: ['area', 'area_km2'], label: 'Area', icon: MapPin, priority: 6, formatter: (v) => v.includes('km') ? v : `${v} km²` },
+      { keys: ['population', 'population_estimate'], label: 'Population', icon: Users, priority: 7 },
+      { keys: ['currency', 'currency_code'], label: 'Currency', icon: DollarSign, priority: 8 },
+      { keys: ['government', 'government_type'], label: 'Government', icon: Building, priority: 9 },
+      { keys: ['leader_title1', 'head_of_state'], label: 'Head of State', icon: Users, priority: 10 },
+      { keys: ['leader_name1', 'leader'], label: 'Leader', icon: Users, priority: 11 },
+      { keys: ['legislature'], label: 'Legislature', icon: Building, priority: 12 },
+      { keys: ['established', 'established_event1'], label: 'Established', icon: Clock, priority: 13 },
+      { keys: ['gdp', 'GDP_PPP', 'GDP_nominal'], label: 'GDP', icon: DollarSign, priority: 14 },
+      { keys: ['languages', 'official_languages'], label: 'Languages', icon: Languages, priority: 15 },
+      { keys: ['religion', 'state_religion'], label: 'Religion', icon: Info, priority: 16 },
+      { keys: ['timezone', 'time_zone'], label: 'Timezone', icon: Clock, priority: 17 },
+      { keys: ['callingCode', 'calling_code'], label: 'Calling Code', icon: Phone, priority: 18 },
+      { keys: ['internetTld', 'cctld'], label: 'Internet TLD', icon: Wifi, priority: 19 },
+      { keys: ['drivingSide', 'drives_on'], label: 'Driving Side', icon: Navigation, priority: 20 },
     ];
 
     // Process mapped fields
@@ -280,7 +296,14 @@ export function CountryInfobox({ countryName, onToggle }: CountryInfoboxProps) {
 
   // Success state with data
   const fields = formatInfoboxFields(infobox);
-  const displayFields = isExpanded ? fields : fields.slice(0, 6);
+  
+  // Limit displayed fields - only show important ones
+  const mainFields = fields.filter(f => f.priority <= 20);
+  const displayFields = isExpanded ? mainFields : mainFields.slice(0, 6);
+
+  // Get additional images if available
+  const mapImage = infobox.locator_map || infobox.image_map;
+  const coatOfArms = infobox.image_coat || infobox.coat_of_arms;
 
   return (
     <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-primary)] rounded-lg shadow-md transition-all duration-300">
@@ -330,6 +353,53 @@ export function CountryInfobox({ countryName, onToggle }: CountryInfoboxProps) {
             {infobox.native_name}
           </p>
         )}
+        
+        {/* Flag and map previews */}
+        <div className="mt-3 flex flex-col sm:flex-row items-center gap-3 justify-center">
+          {/* Flag */}
+          {flagUrl && (
+            <div className="flex flex-col items-center">
+              <img 
+                src={flagUrl} 
+                alt={`Flag of ${countryName}`} 
+                className="h-16 object-contain border border-[var(--color-border-primary)] rounded shadow-sm"
+              />
+              <span className="text-xs text-[var(--color-text-muted)] mt-1">National Flag</span>
+            </div>
+          )}
+          
+          {/* Coat of Arms if available */}
+          {coatOfArms && (
+            <div className="flex flex-col items-center">
+              <img 
+                src={`https://ixwiki.com/images/${coatOfArms}`} 
+                alt={`Coat of Arms of ${countryName}`} 
+                className="h-16 object-contain border border-[var(--color-border-primary)] rounded shadow-sm"
+                onError={(e) => {
+                  // If direct path fails, try with File: prefix
+                  (e.target as HTMLImageElement).src = `https://ixwiki.com/wiki/Special:Redirect/file/${encodeURIComponent(coatOfArms)}`;
+                }}
+              />
+              <span className="text-xs text-[var(--color-text-muted)] mt-1">Coat of Arms</span>
+            </div>
+          )}
+          
+          {/* Map if available */}
+          {mapImage && (
+            <div className="flex flex-col items-center">
+              <img 
+                src={`https://ixwiki.com/images/${mapImage}`} 
+                alt={`Map of ${countryName}`} 
+                className="h-16 object-contain border border-[var(--color-border-primary)] rounded shadow-sm"
+                onError={(e) => {
+                  // If direct path fails, try with File: prefix
+                  (e.target as HTMLImageElement).src = `https://ixwiki.com/wiki/Special:Redirect/file/${encodeURIComponent(mapImage)}`;
+                }}
+              />
+              <span className="text-xs text-[var(--color-text-muted)] mt-1">Location Map</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Content */}
