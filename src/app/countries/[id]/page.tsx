@@ -1,7 +1,7 @@
 // src/app/countries/[id]/page.tsx
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
@@ -46,11 +46,13 @@ import {
   Zap,
   Compass,
   Layers,
-  Info
+  Info,
+  Clock,
+  AlertCircle,
+  RefreshCw
 } from "lucide-react";
 import { useTheme } from "~/context/theme-context";
 
-// Define proper types for comparison data
 interface ComparisonDataPoint {
   name: string;
   population: number;
@@ -70,31 +72,74 @@ export default function CountryDetailPage() {
   const countryId = params.id as string;
   const { theme } = useTheme();
 
+  // Time control state
   const [timeOffset, setTimeOffset] = useState(0);
   const [forecastYears, setForecastYears] = useState(1);
   const [selectedMetric, setSelectedMetric] = useState<'density' | 'efficiency' | 'growth' | 'comparison'>('density');
   const [infoboxExpanded, setInfoboxExpanded] = useState(false);
+  const [isTimeTravel, setIsTimeTravel] = useState(false);
 
-  const { data: country, isLoading } = api.countries.getById.useQuery({
+  // Get time context
+  const { data: timeContext } = api.countries.getTimeContext.useQuery();
+
+  // Calculate target time based on controls
+  const targetTime = useMemo(() => {
+    if (!timeContext) return Date.now();
+    
+    let baseTime = timeContext.currentIxTime;
+    
+    // Apply time offset (negative goes to past, positive to future)
+    if (timeOffset !== 0) {
+      baseTime = IxTime.addYears(baseTime, timeOffset);
+      setIsTimeTravel(timeOffset !== 0);
+    } else {
+      setIsTimeTravel(false);
+    }
+    
+    return baseTime;
+  }, [timeContext?.currentIxTime, timeOffset]);
+
+  const forecastTime = useMemo(() => {
+    return IxTime.addYears(targetTime, forecastYears);
+  }, [targetTime, forecastYears]);
+
+  // Get country data for the selected time
+  const { data: country, isLoading, error, refetch } = api.countries.getByIdAtTime.useQuery({
     id: countryId,
+    ixTime: targetTime,
+  }, {
+    enabled: !!countryId && !!timeContext,
+    refetchOnWindowFocus: false,
   });
 
+  // Get forecast data
+  const { data: forecastData } = api.countries.getForecastRange.useQuery({
+    countryId,
+    startTime: targetTime,
+    endTime: forecastTime,
+    steps: 10,
+  }, {
+    enabled: !!countryId && forecastYears > 0 && !!timeContext,
+  });
+
+  // Get historical data around current time for charts
+  const { data: historicalChartData } = api.countries.getHistoricalAtTime.useQuery({
+    countryId,
+    ixTime: targetTime,
+    windowYears: 10, // 10 years of data around the current time
+  }, {
+    enabled: !!countryId && !!timeContext,
+  });
+
+  // Get all countries for comparison (at current time only)
   const { data: allCountries } = api.countries.getAll.useQuery();
 
-  const currentIxTime = IxTime.getCurrentIxTime();
-  const targetTime = useMemo(() => {
-    return IxTime.addYears(currentIxTime, timeOffset);
-  }, [currentIxTime, timeOffset]);
-
-  const { data: forecastData } = api.countries.getForecast.useQuery(
-    {
-      countryId,
-      targetTime: IxTime.addYears(targetTime, forecastYears),
-    },
-    {
-      enabled: !!country && forecastYears > 0 && !!countryId,
+  // Refresh data when time changes significantly
+  useEffect(() => {
+    if (Math.abs(timeOffset) > 0.1) { // If time offset is significant
+      refetch();
     }
-  );
+  }, [timeOffset, refetch]);
 
   const formatNumber = (num: number | null | undefined, isCurrency = true, precision = 2): string => {
     if (num == null) return isCurrency ? '$0.00' : '0';
@@ -111,24 +156,41 @@ export default function CountryDetailPage() {
     return `${formatNumber(area, false, 0)} km²`;
   };
 
+  // Use historical data for charts when available, otherwise use current data
   const chartData = useMemo(() => {
-    if (!country?.historicalData) return [];
-    return country.historicalData
-      .slice()
-      .sort((a, b) => new Date(a.ixTimeTimestamp).getTime() - new Date(b.ixTimeTimestamp).getTime())
-      .map((point) => ({
-        date: IxTime.formatIxTime(new Date(point.ixTimeTimestamp).getTime()),
-        population: point.population / 1000000, // In millions
-        gdpPerCapita: point.gdpPerCapita,
-        totalGdp: point.totalGdp / 1000000000, // In billions
-        populationDensity: point.populationDensity,
-        gdpDensity: point.gdpDensity ? point.gdpDensity / 1000000 : 0, // In millions per km²
-        economicEfficiency: point.gdpPerCapita / (point.populationDensity || 1), // GDP per capita per density unit
-        areaUtilization: point.totalGdp / ((country.landArea || 1) * 1000000), // GDP per km² in millions
-      }));
-  }, [country]);
+    if (historicalChartData && historicalChartData.length > 0) {
+      return historicalChartData
+        .sort((a, b) => a.ixTimeTimestamp - b.ixTimeTimestamp)
+        .map((point) => ({
+          date: IxTime.formatIxTime(point.ixTimeTimestamp),
+          population: point.population / 1000000, // In millions
+          gdpPerCapita: point.gdpPerCapita,
+          totalGdp: point.totalGdp / 1000000000, // In billions
+          populationDensity: point.populationDensity || 0,
+          gdpDensity: point.gdpDensity ? point.gdpDensity / 1000000 : 0, // In millions per km²
+          economicEfficiency: point.gdpPerCapita / (point.populationDensity || 1),
+          areaUtilization: point.totalGdp / ((country?.landArea || 1) * 1000000),
+        }));
+    }
 
-  // Comparative data for scatter plots
+    // Fallback to single point from current data
+    if (country) {
+      return [{
+        date: IxTime.formatIxTime(targetTime),
+        population: country.currentPopulation / 1000000,
+        gdpPerCapita: country.currentGdpPerCapita,
+        totalGdp: country.currentTotalGdp / 1000000000,
+        populationDensity: country.populationDensity || 0,
+        gdpDensity: country.gdpDensity ? country.gdpDensity / 1000000 : 0,
+        economicEfficiency: country.currentGdpPerCapita / (country.populationDensity || 1),
+        areaUtilization: country.currentTotalGdp / ((country.landArea || 1) * 1000000),
+      }];
+    }
+
+    return [];
+  }, [historicalChartData, country, targetTime]);
+
+  // Comparative data for scatter plots (only use current time data for comparison)
   const comparisonData = useMemo((): ComparisonDataPoint[] => {
     if (!allCountries || !country) return [];
     return allCountries
@@ -156,13 +218,13 @@ export default function CountryDetailPage() {
     const gdpPerSqMi = country.currentTotalGdp / landAreaSqMi;
     
     return {
-      economicDensity: country.currentTotalGdp / country.landArea, // GDP per km²
+      economicDensity: country.currentTotalGdp / country.landArea,
       populationEfficiency: country.currentGdpPerCapita / (country.populationDensity || 1),
-      landProductivity: country.currentTotalGdp / country.landArea / 1000000, // GDP in millions per km²
-      spatialGdpRatio: country.currentGdpPerCapita / Math.sqrt(country.landArea), // Spatial GDP efficiency
+      landProductivity: country.currentTotalGdp / country.landArea / 1000000,
+      spatialGdpRatio: country.currentGdpPerCapita / Math.sqrt(country.landArea),
       populationPerSqMi,
       gdpPerSqMi,
-      compactness: Math.sqrt(country.landArea) / (country.currentPopulation / 1000000), // Inverse measure of how "concentrated" the country is
+      compactness: Math.sqrt(country.landArea) / (country.currentPopulation / 1000000),
     };
   }, [country]);
 
@@ -185,14 +247,18 @@ export default function CountryDetailPage() {
     'Developing': '#F59E0B'
   };
 
-  // Helper function to get color for scatter plot points
   const getScatterPointColor = (dataPoint: ComparisonDataPoint): string => {
-    if (dataPoint.isCurrentCountry) return "#EF4444"; // Red for current country
-    return TIER_COLORS[dataPoint.economicTier] || "#6B7280"; // Tier color or gray fallback
+    if (dataPoint.isCurrentCountry) return "#EF4444";
+    return TIER_COLORS[dataPoint.economicTier] || "#6B7280";
   };
 
   const handleInfoboxToggle = (expanded: boolean) => {
     setInfoboxExpanded(expanded);
+  };
+
+  const handleTimeReset = () => {
+    setTimeOffset(0);
+    setForecastYears(1);
   };
 
   if (isLoading) {
@@ -200,7 +266,28 @@ export default function CountryDetailPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600 dark:border-indigo-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading country data...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">
+            {isTimeTravel ? 'Calculating time travel data...' : 'Loading country data...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="mx-auto h-12 w-12 text-red-400" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Error loading country</h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{error.message}</p>
+          <button
+            onClick={() => refetch()}
+            className="mt-4 inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry
+          </button>
         </div>
       </div>
     );
@@ -228,13 +315,38 @@ export default function CountryDetailPage() {
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back to Countries
           </button>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{country.name}</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Economic statistics and geographic analysis
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                {country.name}
+                {isTimeTravel && (
+                  <span className="ml-3 px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-lg rounded-full">
+                    Time Travel Mode
+                  </span>
+                )}
+              </h1>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">
+                Economic statistics and geographic analysis
+                {country.gameTimeDescription && (
+                  <span className="ml-2 text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                    • {country.gameTimeDescription}
+                  </span>
+                )}
+              </p>
+            </div>
+            {isTimeTravel && (
+              <button
+                onClick={handleTimeReset}
+                className="inline-flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700"
+              >
+                <Clock className="h-4 w-4 mr-2" />
+                Return to Present
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Main Content Layout - Responsive to infobox state */}
+        {/* Main Content Layout */}
         <div className={`grid gap-8 transition-all duration-300 ${
           infoboxExpanded 
             ? 'lg:grid-cols-12' 
@@ -246,12 +358,18 @@ export default function CountryDetailPage() {
               ? 'lg:col-span-8' 
               : 'lg:col-span-2'
           } space-y-8`}>
-            {/* Time Travel Controls */}
+            {/* Enhanced Time Travel Controls */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                 <Calendar className="h-5 w-5 mr-2" />
                 Time Travel / Forecast Controls
+                {isTimeTravel && (
+                  <span className="ml-3 px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs rounded-full">
+                    ACTIVE
+                  </span>
+                )}
               </h2>
+              
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -259,7 +377,7 @@ export default function CountryDetailPage() {
                   </label>
                   <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => setTimeOffset(timeOffset - 1)}
+                      onClick={() => setTimeOffset(Math.max(timeOffset - 1, -10))}
                       className="p-2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 rounded-md border border-indigo-300 dark:border-indigo-700"
                     >
                       <Rewind className="h-4 w-4" />
@@ -267,7 +385,7 @@ export default function CountryDetailPage() {
                     <input
                       type="range"
                       min="-10"
-                      max="0"
+                      max="10"
                       step="0.1"
                       value={timeOffset}
                       onChange={(e) => setTimeOffset(parseFloat(e.target.value))}
@@ -276,11 +394,24 @@ export default function CountryDetailPage() {
                     <button
                       onClick={() => setTimeOffset(0)}
                       className="p-2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 rounded-md border border-indigo-300 dark:border-indigo-700"
+                      title="Return to present"
                     >
                       <Play className="h-4 w-4" />
                     </button>
+                    <button
+                      onClick={() => setTimeOffset(Math.min(timeOffset + 1, 10))}
+                      className="p-2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 rounded-md border border-indigo-300 dark:border-indigo-700"
+                    >
+                      <FastForward className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 text-center">
+                    {timeOffset === 0 ? "Present Time" : 
+                     timeOffset < 0 ? `${Math.abs(timeOffset).toFixed(1)} years ago` : 
+                     `${timeOffset.toFixed(1)} years from now`}
                   </div>
                 </div>
+                
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Forecast: +{forecastYears.toFixed(1)} years
@@ -289,7 +420,7 @@ export default function CountryDetailPage() {
                     <input
                       type="range"
                       min="0"
-                      max="5"
+                      max="10"
                       step="0.1"
                       value={forecastYears}
                       onChange={(e) => setForecastYears(parseFloat(e.target.value))}
@@ -298,17 +429,18 @@ export default function CountryDetailPage() {
                     <FastForward className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                   </div>
                 </div>
+                
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Forecasted Date
                   </label>
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {IxTime.formatIxTime(IxTime.addYears(targetTime, forecastYears))}
+                    {IxTime.formatIxTime(forecastTime)}
                   </p>
-                  {forecastData && (
+                  {forecastData && forecastData.dataPoints.length > 0 && (
                     <div className="mt-2 text-xs text-green-600 dark:text-green-400">
-                      Pop: {formatNumber(forecastData.population, false)} <br/>
-                      GDP p.c.: {formatNumber(forecastData.gdpPerCapita)}
+                      Pop: {formatNumber(forecastData.dataPoints[forecastData.dataPoints.length - 1]?.population * 1000000, false)} <br/>
+                      GDP p.c.: {formatNumber(forecastData.dataPoints[forecastData.dataPoints.length - 1]?.gdpPerCapita)}
                     </div>
                   )}
                 </div>
@@ -384,6 +516,11 @@ export default function CountryDetailPage() {
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                   <Target className="h-5 w-5 mr-2" />
                   Economic & Geographic Efficiency Metrics
+                  {isTimeTravel && (
+                    <span className="ml-2 text-xs text-blue-600 dark:text-blue-400">
+                      (at {IxTime.formatIxTime(targetTime)})
+                    </span>
+                  )}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="text-center">
@@ -440,6 +577,7 @@ export default function CountryDetailPage() {
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                       Population & GDP Density Over Time
+                      {isTimeTravel && <span className="text-sm text-blue-600 dark:text-blue-400 ml-2">(Historical View)</span>}
                     </h3>
                     <ResponsiveContainer width="100%" height={300}>
                       <ComposedChart data={chartData}>
@@ -564,6 +702,7 @@ export default function CountryDetailPage() {
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                       Global Population vs GDP per Capita
+                      <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">(All countries at present time)</span>
                     </h3>
                     <ResponsiveContainer width="100%" height={300}>
                       <ScatterChart data={comparisonData}>
@@ -581,6 +720,7 @@ export default function CountryDetailPage() {
                                   <p>Population: {data.population.toFixed(1)}M</p>
                                   <p>GDP per Capita: {formatNumber(data.gdpPerCapita)}</p>
                                   <p>Economic Tier: {data.economicTier}</p>
+                                  {data.isCurrentCountry && <p className="text-red-500 font-semibold">← This Country</p>}
                                 </div>
                               );
                             }
@@ -618,6 +758,7 @@ export default function CountryDetailPage() {
                                   <p>Land Area: {formatArea(data.landArea)}</p>
                                   <p>Total GDP: {formatNumber(data.totalGdp * 1000000000)}</p>
                                   <p>GDP Density: {formatNumber(data.gdpDensity, true, 0)}/km²</p>
+                                  {data.isCurrentCountry && <p className="text-red-500 font-semibold">← This Country</p>}
                                 </div>
                               );
                             }
