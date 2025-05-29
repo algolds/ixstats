@@ -1,122 +1,170 @@
 // src/hooks/useFlagPreloader.ts
 "use client";
 
-import { useEffect, useCallback } from 'react';
-import { ixnayWiki } from '~/lib/mediawiki-service';
+import { useEffect, useState, useCallback } from "react";
+import { ixnayWiki } from "~/lib/mediawiki-service";
 
-interface UseFlagPreloaderOptions {
-  enabled?: boolean;
-  preloadOnMount?: boolean;
-}
-
-interface FlagPreloaderStats {
-  totalFlags: number;
+interface PreloaderStats {
+  flags: number;
   preloadedFlags: number;
   failedFlags: number;
-  cacheHitRate: number;
+  cacheEfficiency: number;
 }
 
-export function useFlagPreloader(
-  countryNames: string[],
-  options: UseFlagPreloaderOptions = {}
-) {
-  const { enabled = true, preloadOnMount = true } = options;
+interface GlobalFlagPreloader {
+  preloadAllFlags: (countryNames: string[]) => Promise<void>;
+  getGlobalStats: () => PreloaderStats;
+  clearCache: () => void;
+  isPreloading: boolean;
+}
 
-  // Preload flags for the given countries
-  const preloadFlags = useCallback(async () => {
-    if (!enabled || countryNames.length === 0) return;
+/**
+ * Global flag preloader hook for managing MediaWiki flag cache across the application
+ */
+export function useGlobalFlagPreloader(): GlobalFlagPreloader {
+  const [isPreloading, setIsPreloading] = useState(false);
+  const [stats, setStats] = useState<PreloaderStats>({
+    flags: 0,
+    preloadedFlags: 0,
+    failedFlags: 0,
+    cacheEfficiency: 0,
+  });
 
-    try {
-      await ixnayWiki.preloadCountryFlags(countryNames);
-    } catch (error) {
-      console.warn('[FlagPreloader] Failed to preload flags:', error);
-    }
-  }, [countryNames, enabled]);
-
-  // Get cache statistics
-  const getCacheStats = useCallback((): FlagPreloaderStats => {
-    const stats = ixnayWiki.getCacheStats();
-    const cacheHitRate = stats.flags > 0 ? (stats.preloadedFlags / stats.flags) * 100 : 0;
-
-    return {
-      totalFlags: stats.flags,
-      preloadedFlags: stats.preloadedFlags,
-      failedFlags: stats.failedFlags,
-      cacheHitRate: Math.round(cacheHitRate)
+  // Update stats from the MediaWiki service
+  const updateStats = useCallback(() => {
+    const serviceStats = ixnayWiki.getCacheStats();
+    const newStats: PreloaderStats = {
+      flags: serviceStats.flags,
+      preloadedFlags: serviceStats.preloadedFlags,
+      failedFlags: serviceStats.failedFlags,
+      cacheEfficiency: serviceStats.flags > 0 
+        ? Math.round((serviceStats.preloadedFlags / serviceStats.flags) * 100)
+        : 0,
     };
+    setStats(newStats);
   }, []);
 
-  // Clear flag cache
-  const clearCache = useCallback(() => {
-    ixnayWiki.clearCache();
-  }, []);
-
-  // Preload individual flag
-  const preloadFlag = useCallback(async (countryName: string) => {
-    if (!enabled) return null;
-
-    try {
-      return await ixnayWiki.getFlagUrl(countryName);
-    } catch (error) {
-      console.warn(`[FlagPreloader] Failed to preload flag for ${countryName}:`, error);
-      return null;
-    }
-  }, [enabled]);
-
-  // Effect to preload flags on mount
-  useEffect(() => {
-    if (preloadOnMount && enabled && countryNames.length > 0) {
-      // Delay to avoid blocking initial render
-      const timeoutId = setTimeout(() => {
-        preloadFlags();
-      }, 100);
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [preloadFlags, preloadOnMount, enabled, countryNames.length]);
-
-  return {
-    preloadFlags,
-    preloadFlag,
-    getCacheStats,
-    clearCache,
-    isEnabled: enabled
-  };
-}
-
-// Global flag preloader for app-wide use
-export function useGlobalFlagPreloader() {
+  // Preload flags for multiple countries
   const preloadAllFlags = useCallback(async (countryNames: string[]) => {
     if (countryNames.length === 0) return;
 
+    setIsPreloading(true);
     try {
-      // Store country list for future sessions
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('ixstats_countries', JSON.stringify(countryNames));
-      }
-
-      // Preload flags
+      console.log(`[FlagPreloader] Starting preload for ${countryNames.length} countries`);
       await ixnayWiki.preloadCountryFlags(countryNames);
-      
-      console.log(`[FlagPreloader] Successfully initiated preloading for ${countryNames.length} countries`);
+      console.log(`[FlagPreloader] Preload completed`);
     } catch (error) {
-      console.warn('[FlagPreloader] Global preload failed:', error);
+      console.error('[FlagPreloader] Preload failed:', error);
+    } finally {
+      setIsPreloading(false);
+      updateStats();
     }
-  }, []);
+  }, [updateStats]);
 
+  // Get current cache statistics
   const getGlobalStats = useCallback(() => {
-    const stats = ixnayWiki.getCacheStats();
-    
-    return {
-      ...stats,
-      cacheEfficiency: stats.totalRequests > 0 ? Math.round((stats.cacheHits / stats.totalRequests) * 100) : 0,
-      errorRate: stats.totalRequests > 0 ? Math.round((stats.errors / stats.totalRequests) * 100) : 0
-    };
-  }, []);
+    updateStats();
+    return stats;
+  }, [stats, updateStats]);
+
+  // Clear the cache
+  const clearCache = useCallback(() => {
+    ixnayWiki.clearCache();
+    updateStats();
+  }, [updateStats]);
+
+  // Update stats on mount
+  useEffect(() => {
+    updateStats();
+  }, [updateStats]);
 
   return {
     preloadAllFlags,
     getGlobalStats,
-    clearAllCaches: () => ixnayWiki.clearCache()
+    clearCache,
+    isPreloading,
   };
+}
+
+/**
+ * Individual country flag preloader hook
+ */
+export function useFlagPreloader(countryName?: string) {
+  const [flagUrl, setFlagUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadFlag = useCallback(async (name: string) => {
+    if (!name) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const url = await ixnayWiki.getFlagUrl(name);
+      setFlagUrl(url);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load flag';
+      setError(errorMessage);
+      setFlagUrl(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Load flag when country name changes
+  useEffect(() => {
+    if (countryName) {
+      loadFlag(countryName);
+    }
+  }, [countryName, loadFlag]);
+
+  return {
+    flagUrl,
+    isLoading,
+    error,
+    reload: () => countryName && loadFlag(countryName),
+  };
+}
+
+/**
+ * Flag URL retrieval hook for individual countries
+ */
+export function useFlagUrl(countryName: string) {
+  const [flagUrl, setFlagUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!countryName) {
+      setFlagUrl(null);
+      setIsLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadFlag = async () => {
+      try {
+        const url = await ixnayWiki.getFlagUrl(countryName);
+        if (isMounted) {
+          setFlagUrl(url);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.warn(`Failed to load flag for ${countryName}:`, error);
+          setFlagUrl(null);
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadFlag();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [countryName]);
+
+  return { flagUrl, isLoading };
 }

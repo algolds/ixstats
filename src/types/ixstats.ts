@@ -1,28 +1,374 @@
 // src/types/ixstats.ts
-// Data models and types for IxStats - Fixed to match Prisma exactly
+// Core type definitions for IxStats system
 
+// Economic and Population Tier Enums
+export enum EconomicTier {
+  DEVELOPING = "Developing",
+  EMERGING = "Emerging", 
+  DEVELOPED = "Developed",
+  ADVANCED = "Advanced"
+}
+
+export enum PopulationTier {
+  MICRO = "Micro",
+  SMALL = "Small",
+  MEDIUM = "Medium", 
+  LARGE = "Large",
+  MASSIVE = "Massive"
+}
+
+// DM Input Types
+export enum DmInputType {
+  POPULATION_ADJUSTMENT = "population_adjustment",
+  GDP_ADJUSTMENT = "gdp_adjustment", 
+  GROWTH_RATE_MODIFIER = "growth_rate_modifier",
+  SPECIAL_EVENT = "special_event",
+  TRADE_AGREEMENT = "trade_agreement",
+  NATURAL_DISASTER = "natural_disaster",
+  ECONOMIC_POLICY = "economic_policy"
+}
+
+// Base country data from roster
 export interface BaseCountryData {
   country: string;
   population: number;
-  gdpPerCapita: number; // GDP PC
-  maxGdpGrowthRate: number; // Max GDPPC Grow Rt
-  adjustedGdpGrowth: number; // Adj GDPPC Growth
-  populationGrowthRate: number; // Pop Growth Rate
-  projected2040Population: number; // 2040 Population
-  projected2040Gdp: number; // 2040 GDP
-  projected2040GdpPerCapita: number; // 2040 GDP PC
-  actualGdpGrowth: number; // Actual GDP Growth
-  landArea?: number; // Land area in square kilometers
+  gdpPerCapita: number;
+  maxGdpGrowthRate: number;
+  adjustedGdpGrowth: number;
+  populationGrowthRate: number;
+  projected2040Population: number;
+  projected2040Gdp: number;
+  projected2040GdpPerCapita: number;
+  actualGdpGrowth: number;
+  landArea?: number | null;
 }
 
-// Database types (matching Prisma exactly)
-export interface CountryFromDB {
+// Current country statistics (calculated)
+export interface CountryStats extends BaseCountryData {
+  // Database fields
+  id?: string;
+  name: string;
+  
+  // Calculated current values
+  totalGdp: number;
+  currentPopulation: number;
+  currentGdpPerCapita: number;
+  currentTotalGdp: number;
+  
+  // Time tracking
+  lastCalculated: Date | number;
+  baselineDate: Date | number;
+  
+  // Categorization
+  economicTier: EconomicTier;
+  populationTier: PopulationTier;
+  
+  // Geographic calculations
+  populationDensity?: number | null;
+  gdpDensity?: number | null;
+  
+  // Growth modifiers
+  localGrowthFactor: number;
+  globalGrowthFactor: number;
+  
+  // Historical data (optional)
+  historicalData?: HistoricalDataPoint[];
+}
+
+// Historical data point
+export interface HistoricalDataPoint {
+  id?: string;
+  countryId?: string;
+  ixTimeTimestamp: Date | number;
+  population: number;
+  gdpPerCapita: number;
+  totalGdp: number;
+  populationGrowthRate: number;
+  gdpGrowthRate: number;
+  landArea?: number | null;
+  populationDensity?: number | null;
+  gdpDensity?: number | null;
+}
+
+// DM Input record
+export interface DmInputs {
+  id?: string;
+  countryId?: string | null;
+  ixTimeTimestamp: Date | number;
+  inputType: DmInputType | string;
+  value: number;
+  description?: string | null;
+  duration?: number | null;
+  isActive: boolean;
+  createdBy?: string | null;
+}
+
+// Economic configuration
+export interface EconomicConfig {
+  globalGrowthFactor: number;
+  baseInflationRate: number;
+  economicTierThresholds: {
+    developing: number;
+    emerging: number;
+    developed: number;
+    advanced: number;
+  };
+  populationTierThresholds: {
+    micro: number;
+    small: number;
+    medium: number;
+    large: number;
+  };
+  tierGrowthModifiers: Record<string, number>;
+  calculationIntervalMs: number;
+  ixTimeUpdateFrequency: number;
+}
+
+// System configuration
+export interface IxStatsConfig {
+  economic: EconomicConfig;
+  timeSettings: {
+    baselineYear: number;
+    currentIxTimeMultiplier: number;
+    updateIntervalSeconds: number;
+  };
+  displaySettings: {
+    defaultCurrency: string;
+    numberFormat: string;
+    showHistoricalData: boolean;
+    chartTimeRange: number;
+  };
+}
+
+// Global economic snapshot
+export interface GlobalEconomicSnapshot {
+  totalPopulation: number;
+  totalGdp: number;
+  averageGdpPerCapita: number;
+  countryCount: number;
+  economicTierDistribution: Record<EconomicTier, number>;
+  populationTierDistribution: Record<PopulationTier, number>;
+  averagePopulationDensity: number;
+  averageGdpDensity: number;
+  globalGrowthRate: number;
+  ixTimeTimestamp: number;
+}
+
+// Bot time response types
+export interface BotTimeResponse {
+  ixTimeTimestamp: number;
+  ixTimeFormatted: string;
+  multiplier: number;
+  isPaused: boolean;
+  hasTimeOverride: boolean;
+  hasMultiplierOverride: boolean;
+  realWorldTime: number;
+  gameYear: number;
+}
+
+export interface BotStatusResponse extends BotTimeResponse {
+  pausedAt?: number | null;
+  pauseTimestamp?: number | null;
+  botStatus: {
+    ready: boolean;
+    user?: {
+      id: string;
+      username: string;
+      discriminator: string;
+    };
+    guilds: number;
+    uptime: number;
+  };
+}
+
+// Calculation result types
+export interface CalculationResult {
+  country: string;
+  oldStats: Partial<CountryStats>;
+  newStats: CountryStats;
+  timeElapsed: number;
+  calculationDate: number;
+  changes?: {
+    population: number;
+    gdpPerCapita: number;
+    totalGdp: number;
+    economicTier?: string;
+    populationTier?: string;
+  };
+}
+
+// Import/Export types
+export interface ImportAnalysis {
+  totalCountries: number;
+  newCountries: number;
+  updatedCountries: number;
+  unchangedCountries: number;
+  changes: Array<{
+    type: 'new' | 'update';
+    country: BaseCountryData;
+    existingData?: any;
+    changes?: Array<{
+      field: string;
+      oldValue: any;
+      newValue: any;
+      fieldLabel: string;
+    }>;
+  }>;
+  analysisTime: number;
+}
+
+export interface ImportResult {
+  imported: number;
+  totalInFile: number;
+  countries: string[];
+  importTime: number;
+  timeSource: string;
+  errors?: string[];
+}
+
+// Time context information
+export interface TimeContext {
+  currentIxTime: number;
+  formattedCurrentTime: string;
+  gameEpoch: number;
+  formattedGameEpoch: string;
+  yearsSinceGameStart: number;
+  currentGameYear: number;
+  gameTimeDescription: string;
+  timeMultiplier: number;
+}
+
+// Forecast data
+export interface ForecastPoint {
+  ixTime: number;
+  formattedTime: string;
+  gameYear: number;
+  population: number;
+  gdpPerCapita: number;
+  totalGdp: number;
+  populationDensity?: number | null;
+  gdpDensity?: number | null;
+  economicTier: EconomicTier;
+  populationTier: PopulationTier;
+}
+
+export interface ForecastRange {
+  countryId: string;
+  countryName: string;
+  startTime: number;
+  endTime: number;
+  dataPoints: ForecastPoint[];
+}
+
+// Chart data types
+export interface ChartDataPoint {
+  date: string;
+  population: number;
+  gdpPerCapita: number;
+  totalGdp: number;
+  populationDensity: number;
+  gdpDensity: number;
+  economicEfficiency: number;
+  areaUtilization: number;
+}
+
+// System status types
+export interface SystemStatus {
+  ixTime: {
+    currentRealTime: string;
+    currentIxTime: string;
+    formattedIxTime: string;
+    multiplier: number;
+    isPaused: boolean;
+    hasTimeOverride: boolean;
+    timeOverrideValue?: string | null;
+    hasMultiplierOverride: boolean;
+    multiplierOverrideValue?: number | null;
+    realWorldEpoch: string;
+    inGameEpoch: string;
+    yearsSinceGameStart: number;
+    currentGameYear: number;
+    gameTimeDescription: string;
+    botAvailable: boolean;
+    lastSyncTime?: string | null;
+    lastKnownBotTime?: string | null;
+    botStatus?: any;
+  };
+  countryCount: number;
+  activeDmInputs: number;
+  lastCalculation?: {
+    timestamp: string;
+    ixTimeTimestamp: string;
+    countriesUpdated: number;
+    executionTimeMs: number;
+  } | null;
+}
+
+// API response wrappers
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
+export interface PaginatedResponse<T = any> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
+// Form validation types
+export interface ValidationError {
+  field: string;
+  message: string;
+  code?: string;
+}
+
+export interface FormState {
+  isValid: boolean;
+  errors: ValidationError[];
+  isDirty: boolean;
+  isSubmitting: boolean;
+}
+
+// UI State types
+export interface LoadingState {
+  isLoading: boolean;
+  error?: string | null;
+  data?: any;
+}
+
+export interface TableColumn {
+  key: string;
+  label: string;
+  sortable?: boolean;
+  width?: string;
+  align?: 'left' | 'center' | 'right';
+  render?: (value: any, row: any) => React.ReactNode;
+}
+
+// Theme types
+export type ThemeMode = 'light' | 'dark' | 'system';
+
+export interface ThemeConfig {
+  mode: ThemeMode;
+  colors: Record<string, string>;
+  fonts: Record<string, string>;
+  spacing: Record<string, string>;
+}
+
+// Utility types
+export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+export type RequiredKeys<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>;
+
+// Database model types (matching Prisma schema)
+export interface Country {
   id: string;
   name: string;
-  createdAt: Date;
-  updatedAt: Date;
-  
-  // Base data
   baselinePopulation: number;
   baselineGdpPerCapita: number;
   maxGdpGrowthRate: number;
@@ -32,280 +378,36 @@ export interface CountryFromDB {
   projected2040Gdp: number;
   projected2040GdpPerCapita: number;
   actualGdpGrowth: number;
-  
-  // Current calculated values
+  landArea?: number | null;
   currentPopulation: number;
   currentGdpPerCapita: number;
   currentTotalGdp: number;
-  
-  // Geography and density fields
-  landArea: number | null;
-  populationDensity: number | null;
-  gdpDensity: number | null;
-  
-  // System fields
+  populationDensity?: number | null;
+  gdpDensity?: number | null;
   lastCalculated: Date;
   baselineDate: Date;
   economicTier: string;
   populationTier: string;
   localGrowthFactor: number;
-  
-  // Relationships (when included)
-  historicalData?: HistoricalDataFromDB[];
-  dmInputs?: DmInputFromDB[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-// Computed interface for business logic (with timestamp helpers)
-export interface CountryStats extends BaseCountryData {
-  id?: string; // Optional if it comes from DB
-  name: string; // Add name property for component compatibility
-  totalGdp: number; // Calculated: population * gdpPerCapita (baseline)
-  
-  currentPopulation: number;
-  currentGdpPerCapita: number;
-  currentTotalGdp: number;
-  
-  // Keep as Date objects to match Prisma
-  lastCalculated: Date;
-  baselineDate: Date;
-  
-  // Add computed timestamp properties for backward compatibility
-  lastCalculatedTimestamp?: number; // Helper: lastCalculated.getTime()
-  baselineDateTimestamp?: number; // Helper: baselineDate.getTime()
-  
-  economicTier: EconomicTier;
-  populationTier: PopulationTier;
-  
-  localGrowthFactor: number;
-  globalGrowthFactor: number; // This might be better managed globally or passed in
-
-  populationDensity?: number | null; // Population per square kilometer
-  gdpDensity?: number | null; // GDP per square kilometer
-  
-  // Add historicalData and dmInputs for full compatibility
-  historicalData?: HistoricalDataPoint[];
-  dmInputs?: DmInputs[];
-}
-
-export enum EconomicTier {
-  DEVELOPING = "Developing",
-  EMERGING = "Emerging", 
-  DEVELOPED = "Developed",
-  ADVANCED = "Advanced"
-}
-
-export enum PopulationTier {
-  MICRO = "Micro", // < 1M
-  SMALL = "Small", // 1M - 10M
-  MEDIUM = "Medium", // 10M - 50M
-  LARGE = "Large", // 50M - 200M
-  MASSIVE = "Massive" // > 200M
-}
-
-export interface EconomicConfig {
-  globalGrowthFactor: number;
-  baseInflationRate: number;
-  
-  economicTierThresholds: {
-    developing: number; 
-    emerging: number;
-    developed: number;
-    advanced: number;
-  };
-  
-  populationTierThresholds: {
-    micro: number;
-    small: number;
-    medium: number;
-    large: number; // Threshold for 'Large', anything above is 'Massive'
-  };
-  
-  // Using EconomicTier enum as keys for better type safety
-  tierGrowthModifiers: {
-    [key in EconomicTier]: number;
-  };
-  
-  calculationIntervalMs: number; 
-  ixTimeUpdateFrequency: number; // (e.g., how many real seconds per IxTime second if multiplier changes)
-}
-
-// Database type for DM Inputs (matching Prisma exactly)
-export interface DmInputFromDB {
-  id: string;
-  countryId: string | null;
-  ixTimeTimestamp: Date;
-  inputType: string;
-  value: number;
-  description: string | null;
-  duration: number | null;
-  isActive: boolean;
-  createdBy: string | null;
-  
-  // Relationship
-  country?: CountryFromDB | null;
-}
-
-// Business logic interface for DM Inputs (backward compatibility)
-export interface DmInputs {
-  id: string;
-  countryId?: string | null; // Can be null for global inputs (match Prisma)
-  ixTimeTimestamp: Date; // Keep as Date to match Prisma
-  ixTimeTimestampMs?: number; // Helper: ixTimeTimestamp.getTime()
-  inputType: string;
-  value: number;
-  description?: string | null; // Change to match Prisma (string | null)
-  duration?: number | null; // Change to match Prisma (number | null)
-  isActive: boolean;
-  createdBy?: string | null; // Change to match Prisma (string | null)
-}
-
-export enum DmInputType {
-  POPULATION_ADJUSTMENT = "population_adjustment", // e.g., +0.05 for +5% pop
-  GDP_ADJUSTMENT = "gdp_adjustment",               // e.g., -0.10 for -10% GDP
-  GROWTH_RATE_MODIFIER = "growth_rate_modifier",   // e.g., 1.1 for +10% to existing growth rate
-  SPECIAL_EVENT = "special_event",                 // Generic, value might determine magnitude
-  TRADE_AGREEMENT = "trade_agreement",             // Could be a boolean or % impact
-  NATURAL_DISASTER = "natural_disaster",           // Usually negative impact value
-  ECONOMIC_POLICY = "economic_policy"              // Can be positive or negative
-}
-
-// Database type for Historical Data (matching Prisma exactly)
-export interface HistoricalDataFromDB {
-  id: string;
-  countryId: string;
-  ixTimeTimestamp: Date;
-  population: number;
-  gdpPerCapita: number;
-  totalGdp: number;
-  populationGrowthRate: number;
-  gdpGrowthRate: number;
-  
-  // Add geography and density tracking
-  landArea: number | null;
-  populationDensity: number | null;
-  gdpDensity: number | null;
-  
-  // Relationship
-  country: CountryFromDB;
-}
-
-// Business logic interface for Historical Data
-export interface HistoricalDataPoint {
-  id?: string; // Optional if it comes from DB
-  countryId?: string; // Link to country
-  ixTimeTimestamp: Date; // Keep as Date to match Prisma
-  ixTimeTimestampMs?: number; // Helper: ixTimeTimestamp.getTime()
-  population: number;
-  gdpPerCapita: number;
-  totalGdp: number;
-  populationGrowthRate: number; // Rate during the period leading to this point
-  gdpGrowthRate: number; // Rate during the period leading to this point
-  landArea?: number | null;
-  populationDensity?: number | null;
-  gdpDensity?: number | null;
-}
-  
-export interface IxStatsConfig {
-  economic: EconomicConfig;
-  timeSettings: {
-    baselineYear: number; 
-    currentIxTimeMultiplier: number;
-    updateIntervalSeconds: number; // How often real-time updates IxTime
-  };
-  displaySettings: {
-    defaultCurrency: string;
-    numberFormat: "standard" | "scientific" | "compact";
-    showHistoricalData: boolean;
-    chartTimeRange: number; 
-  };
-}
-
-export interface StatsCalculationResult {
-  country: string; // Country name or ID
-  oldStats: Partial<CountryStats>;
-  newStats: CountryStats;
-  timeElapsed: number; // Years in IxTime for this calculation step
-  calculationDate: number; // IxTime timestamp of this calculation
-}
-
-export interface GlobalEconomicSnapshot {
-  ixTimeTimestamp: number;
-  totalPopulation: number; // Keep this name for component compatibility
-  totalGdp: number; // Add this property
-  countryCount: number; // Add this property
-  averageGdpPerCapita: number;
-  globalGrowthRate: number; // The current effective global growth rate
-  economicTierDistribution: Record<EconomicTier, number>; // Count of countries in each tier
-  populationTierDistribution: Record<PopulationTier, number>; // Count of countries in each tier
-  averagePopulationDensity?: number;
-  averageGdpDensity?: number;
-}
-
-// SystemConfig interface to match Prisma exactly
 export interface SystemConfig {
   id: string;
   key: string;
   value: string;
-  description: string | null; // Match Prisma: string | null, not string | undefined
+  description?: string | null;
+  createdAt: Date;
   updatedAt: Date;
 }
 
-// Database type for Calculation Logs (matching Prisma exactly)
-export interface CalculationLogFromDB {
+export interface CalculationLog {
   id: string;
   timestamp: Date;
   ixTimeTimestamp: Date;
   countriesUpdated: number;
   executionTimeMs: number;
   globalGrowthFactor: number;
-}
-
-// Utility type for transforming DB dates to timestamps
-export type WithTimestamps<T> = T & {
-  [K in keyof T as T[K] extends Date ? `${K & string}Timestamp` : never]: number;
-};
-
-// Helper function type for converting Date objects to timestamps
-export interface TimestampConverter {
-  toTimestamp(date: Date): number;
-  fromTimestamp(timestamp: number): Date;
-  formatIxTime(timestamp: number, includeTime?: boolean): string;
-}
-
-// Bot Status Types (for Discord bot integration)
-export interface BotTimeResponse {
-  realTime: string;
-  ixTimeTimestamp: number;
-  ixTimeFormatted: string;
-  multiplier: number;
-  isPaused: boolean;
-  hasTimeOverride: boolean;
-  hasMultiplierOverride: boolean;
-  epoch: string;
-  pausedAt?: string | null;
-  pauseTimestamp?: string | null;
-}
-
-export interface BotStatusResponse extends BotTimeResponse {
-  ixTimeFormattedShort: string;
-  baseMultiplier: number;
-  timeOverrideValue: number | null;
-  multiplierOverrideValue: number | null;
-  pausedTime: number | null;
-  epochTimestamp: number;
-  botStatus: {
-    ready: boolean;
-    readyAt: string | null;
-    uptime: number | null;
-    user: {
-      id: string;
-      username: string;
-      tag: string;
-    } | null;
-  };
-}
-
-export interface BotHealthResponse {
-  available: boolean;
-  message: string;
+  notes?: string | null;
 }
