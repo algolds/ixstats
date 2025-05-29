@@ -1,8 +1,9 @@
 // src/app/countries/page.tsx
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { api } from "~/trpc/react";
+import { useGlobalFlagPreloader } from "~/hooks/useFlagPreloader";
 import { 
   CountriesPageHeader,
   CountriesSearch,
@@ -21,6 +22,25 @@ export default function CountriesPage() {
 
   // Data fetching
   const { data: countries, isLoading, error } = api.countries.getAll.useQuery();
+
+  // Flag preloader
+  const { preloadAllFlags, getGlobalStats } = useGlobalFlagPreloader();
+
+  // Preload flags when countries data is loaded
+  useEffect(() => {
+    if (countries && countries.length > 0) {
+      const countryNames = countries.map(c => c.name);
+      preloadAllFlags(countryNames);
+      
+      // Log cache stats in development
+      if (process.env.NODE_ENV === 'development') {
+        setTimeout(() => {
+          const stats = getGlobalStats();
+          console.log('[Countries] Flag cache stats:', stats);
+        }, 2000);
+      }
+    }
+  }, [countries, preloadAllFlags, getGlobalStats]);
 
   // Filter and sort countries
   const filteredAndSortedCountries = useMemo(() => {
@@ -146,6 +166,21 @@ export default function CountriesPage() {
           isLoading={isLoading}
           searchTerm={searchTerm}
         />
+
+        {/* Development: Flag Cache Stats */}
+        {process.env.NODE_ENV === 'development' && countries && (
+          <div className="mt-8 p-4 bg-[var(--color-bg-surface)] border border-[var(--color-border-primary)] rounded-lg">
+            <h4 className="text-sm font-semibold text-[var(--color-text-primary)] mb-2">
+              Flag Cache Stats (Development)
+            </h4>
+            <div className="text-xs text-[var(--color-text-muted)] space-x-4">
+              <span>Total: {getGlobalStats().flags}</span>
+              <span>Preloaded: {getGlobalStats().preloadedFlags}</span>
+              <span>Failed: {getGlobalStats().failedFlags}</span>
+              <span>Efficiency: {getGlobalStats().cacheEfficiency}%</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

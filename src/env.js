@@ -1,3 +1,4 @@
+// src/env.js
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
@@ -36,6 +37,12 @@ export const env = createEnv({
       .url()
       .optional()
       .default("http://localhost:3001"),
+    // MediaWiki API URL for country data and flags
+    NEXT_PUBLIC_MEDIAWIKI_URL: z
+      .string()
+      .url()
+      .optional()
+      .default("https://wiki.ixnay.com/"),
   },
 
   /**
@@ -50,6 +57,7 @@ export const env = createEnv({
     DISCORD_CLIENT_ID: process.env.DISCORD_CLIENT_ID,
     DISCORD_GUILD_ID: process.env.DISCORD_GUILD_ID,
     NEXT_PUBLIC_IXTIME_BOT_URL: process.env.NEXT_PUBLIC_IXTIME_BOT_URL,
+    NEXT_PUBLIC_MEDIAWIKI_URL: process.env.NEXT_PUBLIC_MEDIAWIKI_URL,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   /**

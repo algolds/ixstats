@@ -33,42 +33,43 @@ interface CountryListCardProps {
   country: CountryData;
 }
 
+type FlagState = 'loading' | 'loaded' | 'error';
+
 export function CountryListCard({ country }: CountryListCardProps) {
   const [flagUrl, setFlagUrl] = useState<string | null>(null);
-  const [flagLoading, setFlagLoading] = useState(true);
+  const [flagState, setFlagState] = useState<FlagState>('loading');
 
-  // Load flag from MediaWiki
+  // Load flag from MediaWiki with improved state management
   useEffect(() => {
     const loadFlag = async () => {
       try {
-        setFlagLoading(true);
+        setFlagState('loading');
         const url = await ixnayWiki.getFlagUrl(country.name);
         setFlagUrl(url);
+        // Don't set state to loaded yet - wait for image onLoad
+        if (!url) {
+          setFlagState('error');
+        }
       } catch (error) {
         console.warn(`Failed to load flag for ${country.name}:`, error);
-      } finally {
-        setFlagLoading(false);
+        setFlagState('error');
       }
     };
 
     loadFlag();
   }, [country.name]);
 
-  const formatNumber = (num: number | null | undefined, p0: boolean): string => {
-    if (num == null) return '$0.00';
-    if (num >= 1e12) return `$${(num / 1e12).toFixed(2)}T`;
-    if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
-    if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
-    if (num >= 1e3) return `$${(num / 1e3).toFixed(2)}K`;
-    return `$${num.toFixed(2)}`;
+  const formatNumber = (num: number | null | undefined, isCurrency = true): string => {
+    if (num == null) return isCurrency ? '$0.00' : '0';
+    if (num >= 1e12) return `${isCurrency ? '$' : ''}${(num / 1e12).toFixed(2)}T`;
+    if (num >= 1e9) return `${isCurrency ? '$' : ''}${(num / 1e9).toFixed(2)}B`;
+    if (num >= 1e6) return `${isCurrency ? '$' : ''}${(num / 1e6).toFixed(2)}M`;
+    if (num >= 1e3) return `${isCurrency ? '$' : ''}${(num / 1e3).toFixed(2)}K`;
+    return `${isCurrency ? '$' : ''}${num.toFixed(isCurrency ? 2 : 0)}`;
   };
 
   const formatPopulation = (num: number | null | undefined): string => {
-    if (num == null) return '0';
-    if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
-    if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
-    if (num >= 1e3) return `${(num / 1e3).toFixed(2)}K`;
-    return num.toFixed(0);
+    return formatNumber(num, false);
   };
 
   const getEconomicEfficiency = (): { rating: string; color: string; description: string } => {
@@ -113,17 +114,43 @@ export function CountryListCard({ country }: CountryListCardProps) {
     };
   };
 
-  const getTierColor = (tier: string) => {
-    switch (tier) {
-      case "Advanced": return "bg-purple-100 text-purple-800 dark:bg-purple-700 dark:text-purple-100";
-      case "Developed": return "bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-100";
-      case "Emerging": return "bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-100";
-      default: return "bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-100";
-    }
+  const handleImageLoad = () => {
+    setFlagState('loaded');
+  };
+
+  const handleImageError = () => {
+    setFlagState('error');
   };
 
   const efficiency = getEconomicEfficiency();
   const tierStyle = getTierStyle(country.economicTier);
+
+  const stats = [
+    {
+      icon: Users,
+      label: "Population",
+      value: formatPopulation(country.currentPopulation),
+      color: "var(--color-info)"
+    },
+    {
+      icon: TrendingUp,
+      label: "GDP p.c.",
+      value: formatNumber(country.currentGdpPerCapita),
+      color: "var(--color-success)"
+    },
+    {
+      icon: Globe,
+      label: "Total GDP",
+      value: formatNumber(country.currentTotalGdp),
+      color: "var(--color-chart-1)"
+    },
+    {
+      icon: Scaling,
+      label: "Density",
+      value: country.populationDensity ? `${country.populationDensity.toFixed(1)}/km²` : 'N/A',
+      color: "var(--color-warning)"
+    }
+  ];
 
   return (
     <Link
@@ -132,35 +159,31 @@ export function CountryListCard({ country }: CountryListCardProps) {
     >
       {/* Header with Flag and Country Name */}
       <div className="p-6 flex-grow">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex justify-between items-start mb-4">
           <div className="flex items-center min-w-0 flex-1">
-            {/* Flag */}
-            <div className="flex-shrink-0 mr-3">
-              {flagLoading ? (
-                <div className="w-8 h-6 bg-[var(--color-bg-tertiary)] rounded animate-pulse flex items-center justify-center">
+            {/* Fixed Flag Container - Single state-managed element */}
+            <div className="flex-shrink-0 mr-3 w-8 h-6 relative">
+              {flagState === 'loading' ? (
+                <div className="w-8 h-6 bg-[var(--color-bg-tertiary)] rounded animate-pulse flex items-center justify-center border border-[var(--color-border-primary)]">
                   <Flag className="h-3 w-3 text-[var(--color-text-muted)]" />
                 </div>
-              ) : flagUrl ? (
+              ) : flagUrl && flagState !== 'error' ? (
                 <img
                   src={flagUrl}
                   alt={`Flag of ${country.name}`}
                   className="w-8 h-6 object-cover rounded shadow-sm border border-[var(--color-border-primary)]"
-                  onError={(e) => {
-                    // Fallback to icon if image fails to load
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    const fallback = target.nextElementSibling as HTMLElement;
-                    if (fallback) fallback.style.display = 'flex';
-                  }}
+                  onLoad={handleImageLoad}
+                  onError={handleImageError}
+                  style={{ display: flagState === 'loaded' ? 'block' : 'none' }}
                 />
               ) : null}
-              {/* Fallback flag icon */}
-              <div 
-                className="w-8 h-6 bg-[var(--color-bg-tertiary)] rounded flex items-center justify-center border border-[var(--color-border-primary)]"
-                style={{ display: flagUrl ? 'none' : 'flex' }}
-              >
-                <Flag className="h-3 w-3 text-[var(--color-text-muted)]" />
-              </div>
+              
+              {/* Fallback flag icon - only shown when error or before image loads */}
+              {(flagState === 'error' || (flagUrl && flagState === 'loading')) && (
+                <div className="w-8 h-6 bg-[var(--color-bg-tertiary)] rounded flex items-center justify-center border border-[var(--color-border-primary)] absolute inset-0">
+                  <Flag className="h-3 w-3 text-[var(--color-text-muted)]" />
+                </div>
+              )}
             </div>
             
             {/* Country Name */}
@@ -174,45 +197,20 @@ export function CountryListCard({ country }: CountryListCardProps) {
 
         {/* Economic Stats Grid - Centered */}
         <div className="grid grid-cols-2 gap-4 text-sm mb-6">
-          <div className="flex flex-col items-center text-center">
-            <div className="flex items-center justify-center mb-2">
-              <Users className="h-4 w-4 text-[var(--color-info)] mr-1" />
-              <span className="text-[var(--color-text-muted)] text-xs">Population</span>
-            </div>
-            <span className="font-medium text-[var(--color-text-secondary)] text-base">
-              {formatPopulation(country.currentPopulation)}
-            </span>
-          </div>
-
-          <div className="flex flex-col items-center text-center">
-            <div className="flex items-center justify-center mb-2">
-              <TrendingUp className="h-4 w-4 text-[var(--color-success)] mr-1" />
-              <span className="text-[var(--color-text-muted)] text-xs">GDP p.c.</span>
-            </div>
-            <span className="font-medium text-[var(--color-text-secondary)] text-base">
-              {formatNumber(country.currentGdpPerCapita)}
-            </span>
-          </div>
-
-          <div className="flex flex-col items-center text-center">
-            <div className="flex items-center justify-center mb-2">
-              <Globe className="h-4 w-4 text-[var(--color-chart-1)] mr-1" />
-              <span className="text-[var(--color-text-muted)] text-xs">Total GDP</span>
-            </div>
-            <span className="font-medium text-[var(--color-text-secondary)] text-base">
-              {formatNumber(country.currentTotalGdp)}
-            </span>
-          </div>
-
-          <div className="flex flex-col items-center text-center">
-            <div className="flex items-center justify-center mb-2">
-              <Scaling className="h-4 w-4 text-[var(--color-warning)] mr-1" />
-              <span className="text-[var(--color-text-muted)] text-xs">Density</span>
-            </div>
-            <span className="font-medium text-[var(--color-text-secondary)] text-base">
-              {country.populationDensity ? `${country.populationDensity.toFixed(1)}/km²` : 'N/A'}
-            </span>
-          </div>
+          {stats.map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <div key={stat.label} className="flex flex-col items-center text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <Icon className="h-4 w-4 mr-1" style={{ color: stat.color }} />
+                  <span className="text-[var(--color-text-muted)] text-xs">{stat.label}</span>
+                </div>
+                <span className="font-medium text-[var(--color-text-secondary)] text-base" title={stat.value}>
+                  {stat.value}
+                </span>
+              </div>
+            );
+          })}
         </div>
 
         {/* Geographic Info */}
@@ -226,7 +224,7 @@ export function CountryListCard({ country }: CountryListCardProps) {
 
       {/* Footer with Tier and Efficiency Badges */}
       <div className="px-6 py-4 bg-[var(--color-bg-tertiary)] border-t border-[var(--color-border-primary)] rounded-b-lg">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2 mb-2">
           {/* Economic Tier Badge */}
           <span className={`tier-badge ${tierStyle.className}`}>
             {country.economicTier}
@@ -260,7 +258,7 @@ export function CountryListCard({ country }: CountryListCardProps) {
         </div>
         
         {/* Population Tier (smaller, secondary info) */}
-        <div className="mt-2 text-center">
+        <div className="text-center">
           <span className="text-xs text-[var(--color-text-muted)] font-medium">
             {country.populationTier} Population
           </span>
