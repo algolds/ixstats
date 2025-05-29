@@ -2,6 +2,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { IxStatsDataService } from "~/lib/data-service";
+import { IxStatsCalculator } from "~/lib/calculations"; // Added missing import
 import { IxTime } from "~/lib/ixtime";
 import { IxSheetzCalculator } from "~/lib/enhanced-calculations";
 import type { EconomicTier, PopulationTier, DmInputType as DmInputTypeEnum, GlobalEconomicSnapshot } from "~/types/ixstats";
@@ -164,194 +165,6 @@ export const countriesRouter = createTRPCRouter({
         localGrowthFactor: country.localGrowthFactor,
         globalGrowthFactor: globalGrowthFactor,
         populationDensity: country.populationDensity,
-        gdpDensity: country.gdpDensity,
-        historicalData: country.historicalData.map(h => ({
-          id: h.id,
-          countryId: h.countryId,
-          ixTimeTimestamp: h.ixTimeTimestamp,
-          population: h.population,
-          gdpPerCapita: h.gdpPerCapita,
-          totalGdp: h.totalGdp,
-          populationGrowthRate: h.populationGrowthRate,
-          gdpGrowthRate: h.gdpGrowthRate,
-          landArea: h.landArea,
-          populationDensity: h.populationDensity,
-          gdpDensity: h.gdpDensity,
-        })),
-      };
-
-      // Calculate stats for the requested time
-      const targetTimeStats = calculator.calculateTimeProgression(
-        countryStats,
-        input.ixTime,
-        country.dmInputs.map(dm => ({
-          id: dm.id,
-          countryId: dm.countryId,
-          ixTimeTimestamp: dm.ixTimeTimestamp,
-          inputType: dm.inputType,
-          value: dm.value,
-          description: dm.description,
-          duration: dm.duration,
-          isActive: dm.isActive,
-          createdBy: dm.createdBy,
-        }))
-      );
-
-      return {
-        ...targetTimeStats.newStats,
-        requestedTime: input.ixTime,
-        formattedTime: IxTime.formatIxTime(input.ixTime, true),
-        gameTimeDescription: IxTime.getGameTimeDescription(input.ixTime),
-        timeFromPresent: IxTime.getYearsElapsed(IxTime.getCurrentIxTime(), input.ixTime),
-        historicalData: countryStats.historicalData,
-      };
-    }),
-
-  /**
-   * Get forecast data for a country over a time range
-   */
-  getForecastRange: publicProcedure
-    .input(z.object({
-      countryId: z.string(),
-      startTime: z.number(),
-      endTime: z.number(),
-      steps: z.number().min(2).max(50).default(10), // Number of data points
-    }))
-    .query(async ({ ctx, input }) => {
-      const country = await ctx.db.country.findUnique({
-        where: { id: input.countryId },
-        include: {
-          dmInputs: {
-            where: { isActive: true }
-          }
-        }
-      });
-
-      if (!country) {
-        throw new Error("Country not found");
-      }
-
-      // Get system configuration
-      const systemConfigs = await ctx.db.systemConfig.findMany();
-      const globalGrowthFactor = parseFloat(
-        systemConfigs.find(c => c.key === 'global_growth_factor')?.value || '1.0321'
-      );
-
-      const economicConfig = IxStatsDataService.getDefaultEconomicConfig();
-      economicConfig.globalGrowthFactor = globalGrowthFactor;
-      
-      const calculator = new IxStatsCalculator(economicConfig, IxTime.getInGameEpoch());
-
-      // Create base country stats
-      const countryStats = {
-        id: country.id,
-        country: country.name,
-        name: country.name,
-        population: country.baselinePopulation,
-        gdpPerCapita: country.baselineGdpPerCapita,
-        maxGdpGrowthRate: country.maxGdpGrowthRate,
-        adjustedGdpGrowth: country.adjustedGdpGrowth,
-        populationGrowthRate: country.populationGrowthRate,
-        projected2040Population: country.projected2040Population,
-        projected2040Gdp: country.projected2040Gdp,
-        projected2040GdpPerCapita: country.projected2040GdpPerCapita,
-        actualGdpGrowth: country.actualGdpGrowth,
-        landArea: country.landArea,
-        totalGdp: country.baselinePopulation * country.baselineGdpPerCapita,
-        currentPopulation: country.currentPopulation,
-        currentGdpPerCapita: country.currentGdpPerCapita,
-        currentTotalGdp: country.currentTotalGdp,
-        lastCalculated: country.lastCalculated,
-        baselineDate: country.baselineDate,
-        economicTier: country.economicTier as any,
-        populationTier: country.populationTier as any,
-        localGrowthFactor: country.localGrowthFactor,
-        globalGrowthFactor: globalGrowthFactor,
-        populationDensity: country.populationDensity,
-        gdpDensity: country.gdpDensity,
-      };
-
-      // Generate time points
-      const timeStep = (input.endTime - input.startTime) / (input.steps - 1);
-      const forecastPoints = [];
-
-      for (let i = 0; i < input.steps; i++) {
-        const targetTime = input.startTime + (timeStep * i);
-        
-        const projection = calculator.calculateTimeProgression(
-          countryStats,
-          targetTime,
-          country.dmInputs.map(dm => ({
-            id: dm.id,
-            countryId: dm.countryId,
-            ixTimeTimestamp: dm.ixTimeTimestamp,
-            inputType: dm.inputType,
-            value: dm.value,
-            description: dm.description,
-            duration: dm.duration,
-            isActive: dm.isActive,
-            createdBy: dm.createdBy,
-          }))
-        );
-
-        forecastPoints.push({
-          ixTime: targetTime,
-          formattedTime: IxTime.formatIxTime(targetTime),
-          gameYear: IxTime.getCurrentGameYear(targetTime),
-          population: projection.newStats.currentPopulation,
-          gdpPerCapita: projection.newStats.currentGdpPerCapita,
-          totalGdp: projection.newStats.currentTotalGdp,
-          populationDensity: projection.newStats.populationDensity,
-          gdpDensity: projection.newStats.gdpDensity,
-          economicTier: projection.newStats.economicTier,
-          populationTier: projection.newStats.populationTier,
-        });
-      }
-
-      return {
-        countryId: input.countryId,
-        countryName: country.name,
-        startTime: input.startTime,
-        endTime: input.endTime,
-        dataPoints: forecastPoints,
-      };
-    }),
-
-  /**
-   * Get historical data with time travel support
-   */
-  getHistoricalAtTime: publicProcedure
-    .input(z.object({
-      countryId: z.string(),
-      ixTime: z.number(),
-      windowYears: z.number().default(5), // How many years around this time to include
-    }))
-    .query(async ({ ctx, input }) => {
-      const startTime = IxTime.addYears(input.ixTime, -input.windowYears / 2);
-      const endTime = IxTime.addYears(input.ixTime, input.windowYears / 2);
-
-      const historicalData = await ctx.db.historicalData.findMany({
-        where: {
-          countryId: input.countryId,
-          ixTimeTimestamp: {
-            gte: new Date(startTime),
-            lte: new Date(endTime),
-          }
-        },
-        orderBy: { ixTimeTimestamp: 'asc' },
-      });
-
-      return historicalData.map(h => ({
-        id: h.id,
-        ixTimeTimestamp: h.ixTimeTimestamp.getTime(),
-        formattedTime: IxTime.formatIxTime(h.ixTimeTimestamp.getTime()),
-        population: h.population,
-        gdpPerCapita: h.gdpPerCapita,
-        totalGdp: h.totalGdp,
-        populationGrowthRate: h.populationGrowthRate,
-        gdpGrowthRate: h.gdpGrowthRate,
-        landArea: h.landArea,
-        populationDensity: h.populationDensity,
         gdpDensity: h.gdpDensity,
       }));
     }),
@@ -948,4 +761,192 @@ export const countriesRouter = createTRPCRouter({
         throw new Error(`Failed to import Excel file: ${message}`);
       }
     })
-});
+});ty: country.gdpDensity,
+        historicalData: country.historicalData.map(h => ({
+          id: h.id,
+          countryId: h.countryId,
+          ixTimeTimestamp: h.ixTimeTimestamp,
+          population: h.population,
+          gdpPerCapita: h.gdpPerCapita,
+          totalGdp: h.totalGdp,
+          populationGrowthRate: h.populationGrowthRate,
+          gdpGrowthRate: h.gdpGrowthRate,
+          landArea: h.landArea,
+          populationDensity: h.populationDensity,
+          gdpDensity: h.gdpDensity,
+        })),
+      };
+
+      // Calculate stats for the requested time
+      const targetTimeStats = calculator.calculateTimeProgression(
+        countryStats,
+        input.ixTime,
+        country.dmInputs.map(dm => ({
+          id: dm.id,
+          countryId: dm.countryId,
+          ixTimeTimestamp: dm.ixTimeTimestamp,
+          inputType: dm.inputType,
+          value: dm.value,
+          description: dm.description,
+          duration: dm.duration,
+          isActive: dm.isActive,
+          createdBy: dm.createdBy,
+        }))
+      );
+
+      return {
+        ...targetTimeStats.newStats,
+        requestedTime: input.ixTime,
+        formattedTime: IxTime.formatIxTime(input.ixTime, true),
+        gameTimeDescription: IxTime.getGameTimeDescription(input.ixTime),
+        timeFromPresent: IxTime.getYearsElapsed(IxTime.getCurrentIxTime(), input.ixTime),
+        historicalData: countryStats.historicalData,
+      };
+    }),
+
+  /**
+   * Get forecast data for a country over a time range
+   */
+  getForecastRange: publicProcedure
+    .input(z.object({
+      countryId: z.string(),
+      startTime: z.number(),
+      endTime: z.number(),
+      steps: z.number().min(2).max(50).default(10), // Number of data points
+    }))
+    .query(async ({ ctx, input }) => {
+      const country = await ctx.db.country.findUnique({
+        where: { id: input.countryId },
+        include: {
+          dmInputs: {
+            where: { isActive: true }
+          }
+        }
+      });
+
+      if (!country) {
+        throw new Error("Country not found");
+      }
+
+      // Get system configuration
+      const systemConfigs = await ctx.db.systemConfig.findMany();
+      const globalGrowthFactor = parseFloat(
+        systemConfigs.find(c => c.key === 'global_growth_factor')?.value || '1.0321'
+      );
+
+      const economicConfig = IxStatsDataService.getDefaultEconomicConfig();
+      economicConfig.globalGrowthFactor = globalGrowthFactor;
+      
+      const calculator = new IxStatsCalculator(economicConfig, IxTime.getInGameEpoch());
+
+      // Create base country stats
+      const countryStats = {
+        id: country.id,
+        country: country.name,
+        name: country.name,
+        population: country.baselinePopulation,
+        gdpPerCapita: country.baselineGdpPerCapita,
+        maxGdpGrowthRate: country.maxGdpGrowthRate,
+        adjustedGdpGrowth: country.adjustedGdpGrowth,
+        populationGrowthRate: country.populationGrowthRate,
+        projected2040Population: country.projected2040Population,
+        projected2040Gdp: country.projected2040Gdp,
+        projected2040GdpPerCapita: country.projected2040GdpPerCapita,
+        actualGdpGrowth: country.actualGdpGrowth,
+        landArea: country.landArea,
+        totalGdp: country.baselinePopulation * country.baselineGdpPerCapita,
+        currentPopulation: country.currentPopulation,
+        currentGdpPerCapita: country.currentGdpPerCapita,
+        currentTotalGdp: country.currentTotalGdp,
+        lastCalculated: country.lastCalculated,
+        baselineDate: country.baselineDate,
+        economicTier: country.economicTier as any,
+        populationTier: country.populationTier as any,
+        localGrowthFactor: country.localGrowthFactor,
+        globalGrowthFactor: globalGrowthFactor,
+        populationDensity: country.populationDensity,
+        gdpDensity: country.gdpDensity,
+      };
+
+      // Generate time points
+      const timeStep = (input.endTime - input.startTime) / (input.steps - 1);
+      const forecastPoints = [];
+
+      for (let i = 0; i < input.steps; i++) {
+        const targetTime = input.startTime + (timeStep * i);
+        
+        const projection = calculator.calculateTimeProgression(
+          countryStats,
+          targetTime,
+          country.dmInputs.map(dm => ({
+            id: dm.id,
+            countryId: dm.countryId,
+            ixTimeTimestamp: dm.ixTimeTimestamp,
+            inputType: dm.inputType,
+            value: dm.value,
+            description: dm.description,
+            duration: dm.duration,
+            isActive: dm.isActive,
+            createdBy: dm.createdBy,
+          }))
+        );
+
+        forecastPoints.push({
+          ixTime: targetTime,
+          formattedTime: IxTime.formatIxTime(targetTime),
+          gameYear: IxTime.getCurrentGameYear(targetTime),
+          population: projection.newStats.currentPopulation,
+          gdpPerCapita: projection.newStats.currentGdpPerCapita,
+          totalGdp: projection.newStats.currentTotalGdp,
+          populationDensity: projection.newStats.populationDensity,
+          gdpDensity: projection.newStats.gdpDensity,
+          economicTier: projection.newStats.economicTier,
+          populationTier: projection.newStats.populationTier,
+        });
+      }
+
+      return {
+        countryId: input.countryId,
+        countryName: country.name,
+        startTime: input.startTime,
+        endTime: input.endTime,
+        dataPoints: forecastPoints,
+      };
+    }),
+
+  /**
+   * Get historical data with time travel support
+   */
+  getHistoricalAtTime: publicProcedure
+    .input(z.object({
+      countryId: z.string(),
+      ixTime: z.number(),
+      windowYears: z.number().default(5), // How many years around this time to include
+    }))
+    .query(async ({ ctx, input }) => {
+      const startTime = IxTime.addYears(input.ixTime, -input.windowYears / 2);
+      const endTime = IxTime.addYears(input.ixTime, input.windowYears / 2);
+
+      const historicalData = await ctx.db.historicalData.findMany({
+        where: {
+          countryId: input.countryId,
+          ixTimeTimestamp: {
+            gte: new Date(startTime),
+            lte: new Date(endTime),
+          }
+        },
+        orderBy: { ixTimeTimestamp: 'asc' },
+      });
+
+      return historicalData.map(h => ({
+        id: h.id,
+        ixTimeTimestamp: h.ixTimeTimestamp.getTime(),
+        formattedTime: IxTime.formatIxTime(h.ixTimeTimestamp.getTime()),
+        population: h.population,
+        gdpPerCapita: h.gdpPerCapita,
+        totalGdp: h.totalGdp,
+        populationGrowthRate: h.populationGrowthRate,
+        gdpGrowthRate: h.gdpGrowthRate,
+        landArea: h.landArea,
+        populationDensity: h.populationDensity,
+        gdpDensi

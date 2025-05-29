@@ -75,7 +75,7 @@ class IxnayWikiService {
   async getFlagUrl(countryName: string): Promise<string | null> {
     // Check cache first
     if (this.FLAG_CACHE.has(countryName)) {
-      return this.FLAG_CACHE.get(countryName);
+      return this.FLAG_CACHE.get(countryName) ?? null;
     }
     
     try {
@@ -215,9 +215,11 @@ class IxnayWikiService {
       if (!pages) return null;
       
       // Find the first page (there should only be one)
-      const pageId = Object.keys(pages)[0];
-      const page = pages[pageId];
+      const pageIds = Object.keys(pages);
+      const pageId = pageIds[0];
+      if (!pageId) return null;
       
+      const page = pages[pageId];
       if (!page || page.missing) return null;
       
       const url = page.imageinfo?.[0]?.url || null;
@@ -236,7 +238,7 @@ class IxnayWikiService {
   async getCountryInfobox(countryName: string): Promise<CountryInfobox | null> {
     // Check cache first
     if (this.INFOBOX_CACHE.has(countryName)) {
-      return this.INFOBOX_CACHE.get(countryName);
+      return this.INFOBOX_CACHE.get(countryName) ?? null;
     }
     
     try {
