@@ -10,6 +10,7 @@ interface MediaWikiApiResponse {
     text?: { '*': string };
   };
   query?: {
+    normalized?: Array<{ fromencoded: boolean; from: string; to: string }>;
     pages?: Array<{
       pageid?: number;
       title: string;
@@ -102,53 +103,38 @@ interface CacheStats {
 }
 
 class MediaWikiService {
-  private baseUrl: string;
   private flagCache = new Map<string, FlagCacheEntry>();
   private infoboxCache = new Map<string, CountryInfobox | null>();
   private readonly CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
 
-  constructor(baseUrl: string) {
-    this.baseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-  }
-
-  // Public method to get country wiki URL
+  // Public method to get country wiki URL (still uses external base URL)
   getCountryWikiUrl(countryName: string): string {
-    const pageName = countryName.replace(/ /g, '_');
-    return `${this.baseUrl}wiki/${encodeURIComponent(pageName)}`;
+    const baseUrl = env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
+    const pageName = countryName.replace(/ /g, "_");
+    return `${baseUrl}wiki/${encodeURIComponent(pageName)}`;
   }
 
   private async makeApiRequest(params: Record<string, string>): Promise<MediaWikiApiResponse> {
-    const url = new URL(`${this.baseUrl}api.php`);
-    
-    // Add default parameters
-    url.searchParams.set('format', 'json');
-    url.searchParams.set('formatversion', '2');
-    url.searchParams.set('origin', '*'); // Enable CORS
-    
-    // Add custom parameters
+    const url = new URL('/api/mediawiki', window.location.origin);
+
     Object.entries(params).forEach(([key, value]) => {
       url.searchParams.set(key, value);
     });
-
-    console.log(`[MediaWiki] Making request to: ${url.toString()}`);
 
     try {
       const response = await fetch(url.toString(), {
         method: 'GET',
         headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'IxStats/1.0 (https://ixnay.com/; contact@ixnay.com)',
-          'Access-Control-Allow-Origin': '*',
+          Accept: 'application/json',
         },
-        mode: 'cors',
       });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json() as MediaWikiApiResponse;
-      
+      const data = (await response.json()) as MediaWikiApiResponse;
+
       if (data.error) {
         throw new Error(`MediaWiki API Error: ${data.error.code} - ${data.error.info}`);
       }
@@ -163,33 +149,34 @@ class MediaWikiService {
   async getFlagUrl(countryName: string): Promise<string | null> {
     const cacheKey = countryName.toLowerCase();
     const cached = this.flagCache.get(cacheKey);
-    
+
+    // Return cached result if fresh or error cached
     if (cached && (Date.now() - cached.lastUpdated < this.CACHE_EXPIRY)) {
+      if (cached.error) {
+        // Previously failed, avoid retrying now
+        return null;
+      }
       return cached.url;
     }
 
     try {
       console.log(`[MediaWiki] Getting flag for: ${countryName}`);
 
-      // Method 1: Try Template:Country_data_[Country_name] (PRIMARY METHOD)
       const flagFromTemplate = await this.getFlagFromCountryDataTemplate(countryName);
       if (flagFromTemplate) {
-        console.log(`[MediaWiki] Found flag from template: ${flagFromTemplate}`);
         this.flagCache.set(cacheKey, { url: flagFromTemplate, lastUpdated: Date.now() });
         return flagFromTemplate;
       }
 
-      // Method 2: Try to get flag from the country page infobox
       const flagFromInfobox = await this.getFlagFromInfobox(countryName);
       if (flagFromInfobox) {
-        console.log(`[MediaWiki] Found flag from infobox: ${flagFromInfobox}`);
         this.flagCache.set(cacheKey, { url: flagFromInfobox, lastUpdated: Date.now() });
         return flagFromInfobox;
       }
 
-      // Method 3: Try common flag file naming patterns
+      // Common patterns fallback
       const commonPatterns = [
-        `Flag3 ${countryName.toLowerCase()}.png`, // Based on your example
+        `Flag3 ${countryName.toLowerCase()}.png`,
         `Flag_of_${countryName.replace(/ /g, '_')}.svg`,
         `Flag_of_${countryName.replace(/ /g, '_')}.png`,
         `${countryName.replace(/ /g, '_')}_flag.svg`,
@@ -199,21 +186,17 @@ class MediaWikiService {
       ];
 
       for (const pattern of commonPatterns) {
-        console.log(`[MediaWiki] Trying pattern: ${pattern}`);
         const url = await this.getFileUrl(pattern);
         if (url) {
-          console.log(`[MediaWiki] Found flag with pattern: ${pattern} -> ${url}`);
           this.flagCache.set(cacheKey, { url, lastUpdated: Date.now() });
           return url;
         }
       }
 
-      // No flag found
-      console.warn(`[MediaWiki] No flag found for: ${countryName}`);
+      // No flag found, cache error to avoid retries
       this.flagCache.set(cacheKey, { url: null, lastUpdated: Date.now(), error: true });
       return null;
     } catch (error) {
-      console.error(`[MediaWiki] Error getting flag for ${countryName}:`, error);
       this.flagCache.set(cacheKey, { url: null, lastUpdated: Date.now(), error: true });
       return null;
     }
@@ -223,53 +206,52 @@ class MediaWikiService {
     try {
       const templateName = `Template:Country_data_${countryName.replace(/ /g, '_')}`;
       console.log(`[MediaWiki] Fetching template: ${templateName}`);
-      
+
       const data = await this.makeApiRequest({
         action: 'query',
         titles: templateName,
         prop: 'revisions',
         rvprop: 'content',
-        rvslots: 'main'
+        rvslots: 'main',
       });
 
-      console.log(`[MediaWiki] Template response:`, JSON.stringify(data, null, 2));
+      const normalizedTitle = data.query?.normalized?.[0]?.to || templateName;
+      console.log(`[MediaWiki] Normalized title: ${normalizedTitle}`);
 
       const pages = data.query?.pages;
       if (!pages || pages.length === 0) {
-        console.log(`[MediaWiki] No pages returned for template: ${templateName}`);
+        console.log(`[MediaWiki] No pages returned for template: ${normalizedTitle}`);
         return null;
       }
 
       const page = pages[0];
       if (!page || page.missing) {
-        console.log(`[MediaWiki] Template page missing: ${templateName}`);
+        console.log(`[MediaWiki] Template page missing: ${normalizedTitle}`);
         return null;
       }
 
       const content = page.revisions?.[0]?.slots?.main?.['*'] || page.revisions?.[0]?.['*'];
       if (!content) {
-        console.log(`[MediaWiki] No content in template: ${templateName}`);
+        console.log(`[MediaWiki] No content in template: ${normalizedTitle}`);
         return null;
       }
 
-      console.log(`[MediaWiki] Template content:`, content);
-
-      // Look for flag alias parameter - more flexible regex
+      // Extract flag alias field first
       const flagAliasMatch = content.match(/\|\s*flag\s*alias\s*=\s*([^\n\|]+)/i);
       if (flagAliasMatch?.[1]) {
         const flagFile = flagAliasMatch[1].trim();
-        console.log(`[MediaWiki] Found flag alias: ${flagFile}`);
         if (flagFile && !flagFile.includes('{{') && !flagFile.includes('{{{')) {
+          console.log(`[MediaWiki] Found flag alias: ${flagFile}`);
           return await this.getFileUrl(flagFile);
         }
       }
 
-      // Also try just "flag" parameter as fallback
+      // Fallback: extract flag field
       const flagMatch = content.match(/\|\s*flag\s*=\s*([^\n\|]+)/i);
       if (flagMatch?.[1]) {
         const flagFile = flagMatch[1].trim();
-        console.log(`[MediaWiki] Found flag parameter: ${flagFile}`);
         if (flagFile && !flagFile.includes('{{') && !flagFile.includes('{{{')) {
+          console.log(`[MediaWiki] Found flag parameter: ${flagFile}`);
           return await this.getFileUrl(flagFile);
         }
       }
@@ -285,13 +267,13 @@ class MediaWikiService {
   private async getFlagFromInfobox(countryName: string): Promise<string | null> {
     try {
       console.log(`[MediaWiki] Getting flag from infobox for: ${countryName}`);
-      
+
       const data = await this.makeApiRequest({
         action: 'query',
         titles: countryName,
         prop: 'revisions',
         rvprop: 'content',
-        rvslots: 'main'
+        rvslots: 'main',
       });
 
       const pages = data.query?.pages;
@@ -303,12 +285,11 @@ class MediaWikiService {
       const content = page.revisions?.[0]?.slots?.main?.['*'] || page.revisions?.[0]?.['*'];
       if (!content) return null;
 
-      // Look for image_flag parameter in infobox - more flexible regex
       const flagMatch = content.match(/\|\s*image_flag\s*=\s*([^\|\n]+)/i);
       if (flagMatch?.[1]) {
         const flagFile = flagMatch[1].trim();
-        console.log(`[MediaWiki] Found image_flag in infobox: ${flagFile}`);
         if (flagFile && !flagFile.includes('{{') && !flagFile.includes('{{{')) {
+          console.log(`[MediaWiki] Found image_flag in infobox: ${flagFile}`);
           return await this.getFileUrl(flagFile);
         }
       }
@@ -322,19 +303,18 @@ class MediaWikiService {
 
   private async getFileUrl(fileName: string): Promise<string | null> {
     if (!fileName) return null;
-    
-    // Clean the filename
+
     let cleanFileName = fileName.replace(/^File:/i, '').trim();
     if (!cleanFileName) return null;
 
     try {
       console.log(`[MediaWiki] Getting file URL for: ${cleanFileName}`);
-      
+
       const data = await this.makeApiRequest({
         action: 'query',
         titles: `File:${cleanFileName}`,
         prop: 'imageinfo',
-        iiprop: 'url'
+        iiprop: 'url',
       });
 
       const pages = data.query?.pages;
@@ -350,7 +330,7 @@ class MediaWikiService {
       if (url) {
         console.log(`[MediaWiki] Found file URL: ${url}`);
       }
-      
+
       return url || null;
     } catch (error) {
       console.error(`[MediaWiki] Error getting file URL for ${cleanFileName}:`, error);
@@ -360,20 +340,20 @@ class MediaWikiService {
 
   async getCountryInfobox(countryName: string): Promise<CountryInfobox | null> {
     const cacheKey = countryName.toLowerCase();
-    
+
     if (this.infoboxCache.has(cacheKey)) {
       return this.infoboxCache.get(cacheKey) || null;
     }
 
     try {
       console.log(`[MediaWiki] Getting infobox for: ${countryName}`);
-      
+
       const data = await this.makeApiRequest({
         action: 'query',
         titles: countryName,
         prop: 'revisions',
         rvprop: 'content',
-        rvslots: 'main'
+        rvslots: 'main',
       });
 
       const pages = data.query?.pages;
@@ -411,10 +391,9 @@ class MediaWikiService {
     const infobox: CountryInfobox = { name: countryName };
 
     try {
-      // Find the infobox country template - improved regex to handle nested braces
       const infoboxRegex = /\{\{\s*Infobox\s+country([\s\S]*?)\}\}(?!\})/i;
       const infoboxMatch = wikitext.match(infoboxRegex);
-      
+
       if (!infoboxMatch) {
         console.log(`[MediaWiki] No infobox found for: ${countryName}`);
         return infobox;
@@ -423,7 +402,6 @@ class MediaWikiService {
       const infoboxContent = infoboxMatch[0];
       console.log(`[MediaWiki] Found infobox content length: ${infoboxContent.length}`);
 
-      // Parse parameters - improved regex to handle complex values
       const lines = infoboxContent.split('\n');
       let currentParam = '';
       let currentValue = '';
@@ -431,36 +409,28 @@ class MediaWikiService {
 
       for (const line of lines) {
         const trimmed = line.trim();
-        
-        // Skip template declaration and closing
+
         if (trimmed.startsWith('{{') || trimmed === '}}') continue;
-        
-        // Check if this line starts a new parameter
+
         const paramMatch = trimmed.match(/^\|\s*([^=]+?)\s*=\s*(.*)/);
-        
+
         if (paramMatch) {
-          // Save previous parameter if we have one
           if (inParam && currentParam && currentValue.trim()) {
             this.setInfoboxValue(infobox, currentParam, currentValue);
           }
-          
-          // Start new parameter
-          currentParam = paramMatch[1].trim();
-          currentValue = paramMatch[2] || '';
+          currentParam = paramMatch[1]?.trim() ?? '';
+          currentValue = paramMatch[2] ?? '';
           inParam = true;
         } else if (inParam && trimmed && !trimmed.startsWith('|')) {
-          // Continue current parameter value
           currentValue += ' ' + trimmed;
         }
       }
-      
-      // Don't forget the last parameter
+
       if (inParam && currentParam && currentValue.trim()) {
         this.setInfoboxValue(infobox, currentParam, currentValue);
       }
 
       console.log(`[MediaWiki] Parsed ${Object.keys(infobox).length} infobox fields for: ${countryName}`);
-      
     } catch (error) {
       console.error(`[MediaWiki] Error parsing infobox for ${countryName}:`, error);
     }
@@ -469,41 +439,31 @@ class MediaWikiService {
   }
 
   private setInfoboxValue(infobox: CountryInfobox, key: string, value: string): void {
-    // Clean up the value
     let cleanValue = value
-      // Remove wiki links but keep the display text
       .replace(/\[\[(?:[^\|\]]*\|)?([^\]]+)\]\]/g, '$1')
-      // Remove simple templates like {{nowrap|text}}
       .replace(/\{\{(?:nowrap|nobr)\|([^}]+)\}\}/gi, '$1')
-      // Remove references
       .replace(/<ref[^>]*>.*?<\/ref>/gi, '')
-      // Remove HTML tags
       .replace(/<[^>]+>/g, '')
-      // Clean up whitespace
       .replace(/\s+/g, ' ')
       .trim();
 
     if (!cleanValue) return;
 
-    // Store with normalized key
     const normalizedKey = key.toLowerCase().replace(/[^a-z0-9]+/g, '_');
     infobox[normalizedKey] = cleanValue;
-    
-    // Also store with original key for compatibility
     infobox[key] = cleanValue;
 
-    // Add common field mappings
     const fieldMappings: Record<string, string> = {
-      'area_km2': 'area',
-      'population_estimate': 'population',
-      'government_type': 'government',
-      'leader_name1': 'leader',
-      'GDP_PPP': 'gdp',
-      'official_languages': 'languages',
-      'time_zone': 'timezone',
-      'calling_code': 'callingCode',
-      'cctld': 'internetTld',
-      'drives_on': 'drivingSide'
+      area_km2: 'area',
+      population_estimate: 'population',
+      government_type: 'government',
+      leader_name1: 'leader',
+      gdp_ppp: 'gdp',
+      official_languages: 'languages',
+      time_zone: 'timezone',
+      calling_code: 'callingCode',
+      cctld: 'internetTld',
+      drives_on: 'drivingSide',
     };
 
     const mappedKey = fieldMappings[normalizedKey];
@@ -514,7 +474,7 @@ class MediaWikiService {
 
   async preloadCountryFlags(countryNames: string[]): Promise<void> {
     console.log(`[MediaWiki] Preloading flags for ${countryNames.length} countries`);
-    
+
     const promises = countryNames.map(async (name) => {
       try {
         const url = await this.getFlagUrl(name);
@@ -526,9 +486,9 @@ class MediaWikiService {
     });
 
     const results = await Promise.all(promises);
-    const successful = results.filter(r => r.success).length;
-    const failed = results.filter(r => !r.success).length;
-    
+    const successful = results.filter((r) => r.success).length;
+    const failed = results.filter((r) => !r.success).length;
+
     console.log(`[MediaWiki] Preload complete: ${successful} successful, ${failed} failed`);
   }
 
@@ -540,21 +500,18 @@ class MediaWikiService {
 
   getCacheStats(): CacheStats {
     const flagEntries = Array.from(this.flagCache.values());
-    const successfulFlags = flagEntries.filter(entry => entry.url !== null).length;
-    const failedFlags = flagEntries.filter(entry => entry.error).length;
+    const successfulFlags = flagEntries.filter((entry) => entry.url !== null).length;
+    const failedFlags = flagEntries.filter((entry) => entry.error).length;
 
     return {
       flags: this.flagCache.size,
       preloadedFlags: successfulFlags,
       failedFlags: failedFlags,
-      infoboxes: this.infoboxCache.size
+      infoboxes: this.infoboxCache.size,
     };
   }
 }
 
-// Create and export the service instance
-const IXNAY_MEDIAWIKI_URL = env.NEXT_PUBLIC_MEDIAWIKI_URL || 'https://ixwiki.com';
-export const ixnayWiki = new MediaWikiService(IXNAY_MEDIAWIKI_URL);
+export const ixnayWiki = new MediaWikiService();
 
-// Export types
 export type { MediaWikiApiResponse };

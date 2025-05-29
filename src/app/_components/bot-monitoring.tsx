@@ -18,9 +18,48 @@ import {
   Bot,
   AlertTriangle,
   Info,
-  ArrowLeftRight
+  ArrowLeftRight,
 } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+} from "recharts";
+
+interface BotUser {
+  id: string;
+  tag: string;
+}
+
+interface BotStatus {
+  ready: boolean;
+  uptime: number; // milliseconds
+  user?: BotUser | null;
+}
+
+interface BotHealth {
+  available: boolean;
+}
+
+interface BotStatusResponse {
+  botStatus?: BotStatus | null;
+  botHealth: BotHealth;
+  multiplier?: number;
+  lastSyncTime?: string | null;
+  botAvailable?: boolean;
+  formattedIxTime?: string;
+  hasTimeOverride?: boolean;
+  timeOverrideValue?: string | null;
+  hasMultiplierOverride?: boolean;
+  multiplierOverrideValue?: number;
+  isPaused?: boolean;
+}
 
 interface BotMetrics {
   timestamp: string;
@@ -43,7 +82,10 @@ export function BotMonitoringDashboard() {
   const [recentEvents, setRecentEvents] = useState<SyncEvent[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const { data: botStatus, refetch: refetchBotStatus } = api.admin.getBotStatus.useQuery(undefined, {
+  const {
+    data: botStatus,
+    refetch: refetchBotStatus,
+  } = api.admin.getBotStatus.useQuery(undefined, {
     refetchInterval: 5000, // Check every 5 seconds
   });
 
@@ -52,23 +94,23 @@ export function BotMonitoringDashboard() {
       refetchBotStatus();
       const event: SyncEvent = {
         timestamp: new Date().toISOString(),
-        eventType: 'Manual Sync',
-        source: 'Admin Dashboard',
+        eventType: "Manual Sync",
+        source: "Admin Dashboard",
         success: data.success,
-        errorMessage: data.success ? undefined : data.message
+        errorMessage: data.success ? undefined : data.message,
       };
-      setRecentEvents(prev => [event, ...prev.slice(0, 9)]);
+      setRecentEvents((prev) => [event, ...prev.slice(0, 9)]);
     },
     onError: (error) => {
       const event: SyncEvent = {
         timestamp: new Date().toISOString(),
-        eventType: 'Manual Sync',
-        source: 'Admin Dashboard',
+        eventType: "Manual Sync",
+        source: "Admin Dashboard",
         success: false,
-        errorMessage: error.message
+        errorMessage: error.message,
       };
-      setRecentEvents(prev => [event, ...prev.slice(0, 9)]);
-    }
+      setRecentEvents((prev) => [event, ...prev.slice(0, 9)]);
+    },
   });
 
   // Simulate metrics collection (in real implementation, this would come from your API)
@@ -82,7 +124,7 @@ export function BotMonitoringDashboard() {
           errorCount: 0,
         };
 
-        setMetrics(prev => {
+        setMetrics((prev) => {
           const updated = [...prev, newMetric].slice(-20); // Keep last 20 metrics
           return updated;
         });
@@ -91,19 +133,25 @@ export function BotMonitoringDashboard() {
 
     // Initial update
     collectMetrics();
-    
+
     // Update every 5 seconds
     const interval = setInterval(collectMetrics, 5000);
-    
+
     return () => clearInterval(interval);
   }, [botStatus]);
 
   const getStatusColor = (available: boolean) => {
-    return available ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400";
+    return available
+      ? "text-green-600 dark:text-green-400"
+      : "text-red-600 dark:text-red-400";
   };
 
   const getStatusIcon = (available: boolean) => {
-    return available ? <CheckCircle className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />;
+    return available ? (
+      <CheckCircle className="h-5 w-5" />
+    ) : (
+      <AlertCircle className="h-5 w-5" />
+    );
   };
 
   const formatUptime = (uptimeMs: number | null | undefined) => {
@@ -123,7 +171,9 @@ export function BotMonitoringDashboard() {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-center py-8">
           <RefreshCw className="h-6 w-6 animate-spin text-gray-400 mr-2" />
-          <span className="text-gray-500 dark:text-gray-400">Loading bot status...</span>
+          <span className="text-gray-500 dark:text-gray-400">
+            Loading bot status...
+          </span>
         </div>
       </div>
     );
@@ -162,7 +212,11 @@ export function BotMonitoringDashboard() {
             </div>
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Connection</p>
-              <p className={`font-medium ${getStatusColor(botStatus.botHealth.available)}`}>
+              <p
+                className={`font-medium ${getStatusColor(
+                  botStatus.botHealth.available
+                )}`}
+              >
                 {botStatus.botHealth.available ? "Online" : "Offline"}
               </p>
             </div>
@@ -173,7 +227,7 @@ export function BotMonitoringDashboard() {
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Bot Ready</p>
               <p className="font-medium text-gray-900 dark:text-white">
-                {botStatus.botStatus?.ready ? "Yes" : "No"}
+                {botStatus.botStatus?.botReady ? "Yes" : "No"}
               </p>
             </div>
           </div>
@@ -183,7 +237,7 @@ export function BotMonitoringDashboard() {
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Uptime</p>
               <p className="font-medium text-gray-900 dark:text-white">
-                {formatUptime(botStatus.botStatus?.uptime)}
+                {formatUptime(botStatus.botStatus?.ixTimeTimestamp)}
               </p>
             </div>
           </div>
@@ -206,10 +260,14 @@ export function BotMonitoringDashboard() {
             disabled={!botStatus.botHealth.available || syncWithBotMutation.isPending}
             className="px-3 py-1 text-sm bg-blue-100 hover:bg-blue-200 dark:bg-blue-700 dark:hover:bg-blue-600 text-blue-700 dark:text-blue-100 rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
           >
-            <ArrowLeftRight className={`h-3 w-3 mr-1 ${syncWithBotMutation.isPending ? 'animate-spin' : ''}`} />
-            {syncWithBotMutation.isPending ? 'Syncing...' : 'Force Sync'}
+            <ArrowLeftRight
+              className={`h-3 w-3 mr-1 ${
+                syncWithBotMutation.isPending ? "animate-spin" : ""
+              }`}
+            />
+            {syncWithBotMutation.isPending ? "Syncing..." : "Force Sync"}
           </button>
-          
+
           {botStatus.hasTimeOverride && (
             <div className="flex items-center px-3 py-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 rounded-md text-sm">
               <AlertTriangle className="h-3 w-3 mr-1" />
@@ -235,7 +293,7 @@ export function BotMonitoringDashboard() {
               <TrendingUp className="h-5 w-5 mr-2" />
               Performance Metrics
             </h4>
-            
+
             {metrics.length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Response Time Chart */}
@@ -246,21 +304,23 @@ export function BotMonitoringDashboard() {
                   <ResponsiveContainer width="100%" height={200}>
                     <LineChart data={metrics}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
-                      <XAxis 
-                        dataKey="timestamp" 
-                        tick={{ fontSize: 10 }} 
-                        tickFormatter={(value) => new Date(value).toLocaleTimeString()}
+                      <XAxis
+                        dataKey="timestamp"
+                        tick={{ fontSize: 10 }}
+                        tickFormatter={(value) =>
+                          new Date(value).toLocaleTimeString()
+                        }
                       />
                       <YAxis tick={{ fontSize: 10 }} />
-                      <Tooltip 
+                      <Tooltip
                         labelFormatter={(label) => new Date(label).toLocaleString()}
-                        formatter={(value: number) => [`${value.toFixed(1)}ms`, 'Response Time']}
+                        formatter={(value: number) => [`${value.toFixed(1)}ms`, "Response Time"]}
                       />
-                      <Line 
-                        type="monotone" 
-                        dataKey="responseTime" 
-                        stroke="#3B82F6" 
-                        strokeWidth={2} 
+                      <Line
+                        type="monotone"
+                        dataKey="responseTime"
+                        stroke="#3B82F6"
+                        strokeWidth={2}
                         dot={false}
                       />
                     </LineChart>
@@ -275,21 +335,23 @@ export function BotMonitoringDashboard() {
                   <ResponsiveContainer width="100%" height={200}>
                     <AreaChart data={metrics}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
-                      <XAxis 
-                        dataKey="timestamp" 
-                        tick={{ fontSize: 10 }} 
-                        tickFormatter={(value) => new Date(value).toLocaleTimeString()}
+                      <XAxis
+                        dataKey="timestamp"
+                        tick={{ fontSize: 10 }}
+                        tickFormatter={(value) =>
+                          new Date(value).toLocaleTimeString()
+                        }
                       />
                       <YAxis tick={{ fontSize: 10 }} domain={[0, 1]} />
-                      <Tooltip 
+                      <Tooltip
                         labelFormatter={(label) => new Date(label).toLocaleString()}
-                        formatter={(value: number) => [value ? 'Online' : 'Offline', 'Status']}
+                        formatter={(value: number) => [value ? "Online" : "Offline", "Status"]}
                       />
-                      <Area 
-                        type="stepAfter" 
-                        dataKey="isAvailable" 
-                        stroke="#10B981" 
-                        fill="#10B981" 
+                      <Area
+                        type="stepAfter"
+                        dataKey="isAvailable"
+                        stroke="#10B981"
+                        fill="#10B981"
                         fillOpacity={0.3}
                       />
                     </AreaChart>
@@ -310,16 +372,15 @@ export function BotMonitoringDashboard() {
               <Server className="h-5 w-5 mr-2" />
               Bot Information
             </h4>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {botStatus.botStatus?.user && (
+              {botStatus.botStatus?.botUser && (
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Bot User</p>
                   <p className="font-medium text-gray-900 dark:text-white">
-                    {botStatus.botStatus.user.tag}
+                    {botStatus.botStatus.botUser.tag}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    ID: {botStatus.botStatus.user.id}
+                    ID: {botStatus.botStatus.botUser.id}
                   </p>
                 </div>
               )}
@@ -327,10 +388,9 @@ export function BotMonitoringDashboard() {
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Last Sync</p>
                 <p className="font-medium text-gray-900 dark:text-white">
-                  {botStatus.lastSyncTime 
+                  {botStatus.lastSyncTime
                     ? new Date(botStatus.lastSyncTime).toLocaleString()
-                    : "Never"
-                  }
+                    : "Never"}
                 </p>
               </div>
 
@@ -363,10 +423,9 @@ export function BotMonitoringDashboard() {
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Multiplier Override</p>
                 <p className="font-medium text-gray-900 dark:text-white">
-                  {botStatus.hasMultiplierOverride 
+                  {botStatus.hasMultiplierOverride
                     ? `${botStatus.multiplierOverrideValue}x`
-                    : "None"
-                  }
+                    : "None"}
                 </p>
               </div>
             </div>
@@ -378,14 +437,21 @@ export function BotMonitoringDashboard() {
               <Activity className="h-5 w-5 mr-2" />
               Recent Sync Events
             </h4>
-            
+
             {recentEvents.length > 0 ? (
               <div className="space-y-2">
                 {recentEvents.slice(0, 10).map((event, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-750 rounded-md">
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-750 rounded-md"
+                  >
                     <div className="flex items-center space-x-3">
                       <div className={event.success ? "text-green-500" : "text-red-500"}>
-                        {event.success ? <CheckCircle className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                        {event.success ? (
+                          <CheckCircle className="h-4 w-4" />
+                        ) : (
+                          <AlertCircle className="h-4 w-4" />
+                        )}
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-900 dark:text-white">
