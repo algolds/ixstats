@@ -5,8 +5,10 @@ import { IxStatsDataService } from "~/lib/data-service";
 import { IxStatsCalculator } from "~/lib/calculations";
 import { IxTime } from "~/lib/ixtime";
 import { IxSheetzCalculator } from "~/lib/enhanced-calculations";
-import { EconomicTier, type PopulationTier, type GlobalEconomicSnapshot, type CountryStats } from "~/types/ixstats";
-import { DmInputType as DmInputTypeEnum } from "~/types/ixstats"; // Corrected import for enum
+// Corrected: Import enums as values, others as types
+import { EconomicTier, PopulationTier, DmInputType as DmInputTypeEnum } from "~/types/ixstats"; 
+import type { GlobalEconomicSnapshot, CountryStats } from "~/types/ixstats";
+
 
 const countryInputSchema = z.object({
   name: z.string().min(1),
@@ -788,7 +790,7 @@ export const countriesRouter = createTRPCRouter({
       }
     }),
 
-    getHistoricalAtTime: publicProcedure
+  getHistoricalAtTime: publicProcedure
     .input(z.object({
       countryId: z.string(),
       ixTime: z.number(),
@@ -820,7 +822,7 @@ export const countriesRouter = createTRPCRouter({
         gdpGrowthRate: h.gdpGrowthRate,
         landArea: h.landArea,
         populationDensity: h.populationDensity,
-        gdpDensity: h.gdpDensity, // Corrected typo from gdpDensi
+        gdpDensity: h.gdpDensity,
       }));
     }),
 });
