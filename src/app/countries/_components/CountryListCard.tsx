@@ -36,22 +36,16 @@ interface CountryListCardProps {
 export function CountryListCard({ country }: CountryListCardProps) {
   const [flagUrl, setFlagUrl] = useState<string | null>(null);
   const [flagLoading, setFlagLoading] = useState(true);
-  const [flagError, setFlagError] = useState(false);
 
   // Load flag from MediaWiki
   useEffect(() => {
     const loadFlag = async () => {
       try {
         setFlagLoading(true);
-        setFlagError(false);
         const url = await ixnayWiki.getFlagUrl(country.name);
         setFlagUrl(url);
-        if (!url) {
-          setFlagError(true);
-        }
       } catch (error) {
         console.warn(`Failed to load flag for ${country.name}:`, error);
-        setFlagError(true);
       } finally {
         setFlagLoading(false);
       }
@@ -60,14 +54,13 @@ export function CountryListCard({ country }: CountryListCardProps) {
     loadFlag();
   }, [country.name]);
 
-  const formatNumber = (num: number | null | undefined, isCurrency: boolean = true): string => {
-    if (num == null) return isCurrency ? '$0.00' : '0';
-    const prefix = isCurrency ? '$' : '';
-    if (Math.abs(num) >= 1e12) return `${prefix}${(num / 1e12).toFixed(2)}T`;
-    if (Math.abs(num) >= 1e9) return `${prefix}${(num / 1e9).toFixed(2)}B`;
-    if (Math.abs(num) >= 1e6) return `${prefix}${(num / 1e6).toFixed(2)}M`;
-    if (Math.abs(num) >= 1e3) return `${prefix}${(num / 1e3).toFixed(2)}K`;
-    return `${prefix}${num.toFixed(isCurrency ? 2 : 0)}`;
+  const formatNumber = (num: number | null | undefined, p0: boolean): string => {
+    if (num == null) return '$0.00';
+    if (num >= 1e12) return `$${(num / 1e12).toFixed(2)}T`;
+    if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
+    if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
+    if (num >= 1e3) return `$${(num / 1e3).toFixed(2)}K`;
+    return `$${num.toFixed(2)}`;
   };
 
   const formatPopulation = (num: number | null | undefined): string => {
@@ -129,36 +122,6 @@ export function CountryListCard({ country }: CountryListCardProps) {
     }
   };
 
-  // Render flag component
-  const renderFlag = () => {
-    if (flagLoading) {
-      return (
-        <div className="w-8 h-6 bg-[var(--color-bg-tertiary)] rounded animate-pulse flex items-center justify-center">
-          <Flag className="h-3 w-3 text-[var(--color-text-muted)]" />
-        </div>
-      );
-    }
-
-    if (flagUrl && !flagError) {
-      return (
-        <img
-          src={flagUrl}
-          alt={`Flag of ${country.name}`}
-          className="w-8 h-6 object-cover rounded shadow-sm border border-[var(--color-border-primary)]"
-          onError={() => setFlagError(true)}
-          onLoad={() => setFlagError(false)}
-        />
-      );
-    }
-
-    // Fallback when no flag URL or error occurred
-    return (
-      <div className="w-8 h-6 bg-[var(--color-bg-tertiary)] rounded flex items-center justify-center border border-[var(--color-border-primary)]">
-        <Flag className="h-3 w-3 text-[var(--color-text-muted)]" />
-      </div>
-    );
-  };
-
   const efficiency = getEconomicEfficiency();
   const tierStyle = getTierStyle(country.economicTier);
 
@@ -173,7 +136,31 @@ export function CountryListCard({ country }: CountryListCardProps) {
           <div className="flex items-center min-w-0 flex-1">
             {/* Flag */}
             <div className="flex-shrink-0 mr-3">
-              {renderFlag()}
+              {flagLoading ? (
+                <div className="w-8 h-6 bg-[var(--color-bg-tertiary)] rounded animate-pulse flex items-center justify-center">
+                  <Flag className="h-3 w-3 text-[var(--color-text-muted)]" />
+                </div>
+              ) : flagUrl ? (
+                <img
+                  src={flagUrl}
+                  alt={`Flag of ${country.name}`}
+                  className="w-8 h-6 object-cover rounded shadow-sm border border-[var(--color-border-primary)]"
+                  onError={(e) => {
+                    // Fallback to icon if image fails to load
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const fallback = target.nextElementSibling as HTMLElement;
+                    if (fallback) fallback.style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              {/* Fallback flag icon */}
+              <div 
+                className="w-8 h-6 bg-[var(--color-bg-tertiary)] rounded flex items-center justify-center border border-[var(--color-border-primary)]"
+                style={{ display: flagUrl ? 'none' : 'flex' }}
+              >
+                <Flag className="h-3 w-3 text-[var(--color-text-muted)]" />
+              </div>
             </div>
             
             {/* Country Name */}

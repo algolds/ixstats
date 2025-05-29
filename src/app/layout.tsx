@@ -1,37 +1,43 @@
 // src/app/layout.tsx
 import "~/styles/globals.css";
 
-import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
+import { Geist } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { ThemeProvider } from "~/context/theme-context";
-import { MediaWikiProvider, MediaWikiLoadingIndicator } from "~/components/providers/MediaWikiProvider";
+import { Navigation } from "~/app/_components/navigation";
 
 export const metadata: Metadata = {
-  title: "IxStats - Ixnay Statistics Dashboard",
-  description: "Advanced statistics and analysis platform for the Ixnay worldbuilding community",
+  title: "IxStats - Alpha version",
+  description: "IxStats - Automated Economic Statistics for Ixnay",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
-export default function RootLayout({
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist-sans",
+});
+
+const RootLayout = ({
   children,
-}: Readonly<{ children: React.ReactNode }>) {
+}: Readonly<{ children: React.ReactNode }>) => {
   return (
-    <html lang="en" className={`${GeistSans.variable}`}>
-      <body>
+    <html lang="en" className={`${geist.variable}`} suppressHydrationWarning>
+      <body className="min-h-screen transition-colors duration-200">
         <TRPCReactProvider>
           <ThemeProvider>
-            <MediaWikiProvider>
-              <main className="min-h-screen">
+            <div className="min-h-screen flex flex-col">
+              <Navigation />
+              <main className="flex-1">
                 {children}
               </main>
-              {/* Global loading indicator for MediaWiki data */}
-              <MediaWikiLoadingIndicator />
-            </MediaWikiProvider>
+            </div>
           </ThemeProvider>
         </TRPCReactProvider>
       </body>
     </html>
   );
 }
+
+export default RootLayout;
