@@ -4,12 +4,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Moon, Sun, BarChart3, Globe, Settings, Database, Building } from "lucide-react";
-import { useTheme, useThemeClasses } from "~/context/theme-context";
+import { useTheme } from "~/context/theme-context";
 
 export function Navigation() {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
-  const themeClasses = useThemeClasses();
 
   const navigationItems = [
     {
@@ -50,20 +49,20 @@ export function Navigation() {
           <div className="flex">
             {/* Logo */}
             <div className="flex-shrink-0 flex items-center">
-              <Link 
-                href="/" 
+              <Link
+                href="/"
                 className="text-2xl font-bold text-gradient hover:opacity-80 transition-opacity"
               >
                 IxStats™
               </Link>
             </div>
-            
+
             {/* Navigation Links */}
             <div className="hidden sm:ml-6 sm:flex sm:space-x-2">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
                 const current = isCurrentPage(item.href);
-                
+
                 return (
                   <Link
                     key={item.name}
@@ -78,7 +77,7 @@ export function Navigation() {
               })}
             </div>
           </div>
-          
+
           {/* Theme Toggle */}
           <div className="flex items-center">
             <button
@@ -95,14 +94,14 @@ export function Navigation() {
           </div>
         </div>
       </div>
-      
+
       {/* Mobile Navigation */}
       <div className="sm:hidden border-t border-[var(--color-border-primary)]">
         <div className="px-2 pt-2 pb-3 space-y-1">
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const current = isCurrentPage(item.href);
-            
+
             return (
               <Link
                 key={item.name}

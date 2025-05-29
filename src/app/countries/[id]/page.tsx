@@ -113,7 +113,7 @@ export default function CountryDetailPage() {
   });
 
   // Get forecast data
-  const { data: forecastData } = api.countries.getForecastRange.useQuery({
+  const { data: forecastData } = api.countries.getForecast.useQuery({
     countryId,
     startTime: targetTime,
     endTime: forecastTime,
