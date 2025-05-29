@@ -42,7 +42,7 @@ export const env = createEnv({
       .string()
       .url()
       .optional()
-      .default("https://wiki.ixnay.com/"),
+      .default("https://ixwiki.com/"),
   },
 
   /**

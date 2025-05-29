@@ -48,6 +48,9 @@ interface MediaWikiApiResponse {
           contentmodel: string;
           '*': string;
         }>;
+        imageinfo?: Array<{
+          url?: string;
+        }>;
       };
     };
   };
@@ -342,52 +345,90 @@ class MediaWikiService {
   private parseCountryInfobox(wikitext: string, countryName: string): CountryInfobox {
     const infobox: CountryInfobox = { name: countryName };
     
-    // Find the Infobox country template
-    const infoboxMatch = wikitext.match(/{{Infobox country\s*\|([^{}]*(?:{[^{}]*}[^{}]*)*)}}/i);
+    // Ensure wikitext is defined and is a string
+    if (!wikitext || typeof wikitext !== 'string') {
+      console.warn(`[MediaWiki] Invalid wikitext for ${countryName}`);
+      return infobox;
+    }
     
-    if (!infoboxMatch) {
+    // Find the Infobox country template (case insensitive, flexible spacing)
+    const infoboxMatch = wikitext.match(/\{\{\s*Infobox\s+country\s*\|([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}\}/i);
+    
+    if (!infoboxMatch || !infoboxMatch[1]) {
+      // Try alternative infobox patterns
+      const altPatterns = [
+        /\{\{\s*Infobox\s+nation\s*\|([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}\}/i,
+        /\{\{\s*Country\s+infobox\s*\|([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}\}/i,
+        /\{\{\s*Infobox\s*\|([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}\}/i
+      ];
+      
+      let foundMatch = false;
+      for (const pattern of altPatterns) {
+        const match = wikitext.match(pattern);
+        if (match && match[1]) {
+          const parsedInfobox = this.parseInfoboxContent(match[1], countryName);
+          this.infoboxCache.set(countryName.toLowerCase(), parsedInfobox);
+          return parsedInfobox;
+        }
+      }
+      
+      console.warn(`[MediaWiki] No infobox found for ${countryName}`);
       return infobox;
     }
 
-    const infoboxContent = infoboxMatch[1] || '';
+    return this.parseInfoboxContent(infoboxMatch[1], countryName);
+  }
+
+  /**
+   * Parse infobox content into structured data
+   */
+  private parseInfoboxContent(infoboxContent: string, countryName: string): CountryInfobox {
+    const infobox: CountryInfobox = { name: countryName };
     
     // Parse the infobox parameters
     const paramRegex = /\|\s*([^=|]+)\s*=\s*([^|]*)/g;
     let match;
     
     while ((match = paramRegex.exec(infoboxContent)) !== null) {
-      const key = match[1]!.trim().toLowerCase().replace(/\s+/g, '_');
-      const value = match[2]!.trim()
+      if (!match[1] || !match[2]) continue;
+      
+      const key = match[1].trim().toLowerCase().replace(/\s+/g, '_');
+      const value = match[2].trim()
         .replace(/\[\[([^|\]]+)(\|[^\]]+)?\]\]/g, '$1') // Remove wiki links but keep text
         .replace(/<ref[^>]*>.*?<\/ref>/gi, '') // Remove references
-        .replace(/{{[^}]*}}/g, '') // Remove templates
+        .replace(/\{\{[^}]*\}\}/g, '') // Remove templates
         .replace(/\s+/g, ' ')
         .trim();
       
-      if (value) {
+      if (value && value.length > 0) {
         // Map common infobox fields
         switch (key) {
           case 'official_name':
           case 'conventional_long_name':
+          case 'common_name':
             if (!infobox.name || infobox.name === countryName) {
               infobox.name = value;
             }
             break;
           case 'capital':
           case 'capital_city':
+          case 'capital_and_largest_city':
             infobox.capital = value;
             break;
           case 'continent':
+          case 'region':
             infobox.continent = value;
             break;
           case 'area_km2':
           case 'area_total_km2':
           case 'area':
+          case 'total_area':
             infobox.area = value;
             break;
           case 'population_estimate':
           case 'population_total':
           case 'population':
+          case 'population_census':
             infobox.population = value;
             break;
           case 'currency':
@@ -395,41 +436,50 @@ class MediaWikiService {
             break;
           case 'government_type':
           case 'government':
+          case 'political_system':
             infobox.government = value;
             break;
           case 'leader_title1':
           case 'leader_name1':
           case 'head_of_state':
-            if (key.includes('name') || key.includes('head')) {
+          case 'president':
+          case 'prime_minister':
+            if (key.includes('name') || key.includes('head') || key.includes('president') || key.includes('minister')) {
               infobox.leader = value;
             }
             break;
           case 'gdp_nominal':
           case 'gdp_ppp':
           case 'gdp':
+          case 'gdp_total':
             infobox.gdp = value;
             break;
           case 'official_languages':
           case 'languages':
+          case 'national_languages':
             infobox.languages = value;
             break;
           case 'timezone':
           case 'utc_offset':
+          case 'time_zone':
             infobox.timezone = value;
             break;
           case 'calling_code':
+          case 'phone_code':
             infobox.callingCode = value;
             break;
           case 'internet_tld':
           case 'cctld':
+          case 'iso_code':
             infobox.internetTld = value;
             break;
           case 'drives_on':
+          case 'driving_side':
             infobox.drivingSide = value;
             break;
           default:
             // Store any other fields that might be useful
-            if (value.length < 200) { // Avoid very long values
+            if (value.length < 200 && value.length > 0) { // Avoid very long values and empty strings
               infobox[key] = value;
             }
         }
@@ -458,7 +508,8 @@ class MediaWikiService {
     }
 
     try {
-      const templatePageTitle = `Template:Country data/${countryName}`;
+      // Fixed: Correct template path format for ixwiki.com
+      const templatePageTitle = `Template:Country_data_${countryName}`;
       const url = new URL(`${this.baseUrl}api.php`);
       
       url.searchParams.set('action', 'query');
@@ -487,16 +538,82 @@ class MediaWikiService {
       
       if (!page || page.pageid === -1 || !page.revisions?.[0]) {
         console.warn(`[MediaWiki] Template not found: ${templatePageTitle}`);
+        // Try alternative template naming patterns
+        const alternatives = [
+          `Template:Country data ${countryName}`, // With space
+          `Template:Countrydata_${countryName}`,   // No underscore between Country and data
+          `Template:Flag_${countryName}`,          // Direct flag template
+        ];
+        
+        for (const altTemplate of alternatives) {
+          const altResult = await this.tryAlternativeTemplate(altTemplate);
+          if (altResult) {
+            this.cache.set(cacheKey, altResult);
+            return altResult;
+          }
+        }
+        
         return null;
       }
 
       const wikitext = page.revisions[0]['*'];
+      if (!wikitext) {
+        console.warn(`[MediaWiki] Empty wikitext for ${templatePageTitle}`);
+        return null;
+      }
+      
       const parsedData = this.parseCountryTemplate(wikitext);
       
       this.cache.set(cacheKey, parsedData);
       return parsedData;
     } catch (error) {
       console.error(`[MediaWiki] Error fetching country data for ${countryName}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Try alternative template patterns
+   */
+  private async tryAlternativeTemplate(templateTitle: string): Promise<CountryTemplateData | null> {
+    try {
+      const url = new URL(`${this.baseUrl}api.php`);
+      
+      url.searchParams.set('action', 'query');
+      url.searchParams.set('format', 'json');
+      url.searchParams.set('titles', templateTitle);
+      url.searchParams.set('prop', 'revisions');
+      url.searchParams.set('rvprop', 'content');
+      url.searchParams.set('rvslots', 'main');
+      url.searchParams.set('origin', '*');
+
+      const response = await fetch(url.toString());
+      
+      if (!response.ok) {
+        return null;
+      }
+
+      const data: MediaWikiApiResponse = await response.json();
+      
+      if (!data.query?.pages) {
+        return null;
+      }
+
+      const pages = Object.values(data.query.pages);
+      const page = pages[0];
+      
+      if (!page || page.pageid === -1 || !page.revisions?.[0]) {
+        return null;
+      }
+
+      const wikitext = page.revisions[0]['*'];
+      if (!wikitext) {
+        return null;
+      }
+      
+      return this.parseCountryTemplate(wikitext);
+    } catch (error) {
+      console.warn(`[MediaWiki] Failed to fetch alternative template ${templateTitle}:`, error);
       return null;
     }
   }
@@ -534,7 +651,7 @@ class MediaWikiService {
         return null;
       }
 
-      const imageInfo = (page as any).imageinfo;
+      const imageInfo = page.imageinfo;
       if (imageInfo && imageInfo[0]?.url) {
         return imageInfo[0].url;
       }
@@ -552,6 +669,10 @@ class MediaWikiService {
   private parseCountryTemplate(wikitext: string): CountryTemplateData {
     const data: CountryTemplateData = {};
     
+    if (!wikitext || typeof wikitext !== 'string') {
+      return data;
+    }
+    
     // Remove comments and normalize whitespace
     const cleanText = wikitext
       .replace(/<!--[\s\S]*?-->/g, '')
@@ -563,32 +684,37 @@ class MediaWikiService {
     let match;
     
     while ((match = paramRegex.exec(cleanText)) !== null) {
-      const key = match[1]!.trim().toLowerCase();
-      const value = match[2]!.trim();
+      if (!match[1] || !match[2]) continue;
       
-      switch (key) {
-        case 'flag':
-        case 'flag_image':
-        case 'flag-image':
-          data.flag = value;
-          break;
-        case 'capital':
-          data.capital = value;
-          break;
-        case 'continent':
-          data.continent = value;
-          break;
-        case 'currency':
-          data.currency = value;
-          break;
-        case 'government':
-        case 'gov_type':
-          data.government = value;
-          break;
-        case 'leader':
-        case 'head_of_state':
-          data.leader = value;
-          break;
+      const key = match[1].trim().toLowerCase();
+      const value = match[2].trim();
+      
+      if (value && value.length > 0) {
+        switch (key) {
+          case 'flag':
+          case 'flag_image':
+          case 'flag-image':
+          case 'flagimage':
+            data.flag = value;
+            break;
+          case 'capital':
+            data.capital = value;
+            break;
+          case 'continent':
+            data.continent = value;
+            break;
+          case 'currency':
+            data.currency = value;
+            break;
+          case 'government':
+          case 'gov_type':
+            data.government = value;
+            break;
+          case 'leader':
+          case 'head_of_state':
+            data.leader = value;
+            break;
+        }
       }
     }
 
@@ -620,7 +746,7 @@ class MediaWikiService {
 }
 
 // Default instance for the Ixnay MediaWiki
-const IXNAY_MEDIAWIKI_URL = process.env.NEXT_PUBLIC_MEDIAWIKI_URL ?? 'https://wiki.ixnay.com/';
+const IXNAY_MEDIAWIKI_URL = process.env.NEXT_PUBLIC_MEDIAWIKI_URL ?? 'https://ixwiki.com/';
 
 export const ixnayWiki = new MediaWikiService(IXNAY_MEDIAWIKI_URL);
 
