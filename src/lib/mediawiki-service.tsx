@@ -96,9 +96,6 @@ const InfoIconToUse = InfoIconLucide || PlaceholderIcon;
 
 
 class MediaWikiService {
-  getCountryWikiUrl(countryName: string) {
-    throw new Error("Method not implemented.");
-  }
   private baseUrl: string;
   private cache = new Map<string, CountryTemplateData>();
   private flagCache = new Map<string, FlagCacheEntry>();
@@ -111,6 +108,13 @@ class MediaWikiService {
     if (typeof window !== 'undefined') {
       this.initializeFlagPreloading();
     }
+  }
+
+  // Public method to get country wiki URL
+  getCountryWikiUrl(countryName: string): string {
+    // Encode the country name for URL safety
+    const encodedName = encodeURIComponent(countryName.replace(/ /g, '_'));
+    return `${this.baseUrl}wiki/${encodedName}`;
   }
 
   private async makeApiRequest(params: Record<string, string>, debug = false): Promise<MediaWikiApiResponse> {
@@ -462,7 +466,6 @@ class MediaWikiService {
     return infobox;
   }
 
-  // This is line 488 in your provided file.
   private parseCountryTemplate(wikitext: string): CountryTemplateData {
     const data: CountryTemplateData = {};
     if (!wikitext || typeof wikitext !== 'string') return data;
@@ -484,16 +487,81 @@ class MediaWikiService {
     return data;
   }
   
-  // Stubs for methods not directly related to the immediate error, but need full implementation
   async getCountryData(countryName: string): Promise<CountryTemplateData | null> {
-    // This should call makeApiRequest and parseCountryTemplate
-    // For now, returning null to avoid further errors if this path is hit
-    console.warn("getCountryData is a stub");
-    return null;
+    const cacheKey = countryName.toLowerCase();
+    
+    // Check cache first
+    if (this.cache.has(cacheKey)) {
+      return this.cache.get(cacheKey) || null;
+    }
+    
+    try {
+      // Try to get the country data template
+      const templateTitle = `Template:Country data ${countryName}`;
+      const data = await this.makeApiRequest({
+        action: 'query',
+        titles: templateTitle,
+        prop: 'revisions',
+        rvprop: 'content',
+        rvslots: 'main'
+      });
+      
+      const page = data.query?.pages ? Object.values(data.query.pages)[0] : undefined;
+      if (page && !page.missing && page.revisions?.[0]?.['*']) {
+        const wikitext = page.revisions[0]['*'];
+        const templateData = this.parseCountryTemplate(wikitext);
+        
+        // Cache the result
+        this.cache.set(cacheKey, templateData);
+        return templateData;
+      }
+      
+      return null;
+    } catch (error) {
+      console.warn(`[MediaWiki] Failed to get country data for ${countryName}:`, error);
+      return null;
+    }
   }
-  async testTemplateAccess(): Promise<void> { console.log("Testing template access..."); }
-  clearCache(): void { console.log("Caches cleared."); }
-  getCacheStats() { return { countryData:this.cache.size, flags:this.flagCache.size, infoboxes:this.infoboxCache.size, preloadedFlags:0, failedFlags:0 }; }
+
+  async testTemplateAccess(): Promise<void> { 
+    console.log("[MediaWiki] Testing template access...");
+    try {
+      // Test with a common template
+      const testCountry = "United States";
+      const data = await this.makeApiRequest({
+        action: 'query',
+        titles: `Template:Country data ${testCountry}`,
+        prop: 'revisions',
+        rvprop: 'content',
+        rvslots: 'main'
+      }, true);
+      
+      console.log("[MediaWiki] Template access test successful", data);
+    } catch (error) {
+      console.error("[MediaWiki] Template access test failed:", error);
+    }
+  }
+
+  clearCache(): void { 
+    this.cache.clear();
+    this.flagCache.clear();
+    this.infoboxCache.clear();
+    this.preloadPromises.clear();
+    console.log("[MediaWiki] All caches cleared."); 
+  }
+  
+  getCacheStats() { 
+    const preloadedFlags = Array.from(this.flagCache.values()).filter(entry => entry.preloaded).length;
+    const failedFlags = Array.from(this.flagCache.values()).filter(entry => entry.error).length;
+    
+    return { 
+      countryData: this.cache.size, 
+      flags: this.flagCache.size, 
+      infoboxes: this.infoboxCache.size, 
+      preloadedFlags,
+      failedFlags 
+    }; 
+  }
 }
 
 const IXNAY_MEDIAWIKI_URL = env.NEXT_PUBLIC_MEDIAWIKI_URL ?? 'https://ixwiki.com/';
@@ -501,8 +569,27 @@ export const ixnayWiki = new MediaWikiService(IXNAY_MEDIAWIKI_URL);
 
 if (typeof window !== 'undefined') {
   (window as any).ixnayWikiService = ixnayWiki;
-  (window as any).testMediaWikiAccess = async (country?: string) => { /* ... */ };
+  (window as any).testMediaWikiAccess = async (country?: string) => {
+    console.log('[MediaWiki] Testing MediaWiki access...');
+    
+    if (country) {
+      console.log(`[MediaWiki] Testing flag access for ${country}...`);
+      try {
+        const flagUrl = await ixnayWiki.getFlagUrl(country);
+        console.log(`[MediaWiki] Flag URL for ${country}:`, flagUrl);
+        
+        const infobox = await ixnayWiki.getCountryInfobox(country);
+        console.log(`[MediaWiki] Infobox data for ${country}:`, infobox);
+        
+        return { flagUrl, infobox };
+      } catch (error) {
+        console.error('[MediaWiki] Test failed:', error);
+        return null;
+      }
+    } else {
+      await ixnayWiki.testTemplateAccess();
+    }
+  };
 }
 
 export type { CountryTemplateData };
-// Removed the standalone 'replace' function

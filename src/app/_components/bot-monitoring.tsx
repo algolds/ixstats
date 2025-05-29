@@ -106,7 +106,7 @@ export function BotMonitoringDashboard() {
     return available ? <CheckCircle className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />;
   };
 
-  const formatUptime = (uptimeMs: number | null) => {
+  const formatUptime = (uptimeMs: number | null | undefined) => {
     if (!uptimeMs) return "Unknown";
     const seconds = Math.floor(uptimeMs / 1000);
     const hours = Math.floor(seconds / 3600);
@@ -344,7 +344,7 @@ export function BotMonitoringDashboard() {
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Current IxTime</p>
                 <p className="font-medium text-gray-900 dark:text-white text-sm">
-                  {botStatus.ixTimeFormatted || "Unknown"}
+                  {botStatus.formattedIxTime || "Unknown"}
                 </p>
               </div>
 
