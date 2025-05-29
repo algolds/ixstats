@@ -54,6 +54,13 @@ interface MediaWikiApiResponse {
       };
     };
   };
+  expandtemplates?: {
+    wikitext?: string;
+  };
+  error?: {
+    code: string;
+    info: string;
+  };
 }
 
 interface FlagCacheEntry {
@@ -79,6 +86,58 @@ class MediaWikiService {
     // Initialize flag pre-loading if in browser
     if (typeof window !== 'undefined') {
       this.initializeFlagPreloading();
+    }
+  }
+
+  /**
+   * Make API request with proper error handling and CORS
+   */
+  private async makeApiRequest(params: Record<string, string>, debug = false): Promise<MediaWikiApiResponse> {
+    const url = new URL(`${this.baseUrl}api.php`);
+    
+    // Set default parameters
+    url.searchParams.set('format', 'json');
+    url.searchParams.set('origin', '*'); // Important for CORS
+    
+    // Add custom parameters
+    Object.entries(params).forEach(([key, value]) => {
+      url.searchParams.set(key, value);
+    });
+
+    if (debug) console.log(`[MediaWiki] API Request: ${url.toString()}`);
+
+    try {
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        mode: 'cors',
+      });
+
+      if (!response.ok) {
+        console.error(`[MediaWiki] HTTP Error: ${response.status} ${response.statusText}`);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data: MediaWikiApiResponse = await response.json();
+      
+      // Enhanced debugging - only log full response when debugging
+      if (debug) {
+        console.log(`[MediaWiki] API Response:`, JSON.stringify(data, null, 2));
+      }
+      
+      if (data.error) {
+        console.error(`[MediaWiki] API Error:`, data.error);
+        throw new Error(`API Error: ${data.error.code} - ${data.error.info}`);
+      }
+
+      if (debug) console.log(`[MediaWiki] API Response received successfully`);
+      return data;
+    } catch (error) {
+      console.error(`[MediaWiki] Request failed:`, error);
+      throw error;
     }
   }
 
@@ -223,49 +282,35 @@ class MediaWikiService {
     const cacheKey = countryName.toLowerCase();
     
     try {
-      // First try to get country data which might have flag info
-      const countryData = await this.getCountryData(countryName);
+      console.log(`[MediaWiki] Fetching flag for: ${countryName}`);
       
-      if (countryData?.flag) {
-        const flagUrl = await this.resolveFileUrl(countryData.flag);
-        if (flagUrl) {
-          this.flagCache.set(cacheKey, {
-            url: flagUrl,
-            preloaded: false,
-            lastUpdated: Date.now(),
-            error: false
-          });
-          return flagUrl;
-        }
+      // First try to get flag from Template:Country data [CountryName]
+      let flagUrl = await this.getFlagFromCountryDataTemplate(countryName);
+      if (flagUrl) {
+        this.flagCache.set(cacheKey, {
+          url: flagUrl,
+          preloaded: false,
+          lastUpdated: Date.now(),
+          error: false
+        });
+        return flagUrl;
       }
 
-      // Fallback: try common flag file naming patterns
-      const flagPatterns = [
-        `Flag of ${countryName}.png`,
-        `Flag of ${countryName}.svg`,
-        `Flag of ${countryName}.jpg`,
-        `${countryName} flag.png`,
-        `${countryName} flag.svg`,
-        `Flag ${countryName}.png`,
-        `Flag ${countryName}.svg`,
-        `${countryName}flag.png`, // No space
-        `${countryName}Flag.png`, // Capital F
-      ];
-
-      for (const pattern of flagPatterns) {
-        const flagUrl = await this.resolveFileUrl(pattern);
-        if (flagUrl) {
-          this.flagCache.set(cacheKey, {
-            url: flagUrl,
-            preloaded: false,
-            lastUpdated: Date.now(),
-            error: false
-          });
-          return flagUrl;
-        }
+      // Fallback: Get flag info from the main country page itself
+      console.log(`[MediaWiki] Template approach failed, trying main country page: ${countryName}`);
+      flagUrl = await this.getFlagFromCountryPage(countryName);
+      if (flagUrl) {
+        this.flagCache.set(cacheKey, {
+          url: flagUrl,
+          preloaded: false,
+          lastUpdated: Date.now(),
+          error: false
+        });
+        return flagUrl;
       }
 
       // No flag found - cache the negative result
+      console.warn(`[MediaWiki] No flag found for ${countryName}`);
       this.flagCache.set(cacheKey, {
         url: '',
         preloaded: false,
@@ -287,7 +332,226 @@ class MediaWikiService {
   }
 
   /**
-   * Get country infobox data
+   * Get flag from the main country page by looking for flag references
+   */
+  private async getFlagFromCountryPage(countryName: string): Promise<string | null> {
+    try {
+      console.log(`[MediaWiki] Looking for flag in main country page: ${countryName}`);
+      
+      const data = await this.makeApiRequest({
+        action: 'query',
+        titles: countryName,
+        prop: 'revisions',
+        rvprop: 'content',
+        rvslots: 'main'
+      });
+      
+      if (!data.query?.pages) {
+        console.log(`[MediaWiki] No pages in response for main page: ${countryName}`);
+        return null;
+      }
+
+      const pages = Object.values(data.query.pages);
+      const page = pages[0];
+      
+      if (!page || page.pageid === -1 || !page.revisions?.[0]) {
+        console.log(`[MediaWiki] Main page not found: ${countryName}`);
+        return null;
+      }
+
+      const wikitext = page.revisions[0]['*'];
+      if (!wikitext) {
+        console.log(`[MediaWiki] Empty content for main page: ${countryName}`);
+        return null;
+      }
+
+      console.log(`[MediaWiki] Main page content preview: ${wikitext.substring(0, 500)}...`);
+      
+      // Look for {{flag|CountryName}} in the page content
+      const flagMatch = wikitext.match(/\{\{\s*flag\s*\|\s*([^}]*)\s*\}\}/i);
+      if (flagMatch) {
+        console.log(`[MediaWiki] Found {{flag|...}} in main page: ${flagMatch[0]}`);
+        return await this.resolveFlagTemplate(countryName);
+      }
+
+      // Look for File: references that might be flags
+      const fileMatches = wikitext.match(/\[\[\s*File:([^|\]]*flag[^|\]]*)/gi);
+      if (fileMatches) {
+        for (const match of fileMatches) {
+          const fileNameMatch = match.match(/File:([^|\]]+)/i);
+          if (fileNameMatch) {
+            const fileName = fileNameMatch[1];
+            console.log(`[MediaWiki] Found potential flag file in main page: ${fileName}`);
+            const flagUrl = await this.resolveFileUrl(fileName);
+            if (flagUrl) {
+              return flagUrl;
+            }
+          }
+        }
+      }
+
+      // Look in the infobox for flag parameter
+      const infoboxMatch = wikitext.match(/\{\{\s*Infobox[^}]*flag\s*=\s*([^|\n}]+)/i);
+      if (infoboxMatch) {
+        const flagFile = infoboxMatch[1].trim();
+        console.log(`[MediaWiki] Found flag in infobox: ${flagFile}`);
+        return await this.resolveFileUrl(flagFile);
+      }
+
+      return null;
+    } catch (error) {
+      console.error(`[MediaWiki] Error getting flag from main country page:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Get flag from Template:Country data [CountryName] by finding {{flag|CountryName}} usage
+   */
+  private async getFlagFromCountryDataTemplate(countryName: string): Promise<string | null> {
+    try {
+      console.log(`[MediaWiki] Looking for flag in Template:Country data ${countryName}`);
+      
+      // Try different template naming patterns
+      const templatePatterns = [
+        `Template:Country data ${countryName}`,
+        `Template:Country_data_${countryName}`,
+        `Template:Countrydata_${countryName}`,
+        `Template:Flag_${countryName}`,
+      ];
+
+      for (const templateTitle of templatePatterns) {
+        console.log(`[MediaWiki] Trying template: ${templateTitle}`);
+        
+        try {
+          const data = await this.makeApiRequest({
+            action: 'query',
+            titles: templateTitle,
+            prop: 'revisions',
+            rvprop: 'content',
+            rvslots: 'main'
+          });
+          
+          if (!data.query?.pages) {
+            console.log(`[MediaWiki] No pages in response for: ${templateTitle}`);
+            continue;
+          }
+
+          const pages = Object.values(data.query.pages);
+          const page = pages[0];
+          
+          if (!page || page.pageid === -1 || !page.revisions?.[0]) {
+            console.log(`[MediaWiki] Template not found: ${templateTitle}`);
+            continue;
+          }
+
+          const wikitext = page.revisions[0]['*'];
+          if (!wikitext) {
+            console.log(`[MediaWiki] Empty wikitext for ${templateTitle}`);
+            continue;
+          }
+
+          console.log(`[MediaWiki] Template content: ${wikitext.substring(0, 300)}...`);
+          
+          // Look for {{flag|CountryName}} pattern and extract the flag image
+          const flagMatch = wikitext.match(/\{\{\s*flag\s*\|\s*([^}]+)\s*\}\}/i);
+          if (flagMatch) {
+            console.log(`[MediaWiki] Found {{flag|...}} template: ${flagMatch[0]}`);
+            
+            // Now we need to resolve what the flag template actually produces
+            return await this.resolveFlagTemplate(countryName);
+          }
+
+          // Look for direct flag file references
+          const flagFileMatch = wikitext.match(/flag\s*=\s*([^|\n}]+)/i);
+          if (flagFileMatch) {
+            const flagFile = flagFileMatch[1].trim();
+            console.log(`[MediaWiki] Found flag file reference: ${flagFile}`);
+            return await this.resolveFileUrl(flagFile);
+          }
+
+          // Look for any file references that might be flags
+          const fileMatch = wikitext.match(/\[\[File:([^|\]]*flag[^|\]]*)/i);
+          if (fileMatch) {
+            const flagFile = fileMatch[1];
+            console.log(`[MediaWiki] Found file reference with 'flag' in name: ${flagFile}`);
+            return await this.resolveFileUrl(flagFile);
+          }
+        } catch (error) {
+          console.warn(`[MediaWiki] Error checking template ${templateTitle}:`, error);
+          continue;
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error(`[MediaWiki] Error getting flag from country data template:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Resolve {{flag|CountryName}} template to actual flag image URL
+   */
+  private async resolveFlagTemplate(countryName: string): Promise<string | null> {
+    try {
+      // Try common flag file naming patterns based on the country name
+      const flagPatterns = [
+        `Flag of ${countryName}.svg`,
+        `Flag of ${countryName}.png`,
+        `${countryName} flag.svg`,
+        `${countryName} flag.png`,
+        `Flag ${countryName}.svg`,
+        `Flag ${countryName}.png`,
+        `${countryName}flag.svg`,
+        `${countryName}Flag.svg`,
+        `${countryName}.svg`,  // Sometimes just the country name
+        `${countryName}.png`,
+      ];
+
+      console.log(`[MediaWiki] Trying flag patterns for {{flag|${countryName}}}:`, flagPatterns);
+
+      for (const pattern of flagPatterns) {
+        const flagUrl = await this.resolveFileUrl(pattern);
+        if (flagUrl) {
+          console.log(`[MediaWiki] Flag resolved: {{flag|${countryName}}} -> ${pattern} -> ${flagUrl}`);
+          return flagUrl;
+        }
+      }
+
+      // Also try expanding the template directly via API
+      try {
+        const expandedData = await this.makeApiRequest({
+          action: 'expandtemplates',
+          text: `{{flag|${countryName}}}`,
+          prop: 'wikitext'
+        });
+
+        if (expandedData.expandtemplates?.wikitext) {
+          const expandedText = expandedData.expandtemplates.wikitext;
+          console.log(`[MediaWiki] Expanded {{flag|${countryName}}} to: ${expandedText}`);
+          
+          // Look for file references in the expanded text
+          const fileMatch = expandedText.match(/\[\[File:([^|\]]+)/i);
+          if (fileMatch) {
+            const fileName = fileMatch[1];
+            console.log(`[MediaWiki] Found file in expanded template: ${fileName}`);
+            return await this.resolveFileUrl(fileName);
+          }
+        }
+      } catch (expandError) {
+        console.warn(`[MediaWiki] Template expansion failed:`, expandError);
+      }
+
+      return null;
+    } catch (error) {
+      console.error(`[MediaWiki] Error resolving flag template:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Get country infobox data from the main country page
    */
   async getCountryInfobox(countryName: string): Promise<CountryInfobox | null> {
     const cacheKey = countryName.toLowerCase();
@@ -297,26 +561,19 @@ class MediaWikiService {
     }
 
     try {
-      const url = new URL(`${this.baseUrl}api.php`);
-      
-      url.searchParams.set('action', 'query');
-      url.searchParams.set('format', 'json');
-      url.searchParams.set('titles', countryName);
-      url.searchParams.set('prop', 'revisions');
-      url.searchParams.set('rvprop', 'content');
-      url.searchParams.set('rvslots', 'main');
-      url.searchParams.set('origin', '*');
+      console.log(`[MediaWiki] Fetching infobox from main page: ${countryName}`);
 
-      const response = await fetch(url.toString());
-      
-      if (!response.ok) {
-        console.warn(`[MediaWiki] Failed to fetch ${countryName}: ${response.status}`);
-        return null;
-      }
-
-      const data: MediaWikiApiResponse = await response.json();
+      // Get the main country page content
+      const data = await this.makeApiRequest({
+        action: 'query',
+        titles: countryName,
+        prop: 'revisions',
+        rvprop: 'content',
+        rvslots: 'main'
+      });
       
       if (!data.query?.pages) {
+        console.warn(`[MediaWiki] No pages in response for: ${countryName}`);
         return null;
       }
 
@@ -329,7 +586,17 @@ class MediaWikiService {
       }
 
       const wikitext = page.revisions[0]['*'];
+      
+      if (!wikitext) {
+        console.warn(`[MediaWiki] Empty content for: ${countryName}`);
+        return null;
+      }
+
+      console.log(`[MediaWiki] Page content preview: ${wikitext.substring(0, 500)}...`);
+      
       const infobox = this.parseCountryInfobox(wikitext, countryName);
+      
+      console.log(`[MediaWiki] Infobox parsed for ${countryName}:`, Object.keys(infobox));
       
       this.infoboxCache.set(cacheKey, infobox);
       return infobox;
@@ -340,7 +607,7 @@ class MediaWikiService {
   }
 
   /**
-   * Parse country infobox from wikitext
+   * Parse country infobox from wikitext (usually at the beginning of the page)
    */
   private parseCountryInfobox(wikitext: string, countryName: string): CountryInfobox {
     const infobox: CountryInfobox = { name: countryName };
@@ -351,31 +618,36 @@ class MediaWikiService {
       return infobox;
     }
     
+    console.log(`[MediaWiki] Looking for infobox in: ${wikitext.substring(0, 1000)}...`);
+    
     // Find the Infobox country template (case insensitive, flexible spacing)
-    const infoboxMatch = wikitext.match(/\{\{\s*Infobox\s+country\s*\|([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}\}/i);
+    // The infobox is usually at the beginning of the page
+    const infoboxPatterns = [
+      /\{\{\s*Infobox\s+country\s*\|([\s\S]*?)\n\}\}/i,
+      /\{\{\s*Infobox\s+nation\s*\|([\s\S]*?)\n\}\}/i,
+      /\{\{\s*Country\s+infobox\s*\|([\s\S]*?)\n\}\}/i,
+      /\{\{\s*Infobox\s*\|([\s\S]*?)\n\}\}/i
+    ];
+    
+    let infoboxMatch = null;
+    let matchedPattern = '';
+    
+    for (const pattern of infoboxPatterns) {
+      infoboxMatch = wikitext.match(pattern);
+      if (infoboxMatch && infoboxMatch[1]) {
+        matchedPattern = pattern.toString();
+        console.log(`[MediaWiki] Found infobox with pattern: ${matchedPattern}`);
+        break;
+      }
+    }
     
     if (!infoboxMatch || !infoboxMatch[1]) {
-      // Try alternative infobox patterns
-      const altPatterns = [
-        /\{\{\s*Infobox\s+nation\s*\|([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}\}/i,
-        /\{\{\s*Country\s+infobox\s*\|([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}\}/i,
-        /\{\{\s*Infobox\s*\|([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}\}/i
-      ];
-      
-      let foundMatch = false;
-      for (const pattern of altPatterns) {
-        const match = wikitext.match(pattern);
-        if (match && match[1]) {
-          const parsedInfobox = this.parseInfoboxContent(match[1], countryName);
-          this.infoboxCache.set(countryName.toLowerCase(), parsedInfobox);
-          return parsedInfobox;
-        }
-      }
-      
       console.warn(`[MediaWiki] No infobox found for ${countryName}`);
       return infobox;
     }
 
+    console.log(`[MediaWiki] Infobox content: ${infoboxMatch[1].substring(0, 500)}...`);
+    
     return this.parseInfoboxContent(infoboxMatch[1], countryName);
   }
 
@@ -498,7 +770,7 @@ class MediaWikiService {
   }
 
   /**
-   * Fetch country template data from MediaWiki
+   * Fetch country template data from MediaWiki (simplified - mainly for debugging)
    */
   async getCountryData(countryName: string): Promise<CountryTemplateData | null> {
     const cacheKey = countryName.toLowerCase();
@@ -508,28 +780,21 @@ class MediaWikiService {
     }
 
     try {
-      // Fixed: Correct template path format for ixwiki.com
-      const templatePageTitle = `Template:Country_data_${countryName}`;
-      const url = new URL(`${this.baseUrl}api.php`);
-      
-      url.searchParams.set('action', 'query');
-      url.searchParams.set('format', 'json');
-      url.searchParams.set('titles', templatePageTitle);
-      url.searchParams.set('prop', 'revisions');
-      url.searchParams.set('rvprop', 'content');
-      url.searchParams.set('rvslots', 'main');
-      url.searchParams.set('origin', '*');
+      console.log(`[MediaWiki] Fetching country data template for: ${countryName}`);
 
-      const response = await fetch(url.toString());
+      // Try the main Template:Country data pattern
+      const templateTitle = `Template:Country data ${countryName}`;
       
-      if (!response.ok) {
-        console.warn(`[MediaWiki] Failed to fetch ${templatePageTitle}: ${response.status}`);
-        return null;
-      }
-
-      const data: MediaWikiApiResponse = await response.json();
+      const data = await this.makeApiRequest({
+        action: 'query',
+        titles: templateTitle,
+        prop: 'revisions',
+        rvprop: 'content',
+        rvslots: 'main'
+      });
       
       if (!data.query?.pages) {
+        console.log(`[MediaWiki] No pages in response for: ${templateTitle}`);
         return null;
       }
 
@@ -537,31 +802,17 @@ class MediaWikiService {
       const page = pages[0];
       
       if (!page || page.pageid === -1 || !page.revisions?.[0]) {
-        console.warn(`[MediaWiki] Template not found: ${templatePageTitle}`);
-        // Try alternative template naming patterns
-        const alternatives = [
-          `Template:Country data ${countryName}`, // With space
-          `Template:Countrydata_${countryName}`,   // No underscore between Country and data
-          `Template:Flag_${countryName}`,          // Direct flag template
-        ];
-        
-        for (const altTemplate of alternatives) {
-          const altResult = await this.tryAlternativeTemplate(altTemplate);
-          if (altResult) {
-            this.cache.set(cacheKey, altResult);
-            return altResult;
-          }
-        }
-        
+        console.log(`[MediaWiki] Template not found: ${templateTitle}`);
         return null;
       }
 
       const wikitext = page.revisions[0]['*'];
       if (!wikitext) {
-        console.warn(`[MediaWiki] Empty wikitext for ${templatePageTitle}`);
+        console.log(`[MediaWiki] Empty wikitext for ${templateTitle}`);
         return null;
       }
       
+      console.log(`[MediaWiki] Found template: ${templateTitle}`);
       const parsedData = this.parseCountryTemplate(wikitext);
       
       this.cache.set(cacheKey, parsedData);
@@ -573,74 +824,21 @@ class MediaWikiService {
   }
 
   /**
-   * Try alternative template patterns
-   */
-  private async tryAlternativeTemplate(templateTitle: string): Promise<CountryTemplateData | null> {
-    try {
-      const url = new URL(`${this.baseUrl}api.php`);
-      
-      url.searchParams.set('action', 'query');
-      url.searchParams.set('format', 'json');
-      url.searchParams.set('titles', templateTitle);
-      url.searchParams.set('prop', 'revisions');
-      url.searchParams.set('rvprop', 'content');
-      url.searchParams.set('rvslots', 'main');
-      url.searchParams.set('origin', '*');
-
-      const response = await fetch(url.toString());
-      
-      if (!response.ok) {
-        return null;
-      }
-
-      const data: MediaWikiApiResponse = await response.json();
-      
-      if (!data.query?.pages) {
-        return null;
-      }
-
-      const pages = Object.values(data.query.pages);
-      const page = pages[0];
-      
-      if (!page || page.pageid === -1 || !page.revisions?.[0]) {
-        return null;
-      }
-
-      const wikitext = page.revisions[0]['*'];
-      if (!wikitext) {
-        return null;
-      }
-      
-      return this.parseCountryTemplate(wikitext);
-    } catch (error) {
-      console.warn(`[MediaWiki] Failed to fetch alternative template ${templateTitle}:`, error);
-      return null;
-    }
-  }
-
-  /**
    * Resolve a file name to its full URL
    */
   private async resolveFileUrl(fileName: string): Promise<string | null> {
     try {
-      const url = new URL(`${this.baseUrl}api.php`);
-      
-      url.searchParams.set('action', 'query');
-      url.searchParams.set('format', 'json');
-      url.searchParams.set('titles', `File:${fileName}`);
-      url.searchParams.set('prop', 'imageinfo');
-      url.searchParams.set('iiprop', 'url');
-      url.searchParams.set('origin', '*');
+      console.log(`[MediaWiki] Resolving file URL for: ${fileName}`);
 
-      const response = await fetch(url.toString());
-      
-      if (!response.ok) {
-        return null;
-      }
-
-      const data: MediaWikiApiResponse = await response.json();
+      const data = await this.makeApiRequest({
+        action: 'query',
+        titles: `File:${fileName}`,
+        prop: 'imageinfo',
+        iiprop: 'url'
+      });
       
       if (!data.query?.pages) {
+        console.log(`[MediaWiki] No pages found for file: ${fileName}`);
         return null;
       }
 
@@ -648,14 +846,17 @@ class MediaWikiService {
       const page = pages[0];
       
       if (!page || page.pageid === -1) {
+        console.log(`[MediaWiki] File not found: ${fileName}`);
         return null;
       }
 
       const imageInfo = page.imageinfo;
       if (imageInfo && imageInfo[0]?.url) {
+        console.log(`[MediaWiki] File resolved: ${fileName} -> ${imageInfo[0].url}`);
         return imageInfo[0].url;
       }
 
+      console.log(`[MediaWiki] No imageinfo for file: ${fileName}`);
       return null;
     } catch (error) {
       console.error(`[MediaWiki] Error resolving file URL for ${fileName}:`, error);
@@ -672,6 +873,8 @@ class MediaWikiService {
     if (!wikitext || typeof wikitext !== 'string') {
       return data;
     }
+    
+    console.log(`[MediaWiki] Parsing template wikitext: ${wikitext.substring(0, 200)}...`);
     
     // Remove comments and normalize whitespace
     const cleanText = wikitext
@@ -690,6 +893,8 @@ class MediaWikiService {
       const value = match[2].trim();
       
       if (value && value.length > 0) {
+        console.log(`[MediaWiki] Template param: ${key} = ${value}`);
+        
         switch (key) {
           case 'flag':
           case 'flag_image':
@@ -718,7 +923,62 @@ class MediaWikiService {
       }
     }
 
+    console.log(`[MediaWiki] Parsed country data:`, data);
     return data;
+  }
+
+  /**
+   * Test method to check if we can access any templates at all
+   */
+  async testTemplateAccess(): Promise<void> {
+    console.log(`[MediaWiki] Testing template access...`);
+    
+    // Try some commonly existing templates
+    const testTemplates = [
+      'Template:Flag',
+      'Template:Flagicon', 
+      'Template:Main',
+      'Template:See also',
+      'Template:Infobox',
+      'Template:Cite web'
+    ];
+
+    for (const template of testTemplates) {
+      try {
+        console.log(`[MediaWiki] Testing template: ${template}`);
+        
+        const data = await this.makeApiRequest({
+          action: 'query',
+          titles: template,
+          prop: 'revisions',
+          rvprop: 'content',
+          rvslots: 'main'
+        }, true); // Enable debug logging for tests
+        
+        if (data.query?.pages) {
+          const pages = Object.values(data.query.pages);
+          const page = pages[0];
+          
+          if (page && page.pageid !== -1) {
+            console.log(`[MediaWiki] ✓ Template exists: ${template} (ID: ${page.pageid})`);
+            if (page.revisions?.[0]) {
+              const content = page.revisions[0]['*'];
+              console.log(`[MediaWiki] Template content length: ${content ? content.length : 0}`);
+              if (content) {
+                console.log(`[MediaWiki] Template preview: ${content.substring(0, 200)}...`);
+                return; // Found a working template, exit test
+              }
+            }
+          } else {
+            console.log(`[MediaWiki] ✗ Template not found: ${template}`);
+          }
+        }
+      } catch (error) {
+        console.log(`[MediaWiki] ✗ Error testing template ${template}:`, error);
+      }
+    }
+    
+    console.log(`[MediaWiki] Template access test completed - no working templates found`);
   }
 
   /**
@@ -749,6 +1009,23 @@ class MediaWikiService {
 const IXNAY_MEDIAWIKI_URL = process.env.NEXT_PUBLIC_MEDIAWIKI_URL ?? 'https://ixwiki.com/';
 
 export const ixnayWiki = new MediaWikiService(IXNAY_MEDIAWIKI_URL);
+
+// Make test method available globally for debugging
+if (typeof window !== 'undefined') {
+  (window as any).testMediaWiki = async () => {
+    console.log('Testing MediaWiki API access...');
+    await ixnayWiki.testTemplateAccess();
+    
+    // Also test a specific country page
+    console.log('Testing country page access...');
+    try {
+      const infobox = await ixnayWiki.getCountryInfobox('Tierrador');
+      console.log('Tierrador infobox result:', infobox);
+    } catch (error) {
+      console.error('Error testing Tierrador page:', error);
+    }
+  };
+}
 
 export { MediaWikiService };
 export type { CountryTemplateData, CountryInfobox };
