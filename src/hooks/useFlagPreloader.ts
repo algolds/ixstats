@@ -109,8 +109,8 @@ export function useGlobalFlagPreloader() {
     
     return {
       ...stats,
-      cacheEfficiency: stats.flags > 0 ? Math.round((stats.preloadedFlags / stats.flags) * 100) : 0,
-      errorRate: stats.flags > 0 ? Math.round((stats.failedFlags / stats.flags) * 100) : 0
+      cacheEfficiency: stats.totalRequests > 0 ? Math.round((stats.cacheHits / stats.totalRequests) * 100) : 0,
+      errorRate: stats.totalRequests > 0 ? Math.round((stats.errors / stats.totalRequests) * 100) : 0
     };
   }, []);
 

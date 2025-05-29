@@ -17,7 +17,8 @@ import {
   Wifi,
   Navigation,
   Info,
-  Loader2
+  Loader2,
+  AlertTriangle
 } from "lucide-react";
 import { ixnayWiki, type CountryInfobox } from "~/lib/mediawiki-service";
 
@@ -31,32 +32,64 @@ interface InfoboxField {
   label: string;
   value: string;
   icon: React.ComponentType<{ className?: string }>;
-  priority: number; // Lower numbers shown first
+  priority: number;
+}
+
+interface LoadingState {
+  isLoading: boolean;
+  error: string | null;
+  retryCount: number;
 }
 
 export function CountryInfobox({ countryName, onToggle }: CountryInfoboxProps) {
   const [infobox, setInfobox] = useState<CountryInfobox | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadingState, setLoadingState] = useState<LoadingState>({
+    isLoading: true,
+    error: null,
+    retryCount: 0
+  });
+
+  const MAX_RETRIES = 2;
 
   useEffect(() => {
-    const loadInfobox = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const data = await ixnayWiki.getCountryInfobox(countryName);
-        setInfobox(data);
-      } catch (err) {
-        console.error(`Failed to load infobox for ${countryName}:`, err);
-        setError('Failed to load country information');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadInfobox();
+    loadInfoboxData();
   }, [countryName]);
+
+  const loadInfoboxData = async (isRetry = false) => {
+    try {
+      if (!isRetry) {
+        setLoadingState(prev => ({ ...prev, isLoading: true, error: null }));
+      }
+
+      console.log(`[CountryInfobox] Loading data for: ${countryName}`);
+      const data = await ixnayWiki.getCountryInfobox(countryName);
+      
+      setInfobox(data);
+      setLoadingState(prev => ({ ...prev, isLoading: false, error: null }));
+      
+      if (data) {
+        console.log(`[CountryInfobox] Successfully loaded infobox for: ${countryName}`);
+      } else {
+        console.log(`[CountryInfobox] No infobox data found for: ${countryName}`);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load country information';
+      console.error(`[CountryInfobox] Error loading data for ${countryName}:`, error);
+      
+      setLoadingState(prev => ({
+        isLoading: false,
+        error: errorMessage,
+        retryCount: prev.retryCount + 1
+      }));
+    }
+  };
+
+  const handleRetry = () => {
+    if (loadingState.retryCount < MAX_RETRIES) {
+      loadInfoboxData(true);
+    }
+  };
 
   const handleToggle = () => {
     const newExpanded = !isExpanded;
@@ -71,36 +104,47 @@ export function CountryInfobox({ countryName, onToggle }: CountryInfoboxProps) {
   const formatInfoboxFields = (infobox: CountryInfobox): InfoboxField[] => {
     const fields: InfoboxField[] = [];
 
-    // Define field mappings with icons and priorities
     const fieldMappings: Array<{
-      key: keyof CountryInfobox | string;
+      keys: string[];
       label: string;
       icon: React.ComponentType<{ className?: string }>;
       priority: number;
       formatter?: (value: string) => string;
     }> = [
-      { key: 'capital', label: 'Capital', icon: Building, priority: 1 },
-      { key: 'continent', label: 'Continent', icon: Globe, priority: 2 },
-      { key: 'area', label: 'Area', icon: MapPin, priority: 3, formatter: (v) => v.includes('km') ? v : `${v} km²` },
-      { key: 'population', label: 'Population', icon: Users, priority: 4 },
-      { key: 'currency', label: 'Currency', icon: DollarSign, priority: 5 },
-      { key: 'government', label: 'Government', icon: Building, priority: 6 },
-      { key: 'leader', label: 'Leader', icon: Users, priority: 7 },
-      { key: 'gdp', label: 'GDP', icon: DollarSign, priority: 8 },
-      { key: 'languages', label: 'Languages', icon: Languages, priority: 9 },
-      { key: 'timezone', label: 'Timezone', icon: Clock, priority: 10 },
-      { key: 'callingCode', label: 'Calling Code', icon: Phone, priority: 11 },
-      { key: 'internetTld', label: 'Internet TLD', icon: Wifi, priority: 12 },
-      { key: 'drivingSide', label: 'Driving Side', icon: Navigation, priority: 13 },
+      { keys: ['capital'], label: 'Capital', icon: Building, priority: 1 },
+      { keys: ['continent'], label: 'Continent', icon: Globe, priority: 2 },
+      { keys: ['area', 'area_km2'], label: 'Area', icon: MapPin, priority: 3, formatter: (v) => v.includes('km') ? v : `${v} km²` },
+      { keys: ['population', 'population_estimate'], label: 'Population', icon: Users, priority: 4 },
+      { keys: ['currency', 'currency_code'], label: 'Currency', icon: DollarSign, priority: 5 },
+      { keys: ['government', 'government_type'], label: 'Government', icon: Building, priority: 6 },
+      { keys: ['leader', 'leader_name1'], label: 'Leader', icon: Users, priority: 7 },
+      { keys: ['gdp', 'GDP_PPP', 'GDP_nominal'], label: 'GDP', icon: DollarSign, priority: 8 },
+      { keys: ['languages', 'official_languages'], label: 'Languages', icon: Languages, priority: 9 },
+      { keys: ['timezone', 'time_zone'], label: 'Timezone', icon: Clock, priority: 10 },
+      { keys: ['callingCode', 'calling_code'], label: 'Calling Code', icon: Phone, priority: 11 },
+      { keys: ['internetTld', 'cctld'], label: 'Internet TLD', icon: Wifi, priority: 12 },
+      { keys: ['drivingSide', 'drives_on'], label: 'Driving Side', icon: Navigation, priority: 13 },
     ];
 
-    // Process standard fields
+    // Process mapped fields
     for (const mapping of fieldMappings) {
-      const value = infobox[mapping.key as keyof CountryInfobox];
-      if (value && value.trim()) {
+      let value: string | undefined;
+      let usedKey: string | undefined;
+
+      // Find first available value from the key options
+      for (const key of mapping.keys) {
+        const val = infobox[key as keyof CountryInfobox];
+        if (val && val.trim()) {
+          value = val;
+          usedKey = key;
+          break;
+        }
+      }
+
+      if (value && usedKey) {
         const formattedValue = mapping.formatter ? mapping.formatter(value) : value;
         fields.push({
-          key: mapping.key as string,
+          key: usedKey,
           label: mapping.label,
           value: formattedValue,
           icon: mapping.icon,
@@ -109,27 +153,28 @@ export function CountryInfobox({ countryName, onToggle }: CountryInfoboxProps) {
       }
     }
 
-    // Process any additional fields not in our standard mappings
-    const standardKeys = new Set(fieldMappings.map(m => m.key));
+    // Add any additional fields not in our standard mappings
+    const mappedKeys = new Set(fieldMappings.flatMap(m => m.keys));
+    const standardKeys = new Set(['name', 'conventional_long_name', 'native_name', 'image_flag', 'flag', 'image_coat']);
+    
     for (const [key, value] of Object.entries(infobox)) {
-      if (!standardKeys.has(key) && key !== 'name' && value && typeof value === 'string' && value.trim()) {
-        // Format the key as a readable label
+      if (!mappedKeys.has(key) && !standardKeys.has(key) && value && typeof value === 'string' && value.trim()) {
         const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
         fields.push({
           key,
           label,
           value,
           icon: Info,
-          priority: 20 // Lower priority for additional fields
+          priority: 20
         });
       }
     }
 
-    // Sort by priority
     return fields.sort((a, b) => a.priority - b.priority);
   };
 
-  if (isLoading) {
+  // Loading state
+  if (loadingState.isLoading) {
     return (
       <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-primary)] rounded-lg shadow-md">
         <div className="p-4 border-b border-[var(--color-border-primary)]">
@@ -150,7 +195,7 @@ export function CountryInfobox({ countryName, onToggle }: CountryInfoboxProps) {
               <div key={i} className="flex items-center space-x-3">
                 <div className="w-5 h-5 bg-[var(--color-bg-tertiary)] rounded animate-pulse"></div>
                 <div className="flex-1">
-                  <div className="h-4 bg-[var(--color-bg-tertiary)] rounded animate-pulse"></div>
+                  <div className="h-4 bg-[var(--color-bg-tertiary)] rounded animate-pulse" style={{width: `${60 + Math.random() * 40}%`}}></div>
                 </div>
               </div>
             ))}
@@ -160,7 +205,51 @@ export function CountryInfobox({ countryName, onToggle }: CountryInfoboxProps) {
     );
   }
 
-  if (error || !infobox) {
+  // Error state
+  if (loadingState.error) {
+    const canRetry = loadingState.retryCount < MAX_RETRIES;
+    
+    return (
+      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-primary)] rounded-lg shadow-md">
+        <div className="p-4 border-b border-[var(--color-border-primary)]">
+          <h3 className="text-lg font-semibold text-[var(--color-text-primary)] flex items-center">
+            <Globe className="h-5 w-5 mr-2" />
+            Country Information
+          </h3>
+        </div>
+        <div className="p-4 text-center">
+          <div className="text-[var(--color-error)] mb-4">
+            <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
+            <p className="text-sm font-medium">Failed to load country information</p>
+            <p className="text-xs text-[var(--color-text-muted)] mt-1">{loadingState.error}</p>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-2 justify-center">
+            {canRetry && (
+              <button
+                onClick={handleRetry}
+                className="inline-flex items-center px-3 py-2 bg-[var(--color-brand-primary)] text-white rounded-md hover:bg-[var(--color-brand-dark)] transition-colors text-sm"
+              >
+                Try Again ({loadingState.retryCount}/{MAX_RETRIES})
+              </button>
+            )}
+            <a
+              href={getWikiUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center px-3 py-2 bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] rounded-md hover:bg-[var(--color-bg-accent)] transition-colors text-sm"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              View on Wiki
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // No data state
+  if (!infobox) {
     return (
       <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-primary)] rounded-lg shadow-md">
         <div className="p-4 border-b border-[var(--color-border-primary)]">
@@ -172,7 +261,8 @@ export function CountryInfobox({ countryName, onToggle }: CountryInfoboxProps) {
         <div className="p-4 text-center">
           <div className="text-[var(--color-text-muted)] mb-4">
             <Info className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>{error || 'No country information available'}</p>
+            <p className="text-sm">No country information available</p>
+            <p className="text-xs mt-1">This country may not have a wiki page yet.</p>
           </div>
           <a
             href={getWikiUrl()}
@@ -188,8 +278,9 @@ export function CountryInfobox({ countryName, onToggle }: CountryInfoboxProps) {
     );
   }
 
+  // Success state with data
   const fields = formatInfoboxFields(infobox);
-  const displayFields = isExpanded ? fields : fields.slice(0, 6); // Show first 6 when collapsed
+  const displayFields = isExpanded ? fields : fields.slice(0, 6);
 
   return (
     <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-primary)] rounded-lg shadow-md transition-all duration-300">
@@ -198,7 +289,7 @@ export function CountryInfobox({ countryName, onToggle }: CountryInfoboxProps) {
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-[var(--color-text-primary)] flex items-center">
             <Globe className="h-5 w-5 mr-2" />
-            {infobox.name}
+            {infobox.conventional_long_name || infobox.name}
           </h3>
           <div className="flex items-center space-x-2">
             <a
@@ -232,6 +323,13 @@ export function CountryInfobox({ countryName, onToggle }: CountryInfoboxProps) {
             )}
           </div>
         </div>
+        
+        {/* Native name subtitle */}
+        {infobox.native_name && infobox.native_name !== infobox.name && (
+          <p className="text-sm text-[var(--color-text-muted)] mt-1 italic">
+            {infobox.native_name}
+          </p>
+        )}
       </div>
 
       {/* Content */}
@@ -271,20 +369,23 @@ export function CountryInfobox({ countryName, onToggle }: CountryInfoboxProps) {
         )}
       </div>
 
-      {/* Footer with wiki link when expanded */}
+      {/* Footer with source info when expanded */}
       {isExpanded && (
         <div className="px-4 py-3 bg-[var(--color-bg-tertiary)] border-t border-[var(--color-border-primary)] rounded-b-lg">
           <div className="flex items-center justify-between text-xs text-[var(--color-text-muted)]">
             <span>Source: Ixnay Wiki</span>
-            <a
-              href={getWikiUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[var(--color-brand-primary)] hover:text-[var(--color-brand-dark)] transition-colors flex items-center"
-            >
-              View full page
-              <ExternalLink className="h-3 w-3 ml-1" />
-            </a>
+            <div className="flex items-center space-x-4">
+              <span>Fields: {fields.length}</span>
+              <a
+                href={getWikiUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--color-brand-primary)] hover:text-[var(--color-brand-dark)] transition-colors flex items-center"
+              >
+                View full page
+                <ExternalLink className="h-3 w-3 ml-1" />
+              </a>
+            </div>
           </div>
         </div>
       )}
