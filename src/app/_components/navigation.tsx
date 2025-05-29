@@ -14,7 +14,7 @@ export function Navigation() {
   const navigationItems = [
     {
       name: "Dashboard",
-      href: "/ixstats",
+      href: "/dashboard",
       icon: BarChart3,
     },
     {

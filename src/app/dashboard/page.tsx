@@ -1,8 +1,8 @@
-// src/app/ixstats/page.tsx
+// src/app/dashboard/page.tsx
 import { Suspense } from "react";
 import IxStatsDashboard from "~/app/_components/ixstats-dashboard";
 
-function IxStatsLoading() {
+function DashboardLoading() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="text-center">
@@ -13,9 +13,9 @@ function IxStatsLoading() {
   );
 }
 
-export default function IxStatsPage() {
+export default function DashboardPage() {
   return (
-    <Suspense fallback={<IxStatsLoading />}>
+    <Suspense fallback={<DashboardLoading />}>
       <IxStatsDashboard />
     </Suspense>
   );

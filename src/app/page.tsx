@@ -16,7 +16,7 @@ export default async function Home() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
             <Link
               className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20 transition-colors"
-              href="/ixstats"
+              href="/dashboard"
             >
               <h3 className="text-2xl font-bold">📊 IxStats Dashboard →</h3>
               <div className="text-lg">
@@ -39,7 +39,7 @@ export default async function Home() {
 
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-300 mb-2">
-              Alpha version 0.3.5
+              Alpha version 0.4.0
             </p>
             <p className="text-xs text-gray-400">
               build version: d32bd7e
