@@ -171,10 +171,10 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (systemConfig) {
-      const multiplierConfig = systemConfig.find((c: SystemConfig) => c.key === 'time_multiplier');
-      const growthConfig = systemConfig.find((c: SystemConfig) => c.key === 'global_growth_factor');
-      const autoUpdateConfig = systemConfig.find((c: SystemConfig) => c.key === 'auto_update');
-      const botSyncConfig = systemConfig.find((c: SystemConfig) => c.key === 'bot_sync_enabled');
+      const multiplierConfig = systemConfig.find(c => c.key === 'time_multiplier');
+      const growthConfig = systemConfig.find(c => c.key === 'global_growth_factor');
+      const autoUpdateConfig = systemConfig.find(c => c.key === 'auto_update');
+      const botSyncConfig = systemConfig.find(c => c.key === 'bot_sync_enabled');
 
       if (multiplierConfig) setTimeMultiplier(parseFloat(multiplierConfig.value));
       if (growthConfig) setGlobalGrowthFactor(parseFloat(growthConfig.value));
