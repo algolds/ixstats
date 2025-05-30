@@ -76,6 +76,10 @@ export interface TaxBracket {
   }
   
   export interface CountryComparison {
+    metric: ReactNode;
+    tier(tier: any): unknown;
+    analysis: ReactNode;
+    comparableCountries: any;
     countryName: string;
     similarity: number; // 0-100%
     matchingFields: string[];

@@ -1,8 +1,81 @@
-// src/app/economy/lib/enhanced-economy-data-service.ts
+// src/app/economy/lib/economy-data-service.ts
+// Note: The original content comment mentioned enhanced-economy-data-service.ts.
+// This file now defines base types/functions and the EnhancedEconomyDataService class.
 
-import type { EnhancedEconomicInputs, CountryComparison, EconomicHint } from "./enhanced-economic-types";
-import type { RealCountryData } from "./economy-data-service";
-import { getEconomicTier } from "./economy-data-service";
+import type { EnhancedEconomicInputs, CountryComparison as EnhancedCountryComparison, EconomicHint } from "./enhanced-economic-types";
+import { EconomicTier } from "~/types/ixstats"; // Use central enum
+
+// Define and Export RealCountryData
+export interface RealCountryData {
+  name: string;
+  countryCode: string; // Assuming this is part of the data from RLData.csv
+  population: number;
+  gdpPerCapita: number;
+  taxRevenuePercent: number;
+  unemploymentRate: number;
+  // Add any other fields that come from your RLData.csv source
+  landArea?: number; // Optional land area
+}
+
+// Define and Export EconomicInputs (base version for the simpler form)
+export interface EconomicInputs {
+  countryName: string;
+  population: number;
+  gdpPerCapita: number;
+  taxRevenuePercent: number;
+  unemploymentRate: number;
+  governmentBudgetPercent: number;
+  internalDebtPercent: number;
+  externalDebtPercent: number;
+}
+
+// Define and Export getEconomicTier
+export function getEconomicTier(gdpPerCapita: number): EconomicTier {
+  if (gdpPerCapita >= 50000) return EconomicTier.ADVANCED;
+  if (gdpPerCapita >= 35000) return EconomicTier.DEVELOPED;
+  if (gdpPerCapita >= 15000) return EconomicTier.EMERGING;
+  return EconomicTier.DEVELOPING;
+}
+
+// Placeholder for parseEconomyData - implement actual CSV parsing logic here
+export async function parseEconomyData(): Promise<RealCountryData[]> {
+  console.warn("parseEconomyData is a placeholder and needs implementation.");
+  // This should fetch and parse 'IxEconomy.xlsx - RLData.csv' or similar
+  // For now, returning an empty array to avoid breaking dependent components.
+  return [];
+}
+
+// Placeholder for saveBaselineToStorage
+export function saveBaselineToStorage(inputs: EconomicInputs): void {
+  console.warn("saveBaselineToStorage is a placeholder and needs implementation.");
+  try {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ixeconomy_baseline', JSON.stringify(inputs));
+    }
+  } catch (e) {
+    console.error("Failed to save baseline to storage", e);
+  }
+}
+
+// Placeholder for loadBaselineFromStorage
+export function loadBaselineFromStorage(): EconomicInputs | null {
+  console.warn("loadBaselineFromStorage is a placeholder and needs implementation.");
+  try {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('ixeconomy_baseline');
+      return stored ? JSON.parse(stored) : null;
+    }
+    return null;
+  } catch (e) {
+    console.error("Failed to load baseline from storage", e);
+    return null;
+  }
+}
+
+
+// Re-export CountryComparison from enhanced-economic-types as EconomicComparison if needed by other files directly from this service
+export type { EnhancedCountryComparison as EconomicComparison };
+
 
 export interface EnhancedCountryProfile {
   basic: EnhancedEconomicInputs;
@@ -23,7 +96,7 @@ export interface EnhancedCountryProfile {
     taxBurdenPerCapita: number;
     governmentEfficiencyRatio: number;
   };
-  comparisons: CountryComparison[];
+  comparisons: EnhancedCountryComparison[];
   hints: EconomicHint[];
   ixTimeData: {
     baselineDate: number;
@@ -38,32 +111,25 @@ export interface EnhancedCountryProfile {
 
 export class EnhancedEconomyDataService {
   
-  /**
-   * Calculate comprehensive metrics from enhanced economic inputs
-   */
   static calculateMetrics(inputs: EnhancedEconomicInputs): EnhancedCountryProfile['calculated'] {
-    // Basic calculations
     const totalGDP = inputs.population * inputs.gdpPerCapita;
     const realTotalGDP = totalGDP * (1 + inputs.realGDPGrowthRate);
     const taxRevenue = totalGDP * (inputs.taxRevenuePercent / 100);
     const governmentBudget = totalGDP * (inputs.governmentBudgetPercent / 100);
     const budgetBalance = taxRevenue - governmentBudget;
-    const budgetBalancePercent = (budgetBalance / totalGDP) * 100;
+    const budgetBalancePercent = totalGDP === 0 ? 0 : (budgetBalance / totalGDP) * 100;
     const totalDebt = totalGDP * ((inputs.internalDebtPercent + inputs.externalDebtPercent) / 100);
     const debtToGDPRatio = inputs.internalDebtPercent + inputs.externalDebtPercent;
 
-    // Labor market calculations
     const workingAgePopulation = inputs.population * 0.65;
     const laborForce = workingAgePopulation * (inputs.laborForceParticipationRate / 100);
     const employedPopulation = laborForce * (1 - inputs.unemploymentRate / 100);
     const unemployedPopulation = laborForce - employedPopulation;
 
-    // Advanced calculations
-    const productivityPerWorker = totalGDP / employedPopulation;
-    const taxBurdenPerCapita = taxRevenue / inputs.population;
-    const governmentEfficiencyRatio = governmentBudget / inputs.population;
+    const productivityPerWorker = employedPopulation === 0 ? 0 : totalGDP / employedPopulation;
+    const taxBurdenPerCapita = inputs.population === 0 ? 0 : taxRevenue / inputs.population;
+    const governmentEfficiencyRatio = inputs.population === 0 ? 0 : governmentBudget / inputs.population;
 
-    // Economic health score (0-100)
     const economicHealthScore = this.calculateEconomicHealthScore(inputs);
 
     return {
@@ -85,20 +151,15 @@ export class EnhancedEconomyDataService {
     };
   }
 
-  /**
-   * Calculate comprehensive economic health score
-   */
   private static calculateEconomicHealthScore(inputs: EnhancedEconomicInputs): number {
-    let score = 50; // Base score
+    let score = 50; 
 
-    // GDP per capita contribution (0-20 points)
     if (inputs.gdpPerCapita >= 50000) score += 20;
     else if (inputs.gdpPerCapita >= 35000) score += 15;
     else if (inputs.gdpPerCapita >= 25000) score += 10;
     else if (inputs.gdpPerCapita >= 15000) score += 5;
     else if (inputs.gdpPerCapita < 5000) score -= 10;
 
-    // Employment health (0-15 points)
     if (inputs.unemploymentRate <= 3) score += 15;
     else if (inputs.unemploymentRate <= 5) score += 12;
     else if (inputs.unemploymentRate <= 8) score += 8;
@@ -106,7 +167,6 @@ export class EnhancedEconomyDataService {
     else if (inputs.unemploymentRate >= 20) score -= 15;
     else if (inputs.unemploymentRate >= 15) score -= 10;
 
-    // Fiscal health (0-15 points)
     const budgetBalance = inputs.taxRevenuePercent - inputs.governmentBudgetPercent;
     if (budgetBalance >= 2) score += 15;
     else if (budgetBalance >= 0) score += 10;
@@ -114,7 +174,6 @@ export class EnhancedEconomyDataService {
     else if (budgetBalance >= -6) score -= 5;
     else score -= 15;
 
-    // Debt sustainability (0-10 points)
     const totalDebt = inputs.internalDebtPercent + inputs.externalDebtPercent;
     if (totalDebt <= 40) score += 10;
     else if (totalDebt <= 60) score += 8;
@@ -122,7 +181,6 @@ export class EnhancedEconomyDataService {
     else if (totalDebt <= 120) score -= 5;
     else score -= 15;
 
-    // Growth and inflation balance (0-10 points)
     if (inputs.realGDPGrowthRate >= 0.02 && inputs.realGDPGrowthRate <= 0.06) score += 5;
     else if (inputs.realGDPGrowthRate < 0) score -= 10;
     else if (inputs.realGDPGrowthRate > 0.10) score -= 5;
@@ -131,55 +189,47 @@ export class EnhancedEconomyDataService {
     else if (inputs.inflationRate < 0) score -= 10;
     else if (inputs.inflationRate > 0.08) score -= 10;
 
-    // Labor force efficiency (0-5 points)
     if (inputs.laborForceParticipationRate >= 70) score += 5;
     else if (inputs.laborForceParticipationRate >= 60) score += 3;
     else if (inputs.laborForceParticipationRate < 50) score -= 5;
 
-    // Tax efficiency (0-5 points)
     if (inputs.taxRevenuePercent >= 18 && inputs.taxRevenuePercent <= 35) score += 5;
     else if (inputs.taxRevenuePercent < 12 || inputs.taxRevenuePercent > 45) score -= 5;
 
     return Math.max(0, Math.min(100, Math.round(score)));
   }
 
-  /**
-   * Find similar countries based on comprehensive economic indicators
-   */
   static findSimilarCountries(
     inputs: EnhancedEconomicInputs,
     allCountries: RealCountryData[]
-  ): CountryComparison[] {
+  ): EnhancedCountryComparison[] {
     return allCountries
       .filter(country => country.name !== "World")
       .map(country => {
-        // Calculate similarity across multiple dimensions
         const gdpSimilarity = this.calculateSimilarity(inputs.gdpPerCapita, country.gdpPerCapita, 'logarithmic');
         const populationSimilarity = this.calculateSimilarity(inputs.population, country.population, 'logarithmic');
         const taxSimilarity = this.calculateSimilarity(inputs.taxRevenuePercent, country.taxRevenuePercent, 'linear');
         const unemploymentSimilarity = this.calculateSimilarity(inputs.unemploymentRate, country.unemploymentRate, 'linear');
 
-        // Weighted similarity score
         const overallSimilarity = (
           gdpSimilarity * 0.4 +
           populationSimilarity * 0.2 +
           taxSimilarity * 0.25 +
           unemploymentSimilarity * 0.15
-        );
+        ) * 100; // As percentage
 
-        // Identify key differences
         const keyDifferences = [
           {
             field: 'GDP per Capita',
             userValue: inputs.gdpPerCapita,
             countryValue: country.gdpPerCapita,
-            difference: ((inputs.gdpPerCapita - country.gdpPerCapita) / country.gdpPerCapita) * 100
+            difference: country.gdpPerCapita === 0 ? Infinity : ((inputs.gdpPerCapita - country.gdpPerCapita) / country.gdpPerCapita) * 100
           },
           {
             field: 'Population',
             userValue: inputs.population,
             countryValue: country.population,
-            difference: ((inputs.population - country.population) / country.population) * 100
+            difference: country.population === 0 ? Infinity : ((inputs.population - country.population) / country.population) * 100
           },
           {
             field: 'Tax Revenue %',
@@ -193,7 +243,7 @@ export class EnhancedEconomyDataService {
             countryValue: country.unemploymentRate,
             difference: inputs.unemploymentRate - country.unemploymentRate
           }
-        ].filter(diff => Math.abs(diff.difference) > 10); // Only significant differences
+        ].filter(diff => Math.abs(diff.difference) > 10); 
 
         return {
           countryName: country.name,
@@ -206,17 +256,17 @@ export class EnhancedEconomyDataService {
       .slice(0, 10);
   }
 
-  /**
-   * Calculate similarity between two values
-   */
   private static calculateSimilarity(
     value1: number, 
     value2: number, 
     method: 'linear' | 'logarithmic' = 'linear'
   ): number {
+    if (value1 === 0 && value2 === 0) return 1;
+    if (value1 === 0 || value2 === 0) return 0;
+
     if (method === 'logarithmic') {
-      const logDiff = Math.abs(Math.log(value1 + 1) - Math.log(value2 + 1));
-      return Math.max(0, 1 - logDiff / Math.log(Math.max(value1, value2) + 1));
+      const logDiff = Math.abs(Math.log(value1) - Math.log(value2)); // +1 removed to handle large numbers better if they can't be 0
+      return Math.max(0, 1 - logDiff / Math.log(Math.max(value1, value2)));
     } else {
       const maxValue = Math.max(value1, value2);
       if (maxValue === 0) return 1;
@@ -225,12 +275,9 @@ export class EnhancedEconomyDataService {
     }
   }
 
-  /**
-   * Get fields that closely match between user input and country
-   */
   private static getMatchingFields(inputs: EnhancedEconomicInputs, country: RealCountryData): string[] {
     const matches: string[] = [];
-    const threshold = 0.9; // 90% similarity threshold
+    const threshold = 0.9; 
 
     if (this.calculateSimilarity(inputs.gdpPerCapita, country.gdpPerCapita, 'logarithmic') > threshold) {
       matches.push('GDP per Capita');
@@ -248,13 +295,9 @@ export class EnhancedEconomyDataService {
     return matches;
   }
 
-  /**
-   * Generate comprehensive economic hints and suggestions
-   */
   static generateEconomicHints(inputs: EnhancedEconomicInputs): EconomicHint[] {
     const hints: EconomicHint[] = [];
 
-    // GDP per capita analysis
     if (inputs.gdpPerCapita > 80000) {
       hints.push({
         type: 'info',
@@ -273,7 +316,6 @@ export class EnhancedEconomyDataService {
       });
     }
 
-    // Unemployment analysis
     if (inputs.unemploymentRate > 25) {
       hints.push({
         type: 'warning',
@@ -292,7 +334,6 @@ export class EnhancedEconomyDataService {
       });
     }
 
-    // Fiscal balance analysis
     const budgetBalance = inputs.taxRevenuePercent - inputs.governmentBudgetPercent;
     if (budgetBalance < -10) {
       hints.push({
@@ -312,7 +353,6 @@ export class EnhancedEconomyDataService {
       });
     }
 
-    // Debt analysis
     const totalDebt = inputs.internalDebtPercent + inputs.externalDebtPercent;
     if (totalDebt > 200) {
       hints.push({
@@ -332,7 +372,6 @@ export class EnhancedEconomyDataService {
       });
     }
 
-    // Growth and inflation analysis
     if (inputs.realGDPGrowthRate > 0.08) {
       hints.push({
         type: 'warning',
@@ -361,7 +400,6 @@ export class EnhancedEconomyDataService {
       });
     }
 
-    // Tax burden analysis
     if (inputs.taxRevenuePercent > 45) {
       hints.push({
         type: 'suggestion',
@@ -380,7 +418,6 @@ export class EnhancedEconomyDataService {
       });
     }
 
-    // Labor force participation
     if (inputs.laborForceParticipationRate > 80) {
       hints.push({
         type: 'info',
@@ -399,8 +436,7 @@ export class EnhancedEconomyDataService {
       });
     }
 
-    // Government spending efficiency
-    const spendingTotal = Object.values(inputs.governmentSpendingBreakdown).reduce((a, b) => a + b, 0);
+    const spendingTotal = inputs.governmentSpendingBreakdown ? Object.values(inputs.governmentSpendingBreakdown).reduce((a, b) => a + b, 0) : 0;
     if (spendingTotal > 100) {
       hints.push({
         type: 'warning',
@@ -409,7 +445,7 @@ export class EnhancedEconomyDataService {
         relatedCountries: [],
         impact: 'high'
       });
-    } else if (spendingTotal < 85) {
+    } else if (spendingTotal < 85 && spendingTotal > 0) { // Added spendingTotal > 0 to avoid hint on initial empty data
       hints.push({
         type: 'info',
         title: 'Unallocated Budget',
@@ -422,9 +458,6 @@ export class EnhancedEconomyDataService {
     return hints;
   }
 
-  /**
-   * Create comprehensive country profile with IxTime integration
-   */
   static createCountryProfile(
     inputs: EnhancedEconomicInputs,
     allCountries: RealCountryData[],
@@ -437,14 +470,13 @@ export class EnhancedEconomyDataService {
     const comparisons = this.findSimilarCountries(inputs, allCountries);
     const hints = this.generateEconomicHints(inputs);
 
-    // IxTime projections (simplified for now)
     const currentTime = ixTimeData?.currentTime || Date.now();
     const baselineDate = ixTimeData?.baselineDate || currentTime;
     
     const projectedGrowth = {
       oneYear: {
         gdp: inputs.gdpPerCapita * Math.pow(1 + inputs.realGDPGrowthRate, 1),
-        population: inputs.population * Math.pow(1.01, 1) // Assume 1% population growth
+        population: inputs.population * Math.pow(1.01, 1) 
       },
       fiveYear: {
         gdp: inputs.gdpPerCapita * Math.pow(1 + inputs.realGDPGrowthRate, 5),
@@ -469,51 +501,37 @@ export class EnhancedEconomyDataService {
     };
   }
 
-  /**
-   * Export enhanced economic data to format compatible with IxStats
-   */
   static exportToIxStatsFormat(profile: EnhancedCountryProfile) {
     return {
-      // Basic country data
       country: profile.basic.countryName,
       population: profile.basic.population,
       gdpPerCapita: profile.basic.gdpPerCapita,
       
-      // Enhanced economic indicators
       realGDPGrowthRate: profile.basic.realGDPGrowthRate,
       inflationRate: profile.basic.inflationRate,
       
-      // Labor market data
       laborForceParticipationRate: profile.basic.laborForceParticipationRate,
       unemploymentRate: profile.basic.unemploymentRate,
       totalWorkforce: profile.calculated.employedPopulation,
       
-      // Fiscal data
       taxRevenuePercent: profile.basic.taxRevenuePercent,
       governmentBudgetPercent: profile.basic.governmentBudgetPercent,
       internalDebtPercent: profile.basic.internalDebtPercent,
       externalDebtPercent: profile.basic.externalDebtPercent,
       
-      // Calculated metrics
       totalGDP: profile.calculated.totalGDP,
       economicHealthScore: profile.calculated.economicHealthScore,
       productivityPerWorker: profile.calculated.productivityPerWorker,
       
-      // IxTime data
       baselineDate: profile.ixTimeData.baselineDate,
       lastUpdated: profile.ixTimeData.lastUpdated,
       
-      // Economic tier
-      economicTier: getEconomicTier(profile.basic.gdpPerCapita),
+      economicTier: getEconomicTier(profile.basic.gdpPerCapita), // Use local/imported getEconomicTier
       
-      // Projections
       projections: profile.ixTimeData.projectedGrowth
     };
   }
 
-  /**
-   * Save enhanced baseline to storage with IxTime metadata
-   */
   static saveEnhancedBaseline(profile: EnhancedCountryProfile): void {
     try {
       if (typeof window !== 'undefined') {
@@ -533,9 +551,6 @@ export class EnhancedEconomyDataService {
     }
   }
 
-  /**
-   * Load enhanced baseline from storage
-   */
   static loadEnhancedBaseline(): EnhancedCountryProfile | null {
     try {
       if (typeof window !== 'undefined') {
@@ -552,3 +567,6 @@ export class EnhancedEconomyDataService {
     }
   }
 }
+
+// Export generateEconomicComparisons if it's meant to be used directly
+export const generateEconomicComparisons = EnhancedEconomyDataService.findSimilarCountries;
