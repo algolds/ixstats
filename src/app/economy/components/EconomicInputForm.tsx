@@ -10,6 +10,9 @@ import {
   BarChart3,
   Briefcase,
   Building,
+  Scale,
+  Building2,
+  Users,
 } from "lucide-react";
 import type { EconomicInputs, RealCountryData } from "../lib/economy-data-service";
 import { getEconomicTier, createDefaultEconomicInputs } from "../lib/economy-data-service";
@@ -17,6 +20,9 @@ import { getTierStyle } from "~/lib/theme-utils";
 import { CoreEconomicIndicatorsComponent } from "./CoreEconomicIndicators";
 import { LaborEmploymentComponent } from "./LaborEmployment";
 import { FiscalSystemComponent } from "./FiscalSystem";
+import { IncomeWealthDistribution } from "./IncomeWealthDistribution";
+import { GovernmentSpending } from "./GovernmentSpending";
+import { Demographics } from "./Demographics";
 
 interface EconomicInputFormProps {
   inputs: EconomicInputs;
@@ -40,7 +46,7 @@ export function EconomicInputForm({
   onBack
 }: EconomicInputFormProps) {
   const [errors, setErrors] = useState<ValidationError[]>([]);
-  const [activeSection, setActiveSection] = useState<'core' | 'labor' | 'fiscal'>('core');
+  const [activeSection, setActiveSection] = useState<'core' | 'labor' | 'fiscal' | 'income' | 'spending' | 'demographics'>('core');
 
   useEffect(() => {
     validateInputs();
@@ -88,6 +94,22 @@ export function EconomicInputForm({
       newErrors.push({ field: 'totalDebtGDPRatio', message: 'Very high debt levels may be unsustainable', severity: 'warning' });
     }
 
+    // Income & Wealth Validation
+    if (inputs.incomeWealth.incomeInequalityGini < 0 || inputs.incomeWealth.incomeInequalityGini > 1) {
+      newErrors.push({ field: 'incomeInequalityGini', message: 'Gini coefficient must be between 0-1', severity: 'error' });
+    }
+    if (inputs.incomeWealth.povertyRate < 0 || inputs.incomeWealth.povertyRate > 100) {
+      newErrors.push({ field: 'povertyRate', message: 'Poverty rate must be 0-100%', severity: 'error' });
+    }
+    
+    // Demographics Validation
+    if (inputs.demographics.lifeExpectancy < 30 || inputs.demographics.lifeExpectancy > 100) {
+      newErrors.push({ field: 'lifeExpectancy', message: 'Life expectancy seems unrealistic', severity: 'warning' });
+    }
+    if (inputs.demographics.literacyRate < 0 || inputs.demographics.literacyRate > 100) {
+      newErrors.push({ field: 'literacyRate', message: 'Literacy rate must be 0-100%', severity: 'error' });
+    }
+
     setErrors(newErrors);
   };
 
@@ -107,6 +129,18 @@ export function EconomicInputForm({
     onInputsChange({ ...inputs, fiscalSystem });
   };
 
+  const handleIncomeWealthChange = (incomeWealth: typeof inputs.incomeWealth) => {
+    onInputsChange({ ...inputs, incomeWealth });
+  };
+
+  const handleGovernmentSpendingChange = (governmentSpending: typeof inputs.governmentSpending) => {
+    onInputsChange({ ...inputs, governmentSpending });
+  };
+
+  const handleDemographicsChange = (demographics: typeof inputs.demographics) => {
+    onInputsChange({ ...inputs, demographics });
+  };
+
   const hasFatalErrors = errors.some(e => e.severity === 'error');
   const canPreview = !hasFatalErrors && inputs.countryName.trim();
 
@@ -117,6 +151,9 @@ export function EconomicInputForm({
     { key: 'core', label: 'Core Indicators', icon: BarChart3 },
     { key: 'labor', label: 'Labor & Employment', icon: Briefcase },
     { key: 'fiscal', label: 'Fiscal System', icon: Building },
+    { key: 'income', label: 'Income & Wealth', icon: Scale },
+    { key: 'spending', label: 'Gov. Spending', icon: Building2 },
+    { key: 'demographics', label: 'Demographics', icon: Users }
   ] as const;
 
   const calculateTotalGDP = () => inputs.coreIndicators.nominalGDP / 1e9; // Billions
@@ -176,7 +213,7 @@ export function EconomicInputForm({
       </div>
 
       {/* Section Navigation */}
-      <div className="flex border-b border-[var(--color-border-primary)] mb-6">
+      <div className="flex flex-wrap border-b border-[var(--color-border-primary)] mb-6">
         {sections.map((section) => {
           const Icon = section.icon;
           const isActive = activeSection === section.key;
@@ -224,6 +261,32 @@ export function EconomicInputForm({
             nominalGDP={inputs.coreIndicators.nominalGDP}
             totalPopulation={inputs.coreIndicators.totalPopulation}
             onFiscalDataChange={handleFiscalDataChange}
+          />
+        )}
+
+        {activeSection === 'income' && (
+          <IncomeWealthDistribution
+            incomeData={inputs.incomeWealth}
+            totalPopulation={inputs.coreIndicators.totalPopulation}
+            gdpPerCapita={inputs.coreIndicators.gdpPerCapita}
+            onIncomeDataChange={handleIncomeWealthChange}
+          />
+        )}
+
+        {activeSection === 'spending' && (
+          <GovernmentSpending
+            spendingData={inputs.governmentSpending}
+            nominalGDP={inputs.coreIndicators.nominalGDP}
+            totalPopulation={inputs.coreIndicators.totalPopulation}
+            onSpendingDataChange={handleGovernmentSpendingChange}
+          />
+        )}
+
+        {activeSection === 'demographics' && (
+          <Demographics
+            demographicData={inputs.demographics}
+            totalPopulation={inputs.coreIndicators.totalPopulation}
+            onDemographicDataChange={handleDemographicsChange}
           />
         )}
       </div>
