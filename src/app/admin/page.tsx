@@ -20,12 +20,18 @@ import {
   RefreshCw,
   Wifi,
   WifiOff,
-  ArrowLeftRight, // Using this instead of Sync
+  ArrowLeftRight,
   Bot,
   CheckCircle,
   XCircle,
   AlertCircle,
+  Upload,
+  Database,
 } from "lucide-react";
+
+// Import file upload components
+import { FileUpload } from "./_components/FileUpload";
+import { ImportPreviewDialog } from "./_components/ImportPreviewDialog";
 
 // Import SystemConfig from types
 import type { SystemConfig } from "~/types/ixstats";
@@ -48,6 +54,13 @@ export default function AdminDashboard() {
   const [autoUpdate, setAutoUpdate] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [botSyncEnabled, setBotSyncEnabled] = useState(true);
+
+  // File upload state
+  const [isUploading, setIsUploading] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showImportPreview, setShowImportPreview] = useState(false);
+  const [importChanges, setImportChanges] = useState<any[]>([]);
+  const [pendingFileData, setPendingFileData] = useState<string>("");
 
   // Get system configuration
   const { data: systemConfig, refetch: refetchConfig, isLoading: configLoading } = api.admin.getSystemConfig.useQuery();
@@ -119,6 +132,39 @@ export default function AdminDashboard() {
     },
   });
 
+  // File upload mutations
+  const analyzeImportMutation = api.countries.analyzeImport.useMutation({
+    onSuccess: (data) => {
+      setImportChanges(data.changes);
+      setShowImportPreview(true);
+      setIsAnalyzing(false);
+    },
+    onError: (error) => {
+      console.error("Import analysis error:", error);
+      alert(`Analysis Error: ${error.message}`);
+      setIsAnalyzing(false);
+    },
+  });
+
+  const importMutation = api.countries.importFromExcel.useMutation({
+    onSuccess: (data) => {
+      setIsUploading(false);
+      setShowImportPreview(false);
+      setPendingFileData("");
+      
+      // Show success message
+      const message = data.imported > 0 
+        ? `Successfully imported ${data.imported} of ${data.totalInFile} countries!`
+        : `No new countries imported. ${data.totalInFile} countries were analyzed.`;
+      alert(message);
+    },
+    onError: (error) => {
+      console.error("Import error:", error);
+      alert(`Import Error: ${error.message}`);
+      setIsUploading(false);
+    },
+  });
+
   // Update IxTime display from systemStatus if available, otherwise local IxTime
   useEffect(() => {
     const updateTimeDisplay = () => {
@@ -148,6 +194,48 @@ export default function AdminDashboard() {
       if (botSync) setBotSyncEnabled(botSync.value === 'true');
     }
   }, [systemConfig]);
+
+  // File upload handlers
+  const handleFileUpload = async (file: File) => {
+    setIsAnalyzing(true);
+    
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      
+      setPendingFileData(base64);
+      
+      // First, analyze the import
+      await analyzeImportMutation.mutateAsync({
+        fileData: base64,
+      });
+    } catch (error) {
+      console.error("File analysis error:", error);
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleConfirmImport = async (replaceExisting: boolean) => {
+    if (!pendingFileData) return;
+    
+    setIsUploading(true);
+    
+    try {
+      await importMutation.mutateAsync({
+        fileData: pendingFileData,
+        replaceExisting,
+      });
+    } catch (error) {
+      console.error("File import error:", error);
+      setIsUploading(false);
+    }
+  };
+
+  const handleClosePreview = () => {
+    setShowImportPreview(false);
+    setPendingFileData("");
+    setImportChanges([]);
+  };
 
   const handleSaveConfig = () => {
     updateConfigMutation.mutate({
@@ -244,6 +332,15 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white">
+      {/* Import Preview Dialog */}
+      <ImportPreviewDialog
+        isOpen={showImportPreview}
+        onClose={handleClosePreview}
+        onConfirm={handleConfirmImport}
+        changes={importChanges}
+        isLoading={isUploading}
+      />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -252,7 +349,7 @@ export default function AdminDashboard() {
             IxStats Admin Dashboard
           </h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Control IxTime flow, global economic factors, and system operations
+            Control IxTime flow, global economic factors, data imports, and system operations
           </p>
         </div>
 
@@ -384,6 +481,66 @@ export default function AdminDashboard() {
                     </div>
                 </div>
             </div>
+        </div>
+
+        {/* Data Import Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+            <Database className="h-5 w-5 mr-2" />
+            Country Data Import
+          </h2>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-3">
+                Import Roster Data with Preview
+              </h3>
+              <FileUpload 
+                onFileSelect={handleFileUpload} 
+                isUploading={isUploading}
+                isAnalyzing={isAnalyzing} 
+              />
+              
+              {/* Import Status Messages */}
+              {analyzeImportMutation.isError && (
+                <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                  <div className="flex">
+                    <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+                    <p className="text-sm text-red-800 dark:text-red-200">
+                      Error analyzing file: {analyzeImportMutation.error?.message}
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {importMutation.isError && (
+                <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                  <div className="flex">
+                    <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+                    <p className="text-sm text-red-800 dark:text-red-200">
+                      Error importing file: {importMutation.error?.message}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-3">
+                Import Guidelines
+              </h3>
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <ul className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                  <li>• Supports Excel (.xlsx, .xls) formats</li>
+                  <li>• Upload shows a preview of changes before importing</li>
+                  <li>• You can choose to update existing countries or skip them</li>
+                  <li>• Historical data and DM inputs are always preserved</li>
+                  <li>• New countries are automatically added to the system</li>
+                  <li>• Statistics are recalculated after successful import</li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Bot Control Panel */}
