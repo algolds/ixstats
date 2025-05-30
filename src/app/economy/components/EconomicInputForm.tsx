@@ -2,21 +2,23 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  ArrowLeft, 
-  Eye, 
-  Users, 
-  DollarSign, 
-  Percent, 
-  TrendingDown, 
-  Building, 
+import {
+  ArrowLeft,
+  Eye,
+  Users,
+  DollarSign,
+  Percent,
+  TrendingDown,
+  Building,
   CreditCard,
   AlertCircle,
   Info,
-  CheckCircle
+  CheckCircle,
+  HelpCircle
 } from "lucide-react";
 import type { EconomicInputs, RealCountryData } from "../lib/economy-data-service";
 import { getEconomicTier } from "../lib/economy-data-service";
+import { getTierStyle } from "~/lib/theme-utils";
 
 interface EconomicInputFormProps {
   inputs: EconomicInputs;
@@ -27,430 +29,157 @@ interface EconomicInputFormProps {
 }
 
 interface ValidationError {
-  field: string;
+  field: keyof EconomicInputs;
   message: string;
   severity: 'error' | 'warning' | 'info';
 }
 
-export function EconomicInputForm({ 
-  inputs, 
-  referenceCountry, 
-  onInputsChange, 
-  onPreview, 
-  onBack 
+export function EconomicInputForm({
+  inputs,
+  referenceCountry,
+  onInputsChange,
+  onPreview,
+  onBack
 }: EconomicInputFormProps) {
   const [errors, setErrors] = useState<ValidationError[]>([]);
-  const [isDirty, setIsDirty] = useState(false);
 
-  // Validate inputs whenever they change
   useEffect(() => {
     validateInputs();
   }, [inputs]);
 
   const validateInputs = () => {
     const newErrors: ValidationError[] = [];
-
-    // Country name validation
-    if (!inputs.countryName.trim()) {
-      newErrors.push({
-        field: 'countryName',
-        message: 'Country name is required',
-        severity: 'error'
-      });
-    }
-
-    // Population validation
-    if (inputs.population <= 0) {
-      newErrors.push({
-        field: 'population',
-        message: 'Population must be greater than 0',
-        severity: 'error'
-      });
-    } else if (inputs.population < 1000) {
-      newErrors.push({
-        field: 'population',
-        message: 'Very small population - consider if this is realistic for a nation',
-        severity: 'warning'
-      });
-    } else if (inputs.population > 2000000000) {
-      newErrors.push({
-        field: 'population',
-        message: 'Extremely large population - larger than any real country',
-        severity: 'warning'
-      });
-    }
-
-    // GDP per capita validation
-    if (inputs.gdpPerCapita <= 0) {
-      newErrors.push({
-        field: 'gdpPerCapita',
-        message: 'GDP per capita must be greater than 0',
-        severity: 'error'
-      });
-    } else if (inputs.gdpPerCapita < 500) {
-      newErrors.push({
-        field: 'gdpPerCapita',
-        message: 'Very low GDP per capita - indicates extreme poverty',
-        severity: 'warning'
-      });
-    } else if (inputs.gdpPerCapita > 200000) {
-      newErrors.push({
-        field: 'gdpPerCapita',
-        message: 'Extremely high GDP per capita - higher than any real country',
-        severity: 'warning'
-      });
-    }
-
-    // Tax revenue validation
-    if (inputs.taxRevenuePercent < 0 || inputs.taxRevenuePercent > 100) {
-      newErrors.push({
-        field: 'taxRevenuePercent',
-        message: 'Tax revenue must be between 0% and 100%',
-        severity: 'error'
-      });
-    } else if (inputs.taxRevenuePercent > 50) {
-      newErrors.push({
-        field: 'taxRevenuePercent',
-        message: 'Very high tax rate - may impact economic growth',
-        severity: 'warning'
-      });
-    } else if (inputs.taxRevenuePercent < 5) {
-      newErrors.push({
-        field: 'taxRevenuePercent',
-        message: 'Very low tax revenue - may limit government services',
-        severity: 'warning'
-      });
-    }
-
-    // Unemployment validation
-    if (inputs.unemploymentRate < 0 || inputs.unemploymentRate > 100) {
-      newErrors.push({
-        field: 'unemploymentRate',
-        message: 'Unemployment rate must be between 0% and 100%',
-        severity: 'error'
-      });
-    } else if (inputs.unemploymentRate > 25) {
-      newErrors.push({
-        field: 'unemploymentRate',
-        message: 'Very high unemployment - indicates economic crisis',
-        severity: 'warning'
-      });
-    } else if (inputs.unemploymentRate < 1) {
-      newErrors.push({
-        field: 'unemploymentRate',
-        message: 'Extremely low unemployment - may indicate labor shortages',
-        severity: 'info'
-      });
-    }
-
-    // Government budget validation
-    if (inputs.governmentBudgetPercent < 0 || inputs.governmentBudgetPercent > 100) {
-      newErrors.push({
-        field: 'governmentBudgetPercent',
-        message: 'Government budget must be between 0% and 100%',
-        severity: 'error'
-      });
-    } else if (inputs.governmentBudgetPercent > 60) {
-      newErrors.push({
-        field: 'governmentBudgetPercent',
-        message: 'Very large government sector - may crowd out private investment',
-        severity: 'warning'
-      });
-    }
-
-    // Debt validation
-    if (inputs.internalDebtPercent < 0 || inputs.internalDebtPercent > 1000) {
-      newErrors.push({
-        field: 'internalDebtPercent',
-        message: 'Internal debt must be between 0% and 1000% of GDP',
-        severity: 'error'
-      });
-    } else if (inputs.internalDebtPercent > 200) {
-      newErrors.push({
-        field: 'internalDebtPercent',
-        message: 'Very high internal debt - may pose fiscal risks',
-        severity: 'warning'
-      });
-    }
-
-    if (inputs.externalDebtPercent < 0 || inputs.externalDebtPercent > 1000) {
-      newErrors.push({
-        field: 'externalDebtPercent',
-        message: 'External debt must be between 0% and 1000% of GDP',
-        severity: 'error'
-      });
-    } else if (inputs.externalDebtPercent > 100) {
-      newErrors.push({
-        field: 'externalDebtPercent',
-        message: 'High external debt - may create dependency on foreign creditors',
-        severity: 'warning'
-      });
-    }
-
+    if (!inputs.countryName.trim()) newErrors.push({ field: 'countryName', message: 'Country name is required', severity: 'error' });
+    if (inputs.population <= 0) newErrors.push({ field: 'population', message: 'Population must be > 0', severity: 'error' });
+    else if (inputs.population < 1000) newErrors.push({ field: 'population', message: 'Very small population', severity: 'warning' });
+    if (inputs.gdpPerCapita <= 0) newErrors.push({ field: 'gdpPerCapita', message: 'GDP p.c. must be > 0', severity: 'error' });
+    else if (inputs.gdpPerCapita < 500) newErrors.push({ field: 'gdpPerCapita', message: 'Very low GDP p.c.', severity: 'warning' });
+    if (inputs.taxRevenuePercent < 0 || inputs.taxRevenuePercent > 100) newErrors.push({ field: 'taxRevenuePercent', message: 'Tax % must be 0-100', severity: 'error' });
+    if (inputs.unemploymentRate < 0 || inputs.unemploymentRate > 100) newErrors.push({ field: 'unemploymentRate', message: 'Unemp. % must be 0-100', severity: 'error' });
+    if (inputs.governmentBudgetPercent < 0 || inputs.governmentBudgetPercent > 100) newErrors.push({ field: 'governmentBudgetPercent', message: 'Budget % must be 0-100', severity: 'error' });
+    if (inputs.internalDebtPercent < 0) newErrors.push({ field: 'internalDebtPercent', message: 'Debt % must be non-negative', severity: 'error' });
+    if (inputs.externalDebtPercent < 0) newErrors.push({ field: 'externalDebtPercent', message: 'Debt % must be non-negative', severity: 'error' });
     setErrors(newErrors);
   };
 
   const handleInputChange = (field: keyof EconomicInputs, value: string | number) => {
-    setIsDirty(true);
-    onInputsChange({
-      ...inputs,
-      [field]: value
-    });
+    onInputsChange({ ...inputs, [field]: value });
   };
 
-  const getFieldError = (field: string) => {
-    return errors.find(error => error.field === field);
-  };
+  const getFieldError = (field: keyof EconomicInputs) => errors.find(e => e.field === field);
+  const hasFatalErrors = errors.some(e => e.severity === 'error');
+  const canPreview = !hasFatalErrors && inputs.countryName.trim();
 
-  const hasErrors = errors.some(error => error.severity === 'error');
-  const canPreview = !hasErrors && inputs.countryName.trim();
+  const calculateTotalGDP = () => (inputs.population * inputs.gdpPerCapita) / 1e9; // Billions
+  const calculateTaxRevenueValue = () => (calculateTotalGDP() * inputs.taxRevenuePercent) / 100;
 
-  const calculateTotalGDP = () => {
-    return (inputs.population * inputs.gdpPerCapita) / 1e9; // In billions
-  };
-
-  const calculateTaxRevenue = () => {
-    return (calculateTotalGDP() * inputs.taxRevenuePercent) / 100;
-  };
-
-  const formatNumber = (num: number): string => {
-    if (num >= 1e9) return `$${(num / 1e9).toFixed(1)}B`;
-    if (num >= 1e6) return `$${(num / 1e6).toFixed(1)}M`;
-    if (num >= 1e3) return `$${(num / 1e3).toFixed(1)}K`;
+  const formatNumber = (num: number, precision = 1): string => {
+    if (Math.abs(num) >= 1e9) return `$${(num / 1e9).toFixed(precision)}T`;
+    if (Math.abs(num) >= 1e6) return `$${(num / 1e6).toFixed(precision)}M`;
+    if (Math.abs(num) >= 1e3) return `$${(num / 1e3).toFixed(precision)}K`;
     return `$${num.toFixed(0)}`;
   };
+  const formatPopulationDisplay = (pop: number): string => {
+    if (pop >= 1e9) return `${(pop / 1e9).toFixed(1)}B`;
+    if (pop >= 1e6) return `${(pop / 1e6).toFixed(1)}M`;
+    if (pop >= 1e3) return `${(pop / 1e3).toFixed(0)}K`;
+    return pop.toString();
+  };
 
-  const inputFields = [
-    {
-      key: 'countryName' as keyof EconomicInputs,
-      label: 'Country Name',
-      icon: Building,
-      type: 'text',
-      placeholder: 'Enter your nation\'s name',
-      help: 'Choose a unique name for your nation'
-    },
-    {
-      key: 'population' as keyof EconomicInputs,
-      label: 'Population',
-      icon: Users,
-      type: 'number',
-      placeholder: '50000000',
-      help: 'Total number of citizens in your nation',
-      reference: referenceCountry.population.toLocaleString()
-    },
-    {
-      key: 'gdpPerCapita' as keyof EconomicInputs,
-      label: 'GDP per Capita ($)',
-      icon: DollarSign,
-      type: 'number',
-      placeholder: '25000',
-      help: 'Average economic output per person per year',
-      reference: `$${referenceCountry.gdpPerCapita.toLocaleString()}`
-    },
-    {
-      key: 'taxRevenuePercent' as keyof EconomicInputs,
-      label: 'Tax Revenue (% of GDP)',
-      icon: Percent,
-      type: 'number',
-      step: '0.1',
-      placeholder: '15.0',
-      help: 'Government tax collection as percentage of total GDP',
-      reference: `${referenceCountry.taxRevenuePercent.toFixed(1)}%`
-    },
-    {
-      key: 'unemploymentRate' as keyof EconomicInputs,
-      label: 'Unemployment Rate (%)',
-      icon: TrendingDown,
-      type: 'number',
-      step: '0.1',
-      placeholder: '5.0',
-      help: 'Percentage of workforce actively seeking employment',
-      reference: `${referenceCountry.unemploymentRate.toFixed(1)}%`
-    },
-    {
-      key: 'governmentBudgetPercent' as keyof EconomicInputs,
-      label: 'Government Budget (% of GDP)',
-      icon: Building,
-      type: 'number',
-      step: '0.1',
-      placeholder: '20.0',
-      help: 'Total government spending as percentage of GDP'
-    },
-    {
-      key: 'internalDebtPercent' as keyof EconomicInputs,
-      label: 'Internal Debt (% of GDP)',
-      icon: CreditCard,
-      type: 'number',
-      step: '0.1',
-      placeholder: '60.0',
-      help: 'Government debt owed to domestic creditors'
-    },
-    {
-      key: 'externalDebtPercent' as keyof EconomicInputs,
-      label: 'External Debt (% of GDP)',
-      icon: CreditCard,
-      type: 'number',
-      step: '0.1',
-      placeholder: '30.0',
-      help: 'Government debt owed to foreign creditors'
-    }
+
+  const inputFields: Array<{
+    key: keyof EconomicInputs; label: string; icon: React.ElementType; type: string;
+    placeholder?: string; help: string; reference?: string; step?: string;
+  }> = [
+    { key: 'countryName', label: 'Country Name', icon: Building, type: 'text', placeholder: `New ${referenceCountry.name}`, help: 'Unique name for your nation.' },
+    { key: 'population', label: 'Population', icon: Users, type: 'number', help: 'Total citizens.', reference: referenceCountry.population.toLocaleString() },
+    { key: 'gdpPerCapita', label: 'GDP per Capita ($)', icon: DollarSign, type: 'number', help: 'Avg. economic output per person/year.', reference: `$${referenceCountry.gdpPerCapita.toLocaleString()}` },
+    { key: 'taxRevenuePercent', label: 'Tax Revenue (% of GDP)', icon: Percent, type: 'number', step: '0.1', help: 'Gov tax collection as % of total GDP.', reference: `${referenceCountry.taxRevenuePercent.toFixed(1)}%` },
+    { key: 'unemploymentRate', label: 'Unemployment Rate (%)', icon: TrendingDown, type: 'number', step: '0.1', help: '% of workforce seeking employment.', reference: `${referenceCountry.unemploymentRate.toFixed(1)}%` },
+    { key: 'governmentBudgetPercent', label: 'Gov. Budget (% of GDP)', icon: Building, type: 'number', step: '0.1', help: 'Total gov spending as % of GDP.', reference: `Ref: ${referenceCountry.taxRevenuePercent.toFixed(1)}%` },
+    { key: 'internalDebtPercent', label: 'Internal Debt (% of GDP)', icon: CreditCard, type: 'number', step: '0.1', help: 'Gov debt to domestic creditors.' },
+    { key: 'externalDebtPercent', label: 'External Debt (% of GDP)', icon: CreditCard, type: 'number', step: '0.1', help: 'Gov debt to foreign creditors.' }
   ];
+  
+  const currentEconomicTier = getEconomicTier(inputs.gdpPerCapita);
+  const tierStyle = getTierStyle(currentEconomicTier);
+
 
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            Economic Parameters
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Customize your nation's economic indicators based on {referenceCountry.name}
-          </p>
+          <h2 className="text-xl font-semibold text-[var(--color-text-primary)] mb-1">Economic Parameters</h2>
+          <p className="text-[var(--color-text-muted)]">Customize based on {referenceCountry.name}</p>
         </div>
-        <button
-          onClick={onBack}
-          className="flex items-center px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Back to Selection
+        <button onClick={onBack} className="btn-secondary text-sm py-1.5 px-3">
+          <ArrowLeft className="h-4 w-4 mr-1.5" /> Back
         </button>
       </div>
 
-      {/* Quick Stats Summary */}
-      <div className="bg-gray-50 dark:bg-gray-750 rounded-lg p-4 mb-6 border border-gray-200 dark:border-gray-700">
-        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Live Economic Summary</h3>
+      <div className="bg-[var(--color-bg-tertiary)] rounded-lg p-4 mb-6 border border-[var(--color-border-primary)]">
+        <h3 className="text-sm font-medium text-[var(--color-text-secondary)] mb-3">Live Economic Summary</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div>
-            <span className="text-gray-500 dark:text-gray-400">Total GDP:</span>
-            <div className="font-semibold text-gray-900 dark:text-white">
-              {formatNumber(calculateTotalGDP() * 1e9)}
+          {[
+            {label: "Total GDP", value: formatNumber(calculateTotalGDP() * 1e9)},
+            {label: "Tax Revenue", value: formatNumber(calculateTaxRevenueValue() * 1e9)},
+            {label: "Economic Tier", value: <span className={`tier-badge ${tierStyle.className}`}>{currentEconomicTier}</span> },
+            {label: "Total Debt", value: `${(inputs.internalDebtPercent + inputs.externalDebtPercent).toFixed(1)}% GDP`}
+          ].map(item => (
+            <div key={item.label}>
+              <span className="text-[var(--color-text-muted)]">{item.label}:</span>
+              <div className="font-semibold text-[var(--color-text-primary)]">{item.value}</div>
             </div>
-          </div>
-          <div>
-            <span className="text-gray-500 dark:text-gray-400">Tax Revenue:</span>
-            <div className="font-semibold text-gray-900 dark:text-white">
-              {formatNumber(calculateTaxRevenue() * 1e9)}
-            </div>
-          </div>
-          <div>
-            <span className="text-gray-500 dark:text-gray-400">Economic Tier:</span>
-            <div className="font-semibold text-gray-900 dark:text-white">
-              {getEconomicTier(inputs.gdpPerCapita)}
-            </div>
-          </div>
-          <div>
-            <span className="text-gray-500 dark:text-gray-400">Total Debt:</span>
-            <div className="font-semibold text-gray-900 dark:text-white">
-              {(inputs.internalDebtPercent + inputs.externalDebtPercent).toFixed(1)}% GDP
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
-      {/* Input Fields */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        {inputFields.map((field) => {
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+        {inputFields.map(field => {
           const Icon = field.icon;
           const error = getFieldError(field.key);
           const value = inputs[field.key];
-          
+
           return (
-            <div key={field.key} className="space-y-2">
-              <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
-                <Icon className="h-4 w-4 mr-2" />
-                {field.label}
+            <div key={field.key} className="space-y-1">
+              <label htmlFor={field.key} className="form-label flex items-center">
+                <Icon className="h-4 w-4 mr-2 text-[var(--color-brand-primary)]" /> {field.label}
               </label>
-              
               <div className="relative">
                 <input
+                  id={field.key}
                   type={field.type}
                   step={field.step}
-                  placeholder={field.placeholder}
+                  placeholder={field.placeholder || `e.g. ${field.reference || 'value'}`}
                   value={value}
-                  onChange={(e) => {
-                    const newValue = field.type === 'number' 
-                      ? parseFloat(e.target.value) || 0 
-                      : e.target.value;
-                    handleInputChange(field.key, newValue);
-                  }}
-                  className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500 ${
-                    error 
-                      ? error.severity === 'error' 
-                        ? 'border-red-500 dark:border-red-400' 
-                        : 'border-yellow-500 dark:border-yellow-400'
-                      : 'border-gray-300 dark:border-gray-600'
-                  }`}
+                  onChange={(e) => handleInputChange(field.key, field.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value)}
+                  className={`form-input ${error ? (error.severity === 'error' ? 'border-red-500 dark:border-red-400' : 'border-yellow-500 dark:border-yellow-400') : ''}`}
                 />
                 {error && (
-                  <div className="absolute -right-2 top-2">
-                    {error.severity === 'error' ? (
-                      <AlertCircle className="h-5 w-5 text-red-500" />
-                    ) : error.severity === 'warning' ? (
-                      <AlertCircle className="h-5 w-5 text-yellow-500" />
-                    ) : (
-                      <Info className="h-5 w-5 text-blue-500" />
-                    )}
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2" title={error.message}>
+                    {error.severity === 'error' ? <AlertCircle className="h-5 w-5 text-red-500" /> :
+                     error.severity === 'warning' ? <AlertCircle className="h-5 w-5 text-yellow-500" /> :
+                     <Info className="h-5 w-5 text-blue-500" />}
                   </div>
                 )}
               </div>
-
-              {/* Help text and reference */}
-              <div className="flex flex-col space-y-1">
-                <p className="text-xs text-gray-500 dark:text-gray-400">{field.help}</p>
-                {field.reference && (
-                  <p className="text-xs text-indigo-600 dark:text-indigo-400">
-                    {referenceCountry.name}: {field.reference}
-                  </p>
-                )}
+              <div className="text-xs text-[var(--color-text-muted)] flex justify-between items-center min-h-[1.25rem]">
+                <span>{field.help}</span>
+                {field.reference && <span className="text-[var(--color-brand-secondary)] text-right">Ref: {field.reference}</span>}
               </div>
-
-              {/* Error message */}
-              {error && (
-                <div className={`text-xs flex items-center ${
-                  error.severity === 'error' 
-                    ? 'text-red-600 dark:text-red-400' 
-                    : error.severity === 'warning'
-                      ? 'text-yellow-600 dark:text-yellow-400'
-                      : 'text-blue-600 dark:text-blue-400'
-                }`}>
-                  {error.severity === 'error' ? (
-                    <AlertCircle className="h-3 w-3 mr-1" />
-                  ) : error.severity === 'warning' ? (
-                    <AlertCircle className="h-3 w-3 mr-1" />
-                  ) : (
-                    <Info className="h-3 w-3 mr-1" />
-                  )}
-                  {error.message}
-                </div>
-              )}
+              {error && <p className={`text-xs ${error.severity === 'error' ? 'text-red-500' : error.severity === 'warning' ? 'text-yellow-500' : 'text-blue-500'}`}>{error.message}</p>}
             </div>
           );
         })}
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex justify-between items-center pt-6 border-t border-gray-200 dark:border-gray-700">
-        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-          {canPreview ? (
-            <div className="flex items-center text-green-600 dark:text-green-400">
-              <CheckCircle className="h-4 w-4 mr-1" />
-              Ready for preview
-            </div>
-          ) : (
-            <div className="flex items-center">
-              <AlertCircle className="h-4 w-4 mr-1" />
-              {hasErrors ? 'Please fix errors before continuing' : 'Fill in all required fields'}
-            </div>
-          )}
+      <div className="flex justify-between items-center pt-6 mt-6 border-t border-[var(--color-border-primary)]">
+        <div className={`flex items-center text-sm ${canPreview ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+          {canPreview ? <CheckCircle className="h-4 w-4 mr-1.5" /> : <AlertCircle className="h-4 w-4 mr-1.5" />}
+          {canPreview ? 'Ready for preview' : (hasFatalErrors ? 'Fix errors to continue' : 'Fill required fields')}
         </div>
-        
-        <button
-          onClick={onPreview}
-          disabled={!canPreview}
-          className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Eye className="h-4 w-4 mr-2" />
-          Preview & Compare
+        <button onClick={onPreview} disabled={!canPreview} className="btn-primary">
+          <Eye className="h-4 w-4 mr-2" /> Preview & Compare
         </button>
       </div>
     </div>

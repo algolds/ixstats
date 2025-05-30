@@ -2,21 +2,13 @@
 "use client";
 
 import { useMemo } from "react";
-import { 
-  ArrowLeft, 
-  CheckCircle, 
-  Users, 
-  DollarSign, 
-  Percent, 
-  TrendingDown, 
-  Building, 
-  CreditCard,
-  Globe,
-  Star,
-  BarChart3
+import {
+  ArrowLeft, CheckCircle, Users, DollarSign, Percent, TrendingDown, Building, CreditCard,
+  Globe, Star, BarChart3, Info, BarChartHorizontalBig
 } from "lucide-react";
 import type { EconomicInputs, RealCountryData, EconomicComparison } from "../lib/economy-data-service";
 import { generateEconomicComparisons, getEconomicTier } from "../lib/economy-data-service";
+import { getTierStyle } from "~/lib/theme-utils"; // Assuming you have this
 
 interface EconomicPreviewProps {
   inputs: EconomicInputs;
@@ -26,230 +18,116 @@ interface EconomicPreviewProps {
   onConfirm: () => void;
 }
 
-export function EconomicPreview({ 
-  inputs, 
-  referenceCountry, 
-  allCountries, 
-  onBack, 
-  onConfirm 
+export function EconomicPreview({
+  inputs,
+  referenceCountry,
+  allCountries,
+  onBack,
+  onConfirm
 }: EconomicPreviewProps) {
   const comparisons = useMemo(() => {
-    return generateEconomicComparisons(inputs, allCountries);
+    return generateEconomicComparisons(inputs, allCountries.filter(c => c.name !== "World"));
   }, [inputs, allCountries]);
 
-  const calculateTotalGDP = () => {
-    return (inputs.population * inputs.gdpPerCapita) / 1e9; // In billions
-  };
+  const calculateTotalGDP = () => (inputs.population * inputs.gdpPerCapita) / 1e9; // Billions
+  const calculateTaxRevenueValue = () => (calculateTotalGDP() * inputs.taxRevenuePercent) / 100;
 
-  const calculateTaxRevenue = () => {
-    return (calculateTotalGDP() * inputs.taxRevenuePercent) / 100;
+  const formatNumber = (num: number, precision = 1, isCurrency = true): string => {
+    const prefix = isCurrency ? '$' : '';
+    if (Math.abs(num) >= 1e9) return `${prefix}${(num / 1e9).toFixed(precision)}T`;
+    if (Math.abs(num) >= 1e6) return `${prefix}${(num / 1e6).toFixed(precision)}M`;
+    if (Math.abs(num) >= 1e3) return `${prefix}${(num / 1e3).toFixed(precision)}K`;
+    return `${prefix}${num.toFixed(isCurrency ? precision : 0)}`;
   };
-
-  const formatNumber = (num: number): string => {
-    if (num >= 1e9) return `$${(num / 1e9).toFixed(1)}B`;
-    if (num >= 1e6) return `$${(num / 1e6).toFixed(1)}M`;
-    if (num >= 1e3) return `$${(num / 1e3).toFixed(1)}K`;
-    return `$${num.toFixed(0)}`;
-  };
-
-  const formatPopulation = (pop: number): string => {
-    if (pop >= 1e9) return `${(pop / 1e9).toFixed(1)}B`;
-    if (pop >= 1e6) return `${(pop / 1e6).toFixed(1)}M`;
-    if (pop >= 1e3) return `${(pop / 1e3).toFixed(0)}K`;
-    return pop.toString();
-  };
-
-  const getTierColor = (tier: string) => {
-    switch (tier) {
-      case "Advanced": return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-200";
-      case "Developed": return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200";
-      case "Emerging": return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200";
-      default: return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200";
-    }
-  };
+  const formatPopulationDisplay = (pop: number): string => formatNumber(pop, 1, false);
 
   const economicTier = getEconomicTier(inputs.gdpPerCapita);
+  const tierStyle = getTierStyle(economicTier);
   const totalGDP = calculateTotalGDP();
-  const taxRevenue = calculateTaxRevenue();
+  const taxRevenue = calculateTaxRevenueValue();
 
-  // Calculate economic health score
   const getEconomicHealthScore = () => {
-    let score = 70; // Base score
-    
-    // GDP per capita factor
-    if (inputs.gdpPerCapita >= 50000) score += 15;
-    else if (inputs.gdpPerCapita >= 25000) score += 10;
-    else if (inputs.gdpPerCapita >= 10000) score += 5;
-    else score -= 5;
-    
-    // Unemployment factor
-    if (inputs.unemploymentRate <= 5) score += 10;
-    else if (inputs.unemploymentRate <= 10) score += 5;
-    else if (inputs.unemploymentRate >= 20) score -= 15;
-    else if (inputs.unemploymentRate >= 15) score -= 10;
-    
-    // Tax revenue factor (balance needed)
-    if (inputs.taxRevenuePercent >= 15 && inputs.taxRevenuePercent <= 30) score += 5;
-    else if (inputs.taxRevenuePercent < 10 || inputs.taxRevenuePercent > 40) score -= 5;
-    
-    // Debt factor
+    let score = 70;
+    if (inputs.gdpPerCapita >= 50000) score += 15; else if (inputs.gdpPerCapita >= 25000) score += 10; else if (inputs.gdpPerCapita >= 10000) score += 5; else score -= 5;
+    if (inputs.unemploymentRate <= 5) score += 10; else if (inputs.unemploymentRate <= 10) score += 5; else if (inputs.unemploymentRate >= 20) score -= 15; else if (inputs.unemploymentRate >= 15) score -= 10;
+    if (inputs.taxRevenuePercent >= 15 && inputs.taxRevenuePercent <= 30) score += 5; else if (inputs.taxRevenuePercent < 10 || inputs.taxRevenuePercent > 40) score -= 5;
     const totalDebt = inputs.internalDebtPercent + inputs.externalDebtPercent;
-    if (totalDebt <= 60) score += 5;
-    else if (totalDebt >= 150) score -= 10;
-    else if (totalDebt >= 100) score -= 5;
-    
-    return Math.max(0, Math.min(100, score));
+    if (totalDebt <= 60) score += 5; else if (totalDebt >= 150) score -= 10; else if (totalDebt >= 100) score -= 5;
+    return Math.max(0, Math.min(100, Math.round(score)));
   };
 
   const healthScore = getEconomicHealthScore();
   const getHealthRating = (score: number): { label: string; color: string } => {
-    if (score >= 85) return { label: 'Excellent', color: 'text-green-600 dark:text-green-400' };
-    if (score >= 70) return { label: 'Good', color: 'text-blue-600 dark:text-blue-400' };
-    if (score >= 55) return { label: 'Fair', color: 'text-yellow-600 dark:text-yellow-400' };
-    if (score >= 40) return { label: 'Poor', color: 'text-orange-600 dark:text-orange-400' };
-    return { label: 'Critical', color: 'text-red-600 dark:text-red-400' };
+    if (score >= 85) return { label: 'Excellent', color: 'text-[var(--color-success)]' };
+    if (score >= 70) return { label: 'Good', color: 'text-[var(--color-info)]' };
+    if (score >= 55) return { label: 'Fair', color: 'text-[var(--color-warning)]' };
+    if (score >= 40) return { label: 'Poor', color: 'text-[var(--color-error-dark)]' };
+    return { label: 'Critical', color: 'text-[var(--color-error)]' };
   };
-
   const healthRating = getHealthRating(healthScore);
+
+  const indicatorItems = [
+    { icon: Users, label: 'Population', value: formatPopulationDisplay(inputs.population), reference: formatPopulationDisplay(referenceCountry.population), color: 'blue' },
+    { icon: DollarSign, label: 'GDP per Capita', value: formatNumber(inputs.gdpPerCapita, 2), reference: formatNumber(referenceCountry.gdpPerCapita, 2), color: 'green' },
+    { icon: Percent, label: 'Tax Revenue %', value: `${inputs.taxRevenuePercent.toFixed(1)}%`, reference: `${referenceCountry.taxRevenuePercent.toFixed(1)}%`, color: 'purple' },
+    { icon: TrendingDown, label: 'Unemployment %', value: `${inputs.unemploymentRate.toFixed(1)}%`, reference: `${referenceCountry.unemploymentRate.toFixed(1)}%`, color: 'red' },
+    { icon: Building, label: 'Gov. Budget %', value: `${inputs.governmentBudgetPercent.toFixed(1)}%`, reference: `Ref: ${referenceCountry.taxRevenuePercent.toFixed(1)}%`, color: 'indigo' },
+    { icon: CreditCard, label: 'Total Debt %', value: `${(inputs.internalDebtPercent + inputs.externalDebtPercent).toFixed(1)}%`, reference: 'Varies', color: 'orange' }
+  ];
 
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            Economic Preview: {inputs.countryName}
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Review your nation's economic profile and compare with real-world countries
-          </p>
+          <h2 className="text-xl font-semibold text-[var(--color-text-primary)] mb-1">Economic Preview: {inputs.countryName}</h2>
+          <p className="text-[var(--color-text-muted)]">Review and compare your nation's economic profile.</p>
         </div>
-        <button
-          onClick={onBack}
-          className="flex items-center px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Back to Inputs
+        <button onClick={onBack} className="btn-secondary text-sm py-1.5 px-3">
+          <ArrowLeft className="h-4 w-4 mr-1.5" /> Back
         </button>
       </div>
 
-      {/* Economic Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-          <div className="flex items-center justify-between mb-2">
-            <Users className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTierColor(economicTier)}`}>
-              {economicTier}
-            </span>
-          </div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">
-            {formatPopulation(inputs.population)}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Population</div>
-        </div>
-
-        <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
-          <div className="flex items-center justify-between mb-2">
-            <DollarSign className="h-8 w-8 text-green-600 dark:text-green-400" />
-            <div className="text-xs text-green-700 dark:text-green-300">per capita</div>
-          </div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">
-            {formatNumber(inputs.gdpPerCapita)}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">GDP per Capita</div>
-        </div>
-
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
-          <div className="flex items-center justify-between mb-2">
-            <Globe className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-            <div className="text-xs text-purple-700 dark:text-purple-300">total</div>
-          </div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">
-            {formatNumber(totalGDP * 1e9)}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Total GDP</div>
-        </div>
-
-        <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
-          <div className="flex items-center justify-between mb-2">
-            <Star className="h-8 w-8 text-orange-600 dark:text-orange-400" />
-            <div className={`text-xs font-medium ${healthRating.color}`}>{healthRating.label}</div>
-          </div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">
-            {healthScore}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Health Score</div>
-        </div>
+        {[
+          { icon: Users, label: "Population", value: formatPopulationDisplay(inputs.population), tier: economicTier, tierColorStyle: tierStyle.className },
+          { icon: DollarSign, label: "GDP p.c.", value: formatNumber(inputs.gdpPerCapita), subLabel: "per capita" },
+          { icon: Globe, label: "Total GDP", value: formatNumber(totalGDP * 1e9), subLabel: "total" },
+          { icon: Star, label: "Health Score", value: healthScore.toString(), subLabel: healthRating.label, colorClass: healthRating.color }
+        ].map(item => {
+            const Icon = item.icon;
+            return(
+                <div key={item.label} className={`p-4 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]`}>
+                    <div className="flex items-center justify-between mb-2">
+                        <Icon className={`h-7 w-7 ${item.colorClass || 'text-[var(--color-brand-primary)]'}`} />
+                        {item.tier && <span className={`tier-badge ${item.tierColorStyle}`}>{item.tier}</span>}
+                    </div>
+                    <div className={`text-2xl font-bold text-[var(--color-text-primary)] ${item.colorClass}`}>{item.value}</div>
+                    <div className="text-sm text-[var(--color-text-muted)]">{item.label} {item.subLabel && `(${item.subLabel})`}</div>
+                </div>
+            );
+        })}
       </div>
 
-      {/* Economic Indicators Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-8">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-            <BarChart3 className="h-5 w-5 mr-2" />
-            Economic Indicators
+      <div className="card mb-8">
+        <div className="card-header">
+          <h3 className="text-lg font-semibold text-[var(--color-text-primary)] flex items-center">
+            <BarChart3 className="h-5 w-5 mr-2" /> Economic Indicators
           </h3>
         </div>
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[
-              { 
-                icon: Users, 
-                label: 'Population', 
-                value: formatPopulation(inputs.population),
-                reference: formatPopulation(referenceCountry.population),
-                color: 'blue'
-              },
-              { 
-                icon: DollarSign, 
-                label: 'GDP per Capita', 
-                value: formatNumber(inputs.gdpPerCapita),
-                reference: formatNumber(referenceCountry.gdpPerCapita),
-                color: 'green'
-              },
-              { 
-                icon: Percent, 
-                label: 'Tax Revenue', 
-                value: `${inputs.taxRevenuePercent.toFixed(1)}%`,
-                reference: `${referenceCountry.taxRevenuePercent.toFixed(1)}%`,
-                color: 'purple'
-              },
-              { 
-                icon: TrendingDown, 
-                label: 'Unemployment', 
-                value: `${inputs.unemploymentRate.toFixed(1)}%`,
-                reference: `${referenceCountry.unemploymentRate.toFixed(1)}%`,
-                color: 'red'
-              },
-              { 
-                icon: Building, 
-                label: 'Gov. Budget', 
-                value: `${inputs.governmentBudgetPercent.toFixed(1)}%`,
-                reference: `${inputs.taxRevenuePercent.toFixed(1)}%`,
-                color: 'indigo'
-              },
-              { 
-                icon: CreditCard, 
-                label: 'Total Debt', 
-                value: `${(inputs.internalDebtPercent + inputs.externalDebtPercent).toFixed(1)}%`,
-                reference: 'varies',
-                color: 'orange'
-              }
-            ].map((item, index) => {
+        <div className="card-content">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+            {indicatorItems.map(item => {
               const Icon = item.icon;
-              return (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-750 rounded-lg border border-gray-200 dark:border-gray-700">
+              return(
+                <div key={item.label} className="flex items-center justify-between p-3 bg-[var(--color-bg-tertiary)] rounded-md border border-[var(--color-border-secondary)]">
                   <div className="flex items-center">
-                    <Icon className={`h-5 w-5 mr-3 text-${item.color}-600 dark:text-${item.color}-400`} />
+                    <Icon className={`h-5 w-5 mr-3 text-[var(--color-brand-primary)]`} />
                     <div>
-                      <div className="font-medium text-gray-900 dark:text-white">{item.label}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {referenceCountry.name}: {item.reference}
-                      </div>
+                      <div className="font-medium text-[var(--color-text-primary)]">{item.label}</div>
+                      <div className="text-xs text-[var(--color-text-muted)]">Ref ({referenceCountry.name}): {item.reference}</div>
                     </div>
                   </div>
-                  <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {item.value}
-                  </div>
+                  <div className="text-lg font-semibold text-[var(--color-text-primary)]">{item.value}</div>
                 </div>
               );
             })}
@@ -257,63 +135,54 @@ export function EconomicPreview({
         </div>
       </div>
 
-      {/* Country Comparisons */}
-      <div className="space-y-6 mb-8">
-        {comparisons.map((comparison, index) => (
-          <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <h4 className="font-semibold text-gray-900 dark:text-white">{comparison.metric}</h4>
-            </div>
-            <div className="p-6">
-              <p className="text-gray-700 dark:text-gray-300 mb-4">{comparison.analysis}</p>
-              
-              {comparison.comparableCountries.length > 0 && (
+      <div className="card mb-8">
+        <div className="card-header">
+            <h3 className="text-lg font-semibold text-[var(--color-text-primary)] flex items-center">
+                <BarChartHorizontalBig className="h-5 w-5 mr-2" /> Country Comparisons
+            </h3>
+        </div>
+        <div className="card-content space-y-6">
+            {comparisons.map((comp, index) => (
+            <div key={index} className="p-4 bg-[var(--color-bg-tertiary)] rounded-lg border border-[var(--color-border-secondary)]">
+                <h4 className="font-semibold text-[var(--color-text-primary)] mb-1">{comp.metric}
+                    <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${getTierStyle(comp.tier).className}`}>
+                        {comp.tier}
+                    </span>
+                </h4>
+                <p className="text-sm text-[var(--color-text-muted)] mb-3">{comp.analysis}</p>
+                {comp.comparableCountries.length > 0 && (
                 <div>
-                  <h5 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">
-                    Similar Countries:
-                  </h5>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    {comparison.comparableCountries.slice(0, 6).map((country, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-750 rounded border border-gray-200 dark:border-gray-700">
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {country.name}
+                    <h5 className="text-xs font-medium text-[var(--color-text-secondary)] mb-1.5">Similar Countries:</h5>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                    {comp.comparableCountries.map((country, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-1.5 text-xs bg-[var(--color-bg-secondary)] rounded border border-[var(--color-border-primary)]">
+                        <span className="font-medium text-[var(--color-text-primary)] truncate" title={country.name}>{country.name}</span>
+                        <span className="text-[var(--color-text-muted)]">
+                            {comp.metric.includes('Population') ? formatPopulationDisplay(country.value)
+                            : comp.metric.includes('GDP per Capita') ? formatNumber(country.value)
+                            : `${country.value.toFixed(1)}%`}
                         </span>
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                          {comparison.metric.includes('Population') 
-                            ? formatPopulation(country.value)
-                            : comparison.metric.includes('GDP per Capita')
-                              ? formatNumber(country.value)
-                              : `${country.value.toFixed(1)}%`
-                          }
-                        </span>
-                      </div>
+                        </div>
                     ))}
-                  </div>
+                    </div>
                 </div>
-              )}
+                )}
             </div>
-          </div>
-        ))}
+            ))}
+        </div>
       </div>
 
-      {/* Confirmation Section */}
-      <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-6">
-        <div className="flex items-center justify-between">
+
+      <div className="bg-[var(--color-brand-primary)] bg-opacity-10 border border-[var(--color-brand-primary)] border-opacity-30 rounded-lg p-6">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
-            <h3 className="text-lg font-semibold text-indigo-900 dark:text-indigo-100 mb-2">
-              Ready to Set Baseline?
-            </h3>
-            <p className="text-indigo-700 dark:text-indigo-300 text-sm">
-              This will lock in your economic parameters as the starting point for {inputs.countryName}. 
-              You'll be able to see growth projections and apply DM modifications in the next phases.
+            <h3 className="text-lg font-semibold text-[var(--color-brand-primary)] mb-1">Ready to Set Baseline?</h3>
+            <p className="text-[var(--color-text-secondary)] text-sm">
+              This will lock in parameters for {inputs.countryName}. Next, you can apply DM modifications.
             </p>
           </div>
-          <button
-            onClick={onConfirm}
-            className="flex items-center px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 font-medium"
-          >
-            <CheckCircle className="h-5 w-5 mr-2" />
-            Confirm Baseline
+          <button onClick={onConfirm} className="btn-primary flex-shrink-0">
+            <CheckCircle className="h-5 w-5 mr-2" /> Confirm Baseline
           </button>
         </div>
       </div>
