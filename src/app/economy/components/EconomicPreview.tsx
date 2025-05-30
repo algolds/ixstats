@@ -29,8 +29,8 @@ export function EconomicPreview({
     return generateEconomicComparisons(inputs, allCountries.filter(c => c.name !== "World"));
   }, [inputs, allCountries]);
 
-  const calculateTotalGDP = () => (inputs.population * inputs.gdpPerCapita) / 1e9; // Billions
-  const calculateTaxRevenueValue = () => (calculateTotalGDP() * inputs.taxRevenuePercent) / 100;
+  const calculateTotalGDP = () => (inputs.coreIndicators.totalPopulation * inputs.coreIndicators.gdpPerCapita) / 1e9; // Billions
+  const calculateTaxRevenueValue = () => (calculateTotalGDP() * inputs.fiscalSystem.taxRevenueGDPPercent) / 100;
 
   const formatNumber = (num: number, precision = 1, isCurrency = true): string => {
     const prefix = isCurrency ? '$' : '';
@@ -41,18 +41,31 @@ export function EconomicPreview({
   };
   const formatPopulationDisplay = (pop: number): string => formatNumber(pop, 1, false);
 
-  const economicTier = getEconomicTier(inputs.gdpPerCapita);
+  const economicTier = getEconomicTier(inputs.coreIndicators.gdpPerCapita);
   const tierStyle = getTierStyle(economicTier);
   const totalGDP = calculateTotalGDP();
   const taxRevenue = calculateTaxRevenueValue();
 
   const getEconomicHealthScore = () => {
     let score = 70;
-    if (inputs.gdpPerCapita >= 50000) score += 15; else if (inputs.gdpPerCapita >= 25000) score += 10; else if (inputs.gdpPerCapita >= 10000) score += 5; else score -= 5;
-    if (inputs.unemploymentRate <= 5) score += 10; else if (inputs.unemploymentRate <= 10) score += 5; else if (inputs.unemploymentRate >= 20) score -= 15; else if (inputs.unemploymentRate >= 15) score -= 10;
-    if (inputs.taxRevenuePercent >= 15 && inputs.taxRevenuePercent <= 30) score += 5; else if (inputs.taxRevenuePercent < 10 || inputs.taxRevenuePercent > 40) score -= 5;
-    const totalDebt = inputs.internalDebtPercent + inputs.externalDebtPercent;
-    if (totalDebt <= 60) score += 5; else if (totalDebt >= 150) score -= 10; else if (totalDebt >= 100) score -= 5;
+    if (inputs.coreIndicators.gdpPerCapita >= 50000) score += 15; 
+    else if (inputs.coreIndicators.gdpPerCapita >= 25000) score += 10; 
+    else if (inputs.coreIndicators.gdpPerCapita >= 10000) score += 5; 
+    else score -= 5;
+    
+    if (inputs.laborEmployment.unemploymentRate <= 5) score += 10; 
+    else if (inputs.laborEmployment.unemploymentRate <= 10) score += 5; 
+    else if (inputs.laborEmployment.unemploymentRate >= 20) score -= 15; 
+    else if (inputs.laborEmployment.unemploymentRate >= 15) score -= 10;
+    
+    if (inputs.fiscalSystem.taxRevenueGDPPercent >= 15 && inputs.fiscalSystem.taxRevenueGDPPercent <= 30) score += 5; 
+    else if (inputs.fiscalSystem.taxRevenueGDPPercent < 10 || inputs.fiscalSystem.taxRevenueGDPPercent > 40) score -= 5;
+    
+    const totalDebt = inputs.fiscalSystem.internalDebtGDPPercent + inputs.fiscalSystem.externalDebtGDPPercent;
+    if (totalDebt <= 60) score += 5; 
+    else if (totalDebt >= 150) score -= 10; 
+    else if (totalDebt >= 100) score -= 5;
+    
     return Math.max(0, Math.min(100, Math.round(score)));
   };
 
@@ -67,12 +80,12 @@ export function EconomicPreview({
   const healthRating = getHealthRating(healthScore);
 
   const indicatorItems = [
-    { icon: Users, label: 'Population', value: formatPopulationDisplay(inputs.population), reference: formatPopulationDisplay(referenceCountry.population), color: 'blue' },
-    { icon: DollarSign, label: 'GDP per Capita', value: formatNumber(inputs.gdpPerCapita, 2), reference: formatNumber(referenceCountry.gdpPerCapita, 2), color: 'green' },
-    { icon: Percent, label: 'Tax Revenue %', value: `${inputs.taxRevenuePercent.toFixed(1)}%`, reference: `${referenceCountry.taxRevenuePercent.toFixed(1)}%`, color: 'purple' },
-    { icon: TrendingDown, label: 'Unemployment %', value: `${inputs.unemploymentRate.toFixed(1)}%`, reference: `${referenceCountry.unemploymentRate.toFixed(1)}%`, color: 'red' },
-    { icon: Building, label: 'Gov. Budget %', value: `${inputs.governmentBudgetPercent.toFixed(1)}%`, reference: `Ref: ${referenceCountry.taxRevenuePercent.toFixed(1)}%`, color: 'indigo' },
-    { icon: CreditCard, label: 'Total Debt %', value: `${(inputs.internalDebtPercent + inputs.externalDebtPercent).toFixed(1)}%`, reference: 'Varies', color: 'orange' }
+    { icon: Users, label: 'Population', value: formatPopulationDisplay(inputs.coreIndicators.totalPopulation), reference: formatPopulationDisplay(referenceCountry.population), color: 'blue' },
+    { icon: DollarSign, label: 'GDP per Capita', value: formatNumber(inputs.coreIndicators.gdpPerCapita, 2), reference: formatNumber(referenceCountry.gdpPerCapita, 2), color: 'green' },
+    { icon: Percent, label: 'Tax Revenue %', value: `${inputs.fiscalSystem.taxRevenueGDPPercent.toFixed(1)}%`, reference: `${referenceCountry.taxRevenuePercent.toFixed(1)}%`, color: 'purple' },
+    { icon: TrendingDown, label: 'Unemployment %', value: `${inputs.laborEmployment.unemploymentRate.toFixed(1)}%`, reference: `${referenceCountry.unemploymentRate.toFixed(1)}%`, color: 'red' },
+    { icon: Building, label: 'Gov. Budget %', value: `${inputs.fiscalSystem.governmentBudgetGDPPercent.toFixed(1)}%`, reference: `Ref: ${referenceCountry.taxRevenuePercent.toFixed(1)}%`, color: 'indigo' },
+    { icon: CreditCard, label: 'Total Debt %', value: `${(inputs.fiscalSystem.internalDebtGDPPercent + inputs.fiscalSystem.externalDebtGDPPercent).toFixed(1)}%`, reference: 'Varies', color: 'orange' }
   ];
 
   return (
@@ -89,8 +102,8 @@ export function EconomicPreview({
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { icon: Users, label: "Population", value: formatPopulationDisplay(inputs.population), tier: economicTier, tierColorStyle: tierStyle.className },
-          { icon: DollarSign, label: "GDP p.c.", value: formatNumber(inputs.gdpPerCapita), subLabel: "per capita" },
+          { icon: Users, label: "Population", value: formatPopulationDisplay(inputs.coreIndicators.totalPopulation), tier: economicTier, tierColorStyle: tierStyle.className },
+          { icon: DollarSign, label: "GDP p.c.", value: formatNumber(inputs.coreIndicators.gdpPerCapita), subLabel: "per capita" },
           { icon: Globe, label: "Total GDP", value: formatNumber(totalGDP * 1e9), subLabel: "total" },
           { icon: Star, label: "Health Score", value: healthScore.toString(), subLabel: healthRating.label, colorClass: healthRating.color }
         ].map(item => {
@@ -171,7 +184,6 @@ export function EconomicPreview({
             ))}
         </div>
       </div>
-
 
       <div className="bg-[var(--color-brand-primary)] bg-opacity-10 border border-[var(--color-brand-primary)] border-opacity-30 rounded-lg p-6">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">

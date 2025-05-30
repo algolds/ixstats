@@ -184,6 +184,11 @@ export async function parseEconomyData(): Promise<RealCountryData[]> {
         return [];
     }
 
+    if (!sheetJson[0]) {
+      console.warn("RLData sheet has no headers.");
+      return [];
+    }
+
     const headers = sheetJson[0].map(h => String(h).trim());
     const rawData = sheetJson.slice(1);
 
