@@ -1,4 +1,5 @@
 // src/app/economy/lib/enhanced-economy-data-service.ts
+//  Business logic & calculations
 
 import type { EnhancedEconomicInputs, CountryComparison, EconomicHint } from "./enhanced-economic-types";
 import type { RealCountryData } from "./economy-data-service";
