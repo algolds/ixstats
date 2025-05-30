@@ -30,7 +30,7 @@ export function FileUpload({ onFileSelect, isUploading, isAnalyzing }: FileUploa
               id="file-upload"
               name="file-upload"
               type="file"
-              accept=".xlsx,.xls"
+              accept=".xlsx,.xls,.csv"
               className="sr-only"
               onChange={handleFileChange}
               disabled={isUploading || isAnalyzing}
@@ -41,7 +41,7 @@ export function FileUpload({ onFileSelect, isUploading, isAnalyzing }: FileUploa
           </label>
         </div>
         <div className="mt-4 text-xs text-gray-400 dark:text-gray-500">
-          <p>• Supports .xlsx and .xls formats</p>
+          <p>• Supports .xlsx / .xls / .csv formats</p>
           <p>• Upload will show a preview of changes before importing</p>
           <p>• You can choose to update existing countries or skip them</p>
         </div>

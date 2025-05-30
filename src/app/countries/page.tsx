@@ -3,8 +3,8 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { api } from "~/trpc/react";
-import { useGlobalFlagPreloader } from "~/hooks/useFlagPreloader";
-import {
+import { useGlobalFlagPreloader } from "~/hooks/useFlagPreloader"; // Ensure this path is correct
+import { 
   CountriesPageHeader,
   CountriesSearch,
   CountriesGrid,
@@ -12,56 +12,43 @@ import {
   type SortDirection,
   type TierFilter
 } from "./_components";
-import type { Country } from "~/types/ixstats";
 
 export default function CountriesPage() {
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState("");
   const [tierFilter, setTierFilter] = useState<TierFilter>("all");
-  const [continentFilter, setContinentFilter] = useState<string>("all");
-  const [regionFilter, setRegionFilter] = useState<string>("all");
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   // Data fetching
   const { data: countries, isLoading, error } = api.countries.getAll.useQuery();
 
+  // Flag preloader
   const { preloadAllFlags, currentStats: flagPreloaderStats } = useGlobalFlagPreloader();
 
+  // Preload flags when countries data is loaded
   useEffect(() => {
     if (countries && countries.length > 0) {
       const countryNames = countries.map(c => c.name);
-      void preloadAllFlags(countryNames);
+      // preloadAllFlags is a stable callback that will update stats internally
+      void preloadAllFlags(countryNames); 
     }
-  }, [countries, preloadAllFlags]);
+  }, [countries, preloadAllFlags]); // preloadAllFlags is stable
 
+  // For logging development stats, react to changes in flagPreloaderStats
   useEffect(() => {
     if (process.env.NODE_ENV === 'development' && countries && countries.length > 0) {
+      // This log will run when flagPreloaderStats changes (e.g., after preloading)
       console.log('[Countries] Flag cache stats (updated):', flagPreloaderStats);
     }
   }, [flagPreloaderStats, countries]);
 
-  const availableContinents = useMemo(() => {
-    if (!countries) return [];
-    const continents = new Set(countries.map((c: Country) => c.continent).filter(Boolean) as string[]);
-    return Array.from(continents).sort();
-  }, [countries]);
 
-  const availableRegions = useMemo(() => {
-    if (!countries) return [];
-    let regionsSource = countries;
-    if (continentFilter !== "all") {
-        regionsSource = countries.filter((c: Country) => c.continent === continentFilter);
-    }
-    const regions = new Set(regionsSource.map((c: Country) => c.region).filter(Boolean) as string[]);
-    return Array.from(regions).sort();
-  }, [countries, continentFilter]);
-
-
+  // Filter and sort countries
   const filteredAndSortedCountries = useMemo(() => {
     if (!countries) return [];
 
-    let filtered = countries as Array<Country & { country: string }>; // Asserting combined type
+    let filtered = countries;
 
     // Apply search filter
     if (searchTerm) {
@@ -74,60 +61,57 @@ export default function CountriesPage() {
     if (tierFilter !== "all") {
       filtered = filtered.filter((country) => country.economicTier === tierFilter);
     }
-    
-    // Apply continent filter
-    if (continentFilter !== "all") {
-      filtered = filtered.filter((country: Country) => country.continent === continentFilter);
-    }
-
-    // Apply region filter
-    if (regionFilter !== "all") {
-      filtered = filtered.filter((country: Country) => country.region === regionFilter);
-    }
 
     // Apply sorting
     filtered.sort((a, b) => {
       let aValue: any;
       let bValue: any;
 
-      const getSortableValue = (country: any, field: SortField) => {
-        switch (field) {
-            case 'name': return country.name.toLowerCase();
-            case 'population': return country.currentPopulation;
-            case 'gdpPerCapita': return country.currentGdpPerCapita;
-            case 'totalGdp': return country.currentTotalGdp;
-            case 'economicTier':
-                const tierOrder = { 'Advanced': 4, 'Developed': 3, 'Emerging': 2, 'Developing': 1, 'Unknown': 0 };
-                return tierOrder[country.economicTier as keyof typeof tierOrder] || 0;
-            case 'continent': return country.continent?.toLowerCase() || '';
-            case 'region': return country.region?.toLowerCase() || '';
-            case 'landArea': return country.landArea || 0;
-            case 'populationDensity': return country.populationDensity || 0;
-            default: return country.name.toLowerCase();
-        }
-      };
-      
-      aValue = getSortableValue(a, sortField);
-      bValue = getSortableValue(b, sortField);
+      switch (sortField) {
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'population':
+          aValue = a.currentPopulation;
+          bValue = b.currentPopulation;
+          break;
+        case 'gdpPerCapita':
+          aValue = a.currentGdpPerCapita;
+          bValue = b.currentGdpPerCapita;
+          break;
+        case 'totalGdp':
+          aValue = a.currentTotalGdp;
+          bValue = b.currentTotalGdp;
+          break;
+        case 'economicTier':
+          // Sort by tier order: Advanced > Developed > Emerging > Developing
+          const tierOrder = { 'Advanced': 4, 'Developed': 3, 'Emerging': 2, 'Developing': 1 };
+          aValue = tierOrder[a.economicTier as keyof typeof tierOrder] || 0;
+          bValue = tierOrder[b.economicTier as keyof typeof tierOrder] || 0;
+          break;
+        default:
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+      }
 
-
+      // Handle null/undefined values
       if (aValue == null && bValue == null) return 0;
-      if (aValue == null) return sortDirection === 'asc' ? 1 : -1; // Nulls last for asc, first for desc
-      if (bValue == null) return sortDirection === 'asc' ? -1 : 1; // Nulls last for asc, first for desc
+      if (aValue == null) return 1;
+      if (bValue == null) return -1;
 
-
+      // String comparison for name, number comparison for others
       if (typeof aValue === 'string' && typeof bValue === 'string') {
         const comparison = aValue.localeCompare(bValue);
         return sortDirection === 'asc' ? comparison : -comparison;
-      } else if (typeof aValue === 'number' && typeof bValue === 'number') {
+      } else {
         const comparison = aValue - bValue;
         return sortDirection === 'asc' ? comparison : -comparison;
       }
-      return 0; // Fallback for mixed types or unexpected values
     });
 
     return filtered;
-  }, [countries, searchTerm, tierFilter, continentFilter, regionFilter, sortField, sortDirection]);
+  }, [countries, searchTerm, tierFilter, sortField, sortDirection]);
 
   const handleSortChange = (field: SortField, direction: SortDirection) => {
     setSortField(field);
@@ -159,45 +143,46 @@ export default function CountriesPage() {
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <CountriesPageHeader
+        {/* Page Header */}
+        <CountriesPageHeader 
           totalCountries={countries?.length || 0}
           isLoading={isLoading}
         />
 
+        {/* Search and Filters */}
         <CountriesSearch
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           tierFilter={tierFilter}
           onTierFilterChange={setTierFilter}
-          continentFilter={continentFilter}
-          onContinentFilterChange={setContinentFilter}
-          regionFilter={regionFilter}
-          onRegionFilterChange={setRegionFilter}
           sortField={sortField}
           sortDirection={sortDirection}
           onSortChange={handleSortChange}
           totalResults={countries?.length || 0}
-          filteredResults={filteredAndSortedCountries.length}
-          availableContinents={availableContinents}
-          availableRegions={availableRegions}
-        />
+          filteredResults={filteredAndSortedCountries.length} continentFilter={""} onContinentFilterChange={function (continent: string): void {
+            throw new Error("Function not implemented.");
+          } } regionFilter={""} onRegionFilterChange={function (region: string): void {
+            throw new Error("Function not implemented.");
+          } } availableContinents={[]} availableRegions={[]}        />
 
+        {/* Countries Grid */}
         <CountriesGrid
           countries={filteredAndSortedCountries}
           isLoading={isLoading}
           searchTerm={searchTerm}
         />
-        
+
+        {/* Development: Flag Cache Stats */}
         {process.env.NODE_ENV === 'development' && countries && (
           <div className="mt-8 p-4 bg-[var(--color-bg-surface)] border border-[var(--color-border-primary)] rounded-lg">
             <h4 className="text-sm font-semibold text-[var(--color-text-primary)] mb-2">
               Flag Cache Stats (Development)
             </h4>
             <div className="text-xs text-[var(--color-text-muted)] space-x-4">
-              <span>Total Flags Queried: {flagPreloaderStats.flags}</span>
+              <span>Total: {flagPreloaderStats.flags}</span>
               <span>Preloaded: {flagPreloaderStats.preloadedFlags}</span>
               <span>Failed: {flagPreloaderStats.failedFlags}</span>
-              <span>Cache Efficiency: {flagPreloaderStats.cacheEfficiency.toFixed(1)}%</span>
+              <span>Efficiency: {flagPreloaderStats.cacheEfficiency}%</span>
             </div>
           </div>
         )}
