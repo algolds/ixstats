@@ -1,5 +1,6 @@
 // src/app/economy/lib/economy-data-service.ts
 import * as XLSX from 'xlsx';
+import { Shield, GraduationCap, Heart, Truck, Users2, MoreHorizontal } from 'lucide-react';
 
 export interface RealCountryData {
   name: string;
@@ -59,11 +60,81 @@ export interface FiscalSystemData {
   debtServiceCosts: number;
 }
 
+export interface EconomicClass {
+  name: string;
+  populationPercent: number;
+  wealthPercent: number;
+  averageIncome: number;
+  color: string;
+}
+
+export interface IncomeWealthData {
+  economicClasses: EconomicClass[];
+  povertyRate: number;
+  incomeInequalityGini: number;
+  socialMobilityIndex: number;
+}
+
+export interface SpendingCategory {
+  category: string;
+  amount: number;
+  percent: number;
+  icon: React.ElementType;
+  color: string;
+  description: string;
+}
+
+export interface GovernmentSpendingData {
+  totalSpending: number;
+  spendingGDPPercent: number;
+  spendingPerCapita: number;
+  spendingCategories: SpendingCategory[];
+  deficitSurplus: number;
+}
+
+export interface AgeGroup {
+  group: string;
+  percent: number;
+  color: string;
+}
+
+export interface Region {
+  name: string;
+  population: number;
+  urbanPercent: number;
+  color: string;
+}
+
+export interface EducationLevel {
+  level: string;
+  percent: number;
+  color: string;
+}
+
+export interface CitizenshipStatus {
+  status: string;
+  percent: number;
+  color: string;
+}
+
+export interface DemographicData {
+  ageDistribution: AgeGroup[];
+  lifeExpectancy: number;
+  urbanRuralSplit: { urban: number; rural: number };
+  regions: Region[];
+  educationLevels: EducationLevel[];
+  literacyRate: number;
+  citizenshipStatuses: CitizenshipStatus[];
+}
+
 export interface EconomicInputs {
   countryName: string;
   coreIndicators: CoreEconomicIndicators;
   laborEmployment: LaborEmploymentData;
   fiscalSystem: FiscalSystemData;
+  incomeWealth: IncomeWealthData;
+  governmentSpending: GovernmentSpendingData;
+  demographics: DemographicData;
 }
 
 export interface EconomicComparison {
@@ -85,6 +156,9 @@ export function createDefaultEconomicInputs(referenceCountry?: RealCountryData):
   const baseNominalGDP = basePopulation * baseGDPPerCapita;
   const baseTaxRevenuePercent = referenceCountry?.taxRevenuePercent || 20;
   const baseUnemploymentRate = referenceCountry?.unemploymentRate || 5;
+  
+  // Calculate default government spending
+  const totalSpending = (baseNominalGDP * Math.min(baseTaxRevenuePercent + 2, 25)) / 100;
   
   return {
     countryName: referenceCountry ? `New ${referenceCountry.name}` : "New Nation",
@@ -150,6 +224,61 @@ export function createDefaultEconomicInputs(referenceCountry?: RealCountryData):
       interestRates: 3.5,
       debtServiceCosts: (baseNominalGDP * 0.7 * 0.035),
     },
+    incomeWealth: {
+      economicClasses: [
+        { name: "Upper Class", populationPercent: 5, wealthPercent: 40, averageIncome: baseGDPPerCapita * 5, color: "#4C51BF" },
+        { name: "Upper Middle Class", populationPercent: 15, wealthPercent: 30, averageIncome: baseGDPPerCapita * 2, color: "#4299E1" },
+        { name: "Middle Class", populationPercent: 30, wealthPercent: 20, averageIncome: baseGDPPerCapita, color: "#48BB78" },
+        { name: "Lower Middle Class", populationPercent: 30, wealthPercent: 8, averageIncome: baseGDPPerCapita * 0.5, color: "#ECC94B" },
+        { name: "Lower Class", populationPercent: 20, wealthPercent: 2, averageIncome: baseGDPPerCapita * 0.2, color: "#F56565" }
+      ],
+      povertyRate: 15,
+      incomeInequalityGini: 0.38,
+      socialMobilityIndex: 60
+    },
+    governmentSpending: {
+      totalSpending,
+      spendingGDPPercent: Math.min(baseTaxRevenuePercent + 2, 25),
+      spendingPerCapita: totalSpending / basePopulation,
+      spendingCategories: [
+        { category: "Defense", amount: totalSpending * 0.15, percent: 15, icon: Shield, color: "#4C51BF", description: "Military, security, and defense infrastructure" },
+        { category: "Education", amount: totalSpending * 0.18, percent: 18, icon: GraduationCap, color: "#4299E1", description: "Schools, universities, and education programs" },
+        { category: "Healthcare", amount: totalSpending * 0.22, percent: 22, icon: Heart, color: "#F56565", description: "Public health services and medical care" },
+        { category: "Infrastructure", amount: totalSpending * 0.12, percent: 12, icon: Truck, color: "#48BB78", description: "Roads, utilities, and public works" },
+        { category: "Social Security", amount: totalSpending * 0.20, percent: 20, icon: Users2, color: "#ECC94B", description: "Welfare, pensions, and social benefits" },
+        { category: "Other", amount: totalSpending * 0.13, percent: 13, icon: MoreHorizontal, color: "#A0AEC0", description: "Administration, debt service, and miscellaneous" }
+      ],
+      deficitSurplus: ((baseNominalGDP * baseTaxRevenuePercent) / 100) - totalSpending
+    },
+    demographics: {
+      ageDistribution: [
+        { group: "0-15", percent: 20, color: "#4299E1" },
+        { group: "16-64", percent: 65, color: "#48BB78" },
+        { group: "65+", percent: 15, color: "#F56565" }
+      ],
+      lifeExpectancy: 78.5,
+      urbanRuralSplit: { urban: 65, rural: 35 },
+      regions: [
+        { name: "North", population: basePopulation * 0.25, urbanPercent: 70, color: "#4C51BF" },
+        { name: "South", population: basePopulation * 0.30, urbanPercent: 60, color: "#4299E1" },
+        { name: "East", population: basePopulation * 0.20, urbanPercent: 75, color: "#48BB78" },
+        { name: "West", population: basePopulation * 0.15, urbanPercent: 55, color: "#ECC94B" },
+        { name: "Central", population: basePopulation * 0.10, urbanPercent: 50, color: "#F56565" }
+      ],
+      educationLevels: [
+        { level: "No Formal Education", percent: 5, color: "#F56565" },
+        { level: "Primary Education", percent: 15, color: "#ECC94B" },
+        { level: "Secondary Education", percent: 55, color: "#48BB78" },
+        { level: "Higher Education", percent: 25, color: "#4299E1" }
+      ],
+      literacyRate: 95,
+      citizenshipStatuses: [
+        { status: "Citizens", percent: 92, color: "#4C51BF" },
+        { status: "Permanent Residents", percent: 5, color: "#48BB78" },
+        { status: "Temporary Residents", percent: 2, color: "#ECC94B" },
+        { status: "Other", percent: 1, color: "#F56565" }
+      ]
+    }
   };
 }
 
@@ -157,7 +286,6 @@ export function createDefaultEconomicInputs(referenceCountry?: RealCountryData):
 let cachedCountryData: RealCountryData[] | null = null;
 
 export async function parseEconomyData(): Promise<RealCountryData[]> {
-  // ... existing implementation
   if (cachedCountryData) {
     return cachedCountryData;
   }
@@ -257,7 +385,6 @@ export function generateEconomicComparisons(
   inputs: EconomicInputs,
   allCountries: RealCountryData[]
 ): EconomicComparison[] {
-  // ... existing implementation adapted for new structure
   const comparisons: EconomicComparison[] = [];
 
   const metricsToCompare: Array<{
