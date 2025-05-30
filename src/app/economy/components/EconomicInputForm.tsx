@@ -5,20 +5,18 @@ import { useState, useEffect } from "react";
 import {
   ArrowLeft,
   Eye,
-  Users,
-  DollarSign,
-  Percent,
-  TrendingDown,
-  Building,
-  CreditCard,
-  AlertCircle,
-  Info,
   CheckCircle,
-  HelpCircle
+  AlertCircle,
+  BarChart3,
+  Briefcase,
+  Building,
 } from "lucide-react";
 import type { EconomicInputs, RealCountryData } from "../lib/economy-data-service";
-import { getEconomicTier } from "../lib/economy-data-service";
+import { getEconomicTier, createDefaultEconomicInputs } from "../lib/economy-data-service";
 import { getTierStyle } from "~/lib/theme-utils";
+import { CoreEconomicIndicatorsComponent } from "./CoreEconomicIndicators";
+import { LaborEmploymentComponent } from "./LaborEmployment";
+import { FiscalSystemComponent } from "./FiscalSystem";
 
 interface EconomicInputFormProps {
   inputs: EconomicInputs;
@@ -29,7 +27,7 @@ interface EconomicInputFormProps {
 }
 
 interface ValidationError {
-  field: keyof EconomicInputs;
+  field: string;
   message: string;
   severity: 'error' | 'warning' | 'info';
 }
@@ -42,6 +40,7 @@ export function EconomicInputForm({
   onBack
 }: EconomicInputFormProps) {
   const [errors, setErrors] = useState<ValidationError[]>([]);
+  const [activeSection, setActiveSection] = useState<'core' | 'labor' | 'fiscal'>('core');
 
   useEffect(() => {
     validateInputs();
@@ -49,29 +48,79 @@ export function EconomicInputForm({
 
   const validateInputs = () => {
     const newErrors: ValidationError[] = [];
-    if (!inputs.countryName.trim()) newErrors.push({ field: 'countryName', message: 'Country name is required', severity: 'error' });
-    if (inputs.population <= 0) newErrors.push({ field: 'population', message: 'Population must be > 0', severity: 'error' });
-    else if (inputs.population < 1000) newErrors.push({ field: 'population', message: 'Very small population', severity: 'warning' });
-    if (inputs.gdpPerCapita <= 0) newErrors.push({ field: 'gdpPerCapita', message: 'GDP p.c. must be > 0', severity: 'error' });
-    else if (inputs.gdpPerCapita < 500) newErrors.push({ field: 'gdpPerCapita', message: 'Very low GDP p.c.', severity: 'warning' });
-    if (inputs.taxRevenuePercent < 0 || inputs.taxRevenuePercent > 100) newErrors.push({ field: 'taxRevenuePercent', message: 'Tax % must be 0-100', severity: 'error' });
-    if (inputs.unemploymentRate < 0 || inputs.unemploymentRate > 100) newErrors.push({ field: 'unemploymentRate', message: 'Unemp. % must be 0-100', severity: 'error' });
-    if (inputs.governmentBudgetPercent < 0 || inputs.governmentBudgetPercent > 100) newErrors.push({ field: 'governmentBudgetPercent', message: 'Budget % must be 0-100', severity: 'error' });
-    if (inputs.internalDebtPercent < 0) newErrors.push({ field: 'internalDebtPercent', message: 'Debt % must be non-negative', severity: 'error' });
-    if (inputs.externalDebtPercent < 0) newErrors.push({ field: 'externalDebtPercent', message: 'Debt % must be non-negative', severity: 'error' });
+    
+    // Core Indicators Validation
+    if (!inputs.countryName.trim()) {
+      newErrors.push({ field: 'countryName', message: 'Country name is required', severity: 'error' });
+    }
+    if (inputs.coreIndicators.totalPopulation <= 0) {
+      newErrors.push({ field: 'totalPopulation', message: 'Population must be > 0', severity: 'error' });
+    }
+    if (inputs.coreIndicators.gdpPerCapita <= 0) {
+      newErrors.push({ field: 'gdpPerCapita', message: 'GDP p.c. must be > 0', severity: 'error' });
+    }
+    if (inputs.coreIndicators.realGDPGrowthRate < -10 || inputs.coreIndicators.realGDPGrowthRate > 15) {
+      newErrors.push({ field: 'realGDPGrowthRate', message: 'GDP growth rate seems unrealistic', severity: 'warning' });
+    }
+    if (inputs.coreIndicators.inflationRate < 0 || inputs.coreIndicators.inflationRate > 20) {
+      newErrors.push({ field: 'inflationRate', message: 'Inflation rate seems extreme', severity: 'warning' });
+    }
+
+    // Labor Validation
+    if (inputs.laborEmployment.unemploymentRate < 0 || inputs.laborEmployment.unemploymentRate > 100) {
+      newErrors.push({ field: 'unemploymentRate', message: 'Unemployment rate must be 0-100%', severity: 'error' });
+    }
+    if (inputs.laborEmployment.laborForceParticipationRate < 0 || inputs.laborEmployment.laborForceParticipationRate > 100) {
+      newErrors.push({ field: 'laborForceParticipationRate', message: 'Labor participation must be 0-100%', severity: 'error' });
+    }
+    if (inputs.laborEmployment.minimumWage <= 0) {
+      newErrors.push({ field: 'minimumWage', message: 'Minimum wage must be > 0', severity: 'error' });
+    }
+
+    // Fiscal Validation
+    if (inputs.fiscalSystem.taxRevenueGDPPercent < 0 || inputs.fiscalSystem.taxRevenueGDPPercent > 100) {
+      newErrors.push({ field: 'taxRevenueGDPPercent', message: 'Tax revenue % must be 0-100', severity: 'error' });
+    }
+    if (inputs.fiscalSystem.governmentBudgetGDPPercent < 0 || inputs.fiscalSystem.governmentBudgetGDPPercent > 100) {
+      newErrors.push({ field: 'governmentBudgetGDPPercent', message: 'Budget % must be 0-100', severity: 'error' });
+    }
+    if (inputs.fiscalSystem.totalDebtGDPRatio > 200) {
+      newErrors.push({ field: 'totalDebtGDPRatio', message: 'Very high debt levels may be unsustainable', severity: 'warning' });
+    }
+
     setErrors(newErrors);
   };
 
-  const handleInputChange = (field: keyof EconomicInputs, value: string | number) => {
-    onInputsChange({ ...inputs, [field]: value });
+  const handleCountryNameChange = (name: string) => {
+    onInputsChange({ ...inputs, countryName: name });
   };
 
-  const getFieldError = (field: keyof EconomicInputs) => errors.find(e => e.field === field);
+  const handleCoreIndicatorsChange = (coreIndicators: typeof inputs.coreIndicators) => {
+    onInputsChange({ ...inputs, coreIndicators });
+  };
+
+  const handleLaborDataChange = (laborEmployment: typeof inputs.laborEmployment) => {
+    onInputsChange({ ...inputs, laborEmployment });
+  };
+
+  const handleFiscalDataChange = (fiscalSystem: typeof inputs.fiscalSystem) => {
+    onInputsChange({ ...inputs, fiscalSystem });
+  };
+
   const hasFatalErrors = errors.some(e => e.severity === 'error');
   const canPreview = !hasFatalErrors && inputs.countryName.trim();
 
-  const calculateTotalGDP = () => (inputs.population * inputs.gdpPerCapita) / 1e9; // Billions
-  const calculateTaxRevenueValue = () => (calculateTotalGDP() * inputs.taxRevenuePercent) / 100;
+  const currentEconomicTier = getEconomicTier(inputs.coreIndicators.gdpPerCapita);
+  const tierStyle = getTierStyle(currentEconomicTier);
+
+  const sections = [
+    { key: 'core', label: 'Core Indicators', icon: BarChart3 },
+    { key: 'labor', label: 'Labor & Employment', icon: Briefcase },
+    { key: 'fiscal', label: 'Fiscal System', icon: Building },
+  ] as const;
+
+  const calculateTotalGDP = () => inputs.coreIndicators.nominalGDP / 1e9; // Billions
+  const calculateTaxRevenue = () => inputs.fiscalSystem.governmentRevenueTotal / 1e9; // Billions
 
   const formatNumber = (num: number, precision = 1): string => {
     if (Math.abs(num) >= 1e9) return `$${(num / 1e9).toFixed(precision)}T`;
@@ -79,52 +128,44 @@ export function EconomicInputForm({
     if (Math.abs(num) >= 1e3) return `$${(num / 1e3).toFixed(precision)}K`;
     return `$${num.toFixed(0)}`;
   };
-  const formatPopulationDisplay = (pop: number): string => {
-    if (pop >= 1e9) return `${(pop / 1e9).toFixed(1)}B`;
-    if (pop >= 1e6) return `${(pop / 1e6).toFixed(1)}M`;
-    if (pop >= 1e3) return `${(pop / 1e3).toFixed(0)}K`;
-    return pop.toString();
-  };
-
-
-  const inputFields: Array<{
-    key: keyof EconomicInputs; label: string; icon: React.ElementType; type: string;
-    placeholder?: string; help: string; reference?: string; step?: string;
-  }> = [
-    { key: 'countryName', label: 'Country Name', icon: Building, type: 'text', placeholder: `New ${referenceCountry.name}`, help: 'Unique name for your nation.' },
-    { key: 'population', label: 'Population', icon: Users, type: 'number', help: 'Total citizens.', reference: referenceCountry.population.toLocaleString() },
-    { key: 'gdpPerCapita', label: 'GDP per Capita ($)', icon: DollarSign, type: 'number', help: 'Avg. economic output per person/year.', reference: `$${referenceCountry.gdpPerCapita.toLocaleString()}` },
-    { key: 'taxRevenuePercent', label: 'Tax Revenue (% of GDP)', icon: Percent, type: 'number', step: '0.1', help: 'Gov tax collection as % of total GDP.', reference: `${referenceCountry.taxRevenuePercent.toFixed(1)}%` },
-    { key: 'unemploymentRate', label: 'Unemployment Rate (%)', icon: TrendingDown, type: 'number', step: '0.1', help: '% of workforce seeking employment.', reference: `${referenceCountry.unemploymentRate.toFixed(1)}%` },
-    { key: 'governmentBudgetPercent', label: 'Gov. Budget (% of GDP)', icon: Building, type: 'number', step: '0.1', help: 'Total gov spending as % of GDP.', reference: `Ref: ${referenceCountry.taxRevenuePercent.toFixed(1)}%` },
-    { key: 'internalDebtPercent', label: 'Internal Debt (% of GDP)', icon: CreditCard, type: 'number', step: '0.1', help: 'Gov debt to domestic creditors.' },
-    { key: 'externalDebtPercent', label: 'External Debt (% of GDP)', icon: CreditCard, type: 'number', step: '0.1', help: 'Gov debt to foreign creditors.' }
-  ];
-  
-  const currentEconomicTier = getEconomicTier(inputs.gdpPerCapita);
-  const tierStyle = getTierStyle(currentEconomicTier);
-
 
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-semibold text-[var(--color-text-primary)] mb-1">Economic Parameters</h2>
-          <p className="text-[var(--color-text-muted)]">Customize based on {referenceCountry.name}</p>
+          <h2 className="text-xl font-semibold text-[var(--color-text-primary)] mb-1">Economic Framework</h2>
+          <p className="text-[var(--color-text-muted)]">Building comprehensive economic model for {inputs.countryName || 'your nation'}</p>
         </div>
         <button onClick={onBack} className="btn-secondary text-sm py-1.5 px-3">
           <ArrowLeft className="h-4 w-4 mr-1.5" /> Back
         </button>
       </div>
 
+      {/* Country Name Input */}
+      <div className="mb-6">
+        <label className="form-label">
+          <Building className="h-4 w-4 mr-2 text-[var(--color-brand-primary)]" />
+          Country Name
+        </label>
+        <input
+          type="text"
+          value={inputs.countryName}
+          onChange={(e) => handleCountryNameChange(e.target.value)}
+          className="form-input"
+          placeholder={`New ${referenceCountry.name}`}
+        />
+      </div>
+
+      {/* Economic Summary */}
       <div className="bg-[var(--color-bg-tertiary)] rounded-lg p-4 mb-6 border border-[var(--color-border-primary)]">
         <h3 className="text-sm font-medium text-[var(--color-text-secondary)] mb-3">Live Economic Summary</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
           {[
-            {label: "Total GDP", value: formatNumber(calculateTotalGDP() * 1e9)},
-            {label: "Tax Revenue", value: formatNumber(calculateTaxRevenueValue() * 1e9)},
+            {label: "Total GDP", value: formatNumber(inputs.coreIndicators.nominalGDP)},
+            {label: "GDP per Capita", value: formatNumber(inputs.coreIndicators.gdpPerCapita)},
+            {label: "Population", value: (inputs.coreIndicators.totalPopulation / 1e6).toFixed(1) + "M"},
+            {label: "Tax Revenue", value: formatNumber(inputs.fiscalSystem.governmentRevenueTotal)},
             {label: "Economic Tier", value: <span className={`tier-badge ${tierStyle.className}`}>{currentEconomicTier}</span> },
-            {label: "Total Debt", value: `${(inputs.internalDebtPercent + inputs.externalDebtPercent).toFixed(1)}% GDP`}
           ].map(item => (
             <div key={item.label}>
               <span className="text-[var(--color-text-muted)]">{item.label}:</span>
@@ -134,49 +175,91 @@ export function EconomicInputForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-        {inputFields.map(field => {
-          const Icon = field.icon;
-          const error = getFieldError(field.key);
-          const value = inputs[field.key];
-
+      {/* Section Navigation */}
+      <div className="flex border-b border-[var(--color-border-primary)] mb-6">
+        {sections.map((section) => {
+          const Icon = section.icon;
+          const isActive = activeSection === section.key;
+          
           return (
-            <div key={field.key} className="space-y-1">
-              <label htmlFor={field.key} className="form-label flex items-center">
-                <Icon className="h-4 w-4 mr-2 text-[var(--color-brand-primary)]" /> {field.label}
-              </label>
-              <div className="relative">
-                <input
-                  id={field.key}
-                  type={field.type}
-                  step={field.step}
-                  placeholder={field.placeholder || `e.g. ${field.reference || 'value'}`}
-                  value={value}
-                  onChange={(e) => handleInputChange(field.key, field.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value)}
-                  className={`form-input ${error ? (error.severity === 'error' ? 'border-red-500 dark:border-red-400' : 'border-yellow-500 dark:border-yellow-400') : ''}`}
-                />
-                {error && (
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2" title={error.message}>
-                    {error.severity === 'error' ? <AlertCircle className="h-5 w-5 text-red-500" /> :
-                     error.severity === 'warning' ? <AlertCircle className="h-5 w-5 text-yellow-500" /> :
-                     <Info className="h-5 w-5 text-blue-500" />}
-                  </div>
-                )}
-              </div>
-              <div className="text-xs text-[var(--color-text-muted)] flex justify-between items-center min-h-[1.25rem]">
-                <span>{field.help}</span>
-                {field.reference && <span className="text-[var(--color-brand-secondary)] text-right">Ref: {field.reference}</span>}
-              </div>
-              {error && <p className={`text-xs ${error.severity === 'error' ? 'text-red-500' : error.severity === 'warning' ? 'text-yellow-500' : 'text-blue-500'}`}>{error.message}</p>}
-            </div>
+            <button
+              key={section.key}
+              onClick={() => setActiveSection(section.key)}
+              className={`flex items-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                isActive
+                  ? 'border-[var(--color-brand-primary)] text-[var(--color-brand-primary)]'
+                  : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-secondary)]'
+              }`}
+            >
+              <Icon className="h-4 w-4 mr-2" />
+              {section.label}
+            </button>
           );
         })}
       </div>
 
+      {/* Section Content */}
+      <div className="min-h-[600px]">
+        {activeSection === 'core' && (
+          <CoreEconomicIndicatorsComponent
+            indicators={inputs.coreIndicators}
+            referenceCountry={referenceCountry}
+            onIndicatorsChange={handleCoreIndicatorsChange}
+          />
+        )}
+        
+        {activeSection === 'labor' && (
+          <LaborEmploymentComponent
+            laborData={inputs.laborEmployment}
+            referenceCountry={referenceCountry}
+            totalPopulation={inputs.coreIndicators.totalPopulation}
+            onLaborDataChange={handleLaborDataChange}
+          />
+        )}
+        
+        {activeSection === 'fiscal' && (
+          <FiscalSystemComponent
+            fiscalData={inputs.fiscalSystem}
+            referenceCountry={referenceCountry}
+            nominalGDP={inputs.coreIndicators.nominalGDP}
+            totalPopulation={inputs.coreIndicators.totalPopulation}
+            onFiscalDataChange={handleFiscalDataChange}
+          />
+        )}
+      </div>
+
+      {/* Validation Errors */}
+      {errors.length > 0 && (
+        <div className="mb-6 space-y-2">
+          {errors.slice(0, 3).map((error, index) => (
+            <div key={index} className={`flex items-center text-sm p-2 rounded ${
+              error.severity === 'error' ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400' :
+              error.severity === 'warning' ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400' :
+              'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+            }`}>
+              {error.severity === 'error' ? <AlertCircle className="h-4 w-4 mr-2" /> : 
+               <AlertCircle className="h-4 w-4 mr-2" />}
+              {error.message}
+            </div>
+          ))}
+          {errors.length > 3 && (
+            <div className="text-xs text-[var(--color-text-muted)]">
+              +{errors.length - 3} more validation {errors.length - 3 === 1 ? 'issue' : 'issues'}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Action Bar */}
       <div className="flex justify-between items-center pt-6 mt-6 border-t border-[var(--color-border-primary)]">
         <div className={`flex items-center text-sm ${canPreview ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
           {canPreview ? <CheckCircle className="h-4 w-4 mr-1.5" /> : <AlertCircle className="h-4 w-4 mr-1.5" />}
           {canPreview ? 'Ready for preview' : (hasFatalErrors ? 'Fix errors to continue' : 'Fill required fields')}
+          {errors.length > 0 && (
+            <span className="ml-2 text-xs">
+              ({errors.filter(e => e.severity === 'error').length} errors, {errors.filter(e => e.severity === 'warning').length} warnings)
+            </span>
+          )}
         </div>
         <button onClick={onPreview} disabled={!canPreview} className="btn-primary">
           <Eye className="h-4 w-4 mr-2" /> Preview & Compare

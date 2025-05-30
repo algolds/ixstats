@@ -6,17 +6,21 @@ import { Globe, DollarSign, Users, TrendingUp, Building, AlertCircle, Loader2, I
 import { CountrySelector } from "./components/CountrySelector";
 import { EconomicInputForm } from "./components/EconomicInputForm";
 import { EconomicPreview } from "./components/EconomicPreview";
-import { parseEconomyData, type RealCountryData, type EconomicInputs, saveBaselineToStorage, loadBaselineFromStorage } from "./lib/economy-data-service";
+import { 
+  parseEconomyData, 
+  type RealCountryData, 
+  type EconomicInputs, 
+  saveBaselineToStorage, 
+  loadBaselineFromStorage,
+  createDefaultEconomicInputs
+} from "./lib/economy-data-service";
 
 type EconomyPhase = 'select' | 'input' | 'preview';
 
 export default function EconomyPage() {
   const [realCountryData, setRealCountryData] = useState<RealCountryData[]>([]);
   const [selectedCountry, setSelectedCountry] = useState<RealCountryData | null>(null);
-  const [economicInputs, setEconomicInputs] = useState<EconomicInputs>({
-    countryName: "", population: 0, gdpPerCapita: 0, taxRevenuePercent: 10,
-    unemploymentRate: 5, governmentBudgetPercent: 20, internalDebtPercent: 60, externalDebtPercent: 30,
-  });
+  const [economicInputs, setEconomicInputs] = useState<EconomicInputs>(createDefaultEconomicInputs());
   const [isLoading, setIsLoading] = useState(true);
   const [currentPhase, setCurrentPhase] = useState<EconomyPhase>('select');
   const [error, setError] = useState<string | null>(null);
@@ -54,16 +58,7 @@ export default function EconomyPage() {
 
   const handleCountrySelect = (country: RealCountryData) => {
     setSelectedCountry(country);
-    setEconomicInputs({
-      countryName: `New ${country.name}`,
-      population: country.population,
-      gdpPerCapita: country.gdpPerCapita,
-      taxRevenuePercent: country.taxRevenuePercent,
-      unemploymentRate: country.unemploymentRate,
-      governmentBudgetPercent: Math.min(country.taxRevenuePercent, 40), // Sensible default
-      internalDebtPercent: 60,
-      externalDebtPercent: 30,
-    });
+    setEconomicInputs(createDefaultEconomicInputs(country));
     setCurrentPhase('input');
   };
 
@@ -81,7 +76,6 @@ export default function EconomyPage() {
     // Potentially, navigate or enable next features:
     // router.push(`/dm-dashboard?country=${economicInputs.countryName}`);
   };
-
 
   if (isLoading) {
     return (
@@ -111,24 +105,22 @@ export default function EconomyPage() {
     );
   }
 
-
   const phases = [
     { phase: 'select', label: 'Select Reference', icon: Globe },
-    { phase: 'input', label: 'Economic Inputs', icon: DollarSign },
+    { phase: 'input', label: 'Economic Framework', icon: DollarSign },
     { phase: 'preview', label: 'Preview & Compare', icon: TrendingUp },
   ] as const;
 
-
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)]">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-[var(--color-text-primary)] flex items-center justify-center">
             <Building className="h-8 w-8 mr-3 text-[var(--color-brand-primary)]" />
             IxEconomy Builder
           </h1>
           <p className="mt-2 text-[var(--color-text-muted)]">
-            Model your nation's economy using real-world data as a baseline.
+            Create a comprehensive economic framework using real-world data as a foundation.
           </p>
         </div>
 
@@ -194,10 +186,12 @@ export default function EconomyPage() {
             <Info className="h-5 w-5 text-[var(--color-info)] mr-3 mt-0.5 flex-shrink-0" />
             <div>
               <h3 className="text-sm font-medium text-[var(--color-text-primary)]">
-                IxEconomy Builder Note
+                Enhanced IxEconomy Builder
               </h3>
               <p className="text-xs text-[var(--color-text-muted)] mt-1">
-                This tool helps establish a baseline economy for your nation. Once confirmed, these values will serve as the starting point for simulations and DM inputs within the IxStats system. All data is currently saved locally to your browser.
+                This comprehensive tool establishes a complete economic framework covering core indicators, labor markets, and fiscal systems. 
+                The framework integrates with the broader IxStats ecosystem for simulations and DM management. 
+                All data is currently saved locally to your browser.
               </p>
             </div>
           </div>
