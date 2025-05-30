@@ -1,14 +1,14 @@
 // src/lib/data-service.ts
-// Enhanced data service with proper epoch handling
+// Enhanced data service with proper epoch handling and CSV support
 
 import * as XLSX from 'xlsx';
 import { IxStatsCalculator } from './calculations';
 import { IxTime } from './ixtime';
-import type { 
-  BaseCountryData, 
-  CountryStats, 
-  EconomicConfig, 
-  IxStatsConfig 
+import type {
+  BaseCountryData,
+  CountryStats,
+  EconomicConfig,
+  IxStatsConfig
 } from '../types/ixstats';
 
 export class IxStatsDataService {
@@ -17,39 +17,65 @@ export class IxStatsDataService {
 
   constructor(config: IxStatsConfig) {
     this.config = config;
-    
-    // Use the in-game epoch (January 1, 2028) as the baseline for calculations
-    // This is when the roster data represents - the "in-game year zero"
     const gameEpoch = IxTime.getInGameEpoch();
     this.calculator = new IxStatsCalculator(config.economic, gameEpoch);
   }
 
-  async parseRosterFile(fileBuffer: ArrayBuffer): Promise<BaseCountryData[]> {
-    const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
-
-    const sheetName = workbook.SheetNames[0];
-    if (!sheetName) {
-      throw new Error('No worksheets found in the file');
+  async parseRosterFile(fileBuffer: ArrayBuffer, fileName?: string): Promise<BaseCountryData[]> {
+    if (fileName && fileName.toLowerCase().endsWith('.csv')) {
+      const csvString = new TextDecoder("utf-8").decode(fileBuffer);
+      return this.parseCsvData(csvString);
+    } else { // Assume Excel
+      const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+      const sheetName = workbook.SheetNames[0];
+      if (!sheetName) {
+        throw new Error('No worksheets found in the Excel file');
+      }
+      const worksheet = workbook.Sheets[sheetName];
+      if (!worksheet) {
+        throw new Error('Worksheet not found in the Excel file');
+      }
+      const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+      return this.processRawDataWithHeaderRecognition(rawData, true); // isExcel = true
     }
-    const worksheet = workbook.Sheets[sheetName];
-    if (!worksheet) {
-      throw new Error('Worksheet not found in the file');
-    }
-
-    const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
-    return this.processRawDataWithHeaderRecognition(rawData);
   }
 
-  private processRawDataWithHeaderRecognition(rawData: any[][]): BaseCountryData[] {
+  private parseCsvData(csvString: string): BaseCountryData[] {
+    const lines = csvString.split(/\r\n|\n/);
+    // Skip the initial 6 metadata lines in "World-Roster-30-05-2025.csv"
+    const dataLines = lines.slice(6);
+    if (dataLines.length < 2) { // Need headers + at least one data row
+        console.warn("CSV has insufficient data (less than 2 effective rows).");
+        return [];
+    }
+
+    const headerLine = dataLines[0];
+    const records = dataLines.slice(1);
+
+    const rawDataArrays: any[][] = [];
+    if (headerLine) {
+        rawDataArrays.push(headerLine.split(',').map(h => h.trim())); // Headers
+    }
+    records.forEach(line => {
+        if (line.trim() !== "") { // Skip empty lines
+             // Basic CSV split, doesn't handle commas within quotes perfectly
+            rawDataArrays.push(line.split(',').map(val => val.trim()));
+        }
+    });
+    return this.processRawDataWithHeaderRecognition(rawDataArrays, false); // isExcel = false
+  }
+
+
+  private processRawDataWithHeaderRecognition(rawData: any[][], isExcel: boolean): BaseCountryData[] {
     const countries: BaseCountryData[] = [];
     if (rawData.length < 2) {
-        console.warn("Spreadsheet has insufficient data (less than 2 rows).");
+        console.warn(`Spreadsheet (${isExcel ? 'Excel' : 'CSV'}) has insufficient data (less than 2 rows).`);
         return countries;
     }
 
     const headers = rawData[0]?.map(h => String(h).trim().toLowerCase());
     if (!headers) {
-        throw new Error("Could not parse headers from the spreadsheet.");
+        throw new Error(`Could not parse headers from the ${isExcel ? 'Excel' : 'CSV'} file.`);
     }
 
     const findHeaderIndex = (possibleNames: string[]): number => {
@@ -59,9 +85,14 @@ export class IxStatsDataService {
         }
         return -1;
     };
-    
+
     const headerMap = {
         country: findHeaderIndex(['Country', 'Nation Name']),
+        continent: findHeaderIndex(['Continent']),
+        region: findHeaderIndex(['Region']),
+        governmentType: findHeaderIndex(['Government Type']),
+        religion: findHeaderIndex(['Religion']),
+        leader: findHeaderIndex(['Leader']),
         population: findHeaderIndex(['Population', 'Current Population', 'Pop']),
         gdpPerCapita: findHeaderIndex(['GDP PC', 'GDP per Capita', 'GDPPC']),
         maxGdpGrowthRate: findHeaderIndex(['Max GDPPC Grow Rt', 'Max Growth Rate', 'Max GDP Growth']),
@@ -71,71 +102,61 @@ export class IxStatsDataService {
         projected2040Gdp: findHeaderIndex(['2040 GDP']),
         projected2040GdpPerCapita: findHeaderIndex(['2040 GDP PC']),
         actualGdpGrowth: findHeaderIndex(['Actual GDP Growth']),
-        // Enhanced area parsing - support both km² and sq mi
-        landAreaKm: findHeaderIndex(['Area (km²)', 'Area (SqKm)', 'Land Area (km²)', 'Area km²', 'SqKm']),
-        landAreaMi: findHeaderIndex(['Area (sq mi)', 'Area (SqMi)', 'Land Area (sq mi)', 'Area sq mi', 'SqMi']),
-        // Fallback for generic area column
-        landArea: findHeaderIndex(['Land Area', 'Area', 'SqKm', 'Area (SqKm)'])
+        landAreaKm: findHeaderIndex(['Area (km²)', 'Area (SqKm)', 'Land Area (km²)', 'Area km²']),
+        landAreaMi: findHeaderIndex(['Area (sq mi)', 'Area (SqMi)', 'Land Area (sq mi)', 'Area sq mi']),
     };
 
     if (headerMap.country === -1 || headerMap.population === -1 || headerMap.gdpPerCapita === -1) {
-        throw new Error("Required headers (Country, Population, GDP per Capita) not found in the spreadsheet.");
+        throw new Error(`Required headers (Country, Population, GDP per Capita) not found in the ${isExcel ? 'Excel' : 'CSV'} file.`);
     }
 
-    // Calculate projections relative to the in-game epoch (January 1, 2028)
-    const gameEpochYear = 2028; // This is year zero in the game
-    const targetYear = 2040; // Target year for projections
-    const yearsToTarget = targetYear - gameEpochYear; // 12 years from game start to 2040
+    const gameEpochYear = 2028;
+    const targetYear = 2040;
+    const yearsToTarget = targetYear - gameEpochYear;
 
     for (let i = 1; i < rawData.length; i++) {
       const row = rawData[i];
-      if (!row || !row[headerMap.country] || typeof row[headerMap.country] !== 'string') {
+      if (!row || !row[headerMap.country] || typeof row[headerMap.country] !== 'string' || row[headerMap.country].trim() === "") {
         continue;
       }
 
       try {
-        // Parse area data with priority: km² > sq mi > generic area
-        let landAreaKm: number | undefined = undefined;
-        
-        if (headerMap.landAreaKm !== -1) {
-          // Direct km² data available
-          landAreaKm = this.parseNumberOptional(row[headerMap.landAreaKm]);
-        } else if (headerMap.landAreaMi !== -1) {
-          // Convert from sq mi to km²
-          const landAreaMi = this.parseNumberOptional(row[headerMap.landAreaMi]);
-          if (landAreaMi !== undefined) {
-            landAreaKm = landAreaMi * 2.58999; // 1 sq mi = 2.58999 km²
-          }
-        } else if (headerMap.landArea !== -1) {
-          // Generic area column (assume km²)
-          landAreaKm = this.parseNumberOptional(row[headerMap.landArea]);
+        let landAreaKm: number | undefined = this.parseNumberOptional(row[headerMap.landAreaKm]);
+        const landAreaMi = this.parseNumberOptional(row[headerMap.landAreaMi]);
+        if (landAreaKm === undefined && landAreaMi !== undefined) {
+            landAreaKm = landAreaMi * 2.58999;
         }
 
         const countryData: BaseCountryData = {
           country: String(row[headerMap.country]).trim(),
-          population: this.parseNumberRequired(row[headerMap.population]),
-          gdpPerCapita: this.parseNumberRequired(row[headerMap.gdpPerCapita]),
-          maxGdpGrowthRate: this.parseNumberRequired(row[headerMap.maxGdpGrowthRate], 0.05),
-          adjustedGdpGrowth: this.parseNumberRequired(row[headerMap.adjustedGdpGrowth], 0.03),
-          populationGrowthRate: this.parseNumberRequired(row[headerMap.populationGrowthRate], 0.01),
-          projected2040Population: this.parseNumberRequired(row[headerMap.projected2040Population], 0),
-          projected2040Gdp: this.parseNumberRequired(row[headerMap.projected2040Gdp], 0),
-          projected2040GdpPerCapita: this.parseNumberRequired(row[headerMap.projected2040GdpPerCapita], 0),
-          actualGdpGrowth: this.parseNumberRequired(row[headerMap.actualGdpGrowth], 0),
+          continent: headerMap.continent !== -1 ? (String(row[headerMap.continent]).trim() || null) : null,
+          region: headerMap.region !== -1 ? (String(row[headerMap.region]).trim() || null) : null,
+          governmentType: headerMap.governmentType !== -1 ? (String(row[headerMap.governmentType]).trim() || null) : null,
+          religion: headerMap.religion !== -1 ? (String(row[headerMap.religion]).trim() || null) : null,
+          leader: headerMap.leader !== -1 ? (String(row[headerMap.leader]).trim() || null) : null,
+          population: this.parseNumberRequired(row[headerMap.population], 0, true), // isNumericString = true
+          gdpPerCapita: this.parseNumberRequired(row[headerMap.gdpPerCapita], 0, true), // isNumericString = true
+          maxGdpGrowthRate: this.parsePercentageRequired(row[headerMap.maxGdpGrowthRate], 0.05),
+          adjustedGdpGrowth: this.parsePercentageRequired(row[headerMap.adjustedGdpGrowth], 0.03),
+          populationGrowthRate: this.parsePercentageRequired(row[headerMap.populationGrowthRate], 0.01),
+          projected2040Population: this.parseNumberRequired(row[headerMap.projected2040Population], 0, true),
+          projected2040Gdp: this.parseNumberRequired(row[headerMap.projected2040Gdp], 0, true),
+          projected2040GdpPerCapita: this.parseNumberRequired(row[headerMap.projected2040GdpPerCapita], 0, true),
+          actualGdpGrowth: this.parsePercentageRequired(row[headerMap.actualGdpGrowth], 0),
           landArea: landAreaKm,
+          areaSqMi: landAreaMi,
         };
-        
-        // Calculate missing projections based on growth rates and time to 2040
-        if (countryData.projected2040Population === 0 && yearsToTarget > 0) {
+
+        if (countryData.projected2040Population === 0 && yearsToTarget > 0 && countryData.population > 0 && countryData.populationGrowthRate !== undefined) {
           countryData.projected2040Population = countryData.population * Math.pow(1 + countryData.populationGrowthRate, yearsToTarget);
         }
-        if (countryData.projected2040GdpPerCapita === 0 && yearsToTarget > 0) {
+        if (countryData.projected2040GdpPerCapita === 0 && yearsToTarget > 0 && countryData.gdpPerCapita > 0 && countryData.adjustedGdpGrowth !== undefined) {
           countryData.projected2040GdpPerCapita = countryData.gdpPerCapita * Math.pow(1 + countryData.adjustedGdpGrowth, yearsToTarget);
         }
-        if (countryData.projected2040Gdp === 0) {
+        if (countryData.projected2040Gdp === 0 && countryData.projected2040Population > 0 && countryData.projected2040GdpPerCapita > 0) {
           countryData.projected2040Gdp = countryData.projected2040Population * countryData.projected2040GdpPerCapita;
         }
-        if (countryData.actualGdpGrowth === 0) {
+        if (countryData.actualGdpGrowth === 0 && countryData.populationGrowthRate !== undefined && countryData.adjustedGdpGrowth !== undefined) {
           countryData.actualGdpGrowth = countryData.populationGrowthRate + countryData.adjustedGdpGrowth;
         }
 
@@ -148,102 +169,91 @@ export class IxStatsDataService {
         console.error(`Error processing row for ${row[headerMap.country]}:`, error);
       }
     }
-    
-    console.log(`[DataService] Processed ${countries.length} countries from roster file`);
-    console.log(`[DataService] Roster data represents game epoch: ${IxTime.formatIxTime(IxTime.getInGameEpoch())}`);
-    console.log(`[DataService] Current game time: ${IxTime.formatIxTime(IxTime.getCurrentIxTime())}`);
-    console.log(`[DataService] Years since game start: ${IxTime.getYearsSinceGameEpoch().toFixed(2)}`);
-    
+    console.log(`[DataService] Processed ${countries.length} countries from ${isExcel ? 'Excel' : 'CSV'} file`);
     return countries;
   }
 
-  private parseNumberRequired(value: any, defaultValue: number = 0): number {
-    if (value === null || value === undefined || String(value).trim() === "") {
+  private parseNumberRequired(value: any, defaultValue: number = 0, isNumericString: boolean = false): number {
+    if (value === null || value === undefined || String(value).trim() === "" || String(value).trim().toLowerCase() === '#div/0!') {
         return defaultValue;
     }
     if (typeof value === 'number') return isNaN(value) ? defaultValue : value;
     if (typeof value === 'string') {
-      const cleaned = value.replace(/[,%$]/g, '');
+      const cleaned = value.replace(/[,%$]/g, '').trim();
       const parsed = parseFloat(cleaned);
       return isNaN(parsed) ? defaultValue : parsed;
     }
     return defaultValue;
   }
 
-  private parseNumberOptional(value: any): number | undefined {
-    if (value === null || value === undefined || String(value).trim() === "") {
+  private parseNumberOptional(value: any, isNumericString: boolean = false): number | undefined {
+    if (value === null || value === undefined || String(value).trim() === "" || String(value).trim().toLowerCase() === '#div/0!') {
         return undefined;
     }
     if (typeof value === 'number') return isNaN(value) ? undefined : value;
     if (typeof value === 'string') {
-      const cleaned = value.replace(/[,%$]/g, '');
+      const cleaned = value.replace(/[,%$]/g, '').trim();
       const parsed = parseFloat(cleaned);
       return isNaN(parsed) ? undefined : parsed;
     }
     return undefined;
   }
 
+  private parsePercentageRequired(value: any, defaultValue: number = 0): number {
+      const num = this.parseNumberRequired(value, defaultValue * 100, true); // Parse as if it's a whole number if '%' is present
+      // If the original value string contained '%', it's already a percentage.
+      // Otherwise, assume it's a decimal representation.
+      return String(value).includes('%') ? num / 100 : num;
+  }
+
+
   private validateCountryData(data: BaseCountryData): boolean {
     return (
       data.country.length > 0 &&
-      data.population > 0 &&
-      data.gdpPerCapita > 0
+      data.population >= 0 && // Allow 0 for uninhabited places
+      data.gdpPerCapita >= 0 // Allow 0
     );
   }
 
-  /**
-   * Initialize countries from roster data
-   * The roster data represents the baseline state at January 1, 2028
-   */
   initializeCountries(baseData: BaseCountryData[]): CountryStats[] {
     console.log(`[DataService] Initializing ${baseData.length} countries with epoch baseline`);
-    
     const initialized = baseData.map(data => {
       const stats = this.calculator.initializeCountryStats(data);
-      
-      // Ensure baseline dates are set to the game epoch
       stats.baselineDate = new Date(IxTime.getInGameEpoch());
       stats.lastCalculated = new Date(IxTime.getInGameEpoch());
-      
+      // Carry over new fields
+      stats.continent = data.continent;
+      stats.region = data.region;
+      stats.governmentType = data.governmentType;
+      stats.religion = data.religion;
+      stats.leader = data.leader;
+      stats.areaSqMi = data.areaSqMi;
       return stats;
     });
-    
     console.log(`[DataService] Countries initialized with baseline: ${IxTime.formatIxTime(IxTime.getInGameEpoch())}`);
     return initialized;
   }
 
-  /**
-   * Update a country's stats to the current time
-   */
   updateCountryToCurrentTime(countryStats: CountryStats, dmInputs: any[] = []): CountryStats {
     const currentTime = IxTime.getCurrentIxTime();
     const result = this.calculator.calculateTimeProgression(countryStats, currentTime, dmInputs);
     return result.newStats;
   }
 
-  /**
-   * Calculate country stats for a specific point in time
-   */
   calculateCountryAtTime(countryStats: CountryStats, targetTime: number, dmInputs: any[] = []): CountryStats {
     const result = this.calculator.calculateTimeProgression(countryStats, targetTime, dmInputs);
     return result.newStats;
   }
 
-  /**
-   * Create a forecast projection for a country
-   */
   createForecast(countryStats: CountryStats, years: number, dmInputs: any[] = []): CountryStats {
     const targetTime = IxTime.addYears(IxTime.getCurrentIxTime(), years);
     return this.calculateCountryAtTime(countryStats, targetTime, dmInputs);
   }
 
-  /**
-   * Generate time series data for a country
-   */
   generateTimeSeries(
-    countryStats: CountryStats, 
-    startTime: number, 
-    endTime: number, 
+    countryStats: CountryStats,
+    startTime: number,
+    endTime: number,
     steps: number = 10,
     dmInputs: any[] = []
   ): Array<{
@@ -255,11 +265,9 @@ export class IxStatsDataService {
   }> {
     const timeStep = (endTime - startTime) / (steps - 1);
     const series = [];
-
     for (let i = 0; i < steps; i++) {
       const targetTime = startTime + (timeStep * i);
       const stats = this.calculateCountryAtTime(countryStats, targetTime, dmInputs);
-      
       series.push({
         time: targetTime,
         formattedTime: IxTime.formatIxTime(targetTime),
@@ -268,7 +276,6 @@ export class IxStatsDataService {
         description: this.calculator.getTimeDescription(targetTime),
       });
     }
-
     return series;
   }
 
@@ -276,22 +283,22 @@ export class IxStatsDataService {
     return {
       globalGrowthFactor: 1.0321,
       baseInflationRate: 0.02,
-      economicTierThresholds: { 
-        developing: 0, 
-        emerging: 15000, 
-        developed: 35000, 
-        advanced: 50000 
+      economicTierThresholds: {
+        developing: 0,
+        emerging: 15000,
+        developed: 35000,
+        advanced: 50000
       },
-      populationTierThresholds: { 
-        micro: 1000000, 
-        small: 10000000, 
-        medium: 50000000, 
-        large: 200000000 
+      populationTierThresholds: {
+        micro: 1000000,
+        small: 10000000,
+        medium: 50000000,
+        large: 200000000
       },
       tierGrowthModifiers: {
-        "Developing": 1.2, 
-        "Emerging": 1.1, 
-        "Developed": 1.0, 
+        "Developing": 1.2,
+        "Emerging": 1.1,
+        "Developed": 1.0,
         "Advanced": 0.9
       } as Record<"Developing" | "Emerging" | "Developed" | "Advanced", number>,
       calculationIntervalMs: 60000,
@@ -302,16 +309,16 @@ export class IxStatsDataService {
   static getDefaultConfig(): IxStatsConfig {
     return {
       economic: this.getDefaultEconomicConfig(),
-      timeSettings: { 
-        baselineYear: 2028, // Game epoch year
-        currentIxTimeMultiplier: 4, 
-        updateIntervalSeconds: 60 
+      timeSettings: {
+        baselineYear: 2028,
+        currentIxTimeMultiplier: 4,
+        updateIntervalSeconds: 60
       },
-      displaySettings: { 
-        defaultCurrency: "USD", 
-        numberFormat: "compact", 
-        showHistoricalData: true, 
-        chartTimeRange: 5 
+      displaySettings: {
+        defaultCurrency: "USD",
+        numberFormat: "compact",
+        showHistoricalData: true,
+        chartTimeRange: 5
       }
     };
   }
@@ -323,8 +330,13 @@ export class IxStatsDataService {
 
     const exportData = countries.map(country => ({
       'Country': country.country,
+      'Continent': country.continent,
+      'Region': country.region,
+      'Government Type': country.governmentType,
+      'Religion': country.religion,
+      'Leader': country.leader,
       'Land Area (km²)': country.landArea?.toFixed(2),
-      'Land Area (sq mi)': country.landArea ? (country.landArea / 2.58999).toFixed(2) : undefined,
+      'Land Area (sq mi)': country.areaSqMi?.toFixed(2),
       'Current Population': country.currentPopulation,
       'Population Density (per km²)': country.populationDensity?.toFixed(2),
       'Current GDP per Capita': country.currentGdpPerCapita,
@@ -333,12 +345,14 @@ export class IxStatsDataService {
       'Economic Tier': country.economicTier,
       'Population Tier': country.populationTier,
       'Population Growth Rate': country.populationGrowthRate,
-      'GDP Growth Rate': country.adjustedGdpGrowth,
+      'Adjusted GDP Growth Rate': country.adjustedGdpGrowth,
+      'Max GDP Growth Rate': country.maxGdpGrowthRate,
+      'Actual GDP Growth': country.actualGdpGrowth,
       'Game Year': gameYear,
       'Years Since Game Start': yearsSinceStart.toFixed(2),
       'Current IxTime': IxTime.formatIxTime(currentTime, true),
       'Last Updated (IxTime)': IxTime.formatIxTime(
-        country.lastCalculated instanceof Date ? country.lastCalculated.getTime() : country.lastCalculated, 
+        country.lastCalculated instanceof Date ? country.lastCalculated.getTime() : country.lastCalculated,
         true
       ),
       'Baseline Population (2028)': country.population,
@@ -350,61 +364,28 @@ export class IxStatsDataService {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, `IxStats Export - Year ${gameYear}`);
     
-    // Add metadata sheet
     const metadataSheet = XLSX.utils.json_to_sheet([
-      {
-        'Property': 'Export Date',
-        'Value': new Date().toISOString(),
-      },
-      {
-        'Property': 'Game Epoch (Roster Baseline)',
-        'Value': IxTime.formatIxTime(IxTime.getInGameEpoch(), true),
-      },
-      {
-        'Property': 'Current Game Time',
-        'Value': IxTime.formatIxTime(currentTime, true),
-      },
-      {
-        'Property': 'Current Game Year',
-        'Value': gameYear.toString(),
-      },
-      {
-        'Property': 'Years Since Game Start',
-        'Value': yearsSinceStart.toFixed(2),
-      },
-      {
-        'Property': 'Time Multiplier',
-        'Value': IxTime.getTimeMultiplier().toString(),
-      },
-      {
-        'Property': 'Countries Exported',
-        'Value': countries.length.toString(),
-      }
+      { 'Property': 'Export Date', 'Value': new Date().toISOString() },
+      { 'Property': 'Game Epoch (Roster Baseline)', 'Value': IxTime.formatIxTime(IxTime.getInGameEpoch(), true) },
+      { 'Property': 'Current Game Time', 'Value': IxTime.formatIxTime(currentTime, true) },
+      { 'Property': 'Current Game Year', 'Value': gameYear.toString() },
+      { 'Property': 'Years Since Game Start', 'Value': yearsSinceStart.toFixed(2) },
+      { 'Property': 'Time Multiplier', 'Value': IxTime.getTimeMultiplier().toString() },
+      { 'Property': 'Countries Exported', 'Value': countries.length.toString() }
     ]);
-    
     XLSX.utils.book_append_sheet(workbook, metadataSheet, 'Export Metadata');
     
     return XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
   }
 
-  getCalculator(): IxStatsCalculator { 
-    return this.calculator; 
-  }
-  
-  getConfig(): IxStatsConfig { 
-    return this.config; 
-  }
+  getCalculator(): IxStatsCalculator { return this.calculator; }
+  getConfig(): IxStatsConfig { return this.config; }
 
-  /**
-   * Get information about the current time context
-   */
   getTimeContext() {
     const currentTime = IxTime.getCurrentIxTime();
     const gameEpoch = IxTime.getInGameEpoch();
-    
     return {
-      currentTime,
-      gameEpoch,
+      currentTime, gameEpoch,
       currentGameYear: IxTime.getCurrentGameYear(),
       yearsSinceGameStart: IxTime.getYearsSinceGameEpoch(),
       gameTimeDescription: IxTime.getGameTimeDescription(),
@@ -415,46 +396,25 @@ export class IxStatsDataService {
     };
   }
 
-  /**
-   * Validate that roster data aligns with expected epoch
-   */
   validateEpochAlignment(countries: BaseCountryData[]): {
-    isValid: boolean;
-    warnings: string[];
-    info: {
-      rosterBaseline: string;
-      gameEpoch: string;
-      currentGameTime: string;
-      yearsElapsed: number;
+    isValid: boolean; warnings: string[]; info: {
+      rosterBaseline: string; gameEpoch: string; currentGameTime: string; yearsElapsed: number;
     };
   } {
     const warnings: string[] = [];
     const gameEpoch = IxTime.getInGameEpoch();
     const currentTime = IxTime.getCurrentIxTime();
     const yearsElapsed = IxTime.getYearsSinceGameEpoch();
-
-    // Check if any countries have suspicious data that might indicate wrong epoch
     const avgPopulation = countries.reduce((sum, c) => sum + c.population, 0) / countries.length;
     const avgGdpPerCapita = countries.reduce((sum, c) => sum + c.gdpPerCapita, 0) / countries.length;
-
-    if (avgPopulation > 500000000) {
-      warnings.push("Average population seems very high - check if data is from correct time period");
-    }
-
-    if (avgGdpPerCapita > 100000) {
-      warnings.push("Average GDP per capita seems very high - verify data represents 2028 baseline");
-    }
-
-    // Check for countries with land area but no population density calculated
+    if (avgPopulation > 500000000) warnings.push("Average population seems very high - check if data is from correct time period");
+    if (avgGdpPerCapita > 100000) warnings.push("Average GDP per capita seems very high - verify data represents 2028 baseline");
     const countriesWithAreaButNoDensity = countries.filter(c => c.landArea && c.landArea > 0).length;
     if (countriesWithAreaButNoDensity > 0) {
       console.log(`[DataService] ${countriesWithAreaButNoDensity} countries have land area data for density calculations`);
     }
-
     return {
-      isValid: warnings.length === 0,
-      warnings,
-      info: {
+      isValid: warnings.length === 0, warnings, info: {
         rosterBaseline: IxTime.formatIxTime(gameEpoch, true),
         gameEpoch: "January 1, 2028 (In-Game Year Zero)",
         currentGameTime: IxTime.formatIxTime(currentTime, true),
