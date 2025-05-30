@@ -92,13 +92,13 @@ export function EnhancedEconomicInputForm({
       budgetDeficitSurplus: inputs.budgetDeficitSurplus ?? 0,
     };
 
-    for (const key in defaultEnhancedFields) {
-        if (inputs[key as keyof EnhancedEconomicInputs] === undefined || inputs[key as keyof EnhancedEconomicInputs] === null) {
-            updatedInputs[key as keyof EnhancedEconomicInputs] = defaultEnhancedFields[key as keyof EnhancedEconomicInputs];
+    for (const [key, value] of Object.entries(defaultEnhancedFields)) {
+        const inputKey = key as keyof EnhancedEconomicInputs;
+        if (inputs[inputKey] === undefined || inputs[inputKey] === null) {
+            (updatedInputs as any)[inputKey] = value;
             needsUpdate = true;
         }
     }
-
 
     if (needsUpdate) {
       onInputsChange({ ...inputs, ...updatedInputs });
@@ -172,7 +172,6 @@ export function EnhancedEconomicInputForm({
         });
     }
 
-
     setErrors(newErrors);
   };
 
@@ -220,14 +219,13 @@ export function EnhancedEconomicInputForm({
   const formatNumber = (num?: number, precision = 1, isCurrency = true): string => {
     if (num === undefined || num === null || isNaN(num)) return isCurrency ? '$0' : '0';
     const prefix = isCurrency ? '$' : '';
+    const compact = true; // Define compact here since it's used below
     if (Math.abs(num) >= 1e12) return `${prefix}${(num / 1e12).toFixed(precision)}T`;
     if (Math.abs(num) >= 1e9) return `${prefix}${(num / 1e9).toFixed(precision)}B`;
     if (Math.abs(num) >= 1e6) return `${prefix}${(num / 1e6).toFixed(precision)}M`;
-    if (Math.abs(num) >= 1e3 && compact) return `${prefix}${(num / 1e3).toFixed(precision)}K`; // Added compact logic
+    if (Math.abs(num) >= 1e3 && compact) return `${prefix}${(num / 1e3).toFixed(precision)}K`;
     return `${prefix}${num.toFixed(isCurrency ? precision : 0)}`;
   };
-  const compact = true; // Define compact if it's used above, or pass as parameter
-
 
   return (
     <div className="p-6 space-y-6">

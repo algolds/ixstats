@@ -1,6 +1,8 @@
 // src/app/economy/lib/enhanced-economic-types.ts
 // TypeScript interfaces
 
+import type { ReactNode } from "react";
+
 export interface TaxBracket {
     minIncome: number;
     maxIncome: number | null; // null for highest bracket

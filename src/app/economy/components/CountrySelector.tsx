@@ -50,8 +50,8 @@ export function CountrySelector({ countries, onCountrySelect, selectedCountry }:
     const stats: Record<string, number> = { Advanced: 0, Developed: 0, Emerging: 0, Developing: 0 };
     countries.filter(c => c.name !== "World").forEach(country => {
       const tier = getEconomicTier(country.gdpPerCapita);
-      if (stats[tier as string] !== undefined) { // Type assertion for safety
-        stats[tier as string]++;
+      if (stats[tier] !== undefined) {
+        stats[tier]++;
       }
     });
     return stats;

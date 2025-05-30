@@ -29,6 +29,17 @@ export interface EconomicInputs {
   externalDebtPercent: number;
 }
 
+// Define EconomicComparison for backward compatibility
+export interface EconomicComparison {
+  metric: string;
+  tier: string;
+  analysis: string;
+  comparableCountries: Array<{
+    name: string;
+    value: number;
+  }>;
+}
+
 // Define and Export getEconomicTier
 export function getEconomicTier(gdpPerCapita: number): EconomicTier {
   if (gdpPerCapita >= 50000) return EconomicTier.ADVANCED;
@@ -72,10 +83,67 @@ export function loadBaselineFromStorage(): EconomicInputs | null {
   }
 }
 
+// Generate economic comparisons function
+export function generateEconomicComparisons(inputs: EconomicInputs, allCountries: RealCountryData[]): EconomicComparison[] {
+  const comparisons: EconomicComparison[] = [];
 
-// Re-export CountryComparison from enhanced-economic-types as EconomicComparison if needed by other files directly from this service
-export type { EnhancedCountryComparison as EconomicComparison };
+  // Population comparison
+  const populationComparison: EconomicComparison = {
+    metric: "Population Size",
+    tier: getEconomicTier(inputs.gdpPerCapita),
+    analysis: `Your nation's population of ${inputs.population.toLocaleString()} places it among ${
+      inputs.population > 100000000 ? 'large' : inputs.population > 50000000 ? 'medium-large' : inputs.population > 10000000 ? 'medium' : 'smaller'
+    } nations globally.`,
+    comparableCountries: allCountries
+      .filter(c => Math.abs(c.population - inputs.population) / Math.max(c.population, inputs.population) < 0.5)
+      .sort((a, b) => Math.abs(a.population - inputs.population) - Math.abs(b.population - inputs.population))
+      .slice(0, 5)
+      .map(c => ({ name: c.name, value: c.population }))
+  };
 
+  // GDP per capita comparison
+  const gdpComparison: EconomicComparison = {
+    metric: "GDP per Capita",
+    tier: getEconomicTier(inputs.gdpPerCapita),
+    analysis: `With a GDP per capita of $${inputs.gdpPerCapita.toLocaleString()}, your nation is classified as ${getEconomicTier(inputs.gdpPerCapita).toLowerCase()}.`,
+    comparableCountries: allCountries
+      .filter(c => Math.abs(c.gdpPerCapita - inputs.gdpPerCapita) / Math.max(c.gdpPerCapita, inputs.gdpPerCapita) < 0.3)
+      .sort((a, b) => Math.abs(a.gdpPerCapita - inputs.gdpPerCapita) - Math.abs(b.gdpPerCapita - inputs.gdpPerCapita))
+      .slice(0, 5)
+      .map(c => ({ name: c.name, value: c.gdpPerCapita }))
+  };
+
+  // Tax revenue comparison
+  const taxComparison: EconomicComparison = {
+    metric: "Tax Revenue (% of GDP)",
+    tier: getEconomicTier(inputs.gdpPerCapita),
+    analysis: `Your tax revenue of ${inputs.taxRevenuePercent.toFixed(1)}% of GDP is ${
+      inputs.taxRevenuePercent > 35 ? 'high' : inputs.taxRevenuePercent > 25 ? 'moderate' : inputs.taxRevenuePercent > 15 ? 'low' : 'very low'
+    } compared to global standards.`,
+    comparableCountries: allCountries
+      .filter(c => Math.abs(c.taxRevenuePercent - inputs.taxRevenuePercent) < 5)
+      .sort((a, b) => Math.abs(a.taxRevenuePercent - inputs.taxRevenuePercent) - Math.abs(b.taxRevenuePercent - inputs.taxRevenuePercent))
+      .slice(0, 5)
+      .map(c => ({ name: c.name, value: c.taxRevenuePercent }))
+  };
+
+  // Unemployment comparison
+  const unemploymentComparison: EconomicComparison = {
+    metric: "Unemployment Rate",
+    tier: getEconomicTier(inputs.gdpPerCapita),
+    analysis: `Your unemployment rate of ${inputs.unemploymentRate.toFixed(1)}% is ${
+      inputs.unemploymentRate > 15 ? 'very high' : inputs.unemploymentRate > 10 ? 'high' : inputs.unemploymentRate > 6 ? 'moderate' : inputs.unemploymentRate > 3 ? 'low' : 'very low'
+    } by international standards.`,
+    comparableCountries: allCountries
+      .filter(c => Math.abs(c.unemploymentRate - inputs.unemploymentRate) < 3)
+      .sort((a, b) => Math.abs(a.unemploymentRate - inputs.unemploymentRate) - Math.abs(b.unemploymentRate - inputs.unemploymentRate))
+      .slice(0, 5)
+      .map(c => ({ name: c.name, value: c.unemploymentRate }))
+  };
+
+  comparisons.push(populationComparison, gdpComparison, taxComparison, unemploymentComparison);
+  return comparisons;
+}
 
 export interface EnhancedCountryProfile {
   basic: EnhancedEconomicInputs;
@@ -567,6 +635,3 @@ export class EnhancedEconomyDataService {
     }
   }
 }
-
-// Export generateEconomicComparisons if it's meant to be used directly
-export const generateEconomicComparisons = EnhancedEconomyDataService.findSimilarCountries;
