@@ -8,8 +8,11 @@ export { CountryListCard } from './CountryListCard';
 export { CountryInfobox } from './CountryInfobox';
 
 // Re-export types for convenience
-export type { 
-  SortField, 
-  SortDirection, 
-  TierFilter 
+export type {
+  SortField,
+  SortDirection,
+  TierFilter
 } from './CountriesSearch';
+
+// It might be useful to export CountryData type if used by parent components
+// export type { CountryData } from './CountryListCard'; // Or from a central types file

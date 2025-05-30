@@ -4,7 +4,7 @@
 // Economic and Population Tier Enums
 export enum EconomicTier {
   DEVELOPING = "Developing",
-  EMERGING = "Emerging", 
+  EMERGING = "Emerging",
   DEVELOPED = "Developed",
   ADVANCED = "Advanced"
 }
@@ -12,7 +12,7 @@ export enum EconomicTier {
 export enum PopulationTier {
   MICRO = "Micro",
   SMALL = "Small",
-  MEDIUM = "Medium", 
+  MEDIUM = "Medium",
   LARGE = "Large",
   MASSIVE = "Massive"
 }
@@ -20,7 +20,7 @@ export enum PopulationTier {
 // DM Input Types
 export enum DmInputType {
   POPULATION_ADJUSTMENT = "population_adjustment",
-  GDP_ADJUSTMENT = "gdp_adjustment", 
+  GDP_ADJUSTMENT = "gdp_adjustment",
   GROWTH_RATE_MODIFIER = "growth_rate_modifier",
   SPECIAL_EVENT = "special_event",
   TRADE_AGREEMENT = "trade_agreement",
@@ -30,47 +30,61 @@ export enum DmInputType {
 
 // Base country data from roster
 export interface BaseCountryData {
-  country: string;
-  population: number;
-  gdpPerCapita: number;
-  maxGdpGrowthRate: number;
-  adjustedGdpGrowth: number;
-  populationGrowthRate: number;
-  projected2040Population: number;
-  projected2040Gdp: number;
-  projected2040GdpPerCapita: number;
-  actualGdpGrowth: number;
-  landArea?: number | null;
+  country: string; // From CSV "Country"
+  continent?: string | null; // From CSV "Continent"
+  region?: string | null; // From CSV "Region"
+  governmentType?: string | null; // From CSV "Government Type"
+  religion?: string | null; // From CSV "Religion"
+  leader?: string | null; // From CSV "Leader"
+  population: number; // From CSV "Population"
+  gdpPerCapita: number; // From CSV "GDP PC"
+  landArea?: number | null; // From CSV "Area (km²)"
+  areaSqMi?: number | null; // From CSV "Area (sq mi)" - for reference
+  maxGdpGrowthRate: number; // From CSV "Max GDPPC Grow Rt"
+  adjustedGdpGrowth: number; // From CSV "Adj GDPPC Growth"
+  populationGrowthRate: number; // From CSV "Pop Growth Rate"
+  projected2040Population: number; // From CSV "2040 Population"
+  projected2040Gdp: number; // From CSV "2040 GDP"
+  projected2040GdpPerCapita: number; // From CSV "2040 GDP PC"
+  actualGdpGrowth: number; // From CSV "Actual GDP Growth"
 }
 
 // Current country statistics (calculated)
 export interface CountryStats extends BaseCountryData {
   // Database fields
   id?: string;
-  name: string;
-  
+  name: string; // Will be same as 'country' from BaseCountryData
+
+  // Descriptive fields from CSV, carried over
+  continent?: string | null;
+  region?: string | null;
+  governmentType?: string | null;
+  religion?: string | null;
+  leader?: string | null;
+  areaSqMi?: number | null;
+
   // Calculated current values
-  totalGdp: number;
+  totalGdp: number; // Derived from population * gdpPerCapita initially
   currentPopulation: number;
   currentGdpPerCapita: number;
   currentTotalGdp: number;
-  
+
   // Time tracking
   lastCalculated: Date | number;
   baselineDate: Date | number;
-  
+
   // Categorization
   economicTier: EconomicTier;
   populationTier: PopulationTier;
-  
+
   // Geographic calculations
   populationDensity?: number | null;
   gdpDensity?: number | null;
-  
+
   // Growth modifiers
   localGrowthFactor: number;
   globalGrowthFactor: number;
-  
+
   // Historical data (optional)
   historicalData?: HistoricalDataPoint[];
 }
@@ -184,17 +198,17 @@ export interface BotEndpointStatusResponse extends BotTimeResponse {
 
 // Represents the derived/flattened bot status object
 // This is the structure for the `botStatus` field within `IxTimeState` and `AdminPageBotStatusView`
-export interface DerivedBotDisplayStatus extends BotTimeResponse { 
+export interface DerivedBotDisplayStatus extends BotTimeResponse {
   pausedAt?: number | null;
   pauseTimestamp?: number | null;
-  botReady: boolean; 
+  botReady: boolean;
   botUser?: {
     id: string;
     username: string;
     discriminator: string;
   };
-  guilds?: number; 
-  uptime?: number; 
+  guilds?: number;
+  uptime?: number;
 }
 
 // Output of IxTime.getStatus() method - represents the comprehensive local/fallback IxTime state
@@ -202,18 +216,18 @@ export interface IxTimeState {
   currentRealTime: string;
   currentIxTime: string;
   formattedIxTime: string;
-  multiplier: number; 
-  isPaused: boolean;  
-  hasTimeOverride: boolean; 
+  multiplier: number;
+  isPaused: boolean;
+  hasTimeOverride: boolean;
   timeOverrideValue?: string | null;
-  hasMultiplierOverride?: boolean; 
+  hasMultiplierOverride?: boolean;
   multiplierOverrideValue?: number | null | undefined; // Allowing null and undefined
   realWorldEpoch?: string;
   inGameEpoch?: string;
   yearsSinceGameStart?: number;
   currentGameYear?: number;
   gameTimeDescription?: string;
-  botAvailable?: boolean; 
+  botAvailable?: boolean;
   lastSyncTime?: string | null;
   lastKnownBotTime?: string | null;
   botStatus: DerivedBotDisplayStatus | null; // The derived/flattened object from bot, if available
@@ -265,7 +279,7 @@ export interface ImportAnalysis {
   unchangedCountries: number;
   changes: Array<{
     type: 'new' | 'update';
-    country: BaseCountryData;
+    country: BaseCountryData; // Changed to BaseCountryData for analysis
     existingData?: any;
     changes?: Array<{
       field: string;
@@ -396,7 +410,14 @@ export type RequiredKeys<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K
 // Database model types (matching Prisma schema)
 export interface Country {
   id: string;
-  name: string;
+  name: string; // Unique identifier
+  continent?: string | null;
+  region?: string | null;
+  governmentType?: string | null;
+  religion?: string | null;
+  leader?: string | null;
+  areaSqMi?: number | null;
+
   baselinePopulation: number;
   baselineGdpPerCapita: number;
   maxGdpGrowthRate: number;
@@ -414,8 +435,8 @@ export interface Country {
   gdpDensity?: number | null;
   lastCalculated: Date;
   baselineDate: Date;
-  economicTier: string;
-  populationTier: string;
+  economicTier: string; // Should map to EconomicTier enum
+  populationTier: string; // Should map to PopulationTier enum
   localGrowthFactor: number;
   createdAt: Date;
   updatedAt: Date;
