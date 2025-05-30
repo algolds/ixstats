@@ -42,7 +42,8 @@ export default async function Home() {
               Alpha version 0.5.0
             </p>
             <p className="text-xs text-gray-400">
-              build version: d32bd7e
+              build version: 33240f2
+
             </p>
           </div>
         </div>
