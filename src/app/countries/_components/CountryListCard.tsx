@@ -144,7 +144,7 @@ export function CountryListCard({ country }: CountryListCardProps) {
                   onError={() => setFlagState('error')}
                 />
               )}
-              {flagState === 'error' && (!flagUrl || flagState === 'loading') && ( // Show placeholder if error or still loading with no URL
+              {(flagState === 'error' || (flagState === 'loading' && !flagUrl)) && ( 
                 <div className="w-8 h-6 bg-[var(--color-bg-tertiary)] rounded flex items-center justify-center border border-[var(--color-border-primary)] absolute inset-0 z-0">
                   <Flag className="h-3 w-3 text-[var(--color-text-muted)]" />
                 </div>
