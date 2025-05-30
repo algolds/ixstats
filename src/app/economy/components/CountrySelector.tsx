@@ -3,21 +3,28 @@
 
 import { useState, useMemo } from "react";
 import { Search, Globe, DollarSign, Users, TrendingUp, Filter as FilterIcon } from "lucide-react";
-import type { RealCountryData } from "../lib/economy-data-service";
-import { getEconomicTier } from "../lib/economy-data-service";
-import { getTierStyle } from "~/lib/theme-utils"; // Assuming you have this
+import { type RealCountryData, getEconomicTier } from "../lib/economy-data-service"; // Correctly import RealCountryData and getEconomicTier
+import { getTierStyle } from "~/lib/theme-utils"; 
+import { EconomicTier } from "~/types/ixstats"; // Import EconomicTier enum
+
+interface CountrySelectorProps {
+  countries: RealCountryData[];
+  onCountrySelect: (country: RealCountryData) => void;
+  selectedCountry: RealCountryData | null;
+}
+
 
 export function CountrySelector({ countries, onCountrySelect, selectedCountry }: CountrySelectorProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTierFilter, setSelectedTierFilter] = useState<string>("all");
 
   const filteredCountries = useMemo(() => {
-    let filtered = countries.filter(country => country.name !== "World"); // Exclude "World" entry
+    let filtered = countries.filter(country => country.name !== "World"); 
 
     if (searchTerm) {
       filtered = filtered.filter(country =>
         country.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        country.countryCode.toLowerCase().includes(searchTerm.toLowerCase())
+        (country.countryCode && country.countryCode.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
@@ -40,10 +47,12 @@ export function CountrySelector({ countries, onCountrySelect, selectedCountry }:
   const formatPopulation = (pop: number): string => formatNumber(pop, false, 1);
 
   const tierStats = useMemo(() => {
-    const stats = { Advanced: 0, Developed: 0, Emerging: 0, Developing: 0 };
+    const stats: Record<string, number> = { Advanced: 0, Developed: 0, Emerging: 0, Developing: 0 };
     countries.filter(c => c.name !== "World").forEach(country => {
       const tier = getEconomicTier(country.gdpPerCapita);
-      stats[tier]++;
+      if (stats[tier as string] !== undefined) { // Type assertion for safety
+        stats[tier as string]++;
+      }
     });
     return stats;
   }, [countries]);
@@ -94,10 +103,10 @@ export function CountrySelector({ countries, onCountrySelect, selectedCountry }:
               className="form-select pl-10"
             >
               <option value="all">All Tiers</option>
-              <option value="Advanced">Advanced</option>
-              <option value="Developed">Developed</option>
-              <option value="Emerging">Emerging</option>
-              <option value="Developing">Developing</option>
+              <option value={EconomicTier.ADVANCED}>Advanced</option>
+              <option value={EconomicTier.DEVELOPED}>Developed</option>
+              <option value={EconomicTier.EMERGING}>Emerging</option>
+              <option value={EconomicTier.DEVELOPING}>Developing</option>
             </select>
           </div>
         </div>
@@ -118,7 +127,7 @@ export function CountrySelector({ countries, onCountrySelect, selectedCountry }:
 
               return (
                 <div
-                  key={country.countryCode}
+                  key={country.countryCode || country.name} // Use countryCode if available, fallback to name
                   onClick={() => onCountrySelect(country)}
                   className={`p-4 cursor-pointer transition-colors hover:bg-[var(--color-bg-tertiary)] ${
                     isSelected ? 'bg-[var(--color-brand-primary)] bg-opacity-10 border-l-4 border-[var(--color-brand-primary)]' : ''
@@ -157,10 +166,4 @@ export function CountrySelector({ countries, onCountrySelect, selectedCountry }:
       )}
     </div>
   );
-}
-
-interface CountrySelectorProps {
-  countries: RealCountryData[];
-  onCountrySelect: (country: RealCountryData) => void;
-  selectedCountry: RealCountryData | null;
 }

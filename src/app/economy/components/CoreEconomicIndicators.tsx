@@ -4,11 +4,12 @@
 import { useState, useEffect } from "react";
 import { TrendingUp, DollarSign, Activity, Globe, Info, AlertTriangle } from "lucide-react";
 import type { EnhancedEconomicInputs, EconomicHint } from "../lib/enhanced-economic-types";
+import type { RealCountryData } from "../lib/economy-data-service"; // Import RealCountryData
 
 interface CoreEconomicIndicatorsProps {
   inputs: EnhancedEconomicInputs;
   onInputsChange: (inputs: Partial<EnhancedEconomicInputs>) => void;
-  referenceCountries: any[];
+  referenceCountries: RealCountryData[]; // Use RealCountryData type
 }
 
 export function CoreEconomicIndicators({ 
@@ -20,11 +21,12 @@ export function CoreEconomicIndicators({
 
   // Calculate derived values
   const totalGDP = inputs.population * inputs.gdpPerCapita;
-  const nominalGDP = totalGDP / (1 + inputs.inflationRate); // Simplified real vs nominal
+  // const nominalGDP = totalGDP / (1 + inputs.inflationRate); // Simplified real vs nominal (Commented out as unused)
 
   useEffect(() => {
     generateHints();
-  }, [inputs.realGDPGrowthRate, inputs.inflationRate, inputs.gdpPerCapita]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inputs.realGDPGrowthRate, inputs.inflationRate, inputs.gdpPerCapita, referenceCountries]); // Added referenceCountries to dependency array
 
   const generateHints = () => {
     const newHints: EconomicHint[] = [];
@@ -84,21 +86,26 @@ export function CoreEconomicIndicators({
     }
 
     // Find closest matching countries
-    const similarities = referenceCountries.map(country => {
-      const gdpDiff = Math.abs(inputs.gdpPerCapita - country.gdpPerCapita) / country.gdpPerCapita;
-      const similarity = Math.max(0, 100 - (gdpDiff * 100));
-      return { name: country.name, similarity };
-    }).sort((a, b) => b.similarity - a.similarity);
+    if (referenceCountries && referenceCountries.length > 0) {
+        const similarities = referenceCountries
+        .filter(country => country && typeof country.gdpPerCapita === 'number') // Ensure country and gdpPerCapita are valid
+        .map(country => {
+            const gdpDiff = Math.abs(inputs.gdpPerCapita - country.gdpPerCapita) / country.gdpPerCapita;
+            const similarity = Math.max(0, 100 - (gdpDiff * 100));
+            return { name: country.name, similarity };
+        }).sort((a, b) => b.similarity - a.similarity);
 
-    if (similarities.length > 0 && similarities[0].similarity > 70) {
-      newHints.push({
-        type: 'info',
-        title: 'Similar Economy',
-        message: `Your economy most closely resembles ${similarities[0].name} (${similarities[0].similarity.toFixed(0)}% match).`,
-        relatedCountries: [similarities[0].name],
-        impact: 'low'
-      });
+        if (similarities.length > 0 && similarities[0] && similarities[0].similarity > 70) {
+            newHints.push({
+                type: 'info',
+                title: 'Similar Economy',
+                message: `Your economy most closely resembles ${similarities[0].name} (${similarities[0].similarity.toFixed(0)}% match).`,
+                relatedCountries: [similarities[0].name],
+                impact: 'low'
+            });
+        }
     }
+
 
     setHints(newHints);
   };
@@ -334,14 +341,14 @@ export function CoreEconomicIndicators({
                         <p className="text-xs text-[var(--color-text-muted)] mt-1">
                           {hint.message}
                         </p>
-                        {hint.relatedCountries.length > 0 && (
+                        {hint.relatedCountries && hint.relatedCountries.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-2">
-                            {hint.relatedCountries.map(country => (
+                            {hint.relatedCountries.map(countryName => ( // Changed variable name
                               <span 
-                                key={country}
+                                key={countryName}
                                 className="px-2 py-1 text-xs bg-[var(--color-bg-secondary)] rounded-full text-[var(--color-text-secondary)]"
                               >
-                                {country}
+                                {countryName}
                               </span>
                             ))}
                           </div>
