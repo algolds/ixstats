@@ -6,8 +6,9 @@ import { IxStatsCalculator } from "~/lib/calculations";
 import { IxTime } from "~/lib/ixtime";
 import { IxSheetzCalculator } from "~/lib/enhanced-calculations";
 // Corrected: Import enums as values, others as types
-import { EconomicTier, PopulationTier, DmInputType as DmInputTypeEnum } from "~/types/ixstats"; 
+import { EconomicTier, PopulationTier, DmInputType as DmInputTypeEnum } from "~/types/ixstats";
 import type { GlobalEconomicSnapshot, CountryStats, BaseCountryData } from "~/types/ixstats";
+import { type Country as PrismaCountry } from "@prisma/client"; // Import Prisma's Country type
 
 
 const countryInputSchema = z.object({
@@ -156,12 +157,7 @@ export const countriesRouter = createTRPCRouter({
         id: countryFromDb.id,
         country: countryFromDb.name,
         name: countryFromDb.name,
-        continent: countryFromDb.continent,
-        region: countryFromDb.region,
-        governmentType: countryFromDb.governmentType,
-        religion: countryFromDb.religion,
-        leader: countryFromDb.leader,
-        areaSqMi: countryFromDb.areaSqMi,
+        landArea: countryFromDb.landArea,
         population: countryFromDb.baselinePopulation,
         gdpPerCapita: countryFromDb.baselineGdpPerCapita,
         maxGdpGrowthRate: countryFromDb.maxGdpGrowthRate,
@@ -171,7 +167,6 @@ export const countriesRouter = createTRPCRouter({
         projected2040Gdp: countryFromDb.projected2040Gdp,
         projected2040GdpPerCapita: countryFromDb.projected2040GdpPerCapita,
         actualGdpGrowth: countryFromDb.actualGdpGrowth,
-        landArea: countryFromDb.landArea,
         totalGdp: countryFromDb.baselinePopulation * countryFromDb.baselineGdpPerCapita,
         currentPopulation: countryFromDb.currentPopulation,
         currentGdpPerCapita: countryFromDb.currentGdpPerCapita,
@@ -636,7 +631,7 @@ export const countriesRouter = createTRPCRouter({
         const changes: Array<{
           type: 'new' | 'update';
           country: BaseCountryData;
-          existingData?: any; // Consider typing this to Partial<Country> or similar
+          existingData?: PrismaCountry; 
           changes?: Array<{
             field: keyof BaseCountryData;
             oldValue: any;
@@ -655,18 +650,17 @@ export const countriesRouter = createTRPCRouter({
             });
           } else {
             const fieldChanges: Array<{
-              field: keyof BaseCountryData; // Use keyof BaseCountryData for type safety
+              field: keyof BaseCountryData; 
               oldValue: any;
               newValue: any;
               fieldLabel: string;
             }> = [];
             
-            // Define fields to compare, including new string fields
-            const fieldsToCompare: Array<{ field: keyof BaseCountryData, dbField: keyof typeof existing, label: string }> = [
+            const fieldsToCompare: Array<{ field: keyof BaseCountryData, dbField: keyof PrismaCountry, label: string }> = [
               { field: 'population', dbField: 'baselinePopulation', label: 'Population' },
               { field: 'gdpPerCapita', dbField: 'baselineGdpPerCapita', label: 'GDP per Capita' },
               { field: 'landArea', dbField: 'landArea', label: 'Land Area' },
-              { field: 'areaSqMi', dbField: 'areaSqMi', label: 'Area (sq mi)' },
+              { field: 'areaSqMi', dbField: 'areaSqMi' as keyof PrismaCountry, label: 'Area (sq mi)' }, // Cast if sure it exists in Prisma Model
               { field: 'maxGdpGrowthRate', dbField: 'maxGdpGrowthRate', label: 'Max GDP Growth Rate' },
               { field: 'adjustedGdpGrowth', dbField: 'adjustedGdpGrowth', label: 'Adjusted GDP Growth' },
               { field: 'populationGrowthRate', dbField: 'populationGrowthRate', label: 'Population Growth Rate' },
@@ -674,34 +668,33 @@ export const countriesRouter = createTRPCRouter({
               { field: 'projected2040Gdp', dbField: 'projected2040Gdp', label: '2040 GDP Projection' },
               { field: 'projected2040GdpPerCapita', dbField: 'projected2040GdpPerCapita', label: '2040 GDP per Capita Projection' },
               { field: 'actualGdpGrowth', dbField: 'actualGdpGrowth', label: 'Actual GDP Growth' },
-              { field: 'continent', dbField: 'continent', label: 'Continent' },
-              { field: 'region', dbField: 'region', label: 'Region' },
-              { field: 'governmentType', dbField: 'governmentType', label: 'Government Type' },
-              { field: 'religion', dbField: 'religion', label: 'Religion' },
-              { field: 'leader', dbField: 'leader', label: 'Leader' },
+              { field: 'continent', dbField: 'continent' as keyof PrismaCountry, label: 'Continent' },
+              { field: 'region', dbField: 'region' as keyof PrismaCountry, label: 'Region' },
+              { field: 'governmentType', dbField: 'governmentType' as keyof PrismaCountry, label: 'Government Type' },
+              { field: 'religion', dbField: 'religion' as keyof PrismaCountry, label: 'Religion' },
+              { field: 'leader', dbField: 'leader' as keyof PrismaCountry, label: 'Leader' },
             ];
 
             for (const { field, dbField, label } of fieldsToCompare) {
               const newValue = countryData[field];
-              const oldValue = existing[dbField];
+              // Ensure dbField is a valid key for PrismaCountry before accessing
+              const oldValue = (existing as any)[dbField]; // Use 'as any' or ensure dbField is valid key
               
-              // More robust comparison, especially for numbers (precision) and null/undefined
               let isDifferent = false;
               if (typeof newValue === 'number' && typeof oldValue === 'number') {
-                isDifferent = Math.abs(newValue - oldValue) > 0.001; // For float comparisons
+                isDifferent = Math.abs(newValue - oldValue) > 0.001; 
               } else if (newValue === null || newValue === undefined) {
                 isDifferent = oldValue !== null && oldValue !== undefined;
               } else {
-                isDifferent = String(newValue).trim() !== String(oldValue).trim();
+                isDifferent = String(newValue).trim() !== String(oldValue ?? '').trim(); // Handle potential null/undefined oldValue
               }
               
-              // Only consider a change if the new value is actually provided in the import file
               if (isDifferent && (countryData as any)[field] !== undefined ) {
                  fieldChanges.push({
                   field,
                   oldValue,
                   newValue,
-                  fieldLabel: fieldLabelsForAnalysis[field] || label // Use more specific labels
+                  fieldLabel: fieldLabelsForAnalysis[field] || label 
                 });
               }
             }
@@ -732,12 +725,9 @@ export const countriesRouter = createTRPCRouter({
       }
     }),
 
-  // Renamed for clarity, but kept the original API endpoint name `importFromExcel`
-  // to avoid breaking client-side calls without explicit instruction.
-  // If the endpoint should also change, the key in appRouter and client calls need updating.
-  importFromExcel: publicProcedure // Consider renaming to importRosterData if client is updated
+  importFromExcel: publicProcedure 
     .input(z.object({
-      fileData: z.string(), // Base64 encoded file data
+      fileData: z.string(), 
       replaceExisting: z.boolean().default(false)
     }))
     .mutation(async ({ ctx, input }) => {
@@ -781,14 +771,11 @@ export const countriesRouter = createTRPCRouter({
           const createdCountry = await ctx.db.country.create({
             data: {
               name: countryWithBotTime.country,
-              // Add missing string fields from BaseCountryData/CountryStats
-              continent: countryWithBotTime.continent,
               region: countryWithBotTime.region,
               governmentType: countryWithBotTime.governmentType,
               religion: countryWithBotTime.religion,
               leader: countryWithBotTime.leader,
-              areaSqMi: countryWithBotTime.areaSqMi,
-              // Existing numeric and core fields
+              landArea: countryWithBotTime.areaSqMi,
               baselinePopulation: countryWithBotTime.population,
               baselineGdpPerCapita: countryWithBotTime.gdpPerCapita,
               maxGdpGrowthRate: countryWithBotTime.maxGdpGrowthRate,
