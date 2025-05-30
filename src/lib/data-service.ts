@@ -24,7 +24,9 @@ export class IxStatsDataService {
   async parseRosterFile(fileBuffer: ArrayBuffer, fileName?: string): Promise<BaseCountryData[]> {
     if (fileName && fileName.toLowerCase().endsWith('.csv')) {
       const csvString = new TextDecoder("utf-8").decode(fileBuffer);
-      return this.parseCsvData(csvString);
+      // Determine header skip based on known roster filename
+      const headerSkip = fileName.toLowerCase().includes('world-roster') ? 6 : 0;
+      return this.parseCsvData(csvString, headerSkip);
     } else { // Assume Excel
       const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
       const sheetName = workbook.SheetNames[0];
@@ -40,12 +42,12 @@ export class IxStatsDataService {
     }
   }
 
-  private parseCsvData(csvString: string): BaseCountryData[] {
+  private parseCsvData(csvString: string, headerSkipLines = 0): BaseCountryData[] {
     const lines = csvString.split(/\r\n|\n/);
-    // Skip the initial 6 metadata lines in "World-Roster-30-05-2025.csv"
-    const dataLines = lines.slice(6);
+    // Skip specified metadata lines
+    const dataLines = lines.slice(headerSkipLines);
     if (dataLines.length < 2) { // Need headers + at least one data row
-        console.warn("CSV has insufficient data (less than 2 effective rows).");
+        console.warn(`CSV has insufficient data (less than 2 effective rows after skipping ${headerSkipLines} lines).`);
         return [];
     }
 
@@ -54,11 +56,11 @@ export class IxStatsDataService {
 
     const rawDataArrays: any[][] = [];
     if (headerLine) {
+        // A more robust CSV parsing could be implemented here if needed, e.g., handling quoted commas
         rawDataArrays.push(headerLine.split(',').map(h => h.trim())); // Headers
     }
     records.forEach(line => {
         if (line.trim() !== "") { // Skip empty lines
-             // Basic CSV split, doesn't handle commas within quotes perfectly
             rawDataArrays.push(line.split(',').map(val => val.trim()));
         }
     });
@@ -86,15 +88,16 @@ export class IxStatsDataService {
         return -1;
     };
 
+    // Consistent header mapping
     const headerMap = {
         country: findHeaderIndex(['Country', 'Nation Name']),
         continent: findHeaderIndex(['Continent']),
         region: findHeaderIndex(['Region']),
-        governmentType: findHeaderIndex(['Government Type']),
+        governmentType: findHeaderIndex(['Government Type', 'Govt Type']),
         religion: findHeaderIndex(['Religion']),
         leader: findHeaderIndex(['Leader']),
         population: findHeaderIndex(['Population', 'Current Population', 'Pop']),
-        gdpPerCapita: findHeaderIndex(['GDP PC', 'GDP per Capita', 'GDPPC']),
+        gdpPerCapita: findHeaderIndex(['GDP PC', 'GDP per Capita', 'GDPPC', 'GDPperCap (current US$)']),
         maxGdpGrowthRate: findHeaderIndex(['Max GDPPC Grow Rt', 'Max Growth Rate', 'Max GDP Growth']),
         adjustedGdpGrowth: findHeaderIndex(['Adj GDPPC Growth', 'GDP Growth', 'Adjusted GDP Growth']),
         populationGrowthRate: findHeaderIndex(['Pop Growth Rate', 'Population Growth']),
@@ -107,16 +110,16 @@ export class IxStatsDataService {
     };
 
     if (headerMap.country === -1 || headerMap.population === -1 || headerMap.gdpPerCapita === -1) {
-        throw new Error(`Required headers (Country, Population, GDP per Capita) not found in the ${isExcel ? 'Excel' : 'CSV'} file.`);
+        throw new Error(`Required headers (Country, Population, GDP per Capita) not found in the ${isExcel ? 'Excel' : 'CSV'} file. Found headers: ${headers.join(', ')}`);
     }
 
-    const gameEpochYear = 2028;
+    const gameEpochYear = 2028; // Roster baseline year
     const targetYear = 2040;
     const yearsToTarget = targetYear - gameEpochYear;
 
     for (let i = 1; i < rawData.length; i++) {
       const row = rawData[i];
-      if (!row || !row[headerMap.country] || typeof row[headerMap.country] !== 'string' || row[headerMap.country].trim() === "") {
+      if (!row || !row[headerMap.country] || String(row[headerMap.country]).trim() === "" || String(row[headerMap.country]).trim() === "0") { // Skip empty or placeholder country names
         continue;
       }
 
@@ -124,7 +127,7 @@ export class IxStatsDataService {
         let landAreaKm: number | undefined = this.parseNumberOptional(row[headerMap.landAreaKm]);
         const landAreaMi = this.parseNumberOptional(row[headerMap.landAreaMi]);
         if (landAreaKm === undefined && landAreaMi !== undefined) {
-            landAreaKm = landAreaMi * 2.58999;
+            landAreaKm = landAreaMi * 2.58999; // Convert sq mi to sq km
         }
 
         const countryData: BaseCountryData = {
@@ -134,19 +137,20 @@ export class IxStatsDataService {
           governmentType: headerMap.governmentType !== -1 ? (String(row[headerMap.governmentType]).trim() || null) : null,
           religion: headerMap.religion !== -1 ? (String(row[headerMap.religion]).trim() || null) : null,
           leader: headerMap.leader !== -1 ? (String(row[headerMap.leader]).trim() || null) : null,
-          population: this.parseNumberRequired(row[headerMap.population], 0, true), // isNumericString = true
-          gdpPerCapita: this.parseNumberRequired(row[headerMap.gdpPerCapita], 0, true), // isNumericString = true
+          population: this.parseNumberRequired(row[headerMap.population], 0),
+          gdpPerCapita: this.parseNumberRequired(row[headerMap.gdpPerCapita], 0),
           maxGdpGrowthRate: this.parsePercentageRequired(row[headerMap.maxGdpGrowthRate], 0.05),
           adjustedGdpGrowth: this.parsePercentageRequired(row[headerMap.adjustedGdpGrowth], 0.03),
           populationGrowthRate: this.parsePercentageRequired(row[headerMap.populationGrowthRate], 0.01),
-          projected2040Population: this.parseNumberRequired(row[headerMap.projected2040Population], 0, true),
-          projected2040Gdp: this.parseNumberRequired(row[headerMap.projected2040Gdp], 0, true),
-          projected2040GdpPerCapita: this.parseNumberRequired(row[headerMap.projected2040GdpPerCapita], 0, true),
+          projected2040Population: this.parseNumberRequired(row[headerMap.projected2040Population], 0),
+          projected2040Gdp: this.parseNumberRequired(row[headerMap.projected2040Gdp], 0),
+          projected2040GdpPerCapita: this.parseNumberRequired(row[headerMap.projected2040GdpPerCapita], 0),
           actualGdpGrowth: this.parsePercentageRequired(row[headerMap.actualGdpGrowth], 0),
           landArea: landAreaKm,
           areaSqMi: landAreaMi,
         };
-
+        
+        // Default projections if not provided or zero
         if (countryData.projected2040Population === 0 && yearsToTarget > 0 && countryData.population > 0 && countryData.populationGrowthRate !== undefined) {
           countryData.projected2040Population = countryData.population * Math.pow(1 + countryData.populationGrowthRate, yearsToTarget);
         }
@@ -157,8 +161,10 @@ export class IxStatsDataService {
           countryData.projected2040Gdp = countryData.projected2040Population * countryData.projected2040GdpPerCapita;
         }
         if (countryData.actualGdpGrowth === 0 && countryData.populationGrowthRate !== undefined && countryData.adjustedGdpGrowth !== undefined) {
-          countryData.actualGdpGrowth = countryData.populationGrowthRate + countryData.adjustedGdpGrowth;
+          // This is a simple sum; more complex models might differ.
+          countryData.actualGdpGrowth = (1 + countryData.populationGrowthRate) * (1 + countryData.adjustedGdpGrowth) -1;
         }
+
 
         if (this.validateCountryData(countryData)) {
           countries.push(countryData);
@@ -173,20 +179,20 @@ export class IxStatsDataService {
     return countries;
   }
 
-  private parseNumberRequired(value: any, defaultValue: number = 0, isNumericString: boolean = false): number {
+  private parseNumberRequired(value: any, defaultValue: number = 0): number {
     if (value === null || value === undefined || String(value).trim() === "" || String(value).trim().toLowerCase() === '#div/0!') {
         return defaultValue;
     }
     if (typeof value === 'number') return isNaN(value) ? defaultValue : value;
     if (typeof value === 'string') {
-      const cleaned = value.replace(/[,%$]/g, '').trim();
+      const cleaned = value.replace(/[,%$]/g, '').trim(); // Remove commas, percentage, and dollar signs
       const parsed = parseFloat(cleaned);
       return isNaN(parsed) ? defaultValue : parsed;
     }
     return defaultValue;
   }
 
-  private parseNumberOptional(value: any, isNumericString: boolean = false): number | undefined {
+  private parseNumberOptional(value: any): number | undefined {
     if (value === null || value === undefined || String(value).trim() === "" || String(value).trim().toLowerCase() === '#div/0!') {
         return undefined;
     }
@@ -200,18 +206,19 @@ export class IxStatsDataService {
   }
 
   private parsePercentageRequired(value: any, defaultValue: number = 0): number {
-      const num = this.parseNumberRequired(value, defaultValue * 100, true); // Parse as if it's a whole number if '%' is present
-      // If the original value string contained '%', it's already a percentage.
-      // Otherwise, assume it's a decimal representation.
-      return String(value).includes('%') ? num / 100 : num;
+      const asString = String(value);
+      const isPercentString = asString.includes('%');
+      const num = this.parseNumberRequired(value, defaultValue * (isPercentString ? 100 : 1));
+      
+      return isPercentString ? num / 100 : num;
   }
 
 
   private validateCountryData(data: BaseCountryData): boolean {
     return (
       data.country.length > 0 &&
-      data.population >= 0 && // Allow 0 for uninhabited places
-      data.gdpPerCapita >= 0 // Allow 0
+      data.population >= 0 && 
+      data.gdpPerCapita >= 0 
     );
   }
 
@@ -221,7 +228,7 @@ export class IxStatsDataService {
       const stats = this.calculator.initializeCountryStats(data);
       stats.baselineDate = new Date(IxTime.getInGameEpoch());
       stats.lastCalculated = new Date(IxTime.getInGameEpoch());
-      // Carry over new fields
+      // Carry over all fields from BaseCountryData
       stats.continent = data.continent;
       stats.region = data.region;
       stats.governmentType = data.governmentType;

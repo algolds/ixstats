@@ -7,7 +7,7 @@ import { IxTime } from "~/lib/ixtime";
 import { IxSheetzCalculator } from "~/lib/enhanced-calculations";
 // Corrected: Import enums as values, others as types
 import { EconomicTier, PopulationTier, DmInputType as DmInputTypeEnum } from "~/types/ixstats"; 
-import type { GlobalEconomicSnapshot, CountryStats } from "~/types/ixstats";
+import type { GlobalEconomicSnapshot, CountryStats, BaseCountryData } from "~/types/ixstats";
 
 
 const countryInputSchema = z.object({
@@ -41,6 +41,28 @@ const dmInputSchema = z.object({
   description: z.string().optional(),
   duration: z.number().positive().optional()
 });
+
+// Field labels for analysis, similar to ImportPreviewDialog
+const fieldLabelsForAnalysis: Record<string, string> = {
+  'country': 'Country Name',
+  'continent': 'Continent',
+  'region': 'Region',
+  'governmentType': 'Government Type',
+  'religion': 'Religion',
+  'leader': 'Leader',
+  'population': 'Population',
+  'gdpPerCapita': 'GDP per Capita',
+  'landArea': 'Land Area (km²)',
+  'areaSqMi': 'Area (sq mi)',
+  'maxGdpGrowthRate': 'Max GDP Growth Rate',
+  'adjustedGdpGrowth': 'Adjusted GDP Growth',
+  'populationGrowthRate': 'Population Growth Rate',
+  'projected2040Population': '2040 Population',
+  'projected2040Gdp': '2040 GDP',
+  'projected2040GdpPerCapita': '2040 GDP p.c.',
+  'actualGdpGrowth': 'Actual GDP Growth'
+};
+
 
 function determineEconomicTier(gdpPerCapita: number): EconomicTier {
     if (gdpPerCapita >= 50000) return EconomicTier.ADVANCED;
@@ -92,8 +114,8 @@ export const countriesRouter = createTRPCRouter({
 
     return countries.map(country => ({
       ...country,
-      name: country.name,
-      country: country.name,
+      name: country.name, // Ensure name is present
+      country: country.name, // Keep 'country' for compatibility if used elsewhere
     }));
   }),
 
@@ -134,6 +156,12 @@ export const countriesRouter = createTRPCRouter({
         id: countryFromDb.id,
         country: countryFromDb.name,
         name: countryFromDb.name,
+        continent: countryFromDb.continent,
+        region: countryFromDb.region,
+        governmentType: countryFromDb.governmentType,
+        religion: countryFromDb.religion,
+        leader: countryFromDb.leader,
+        areaSqMi: countryFromDb.areaSqMi,
         population: countryFromDb.baselinePopulation,
         gdpPerCapita: countryFromDb.baselineGdpPerCapita,
         maxGdpGrowthRate: countryFromDb.maxGdpGrowthRate,
@@ -234,8 +262,8 @@ export const countriesRouter = createTRPCRouter({
 
       return {
         ...country,
-        name: country.name,
-        country: country.name,
+        name: country.name, // Ensure name is present
+        country: country.name, // Keep 'country' for compatibility
       };
     }),
 
@@ -392,7 +420,7 @@ export const countriesRouter = createTRPCRouter({
           newStats: result,
           timeElapsed,
           calculationDate: targetIxTimeMs,
-          timeSource: 'bot-sync'
+          timeSource: 'bot-sync' // Or determine dynamically
         };
       };
 
@@ -409,7 +437,7 @@ export const countriesRouter = createTRPCRouter({
           include: { dmInputs: { where: { isActive: true } } }
         });
         const results = (await Promise.all(countries.map(processCountryUpdate))).filter(r => r !== null);
-        return { updated: results.length, results, timeSource: 'bot-sync' };
+        return { updated: results.length, results, timeSource: 'bot-sync' }; // Or determine dynamically
       }
     }),
 
@@ -479,7 +507,7 @@ export const countriesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       return ctx.db.dmInput.findMany({
         where: {
-          countryId: input.countryId || null,
+          countryId: input.countryId || null, // Prisma expects null for optional relations
           isActive: true
         },
         orderBy: { ixTimeTimestamp: 'desc' }
@@ -492,7 +520,7 @@ export const countriesRouter = createTRPCRouter({
       const currentIxTimeMs = await getCurrentIxTime(ctx);
       return ctx.db.dmInput.create({
         data: {
-          countryId: input.countryId,
+          countryId: input.countryId, // Will be undefined for global, which Prisma handles as null
           ixTimeTimestamp: new Date(currentIxTimeMs),
           inputType: input.inputType,
           value: input.value,
@@ -592,7 +620,7 @@ export const countriesRouter = createTRPCRouter({
 
   analyzeImport: publicProcedure
     .input(z.object({
-      fileData: z.string(),
+      fileData: z.string(), // Base64 encoded file data
     }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -607,10 +635,10 @@ export const countriesRouter = createTRPCRouter({
 
         const changes: Array<{
           type: 'new' | 'update';
-          country: any;
-          existingData?: any;
+          country: BaseCountryData;
+          existingData?: any; // Consider typing this to Partial<Country> or similar
           changes?: Array<{
-            field: string;
+            field: keyof BaseCountryData;
             oldValue: any;
             newValue: any;
             fieldLabel: string;
@@ -627,16 +655,18 @@ export const countriesRouter = createTRPCRouter({
             });
           } else {
             const fieldChanges: Array<{
-              field: string;
+              field: keyof BaseCountryData; // Use keyof BaseCountryData for type safety
               oldValue: any;
               newValue: any;
               fieldLabel: string;
             }> = [];
-
-            const fieldsToCompare = [
+            
+            // Define fields to compare, including new string fields
+            const fieldsToCompare: Array<{ field: keyof BaseCountryData, dbField: keyof typeof existing, label: string }> = [
               { field: 'population', dbField: 'baselinePopulation', label: 'Population' },
               { field: 'gdpPerCapita', dbField: 'baselineGdpPerCapita', label: 'GDP per Capita' },
               { field: 'landArea', dbField: 'landArea', label: 'Land Area' },
+              { field: 'areaSqMi', dbField: 'areaSqMi', label: 'Area (sq mi)' },
               { field: 'maxGdpGrowthRate', dbField: 'maxGdpGrowthRate', label: 'Max GDP Growth Rate' },
               { field: 'adjustedGdpGrowth', dbField: 'adjustedGdpGrowth', label: 'Adjusted GDP Growth' },
               { field: 'populationGrowthRate', dbField: 'populationGrowthRate', label: 'Population Growth Rate' },
@@ -644,22 +674,34 @@ export const countriesRouter = createTRPCRouter({
               { field: 'projected2040Gdp', dbField: 'projected2040Gdp', label: '2040 GDP Projection' },
               { field: 'projected2040GdpPerCapita', dbField: 'projected2040GdpPerCapita', label: '2040 GDP per Capita Projection' },
               { field: 'actualGdpGrowth', dbField: 'actualGdpGrowth', label: 'Actual GDP Growth' },
+              { field: 'continent', dbField: 'continent', label: 'Continent' },
+              { field: 'region', dbField: 'region', label: 'Region' },
+              { field: 'governmentType', dbField: 'governmentType', label: 'Government Type' },
+              { field: 'religion', dbField: 'religion', label: 'Religion' },
+              { field: 'leader', dbField: 'leader', label: 'Leader' },
             ];
 
             for (const { field, dbField, label } of fieldsToCompare) {
-              const newValue = (countryData as any)[field];
-              const oldValue = (existing as any)[dbField];
-
-              const isDifferent = typeof newValue === 'number' && typeof oldValue === 'number'
-                ? Math.abs(newValue - oldValue) > 0.001
-                : newValue !== oldValue;
-
-              if (isDifferent && newValue !== null && newValue !== undefined) {
-                fieldChanges.push({
+              const newValue = countryData[field];
+              const oldValue = existing[dbField];
+              
+              // More robust comparison, especially for numbers (precision) and null/undefined
+              let isDifferent = false;
+              if (typeof newValue === 'number' && typeof oldValue === 'number') {
+                isDifferent = Math.abs(newValue - oldValue) > 0.001; // For float comparisons
+              } else if (newValue === null || newValue === undefined) {
+                isDifferent = oldValue !== null && oldValue !== undefined;
+              } else {
+                isDifferent = String(newValue).trim() !== String(oldValue).trim();
+              }
+              
+              // Only consider a change if the new value is actually provided in the import file
+              if (isDifferent && (countryData as any)[field] !== undefined ) {
+                 fieldChanges.push({
                   field,
                   oldValue,
                   newValue,
-                  fieldLabel: label
+                  fieldLabel: fieldLabelsForAnalysis[field] || label // Use more specific labels
                 });
               }
             }
@@ -690,9 +732,12 @@ export const countriesRouter = createTRPCRouter({
       }
     }),
 
-  importFromExcel: publicProcedure
+  // Renamed for clarity, but kept the original API endpoint name `importFromExcel`
+  // to avoid breaking client-side calls without explicit instruction.
+  // If the endpoint should also change, the key in appRouter and client calls need updating.
+  importFromExcel: publicProcedure // Consider renaming to importRosterData if client is updated
     .input(z.object({
-      fileData: z.string(),
+      fileData: z.string(), // Base64 encoded file data
       replaceExisting: z.boolean().default(false)
     }))
     .mutation(async ({ ctx, input }) => {
@@ -736,6 +781,14 @@ export const countriesRouter = createTRPCRouter({
           const createdCountry = await ctx.db.country.create({
             data: {
               name: countryWithBotTime.country,
+              // Add missing string fields from BaseCountryData/CountryStats
+              continent: countryWithBotTime.continent,
+              region: countryWithBotTime.region,
+              governmentType: countryWithBotTime.governmentType,
+              religion: countryWithBotTime.religion,
+              leader: countryWithBotTime.leader,
+              areaSqMi: countryWithBotTime.areaSqMi,
+              // Existing numeric and core fields
               baselinePopulation: countryWithBotTime.population,
               baselineGdpPerCapita: countryWithBotTime.gdpPerCapita,
               maxGdpGrowthRate: countryWithBotTime.maxGdpGrowthRate,
@@ -781,7 +834,7 @@ export const countriesRouter = createTRPCRouter({
           totalInFile: initializedCountries.length,
           countries: results.map(c => c.name),
           importTime: currentIxTimeMs,
-          timeSource: 'bot-sync'
+          timeSource: 'bot-sync' // Or determine dynamically
         };
       } catch (error) {
         console.error('Import error:', error);
