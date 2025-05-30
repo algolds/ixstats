@@ -12,7 +12,7 @@ import {
   type SortDirection,
   type TierFilter
 } from "./_components";
-import type { Country } from "~/types/ixstats"; // Assuming Country type includes new fields
+import type { Country } from "~/types/ixstats";
 
 export default function CountriesPage() {
   // Search and filter state
@@ -43,7 +43,7 @@ export default function CountriesPage() {
 
   const availableContinents = useMemo(() => {
     if (!countries) return [];
-    const continents = new Set(countries.map(c => c.continent).filter(Boolean) as string[]);
+    const continents = new Set(countries.map((c: Country) => c.continent).filter(Boolean) as string[]);
     return Array.from(continents).sort();
   }, [countries]);
 
@@ -51,9 +51,9 @@ export default function CountriesPage() {
     if (!countries) return [];
     let regionsSource = countries;
     if (continentFilter !== "all") {
-        regionsSource = countries.filter(c => c.continent === continentFilter);
+        regionsSource = countries.filter((c: Country) => c.continent === continentFilter);
     }
-    const regions = new Set(regionsSource.map(c => c.region).filter(Boolean) as string[]);
+    const regions = new Set(regionsSource.map((c: Country) => c.region).filter(Boolean) as string[]);
     return Array.from(regions).sort();
   }, [countries, continentFilter]);
 
@@ -77,12 +77,12 @@ export default function CountriesPage() {
     
     // Apply continent filter
     if (continentFilter !== "all") {
-      filtered = filtered.filter((country) => country.continent === continentFilter);
+      filtered = filtered.filter((country: Country) => country.continent === continentFilter);
     }
 
     // Apply region filter
     if (regionFilter !== "all") {
-      filtered = filtered.filter((country) => country.region === regionFilter);
+      filtered = filtered.filter((country: Country) => country.region === regionFilter);
     }
 
     // Apply sorting
