@@ -18,7 +18,7 @@ export function CountriesPageHeader({ totalCountries, isLoading = false }: Count
             Explore Countries
           </h1>
           <p className="mt-2 text-lg text-[var(--color-text-muted)]">
-            Browse detailed economic statistics for all countries in the Ixnay world.
+            Browse detailed economic statistics for all countries in the world.
           </p>
         </div>
         
