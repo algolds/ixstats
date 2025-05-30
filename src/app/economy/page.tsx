@@ -6,18 +6,16 @@ import { Globe, DollarSign, Users, TrendingUp, Building, AlertCircle, Loader2, I
 import { CountrySelector } from "./components/CountrySelector";
 import { EnhancedEconomicInputForm } from "./components/EnhancedEconomicInputForm";
 import { EnhancedEconomicPreview } from "./components/EnhancedEconomicPreview";
-import { 
-  parseEconomyData, 
-  type RealCountryData, 
-  saveBaselineToStorage, // Assuming this saves EnhancedEconomicInputs now or a compatible format
-  loadBaselineFromStorage, // Assuming this loads EnhancedEconomicInputs or a compatible format
-  type EconomicInputs as BaseEconomicInputs // For legacy if needed, but ideally EnhancedEconomicInputs is used
-} from "./lib/economy-data-service"; 
+import { parseEconomyData, type RealCountryData, saveBaselineToStorage, loadBaselineFromStorage } from "./lib/economy-data-service";
 import type { EnhancedEconomicInputs, TaxBracket, CorporateTaxTier, ExciseTaxRates, GovernmentSpending } from "./lib/enhanced-economic-types";
 
 type EconomyPhase = 'select' | 'input' | 'preview';
 
-const initialEconomicInputs: EnhancedEconomicInputs = {
+export default function EnhancedEconomyPage() {
+  const [realCountryData, setRealCountryData] = useState<RealCountryData[]>([]);
+  const [selectedCountry, setSelectedCountry] = useState<RealCountryData | null>(null);
+  const [economicInputs, setEconomicInputs] = useState<EnhancedEconomicInputs>({
+    // Base fields
     countryName: "",
     population: 0,
     gdpPerCapita: 0,
@@ -26,46 +24,62 @@ const initialEconomicInputs: EnhancedEconomicInputs = {
     governmentBudgetPercent: 20,
     internalDebtPercent: 60,
     externalDebtPercent: 30,
+
+    // Core Economic Indicators
     realGDPGrowthRate: 0.025,
     inflationRate: 0.02,
     currencyExchangeRate: 1.0,
     baseCurrency: 'USD',
+
+    // Labor & Employment
     laborForceParticipationRate: 65,
     employmentRate: 95,
     totalWorkforce: 0,
     averageWorkweekHours: 40,
     minimumWage: 7.25,
     averageAnnualIncome: 0,
+
+    // Fiscal System - Revenue
     governmentRevenueTotal: 0,
     taxRevenuePerCapita: 0,
+    
+    // Tax Rates (defaults)
     personalIncomeTaxRates: [
       { minIncome: 0, maxIncome: 10000, rate: 0.10 },
       { minIncome: 10000, maxIncome: 40000, rate: 0.22 },
       { minIncome: 40000, maxIncome: 85000, rate: 0.24 },
       { minIncome: 85000, maxIncome: null, rate: 0.32 }
-    ],
+    ] as TaxBracket[],
     corporateTaxRates: [
       { revenueThreshold: 0, rate: 0.15, description: 'Small Business' },
       { revenueThreshold: 50000, rate: 0.21, description: 'Standard Rate' },
       { revenueThreshold: 10000000, rate: 0.25, description: 'Large Corporation' }
-    ],
+    ] as CorporateTaxTier[],
     salesTaxRate: 8.5,
     propertyTaxRate: 1.2,
     payrollTaxRate: 15.3,
-    exciseTaxRates: { alcohol: 2.5, tobacco: 15.0, fuel: 0.5, luxuryGoods: 10.0, environmentalTax: 5.0 },
+    exciseTaxRates: {
+      alcohol: 2.5,
+      tobacco: 15.0,
+      fuel: 0.5,
+      luxuryGoods: 10.0,
+      environmentalTax: 5.0
+    } as ExciseTaxRates,
     wealthTaxRate: 0.5,
+
+    // Government Spending
     budgetDeficitSurplus: 0,
     governmentSpendingBreakdown: {
-      defense: 15, education: 20, healthcare: 18, infrastructure: 12,
-      socialServices: 15, administration: 8, diplomatic: 3, justice: 5
-    }
-};
-
-
-export default function EnhancedEconomyPage() {
-  const [realCountryData, setRealCountryData] = useState<RealCountryData[]>([]);
-  const [selectedCountry, setSelectedCountry] = useState<RealCountryData | null>(null);
-  const [economicInputs, setEconomicInputs] = useState<EnhancedEconomicInputs>({...initialEconomicInputs});
+      defense: 15,
+      education: 20,
+      healthcare: 18,
+      infrastructure: 12,
+      socialServices: 15,
+      administration: 8,
+      diplomatic: 3,
+      justice: 5
+    } as GovernmentSpending
+  });
   
   const [isLoading, setIsLoading] = useState(true);
   const [currentPhase, setCurrentPhase] = useState<EconomyPhase>('select');
@@ -79,30 +93,44 @@ export default function EnhancedEconomyPage() {
         const data = await parseEconomyData();
         setRealCountryData(data);
 
-        const savedBaseline = loadBaselineFromStorage(); // This now loads EconomicInputs
+        // Try to load saved baseline
+        const savedBaseline = loadBaselineFromStorage();
         if (savedBaseline) {
-          // Adapt saved legacy baseline to EnhancedEconomicInputs structure
-          const enhancedFromSaved: EnhancedEconomicInputs = {
-            ...initialEconomicInputs, // Start with full defaults for enhanced fields
-            countryName: savedBaseline.countryName,
-            population: savedBaseline.population,
-            gdpPerCapita: savedBaseline.gdpPerCapita,
-            taxRevenuePercent: savedBaseline.taxRevenuePercent,
-            unemploymentRate: savedBaseline.unemploymentRate,
-            governmentBudgetPercent: savedBaseline.governmentBudgetPercent,
-            internalDebtPercent: savedBaseline.internalDebtPercent,
-            externalDebtPercent: savedBaseline.externalDebtPercent,
-            // Calculate/estimate some enhanced fields based on legacy data if possible
+          // Convert legacy baseline to enhanced format
+          const enhancedInputs: EnhancedEconomicInputs = {
+            ...economicInputs,
+            ...savedBaseline,
+            // Ensure enhanced fields exist
+            realGDPGrowthRate: economicInputs.realGDPGrowthRate,
+            inflationRate: economicInputs.inflationRate,
+            currencyExchangeRate: economicInputs.currencyExchangeRate,
+            baseCurrency: economicInputs.baseCurrency,
+            laborForceParticipationRate: economicInputs.laborForceParticipationRate,
             employmentRate: 100 - savedBaseline.unemploymentRate,
-            totalWorkforce: Math.round(savedBaseline.population * 0.65 * ((100 - savedBaseline.unemploymentRate) / 100)),
+            totalWorkforce: Math.round(savedBaseline.population * 0.65 * 0.95),
+            averageWorkweekHours: economicInputs.averageWorkweekHours,
+            minimumWage: economicInputs.minimumWage,
             averageAnnualIncome: savedBaseline.gdpPerCapita * 0.8,
+            governmentRevenueTotal: 0,
+            taxRevenuePerCapita: 0,
+            personalIncomeTaxRates: economicInputs.personalIncomeTaxRates,
+            corporateTaxRates: economicInputs.corporateTaxRates,
+            salesTaxRate: economicInputs.salesTaxRate,
+            propertyTaxRate: economicInputs.propertyTaxRate,
+            payrollTaxRate: economicInputs.payrollTaxRate,
+            exciseTaxRates: economicInputs.exciseTaxRates,
+            wealthTaxRate: economicInputs.wealthTaxRate,
+            budgetDeficitSurplus: 0,
+            governmentSpendingBreakdown: economicInputs.governmentSpendingBreakdown
           };
-          setEconomicInputs(enhancedFromSaved);
           
+          setEconomicInputs(enhancedInputs);
+          
+          // Try to find the reference country
           const refCountryName = savedBaseline.countryName.startsWith("New ") 
             ? savedBaseline.countryName.substring(4) 
-            : savedBaseline.countryName; // If not prefixed, assume it's the ref country itself
-          const refCountry = data.find(c => c.name.toLowerCase() === refCountryName.toLowerCase());
+            : null;
+          const refCountry = refCountryName ? data.find(c => c.name === refCountryName) : null;
           if (refCountry) {
             setSelectedCountry(refCountry);
           }
@@ -117,28 +145,28 @@ export default function EnhancedEconomyPage() {
       }
     };
     loadData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // economicInputs removed from deps to avoid re-triggering on its own update
+  }, []);
 
   const handleCountrySelect = (country: RealCountryData) => {
     setSelectedCountry(country);
     
+    // Create enhanced inputs based on country data
     const newInputs: EnhancedEconomicInputs = {
-      ...initialEconomicInputs, // Reset to defaults for enhanced fields
+      ...economicInputs,
       countryName: `New ${country.name}`,
       population: country.population,
       gdpPerCapita: country.gdpPerCapita,
       taxRevenuePercent: country.taxRevenuePercent,
       unemploymentRate: country.unemploymentRate,
       governmentBudgetPercent: Math.min(country.taxRevenuePercent * 1.2, 40),
-      internalDebtPercent: 60, // Default or derive
-      externalDebtPercent: 30, // Default or derive
       
+      // Enhanced defaults based on country tier
       realGDPGrowthRate: country.gdpPerCapita > 50000 ? 0.02 : country.gdpPerCapita > 25000 ? 0.025 : 0.04,
       inflationRate: 0.02,
       currencyExchangeRate: 1.0,
       baseCurrency: 'USD',
       
+      // Labor estimates based on country data
       laborForceParticipationRate: country.gdpPerCapita > 40000 ? 70 : 65,
       employmentRate: 100 - country.unemploymentRate,
       totalWorkforce: Math.round(country.population * 0.65 * (1 - country.unemploymentRate / 100)),
@@ -146,16 +174,25 @@ export default function EnhancedEconomyPage() {
       minimumWage: Math.max(3, country.gdpPerCapita / 5000),
       averageAnnualIncome: country.gdpPerCapita * 0.75,
       
+      // Fiscal estimates
       governmentRevenueTotal: (country.population * country.gdpPerCapita * country.taxRevenuePercent) / 100,
       taxRevenuePerCapita: (country.gdpPerCapita * country.taxRevenuePercent) / 100,
       
+      // Tax system based on development level
       salesTaxRate: country.gdpPerCapita > 40000 ? 6 : 10,
       propertyTaxRate: country.gdpPerCapita > 40000 ? 1.5 : 0.8,
       payrollTaxRate: country.gdpPerCapita > 40000 ? 18 : 12,
       
-      governmentSpendingBreakdown: { // Default spending breakdown
-        defense: 15, education: 20, healthcare: 18, infrastructure: 12,
-        socialServices: 15, administration: 8, diplomatic: 3, justice: 5
+      // Government spending based on development
+      governmentSpendingBreakdown: {
+        defense: country.gdpPerCapita > 40000 ? 12 : 18,
+        education: country.gdpPerCapita > 40000 ? 22 : 16,
+        healthcare: country.gdpPerCapita > 40000 ? 20 : 12,
+        infrastructure: country.gdpPerCapita > 40000 ? 10 : 18,
+        socialServices: country.gdpPerCapita > 40000 ? 18 : 8,
+        administration: 8,
+        diplomatic: country.gdpPerCapita > 40000 ? 4 : 2,
+        justice: country.gdpPerCapita > 40000 ? 6 : 4
       }
     };
     
@@ -163,8 +200,8 @@ export default function EnhancedEconomyPage() {
     setCurrentPhase('input');
   };
 
-  const handleInputsChange = (newInputsUpdate: Partial<EnhancedEconomicInputs>) => {
-    setEconomicInputs(prev => ({...prev, ...newInputsUpdate}));
+  const handleInputsChange = (newInputs: EnhancedEconomicInputs) => {
+    setEconomicInputs(newInputs);
   };
 
   const handlePreview = () => setCurrentPhase('preview');
@@ -175,33 +212,30 @@ export default function EnhancedEconomyPage() {
   };
   
   const handleConfirmBaseline = () => {
-    // For saving, we might want to save the EnhancedEconomicInputs directly
-    // or adapt it to a different structure if needed by the backend.
-    // The current saveBaselineToStorage expects BaseEconomicInputs.
-    // For now, let's assume we are saving the enhanced version.
+    // Convert enhanced inputs to legacy format for storage compatibility
+    const legacyInputs = {
+      countryName: economicInputs.countryName,
+      population: economicInputs.population,
+      gdpPerCapita: economicInputs.gdpPerCapita,
+      taxRevenuePercent: economicInputs.taxRevenuePercent,
+      unemploymentRate: economicInputs.unemploymentRate,
+      governmentBudgetPercent: economicInputs.governmentBudgetPercent,
+      internalDebtPercent: economicInputs.internalDebtPercent,
+      externalDebtPercent: economicInputs.externalDebtPercent,
+    };
+    
+    saveBaselineToStorage(legacyInputs);
+    
+    // Also save enhanced data to separate storage
     try {
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('ixeconomy_enhanced_baseline', JSON.stringify({
-                ...economicInputs, // Save the full enhanced inputs
-                timestamp: Date.now(),
-            }));
-            // If you still need to save a legacy version:
-            const legacyInputs: BaseEconomicInputs = {
-                countryName: economicInputs.countryName,
-                population: economicInputs.population,
-                gdpPerCapita: economicInputs.gdpPerCapita,
-                taxRevenuePercent: economicInputs.taxRevenuePercent,
-                unemploymentRate: economicInputs.unemploymentRate,
-                governmentBudgetPercent: economicInputs.governmentBudgetPercent,
-                internalDebtPercent: economicInputs.internalDebtPercent,
-                externalDebtPercent: economicInputs.externalDebtPercent,
-            };
-            saveBaselineToStorage(legacyInputs); // This uses the placeholder
-        }
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('ixeconomy_enhanced_baseline', JSON.stringify({
+          ...economicInputs,
+          timestamp: Date.now(),
+        }));
+      }
     } catch (error) {
-        console.error('Failed to save baseline:', error);
-        alert('Error saving baseline: ' + (error instanceof Error ? error.message : "Unknown error"));
-        return;
+      console.error('Failed to save enhanced baseline:', error);
     }
     
     alert(`${economicInputs.countryName} comprehensive economic model saved! Ready for IxStats integration.`);
@@ -256,6 +290,7 @@ export default function EnhancedEconomyPage() {
           </p>
         </div>
 
+        {/* Enhanced Progress Indicator */}
         <div className="mb-8">
           <div className="flex items-center justify-center max-w-4xl mx-auto">
             {phases.map((p, index) => {
@@ -318,6 +353,7 @@ export default function EnhancedEconomyPage() {
           )}
         </div>
 
+        {/* Enhanced Info Panel */}
         <div className="mt-6 p-4 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-primary)] rounded-lg">
           <div className="flex items-start">
             <Info className="h-5 w-5 text-[var(--color-info)] mr-3 mt-0.5 flex-shrink-0" />
