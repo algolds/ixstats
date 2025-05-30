@@ -75,7 +75,20 @@ export function EnhancedEconomicPreview({
     const totalDebtPerc = internalDebt + externalDebt;
     if (totalDebtPerc <= 60) score += 5; else if (totalDebtPerc >= 150) score -= 10; else if (totalDebtPerc >= 100) score -= 5;
     if (realGDPGrowth >= 0.02 && realGDPGrowth <= 0.06) score += 5;
-    if (inflation >= 0.015 && inflation <= 0.03) score += 5;
+    else if (realGDPGrowth < 0) score -= 10;
+    else if (realGDPGrowth > 0.10) score -= 5;
+
+    if (inflation >= 0.015 && inflation <= 0.035) score += 5;
+    else if (inflation < 0) score -= 10;
+    else if (inflation > 0.08) score -= 10;
+
+    if (inputs.laborForceParticipationRate >= 70) score += 5;
+    else if (inputs.laborForceParticipationRate >= 60) score += 3;
+    else if (inputs.laborForceParticipationRate < 50) score -= 5;
+
+    if (inputs.taxRevenuePercent >= 18 && inputs.taxRevenuePercent <= 35) score += 5;
+    else if (inputs.taxRevenuePercent < 12 || inputs.taxRevenuePercent > 45) score -= 5;
+
     return Math.max(0, Math.min(100, Math.round(score)));
   };
 
@@ -103,12 +116,12 @@ export function EnhancedEconomicPreview({
   ].filter(item => item.value > 0);
 
   const taxData = [
-    { name: 'Income Tax', value: 45, amount: taxRevenue * 0.45 },
-    { name: 'Corporate Tax', value: 20, amount: taxRevenue * 0.20 },
-    { name: 'Sales Tax', value: (inputs.salesTaxRate ?? 0) / 2, amount: taxRevenue * ((inputs.salesTaxRate ?? 0) / 100) },
-    { name: 'Property Tax', value: (inputs.propertyTaxRate ?? 0) * 5, amount: taxRevenue * ((inputs.propertyTaxRate ?? 0) / 100) },
-    { name: 'Payroll Tax', value: (inputs.payrollTaxRate ?? 0) / 2, amount: taxRevenue * ((inputs.payrollTaxRate ?? 0) / 100) },
-    { name: 'Other', value: 15, amount: taxRevenue * 0.15 }
+    { name: 'Income Tax', percentage: 45, amount: taxRevenue * 0.45 },
+    { name: 'Corporate Tax', percentage: 20, amount: taxRevenue * 0.20 },
+    { name: 'Sales Tax', percentage: (inputs.salesTaxRate ?? 0) / 2, amount: taxRevenue * ((inputs.salesTaxRate ?? 0) / 100) },
+    { name: 'Property Tax', percentage: (inputs.propertyTaxRate ?? 0) * 5, amount: taxRevenue * ((inputs.propertyTaxRate ?? 0) / 100) },
+    { name: 'Payroll Tax', percentage: (inputs.payrollTaxRate ?? 0) / 2, amount: taxRevenue * ((inputs.payrollTaxRate ?? 0) / 100) },
+    { name: 'Other', percentage: 15, amount: taxRevenue * 0.15 }
   ];
 
   const keyIndicators = [
@@ -295,7 +308,7 @@ export function EnhancedEconomicPreview({
                   <Tooltip 
                     formatter={(value: number, name: string) => {
                         const item = spendingData.find(d => d.name === name);
-                        return [`${value.toFixed(1)}% (${formatNumber(item?.value || 0)})`, name];
+                        return [`${value.toFixed(1)}%`, name];
                     }}
                     contentStyle={{
                       backgroundColor: 'var(--color-surface-blur)',
@@ -389,36 +402,41 @@ export function EnhancedEconomicPreview({
           <div>
             <h4 className="text-sm font-medium text-[var(--color-text-secondary)] mb-3">Economic Benchmarks</h4>
             <div className="space-y-4">
-              {comparisons.map((comp, compIndex: number) => ( // Added type for compIndex
-                <div key={compIndex} className="p-4 bg-[var(--color-bg-tertiary)] rounded-lg border border-[var(--color-border-secondary)]">
-                  <h5 className="font-semibold text-[var(--color-text-primary)] mb-1 flex items-center">
-                    {comp.metric}
-                    <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${getTierStyle(comp.tier as unknown as string).className}`}>
-                      {comp.tier as unknown as string}
-                    </span>
-                  </h5>
-                  <p className="text-sm text-[var(--color-text-muted)] mb-3">{comp.analysis}</p>
-                  {comp.comparableCountries.length > 0 && (
-                    <div>
-                      <h6 className="text-xs font-medium text-[var(--color-text-secondary)] mb-1.5">Similar Countries:</h6>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                        {comp.comparableCountries.map((countryItem: { name: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; value: number | undefined; }, countryIndex: number) => ( // Added type for countryIndex
-                          <div key={countryIndex} className="flex items-center justify-between p-1.5 text-xs bg-[var(--color-bg-secondary)] rounded border border-[var(--color-border-primary)]">
-                            <span className="font-medium text-[var(--color-text-primary)] truncate" title={countryItem.name}>
-                              {countryItem.name}
-                            </span>
-                            <span className="text-[var(--color-text-muted)]">
-                              {comp.metric.includes('Population') ? formatPopulationDisplay(countryItem.value)
-                              : comp.metric.includes('GDP per Capita') ? formatNumber(countryItem.value)
-                              : `${countryItem.value.toFixed(1)}%`}
-                            </span>
-                          </div>
-                        ))}
+              {comparisons.map((comp, compIndex: number) => {
+                // Type guard for comp.metric
+                const metricTitle = typeof comp.metric === 'string' ? comp.metric : 'Metric Detail';
+                const analysisText = typeof comp.analysis === 'string' ? comp.analysis : 'Analysis detail';
+                return (
+                  <div key={compIndex} className="p-4 bg-[var(--color-bg-tertiary)] rounded-lg border border-[var(--color-border-secondary)]">
+                    <h5 className="font-semibold text-[var(--color-text-primary)] mb-1 flex items-center">
+                      {metricTitle}
+                      <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${getTierStyle(comp.tier || '').className}`}>
+                        {comp.tier || 'N/A'}
+                      </span>
+                    </h5>
+                    <p className="text-sm text-[var(--color-text-muted)] mb-3">{analysisText}</p>
+                    {comp.comparableCountries && comp.comparableCountries.length > 0 && (
+                      <div>
+                        <h6 className="text-xs font-medium text-[var(--color-text-secondary)] mb-1.5">Similar Countries:</h6>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                          {comp.comparableCountries.map((countryItem: { name?: string; value: number | undefined; }, countryIndex: number) => (
+                            <div key={countryIndex} className="flex items-center justify-between p-1.5 text-xs bg-[var(--color-bg-secondary)] rounded border border-[var(--color-border-primary)]">
+                              <span className="font-medium text-[var(--color-text-primary)] truncate" title={countryItem.name || 'N/A'}>
+                                {countryItem.name || 'N/A'}
+                              </span>
+                              <span className="text-[var(--color-text-muted)]">
+                                {metricTitle.includes('Population') ? formatPopulationDisplay(countryItem.value)
+                                : metricTitle.includes('GDP per Capita') ? formatNumber(countryItem.value)
+                                : `${(countryItem.value || 0).toFixed(1)}%`}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              ))}
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
