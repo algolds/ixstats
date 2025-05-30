@@ -166,7 +166,7 @@ export class EnhancedEconomyDataService {
           populationSimilarity * 0.2 +
           taxSimilarity * 0.25 +
           unemploymentSimilarity * 0.15
-        ) * 100; // Convert to percentage
+        );
 
         // Identify key differences
         const keyDifferences = [

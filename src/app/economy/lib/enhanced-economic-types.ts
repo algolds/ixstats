@@ -1,8 +1,6 @@
 // src/app/economy/lib/enhanced-economic-types.ts
 // TypeScript interfaces
 
-import type { ReactNode } from "react"; // Keep for other potential uses, but not directly in CountryComparison anymore
-
 export interface TaxBracket {
     minIncome: number;
     maxIncome: number | null; // null for highest bracket
@@ -77,7 +75,6 @@ export interface TaxBracket {
     governmentSpendingBreakdown: GovernmentSpending;
   }
   
-  // Corrected CountryComparison to match the actual data structure
   export interface CountryComparison {
     countryName: string;
     similarity: number; // 0-100%
@@ -88,11 +85,6 @@ export interface TaxBracket {
       countryValue: number;
       difference: number;
     }>;
-     // Add these fields if they are indeed part of the object returned by findSimilarCountries
-    metric?: string; // Optional: Add if it's sometimes present
-    tier?: string;   // Optional: Add if it's sometimes present
-    analysis?: string; // Optional: Add if it's sometimes present
-    comparableCountries?: Array<{ name: string; value: number }>; // Optional
   }
   
   export interface EconomicHint {
