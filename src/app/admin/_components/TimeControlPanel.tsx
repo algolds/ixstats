@@ -3,14 +3,14 @@
 
 import { Clock, Pause, Play, RotateCcw } from "lucide-react";
 import { IxTime } from "~/lib/ixtime";
-import type { BotStatusResponse } from "~/types/ixstats";
+import type { AdminPageBotStatusView } from "~/types/ixstats";
 
 interface TimeControlPanelProps {
   timeMultiplier: number;
   customDate: string;
   customTime: string;
   botSyncEnabled: boolean;
-  botStatus: BotStatusResponse | undefined;
+  botStatus: AdminPageBotStatusView | undefined;
   onTimeMultiplierChange: (value: number) => void;
   onCustomDateChange: (value: string) => void;
   onCustomTimeChange: (value: string) => void;

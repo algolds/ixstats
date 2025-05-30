@@ -154,22 +154,23 @@ export interface GlobalEconomicSnapshot {
   ixTimeTimestamp: number;
 }
 
-// Bot time response types
+// Bot time response types (common fields)
 export interface BotTimeResponse {
   ixTimeTimestamp: number;
   ixTimeFormatted: string;
   multiplier: number;
   isPaused: boolean;
-  hasTimeOverride: boolean;
-  hasMultiplierOverride: boolean;
+  hasTimeOverride: boolean; // Bot's own time override status
+  hasMultiplierOverride: boolean; // Bot's own multiplier override status
   realWorldTime: number;
   gameYear: number;
 }
 
-export interface BotStatusResponse extends BotTimeResponse {
+// Represents the direct response from the bot's /ixtime/status endpoint
+export interface BotEndpointStatusResponse extends BotTimeResponse {
   pausedAt?: number | null;
   pauseTimestamp?: number | null;
-  botStatus: {
+  botStatus: { // The nested object with bot's specific ready/user state
     ready: boolean;
     user?: {
       id: string;
@@ -180,6 +181,65 @@ export interface BotStatusResponse extends BotTimeResponse {
     uptime: number;
   };
 }
+
+// Represents the derived/flattened bot status object
+// This is the structure for the `botStatus` field within `IxTimeState` and `AdminPageBotStatusView`
+export interface DerivedBotDisplayStatus extends BotTimeResponse { 
+  pausedAt?: number | null;
+  pauseTimestamp?: number | null;
+  botReady: boolean; 
+  botUser?: {
+    id: string;
+    username: string;
+    discriminator: string;
+  };
+  guilds?: number; 
+  uptime?: number; 
+}
+
+// Output of IxTime.getStatus() method - represents the comprehensive local/fallback IxTime state
+export interface IxTimeState {
+  currentRealTime: string;
+  currentIxTime: string;
+  formattedIxTime: string;
+  multiplier: number; 
+  isPaused: boolean;  
+  hasTimeOverride: boolean; 
+  timeOverrideValue?: string | null;
+  hasMultiplierOverride?: boolean; 
+  multiplierOverrideValue?: number | null | undefined; // Allowing null and undefined
+  realWorldEpoch?: string;
+  inGameEpoch?: string;
+  yearsSinceGameStart?: number;
+  currentGameYear?: number;
+  gameTimeDescription?: string;
+  botAvailable?: boolean; 
+  lastSyncTime?: string | null;
+  lastKnownBotTime?: string | null;
+  botStatus: DerivedBotDisplayStatus | null; // The derived/flattened object from bot, if available
+}
+
+// Output of adminRouter.getBotStatus procedure (passed to admin components)
+export interface AdminPageBotStatusView extends IxTimeState { // Inherits all fields from IxTimeState
+  botHealth: { // Specific health check result
+    available: boolean;
+    message: string;
+  };
+}
+
+// SystemStatus: Type for the `adminRouter.getSystemStatus` output
+export interface SystemStatus {
+  ixTime: IxTimeState; // Uses the direct output of IxTime.getStatus()
+  countryCount: number;
+  activeDmInputs: number;
+  lastCalculation?: {
+    timestamp: string;
+    ixTimeTimestamp: string;
+    countriesUpdated: number;
+    executionTimeMs: number;
+  } | null;
+}
+
 
 // Calculation result types
 export interface CalculationResult {
@@ -270,38 +330,6 @@ export interface ChartDataPoint {
   gdpDensity: number;
   economicEfficiency: number;
   areaUtilization: number;
-}
-
-// System status types
-export interface SystemStatus {
-  ixTime: {
-    currentRealTime: string;
-    currentIxTime: string;
-    formattedIxTime: string;
-    multiplier: number;
-    isPaused: boolean;
-    hasTimeOverride: boolean;
-    timeOverrideValue?: string | null;
-    hasMultiplierOverride: boolean;
-    multiplierOverrideValue?: number | null;
-    realWorldEpoch: string;
-    inGameEpoch: string;
-    yearsSinceGameStart: number;
-    currentGameYear: number;
-    gameTimeDescription: string;
-    botAvailable: boolean;
-    lastSyncTime?: string | null;
-    lastKnownBotTime?: string | null;
-    botStatus?: any;
-  };
-  countryCount: number;
-  activeDmInputs: number;
-  lastCalculation?: {
-    timestamp: string;
-    ixTimeTimestamp: string;
-    countriesUpdated: number;
-    executionTimeMs: number;
-  } | null;
 }
 
 // API response wrappers
@@ -402,6 +430,7 @@ export interface SystemConfig {
   updatedAt: Date;
 }
 
+// Original CalculationLog type
 export interface CalculationLog {
   id: string;
   timestamp: Date;

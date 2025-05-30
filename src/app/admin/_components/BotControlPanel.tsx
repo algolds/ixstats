@@ -2,10 +2,10 @@
 "use client";
 
 import { Bot, Pause, Play, RotateCcw, AlertTriangle } from "lucide-react";
-import type { BotStatusResponse } from "~/types/ixstats";
+import type { AdminPageBotStatusView } from "~/types/ixstats"; 
 
 interface BotControlPanelProps {
-  botStatus: BotStatusResponse | undefined;
+  botStatus: AdminPageBotStatusView | undefined; 
   onPauseBot: () => void;
   onResumeBot: () => void;
   onClearOverrides: () => void;
@@ -61,6 +61,7 @@ export function BotControlPanel({
         </button>
       </div>
 
+      {/* Check the bot's direct override status via botStatus.botStatus (DerivedBotDisplayStatus) */}
       {botStatus.botStatus?.hasTimeOverride && (
         <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
           <div className="flex">
