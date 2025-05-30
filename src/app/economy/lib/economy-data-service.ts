@@ -14,15 +14,56 @@ export interface RealCountryData {
   womenBeatWifeDinnerPercent?: number | string;
 }
 
+export interface CoreEconomicIndicators {
+  totalPopulation: number;
+  nominalGDP: number;
+  gdpPerCapita: number;
+  realGDPGrowthRate: number;
+  inflationRate: number;
+  currencyExchangeRate: number;
+}
+
+export interface LaborEmploymentData {
+  laborForceParticipationRate: number;
+  employmentRate: number;
+  unemploymentRate: number;
+  totalWorkforce: number;
+  averageWorkweekHours: number;
+  minimumWage: number;
+  averageAnnualIncome: number;
+}
+
+export interface TaxRates {
+  personalIncomeTaxRates: { bracket: number; rate: number }[];
+  corporateTaxRates: { size: string; rate: number }[];
+  salesTaxRate: number;
+  propertyTaxRate: number;
+  payrollTaxRate: number;
+  exciseTaxRates: { type: string; rate: number }[];
+  wealthTaxRate: number;
+}
+
+export interface FiscalSystemData {
+  taxRevenueGDPPercent: number;
+  governmentRevenueTotal: number;
+  taxRevenuePerCapita: number;
+  taxRates: TaxRates;
+  governmentBudgetGDPPercent: number;
+  budgetDeficitSurplus: number;
+  governmentSpendingByCategory: { category: string; amount: number; percent: number }[];
+  internalDebtGDPPercent: number;
+  externalDebtGDPPercent: number;
+  totalDebtGDPRatio: number;
+  debtPerCapita: number;
+  interestRates: number;
+  debtServiceCosts: number;
+}
+
 export interface EconomicInputs {
   countryName: string;
-  population: number;
-  gdpPerCapita: number;
-  taxRevenuePercent: number;
-  unemploymentRate: number;
-  governmentBudgetPercent: number;
-  internalDebtPercent: number;
-  externalDebtPercent: number;
+  coreIndicators: CoreEconomicIndicators;
+  laborEmployment: LaborEmploymentData;
+  fiscalSystem: FiscalSystemData;
 }
 
 export interface EconomicComparison {
@@ -37,44 +78,116 @@ export interface EconomicComparison {
   tier: 'Developing' | 'Emerging' | 'Developed' | 'Advanced';
 }
 
+// Helper function to create default economic inputs
+export function createDefaultEconomicInputs(referenceCountry?: RealCountryData): EconomicInputs {
+  const basePopulation = referenceCountry?.population || 10000000;
+  const baseGDPPerCapita = referenceCountry?.gdpPerCapita || 25000;
+  const baseNominalGDP = basePopulation * baseGDPPerCapita;
+  const baseTaxRevenuePercent = referenceCountry?.taxRevenuePercent || 20;
+  const baseUnemploymentRate = referenceCountry?.unemploymentRate || 5;
+  
+  return {
+    countryName: referenceCountry ? `New ${referenceCountry.name}` : "New Nation",
+    coreIndicators: {
+      totalPopulation: basePopulation,
+      nominalGDP: baseNominalGDP,
+      gdpPerCapita: baseGDPPerCapita,
+      realGDPGrowthRate: 3.0,
+      inflationRate: 2.0,
+      currencyExchangeRate: 1.0,
+    },
+    laborEmployment: {
+      laborForceParticipationRate: 65,
+      employmentRate: 100 - baseUnemploymentRate,
+      unemploymentRate: baseUnemploymentRate,
+      totalWorkforce: Math.round(basePopulation * 0.65),
+      averageWorkweekHours: 40,
+      minimumWage: Math.round(baseGDPPerCapita * 0.02),
+      averageAnnualIncome: Math.round(baseGDPPerCapita * 0.8),
+    },
+    fiscalSystem: {
+      taxRevenueGDPPercent: baseTaxRevenuePercent,
+      governmentRevenueTotal: (baseNominalGDP * baseTaxRevenuePercent) / 100,
+      taxRevenuePerCapita: (baseNominalGDP * baseTaxRevenuePercent) / (100 * basePopulation),
+      taxRates: {
+        personalIncomeTaxRates: [
+          { bracket: 0, rate: 0 },
+          { bracket: 20000, rate: 10 },
+          { bracket: 50000, rate: 22 },
+          { bracket: 100000, rate: 32 },
+          { bracket: 200000, rate: 37 },
+        ],
+        corporateTaxRates: [
+          { size: "Small (< $1M revenue)", rate: 15 },
+          { size: "Medium ($1M - $10M)", rate: 21 },
+          { size: "Large (> $10M)", rate: 25 },
+        ],
+        salesTaxRate: 8.5,
+        propertyTaxRate: 1.2,
+        payrollTaxRate: 15.3,
+        exciseTaxRates: [
+          { type: "Fuel", rate: 25 },
+          { type: "Alcohol", rate: 35 },
+          { type: "Tobacco", rate: 50 },
+          { type: "Luxury Goods", rate: 15 },
+        ],
+        wealthTaxRate: 0.5,
+      },
+      governmentBudgetGDPPercent: Math.min(baseTaxRevenuePercent + 2, 25),
+      budgetDeficitSurplus: ((baseNominalGDP * baseTaxRevenuePercent) / 100) - ((baseNominalGDP * Math.min(baseTaxRevenuePercent + 2, 25)) / 100),
+      governmentSpendingByCategory: [
+        { category: "Defense", amount: 0, percent: 15 },
+        { category: "Education", amount: 0, percent: 18 },
+        { category: "Healthcare", amount: 0, percent: 22 },
+        { category: "Infrastructure", amount: 0, percent: 12 },
+        { category: "Social Security", amount: 0, percent: 20 },
+        { category: "Other", amount: 0, percent: 13 },
+      ],
+      internalDebtGDPPercent: 45,
+      externalDebtGDPPercent: 25,
+      totalDebtGDPRatio: 70,
+      debtPerCapita: (baseNominalGDP * 0.7) / basePopulation,
+      interestRates: 3.5,
+      debtServiceCosts: (baseNominalGDP * 0.7 * 0.035),
+    },
+  };
+}
+
+// Keep existing functions but update signatures
 let cachedCountryData: RealCountryData[] | null = null;
 
 export async function parseEconomyData(): Promise<RealCountryData[]> {
+  // ... existing implementation
   if (cachedCountryData) {
     return cachedCountryData;
   }
 
   try {
-    // Fetch the Excel file from the public directory
-    const response = await fetch('/IxEconomy.xlsx'); // Corrected to fetch the .xlsx file
+    const response = await fetch('/IxEconomy.xlsx');
     if (!response.ok) {
       throw new Error(`Failed to fetch Excel file: ${response.status} ${response.statusText}`);
     }
     
-    const arrayBuffer = await response.arrayBuffer(); // Process as ArrayBuffer for XLSX
-    
+    const arrayBuffer = await response.arrayBuffer();
     const workbook = XLSX.read(arrayBuffer, { type: 'buffer' });
-
-    // Parse the RLData sheet
-    const rlDataSheetName = 'RLData'; // Target the specific sheet
+    const rlDataSheetName = 'RLData';
     const rlDataSheet = workbook.Sheets[rlDataSheetName];
+    
     if (!rlDataSheet) {
       throw new Error(`Sheet "${rlDataSheetName}" not found in the Excel file`);
     }
     
-    // Convert sheet to JSON, using header: 1 to get array of arrays
     const sheetJson = XLSX.utils.sheet_to_json(rlDataSheet, { header: 1 }) as any[][];
 
-    if (sheetJson.length < 2) { // At least one header row and one data row
+    if (sheetJson.length < 2) {
         console.warn("RLData sheet has insufficient data.");
         return [];
     }
 
     const headers = sheetJson[0].map(h => String(h).trim());
-    const rawData = sheetJson.slice(1); // Data rows
+    const rawData = sheetJson.slice(1);
 
     const countries: RealCountryData[] = rawData.map((rowArray: any[]) => {
-      // Create an object from the row array and headers
       const row: any = {};
       headers.forEach((header, index) => {
           row[header] = rowArray[index];
@@ -99,13 +212,11 @@ export async function parseEconomyData(): Promise<RealCountryData[]> {
       }
 
       const population = gdpPerCapita > 0 ? Math.round(gdp / gdpPerCapita) : 0;
-      
       const countryName = String(row['Country Name'] || '').trim();
+      
       if (!countryName || (gdp === 0 && gdpPerCapita === 0 && population === 0 && countryName !== "0") ) {
-         // Allow zero GDP/GDPPC if population exists, but skip if name is also "0" or empty
         if (countryName === "0" || countryName === "") return null;
       }
-
 
       return {
         name: countryName,
@@ -141,39 +252,40 @@ export function generateEconomicComparisons(
   inputs: EconomicInputs,
   allCountries: RealCountryData[]
 ): EconomicComparison[] {
+  // ... existing implementation adapted for new structure
   const comparisons: EconomicComparison[] = [];
 
   const metricsToCompare: Array<{
     name: string;
     userValue: number;
-    getValue: (country: RealCountryData) => number | undefined; // Allow undefined for getValue
+    getValue: (country: RealCountryData) => number | undefined;
     formatValue: (value: number) => string;
     getTier: (value: number) => string;
   }> = [
     {
       name: 'GDP per Capita',
-      userValue: inputs.gdpPerCapita,
+      userValue: inputs.coreIndicators.gdpPerCapita,
       getValue: (c) => c.gdpPerCapita,
       formatValue: (v) => `$${v.toLocaleString()}`,
       getTier: (v) => getEconomicTier(v)
     },
     {
       name: 'Population',
-      userValue: inputs.population,
+      userValue: inputs.coreIndicators.totalPopulation,
       getValue: (c) => c.population,
       formatValue: (v) => formatPopulationDisplay(v),
       getTier: (v) => v >= 100000000 ? 'Very Large' : v >= 25000000 ? 'Large' : v >= 5000000 ? 'Medium' : 'Small'
     },
     {
       name: 'Tax Revenue (% of GDP)',
-      userValue: inputs.taxRevenuePercent,
+      userValue: inputs.fiscalSystem.taxRevenueGDPPercent,
       getValue: (c) => c.taxRevenuePercent,
       formatValue: (v) => `${v.toFixed(1)}%`,
       getTier: (v) => v >= 25 ? 'High Tax' : v >= 15 ? 'Moderate Tax' : 'Low Tax'
     },
     {
       name: 'Unemployment Rate',
-      userValue: inputs.unemploymentRate,
+      userValue: inputs.laborEmployment.unemploymentRate,
       getValue: (c) => c.unemploymentRate,
       formatValue: (v) => `${v.toFixed(1)}%`,
       getTier: (v) => v >= 15 ? 'High Unemployment' : v >= 8 ? 'Moderate Unemployment' : 'Low Unemployment'
@@ -208,7 +320,7 @@ function generateMetricComparison(
   const maxValue = userValue * (1 + tolerance);
 
   let similarCountries = allCountries
-    .map(country => ({ country, value: getValue(country) })) // Get value first
+    .map(country => ({ country, value: getValue(country) }))
     .filter(({ country, value }) => 
       typeof value === 'number' && 
       !isNaN(value) && 
@@ -217,7 +329,7 @@ function generateMetricComparison(
       country.name !== "World"
     )
     .slice(0, 5)
-    .map(({ country, value }) => ({ // value is now guaranteed to be a number
+    .map(({ country, value }) => ({
       name: country.name,
       value: value!, 
       tier: getTier(value!)
@@ -234,10 +346,10 @@ function generateMetricComparison(
           difference: (typeof val === 'number' && !isNaN(val)) ? Math.abs(val - userValue) : Infinity
         };
       })
-      .filter(item => typeof item.value === 'number' && !isNaN(item.value)) // Ensure value is valid for sorting
+      .filter(item => typeof item.value === 'number' && !isNaN(item.value))
       .sort((a, b) => a.difference - b.difference)
       .slice(0, 3)
-      .map(({ country, value }) => ({ // value is now guaranteed to be a number
+      .map(({ country, value }) => ({
         name: country.name,
         value: value!,
         tier: getTier(value!)
@@ -253,10 +365,9 @@ function generateMetricComparison(
     userValue,
     comparableCountries: similarCountries,
     analysis,
-    tier: userTier as any // Cast because getTier returns specific strings
+    tier: userTier as any
   };
 }
-
 
 function generateAnalysisText(
   metricName: string,
@@ -271,7 +382,7 @@ function generateAnalysisText(
     return `Your ${metricName.toLowerCase()} of ${formattedValue} places you in the '${tier}' category. No closely comparable countries found in the dataset.`;
   }
   
-  const comparisonValue = topSimilar.value; // Already a number from mapping
+  const comparisonValue = topSimilar.value;
   const comparison = userValue > comparisonValue ? 'higher than' :
     userValue < comparisonValue ? 'lower than' : 'similar to';
 
@@ -292,17 +403,6 @@ function generateAnalysisText(
     }
   }
   analysis += '.';
-
-  if (metricName === 'GDP per Capita') {
-    if (tier === 'Advanced') analysis += ' This suggests a highly productive economy with a high standard of living.';
-    else if (tier === 'Developed') analysis += ' This indicates a well-established economy with good quality of life.';
-    else if (tier === 'Emerging') analysis += ' Your nation shows strong potential for growth and development.';
-    else analysis += ' There is considerable room for economic development and improving living standards.';
-  } else if (metricName === 'Unemployment Rate') {
-    if (tier === 'Low Unemployment') analysis += ' This suggests a healthy labor market, but watch for potential labor shortages.';
-    else if (tier === 'Moderate Unemployment') analysis += ' This indicates a relatively stable labor market with some room for job creation.';
-    else analysis += ' This points to significant challenges in the labor market that may require policy attention.';
-  }
 
   return analysis;
 }
