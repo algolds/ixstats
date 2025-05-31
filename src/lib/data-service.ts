@@ -46,27 +46,118 @@ export class IxStatsDataService {
     const lines = csvString.split(/\r\n|\n/);
     // Skip specified metadata lines
     const dataLines = lines.slice(headerSkipLines);
-    if (dataLines.length < 2) { // Need headers + at least one data row
+    if (dataLines.length < 2) {
         console.warn(`CSV has insufficient data (less than 2 effective rows after skipping ${headerSkipLines} lines).`);
         return [];
     }
 
-    const headerLine = dataLines[0];
-    const records = dataLines.slice(1);
-
+    // More robust CSV parsing
     const rawDataArrays: any[][] = [];
-    if (headerLine) {
-        // A more robust CSV parsing could be implemented here if needed, e.g., handling quoted commas
-        rawDataArrays.push(headerLine.split(',').map(h => h.trim())); // Headers
-    }
-    records.forEach(line => {
-        if (line.trim() !== "") { // Skip empty lines
-            rawDataArrays.push(line.split(',').map(val => val.trim()));
+    
+    for (let i = 0; i < dataLines.length; i++) {
+        const line = dataLines[i] ?? '';
+        if (line.trim() === "") continue; // Skip empty lines
+        
+        // Parse CSV line handling quoted values
+        const values: string[] = [];
+        let inQuote = false;
+        let currentValue = "";
+        
+        for (let j = 0; j < line.length; j++) {
+            const char = line[j];
+            
+            if (char === '"') {
+                inQuote = !inQuote;
+            } else if (char === ',' && !inQuote) {
+                values.push(currentValue.trim());
+                currentValue = "";
+            } else {
+                currentValue += char;
+            }
         }
-    });
+        
+        // Add the last value
+        values.push(currentValue.trim());
+        
+        // Clean up values - remove quotes
+        const cleanedValues = values.map(val => {
+            // Remove surrounding quotes if present
+            if (val.startsWith('"') && val.endsWith('"')) {
+                return val.substring(1, val.length - 1).trim();
+            }
+            return val.trim();
+        });
+        
+        rawDataArrays.push(cleanedValues);
+    }
+    
+    // If we couldn't detect proper headers, try to infer them
+    if (rawDataArrays.length > 0) {
+        const firstRow = rawDataArrays[0] ?? [];
+        // Check if the first row looks like data rather than headers
+        const looksLikeData = firstRow.some(val => {
+            const strVal = String(val).trim();
+            return strVal.match(/^\d/) || strVal.match(/^\$/) || strVal.match(/%$/);
+        });
+        if (looksLikeData) {
+            console.log("First row looks like data, inferring headers...");
+            const inferredHeaders = this.inferHeadersFromData(rawDataArrays);
+            // Insert inferred headers at the beginning
+            rawDataArrays.unshift(inferredHeaders);
+        }
+    }
+    
     return this.processRawDataWithHeaderRecognition(rawDataArrays, false); // isExcel = false
   }
 
+  private inferHeadersFromData(rawData: any[][]): string[] {
+    // If we have at least one row of data, try to infer headers
+    if (rawData.length >= 1) {
+        const firstRow = rawData[0];
+        const inferredHeaders: string[] = [];
+        
+        // Infer based on data patterns in the first row
+        if (firstRow) {
+            for (let i = 0; i < firstRow.length; i++) {
+                const value = String(firstRow[i]).trim();
+                
+                // Try to infer what this column might be
+                if (i === 0 && !value.match(/^\d/)) {
+                inferredHeaders.push("Country"); // First column is likely country name if not numeric
+            } else if (value.match(/^\d{1,3}(,\d{3})*(\.\d+)?$/) || value.match(/^\d+$/)) {
+                // Numeric values without currency symbols could be population
+                if (!inferredHeaders.includes("Population")) {
+                    inferredHeaders.push("Population");
+                } else {
+                    inferredHeaders.push(`Column${i}`);
+                }
+            } else if (value.match(/^\$\d{1,3}(,\d{3})*(\.\d+)?$/) || value.match(/^\d+\.\d+$/)) {
+                // Values with $ or decimal points could be GDP per capita
+                if (!inferredHeaders.includes("GDP per Capita")) {
+                    inferredHeaders.push("GDP per Capita");
+                } else {
+                    inferredHeaders.push(`Column${i}`);
+                }
+            } else if (value.match(/^\d+(\.\d+)?%$/)) {
+                // Percentage values could be growth rates
+                if (!inferredHeaders.includes("Population Growth Rate")) {
+                    inferredHeaders.push("Population Growth Rate");
+                } else if (!inferredHeaders.includes("GDP Growth")) {
+                    inferredHeaders.push("GDP Growth");
+                } else {
+                    inferredHeaders.push(`Column${i}`);
+                }
+            } else {
+                inferredHeaders.push(`Column${i}`);
+            }
+        }
+        
+        console.log("Inferred headers:", inferredHeaders.join(", "));
+        return inferredHeaders;
+    }
+    
+    return [];
+  }
 
   private processRawDataWithHeaderRecognition(rawData: any[][], isExcel: boolean): BaseCountryData[] {
     const countries: BaseCountryData[] = [];
@@ -75,29 +166,40 @@ export class IxStatsDataService {
         return countries;
     }
 
-    const headers = rawData[0]?.map(h => String(h).trim().toLowerCase());
+    // Normalize headers - remove quotes, trim, and convert to lowercase
+    const headers = rawData[0]?.map(h => {
+        const header = String(h).trim();
+        // Remove quotes if present
+        return header.replace(/^["'](.*)["']$/, '$1').toLowerCase();
+    });
+
     if (!headers) {
         throw new Error(`Could not parse headers from the ${isExcel ? 'Excel' : 'CSV'} file.`);
     }
 
+    console.log("Detected headers:", headers.join(", "));
+
     const findHeaderIndex = (possibleNames: string[]): number => {
         for (const name of possibleNames) {
-            const index = headers.indexOf(name.toLowerCase());
+            const index = headers.findIndex(h => 
+                h.toLowerCase() === name.toLowerCase() || 
+                h.toLowerCase().includes(name.toLowerCase())
+            );
             if (index !== -1) return index;
         }
         return -1;
     };
 
-    // Consistent header mapping
+    // Expanded header mapping with more possible variations
     const headerMap = {
-        country: findHeaderIndex(['Country', 'Nation Name']),
+        country: findHeaderIndex(['Country', 'Nation Name', 'Nation', 'Country Name']),
         continent: findHeaderIndex(['Continent']),
         region: findHeaderIndex(['Region']),
-        governmentType: findHeaderIndex(['Government Type', 'Govt Type']),
+        governmentType: findHeaderIndex(['Government Type', 'Govt Type', 'Government']),
         religion: findHeaderIndex(['Religion']),
         leader: findHeaderIndex(['Leader']),
-        population: findHeaderIndex(['Population', 'Current Population', 'Pop']),
-        gdpPerCapita: findHeaderIndex(['GDP PC', 'GDP per Capita', 'GDPPC', 'GDPperCap (current US$)']),
+        population: findHeaderIndex(['Population', 'Current Population', 'Pop', 'Population (current)']),
+        gdpPerCapita: findHeaderIndex(['GDP PC', 'GDP per Capita', 'GDPPC', 'GDPperCap', 'GDP/Capita']),
         maxGdpGrowthRate: findHeaderIndex(['Max GDPPC Grow Rt', 'Max Growth Rate', 'Max GDP Growth']),
         adjustedGdpGrowth: findHeaderIndex(['Adj GDPPC Growth', 'GDP Growth', 'Adjusted GDP Growth']),
         populationGrowthRate: findHeaderIndex(['Pop Growth Rate', 'Population Growth']),
@@ -105,12 +207,37 @@ export class IxStatsDataService {
         projected2040Gdp: findHeaderIndex(['2040 GDP']),
         projected2040GdpPerCapita: findHeaderIndex(['2040 GDP PC']),
         actualGdpGrowth: findHeaderIndex(['Actual GDP Growth']),
-        landAreaKm: findHeaderIndex(['Area (km²)', 'Area (SqKm)', 'Land Area (km²)', 'Area km²']),
+        landAreaKm: findHeaderIndex(['Area (km²)', 'Area (SqKm)', 'Land Area (km²)', 'Area km²', 'Area']),
         landAreaMi: findHeaderIndex(['Area (sq mi)', 'Area (SqMi)', 'Land Area (sq mi)', 'Area sq mi']),
     };
 
+    // Log the header mapping for debugging
+    console.log("Header mapping:", Object.entries(headerMap)
+        .map(([key, value]) => `${key}: ${value} (${value >= 0 ? headers[value] : 'not found'})`)
+        .join(", "));
+
     if (headerMap.country === -1 || headerMap.population === -1 || headerMap.gdpPerCapita === -1) {
-        throw new Error(`Required headers (Country, Population, GDP per Capita) not found in the ${isExcel ? 'Excel' : 'CSV'} file. Found headers: ${headers.join(', ')}`);
+        // Try to fix common issues with headers
+        if (headerMap.country === -1 && headers.some(h => h.includes('name'))) {
+            headerMap.country = headers.findIndex(h => h.includes('name'));
+        }
+        
+        if (headerMap.population === -1 && headers.some(h => h.match(/pop/i))) {
+            headerMap.population = headers.findIndex(h => h.match(/pop/i));
+        }
+        
+        if (headerMap.gdpPerCapita === -1) {
+            // Look for any header containing GDP
+            const gdpIndex = headers.findIndex(h => h.includes('gdp'));
+            if (gdpIndex !== -1) {
+                headerMap.gdpPerCapita = gdpIndex;
+            }
+        }
+        
+        // If still not found, throw error
+        if (headerMap.country === -1 || headerMap.population === -1 || headerMap.gdpPerCapita === -1) {
+            throw new Error(`Required headers (Country, Population, GDP per Capita) not found in the ${isExcel ? 'Excel' : 'CSV'} file. Found headers: ${headers.join(', ')}`);
+        }
     }
 
     const gameEpochYear = 2028; // Roster baseline year
@@ -165,6 +292,12 @@ export class IxStatsDataService {
           countryData.actualGdpGrowth = (1 + countryData.populationGrowthRate) * (1 + countryData.adjustedGdpGrowth) -1;
         }
 
+        // Validate and ensure minimum values
+        if (countryData.population <= 0) countryData.population = 1000; // Minimum population
+        if (countryData.gdpPerCapita <= 0) countryData.gdpPerCapita = 500; // Minimum GDP per capita
+        if (countryData.maxGdpGrowthRate <= 0) countryData.maxGdpGrowthRate = 0.05; // Default max growth
+        if (countryData.adjustedGdpGrowth <= 0) countryData.adjustedGdpGrowth = 0.03; // Default adjusted growth
+        if (countryData.populationGrowthRate === 0) countryData.populationGrowthRate = 0.01; // Default population growth
 
         if (this.validateCountryData(countryData)) {
           countries.push(countryData);
@@ -185,7 +318,7 @@ export class IxStatsDataService {
     }
     if (typeof value === 'number') return isNaN(value) ? defaultValue : value;
     if (typeof value === 'string') {
-      const cleaned = value.replace(/[,%$]/g, '').trim(); // Remove commas, percentage, and dollar signs
+      const cleaned = value.replace(/[,%$"]/g, '').trim(); // Remove commas, percentage, dollar signs, and quotes
       const parsed = parseFloat(cleaned);
       return isNaN(parsed) ? defaultValue : parsed;
     }
@@ -198,7 +331,7 @@ export class IxStatsDataService {
     }
     if (typeof value === 'number') return isNaN(value) ? undefined : value;
     if (typeof value === 'string') {
-      const cleaned = value.replace(/[,%$]/g, '').trim();
+      const cleaned = value.replace(/[,%$"]/g, '').trim(); // Remove commas, percentage, dollar signs, and quotes
       const parsed = parseFloat(cleaned);
       return isNaN(parsed) ? undefined : parsed;
     }
@@ -206,19 +339,33 @@ export class IxStatsDataService {
   }
 
   private parsePercentageRequired(value: any, defaultValue: number = 0): number {
+      if (value === null || value === undefined || String(value).trim() === "") {
+          return defaultValue;
+      }
+      
       const asString = String(value);
       const isPercentString = asString.includes('%');
-      const num = this.parseNumberRequired(value, defaultValue * (isPercentString ? 100 : 1));
       
-      return isPercentString ? num / 100 : num;
+      // Clean the string more thoroughly
+      const cleaned = asString.replace(/[,"$]/g, '').trim(); // Remove commas, quotes, and dollar signs
+      
+      // Parse the number
+      let num;
+      if (isPercentString) {
+          // Remove the % sign and parse
+          num = parseFloat(cleaned.replace(/%/g, '')) / 100;
+      } else {
+          num = parseFloat(cleaned);
+      }
+      
+      return isNaN(num) ? defaultValue : (isPercentString ? num : num);
   }
-
 
   private validateCountryData(data: BaseCountryData): boolean {
     return (
       data.country.length > 0 &&
-      data.population >= 0 && 
-      data.gdpPerCapita >= 0 
+      data.population > 0 && 
+      data.gdpPerCapita > 0 
     );
   }
 
