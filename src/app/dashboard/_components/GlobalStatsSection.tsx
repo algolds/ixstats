@@ -3,6 +3,14 @@
 
 import { Users, Globe, TrendingUp, MapPin, Scaling, Layers } from "lucide-react";
 import type { GlobalEconomicSnapshot } from "~/types/ixstats";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "~/components/ui/card"; // Import shadcn/ui Card components
+import { Skeleton } from "~/components/ui/skeleton"; // Import Skeleton
 
 interface GlobalStatsSectionProps {
   globalStats: GlobalEconomicSnapshot;
@@ -13,12 +21,18 @@ export function GlobalStatsSection({ globalStats, isLoading = false }: GlobalSta
   if (isLoading) {
     return (
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-[var(--color-text-primary)] mb-4">Global Statistics</h2>
+        <h2 className="text-xl font-semibold mb-4">Global Statistics</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="card">
-              <div className="loading-skeleton h-16"></div>
-            </div>
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-6 w-24 mb-2" />
+                <Skeleton className="h-4 w-32" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-1/2" />
+              </CardContent>
+            </Card>
           ))}
         </div>
       </div>
@@ -26,105 +40,103 @@ export function GlobalStatsSection({ globalStats, isLoading = false }: GlobalSta
   }
 
   const primaryStats = [
-    { 
-      icon: Users, 
-      label: "Total Population", 
-      value: `${(globalStats.totalPopulation / 1e9).toFixed(2)}B`, 
-      color: "info",
+    {
+      icon: Users,
+      label: "Total Population",
+      value: `${(globalStats.totalPopulation / 1e9).toFixed(2)}B`,
+      color: "text-blue-500", // Using Tailwind color classes directly
       description: "Combined population across all nations"
     },
-    { 
-      icon: Globe, 
-      label: "Total GDP", 
-      value: `$${(globalStats.totalGdp / 1e12).toFixed(2)}T`, 
-      color: "success",
+    {
+      icon: Globe,
+      label: "Total GDP",
+      value: `$${(globalStats.totalGdp / 1e12).toFixed(2)}T`,
+      color: "text-green-500",
       description: "Combined economic output"
     },
-    { 
-      icon: TrendingUp, 
-      label: "Avg GDP p.c.", 
-      value: `$${globalStats.averageGdpPerCapita.toFixed(0)}`, 
-      color: "chart-1",
-      description: "Average GDP per capita across all countries"
+    {
+      icon: TrendingUp,
+      label: "Avg GDP p.c.",
+      value: `$${globalStats.averageGdpPerCapita.toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
+      color: "text-purple-500",
+      description: "Average GDP per capita"
     },
-    { 
-      icon: MapPin, 
-      label: "Countries", 
-      value: globalStats.countryCount.toString(), 
-      color: "warning",
+    {
+      icon: MapPin,
+      label: "Countries",
+      value: globalStats.countryCount.toString(),
+      color: "text-yellow-500",
       description: "Total number of nations"
     },
   ];
 
   const geographicStats = [
-    { 
-      icon: Scaling, 
-      label: "Avg. Population Density", 
-      value: `${globalStats.averagePopulationDensity?.toFixed(1) ?? 'N/A'} /km²`, 
-      color: "chart-6",
-      description: "Average population per square kilometer across all nations"
+    {
+      icon: Scaling,
+      label: "Avg. Population Density",
+      value: `${globalStats.averagePopulationDensity?.toFixed(1) ?? 'N/A'} /km²`,
+      color: "text-teal-500",
+      description: "Average population per km²"
     },
-    { 
-      icon: Layers, 
-      label: "Avg. GDP Density", 
-      value: `$${(globalStats.averageGdpDensity ? globalStats.averageGdpDensity / 1000000 : 0).toFixed(1)}M /km²`, 
-      color: "chart-5",
-      description: "Average economic output per square kilometer"
+    {
+      icon: Layers,
+      label: "Avg. GDP Density",
+      value: `$${(globalStats.averageGdpDensity ? globalStats.averageGdpDensity / 1000000 : 0).toFixed(1)}M /km²`,
+      color: "text-pink-500",
+      description: "Average economic output per km²"
     },
   ];
 
   return (
     <div className="mb-8">
-      <h2 className="text-xl font-semibold text-[var(--color-text-primary)] mb-4">Global Statistics</h2>
-      
-      {/* Primary Statistics */}
+      <h2 className="text-2xl font-semibold text-foreground mb-6">Global Statistics</h2>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        {primaryStats.map(stat => (
-          <div key={stat.label} className="card group">
-            <div className="flex items-center">
-              <stat.icon 
-                className="h-8 w-8 mr-4 transition-transform group-hover:scale-110" 
-                style={{ color: `var(--color-${stat.color})` }}
-              />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-[var(--color-text-muted)] truncate">
+        {primaryStats.map(stat => {
+          const Icon = stat.icon;
+          return (
+            <Card key={stat.label} className="group transition-all hover:shadow-lg">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
                   {stat.label}
-                </p>
-                <p className="text-2xl font-semibold text-[var(--color-text-primary)]">
+                </CardTitle>
+                <Icon className={`h-5 w-5 ${stat.color}`} />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-foreground">
                   {stat.value}
-                </p>
-                <p className="text-xs text-[var(--color-text-muted)] mt-1 line-clamp-2">
+                </div>
+                <p className="text-xs text-muted-foreground pt-1">
                   {stat.description}
                 </p>
-              </div>
-            </div>
-          </div>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
-      {/* Geographic Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {geographicStats.map(stat => (
-          <div key={stat.label} className="card group">
-            <div className="flex items-center mb-2">
-              <stat.icon 
-                className="h-8 w-8 mr-4 transition-transform group-hover:scale-110" 
-                style={{ color: `var(--color-${stat.color})` }}
-              />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-[var(--color-text-muted)]">
+        {geographicStats.map(stat => {
+          const Icon = stat.icon;
+          return (
+            <Card key={stat.label} className="group transition-all hover:shadow-md">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
                   {stat.label}
-                </p>
-                <p className="text-2xl font-semibold text-[var(--color-text-primary)]">
+                </CardTitle>
+                <Icon className={`h-5 w-5 ${stat.color}`} />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-semibold text-foreground">
                   {stat.value}
+                </div>
+                 <p className="text-xs text-muted-foreground pt-1">
+                  {stat.description}
                 </p>
-              </div>
-            </div>
-            <p className="text-xs text-[var(--color-text-muted)]">
-              {stat.description}
-            </p>
-          </div>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
