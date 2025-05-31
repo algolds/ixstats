@@ -38,10 +38,11 @@ import {
 } from "~/components/ui/card";
 
 import { CountryInfobox } from "../_components/CountryInfobox";
+import { CountryAtGlance } from "../_components/detail/CountryAtGlance";
+import { IxStatsCharts, type ChartType, type TimeRange } from "../_components/charts/IxStatsCharts";
 import {
   TimeControl,
   ChartTypeSelector,
-  type ChartType,
   TenYearForecast,
 } from "../_components/detail";
 import type { ForecastDataPoint as TenYearForecastDataPoint } from "../_components/detail/TenYearForecast";
@@ -100,6 +101,10 @@ function CountryDetailPageContent() {
   const [currentIxTime, setCurrentIxTime] = useState<number>(() => IxTime.getCurrentIxTime());
   const [forecastYears, setForecastYears] = useState<number>(0);
   const [selectedChartType, setSelectedChartType] = useState<ChartType>('overview');
+  const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>('10Y');
+  const [customStartTime, setCustomStartTime] = useState<number>();
+  const [customEndTime, setCustomEndTime] = useState<number>();
+  const [showForecast, setShowForecast] = useState<boolean>(false);
   const [infoboxExpanded, setInfoboxExpanded] = useState(false);
 
   // Historical data time range
@@ -235,6 +240,8 @@ function CountryDetailPageContent() {
           return {
             ...point,
             ixTimeTimestamp: timestamp,
+            formattedDate: IxTime.formatIxTime(timestamp),
+            gameYear: IxTime.getCurrentGameYear(timestamp),
             population,
             gdpPerCapita,
             totalGdp,
@@ -249,9 +256,42 @@ function CountryDetailPageContent() {
           return null;
         }
       })
-      .filter((point): point is Exclude<typeof point, null> => point !== null) // Type guard for filtering nulls
+      .filter((point): point is Exclude<typeof point, null> => point !== null)
       .sort((a, b) => a.ixTimeTimestamp - b.ixTimeTimestamp);
   }, [historicalDataRaw]);
+
+  // Process forecast data for charts
+  const processedForecastData = useMemo(() => {
+    if (!forecastDataFromApi?.dataPoints) return [];
+    
+    return forecastDataFromApi.dataPoints.map(point => ({
+      ixTimeTimestamp: point.ixTime,
+      formattedDate: IxTime.formatIxTime(point.ixTime),
+      gameYear: point.gameYear,
+      population: point.population,
+      gdpPerCapita: point.gdpPerCapita,
+      totalGdp: point.totalGdp,
+      populationDensity: point.populationDensity,
+      gdpDensity: point.gdpDensity,
+      populationGrowthRate: 0, // Could be calculated if needed
+      gdpGrowthRate: 0, // Could be calculated if needed
+      landArea: transformedCountry?.landArea || null,
+    }));
+  }, [forecastDataFromApi, transformedCountry]);
+
+  // Chart data for the new chart system
+  const chartData = useMemo(() => {
+    if (!transformedCountry) return null;
+    
+    return {
+      id: transformedCountry.id,
+      name: transformedCountry.name,
+      currentIxTime,
+      gameEpoch: timeContext.gameEpoch,
+      historicalData: processedHistoricalData,
+      forecastData: processedForecastData,
+    };
+  }, [transformedCountry, currentIxTime, timeContext.gameEpoch, processedHistoricalData, processedForecastData]);
 
   const availableDataForCharts = useMemo(() => ({
     hasLandArea: !!(transformedCountry?.landArea),
@@ -272,6 +312,15 @@ function CountryDetailPageContent() {
     setSelectedChartType(chartType);
   };
 
+  const handleTimeRangeChange = (range: TimeRange) => {
+    setSelectedTimeRange(range);
+  };
+
+  const handleCustomTimeChange = (startTime: number, endTime: number) => {
+    setCustomStartTime(startTime);
+    setCustomEndTime(endTime);
+  };
+
   const handleInfoboxToggle = (expanded: boolean) => {
     setInfoboxExpanded(expanded);
   };
@@ -282,13 +331,6 @@ function CountryDetailPageContent() {
 
   const isTimeTravel = Math.abs(currentIxTime - IxTime.getCurrentIxTime()) > 60000; // 1 minute tolerance
   const isLoadingPage = isLoadingCountry && !transformedCountry;
-
-  // Implemented formatChartDate function
-  function formatChartDate(ixTimeTimestamp: number, formatStyle: string): React.ReactNode {
-    // Assuming 'long' corresponds to the verbose option in IxTime.formatIxTime
-    const isVerbose = formatStyle === 'long';
-    return IxTime.formatIxTime(ixTimeTimestamp, isVerbose);
-  }
 
   // Enhanced loading state
   if (isLoadingPage) {
@@ -378,7 +420,7 @@ function CountryDetailPageContent() {
             </p>
             <div className="mt-1 flex items-center text-xs text-muted-foreground">
               <Info className="h-3.5 w-3.5 mr-1.5" />
-              <span>Viewing: {formatChartDate(currentIxTime, 'long')} ({timeContext.gameTimeDescription})</span>
+              <span>Viewing: {IxTime.formatIxTime(currentIxTime, true)} ({timeContext.gameTimeDescription})</span>
               {processedHistoricalData.length > 0 && (
                 <span className="ml-3">
                   • {processedHistoricalData.length} data points ({historicalTimeRange.yearsBack} years)
@@ -409,6 +451,7 @@ function CountryDetailPageContent() {
 
         <div className={`grid gap-6 lg:gap-8 transition-all duration-300 ${infoboxExpanded ? 'lg:grid-cols-[1fr_320px]' : 'lg:grid-cols-[1fr_400px]'}`}>
           <div className="space-y-6 lg:space-y-8">
+            {/* Time Control */}
             <TimeControl
               onTimeChange={handleTimeChange}
               onForecastChange={handleForecastChange}
@@ -416,10 +459,43 @@ function CountryDetailPageContent() {
               gameEpoch={timeContext.gameEpoch}
               isLoading={isLoadingCountry || isLoadingHistorical || isLoadingForecast}
             />
-            
 
-           
+            {/* Country At-a-Glance */}
+            <CountryAtGlance
+              country={transformedCountry}
+              currentIxTime={currentIxTime}
+              isLoading={isLoadingCountry}
+            />
+
+            {/* Enhanced Chart System */}
+            {chartData && (
+              <IxStatsCharts
+                data={chartData}
+                selectedChartType={selectedChartType}
+                onChartTypeChange={handleChartChange}
+                selectedTimeRange={selectedTimeRange}
+                onTimeRangeChange={handleTimeRangeChange}
+                customStartTime={customStartTime}
+                customEndTime={customEndTime}
+                onCustomTimeChange={handleCustomTimeChange}
+                isLoading={isLoadingHistorical}
+                showForecast={showForecast}
+                onForecastToggle={setShowForecast}
+              />
+            )}
+
+            {/* Legacy Forecast Component (keep for now) */}
+            {forecastYears > 0 && (
+              <TenYearForecast
+                country={transformedCountry}
+                forecastData={transformedCountry.forecastDataPoints}
+                baseTime={currentIxTime}
+                isLoading={isLoadingForecast}
+                forecastYears={forecastYears}
+              />
+            )}
           </div>
+          
           <aside className="lg:sticky lg:top-20 self-start">
             <CountryInfobox
               countryName={transformedCountry.name}
