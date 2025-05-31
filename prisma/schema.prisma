@@ -8,110 +8,94 @@ datasource db {
 }
 
 model Country {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Base data
+  id                        String           @id @default(cuid())
+  name                      String           @unique
+  createdAt                 DateTime         @default(now())
+  updatedAt                 DateTime         @updatedAt
   baselinePopulation        Float
-  baselineGdpPerCapita     Float
-  maxGdpGrowthRate         Float
-  adjustedGdpGrowth        Float
-  populationGrowthRate     Float
-  projected2040Population  Float
-  projected2040Gdp         Float
+  baselineGdpPerCapita      Float
+  maxGdpGrowthRate          Float
+  adjustedGdpGrowth         Float
+  populationGrowthRate      Float
+  projected2040Population   Float
+  projected2040Gdp          Float
   projected2040GdpPerCapita Float
-  actualGdpGrowth          Float
+  actualGdpGrowth           Float
+  currentPopulation         Float
+  currentGdpPerCapita       Float
+  currentTotalGdp           Float
+  lastCalculated            DateTime
+  baselineDate              DateTime
+  economicTier              String
+  populationTier            String
+  localGrowthFactor         Float            @default(1.0)
+  gdpDensity                Float?
+  landArea                  Float?
+  populationDensity         Float?
+  areaSqMi                  Float?
+  continent                 String?
+  governmentType            String?
+  leader                    String?
+  region                    String?
+  religion                  String?
+  dmInputs                  DmInput[]
+  historicalData            HistoricalData[]
 
-  // Current calculated values
-  currentPopulation     Float
-  currentGdpPerCapita  Float
-  currentTotalGdp      Float
-  
-  // Geography and density fields
-  landArea             Float?
-  populationDensity    Float?
-  gdpDensity          Float?
-  
-  // Additional country information fields (NEWLY ADDED)
-  continent            String?
-  region               String?
-  governmentType       String?
-  religion             String?
-  leader               String?
-  areaSqMi             Float?
-  
-  // System fields
-  lastCalculated       DateTime
-  baselineDate         DateTime
-  economicTier         String
-  populationTier       String
-  localGrowthFactor    Float   @default(1.0)
-  
-  // Relationships
-  historicalData       HistoricalData[]
-  dmInputs            DmInput[]
-  
   @@map("countries")
 }
 
 model HistoricalData {
-  id               String   @id @default(cuid())
-  countryId        String
-  ixTimeTimestamp  DateTime
-  population       Float
-  gdpPerCapita     Float
-  totalGdp         Float
+  id                   String   @id @default(cuid())
+  countryId            String
+  ixTimeTimestamp      DateTime
+  population           Float
+  gdpPerCapita         Float
+  totalGdp             Float
   populationGrowthRate Float
-  gdpGrowthRate    Float
-  
-  // Add geography and density tracking
-  landArea         Float?
-  populationDensity Float?
-  gdpDensity       Float?
-  
-  country          Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
-  
-  @@map("historical_data")
+  gdpGrowthRate        Float
+  gdpDensity           Float?
+  landArea             Float?
+  populationDensity    Float?
+  country              Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
   @@index([countryId, ixTimeTimestamp])
+  @@map("historical_data")
 }
 
 model DmInput {
-  id               String   @id @default(cuid())
-  countryId        String?
-  ixTimeTimestamp  DateTime
-  inputType        String
-  value            Float
-  description      String?
-  duration         Float?
-  isActive         Boolean  @default(true)
-  createdBy        String?
-  
-  country          Country? @relation(fields: [countryId], references: [id], onDelete: Cascade)
-  
-  @@map("dm_inputs")
+  id              String   @id @default(cuid())
+  countryId       String?
+  ixTimeTimestamp DateTime
+  inputType       String
+  value           Float
+  description     String?
+  duration        Float?
+  isActive        Boolean  @default(true)
+  createdBy       String?
+  country         Country? @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
   @@index([countryId, ixTimeTimestamp])
+  @@map("dm_inputs")
 }
 
 model SystemConfig {
-  id                    String   @id @default(cuid())
-  key                   String   @unique
-  value                 String
-  description           String?
-  updatedAt            DateTime @updatedAt
-  
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+
   @@map("system_config")
 }
 
 model CalculationLog {
-  id               String   @id @default(cuid())
-  timestamp        DateTime @default(now())
-  ixTimeTimestamp  DateTime
-  countriesUpdated Int
-  executionTimeMs  Int
+  id                 String   @id @default(cuid())
+  timestamp          DateTime @default(now())
+  ixTimeTimestamp    DateTime
+  countriesUpdated   Int
+  executionTimeMs    Int
   globalGrowthFactor Float
-  
+
   @@map("calculation_logs")
 }
 
