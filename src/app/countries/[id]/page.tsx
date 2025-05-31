@@ -283,7 +283,7 @@ function CountryDetailPageContent() {
                 <h1 className="text-3xl md:text-4xl font-bold text-foreground">{transformedCountry.name}</h1>
                 {isTimeTravel && (<Badge variant="outline" className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700"><Clock className="h-3.5 w-3.5 mr-1.5" />Time Travel Active</Badge>)}
             </div>
-            <p className="mt-2 text-base md:text-lg text-muted-foreground">Economic Analysis & Forecasting Dashboard</p>
+            <p className="mt-2 text-base md:text-lg text-muted-foreground">Country Dashboard</p>
              <div className="mt-1 flex items-center text-xs text-muted-foreground"><Info className="h-3.5 w-3.5 mr-1.5" /><span>Viewing: {timeContext.formattedCurrentTime} ({timeContext.gameTimeDescription})</span></div>
           </div>
           <div className="flex items-center gap-2 mt-4 lg:mt-0">
@@ -305,7 +305,11 @@ function CountryDetailPageContent() {
             {/* FIXED: CountryAtGlance now receives proper timeResolution state and handler */}
             <CountryAtGlance
               country={transformedCountry}
-              historicalData={transformedCountry.historicalData}
+              historicalData={transformedCountry.historicalData?.map(data => ({
+                ...data,
+                populationGrowthRate: 0, // Add missing required properties
+                gdpGrowthRate: 0
+              })) || []}
               targetTime={currentIxTime}
               forecastYears={forecastYears}
               isLoading={isLoadingHistorical || isLoadingCountry}
