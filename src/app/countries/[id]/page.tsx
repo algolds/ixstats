@@ -2,208 +2,212 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { 
-  ArrowLeft, 
-  Info, 
-  ChevronRight, 
-  Clock, 
-  BarChart3, 
-  Globe, 
-  MapPin, 
-  Users, 
-  TrendingUp,
-  Landmark,
+import {
+  ArrowLeft,
+  ChevronRight,
+  Globe,
   AlertTriangle,
-  Loader
+  Loader,
+  RefreshCw,
+  Clock,
+  Info
 } from "lucide-react";
 import { api } from "~/trpc/react";
-import { CountryInfobox } from "../_components/CountryInfobox";
 import { IxTime } from "~/lib/ixtime";
-import { getTierStyle } from "~/lib/theme-utils";
-
-// Define chart data point type to fix TypeScript errors
-interface ChartDataPoint {
-  date: string;
-  population: number;
-  gdpPerCapita: number;
-  totalGdp: number;
-  populationDensity: number;
-  gdpDensity: number;
-  economicEfficiency: number;
-  areaUtilization: number;
-}
+import { CountryInfobox } from "../_components/CountryInfobox";
+import {
+  TimeControl,
+  CountryAtGlance,
+  TenYearForecast,
+  ChartTypeSelector,
+  type ChartType
+} from "../_components/detail";
 
 export default function CountryDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const countryId = params.id;
-  
-  // Current time state for time-based queries
+
+  // Component state
   const [currentIxTime, setCurrentIxTime] = useState<number>(IxTime.getCurrentIxTime());
+  const [forecastYears, setForecastYears] = useState<number>(0);
+  const [selectedChart, setSelectedChart] = useState<ChartType>('density');
+  const [infoboxExpanded, setInfoboxExpanded] = useState(false);
   
-  // Fetch the country data
-  const { data: country, isLoading: isLoadingCountry, error: countryError } = 
-    api.countries.getById.useQuery({ id: countryId });
-  
-  // Initialize timeContext with a fallback
+  // Time context state
   const [timeContext, setTimeContext] = useState({
     currentIxTime: IxTime.getCurrentIxTime(),
     formattedCurrentTime: IxTime.formatIxTime(IxTime.getCurrentIxTime()),
     gameEpoch: IxTime.getInGameEpoch(),
     formattedGameEpoch: IxTime.formatIxTime(IxTime.getInGameEpoch()),
-    yearsSinceGameStart: (IxTime.getCurrentIxTime() - IxTime.getInGameEpoch()) / (365 * 24 * 60 * 60 * 1000), // Calculate years since start
+    yearsSinceGameStart: (IxTime.getCurrentIxTime() - IxTime.getInGameEpoch()) / (365 * 24 * 60 * 60 * 1000),
     currentGameYear: IxTime.getCurrentGameYear(),
     gameTimeDescription: `Year ${IxTime.getCurrentGameYear()}`,
     timeMultiplier: IxTime.getTimeMultiplier()
   });
 
-  // Initialize chart data with proper types
-  const [chartData, setChartData] = useState<{
-    historicalData: ChartDataPoint[];
-    forecastData: ChartDataPoint[];
-  }>({
-    historicalData: [],
-    forecastData: []
-  });
-  
-  // Format numbers for display
-  const formatNumber = (num: number, isCurrency = false): string => {
-    if (isCurrency) {
-      if (Math.abs(num) >= 1e12) return `$${(num / 1e12).toFixed(2)}T`;
-      if (Math.abs(num) >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
-      if (Math.abs(num) >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
-      if (Math.abs(num) >= 1e3) return `$${(num / 1e3).toFixed(2)}K`;
-      return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    } else {
-      if (Math.abs(num) >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
-      if (Math.abs(num) >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
-      if (Math.abs(num) >= 1e3) return `${(num / 1e3).toFixed(2)}K`;
-      return num.toLocaleString();
-    }
-  };
+  // Fetch country data at the selected time
+  const { data: country, isLoading: isLoadingCountry, error: countryError, refetch } = 
+    api.countries.getByIdAtTime.useQuery({
+      id: countryId,
+      timestamp: currentIxTime
+    }, {
+      enabled: !!countryId,
+      refetchOnWindowFocus: false
+    });
 
-  // Prepare chart data from historical data points if available
-  useEffect(() => {
-    if (country?.historicalData?.length) {
-      // Convert to chart format
-      const historicalChartData: ChartDataPoint[] = country.historicalData
-        .map(point => ({
-          date: new Date(point.ixTimeTimestamp).toISOString(),
-          population: point.population,
-          gdpPerCapita: point.gdpPerCapita,
-          totalGdp: point.totalGdp,
-          populationDensity: point.populationDensity || 0,
-          gdpDensity: point.gdpDensity || 0,
-          economicEfficiency: point.gdpPerCapita / (point.populationDensity || 1),
-          areaUtilization: (point.gdpDensity || 0) / 1000
-        }))
-        .sort((a: ChartDataPoint, b: ChartDataPoint) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      
-      setChartData(prev => ({
-        ...prev,
-        historicalData: historicalChartData
-      }));
-    }
-  }, [country?.historicalData]);
+  // Fetch historical data for charts
+  const { data: historicalData, isLoading: isLoadingHistorical } = 
+    api.countries.getHistoricalAtTime.useQuery({
+      id: countryId,
+      startTime: IxTime.addYears(currentIxTime, -10),
+      endTime: currentIxTime
+    }, {
+      enabled: !!countryId && !!country,
+      refetchOnWindowFocus: false
+    });
 
-  // Calculate forecast data based on current stats (simplified)
+  // Fetch forecast data
+  const { data: forecastData, isLoading: isLoadingForecast } = 
+    api.countries.getForecast.useQuery({
+      id: countryId,
+      startTime: currentIxTime,
+      endTime: IxTime.addYears(currentIxTime, forecastYears)
+    }, {
+      enabled: !!countryId && forecastYears > 0,
+      refetchOnWindowFocus: false
+    });
+
+  // Update time context when currentIxTime changes
   useEffect(() => {
-    if (country) {
-      const forecastPoints: ChartDataPoint[] = [];
-      const currentTime = new Date(country.lastCalculated).getTime();
-      const currentStats = {
-        population: country.currentPopulation,
-        gdpPerCapita: country.currentGdpPerCapita,
-        totalGdp: country.currentTotalGdp,
-        populationDensity: country.populationDensity || 0,
-        gdpDensity: country.gdpDensity || 0
-      };
-      
-      // Add current point
-      forecastPoints.push({
-        date: new Date(currentTime).toISOString(),
-        ...currentStats,
-        economicEfficiency: currentStats.gdpPerCapita / (currentStats.populationDensity || 1),
-        areaUtilization: (currentStats.gdpDensity || 0) / 1000
-      });
-      
-      // Simple projections for 10 years (just for visualization, not accurate)
-      for (let i = 1; i <= 10; i++) {
-        const yearMs = 365 * 24 * 60 * 60 * 1000;
-        const timePoint = currentTime + (i * yearMs);
-        const growthFactor = 1 + (country.adjustedGdpGrowth || 0.03);
-        const popGrowthFactor = 1 + (country.populationGrowthRate || 0.01);
-        
-        const projectedPopulation = currentStats.population * Math.pow(popGrowthFactor, i);
-        const projectedGdpPerCapita = currentStats.gdpPerCapita * Math.pow(growthFactor, i);
-        const projectedTotalGdp = projectedPopulation * projectedGdpPerCapita;
-        const projectedPopDensity = country.landArea ? projectedPopulation / country.landArea : 0;
-        const projectedGdpDensity = country.landArea ? projectedTotalGdp / country.landArea : 0;
-        
-        forecastPoints.push({
-          date: new Date(timePoint).toISOString(),
-          population: projectedPopulation,
-          gdpPerCapita: projectedGdpPerCapita,
-          totalGdp: projectedTotalGdp,
-          populationDensity: projectedPopDensity,
-          gdpDensity: projectedGdpDensity,
-          economicEfficiency: projectedGdpPerCapita / (projectedPopDensity || 1),
-          areaUtilization: (projectedGdpDensity || 0) / 1000
-        });
-      }
-      
-      setChartData(prev => ({
-        ...prev,
-        forecastData: forecastPoints
-      }));
-    }
+    setTimeContext({
+      currentIxTime,
+      formattedCurrentTime: IxTime.formatIxTime(currentIxTime),
+      gameEpoch: IxTime.getInGameEpoch(),
+      formattedGameEpoch: IxTime.formatIxTime(IxTime.getInGameEpoch()),
+      yearsSinceGameStart: (currentIxTime - IxTime.getInGameEpoch()) / (365 * 24 * 60 * 60 * 1000),
+      currentGameYear: IxTime.getGameYear(currentIxTime),
+      gameTimeDescription: `Year ${IxTime.getGameYear(currentIxTime)}`,
+      timeMultiplier: IxTime.getTimeMultiplier()
+    });
+  }, [currentIxTime]);
+
+  // Transform data to match component props
+  const transformedHistoricalData = useMemo(() => {
+    return historicalData?.map(point => ({
+      ixTimeTimestamp: point.ixTimeTimestamp,
+      population: point.population,
+      gdpPerCapita: point.gdpPerCapita,
+      totalGdp: point.totalGdp,
+      populationDensity: point.populationDensity === null ? undefined : point.populationDensity,
+      gdpDensity: point.gdpDensity === null ? undefined : point.gdpDensity
+    })) || [];
+  }, [historicalData]);
+
+  const transformedCountry = useMemo(() => {
+    if (!country) return null;
+    return {
+      id: country.id,
+      name: country.name,
+      currentPopulation: country.currentPopulation,
+      currentGdpPerCapita: country.currentGdpPerCapita,
+      currentTotalGdp: country.currentTotalGdp,
+      populationGrowthRate: country.populationGrowthRate,
+      adjustedGdpGrowth: country.adjustedGdpGrowth,
+      economicTier: country.economicTier,
+      populationTier: country.populationTier,
+      landArea: country.landArea === null ? undefined : country.landArea,
+      populationDensity: country.populationDensity,
+      gdpDensity: country.gdpDensity,
+      lastCalculated: country.lastCalculated
+    };
   }, [country]);
 
-  // Get economic tier styling
-  const tierStyle = useMemo(() => {
-    if (!country) return getTierStyle("Developing");
-    return getTierStyle(country.economicTier);
-  }, [country?.economicTier]);
+  const transformedForecastData = useMemo(() => {
+    return forecastData?.dataPoints?.map(point => ({
+      year: IxTime.getGameYear(point.ixTime),
+      population: point.population,
+      gdpPerCapita: point.gdpPerCapita,
+      totalGdp: point.totalGdp,
+      populationDensity: point.populationDensity === null ? undefined : point.populationDensity,
+      gdpDensity: point.gdpDensity === null ? undefined : point.gdpDensity
+    })) || [];
+  }, [forecastData]);
 
-  if (isLoadingCountry) {
+  // Determine what data is available for charts
+  const availableData = useMemo(() => ({
+    hasLandArea: !!(transformedCountry?.landArea),
+    hasHistoricalData: !!(transformedHistoricalData?.length),
+    hasComparison: true, // Assuming comparison data is always available
+    hasDensityData: !!(transformedCountry?.populationDensity && transformedCountry?.gdpDensity)
+  }), [transformedCountry, transformedHistoricalData]);
+
+  // Event handlers
+  const handleTimeChange = (newIxTime: number) => {
+    setCurrentIxTime(newIxTime);
+  };
+
+  const handleForecastChange = (years: number) => {
+    setForecastYears(years);
+  };
+
+  const handleChartChange = (chartType: ChartType) => {
+    setSelectedChart(chartType);
+  };
+
+  const handleInfoboxToggle = (expanded: boolean) => {
+    setInfoboxExpanded(expanded);
+  };
+
+  const handleRefresh = () => {
+    refetch();
+  };
+
+  const isTimeTravel = currentIxTime !== IxTime.getCurrentIxTime();
+  const isLoading = isLoadingCountry || isLoadingHistorical;
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-[var(--color-bg-primary)] flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <Loader className="h-12 w-12 animate-spin text-[var(--color-brand-primary)] mx-auto mb-4" />
-          <h3 className="text-xl font-medium text-[var(--color-text-primary)]">
-            Loading country data...
+          <Loader className="h-12 w-12 animate-spin text-indigo-600 dark:text-indigo-500 mx-auto mb-4" />
+          <h3 className="text-xl font-medium text-gray-900 dark:text-white">
+            {isTimeTravel ? 'Calculating time travel data...' : 'Loading country data...'}
           </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+            This may take a few moments
+          </p>
         </div>
       </div>
     );
   }
 
-  if (countryError || !country) {
+  if (countryError || !country || !transformedCountry) {
     return (
-      <div className="min-h-screen bg-[var(--color-bg-primary)] flex items-center justify-center">
-        <div className="text-center p-6 bg-[var(--color-error)]20 border border-[var(--color-error)]40 rounded-lg max-w-md">
-          <div className="text-[var(--color-error)] text-6xl mb-4">
-            <AlertTriangle className="h-16 w-16 mx-auto" />
-          </div>
-          <h3 className="text-xl font-medium text-[var(--color-text-primary)] mb-2">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 rounded-lg max-w-md">
+          <AlertTriangle className="h-16 w-16 mx-auto text-red-500 dark:text-red-400 mb-4" />
+          <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">
             Error Loading Country
           </h3>
-          <p className="text-sm text-[var(--color-text-muted)] mb-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
             {countryError?.message || "Country not found or could not be loaded."}
           </p>
           <div className="flex gap-4 justify-center">
             <button
               onClick={() => router.push('/countries')}
-              className="btn-secondary"
+              className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center"
             >
+              <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Countries
             </button>
             <button
-              onClick={() => router.refresh()}
-              className="btn-primary"
+              onClick={handleRefresh}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center"
             >
+              <RefreshCw className="h-4 w-4 mr-2" />
               Try Again
             </button>
           </div>
@@ -213,7 +217,7 @@ export default function CountryDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg-primary)]">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb Navigation */}
         <nav className="mb-6">
@@ -221,364 +225,321 @@ export default function CountryDetailPage() {
             <li>
               <Link 
                 href="/countries" 
-                className="text-[var(--color-text-muted)] hover:text-[var(--color-brand-primary)] transition-colors flex items-center"
+                className="text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex items-center"
               >
                 <ArrowLeft className="h-3.5 w-3.5 mr-1" />
                 Countries
               </Link>
             </li>
             <li className="flex items-center">
-              <ChevronRight className="h-4 w-4 text-[var(--color-text-muted)]" />
-              <span className="ml-2 font-medium text-[var(--color-text-primary)]">
+              <ChevronRight className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+              <span className="ml-2 font-medium text-gray-900 dark:text-white">
                 {country.name}
               </span>
             </li>
           </ol>
         </nav>
 
-        {/* Country Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+        {/* Page Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
           <div>
             <div className="flex items-center">
-              <h1 className="text-4xl font-bold text-[var(--color-text-primary)]">
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
                 {country.name}
               </h1>
-              <span className={`tier-badge ml-4 ${tierStyle.className}`}>
-                {country.economicTier}
+              {isTimeTravel && (
+                <span className="ml-4 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-sm rounded-full border border-blue-200 dark:border-blue-800/40">
+                  <Clock className="h-4 w-4 inline mr-1" />
+                  Time Travel Active
+                </span>
+              )}
+            </div>
+            <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
+              Economic Analysis & Forecasting Dashboard
+            </p>
+            <div className="mt-1 flex items-center text-sm text-gray-500 dark:text-gray-400">
+              <Info className="h-4 w-4 mr-1" />
+              <span>
+                Viewing: {timeContext.formattedCurrentTime} • 
+                {timeContext.gameTimeDescription} • 
+                {isTimeTravel ? 'Historical/Future View' : 'Real-time Data'}
               </span>
             </div>
-            <p className="mt-2 text-lg text-[var(--color-text-muted)]">
-              {country.continent}{country.continent && country.region && ","} {country.region} • {country.populationTier} Population
-            </p>
           </div>
-          
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="stat-block">
-              <Users className="stat-icon" />
-              <div>
-                <span className="stat-label">Population</span>
-                <span className="stat-value">{formatNumber(country.currentPopulation)}</span>
-              </div>
-            </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleRefresh}
+              disabled={isLoading}
+              className="p-2 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+              title="Refresh data"
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            </button>
             
-            <div className="stat-block">
-              <TrendingUp className="stat-icon" />
-              <div>
-                <span className="stat-label">GDP per Capita</span>
-                <span className="stat-value">{formatNumber(country.currentGdpPerCapita, true)}</span>
-              </div>
-            </div>
-            
-            <div className="stat-block">
-              <Landmark className="stat-icon" />
-              <div>
-                <span className="stat-label">Total GDP</span>
-                <span className="stat-value">{formatNumber(country.currentTotalGdp, true)}</span>
-              </div>
-            </div>
+            {isTimeTravel && (
+              <button
+                onClick={() => setCurrentIxTime(IxTime.getCurrentIxTime())}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center"
+              >
+                <Clock className="h-4 w-4 mr-2" />
+                Return to Present
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Stats and Geography */}
-          <div className="lg:col-span-1 space-y-8">
-            {/* Country Information */}
-            <CountryInfobox countryName={country.name} />
+        {/* Main Content Layout */}
+        <div className={`grid gap-8 transition-all duration-300 ${
+        infoboxExpanded 
+          ? 'lg:grid-cols-12' 
+          : 'lg:grid-cols-4'
+        }`}>
+          {/* Main Content Area */}
+          <div className={`${
+            infoboxExpanded 
+              ? 'lg:col-span-8' 
+              : 'lg:col-span-3'
+          } space-y-8`}>
             
-            {/* Detailed Stats Card */}
-            <div className="card">
-              <div className="card-header">
-                <h2 className="card-title">
-                  <BarChart3 className="card-icon" />
-                  Economic Statistics
-                </h2>
-              </div>
-              <div className="card-body space-y-4">
-                <div className="stat-row">
-                  <span className="stat-label">Current Population:</span>
-                  <span className="stat-value">{formatNumber(country.currentPopulation)}</span>
-                </div>
-                <div className="stat-row">
-                  <span className="stat-label">Population Growth:</span>
-                  <span className="stat-value">{(country.populationGrowthRate * 100).toFixed(2)}%</span>
-                </div>
-                <div className="stat-row">
-                  <span className="stat-label">GDP per Capita:</span>
-                  <span className="stat-value">{formatNumber(country.currentGdpPerCapita, true)}</span>
-                </div>
-                <div className="stat-row">
-                  <span className="stat-label">GDP Growth Rate:</span>
-                  <span className="stat-value">{(country.adjustedGdpGrowth * 100).toFixed(2)}%</span>
-                </div>
-                <div className="stat-row">
-                  <span className="stat-label">Total GDP:</span>
-                  <span className="stat-value">{formatNumber(country.currentTotalGdp, true)}</span>
-                </div>
-                {country.landArea && (
-                  <>
-                    <div className="stat-row">
-                      <span className="stat-label">Land Area:</span>
-                      <span className="stat-value">{formatNumber(country.landArea, false)} km²</span>
-                    </div>
-                    <div className="stat-row">
-                      <span className="stat-label">Population Density:</span>
-                      <span className="stat-value">{country.populationDensity?.toFixed(1)} /km²</span>
-                    </div>
-                    <div className="stat-row">
-                      <span className="stat-label">GDP Density:</span>
-                      <span className="stat-value">{formatNumber(country.gdpDensity || 0, true)}/km²</span>
-                    </div>
-                  </>
-                )}
-              </div>
-              <div className="card-footer">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-[var(--color-text-muted)]">
-                    Last updated: {new Date(country.lastCalculated).toLocaleString()}
-                  </span>
-                  <Clock className="h-4 w-4 text-[var(--color-text-muted)]" />
-                </div>
-              </div>
-            </div>
-            
-            {/* Geography Card */}
-            {country.landArea && (
-              <div className="card">
-                <div className="card-header">
-                  <h2 className="card-title">
-                    <MapPin className="card-icon" />
-                    Geographic Information
+            {/* Time Control Component */}
+            <TimeControl
+              onTimeChange={handleTimeChange}
+              onForecastChange={handleForecastChange}
+              currentTime={timeContext.currentIxTime}
+              gameEpoch={timeContext.gameEpoch}
+              isLoading={isLoading}
+            />
+
+            {/* Country at a Glance */}
+            <CountryAtGlance
+              country={transformedCountry}
+              historicalData={transformedHistoricalData}
+              targetTime={currentIxTime}
+              forecastYears={forecastYears}
+              isLoading={isLoadingHistorical}
+            />
+
+            {/* Chart Type Selector */}
+            <ChartTypeSelector
+              selectedChart={selectedChart}
+              onChartChange={handleChartChange}
+              availableData={availableData}
+              isCompact={false}
+            />
+
+            {/* 10-Year Forecast */}
+            <TenYearForecast
+              country={transformedCountry}
+              forecastData={transformedForecastData}
+              baseTime={currentIxTime}
+              isLoading={isLoadingForecast}
+            />
+
+            {/* Additional Charts Section Based on Selected Chart Type */}
+            <div className="space-y-8">
+              {selectedChart === 'density' && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <Globe className="h-5 w-5 mr-2" />
+                    Density Analysis
                   </h2>
-                </div>
-                <div className="card-body space-y-4">
-                  <div className="stat-row">
-                    <span className="stat-label">Continent:</span>
-                    <span className="stat-value">{country.continent || 'N/A'}</span>
-                  </div>
-                  <div className="stat-row">
-                    <span className="stat-label">Region:</span>
-                    <span className="stat-value">{country.region || 'N/A'}</span>
-                  </div>
-                  <div className="stat-row">
-                    <span className="stat-label">Land Area:</span>
-                    <span className="stat-value">{formatNumber(country.landArea, false)} km²</span>
-                  </div>
-                  {country.areaSqMi && (
-                    <div className="stat-row">
-                      <span className="stat-label">Area (sq mi):</span>
-                      <span className="stat-value">{formatNumber(country.areaSqMi, false)}</span>
+                  {availableData.hasLandArea ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <span className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Population Density</span>
+                        <span className="text-xl font-bold text-gray-900 dark:text-white">
+                          {transformedCountry.populationDensity ? `${transformedCountry.populationDensity.toFixed(1)} /km²` : 'N/A'}
+                        </span>
+                      </div>
+                      <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <span className="block text-sm text-gray-500 dark:text-gray-400 mb-1">GDP Density</span>
+                        <span className="text-xl font-bold text-gray-900 dark:text-white">
+                          {transformedCountry.gdpDensity ? `$${(transformedCountry.gdpDensity / 1000000).toFixed(1)}M /km²` : 'N/A'}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <AlertTriangle className="h-12 w-12 text-yellow-500 dark:text-yellow-400 mx-auto mb-4" />
+                      <p className="text-gray-600 dark:text-gray-400">
+                        Land area data required for density analysis
+                      </p>
                     </div>
                   )}
-                  <div className="stat-row">
-                    <span className="stat-label">Population Density:</span>
-                    <span className="stat-value">{country.populationDensity?.toFixed(1)} people/km²</span>
-                  </div>
-                  <div className="stat-row">
-                    <span className="stat-label">GDP Density:</span>
-                    <span className="stat-value">{formatNumber(country.gdpDensity || 0, true)}/km²</span>
-                  </div>
                 </div>
-              </div>
-            )}
-            
-            {/* Political Information */}
-            <div className="card">
-              <div className="card-header">
-                <h2 className="card-title">
-                  <Globe className="card-icon" />
-                  Political Information
-                </h2>
-              </div>
-              <div className="card-body space-y-4">
-                <div className="stat-row">
-                  <span className="stat-label">Government:</span>
-                  <span className="stat-value">{country.governmentType || 'N/A'}</span>
-                </div>
-                <div className="stat-row">
-                  <span className="stat-label">Leader:</span>
-                  <span className="stat-value">{country.leader || 'N/A'}</span>
-                </div>
-                <div className="stat-row">
-                  <span className="stat-label">Religion:</span>
-                  <span className="stat-value">{country.religion || 'N/A'}</span>
-                </div>
-                <div className="stat-row">
-                  <span className="stat-label">Economic Tier:</span>
-                  <span className={`stat-value font-medium ${tierStyle.color}`}>{country.economicTier}</span>
-                </div>
-                <div className="stat-row">
-                  <span className="stat-label">Population Tier:</span>
-                  <span className="stat-value">{country.populationTier}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Right Column - Charts and Time-based Data */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Time Context */}
-            <div className="card">
-              <div className="card-header">
-                <h2 className="card-title">
-                  <Clock className="card-icon" />
-                  Time Context
-                </h2>
-              </div>
-              <div className="card-body">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  <div>
-                    <div className="text-2xl font-bold text-[var(--color-brand-primary)]">
-                      {timeContext.gameTimeDescription}
+              )}
+
+              {selectedChart === 'efficiency' && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <Globe className="h-5 w-5 mr-2" />
+                    Economic Efficiency Analysis
+                  </h2>
+                  {availableData.hasLandArea ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                          {transformedCountry.landArea ? 
+                            ((transformedCountry.currentTotalGdp / transformedCountry.landArea) / 1000000).toFixed(1) : 
+                            'N/A'
+                          }
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">GDP per km² (M$)</div>
+                      </div>
+                      <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                          {transformedCountry.populationDensity ? 
+                            (transformedCountry.currentGdpPerCapita / transformedCountry.populationDensity).toFixed(0) : 
+                            'N/A'
+                          }
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">Efficiency Ratio</div>
+                      </div>
+                      <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                          {transformedCountry.landArea ? 
+                            Math.sqrt(transformedCountry.currentTotalGdp / transformedCountry.landArea / 1000000).toFixed(1) : 
+                            'N/A'
+                          }
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">Spatial Index</div>
+                      </div>
                     </div>
-                    <p className="text-sm text-[var(--color-text-muted)]">
-                      {timeContext.yearsSinceGameStart.toFixed(1)} years since game start
+                  ) : (
+                    <div className="text-center py-8">
+                      <AlertTriangle className="h-12 w-12 text-yellow-500 dark:text-yellow-400 mx-auto mb-4" />
+                      <p className="text-gray-600 dark:text-gray-400">
+                        Land area data required for efficiency analysis
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {selectedChart === 'growth' && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <Globe className="h-5 w-5 mr-2" />
+                    Growth Trends Analysis
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <span className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Population Growth Rate</span>
+                      <span className="text-xl font-bold text-green-600 dark:text-green-400">
+                        {(transformedCountry.populationGrowthRate * 100).toFixed(2)}%
+                      </span>
+                    </div>
+                    <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <span className="block text-sm text-gray-500 dark:text-gray-400 mb-1">GDP Growth Rate</span>
+                      <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                        {(transformedCountry.adjustedGdpGrowth * 100).toFixed(2)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedChart === 'comparison' && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <Globe className="h-5 w-5 mr-2" />
+                    Global Comparison
+                  </h2>
+                  <div className="text-center py-8">
+                    <Info className="h-12 w-12 text-blue-600 dark:text-blue-400 mx-auto mb-4" />
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Global comparison charts will be rendered here based on all countries data
                     </p>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="stat-block-small">
-                      <span className="stat-label-small">Current In-Game Time</span>
-                      <span className="stat-value-small">{timeContext.formattedCurrentTime}</span>
-                    </div>
-                    <div className="stat-block-small">
-                      <span className="stat-label-small">Game Epoch</span>
-                      <span className="stat-value-small">{timeContext.formattedGameEpoch}</span>
-                    </div>
-                  </div>
                 </div>
-              </div>
-              <div className="card-footer">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-[var(--color-text-muted)]">
-                    Time Multiplier: {timeContext.timeMultiplier}x
-                  </span>
-                  <Info className="h-4 w-4 text-[var(--color-text-muted)]" />
-                </div>
-              </div>
+              )}
             </div>
-            
-            {/* Historical Data Chart */}
-            <div className="card">
-              <div className="card-header">
-                <h2 className="card-title">
-                  <BarChart3 className="card-icon" />
-                  Historical Performance
-                </h2>
-              </div>
-              <div className="card-body">
-                {chartData.historicalData.length > 0 ? (
-                  <div className="h-80">
-                    {/* Render chart component here with chartData.historicalData */}
-                    <div className="text-center text-[var(--color-text-muted)] h-full flex items-center justify-center">
-                      <div>
-                        <BarChart3 className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                        <p>Historical chart data available ({chartData.historicalData.length} points)</p>
-                        <p className="text-sm mt-2">Chart visualization component would go here</p>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-16 text-[var(--color-text-muted)]">
-                    <BarChart3 className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                    <p>No historical data available for this country</p>
-                    <p className="text-sm mt-2">Data will be collected as time progresses</p>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {/* Forecast Chart */}
-            <div className="card">
-              <div className="card-header">
-                <h2 className="card-title">
-                  <TrendingUp className="card-icon" />
-                  10-Year Forecast
-                </h2>
-              </div>
-              <div className="card-body">
-                {chartData.forecastData.length > 0 ? (
-                  <div className="h-80">
-                    {/* Render forecast chart component here with chartData.forecastData */}
-                    <div className="text-center text-[var(--color-text-muted)] h-full flex items-center justify-center">
-                      <div>
-                        <TrendingUp className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                        <p>Forecast data available ({chartData.forecastData.length} points)</p>
-                        <p className="text-sm mt-2">Chart visualization component would go here</p>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-16 text-[var(--color-text-muted)]">
-                    <TrendingUp className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                    <p>No forecast data available</p>
-                  </div>
-                )}
-              </div>
-              <div className="card-footer">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-[var(--color-text-muted)]">
-                    Based on current growth rates: {(country.adjustedGdpGrowth * 100).toFixed(2)}% GDP, {(country.populationGrowthRate * 100).toFixed(2)}% Population
-                  </span>
-                  <Info className="h-4 w-4 text-[var(--color-text-muted)]" />
-                </div>
-              </div>
-            </div>
-            
-            {/* DM Inputs/Events */}
-            {country.dmInputs && country.dmInputs.length > 0 && (
-              <div className="card">
-                <div className="card-header">
-                  <h2 className="card-title">
-                    <Info className="card-icon" />
-                    Active Economic Events
-                  </h2>
-                </div>
-                <div className="card-body">
-                  <div className="space-y-4">
-                    {country.dmInputs.map((input) => (
-                      <div 
-                        key={input.id} 
-                        className="flex items-start p-3 border border-[var(--color-border-primary)] rounded-lg bg-[var(--color-bg-tertiary)]"
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center">
-                            <span className="font-medium text-[var(--color-text-primary)]">
-                              {input.inputType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                            </span>
-                            <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-[var(--color-success)]20 text-[var(--color-success)]">
-                              Active
-                            </span>
-                          </div>
-                          <p className="text-sm text-[var(--color-text-muted)] mt-1">
-                            {input.description || `${input.value > 0 ? '+' : ''}${(input.value * 100).toFixed(2)}% adjustment`}
-                          </p>
-                          <div className="mt-2 flex items-center text-xs text-[var(--color-text-muted)]">
-                            <Clock className="h-3 w-3 mr-1" />
-                            <span>
-                              Started: {new Date(input.ixTimeTimestamp).toLocaleDateString()}
-                              {input.duration && ` • Duration: ${input.duration} days`}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className={`text-lg font-semibold ${input.value >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-error)]'}`}>
-                            {input.value >= 0 ? '+' : ''}{(input.value * 100).toFixed(2)}%
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="card-footer">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-[var(--color-text-muted)]">
-                      {country.dmInputs.length} active event{country.dmInputs.length !== 1 ? 's' : ''}
+          </div>
+
+          {/* Sidebar - Country Infobox */}
+          <div className={`${
+            infoboxExpanded 
+              ? 'lg:col-span-4' 
+              : 'lg:col-span-1'
+          } transition-all duration-300`}>
+            <div className="sticky top-8">
+              <CountryInfobox 
+                countryName={country.name}
+                onToggle={handleInfoboxToggle}
+              />
+              
+              {/* Quick Stats Panel */}
+              <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border border-gray-200 dark:border-gray-700">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                  Quick Stats
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Economic Tier</span>
+                    <span className="text-xs font-medium text-gray-900 dark:text-white">
+                      {country.economicTier}
                     </span>
-                    <Info className="h-4 w-4 text-[var(--color-text-muted)]" />
                   </div>
+                  <div className="flex justify-between">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Population Tier</span>
+                    <span className="text-xs font-medium text-gray-900 dark:text-white">
+                      {country.populationTier}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Last Updated</span>
+                    <span className="text-xs font-medium text-gray-900 dark:text-white">
+                      {new Date(country.lastCalculated).toLocaleDateString()}
+                    </span>
+                  </div>
+                  {country.landArea && (
+                    <div className="flex justify-between">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Land Area</span>
+                      <span className="text-xs font-medium text-gray-900 dark:text-white">
+                        {(country.landArea / 1000).toFixed(0)}K km²
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
+
+              {/* Time Context Panel */}
+              <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border border-gray-200 dark:border-gray-700">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+                  <Clock className="h-4 w-4 mr-1" />
+                  Time Context
+                </h3>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 dark:text-gray-400">Current View</span>
+                    <span className="text-gray-900 dark:text-white font-medium">
+                      {timeContext.gameTimeDescription}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 dark:text-gray-400">Time Multiplier</span>
+                    <span className="text-gray-900 dark:text-white font-medium">
+                      {timeContext.timeMultiplier}x
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 dark:text-gray-400">Years Since Start</span>
+                    <span className="text-gray-900 dark:text-white font-medium">
+                      {timeContext.yearsSinceGameStart.toFixed(1)}
+                    </span>
+                  </div>
+                  {forecastYears > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 dark:text-gray-400">Forecast Period</span>
+                      <span className="text-green-600 dark:text-green-400 font-medium">
+                        +{forecastYears.toFixed(1)} years
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
