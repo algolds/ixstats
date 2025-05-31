@@ -1,15 +1,17 @@
 // src/server/api/routers/countries.ts
+// Updated countries router using the new CSV handler
+
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { IxStatsDataService } from "~/lib/data-service";
 import { IxStatsCalculator } from "~/lib/calculations";
 import { IxTime } from "~/lib/ixtime";
 import { IxSheetzCalculator } from "~/lib/enhanced-calculations";
+import { csvHandler } from "~/lib/csv-handler"; // Import the new CSV handler
 // Corrected: Import enums as values, others as types
 import { EconomicTier, PopulationTier, DmInputType as DmInputTypeEnum } from "~/types/ixstats";
 import type { GlobalEconomicSnapshot, CountryStats, BaseCountryData } from "~/types/ixstats";
 import { type Country as PrismaCountry } from "@prisma/client"; // Import Prisma's Country type
-
 
 const countryInputSchema = z.object({
   name: z.string().min(1),
@@ -49,7 +51,7 @@ const dmInputSchema = z.object({
   duration: z.number().positive().optional()
 });
 
-// Field labels for analysis, similar to ImportPreviewDialog
+// Field labels for analysis
 const fieldLabelsForAnalysis: Record<string, string> = {
   'country': 'Country Name',
   'continent': 'Continent',
@@ -70,13 +72,13 @@ const fieldLabelsForAnalysis: Record<string, string> = {
   'actualGdpGrowth': 'Actual GDP Growth'
 };
 
-
 function determineEconomicTier(gdpPerCapita: number): EconomicTier {
     if (gdpPerCapita >= 50000) return EconomicTier.ADVANCED;
     if (gdpPerCapita >= 35000) return EconomicTier.DEVELOPED;
     if (gdpPerCapita >= 15000) return EconomicTier.EMERGING;
     return EconomicTier.DEVELOPING;
 }
+
 function determinePopulationTier(population: number): PopulationTier {
     if (population >= 200000000) return PopulationTier.MASSIVE;
     if (population >= 50000000) return PopulationTier.LARGE;
@@ -168,13 +170,13 @@ export const countriesRouter = createTRPCRouter({
         country: countryFromDb.name, 
         name: countryFromDb.name,    
 
-        // Initialize descriptive fields not present in the provided Prisma schema for Country model
-        continent: (countryFromDb as any).continent ?? null,
-        region: (countryFromDb as any).region ?? null,
-        governmentType: (countryFromDb as any).governmentType ?? null,
-        religion: (countryFromDb as any).religion ?? null,
-        leader: (countryFromDb as any).leader ?? null,
-        areaSqMi: (countryFromDb as any).areaSqMi ?? null,
+        // Initialize descriptive fields 
+        continent: countryFromDb.continent ?? null,
+        region: countryFromDb.region ?? null,
+        governmentType: countryFromDb.governmentType ?? null,
+        religion: countryFromDb.religion ?? null,
+        leader: countryFromDb.leader ?? null,
+        areaSqMi: countryFromDb.areaSqMi ?? null,
 
         // Baseline data from DB
         population: countryFromDb.baselinePopulation,
@@ -320,7 +322,7 @@ export const countriesRouter = createTRPCRouter({
       const populationDensity = landArea > 0 ? input.baselinePopulation / landArea : undefined;
       const gdpDensityValue = landArea > 0 ? (input.baselinePopulation * input.baselineGdpPerCapita) / landArea : undefined;
 
-      const countryDataForCreate: PrismaCountryCreateInput = { // Use Prisma generated type if available, or 'any'
+      const countryDataForCreate = {
         name: input.name,
         baselinePopulation: input.baselinePopulation,
         baselineGdpPerCapita: input.baselineGdpPerCapita,
@@ -332,14 +334,12 @@ export const countriesRouter = createTRPCRouter({
         projected2040GdpPerCapita,
         actualGdpGrowth,
         landArea: input.landArea ?? null, 
-        // Descriptive fields - Prisma will ignore these if not in schema
-        // Or, if they are in schema, they will be set.
-        ...(input.continent !== undefined && { continent: input.continent }),
-        ...(input.region !== undefined && { region: input.region }),
-        ...(input.governmentType !== undefined && { governmentType: input.governmentType }),
-        ...(input.religion !== undefined && { religion: input.religion }),
-        ...(input.leader !== undefined && { leader: input.leader }),
-        ...(input.areaSqMi !== undefined && { areaSqMi: input.areaSqMi }),
+        continent: input.continent ?? null,
+        region: input.region ?? null,
+        governmentType: input.governmentType ?? null,
+        religion: input.religion ?? null,
+        leader: input.leader ?? null,
+        areaSqMi: input.areaSqMi ?? null,
         currentPopulation: input.baselinePopulation,
         currentGdpPerCapita: input.baselineGdpPerCapita,
         currentTotalGdp: input.baselinePopulation * input.baselineGdpPerCapita,
@@ -352,7 +352,7 @@ export const countriesRouter = createTRPCRouter({
         localGrowthFactor: 1.0, 
       };
       
-      const country = await ctx.db.country.create({ data: countryDataForCreate as any }); // Use `as any` if Prisma type causes issues with extra fields that might be ignored by Prisma
+      const country = await ctx.db.country.create({ data: countryDataForCreate });
 
       await ctx.db.historicalData.create({
         data: {
@@ -661,11 +661,23 @@ export const countriesRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx, input }) => {
       try {
+        console.log(`[CSV Import] Starting analysis of ${input.fileName || 'file'}`);
+        
         const buffer = Buffer.from(input.fileData, 'base64');
         const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
 
-        const dataService = new IxStatsDataService(IxStatsDataService.getDefaultConfig());
-        const baseDataArray = await dataService.parseRosterFile(arrayBuffer, input.fileName);
+        // Use the new CSV handler instead of the old data parser
+        const parseResult = await csvHandler.parseFile(arrayBuffer, input.fileName);
+        
+        if (!parseResult.success) {
+          throw new Error(`CSV parsing failed: ${parseResult.errors.join(', ')}`);
+        }
+
+        console.log(`[CSV Import] Successfully parsed ${parseResult.data.length} countries`);
+        
+        if (parseResult.warnings.length > 0) {
+          console.warn(`[CSV Import] Warnings: ${parseResult.warnings.join(', ')}`);
+        }
 
         const existingCountries = await ctx.db.country.findMany();
         const existingCountriesMap = new Map(existingCountries.map(c => [c.name.toLowerCase(), c]));
@@ -682,7 +694,7 @@ export const countriesRouter = createTRPCRouter({
           }>;
         }> = [];
 
-        for (const countryData of baseDataArray) {
+        for (const countryData of parseResult.data) {
           const existing = existingCountriesMap.get(countryData.country.toLowerCase());
 
           if (!existing) {
@@ -698,6 +710,7 @@ export const countriesRouter = createTRPCRouter({
               fieldLabel: string;
             }> = [];
             
+            // Compare fields for changes
             const fieldsToCompare: Array<{ field: keyof BaseCountryData, dbField: keyof PrismaCountry, label?: string }> = [
               { field: 'population', dbField: 'baselinePopulation' },
               { field: 'gdpPerCapita', dbField: 'baselineGdpPerCapita' },
@@ -755,16 +768,20 @@ export const countriesRouter = createTRPCRouter({
           }
         }
 
+        console.log(`[CSV Import] Analysis complete: ${changes.filter(c => c.type === 'new').length} new, ${changes.filter(c => c.type === 'update').length} updates`);
+
         return {
-          totalCountries: baseDataArray.length,
+          totalCountries: parseResult.data.length,
           changes,
           newCountries: changes.filter(c => c.type === 'new').length,
           updatedCountries: changes.filter(c => c.type === 'update').length,
-          unchangedCountries: baseDataArray.length - changes.length,
-          analysisTime: await getCurrentIxTime(ctx)
+          unchangedCountries: parseResult.data.length - changes.length,
+          analysisTime: await getCurrentIxTime(ctx),
+          parseWarnings: parseResult.warnings,
+          metadata: parseResult.metadata
         };
       } catch (error) {
-        console.error('Import analysis error:', error);
+        console.error('[CSV Import] Analysis error:', error);
         const message = error instanceof Error ? error.message : 'Unknown error during import analysis';
         throw new Error(`Failed to analyze import file: ${message}`);
       }
@@ -778,63 +795,71 @@ export const countriesRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx, input }) => {
       try {
+        console.log(`[CSV Import] Starting import of ${input.fileName || 'file'} (replace: ${input.replaceExisting})`);
+        
         const buffer = Buffer.from(input.fileData, 'base64');
         const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
 
-        const dataService = new IxStatsDataService(IxStatsDataService.getDefaultConfig());
-        const baseDataArray = await dataService.parseRosterFile(arrayBuffer, input.fileName);
-        const initializedCountries = dataService.initializeCountries(baseDataArray);
+        // Use the new CSV handler
+        const parseResult = await csvHandler.parseFile(arrayBuffer, input.fileName);
+        
+        if (!parseResult.success) {
+          throw new Error(`CSV parsing failed: ${parseResult.errors.join(', ')}`);
+        }
 
         const currentIxTimeMs = await getCurrentIxTime(ctx); 
 
         if (input.replaceExisting) {
+          console.log('[CSV Import] Clearing existing data for full replacement');
           await ctx.db.historicalData.deleteMany({});
           await ctx.db.dmInput.deleteMany({});
           await ctx.db.country.deleteMany({});
         }
 
         const results = [];
-        for (const countryStats of initializedCountries) {
+        for (const countryData of parseResult.data) {
           const existingCountry = !input.replaceExisting 
-            ? await ctx.db.country.findUnique({ where: { name: countryStats.country }}) 
+            ? await ctx.db.country.findUnique({ where: { name: countryData.country }}) 
             : null;
 
           if (existingCountry && !input.replaceExisting) {
-            continue; 
+            continue; // Skip existing countries when not replacing
           }
           
-          const gdpDensityValue = countryStats.landArea && countryStats.landArea > 0 
-            ? countryStats.currentTotalGdp / countryStats.landArea 
+          const gdpDensityValue = countryData.landArea && countryData.landArea > 0 
+            ? (countryData.population * countryData.gdpPerCapita) / countryData.landArea 
             : null; 
 
           const dataToCreate = {
-            name: countryStats.country,
-            baselinePopulation: countryStats.population,
-            baselineGdpPerCapita: countryStats.gdpPerCapita,
-            maxGdpGrowthRate: countryStats.maxGdpGrowthRate,
-            adjustedGdpGrowth: countryStats.adjustedGdpGrowth,
-            populationGrowthRate: countryStats.populationGrowthRate,
-            projected2040Population: countryStats.projected2040Population,
-            projected2040Gdp: countryStats.projected2040Gdp,
-            projected2040GdpPerCapita: countryStats.projected2040GdpPerCapita,
-            actualGdpGrowth: countryStats.actualGdpGrowth,
-            landArea: countryStats.landArea ?? null, 
-            continent: countryStats.continent ?? null,
-            region: countryStats.region ?? null,
-            governmentType: countryStats.governmentType ?? null,
-            religion: countryStats.religion ?? null,
-            leader: countryStats.leader ?? null,
-            areaSqMi: countryStats.areaSqMi ?? null,
-            currentPopulation: countryStats.currentPopulation,
-            currentGdpPerCapita: countryStats.currentGdpPerCapita,
-            currentTotalGdp: countryStats.currentTotalGdp,
-            populationDensity: countryStats.populationDensity ?? null, 
-            gdpDensity: gdpDensityValue ?? null, 
+            name: countryData.country,
+            baselinePopulation: countryData.population,
+            baselineGdpPerCapita: countryData.gdpPerCapita,
+            maxGdpGrowthRate: countryData.maxGdpGrowthRate,
+            adjustedGdpGrowth: countryData.adjustedGdpGrowth,
+            populationGrowthRate: countryData.populationGrowthRate,
+            projected2040Population: countryData.projected2040Population,
+            projected2040Gdp: countryData.projected2040Gdp,
+            projected2040GdpPerCapita: countryData.projected2040GdpPerCapita,
+            actualGdpGrowth: countryData.actualGdpGrowth,
+            landArea: countryData.landArea ?? null, 
+            continent: countryData.continent ?? null,
+            region: countryData.region ?? null,
+            governmentType: countryData.governmentType ?? null,
+            religion: countryData.religion ?? null,
+            leader: countryData.leader ?? null,
+            areaSqMi: countryData.areaSqMi ?? null,
+            currentPopulation: countryData.population,
+            currentGdpPerCapita: countryData.gdpPerCapita,
+            currentTotalGdp: countryData.population * countryData.gdpPerCapita,
+            populationDensity: countryData.landArea && countryData.landArea > 0 
+              ? countryData.population / countryData.landArea 
+              : null, 
+            gdpDensity: gdpDensityValue, 
             lastCalculated: new Date(currentIxTimeMs), 
             baselineDate: new Date(IxTime.getInGameEpoch()), 
-            economicTier: countryStats.economicTier as EconomicTier,
-            populationTier: countryStats.populationTier as PopulationTier,
-            localGrowthFactor: countryStats.localGrowthFactor,
+            economicTier: determineEconomicTier(countryData.gdpPerCapita),
+            populationTier: determinePopulationTier(countryData.population),
+            localGrowthFactor: 1.0,
           };
           
           const createdCountry = await ctx.db.country.create({
@@ -859,17 +884,22 @@ export const countriesRouter = createTRPCRouter({
         }
 
         const timeSource = (await ctx.db.systemConfig.findUnique({ where: { key: 'bot_sync_enabled' } }))?.value === 'true' ? 'bot-synced' : 'local-calc';
+        
+        console.log(`[CSV Import] Import complete: ${results.length}/${parseResult.data.length} countries imported`);
+        
         return {
           imported: results.length,
-          totalInFile: initializedCountries.length,
+          totalInFile: parseResult.data.length,
           countries: results.map(c => c.name),
           importTime: currentIxTimeMs,
-          timeSource: timeSource
+          timeSource: timeSource,
+          parseWarnings: parseResult.warnings,
+          metadata: parseResult.metadata
         };
       } catch (error) {
-        console.error('Import error:', error);
-        const message = error instanceof Error ? error.message : 'Unknown error during Excel import';
-        throw new Error(`Failed to import Excel file: ${message}`);
+        console.error('[CSV Import] Import error:', error);
+        const message = error instanceof Error ? error.message : 'Unknown error during import';
+        throw new Error(`Failed to import file: ${message}`);
       }
     }),
 
@@ -909,14 +939,3 @@ export const countriesRouter = createTRPCRouter({
       }));
     }),
 });
-
-// Helper type for Prisma create input to avoid TypeScript errors with potentially extra fields
-// that Prisma might ignore if not in schema.
-type PrismaCountryCreateInput = Omit<PrismaCountry, "id" | "createdAt" | "updatedAt" | "historicalData" | "dmInputs"> & {
-  continent?: string | null;
-  region?: string | null;
-  governmentType?: string | null;
-  religion?: string | null;
-  leader?: string | null;
-  areaSqMi?: number | null;
-};
