@@ -54,7 +54,7 @@ export type PageCountryData = {
 };
 
 // Helper function for type predicate filtering
-const isNonNull = <T>(value: T | null): value is T => value !== null;
+const isNonNull = <T,>(value: T | null): value is T => value !== null;
 
 // Flag cache to avoid repeated API calls
 const flagCache = new Map<string, string | null>();
@@ -200,7 +200,6 @@ function CountryCard({ country }: { country: PageCountryData }) {
     </Link>
   );
 }
-}
 
 export default function CountriesPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -226,7 +225,7 @@ export default function CountriesPage() {
 
   const countries = countriesResult?.countries || [];
   // Ensure processedCountries conforms to PageCountryData
-  const processedCountries: PageCountryData[] = countries.map((country: any) => ({ // Added 'any' for country, or define a more specific API type
+  const processedCountries: PageCountryData[] = countries.map((country: any): PageCountryData => ({ // Added 'any' for country, or define a more specific API type
     id: country.id,
     name: country.name,
     continent: country.continent,
@@ -314,7 +313,7 @@ export default function CountriesPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All continents</SelectItem>
-                    {continents.map(continent => (
+                    {continents.map((continent: string) => (
                       <SelectItem key={continent} value={continent}>
                         {continent}
                       </SelectItem>
@@ -331,7 +330,7 @@ export default function CountriesPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All tiers</SelectItem>
-                    {economicTiers.map(tier => (
+                    {economicTiers.map((tier: string) => (
                       <SelectItem key={tier} value={tier}>
                         {tier}
                       </SelectItem>
@@ -379,7 +378,7 @@ export default function CountriesPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {processedCountries.map((country) => (
+              {processedCountries.map((country: PageCountryData) => (
                 <CountryCard key={country.id} country={country} />
               ))}
             </div>
@@ -411,7 +410,7 @@ export default function CountriesPage() {
                       <p className="text-sm text-muted-foreground">Total Population</p>
                       <p className="text-2xl font-bold">
                         {formatPopulation(
-                          processedCountries.reduce((sum, c) => sum + c.currentPopulation, 0)
+                          processedCountries.reduce((sum: number, c: PageCountryData) => sum + c.currentPopulation, 0)
                         )}
                       </p>
                     </div>
@@ -419,7 +418,7 @@ export default function CountriesPage() {
                       <p className="text-sm text-muted-foreground">Combined GDP</p>
                       <p className="text-2xl font-bold">
                         {formatCurrency(
-                          processedCountries.reduce((sum, c) => sum + c.currentTotalGdp, 0)
+                          processedCountries.reduce((sum: number, c: PageCountryData) => sum + c.currentTotalGdp, 0)
                         )}
                       </p>
                     </div>
