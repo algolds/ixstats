@@ -29,6 +29,27 @@ import {
 
 import { formatPopulation, formatCurrency } from "~/lib/chart-utils";
 
+// Define and export PageCountryData type
+export type PageCountryData = {
+  id: string;
+  name: string;
+  continent: string | null;
+  region: string | null;
+  economicTier: string | null;
+  populationTier: string | null;
+  currentPopulation: number;
+  currentGdpPerCapita: number;
+  currentTotalGdp: number;
+  populationGrowthRate: number | null;
+  adjustedGdpGrowth: number | null;
+  // Fields required by CountriesGrid / CountryListCard
+  // Assuming these are available on the 'country' object from the API
+  landArea: number | null;
+  populationDensity: number | null;
+  gdpDensity: number | null;
+  lastCalculated: string; // Or Date, if API provides Date objects directly. CountriesGrid expects to convert this.
+};
+
 export default function CountriesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedContinent, setSelectedContinent] = useState<string>("all");
@@ -52,7 +73,8 @@ export default function CountriesPage() {
   );
 
   const countries = countriesResult?.countries || [];
-  const processedCountries = countries.map((country) => ({
+  // Ensure processedCountries conforms to PageCountryData
+  const processedCountries: PageCountryData[] = countries.map((country: any) => ({ // Added 'any' for country, or define a more specific API type
     id: country.id,
     name: country.name,
     continent: country.continent,
@@ -64,6 +86,11 @@ export default function CountriesPage() {
     currentTotalGdp: country.currentTotalGdp,
     populationGrowthRate: country.populationGrowthRate,
     adjustedGdpGrowth: country.adjustedGdpGrowth,
+    // Add missing fields, assuming they exist on 'country' from the API response
+    landArea: country.landArea,
+    populationDensity: country.populationDensity,
+    gdpDensity: country.gdpDensity,
+    lastCalculated: country.lastCalculated,
   }));
 
   const currentIxTime = IxTime.getCurrentIxTime();
@@ -71,14 +98,14 @@ export default function CountriesPage() {
 
   // Get unique continents and tiers for filters
   const continents = useMemo(() => {
-    const unique = new Set(countries.map(c => c.continent).filter(Boolean));
+    const unique = new Set(processedCountries.map(c => c.continent).filter(Boolean as (value: string | null) => value is string));
     return Array.from(unique);
-  }, [countries]);
+  }, [processedCountries]);
 
   const economicTiers = useMemo(() => {
-    const unique = new Set(countries.map(c => c.economicTier).filter(Boolean));
+    const unique = new Set(processedCountries.map(c => c.economicTier).filter(Boolean as (value: string | null) => value is string));
     return Array.from(unique);
-  }, [countries]);
+  }, [processedCountries]);
 
   if (error) {
     return (
@@ -136,8 +163,8 @@ export default function CountriesPage() {
                   <SelectContent>
                     <SelectItem value="all">All continents</SelectItem>
                     {continents.map(continent => (
-                      <SelectItem key={continent} value={continent ?? ''}>
-                        {continent ?? ''}
+                      <SelectItem key={continent} value={continent}>
+                        {continent}
                       </SelectItem>
                     ))}
                   </SelectContent>
