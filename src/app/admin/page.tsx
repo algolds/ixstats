@@ -98,7 +98,7 @@ export default function AdminDashboard() {
   // Type-safe data parsing with fallbacks
   const botStatusView: AdminPageBotStatusView | undefined = (() => {
     try {
-      return botStatusData ? (botStatusData as AdminPageBotStatusView) : undefined;
+      return botStatusData ? (botStatusData as unknown as AdminPageBotStatusView) : undefined;
     } catch {
       return undefined;
     }
