@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
-@theme {
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-}
+/*
+   The @theme rule was removed from here.
+   The --font-sans variable definition has been moved into the :root selector below.
+*/
 
 /* ===================================
    DARK-FIRST COLOR SYSTEM
@@ -12,6 +12,10 @@
    =================================== */
 
 :root {
+  /* Font definition moved from @theme block */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
   /* Dark Theme Colors (Default) */
   --color-bg-primary: #111827;        /* gray-900 */
   --color-bg-secondary: #1f2937;      /* gray-800 */
@@ -633,11 +637,11 @@ body {
   @apply border-b-0 pb-0;
 }
 
-.card {
+.card { /* This redefines .card, ensure this is intended or scope it appropriately if it's specific to country detail pages */
   @apply bg-[var(--color-bg-surface)] border border-[var(--color-border-primary)] rounded-lg shadow-sm overflow-hidden;
 }
 
-.card-header {
+.card-header { /* This redefines .card-header */
   @apply p-4 border-b border-[var(--color-border-primary)];
 }
 
@@ -657,6 +661,6 @@ body {
   @apply px-4 py-3 bg-[var(--color-bg-tertiary)] border-t border-[var(--color-border-primary)];
 }
 
-.tier-badge {
+.tier-badge { /* This redefines .tier-badge */
   @apply px-2 py-1 rounded-full text-xs font-medium;
 }

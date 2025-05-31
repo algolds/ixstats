@@ -124,6 +124,15 @@ export class IxTime {
     const millisecondsPerYear = 365.25 * 24 * 60 * 60 * 1000;
     return timeMs + (years * millisecondsPerYear);
   }
+/**
+ * Add months to an IxTime timestamp
+ */
+static addMonths(ixTime: number | Date, months: number): number {
+  const timeMs = ixTime instanceof Date ? ixTime.getTime() : ixTime;
+  const date = new Date(timeMs);
+  date.setMonth(date.getMonth() + months);
+  return date.getTime();
+}
 
   /**
    * Create an IxTime timestamp from in-game date components
