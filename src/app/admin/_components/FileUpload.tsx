@@ -1,7 +1,7 @@
 // src/app/admin/_components/FileUpload.tsx
 "use client";
 
-import { Upload } from "lucide-react";
+import { Upload, Loader2 } from "lucide-react";
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
@@ -41,7 +41,11 @@ export function FileUpload({ onFileSelect, isUploading, isAnalyzing }: FileUploa
       onDrop={handleDrop}
     >
       <div className="text-center">
-        <Upload className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+        {isAnalyzing || isUploading ? (
+          <Loader2 className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 animate-spin" />
+        ) : (
+          <Upload className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+        )}
         <div className="mt-4">
           <label htmlFor="file-upload" className="cursor-pointer">
             <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">

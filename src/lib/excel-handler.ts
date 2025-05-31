@@ -1,5 +1,5 @@
 // src/lib/excel-handler.ts
-// Excel-only handler for IxStats world roster data with reduced field set
+// Excel-only handler for IxStats world roster data with standardized headers
 
 import * as XLSX from 'xlsx';
 import type { BaseCountryData } from '../types/ixstats';
@@ -25,8 +25,9 @@ export interface ExcelFieldMapping {
   aliases: string[];
 }
 
-// Field mappings for the exact Excel structure (now includes all required fields)
+// Field mappings for the standardized Excel headers
 const FIELD_MAPPINGS: ExcelFieldMapping[] = [
+  // Standard headers - exact matches
   {
     excelHeader: 'Country',
     dbField: 'country',
@@ -100,50 +101,51 @@ const FIELD_MAPPINGS: ExcelFieldMapping[] = [
   {
     excelHeader: 'Max GDPPC Grow Rt',
     dbField: 'maxGdpGrowthRate',
-    required: true, // As per schema if it's NOT NULL implicitly
+    required: true,
     type: 'percentage',
     aliases: ['Max Growth Rate', 'Max GDP Growth']
   },
   {
     excelHeader: 'Adj GDPPC Growth',
     dbField: 'adjustedGdpGrowth',
-    required: true, // As per schema
+    required: true,
     type: 'percentage',
     aliases: ['GDP Growth', 'Adjusted GDP Growth']
   },
   {
     excelHeader: 'Pop Growth Rate',
     dbField: 'populationGrowthRate',
-    required: true, // As per schema
+    required: true,
     type: 'percentage',
     aliases: ['Population Growth', 'popgrowthrate']
   },
-  // Added missing fields
+  
+  // Required fields that aren't in standard headers - will use defaults
   {
     excelHeader: '2040 Population',
     dbField: 'projected2040Population',
-    required: true,
+    required: false, // Not in standardized headers, will calculate defaults
     type: 'number',
-    aliases: ['2040 Pop']
+    aliases: ['2040 Pop', 'Projected Population']
   },
   {
     excelHeader: '2040 GDP',
     dbField: 'projected2040Gdp',
-    required: true,
+    required: false, // Not in standardized headers, will calculate defaults
     type: 'number',
-    aliases: []
+    aliases: ['Projected GDP']
   },
   {
     excelHeader: '2040 GDP PC',
     dbField: 'projected2040GdpPerCapita',
-    required: true,
+    required: false, // Not in standardized headers, will calculate defaults
     type: 'number',
-    aliases: ['2040 GDPPC']
+    aliases: ['2040 GDPPC', 'Projected GDPPC']
   },
   {
     excelHeader: 'Actual GDP Growth',
     dbField: 'actualGdpGrowth',
-    required: true,
+    required: false, // Not in standardized headers, will calculate defaults
     type: 'percentage',
     aliases: ['Actual Growth']
   }
@@ -361,7 +363,6 @@ export class IxStatsExcelHandler {
       // Get country name first - it's required
       const countryIndex = fieldMap.get('country');
       if (countryIndex === undefined || row[countryIndex] === undefined) {
-        // throw new Error('Country field not mapped or missing in row'); // More specific error
         console.warn("Skipping row due to missing country name or mapping");
         return null;
       }
@@ -383,28 +384,55 @@ export class IxStatsExcelHandler {
         gdpPerCapita: this.parseNumber(row[fieldMap.get('gdpPerCapita') ?? -1], 0), // Default 0, validation will catch
         landArea: this.parseOptionalNumber(row[fieldMap.get('landArea') ?? -1]),
         areaSqMi: this.parseOptionalNumber(row[fieldMap.get('areaSqMi') ?? -1]),
-        maxGdpGrowthRate: this.parsePercentage(row[fieldMap.get('maxGdpGrowthRate') ?? -1], 0.00), // Default to 0 if required and missing
-        adjustedGdpGrowth: this.parsePercentage(row[fieldMap.get('adjustedGdpGrowth') ?? -1], 0.00),
-        populationGrowthRate: this.parsePercentage(row[fieldMap.get('populationGrowthRate') ?? -1], 0.00),
-        projected2040Population: this.parseNumber(row[fieldMap.get('projected2040Population') ?? -1], 0),
-        projected2040Gdp: this.parseNumber(row[fieldMap.get('projected2040Gdp') ?? -1], 0),
-        projected2040GdpPerCapita: this.parseNumber(row[fieldMap.get('projected2040GdpPerCapita') ?? -1], 0),
-        actualGdpGrowth: this.parsePercentage(row[fieldMap.get('actualGdpGrowth') ?? -1], 0.00),
+        maxGdpGrowthRate: this.parsePercentage(row[fieldMap.get('maxGdpGrowthRate') ?? -1], 0.05), // Default to 5% if required and missing
+        adjustedGdpGrowth: this.parsePercentage(row[fieldMap.get('adjustedGdpGrowth') ?? -1], 0.03), // Default to 3%
+        populationGrowthRate: this.parsePercentage(row[fieldMap.get('populationGrowthRate') ?? -1], 0.01), // Default to 1%
+        projected2040Population: this.parseOptionalNumber(row[fieldMap.get('projected2040Population') ?? -1]) ?? 0,
+        projected2040Gdp: this.parseOptionalNumber(row[fieldMap.get('projected2040Gdp') ?? -1]) ?? 0,
+        projected2040GdpPerCapita: this.parseOptionalNumber(row[fieldMap.get('projected2040GdpPerCapita') ?? -1]) ?? 0,
+        actualGdpGrowth: this.parseOptionalNumber(row[fieldMap.get('actualGdpGrowth') ?? -1]) ?? 0,
       };
 
       // Calculate missing areaSqMi from landArea if needed
-      if (countryData.areaSqMi === null && countryData.landArea !== undefined) {
+      if (countryData.areaSqMi === null && countryData.landArea !== null && countryData.landArea !== undefined) {
         countryData.areaSqMi = countryData.landArea / 2.58999;
       }
 
       // Calculate missing landArea from areaSqMi if needed
-      if (countryData.landArea === null && countryData.areaSqMi !== undefined) {
+      if (countryData.landArea === null && countryData.areaSqMi !== null && countryData.areaSqMi !== undefined) {
         countryData.landArea = countryData.areaSqMi * 2.58999;
+      }
+      
+      // Calculate default values for missing required fields (that aren't in standard headers)
+      // These are required in the database schema but not in the standardized Excel headers
+      
+      // Calculate 2040 Population (12 years from baseline 2028)
+      if (countryData.projected2040Population === null || countryData.projected2040Population === undefined) {
+        // Project population 12 years into the future (2028 to 2040)
+        countryData.projected2040Population = countryData.population * Math.pow(1 + countryData.populationGrowthRate, 12);
+      }
+      
+      // Calculate 2040 GDP per Capita
+      if (countryData.projected2040GdpPerCapita === null || countryData.projected2040GdpPerCapita === undefined) {
+        // Project GDP per capita 12 years into the future
+        countryData.projected2040GdpPerCapita = countryData.gdpPerCapita * Math.pow(1 + countryData.adjustedGdpGrowth, 12);
+      }
+      
+      // Calculate 2040 total GDP
+      if (countryData.projected2040Gdp === null || countryData.projected2040Gdp === undefined) {
+        // Calculate projected GDP based on population and GDP per capita
+        countryData.projected2040Gdp = countryData.projected2040Population * countryData.projected2040GdpPerCapita;
+      }
+      
+      // Set actual GDP growth if missing
+      if (countryData.actualGdpGrowth === null || countryData.actualGdpGrowth === undefined) {
+        // Default to the adjusted GDP growth rate
+        countryData.actualGdpGrowth = countryData.adjustedGdpGrowth;
       }
       
       // Validate the parsed data
       if (!this.validateCountryData(countryData)) {
-         console.warn(`[Excel Handler] Invalid data for country: ${countryName}. Pop: ${countryData.population}, GDPPC: ${countryData.gdpPerCapita}`);
+        console.warn(`[Excel Handler] Invalid data for country: ${countryName}. Pop: ${countryData.population}, GDPPC: ${countryData.gdpPerCapita}`);
         return null;
       }
 
@@ -514,15 +542,15 @@ export class IxStatsExcelHandler {
       data.country.length > 0 &&
       data.population > 0 &&
       data.gdpPerCapita > 0 &&
-      data.projected2040Population >= 0 && // Allow 0 if truly the case
-      data.projected2040Gdp >= 0 &&
-      data.projected2040GdpPerCapita >= 0 &&
+      data.projected2040Population > 0 && // Now we calculate these if missing
+      data.projected2040Gdp > 0 &&
+      data.projected2040GdpPerCapita > 0 &&
       // actualGdpGrowth can be negative
       !data.country.toLowerCase().includes('#div/0!') &&
       !data.country.includes('DIV');
 
     if (!isValid) {
-        // console.warn(`[ExcelHandler] Validation failed for ${data.country}: Pop=${data.population}, GDPPC=${data.gdpPerCapita}, ProjPop=${data.projected2040Population}, ProjGDP=${data.projected2040Gdp}, ProjGDPPC=${data.projected2040GdpPerCapita}`);
+      console.warn(`[ExcelHandler] Validation failed for ${data.country}: Pop=${data.population}, GDPPC=${data.gdpPerCapita}, ProjPop=${data.projected2040Population}, ProjGDP=${data.projected2040Gdp}, ProjGDPPC=${data.projected2040GdpPerCapita}`);
     }
     return isValid;
   }
