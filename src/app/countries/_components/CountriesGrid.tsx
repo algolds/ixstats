@@ -2,23 +2,15 @@
 "use client";
 
 import { Globe } from "lucide-react";
-import { CountryListCard } from "./CountryListCard";
-
-interface CountryData {
-  id: string;
-  name: string;
-  currentPopulation: number;
-  currentGdpPerCapita: number;
-  currentTotalGdp: number;
-  economicTier: string;
-  populationTier: string;
-  landArea?: number | null;
-  populationDensity?: number | null;
-  gdpDensity?: number | null;
-}
+import { CountryListCard } from "./CountryListCard"; // Assuming this is already converted
+import { Skeleton } from "~/components/ui/skeleton"; // For loading state
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "~/components/ui/card"; // For "No countries" message
+import { Button } from "~/components/ui/button"; // For "No countries" message button
+import type { PageCountryData } from "../page"; // Import the specific type
+import { IxTime } from "~/lib/ixtime";
 
 interface CountriesGridProps {
-  countries: CountryData[];
+  countries: PageCountryData[]; // Use the specific type
   isLoading?: boolean;
   searchTerm?: string;
 }
@@ -26,42 +18,38 @@ interface CountriesGridProps {
 export function CountriesGrid({ countries, isLoading = false, searchTerm = "" }: CountriesGridProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {Array.from({ length: 12 }).map((_, i) => (
-          <div key={i} className="card animate-pulse">
-            <div className="p-6">
-              {/* Header skeleton */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center">
-                  <div className="w-8 h-6 bg-[var(--color-bg-tertiary)] rounded mr-3"></div>
-                  <div className="h-6 bg-[var(--color-bg-tertiary)] rounded w-32"></div>
+          // Using shadcn Skeleton within a Card structure for consistent loading appearance
+          <Card key={i} className="flex flex-col h-full">
+            <CardHeader className="pb-4">
+              <div className="flex justify-between items-start">
+                <div className="flex items-center space-x-3 min-w-0">
+                  <Skeleton className="h-6 w-8 rounded" /> {/* Flag skeleton */}
+                  <Skeleton className="h-6 w-32 rounded" /> {/* Title skeleton */}
                 </div>
-                <div className="w-5 h-5 bg-[var(--color-bg-tertiary)] rounded"></div>
+                <Skeleton className="h-7 w-7 rounded-full" /> {/* Button skeleton */}
               </div>
-              
-              {/* Stats grid skeleton */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
+              <Skeleton className="h-4 w-2/3 mt-1 rounded" /> {/* Description skeleton */}
+            </CardHeader>
+            <CardContent className="flex-grow">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm mb-4">
                 {Array.from({ length: 4 }).map((_, j) => (
-                  <div key={j} className="flex flex-col items-center text-center">
-                    <div className="h-4 bg-[var(--color-bg-tertiary)] rounded w-16 mb-2"></div>
-                    <div className="h-5 bg-[var(--color-bg-tertiary)] rounded w-20"></div>
+                  <div key={j} className="space-y-1">
+                    <Skeleton className="h-3 w-16 rounded" />
+                    <Skeleton className="h-5 w-20 rounded" />
                   </div>
                 ))}
               </div>
-              
-              {/* Geographic info skeleton */}
-              <div className="h-4 bg-[var(--color-bg-tertiary)] rounded w-24 mx-auto mb-4"></div>
-            </div>
-            
-            {/* Footer skeleton */}
-            <div className="px-6 py-4 bg-[var(--color-bg-tertiary)] border-t border-[var(--color-border-primary)] rounded-b-lg">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="h-6 bg-[var(--color-bg-accent)] rounded w-20"></div>
-                <div className="h-6 bg-[var(--color-bg-accent)] rounded w-16"></div>
+              <Skeleton className="h-8 w-full rounded-md" /> {/* Efficiency badge skeleton */}
+            </CardContent>
+            <CardFooter className="pt-4">
+              <div className="flex justify-between items-center w-full">
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-4 w-24 rounded" />
               </div>
-              <div className="h-4 bg-[var(--color-bg-accent)] rounded w-24 mx-auto"></div>
-            </div>
-          </div>
+            </CardFooter>
+          </Card>
         ))}
       </div>
     );
@@ -69,50 +57,76 @@ export function CountriesGrid({ countries, isLoading = false, searchTerm = "" }:
 
   if (countries.length === 0) {
     return (
-      <div className="text-center py-16">
-        <Globe className="mx-auto h-16 w-16 text-[var(--color-text-muted)] opacity-50" />
-        <h3 className="mt-4 text-xl font-medium text-[var(--color-text-primary)]">
-          {searchTerm ? "No countries match your search" : "No countries available"}
-        </h3>
-        <p className="mt-2 text-sm text-[var(--color-text-muted)] max-w-md mx-auto">
-          {searchTerm ? (
-            <>
-              Try adjusting your search terms "{searchTerm}" or check the filters you've applied.
-            </>
-          ) : (
-            "Upload an Excel roster file via the IxStats Dashboard to get started with country data."
-          )}
-        </p>
-        
-        {!searchTerm && (
-          <div className="mt-6">
-            <button
-              onClick={() => window.location.href = '/admin'}
-              className="btn-primary"
-            >
+      <Card className="text-center py-16 col-span-full"> {/* Ensure it spans full width if in a grid */}
+        <CardHeader>
+            <Globe className="mx-auto h-16 w-16 text-muted-foreground opacity-50" />
+            <CardTitle className="mt-4 text-xl font-medium text-foreground">
+                 {searchTerm ? "No countries match your search" : "No countries available"}
+            </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
+            {searchTerm ? (
+              <>
+                Try adjusting your search terms "{searchTerm}" or check the filters you've applied.
+              </>
+            ) : (
+              "Upload an Excel roster file via the Admin Panel to get started with country data."
+            )}
+          </p>
+          {!searchTerm && (
+            <Button variant="secondary" className="mt-6" onClick={() => window.location.href = '/admin'}>
               Go to Admin Panel
-            </button>
-          </div>
-        )}
-      </div>
+            </Button>
+          )}
+        </CardContent>
+      </Card>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Grid Container */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {countries.map((country) => (
           <CountryListCard
             key={country.id}
-            country={country}
+            // Pass the country data as CountryStats type, ensuring all fields are present
+            // You might need to adjust this mapping based on what CountryListCard exactly expects
+            // and what your `getAll` tRPC procedure returns.
+            country={{
+              id: country.id,
+              name: country.name,
+              continent: country.continent,
+              region: country.region,
+              currentPopulation: country.currentPopulation,
+              currentGdpPerCapita: country.currentGdpPerCapita,
+              currentTotalGdp: country.currentTotalGdp,
+              economicTier: country.economicTier,
+              populationTier: country.populationTier,
+              landArea: country.landArea,
+              populationDensity: country.populationDensity,
+              gdpDensity: country.gdpDensity,
+              lastCalculated: new Date(country.lastCalculated), // Ensure it's a Date object
+              // Fill in other required CountryStats fields with defaults or from fetched data if available
+              baselinePopulation: country.currentPopulation, // Or from a specific baseline field
+              baselineGdpPerCapita: country.currentGdpPerCapita, // Or from a specific baseline field
+              maxGdpGrowthRate: 0.05, // Example default, fetch if available
+              adjustedGdpGrowth: 0.03, // Example default, fetch if available
+              populationGrowthRate: 0.01, // Example default, fetch if available
+              localGrowthFactor: 1.0, // Example default
+              baselineDate: new Date(IxTime.getInGameEpoch()), // Example default
+              projected2040Population: 0, // Example default
+              projected2040Gdp: 0, // Example default
+              projected2040GdpPerCapita: 0, // Example default
+              actualGdpGrowth: 0, // Example default
+              areaSqMi: country.landArea ? country.landArea / 2.59 : null, // Example calculation
+            }}
           />
         ))}
       </div>
-      
-      {/* Load More / Pagination could go here in the future */}
+
       {countries.length > 0 && (
-        <div className="text-center text-sm text-[var(--color-text-muted)] mt-8">
+        <div className="text-center text-sm text-muted-foreground mt-8">
           Showing {countries.length} countries
         </div>
       )}

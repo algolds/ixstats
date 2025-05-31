@@ -2,15 +2,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  ChevronDown, 
-  ChevronUp, 
-  ExternalLink, 
-  Globe, 
-  MapPin, 
-  Users, 
-  Building, 
-  DollarSign, 
+import {
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Globe,
+  MapPin,
+  Users,
+  Building,
+  DollarSign,
   Languages,
   Clock,
   Phone,
@@ -19,14 +19,28 @@ import {
   Info,
   Loader2,
   AlertTriangle,
-  Flag
+  Flag,
+  RefreshCw
 } from "lucide-react";
 import { ixnayWiki } from "~/lib/mediawiki-service";
-import type { CountryInfobox } from "~/lib/mediawiki-service";
+import type { CountryInfobox as CountryInfoboxType } from "~/lib/mediawiki-service"; // Renamed to avoid conflict
+import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+  CardDescription,
+} from "~/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
+import { Separator } from "~/components/ui/separator";
 
 interface CountryInfoboxProps {
   countryName: string;
   onToggle?: (isExpanded: boolean) => void;
+  initialExpanded?: boolean; // Allow parent to control initial state
 }
 
 interface InfoboxField {
@@ -43,10 +57,10 @@ interface LoadingState {
   retryCount: number;
 }
 
-export function CountryInfobox({ countryName, onToggle }: CountryInfoboxProps) {
-  const [infobox, setInfobox] = useState<CountryInfobox | null>(null);
+export function CountryInfobox({ countryName, onToggle, initialExpanded = false }: CountryInfoboxProps) {
+  const [infobox, setInfobox] = useState<CountryInfoboxType | null>(null);
   const [flagUrl, setFlagUrl] = useState<string | null>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(initialExpanded);
   const [loadingState, setLoadingState] = useState<LoadingState>({
     isLoading: true,
     error: null,
@@ -55,37 +69,38 @@ export function CountryInfobox({ countryName, onToggle }: CountryInfoboxProps) {
 
   const MAX_RETRIES = 2;
 
-  useEffect(() => {
-    loadInfoboxData();
-  }, [countryName]);
-
   const loadInfoboxData = async (isRetry = false) => {
+    if (!countryName) {
+        setLoadingState({ isLoading: false, error: "Country name not provided.", retryCount: 0 });
+        return;
+    }
     try {
       if (!isRetry) {
+        setLoadingState(prev => ({ ...prev, isLoading: true, error: null, retryCount: 0 }));
+      } else {
         setLoadingState(prev => ({ ...prev, isLoading: true, error: null }));
       }
 
       console.log(`[CountryInfobox] Loading data for: ${countryName}`);
-      
-      // Get the flag URL
-      const flag = await ixnayWiki.getFlagUrl(countryName);
+      const [flag, data] = await Promise.all([
+        ixnayWiki.getFlagUrl(countryName),
+        ixnayWiki.getCountryInfobox(countryName)
+      ]);
+
       setFlagUrl(flag);
-      
-      // Get the infobox data
-      const data = await ixnayWiki.getCountryInfobox(countryName);
       setInfobox(data);
-      
       setLoadingState(prev => ({ ...prev, isLoading: false, error: null }));
-      
+
       if (data) {
         console.log(`[CountryInfobox] Successfully loaded infobox for: ${countryName}`);
       } else {
         console.log(`[CountryInfobox] No infobox data found for: ${countryName}`);
+        // Optionally set a specific error or message if data is null but no exception occurred
+        // setLoadingState(prev => ({ ...prev, isLoading: false, error: "No infobox data found."}));
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load country information';
       console.error(`[CountryInfobox] Error loading data for ${countryName}:`, error);
-      
       setLoadingState(prev => ({
         isLoading: false,
         error: errorMessage,
@@ -93,6 +108,11 @@ export function CountryInfobox({ countryName, onToggle }: CountryInfoboxProps) {
       }));
     }
   };
+
+  useEffect(() => {
+    loadInfoboxData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [countryName]); // Only re-run if countryName changes
 
   const handleRetry = () => {
     if (loadingState.retryCount < MAX_RETRIES) {
@@ -110,11 +130,10 @@ export function CountryInfobox({ countryName, onToggle }: CountryInfoboxProps) {
     return ixnayWiki.getCountryWikiUrl(countryName);
   };
 
-  const formatInfoboxFields = (infobox: CountryInfobox): InfoboxField[] => {
+  const formatInfoboxFields = (currentInfobox: CountryInfoboxType): InfoboxField[] => {
     const fields: InfoboxField[] = [];
-
     const fieldMappings: Array<{
-      keys: string[];
+      keys: (keyof CountryInfoboxType)[]; // Ensure keys are valid
       label: string;
       icon: React.ComponentType<{ className?: string }>;
       priority: number;
@@ -125,340 +144,222 @@ export function CountryInfobox({ countryName, onToggle }: CountryInfoboxProps) {
       { keys: ['official_name', 'conventional_long_name'], label: 'Official Name', icon: Globe, priority: 3 },
       { keys: ['motto'], label: 'Motto', icon: Info, priority: 4 },
       { keys: ['continent'], label: 'Continent', icon: Globe, priority: 5 },
-      { keys: ['area', 'area_km2'], label: 'Area', icon: MapPin, priority: 6, formatter: (v) => v.includes('km') ? v : `${v} km²` },
-      { keys: ['population', 'population_estimate'], label: 'Population', icon: Users, priority: 7 },
+      { keys: ['area', 'area_km2'], label: 'Area', icon: MapPin, priority: 6, formatter: (v) => v.includes('km') ? v : `${parseFloat(v).toLocaleString()} km²` },
+      { keys: ['population', 'population_estimate'], label: 'Population', icon: Users, priority: 7, formatter: (v) => parseFloat(v).toLocaleString() },
       { keys: ['currency', 'currency_code'], label: 'Currency', icon: DollarSign, priority: 8 },
       { keys: ['government', 'government_type'], label: 'Government', icon: Building, priority: 9 },
       { keys: ['leader_title1', 'head_of_state'], label: 'Head of State', icon: Users, priority: 10 },
       { keys: ['leader_name1', 'leader'], label: 'Leader', icon: Users, priority: 11 },
       { keys: ['legislature'], label: 'Legislature', icon: Building, priority: 12 },
-      { keys: ['established', 'established_event1'], label: 'Established', icon: Clock, priority: 13 },
-      { keys: ['gdp', 'GDP_PPP', 'GDP_nominal'], label: 'GDP', icon: DollarSign, priority: 14 },
+      { keys: ['established_event1', 'established_date1', 'established'], label: 'Established', icon: Clock, priority: 13 },
+      { keys: ['gdp_ppp', 'GDP_PPP', 'gdp_nominal', 'GDP_nominal', 'gdp'], label: 'GDP', icon: DollarSign, priority: 14 },
       { keys: ['languages', 'official_languages'], label: 'Languages', icon: Languages, priority: 15 },
       { keys: ['religion', 'state_religion'], label: 'Religion', icon: Info, priority: 16 },
       { keys: ['timezone', 'time_zone'], label: 'Timezone', icon: Clock, priority: 17 },
-      { keys: ['callingCode', 'calling_code'], label: 'Calling Code', icon: Phone, priority: 18 },
+      { keys: ['calling_code', 'callingCode'], label: 'Calling Code', icon: Phone, priority: 18 },
       { keys: ['internetTld', 'cctld'], label: 'Internet TLD', icon: Wifi, priority: 19 },
-      { keys: ['drivingSide', 'drives_on'], label: 'Driving Side', icon: Navigation, priority: 20 },
+      { keys: ['driving_side', 'drives_on'], label: 'Driving Side', icon: Navigation, priority: 20 },
     ];
 
-    // Process mapped fields
     for (const mapping of fieldMappings) {
       let value: string | undefined;
       let usedKey: string | undefined;
-
-      // Find first available value from the key options
       for (const key of mapping.keys) {
-        const val = infobox[key as keyof CountryInfobox];
-        if (val && val.trim()) {
-          value = val;
-          usedKey = key;
+        const val = currentInfobox[key];
+        if (val && String(val).trim()) {
+          value = String(val);
+          usedKey = String(key);
           break;
         }
       }
-
       if (value && usedKey) {
         const formattedValue = mapping.formatter ? mapping.formatter(value) : value;
-        fields.push({
-          key: usedKey,
-          label: mapping.label,
-          value: formattedValue,
-          icon: mapping.icon,
-          priority: mapping.priority
-        });
+        fields.push({ key: usedKey, label: mapping.label, value: formattedValue, icon: mapping.icon, priority: mapping.priority });
       }
     }
-
-    // Add any additional fields not in our standard mappings
+    // Add other fields not explicitly mapped, with lower priority
     const mappedKeys = new Set(fieldMappings.flatMap(m => m.keys));
-    const standardKeys = new Set(['name', 'conventional_long_name', 'native_name', 'image_flag', 'flag', 'image_coat']);
-    
-    for (const [key, value] of Object.entries(infobox)) {
-      if (!mappedKeys.has(key) && !standardKeys.has(key) && value && typeof value === 'string' && value.trim()) {
-        const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        fields.push({
-          key,
-          label,
-          value,
-          icon: Info,
-          priority: 20
-        });
-      }
-    }
+    const standardKeys = new Set<keyof CountryInfoboxType>(['name', 'conventional_long_name', 'native_name', 'image_flag', 'flag', 'image_coat', 'locator_map', 'image_map']);
+
+    Object.entries(currentInfobox).forEach(([key, value]) => {
+        if (!mappedKeys.has(key as keyof CountryInfoboxType) && !standardKeys.has(key as keyof CountryInfoboxType) && value && typeof value === 'string' && value.trim()) {
+            const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            fields.push({ key, label, value, icon: Info, priority: 99 }); // Low priority for other fields
+        }
+    });
+
 
     return fields.sort((a, b) => a.priority - b.priority);
   };
 
-  // Loading state
+
   if (loadingState.isLoading) {
     return (
-      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-primary)] rounded-lg shadow-md">
-        <div className="p-4 border-b border-[var(--color-border-primary)]">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-[var(--color-text-primary)] flex items-center">
-              <Globe className="h-5 w-5 mr-2" />
-              Country Information
-            </h3>
-            <div className="flex items-center space-x-2">
-              <Loader2 className="h-4 w-4 animate-spin text-[var(--color-brand-primary)]" />
-              <span className="text-sm text-[var(--color-text-muted)]">Loading...</span>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-3/4 mb-2" />
+          <Skeleton className="h-4 w-1/2" />
+        </CardHeader>
+        <CardContent className="space-y-3 p-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex items-center space-x-3">
+              <Skeleton className="h-5 w-5 rounded-full" />
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 flex-1" />
             </div>
-          </div>
-        </div>
-        <div className="p-4">
-          <div className="space-y-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="flex items-center space-x-3">
-                <div className="w-5 h-5 bg-[var(--color-bg-tertiary)] rounded animate-pulse"></div>
-                <div className="flex-1">
-                  <div className="h-4 bg-[var(--color-bg-tertiary)] rounded animate-pulse" style={{width: `${60 + Math.random() * 40}%`}}></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+          ))}
+        </CardContent>
+      </Card>
     );
   }
 
-  // Error state
   if (loadingState.error) {
     const canRetry = loadingState.retryCount < MAX_RETRIES;
-    
     return (
-      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-primary)] rounded-lg shadow-md">
-        <div className="p-4 border-b border-[var(--color-border-primary)]">
-          <h3 className="text-lg font-semibold text-[var(--color-text-primary)] flex items-center">
-            <Globe className="h-5 w-5 mr-2" />
-            Country Information
-          </h3>
-        </div>
-        <div className="p-4 text-center">
-          <div className="text-[var(--color-error)] mb-4">
-            <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
-            <p className="text-sm font-medium">Failed to load country information</p>
-            <p className="text-xs text-[var(--color-text-muted)] mt-1">{loadingState.error}</p>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-2 justify-center">
-            {canRetry && (
-              <button
-                onClick={handleRetry}
-                className="inline-flex items-center px-3 py-2 bg-[var(--color-brand-primary)] text-white rounded-md hover:bg-[var(--color-brand-dark)] transition-colors text-sm"
-              >
-                Try Again ({loadingState.retryCount}/{MAX_RETRIES})
-              </button>
-            )}
-            <a
-              href={getWikiUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center px-3 py-2 bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] rounded-md hover:bg-[var(--color-bg-accent)] transition-colors text-sm"
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              View on Wiki
-            </a>
-          </div>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Globe className="h-5 w-5 mr-2" /> Country Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4">
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Error Loading Infobox</AlertTitle>
+            <AlertDescription>
+              {loadingState.error}
+              {canRetry && (
+                <Button onClick={handleRetry} variant="outline" size="sm" className="mt-2">
+                  <RefreshCw className="h-3 w-3 mr-1.5" />
+                  Try Again ({loadingState.retryCount + 1}/{MAX_RETRIES})
+                </Button>
+              )}
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+         <CardFooter className="p-4 border-t">
+            <Button variant="outline" asChild className="w-full">
+                <a href={getWikiUrl()} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4 mr-2" /> View on Wiki
+                </a>
+            </Button>
+        </CardFooter>
+      </Card>
     );
   }
 
-  // No data state
   if (!infobox) {
     return (
-      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-primary)] rounded-lg shadow-md">
-        <div className="p-4 border-b border-[var(--color-border-primary)]">
-          <h3 className="text-lg font-semibold text-[var(--color-text-primary)] flex items-center">
-            <Globe className="h-5 w-5 mr-2" />
-            Country Information
-          </h3>
-        </div>
-        <div className="p-4 text-center">
-          <div className="text-[var(--color-text-muted)] mb-4">
-            <Info className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No country information available</p>
-            <p className="text-xs mt-1">This country may not have a wiki page yet.</p>
-          </div>
-          <a
-            href={getWikiUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center px-4 py-2 bg-[var(--color-brand-primary)] text-white rounded-md hover:bg-[var(--color-brand-dark)] transition-colors"
-          >
-            <ExternalLink className="h-4 w-4 mr-2" />
-            View Wiki Page
-          </a>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Globe className="h-5 w-5 mr-2" /> {countryName}
+          </CardTitle>
+          <CardDescription>Country Information</CardDescription>
+        </CardHeader>
+        <CardContent className="p-4 text-center">
+          <Info className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+          <p className="text-sm text-muted-foreground">No detailed infobox data found on Ixnay Wiki for this country.</p>
+        </CardContent>
+        <CardFooter className="p-4 border-t">
+            <Button variant="outline" asChild className="w-full">
+                <a href={getWikiUrl()} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4 mr-2" /> View Wiki Page
+                </a>
+            </Button>
+        </CardFooter>
+      </Card>
     );
   }
 
-  // Success state with data
   const fields = formatInfoboxFields(infobox);
-  
-  // Limit displayed fields - only show important ones
-  const mainFields = fields.filter(f => f.priority <= 20);
-  const displayFields = isExpanded ? mainFields : mainFields.slice(0, 6);
-
-  // Get additional images if available
+  const displayFields = isExpanded ? fields : fields.slice(0, 6);
   const mapImage = infobox.locator_map || infobox.image_map;
   const coatOfArms = infobox.image_coat || infobox.coat_of_arms;
 
-  return (
-    <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-primary)] rounded-lg shadow-md transition-all duration-300">
-      {/* Header */}
-      <div className="p-4 border-b border-[var(--color-border-primary)]">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-[var(--color-text-primary)] flex items-center">
-            <Globe className="h-5 w-5 mr-2" />
-            {infobox.conventional_long_name || infobox.name}
-          </h3>
-          <div className="flex items-center space-x-2">
-            <a
-              href={getWikiUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center px-3 py-1 text-sm bg-[var(--color-brand-primary)] text-white rounded-md hover:bg-[var(--color-brand-dark)] transition-colors"
-              title="View full wiki page"
-            >
-              <ExternalLink className="h-3 w-3 mr-1" />
-              Wiki
-            </a>
-            {fields.length > 6 && (
-              <button
-                onClick={handleToggle}
-                className="inline-flex items-center px-3 py-1 text-sm bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] rounded-md hover:bg-[var(--color-bg-accent)] transition-colors"
-                title={isExpanded ? 'Show less' : 'Show more'}
-              >
-                {isExpanded ? (
-                  <>
-                    <ChevronUp className="h-3 w-3 mr-1" />
-                    Less
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="h-3 w-3 mr-1" />
-                    More
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-        </div>
-        
-        {/* Native name subtitle */}
-        {infobox.native_name && infobox.native_name !== infobox.name && (
-          <p className="text-sm text-[var(--color-text-muted)] mt-1 italic">
-            {infobox.native_name}
-          </p>
-        )}
-        
-        {/* Flag and map previews */}
-        <div className="mt-3 flex flex-col sm:flex-row items-center gap-3 justify-center">
-          {/* Flag */}
-          {flagUrl && (
-            <div className="flex flex-col items-center">
-              <img 
-                src={flagUrl} 
-                alt={`Flag of ${countryName}`} 
-                className="h-16 object-contain border border-[var(--color-border-primary)] rounded shadow-sm"
-              />
-              <span className="text-xs text-[var(--color-text-muted)] mt-1">National Flag</span>
-            </div>
-          )}
-          
-          {/* Coat of Arms if available */}
-          {coatOfArms && (
-            <div className="flex flex-col items-center">
-              <img 
-                src={`https://ixwiki.com/images/${coatOfArms}`} 
-                alt={`Coat of Arms of ${countryName}`} 
-                className="h-16 object-contain border border-[var(--color-border-primary)] rounded shadow-sm"
-                onError={(e) => {
-                  // If direct path fails, try with File: prefix
-                  (e.target as HTMLImageElement).src = `https://ixwiki.com/wiki/Special:Redirect/file/${encodeURIComponent(coatOfArms)}`;
-                }}
-              />
-              <span className="text-xs text-[var(--color-text-muted)] mt-1">Coat of Arms</span>
-            </div>
-          )}
-          
-          {/* Map if available */}
-          {mapImage && (
-            <div className="flex flex-col items-center">
-              <img 
-                src={`https://ixwiki.com/images/${mapImage}`} 
-                alt={`Map of ${countryName}`} 
-                className="h-16 object-contain border border-[var(--color-border-primary)] rounded shadow-sm"
-                onError={(e) => {
-                  // If direct path fails, try with File: prefix
-                  (e.target as HTMLImageElement).src = `https://ixwiki.com/wiki/Special:Redirect/file/${encodeURIComponent(mapImage)}`;
-                }}
-              />
-              <span className="text-xs text-[var(--color-text-muted)] mt-1">Location Map</span>
-            </div>
-          )}
-        </div>
-      </div>
 
-      {/* Content */}
-      <div className="p-4">
-        <div className="space-y-3">
+  return (
+    <Card className="transition-all duration-300">
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center text-lg">
+            <Globe className="h-5 w-5 mr-2 text-primary" />
+            {infobox.conventional_long_name || countryName}
+          </CardTitle>
+           <Button variant="outline" size="sm" asChild>
+                <a href={getWikiUrl()} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> Wiki
+                </a>
+            </Button>
+        </div>
+        {infobox.native_name && infobox.native_name !== countryName && (
+          <CardDescription className="text-sm italic">
+            {infobox.native_name}
+          </CardDescription>
+        )}
+      </CardHeader>
+
+      <CardContent className="px-4 pt-0 pb-4">
+        {(flagUrl || coatOfArms || mapImage) && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 my-4">
+            {flagUrl && (
+                <div className="flex flex-col items-center">
+                <img src={flagUrl} alt={`Flag of ${countryName}`} className="h-16 max-w-full object-contain border rounded shadow-sm bg-muted/20" />
+                <span className="text-xs text-muted-foreground mt-1">Flag</span>
+                </div>
+            )}
+            {coatOfArms && (
+                <div className="flex flex-col items-center">
+                <img src={`https://ixwiki.com/images/${coatOfArms.replace(/ /g, '_')}`} alt="Coat of Arms" className="h-16 max-w-full object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
+                <span className="text-xs text-muted-foreground mt-1">Coat of Arms</span>
+                </div>
+            )}
+            {mapImage && (
+                <div className="flex flex-col items-center">
+                <img src={`https://ixwiki.com/images/${mapImage.replace(/ /g, '_')}`} alt="Map" className="h-16 max-w-full object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
+                <span className="text-xs text-muted-foreground mt-1">Map</span>
+                </div>
+            )}
+            </div>
+        )}
+        {displayFields.length > 0 && <Separator className="my-3" />}
+
+        <div className="space-y-2.5">
           {displayFields.map((field) => {
             const Icon = field.icon;
             return (
-              <div key={field.key} className="flex items-start space-x-3">
-                <Icon className="h-4 w-4 mt-0.5 text-[var(--color-brand-primary)] flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-col sm:flex-row sm:items-center">
-                    <span className="text-sm font-medium text-[var(--color-text-muted)] sm:w-24 flex-shrink-0">
-                      {field.label}:
-                    </span>
-                    <span className="text-sm text-[var(--color-text-primary)] break-words">
-                      {field.value}
-                    </span>
-                  </div>
-                </div>
+              <div key={field.key} className="flex items-start text-sm">
+                <Icon className="h-4 w-4 mt-0.5 text-primary mr-2.5 flex-shrink-0" />
+                <span className="font-medium text-muted-foreground w-28 sm:w-32 flex-shrink-0 truncate" title={field.label}>
+                  {field.label}:
+                </span>
+                <span className="text-foreground break-words flex-1 text-right sm:text-left" title={field.value}>
+                  {field.value}
+                </span>
               </div>
             );
           })}
         </div>
+      </CardContent>
 
-        {/* Show expand hint if there are more fields */}
-        {!isExpanded && fields.length > 6 && (
-          <div className="mt-4 pt-3 border-t border-[var(--color-border-primary)]">
-            <button
-              onClick={handleToggle}
-              className="w-full text-center text-sm text-[var(--color-brand-primary)] hover:text-[var(--color-brand-dark)] transition-colors flex items-center justify-center"
-            >
-              <ChevronDown className="h-4 w-4 mr-1" />
-              Show {fields.length - 6} more fields
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Footer with source info when expanded */}
-      {isExpanded && (
-        <div className="px-4 py-3 bg-[var(--color-bg-tertiary)] border-t border-[var(--color-border-primary)] rounded-b-lg">
-          <div className="flex items-center justify-between text-xs text-[var(--color-text-muted)]">
-            <span>Source: Ixnay Wiki</span>
-            <div className="flex items-center space-x-4">
-              <span>Fields: {fields.length}</span>
-              <a
-                href={getWikiUrl()}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[var(--color-brand-primary)] hover:text-[var(--color-brand-dark)] transition-colors flex items-center"
-              >
-                View full page
-                <ExternalLink className="h-3 w-3 ml-1" />
-              </a>
-            </div>
-          </div>
-        </div>
+      {fields.length > 6 && (
+        <CardFooter className="p-4 border-t">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleToggle}
+            className="w-full text-primary hover:text-primary/90"
+          >
+            {isExpanded ? (
+              <ChevronUp className="h-4 w-4 mr-1.5" />
+            ) : (
+              <ChevronDown className="h-4 w-4 mr-1.5" />
+            )}
+            {isExpanded ? 'Show Less' : `Show ${fields.length - 6} More Field${fields.length - 6 > 1 ? 's' : ''}`}
+          </Button>
+        </CardFooter>
       )}
-    </div>
+    </Card>
   );
 }
+

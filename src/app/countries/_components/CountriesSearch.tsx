@@ -2,7 +2,25 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Filter, X, SortAsc, SortDesc } from "lucide-react";
+import { Search, Filter, X, SortAsc, SortDesc, Settings2, CheckCircle } from "lucide-react";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Badge } from "~/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 
 export type SortField = 'name' | 'population' | 'gdpPerCapita' | 'totalGdp' | 'economicTier' | 'continent' | 'region' | 'landArea' | 'populationDensity';
 export type SortDirection = 'asc' | 'desc';
@@ -71,192 +89,162 @@ export function CountriesSearch({
     onContinentFilterChange("all");
     onRegionFilterChange("all");
     onSortChange("name", "asc");
+    setShowAdvancedFilters(false);
   };
 
   const hasActiveFilters = searchTerm !== "" || tierFilter !== "all" || continentFilter !== "all" || regionFilter !== "all" || sortField !== "name" || sortDirection !== "asc";
 
   return (
-    <div className="mb-8">
-      {/* Main Search Bar */}
-      <div className="flex flex-col lg:flex-row gap-4 mb-4">
-        <div className="flex-1">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="text-[var(--color-text-muted)] h-5 w-5" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search by country name..."
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="form-input pl-10 pr-10" // Increased pr for clear button
-            />
-            {searchTerm && (
-              <button
-                onClick={() => onSearchChange("")}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-                aria-label="Clear search term"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
+    <div className="mb-8 p-4 sm:p-6 bg-card border rounded-lg shadow-sm">
+      {/* Main Search and Basic Controls */}
+      <div className="flex flex-col sm:flex-row gap-3 items-center">
+        <div className="relative flex-grow w-full sm:w-auto">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            type="text"
+            placeholder="Search by country name..."
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-10 pr-10 w-full" // Added w-full
+          />
+          {searchTerm && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onSearchChange("")}
+              className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:text-foreground"
+              aria-label="Clear search term"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
-        
-        <div className="flex gap-3">
-          <button
-            onClick={() => onSortChange(sortField, sortDirection === 'asc' ? 'desc' : 'asc')}
-            className="btn-secondary flex items-center px-3 py-2"
-            title={`Sort by ${sortOptions.find(o => o.value === sortField)?.label} ${sortDirection === 'asc' ? 'descending' : 'ascending'}`}
-          >
-            {sortDirection === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
-            <span className="ml-2 hidden sm:inline">{sortOptions.find(o => o.value === sortField)?.label}</span>
-          </button>
-          
-          <button
+
+        <div className="flex gap-2 w-full sm:w-auto justify-between sm:justify-start">
+           <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex-1 sm:flex-none">
+                {sortDirection === 'asc' ? <SortAsc className="h-4 w-4 mr-0 sm:mr-2" /> : <SortDesc className="h-4 w-4 mr-0 sm:mr-2" />}
+                <span className="hidden sm:inline">{sortOptions.find(o => o.value === sortField)?.label}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Sort By</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {sortOptions.map(option => (
+                <DropdownMenuItem key={option.value} onClick={() => onSortChange(option.value, sortDirection)}>
+                  {option.label}
+                  {sortField === option.value && <CheckCircle className="ml-auto h-4 w-4 text-primary" />}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+               <DropdownMenuItem onClick={() => onSortChange(sortField, 'asc')}>
+                Ascending
+                {sortDirection === 'asc' && <CheckCircle className="ml-auto h-4 w-4 text-primary" />}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onSortChange(sortField, 'desc')}>
+                Descending
+                {sortDirection === 'desc' && <CheckCircle className="ml-auto h-4 w-4 text-primary" />}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button
+            variant="outline"
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            className={`btn-secondary flex items-center px-3 py-2 ${showAdvancedFilters ? 'bg-[var(--color-brand-primary)] text-white hover:bg-[var(--color-brand-dark)]' : ''}`}
+            className={`flex-1 sm:flex-none ${showAdvancedFilters ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''}`}
           >
-            <Filter className="h-4 w-4 mr-2" />
-            Filters
-          </button>
-          
+            <Filter className="h-4 w-4 mr-0 sm:mr-2" />
+            <span className="hidden sm:inline">Filters</span>
+          </Button>
+
           {hasActiveFilters && (
-            <button
+            <Button
+              variant="destructive"
               onClick={handleClearFilters}
-              className="btn-secondary text-[var(--color-error)] hover:bg-[var(--color-error)] hover:text-white border-[var(--color-error)] hover:border-[var(--color-error-dark)] flex items-center px-3 py-2"
+              className="flex-1 sm:flex-none"
               title="Clear all filters"
             >
-              <X className="h-4 w-4 mr-1" />
-              Clear
-            </button>
+              <X className="h-4 w-4 mr-0 sm:mr-1" />
+              <span className="hidden sm:inline">Clear</span>
+            </Button>
           )}
         </div>
       </div>
 
       {/* Advanced Filters Panel */}
       {showAdvancedFilters && (
-        <div className="bg-[var(--color-bg-tertiary)] border border-[var(--color-border-primary)] rounded-lg p-6 mb-4 animate-fade-in">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div className="mt-4 pt-4 border-t border-border animate-fade-in">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <div>
-              <label htmlFor="tierFilter" className="form-label mb-1">Economic Tier</label>
-              <select
-                id="tierFilter"
-                value={tierFilter}
-                onChange={(e) => onTierFilterChange(e.target.value as TierFilter)}
-                className="form-select"
-              >
-                {tierOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              <label htmlFor="tierFilter" className="text-sm font-medium text-muted-foreground mb-1 block">Economic Tier</label>
+              <Select value={tierFilter} onValueChange={(value) => onTierFilterChange(value as TierFilter)}>
+                <SelectTrigger id="tierFilter">
+                  <SelectValue placeholder="Select tier" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tierOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
-              <label htmlFor="continentFilter" className="form-label mb-1">Continent</label>
-              <select
-                id="continentFilter"
-                value={continentFilter}
-                onChange={(e) => onContinentFilterChange(e.target.value)}
-                className="form-select"
-              >
-                <option value="all">All Continents</option>
-                {availableContinents.map((continent) => (
-                  <option key={continent} value={continent}>
-                    {continent}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div>
-              <label htmlFor="regionFilter" className="form-label mb-1">Region</label>
-              <select
-                id="regionFilter"
-                value={regionFilter}
-                onChange={(e) => onRegionFilterChange(e.target.value)}
-                className="form-select"
-              >
-                <option value="all">All Regions</option>
-                {availableRegions.map((region) => (
-                  <option key={region} value={region}>
-                    {region}
-                  </option>
-                ))}
-              </select>
+              <label htmlFor="continentFilter" className="text-sm font-medium text-muted-foreground mb-1 block">Continent</label>
+              <Select value={continentFilter} onValueChange={onContinentFilterChange}>
+                <SelectTrigger id="continentFilter">
+                  <SelectValue placeholder="Select continent" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Continents</SelectItem>
+                  {availableContinents.map((continent) => (
+                    <SelectItem key={continent} value={continent}>
+                      {continent}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
-              <label htmlFor="sortField" className="form-label mb-1">Sort By</label>
-              <select
-                id="sortField"
-                value={sortField}
-                onChange={(e) => onSortChange(e.target.value as SortField, sortDirection)}
-                className="form-select"
-              >
-                {sortOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="sortDirection" className="form-label mb-1">Sort Direction</label>
-              <select
-                id="sortDirection"
-                value={sortDirection}
-                onChange={(e) => onSortChange(sortField, e.target.value as SortDirection)}
-                className="form-select"
-              >
-                <option value="asc">Ascending</option>
-                <option value="desc">Descending</option>
-              </select>
+              <label htmlFor="regionFilter" className="text-sm font-medium text-muted-foreground mb-1 block">Region</label>
+              <Select value={regionFilter} onValueChange={onRegionFilterChange} disabled={continentFilter === "all" && availableRegions.length === 0}>
+                <SelectTrigger id="regionFilter">
+                  <SelectValue placeholder="Select region" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Regions</SelectItem>
+                  {availableRegions.map((region) => (
+                    <SelectItem key={region} value={region}>
+                      {region}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
       )}
 
-      <div className="flex items-center justify-between text-sm text-[var(--color-text-muted)]">
+      {/* Results Summary */}
+      <div className="mt-4 text-sm text-muted-foreground">
         <span>
           Showing {filteredResults.toLocaleString()} of {totalResults.toLocaleString()} countries
-          {hasActiveFilters && (
-            <span className="ml-2 text-[var(--color-brand-primary)]">
-              (filtered)
-            </span>
-          )}
         </span>
-        
         {hasActiveFilters && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-medium">Active:</span>
-            {searchTerm && (
-              <span className="filter-tag">
-                Search: "{searchTerm.length > 15 ? searchTerm.substring(0,12) + '...' : searchTerm}"
-              </span>
-            )}
-            {tierFilter !== 'all' && (
-              <span className="filter-tag">
-                Tier: {tierFilter}
-              </span>
-            )}
-            {continentFilter !== 'all' && (
-              <span className="filter-tag">
-                Continent: {continentFilter}
-              </span>
-            )}
-            {regionFilter !== 'all' && (
-              <span className="filter-tag">
-                Region: {regionFilter}
-              </span>
-            )}
+          <div className="mt-2 flex flex-wrap gap-1 items-center">
+            <span className="font-medium mr-1">Active Filters:</span>
+            {searchTerm && <Badge variant="secondary">Search: "{searchTerm.length > 15 ? searchTerm.substring(0,12) + '...' : searchTerm}"</Badge>}
+            {tierFilter !== 'all' && <Badge variant="secondary">Tier: {tierFilter}</Badge>}
+            {continentFilter !== 'all' && <Badge variant="secondary">Continent: {continentFilter}</Badge>}
+            {regionFilter !== 'all' && <Badge variant="secondary">Region: {regionFilter}</Badge>}
             {(sortField !== 'name' || sortDirection !== 'asc') && (
-              <span className="filter-tag">
+              <Badge variant="secondary">
                 Sort: {sortOptions.find(o => o.value === sortField)?.label} ({sortDirection})
-              </span>
+              </Badge>
             )}
           </div>
         )}

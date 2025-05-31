@@ -1,7 +1,7 @@
 // src/app/countries/_components/detail/TimeControl.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Calendar,
   Rewind,
@@ -12,15 +12,27 @@ import {
   Clock,
   Info,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Minus, Plus
 } from "lucide-react";
 import { IxTime } from "~/lib/ixtime";
+import { Button } from "~/components/ui/button";
+import { Slider } from "~/components/ui/slider";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Label } from "~/components/ui/label";
+import { Badge } from "~/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 
 interface TimeControlProps {
   onTimeChange: (ixTime: number) => void;
   onForecastChange: (years: number) => void;
-  currentTime?: number;
-  gameEpoch?: number;
+  currentTime: number;
+  gameEpoch: number;
   isLoading?: boolean;
 }
 
@@ -31,311 +43,206 @@ export function TimeControl({
   gameEpoch,
   isLoading = false
 }: TimeControlProps) {
-  const [expanded, setExpanded] = useState(false);
-  const [timeOffset, setTimeOffset] = useState(0); // Years from current time
-  const [forecastYears, setForecastYears] = useState(0);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [timeOffset, setTimeOffset] = useState(0); // Years relative to the *actual current IxTime*
+  const [forecastYearsInput, setForecastYearsInput] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState(1); // 1x, 2x, 4x speed
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
 
-  const actualCurrentTime = currentTime || IxTime.getCurrentIxTime();
-  const actualGameEpoch = gameEpoch || IxTime.getInGameEpoch();
-  
-  // Calculate the target time based on offset
-  const targetTime = IxTime.addYears(actualCurrentTime, timeOffset);
-  
-  // Calculate min/max bounds
-  const maxPastYears = -(IxTime.getCurrentGameYear(actualCurrentTime) - IxTime.getCurrentGameYear(actualGameEpoch));
+  // targetTime is the time that should be displayed and used for data fetching
+  // It's derived from the parent's currentTime and the local timeOffset
+  const targetTime = useMemo(() => IxTime.addYears(currentTime, timeOffset), [currentTime, timeOffset]);
+
+  // Min/max bounds for timeOffset, relative to the *actual current IxTime*
+  const maxPastYears = useMemo(() => -(IxTime.getCurrentGameYear(IxTime.getCurrentIxTime()) - IxTime.getCurrentGameYear(gameEpoch)), [gameEpoch]);
   const maxFutureYears = 10;
 
-  // Auto-play functionality
   useEffect(() => {
     if (!isPlaying) return;
-
     const interval = setInterval(() => {
       setTimeOffset(prev => {
-        const newOffset = prev + (0.1 * playbackSpeed); // 0.1 years per tick
+        const newOffset = prev + (0.1 * playbackSpeed);
         if (newOffset > maxFutureYears) {
           setIsPlaying(false);
           return maxFutureYears;
         }
+        if (newOffset < maxPastYears) {
+          setIsPlaying(false);
+          return maxPastYears;
+        }
         return newOffset;
       });
-    }, 100); // 100ms intervals
-
+    }, 100);
     return () => clearInterval(interval);
-  }, [isPlaying, playbackSpeed, maxFutureYears]);
+  }, [isPlaying, playbackSpeed, maxFutureYears, maxPastYears]);
 
-  // Notify parent of time changes
+  // Effect to call parent's onTimeChange when targetTime (derived from offset) changes
   useEffect(() => {
     onTimeChange(targetTime);
   }, [targetTime, onTimeChange]);
 
-  // Notify parent of forecast changes
+  // Effect to call parent's onForecastChange when forecastYearsInput changes
   useEffect(() => {
-    onForecastChange(forecastYears);
-  }, [forecastYears, onForecastChange]);
+    onForecastChange(forecastYearsInput);
+  }, [forecastYearsInput, onForecastChange]);
 
-  const handleTimeOffsetChange = (newOffset: number) => {
-    const clampedOffset = Math.max(maxPastYears, Math.min(maxFutureYears, newOffset));
-    setTimeOffset(clampedOffset);
-    if (isPlaying && clampedOffset >= maxFutureYears) {
-      setIsPlaying(false);
+  // When parent's currentTime changes (e.g., reset to present), reset local offset
+  useEffect(() => {
+      // If the parent's currentTime is the actual present, and we have an offset,
+      // it means we were time traveling and parent reset. So, reset local offset.
+      if (currentTime === IxTime.getCurrentIxTime()) {
+          setTimeOffset(0);
+      }
+      // No dependency on timeOffset here to avoid loops. This effect is purely
+      // to react to external changes of `currentTime` prop.
+  }, [currentTime]);
+
+
+  const handleTimeOffsetChange = (newOffsetArray: number[]) => {
+    const newOffset = newOffsetArray[0];
+    if (typeof newOffset === 'number') {
+      const clampedOffset = Math.max(maxPastYears, Math.min(maxFutureYears, newOffset));
+      setTimeOffset(clampedOffset);
+      if (isPlaying && (clampedOffset >= maxFutureYears || clampedOffset <= maxPastYears)) {
+        setIsPlaying(false);
+      }
+    }
+  };
+  
+  const handleForecastYearsInputChange = (newForecastYearsArray: number[]) => {
+    const newForecastYears = newForecastYearsArray[0];
+    if (typeof newForecastYears === 'number') {
+      setForecastYearsInput(newForecastYears);
     }
   };
 
+
   const handleReset = () => {
-    setTimeOffset(0);
-    setForecastYears(0);
+    // This should trigger the parent to set its currentTime to actual present
+    // And then the useEffect above will reset local timeOffset.
+    onTimeChange(IxTime.getCurrentIxTime()); // Signal parent to reset to present
+    setTimeOffset(0); // Also reset local offset immediately for responsiveness
+    setForecastYearsInput(0);
     setIsPlaying(false);
   };
 
   const handlePlayPause = () => {
+    if (timeOffset >= maxFutureYears && !isPlaying) return;
     setIsPlaying(!isPlaying);
+  };
+  
+  const stepTime = (years: number) => {
+    const currentTargetOffset = IxTime.getYearsBetween(IxTime.getCurrentIxTime(), targetTime);
+    const newTargetOffset = currentTargetOffset + years;
+    const newClampedTargetOffset = Math.max(maxPastYears, Math.min(maxFutureYears, newTargetOffset));
+    // Calculate the new timeOffset based on the actual current IxTime
+    const newTimeOffset = IxTime.getYearsBetween(IxTime.getCurrentIxTime(), IxTime.addYears(IxTime.getCurrentIxTime(), newClampedTargetOffset));
+    setTimeOffset(newTimeOffset);
   };
 
   const getTimeDescription = () => {
-    if (timeOffset === 0) return "Present Time";
+    if (Math.abs(timeOffset) < 0.05) return "Present Time";
     if (timeOffset < 0) return `${Math.abs(timeOffset).toFixed(1)} years ago`;
     return `${timeOffset.toFixed(1)} years in future`;
   };
 
-  const isAtPresent = timeOffset === 0;
-  const isAtFuture = timeOffset > 0;
-  const isAtPast = timeOffset < 0;
+  const isAtPresent = Math.abs(timeOffset) < 0.05 && currentTime === IxTime.getCurrentIxTime();
 
-  // Collapsed view
-  if (!expanded) {
+
+  if (!isExpanded) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white flex items-center">
-              <Clock className="h-4 w-4 mr-2" />
-              Viewing: {IxTime.formatIxTime(targetTime)} ({IxTime.getCurrentGameYear(targetTime)})
-            </h3>
-            {!isAtPresent && (
-              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                Time travel active: {getTimeDescription()}
-              </p>
-            )}
-            {forecastYears > 0 && (
-              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                Forecast: +{forecastYears.toFixed(1)} years
-              </p>
-            )}
+      <Card className="overflow-hidden">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-foreground flex items-center">
+                <Clock className="h-4 w-4 mr-2 text-primary" />
+                Viewing: {IxTime.formatIxTime(targetTime)} ({IxTime.getCurrentGameYear(targetTime)})
+              </div>
+              {!isAtPresent && (
+                <Badge variant="outline" className="mt-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700">
+                  Time Travel: {getTimeDescription()}
+                </Badge>
+              )}
+              {forecastYearsInput > 0 && (
+                 <Badge variant="outline" className="mt-1 ml-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700">
+                  Forecast: +{forecastYearsInput.toFixed(1)} yrs
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {!isAtPresent && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" onClick={handleReset} className="h-8 w-8">
+                        <RotateCcw className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Reset to Present</p></TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              <Button variant="outline" size="sm" onClick={() => setIsExpanded(true)}>
+                Controls <ChevronDown className="h-3.5 w-3.5 ml-1.5" />
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            {!isAtPresent && (
-              <button
-                onClick={handleReset}
-                className="p-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
-                title="Reset to present time"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-              </button>
-            )}
-            <button 
-              onClick={() => setExpanded(true)}
-              className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/50 flex items-center font-medium"
-            >
-              <span className="mr-1">Time Controls</span>
-              <ChevronDown className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
-  // Expanded view
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
-          <Calendar className="h-5 w-5 mr-2" />
-          Time Control
-          {!isAtPresent && (
-            <span className="ml-3 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-sm rounded-full">
-              Time Travel Active
-            </span>
-          )}
-        </h2>
-        
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleReset}
-            disabled={isLoading || (isAtPresent && forecastYears === 0)}
-            className={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 ${
-              isAtPresent && forecastYears === 0
-                ? 'text-gray-400 dark:text-gray-600'
-                : 'text-gray-700 dark:text-gray-300'
-            }`}
-            title="Reset to present time"
-          >
-            <RotateCcw className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => setExpanded(false)}
-            className="p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-          >
-            <ChevronUp className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* Current Time Display */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Viewing Time</div>
-          <div className="text-lg font-semibold text-gray-900 dark:text-white">
-            {IxTime.formatIxTime(targetTime)}
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">
-            {getTimeDescription()}
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center"><Calendar className="h-5 w-5 mr-2" />Time Control</CardTitle>
+          <div className="flex items-center gap-2">
+            {!isAtPresent && (
+                <TooltipProvider>
+                    <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" onClick={handleReset} disabled={isLoading} className="h-8 w-8"><RotateCcw className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent><p>Reset to Present Time</p></TooltipContent></Tooltip>
+                </TooltipProvider>
+            )}
+            <Button variant="ghost" size="icon" onClick={() => setIsExpanded(false)} className="h-8 w-8"><ChevronUp className="h-4 w-4" /></Button>
           </div>
         </div>
-        
-        <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Game Year</div>
-          <div className="text-lg font-semibold text-gray-900 dark:text-white">
-            {IxTime.getCurrentGameYear(targetTime)}
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">
-            Year {IxTime.getCurrentGameYear(targetTime) - IxTime.getCurrentGameYear(actualGameEpoch)} of simulation
-          </div>
-        </div>
-        
-        <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Forecast</div>
-          <div className="text-lg font-semibold text-gray-900 dark:text-white">
-            +{forecastYears.toFixed(1)} years
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">
-            {forecastYears > 0 ? IxTime.formatIxTime(IxTime.addYears(targetTime, forecastYears)) : 'None'}
-          </div>
-        </div>
-      </div>
-
-      {/* Time Navigation Controls */}
-      <div className="space-y-4">
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-medium text-gray-900 dark:text-white">
-              Time Position
-            </label>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => handleTimeOffsetChange(timeOffset - 1)}
-                disabled={isLoading || timeOffset <= maxPastYears}
-                className="p-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 disabled:opacity-50"
-              >
-                <Rewind className="h-4 w-4" />
-              </button>
-              
-              <button
-                onClick={handlePlayPause}
-                disabled={isLoading || timeOffset >= maxFutureYears}
-                className="p-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
-              >
-                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              </button>
-              
-              <button
-                onClick={() => handleTimeOffsetChange(timeOffset + 1)}
-                disabled={isLoading || timeOffset >= maxFutureYears}
-                className="p-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 disabled:opacity-50"
-              >
-                <FastForward className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-          
-          <div className="relative">
-            <input
-              type="range"
-              min={maxPastYears}
-              max={maxFutureYears}
-              step={0.1}
-              value={timeOffset}
-              onChange={(e) => handleTimeOffsetChange(parseFloat(e.target.value))}
-              disabled={isLoading}
-              className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer"
-            />
-            <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
-              <span>Game Start</span>
-              <span>Present</span>
-              <span>+10 Years</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Forecast Control */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-medium text-gray-900 dark:text-white">
-              Forecast Period
-            </label>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              {forecastYears.toFixed(1)} years
-            </span>
-          </div>
-          
-          <input
-            type="range"
-            min={0}
-            max={10}
-            step={0.1}
-            value={forecastYears}
-            onChange={(e) => setForecastYears(parseFloat(e.target.value))}
-            disabled={isLoading}
-            className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer"
-          />
-          <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
-            <span>No Forecast</span>
-            <span>10 Years</span>
-          </div>
-        </div>
-
-        {/* Playback Speed Control (when playing) */}
-        {isPlaying && (
-          <div>
-            <label className="text-sm font-medium text-gray-900 dark:text-white mb-2 block">
-              Playback Speed
-            </label>
-            <div className="flex space-x-2">
-              {[1, 2, 4].map((speed) => (
-                <button
-                  key={speed}
-                  onClick={() => setPlaybackSpeed(speed)}
-                  className={`px-3 py-1 rounded text-sm ${
-                    playbackSpeed === speed
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  }`}
-                >
-                  {speed}x
-                </button>
-              ))}
-            </div>
-          </div>
+        {isAtPresent ? (
+            <CardDescription>Currently viewing present time. Adjust to explore historical data or future forecasts.</CardDescription>
+        ) : (
+            <CardDescription className="text-blue-600 dark:text-blue-400">Time travel active: Viewing data for {getTimeDescription()}.</CardDescription>
         )}
-      </div>
-
-      {/* Info Panel */}
-      <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-lg">
-        <div className="flex items-start">
-          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 mr-2 flex-shrink-0" />
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            <p className="mb-1">
-              <strong>Time Control:</strong> Navigate through historical data and forecast future scenarios.
-            </p>
-            <p>
-              Use the slider or playback controls to explore different time periods. 
-              Forecast shows projected data based on current growth rates.
-            </p>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+            <div className="p-3 bg-muted/50 rounded-md"><Label className="text-xs text-muted-foreground block mb-1">Viewing Time</Label><div className="text-base font-semibold text-foreground">{IxTime.formatIxTime(targetTime)}</div></div>
+            <div className="p-3 bg-muted/50 rounded-md"><Label className="text-xs text-muted-foreground block mb-1">Game Year</Label><div className="text-base font-semibold text-foreground">{IxTime.getCurrentGameYear(targetTime)}</div></div>
+            <div className="p-3 bg-muted/50 rounded-md"><Label className="text-xs text-muted-foreground block mb-1">Relative to Present</Label><div className="text-base font-semibold text-foreground">{getTimeDescription()}</div></div>
+        </div>
+        <div className="space-y-3">
+          <Label htmlFor="time-offset-slider">Time Position (Years from Present: {timeOffset.toFixed(1)})</Label>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => stepTime(-1)} disabled={isLoading || timeOffset <= maxPastYears} className="h-8 w-8"><Rewind className="h-4 w-4" /></Button>
+            <Slider id="time-offset-slider" min={maxPastYears} max={maxFutureYears} step={0.1} value={[timeOffset]} onValueChange={handleTimeOffsetChange} disabled={isLoading} className="flex-grow"/>
+            <Button variant="outline" size="icon" onClick={() => stepTime(1)} disabled={isLoading || timeOffset >= maxFutureYears} className="h-8 w-8"><FastForward className="h-4 w-4" /></Button>
+          </div>
+          <div className="flex items-center justify-center gap-2">
+             <Button variant={isPlaying ? "destructive" : "default"} size="sm" onClick={handlePlayPause} disabled={isLoading || (timeOffset >= maxFutureYears && !isPlaying) || (timeOffset <= maxPastYears && !isPlaying) }>{isPlaying ? <Pause className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}{isPlaying ? "Pause" : "Play"}</Button>
+              {isPlaying && (<div className="flex items-center gap-1">{[1, 2, 4].map((speed) => (<Button key={speed} variant={playbackSpeed === speed ? "secondary" : "ghost"} size="sm" onClick={() => setPlaybackSpeed(speed)}>{speed}x</Button>))}</div>)}
           </div>
         </div>
-      </div>
-    </div>
+        <div className="space-y-3">
+          <Label htmlFor="forecast-slider">Forecast Period (Years from selected time: {forecastYearsInput.toFixed(1)})</Label>
+           <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => setForecastYearsInput(prev => Math.max(0, prev - 1))} disabled={isLoading || forecastYearsInput <= 0} className="h-8 w-8"><Minus className="h-4 w-4" /></Button>
+            <Slider id="forecast-slider" min={0} max={10} step={0.5} value={[forecastYearsInput]} onValueChange={handleForecastYearsInputChange} disabled={isLoading} className="flex-grow"/>
+            <Button variant="outline" size="icon" onClick={() => setForecastYearsInput(prev => Math.min(10, prev + 1))} disabled={isLoading || forecastYearsInput >= 10} className="h-8 w-8"><Plus className="h-4 w-4" /></Button>
+          </div>
+        </div>
+        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg text-xs">
+          <div className="flex items-start"><Info className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 mt-0.5 mr-2 flex-shrink-0" /><p className="text-muted-foreground">Adjust "Time Position" to view historical or future base data. "Forecast Period" extends projections from the selected time position.</p></div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
