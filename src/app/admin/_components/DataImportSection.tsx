@@ -67,7 +67,7 @@ export function DataImportSection({
           </h3>
           <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
             <ul className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
-              <li>• Supports Excel (.xlsx, .xls) formats</li>
+              <li>• Supports Excel (.xlsx, .xls) and CSV (.csv) formats</li>
               <li>• Upload shows a preview of changes before importing</li>
               <li>• You can choose to update existing countries or skip them</li>
               <li>• Historical data and DM inputs are always preserved</li>

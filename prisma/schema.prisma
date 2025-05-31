@@ -34,6 +34,14 @@ model Country {
   populationDensity    Float?
   gdpDensity          Float?
   
+  // Additional country information fields (NEWLY ADDED)
+  continent            String?
+  region               String?
+  governmentType       String?
+  religion             String?
+  leader               String?
+  areaSqMi             Float?
+  
   // System fields
   lastCalculated       DateTime
   baselineDate         DateTime
