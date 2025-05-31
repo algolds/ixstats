@@ -14,9 +14,12 @@ import {
   Clock,
   Info,
   Settings2,
+  Flag,
+  ExternalLink
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
+import { ixnayWiki } from "~/lib/mediawiki-service";
 
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -106,6 +109,11 @@ function CountryDetailPageContent() {
   const [customEndTime, setCustomEndTime] = useState<number>();
   const [showForecast, setShowForecast] = useState<boolean>(false);
   const [infoboxExpanded, setInfoboxExpanded] = useState(false);
+  
+  // Flag state management
+  const [flagUrl, setFlagUrl] = useState<string | null>(null);
+  const [flagLoading, setFlagLoading] = useState<boolean>(true);
+  const [flagError, setFlagError] = useState<boolean>(false);
 
   // Historical data time range
   const historicalTimeRange = useMemo(() => {
@@ -147,6 +155,46 @@ function CountryDetailPageContent() {
       refetchOnWindowFocus: false,
       staleTime: 5 * 60 * 1000,
     });
+
+  // Load flag when country data is available
+  useEffect(() => {
+    let isMounted = true;
+    
+    const loadFlag = async () => {
+      if (!countryDataResult?.name) {
+        if (isMounted) {
+          setFlagLoading(false);
+          setFlagError(true);
+        }
+        return;
+      }
+
+      if (isMounted) {
+        setFlagLoading(true);
+        setFlagError(false);
+      }
+
+      try {
+        const url = await ixnayWiki.getFlagUrl(countryDataResult.name);
+        if (isMounted) {
+          setFlagUrl(url);
+          setFlagLoading(false);
+        }
+      } catch (error) {
+        console.warn(`Failed to load flag for ${countryDataResult.name}:`, error);
+        if (isMounted) {
+          setFlagUrl(null);
+          setFlagError(true);
+          setFlagLoading(false);
+        }
+      }
+    };
+
+    void loadFlag();
+    return () => {
+      isMounted = false;
+    };
+  }, [countryDataResult?.name]);
 
   const timeContext = useMemo(() => ({
     currentIxTime,
@@ -332,6 +380,12 @@ function CountryDetailPageContent() {
   const isTimeTravel = Math.abs(currentIxTime - IxTime.getCurrentIxTime()) > 60000; // 1 minute tolerance
   const isLoadingPage = isLoadingCountry && !transformedCountry;
 
+  // Get wiki URL for country
+  const getWikiUrl = () => {
+    if (!transformedCountry?.name) return '#';
+    return `https://ixwiki.com/${encodeURIComponent(transformedCountry.name.replace(/ /g, '_'))}`;
+  };
+
   // Enhanced loading state
   if (isLoadingPage) {
     return (
@@ -404,20 +458,51 @@ function CountryDetailPageContent() {
 
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-8">
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground">{transformedCountry.name}</h1>
+            <div className="flex items-center gap-4">
+              {/* Enhanced Flag Display */}
+              <div className="flex-shrink-0">
+                {flagLoading ? (
+                  <Skeleton className="h-12 w-16 rounded-md border" />
+                ) : flagUrl ? (
+                  <img
+                    src={flagUrl}
+                    alt={`Flag of ${transformedCountry.name}`}
+                    className="h-12 w-16 object-cover rounded-md border border-border shadow-sm"
+                    onError={() => setFlagError(true)}
+                  />
+                ) : (
+                  <div className="h-12 w-16 bg-muted rounded-md border border-border flex items-center justify-center">
+                    <Flag className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+              
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold text-foreground">{transformedCountry.name}</h1>
+                <div className="flex items-center gap-3 mt-2">
+                  <p className="text-base md:text-lg text-muted-foreground">
+                    {transformedCountry.continent && transformedCountry.region
+                      ? `${transformedCountry.region}, ${transformedCountry.continent}`
+                      : transformedCountry.continent || 'Country Dashboard'
+                    }
+                  </p>
+                  {/* Wiki Link */}
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={getWikiUrl()} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                      Wiki
+                    </a>
+                  </Button>
+                </div>
+              </div>
+              
               {isTimeTravel && (
                 <Badge variant="outline" className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700">
                   <Clock className="h-3.5 w-3.5 mr-1.5" />Time Travel Active
                 </Badge>
               )}
             </div>
-            <p className="mt-2 text-base md:text-lg text-muted-foreground">
-              {transformedCountry.continent && transformedCountry.region
-                ? `${transformedCountry.region}, ${transformedCountry.continent}`
-                : transformedCountry.continent || 'Country Dashboard'
-              }
-            </p>
+            
             <div className="mt-1 flex items-center text-xs text-muted-foreground">
               <Info className="h-3.5 w-3.5 mr-1.5" />
               <span>Viewing: {IxTime.formatIxTime(currentIxTime, true)} ({timeContext.gameTimeDescription})</span>
@@ -431,6 +516,7 @@ function CountryDetailPageContent() {
               )}
             </div>
           </div>
+          
           <div className="flex items-center gap-2 mt-4 lg:mt-0">
             <Button
               variant="outline"
@@ -467,25 +553,22 @@ function CountryDetailPageContent() {
               isLoading={isLoadingCountry}
             />
 
-          {/* Enhanced Chart System */}
-{chartData && (
-  <IxStatsCharts
-    data={chartData}
-    selectedChartType={selectedChartType}
-    onChartTypeChangeAction={handleChartChange}
-    selectedTimeRange={selectedTimeRange}
-    onTimeRangeChangeAction={handleTimeRangeChange}
-    customStartTime={customStartTime}
-    customEndTime={customEndTime}
-    onCustomTimeChangeAction={handleCustomTimeChange}
-    isLoading={isLoadingHistorical}
-    showForecast={showForecast}
-    onForecastToggleAction={setShowForecast}
-  />
-)}
-
-
-           
+            {/* Enhanced Chart System */}
+            {chartData && (
+              <IxStatsCharts
+                data={chartData}
+                selectedChartType={selectedChartType}
+                onChartTypeChangeAction={handleChartChange}
+                selectedTimeRange={selectedTimeRange}
+                onTimeRangeChangeAction={handleTimeRangeChange}
+                customStartTime={customStartTime}
+                customEndTime={customEndTime}
+                onCustomTimeChangeAction={handleCustomTimeChange}
+                isLoading={isLoadingHistorical}
+                showForecast={showForecast}
+                onForecastToggleAction={setShowForecast}
+              />
+            )}
           </div>
           
           <aside className="lg:sticky lg:top-20 self-start">

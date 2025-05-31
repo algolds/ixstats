@@ -1,7 +1,7 @@
 // src/app/countries/page.tsx
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -11,14 +11,17 @@ import {
   DollarSign,
   TrendingUp,
   ChevronRight,
+  Flag,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
+import { ixnayWiki } from "~/lib/mediawiki-service";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
+import { Skeleton } from "~/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -49,6 +52,155 @@ export type PageCountryData = {
   gdpDensity: number | null;
   lastCalculated: string; // Or Date, if API provides Date objects directly. CountriesGrid expects to convert this.
 };
+
+// Helper function for type predicate filtering
+const isNonNull = <T>(value: T | null): value is T => value !== null;
+
+// Flag cache to avoid repeated API calls
+const flagCache = new Map<string, string | null>();
+
+// Component for individual country card with flag
+function CountryCard({ country }: { country: PageCountryData }) {
+  const [flagUrl, setFlagUrl] = useState<string | null>(null);
+  const [flagLoading, setFlagLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    
+    const loadFlag = async () => {
+      if (!country.name) {
+        if (isMounted) {
+          setFlagLoading(false);
+        }
+        return;
+      }
+
+      // Check cache first
+      if (flagCache.has(country.name)) {
+        if (isMounted) {
+          setFlagUrl(flagCache.get(country.name) || null);
+          setFlagLoading(false);
+        }
+        return;
+      }
+
+      try {
+        const url = await ixnayWiki.getFlagUrl(country.name);
+        flagCache.set(country.name, url);
+        if (isMounted) {
+          setFlagUrl(url);
+          setFlagLoading(false);
+        }
+      } catch (error) {
+        console.warn(`Failed to load flag for ${country.name}:`, error);
+        flagCache.set(country.name, null);
+        if (isMounted) {
+          setFlagUrl(null);
+          setFlagLoading(false);
+        }
+      }
+    };
+
+    void loadFlag();
+    return () => {
+      isMounted = false;
+    };
+  }, [country.name]);
+
+  return (
+    <Link href={`/countries/${country.id}`}>
+      <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer group">
+        <CardContent className="p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              {/* Flag */}
+              <div className="flex-shrink-0 w-8 h-6 relative">
+                {flagLoading ? (
+                  <Skeleton className="w-8 h-6 rounded" />
+                ) : flagUrl ? (
+                  <img
+                    src={flagUrl}
+                    alt={`Flag of ${country.name}`}
+                    className="w-8 h-6 object-cover rounded border border-border shadow-sm"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                      setFlagUrl(null);
+                    }}
+                  />
+                ) : (
+                  <div className="w-8 h-6 bg-muted rounded border border-border flex items-center justify-center">
+                    <Flag className="h-3 w-3 text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+              
+              <div className="min-w-0">
+                <h3 className="text-lg font-semibold text-foreground mb-1 group-hover:text-primary transition-colors truncate">
+                  {country.name}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {country.region && country.continent 
+                    ? `${country.region}, ${country.continent}`
+                    : country.continent || 'Unknown Region'
+                  }
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Users className="h-4 w-4 text-blue-600 mr-2" />
+                <span className="text-sm">Population</span>
+              </div>
+              <span className="text-sm font-medium">
+                {formatPopulation(country.currentPopulation)}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <DollarSign className="h-4 w-4 text-green-600 mr-2" />
+                <span className="text-sm">GDP per Capita</span>
+              </div>
+              <span className="text-sm font-medium">
+                {formatCurrency(country.currentGdpPerCapita)}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <TrendingUp className="h-4 w-4 text-purple-600 mr-2" />
+                <span className="text-sm">Total GDP</span>
+              </div>
+              <span className="text-sm font-medium">
+                {formatCurrency(country.currentTotalGdp)}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between mt-4 pt-4 border-t">
+            <Badge 
+              variant={
+                country.economicTier === 'Advanced' ? 'default' :
+                country.economicTier === 'Developed' ? 'secondary' : 'outline'
+              }
+              className="text-xs"
+            >
+              {country.economicTier || 'Unknown'}
+            </Badge>
+            <Badge variant="outline" className="text-xs">
+              {country.populationTier || 'Unknown'}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+}
 
 export default function CountriesPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -96,14 +248,14 @@ export default function CountriesPage() {
   const currentIxTime = IxTime.getCurrentIxTime();
   const currentGameYear = IxTime.getCurrentGameYear(currentIxTime);
 
-  // Get unique continents and tiers for filters
+  // Get unique continents and tiers for filters - FIXED: Use proper type predicate
   const continents = useMemo(() => {
-    const unique = new Set(processedCountries.map(c => c.continent).filter(Boolean as (value: string | null) => value is string));
+    const unique = new Set(processedCountries.map(c => c.continent).filter(isNonNull));
     return Array.from(unique);
   }, [processedCountries]);
 
   const economicTiers = useMemo(() => {
-    const unique = new Set(processedCountries.map(c => c.economicTier).filter(Boolean as (value: string | null) => value is string));
+    const unique = new Set(processedCountries.map(c => c.economicTier).filter(isNonNull));
     return Array.from(unique);
   }, [processedCountries]);
 
@@ -211,7 +363,10 @@ export default function CountriesPage() {
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="animate-pulse">
                 <CardContent className="p-6">
-                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <Skeleton className="h-6 w-8 rounded" />
+                    <Skeleton className="h-6 w-32 rounded" />
+                  </div>
                   <div className="space-y-3">
                     <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
                     <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
@@ -225,73 +380,7 @@ export default function CountriesPage() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {processedCountries.map((country) => (
-                <Link key={country.id} href={`/countries/${country.id}`}>
-                  <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-foreground mb-1">
-                            {country.name}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            {country.region && country.continent 
-                              ? `${country.region}, ${country.continent}`
-                              : country.continent || 'Unknown Region'
-                            }
-                          </p>
-                        </div>
-                        <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                      </div>
-
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <Users className="h-4 w-4 text-blue-600 mr-2" />
-                            <span className="text-sm">Population</span>
-                          </div>
-                          <span className="text-sm font-medium">
-                            {formatPopulation(country.currentPopulation)}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <DollarSign className="h-4 w-4 text-green-600 mr-2" />
-                            <span className="text-sm">GDP per Capita</span>
-                          </div>
-                          <span className="text-sm font-medium">
-                            {formatCurrency(country.currentGdpPerCapita)}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <TrendingUp className="h-4 w-4 text-purple-600 mr-2" />
-                            <span className="text-sm">Total GDP</span>
-                          </div>
-                          <span className="text-sm font-medium">
-                            {formatCurrency(country.currentTotalGdp)}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                        <Badge 
-                          variant={
-                            country.economicTier === 'Advanced' ? 'default' :
-                            country.economicTier === 'Developed' ? 'secondary' : 'outline'
-                          }
-                          className="text-xs"
-                        >
-                          {country.economicTier}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          {country.populationTier}
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                <CountryCard key={country.id} country={country} />
               ))}
             </div>
 

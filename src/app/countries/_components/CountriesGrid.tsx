@@ -113,8 +113,8 @@ export function CountriesGrid({ countries, isLoading = false, searchTerm = "" }:
               currentPopulation: country.currentPopulation,
               currentGdpPerCapita: country.currentGdpPerCapita,
               currentTotalGdp: country.currentTotalGdp,
-              economicTier: country.economicTier,
-              populationTier: country.populationTier,
+              economicTier: country.economicTier || 'Unknown', // Fixed: Handle null with default
+              populationTier: country.populationTier || 'Unknown', // Fixed: Handle null with default
               landArea: country.landArea,
               populationDensity: country.populationDensity,
               gdpDensity: country.gdpDensity,
