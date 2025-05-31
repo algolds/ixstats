@@ -53,8 +53,8 @@ interface ChartPoint {
   population?: number;
   gdpPerCapita?: number;
   totalGdp?: number;
-  populationDensity?: number | null;
-  gdpDensity?: number | null;
+  populationDensity?: number | null; // Keep as number | null | undefined
+  gdpDensity?: number | null;       // Keep as number | null | undefined
   isForecast?: boolean;
   historicalPopulation?: number;
   forecastPopulation?: number;
@@ -62,10 +62,10 @@ interface ChartPoint {
   forecastGdpPerCapita?: number;
   historicalTotalGdp?: number;
   forecastTotalGdp?: number;
-  historicalPopulationDensity?: number;
-  forecastPopulationDensity?: number;
-  historicalGdpDensity?: number;
-  forecastGdpDensity?: number;
+  historicalPopulationDensity?: number | null; // Allow null
+  forecastPopulationDensity?: number | null;   // MODIFIED: Allow null
+  historicalGdpDensity?: number | null;        // Allow null
+  forecastGdpDensity?: number | null;          // MODIFIED: Allow null
 }
 
 type TimeResolutionType = 'quarterly' | 'annual';
@@ -175,11 +175,11 @@ export function CountryAtGlance({
       
       const avgPopDensity = densityPoints.length > 0 
         ? densityPoints.reduce((sum, p) => sum + (p.populationDensity || 0), 0) / densityPoints.length
-        : undefined;
+        : null; // MODIFIED: use null instead of undefined for consistency with ChartPoint
         
       const avgGdpDensity = densityPoints.length > 0 
         ? densityPoints.reduce((sum, p) => sum + (p.gdpDensity || 0), 0) / densityPoints.length
-        : undefined;
+        : null; // MODIFIED: use null instead of undefined
 
       return {
         period: periodKey,
@@ -189,7 +189,7 @@ export function CountryAtGlance({
         gdpPerCapita: avgGdpPerCapita,
         totalGdp: avgTotalGdp / 1000000000, // Convert to billions
         populationDensity: avgPopDensity,
-        gdpDensity: avgGdpDensity ? avgGdpDensity / 1000000 : undefined, // Convert to millions
+        gdpDensity: avgGdpDensity ? avgGdpDensity / 1000000 : null, // Convert to millions, ensure null
         isForecast: false,
       };
     })
@@ -221,8 +221,8 @@ export function CountryAtGlance({
         population: country.currentPopulation / 1000000,
         gdpPerCapita: country.currentGdpPerCapita,
         totalGdp: country.currentTotalGdp / 1000000000,
-        populationDensity: country.populationDensity,
-        gdpDensity: country.gdpDensity ? country.gdpDensity / 1000000 : undefined,
+        populationDensity: country.populationDensity, // This can be null
+        gdpDensity: country.gdpDensity ? country.gdpDensity / 1000000 : null, // This can be null
         ixTimeTimestamp: targetTime,
         isForecast: false,
       };
@@ -230,6 +230,15 @@ export function CountryAtGlance({
 
     const forecastPoints: ChartPoint[] = [];
     const numSteps = forecastYears * (timeResolution === 'quarterly' ? 4 : 1);
+
+    // MODIFIED: Handle growth rates that might be percentages
+    const populationGrowthRateDecimal = country.populationGrowthRate && Math.abs(country.populationGrowthRate) > 1 && isFinite(country.populationGrowthRate)
+        ? country.populationGrowthRate / 100
+        : (country.populationGrowthRate || 0);
+
+    const adjustedGdpGrowthDecimal = country.adjustedGdpGrowth && Math.abs(country.adjustedGdpGrowth) > 1 && isFinite(country.adjustedGdpGrowth)
+        ? country.adjustedGdpGrowth / 100
+        : (isFinite(country.adjustedGdpGrowth) ? country.adjustedGdpGrowth : 0);
 
     // Generate forecast points
     for (let i = 1; i <= numSteps; i++) {
@@ -247,21 +256,22 @@ export function CountryAtGlance({
       }
 
       // Apply growth factors with safety checks
-      const popGrowthFactor = Math.pow(1 + (country.populationGrowthRate || 0), yearOffset);
-      const gdpGrowthFactor = Math.pow(1 + (isFinite(country.adjustedGdpGrowth) ? country.adjustedGdpGrowth : 0), yearOffset);
+      const popGrowthFactor = Math.pow(1 + populationGrowthRateDecimal, yearOffset);
+      const gdpGrowthFactor = Math.pow(1 + adjustedGdpGrowthDecimal, yearOffset);
 
       // Ensure finite calculations
       const projectedPopulation = (basePoint.population || 0) * (isFinite(popGrowthFactor) ? popGrowthFactor : 1);
       const projectedGdpPerCapita = (basePoint.gdpPerCapita || 0) * (isFinite(gdpGrowthFactor) ? gdpGrowthFactor : 1);
       const projectedTotalGdp = projectedPopulation * projectedGdpPerCapita / 1000; // Adjust for units
       
-      const projectedPopDensity = basePoint.populationDensity 
+      const projectedPopDensity = basePoint.populationDensity != null // Check for null/undefined
         ? basePoint.populationDensity * (isFinite(popGrowthFactor) ? popGrowthFactor : 1)
-        : undefined;
+        : null; // Ensure null if base is null
         
-      const projectedGdpDensity = basePoint.gdpDensity 
+      const projectedGdpDensity = basePoint.gdpDensity != null // Check for null/undefined
         ? basePoint.gdpDensity * (isFinite(gdpGrowthFactor) ? gdpGrowthFactor : 1)
-        : undefined;
+        : null; // Ensure null if base is null
+
 
       forecastPoints.push({
         period: periodKey,
@@ -270,8 +280,8 @@ export function CountryAtGlance({
         population: isFinite(projectedPopulation) ? projectedPopulation : basePoint.population || 0,
         gdpPerCapita: isFinite(projectedGdpPerCapita) ? projectedGdpPerCapita : basePoint.gdpPerCapita || 0,
         totalGdp: isFinite(projectedTotalGdp) ? projectedTotalGdp : basePoint.totalGdp || 0,
-        populationDensity: projectedPopDensity,
-        gdpDensity: projectedGdpDensity,
+        populationDensity: projectedPopDensity, // Can be null
+        gdpDensity: projectedGdpDensity,       // Can be null
         isForecast: true,
       });
     }
@@ -291,8 +301,8 @@ export function CountryAtGlance({
         historicalPopulation: point.population,
         historicalGdpPerCapita: point.gdpPerCapita,
         historicalTotalGdp: point.totalGdp,
-        historicalPopulationDensity: point.populationDensity,
-        historicalGdpDensity: point.gdpDensity,
+        historicalPopulationDensity: point.populationDensity, // Can be null
+        historicalGdpDensity: point.gdpDensity,          // Can be null
       });
     });
 
@@ -305,8 +315,8 @@ export function CountryAtGlance({
           forecastPopulation: point.population,
           forecastGdpPerCapita: point.gdpPerCapita,
           forecastTotalGdp: point.totalGdp,
-          forecastPopulationDensity: point.populationDensity,
-          forecastGdpDensity: point.gdpDensity,
+          forecastPopulationDensity: point.populationDensity, // Can be null
+          forecastGdpDensity: point.gdpDensity,          // Can be null
         });
       } else {
         dataMap.set(point.period, {
@@ -314,8 +324,8 @@ export function CountryAtGlance({
           forecastPopulation: point.population,
           forecastGdpPerCapita: point.gdpPerCapita,
           forecastTotalGdp: point.totalGdp,
-          forecastPopulationDensity: point.populationDensity,
-          forecastGdpDensity: point.gdpDensity,
+          forecastPopulationDensity: point.populationDensity, // Can be null
+          forecastGdpDensity: point.gdpDensity,          // Can be null
         });
       }
     });
@@ -412,7 +422,7 @@ export function CountryAtGlance({
           ) : combinedChartData.length > 0 ? (
             <ChartDisplay 
               chartView={chartView}
-              combinedData={combinedChartData}
+              combinedData={combinedChartData as any} // Type assertion to resolve type mismatch
               country={country}
               timeResolution={timeResolution}
               theme={theme}

@@ -234,7 +234,7 @@ export const SyncedChart: React.FC<SyncedChartProps> = ({
     strokeDasharray: "3 3",
     label: {
       value: "Game Epoch",
-      position: "top",
+      position: "top" as const, // MODIFIED
       fill: chartColors.referenceLines.epoch,
       fontSize: 10,
     },
@@ -246,12 +246,24 @@ export const SyncedChart: React.FC<SyncedChartProps> = ({
     strokeDasharray: "3 3",
     label: {
       value: "Present",
-      position: "top",
+      position: "top" as const, // MODIFIED
       fill: chartColors.referenceLines.present,
       fontSize: 10,
     },
   } : null;
 
+  // MODIFIED: activeDot onClick handler
+  const handleActiveDotClick = (dotProps: any) => {
+    if (dotProps?.index !== undefined && onPointClick) {
+      const dataPoint = visibleData[dotProps.index];
+      if (dataPoint) {
+        onPointClick(dataPoint);
+      }
+    }
+  };
+
+  const activeDotProps = { r: 6, onClick: handleActiveDotClick };
+  
   // Render the appropriate chart type
   const renderChart = () => {
     switch (chartType) {
@@ -282,7 +294,7 @@ export const SyncedChart: React.FC<SyncedChartProps> = ({
               stroke={chartColors.population} 
               fill="url(#colorPop)" 
               dot={false}
-              activeDot={{ r: 6, onClick: (_, index) => onPointClick?.(visibleData[index]) }}
+              activeDot={activeDotProps} // MODIFIED
             />
             
             {showForecast && (
@@ -294,7 +306,7 @@ export const SyncedChart: React.FC<SyncedChartProps> = ({
                 strokeDasharray="3 3" 
                 fill="url(#colorForecast)" 
                 dot={false}
-                activeDot={{ r: 6, onClick: (_, index) => onPointClick?.(visibleData[index]) }}
+                activeDot={activeDotProps} // MODIFIED
               />
             )}
             
@@ -317,7 +329,7 @@ export const SyncedChart: React.FC<SyncedChartProps> = ({
               name={showDensity ? "Population Density" : "Population (M)"} 
               fill={chartColors.population} 
               opacity={0.8}
-              onClick={(data) => onPointClick?.(data)}
+              onClick={(data: ChartDataPoint) => onPointClick?.(data)} // data is ChartDataPoint
             />
             
             {showForecast && (
@@ -326,7 +338,7 @@ export const SyncedChart: React.FC<SyncedChartProps> = ({
                 name={`${showDensity ? "Population Density" : "Population (M)"} (Forecast)`} 
                 fill={chartColors.forecast} 
                 opacity={0.4}
-                onClick={(data) => onPointClick?.(data)}
+                onClick={(data: ChartDataPoint) => onPointClick?.(data)} // data is ChartDataPoint
               />
             )}
             
@@ -390,7 +402,7 @@ export const SyncedChart: React.FC<SyncedChartProps> = ({
                 stroke={chartColors.population} 
                 fill="url(#colorPop)" 
                 dot={false}
-                activeDot={{ r: 6, onClick: (_, index) => onPointClick?.(visibleData[index]) }}
+                activeDot={activeDotProps} // MODIFIED
               />
               
               {showForecast && (
@@ -403,7 +415,7 @@ export const SyncedChart: React.FC<SyncedChartProps> = ({
                   strokeDasharray="3 3" 
                   fill="url(#colorForecast)" 
                   dot={false}
-                  activeDot={{ r: 6, onClick: (_, index) => onPointClick?.(visibleData[index]) }}
+                  activeDot={activeDotProps} // MODIFIED
                 />
               )}
               
@@ -415,7 +427,7 @@ export const SyncedChart: React.FC<SyncedChartProps> = ({
                 stroke={chartColors.gdp} 
                 strokeWidth={2} 
                 dot={false}
-                activeDot={{ r: 6, onClick: (_, index) => onPointClick?.(visibleData[index]) }}
+                activeDot={activeDotProps} // MODIFIED
               />
               
               {showForecast && (
@@ -428,7 +440,7 @@ export const SyncedChart: React.FC<SyncedChartProps> = ({
                   strokeDasharray="3 3" 
                   strokeWidth={2} 
                   dot={false}
-                  activeDot={{ r: 6, onClick: (_, index) => onPointClick?.(visibleData[index]) }}
+                  activeDot={activeDotProps} // MODIFIED
                 />
               )}
               
@@ -481,7 +493,7 @@ export const SyncedChart: React.FC<SyncedChartProps> = ({
                 stroke={chartColors.gdp} 
                 strokeWidth={2} 
                 dot={false}
-                activeDot={{ r: 6, onClick: (_, index) => onPointClick?.(visibleData[index]) }}
+                activeDot={activeDotProps} // MODIFIED
               />
               
               {showForecast && (
@@ -494,7 +506,7 @@ export const SyncedChart: React.FC<SyncedChartProps> = ({
                   strokeDasharray="3 3" 
                   strokeWidth={2} 
                   dot={false}
-                  activeDot={{ r: 6, onClick: (_, index) => onPointClick?.(visibleData[index]) }}
+                  activeDot={activeDotProps} // MODIFIED
                 />
               )}
               
@@ -505,7 +517,7 @@ export const SyncedChart: React.FC<SyncedChartProps> = ({
                 fill={chartColors.forecast} 
                 opacity={0.7} 
                 barSize={timeResolution === 'annual' ? 20 : 10} 
-                onClick={(data) => onPointClick?.(data)}
+                onClick={(data: ChartDataPoint) => onPointClick?.(data)}
               />
               
               {showForecast && (
@@ -516,7 +528,7 @@ export const SyncedChart: React.FC<SyncedChartProps> = ({
                   fill={chartColors.forecast} 
                   opacity={0.4} 
                   barSize={timeResolution === 'annual' ? 20 : 10} 
-                  onClick={(data) => onPointClick?.(data)}
+                  onClick={(data: ChartDataPoint) => onPointClick?.(data)}
                 />
               )}
               
@@ -541,7 +553,7 @@ export const SyncedChart: React.FC<SyncedChartProps> = ({
               name={yAxisDataKey.charAt(0).toUpperCase() + yAxisDataKey.slice(1)} 
               stroke={chartColors.population} 
               dot={false}
-              activeDot={{ r: 6, onClick: (_, index) => onPointClick?.(visibleData[index]) }}
+              activeDot={activeDotProps} // MODIFIED
             />
             
             {secondaryYAxisDataKey && (
@@ -550,7 +562,7 @@ export const SyncedChart: React.FC<SyncedChartProps> = ({
                 name={secondaryYAxisDataKey.charAt(0).toUpperCase() + secondaryYAxisDataKey.slice(1)} 
                 fill={chartColors.gdp} 
                 opacity={0.7}
-                onClick={(data) => onPointClick?.(data)}
+                onClick={(data: ChartDataPoint) => onPointClick?.(data)}
               />
             )}
             
@@ -575,7 +587,7 @@ export const SyncedChart: React.FC<SyncedChartProps> = ({
               name={showDensity ? "Population Density" : "Population (M)"} 
               stroke={chartColors.population} 
               dot={false}
-              activeDot={{ r: 6, onClick: (_, index) => onPointClick?.(visibleData[index]) }}
+              activeDot={activeDotProps} // MODIFIED
             />
             
             {showForecast && (
@@ -586,7 +598,7 @@ export const SyncedChart: React.FC<SyncedChartProps> = ({
                 stroke={chartColors.forecast} 
                 strokeDasharray="3 3" 
                 dot={false}
-                activeDot={{ r: 6, onClick: (_, index) => onPointClick?.(visibleData[index]) }}
+                activeDot={activeDotProps} // MODIFIED
               />
             )}
             
@@ -597,7 +609,7 @@ export const SyncedChart: React.FC<SyncedChartProps> = ({
                 name={secondaryYAxisDataKey.charAt(0).toUpperCase() + secondaryYAxisDataKey.slice(1)} 
                 stroke={chartColors.gdp} 
                 dot={false}
-                activeDot={{ r: 6, onClick: (_, index) => onPointClick?.(visibleData[index]) }}
+                activeDot={activeDotProps} // MODIFIED
               />
             )}
             
