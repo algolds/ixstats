@@ -13,7 +13,6 @@ import {
 import { Label } from "~/components/ui/label";
 import { IxTime } from "~/lib/ixtime";
 import type { CountryDetailData } from "~/app/countries/[id]/page";
-import { formatNumber } from "~/lib/theme-utils"; // Ensure this imports the updated version
 
 // Import necessary Recharts components
 import {
@@ -43,9 +42,21 @@ interface CountryAtGlanceProps {
   onChartViewChange: (view: 'overview' | 'population' | 'gdp' | 'density') => void;
 }
 
-interface ChartDataPoint {
-  period: string | number;
-  [key: string]: any;
+interface ProcessedChartData {
+  period: string;
+  year: number;
+  timestamp: number;
+  // Raw values
+  population: number;
+  gdpPerCapita: number;
+  totalGdp: number;
+  populationDensity: number;
+  gdpDensity: number;
+  // Chart-friendly scaled values
+  populationMillion: number;
+  totalGdpBillion: number;
+  populationDensityPerKm2: number;
+  gdpDensityMillionPerKm2: number;
 }
 
 export function CountryAtGlance({
@@ -60,157 +71,139 @@ export function CountryAtGlance({
   onTimeResolutionChange,
   onChartViewChange,
 }: CountryAtGlanceProps) {
-  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [chartData, setChartData] = useState<ProcessedChartData[]>([]);
 
-  const formattedValues = useMemo(() => {
-    const formatDisplayValue = (num: number | null | undefined, isCurrency: boolean, defaultPrecision: number, unit?: string): string => {
-        if (num === null || num === undefined || isNaN(num)) {
-            let NALabel = "N/A";
-            if (isCurrency) {
-                 NALabel = "$" + NALabel;
-            }
-            if (unit) NALabel += ` ${unit}`;
-            return NALabel;
-        }
+  
 
-        if (num === 0) {
-            const zeroStr = formatNumber(0, {
-                isCurrency: isCurrency,
-                precision: defaultPrecision,
-                compact: false
-            });
-            return unit ? zeroStr + ` ${unit}` : zeroStr;
-        }
-
-        const tiers = [
-            { limit: 1e33, name: "Decillion" }, { limit: 1e30, name: "Nonillion" },
-            { limit: 1e27, name: "Octillion" }, { limit: 1e24, name: "Septillion" },
-            { limit: 1e21, name: "Sextillion" }, { limit: 1e18, name: "Quintillion" },
-            { limit: 1e15, name: "Quadrillion" }, { limit: 1e12, name: "Trillion" },
-            { limit: 1e9,  name: "Billion" }, { limit: 1e6,  name: "Million" },
-        ];
-
-        let valToFormat = num;
-        let tierNameSuffix = unit ? ` ${unit}` : "";
-
-        if (!unit) {
-            for (const tier of tiers) {
-                if (Math.abs(num) >= tier.limit) {
-                    valToFormat = num / tier.limit;
-                    tierNameSuffix = ` ${tier.name}`;
-                    break;
-                }
-            }
-        }
-        
-        const numStr = formatNumber(valToFormat, {
-            isCurrency: isCurrency,
-            precision: defaultPrecision,
-            compact: false 
-        });
-        
-        return numStr + tierNameSuffix;
-    };
-
-    return {
-        population: formatDisplayValue(
-            country.currentPopulation,
-            false, 
-            (country.currentPopulation && Math.abs(country.currentPopulation) >= 1e6 ? 2 : 0)
-        ),
-        gdpPerCapita: formatDisplayValue(country.currentGdpPerCapita, true, 0),
-        gdp: formatDisplayValue(country.currentTotalGdp, true, 2),
-        density: country.populationDensity !== null && country.populationDensity !== undefined
-          ? formatDisplayValue(country.populationDensity, false, 1, "per km²")
-          : "N/A",
-        gdpDensity: formatDisplayValue(country.gdpDensity, true, 1, "per km²"),
-    };
-  }, [country]);
-
+  // Enhanced chart data processing
   useEffect(() => {
+    console.log("Processing historical data:", historicalData?.length || 0, "points");
+    
     if (!historicalData || historicalData.length === 0) {
+      console.log("No historical data available");
       setChartData([]);
       return;
     }
-    const processedHistoricalData = historicalData.map((dp: HistoricalDataPoint) => {
-      let periodLabel: string;
-      const date = new Date(dp.ixTimeTimestamp);
-      if (timeResolution === 'quarterly') {
-        const quarter = Math.floor(date.getUTCMonth() / 3) + 1;
-        periodLabel = `Q${quarter} ${date.getUTCFullYear()}`;
+
+    try {
+      // Convert and validate historical data
+      const validData = historicalData
+        .map((point) => {
+          const timestamp = typeof point.ixTimeTimestamp === 'number' 
+            ? point.ixTimeTimestamp 
+            : point.ixTimeTimestamp.getTime();
+          
+          // Validate that we have valid numbers
+          const population = Number(point.population) || 0;
+          const gdpPerCapita = Number(point.gdpPerCapita) || 0;
+          const totalGdp = Number(point.totalGdp) || 0;
+          const populationDensity = Number(point.populationDensity) || 0;
+          const gdpDensity = Number(point.gdpDensity) || 0;
+
+          // Skip invalid data points
+          if (!isFinite(timestamp) || population <= 0 || gdpPerCapita <= 0) {
+            return null;
+          }
+
+          const date = new Date(timestamp);
+          const year = date.getUTCFullYear();
+          
+          let periodLabel: string;
+          if (timeResolution === 'quarterly') {
+            const quarter = Math.floor(date.getUTCMonth() / 3) + 1;
+            periodLabel = `Q${quarter} ${year}`;
+          } else {
+            periodLabel = year.toString();
+          }
+
+          return {
+            period: periodLabel,
+            year,
+            timestamp,
+            // Raw values for tooltips
+            population,
+            gdpPerCapita,
+            totalGdp,
+            populationDensity,
+            gdpDensity,
+            // Scaled values for charts
+            populationMillion: population / 1000000,
+            totalGdpBillion: totalGdp / 1000000000,
+            populationDensityPerKm2: populationDensity,
+            gdpDensityMillionPerKm2: gdpDensity / 1000000,
+          };
+        })
+        .filter((point): point is ProcessedChartData => point !== null)
+        .sort((a, b) => a.timestamp - b.timestamp);
+
+      console.log("Valid data points:", validData.length);
+
+      // For annual resolution, keep only the latest data point per year
+      if (timeResolution === 'annual') {
+        const yearMap = new Map<number, ProcessedChartData>();
+        validData.forEach(point => {
+          const existing = yearMap.get(point.year);
+          if (!existing || point.timestamp > existing.timestamp) {
+            yearMap.set(point.year, point);
+          }
+        });
+        const annualData = Array.from(yearMap.values()).sort((a, b) => a.year - b.year);
+        console.log("Annual data points:", annualData.length);
+        setChartData(annualData);
       } else {
-        periodLabel = date.getUTCFullYear().toString();
+        console.log("Quarterly data points:", validData.length);
+        setChartData(validData);
       }
-      return {
-        period: periodLabel,
-        population: dp.population,
-        totalGdp: dp.totalGdp,
-        gdpPerCapita: dp.gdpPerCapita,
-        populationDensity: dp.populationDensity,
-        gdpDensity: dp.gdpDensity,
-      };
-    });
-    
-    if (timeResolution === 'annual') {
-        const uniqueYearData = Array.from(new Map(processedHistoricalData.map(item => [item.period, item])).values());
-        setChartData(uniqueYearData as ChartDataPoint[]);
-    } else {
-        setChartData(processedHistoricalData as ChartDataPoint[]);
+    } catch (error) {
+      console.error("Error processing historical data:", error);
+      setChartData([]);
     }
+  }, [historicalData, timeResolution]);
 
-  }, [historicalData, targetTime, forecastYears, timeResolution]);
+  // Enhanced tooltip with proper formatting
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload || payload.length === 0) return null;
 
+    return (
+      <div className="bg-background border border-border rounded-lg p-3 shadow-lg">
+        <p className="font-semibold mb-2 text-sm">{`Period: ${label}`}</p>
+        {payload.map((entry: any) => {
+          let formattedValue = '';
+          const rawValue = entry.value;
 
-  const yAxisTickFormatter = (value: any, isCurrency: boolean) => {
-    if (typeof value !== 'number' || isNaN(value)) return String(value);
+          // Format based on the data key
+          switch (entry.dataKey) {
+            case 'populationMillion':
+              formattedValue = (rawValue * 1000);
+              break;
+            case 'totalGdpBillion':
+              formattedValue = (rawValue * 1000);
+              break;
+            case 'gdpPerCapita':
+              formattedValue = (rawValue);
+              break;
+            case 'populationDensityPerKm2':
+              formattedValue = `${rawValue.toFixed(1)} per km²`;
+              break;
+            case 'gdpDensityMillionPerKm2':
+              formattedValue = `$${rawValue.toFixed(1)}M per km²`;
+              break;
+            default:
+              formattedValue = rawValue.toLocaleString();
+          }
 
-    const tiers = [
-        { limit: 1e15, suffix: "Q" }, { limit: 1e12, suffix: "T" },
-        { limit: 1e9,  suffix: "B" }, { limit: 1e6,  suffix: "M" },
-        { limit: 1e3,  suffix: "k" }
-    ];
-
-    let val = value;
-    let tierSuffix = "";
-
-    for (const tier of tiers) {
-        if (Math.abs(value) >= tier.limit) {
-            val = value / tier.limit;
-            tierSuffix = tier.suffix;
-            break;
-        }
-    }
-    
-    let tickPrecision = 0;
-    if (tierSuffix && Math.abs(val) < 100 && val !== Math.floor(val)) {
-        tickPrecision = Math.abs(val) < 10 ? 1 : 1; 
-    } else if (!tierSuffix && val !== Math.floor(val) && Math.abs(val) < 1000) {
-        tickPrecision = 2;
-    }
-
-    return formatNumber(val, {
-        isCurrency: isCurrency,
-        precision: tickPrecision,
-        compact: false
-    }) + tierSuffix;
+          return (
+            <div key={entry.dataKey} className="flex justify-between items-center text-xs gap-2" style={{ color: entry.color }}>
+              <span>{entry.name}:</span>
+              <span className="font-semibold">{formattedValue}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
-   const CustomTooltipContent = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-background p-2 border shadow-lg rounded-md">
-          <p className="label font-semibold">{`Period: ${label}`}</p>
-          {payload.map((entry: any) => (
-            <p key={`tooltip-${entry.name}`} style={{ color: entry.color }}>
-              {`${entry.name}: ${yAxisTickFormatter(entry.value, (entry.name.includes("GDP") || entry.name.includes("$") || entry.name.toLowerCase().includes("density ($")))}`}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
-
+  // Loading state
   if (isLoading) {
     return (
       <Card className="w-full">
@@ -219,10 +212,9 @@ export function CountryAtGlance({
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <Skeleton className="h-20" />
-            <Skeleton className="h-20" />
-            <Skeleton className="h-20" />
-            <Skeleton className="h-20" />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-20" />
+            ))}
           </div>
           <Skeleton className="h-[350px] w-full" />
         </CardContent>
@@ -230,28 +222,8 @@ export function CountryAtGlance({
     );
   }
 
-  const overviewPopulationKeys = [
-    { key: 'population', name: 'Population', color: '#3b82f6' },
-    ...(forecastYears > 0 ? [{ key: 'population_forecast', name: 'Forecast', color: '#93c5fd' }] : [])
-  ];
-  const overviewGdpKeys = [
-    { key: 'totalGdp', name: 'GDP', color: '#10b981' },
-    ...(forecastYears > 0 ? [{ key: 'totalGdp_forecast', name: 'Forecast', color: '#6ee7b7' }] : [])
-  ];
-  const populationTrendKeys = overviewPopulationKeys;
-  const gdpTrendKeys = overviewGdpKeys;
-  const gdpPerCapitaKeys = [
-    { key: 'gdpPerCapita', name: 'GDP per Capita ($)', color: '#f59e0b' },
-    ...(forecastYears > 0 ? [{ key: 'gdpPerCapita_forecast', name: 'Forecast ($)', color: '#fcd34d' }] : [])
-  ];
-  const densityMetricsKeys = [
-    { key: 'populationDensity', name: 'Population Density (per km²)', color: '#6366f1' },
-    { key: 'gdpDensity', name: 'GDP Density ($/km²)', color: '#ec4899' },
-    ...(forecastYears > 0 ? [
-      { key: 'populationDensity_forecast', name: 'Pop Density Forecast', color: '#a5b4fc' },
-      { key: 'gdpDensity_forecast', name: 'GDP Density Forecast', color: '#f9a8d4' }
-    ] : [])
-  ];
+  // Chart configuration
+  const hasData = chartData.length > 0;
 
   return (
     <Card className="w-full">
@@ -278,25 +250,37 @@ export function CountryAtGlance({
         </div>
       </CardHeader>
       <CardContent>
+        {/* Statistics Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-muted/50 p-4 rounded-lg">
             <div className="text-sm text-muted-foreground">Population</div>
-            <div className="text-2xl font-bold mt-1">{formattedValues.population}</div>
+            <div className="text-2xl font-bold mt-1">{population}</div>
           </div>
           <div className="bg-muted/50 p-4 rounded-lg">
             <div className="text-sm text-muted-foreground">GDP per Capita</div>
-            <div className="text-2xl font-bold mt-1">{formattedValues.gdpPerCapita}</div>
+            <div className="text-2xl font-bold mt-1">{gdpPerCapita}</div>
           </div>
           <div className="bg-muted/50 p-4 rounded-lg">
             <div className="text-sm text-muted-foreground">Total GDP</div>
-            <div className="text-2xl font-bold mt-1">{formattedValues.gdp}</div>
+            <div className="text-2xl font-bold mt-1">{gdp}</div>
           </div>
           <div className="bg-muted/50 p-4 rounded-lg">
             <div className="text-sm text-muted-foreground">Population Density</div>
-            <div className="text-2xl font-bold mt-1">{formattedValues.density}</div>
+            <div className="text-2xl font-bold mt-1">{density}</div>
           </div>
         </div>
 
+        {/* Data Status */}
+        {!hasData && (
+          <div className="flex items-center justify-center py-8 text-muted-foreground bg-muted/20 rounded-lg mb-6">
+            <div className="text-center">
+              <p className="font-medium">No historical data available</p>
+              <p className="text-sm mt-1">Historical trends will appear when data is loaded</p>
+            </div>
+          </div>
+        )}
+
+        {/* Chart Section */}
         <Tabs defaultValue={chartView} value={chartView} onValueChange={(value) => onChartViewChange(value as any)}>
           <TabsList className="mb-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -309,33 +293,59 @@ export function CountryAtGlance({
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <h4 className="text-lg font-semibold mb-2">Population Trend</h4>
-                <p className="text-sm text-muted-foreground mb-2">Historical and projected population</p>
+                <p className="text-sm text-muted-foreground mb-2">Historical population growth over time</p>
                 <ResponsiveContainer width="100%" height={250}>
                   <RechartsLineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="period" />
-                    <YAxis tickFormatter={(value) => yAxisTickFormatter(value, false)} />
-                    <Tooltip content={<CustomTooltipContent />} />
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis 
+                      dataKey="period" 
+                      tick={{ fontSize: 10 }}
+                      interval={'preserveStartEnd'}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 10 }}
+                      tickFormatter={(value) => `${value.toFixed(1)}M`}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
                     <Legend />
-                    {overviewPopulationKeys.map(item => (
-                      <Line key={item.key} type="monotone" dataKey={item.key} name={item.name} stroke={item.color} dot={false} />
-                    ))}
+                    <Line 
+                      type="monotone" 
+                      dataKey="populationMillion" 
+                      name="Population (Millions)" 
+                      stroke="#3b82f6" 
+                      strokeWidth={2} 
+                      dot={{ r: 3 }}
+                      connectNulls={false}
+                    />
                   </RechartsLineChart>
                 </ResponsiveContainer>
               </div>
               <div>
                 <h4 className="text-lg font-semibold mb-2">GDP Trend</h4>
-                <p className="text-sm text-muted-foreground mb-2">Historical and projected GDP</p>
+                <p className="text-sm text-muted-foreground mb-2">Historical economic growth over time</p>
                 <ResponsiveContainer width="100%" height={250}>
                   <RechartsLineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="period" />
-                    <YAxis tickFormatter={(value) => yAxisTickFormatter(value, true)} />
-                    <Tooltip content={<CustomTooltipContent />} />
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis 
+                      dataKey="period" 
+                      tick={{ fontSize: 10 }}
+                      interval={'preserveStartEnd'}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 10 }}
+                      tickFormatter={(value) => `$${value.toFixed(1)}B`}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
                     <Legend />
-                    {overviewGdpKeys.map(item => (
-                      <Line key={item.key} type="monotone" dataKey={item.key} name={item.name} stroke={item.color} dot={false} />
-                    ))}
+                    <Line 
+                      type="monotone" 
+                      dataKey="totalGdpBillion" 
+                      name="Total GDP (Billions)" 
+                      stroke="#10b981" 
+                      strokeWidth={2} 
+                      dot={{ r: 3 }}
+                      connectNulls={false}
+                    />
                   </RechartsLineChart>
                 </ResponsiveContainer>
               </div>
@@ -343,54 +353,83 @@ export function CountryAtGlance({
           </TabsContent>
 
           <TabsContent value="population">
-             <div>
-                <h4 className="text-lg font-semibold mb-2">Population Trend</h4>
-                <p className="text-sm text-muted-foreground mb-2">Historical and projected population growth</p>
-                <ResponsiveContainer width="100%" height={350}>
-                  <RechartsLineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="period" />
-                    <YAxis tickFormatter={(value) => yAxisTickFormatter(value, false)} />
-                    <Tooltip content={<CustomTooltipContent />} />
-                    <Legend />
-                    {populationTrendKeys.map(item => (
-                      <Line key={item.key} type="monotone" dataKey={item.key} name={item.name} stroke={item.color} dot={false} />
-                    ))}
-                  </RechartsLineChart>
-                </ResponsiveContainer>
-              </div>
+            <div>
+              <h4 className="text-lg font-semibold mb-2">Population Trend</h4>
+              <p className="text-sm text-muted-foreground mb-2">Historical population growth and development</p>
+              <ResponsiveContainer width="100%" height={350}>
+                <RechartsLineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                  <XAxis 
+                    dataKey="period" 
+                    tick={{ fontSize: 10 }}
+                    interval={'preserveStartEnd'}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 10 }}
+                    tickFormatter={(value) => `${value.toFixed(1)}M`}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="populationMillion" 
+                    name="Population (Millions)" 
+                    stroke="#3b82f6" 
+                    strokeWidth={2} 
+                    dot={{ r: 3 }}
+                    connectNulls={false}
+                  />
+                </RechartsLineChart>
+              </ResponsiveContainer>
+            </div>
           </TabsContent>
 
           <TabsContent value="gdp" className="space-y-4">
             <div>
-              <h4 className="text-lg font-semibold mb-2">GDP Trend</h4>
-              <p className="text-sm text-muted-foreground mb-2">Historical and projected GDP</p>
-              <ResponsiveContainer width="100%" height={250}>
+              <h4 className="text-lg font-semibold mb-2">Economic Indicators</h4>
+              <p className="text-sm text-muted-foreground mb-2">Historical GDP trends and per capita development</p>
+              <ResponsiveContainer width="100%" height={350}>
                 <RechartsLineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="period" />
-                  <YAxis tickFormatter={(value) => yAxisTickFormatter(value, true)} />
-                  <Tooltip content={<CustomTooltipContent />} />
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                  <XAxis 
+                    dataKey="period" 
+                    tick={{ fontSize: 10 }}
+                    interval={'preserveStartEnd'}
+                  />
+                  <YAxis 
+                    yAxisId="left" 
+                    orientation="left" 
+                    tick={{ fontSize: 10 }}
+                    tickFormatter={(value) => `$${value.toFixed(1)}B`}
+                  />
+                  <YAxis 
+                    yAxisId="right" 
+                    orientation="right" 
+                    tick={{ fontSize: 10 }}
+                    tickFormatter={(value) => `$${(value/1000).toFixed(0)}K`}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
                   <Legend />
-                  {gdpTrendKeys.map(item => (
-                    <Line key={item.key} type="monotone" dataKey={item.key} name={item.name} stroke={item.color} dot={false} />
-                  ))}
-                </RechartsLineChart>
-              </ResponsiveContainer>
-            </div>
-            <div>
-              <h4 className="text-lg font-semibold mb-2">GDP per Capita</h4>
-              <p className="text-sm text-muted-foreground mb-2">Historical and projected GDP per capita</p>
-              <ResponsiveContainer width="100%" height={250}>
-                <RechartsLineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="period" />
-                  <YAxis tickFormatter={(value) => yAxisTickFormatter(value, true)} />
-                  <Tooltip content={<CustomTooltipContent />} />
-                  <Legend />
-                  {gdpPerCapitaKeys.map(item => (
-                    <Line key={item.key} type="monotone" dataKey={item.key} name={item.name} stroke={item.color} dot={false} />
-                  ))}
+                  <Line 
+                    yAxisId="left"
+                    type="monotone" 
+                    dataKey="totalGdpBillion" 
+                    name="Total GDP (Billions)" 
+                    stroke="#10b981" 
+                    strokeWidth={2} 
+                    dot={{ r: 3 }}
+                    connectNulls={false}
+                  />
+                  <Line 
+                    yAxisId="right"
+                    type="monotone" 
+                    dataKey="gdpPerCapita" 
+                    name="GDP per Capita" 
+                    stroke="#f59e0b" 
+                    strokeWidth={2} 
+                    dot={{ r: 3 }}
+                    connectNulls={false}
+                  />
                 </RechartsLineChart>
               </ResponsiveContainer>
             </div>
@@ -399,24 +438,43 @@ export function CountryAtGlance({
           <TabsContent value="density">
             <div>
               <h4 className="text-lg font-semibold mb-2">Density Metrics</h4>
-              <p className="text-sm text-muted-foreground mb-2">Population density and GDP density per km²</p>
+              <p className="text-sm text-muted-foreground mb-2">Population and economic density per km²</p>
               <ResponsiveContainer width="100%" height={350}>
-                <RechartsBarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="period" />
-                  <YAxis yAxisId="left" orientation="left" stroke="#6366f1" tickFormatter={(value) => yAxisTickFormatter(value, false)} />
-                  <YAxis yAxisId="right" orientation="right" stroke="#ec4899" tickFormatter={(value) => yAxisTickFormatter(value, true)} />
-                  <Tooltip content={<CustomTooltipContent />} />
+                <RechartsBarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                  <XAxis 
+                    dataKey="period" 
+                    tick={{ fontSize: 10 }}
+                    interval={'preserveStartEnd'}
+                  />
+                  <YAxis 
+                    yAxisId="left" 
+                    orientation="left" 
+                    tick={{ fontSize: 10 }}
+                    tickFormatter={(value) => value.toFixed(0)}
+                  />
+                  <YAxis 
+                    yAxisId="right" 
+                    orientation="right" 
+                    tick={{ fontSize: 10 }}
+                    tickFormatter={(value) => `$${value.toFixed(1)}M`}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
                   <Legend />
-                  {densityMetricsKeys.map(item => (
-                    <Bar 
-                        key={item.key} 
-                        dataKey={item.key} 
-                        name={item.name} 
-                        fill={item.color} 
-                        yAxisId={item.key.toLowerCase().includes('population') ? "left" : "right"}
-                    />
-                  ))}
+                  <Bar 
+                    yAxisId="left"
+                    dataKey="populationDensityPerKm2" 
+                    name="Population Density (per km²)" 
+                    fill="#6366f1" 
+                    opacity={0.8}
+                  />
+                  <Bar 
+                    yAxisId="right"
+                    dataKey="gdpDensityMillionPerKm2" 
+                    name="GDP Density (M$/km²)" 
+                    fill="#ec4899" 
+                    opacity={0.8}
+                  />
                 </RechartsBarChart>
               </ResponsiveContainer>
             </div>
