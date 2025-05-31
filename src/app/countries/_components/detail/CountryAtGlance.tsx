@@ -1,7 +1,7 @@
 // src/app/countries/_components/detail/CountryAtGlance.tsx
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react"; // Added useState for internal control if needed, though props are better
 import {
   LineChart,
   Line,
@@ -96,6 +96,9 @@ interface ChartPoint {
   forecastGdpDensity?: number;
 }
 
+type ChartViewType = 'overview' | 'population' | 'gdp' | 'density';
+type TimeResolutionType = 'quarterly' | 'annual';
+
 interface CountryAtGlanceProps {
   country: CountryData;
   historicalData?: HistoricalDataPoint[];
@@ -103,10 +106,34 @@ interface CountryAtGlanceProps {
   forecastYears: number; // Number of years to forecast from targetTime
   isLoading?: boolean;
   isLoadingForecast?: boolean; // Specific loading state for forecast data
-  chartView?: 'overview' | 'population' | 'gdp' | 'density'; // Control which chart to show
-  timeResolution?: 'quarterly' | 'annual'; // Control time resolution of chart
+  chartView?: ChartViewType; // Control which chart to show
+  timeResolution?: TimeResolutionType; // Control time resolution of chart
   showForecastInHistorical?: boolean;
+  onTimeResolutionChange: (resolution: TimeResolutionType) => void; // Callback to change time resolution
+  onChartViewChange: (view: ChartViewType) => void; // Callback to change chart view
 }
+
+// Utility function for formatting numbers (ideally from a shared utils file)
+const formatNumber = (
+    num: number | null | undefined,
+    isCurrency = false,
+    precision = 2,
+    compact = false // Set to true if you want suffixes like K, M, B
+  ): string => {
+    if (num == null || isNaN(num)) return isCurrency ? '$0.00' : '0';
+
+    if (compact) {
+      if (Math.abs(num) >= 1e12) return `${isCurrency ? '$' : ''}${(num / 1e12).toFixed(precision)}T`;
+      if (Math.abs(num) >= 1e9) return `${isCurrency ? '$' : ''}${(num / 1e9).toFixed(precision)}B`;
+      if (Math.abs(num) >= 1e6) return `${isCurrency ? '$' : ''}${(num / 1e6).toFixed(precision)}M`;
+      if (Math.abs(num) >= 1e3) return `${isCurrency ? '$' : ''}${(num / 1e3).toFixed(precision)}K`;
+    }
+    return `${isCurrency ? '$' : ''}${num.toLocaleString(undefined, {
+      minimumFractionDigits: isCurrency ? precision : 0, // Ensure currency always shows precision (e.g., $5.00) unless precision is 0
+      maximumFractionDigits: precision,
+    })}`;
+};
+
 
 export function CountryAtGlance({
   country,
@@ -118,20 +145,21 @@ export function CountryAtGlance({
   chartView = 'overview',
   timeResolution = 'annual',
   showForecastInHistorical = true,
+  onTimeResolutionChange, // Added prop
+  onChartViewChange,      // Added prop
 }: CountryAtGlanceProps) {
   const { theme } = useTheme(); // For chart styling
 
-  // Memoize historical data processing
   const historicalChartData = useMemo(() => {
     if (!historicalData || historicalData.length === 0) return [];
 
     const targetDateObj = new Date(targetTime);
-    const windowYears = 5; // Show last 5 years of data for annual, or equivalent for quarterly
+    const windowYears = 5;
     let windowStartTimeMs: number;
 
     if (timeResolution === 'quarterly') {
       const windowStartDate = new Date(targetDateObj);
-      windowStartDate.setFullYear(targetDateObj.getFullYear() - windowYears); // Approx 5 years back
+      windowStartDate.setFullYear(targetDateObj.getFullYear() - windowYears);
       windowStartTimeMs = windowStartDate.getTime();
     } else { // annual
       const windowStartDate = new Date(targetDateObj);
@@ -145,7 +173,6 @@ export function CountryAtGlance({
 
     if (!filteredRawData.length) return [];
 
-    // Group and average data by period (quarter/year)
     const timestampGroups: Record<string, { points: HistoricalDataPoint[], timestampSum: number, count: number }> = {};
     filteredRawData.forEach(point => {
       const date = new Date(point.ixTimeTimestamp);
@@ -191,13 +218,12 @@ export function CountryAtGlance({
 
   }, [historicalData, targetTime, timeResolution]);
 
-  // Memoize forecast data processing
   const forecastChartData = useMemo(() => {
     if (!showForecastInHistorical || forecastYears === 0) return [];
 
     const basePointForForecast = historicalChartData.length > 0
-      ? historicalChartData[historicalChartData.length - 1] // Base forecast on the last historical point shown
-      : { // Fallback if no historical data, use current country stats at targetTime
+      ? historicalChartData[historicalChartData.length - 1]
+      : {
           period: IxTime.formatIxTime(targetTime, false).split(',')[1]?.trim() || new Date(targetTime).getFullYear().toString(),
           date: IxTime.formatIxTime(targetTime, false).split(',')[1]?.trim() || new Date(targetTime).getFullYear().toString(),
           population: country.currentPopulation / 1000000,
@@ -211,14 +237,12 @@ export function CountryAtGlance({
     if (!basePointForForecast) return [];
 
     const forecastPoints: ChartPoint[] = [];
-    // Start forecast from the timestamp of the base point
     const forecastStartTime = basePointForForecast.ixTimeTimestamp;
-
     const numForecastSteps = forecastYears * (timeResolution === 'quarterly' ? 4 : 1);
 
     for (let i = 1; i <= numForecastSteps; i++) {
       const yearOffset = timeResolution === 'quarterly' ? i / 4 : i;
-      const currentForecastTime = IxTime.addYears(forecastStartTime, yearOffset);
+      const currentForecastTime = IxTime.addYears(forecastStartTime, yearOffset); // Assuming IxTime.addYears exists and works correctly
       const dateObj = new Date(currentForecastTime);
       let periodKey: string;
       if (timeResolution === 'quarterly') {
@@ -228,17 +252,14 @@ export function CountryAtGlance({
         periodKey = dateObj.getUTCFullYear().toString();
       }
 
-      // Use the country's current growth rates for projection
       const populationGrowthFactor = Math.pow(1 + country.populationGrowthRate, yearOffset);
       const gdpGrowthFactor = Math.pow(1 + country.adjustedGdpGrowth, yearOffset);
 
-      // Project from the basePointForForecast's values (which are already in display units)
       const projectedPopulation = (basePointForForecast.population ?? 0) * populationGrowthFactor;
       const projectedGdpPerCapita = (basePointForForecast.gdpPerCapita ?? 0) * gdpGrowthFactor;
-      const projectedTotalGdp = projectedPopulation * projectedGdpPerCapita / 1000; // M * $ -> B$ (since pop is in M, gdp p.c. in $)
+      const projectedTotalGdp = projectedPopulation * projectedGdpPerCapita / 1000;
       const projectedPopDensity = (basePointForForecast.populationDensity ?? 0) * populationGrowthFactor;
       const projectedGdpDensity = (basePointForForecast.gdpDensity ?? 0) * gdpGrowthFactor;
-
 
       forecastPoints.push({
         period: periodKey,
@@ -252,18 +273,15 @@ export function CountryAtGlance({
         isForecast: true,
       });
     }
-    // Ensure the first point of the forecast connects to the last historical point
     if (historicalChartData.length > 0 && forecastPoints.length > 0) {
         return [{...historicalChartData[historicalChartData.length - 1]!, isForecast: true}, ...forecastPoints];
     }
-    if (forecastPoints.length > 0) { // Case where historicalChartData is empty but we have a base
+    if (forecastPoints.length > 0) {
         return [{...basePointForForecast, isForecast: true}, ...forecastPoints];
     }
     return [];
   }, [country, historicalChartData, forecastYears, showForecastInHistorical, timeResolution, targetTime]);
 
-
-  // Combine historical and forecast data for rendering
   const combinedChartData = useMemo(() => {
     const dataMap = new Map<string, ChartPoint>();
 
@@ -303,15 +321,14 @@ export function CountryAtGlance({
     return Array.from(dataMap.values()).sort((a,b) => a.ixTimeTimestamp - b.ixTimeTimestamp);
   }, [historicalChartData, forecastChartData]);
 
-
-  const axisColor = theme === 'dark' ? '#4A5568' : '#CBD5E0'; // Muted gray
-  const textColor = theme === 'dark' ? '#E2E8F0' : '#374151'; // Text color
+  const axisColor = theme === 'dark' ? '#4A5568' : '#CBD5E0';
+  const textColor = theme === 'dark' ? '#E2E8F0' : '#374151';
   const tooltipStyle = {
     backgroundColor: theme === 'dark' ? 'hsl(var(--popover))' : 'hsl(var(--popover))',
     color: theme === 'dark' ? 'hsl(var(--popover-foreground))' : 'hsl(var(--popover-foreground))',
     border: `1px solid ${theme === 'dark' ? 'hsl(var(--border))' : 'hsl(var(--border))'}`,
-    borderRadius: '0.375rem', // Corresponds to rounded-md
-    padding: '0.75rem', // p-3
+    borderRadius: '0.375rem',
+    padding: '0.75rem',
   };
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -416,7 +433,7 @@ export function CountryAtGlance({
           </ComposedChart>
         );
       case 'density':
-         if (!country.landArea) return <div className="flex h-full items-center justify-center text-muted-foreground"><AlertTriangle className="mr-2 h-5 w-5"/>Land area data unavailable for density charts.</div>;
+          if (!country.landArea) return <div className="flex h-full items-center justify-center text-muted-foreground"><AlertTriangle className="mr-2 h-5 w-5"/>Land area data unavailable for density charts.</div>;
         return (
           <ComposedChart {...commonProps}>
             <CartesianGrid strokeDasharray="3 3" stroke={axisColor} opacity={0.2} />
@@ -435,8 +452,7 @@ export function CountryAtGlance({
     }
   };
 
-
-  if (isLoading && !historicalData?.length) { // Show skeleton if main data is loading
+  if (isLoading && !historicalData?.length) {
     return (
       <Card>
         <CardHeader>
@@ -458,6 +474,13 @@ export function CountryAtGlance({
     );
   }
 
+  const chartOptions = [
+    { key: 'overview', label: 'Overview', icon: Activity },
+    { key: 'population', label: 'Population', icon: Users },
+    { key: 'gdp', label: 'GDP', icon: DollarSign },
+    { key: 'density', label: 'Density', icon: Globe }
+  ] as const; // Use "as const" for stronger typing of keys
+
   return (
     <Card>
       <CardHeader>
@@ -468,8 +491,9 @@ export function CountryAtGlance({
             </CardTitle>
             <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">Resolution:</span>
-                <Button variant={timeResolution === 'quarterly' ? "secondary" : "ghost"} size="sm" onClick={() => timeResolution('quarterly')}>Quarterly</Button>
-                <Button variant={timeResolution === 'annual' ? "secondary" : "ghost"} size="sm" onClick={() => setTimeResolution('annual')}>Annual</Button>
+                {/* Corrected onClick handlers */}
+                <Button variant={timeResolution === 'quarterly' ? "secondary" : "ghost"} size="sm" onClick={() => onTimeResolutionChange('quarterly')}>Quarterly</Button>
+                <Button variant={timeResolution === 'annual' ? "secondary" : "ghost"} size="sm" onClick={() => onTimeResolutionChange('annual')}>Annual</Button>
             </div>
         </div>
         <CardDescription>
@@ -479,8 +503,9 @@ export function CountryAtGlance({
       </CardHeader>
       <CardContent>
         <div className="flex flex-wrap gap-2 mb-6">
-            {[{ key: 'overview', label: 'Overview', icon: Activity }, { key: 'population', label: 'Population', icon: Users }, { key: 'gdp', label: 'GDP', icon: DollarSign }, { key: 'density', label: 'Density', icon: Globe }].map(({ key, label, icon: Icon }) => (
-              <Button key={key} variant={chartView === key ? "default" : "outline"} size="sm" onClick={() => setChartView(key as ChartView)} className="flex items-center">
+            {chartOptions.map(({ key, label, icon: Icon }) => (
+              // Corrected onClick handler and type assertion
+              <Button key={key} variant={chartView === key ? "default" : "outline"} size="sm" onClick={() => onChartViewChange(key)} className="flex items-center">
                 <Icon className="h-4 w-4 mr-1.5" />{label}
               </Button>
             ))}
@@ -488,10 +513,10 @@ export function CountryAtGlance({
 
         <div className="h-80 mb-4">
           {(isLoading || (showForecastInHistorical && isLoadingForecast)) && combinedChartData.length === 0 ? (
-             <div className="h-full flex items-center justify-center">
+              <div className="h-full flex items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <p className="ml-2 text-muted-foreground">Loading chart data...</p>
-            </div>
+              </div>
           ) : combinedChartData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               {renderChart()}
@@ -508,9 +533,10 @@ export function CountryAtGlance({
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t">
           {[
-            {label: "Population", value: formatNumber(country.currentPopulation / 1000000, false, 1) + "M", growth: country.populationGrowthRate},
-            {label: "GDP p.c.", value: formatNumber(country.currentGdpPerCapita, true, 0), growth: country.adjustedGdpGrowth},
-            {label: "Total GDP", value: formatNumber(country.currentTotalGdp / 1000000000, true, 1) + "B"},
+            // Using the defined formatNumber function
+            {label: "Population", value: formatNumber(country.currentPopulation / 1000000, false, 1, false) + "M", growth: country.populationGrowthRate},
+            {label: "GDP p.c.", value: formatNumber(country.currentGdpPerCapita, true, 0, false), growth: country.adjustedGdpGrowth},
+            {label: "Total GDP", value: formatNumber(country.currentTotalGdp / 1000000000, true, 1, false) + "B"},
             {label: "Economic Tier", value: country.economicTier, isBadge: true},
           ].map(stat => (
             <div key={stat.label} className="text-center sm:text-left">

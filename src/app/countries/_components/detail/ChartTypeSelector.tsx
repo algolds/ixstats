@@ -1,7 +1,7 @@
 // src/app/countries/_components/detail/ChartTypeSelector.tsx
 "use client";
 
-import { BarChart3, TrendingUp, Users, Globe, Activity, Maximize, Minimize, LucideIcon } from "lucide-react";
+import { BarChart3, TrendingUp, Users, Globe, Activity, Maximize, Minimize, type LucideIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";

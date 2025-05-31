@@ -46,6 +46,7 @@ import {
   TenYearForecast,
 } from "../_components/detail";
 import type { ForecastDataPoint as TenYearForecastDataPoint } from "../_components/detail/TenYearForecast"; // Import type
+import { Badge } from "~/components/ui/badge";
 
 // Define a more specific type for the data used in this page
 export interface CountryDetailData {
@@ -180,7 +181,9 @@ function CountryDetailPageContent() {
       populationDensity: stats.populationDensity ?? null,
       gdpDensity: stats.gdpDensity ?? null,
       lastCalculated: lastCalculatedTimestamp,
-      baselineDate: typeof countryDataResult.baselineDate === 'number' ? countryDataResult.baselineDate : countryDataResult.baselineDate.getTime(),
+      baselineDate: typeof countryDataResult.baselineDate === 'number' 
+        ? countryDataResult.baselineDate 
+        : new Date(countryDataResult.baselineDate).getTime(),
       economicTier: stats.economicTier,
       populationTier: stats.populationTier,
       localGrowthFactor: countryDataResult.localGrowthFactor,
@@ -292,7 +295,9 @@ function CountryDetailPageContent() {
               isLoadingForecast={isLoadingForecast}
               chartView={selectedChartType as 'overview' | 'population' | 'gdp' | 'density'} // Cast to simplified type for CountryAtGlance
               onChartViewChange={handleChartChange as any} // Allow CountryAtGlance to potentially change it (or remove if not needed)
-              // onTimeResolutionChange can be added if CountryAtGlance controls it
+              onTimeResolutionChange={function (resolution: "quarterly" | "annual"): void {
+                throw new Error("Function not implemented.");
+              } }              // onTimeResolutionChange can be added if CountryAtGlance controls it
             />
 
             <ChartTypeSelector selectedChart={selectedChartType} onChartChange={handleChartChange} availableData={availableDataForCharts}/>
