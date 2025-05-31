@@ -6,7 +6,7 @@ import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { IxStatsDataService } from "~/lib/data-service";
 import { IxTime } from "~/lib/ixtime";
 import { excelHandler } from "~/lib/excel-handler";
-import type { BaseCountryData, ImportAnalysis } from "~/types/ixstats";
+import type { BaseCountryData, ImportAnalysis, EconomicTier, PopulationTier, CountryStats } from "~/types/ixstats"; // Added EconomicTier, PopulationTier
 
 export const countriesRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
@@ -100,6 +100,10 @@ export const countriesRouter = createTRPCRouter({
             maxGdpGrowthRate: true,
             adjustedGdpGrowth: true,
             populationGrowthRate: true,
+            projected2040Population: true, // Add new fields for comparison
+            projected2040Gdp: true,
+            projected2040GdpPerCapita: true,
+            actualGdpGrowth: true,
           },
         });
 
@@ -124,7 +128,7 @@ export const countriesRouter = createTRPCRouter({
             });
             newCountries++;
           } else {
-            // Check for changes in the 13 core fields
+            // Check for changes in the core fields
             const fieldChanges: Array<{
               field: string;
               oldValue: any;
@@ -147,7 +151,7 @@ export const countriesRouter = createTRPCRouter({
                 // For numbers, check if difference is significant (>0.1% or >0.001 absolute)
                 const diff = Math.abs(normalizedOld - normalizedNew);
                 const relDiff = normalizedOld !== 0 ? diff / Math.abs(normalizedOld) : diff;
-                if (diff > 0.001 && relDiff > 0.001) {
+                if (diff > 0.0001 && relDiff > 0.0001) { // Made tolerance smaller for growth rates etc.
                   fieldChanges.push({ field, oldValue: normalizedOld, newValue: normalizedNew, fieldLabel: label });
                 }
               } else if (normalizedOld !== normalizedNew) {
@@ -155,7 +159,7 @@ export const countriesRouter = createTRPCRouter({
               }
             };
 
-            // Check all 13 core fields
+            // Check all BaseCountryData fields
             checkField('continent', existing.continent, country.continent, 'Continent');
             checkField('region', existing.region, country.region, 'Region');
             checkField('governmentType', existing.governmentType, country.governmentType, 'Government Type');
@@ -168,6 +172,11 @@ export const countriesRouter = createTRPCRouter({
             checkField('maxGdpGrowthRate', existing.maxGdpGrowthRate, country.maxGdpGrowthRate, 'Max GDP Growth Rate');
             checkField('adjustedGdpGrowth', existing.adjustedGdpGrowth, country.adjustedGdpGrowth, 'Adjusted GDP Growth');
             checkField('populationGrowthRate', existing.populationGrowthRate, country.populationGrowthRate, 'Population Growth Rate');
+            checkField('projected2040Population', existing.projected2040Population, country.projected2040Population, '2040 Population');
+            checkField('projected2040Gdp', existing.projected2040Gdp, country.projected2040Gdp, '2040 GDP');
+            checkField('projected2040GdpPerCapita', existing.projected2040GdpPerCapita, country.projected2040GdpPerCapita, '2040 GDP PC');
+            checkField('actualGdpGrowth', existing.actualGdpGrowth, country.actualGdpGrowth, 'Actual GDP Growth');
+
 
             if (fieldChanges.length > 0) {
               changes.push({
@@ -271,6 +280,12 @@ export const countriesRouter = createTRPCRouter({
               adjustedGdpGrowth: countryData.adjustedGdpGrowth,
               populationGrowthRate: countryData.populationGrowthRate,
               
+              // Include the new NOT NULL fields
+              projected2040Population: countryData.projected2040Population,
+              projected2040Gdp: countryData.projected2040Gdp,
+              projected2040GdpPerCapita: countryData.projected2040GdpPerCapita,
+              actualGdpGrowth: countryData.actualGdpGrowth,
+
               // Current calculated values (start at baseline)
               currentPopulation: countryStats.currentPopulation,
               currentGdpPerCapita: countryStats.currentGdpPerCapita,
@@ -357,25 +372,24 @@ export const countriesRouter = createTRPCRouter({
       const dataService = new IxStatsDataService(IxStatsDataService.getDefaultConfig());
       
       // Convert database country to CountryStats format
-      const countryStats = {
+      const countryStats: CountryStats = {
         ...country,
-        continent: country.continent,
-        region: country.region,
-        governmentType: country.governmentType,
-        religion: country.religion,
-        leader: country.leader,
-        areaSqMi: country.areaSqMi,
-        
-        // Map database fields to CountryStats interface
-        country: country.name,
+        country: country.name, // Ensure 'country' field is present
         name: country.name,
         population: country.baselinePopulation,
         gdpPerCapita: country.baselineGdpPerCapita,
-        totalGdp: country.currentTotalGdp,
+        totalGdp: country.currentTotalGdp, // Use currentTotalGdp for baseline calculation if needed, though progression starts from current
         landArea: country.landArea,
         lastCalculated: country.lastCalculated.getTime(),
         baselineDate: country.baselineDate.getTime(),
         globalGrowthFactor: 1.0321, // Default value, should come from system config
+        economicTier: country.economicTier as EconomicTier, // Cast to enum
+        populationTier: country.populationTier as PopulationTier, // Cast to enum
+         // Added missing fields for CountryStats compatibility
+        projected2040Population: country.projected2040Population,
+        projected2040Gdp: country.projected2040Gdp,
+        projected2040GdpPerCapita: country.projected2040GdpPerCapita,
+        actualGdpGrowth: country.actualGdpGrowth,
       };
 
       // Calculate updated stats
@@ -403,7 +417,7 @@ export const countriesRouter = createTRPCRouter({
       });
 
       // Create historical data point
-      await ctx.db.historicalDataPoint.create({
+      await ctx.db.historicalData.create({ // Corrected: historicalDataPoint
         data: {
           countryId: input.countryId,
           ixTimeTimestamp: new Date(targetTime),

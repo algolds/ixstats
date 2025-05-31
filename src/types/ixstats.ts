@@ -43,6 +43,11 @@ export interface BaseCountryData {
   maxGdpGrowthRate: number; // From Excel "Max GDPPC Grow Rt"
   adjustedGdpGrowth: number; // From Excel "Adj GDPPC Growth"
   populationGrowthRate: number; // From Excel "Pop Growth Rate"
+  // Added missing NOT NULL fields from schema
+  projected2040Population: number;
+  projected2040Gdp: number;
+  projected2040GdpPerCapita: number;
+  actualGdpGrowth: number;
 }
 
 // Current country statistics (calculated)
