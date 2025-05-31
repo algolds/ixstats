@@ -45,13 +45,13 @@ export function FileUpload({ onFileSelect, isUploading, isAnalyzing }: FileUploa
         <div className="mt-4">
           <label htmlFor="file-upload" className="cursor-pointer">
             <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">
-              Upload Excel or CSV roster file
+              Upload Excel roster file
             </span>
             <input
               id="file-upload"
               name="file-upload"
               type="file"
-              accept=".xlsx,.xls,.csv"
+              accept=".xlsx,.xls"
               className="sr-only"
               onChange={handleFileChange}
               disabled={isUploading || isAnalyzing}
@@ -62,9 +62,9 @@ export function FileUpload({ onFileSelect, isUploading, isAnalyzing }: FileUploa
           </label>
         </div>
         <div className="mt-4 text-xs text-gray-400 dark:text-gray-500">
-          <p>• Supports .xlsx / .xls / .csv formats</p>
-          <p>• CSV files should have headers in the first row</p>
-          <p>• Required columns: Country, Population, GDP per Capita</p>
+          <p>• Supports .xlsx / .xls formats only</p>
+          <p>• Excel files should have headers in the first row</p>
+          <p>• Required columns: Country, Population, GDP PC</p>
           <p>• Upload will show a preview of changes before importing</p>
         </div>
       </div>

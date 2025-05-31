@@ -1,10 +1,10 @@
-// src/lib/csv-handler.ts
-// Enhanced CSV handler for IxStats world roster data with all required fields
+// src/lib/excel-handler.ts
+// Excel-only handler for IxStats world roster data with reduced field set
 
 import * as XLSX from 'xlsx';
 import type { BaseCountryData } from '../types/ixstats';
 
-export interface CsvParseResult {
+export interface ExcelParseResult {
   success: boolean;
   data: BaseCountryData[];
   errors: string[];
@@ -17,144 +17,116 @@ export interface CsvParseResult {
   };
 }
 
-export interface CsvFieldMapping {
-  csvHeader: string;
+export interface ExcelFieldMapping {
+  excelHeader: string;
   dbField: keyof BaseCountryData;
   required: boolean;
   type: 'string' | 'number' | 'percentage';
   aliases: string[];
 }
 
-// Updated field mappings to match the exact headers from the user's CSV
-const FIELD_MAPPINGS: CsvFieldMapping[] = [
+// Field mappings for the exact Excel structure (only 13 core fields)
+const FIELD_MAPPINGS: ExcelFieldMapping[] = [
   {
-    csvHeader: 'Country',
+    excelHeader: 'Country',
     dbField: 'country',
     required: true,
     type: 'string',
     aliases: ['Nation Name', 'Nation', 'Country Name', 'name']
   },
   {
-    csvHeader: 'Continent',
+    excelHeader: 'Continent',
     dbField: 'continent',
     required: false,
     type: 'string',
     aliases: []
   },
   {
-    csvHeader: 'Region',
+    excelHeader: 'Region',
     dbField: 'region',
     required: false,
     type: 'string',
     aliases: []
   },
   {
-    csvHeader: 'Government Type',
+    excelHeader: 'Government Type',
     dbField: 'governmentType',
     required: false,
     type: 'string',
     aliases: ['Govt Type', 'Government', 'Gov Type']
   },
   {
-    csvHeader: 'Religion',
+    excelHeader: 'Religion',
     dbField: 'religion',
     required: false,
     type: 'string',
     aliases: []
   },
   {
-    csvHeader: 'Leader',
+    excelHeader: 'Leader',
     dbField: 'leader',
     required: false,
     type: 'string',
     aliases: []
   },
   {
-    csvHeader: 'Population',
+    excelHeader: 'Population',
     dbField: 'population',
     required: true,
     type: 'number',
     aliases: ['Current Population', 'Pop', 'Population (current)']
   },
   {
-    csvHeader: 'GDP PC',
+    excelHeader: 'GDP PC',
     dbField: 'gdpPerCapita',
     required: true,
     type: 'number',
     aliases: ['GDP per Capita', 'GDPPC', 'GDPperCap', 'GDP/Capita', 'gdppercapita']
   },
   {
-    csvHeader: 'Area (km²)',
+    excelHeader: 'Area (km²)',
     dbField: 'landArea',
     required: false,
     type: 'number',
     aliases: ['Area (SqKm)', 'Land Area (km²)', 'Area km²', 'Area', 'landarea']
   },
   {
-    csvHeader: 'Area (sq mi)',
+    excelHeader: 'Area (sq mi)',
     dbField: 'areaSqMi',
     required: false,
     type: 'number',
     aliases: ['Area (SqMi)', 'Land Area (sq mi)', 'Area sq mi']
   },
   {
-    csvHeader: 'Max GDPPC Grow Rt',
+    excelHeader: 'Max GDPPC Grow Rt',
     dbField: 'maxGdpGrowthRate',
     required: false,
     type: 'percentage',
     aliases: ['Max Growth Rate', 'Max GDP Growth']
   },
   {
-    csvHeader: 'Adj GDPPC Growth',
+    excelHeader: 'Adj GDPPC Growth',
     dbField: 'adjustedGdpGrowth',
     required: false,
     type: 'percentage',
     aliases: ['GDP Growth', 'Adjusted GDP Growth']
   },
   {
-    csvHeader: 'Pop Growth Rate',
+    excelHeader: 'Pop Growth Rate',
     dbField: 'populationGrowthRate',
     required: false,
     type: 'percentage',
     aliases: ['Population Growth', 'popgrowthrate']
-  },
-  {
-    csvHeader: '2040 Population',
-    dbField: 'projected2040Population',
-    required: false,
-    type: 'number',
-    aliases: []
-  },
-  {
-    csvHeader: '2040 GDP',
-    dbField: 'projected2040Gdp',
-    required: false,
-    type: 'number',
-    aliases: []
-  },
-  {
-    csvHeader: '2040 GDP PC',
-    dbField: 'projected2040GdpPerCapita',
-    required: false,
-    type: 'number',
-    aliases: []
-  },
-  {
-    csvHeader: 'Actual GDP Growth',
-    dbField: 'actualGdpGrowth',
-    required: false,
-    type: 'percentage',
-    aliases: []
   }
 ];
 
-export class IxStatsCsvHandler {
+export class IxStatsExcelHandler {
   
   /**
-   * Parse CSV or Excel file containing world roster data
+   * Parse Excel file containing world roster data
    */
-  async parseFile(fileBuffer: ArrayBuffer, fileName?: string): Promise<CsvParseResult> {
-    const result: CsvParseResult = {
+  async parseFile(fileBuffer: ArrayBuffer, fileName?: string): Promise<ExcelParseResult> {
+    const result: ExcelParseResult = {
       success: false,
       data: [],
       errors: [],
@@ -168,16 +140,16 @@ export class IxStatsCsvHandler {
     };
 
     try {
-      let rawData: any[][];
-      
-      if (fileName?.toLowerCase().endsWith('.csv')) {
-        rawData = this.parseCsvBuffer(fileBuffer);
-      } else {
-        rawData = this.parseExcelBuffer(fileBuffer);
+      // Only support Excel files
+      if (fileName && !this.isExcelFile(fileName)) {
+        result.errors.push('Only Excel files (.xlsx, .xls) are supported. CSV import has been removed.');
+        return result;
       }
 
+      const rawData = this.parseExcelBuffer(fileBuffer);
+
       if (!rawData || rawData.length < 2) {
-        result.errors.push('File must contain at least a header row and one data row');
+        result.errors.push('Excel file must contain at least a header row and one data row');
         return result;
       }
 
@@ -187,8 +159,8 @@ export class IxStatsCsvHandler {
       const headers = rawData[0]?.map(h => String(h || '').trim()) || [];
       const fieldIndexMap = this.createFieldIndexMap(headers);
 
-      console.log('[CSV Handler] Headers found:', headers);
-      console.log('[CSV Handler] Field mapping:', Array.from(fieldIndexMap.entries()));
+      console.log('[Excel Handler] Headers found:', headers);
+      console.log('[Excel Handler] Field mapping:', Array.from(fieldIndexMap.entries()));
 
       // Validate required fields are present
       const missingRequired = this.validateRequiredFields(fieldIndexMap);
@@ -222,73 +194,40 @@ export class IxStatsCsvHandler {
       }
 
       if (result.data.length === 0) {
-        result.errors.push('No valid countries found in file');
+        result.errors.push('No valid countries found in Excel file');
         return result;
       }
 
       result.success = true;
-      console.log(`[CsvHandler] Successfully parsed ${result.data.length} countries from ${fileName || 'file'}`);
+      console.log(`[Excel Handler] Successfully parsed ${result.data.length} countries from ${fileName || 'Excel file'}`);
       
     } catch (error) {
-      result.errors.push(`File parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      console.error('[CsvHandler] Parse error:', error);
+      result.errors.push(`Excel file parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('[Excel Handler] Parse error:', error);
     }
 
     return result;
   }
 
   /**
-   * Parse CSV buffer to raw data array
+   * Check if file is an Excel file
    */
-  private parseCsvBuffer(buffer: ArrayBuffer): any[][] {
-    const csvString = new TextDecoder('utf-8').decode(buffer);
-    
-    // Remove BOM if present
-    const cleanCsv = csvString.charCodeAt(0) === 0xFEFF ? csvString.substring(1) : csvString;
-    
-    const lines = cleanCsv.split(/\r\n|\n|\r/);
-    const data: any[][] = [];
-
-    for (const line of lines) {
-      if (line.trim() === '') continue;
-      
-      // Simple CSV parsing with quoted field support
-      const values: string[] = [];
-      let inQuote = false;
-      let currentValue = '';
-      
-      for (let i = 0; i < line.length; i++) {
-        const char = line[i];
-        if (char === '"') {
-          inQuote = !inQuote;
-        } else if (char === ',' && !inQuote) {
-          values.push(currentValue.trim());
-          currentValue = '';
-        } else {
-          currentValue += char;
-        }
-      }
-      values.push(currentValue.trim());
-      
-      // Clean quoted values
-      const cleanedValues = values.map(val => {
-        if (val.startsWith('"') && val.endsWith('"')) {
-          return val.substring(1, val.length - 1).trim();
-        }
-        return val.trim();
-      });
-      
-      data.push(cleanedValues);
-    }
-
-    return data;
+  private isExcelFile(fileName: string): boolean {
+    const extension = fileName.toLowerCase().split('.').pop();
+    return extension === 'xlsx' || extension === 'xls';
   }
 
   /**
    * Parse Excel buffer to raw data array
    */
   private parseExcelBuffer(buffer: ArrayBuffer): any[][] {
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    const workbook = XLSX.read(buffer, { 
+      type: 'buffer',
+      cellDates: true,
+      cellNF: false,
+      cellText: false
+    });
+    
     const sheetName = workbook.SheetNames[0];
     
     if (!sheetName) {
@@ -313,7 +252,7 @@ export class IxStatsCsvHandler {
       const headerIndex = this.findHeaderIndex(headers, mapping);
       if (headerIndex !== -1) {
         fieldMap.set(mapping.dbField, headerIndex);
-        console.log(`[CSV Handler] Mapped ${mapping.dbField} to column ${headerIndex} (${headers[headerIndex]})`);
+        console.log(`[Excel Handler] Mapped ${mapping.dbField} to column ${headerIndex} (${headers[headerIndex]})`);
       }
     }
     
@@ -323,8 +262,8 @@ export class IxStatsCsvHandler {
   /**
    * Find the index of a header that matches the field mapping
    */
-  private findHeaderIndex(headers: string[], mapping: CsvFieldMapping): number {
-    const searchTerms = [mapping.csvHeader, ...mapping.aliases];
+  private findHeaderIndex(headers: string[], mapping: ExcelFieldMapping): number {
+    const searchTerms = [mapping.excelHeader, ...mapping.aliases];
     
     for (const term of searchTerms) {
       const index = headers.findIndex(header => {
@@ -362,7 +301,7 @@ export class IxStatsCsvHandler {
     
     for (const mapping of FIELD_MAPPINGS) {
       if (mapping.required && !fieldMap.has(mapping.dbField)) {
-        missing.push(mapping.csvHeader);
+        missing.push(mapping.excelHeader);
       }
     }
     
@@ -412,11 +351,7 @@ export class IxStatsCsvHandler {
         areaSqMi: this.parseOptionalNumber(row[fieldMap.get('areaSqMi') ?? -1]),
         maxGdpGrowthRate: this.parsePercentage(row[fieldMap.get('maxGdpGrowthRate') ?? -1], 0.05),
         adjustedGdpGrowth: this.parsePercentage(row[fieldMap.get('adjustedGdpGrowth') ?? -1], 0.03),
-        populationGrowthRate: this.parsePercentage(row[fieldMap.get('populationGrowthRate') ?? -1], 0.01),
-        projected2040Population: this.parseNumber(row[fieldMap.get('projected2040Population') ?? -1], 0),
-        projected2040Gdp: this.parseNumber(row[fieldMap.get('projected2040Gdp') ?? -1], 0),
-        projected2040GdpPerCapita: this.parseNumber(row[fieldMap.get('projected2040GdpPerCapita') ?? -1], 0),
-        actualGdpGrowth: this.parsePercentage(row[fieldMap.get('actualGdpGrowth') ?? -1], 0)
+        populationGrowthRate: this.parsePercentage(row[fieldMap.get('populationGrowthRate') ?? -1], 0.01)
       };
 
       // Calculate missing areaSqMi from landArea if needed
@@ -428,9 +363,6 @@ export class IxStatsCsvHandler {
       if (!countryData.landArea && countryData.areaSqMi) {
         countryData.landArea = countryData.areaSqMi * 2.58999;
       }
-
-      // Calculate missing projections if needed
-      this.calculateMissingProjections(countryData);
 
       // Validate the parsed data
       if (!this.validateCountryData(countryData)) {
@@ -532,33 +464,6 @@ export class IxStatsCsvHandler {
   }
 
   /**
-   * Calculate missing projection values
-   */
-  private calculateMissingProjections(countryData: BaseCountryData): void {
-    const gameEpochYear = 2028;
-    const targetYear = 2040;
-    const yearsToTarget = targetYear - gameEpochYear;
-
-    // Calculate missing 2040 projections
-    if (countryData.projected2040Population === 0 && yearsToTarget > 0 && countryData.population > 0) {
-      countryData.projected2040Population = countryData.population * Math.pow(1 + countryData.populationGrowthRate, yearsToTarget);
-    }
-
-    if (countryData.projected2040GdpPerCapita === 0 && yearsToTarget > 0 && countryData.gdpPerCapita > 0) {
-      countryData.projected2040GdpPerCapita = countryData.gdpPerCapita * Math.pow(1 + countryData.adjustedGdpGrowth, yearsToTarget);
-    }
-
-    if (countryData.projected2040Gdp === 0 && countryData.projected2040Population > 0 && countryData.projected2040GdpPerCapita > 0) {
-      countryData.projected2040Gdp = countryData.projected2040Population * countryData.projected2040GdpPerCapita;
-    }
-
-    // Calculate actual GDP growth if missing
-    if (countryData.actualGdpGrowth === 0) {
-      countryData.actualGdpGrowth = (1 + countryData.populationGrowthRate) * (1 + countryData.adjustedGdpGrowth) - 1;
-    }
-  }
-
-  /**
    * Validate that country data meets minimum requirements
    */
   private validateCountryData(data: BaseCountryData): boolean {
@@ -574,12 +479,12 @@ export class IxStatsCsvHandler {
   /**
    * Get field mappings for debugging/info purposes
    */
-  getFieldMappings(): CsvFieldMapping[] {
+  getFieldMappings(): ExcelFieldMapping[] {
     return [...FIELD_MAPPINGS];
   }
 
   /**
-   * Validate CSV headers against expected fields
+   * Validate Excel headers against expected fields
    */
   validateHeaders(headers: string[]): { valid: boolean; missing: string[]; mapped: string[] } {
     const fieldMap = this.createFieldIndexMap(headers);
@@ -595,4 +500,4 @@ export class IxStatsCsvHandler {
 }
 
 // Export a singleton instance
-export const csvHandler = new IxStatsCsvHandler();
+export const excelHandler = new IxStatsExcelHandler();

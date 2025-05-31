@@ -1,5 +1,5 @@
 // src/types/ixstats.ts
-// Core type definitions for IxStats system
+// Core type definitions for IxStats system - Excel-only with reduced field set
 
 // Economic and Population Tier Enums
 export enum EconomicTier {
@@ -28,25 +28,21 @@ export enum DmInputType {
   ECONOMIC_POLICY = "economic_policy"
 }
 
-// Base country data from roster
+// Base country data from Excel roster (reduced field set)
 export interface BaseCountryData {
-  country: string; // From CSV "Country"
-  continent?: string | null; // From CSV "Continent"
-  region?: string | null; // From CSV "Region"
-  governmentType?: string | null; // From CSV "Government Type"
-  religion?: string | null; // From CSV "Religion"
-  leader?: string | null; // From CSV "Leader"
-  population: number; // From CSV "Population"
-  gdpPerCapita: number; // From CSV "GDP PC"
-  landArea?: number | null; // From CSV "Area (km²)"
-  areaSqMi?: number | null; // From CSV "Area (sq mi)" - for reference
-  maxGdpGrowthRate: number; // From CSV "Max GDPPC Grow Rt"
-  adjustedGdpGrowth: number; // From CSV "Adj GDPPC Growth"
-  populationGrowthRate: number; // From CSV "Pop Growth Rate"
-  projected2040Population: number; // From CSV "2040 Population"
-  projected2040Gdp: number; // From CSV "2040 GDP"
-  projected2040GdpPerCapita: number; // From CSV "2040 GDP PC"
-  actualGdpGrowth: number; // From CSV "Actual GDP Growth"
+  country: string; // From Excel "Country"
+  continent?: string | null; // From Excel "Continent"
+  region?: string | null; // From Excel "Region"
+  governmentType?: string | null; // From Excel "Government Type"
+  religion?: string | null; // From Excel "Religion"
+  leader?: string | null; // From Excel "Leader"
+  population: number; // From Excel "Population"
+  gdpPerCapita: number; // From Excel "GDP PC"
+  landArea?: number | null; // From Excel "Area (km²)"
+  areaSqMi?: number | null; // From Excel "Area (sq mi)" - for reference
+  maxGdpGrowthRate: number; // From Excel "Max GDPPC Grow Rt"
+  adjustedGdpGrowth: number; // From Excel "Adj GDPPC Growth"
+  populationGrowthRate: number; // From Excel "Pop Growth Rate"
 }
 
 // Current country statistics (calculated)
@@ -55,7 +51,7 @@ export interface CountryStats extends BaseCountryData {
   id?: string;
   name: string; // Will be same as 'country' from BaseCountryData
 
-  // Descriptive fields from CSV, carried over
+  // Descriptive fields from Excel, carried over
   continent?: string | null;
   region?: string | null;
   governmentType?: string | null;
@@ -254,7 +250,6 @@ export interface SystemStatus {
   } | null;
 }
 
-
 // Calculation result types
 export interface CalculationResult {
   country: string;
@@ -271,7 +266,7 @@ export interface CalculationResult {
   };
 }
 
-// Import/Export types
+// Import/Export types (Excel-only)
 export interface ImportAnalysis {
   totalCountries: number;
   newCountries: number;
@@ -423,10 +418,6 @@ export interface Country {
   maxGdpGrowthRate: number;
   adjustedGdpGrowth: number;
   populationGrowthRate: number;
-  projected2040Population: number;
-  projected2040Gdp: number;
-  projected2040GdpPerCapita: number;
-  actualGdpGrowth: number;
   landArea?: number | null;
   currentPopulation: number;
   currentGdpPerCapita: number;
