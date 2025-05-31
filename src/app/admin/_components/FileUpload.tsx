@@ -17,14 +17,35 @@ export function FileUpload({ onFileSelect, isUploading, isAnalyzing }: FileUploa
     }
   };
 
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    if (event.dataTransfer.files?.length > 0) {
+      const file = event.dataTransfer.files[0];
+      if (file) {
+        onFileSelect(file);
+      }
+    }
+  };
+
   return (
-    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
+    <div 
+      className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       <div className="text-center">
         <Upload className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
         <div className="mt-4">
           <label htmlFor="file-upload" className="cursor-pointer">
             <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">
-              Upload Excel roster file
+              Upload Excel or CSV roster file
             </span>
             <input
               id="file-upload"
@@ -42,8 +63,9 @@ export function FileUpload({ onFileSelect, isUploading, isAnalyzing }: FileUploa
         </div>
         <div className="mt-4 text-xs text-gray-400 dark:text-gray-500">
           <p>• Supports .xlsx / .xls / .csv formats</p>
+          <p>• CSV files should have headers in the first row</p>
+          <p>• Required columns: Country, Population, GDP per Capita</p>
           <p>• Upload will show a preview of changes before importing</p>
-          <p>• You can choose to update existing countries or skip them</p>
         </div>
       </div>
     </div>
