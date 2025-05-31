@@ -1,18 +1,25 @@
-// src/app/countries/_components/detail/CountryAtGlance.tsx
+// src/app/countries/_components/charts/CountryAtGlance.tsx
 "use client";
 
 import { useMemo, useState } from "react";
-import { Skeleton } from "~/components/ui/skeleton";
-import { Card, CardHeader, CardContent } from "~/components/ui/card";
-import { BarChart3, Loader2 } from "lucide-react";
+import { Activity, AlertTriangle, BarChart3, Loader2 } from "lucide-react";
 import { useTheme } from "~/context/theme-context";
 import { IxTime } from "~/lib/ixtime";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
 import type { ChartType } from "../detail";
-import { CountryDashboard } from "../charts/CountryDashboard";
-import { ChartDisplay } from "../charts/ChartDisplay";
-import { CountryStats } from "../charts/CountryStats";
+import { CountryDashboard } from "./CountryDashboard";
+import { ChartDisplay } from "./ChartDisplay";
+import { CountryStats } from "./CountryStats";
+import { formatNumber } from "~/lib/format";
 
-// Keep existing types
+// Types remain mostly the same as original component
 interface CountryData {
   id: string;
   name: string;
@@ -37,9 +44,30 @@ interface HistoricalDataPoint {
   gdpDensity?: number | null;
 }
 
+interface ChartPoint {
+  period: string;
+  date: string;
+  ixTimeTimestamp: number;
+  population?: number;
+  gdpPerCapita?: number;
+  totalGdp?: number;
+  populationDensity?: number | null;
+  gdpDensity?: number | null;
+  isForecast?: boolean;
+  historicalPopulation?: number;
+  forecastPopulation?: number;
+  historicalGdpPerCapita?: number;
+  forecastGdpPerCapita?: number;
+  historicalTotalGdp?: number;
+  forecastTotalGdp?: number;
+  historicalPopulationDensity?: number;
+  forecastPopulationDensity?: number;
+  historicalGdpDensity?: number;
+  forecastGdpDensity?: number;
+}
+
 type TimeResolutionType = 'quarterly' | 'annual';
 
-// Keep the same props interface for backward compatibility
 interface CountryAtGlanceProps {
   country: CountryData;
   historicalData?: HistoricalDataPoint[];
@@ -71,14 +99,17 @@ export function CountryAtGlance({
   const [showForecast, setShowForecast] = useState(true);
   const [showDensity, setShowDensity] = useState(false);
 
-  // Data processing remains similar to original component
+  // Data processing - kept from original component with minor adjustments
   const historicalChartData = useMemo(() => {
-    // Processing historical data (keeping the same logic as in the original)
     if (!historicalData || historicalData.length === 0) return [];
 
-    let windowStartTimeMs = timeResolution === 'quarterly' 
-      ? IxTime.addYears(targetTime, -0.25)
-      : IxTime.addYears(targetTime, -1);
+    let windowStartTimeMs: number;
+
+    if (timeResolution === 'quarterly') {
+      windowStartTimeMs = IxTime.addYears(targetTime, -0.25);
+    } else {
+      windowStartTimeMs = IxTime.addYears(targetTime, -1);
+    }
 
     const filteredRawData = historicalData
       .filter(point => point.ixTimeTimestamp >= windowStartTimeMs && point.ixTimeTimestamp <= targetTime)
@@ -86,40 +117,27 @@ export function CountryAtGlance({
 
     if (!filteredRawData.length) return [];
 
-    // Group data by period
-    const timestampGroups: Record<string, { 
-      points: HistoricalDataPoint[], 
-      timestampSum: number, 
-      count: number 
-    }> = {};
-    
-    // Group by time period
+    const timestampGroups: Record<string, { points: HistoricalDataPoint[], timestampSum: number, count: number }> = {};
     filteredRawData.forEach(point => {
       const date = new Date(point.ixTimeTimestamp);
       let periodKey: string;
-      
       if (timeResolution === 'quarterly') {
         const quarter = Math.floor(date.getUTCMonth() / 3) + 1;
         periodKey = `${date.getUTCFullYear()}-Q${quarter}`;
       } else {
         periodKey = date.getUTCFullYear().toString();
       }
-      
       if (!timestampGroups[periodKey]) {
         timestampGroups[periodKey] = { points: [], timestampSum: 0, count: 0 };
       }
-      
       timestampGroups[periodKey]?.points.push(point);
       timestampGroups[periodKey]!.timestampSum += point.ixTimeTimestamp;
       timestampGroups[periodKey]!.count++;
     });
 
-    // Process each group into a data point
     return Object.entries(timestampGroups).map(([period, groupData]) => {
       const points = groupData.points;
       const avgTimestamp = points.length > 0 ? groupData.timestampSum / points.length : 0;
-      
-      // Calculate averages
       const sum = points.reduce((acc, p) => ({
         population: acc.population + p.population,
         gdpPerCapita: acc.gdpPerCapita + p.gdpPerCapita,
@@ -129,7 +147,6 @@ export function CountryAtGlance({
       }), { population: 0, gdpPerCapita: 0, totalGdp: 0, populationDensity: 0, gdpDensity: 0 });
 
       const count = points.length || 1;
-      
       return {
         period,
         date: period,
@@ -142,13 +159,12 @@ export function CountryAtGlance({
         isForecast: false,
       };
     }).sort((a, b) => a.ixTimeTimestamp - b.ixTimeTimestamp);
+
   }, [historicalData, targetTime, timeResolution]);
 
-  // Calculate forecast data
   const forecastChartData = useMemo(() => {
     if (!showForecastInHistorical || forecastYears === 0) return [];
 
-    // Use the last historical data point as base, or create one from current country data
     const basePointForForecast = historicalChartData.length > 0
       ? historicalChartData[historicalChartData.length - 1]
       : {
@@ -164,8 +180,7 @@ export function CountryAtGlance({
     
     if (!basePointForForecast) return [];
 
-    // Generate forecast points
-    const forecastPoints = [];
+    const forecastPoints: ChartPoint[] = [];
     const forecastStartTime = basePointForForecast.ixTimeTimestamp;
     const numForecastSteps = forecastYears * (timeResolution === 'quarterly' ? 4 : 1);
 
@@ -173,8 +188,6 @@ export function CountryAtGlance({
       const yearOffset = timeResolution === 'quarterly' ? i / 4 : i;
       const currentForecastTime = IxTime.addYears(forecastStartTime, yearOffset); 
       const dateObj = new Date(currentForecastTime);
-      
-      // Generate period key
       let periodKey: string;
       if (timeResolution === 'quarterly') {
         const quarter = Math.floor(dateObj.getUTCMonth() / 3) + 1;
@@ -183,7 +196,6 @@ export function CountryAtGlance({
         periodKey = dateObj.getUTCFullYear().toString();
       }
 
-      // Apply growth rates
       const populationGrowthFactor = Math.pow(1 + country.populationGrowthRate, yearOffset);
       const gdpGrowthFactor = Math.pow(1 + country.adjustedGdpGrowth, yearOffset);
 
@@ -205,8 +217,6 @@ export function CountryAtGlance({
         isForecast: true,
       });
     }
-    
-    // Include the last historical point in forecast data for continuity
     if (historicalChartData.length > 0 && forecastPoints.length > 0) {
         return [{...historicalChartData[historicalChartData.length - 1]!, isForecast: true}, ...forecastPoints];
     }
@@ -216,11 +226,9 @@ export function CountryAtGlance({
     return [];
   }, [country, historicalChartData, forecastYears, showForecastInHistorical, timeResolution, targetTime]);
 
-  // Combine historical and forecast data
   const combinedChartData = useMemo(() => {
-    const dataMap = new Map();
+    const dataMap = new Map<string, ChartPoint>();
 
-    // Add historical data
     historicalChartData.forEach(p => {
         dataMap.set(p.period, {
             ...p,
@@ -232,7 +240,6 @@ export function CountryAtGlance({
         });
     });
 
-    // Add forecast data
     forecastChartData.forEach(p => {
         const existing = dataMap.get(p.period);
         if (existing) {
@@ -255,27 +262,32 @@ export function CountryAtGlance({
             });
         }
     });
-    
     return Array.from(dataMap.values()).sort((a,b) => a.ixTimeTimestamp - b.ixTimeTimestamp);
   }, [historicalChartData, forecastChartData]);
 
-  // Loading state
+  // Chart type options
+  const chartOptions = [
+    { key: 'overview' as ChartType, label: 'Overview', icon: Activity },
+    { key: 'population' as ChartType, label: 'Population', icon: Activity },
+    { key: 'gdp' as ChartType, label: 'GDP', icon: Activity },
+    { key: 'density' as ChartType, label: 'Density', icon: Activity }
+  ];
+
   if (isLoading && !historicalData?.length) {
     return (
       <Card>
         <CardHeader>
-          <Skeleton className="h-7 w-3/4 mb-2" />
-          <Skeleton className="h-4 w-1/2" />
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-2 mb-4">
-            <Skeleton className="h-9 w-24 rounded-md" />
-            <Skeleton className="h-9 w-24 rounded-md" />
-            <Skeleton className="h-9 w-24 rounded-md" />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <CardTitle className="flex items-center">
+              <Activity className="h-5 w-5 mr-2 text-primary" />
+              Loading Data...
+            </CardTitle>
           </div>
-          <Skeleton className="h-80 w-full rounded-lg" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
-            {Array.from({length: 4}).map((_,i) => <Skeleton key={i} className="h-16 w-full rounded-md"/>)}
+        </CardHeader>
+        <CardContent>
+          <div className="h-80 flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="ml-2 text-muted-foreground">Loading chart data...</p>
           </div>
         </CardContent>
       </Card>
@@ -284,16 +296,55 @@ export function CountryAtGlance({
 
   return (
     <Card>
-      <CardContent className="p-4 sm:p-6">
-        {/* Conditional rendering based on chart view */}
+      <CardHeader>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <CardTitle className="flex items-center">
+            <Activity className="h-5 w-5 mr-2 text-primary" />
+            Economic Snapshot & Trends
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Resolution:</span>
+            <Button 
+              variant={timeResolution === 'quarterly' ? "secondary" : "ghost"} 
+              size="sm" 
+              onClick={() => onTimeResolutionChange('quarterly')}
+            >
+              Quarterly
+            </Button>
+            <Button 
+              variant={timeResolution === 'annual' ? "secondary" : "ghost"} 
+              size="sm" 
+              onClick={() => onTimeResolutionChange('annual')}
+            >
+              Annual
+            </Button>
+          </div>
+        </div>
+        <CardDescription>
+          Historical trends and {forecastYears > 0 ? `${forecastYears}-year forecast ` : ""}
+          ending {IxTime.formatIxTime(targetTime, false)}. Current Resolution: {timeResolution}.
+        </CardDescription>
+      </CardHeader>
+
+      <CardContent>
         {chartView === 'overview' ? (
-          <CountryDashboard 
-            country={country} 
-            onNavigate={onChartViewChange} 
-          />
-        ) : null}
-        
-        {/* Chart Display */}
+          <CountryDashboard country={country} onNavigate={onChartViewChange} />
+        ) : (
+          <div className="flex flex-wrap gap-2 mb-6">
+            {chartOptions.map(({ key, label, icon: Icon }) => (
+              <Button 
+                key={key} 
+                variant={chartView === key ? "default" : "outline"} 
+                size="sm" 
+                onClick={() => onChartViewChange(key)} 
+                className="flex items-center"
+              >
+                <Icon className="h-4 w-4 mr-1.5" />{label}
+              </Button>
+            ))}
+          </div>
+        )}
+
         <div className="h-80 mb-4">
           {(isLoading || (showForecastInHistorical && isLoadingForecast)) && combinedChartData.length === 0 ? (
             <div className="h-full flex items-center justify-center">
@@ -322,7 +373,7 @@ export function CountryAtGlance({
           )}
         </div>
 
-        {/* Country Stats */}
+        {/* Country Stats Component */}
         <CountryStats country={country} />
       </CardContent>
     </Card>
