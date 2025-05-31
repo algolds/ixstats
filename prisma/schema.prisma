@@ -1,5 +1,5 @@
 // prisma/schema.prisma
-// Updated schema to support all CSV import fields
+// Updated schema to support only Excel imports with reduced field set
 
 generator client {
   provider = "prisma-client-js"
@@ -40,10 +40,6 @@ model Country {
   maxGdpGrowthRate       Float
   adjustedGdpGrowth      Float
   populationGrowthRate   Float
-  projected2040Population Float
-  projected2040Gdp       Float
-  projected2040GdpPerCapita Float
-  actualGdpGrowth        Float
 
   // Current Calculated Values (updated by system)
   currentPopulation    Float

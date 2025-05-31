@@ -1,17 +1,18 @@
 // src/lib/data-service.ts
-// import * as XLSX from 'xlsx'; // XLSX no longer used directly here for export
+// Excel-only data service for IxStats with reduced field set
+
 import { IxStatsCalculator } from './calculations';
 import { IxTime } from './ixtime';
 import type {
   BaseCountryData,
   CountryStats,
-  EconomicConfig, // Keep for constructor
+  EconomicConfig,
   IxStatsConfig,
   HistoricalDataPoint
 } from '../types/ixstats';
 import { parseRosterFile as parseRosterFileFromParser } from './data-parser';
 import { getDefaultEconomicConfig, getDefaultIxStatsConfig } from './config-service';
-import { exportCountriesToExcel as exportToExcelUtil } from './excel-exporter'; // Import the new exporter
+import { exportCountriesToExcel as exportToExcelUtil } from './excel-exporter';
 
 export class IxStatsDataService {
   private calculator: IxStatsCalculator;
@@ -24,6 +25,10 @@ export class IxStatsDataService {
   }
 
   async parseRosterFile(fileBuffer: ArrayBuffer, fileName?: string): Promise<BaseCountryData[]> {
+    // Only support Excel files
+    if (fileName && !fileName.toLowerCase().match(/\.(xlsx|xls)$/)) {
+      throw new Error('Only Excel files (.xlsx, .xls) are supported. CSV import has been removed.');
+    }
     return parseRosterFileFromParser(fileBuffer, fileName);
   }
 
@@ -33,12 +38,15 @@ export class IxStatsDataService {
       const stats = this.calculator.initializeCountryStats(data);
       stats.baselineDate = new Date(IxTime.getInGameEpoch());
       stats.lastCalculated = new Date(IxTime.getInGameEpoch());
+      
+      // Ensure all the descriptive fields are properly carried over
       stats.continent = data.continent;
       stats.region = data.region;
       stats.governmentType = data.governmentType;
       stats.religion = data.religion;
       stats.leader = data.leader;
       stats.areaSqMi = data.areaSqMi;
+      
       return stats;
     });
     console.log(`[DataService] Countries initialized with baseline: ${IxTime.formatIxTime(IxTime.getInGameEpoch())}`);
@@ -116,7 +124,7 @@ export class IxStatsDataService {
     };
   }
 
-   validateEpochAlignment(countries: BaseCountryData[]): {
+  validateEpochAlignment(countries: BaseCountryData[]): {
     isValid: boolean; warnings: string[]; info: {
       rosterBaseline: string; gameEpoch: string; currentGameTime: string; yearsElapsed: number;
     };
@@ -125,14 +133,23 @@ export class IxStatsDataService {
     const gameEpoch = IxTime.getInGameEpoch();
     const currentTime = IxTime.getCurrentIxTime();
     const yearsElapsed = IxTime.getYearsSinceGameEpoch();
+    
+    // Validate data quality
     const avgPopulation = countries.length > 0 ? countries.reduce((sum, c) => sum + c.population, 0) / countries.length : 0;
     const avgGdpPerCapita = countries.length > 0 ? countries.reduce((sum, c) => sum + c.gdpPerCapita, 0) / countries.length : 0;
-    if (avgPopulation > 500000000) warnings.push("Average population seems very high - check if data is from correct time period");
-    if (avgGdpPerCapita > 100000) warnings.push("Average GDP per capita seems very high - verify data represents 2028 baseline");
+    
+    if (avgPopulation > 500000000) {
+      warnings.push("Average population seems very high - check if data is from correct time period");
+    }
+    if (avgGdpPerCapita > 100000) {
+      warnings.push("Average GDP per capita seems very high - verify data represents 2028 baseline");
+    }
+    
     const countriesWithAreaButNoDensity = countries.filter(c => c.landArea && c.landArea > 0).length;
     if (countriesWithAreaButNoDensity > 0) {
       console.log(`[DataService] ${countriesWithAreaButNoDensity} countries have land area data for density calculations`);
     }
+    
     return {
       isValid: warnings.length === 0, warnings, info: {
         rosterBaseline: IxTime.formatIxTime(gameEpoch, true),

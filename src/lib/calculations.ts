@@ -1,5 +1,5 @@
 // src/lib/calculations.ts
-// Updated calculations with proper epoch data handling
+// Updated calculations with reduced field set (no projected 2040 fields)
 
 import { IxTime } from './ixtime';
 import { 
@@ -47,9 +47,28 @@ export class IxStatsCalculator {
     const gdpDensity = landArea > 0 ? totalGdp / landArea : undefined;
 
     return {
-      ...baseData,
-      name: baseData.country,
+      // Basic country data
+      country: baseData.country,
+      continent: baseData.continent,
+      region: baseData.region,
+      governmentType: baseData.governmentType,
+      religion: baseData.religion,
+      leader: baseData.leader,
+      
+      // Area information
       landArea,
+      areaSqMi: baseData.areaSqMi,
+      
+      // Growth rates from Excel
+      maxGdpGrowthRate: baseData.maxGdpGrowthRate,
+      adjustedGdpGrowth: baseData.adjustedGdpGrowth,
+      populationGrowthRate: baseData.populationGrowthRate,
+      
+      // Baseline values (from roster - represents 2028 baseline)
+      population: baseData.population,
+      gdpPerCapita: baseData.gdpPerCapita,
+      
+      name: baseData.country,
       totalGdp,
       
       // Current stats start as baseline stats (roster data)
