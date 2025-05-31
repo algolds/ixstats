@@ -67,7 +67,26 @@ export function ChartDisplay({
   const axisColor = theme === 'dark' ? '#4A5568' : '#CBD5E0';
   const textColor = theme === 'dark' ? '#E2E8F0' : '#374151';
   
-  // Common x-axis configuration
+  // Filter and sort data to ensure proper time series
+  const processedData = combinedData
+    .filter(point => point.ixTimeTimestamp && isFinite(point.ixTimeTimestamp))
+    .sort((a, b) => a.ixTimeTimestamp - b.ixTimeTimestamp)
+    .map(point => ({
+      ...point,
+      // Ensure all values are finite
+      historicalPopulation: isFinite(point.historicalPopulation || 0) ? point.historicalPopulation : undefined,
+      forecastPopulation: isFinite(point.forecastPopulation || 0) ? point.forecastPopulation : undefined,
+      historicalGdpPerCapita: isFinite(point.historicalGdpPerCapita || 0) ? point.historicalGdpPerCapita : undefined,
+      forecastGdpPerCapita: isFinite(point.forecastGdpPerCapita || 0) ? point.forecastGdpPerCapita : undefined,
+      historicalTotalGdp: isFinite(point.historicalTotalGdp || 0) ? point.historicalTotalGdp : undefined,
+      forecastTotalGdp: isFinite(point.forecastTotalGdp || 0) ? point.forecastTotalGdp : undefined,
+      historicalPopulationDensity: isFinite(point.historicalPopulationDensity || 0) ? point.historicalPopulationDensity : undefined,
+      forecastPopulationDensity: isFinite(point.forecastPopulationDensity || 0) ? point.forecastPopulationDensity : undefined,
+      historicalGdpDensity: isFinite(point.historicalGdpDensity || 0) ? point.historicalGdpDensity : undefined,
+      forecastGdpDensity: isFinite(point.forecastGdpDensity || 0) ? point.forecastGdpDensity : undefined,
+    }));
+  
+  // Common x-axis configuration with improved formatting
   const xAxisConfig = {
     dataKey: "ixTimeTimestamp",
     type: "number" as const,
@@ -93,7 +112,7 @@ export function ChartDisplay({
     angle: -30,
     textAnchor: "end" as const,
     height: 40,
-    interval: 'preserveStartEnd' as const
+    interval: Math.max(0, Math.floor(processedData.length / 8)) as any, // Show max 8 labels
   };
   
   // Custom tooltip
@@ -127,6 +146,8 @@ export function ChartDisplay({
   };
 
   function formatTooltipValue(name: string, value: number): string {
+    if (!isFinite(value) || isNaN(value)) return 'N/A';
+    
     if (name.toLowerCase().includes('gdp') && name.toLowerCase().includes('capita')) {
       return `$${Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
     }
@@ -136,18 +157,20 @@ export function ChartDisplay({
     if (name.toLowerCase().includes('population') && name.toLowerCase().includes('(m)')) {
       return `${Number(value).toFixed(1)}M`;
     }
+    if (name.toLowerCase().includes('density')) {
+      return Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 });
+    }
     return Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
   }
 
   // Chart control options
   const chartControls = () => (
     <div className="flex justify-end mb-2 gap-2">
-      {chartView === 'population' || chartView === 'density' ? (
+      {(chartView === 'population' || chartView === 'density') && country.landArea ? (
         <Button
           variant={showDensity ? "default" : "outline"}
           size="sm"
           onClick={onToggleDensity}
-          disabled={!country.landArea}
         >
           <Globe className="h-3.5 w-3.5 mr-1.5" />
           Density
@@ -165,6 +188,19 @@ export function ChartDisplay({
     </div>
   );
 
+  // Show message if no data
+  if (!processedData.length) {
+    return (
+      <>
+        {chartControls()}
+        <div className="flex h-full items-center justify-center text-muted-foreground">
+          <AlertTriangle className="mr-2 h-5 w-5"/>
+          No data available for the selected time period.
+        </div>
+      </>
+    );
+  }
+
   // Render appropriate chart based on chartView
   switch (chartView) {
     case 'population':
@@ -172,7 +208,7 @@ export function ChartDisplay({
         <>
           {chartControls()}
           <ResponsiveContainer width="100%" height="93%">
-            <AreaChart data={combinedData} margin={{ top: 5, right: 5, left: 0, bottom: 40 }}>
+            <AreaChart data={processedData} margin={{ top: 5, right: 5, left: 0, bottom: 40 }}>
               <defs>
                 <linearGradient id="popGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.7}/>
@@ -207,6 +243,7 @@ export function ChartDisplay({
                     name="Population (M)" 
                     stroke="hsl(var(--chart-1))" 
                     fill="url(#popGrad)" 
+                    connectNulls={false}
                     dot={false}
                   />
                   {showForecast && (
@@ -218,6 +255,7 @@ export function ChartDisplay({
                       strokeDasharray="3 3" 
                       fill="url(#forePopGrad)" 
                       fillOpacity={0.5} 
+                      connectNulls={false}
                       dot={false}
                     />
                   )}
@@ -230,6 +268,7 @@ export function ChartDisplay({
                     name="Pop. Density" 
                     stroke="hsl(var(--chart-4))" 
                     fill="url(#popGrad)" 
+                    connectNulls={false}
                     dot={false}
                   />
                   {showForecast && (
@@ -241,6 +280,7 @@ export function ChartDisplay({
                       strokeDasharray="3 3" 
                       fill="url(#forePopGrad)" 
                       fillOpacity={0.5} 
+                      connectNulls={false}
                       dot={false}
                     />
                   )}
@@ -256,7 +296,7 @@ export function ChartDisplay({
         <>
           {chartControls()}
           <ResponsiveContainer width="100%" height="93%">
-            <ComposedChart data={combinedData} margin={{ top: 5, right: 5, left: 0, bottom: 40 }}>
+            <ComposedChart data={processedData} margin={{ top: 5, right: 5, left: 0, bottom: 40 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={axisColor} opacity={0.2} />
               <XAxis {...xAxisConfig} />
               <YAxis 
@@ -272,7 +312,7 @@ export function ChartDisplay({
                   fontSize: 11, 
                   dy: 40 
                 }} 
-                tickFormatter={(val) => `$${(val/1000).toFixed(0)}k`} 
+                tickFormatter={(val) => isFinite(val) ? `$${(val/1000).toFixed(0)}k` : '$0'} 
               />
               <YAxis 
                 yAxisId="right" 
@@ -297,6 +337,7 @@ export function ChartDisplay({
                 name="GDP p.c." 
                 stroke="hsl(var(--chart-2))" 
                 strokeWidth={2} 
+                connectNulls={false}
                 dot={false}
               />
               {showForecast && (
@@ -308,6 +349,7 @@ export function ChartDisplay({
                   stroke="hsl(var(--chart-2))" 
                   strokeDasharray="3 3" 
                   strokeWidth={2} 
+                  connectNulls={false}
                   dot={false}
                 />
               )}
@@ -337,17 +379,20 @@ export function ChartDisplay({
     case 'density':
       if (!country.landArea) {
         return (
-          <div className="flex h-full items-center justify-center text-muted-foreground">
-            <AlertTriangle className="mr-2 h-5 w-5"/>
-            Land area data unavailable for density charts.
-          </div>
+          <>
+            {chartControls()}
+            <div className="flex h-full items-center justify-center text-muted-foreground">
+              <AlertTriangle className="mr-2 h-5 w-5"/>
+              Land area data unavailable for density charts.
+            </div>
+          </>
         );
       }
       return (
         <>
           {chartControls()}
           <ResponsiveContainer width="100%" height="93%">
-            <ComposedChart data={combinedData} margin={{ top: 5, right: 5, left: 0, bottom: 40 }}>
+            <ComposedChart data={processedData} margin={{ top: 5, right: 5, left: 0, bottom: 40 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={axisColor} opacity={0.2} />
               <XAxis {...xAxisConfig} />
               <YAxis 
@@ -404,6 +449,7 @@ export function ChartDisplay({
                 name="GDP Density (M$/km²)" 
                 stroke="hsl(var(--chart-5))" 
                 strokeWidth={2} 
+                connectNulls={false}
                 dot={false}
               />
               {showForecast && (
@@ -415,6 +461,7 @@ export function ChartDisplay({
                   stroke="hsl(var(--chart-5))" 
                   strokeDasharray="3 3" 
                   strokeWidth={2} 
+                  connectNulls={false}
                   dot={false}
                 />
               )}
@@ -429,13 +476,13 @@ export function ChartDisplay({
         <>
           {chartControls()}
           <ResponsiveContainer width="100%" height="93%">
-            <ComposedChart data={combinedData} margin={{ top: 5, right: 5, left: 0, bottom: 40 }}>
+            <ComposedChart data={processedData} margin={{ top: 5, right: 5, left: 0, bottom: 40 }}>
               <defs>
                 <linearGradient id="histPopGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.7}/>
                   <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
                 </linearGradient>
-                <linearGradient id="forePopGrad" x1="0" y1="0" x2="0" y2="1">
+                <linearGradient id="forePopGradOverview" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.4}/>
                   <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.05}/>
                 </linearGradient>
@@ -469,7 +516,7 @@ export function ChartDisplay({
                   fontSize: 11, 
                   dy: -40 
                 }} 
-                tickFormatter={(val) => `$${(val/1000).toFixed(0)}k`} 
+                tickFormatter={(val) => isFinite(val) ? `$${(val/1000).toFixed(0)}k` : '$0'} 
               />
               <Tooltip content={<CustomTooltip />} />
               <Legend wrapperStyle={{fontSize: "12px"}} />
@@ -480,6 +527,7 @@ export function ChartDisplay({
                 name="Population (M)" 
                 stroke="hsl(var(--chart-1))" 
                 fill="url(#histPopGrad)" 
+                connectNulls={false}
                 dot={false} 
               />
               {showForecast && (
@@ -490,7 +538,8 @@ export function ChartDisplay({
                   name="Forecast Pop. (M)" 
                   stroke="hsl(var(--chart-1))" 
                   strokeDasharray="3 3" 
-                  fill="url(#forePopGrad)" 
+                  fill="url(#forePopGradOverview)" 
+                  connectNulls={false}
                   dot={false} 
                 />
               )}
@@ -501,6 +550,7 @@ export function ChartDisplay({
                 name="GDP p.c." 
                 stroke="hsl(var(--chart-2))" 
                 strokeWidth={2} 
+                connectNulls={false}
                 dot={false}
               />
               {showForecast && (
@@ -512,6 +562,7 @@ export function ChartDisplay({
                   stroke="hsl(var(--chart-2))" 
                   strokeDasharray="3 3" 
                   strokeWidth={2} 
+                  connectNulls={false}
                   dot={false}
                 />
               )}
@@ -520,27 +571,4 @@ export function ChartDisplay({
         </>
       );
   }
-}
-
-// Helper function for tooltip value formatting
-function formatNumber(
-  num: number | undefined | null,
-  isCurrency = false,
-  precision = 0,
-  compact = false
-): string {
-  if (num === undefined || num === null || isNaN(num)) return isCurrency ? '$0' : '0';
-  
-  if (compact) {
-    const absNum = Math.abs(num);
-    if (absNum >= 1e12) return `${isCurrency ? '$' : ''}${(num / 1e12).toFixed(1)}T`;
-    if (absNum >= 1e9) return `${isCurrency ? '$' : ''}${(num / 1e9).toFixed(1)}B`;
-    if (absNum >= 1e6) return `${isCurrency ? '$' : ''}${(num / 1e6).toFixed(1)}M`;
-    if (absNum >= 1e3) return `${isCurrency ? '$' : ''}${(num / 1e3).toFixed(0)}K`;
-  }
-  
-  return `${isCurrency ? '$' : ''}${num.toLocaleString(undefined, {
-    minimumFractionDigits: precision,
-    maximumFractionDigits: precision
-  })}`;
 }
