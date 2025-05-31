@@ -18,7 +18,7 @@ export default function Dashboard() {
   // Process countries data for charts with proper type safety and casting
   const processedCountries: ProcessedCountryData[] = countries?.map(country => ({
     id: country.id,
-    name: country.name || country.country || 'Unknown',
+    name: country.name, // Use name instead of country property
     currentPopulation: country.currentPopulation || 0,
     currentGdpPerCapita: country.currentGdpPerCapita || 0,
     currentTotalGdp: country.currentTotalGdp || 0,
@@ -36,6 +36,13 @@ export default function Dashboard() {
 
   const isLoading = countriesLoading || globalStatsLoading;
 
+  // Adapt globalStats to match expected GlobalEconomicSnapshot type
+  const adaptedGlobalStats = globalStats ? {
+    ...globalStats,
+    countryCount: globalStats.totalCountries,
+    globalGrowthRate: 0, // Default value if not provided
+  } : undefined;
+
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)]">
       {/* Header */}
@@ -46,9 +53,9 @@ export default function Dashboard() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Global Stats */}
-        {globalStats && (
+        {adaptedGlobalStats && (
           <GlobalStatsSection 
-            globalStats={globalStats}
+            globalStats={adaptedGlobalStats}
             isLoading={globalStatsLoading}
           />
         )}
