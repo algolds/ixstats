@@ -103,8 +103,20 @@ function CountryDetailPageContent() {
   const [forecastYears, setForecastYears] = useState<number>(0);
   const [selectedChartType, setSelectedChartType] = useState<ChartType>('overview');
   const [infoboxExpanded, setInfoboxExpanded] = useState(false);
-  // FIXED: Add time resolution state
   const [timeResolution, setTimeResolution] = useState<'quarterly' | 'annual'>('annual');
+
+  // Enhanced historical data time range - make it more aggressive about fetching data
+  const historicalTimeRange = useMemo(() => {
+    const yearsBack = 15; // Increased from 10 to get more data
+    const startTime = IxTime.addYears(currentIxTime, -yearsBack);
+    
+    console.log("Historical time range calculation:");
+    console.log("Current IxTime:", IxTime.formatIxTime(currentIxTime));
+    console.log("Start time:", IxTime.formatIxTime(startTime));
+    console.log("Years back:", yearsBack);
+    
+    return { startTime, endTime: currentIxTime, yearsBack };
+  }, [currentIxTime]);
 
   const { data: countryDataResult, isLoading: isLoadingCountry, error: countryError, refetch } =
     api.countries.getByIdAtTime.useQuery({
@@ -113,26 +125,44 @@ function CountryDetailPageContent() {
     }, {
       enabled: !!countryId,
       refetchOnWindowFocus: false,
-      staleTime: 1 * 60 * 1000, // 1 minute for more frequent updates if needed
+      staleTime: 1 * 60 * 1000,
     });
 
-  const { data: historicalDataRaw, isLoading: isLoadingHistorical } =
+  // Enhanced historical data query with better debugging
+  const { data: historicalDataRaw, isLoading: isLoadingHistorical, error: historicalError } =
     api.countries.getHistoricalAtTime.useQuery({
       id: countryId,
-      startTime: IxTime.addYears(currentIxTime, -10),
-      endTime: currentIxTime,
-      limit: 100
+      startTime: historicalTimeRange.startTime,
+      endTime: historicalTimeRange.endTime,
+      limit: 500 // Increased limit significantly
     }, {
       enabled: !!countryId && !!countryDataResult,
       refetchOnWindowFocus: false,
-      staleTime: 15 * 60 * 1000,
+      staleTime: 2 * 60 * 1000,
+      onSuccess: (data) => {
+        console.log("Historical data fetched successfully:");
+        console.log("Data points:", data?.length || 0);
+        if (data && data.length > 0) {
+          console.log("First point:", data[0]);
+          console.log("Last point:", data[data.length - 1]);
+          console.log("Sample data structure:", {
+            ixTimeTimestamp: data[0]?.ixTimeTimestamp,
+            population: data[0]?.population,
+            gdpPerCapita: data[0]?.gdpPerCapita,
+            totalGdp: data[0]?.totalGdp,
+          });
+        }
+      },
+      onError: (error) => {
+        console.error("Historical data fetch error:", error);
+      }
     });
 
   const { data: forecastDataFromApi, isLoading: isLoadingForecast } =
     api.countries.getForecast.useQuery({
       id: countryId,
       startTime: currentIxTime,
-      points: forecastYears > 0 ? (forecastYears * (selectedChartType === 'overview' ? 2 : 4)) +1 : 0,
+      points: forecastYears > 0 ? (forecastYears * 4) + 1 : 0,
       endTime: IxTime.addYears(currentIxTime, forecastYears)
     }, {
       enabled: !!countryId && forecastYears > 0,
@@ -156,12 +186,16 @@ function CountryDetailPageContent() {
     const stats = countryDataResult.calculatedStats;
     if (!stats) return null;
 
+    console.log("Transforming country data:");
+    console.log("Raw country data:", countryDataResult);
+    console.log("Calculated stats:", stats);
+
     // Ensure lastCalculated is a number (timestamp)
     const lastCalculatedTimestamp = typeof stats.lastCalculated === 'number'
       ? stats.lastCalculated
       : stats.lastCalculated.getTime();
 
-    return {
+    const transformed = {
       id: countryDataResult.id,
       name: countryDataResult.name,
       continent: countryDataResult.continent ?? null,
@@ -198,42 +232,123 @@ function CountryDetailPageContent() {
       })) || [],
       forecastDataPoints: forecastDataFromApi?.dataPoints?.map(p => ({
         ...p,
-        year: p.gameYear // Add 'year' field for TenYearForecast compatibility
+        year: p.gameYear
       })) || [],
     };
+
+    console.log("Transformed country:", {
+      name: transformed.name,
+      currentPopulation: transformed.currentPopulation,
+      currentGdpPerCapita: transformed.currentGdpPerCapita,
+      currentTotalGdp: transformed.currentTotalGdp,
+      historicalDataPoints: transformed.historicalData?.length,
+    });
+
+    return transformed;
   }, [countryDataResult, historicalDataRaw, forecastDataFromApi]);
+
+  // Enhanced historical data processing with validation
+  const processedHistoricalData = useMemo(() => {
+    if (!historicalDataRaw || historicalDataRaw.length === 0) {
+      console.log("No historical data to process");
+      return [];
+    }
+
+    console.log("Processing historical data:", historicalDataRaw.length, "raw points");
+    
+    const processed = historicalDataRaw
+      .map((point, index) => {
+        try {
+          const timestamp = typeof point.ixTimeTimestamp === 'number' 
+            ? point.ixTimeTimestamp 
+            : point.ixTimeTimestamp.getTime();
+
+          // Validate the data
+          const population = Number(point.population);
+          const gdpPerCapita = Number(point.gdpPerCapita);
+          const totalGdp = Number(point.totalGdp);
+
+          if (!isFinite(timestamp) || !isFinite(population) || !isFinite(gdpPerCapita) || !isFinite(totalGdp)) {
+            console.warn(`Invalid data point at index ${index}:`, point);
+            return null;
+          }
+
+          if (population <= 0 || gdpPerCapita <= 0 || totalGdp <= 0) {
+            console.warn(`Zero or negative values at index ${index}:`, point);
+            return null;
+          }
+
+          return {
+            ...point,
+            ixTimeTimestamp: timestamp,
+            population,
+            gdpPerCapita,
+            totalGdp,
+            populationDensity: point.populationDensity ? Number(point.populationDensity) : null,
+            gdpDensity: point.gdpDensity ? Number(point.gdpDensity) : null,
+            populationGrowthRate: point.populationGrowthRate || 0,
+            gdpGrowthRate: point.gdpGrowthRate || 0,
+            landArea: point.landArea || null,
+          };
+        } catch (error) {
+          console.error(`Error processing data point at index ${index}:`, error, point);
+          return null;
+        }
+      })
+      .filter((point) => point !== null)
+      .sort((a, b) => a.ixTimeTimestamp - b.ixTimeTimestamp);
+
+    console.log("Processed historical data:", processed.length, "valid points");
+    
+    if (processed.length > 0) {
+      console.log("Time range:", {
+        first: IxTime.formatIxTime(processed[0].ixTimeTimestamp),
+        last: IxTime.formatIxTime(processed[processed.length - 1].ixTimeTimestamp),
+      });
+    }
+
+    return processed;
+  }, [historicalDataRaw]);
 
   const availableDataForCharts = useMemo(() => ({
     hasLandArea: !!(transformedCountry?.landArea),
-    hasHistoricalData: !!(transformedCountry?.historicalData?.length),
-    hasComparison: false, // Placeholder - implement if comparison data is fetched
+    hasHistoricalData: processedHistoricalData.length > 0,
+    hasComparison: false,
     hasDensityData: !!(transformedCountry?.populationDensity && transformedCountry?.gdpDensity)
-  }), [transformedCountry]);
+  }), [transformedCountry, processedHistoricalData]);
 
   const handleTimeChange = (newIxTime: number) => {
+    console.log("Time change requested:", IxTime.formatIxTime(newIxTime));
     setCurrentIxTime(newIxTime);
   };
+  
   const handleForecastChange = (years: number) => {
+    console.log("Forecast years changed:", years);
     setForecastYears(years);
   };
+  
   const handleChartChange = (chartType: ChartType) => {
     setSelectedChartType(chartType);
   };
+  
   const handleInfoboxToggle = (expanded: boolean) => {
     setInfoboxExpanded(expanded);
   };
+  
   const handleRefresh = () => {
+    console.log("Manual refresh triggered");
     void refetch();
   };
 
-  // FIXED: Implement time resolution change handler
   const handleTimeResolutionChange = (resolution: 'quarterly' | 'annual') => {
+    console.log("Time resolution changed:", resolution);
     setTimeResolution(resolution);
   };
 
-  const isTimeTravel = currentIxTime !== IxTime.getCurrentIxTime();
+  const isTimeTravel = Math.abs(currentIxTime - IxTime.getCurrentIxTime()) > 60000; // 1 minute tolerance
   const isLoadingPage = isLoadingCountry && !transformedCountry;
 
+  // Enhanced loading state
   if (isLoadingPage) {
     return (
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -250,15 +365,27 @@ function CountryDetailPageContent() {
     );
   }
 
+  // Enhanced error handling
   if (countryError || !countryDataResult || !transformedCountry) {
     return (
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Alert variant="destructive" className="max-w-lg mx-auto">
-          <AlertTriangle className="h-4 w-4" /><AlertTitle>Error Loading Country Data</AlertTitle>
-          <AlertDescription>{countryError?.message || "Country not found or an error occurred."}
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error Loading Country Data</AlertTitle>
+          <AlertDescription>
+            {countryError?.message || "Country not found or an error occurred."}
+            {historicalError && (
+              <div className="mt-2 text-sm">
+                Historical data error: {historicalError.message}
+              </div>
+            )}
             <div className="mt-4 flex gap-2">
-                <Button onClick={() => router.push('/countries')} variant="outline"><ArrowLeft className="h-4 w-4 mr-2" /> Back to Countries</Button>
-                <Button onClick={handleRefresh}><RefreshCw className="h-4 w-4 mr-2" /> Try Again</Button>
+                <Button onClick={() => router.push('/countries')} variant="outline">
+                  <ArrowLeft className="h-4 w-4 mr-2" /> Back to Countries
+                </Button>
+                <Button onClick={handleRefresh}>
+                  <RefreshCw className="h-4 w-4 mr-2" /> Try Again
+                </Button>
             </div>
           </AlertDescription>
         </Alert>
@@ -271,9 +398,17 @@ function CountryDetailPageContent() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Breadcrumb className="mb-6">
           <BreadcrumbList>
-            <BreadcrumbItem><BreadcrumbLink asChild><Link href="/countries" className="flex items-center"><ArrowLeft className="h-3.5 w-3.5 mr-1.5" />Countries</Link></BreadcrumbLink></BreadcrumbItem>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/countries" className="flex items-center">
+                  <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />Countries
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
             <BreadcrumbSeparator />
-            <BreadcrumbItem><BreadcrumbPage>{transformedCountry.name}</BreadcrumbPage></BreadcrumbItem>
+            <BreadcrumbItem>
+              <BreadcrumbPage>{transformedCountry.name}</BreadcrumbPage>
+            </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
 
@@ -281,14 +416,41 @@ function CountryDetailPageContent() {
           <div>
             <div className="flex items-center gap-3">
                 <h1 className="text-3xl md:text-4xl font-bold text-foreground">{transformedCountry.name}</h1>
-                {isTimeTravel && (<Badge variant="outline" className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700"><Clock className="h-3.5 w-3.5 mr-1.5" />Time Travel Active</Badge>)}
+                {isTimeTravel && (
+                  <Badge variant="outline" className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700">
+                    <Clock className="h-3.5 w-3.5 mr-1.5" />Time Travel Active
+                  </Badge>
+                )}
             </div>
             <p className="mt-2 text-base md:text-lg text-muted-foreground">Country Dashboard</p>
-             <div className="mt-1 flex items-center text-xs text-muted-foreground"><Info className="h-3.5 w-3.5 mr-1.5" /><span>Viewing: {timeContext.formattedCurrentTime} ({timeContext.gameTimeDescription})</span></div>
+             <div className="mt-1 flex items-center text-xs text-muted-foreground">
+               <Info className="h-3.5 w-3.5 mr-1.5" />
+               <span>Viewing: {timeContext.formattedCurrentTime} ({timeContext.gameTimeDescription})</span>
+               {processedHistoricalData.length > 0 && (
+                 <span className="ml-3">
+                   • {processedHistoricalData.length} data points ({historicalTimeRange.yearsBack} years)
+                 </span>
+               )}
+               {isLoadingHistorical && (
+                 <span className="ml-3 text-blue-600">• Loading historical data...</span>
+               )}
+             </div>
           </div>
           <div className="flex items-center gap-2 mt-4 lg:mt-0">
-            <Button variant="outline" size="icon" onClick={handleRefresh} disabled={isLoadingCountry || isLoadingHistorical || isLoadingForecast} title="Refresh data"><RefreshCw className={`h-4 w-4 ${(isLoadingCountry || isLoadingHistorical || isLoadingForecast) ? 'animate-spin' : ''}`} /></Button>
-            {isTimeTravel && (<Button onClick={() => setCurrentIxTime(IxTime.getCurrentIxTime())} size="sm"><Clock className="h-4 w-4 mr-2" />Return to Present</Button>)}
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={handleRefresh} 
+              disabled={isLoadingCountry || isLoadingHistorical || isLoadingForecast} 
+              title="Refresh data"
+            >
+              <RefreshCw className={`h-4 w-4 ${(isLoadingCountry || isLoadingHistorical || isLoadingForecast) ? 'animate-spin' : ''}`} />
+            </Button>
+            {isTimeTravel && (
+              <Button onClick={() => setCurrentIxTime(IxTime.getCurrentIxTime())} size="sm">
+                <Clock className="h-4 w-4 mr-2" />Return to Present
+              </Button>
+            )}
           </div>
         </div>
 
@@ -302,14 +464,9 @@ function CountryDetailPageContent() {
               isLoading={isLoadingCountry || isLoadingHistorical || isLoadingForecast}
             />
             
-            {/* FIXED: CountryAtGlance now receives proper timeResolution state and handler */}
             <CountryAtGlance
               country={transformedCountry}
-              historicalData={transformedCountry.historicalData?.map(data => ({
-                ...data,
-                populationGrowthRate: 0, // Add missing required properties
-                gdpGrowthRate: 0
-              })) || []}
+              historicalData={processedHistoricalData}
               targetTime={currentIxTime}
               forecastYears={forecastYears}
               isLoading={isLoadingHistorical || isLoadingCountry}
@@ -351,7 +508,11 @@ function CountryDetailPageContent() {
 
 export default function CountryDetailPageWrapper() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    }>
       <CountryDetailPageContent />
     </Suspense>
   );

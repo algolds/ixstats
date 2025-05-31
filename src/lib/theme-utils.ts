@@ -84,57 +84,6 @@ export function getChartColors(): {
   };
 }
 
-/**
- * Format number with theme-aware styling.
- * This version clarifies parameter usage and ensures options.precision is respected.
- */
-export function formatNumber(
-  num: number | null | undefined,
-  options: {
-    isCurrency?: boolean;
-    precision?: number; // User-defined precision
-    compact?: boolean;
-  } = {}
-): string {
-  // Determine actual values for flags, defaulting if not provided in options
-  const isCurrency = options.isCurrency === undefined ? false : options.isCurrency;
-  const compact = options.compact === undefined ? true : options.compact;
-
-  // Determine the precision to be used
-  let precisionToUse: number;
-  if (options.precision !== undefined) {
-    precisionToUse = options.precision; // Always use user-provided precision if available
-  } else {
-    // Default precision logic if options.precision is not set:
-    // 2 for compact numbers (e.g., 1.23M)
-    // 2 for currency non-compact numbers (e.g., $123.45)
-    // 0 for non-currency, non-compact numbers (e.g., 123)
-    if (compact) {
-      precisionToUse = 2;
-    } else {
-      precisionToUse = isCurrency ? 2 : 0;
-    }
-  }
-
-  if (num === null || num === undefined || isNaN(num)) {
-    // For null, undefined, or NaN, return $0.00 (with appropriate precision for currency) or 0.
-    // Using a fixed precision of 2 for $0.00 for typical currency display.
-    return isCurrency ? `$0.${'0'.repeat(isCurrency ? 2 : precisionToUse)}` : '0';
-  }
-
-  const prefix = isCurrency ? '$' : '';
-
-  if (compact && num !== 0) { // Apply compact notation if enabled and number is not zero
-    if (Math.abs(num) >= 1e12) return `${prefix}${(num / 1e12).toFixed(precisionToUse)}T`;
-    if (Math.abs(num) >= 1e9) return `${prefix}${(num / 1e9).toFixed(precisionToUse)}B`;
-    if (Math.abs(num) >= 1e6) return `${prefix}${(num / 1e6).toFixed(precisionToUse)}M`;
-    if (Math.abs(num) >= 1e3) return `${prefix}${(num / 1e3).toFixed(precisionToUse)}K`;
-  }
-
-  // For non-compact numbers, numbers not meeting compact thresholds, or zero.
-  // Ensures that the determined 'precisionToUse' (user-defined or default) is respected.
-  return `${prefix}${num.toFixed(precisionToUse)}`;
-}
 
 /**
  * Get responsive class names based on screen size
@@ -244,8 +193,6 @@ export function getLoadingClasses(type: "spinner" | "skeleton" | "pulse" = "spin
 
   return loadingMap[type];
 }
-
-// Note: getTierColor function was removed as its functionality is covered by getTierStyle(tier).color
 
 /**
  * Chart tooltip style generator for Recharts
