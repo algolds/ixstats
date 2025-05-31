@@ -21,7 +21,6 @@ import { CountryInfobox } from "../_components/CountryInfobox";
 import {
   TimeControl,
   CountryAtGlance,
-  TenYearForecast,
   ChartTypeSelector,
   type ChartType
 } from "../_components/detail";
@@ -71,7 +70,7 @@ export default function CountryDetailPage() {
     });
 
   // Fetch forecast data
-  const { data: forecastData, isLoading: isLoadingForecast } = 
+  const { data: forecastData } = 
     api.countries.getForecast.useQuery({
       id: countryId,
       startTime: currentIxTime,
@@ -127,16 +126,6 @@ export default function CountryDetailPage() {
     };
   }, [country]);
 
-  const transformedForecastData = useMemo(() => {
-    return forecastData?.dataPoints?.map(point => ({
-      year: IxTime.getCurrentGameYear(point.ixTime), // Use getCurrentGameYear
-      population: point.population,
-      gdpPerCapita: point.gdpPerCapita,
-      totalGdp: point.totalGdp,
-      populationDensity: point.populationDensity === null ? undefined : point.populationDensity,
-      gdpDensity: point.gdpDensity === null ? undefined : point.gdpDensity
-    })) || [];
-  }, [forecastData]);
 
   // Determine what data is available for charts
   const availableData = useMemo(() => ({
@@ -164,7 +153,7 @@ export default function CountryDetailPage() {
   };
 
   const handleRefresh = () => {
-    refetch();
+    void refetch();
   };
 
   const isTimeTravel = currentIxTime !== IxTime.getCurrentIxTime();
