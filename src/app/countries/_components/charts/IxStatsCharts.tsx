@@ -1,4 +1,3 @@
-// src/app/countries/_components/charts/IxStatsCharts.tsx
 "use client";
 
 import { useMemo, useState } from "react";
@@ -99,32 +98,32 @@ interface IxStatsChartsProps {
   data: CountryChartData;
   selectedChartType: ChartType;
   /** Client-side callback for chart type changes */
-  onChartTypeChange: (type: ChartType) => void;
+  onChartTypeChangeAction: (type: ChartType) => void;
   selectedTimeRange: TimeRange;
   /** Client-side callback for time range changes */
-  onTimeRangeChange: (range: TimeRange) => void;
+  onTimeRangeChangeAction: (range: TimeRange) => void;
   customStartTime?: number;
   customEndTime?: number;
   /** Client-side callback for custom time range changes */
-  onCustomTimeChange?: (startTime: number, endTime: number) => void;
+  onCustomTimeChangeAction?: (startTime: number, endTime: number) => void;
   isLoading?: boolean;
   showForecast?: boolean;
   /** Client-side callback for forecast toggle */
-  onForecastToggle?: (show: boolean) => void;
+  onForecastToggleAction?: (show: boolean) => void;
 }
 
 export function IxStatsCharts({
   data,
   selectedChartType,
-  onChartTypeChange,
+  onChartTypeChangeAction,
   selectedTimeRange,
-  onTimeRangeChange,
+  onTimeRangeChangeAction,
   customStartTime,
   customEndTime,
-  onCustomTimeChange,
+  onCustomTimeChangeAction,
   isLoading = false,
   showForecast = false,
-  onForecastToggle,
+  onForecastToggleAction,
 }: IxStatsChartsProps) {
   const { theme } = useTheme();
   const [visibleSeries, setVisibleSeries] = useState<Record<string, boolean>>({
@@ -327,14 +326,14 @@ export function IxStatsCharts({
   };
 
   const handleCustomTimeStart = (ixTime: number) => {
-    if (onCustomTimeChange && customEndTime) {
-      onCustomTimeChange(ixTime, customEndTime);
+    if (onCustomTimeChangeAction && customEndTime) {
+      onCustomTimeChangeAction(ixTime, customEndTime);
     }
   };
 
   const handleCustomTimeEnd = (ixTime: number) => {
-    if (onCustomTimeChange && customStartTime) {
-      onCustomTimeChange(customStartTime, ixTime);
+    if (onCustomTimeChangeAction && customStartTime) {
+      onCustomTimeChangeAction(customStartTime, ixTime);
     }
   };
 
@@ -367,11 +366,11 @@ export function IxStatsCharts({
           </div>
           
           <div className="flex items-center gap-2">
-            {onForecastToggle && data.forecastData && (
+            {onForecastToggleAction && data.forecastData && (
               <Button
                 variant={showForecast ? "default" : "outline"}
                 size="sm"
-                onClick={() => onForecastToggle(!showForecast)}
+                onClick={() => onForecastToggleAction(!showForecast)}
               >
                 {showForecast ? <Eye className="h-4 w-4 mr-2" /> : <EyeOff className="h-4 w-4 mr-2" />}
                 Forecast
@@ -383,7 +382,7 @@ export function IxStatsCharts({
         {/* Chart Controls */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
           {/* Chart Type Selector */}
-          <Select value={selectedChartType} onValueChange={onChartTypeChange}>
+          <Select value={selectedChartType} onValueChange={onChartTypeChangeAction}>
             <SelectTrigger className="w-48">
               <SelectValue />
             </SelectTrigger>
@@ -428,7 +427,7 @@ export function IxStatsCharts({
           </Select>
 
           {/* Time Range Selector */}
-          <Select value={selectedTimeRange} onValueChange={onTimeRangeChange}>
+          <Select value={selectedTimeRange} onValueChange={onTimeRangeChangeAction}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
@@ -443,18 +442,18 @@ export function IxStatsCharts({
           </Select>
 
           {/* Custom Time Range Controls */}
-          {selectedTimeRange === 'CUSTOM' && onCustomTimeChange && (
+          {selectedTimeRange === 'CUSTOM' && onCustomTimeChangeAction && (
             <div className="flex items-center gap-2">
               <IxTimeCalendar
                 selectedIxTime={customStartTime || IxTime.addYears(data.currentIxTime, -10)}
-                onIxTimeChange={handleCustomTimeStart}
+                onIxTimeChangeAction={handleCustomTimeStart}
                 maxIxTime={customEndTime || data.currentIxTime}
                 gameEpoch={data.gameEpoch}
               />
               <span className="text-sm text-muted-foreground">to</span>
               <IxTimeCalendar
                 selectedIxTime={customEndTime || data.currentIxTime}
-                onIxTimeChange={handleCustomTimeEnd}
+                onIxTimeChangeAction={handleCustomTimeEnd}
                 minIxTime={customStartTime || data.gameEpoch}
                 maxIxTime={data.currentIxTime}
                 gameEpoch={data.gameEpoch}
@@ -535,50 +534,56 @@ export function IxStatsCharts({
                   stroke="#ef4444" 
                   strokeDasharray="2 2"
                   label="Present"
+                  yAxisId="left" // Adding yAxisId to fix the error
                 />
 
-                {/* Render series based on configuration */}
-                {currentConfig.series.map(series => {
-                  if (!visibleSeries[series.key]) return null;
+              {/* Render series based on configuration */}
+{currentConfig.series.map(series => {
+  if (!visibleSeries[series.key]) return null;
 
-                  const commonProps = {
-                    key: series.key,
-                    dataKey: series.key,
-                    name: series.name,
-                    stroke: series.color,
-                    yAxisId: series.yAxisId,
-                  };
+  // Extract key for direct assignment
+  const { key, ...commonProps } = {
+    key: series.key,
+    dataKey: series.key,
+    name: series.name,
+    stroke: series.color,
+    yAxisId: series.yAxisId,
+  };
 
-                  switch (series.type) {
-                    case 'area':
-                      return (
-                        <Area
-                          {...commonProps}
-                          fill={series.color}
-                          fillOpacity={0.3}
-                          strokeWidth={2}
-                        />
-                      );
-                    case 'bar':
-                      return (
-                        <Bar
-                          {...commonProps}
-                          fill={series.color}
-                          fillOpacity={0.8}
-                        />
-                      );
-                    case 'line':
-                    default:
-                      return (
-                        <Line
-                          {...commonProps}
-                          strokeWidth={2}
-                          dot={false}
-                          connectNulls={false}
-                        />
-                      );
-                  }
-                })}
+  switch (series.type) {
+    case 'area':
+      return (
+        <Area
+          key={key}
+          {...commonProps}
+          fill={series.color}
+          fillOpacity={0.3}
+          strokeWidth={2}
+        />
+      );
+    case 'bar':
+      return (
+        <Bar
+          key={key}
+          {...commonProps}
+          fill={series.color}
+          fillOpacity={0.8}
+        />
+      );
+    case 'line':
+    default:
+      return (
+        <Line
+          key={key}
+          {...commonProps}
+          strokeWidth={2}
+          dot={false}
+          connectNulls={false}
+        />
+      );
+  }
+})}
+
 
                 {/* Brush for time navigation */}
                 <Brush 

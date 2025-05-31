@@ -1,4 +1,3 @@
-// src/app/countries/_components/charts/IxTimeCalendar.tsx
 "use client";
 
 import { useState, useMemo } from "react";
@@ -24,7 +23,7 @@ import { cn } from "~/lib/utils";
 interface IxTimeCalendarProps {
   selectedIxTime: number;
   /** Client-side callback for IxTime changes */
-  onIxTimeChange: (ixTime: number) => void;
+  onIxTimeChangeAction: (ixTime: number) => void;
   minIxTime?: number;
   maxIxTime?: number;
   gameEpoch: number;
@@ -33,7 +32,7 @@ interface IxTimeCalendarProps {
 
 export function IxTimeCalendar({
   selectedIxTime,
-  onIxTimeChange,
+  onIxTimeChangeAction,
   minIxTime,
   maxIxTime,
   gameEpoch,
@@ -118,13 +117,13 @@ export function IxTimeCalendar({
     if (minIxTime && constrainedTime < minIxTime) constrainedTime = minIxTime;
     if (maxIxTime && constrainedTime > maxIxTime) constrainedTime = maxIxTime;
     
-    onIxTimeChange(constrainedTime);
+    onIxTimeChangeAction(constrainedTime);
     setCalendarDate(new Date(constrainedTime));
   };
 
   const handleQuickSelect = (value: string) => {
     const ixTime = parseInt(value);
-    onIxTimeChange(ixTime);
+    onIxTimeChangeAction(ixTime);
     setCalendarDate(new Date(ixTime));
     setIsOpen(false);
   };
@@ -151,7 +150,7 @@ export function IxTimeCalendar({
     if (minIxTime && newIxTime < minIxTime) newIxTime = minIxTime;
     if (maxIxTime && newIxTime > maxIxTime) newIxTime = maxIxTime;
 
-    onIxTimeChange(newIxTime);
+    onIxTimeChangeAction(newIxTime);
     setCalendarDate(new Date(newIxTime));
   };
 
