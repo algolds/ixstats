@@ -224,7 +224,13 @@ export function TenYearForecast({
               strokeWidth={3}
               name="GDP per Capita ($)"
             />
-            <ReferenceLine x={new Date().getFullYear().toString()} stroke="#EF4444" strokeDasharray="5 5" label="Current Year" />
+            <ReferenceLine 
+              yAxisId="population"
+              x={new Date().getFullYear().toString()} 
+              stroke="#EF4444" 
+              strokeDasharray="5 5" 
+              label="Current Year" 
+            />
           </ComposedChart>
         );
 
@@ -233,10 +239,15 @@ export function TenYearForecast({
           <LineChart {...commonProps}>
             <CartesianGrid strokeDasharray="3 3" stroke={axisColor} opacity={0.5} />
             <XAxis dataKey="date" tick={{ fontSize: 12, fill: textColor }} stroke={axisColor} />
-            <YAxis tick={{ fontSize: 12, fill: textColor }} stroke={axisColor} />
+            <YAxis 
+              yAxisId="gdpPerCapita" 
+              tick={{ fontSize: 12, fill: textColor }} 
+              stroke={axisColor} 
+            />
             <Tooltip contentStyle={tooltipStyle} />
             <Legend />
             <Line
+              yAxisId="gdpPerCapita"
               type="monotone"
               dataKey="gdpPerCapita_optimistic"
               stroke="#10B981"
@@ -245,6 +256,7 @@ export function TenYearForecast({
               strokeDasharray="5 5"
             />
             <Line
+              yAxisId="gdpPerCapita"
               type="monotone"
               dataKey="gdpPerCapita"
               stroke="#3B82F6"
@@ -252,6 +264,7 @@ export function TenYearForecast({
               name="Baseline Scenario"
             />
             <Line
+              yAxisId="gdpPerCapita"
               type="monotone"
               dataKey="gdpPerCapita_pessimistic"
               stroke="#EF4444"
@@ -259,7 +272,12 @@ export function TenYearForecast({
               name="Pessimistic Scenario"
               strokeDasharray="5 5"
             />
-            <ReferenceLine x={new Date().getFullYear().toString()} stroke="#6B7280" strokeDasharray="5 5" />
+            <ReferenceLine 
+              yAxisId="gdpPerCapita"
+              x={new Date().getFullYear().toString()} 
+              stroke="#6B7280" 
+              strokeDasharray="5 5" 
+            />
           </LineChart>
         );
 
@@ -274,10 +292,15 @@ export function TenYearForecast({
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke={axisColor} opacity={0.5} />
             <XAxis dataKey="date" tick={{ fontSize: 12, fill: textColor }} stroke={axisColor} />
-            <YAxis tick={{ fontSize: 12, fill: textColor }} stroke={axisColor} />
+            <YAxis 
+              yAxisId="population"
+              tick={{ fontSize: 12, fill: textColor }} 
+              stroke={axisColor} 
+            />
             <Tooltip contentStyle={tooltipStyle} />
             <Legend />
             <Area
+              yAxisId="population"
               type="monotone"
               dataKey="population"
               stroke="#8B5CF6"
@@ -285,7 +308,12 @@ export function TenYearForecast({
               fill="url(#popForecastGradient)"
               name="Population (Millions)"
             />
-            <ReferenceLine x={new Date().getFullYear().toString()} stroke="#EF4444" strokeDasharray="5 5" />
+            <ReferenceLine 
+              yAxisId="population"
+              x={new Date().getFullYear().toString()} 
+              stroke="#EF4444" 
+              strokeDasharray="5 5" 
+            />
           </AreaChart>
         );
 
@@ -322,7 +350,12 @@ export function TenYearForecast({
               opacity={0.6}
               name="Total GDP (B$)"
             />
-            <ReferenceLine x={new Date().getFullYear().toString()} stroke="#EF4444" strokeDasharray="5 5" />
+            <ReferenceLine 
+              yAxisId="perCapita"
+              x={new Date().getFullYear().toString()} 
+              stroke="#EF4444" 
+              strokeDasharray="5 5" 
+            />
           </ComposedChart>
         );
 
@@ -370,7 +403,12 @@ export function TenYearForecast({
               strokeWidth={3}
               name="GDP Density (M$/km²)"
             />
-            <ReferenceLine x={new Date().getFullYear().toString()} stroke="#6B7280" strokeDasharray="5 5" />
+            <ReferenceLine 
+              yAxisId="popDensity"
+              x={new Date().getFullYear().toString()} 
+              stroke="#6B7280" 
+              strokeDasharray="5 5" 
+            />
           </ComposedChart>
         );
 
