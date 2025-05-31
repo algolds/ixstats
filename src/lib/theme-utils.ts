@@ -281,3 +281,30 @@ export function getAnimationClasses(animation: "fade-in" | "slide-up" | "pulse-s
 
   return animationMap[animation];
 }
+
+// Add to src/lib/theme-utils.ts
+export function formatNumber(
+  num: number | null | undefined,
+  options: { isCurrency?: boolean; precision?: number; compact?: boolean } = {}
+): string {
+  if (num === null || num === undefined) return 'N/A'; // Or some other placeholder
+
+  // Example formatting logic (you'll need to implement your desired formatting)
+  if (options.isCurrency) {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD', // Or your desired currency
+      minimumFractionDigits: options.precision,
+      maximumFractionDigits: options.precision,
+    }).format(num);
+  }
+
+  if (options.compact && num >= 1000000) {
+    return (num / 1000000).toFixed(options.precision || 1) + 'M';
+  }
+  if (options.compact && num >= 1000) {
+    return (num / 1000).toFixed(options.precision || 1) + 'K';
+  }
+
+  return num.toFixed(options.precision || 0);
+}
