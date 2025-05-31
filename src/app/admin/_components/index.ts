@@ -9,6 +9,6 @@ export { BotControlPanel } from './BotControlPanel';
 export { TimeControlPanel } from './TimeControlPanel';
 export { EconomicControlPanel } from './EconomicControlPanel';
 export { ActionPanel } from './ActionPanel';
-// export { CalculationLogs } from './CalculationLogs'; // Commented out due to unresolved export from its file
+export { CalculationLogs } from './CalculationLogs'; // Now properly implemented
 export { DataImportSection } from './DataImportSection';
 export { WarningPanel } from './WarningPanel';
