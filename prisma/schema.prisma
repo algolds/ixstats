@@ -1,3 +1,6 @@
+// prisma/schema.prisma
+// Updated schema to support all CSV import fields
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,75 +10,109 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Post {
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+}
+
 model Country {
-  id                        String           @id @default(cuid())
-  name                      String           @unique
-  createdAt                 DateTime         @default(now())
-  updatedAt                 DateTime         @updatedAt
-  baselinePopulation        Float
-  baselineGdpPerCapita      Float
-  maxGdpGrowthRate          Float
-  adjustedGdpGrowth         Float
-  populationGrowthRate      Float
-  projected2040Population   Float
-  projected2040Gdp          Float
+  id   String @id @default(cuid())
+  name String @unique
+
+  // Geographic and Political Information
+  continent      String?
+  region         String?
+  governmentType String?
+  religion       String?
+  leader         String?
+
+  // Area Information
+  landArea  Float? // Area in km²
+  areaSqMi  Float? // Area in square miles
+
+  // Baseline Economic Data (from roster - 2028 baseline)
+  baselinePopulation     Float
+  baselineGdpPerCapita   Float
+  maxGdpGrowthRate       Float
+  adjustedGdpGrowth      Float
+  populationGrowthRate   Float
+  projected2040Population Float
+  projected2040Gdp       Float
   projected2040GdpPerCapita Float
-  actualGdpGrowth           Float
-  currentPopulation         Float
-  currentGdpPerCapita       Float
-  currentTotalGdp           Float
-  lastCalculated            DateTime
-  baselineDate              DateTime
-  economicTier              String
-  populationTier            String
-  localGrowthFactor         Float            @default(1.0)
-  gdpDensity                Float?
-  landArea                  Float?
-  populationDensity         Float?
-  areaSqMi                  Float?
-  continent                 String?
-  governmentType            String?
-  leader                    String?
-  region                    String?
-  religion                  String?
-  dmInputs                  DmInput[]
-  historicalData            HistoricalData[]
+  actualGdpGrowth        Float
 
-  @@map("countries")
-}
-
-model HistoricalData {
-  id                   String   @id @default(cuid())
-  countryId            String
-  ixTimeTimestamp      DateTime
-  population           Float
-  gdpPerCapita         Float
-  totalGdp             Float
-  populationGrowthRate Float
-  gdpGrowthRate        Float
-  gdpDensity           Float?
-  landArea             Float?
+  // Current Calculated Values (updated by system)
+  currentPopulation    Float
+  currentGdpPerCapita  Float
+  currentTotalGdp      Float
   populationDensity    Float?
-  country              Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  gdpDensity           Float?
 
-  @@index([countryId, ixTimeTimestamp])
-  @@map("historical_data")
+  // Classification
+  economicTier     String
+  populationTier   String
+
+  // System Fields
+  localGrowthFactor Float   @default(1.0)
+  lastCalculated    DateTime @default(now())
+  baselineDate      DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  historicalData HistoricalDataPoint[]
+  dmInputs       DmInputs[]
+
+  @@index([name])
+  @@index([economicTier])
+  @@index([populationTier])
+  @@index([continent])
+  @@index([region])
 }
 
-model DmInput {
+model HistoricalDataPoint {
+  id              String   @id @default(cuid())
+  countryId       String
+  ixTimeTimestamp DateTime
+  population      Float
+  gdpPerCapita    Float
+  totalGdp        Float
+  populationGrowthRate Float
+  gdpGrowthRate   Float
+  landArea        Float?
+  populationDensity Float?
+  gdpDensity      Float?
+  createdAt       DateTime @default(now())
+
+  country Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([ixTimeTimestamp])
+}
+
+model DmInputs {
   id              String   @id @default(cuid())
   countryId       String?
   ixTimeTimestamp DateTime
   inputType       String
   value           Float
   description     String?
-  duration        Float?
+  duration        Int?     // Duration in days
   isActive        Boolean  @default(true)
   createdBy       String?
-  country         Country? @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  @@index([countryId, ixTimeTimestamp])
-  @@map("dm_inputs")
+  country Country? @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([ixTimeTimestamp])
+  @@index([isActive])
+  @@index([inputType])
 }
 
 model SystemConfig {
@@ -83,62 +120,22 @@ model SystemConfig {
   key         String   @unique
   value       String
   description String?
+  createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@map("system_config")
+  @@index([key])
 }
 
 model CalculationLog {
-  id                 String   @id @default(cuid())
-  timestamp          DateTime @default(now())
-  ixTimeTimestamp    DateTime
-  countriesUpdated   Int
-  executionTimeMs    Int
+  id                String   @id @default(cuid())
+  timestamp         DateTime @default(now())
+  ixTimeTimestamp   DateTime
+  countriesUpdated  Int
+  executionTimeMs   Int
   globalGrowthFactor Float
+  notes             String?
+  createdAt         DateTime @default(now())
 
-  @@map("calculation_logs")
-}
-
-model Post {
-  id        String   @id @default(cuid())
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("posts")
-}
-
-model MediaWikiCache {
-  id          Int      @id @default(autoincrement())
-  pageName    String   @map("page_name")
-  pageType    String   @map("page_type")
-  cacheKey    String   @unique @map("cache_key")
-  contentType String   @map("content_type")
-  content     String?
-  metadata    String   @default("{}")
-  expiresAt   DateTime @map("expires_at")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  @@index([cacheKey])
-  @@index([pageName])
-  @@index([expiresAt])
-  @@map("mediawiki_cache")
-}
-
-model MediaWikiApiLog {
-  id             Int      @id @default(autoincrement())
-  requestType    String   @map("request_type")
-  pageName       String?  @map("page_name")
-  cacheHit       Boolean  @default(false) @map("cache_hit")
-  responseTimeMs Int?     @map("response_time_ms")
-  statusCode     Int?     @map("status_code")
-  errorMessage   String?  @map("error_message")
-  ipAddress      String?  @map("ip_address")
-  userAgent      String?  @map("user_agent")
-  createdAt      DateTime @default(now()) @map("created_at")
-
-  @@index([createdAt])
-  @@index([requestType])
-  @@map("mediawiki_api_log")
+  @@index([timestamp])
+  @@index([ixTimeTimestamp])
 }

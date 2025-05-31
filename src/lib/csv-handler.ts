@@ -1,5 +1,5 @@
 // src/lib/csv-handler.ts
-// Dedicated CSV handler for IxStats world roster data
+// Enhanced CSV handler for IxStats world roster data with all required fields
 
 import * as XLSX from 'xlsx';
 import type { BaseCountryData } from '../types/ixstats';
@@ -25,7 +25,7 @@ export interface CsvFieldMapping {
   aliases: string[];
 }
 
-// Define the exact field mappings based on the CSV structure
+// Updated field mappings to match the exact headers from the user's CSV
 const FIELD_MAPPINGS: CsvFieldMapping[] = [
   {
     csvHeader: 'Country',
@@ -187,10 +187,14 @@ export class IxStatsCsvHandler {
       const headers = rawData[0]?.map(h => String(h || '').trim()) || [];
       const fieldIndexMap = this.createFieldIndexMap(headers);
 
+      console.log('[CSV Handler] Headers found:', headers);
+      console.log('[CSV Handler] Field mapping:', Array.from(fieldIndexMap.entries()));
+
       // Validate required fields are present
       const missingRequired = this.validateRequiredFields(fieldIndexMap);
       if (missingRequired.length > 0) {
         result.errors.push(`Missing required fields: ${missingRequired.join(', ')}`);
+        result.errors.push(`Available headers: ${headers.join(', ')}`);
         return result;
       }
 
@@ -227,6 +231,7 @@ export class IxStatsCsvHandler {
       
     } catch (error) {
       result.errors.push(`File parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('[CsvHandler] Parse error:', error);
     }
 
     return result;
@@ -308,6 +313,7 @@ export class IxStatsCsvHandler {
       const headerIndex = this.findHeaderIndex(headers, mapping);
       if (headerIndex !== -1) {
         fieldMap.set(mapping.dbField, headerIndex);
+        console.log(`[CSV Handler] Mapped ${mapping.dbField} to column ${headerIndex} (${headers[headerIndex]})`);
       }
     }
     
@@ -325,9 +331,19 @@ export class IxStatsCsvHandler {
         const headerLower = header.toLowerCase().trim();
         const termLower = term.toLowerCase().trim();
         
-        return headerLower === termLower ||
-               headerLower.includes(termLower) ||
-               headerLower.replace(/\s+/g, '').includes(termLower.replace(/\s+/g, ''));
+        // Exact match first
+        if (headerLower === termLower) return true;
+        
+        // Contains match
+        if (headerLower.includes(termLower) || termLower.includes(headerLower)) return true;
+        
+        // Match without spaces/special chars
+        const headerClean = headerLower.replace(/[\s\(\)²]/g, '');
+        const termClean = termLower.replace(/[\s\(\)²]/g, '');
+        
+        return headerClean === termClean || 
+               headerClean.includes(termClean) || 
+               termClean.includes(headerClean);
       });
       
       if (index !== -1) {
@@ -382,7 +398,7 @@ export class IxStatsCsvHandler {
         return null; // Skip invalid country names
       }
 
-      // Parse all fields
+      // Parse all fields with safe fallbacks
       const countryData: BaseCountryData = {
         country: countryName,
         continent: this.parseOptionalString(row[fieldMap.get('continent') ?? -1]),
@@ -402,6 +418,16 @@ export class IxStatsCsvHandler {
         projected2040GdpPerCapita: this.parseNumber(row[fieldMap.get('projected2040GdpPerCapita') ?? -1], 0),
         actualGdpGrowth: this.parsePercentage(row[fieldMap.get('actualGdpGrowth') ?? -1], 0)
       };
+
+      // Calculate missing areaSqMi from landArea if needed
+      if (!countryData.areaSqMi && countryData.landArea) {
+        countryData.areaSqMi = countryData.landArea / 2.58999;
+      }
+
+      // Calculate missing landArea from areaSqMi if needed
+      if (!countryData.landArea && countryData.areaSqMi) {
+        countryData.landArea = countryData.areaSqMi * 2.58999;
+      }
 
       // Calculate missing projections if needed
       this.calculateMissingProjections(countryData);
