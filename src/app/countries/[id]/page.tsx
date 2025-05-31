@@ -467,33 +467,25 @@ function CountryDetailPageContent() {
               isLoading={isLoadingCountry}
             />
 
-            {/* Enhanced Chart System */}
-            {chartData && (
-              <IxStatsCharts
-                data={chartData}
-                selectedChartType={selectedChartType}
-                onChartTypeChange={handleChartChange}
-                selectedTimeRange={selectedTimeRange}
-                onTimeRangeChange={handleTimeRangeChange}
-                customStartTime={customStartTime}
-                customEndTime={customEndTime}
-                onCustomTimeChange={handleCustomTimeChange}
-                isLoading={isLoadingHistorical}
-                showForecast={showForecast}
-                onForecastToggle={setShowForecast}
-              />
-            )}
+          {/* Enhanced Chart System */}
+{chartData && (
+  <IxStatsCharts
+    data={chartData}
+    selectedChartType={selectedChartType}
+    onChartTypeChangeAction={handleChartChange}
+    selectedTimeRange={selectedTimeRange}
+    onTimeRangeChangeAction={handleTimeRangeChange}
+    customStartTime={customStartTime}
+    customEndTime={customEndTime}
+    onCustomTimeChangeAction={handleCustomTimeChange}
+    isLoading={isLoadingHistorical}
+    showForecast={showForecast}
+    onForecastToggleAction={setShowForecast}
+  />
+)}
 
-            {/* Legacy Forecast Component (keep for now) */}
-            {forecastYears > 0 && (
-              <TenYearForecast
-                country={transformedCountry}
-                forecastData={transformedCountry.forecastDataPoints}
-                baseTime={currentIxTime}
-                isLoading={isLoadingForecast}
-                forecastYears={forecastYears}
-              />
-            )}
+
+           
           </div>
           
           <aside className="lg:sticky lg:top-20 self-start">

@@ -1,4 +1,3 @@
-// src/app/countries/_components/charts/ComparisonCharts.tsx
 "use client";
 
 import { useMemo, useState } from "react";
@@ -88,7 +87,7 @@ interface ComparisonCountry {
 
 interface ComparisonChartsProps {
   countries: ComparisonCountry[];
-  onCountriesChange: (countries: ComparisonCountry[]) => void;
+  onCountriesChangeAction: (countries: ComparisonCountry[]) => void;
   availableCountries: Array<{
     id: string;
     name: string;
@@ -114,7 +113,7 @@ const CHART_COLORS = [
 
 export function ComparisonCharts({
   countries,
-  onCountriesChange,
+  onCountriesChangeAction,
   availableCountries,
   currentIxTime,
   isLoading = false,
@@ -171,7 +170,7 @@ export function ComparisonCharts({
       color: CHART_COLORS[countries.length] || "#8b5cf6",
     };
 
-    onCountriesChange([...countries, newCountry]);
+    onCountriesChangeAction([...countries, newCountry]);
     setCountrySearchOpen(false);
     setSearchValue("");
   };
@@ -184,7 +183,7 @@ export function ComparisonCharts({
         ...country,
         color: CHART_COLORS[index] || "#8b5cf6",
       }));
-    onCountriesChange(newCountries);
+    onCountriesChangeAction(newCountries);
   };
 
   // Chart data processing

@@ -100,7 +100,7 @@ export default function CountriesPage() {
             Countries Dashboard
           </h1>
           <p className="text-muted-foreground">
-            Explore nations in the IxNay world - Game Year {currentGameYear}
+            Explore nations in the World
           </p>
         </div>
 
