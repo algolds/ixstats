@@ -17,6 +17,8 @@ export default function CountriesPage() {
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState("");
   const [tierFilter, setTierFilter] = useState<TierFilter>("all");
+  const [continentFilter, setContinentFilter] = useState<string>("all"); // Added
+  const [regionFilter, setRegionFilter] = useState<string>("all"); // Added
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
@@ -44,6 +46,24 @@ export default function CountriesPage() {
   }, [flagPreloaderStats, countries]);
 
 
+  // Extract available continents and regions
+  const availableContinents = useMemo(() => {
+    if (!countries) return [];
+    const continents = new Set(countries.map(c => c.continent).filter(Boolean) as string[]);
+    return Array.from(continents).sort();
+  }, [countries]);
+
+  const availableRegions = useMemo(() => {
+    if (!countries) return [];
+    let regionsSource = countries;
+    if (continentFilter && continentFilter !== "all") {
+        regionsSource = countries.filter(c => c.continent === continentFilter);
+    }
+    const regions = new Set(regionsSource.map(c => c.region).filter(Boolean) as string[]);
+    return Array.from(regions).sort();
+  }, [countries, continentFilter]);
+
+
   // Filter and sort countries
   const filteredAndSortedCountries = useMemo(() => {
     if (!countries) return [];
@@ -61,6 +81,17 @@ export default function CountriesPage() {
     if (tierFilter !== "all") {
       filtered = filtered.filter((country) => country.economicTier === tierFilter);
     }
+
+    // Apply continent filter
+    if (continentFilter !== "all") {
+      filtered = filtered.filter((country) => country.continent === continentFilter);
+    }
+
+    // Apply region filter
+    if (regionFilter !== "all") {
+      filtered = filtered.filter((country) => country.region === regionFilter);
+    }
+
 
     // Apply sorting
     filtered.sort((a, b) => {
@@ -90,6 +121,22 @@ export default function CountriesPage() {
           aValue = tierOrder[a.economicTier as keyof typeof tierOrder] || 0;
           bValue = tierOrder[b.economicTier as keyof typeof tierOrder] || 0;
           break;
+        case 'continent': // Added
+          aValue = a.continent || "";
+          bValue = b.continent || "";
+          break;
+        case 'region': // Added
+          aValue = a.region || "";
+          bValue = b.region || "";
+          break;
+        case 'landArea': // Added
+            aValue = a.landArea || 0;
+            bValue = b.landArea || 0;
+            break;
+        case 'populationDensity': // Added
+            aValue = a.populationDensity || 0;
+            bValue = b.populationDensity || 0;
+            break;
         default:
           aValue = a.name.toLowerCase();
           bValue = b.name.toLowerCase();
@@ -111,12 +158,23 @@ export default function CountriesPage() {
     });
 
     return filtered;
-  }, [countries, searchTerm, tierFilter, sortField, sortDirection]);
+  }, [countries, searchTerm, tierFilter, continentFilter, regionFilter, sortField, sortDirection]); // Added continentFilter and regionFilter
 
   const handleSortChange = (field: SortField, direction: SortDirection) => {
     setSortField(field);
     setSortDirection(direction);
   };
+
+  // Handlers for new filters
+  const handleContinentFilterChange = (continent: string) => {
+    setContinentFilter(continent);
+    setRegionFilter("all"); // Reset region when continent changes
+  };
+
+  const handleRegionFilterChange = (region: string) => {
+    setRegionFilter(region);
+  };
+
 
   if (error) {
     return (
@@ -155,15 +213,18 @@ export default function CountriesPage() {
           onSearchChange={setSearchTerm}
           tierFilter={tierFilter}
           onTierFilterChange={setTierFilter}
+          continentFilter={continentFilter}               // Pass new state
+          onContinentFilterChange={handleContinentFilterChange} // Pass new handler
+          regionFilter={regionFilter}                     // Pass new state
+          onRegionFilterChange={handleRegionFilterChange}   // Pass new handler
+          availableContinents={availableContinents}       // Pass available continents
+          availableRegions={availableRegions}             // Pass available regions
           sortField={sortField}
           sortDirection={sortDirection}
           onSortChange={handleSortChange}
           totalResults={countries?.length || 0}
-          filteredResults={filteredAndSortedCountries.length} continentFilter={""} onContinentFilterChange={function (continent: string): void {
-            throw new Error("Function not implemented.");
-          } } regionFilter={""} onRegionFilterChange={function (region: string): void {
-            throw new Error("Function not implemented.");
-          } } availableContinents={[]} availableRegions={[]}        />
+          filteredResults={filteredAndSortedCountries.length}
+        />
 
         {/* Countries Grid */}
         <CountriesGrid

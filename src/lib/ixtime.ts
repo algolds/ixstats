@@ -2,7 +2,8 @@
 // IxTime system - Fixed epoch data alignment
 
 import { env } from "~/env";
-import type { BotTimeResponse, BotStatusResponse } from "~/types/ixstats";
+// Changed BotStatusResponse to BotEndpointStatusResponse
+import type { BotTimeResponse, BotEndpointStatusResponse } from "~/types/ixstats";
 
 export class IxTime {
   // Real-world epoch: October 4, 2020
@@ -23,7 +24,7 @@ export class IxTime {
   private static lastKnownBotTime: number | null = null;
   private static lastSyncTime: number | null = null;
   private static botAvailable: boolean = true;
-    static getGameYear: any;
+  // Removed: static getGameYear: any; 
 
   /**
    * Get the in-game epoch timestamp (January 1, 2028)
@@ -178,8 +179,6 @@ export class IxTime {
       return `${yearsSinceEpoch.toFixed(1)} years since game start (${currentYear})`;
     }
   }
-
-  // [Keep all the existing Discord bot integration methods unchanged]
   
   private static async fetchFromBot(): Promise<BotTimeResponse | null> {
     try {
@@ -206,7 +205,7 @@ export class IxTime {
     }
   }
 
-  static async fetchStatusFromBot(): Promise<BotStatusResponse | null> {
+  static async fetchStatusFromBot(): Promise<BotEndpointStatusResponse | null> {
     try {
       const response = await fetch(`${this.BOT_API_URL}/ixtime/status`, {
         method: 'GET',
@@ -218,7 +217,7 @@ export class IxTime {
         throw new Error(`Bot API returned ${response.status}`);
       }
       
-      const data: BotStatusResponse = await response.json();
+      const data: BotEndpointStatusResponse = await response.json();
       this.lastKnownBotTime = data.ixTimeTimestamp;
       this.lastSyncTime = Date.now();
       this.botAvailable = true;
@@ -373,7 +372,7 @@ export class IxTime {
   }
 
   static async getStatus() {
-    const botStatus = await this.fetchStatusFromBot();
+    const botStatusData = await this.fetchStatusFromBot(); // Changed variable name
     const currentRealTime = Date.now();
     const currentIxTime = this.getCurrentIxTime();
     
@@ -400,17 +399,19 @@ export class IxTime {
       lastKnownBotTime: this.lastKnownBotTime ? new Date(this.lastKnownBotTime).toISOString() : null,
       
       // Bot status (if available)
-      botStatus: botStatus ? {
-        ixTimeTimestamp: botStatus.ixTimeTimestamp,
-        ixTimeFormatted: botStatus.ixTimeFormatted,
-        multiplier: botStatus.multiplier,
-        isPaused: botStatus.isPaused,
-        hasTimeOverride: botStatus.hasTimeOverride,
-        hasMultiplierOverride: botStatus.hasMultiplierOverride,
-        pausedAt: botStatus.pausedAt,
-        pauseTimestamp: botStatus.pauseTimestamp,
-        botReady: botStatus.botStatus.ready,
-        botUser: botStatus.botStatus.user
+      botStatus: botStatusData ? { // Use changed variable name
+        ixTimeTimestamp: botStatusData.ixTimeTimestamp,
+        ixTimeFormatted: botStatusData.ixTimeFormatted,
+        multiplier: botStatusData.multiplier,
+        isPaused: botStatusData.isPaused,
+        hasTimeOverride: botStatusData.hasTimeOverride,
+        hasMultiplierOverride: botStatusData.hasMultiplierOverride,
+        pausedAt: botStatusData.pausedAt,
+        pauseTimestamp: botStatusData.pauseTimestamp,
+        botReady: botStatusData.botStatus.ready, // Access nested botStatus
+        botUser: botStatusData.botStatus.user, // Access nested botStatus
+        guilds: botStatusData.botStatus.guilds, // Access nested botStatus
+        uptime: botStatusData.botStatus.uptime // Access nested botStatus
       } : null
     };
   }

@@ -88,8 +88,8 @@ export default function CountryDetailPage() {
       gameEpoch: IxTime.getInGameEpoch(),
       formattedGameEpoch: IxTime.formatIxTime(IxTime.getInGameEpoch()),
       yearsSinceGameStart: (currentIxTime - IxTime.getInGameEpoch()) / (365 * 24 * 60 * 60 * 1000),
-      currentGameYear: IxTime.getGameYear(currentIxTime),
-      gameTimeDescription: `Year ${IxTime.getGameYear(currentIxTime)}`,
+      currentGameYear: IxTime.getCurrentGameYear(currentIxTime), // CHANGED
+      gameTimeDescription: `Year ${IxTime.getCurrentGameYear(currentIxTime)}`, // CHANGED
       timeMultiplier: IxTime.getTimeMultiplier()
     });
   }, [currentIxTime]);
@@ -107,27 +107,28 @@ export default function CountryDetailPage() {
   }, [historicalData]);
 
   const transformedCountry = useMemo(() => {
-    if (!country) return null;
+    if (!country?.calculatedStats) return null; // Use calculatedStats from getByIdAtTime
+    const stats = country.calculatedStats;
     return {
       id: country.id,
       name: country.name,
-      currentPopulation: country.currentPopulation,
-      currentGdpPerCapita: country.currentGdpPerCapita,
-      currentTotalGdp: country.currentTotalGdp,
-      populationGrowthRate: country.populationGrowthRate,
-      adjustedGdpGrowth: country.adjustedGdpGrowth,
-      economicTier: country.economicTier,
-      populationTier: country.populationTier,
-      landArea: country.landArea === null ? undefined : country.landArea,
-      populationDensity: country.populationDensity,
-      gdpDensity: country.gdpDensity,
-      lastCalculated: country.lastCalculated
+      currentPopulation: stats.currentPopulation,
+      currentGdpPerCapita: stats.currentGdpPerCapita,
+      currentTotalGdp: stats.currentTotalGdp,
+      populationGrowthRate: stats.populationGrowthRate,
+      adjustedGdpGrowth: stats.adjustedGdpGrowth,
+      economicTier: stats.economicTier,
+      populationTier: stats.populationTier,
+      landArea: stats.landArea === null ? undefined : stats.landArea,
+      populationDensity: stats.populationDensity,
+      gdpDensity: stats.gdpDensity,
+      lastCalculated: stats.lastCalculated // This will be a number (timestamp)
     };
   }, [country]);
 
   const transformedForecastData = useMemo(() => {
     return forecastData?.dataPoints?.map(point => ({
-      year: IxTime.getGameYear(point.ixTime),
+      year: IxTime.getCurrentGameYear(point.ixTime), // Use getCurrentGameYear
       population: point.population,
       gdpPerCapita: point.gdpPerCapita,
       totalGdp: point.totalGdp,
@@ -168,7 +169,7 @@ export default function CountryDetailPage() {
   const isTimeTravel = currentIxTime !== IxTime.getCurrentIxTime();
   const isLoading = isLoadingCountry || isLoadingHistorical;
 
-  if (isLoading) {
+  if (isLoading && !transformedCountry) { // Show loading only if no data yet
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
@@ -313,7 +314,11 @@ export default function CountryDetailPage() {
 
             {/* Country at a Glance */}
             <CountryAtGlance
-              country={transformedCountry}
+              country={{
+                ...transformedCountry,
+                populationDensity: transformedCountry.populationDensity ?? undefined,
+                gdpDensity: transformedCountry.gdpDensity ?? undefined
+              }}
               historicalData={transformedHistoricalData}
               targetTime={currentIxTime}
               forecastYears={forecastYears}
@@ -330,8 +335,8 @@ export default function CountryDetailPage() {
 
             {/* 10-Year Forecast */}
             <TenYearForecast
-              country={transformedCountry}
-              forecastData={transformedForecastData}
+              country={transformedCountry} // Pass transformedCountry
+              forecastData={transformedForecastData} // Pass transformedForecastData
               baseTime={currentIxTime}
               isLoading={isLoadingForecast}
             />
@@ -380,7 +385,7 @@ export default function CountryDetailPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                         <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                          {transformedCountry.landArea ? 
+                          {transformedCountry.landArea && transformedCountry.landArea > 0 ? 
                             ((transformedCountry.currentTotalGdp / transformedCountry.landArea) / 1000000).toFixed(1) : 
                             'N/A'
                           }
@@ -389,7 +394,7 @@ export default function CountryDetailPage() {
                       </div>
                       <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                         <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                          {transformedCountry.populationDensity ? 
+                          {transformedCountry.populationDensity && transformedCountry.populationDensity > 0 ? 
                             (transformedCountry.currentGdpPerCapita / transformedCountry.populationDensity).toFixed(0) : 
                             'N/A'
                           }
@@ -398,7 +403,7 @@ export default function CountryDetailPage() {
                       </div>
                       <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                         <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-                          {transformedCountry.landArea ? 
+                          {transformedCountry.landArea && transformedCountry.landArea > 0 ? 
                             Math.sqrt(transformedCountry.currentTotalGdp / transformedCountry.landArea / 1000000).toFixed(1) : 
                             'N/A'
                           }
@@ -478,26 +483,26 @@ export default function CountryDetailPage() {
                   <div className="flex justify-between">
                     <span className="text-xs text-gray-500 dark:text-gray-400">Economic Tier</span>
                     <span className="text-xs font-medium text-gray-900 dark:text-white">
-                      {country.economicTier}
+                      {transformedCountry.economicTier}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-xs text-gray-500 dark:text-gray-400">Population Tier</span>
                     <span className="text-xs font-medium text-gray-900 dark:text-white">
-                      {country.populationTier}
+                      {transformedCountry.populationTier}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-xs text-gray-500 dark:text-gray-400">Last Updated</span>
                     <span className="text-xs font-medium text-gray-900 dark:text-white">
-                      {new Date(country.lastCalculated).toLocaleDateString()}
+                      {new Date(transformedCountry.lastCalculated).toLocaleDateString()}
                     </span>
                   </div>
-                  {country.landArea && (
+                  {transformedCountry.landArea && (
                     <div className="flex justify-between">
                       <span className="text-xs text-gray-500 dark:text-gray-400">Land Area</span>
                       <span className="text-xs font-medium text-gray-900 dark:text-white">
-                        {(country.landArea / 1000).toFixed(0)}K km²
+                        {(transformedCountry.landArea / 1000).toFixed(0)}K km²
                       </span>
                     </div>
                   )}

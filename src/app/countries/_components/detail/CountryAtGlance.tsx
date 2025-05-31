@@ -94,7 +94,7 @@ export function CountryAtGlance({
       if (!acc[key]) {
         acc[key] = [];
       }
-      acc[key].push(point);
+      acc[key]?.push(point);
       return acc;
     }, {});
 
@@ -123,10 +123,10 @@ export function CountryAtGlance({
           totalGdp: avgPoint.totalGdp / 1000000000, // Convert to billions
           populationDensity: avgPoint.populationDensity,
           gdpDensity: avgPoint.gdpDensity / 1000000, // Convert to millions per km²
-          populationGrowth: points.length > 1 ? 
-            ((avgPoint.population - points[0].population) / Math.max(0.001, points[0].population)) * 100 : 0,
-          gdpGrowth: points.length > 1 ? 
-            ((avgPoint.gdpPerCapita - points[0].gdpPerCapita) / Math.max(0.001, points[0].gdpPerCapita)) * 100 : 0,
+          populationGrowth: points.length > 1 && points[0] && points[0].population !== 0 ?
+            ((avgPoint.population - points[0].population) / points[0].population) * 100 : 0,
+          gdpGrowth: points.length > 1 && points[0] && points[0].gdpPerCapita !== 0 ?
+            ((avgPoint.gdpPerCapita - points[0].gdpPerCapita) / points[0].gdpPerCapita) * 100 : 0,
         };
       })
       .sort((a, b) => a.period.localeCompare(b.period));
@@ -134,31 +134,43 @@ export function CountryAtGlance({
 
   // Generate forecast data if enabled
   const forecastData = useMemo(() => {
-    if (!showForecast || forecastYears === 0 || !chartData.length) return [];
-
-    const lastDataPoint = chartData[chartData.length - 1];
-    if (!lastDataPoint) return [];
+    if (!showForecast || forecastYears === 0) return [];
+    
+    // Use current country stats as the base for forecast if chartData is empty
+    const basePointForForecast = chartData.length > 0 
+      ? chartData[chartData.length - 1]
+      : { // Construct a base point from current country data if historical is empty
+          date: IxTime.getCurrentGameYear(targetTime).toString(), // Use game year of targetTime
+          population: country.currentPopulation / 1000000,
+          gdpPerCapita: country.currentGdpPerCapita,
+          totalGdp: country.currentTotalGdp / 1000000000,
+          populationDensity: country.populationDensity || 0,
+          gdpDensity: (country.gdpDensity || 0) / 1000000,
+        };
+    
+    if (!basePointForForecast) return [];
     
     const forecastPoints = [];
+    const currentRealYear = new Date(targetTime).getFullYear(); // Real year of the targetTime for forecast x-axis
 
     for (let i = 1; i <= forecastYears; i++) {
-      const yearFromNow = timeResolution === 'quarterly' ? i / 4 : i;
-      const populationGrowthFactor = Math.pow(1 + country.populationGrowthRate, yearFromNow);
-      const gdpGrowthFactor = Math.pow(1 + country.adjustedGdpGrowth, yearFromNow);
+      const yearFromBase = timeResolution === 'quarterly' ? i / 4 : i;
+      const populationGrowthFactor = Math.pow(1 + country.populationGrowthRate, yearFromBase);
+      const gdpGrowthFactor = Math.pow(1 + country.adjustedGdpGrowth, yearFromBase);
 
-      const projectedPopulation = lastDataPoint.population * populationGrowthFactor;
-      const projectedGdpPerCapita = lastDataPoint.gdpPerCapita * gdpGrowthFactor;
+      const projectedPopulation = basePointForForecast.population * populationGrowthFactor;
+      const projectedGdpPerCapita = basePointForForecast.gdpPerCapita * gdpGrowthFactor;
 
       forecastPoints.push({
         period: timeResolution === 'quarterly' 
-          ? `${new Date().getFullYear() + Math.floor(i)}-Q${(i % 4) + 1}`
-          : (new Date().getFullYear() + i).toString(),
-        date: `Forecast +${i}yr`,
+          ? `${currentRealYear + Math.floor((i-1)/4)}-Q${((i-1) % 4) + 1}` // Adjust quarter calculation
+          : (currentRealYear + i).toString(),
+        date: `Forecast +${i}yr`, // Keep as relative for tooltip/display
         population: projectedPopulation,
         gdpPerCapita: projectedGdpPerCapita,
-        totalGdp: projectedPopulation * projectedGdpPerCapita / 1000, // Adjust for scale
-        populationDensity: lastDataPoint.populationDensity * populationGrowthFactor,
-        gdpDensity: lastDataPoint.gdpDensity * gdpGrowthFactor,
+        totalGdp: projectedPopulation * projectedGdpPerCapita / 1000, 
+        populationDensity: basePointForForecast.populationDensity * populationGrowthFactor,
+        gdpDensity: basePointForForecast.gdpDensity * gdpGrowthFactor,
         populationGrowth: country.populationGrowthRate * 100,
         gdpGrowth: country.adjustedGdpGrowth * 100,
         isForecast: true,
@@ -166,7 +178,8 @@ export function CountryAtGlance({
     }
 
     return forecastPoints;
-  }, [chartData, forecastYears, showForecast, timeResolution, country]);
+  }, [country, chartData, forecastYears, showForecast, timeResolution, targetTime]);
+
 
   const combinedData = [...chartData, ...forecastData];
 
@@ -242,7 +255,7 @@ export function CountryAtGlance({
               fillOpacity={1}
               fill="url(#populationGradient)"
               name="Population (M)"
-              strokeDasharray={(dataPoint) => getStrokeDashArray(dataPoint)}
+              strokeDasharray="0"
             />
             <Line
               yAxisId="gdp"
@@ -251,7 +264,7 @@ export function CountryAtGlance({
               stroke="#10B981"
               strokeWidth={3}
               name="GDP per Capita ($)"
-              strokeDasharray={(dataPoint) => getStrokeDashArray(dataPoint)}
+              strokeDasharray="0"
             />
           </ComposedChart>
         );
