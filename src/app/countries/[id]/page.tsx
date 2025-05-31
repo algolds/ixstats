@@ -333,14 +333,6 @@ export default function CountryDetailPage() {
               isCompact={false}
             />
 
-            {/* 10-Year Forecast */}
-            <TenYearForecast
-              country={transformedCountry} // Pass transformedCountry
-              forecastData={transformedForecastData} // Pass transformedForecastData
-              baseTime={currentIxTime}
-              isLoading={isLoadingForecast}
-            />
-
             {/* Additional Charts Section Based on Selected Chart Type */}
             <div className="space-y-8">
               {selectedChart === 'density' && (
