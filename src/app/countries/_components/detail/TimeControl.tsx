@@ -10,7 +10,9 @@ import {
   Pause,
   RotateCcw,
   Clock,
-  Info
+  Info,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import { IxTime } from "~/lib/ixtime";
 
@@ -29,6 +31,7 @@ export function TimeControl({
   gameEpoch,
   isLoading = false
 }: TimeControlProps) {
+  const [expanded, setExpanded] = useState(false);
   const [timeOffset, setTimeOffset] = useState(0); // Years from current time
   const [forecastYears, setForecastYears] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -41,7 +44,7 @@ export function TimeControl({
   const targetTime = IxTime.addYears(actualCurrentTime, timeOffset);
   
   // Calculate min/max bounds
-  const maxPastYears = -(IxTime.getCurrentGameYear(actualCurrentTime) - IxTime.getCurrentGameYear(actualGameEpoch)); // Use getCurrentGameYear
+  const maxPastYears = -(IxTime.getCurrentGameYear(actualCurrentTime) - IxTime.getCurrentGameYear(actualGameEpoch));
   const maxFutureYears = 10;
 
   // Auto-play functionality
@@ -100,57 +103,114 @@ export function TimeControl({
   const isAtFuture = timeOffset > 0;
   const isAtPast = timeOffset < 0;
 
+  // Collapsed view
+  if (!expanded) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white flex items-center">
+              <Clock className="h-4 w-4 mr-2" />
+              Viewing: {IxTime.formatIxTime(targetTime)} ({IxTime.getCurrentGameYear(targetTime)})
+            </h3>
+            {!isAtPresent && (
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                Time travel active: {getTimeDescription()}
+              </p>
+            )}
+            {forecastYears > 0 && (
+              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                Forecast: +{forecastYears.toFixed(1)} years
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {!isAtPresent && (
+              <button
+                onClick={handleReset}
+                className="p-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+                title="Reset to present time"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+              </button>
+            )}
+            <button 
+              onClick={() => setExpanded(true)}
+              className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/50 flex items-center font-medium"
+            >
+              <span className="mr-1">Time Controls</span>
+              <ChevronDown className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Expanded view
   return (
-    <div className="bg-[var(--color-bg-surface)] rounded-lg shadow-md p-6 border border-[var(--color-border-primary)]">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-[var(--color-text-primary)] flex items-center">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
           <Calendar className="h-5 w-5 mr-2" />
           Time Control
           {!isAtPresent && (
-            <span className="ml-3 px-2 py-1 bg-[var(--color-brand-primary)]20 text-[var(--color-brand-primary)] text-sm rounded-full">
+            <span className="ml-3 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-sm rounded-full">
               Time Travel Active
             </span>
           )}
         </h2>
         
-        <button
-          onClick={handleReset}
-          disabled={isLoading || (isAtPresent && forecastYears === 0)}
-          className="btn-secondary"
-          title="Reset to present time"
-        >
-          <RotateCcw className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleReset}
+            disabled={isLoading || (isAtPresent && forecastYears === 0)}
+            className={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 ${
+              isAtPresent && forecastYears === 0
+                ? 'text-gray-400 dark:text-gray-600'
+                : 'text-gray-700 dark:text-gray-300'
+            }`}
+            title="Reset to present time"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => setExpanded(false)}
+            className="p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+          >
+            <ChevronUp className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {/* Current Time Display */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="text-center p-4 bg-[var(--color-bg-tertiary)] rounded-lg">
-          <div className="text-sm text-[var(--color-text-muted)] mb-1">Viewing Time</div>
-          <div className="text-lg font-semibold text-[var(--color-text-primary)]">
+        <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Viewing Time</div>
+          <div className="text-lg font-semibold text-gray-900 dark:text-white">
             {IxTime.formatIxTime(targetTime)}
           </div>
-          <div className="text-xs text-[var(--color-text-muted)]">
+          <div className="text-xs text-gray-500 dark:text-gray-400">
             {getTimeDescription()}
           </div>
         </div>
         
-        <div className="text-center p-4 bg-[var(--color-bg-tertiary)] rounded-lg">
-          <div className="text-sm text-[var(--color-text-muted)] mb-1">Game Year</div>
-          <div className="text-lg font-semibold text-[var(--color-text-primary)]">
-            {IxTime.getCurrentGameYear(targetTime)} {/* Use getCurrentGameYear */}
+        <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Game Year</div>
+          <div className="text-lg font-semibold text-gray-900 dark:text-white">
+            {IxTime.getCurrentGameYear(targetTime)}
           </div>
-          <div className="text-xs text-[var(--color-text-muted)]">
-            Year {IxTime.getCurrentGameYear(targetTime) - IxTime.getCurrentGameYear(actualGameEpoch)} of simulation {/* Use getCurrentGameYear */}
+          <div className="text-xs text-gray-500 dark:text-gray-400">
+            Year {IxTime.getCurrentGameYear(targetTime) - IxTime.getCurrentGameYear(actualGameEpoch)} of simulation
           </div>
         </div>
         
-        <div className="text-center p-4 bg-[var(--color-bg-tertiary)] rounded-lg">
-          <div className="text-sm text-[var(--color-text-muted)] mb-1">Forecast</div>
-          <div className="text-lg font-semibold text-[var(--color-text-primary)]">
+        <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Forecast</div>
+          <div className="text-lg font-semibold text-gray-900 dark:text-white">
             +{forecastYears.toFixed(1)} years
           </div>
-          <div className="text-xs text-[var(--color-text-muted)]">
+          <div className="text-xs text-gray-500 dark:text-gray-400">
             {forecastYears > 0 ? IxTime.formatIxTime(IxTime.addYears(targetTime, forecastYears)) : 'None'}
           </div>
         </div>
@@ -160,14 +220,14 @@ export function TimeControl({
       <div className="space-y-4">
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-medium text-[var(--color-text-primary)]">
+            <label className="text-sm font-medium text-gray-900 dark:text-white">
               Time Position
             </label>
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => handleTimeOffsetChange(timeOffset - 1)}
                 disabled={isLoading || timeOffset <= maxPastYears}
-                className="p-1 text-[var(--color-brand-primary)] hover:text-[var(--color-brand-dark)] disabled:opacity-50"
+                className="p-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 disabled:opacity-50"
               >
                 <Rewind className="h-4 w-4" />
               </button>
@@ -175,7 +235,7 @@ export function TimeControl({
               <button
                 onClick={handlePlayPause}
                 disabled={isLoading || timeOffset >= maxFutureYears}
-                className="p-2 bg-[var(--color-brand-primary)] text-white rounded-md hover:bg-[var(--color-brand-dark)] disabled:opacity-50"
+                className="p-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
               >
                 {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
               </button>
@@ -183,7 +243,7 @@ export function TimeControl({
               <button
                 onClick={() => handleTimeOffsetChange(timeOffset + 1)}
                 disabled={isLoading || timeOffset >= maxFutureYears}
-                className="p-1 text-[var(--color-brand-primary)] hover:text-[var(--color-brand-dark)] disabled:opacity-50"
+                className="p-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 disabled:opacity-50"
               >
                 <FastForward className="h-4 w-4" />
               </button>
@@ -199,9 +259,9 @@ export function TimeControl({
               value={timeOffset}
               onChange={(e) => handleTimeOffsetChange(parseFloat(e.target.value))}
               disabled={isLoading}
-              className="w-full h-2 bg-[var(--color-bg-accent)] rounded-lg appearance-none cursor-pointer slider"
+              className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer"
             />
-            <div className="flex justify-between text-xs text-[var(--color-text-muted)] mt-1">
+            <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
               <span>Game Start</span>
               <span>Present</span>
               <span>+10 Years</span>
@@ -212,10 +272,10 @@ export function TimeControl({
         {/* Forecast Control */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-medium text-[var(--color-text-primary)]">
+            <label className="text-sm font-medium text-gray-900 dark:text-white">
               Forecast Period
             </label>
-            <span className="text-sm text-[var(--color-text-muted)]">
+            <span className="text-sm text-gray-500 dark:text-gray-400">
               {forecastYears.toFixed(1)} years
             </span>
           </div>
@@ -228,9 +288,9 @@ export function TimeControl({
             value={forecastYears}
             onChange={(e) => setForecastYears(parseFloat(e.target.value))}
             disabled={isLoading}
-            className="w-full h-2 bg-[var(--color-bg-accent)] rounded-lg appearance-none cursor-pointer slider"
+            className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer"
           />
-          <div className="flex justify-between text-xs text-[var(--color-text-muted)] mt-1">
+          <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
             <span>No Forecast</span>
             <span>10 Years</span>
           </div>
@@ -239,7 +299,7 @@ export function TimeControl({
         {/* Playback Speed Control (when playing) */}
         {isPlaying && (
           <div>
-            <label className="text-sm font-medium text-[var(--color-text-primary)] mb-2 block">
+            <label className="text-sm font-medium text-gray-900 dark:text-white mb-2 block">
               Playback Speed
             </label>
             <div className="flex space-x-2">
@@ -249,8 +309,8 @@ export function TimeControl({
                   onClick={() => setPlaybackSpeed(speed)}
                   className={`px-3 py-1 rounded text-sm ${
                     playbackSpeed === speed
-                      ? 'bg-[var(--color-brand-primary)] text-white'
-                      : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-accent)]'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
                   {speed}x
@@ -262,10 +322,10 @@ export function TimeControl({
       </div>
 
       {/* Info Panel */}
-      <div className="mt-6 p-4 bg-[var(--color-info)]10 border border-[var(--color-info)]30 rounded-lg">
+      <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-lg">
         <div className="flex items-start">
-          <Info className="h-4 w-4 text-[var(--color-info)] mt-0.5 mr-2 flex-shrink-0" />
-          <div className="text-sm text-[var(--color-text-muted)]">
+          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 mr-2 flex-shrink-0" />
+          <div className="text-sm text-gray-600 dark:text-gray-400">
             <p className="mb-1">
               <strong>Time Control:</strong> Navigate through historical data and forecast future scenarios.
             </p>
