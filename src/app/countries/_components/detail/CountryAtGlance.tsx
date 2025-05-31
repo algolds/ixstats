@@ -1,329 +1,263 @@
 // src/app/countries/_components/detail/CountryAtGlance.tsx
-"use client";
-
-import { useMemo, useState } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Card, CardHeader, CardContent } from "~/components/ui/card";
-import { BarChart3, Loader2 } from "lucide-react";
-import { useTheme } from "~/context/theme-context";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "~/components/ui/select";
+import { Label } from "~/components/ui/label";
+import { formatNumber } from "~/lib/format";
 import { IxTime } from "~/lib/ixtime";
-import type { ChartType } from "../detail";
-import { CountryDashboard } from "../charts/CountryDashboard";
-import { ChartDisplay } from "../charts/ChartDisplay";
-import { CountryStats } from "../charts/CountryStats";
+import { IxChartDataProcessor } from "~/lib/chart-data-processor-ixtime";
+import { ChartDataFormatter } from "~/lib/chart-data-formatter";
+import { LineChart } from "../charts/line-chart";
+import { BarChart } from "../charts/bar-chart";
+import type { CountryDetailData } from "~/app/countries/[id]/page";
 
-// Keep existing types
-interface CountryData {
-  id: string;
-  name: string;
-  currentPopulation: number;
-  currentGdpPerCapita: number;
-  currentTotalGdp: number;
-  populationGrowthRate: number;
-  adjustedGdpGrowth: number;
-  economicTier: string;
-  populationTier: string;
-  landArea?: number | null;
-  populationDensity?: number | null;
-  gdpDensity?: number | null;
-}
-
-interface HistoricalDataPoint {
-  ixTimeTimestamp: number;
-  population: number;
-  gdpPerCapita: number;
-  totalGdp: number;
-  populationDensity?: number | null;
-  gdpDensity?: number | null;
-}
-
-type TimeResolutionType = 'quarterly' | 'annual';
-
-// Keep the same props interface for backward compatibility
 interface CountryAtGlanceProps {
-  country: CountryData;
-  historicalData?: HistoricalDataPoint[];
+  country: CountryDetailData;
+  historicalData: CountryDetailData['historicalData'];
   targetTime: number;
   forecastYears: number;
-  isLoading?: boolean;
-  isLoadingForecast?: boolean;
-  chartView?: ChartType;
-  timeResolution?: TimeResolutionType;
-  showForecastInHistorical?: boolean;
-  onTimeResolutionChange: (resolution: TimeResolutionType) => void;
-  onChartViewChange: (view: ChartType) => void;
+  isLoading: boolean;
+  isLoadingForecast: boolean;
+  chartView: 'overview' | 'population' | 'gdp' | 'density';
+  timeResolution: 'quarterly' | 'annual';
+  onTimeResolutionChange: (resolution: 'quarterly' | 'annual') => void;
+  onChartViewChange: (view: 'overview' | 'population' | 'gdp' | 'density') => void;
 }
 
 export function CountryAtGlance({
   country,
-  historicalData = [],
+  historicalData,
   targetTime,
   forecastYears,
-  isLoading = false,
-  isLoadingForecast = false,
-  chartView = 'overview',
-  timeResolution = 'annual',
-  showForecastInHistorical = true,
+  isLoading,
+  isLoadingForecast,
+  chartView,
+  timeResolution,
   onTimeResolutionChange,
-  onChartViewChange,
+  onChartViewChange
 }: CountryAtGlanceProps) {
-  const { theme } = useTheme();
-  const [showForecast, setShowForecast] = useState(true);
-  const [showDensity, setShowDensity] = useState(false);
-
-  // Data processing remains similar to original component
-  const historicalChartData = useMemo(() => {
-    // Processing historical data (keeping the same logic as in the original)
-    if (!historicalData || historicalData.length === 0) return [];
-
-    let windowStartTimeMs = timeResolution === 'quarterly' 
-      ? IxTime.addYears(targetTime, -0.25)
-      : IxTime.addYears(targetTime, -1);
-
-    const filteredRawData = historicalData
-      .filter(point => point.ixTimeTimestamp >= windowStartTimeMs && point.ixTimeTimestamp <= targetTime)
-      .sort((a, b) => a.ixTimeTimestamp - b.ixTimeTimestamp);
-
-    if (!filteredRawData.length) return [];
-
-    // Group data by period
-    const timestampGroups: Record<string, { 
-      points: HistoricalDataPoint[], 
-      timestampSum: number, 
-      count: number 
-    }> = {};
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [normalizeValues, setNormalizeValues] = useState(true);
+  
+  // Format numerical values for display
+  const formattedValues = useMemo(() => ({
+    population: formatNumber(country.currentPopulation / 1000000, false, 2) + " million",
+    gdpPerCapita: formatNumber(country.currentGdpPerCapita, true, 0),
+    gdp: formatNumber(country.currentTotalGdp / 1000000000, true, 2) + " billion",
+    density: country.populationDensity 
+      ? formatNumber(country.populationDensity, false, 1) + " per km²" 
+      : "N/A",
+    gdpDensity: country.gdpDensity 
+      ? formatNumber(country.gdpDensity / 1000000, true, 1) + "M per km²" 
+      : "N/A",
+  }), [country]);
+  
+  // Process data for charts
+  useEffect(() => {
+    if (!historicalData || historicalData.length === 0) return;
     
-    // Group by time period
-    filteredRawData.forEach(point => {
-      const date = new Date(point.ixTimeTimestamp);
-      let periodKey: string;
-      
-      if (timeResolution === 'quarterly') {
-        const quarter = Math.floor(date.getUTCMonth() / 3) + 1;
-        periodKey = `${date.getUTCFullYear()}-Q${quarter}`;
-      } else {
-        periodKey = date.getUTCFullYear().toString();
-      }
-      
-      if (!timestampGroups[periodKey]) {
-        timestampGroups[periodKey] = { points: [], timestampSum: 0, count: 0 };
-      }
-      
-      timestampGroups[periodKey]?.points.push(point);
-      timestampGroups[periodKey]!.timestampSum += point.ixTimeTimestamp;
-      timestampGroups[periodKey]!.count++;
+    // Process historical data
+    const historicalChartData = IxChartDataProcessor.processHistoricalData(country, {
+      normalizePopulation: normalizeValues,
+      normalizeTotalGdp: normalizeValues,
+      normalizeGdpDensity: normalizeValues,
+      timeResolution,
+      startTime: IxTime.addYears(targetTime, -10),
+      endTime: targetTime
     });
-
-    // Process each group into a data point
-    return Object.entries(timestampGroups).map(([period, groupData]) => {
-      const points = groupData.points;
-      const avgTimestamp = points.length > 0 ? groupData.timestampSum / points.length : 0;
-      
-      // Calculate averages
-      const sum = points.reduce((acc, p) => ({
-        population: acc.population + p.population,
-        gdpPerCapita: acc.gdpPerCapita + p.gdpPerCapita,
-        totalGdp: acc.totalGdp + p.totalGdp,
-        populationDensity: acc.populationDensity + (p.populationDensity || 0),
-        gdpDensity: acc.gdpDensity + (p.gdpDensity || 0),
-      }), { population: 0, gdpPerCapita: 0, totalGdp: 0, populationDensity: 0, gdpDensity: 0 });
-
-      const count = points.length || 1;
-      
-      return {
-        period,
-        date: period,
-        ixTimeTimestamp: avgTimestamp,
-        population: sum.population / count / 1000000, // Millions
-        gdpPerCapita: sum.gdpPerCapita / count,
-        totalGdp: sum.totalGdp / count / 1000000000, // Billions
-        populationDensity: sum.populationDensity / count,
-        gdpDensity: (sum.gdpDensity / count) / 1000000, // Millions
-        isForecast: false,
-      };
-    }).sort((a, b) => a.ixTimeTimestamp - b.ixTimeTimestamp);
-  }, [historicalData, targetTime, timeResolution]);
-
-  // Calculate forecast data
-  const forecastChartData = useMemo(() => {
-    if (!showForecastInHistorical || forecastYears === 0) return [];
-
-    // Use the last historical data point as base, or create one from current country data
-    const basePointForForecast = historicalChartData.length > 0
-      ? historicalChartData[historicalChartData.length - 1]
-      : {
-          period: IxTime.formatIxTime(targetTime, false).split(',')[1]?.trim() || new Date(targetTime).getFullYear().toString(),
-          date: IxTime.formatIxTime(targetTime, false).split(',')[1]?.trim() || new Date(targetTime).getFullYear().toString(),
-          population: country.currentPopulation / 1000000,
-          gdpPerCapita: country.currentGdpPerCapita,
-          totalGdp: country.currentTotalGdp / 1000000000,
-          populationDensity: country.populationDensity ?? 0,
-          gdpDensity: (country.gdpDensity ?? 0) / 1000000,
-          ixTimeTimestamp: targetTime,
-        };
     
-    if (!basePointForForecast) return [];
-
-    // Generate forecast points
-    const forecastPoints = [];
-    const forecastStartTime = basePointForForecast.ixTimeTimestamp;
-    const numForecastSteps = forecastYears * (timeResolution === 'quarterly' ? 4 : 1);
-
-    for (let i = 1; i <= numForecastSteps; i++) {
-      const yearOffset = timeResolution === 'quarterly' ? i / 4 : i;
-      const currentForecastTime = IxTime.addYears(forecastStartTime, yearOffset); 
-      const dateObj = new Date(currentForecastTime);
-      
-      // Generate period key
-      let periodKey: string;
-      if (timeResolution === 'quarterly') {
-        const quarter = Math.floor(dateObj.getUTCMonth() / 3) + 1;
-        periodKey = `${dateObj.getUTCFullYear()}-Q${quarter}`;
-      } else {
-        periodKey = dateObj.getUTCFullYear().toString();
-      }
-
-      // Apply growth rates
-      const populationGrowthFactor = Math.pow(1 + country.populationGrowthRate, yearOffset);
-      const gdpGrowthFactor = Math.pow(1 + country.adjustedGdpGrowth, yearOffset);
-
-      const projectedPopulation = (basePointForForecast.population ?? 0) * populationGrowthFactor;
-      const projectedGdpPerCapita = (basePointForForecast.gdpPerCapita ?? 0) * gdpGrowthFactor;
-      const projectedTotalGdp = projectedPopulation * projectedGdpPerCapita / 1000; 
-      const projectedPopDensity = (basePointForForecast.populationDensity ?? 0) * populationGrowthFactor;
-      const projectedGdpDensity = (basePointForForecast.gdpDensity ?? 0) * gdpGrowthFactor;
-
-      forecastPoints.push({
-        period: periodKey,
-        date: periodKey,
-        ixTimeTimestamp: currentForecastTime,
-        population: projectedPopulation,
-        gdpPerCapita: projectedGdpPerCapita,
-        totalGdp: projectedTotalGdp,
-        populationDensity: projectedPopDensity,
-        gdpDensity: projectedGdpDensity,
-        isForecast: true,
+    // Process forecast data if available
+    let combinedData = historicalChartData;
+    
+    if (forecastYears > 0 && country.forecastDataPoints && country.forecastDataPoints.length > 0) {
+      const forecastChartData = IxChartDataProcessor.processForecastData(country, {
+        normalizePopulation: normalizeValues,
+        normalizeTotalGdp: normalizeValues,
+        normalizeGdpDensity: normalizeValues,
+        timeResolution
       });
+      
+      combinedData = IxChartDataProcessor.combineHistoricalAndForecast(
+        historicalChartData,
+        forecastChartData
+      );
     }
     
-    // Include the last historical point in forecast data for continuity
-    if (historicalChartData.length > 0 && forecastPoints.length > 0) {
-        return [{...historicalChartData[historicalChartData.length - 1]!, isForecast: true}, ...forecastPoints];
-    }
-    if (forecastPoints.length > 0) {
-        return [{...basePointForForecast, isForecast: true}, ...forecastPoints];
-    }
-    return [];
-  }, [country, historicalChartData, forecastYears, showForecastInHistorical, timeResolution, targetTime]);
-
-  // Combine historical and forecast data
-  const combinedChartData = useMemo(() => {
-    const dataMap = new Map();
-
-    // Add historical data
-    historicalChartData.forEach(p => {
-        dataMap.set(p.period, {
-            ...p,
-            historicalPopulation: p.population,
-            historicalGdpPerCapita: p.gdpPerCapita,
-            historicalTotalGdp: p.totalGdp,
-            historicalPopulationDensity: p.populationDensity,
-            historicalGdpDensity: p.gdpDensity,
-        });
-    });
-
-    // Add forecast data
-    forecastChartData.forEach(p => {
-        const existing = dataMap.get(p.period);
-        if (existing) {
-            dataMap.set(p.period, {
-                ...existing,
-                forecastPopulation: p.population,
-                forecastGdpPerCapita: p.gdpPerCapita ?? undefined,
-                forecastTotalGdp: p.totalGdp ?? undefined,
-                forecastPopulationDensity: p.populationDensity ?? undefined,
-                forecastGdpDensity: p.gdpDensity ?? undefined,
-            });
-        } else {
-            dataMap.set(p.period, {
-                ...p,
-                forecastPopulation: p.population,
-                forecastGdpPerCapita: p.gdpPerCapita ?? undefined,
-                forecastTotalGdp: p.totalGdp ?? undefined,
-                forecastPopulationDensity: p.populationDensity ?? undefined,
-                forecastGdpDensity: p.gdpDensity ?? undefined,
-            });
-        }
+    // Format the data for display
+    const formattedData = ChartDataFormatter.formatChartData(combinedData, {
+      useCompactNumbers: true,
+      currencySymbol: '$',
+      labelFormat: 'short'
     });
     
-    return Array.from(dataMap.values()).sort((a,b) => a.ixTimeTimestamp - b.ixTimeTimestamp);
-  }, [historicalChartData, forecastChartData]);
-
-  // Loading state
-  if (isLoading && !historicalData?.length) {
+    setChartData(formattedData);
+  }, [country, historicalData, targetTime, forecastYears, timeResolution, normalizeValues]);
+  
+  if (isLoading) {
     return (
-      <Card>
+      <Card className="w-full">
         <CardHeader>
-          <Skeleton className="h-7 w-3/4 mb-2" />
-          <Skeleton className="h-4 w-1/2" />
+          <CardTitle>Country Overview</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-2 mb-4">
-            <Skeleton className="h-9 w-24 rounded-md" />
-            <Skeleton className="h-9 w-24 rounded-md" />
-            <Skeleton className="h-9 w-24 rounded-md" />
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <Skeleton className="h-20" />
+            <Skeleton className="h-20" />
+            <Skeleton className="h-20" />
+            <Skeleton className="h-20" />
           </div>
-          <Skeleton className="h-80 w-full rounded-lg" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
-            {Array.from({length: 4}).map((_,i) => <Skeleton key={i} className="h-16 w-full rounded-md"/>)}
-          </div>
+          <Skeleton className="h-[350px] w-full" />
         </CardContent>
       </Card>
     );
   }
-
+  
   return (
-    <Card>
-      <CardContent className="p-4 sm:p-6">
-        {/* Conditional rendering based on chart view */}
-        {chartView === 'overview' ? (
-          <CountryDashboard 
-            country={country} 
-            onNavigate={onChartViewChange} 
-          />
-        ) : null}
-        
-        {/* Chart Display */}
-        <div className="h-80 mb-4">
-          {(isLoading || (showForecastInHistorical && isLoadingForecast)) && combinedChartData.length === 0 ? (
-            <div className="h-full flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="ml-2 text-muted-foreground">Loading chart data...</p>
+    <Card className="w-full">
+      <CardHeader>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <CardTitle>Country Overview</CardTitle>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="resolution" className="text-sm">Resolution</Label>
+              <Select
+                value={timeResolution}
+                onValueChange={(value) => onTimeResolutionChange(value as 'quarterly' | 'annual')}
+              >
+                <SelectTrigger id="resolution" className="w-32">
+                  <SelectValue placeholder="Select resolution" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="annual">Annual</SelectItem>
+                  <SelectItem value="quarterly">Quarterly</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          ) : combinedChartData.length > 0 ? (
-            <ChartDisplay 
-              chartView={chartView}
-              combinedData={combinedChartData}
-              country={country}
-              timeResolution={timeResolution}
-              theme={theme}
-              showForecast={showForecast}
-              showDensity={showDensity}
-              onToggleForecast={() => setShowForecast(!showForecast)}
-              onToggleDensity={() => setShowDensity(!showDensity)}
-            />
-          ) : (
-            <div className="h-full flex items-center justify-center text-center">
-              <BarChart3 className="h-12 w-12 text-muted-foreground opacity-50 mb-2" />
-              <p className="text-muted-foreground">
-                No historical data available for the selected period or resolution.
-              </p>
-            </div>
-          )}
+          </div>
         </div>
-
-        {/* Country Stats */}
-        <CountryStats country={country} />
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-muted/50 p-4 rounded-lg">
+            <div className="text-sm text-muted-foreground">Population</div>
+            <div className="text-2xl font-bold mt-1">{formattedValues.population}</div>
+          </div>
+          <div className="bg-muted/50 p-4 rounded-lg">
+            <div className="text-sm text-muted-foreground">GDP per Capita</div>
+            <div className="text-2xl font-bold mt-1">{formattedValues.gdpPerCapita}</div>
+          </div>
+          <div className="bg-muted/50 p-4 rounded-lg">
+            <div className="text-sm text-muted-foreground">Total GDP</div>
+            <div className="text-2xl font-bold mt-1">{formattedValues.gdp}</div>
+          </div>
+          <div className="bg-muted/50 p-4 rounded-lg">
+            <div className="text-sm text-muted-foreground">Population Density</div>
+            <div className="text-2xl font-bold mt-1">{formattedValues.density}</div>
+          </div>
+        </div>
+        
+        <Tabs defaultValue={chartView} value={chartView} onValueChange={(value) => onChartViewChange(value as any)}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="population">Population</TabsTrigger>
+            <TabsTrigger value="gdp">GDP</TabsTrigger>
+            <TabsTrigger value="density">Density</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="overview" className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <LineChart
+                data={chartData}
+                title="Population Trend"
+                description="Historical and projected population"
+                dataKeys={[
+                  { key: 'population', name: 'Population (M)', color: '#3b82f6' },
+                  ...(forecastYears > 0 ? [{ key: 'population', name: 'Forecast (M)', color: '#93c5fd' }] : [])
+                ]}
+                xAxisDataKey="period"
+                height={250}
+                />
+              
+              <LineChart
+                data={chartData}
+                title="GDP Trend"
+                description="Historical and projected GDP"
+                dataKeys={[
+                  { key: 'totalGdp', name: 'GDP ($B)', color: '#10b981' },
+                  ...(forecastYears > 0 ? [{ key: 'totalGdp', name: 'Forecast ($B)', color: '#6ee7b7' }] : [])
+                ]}
+                xAxisDataKey="period"
+                height={250}
+              />
+            </div>
+          </TabsContent>
+          <TabsContent value="population">
+            <LineChart
+              data={chartData}
+              title="Population Trend"
+              description="Historical and projected population growth"
+              dataKeys={[
+                { key: 'population', name: 'Population (M)', color: '#3b82f6' },
+                ...(forecastYears > 0 ? [{ key: 'population', name: 'Forecast (M)', color: '#93c5fd' }] : [])
+              ]}
+              xAxisDataKey="period"
+              height={350}
+            />
+          </TabsContent>
+          
+          <TabsContent value="gdp" className="space-y-4">
+            <LineChart
+              data={chartData}
+              title="GDP Trend"
+              description="Historical and projected GDP"
+              dataKeys={[
+                { key: 'totalGdp', name: 'Total GDP ($B)', color: '#10b981' },
+                ...(forecastYears > 0 ? [{ key: 'totalGdp', name: 'Forecast ($B)', color: '#6ee7b7' }] : [])
+              ]}
+              xAxisDataKey="period"
+              height={250}
+            />
+            
+            <LineChart
+              data={chartData}
+              title="GDP per Capita"
+              description="Historical and projected GDP per capita"
+              dataKeys={[
+                { key: 'gdpPerCapita', name: 'GDP per Capita ($)', color: '#f59e0b' },
+                ...(forecastYears > 0 ? [{ key: 'gdpPerCapita', name: 'Forecast ($)', color: '#fcd34d' }] : [])
+              ]}
+              xAxisDataKey="period"
+              height={250}
+            />
+          </TabsContent>
+          
+          <TabsContent value="density">
+            <BarChart
+              data={chartData}
+              title="Density Metrics"
+              description="Population density and GDP density per km²"
+              dataKeys={[
+                { key: 'populationDensity', name: 'Population Density (per km²)', color: '#6366f1', type: 'historical' as const },
+                { key: 'gdpDensity', name: 'GDP Density ($M/km²)', color: '#ec4899', type: 'historical' as const },
+                ...(forecastYears > 0 ? [
+                  { key: 'populationDensity', name: 'Pop Density Forecast', color: '#a5b4fc', type: 'forecast' as const },
+                  { key: 'gdpDensity', name: 'GDP Density Forecast', color: '#f9a8d4', type: 'forecast' as const }
+                ] : [])
+              ]}
+              xAxisDataKey="period"
+              height={350}
+              currentTime={targetTime}
+            />
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
