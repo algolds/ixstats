@@ -2,7 +2,7 @@
 import { formatNumber } from "~/lib/format";
 import { IxTime } from "~/lib/ixtime";
 import type { ChartDataPoint } from "~/lib/chart-data-processor";
-import type { ChartType } from "~/context/chart-context";
+import type { ChartType } from "~/app/countries/_components/detail";
 
 export interface FormattedChartDataPoint extends ChartDataPoint {
   formattedPopulation: string;
