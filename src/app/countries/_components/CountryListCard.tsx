@@ -12,10 +12,12 @@ import {
   Scaling,
   Info,
   Flag,
-  LocateFixed // Icon for continent/region
+  LocateFixed, // Icon for continent/region
+  ExternalLink
 } from "lucide-react";
 import { ixnayWiki } from "~/lib/mediawiki-service";
 import { getTierStyle } from "~/lib/theme-utils";
+import { Button } from "~/components/ui/button";
 
 interface CountryData {
   id: string;
@@ -23,8 +25,8 @@ interface CountryData {
   currentPopulation: number;
   currentGdpPerCapita: number;
   currentTotalGdp: number;
-  economicTier: string;
-  populationTier: string;
+  economicTier: string; // Fixed: Updated to string (no longer nullable)
+  populationTier: string; // Fixed: Updated to string (no longer nullable)
   landArea?: number | null;
   populationDensity?: number | null;
   gdpDensity?: number | null;
@@ -118,6 +120,11 @@ export function CountryListCard({ country }: CountryListCardProps) {
   const efficiency = getEconomicEfficiency();
   const tierStyle = getTierStyle(country.economicTier);
 
+  // Get wiki URL for the country
+  const getWikiUrl = () => {
+    return `https://ixwiki.com/${encodeURIComponent(country.name.replace(/ /g, '_'))}`;
+  };
+
   const stats = [
     { icon: Users, label: "Population", value: formatPopulation(country.currentPopulation), color: "var(--color-info)" },
     { icon: TrendingUp, label: "GDP p.c.", value: formatNumber(country.currentGdpPerCapita, true, 2, true), color: "var(--color-success)" },
@@ -159,7 +166,28 @@ export function CountryListCard({ country }: CountryListCardProps) {
               {country.name}
             </h3>
           </div>
-          <ArrowRight className="h-5 w-5 text-[var(--color-text-muted)] group-hover:text-[var(--color-brand-primary)] transition-all group-hover:translate-x-1 flex-shrink-0" />
+          
+          <div className="flex items-center gap-2">
+            {/* Wiki Link Button */}
+            <Button
+              asChild
+              variant="outline"
+              size="icon"
+              className="h-7 w-7 flex-shrink-0"
+              onClick={(e) => e.stopPropagation()} // Prevent Link navigation when clicking wiki button
+            >
+              <a 
+                href={getWikiUrl()} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                title={`View ${country.name} on IxWiki`}
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </Button>
+            
+            <ArrowRight className="h-5 w-5 text-[var(--color-text-muted)] group-hover:text-[var(--color-brand-primary)] transition-all group-hover:translate-x-1 flex-shrink-0" />
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 text-sm mb-4">
