@@ -64,6 +64,12 @@ export class IxStatsCalculator {
       adjustedGdpGrowth: baseData.adjustedGdpGrowth,
       populationGrowthRate: baseData.populationGrowthRate,
       
+      // Add missing required fields
+      projected2040Population: baseData.projected2040Population || 0,
+      projected2040Gdp: baseData.projected2040Gdp || 0,
+      projected2040GdpPerCapita: baseData.projected2040GdpPerCapita || 0,
+      actualGdpGrowth: baseData.actualGdpGrowth || 0,
+      
       // Baseline values (from roster - represents 2028 baseline)
       population: baseData.population,
       gdpPerCapita: baseData.gdpPerCapita,
