@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link"; // Import Link
+import Link from "next/link";
 import { RefreshCw, Users, TrendingUp, MapPin, Scaling, Info, Flag } from "lucide-react";
 import { api } from "~/trpc/react";
 import { formatNumber as formatNumberUtil, cn, getTierStyle } from "~/lib/theme-utils";
@@ -24,16 +24,17 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
-import { Skeleton } from "~/components/ui/skeleton"; // For flag loading
+import { Skeleton } from "~/components/ui/skeleton";
 
 interface CountryCardProps {
   country: CountryStats;
-  onUpdate: () => void;
+  onUpdate: () => void; // Keeping this name for now, but we'll handle the warning
 }
 
 export function CountryCard({ country, onUpdate }: CountryCardProps) {
   const [flagUrl, setFlagUrl] = useState<string | null>(null);
   const [flagLoading, setFlagLoading] = useState<boolean>(true);
+  const [updateError, setUpdateError] = useState<string | null>(null);
 
   // Effect to load the flag URL when the component mounts or country name changes
   useEffect(() => {
@@ -73,14 +74,24 @@ export function CountryCard({ country, onUpdate }: CountryCardProps) {
   }, [country.name]);
 
   const updateMutation = api.countries.updateStats.useMutation({
-    onSuccess: onUpdate,
-    onError: (error) => {
+    onSuccess: () => {
+      setUpdateError(null);
+      onUpdate();
+    },
+    onError: (error: Error) => { // Fixed type safety issue
       console.error(`Failed to update ${country.name}:`, error);
-      // Consider adding user feedback here, e.g., a toast notification
+      setUpdateError(error.message);
     }
   });
 
-  const handleUpdate = () => {
+  const handleUpdate = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent Link navigation
+    e.stopPropagation(); // Stop event bubbling
+    
+    // Clear any previous errors
+    setUpdateError(null);
+    
+    // Call the mutation
     updateMutation.mutate({ countryId: country.id });
   };
 
@@ -133,7 +144,12 @@ export function CountryCard({ country, onUpdate }: CountryCardProps) {
   ];
 
   return (
-    <Card className="flex flex-col h-full group transition-all hover:shadow-xl">
+    <Card className="flex flex-col h-full group transition-all hover:shadow-xl relative">
+      {updateError && (
+        <div className="absolute inset-x-0 top-0 p-2 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 text-xs rounded-t-lg z-10 text-center">
+          Update failed: {updateError}
+        </div>
+      )}
       <Link href={`/countries/${country.id}`} className="flex flex-col h-full">
         <CardHeader className="pb-4">
           <div className="flex justify-between items-start">
@@ -165,13 +181,10 @@ export function CountryCard({ country, onUpdate }: CountryCardProps) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={(e) => {
-                      e.preventDefault(); // Prevent Link navigation
-                      e.stopPropagation(); // Stop event bubbling
-                      handleUpdate();
-                    }}
+                    onClick={handleUpdate}
                     disabled={updateMutation.isPending}
                     className="h-7 w-7 flex-shrink-0" // Ensure button doesn't cause overflow
+                    aria-label={`Update ${country.name} statistics`}
                   >
                     <RefreshCw className={`h-4 w-4 ${updateMutation.isPending ? 'animate-spin' : ''}`} />
                   </Button>
