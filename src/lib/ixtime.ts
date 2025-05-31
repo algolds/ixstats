@@ -1,8 +1,7 @@
 // src/lib/ixtime.ts
-// IxTime system - Fixed epoch data alignment
+// IxTime system - Fixed epoch data alignment with missing functions added
 
 import { env } from "~/env";
-// Changed BotStatusResponse to BotEndpointStatusResponse
 import type { BotTimeResponse, BotEndpointStatusResponse } from "~/types/ixstats";
 
 export class IxTime {
@@ -24,8 +23,6 @@ export class IxTime {
   private static lastKnownBotTime: number | null = null;
   private static lastSyncTime: number | null = null;
   private static botAvailable: boolean = true;
-  static getYearsBetween: any;
-  // Removed: static getGameYear: any; 
 
   /**
    * Get the in-game epoch timestamp (January 1, 2028)
@@ -101,6 +98,14 @@ export class IxTime {
   }
 
   /**
+   * FIXED: Added missing getYearsBetween function as alias for getYearsElapsed
+   * Calculate years between two IxTime timestamps (absolute value)
+   */
+  static getYearsBetween(startIxTime: number | Date, endIxTime: number | Date): number {
+    return Math.abs(this.getYearsElapsed(startIxTime, endIxTime));
+  }
+
+  /**
    * Calculate years elapsed since the in-game epoch (roster baseline)
    * This tells us how many years have passed since January 1, 2028
    */
@@ -125,15 +130,16 @@ export class IxTime {
     const millisecondsPerYear = 365.25 * 24 * 60 * 60 * 1000;
     return timeMs + (years * millisecondsPerYear);
   }
-/**
- * Add months to an IxTime timestamp
- */
-static addMonths(ixTime: number | Date, months: number): number {
-  const timeMs = ixTime instanceof Date ? ixTime.getTime() : ixTime;
-  const date = new Date(timeMs);
-  date.setMonth(date.getMonth() + months);
-  return date.getTime();
-}
+
+  /**
+   * Add months to an IxTime timestamp
+   */
+  static addMonths(ixTime: number | Date, months: number): number {
+    const timeMs = ixTime instanceof Date ? ixTime.getTime() : ixTime;
+    const date = new Date(timeMs);
+    date.setMonth(date.getMonth() + months);
+    return date.getTime();
+  }
 
   /**
    * Create an IxTime timestamp from in-game date components
@@ -382,7 +388,7 @@ static addMonths(ixTime: number | Date, months: number): number {
   }
 
   static async getStatus() {
-    const botStatusData = await this.fetchStatusFromBot(); // Changed variable name
+    const botStatusData = await this.fetchStatusFromBot();
     const currentRealTime = Date.now();
     const currentIxTime = this.getCurrentIxTime();
     
@@ -409,7 +415,7 @@ static addMonths(ixTime: number | Date, months: number): number {
       lastKnownBotTime: this.lastKnownBotTime ? new Date(this.lastKnownBotTime).toISOString() : null,
       
       // Bot status (if available)
-      botStatus: botStatusData ? { // Use changed variable name
+      botStatus: botStatusData ? {
         ixTimeTimestamp: botStatusData.ixTimeTimestamp,
         ixTimeFormatted: botStatusData.ixTimeFormatted,
         multiplier: botStatusData.multiplier,
@@ -418,10 +424,10 @@ static addMonths(ixTime: number | Date, months: number): number {
         hasMultiplierOverride: botStatusData.hasMultiplierOverride,
         pausedAt: botStatusData.pausedAt,
         pauseTimestamp: botStatusData.pauseTimestamp,
-        botReady: botStatusData.botStatus.ready, // Access nested botStatus
-        botUser: botStatusData.botStatus.user, // Access nested botStatus
-        guilds: botStatusData.botStatus.guilds, // Access nested botStatus
-        uptime: botStatusData.botStatus.uptime // Access nested botStatus
+        botReady: botStatusData.botStatus.ready,
+        botUser: botStatusData.botStatus.user,
+        guilds: botStatusData.botStatus.guilds,
+        uptime: botStatusData.botStatus.uptime
       } : null
     };
   }

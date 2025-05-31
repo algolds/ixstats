@@ -131,12 +131,13 @@ export function TimeControl({
     setIsPlaying(!isPlaying);
   };
   
+  // FIXED: Replaced getYearsBetween with getYearsElapsed
   const stepTime = (years: number) => {
-    const currentTargetOffset = IxTime.getYearsBetween(IxTime.getCurrentIxTime(), targetTime);
+    const currentTargetOffset = IxTime.getYearsElapsed(IxTime.getCurrentIxTime(), targetTime);
     const newTargetOffset = currentTargetOffset + years;
     const newClampedTargetOffset = Math.max(maxPastYears, Math.min(maxFutureYears, newTargetOffset));
     // Calculate the new timeOffset based on the actual current IxTime
-    const newTimeOffset = IxTime.getYearsBetween(IxTime.getCurrentIxTime(), IxTime.addYears(IxTime.getCurrentIxTime(), newClampedTargetOffset));
+    const newTimeOffset = IxTime.getYearsElapsed(IxTime.getCurrentIxTime(), IxTime.addYears(IxTime.getCurrentIxTime(), newClampedTargetOffset));
     setTimeOffset(newTimeOffset);
   };
 

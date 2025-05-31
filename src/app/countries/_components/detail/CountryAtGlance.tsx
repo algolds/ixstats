@@ -1,7 +1,7 @@
 // src/app/countries/_components/detail/CountryAtGlance.tsx
 "use client";
 
-import { useMemo, useState } from "react"; // Added useState for internal control if needed, though props are better
+import { useMemo } from "react";
 import {
   LineChart,
   Line,
@@ -15,8 +15,6 @@ import {
   ComposedChart,
   Bar,
   Legend,
-  ReferenceLine,
-  Label
 } from "recharts";
 import {
   BarChart3,
@@ -24,14 +22,13 @@ import {
   Users,
   Globe,
   Activity,
-  Calendar,
   Info,
   DollarSign,
   AlertTriangle,
   Loader2
 } from "lucide-react";
-import { useTheme } from "~/context/theme-context"; // For chart colors
-import { IxTime } from "~/lib/ixtime"; // For time formatting
+import { useTheme } from "~/context/theme-context";
+import { IxTime } from "~/lib/ixtime";
 import {
   Card,
   CardContent,
@@ -41,10 +38,9 @@ import {
 } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
-import { cn } from "~/lib/utils"; // Your utility for class names
+import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 
-// ... (Keep existing interfaces: CountryData, HistoricalDataPoint, ChartPoint, CountryAtGlanceProps) ...
 interface CountryData {
   id: string;
   name: string;
@@ -78,8 +74,6 @@ interface ChartPoint {
   totalGdp?: number;
   populationDensity?: number | null;
   gdpDensity?: number | null;
-  populationGrowth?: number;
-  gdpGrowth?: number;
   isForecast?: boolean;
   historicalPopulation?: number;
   forecastPopulation?: number;
@@ -110,17 +104,26 @@ interface CountryAtGlanceProps {
   onChartViewChange: (view: ChartViewType) => void; 
 }
 
-
-// MODIFIED formatNumber function
+// Fixed formatNumber function with proper edge case handling
 const formatNumber = (
     num: number | null | undefined,
     isCurrency = false,
-    precisionForNonCompactOrSmallNum = 2, // Default precision for non-compact, or for compact numbers < 1K
+    precisionForNonCompactOrSmallNum = 2,
     compact = false
   ): string => {
-    if (num == null || isNaN(num)) {
+    // Handle null/undefined/NaN cases
+    if (num == null || isNaN(num) || !isFinite(num)) {
       if (isCurrency) return compact ? '$0' : '$0.00';
       return '0';
+    }
+
+    // Handle edge cases for very large or very small numbers
+    if (Math.abs(num) > 1e50) {
+      return isCurrency ? '$∞' : '∞';
+    }
+    
+    if (Math.abs(num) < 1e-10 && num !== 0) {
+      return isCurrency ? '$0' : '0';
     }
 
     if (compact) {
@@ -129,43 +132,52 @@ const formatNumber = (
       let suffix = '';
       let fixedPrecision: number;
 
-      if (absNum >= 1e12) { // Trillions (always > 10B)
+      if (absNum >= 1e12) {
         valToShow = num / 1e12;
         suffix = 'T';
-        fixedPrecision = 2; // Consistent 2 decimal places for Trillions
-      } else if (absNum >= 10e9) { // 10 Billion to < 1 Trillion
+        fixedPrecision = 2;
+      } else if (absNum >= 10e9) {
         valToShow = num / 1e9;
         suffix = 'B';
-        fixedPrecision = 2; // 2 decimal places for numbers >= 10 Billion
-      } else if (absNum >= 1e9) { // 1 Billion to < 10 Billion
+        fixedPrecision = 2;
+      } else if (absNum >= 1e9) {
         valToShow = num / 1e9;
         suffix = 'B';
-        fixedPrecision = 1; // 1 decimal place for billions < 10B
-      } else if (absNum >= 1e6) { // Millions
+        fixedPrecision = 1;
+      } else if (absNum >= 1e6) {
         valToShow = num / 1e6;
         suffix = 'M';
-        fixedPrecision = 1; // 1 decimal place for millions
-      } else if (absNum >= 1e3) { // Thousands
+        fixedPrecision = 1;
+      } else if (absNum >= 1e3) {
         valToShow = num / 1e3;
         suffix = 'K';
-        fixedPrecision = 0; // 0 decimal places for thousands
-      } else { // Numbers less than 1000
+        fixedPrecision = 0;
+      } else {
         fixedPrecision = isCurrency ? precisionForNonCompactOrSmallNum : 0;
         return `${isCurrency ? '$' : ''}${num.toLocaleString(undefined, {
           minimumFractionDigits: fixedPrecision,
           maximumFractionDigits: fixedPrecision,
         })}`;
       }
+      
+      if (!isFinite(valToShow)) {
+        return isCurrency ? '$∞' : '∞';
+      }
+      
       return `${isCurrency ? '$' : ''}${valToShow.toFixed(fixedPrecision)}${suffix}`;
     }
 
     // Non-compact formatting
-    return `${isCurrency ? '$' : ''}${num.toLocaleString(undefined, {
-      minimumFractionDigits: (isCurrency && num !== 0) ? precisionForNonCompactOrSmallNum : (num === 0 ? 0 : precisionForNonCompactOrSmallNum),
-      maximumFractionDigits: precisionForNonCompactOrSmallNum,
-    })}`;
+    try {
+      return `${isCurrency ? '$' : ''}${num.toLocaleString(undefined, {
+        minimumFractionDigits: (isCurrency && num !== 0) ? precisionForNonCompactOrSmallNum : (num === 0 ? 0 : precisionForNonCompactOrSmallNum),
+        maximumFractionDigits: precisionForNonCompactOrSmallNum,
+      })}`;
+    } catch (error) {
+      console.warn('Error formatting number:', num, error);
+      return isCurrency ? '$0' : '0';
+    }
 };
-
 
 export function CountryAtGlance({
   country,
@@ -182,22 +194,18 @@ export function CountryAtGlance({
 }: CountryAtGlanceProps) {
   const { theme } = useTheme(); 
 
-  // ... (Keep useMemo for historicalChartData, forecastChartData, combinedChartData) ...
+  // Fixed: Updated historicalChartData to use proper windowing
   const historicalChartData = useMemo(() => {
     if (!historicalData || historicalData.length === 0) return [];
 
-    const targetDateObj = new Date(targetTime);
-    const windowYears = 5;
     let windowStartTimeMs: number;
 
     if (timeResolution === 'quarterly') {
-      const windowStartDate = new Date(targetDateObj);
-      windowStartDate.setFullYear(targetDateObj.getFullYear() - windowYears);
-      windowStartTimeMs = windowStartDate.getTime();
-    } else { // annual
-      const windowStartDate = new Date(targetDateObj);
-      windowStartDate.setFullYear(targetDateObj.getFullYear() - windowYears);
-      windowStartTimeMs = windowStartDate.getTime();
+      // Show last 3 months (0.25 years) for quarterly
+      windowStartTimeMs = IxTime.addYears(targetTime, -0.25);
+    } else {
+      // Show last 12 months (1 year) for annual
+      windowStartTimeMs = IxTime.addYears(targetTime, -1);
     }
 
     const filteredRawData = historicalData
@@ -367,7 +375,8 @@ export function CountryAtGlance({
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const dataPoint = payload[0].payload;
-      const displayLabel = dataPoint.period || IxTime.formatIxTime(label, false);
+      // Fixed: Use IxTime for proper date formatting
+      const displayLabel = dataPoint.period || IxTime.formatIxTime(dataPoint.ixTimeTimestamp || label, false);
       return (
         <div style={tooltipStyle} className="shadow-lg">
           <p className="font-medium mb-2">{displayLabel}</p>
@@ -376,7 +385,7 @@ export function CountryAtGlance({
               <span style={{ color: entry.color }} className="mr-2">{entry.name}:</span>
               <span className="font-semibold">
                 {entry.name.toLowerCase().includes('gdp') && entry.name.toLowerCase().includes('capita')
-                  ? `$${Number(entry.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                  ? formatNumber(Number(entry.value), true, 0, true)
                   : entry.name.toLowerCase().includes('gdp') && (entry.name.toLowerCase().includes('billion') || entry.name.toLowerCase().includes('total'))
                     ? `$${Number(entry.value).toFixed(1)}B`
                     : entry.name.toLowerCase().includes('population') && entry.name.toLowerCase().includes('(m)')
@@ -390,7 +399,6 @@ export function CountryAtGlance({
     }
     return null;
   };
-  // ... (Keep renderChart, isLoading block, chartOptions) ...
 
   const renderChart = () => {
     const xAxisProps = {
@@ -398,12 +406,21 @@ export function CountryAtGlance({
         type: "number" as const,
         domain: ['dataMin', 'dataMax'] as [any, any],
         tickFormatter: (timestamp: number) => {
-          const dateObj = new Date(timestamp);
-          if (timeResolution === 'annual') {
-            return dateObj.getUTCFullYear().toString();
-          } else {
-            const quarter = Math.floor(dateObj.getUTCMonth() / 3) + 1;
-            return `${dateObj.getUTCFullYear().toString().slice(-2)}-Q${quarter}`;
+          // Fixed: Use IxTime for proper date formatting
+          if (!timestamp || isNaN(timestamp)) return '';
+          
+          try {
+            if (timeResolution === 'annual') {
+              return IxTime.getCurrentGameYear(timestamp).toString();
+            } else {
+              const gameYear = IxTime.getCurrentGameYear(timestamp);
+              const dateObj = new Date(timestamp);
+              const quarter = Math.floor(dateObj.getUTCMonth() / 3) + 1;
+              return `${gameYear.toString().slice(-2)}-Q${quarter}`;
+            }
+          } catch (error) {
+            console.warn('Error formatting timestamp:', timestamp, error);
+            return '';
           }
         },
         tick:{ fontSize: 10, fill: textColor },
@@ -423,8 +440,14 @@ export function CountryAtGlance({
         return (
           <ComposedChart {...commonProps}>
             <defs>
-              <linearGradient id="histPopGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.7}/><stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/></linearGradient>
-              <linearGradient id="forePopGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.4}/><stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.05}/></linearGradient>
+              <linearGradient id="histPopGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.7}/>
+                <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
+              </linearGradient>
+              <linearGradient id="forePopGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.4}/>
+                <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.05}/>
+              </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke={axisColor} opacity={0.2} />
             <XAxis {...xAxisProps} />
@@ -441,7 +464,12 @@ export function CountryAtGlance({
       case 'population':
         return (
           <AreaChart {...commonProps}>
-            <defs><linearGradient id="popGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.7}/><stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/></linearGradient></defs>
+            <defs>
+              <linearGradient id="popGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.7}/>
+                <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1}/>
+              </linearGradient>
+            </defs>
             <CartesianGrid strokeDasharray="3 3" stroke={axisColor} opacity={0.2} />
             <XAxis {...xAxisProps} />
             <YAxis tick={{ fontSize: 10, fill: textColor }} stroke={axisColor} label={{ value: 'Population (Millions)', angle: -90, position: 'insideLeft', fill: textColor, fontSize: 11 }}/>
@@ -482,7 +510,8 @@ export function CountryAtGlance({
             <Line yAxisId="right" type="monotone" dataKey="forecastGdpDensity" name="Forecast GDP Density (M$/km²)" stroke="hsl(var(--chart-5))" strokeDasharray="3 3" strokeWidth={2} dot={false}/>
           </ComposedChart>
         );
-      default: return <div className="flex h-full items-center justify-center text-muted-foreground"><Info className="mr-2 h-5 w-5"/>Select a chart view.</div>;
+      default: 
+        return <div className="flex h-full items-center justify-center text-muted-foreground"><Info className="mr-2 h-5 w-5"/>Select a chart view.</div>;
     }
   };
 
@@ -507,7 +536,8 @@ export function CountryAtGlance({
       </Card>
     );
   }
-    const chartOptions = [
+
+  const chartOptions = [
     { key: 'overview', label: 'Overview', icon: Activity },
     { key: 'population', label: 'Population', icon: Users },
     { key: 'gdp', label: 'GDP', icon: DollarSign },
@@ -562,22 +592,28 @@ export function CountryAtGlance({
           )}
         </div>
 
-        {/* MODIFIED Stats Display Section */}
+        {/* Fixed Stats Display Section - Now uses proper compact formatting for GDP/GDPPC */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t">
           {[
             {
               label: "Population",
-              value: formatNumber(country.currentPopulation, false, 0, true), // Use compact, precision 0 for non-currency K or <1K
+              value: formatNumber(country.currentPopulation, false, 0, true),
               growth: country.populationGrowthRate
             },
             {
               label: "GDP p.c.",
-              value: formatNumber(country.currentGdpPerCapita, true, 0, false), // Not compact, precision 0 for whole dollars
+              // Fixed: Added safety check and proper formatting
+              value: isNaN(country.currentGdpPerCapita) || !isFinite(country.currentGdpPerCapita) 
+                ? '$0' 
+                : formatNumber(country.currentGdpPerCapita, true, 0, true),
               growth: country.adjustedGdpGrowth
             },
             {
               label: "Total GDP",
-              value: formatNumber(country.currentTotalGdp, true, 2, true), // Use compact, precision 2 for currency K or <1K
+              // Fixed: Added safety check and proper formatting  
+              value: isNaN(country.currentTotalGdp) || !isFinite(country.currentTotalGdp)
+                ? '$0'
+                : formatNumber(country.currentTotalGdp, true, 1, true),
             },
             {label: "Economic Tier", value: country.economicTier, isBadge: true},
           ].map(stat => (

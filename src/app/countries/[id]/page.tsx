@@ -45,7 +45,7 @@ import {
   type ChartType,
   TenYearForecast,
 } from "../_components/detail";
-import type { ForecastDataPoint as TenYearForecastDataPoint } from "../_components/detail/TenYearForecast"; // Import type
+import type { ForecastDataPoint as TenYearForecastDataPoint } from "../_components/detail/TenYearForecast";
 import { Badge } from "~/components/ui/badge";
 
 // Define a more specific type for the data used in this page
@@ -74,7 +74,7 @@ export interface CountryDetailData {
   economicTier: string;
   populationTier: string;
   localGrowthFactor: number;
-  historicalData?: Array<{ // This structure should match what CountryAtGlance expects for its historical points
+  historicalData?: Array<{
     ixTimeTimestamp: number;
     population: number;
     gdpPerCapita: number;
@@ -90,7 +90,6 @@ export interface CountryDetailData {
     description?: string | null;
     duration?: number | null;
   }>;
-  // This needs to match TenYearForecastDataPoint, especially the 'year' field
   forecastDataPoints?: Array<TenYearForecastDataPoint>;
 }
 
@@ -104,6 +103,8 @@ function CountryDetailPageContent() {
   const [forecastYears, setForecastYears] = useState<number>(0);
   const [selectedChartType, setSelectedChartType] = useState<ChartType>('overview');
   const [infoboxExpanded, setInfoboxExpanded] = useState(false);
+  // FIXED: Add time resolution state
+  const [timeResolution, setTimeResolution] = useState<'quarterly' | 'annual'>('annual');
 
   const { data: countryDataResult, isLoading: isLoadingCountry, error: countryError, refetch } =
     api.countries.getByIdAtTime.useQuery({
@@ -131,7 +132,7 @@ function CountryDetailPageContent() {
     api.countries.getForecast.useQuery({
       id: countryId,
       startTime: currentIxTime,
-      points: forecastYears > 0 ? (forecastYears * (selectedChartType === 'overview' ? 2 : 4)) +1 : 0, // Adjust points based on need
+      points: forecastYears > 0 ? (forecastYears * (selectedChartType === 'overview' ? 2 : 4)) +1 : 0,
       endTime: IxTime.addYears(currentIxTime, forecastYears)
     }, {
       enabled: !!countryId && forecastYears > 0,
@@ -187,9 +188,14 @@ function CountryDetailPageContent() {
       economicTier: stats.economicTier,
       populationTier: stats.populationTier,
       localGrowthFactor: countryDataResult.localGrowthFactor,
-      historicalData: historicalDataRaw?.map(p => ({ ...p, ixTimeTimestamp: p.ixTimeTimestamp })) || [],
-      dmInputs: countryDataResult.dmInputs?.map(d => ({ ...d, ixTimeTimestamp: d.ixTimeTimestamp })) || [],
-      // Map API forecast data to ensure 'year' field is present
+      historicalData: historicalDataRaw?.map(p => ({ 
+        ...p, 
+        ixTimeTimestamp: typeof p.ixTimeTimestamp === 'number' ? p.ixTimeTimestamp : p.ixTimeTimestamp.getTime()
+      })) || [],
+      dmInputs: countryDataResult.dmInputs?.map(d => ({ 
+        ...d, 
+        ixTimeTimestamp: typeof d.ixTimeTimestamp === 'number' ? d.ixTimeTimestamp : d.ixTimeTimestamp.getTime()
+      })) || [],
       forecastDataPoints: forecastDataFromApi?.dataPoints?.map(p => ({
         ...p,
         year: p.gameYear // Add 'year' field for TenYearForecast compatibility
@@ -218,6 +224,11 @@ function CountryDetailPageContent() {
   };
   const handleRefresh = () => {
     void refetch();
+  };
+
+  // FIXED: Implement time resolution change handler
+  const handleTimeResolutionChange = (resolution: 'quarterly' | 'annual') => {
+    setTimeResolution(resolution);
   };
 
   const isTimeTravel = currentIxTime !== IxTime.getCurrentIxTime();
@@ -283,35 +294,51 @@ function CountryDetailPageContent() {
 
         <div className={`grid gap-6 lg:gap-8 transition-all duration-300 ${infoboxExpanded ? 'lg:grid-cols-[1fr_320px]' : 'lg:grid-cols-[1fr_400px]'}`}>
           <div className="space-y-6 lg:space-y-8">
-            <TimeControl onTimeChange={handleTimeChange} onForecastChange={handleForecastChange} currentTime={currentIxTime} gameEpoch={timeContext.gameEpoch} isLoading={isLoadingCountry || isLoadingHistorical || isLoadingForecast}/>
+            <TimeControl 
+              onTimeChange={handleTimeChange} 
+              onForecastChange={handleForecastChange} 
+              currentTime={currentIxTime} 
+              gameEpoch={timeContext.gameEpoch} 
+              isLoading={isLoadingCountry || isLoadingHistorical || isLoadingForecast}
+            />
             
-            {/* CountryAtGlance now receives selectedChartType as chartView */}
+            {/* FIXED: CountryAtGlance now receives proper timeResolution state and handler */}
             <CountryAtGlance
               country={transformedCountry}
               historicalData={transformedCountry.historicalData}
               targetTime={currentIxTime}
               forecastYears={forecastYears}
-              isLoading={isLoadingHistorical || isLoadingCountry} // Pass combined loading state
+              isLoading={isLoadingHistorical || isLoadingCountry}
               isLoadingForecast={isLoadingForecast}
-              chartView={selectedChartType as 'overview' | 'population' | 'gdp' | 'density'} // Cast to simplified type for CountryAtGlance
-              onChartViewChange={handleChartChange as any} // Allow CountryAtGlance to potentially change it (or remove if not needed)
-              onTimeResolutionChange={function (resolution: "quarterly" | "annual"): void {
-                throw new Error("Function not implemented.");
-              } }              // onTimeResolutionChange can be added if CountryAtGlance controls it
+              chartView={selectedChartType as 'overview' | 'population' | 'gdp' | 'density'}
+              timeResolution={timeResolution}
+              onTimeResolutionChange={handleTimeResolutionChange}
+              onChartViewChange={handleChartChange as any}
             />
 
-            <ChartTypeSelector selectedChart={selectedChartType} onChartChange={handleChartChange} availableData={availableDataForCharts}/>
+            <ChartTypeSelector 
+              selectedChart={selectedChartType} 
+              onChartChange={handleChartChange} 
+              availableData={availableDataForCharts}
+            />
             
             {forecastYears > 0 && transformedCountry.forecastDataPoints && (
               <TenYearForecast
-                country={transformedCountry} // Pass the CountryDetailData version
-                forecastData={transformedCountry.forecastDataPoints} // Already mapped with 'year'
+                country={transformedCountry}
+                forecastData={transformedCountry.forecastDataPoints}
                 baseTime={currentIxTime}
                 isLoading={isLoadingForecast}
+                forecastYears={forecastYears}
               />
             )}
           </div>
-          <aside className="lg:sticky lg:top-20 self-start"><CountryInfobox countryName={transformedCountry.name} onToggle={handleInfoboxToggle} initialExpanded={infoboxExpanded}/></aside>
+          <aside className="lg:sticky lg:top-20 self-start">
+            <CountryInfobox 
+              countryName={transformedCountry.name} 
+              onToggle={handleInfoboxToggle} 
+              initialExpanded={infoboxExpanded}
+            />
+          </aside>
         </div>
       </div>
     </div>
