@@ -1,0 +1,90 @@
+/* src/styles/chart-theme.css */
+/* Chart theme colors for light and dark mode */
+
+:root {
+    /* Chart palette - Light theme */
+    --chart-1: 210 100% 55%; /* Population: blue */
+    --chart-2: 262 85% 55%;  /* GDP: purple */
+    --chart-3: 150 80% 40%;  /* Forecast: green */
+    --chart-4: 45 95% 50%;   /* Density: amber/gold */
+    --chart-5: 330 80% 55%;  /* Misc: pink */
+  
+    /* Reference line colors */
+    --chart-ref-line-1: 210 100% 45%; /* Present: blue */
+    --chart-ref-line-2: 45 95% 45%;   /* Epoch: amber */
+    
+    /* Chart tooltip */
+    --chart-tooltip-bg: var(--popover);
+    --chart-tooltip-text: var(--popover-foreground);
+    --chart-tooltip-border: var(--border);
+  }
+  
+  .dark {
+    /* Chart palette - Dark theme */
+    --chart-1: 210 100% 65%; /* Population: blue */
+    --chart-2: 262 85% 65%;  /* GDP: purple */
+    --chart-3: 150 80% 50%;  /* Forecast: green */
+    --chart-4: 45 95% 60%;   /* Density: amber/gold */
+    --chart-5: 330 80% 65%;  /* Misc: pink */
+  
+    /* Reference line colors */
+    --chart-ref-line-1: 210 100% 60%; /* Present: blue */
+    --chart-ref-line-2: 45 95% 60%;   /* Epoch: amber */
+  }
+  
+  /* Epoch-aligned chart styles */
+  .epoch-aligned-chart {
+    /* Chart-specific overrides */
+    font-family: var(--font-sans);
+  }
+  
+  .epoch-aligned-chart .recharts-default-tooltip {
+    background-color: hsl(var(--chart-tooltip-bg)) !important;
+    border-color: hsl(var(--chart-tooltip-border)) !important;
+    color: hsl(var(--chart-tooltip-text)) !important;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 0.75rem;
+  }
+  
+  .epoch-aligned-chart .recharts-tooltip-label {
+    color: hsl(var(--chart-tooltip-text)) !important;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  
+  .epoch-aligned-chart .recharts-tooltip-item-name,
+  .epoch-aligned-chart .recharts-tooltip-item-value {
+    color: hsl(var(--chart-tooltip-text)) !important;
+  }
+  
+  .epoch-aligned-chart .recharts-tooltip-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    padding: 0.125rem 0;
+  }
+  
+  .epoch-aligned-chart .recharts-legend-item-text {
+    color: hsl(var(--foreground)) !important;
+  }
+  
+  .epoch-aligned-chart .recharts-cartesian-axis-tick-value {
+    fill: hsl(var(--muted-foreground)) !important;
+  }
+  
+  .epoch-aligned-chart .recharts-text {
+    fill: hsl(var(--foreground)) !important;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 640px) {
+    .epoch-aligned-chart .recharts-legend-wrapper {
+      font-size: 0.7rem !important;
+    }
+    
+    .epoch-aligned-chart .recharts-cartesian-axis-tick-value {
+      font-size: 0.7rem !important;
+    }
+  }
