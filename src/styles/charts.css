@@ -1,0 +1,138 @@
+/* src/styles/charts.css */
+/* Chart color variables and styling for IxStats charts */
+
+:root {
+    /* Chart color palette - consistent with shadcn/ui */
+    --chart-1: 220 70% 50%; /* Blue */
+    --chart-2: 160 60% 45%; /* Green */
+    --chart-3: 30 80% 55%; /* Orange */
+    --chart-4: 280 65% 60%; /* Purple */
+    --chart-5: 340 75% 55%; /* Pink */
+    --chart-6: 200 70% 50%; /* Cyan */
+    
+    /* Chart background and grid colors */
+    --chart-background: var(--background);
+    --chart-foreground: var(--foreground);
+    --chart-muted: var(--muted);
+    --chart-muted-foreground: var(--muted-foreground);
+    --chart-border: var(--border);
+    
+    /* Chart-specific overrides */
+    --chart-grid-opacity: 0.3;
+    --chart-tooltip-background: var(--popover);
+    --chart-tooltip-foreground: var(--popover-foreground);
+    --chart-tooltip-border: var(--border);
+  }
+  
+  /* Dark mode adjustments */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --chart-1: 220 70% 60%;
+      --chart-2: 160 60% 55%;
+      --chart-3: 30 80% 65%;
+      --chart-4: 280 65% 70%;
+      --chart-5: 340 75% 65%;
+      --chart-6: 200 70% 60%;
+      
+      --chart-grid-opacity: 0.2;
+    }
+  }
+  
+  /* Chart container styling */
+  .chart-container {
+    @apply relative w-full;
+  }
+  
+  .chart-container .recharts-surface {
+    @apply rounded-md;
+  }
+  
+  /* Tooltip styling enhancements */
+  .recharts-tooltip-wrapper {
+    @apply z-50;
+  }
+  
+  .recharts-tooltip-cursor {
+    @apply opacity-20;
+  }
+  
+  /* Responsive chart adjustments */
+  @media (max-width: 640px) {
+    .recharts-cartesian-axis-tick-value {
+      font-size: 10px !important;
+    }
+    
+    .recharts-legend-wrapper {
+      font-size: 12px !important;
+    }
+  }
+  
+  /* Chart animation enhancements */
+  .recharts-line-curve,
+  .recharts-area-curve {
+    transition: all 0.3s ease-in-out;
+  }
+  
+  .recharts-bar-rectangle {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  /* Custom chart loading state */
+  .chart-loading {
+    @apply flex items-center justify-center h-full min-h-[300px] bg-muted/10 rounded-md;
+  }
+  
+  .chart-loading-spinner {
+    @apply animate-spin h-8 w-8 text-muted-foreground;
+  }
+  
+  /* Chart error state */
+  .chart-error {
+    @apply flex items-center justify-center h-full min-h-[300px] bg-destructive/10 rounded-md text-destructive;
+  }
+  
+  /* Custom legend styling */
+  .recharts-legend-wrapper {
+    @apply text-sm;
+  }
+  
+  .recharts-legend-item {
+    @apply mr-4;
+  }
+  
+  /* Grid line styling */
+  .recharts-cartesian-grid-horizontal line,
+  .recharts-cartesian-grid-vertical line {
+    @apply stroke-border;
+    opacity: var(--chart-grid-opacity);
+  }
+  
+  /* Axis styling */
+  .recharts-cartesian-axis-line {
+    @apply stroke-border;
+  }
+  
+  .recharts-cartesian-axis-tick-line {
+    @apply stroke-border;
+  }
+  
+  .recharts-cartesian-axis-tick-value {
+    @apply fill-muted-foreground text-xs;
+  }
+  
+  /* Reference line styling */
+  .recharts-reference-line-line {
+    @apply stroke-muted-foreground;
+    stroke-dasharray: 5 5;
+    opacity: 0.6;
+  }
+  
+  /* Responsive legend positioning */
+  @media (max-width: 768px) {
+    .recharts-legend-wrapper {
+      position: relative !important;
+      width: 100% !important;
+      height: auto !important;
+      margin-top: 1rem !important;
+    }
+  }
