@@ -11,13 +11,9 @@ import {
   SelectValue 
 } from "~/components/ui/select";
 import { Label } from "~/components/ui/label";
-import { formatNumber } from "~/lib/format";
 import { IxTime } from "~/lib/ixtime";
-import { IxChartDataProcessor } from "~/lib/chart-data-processor-ixtime";
-import { ChartDataFormatter } from "~/lib/chart-data-formatter";
-import { LineChart } from "../charts/line-chart";
-import { BarChart } from "../charts/bar-chart";
 import type { CountryDetailData } from "~/app/countries/[id]/page";
+import { formatNumber } from "~/lib/theme-utils";
 
 interface CountryAtGlanceProps {
   country: CountryDetailData;
@@ -65,7 +61,7 @@ export function CountryAtGlance({
     if (!historicalData || historicalData.length === 0) return;
     
     // Process historical data
-    const historicalChartData = IxChartDataProcessor.processHistoricalData(country, {
+    const historicalChartData = historicalData(country, {
       normalizePopulation: normalizeValues,
       normalizeTotalGdp: normalizeValues,
       normalizeGdpDensity: normalizeValues,
@@ -76,27 +72,28 @@ export function CountryAtGlance({
     
     // Process forecast data if available
     let combinedData = historicalChartData;
-    
     if (forecastYears > 0 && country.forecastDataPoints && country.forecastDataPoints.length > 0) {
-      const forecastChartData = IxChartDataProcessor.processForecastData(country, {
+      const forecastChartData = processForecastData(country, {
         normalizePopulation: normalizeValues,
         normalizeTotalGdp: normalizeValues,
         normalizeGdpDensity: normalizeValues,
         timeResolution
       });
       
-      combinedData = IxChartDataProcessor.combineHistoricalAndForecast(
+      combinedData = combineHistoricalAndForecast(
         historicalChartData,
         forecastChartData
       );
     }
     
     // Format the data for display
-    const formattedData = ChartDataFormatter.formatChartData(combinedData, {
-      useCompactNumbers: true,
-      currencySymbol: '$',
-      labelFormat: 'short'
-    });
+    const formattedData = combinedData.map(dataPoint => ({
+      ...dataPoint,
+      population: formatNumber(dataPoint.population, false, 2),
+      gdpPerCapita: formatNumber(dataPoint.gdpPerCapita, true, 0),
+      totalGdp: formatNumber(dataPoint.totalGdp, true, 2),
+      gdpDensity: dataPoint.gdpDensity ? formatNumber(dataPoint.gdpDensity, true, 1) : null
+    }));
     
     setChartData(formattedData);
   }, [country, historicalData, targetTime, forecastYears, timeResolution, normalizeValues]);
@@ -262,3 +259,11 @@ export function CountryAtGlance({
     </Card>
   );
 }
+function processForecastData(country: CountryDetailData, arg1: { normalizePopulation: boolean; normalizeTotalGdp: boolean; normalizeGdpDensity: boolean; timeResolution: "quarterly" | "annual"; }) {
+  throw new Error("Function not implemented.");
+}
+
+function combineHistoricalAndForecast(historicalChartData: any, forecastChartData: void): any {
+  throw new Error("Function not implemented.");
+}
+

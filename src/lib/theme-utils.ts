@@ -88,13 +88,11 @@ export function getCSSVar(property: string): string {
    * Format number with theme-aware styling
    */
   export function formatNumber(
-    num: number | null | undefined, 
-    options: {
-      isCurrency?: boolean;
-      precision?: number;
-      compact?: boolean;
-    } = {}
-  ): string {
+num: number | null | undefined, p0: boolean, p1: number, options: {
+  isCurrency?: boolean;
+  precision?: number;
+  compact?: boolean;
+} = {}  ): string {
     const { isCurrency = false, precision = 2, compact = true } = options;
     
     if (num == null) return isCurrency ? '$0.00' : '0';
