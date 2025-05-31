@@ -28,8 +28,9 @@ interface CountryData {
   landArea?: number | null;
   populationDensity?: number | null;
   gdpDensity?: number | null;
-  continent?: string | null; // Added
-  region?: string | null; // Added
+  continent?: string | null;
+  region?: string | null;
+  lastCalculated: Date; // Added to match usage in CountriesGrid
 }
 
 interface CountryListCardProps {
@@ -72,12 +73,15 @@ export function CountryListCard({ country }: CountryListCardProps) {
     return () => { isMounted = false; };
   }, [country.name]);
 
-  const formatNumber = (num: number | null | undefined, isCurrency = true, precision = 2): string => {
+  // Helper function to format numbers (could be moved to a utils file)
+  const formatNumber = (num: number | null | undefined, isCurrency = true, precision = 2, compact = true): string => {
     if (num == null || isNaN(num)) return isCurrency ? '$0.00' : '0';
-    if (Math.abs(num) >= 1e12) return `${isCurrency ? '$' : ''}${(num / 1e12).toFixed(precision)}T`;
-    if (Math.abs(num) >= 1e9) return `${isCurrency ? '$' : ''}${(num / 1e9).toFixed(precision)}B`;
-    if (Math.abs(num) >= 1e6) return `${isCurrency ? '$' : ''}${(num / 1e6).toFixed(precision)}M`;
-    if (Math.abs(num) >= 1e3 && compact) return `${isCurrency ? '$' : ''}${(num / 1e3).toFixed(precision)}K`;
+    if (compact) {
+      if (Math.abs(num) >= 1e12) return `${isCurrency ? '$' : ''}${(num / 1e12).toFixed(precision)}T`;
+      if (Math.abs(num) >= 1e9) return `${isCurrency ? '$' : ''}${(num / 1e9).toFixed(precision)}B`;
+      if (Math.abs(num) >= 1e6) return `${isCurrency ? '$' : ''}${(num / 1e6).toFixed(precision)}M`;
+      if (Math.abs(num) >= 1e3) return `${isCurrency ? '$' : ''}${(num / 1e3).toFixed(precision)}K`;
+    }
     return `${isCurrency ? '$' : ''}${num.toLocaleString(undefined, {minimumFractionDigits: isCurrency ? precision : 0, maximumFractionDigits: precision })}`;
   };
   
@@ -89,8 +93,6 @@ export function CountryListCard({ country }: CountryListCardProps) {
     return pop.toLocaleString();
   };
   
-  const compact = true; // For stat values, use compact formatting
-
   const getEconomicEfficiency = (): { rating: string; color: string; description: string } => {
     if (!country.landArea || !country.populationDensity || !country.gdpDensity || country.landArea === 0 || country.populationDensity === 0) {
       return {
@@ -101,6 +103,9 @@ export function CountryListCard({ country }: CountryListCardProps) {
     }
     const economicDensity = country.currentTotalGdp / country.landArea;
     const populationEfficiency = country.currentGdpPerCapita / country.populationDensity;
+    // Note: The efficiencyScore calculation might need domain-specific scaling factors
+    // to produce a balanced distribution of ratings.
+    // The current constants (1000000, 100) are kept from the original.
     const efficiencyScore = (economicDensity / 1000000) + (populationEfficiency / 100);
 
     if (efficiencyScore > 100) return { rating: 'Excellent', color: 'var(--color-success)', description: 'Exceptional economic output per unit of land and population density' };
@@ -115,8 +120,8 @@ export function CountryListCard({ country }: CountryListCardProps) {
 
   const stats = [
     { icon: Users, label: "Population", value: formatPopulation(country.currentPopulation), color: "var(--color-info)" },
-    { icon: TrendingUp, label: "GDP p.c.", value: formatNumber(country.currentGdpPerCapita), color: "var(--color-success)" },
-    { icon: Globe, label: "Total GDP", value: formatNumber(country.currentTotalGdp, true, 1), color: "var(--color-chart-1)" },
+    { icon: TrendingUp, label: "GDP p.c.", value: formatNumber(country.currentGdpPerCapita, true, 2, true), color: "var(--color-success)" },
+    { icon: Globe, label: "Total GDP", value: formatNumber(country.currentTotalGdp, true, 1, true), color: "var(--color-chart-1)" },
     { icon: Scaling, label: "Density", value: country.populationDensity ? `${country.populationDensity.toFixed(1)}/km²` : 'N/A', color: "var(--color-warning)" }
   ];
 
@@ -150,7 +155,7 @@ export function CountryListCard({ country }: CountryListCardProps) {
                 </div>
               )}
             </div>
-            <h3 className="text-xl font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-brand-primary)] transition-colors truncate">
+            <h3 className="text-xl font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-brand-primary)] transition-colors truncate" title={country.name}>
               {country.name}
             </h3>
           </div>
@@ -188,7 +193,8 @@ export function CountryListCard({ country }: CountryListCardProps) {
         {country.landArea && (
           <div className="flex items-center justify-center text-xs text-[var(--color-text-muted)] mb-4">
             <MapPin className="h-3 w-3 mr-1" />
-            <span>Land Area: {formatNumber(country.landArea, false, 0)} km²</span>
+            {/* Using formatNumber for landArea for consistency, with compact=false and no currency */}
+            <span>Land Area: {formatNumber(country.landArea, false, 0, false)} km²</span>
           </div>
         )}
       </div>
@@ -203,7 +209,7 @@ export function CountryListCard({ country }: CountryListCardProps) {
               className="px-2 py-1 rounded-full text-xs font-medium border"
               style={{
                 color: efficiency.color,
-                backgroundColor: `${efficiency.color}20`,
+                backgroundColor: `${efficiency.color}20`, // Assuming var colors are hex for opacity
                 borderColor: `${efficiency.color}40`
               }}
             >
@@ -216,7 +222,8 @@ export function CountryListCard({ country }: CountryListCardProps) {
                   <span className="font-semibold">Economic Efficiency</span>
                 </div>
                 <p>{efficiency.description}</p>
-                <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-[var(--color-surface-blur)]"></div>
+                {/* Tooltip arrow styling might need CSS if var(--color-surface-blur) is not a simple color */}
+                <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent" style={{borderTopColor: 'var(--color-surface-blur)'}}></div>
               </div>
             </div>
           </div>

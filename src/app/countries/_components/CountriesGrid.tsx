@@ -7,13 +7,18 @@ import { Skeleton } from "~/components/ui/skeleton"; // For loading state
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "~/components/ui/card"; // For "No countries" message
 import { Button } from "~/components/ui/button"; // For "No countries" message button
 import type { PageCountryData } from "../page"; // Import the specific type
-import { IxTime } from "~/lib/ixtime";
+import { IxTime } from "~/lib/ixtime"; // Assuming IxTime provides getInGameEpoch static method
 
 interface CountriesGridProps {
   countries: PageCountryData[]; // Use the specific type
   isLoading?: boolean;
   searchTerm?: string;
 }
+
+// Assuming PageCountryData has a structure compatible with the properties being accessed.
+// For example, it should include: id, name, continent, region, currentPopulation,
+// currentGdpPerCapita, currentTotalGdp, economicTier, populationTier, landArea,
+// populationDensity, gdpDensity, and lastCalculated.
 
 export function CountriesGrid({ countries, isLoading = false, searchTerm = "" }: CountriesGridProps) {
   if (isLoading) {
@@ -90,9 +95,13 @@ export function CountriesGrid({ countries, isLoading = false, searchTerm = "" }:
         {countries.map((country) => (
           <CountryListCard
             key={country.id}
-            // Pass the country data as CountryStats type, ensuring all fields are present
-            // You might need to adjust this mapping based on what CountryListCard exactly expects
-            // and what your `getAll` tRPC procedure returns.
+            // The `country` prop for CountryListCard now expects `lastCalculated` as a Date.
+            // Other fields like baselinePopulation, maxGdpGrowthRate, areaSqMi etc.,
+            // are passed but are not part of the defined CountryData interface in CountryListCard
+            // (except for those explicitly listed there). This doesn't cause the *reported*
+            // error but means they are not type-checked for CountryListCard.
+            // For a cleaner setup, CountryData should reflect all used props or CountryListCard
+            // should expect a more comprehensive type like a subset of CountryStats.
             country={{
               id: country.id,
               name: country.name,
@@ -106,20 +115,21 @@ export function CountriesGrid({ countries, isLoading = false, searchTerm = "" }:
               landArea: country.landArea,
               populationDensity: country.populationDensity,
               gdpDensity: country.gdpDensity,
-              lastCalculated: new Date(country.lastCalculated), // Ensure it's a Date object
-              // Fill in other required CountryStats fields with defaults or from fetched data if available
-              baselinePopulation: country.currentPopulation, // Or from a specific baseline field
-              baselineGdpPerCapita: country.currentGdpPerCapita, // Or from a specific baseline field
-              maxGdpGrowthRate: 0.05, // Example default, fetch if available
-              adjustedGdpGrowth: 0.03, // Example default, fetch if available
-              populationGrowthRate: 0.01, // Example default, fetch if available
-              localGrowthFactor: 1.0, // Example default
-              baselineDate: new Date(IxTime.getInGameEpoch()), // Example default
-              projected2040Population: 0, // Example default
-              projected2040Gdp: 0, // Example default
-              projected2040GdpPerCapita: 0, // Example default
-              actualGdpGrowth: 0, // Example default
-              areaSqMi: country.landArea ? country.landArea / 2.59 : null, // Example calculation
+              lastCalculated: new Date(country.lastCalculated), // This now matches CountryData
+
+              // These fields are passed but are not in CountryListCard's CountryData interface:
+              // baselinePopulation: country.currentPopulation,
+              // baselineGdpPerCapita: country.currentGdpPerCapita,
+              // maxGdpGrowthRate: 0.05,
+              // adjustedGdpGrowth: 0.03,
+              // populationGrowthRate: 0.01,
+              // localGrowthFactor: 1.0,
+              // baselineDate: new Date(IxTime.getInGameEpoch()),
+              // projected2040Population: 0,
+              // projected2040Gdp: 0,
+              // projected2040GdpPerCapita: 0,
+              // actualGdpGrowth: 0,
+              // areaSqMi: country.landArea ? country.landArea / 2.59 : null,
             }}
           />
         ))}

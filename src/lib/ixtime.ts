@@ -24,6 +24,7 @@ export class IxTime {
   private static lastKnownBotTime: number | null = null;
   private static lastSyncTime: number | null = null;
   private static botAvailable: boolean = true;
+  static getYearsBetween: any;
   // Removed: static getGameYear: any; 
 
   /**
