@@ -1,5 +1,5 @@
 // prisma/schema.prisma
-// Fixed schema to match migrations and remove inconsistencies
+// Complete schema with all required fields
 
 generator client {
   provider = "prisma-client-js"
@@ -51,6 +51,12 @@ model Country {
   // Classification
   economicTier     String
   populationTier   String
+
+  // Projection fields (missing in original schema)
+  projected2040Population   Float @default(0)
+  projected2040Gdp          Float @default(0)
+  projected2040GdpPerCapita Float @default(0)
+  actualGdpGrowth           Float @default(0)
 
   // System Fields
   localGrowthFactor Float   @default(1.0)
