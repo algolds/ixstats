@@ -1,276 +1,319 @@
 // src/app/countries/page.tsx
 "use client";
 
-import { useState, useMemo, useEffect, Suspense } from "react";
-import { api } from "~/trpc/react";
-import { useGlobalFlagPreloader } from "~/hooks/useFlagPreloader";
+import { useState, useMemo } from "react";
+import Link from "next/link";
 import {
-  CountriesPageHeader,
-  CountriesSearch,
-  CountriesGrid,
-  type SortField,
-  type SortDirection,
-  type TierFilter
-} from "./_components"; // Assuming index.ts exports these
-import { Skeleton } from "~/components/ui/skeleton"; // For loading state
-import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert"; // For error state
-import { AlertTriangle, Globe } from "lucide-react";
+  Search,
+  Filter,
+  Globe,
+  Users,
+  DollarSign,
+  TrendingUp,
+  ChevronRight,
+} from "lucide-react";
+import { api } from "~/trpc/react";
+import { IxTime } from "~/lib/ixtime";
+
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
-// Define a more specific type for the country data used in this page
-// This should align with what api.countries.getAll.useQuery() returns
-// and what CountriesGrid/CountryListCard expect.
-export interface PageCountryData {
-  id: string;
-  name: string;
-  continent: string | null;
-  region: string | null;
-  currentPopulation: number;
-  currentGdpPerCapita: number;
-  currentTotalGdp: number;
-  economicTier: string; // Should match EconomicTier enum values
-  populationTier: string; // Should match PopulationTier enum values
-  landArea?: number | null;
-  populationDensity?: number | null;
-  gdpDensity?: number | null;
-  lastCalculated: number; // Assuming timestamp
-}
+import { formatPopulation, formatCurrency } from "~/lib/chart-utils";
 
-
-function CountriesPageContent() {
-  // Search and filter state
+export default function CountriesPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [tierFilter, setTierFilter] = useState<TierFilter>("all");
-  const [continentFilter, setContinentFilter] = useState<string>("all");
-  const [regionFilter, setRegionFilter] = useState<string>("all");
-  const [sortField, setSortField] = useState<SortField>("name");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [selectedContinent, setSelectedContinent] = useState<string>("all");
+  const [selectedTier, setSelectedTier] = useState<string>("all");
 
-  // Data fetching
-  const { data: countriesData, isLoading, error } = api.countries.getAll.useQuery(undefined, {
-    refetchOnWindowFocus: false, // Prevent excessive refetching
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-  });
+  // Build query input, ensuring it's never undefined
+  const queryInput = useMemo(() => ({
+    search: searchTerm || undefined,
+    continent: selectedContinent === "all" ? undefined : selectedContinent,
+    economicTier: selectedTier === "all" ? undefined : selectedTier,
+    limit: 50,
+    offset: 0,
+  }), [searchTerm, selectedContinent, selectedTier]);
 
-  // Flag preloader
-  const { preloadAllFlags, currentStats: flagPreloaderStats } = useGlobalFlagPreloader();
-
-  // Transform fetched data to PageCountryData[]
-  const countries: PageCountryData[] = useMemo(() => {
-    return countriesData?.map(c => ({
-      id: c.id,
-      name: c.name,
-      continent: c.continent ?? null,
-      region: c.region ?? null,
-      currentPopulation: c.currentPopulation,
-      currentGdpPerCapita: c.currentGdpPerCapita,
-      currentTotalGdp: c.currentTotalGdp,
-      economicTier: c.economicTier,
-      populationTier: c.populationTier,
-      landArea: c.landArea ?? null,
-      populationDensity: c.populationDensity ?? null,
-      gdpDensity: c.gdpDensity ?? null,
-      lastCalculated: c.lastCalculated, // Assuming this is a number (timestamp)
-    })) || [];
-  }, [countriesData]);
-
-  // Preload flags when countries data is loaded
-  useEffect(() => {
-    if (countries && countries.length > 0) {
-      const countryNames = countries.map(c => c.name);
-      void preloadAllFlags(countryNames);
+  const { data: countriesResult, isLoading, error } = api.countries.getAll.useQuery(
+    queryInput,
+    {
+      refetchOnWindowFocus: false,
+      staleTime: 30 * 1000,
     }
-  }, [countries, preloadAllFlags]);
+  );
 
-  // Logging for development
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development' && countries && countries.length > 0) {
-      console.log('[CountriesPage] Flag cache stats (updated):', flagPreloaderStats);
-    }
-  }, [flagPreloaderStats, countries]);
+  const countries = countriesResult?.countries || [];
+  const processedCountries = countries.map((country) => ({
+    id: country.id,
+    name: country.name,
+    continent: country.continent,
+    region: country.region,
+    economicTier: country.economicTier,
+    populationTier: country.populationTier,
+    currentPopulation: country.currentPopulation,
+    currentGdpPerCapita: country.currentGdpPerCapita,
+    currentTotalGdp: country.currentTotalGdp,
+    populationGrowthRate: country.populationGrowthRate,
+    adjustedGdpGrowth: country.adjustedGdpGrowth,
+  }));
 
+  const currentIxTime = IxTime.getCurrentIxTime();
+  const currentGameYear = IxTime.getCurrentGameYear(currentIxTime);
 
-  // Extract available continents and regions
-  const availableContinents = useMemo(() => {
-    if (!countries) return [];
-    const continents = new Set(countries.map(c => c.continent).filter(Boolean) as string[]);
-    return Array.from(continents).sort();
+  // Get unique continents and tiers for filters
+  const continents = useMemo(() => {
+    const unique = new Set(countries.map(c => c.continent).filter(Boolean));
+    return Array.from(unique);
   }, [countries]);
 
-  const availableRegions = useMemo(() => {
-    if (!countries) return [];
-    let regionsSource = countries;
-    if (continentFilter && continentFilter !== "all") {
-      regionsSource = countries.filter(c => c.continent === continentFilter);
-    }
-    const regions = new Set(regionsSource.map(c => c.region).filter(Boolean) as string[]);
-    return Array.from(regions).sort();
-  }, [countries, continentFilter]);
-
-
-  // Filter and sort countries
-  const filteredAndSortedCountries = useMemo(() => {
-    if (!countries) return [];
-    let filtered = [...countries]; // Create a new array to avoid mutating the original
-
-    if (searchTerm) {
-      filtered = filtered.filter((country) =>
-        country.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    if (tierFilter !== "all") {
-      filtered = filtered.filter((country) => country.economicTier === tierFilter);
-    }
-    if (continentFilter !== "all") {
-      filtered = filtered.filter((country) => country.continent === continentFilter);
-    }
-    if (regionFilter !== "all") {
-      filtered = filtered.filter((country) => country.region === regionFilter);
-    }
-
-    filtered.sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
-
-      switch (sortField) {
-        case 'name': aValue = a.name.toLowerCase(); bValue = b.name.toLowerCase(); break;
-        case 'population': aValue = a.currentPopulation; bValue = b.currentPopulation; break;
-        case 'gdpPerCapita': aValue = a.currentGdpPerCapita; bValue = b.currentGdpPerCapita; break;
-        case 'totalGdp': aValue = a.currentTotalGdp; bValue = b.currentTotalGdp; break;
-        case 'economicTier':
-          const tierOrder = { 'Advanced': 4, 'Developed': 3, 'Emerging': 2, 'Developing': 1, 'Unknown': 0 };
-          aValue = tierOrder[a.economicTier as keyof typeof tierOrder] || 0;
-          bValue = tierOrder[b.economicTier as keyof typeof tierOrder] || 0;
-          break;
-        case 'continent': aValue = a.continent || ""; bValue = b.continent || ""; break;
-        case 'region': aValue = a.region || ""; bValue = b.region || ""; break;
-        case 'landArea': aValue = a.landArea || 0; bValue = b.landArea || 0; break;
-        case 'populationDensity': aValue = a.populationDensity || 0; bValue = b.populationDensity || 0; break;
-        default: aValue = a.name.toLowerCase(); bValue = b.name.toLowerCase();
-      }
-
-      if (aValue == null && bValue == null) return 0;
-      if (aValue == null) return sortDirection === 'asc' ? 1 : -1; // Nulls last for asc, first for desc
-      if (bValue == null) return sortDirection === 'asc' ? -1 : 1; // Nulls last for asc, first for desc
-
-
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
-        const comparison = aValue.localeCompare(bValue);
-        return sortDirection === 'asc' ? comparison : -comparison;
-      } else {
-        const comparison = (aValue as number) - (bValue as number);
-        return sortDirection === 'asc' ? comparison : -comparison;
-      }
-    });
-    return filtered;
-  }, [countries, searchTerm, tierFilter, continentFilter, regionFilter, sortField, sortDirection]);
-
-  const handleSortChange = (field: SortField, direction: SortDirection) => {
-    setSortField(field);
-    setSortDirection(direction);
-  };
-
-  const handleContinentFilterChange = (continent: string) => {
-    setContinentFilter(continent);
-    setRegionFilter("all");
-  };
-
-  const handleRegionFilterChange = (region: string) => {
-    setRegionFilter(region);
-  };
+  const economicTiers = useMemo(() => {
+    const unique = new Set(countries.map(c => c.economicTier).filter(Boolean));
+    return Array.from(unique);
+  }, [countries]);
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Alert variant="destructive" className="max-w-lg mx-auto">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error Loading Countries</AlertTitle>
-          <AlertDescription>
-            {error.message || "An unexpected error occurred."}
-            <Button onClick={() => window.location.reload()} variant="outline" size="sm" className="mt-2">
-              Try Again
-            </Button>
-          </AlertDescription>
-        </Alert>
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600">Error Loading Countries</h1>
+          <p className="text-muted-foreground mt-2">{error.message}</p>
+        </div>
       </div>
     );
   }
-  
-  // Skeleton Loading for initial page load
-  if (isLoading && !countries?.length) {
-    return (
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <CountriesPageHeader totalCountries={0} isLoading={true} />
-            <div className="mb-8">
-                <Skeleton className="h-12 w-full mb-4" /> {/* Search bar skeleton */}
-                <div className="flex justify-between items-center">
-                    <Skeleton className="h-6 w-1/4" /> {/* Results count skeleton */}
-                </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {Array.from({ length: 8 }).map((_, i) => (
-                    <Skeleton key={i} className="h-[280px] w-full rounded-lg" />
-                ))}
-            </div>
-        </div>
-    );
-  }
-
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <CountriesPageHeader
-          totalCountries={countries?.length || 0}
-          isLoading={isLoading && !countries?.length} // Pass loading state for header elements
-        />
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+            Countries Dashboard
+          </h1>
+          <p className="text-muted-foreground">
+            Explore nations in the IxNay world - Game Year {currentGameYear}
+          </p>
+        </div>
 
-        <CountriesSearch
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          tierFilter={tierFilter}
-          onTierFilterChange={setTierFilter}
-          continentFilter={continentFilter}
-          onContinentFilterChange={handleContinentFilterChange}
-          regionFilter={regionFilter}
-          onRegionFilterChange={handleRegionFilterChange}
-          availableContinents={availableContinents}
-          availableRegions={availableRegions}
-          sortField={sortField}
-          sortDirection={sortDirection}
-          onSortChange={handleSortChange}
-          totalResults={countries?.length || 0}
-          filteredResults={filteredAndSortedCountries?.length || 0}
-        />
+        {/* Filters */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Filter className="h-5 w-5 mr-2" />
+              Filters
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Search</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search countries..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium mb-2 block">Continent</label>
+                <Select value={selectedContinent} onValueChange={setSelectedContinent}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All continents" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All continents</SelectItem>
+                    {continents.map(continent => (
+                      <SelectItem key={continent} value={continent ?? ''}>
+                        {continent ?? ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-        <CountriesGrid
-          countries={filteredAndSortedCountries || []}
-          isLoading={isLoading && !countries?.length} // Pass loading state for grid items
-          searchTerm={searchTerm}
-        />
+              <div>
+                <label className="text-sm font-medium mb-2 block">Economic Tier</label>
+                <Select value={selectedTier} onValueChange={setSelectedTier}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All tiers" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All tiers</SelectItem>
+                    {economicTiers.map(tier => (
+                      <SelectItem key={tier} value={tier}>
+                        {tier}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-        {process.env.NODE_ENV === 'development' && countries && (
-          <div className="mt-8 p-4 bg-card border rounded-lg">
-            <h4 className="text-sm font-semibold text-card-foreground mb-2">
-              Flag Cache Stats (Development)
-            </h4>
-            <div className="text-xs text-muted-foreground space-x-4">
-              <span>Total: {flagPreloaderStats.flags}</span>
-              <span>Preloaded: {flagPreloaderStats.preloadedFlags}</span>
-              <span>Failed: {flagPreloaderStats.failedFlags}</span>
-              <span>Efficiency: {flagPreloaderStats.cacheEfficiency}%</span>
+              <div className="flex items-end">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setSelectedContinent("all");
+                    setSelectedTier("all");
+                  }}
+                  className="w-full"
+                >
+                  Clear Filters
+                </Button>
+              </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Countries Grid */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardContent className="p-6">
+                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
+                  <div className="space-y-3">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {processedCountries.map((country) => (
+                <Link key={country.id} href={`/countries/${country.id}`}>
+                  <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <h3 className="text-lg font-semibold text-foreground mb-1">
+                            {country.name}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {country.region && country.continent 
+                              ? `${country.region}, ${country.continent}`
+                              : country.continent || 'Unknown Region'
+                            }
+                          </p>
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <Users className="h-4 w-4 text-blue-600 mr-2" />
+                            <span className="text-sm">Population</span>
+                          </div>
+                          <span className="text-sm font-medium">
+                            {formatPopulation(country.currentPopulation)}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <DollarSign className="h-4 w-4 text-green-600 mr-2" />
+                            <span className="text-sm">GDP per Capita</span>
+                          </div>
+                          <span className="text-sm font-medium">
+                            {formatCurrency(country.currentGdpPerCapita)}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <TrendingUp className="h-4 w-4 text-purple-600 mr-2" />
+                            <span className="text-sm">Total GDP</span>
+                          </div>
+                          <span className="text-sm font-medium">
+                            {formatCurrency(country.currentTotalGdp)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                        <Badge 
+                          variant={
+                            country.economicTier === 'Advanced' ? 'default' :
+                            country.economicTier === 'Developed' ? 'secondary' : 'outline'
+                          }
+                          className="text-xs"
+                        >
+                          {country.economicTier}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {country.populationTier}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+
+            {processedCountries.length === 0 && !isLoading && (
+              <div className="text-center py-12">
+                <Globe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No countries found</h3>
+                <p className="text-muted-foreground">
+                  Try adjusting your search criteria to find countries.
+                </p>
+              </div>
+            )}
+
+            {/* Summary */}
+            {processedCountries.length > 0 && (
+              <Card className="mt-6">
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Countries</p>
+                      <p className="text-2xl font-bold">{countriesResult?.total || 0}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Showing</p>
+                      <p className="text-2xl font-bold">{processedCountries.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Population</p>
+                      <p className="text-2xl font-bold">
+                        {formatPopulation(
+                          processedCountries.reduce((sum, c) => sum + c.currentPopulation, 0)
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Combined GDP</p>
+                      <p className="text-2xl font-bold">
+                        {formatCurrency(
+                          processedCountries.reduce((sum, c) => sum + c.currentTotalGdp, 0)
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </>
         )}
       </div>
     </div>
-  );
-}
-
-export default function CountriesPage() {
-  return (
-    // Suspense can be used if you expect parts of the page to load asynchronously
-    // For now, the loading state is handled within CountriesPageContent
-    <CountriesPageContent />
   );
 }
