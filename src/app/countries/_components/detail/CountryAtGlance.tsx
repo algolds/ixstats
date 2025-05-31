@@ -59,9 +59,9 @@ interface HistoricalDataPoint {
 }
 
 interface ChartPoint {
-  period: string;
-  date: string;
-  ixTimeTimestamp: number;
+  period: string; // Formatted period string like "YYYY-QQ" or "YYYY"
+  date: string; // Kept for compatibility, can be same as period
+  ixTimeTimestamp: number; // Numerical timestamp for the x-axis
   population?: number;
   gdpPerCapita?: number;
   totalGdp?: number;
@@ -88,7 +88,7 @@ interface ChartPoint {
 interface CountryAtGlanceProps {
   country: CountryData;
   historicalData?: HistoricalDataPoint[];
-  targetTime: number;
+  targetTime: number; // This is the main IxTime timestamp for the current view
   forecastYears: number;
   isLoading?: boolean;
   isLoadingForecast?: boolean;
@@ -121,16 +121,16 @@ export function CountryAtGlance({
   const historicalSegmentData = useMemo(() => {
     if (!historicalData.length) return [];
   
-    const targetDate = new Date(targetTime);
+    const targetDateObj = new Date(targetTime);
     let windowStartTimeMs: number;
   
     if (timeResolution === 'quarterly') {
-      const windowStartDate = new Date(targetDate);
-      windowStartDate.setMonth(targetDate.getMonth() - 3);
+      const windowStartDate = new Date(targetDateObj);
+      windowStartDate.setMonth(targetDateObj.getMonth() - 3 * 4); // Ensure at least 4 quarters for averaging
       windowStartTimeMs = windowStartDate.getTime();
-    } else { // annual
-      const windowStartDate = new Date(targetDate);
-      windowStartDate.setFullYear(targetDate.getFullYear() - 1);
+    } else { 
+      const windowStartDate = new Date(targetDateObj);
+      windowStartDate.setFullYear(targetDateObj.getFullYear() - 1); // Last 12 months
       windowStartTimeMs = windowStartDate.getTime();
     }
   
@@ -140,35 +140,37 @@ export function CountryAtGlance({
   
     if (!filteredRawData.length) return [];
 
-    const timestampGroups: Record<string, HistoricalDataPoint[]> = {};
+    const timestampGroups: Record<string, { points: HistoricalDataPoint[], timestampSum: number }> = {};
     filteredRawData.forEach(point => {
       const date = new Date(point.ixTimeTimestamp);
       let periodKey: string;
       if (timeResolution === 'quarterly') {
-        const quarter = Math.floor(date.getMonth() / 3) + 1;
-        periodKey = `${date.getFullYear()}-Q${quarter}`;
+        const quarter = Math.floor(date.getUTCMonth() / 3) + 1;
+        periodKey = `${date.getUTCFullYear()}-Q${quarter}`;
       } else {
-        periodKey = date.getFullYear().toString();
+        periodKey = date.getUTCFullYear().toString();
       }
       if (!timestampGroups[periodKey]) {
-        timestampGroups[periodKey] = [];
+        timestampGroups[periodKey] = { points: [], timestampSum: 0 };
       }
-      timestampGroups[periodKey]?.push(point);
+      timestampGroups[periodKey]?.points.push(point);
+      timestampGroups[periodKey]!.timestampSum += point.ixTimeTimestamp;
     });
   
-    const periodAverages = Object.entries(timestampGroups).map(([period, points]) => {
+    const periodAverages = Object.entries(timestampGroups).map(([period, groupData]) => {
+      const points = groupData.points;
+      const avgTimestamp = points.length > 0 ? groupData.timestampSum / points.length : 0;
       const avgPoint = points.reduce((sum, point) => ({
-        ixTimeTimestamp: sum.ixTimeTimestamp + point.ixTimeTimestamp / points.length,
         population: sum.population + point.population / points.length,
         gdpPerCapita: sum.gdpPerCapita + point.gdpPerCapita / points.length,
         totalGdp: sum.totalGdp + point.totalGdp / points.length,
         populationDensity: (sum.populationDensity ?? 0) + (point.populationDensity ?? 0) / points.length,
         gdpDensity: (sum.gdpDensity ?? 0) + (point.gdpDensity ?? 0) / points.length,
-      }), { ixTimeTimestamp: 0, population: 0, gdpPerCapita: 0, totalGdp: 0, populationDensity: 0, gdpDensity: 0 });
-      return { period, ...avgPoint };
+      }), { population: 0, gdpPerCapita: 0, totalGdp: 0, populationDensity: 0, gdpDensity: 0 });
+      return { period, ixTimeTimestamp: avgTimestamp, ...avgPoint };
     }).sort((a, b) => a.ixTimeTimestamp - b.ixTimeTimestamp);
   
-    const windowSize = timeResolution === 'quarterly' ? 4 : 12;
+    const windowSize = timeResolution === 'quarterly' ? 4 : 12; // For rolling average over approx 1 year.
     const rollingData: ChartPoint[] = [];
   
     if (periodAverages.length > 0) {
@@ -176,7 +178,7 @@ export function CountryAtGlance({
         const startIdx = Math.max(0, i - windowSize + 1);
         const windowSlice = periodAverages.slice(startIdx, i + 1);
         
-        const currentPeriod = periodAverages[i]!;
+        const currentPeriodData = periodAverages[i]!;
         
         const sum = windowSlice.reduce((acc, p) => ({
           population: acc.population + p.population,
@@ -197,19 +199,19 @@ export function CountryAtGlance({
         let populationGrowth = 0, gdpGrowth = 0;
         if (i > 0) {
           const prevPeriod = periodAverages[i-1]!;
-          populationGrowth = prevPeriod.population ? ((currentPeriod.population - prevPeriod.population) / prevPeriod.population) * 100 : 0;
-          gdpGrowth = prevPeriod.gdpPerCapita ? ((currentPeriod.gdpPerCapita - prevPeriod.gdpPerCapita) / prevPeriod.gdpPerCapita) * 100 : 0;
+          populationGrowth = prevPeriod.population ? ((currentPeriodData.population - prevPeriod.population) / prevPeriod.population) * 100 : 0;
+          gdpGrowth = prevPeriod.gdpPerCapita ? ((currentPeriodData.gdpPerCapita - prevPeriod.gdpPerCapita) / prevPeriod.gdpPerCapita) * 100 : 0;
         }
   
         rollingData.push({
-          period: currentPeriod.period,
-          date: currentPeriod.period,
-          ixTimeTimestamp: currentPeriod.ixTimeTimestamp,
-          population: avg.population / 1000000,
+          period: currentPeriodData.period,
+          date: currentPeriodData.period, // Keep for potential use, but ixTimeTimestamp is primary for XAxis
+          ixTimeTimestamp: currentPeriodData.ixTimeTimestamp,
+          population: avg.population / 1000000, // Convert to Millions for display
           gdpPerCapita: avg.gdpPerCapita,
-          totalGdp: avg.totalGdp / 1000000000,
+          totalGdp: avg.totalGdp / 1000000000, // Convert to Billions for display
           populationDensity: avg.populationDensity,
-          gdpDensity: avg.gdpDensity / 1000000,
+          gdpDensity: avg.gdpDensity / 1000000, // Convert to Millions for display
           populationGrowth,
           gdpGrowth,
           isRollingAverage: true,
@@ -225,15 +227,15 @@ export function CountryAtGlance({
   
     const basePointForForecast = historicalSegmentData.length > 0
       ? historicalSegmentData[historicalSegmentData.length - 1]
-      : { // Fallback to current country stats if no historical window data
-          date: IxTime.getCurrentGameYear(targetTime).toString(),
+      : { 
+          period: IxTime.formatIxTime(targetTime, false).split(',')[1]?.trim() || new Date(targetTime).getFullYear().toString(),
+          date: IxTime.formatIxTime(targetTime, false).split(',')[1]?.trim() || new Date(targetTime).getFullYear().toString(),
           population: country.currentPopulation / 1000000,
           gdpPerCapita: country.currentGdpPerCapita,
           totalGdp: country.currentTotalGdp / 1000000000,
           populationDensity: country.populationDensity ?? 0,
           gdpDensity: (country.gdpDensity ?? 0) / 1000000,
           ixTimeTimestamp: targetTime,
-          period: IxTime.getCurrentGameYear(targetTime).toString(),
         };
     
     if (!basePointForForecast) return [];
@@ -241,16 +243,18 @@ export function CountryAtGlance({
     const forecastPoints: ChartPoint[] = [];
     const forecastStartTime = basePointForForecast.ixTimeTimestamp;
   
-    for (let i = 1; i <= forecastYears * (timeResolution === 'quarterly' ? 4 : 1); i++) {
+    const numForecastSteps = forecastYears * (timeResolution === 'quarterly' ? 4 : 1);
+
+    for (let i = 1; i <= numForecastSteps; i++) {
       const yearOffset = timeResolution === 'quarterly' ? i / 4 : i;
       const currentForecastTime = IxTime.addYears(forecastStartTime, yearOffset);
-      const date = new Date(currentForecastTime);
+      const dateObj = new Date(currentForecastTime);
       let periodKey: string;
       if (timeResolution === 'quarterly') {
-        const quarter = Math.floor(date.getMonth() / 3) + 1;
-        periodKey = `${date.getFullYear()}-Q${quarter}`;
+        const quarter = Math.floor(dateObj.getUTCMonth() / 3) + 1;
+        periodKey = `${dateObj.getUTCFullYear()}-Q${quarter}`;
       } else {
-        periodKey = date.getFullYear().toString();
+        periodKey = dateObj.getUTCFullYear().toString();
       }
 
       const populationGrowthFactor = Math.pow(1 + country.populationGrowthRate, yearOffset);
@@ -265,7 +269,7 @@ export function CountryAtGlance({
         ixTimeTimestamp: currentForecastTime,
         population: projectedPopulation,
         gdpPerCapita: projectedGdpPerCapita,
-        totalGdp: projectedPopulation * projectedGdpPerCapita / 1000, // B
+        totalGdp: projectedPopulation * projectedGdpPerCapita / 1000, 
         populationDensity: (basePointForForecast.populationDensity ?? 0) * populationGrowthFactor,
         gdpDensity: (basePointForForecast.gdpDensity ?? 0) * gdpGrowthFactor,
         populationGrowth: country.populationGrowthRate * 100,
@@ -273,16 +277,23 @@ export function CountryAtGlance({
         isForecast: true,
       });
     }
-    // Add the last historical point to the beginning of the forecast to connect lines
     if (historicalSegmentData.length > 0 && forecastPoints.length > 0) {
         const lastHistoricalPoint = historicalSegmentData[historicalSegmentData.length - 1]!;
-         return [{...lastHistoricalPoint, isForecast: true }, ...forecastPoints];
+         return [{...lastHistoricalPoint, isForecast: true, period: lastHistoricalPoint.period }, ...forecastPoints];
+    }
+    if (forecastPoints.length > 0) { // Case where historicalSegmentData is empty but we have a base
+        return [{...basePointForForecast, isForecast: true, period: basePointForForecast.period}, ...forecastPoints];
     }
     return forecastPoints;
   }, [country, historicalSegmentData, forecastYears, showForecastInHistorical, timeResolution, targetTime]);
 
   const chartDataForDisplay = useMemo(() => {
-    return [...historicalSegmentData, ...forecastSegmentData.slice(1)].map(point => ({
+    const combined = [...historicalSegmentData];
+    if (forecastSegmentData.length > 0) {
+      // Avoid duplicating the connection point
+      combined.push(...forecastSegmentData.slice(1));
+    }
+    return combined.map(point => ({
         ...point,
         historicalPopulation: !point.isForecast ? point.population : undefined,
         forecastPopulation: point.isForecast ? point.population : undefined,
@@ -297,9 +308,9 @@ export function CountryAtGlance({
     }));
   }, [historicalSegmentData, forecastSegmentData]);
 
-  const fullForecastData = useMemo(() => { // For the 10-year dedicated forecast view
+  const fullForecastData = useMemo(() => { 
     const baseData = [];
-    const baseYear = IxTime.getCurrentGameYear(targetTime); // Use targetTime's game year as base
+    const baseYearForForecast = IxTime.getCurrentGameYear(targetTime); 
     
     const scenarios = {
       optimistic: { population: 1.2, gdp: 1.5 },
@@ -309,19 +320,23 @@ export function CountryAtGlance({
 
     const yearsToForecast = Math.max(10, forecastYears);
 
-    for (let year = 0; year <= yearsToForecast; year++) {
+    for (let yearOffset = 0; yearOffset <= yearsToForecast; yearOffset++) {
+      const currentYearInForecast = baseYearForForecast + yearOffset;
+      const currentForecastTimestamp = IxTime.addYears(targetTime, yearOffset);
+
       const yearData: any = {
-        year: baseYear + year,
-        yearOffset: year,
-        date: `${baseYear + year}`,
+        year: currentYearInForecast, 
+        yearOffset: yearOffset,
+        date: currentYearInForecast.toString(), // String for display, 'year' for numeric axis
+        ixTimeTimestamp: currentForecastTimestamp
       };
 
       Object.entries(scenarios).forEach(([scenarioName, multipliers]) => {
         const popGrowthRate = country.populationGrowthRate * multipliers.population;
         const gdpGrowthRate = country.adjustedGdpGrowth * multipliers.gdp;
         
-        const populationGrowthFactor = Math.pow(1 + popGrowthRate, year);
-        const gdpGrowthFactor = Math.pow(1 + gdpGrowthRate, year);
+        const populationGrowthFactor = Math.pow(1 + popGrowthRate, yearOffset);
+        const gdpGrowthFactor = Math.pow(1 + gdpGrowthRate, yearOffset);
         
         const projectedPopulation = country.currentPopulation * populationGrowthFactor;
         const projectedGdpPerCapita = country.currentGdpPerCapita * gdpGrowthFactor;
@@ -347,12 +362,13 @@ export function CountryAtGlance({
 
   const forecastAnalysis = useMemo(() => {
     if (fullForecastData.length < 2) return null;
+    const forecastDuration = fullForecastData.length -1;
     const firstYear = fullForecastData[0]!;
-    const lastYear = fullForecastData[Math.min(10, fullForecastData.length -1)]!; // 10-year or available
+    const lastYear = fullForecastData[forecastDuration]!;
     
-    const populationCAGR = Math.pow(lastYear.population / firstYear.population, 1/Math.min(10, fullForecastData.length -1)) - 1;
-    const gdpPerCapitaCAGR = Math.pow(lastYear.gdpPerCapita / firstYear.gdpPerCapita, 1/Math.min(10, fullForecastData.length -1)) - 1;
-    const totalGdpCAGR = Math.pow(lastYear.totalGdp / firstYear.totalGdp, 1/Math.min(10, fullForecastData.length -1)) - 1;
+    const populationCAGR = Math.pow(lastYear.population / firstYear.population, 1/forecastDuration) - 1;
+    const gdpPerCapitaCAGR = Math.pow(lastYear.gdpPerCapita / firstYear.gdpPerCapita, 1/forecastDuration) - 1;
+    const totalGdpCAGR = Math.pow(lastYear.totalGdp / firstYear.totalGdp, 1/forecastDuration) - 1;
     
     return {
       populationCAGR: populationCAGR * 100,
@@ -366,7 +382,6 @@ export function CountryAtGlance({
     };
   }, [fullForecastData]);
 
-
   const formatTooltipNumber = (num: number, isCurrency = false, precision = 1): string => {
     if (isCurrency) {
       if (Math.abs(num) >= 1e3) return `$${(num / 1e3).toFixed(precision)}K`;
@@ -374,7 +389,7 @@ export function CountryAtGlance({
     }
     if (Math.abs(num) >= 1000) return `${(num / 1000).toFixed(precision)}B`;
     if (Math.abs(num) >= 1) return `${num.toFixed(precision)}M`;
-    return `${(num * 1000).toFixed(0)}K`; // Assuming numbers < 1M are populations in millions
+    return `${(num * 1000).toFixed(0)}K`; 
   };
   
   const axisColor = theme === 'dark' ? '#4A5568' : '#CBD5E0';
@@ -387,12 +402,13 @@ export function CountryAtGlance({
     padding: '12px',
   };
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: any) => { // label is ixTimeTimestamp
     if (active && payload && payload.length) {
       const dataPoint = payload[0].payload;
+      const displayLabel = dataPoint.period || IxTime.formatIxTime(label, false); 
       return (
         <div className="p-3 bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded-lg">
-          <p className="font-medium text-gray-900 dark:text-white mb-2">{label}</p>
+          <p className="font-medium text-gray-900 dark:text-white mb-2">{displayLabel}</p>
           {payload.map((entry: any, index: number) => (
             <div key={`item-${index}`} className="flex justify-between items-center mb-1">
               <span className="text-sm mr-4" style={{ color: entry.color }}>
@@ -400,9 +416,11 @@ export function CountryAtGlance({
               </span>
               <span className="text-sm font-medium text-gray-900 dark:text-white">
                 {entry.name.toLowerCase().includes('gdp') && entry.name.toLowerCase().includes('capita') 
-                  ? `$${entry.value.toLocaleString()}`
+                  ? `$${entry.value.toLocaleString(undefined, {maximumFractionDigits: 0})}`
                   : entry.name.toLowerCase().includes('gdp') && (entry.name.toLowerCase().includes('billion') || entry.name.toLowerCase().includes('total'))
                     ? `$${entry.value.toFixed(1)}B`
+                     : entry.name.toLowerCase().includes('population') && entry.name.toLowerCase().includes('(m)')
+                    ? `${entry.value.toFixed(1)}M`
                     : entry.value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
               </span>
             </div>
@@ -424,17 +442,28 @@ export function CountryAtGlance({
   };
   
   const renderHistoricalChart = () => {
-    const commonProps = {
-      data: chartDataForDisplay, // Use the segmented data
-      margin: { top: 5, right: 30, left: 20, bottom: 60 } // Increased bottom margin for angled labels
-    };
     const xAxisCommon = {
-        dataKey:"date", 
+        dataKey:"ixTimeTimestamp", 
+        type: "number" as const,
+        domain: ['dataMin', 'dataMax'] as [any, any],
+        tickFormatter: (timestamp: number) => {
+          const dateObj = new Date(timestamp);
+          if (timeResolution === 'annual') {
+            return dateObj.getUTCFullYear().toString();
+          } else {
+            const quarter = Math.floor(dateObj.getUTCMonth() / 3) + 1;
+            return `${dateObj.getUTCFullYear()}-Q${quarter}`;
+          }
+        },
         tick:{ fontSize: 10, fill: textColor }, 
         stroke:axisColor,
-        angle:-45, // Angle labels
-        textAnchor:"end" as const, // Anchor for angled labels
-        height:50 // Ensure enough height for angled labels
+        angle:-45, 
+        textAnchor:"end" as const, 
+        height:50 
+    };
+    const commonProps = {
+        data: chartDataForDisplay,
+        margin: { top: 5, right: 30, left: 20, bottom: 60 }
     };
 
     switch (chartView) {
@@ -462,7 +491,7 @@ export function CountryAtGlance({
             <Line yAxisId="gdp" type="monotone" dataKey="historicalGdpPerCapita" stroke="#10B981" strokeWidth={2} name="GDP per Capita ($)" dot={false}/>
             <Line yAxisId="gdp" type="monotone" dataKey="forecastGdpPerCapita" stroke="#10B981" strokeDasharray="5 5" strokeWidth={2} name="Forecast GDP p.c. ($)" dot={false}/>
             {targetTime !== IxTime.getCurrentIxTime() && (
-              <ReferenceLine x={IxTime.formatIxTime(IxTime.getCurrentIxTime(), false).split(',')[1]?.trim()} stroke="#EF4444" strokeDasharray="5 5" yAxisId="population">
+              <ReferenceLine x={IxTime.getCurrentIxTime()} stroke="#EF4444" strokeDasharray="5 5" yAxisId="population">
                 <Label value="Present" position="top" fill="#EF4444" fontSize={11}/>
               </ReferenceLine>
             )}
@@ -502,7 +531,6 @@ export function CountryAtGlance({
             <Line yAxisId="per-capita" type="monotone" dataKey="historicalGdpPerCapita" stroke="#10B981" strokeWidth={2} name="GDP p.c. ($)" dot={false}/>
             <Line yAxisId="per-capita" type="monotone" dataKey="forecastGdpPerCapita" stroke="#10B981" strokeDasharray="5 5" strokeWidth={2} name="Forecast GDP p.c. ($)" dot={false}/>
             <Bar yAxisId="total" dataKey="historicalTotalGdp" fill="#F59E0B" name="Total GDP (B$)" barSize={20} />
-             {/* Forecast Total GDP as a line for distinction or another bar with different style */}
             <Line yAxisId="total" type="monotone" dataKey="forecastTotalGdp" stroke="#F59E0B" strokeDasharray="5 5" strokeWidth={2} name="Forecast Total GDP (B$)" dot={false}/>
           </ComposedChart>
         );
@@ -517,22 +545,24 @@ export function CountryAtGlance({
             <Legend />
             <Bar yAxisId="popDensity" dataKey="historicalPopulationDensity" fill="#8B5CF6" name="Pop. Density (/km²)" barSize={20} />
             <Line yAxisId="gdpDensity" type="monotone" dataKey="historicalGdpDensity" stroke="#EF4444" strokeWidth={2} name="GDP Density (M$/km²)" dot={false}/>
-            {/* Forecast segments */}
             <Bar yAxisId="popDensity" dataKey="forecastPopulationDensity" fill="#8B5CF6"  name="Forecast Pop. Density" barSize={20} opacity={0.6} />
             <Line yAxisId="gdpDensity" type="monotone" dataKey="forecastGdpDensity" stroke="#EF4444" strokeDasharray="5 5" strokeWidth={2} name="Forecast GDP Density" dot={false}/>
           </ComposedChart>
         );
-      default: return <LineChart data={[]}><XAxis dataKey="date" /><YAxis /><Tooltip /></LineChart>;
+      default: return <LineChart data={[]}><XAxis dataKey="ixTimeTimestamp" /><YAxis /><Tooltip /></LineChart>;
     }
   };
-    // Render forecast chart (similar structure, using fullForecastData)
+  
     const renderForecastChart = () => {
         const commonProps = {
-            data: fullForecastData, // Use dedicated forecast data structure
+            data: fullForecastData, 
             margin: { top: 5, right: 30, left: 20, bottom: 60 }
         };
-         const xAxisCommon = {
-            dataKey:"date", 
+         const xAxisCommonForecast = {
+            dataKey:"ixTimeTimestamp", // Use numerical timestamp
+            type: "number" as const,
+            domain: ['dataMin', 'dataMax'] as [any, any],
+            tickFormatter: (timestamp: number) => new Date(timestamp).getUTCFullYear().toString(), // Format timestamp to year
             tick:{ fontSize: 10, fill: textColor }, 
             stroke:axisColor,
             angle:-45,
@@ -546,28 +576,28 @@ export function CountryAtGlance({
                     <ComposedChart {...commonProps}>
                         <defs><linearGradient id="fcPopGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/><stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1}/></linearGradient></defs>
                         <CartesianGrid strokeDasharray="3 3" stroke={axisColor} opacity={0.5} />
-                        <XAxis {...xAxisCommon} />
+                        <XAxis {...xAxisCommonForecast} />
                         <YAxis yAxisId="population" tick={{ fontSize: 10, fill: textColor }} stroke={axisColor} label={{ value: 'Population (M)', angle: -90, position: 'insideLeft', fill: textColor, fontSize: 12 }}/>
                         <YAxis yAxisId="gdp" orientation="right" tick={{ fontSize: 10, fill: textColor }} stroke={axisColor} label={{ value: 'GDP p.c. ($)', angle: 90, position: 'insideRight', fill: textColor, fontSize: 12 }}/>
                         <Tooltip content={<CustomTooltip />} />
                         <Legend />
                         <Area yAxisId="population" type="monotone" dataKey="population" stroke="#3B82F6" fillOpacity={1} fill="url(#fcPopGrad)" name="Population (M)" />
                         <Line yAxisId="gdp" type="monotone" dataKey="gdpPerCapita" stroke="#10B981" strokeWidth={3} name="GDP p.c. ($)" dot={false}/>
-                        <ReferenceLine yAxisId="population" x={new Date(targetTime).getFullYear().toString()} stroke="#EF4444" strokeDasharray="3 3" label={{ value: "Base Year", position: "top", fill: "#EF4444", fontSize: 11 }}/>
+                        <ReferenceLine yAxisId="population" x={baseTime} stroke="#EF4444" strokeDasharray="3 3" label={{ value: "Base Year", position: "top", fill: "#EF4444", fontSize: 11 }}/>
                     </ComposedChart>
                 );
             case 'scenarios':
                  return (
                     <LineChart {...commonProps}>
                         <CartesianGrid strokeDasharray="3 3" stroke={axisColor} opacity={0.5} />
-                        <XAxis {...xAxisCommon} />
+                        <XAxis {...xAxisCommonForecast} />
                         <YAxis yAxisId="gdpPerCapita" tick={{ fontSize: 10, fill: textColor }} stroke={axisColor} label={{ value: 'GDP p.c. ($)', angle: -90, position: 'insideLeft', fill: textColor, fontSize: 12 }} />
                         <Tooltip content={<CustomTooltip />} />
                         <Legend />
                         <Line yAxisId="gdpPerCapita" type="monotone" dataKey="gdpPerCapita_optimistic" stroke="#10B981" strokeWidth={2} name="Optimistic" strokeDasharray="5 5" dot={false}/>
                         <Line yAxisId="gdpPerCapita" type="monotone" dataKey="gdpPerCapita" stroke="#3B82F6" strokeWidth={3} name="Baseline" dot={false}/>
                         <Line yAxisId="gdpPerCapita" type="monotone" dataKey="gdpPerCapita_pessimistic" stroke="#EF4444" strokeWidth={2} name="Pessimistic" strokeDasharray="5 5" dot={false}/>
-                         <ReferenceLine yAxisId="gdpPerCapita" x={new Date(targetTime).getFullYear().toString()} stroke="#6B7280" strokeDasharray="3 3" label={{ value: "Base Year", position: "top", fill: "#6B7280", fontSize: 11 }}/>
+                         <ReferenceLine yAxisId="gdpPerCapita" x={baseTime} stroke="#6B7280" strokeDasharray="3 3" label={{ value: "Base Year", position: "top", fill: "#6B7280", fontSize: 11 }}/>
                     </LineChart>
                 );
              case 'population':
@@ -575,26 +605,26 @@ export function CountryAtGlance({
                     <AreaChart {...commonProps}>
                         <defs><linearGradient id="fcPopAreaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8}/><stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.1}/></linearGradient></defs>
                         <CartesianGrid strokeDasharray="3 3" stroke={axisColor} opacity={0.5} />
-                        <XAxis {...xAxisCommon} />
+                        <XAxis {...xAxisCommonForecast} />
                         <YAxis yAxisId="population" tick={{ fontSize: 10, fill: textColor }} stroke={axisColor} label={{ value: 'Population (M)', angle: -90, position: 'insideLeft', fill: textColor, fontSize: 12 }}/>
                         <Tooltip content={<CustomTooltip />} />
                         <Legend />
                         <Area yAxisId="population" type="monotone" dataKey="population" stroke="#8B5CF6" fillOpacity={1} fill="url(#fcPopAreaGrad)" name="Population (M)" />
-                         <ReferenceLine yAxisId="population" x={new Date(targetTime).getFullYear().toString()} stroke="#EF4444" strokeDasharray="3 3" label={{ value: "Base Year", position: "top", fill: "#EF4444", fontSize: 11 }}/>
+                         <ReferenceLine yAxisId="population" x={baseTime} stroke="#EF4444" strokeDasharray="3 3" label={{ value: "Base Year", position: "top", fill: "#EF4444", fontSize: 11 }}/>
                     </AreaChart>
                 );
             case 'gdp':
                 return (
                     <ComposedChart {...commonProps}>
                         <CartesianGrid strokeDasharray="3 3" stroke={axisColor} opacity={0.5} />
-                        <XAxis {...xAxisCommon} />
+                        <XAxis {...xAxisCommonForecast} />
                         <YAxis yAxisId="perCapita" tick={{ fontSize: 10, fill: textColor }} stroke={axisColor} label={{ value: 'GDP p.c. ($)', angle: -90, position: 'insideLeft', fill: textColor, fontSize: 12 }}/>
                         <YAxis yAxisId="total" orientation="right" tick={{ fontSize: 10, fill: textColor }} stroke={axisColor} label={{ value: 'Total GDP (B$)', angle: 90, position: 'insideRight', fill: textColor, fontSize: 12 }}/>
                         <Tooltip content={<CustomTooltip />} />
                         <Legend />
                         <Line yAxisId="perCapita" type="monotone" dataKey="gdpPerCapita" stroke="#10B981" strokeWidth={3} name="GDP per Capita ($)" dot={false}/>
-                        <Bar yAxisId="total" dataKey="totalGdp" fill="#F59E0B" name="Total GDP (B$)" barSize={20}/>
-                        <ReferenceLine yAxisId="perCapita" x={new Date(targetTime).getFullYear().toString()} stroke="#EF4444" strokeDasharray="3 3" label={{ value: "Base Year", position: "top", fill: "#EF4444", fontSize: 11 }}/>
+                        <Bar yAxisId="total" dataKey="totalGdp" fill="#F59E0B" name="Total GDP (B$)" barSize={20} />
+                        <ReferenceLine yAxisId="perCapita" x={baseTime} stroke="#EF4444" strokeDasharray="3 3" label={{ value: "Base Year", position: "top", fill: "#EF4444", fontSize: 11 }}/>
                     </ComposedChart>
                 );
              case 'density':
@@ -602,17 +632,17 @@ export function CountryAtGlance({
                 return (
                     <ComposedChart {...commonProps}>
                         <CartesianGrid strokeDasharray="3 3" stroke={axisColor} opacity={0.5} />
-                        <XAxis {...xAxisCommon} />
+                        <XAxis {...xAxisCommonForecast} />
                         <YAxis yAxisId="popDensity" tick={{ fontSize: 10, fill: textColor }} stroke={axisColor} label={{ value: 'Pop. /km²', angle: -90, position: 'insideLeft', fill: textColor, fontSize: 12 }}/>
                         <YAxis yAxisId="gdpDensity" orientation="right" tick={{ fontSize: 10, fill: textColor }} stroke={axisColor} label={{ value: 'GDP M$/km²', angle: 90, position: 'insideRight', fill: textColor, fontSize: 12 }}/>
                         <Tooltip content={<CustomTooltip />} />
                         <Legend />
                         <Bar yAxisId="popDensity" dataKey="populationDensity" fill="#8B5CF6" name="Pop. Density" barSize={20}/>
                         <Line yAxisId="gdpDensity" type="monotone" dataKey="gdpDensity" stroke="#EF4444" strokeWidth={3} name="GDP Density (M$/km²)" dot={false}/>
-                        <ReferenceLine yAxisId="popDensity" x={new Date(targetTime).getFullYear().toString()} stroke="#6B7280" strokeDasharray="3 3" label={{ value: "Base Year", position: "top", fill: "#6B7280", fontSize: 11 }}/>
+                        <ReferenceLine yAxisId="popDensity" x={baseTime} stroke="#6B7280" strokeDasharray="3 3" label={{ value: "Base Year", position: "top", fill: "#6B7280", fontSize: 11 }}/>
                     </ComposedChart>
                 );
-            default: return <LineChart data={[]}><XAxis dataKey="date" /><YAxis /><Tooltip /></LineChart>;
+            default: return <LineChart data={[]}><XAxis dataKey="ixTimeTimestamp" /><YAxis /><Tooltip /></LineChart>;
         }
     };
 
@@ -622,7 +652,7 @@ export function CountryAtGlance({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center mb-4 sm:mb-0">
           <BarChart3 className="h-5 w-5 mr-2" />
-          {country.name} {viewMode === 'historical' ? 'At a Glance (Last Year)' : 'Economic Forecast (10 Years)'}
+          {country.name} {viewMode === 'historical' ? 'At a Glance (Last Year)' : `Economic Forecast (+${forecastYears} Years)`}
         </h2>
         <div className="flex flex-wrap gap-2">
           <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
@@ -632,11 +662,11 @@ export function CountryAtGlance({
           {viewMode === 'historical' && (
             <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
               {(['quarterly', 'annual'] as TimeResolution[]).map((res) => (
-                <button key={res} onClick={() => setTimeResolution(res)} className={`px-3 py-1 rounded text-sm font-medium ${timeResolution === res ? 'bg-indigo-600 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}>{res === 'quarterly' ? 'Quarterly' : 'Annual'}</button>
+                <button key={res} onClick={() => setTimeResolution(res)} className={`px-3 py-1 rounded text-sm font-medium ${timeResolution === res ? 'bg-indigo-600 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}>{res.charAt(0).toUpperCase() + res.slice(1)}</button>
               ))}
             </div>
           )}
-           {viewMode === 'historical' && (
+           {viewMode === 'historical' && forecastYears > 0 && (
              <button onClick={() => setShowForecastInHistorical(!showForecastInHistorical)} className={`px-3 py-1 rounded text-sm font-medium ${showForecastInHistorical ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}`}>Show Forecast ({forecastYears}yr)</button>
            )}
            {viewMode === 'forecast' && (
@@ -660,7 +690,7 @@ export function CountryAtGlance({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
             {[
                 {label: "Population", value: formatTooltipNumber(country.currentPopulation / 1000000, false) + "M", growth: country.populationGrowthRate},
-                {label: "GDP p.c.", value: formatTooltipNumber(country.currentGdpPerCapita, true), growth: country.adjustedGdpGrowth},
+                {label: "GDP p.c.", value: formatTooltipNumber(country.currentGdpPerCapita, true, 0), growth: country.adjustedGdpGrowth},
                 {label: "Economic Tier", value: country.economicTier},
                 {label: "Population Tier", value: country.populationTier}
             ].map(stat => (
@@ -678,13 +708,13 @@ export function CountryAtGlance({
         <>
          {forecastAnalysis && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 text-center"><div className="text-2xl font-bold text-green-600 dark:text-green-400">{forecastAnalysis.populationCAGR.toFixed(1)}%</div><div className="text-sm text-gray-600 dark:text-gray-400">Pop. CAGR</div><div className="text-xs text-gray-500 dark:text-gray-500 mt-1">{formatTooltipNumber(forecastAnalysis.projectedPopulation10Y, false)}M in {new Date(targetTime).getFullYear() + 10}</div></div>
-              <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 text-center"><div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{forecastAnalysis.gdpPerCapitaCAGR.toFixed(1)}%</div><div className="text-sm text-gray-600 dark:text-gray-400">GDP p.c. CAGR</div><div className="text-xs text-gray-500 dark:text-gray-500 mt-1">{formatTooltipNumber(forecastAnalysis.projectedGdpPerCapita10Y, true)} in {new Date(targetTime).getFullYear() + 10}</div></div>
-              <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 text-center"><div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{forecastAnalysis.totalGdpCAGR.toFixed(1)}%</div><div className="text-sm text-gray-600 dark:text-gray-400">Total GDP CAGR</div><div className="text-xs text-gray-500 dark:text-gray-500 mt-1">{formatTooltipNumber(forecastAnalysis.projectedTotalGdp10Y * 1000, true)} in {new Date(targetTime).getFullYear() + 10}</div></div>
+              <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 text-center"><div className="text-2xl font-bold text-green-600 dark:text-green-400">{forecastAnalysis.populationCAGR.toFixed(1)}%</div><div className="text-sm text-gray-600 dark:text-gray-400">Pop. CAGR ({forecastYears}yr)</div><div className="text-xs text-gray-500 dark:text-gray-500 mt-1">{formatTooltipNumber(forecastAnalysis.projectedPopulation10Y, false)}M in {new Date(targetTime).getUTCFullYear() + forecastYears}</div></div>
+              <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 text-center"><div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{forecastAnalysis.gdpPerCapitaCAGR.toFixed(1)}%</div><div className="text-sm text-gray-600 dark:text-gray-400">GDP p.c. CAGR ({forecastYears}yr)</div><div className="text-xs text-gray-500 dark:text-gray-500 mt-1">{formatTooltipNumber(forecastAnalysis.projectedGdpPerCapita10Y, true, 0)} in {new Date(targetTime).getUTCFullYear() + forecastYears}</div></div>
+              <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 text-center"><div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{forecastAnalysis.totalGdpCAGR.toFixed(1)}%</div><div className="text-sm text-gray-600 dark:text-gray-400">Total GDP CAGR ({forecastYears}yr)</div><div className="text-xs text-gray-500 dark:text-gray-500 mt-1">{formatTooltipNumber(forecastAnalysis.projectedTotalGdp10Y * 1000, true)} in {new Date(targetTime).getUTCFullYear() + forecastYears}</div></div>
             </div>
           )}
           <div className="flex flex-wrap gap-2 mb-6">
-            {[{ key: 'combined', label: 'Overview', icon: Activity }, { key: 'population', label: 'Population', icon: Users }, { key: 'gdp', label: 'GDP', icon: DollarSign }, { key: 'density', label: 'Density', icon: BarChart3 }, ...(showScenarios ? [{ key: 'scenarios', label: 'Scenarios', icon: Target }] : [])].map(({ key, label, icon: Icon }) => (
+            {[{ key: 'combined', label: 'Overview', icon: Activity }, { key: 'population', label: 'Population', icon: Users }, { key: 'gdp', label: 'GDP', icon: DollarSign }, { key: 'density', label: 'Density', icon: BarChart3 }, ...(showScenarios ? [{ key: 'scenarios', label: 'Scenarios (GDP p.c.)', icon: Target }] : [])].map(({ key, label, icon: Icon }) => (
               <button key={key} onClick={() => setForecastView(key as ForecastView)} className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${forecastView === key ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}><Icon className="h-4 w-4 mr-1" />{label}</button>
             ))}
           </div>
@@ -694,7 +724,7 @@ export function CountryAtGlance({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
             <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4"><h3 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center"><Zap className="h-4 w-4 mr-2" />Growth Assumptions</h3><div className="space-y-1 text-sm"><div className="flex justify-between"><span className="text-gray-600 dark:text-gray-400">Pop. Growth:</span><span className="text-gray-900 dark:text-white">{(country.populationGrowthRate * 100).toFixed(2)}%</span></div><div className="flex justify-between"><span className="text-gray-600 dark:text-gray-400">GDP Growth:</span><span className="text-gray-900 dark:text-white">{(country.adjustedGdpGrowth * 100).toFixed(2)}%</span></div></div></div>
-            <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4"><h3 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center"><AlertTriangle className="h-4 w-4 mr-2" />Notes</h3><div className="text-sm text-gray-600 dark:text-gray-400 space-y-1"><p>• Projections based on current rates.</p><p>• Does not account for cycles or external factors.</p></div></div>
+            <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4"><h3 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center"><AlertTriangle className="h-4 w-4 mr-2" />Notes</h3><div className="text-sm text-gray-600 dark:text-gray-400 space-y-1"><p>• Baseline projections based on current rates.</p><p>• Does not account for cycles or external factors unless specified in scenarios.</p></div></div>
           </div>
         </>
       )}
@@ -704,9 +734,9 @@ export function CountryAtGlance({
           <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 mr-2 flex-shrink-0" />
           <div className="text-sm text-gray-600 dark:text-gray-400">
             {viewMode === 'historical' ? (
-              <>Chart shows {timeResolution} rolling average for the last {timeResolution === 'quarterly' ? '3 months' : '12 months'} ending at selected IxTime. {showForecastInHistorical && forecastYears > 0 && `Forecast extends ${forecastYears} years.`}</>
+              <>Chart shows {timeResolution} rolling average for the last {timeResolution === 'quarterly' ? 'year (4 quarters)' : 'year (12 months)'} ending at selected IxTime ({IxTime.formatIxTime(targetTime, false)}). {showForecastInHistorical && forecastYears > 0 && `Forecast extends ${forecastYears} years from this point.`}</>
             ) : (
-              <>10-year forecast from {IxTime.getCurrentGameYear(targetTime)}. {showScenarios && "Scenarios explore different growth outcomes."}</>
+              <>{forecastYears}-year forecast from base year {IxTime.getCurrentGameYear(targetTime)}. {showScenarios && "Scenarios explore different growth outcomes for GDP per capita."}</>
             )}
           </div>
         </div>

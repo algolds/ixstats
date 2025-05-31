@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 // src/app/countries/[id]/page.tsx
 "use client";
 
@@ -101,7 +102,7 @@ export default function CountryDetailPage() {
       population: point.population,
       gdpPerCapita: point.gdpPerCapita,
       totalGdp: point.totalGdp,
-      populationDensity: point.populationDensity === null ? undefined : point.populationDensity,
+      populationDensity: point.populationDensity ?? undefined,
       gdpDensity: point.gdpDensity === null ? undefined : point.gdpDensity
     })) || [];
   }, [historicalData]);
