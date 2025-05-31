@@ -1,14 +1,10 @@
 // src/app/countries/_components/detail/index.ts
-// Export stub components that we'll use as placeholders
+// Detail page component exports
 
-import { CountryInfobox } from '../CountryInfobox';
+export { TimeControl } from './TimeControl';
+export { CountryAtGlance } from './CountryAtGlance';
+export { TenYearForecast } from './TenYearForecast';
+export { ChartTypeSelector } from './ChartTypeSelector';
 
-// Placeholder components that match the imports in the detail page
-export const CountryStatsCard = () => null;
-export const CountryChart = () => null;
-export const CountryForecast = () => null;
-export const CountryInputsCard = () => null;
-export const CountryGeographyCard = () => null;
-
-// Re-export the existing component
-export { CountryInfobox };
+// Re-export types
+export type { ChartType } from './ChartTypeSelector';
