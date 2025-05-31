@@ -1,5 +1,5 @@
 // prisma/schema.prisma
-// Updated schema to support only Excel imports with reduced field set
+// Fixed schema to match migrations and remove inconsistencies
 
 generator client {
   provider = "prisma-client-js"

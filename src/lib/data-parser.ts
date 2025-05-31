@@ -1,6 +1,3 @@
-// src/lib/data-parser.ts
-// Excel-only data parser for IxStats with reduced field set
-
 import * as XLSX from 'xlsx';
 import type { BaseCountryData } from '../types/ixstats';
 
@@ -86,27 +83,27 @@ function isEmptyRow(row: any[]): boolean {
   });
 }
 
-function processExcelData(rawData: any[][]): BaseCountryData[] {
+function processRawDataWithHeaderRecognition(rawData: any[][], isExcel: boolean): BaseCountryData[] {
   const countries: BaseCountryData[] = [];
   
-  console.log(`[DataParser] Processing Excel file with ${rawData.length} total rows`);
+  console.log(`[DataParser] Processing ${rawData.length} total rows`);
   
   // Debug: log first few rows to see what we're working with
   for (let i = 0; i < Math.min(rawData.length, 3); i++) {
-    console.log(`[DataParser] Row ${i}:`, rawData[i]?.slice(0, 8));
+    console.log(`[DataParser] Row ${i}:`, rawData[i]?.slice(0, 5));
   }
   
   if (rawData.length < 2) {
-    console.warn(`Excel file has insufficient data (less than 2 rows).`);
+    console.warn(`Spreadsheet (${isExcel ? 'Excel' : 'CSV'}) has insufficient data (less than 2 rows).`);
     return countries;
   }
 
-  // Use row 0 as headers
+  // For CSV, always use row 0 as headers since we know the format
   const headerRowIndex = 0;
   const headerRow = rawData[headerRowIndex];
   
   if (!headerRow) {
-    throw new Error(`Could not find header row in the Excel file.`);
+    throw new Error(`Could not find header row in the ${isExcel ? 'Excel' : 'CSV'} file.`);
   }
 
   const headers = headerRow.map(h => {
@@ -114,8 +111,8 @@ function processExcelData(rawData: any[][]): BaseCountryData[] {
     return header.replace(/^["'](.*)["']$/, '$1').toLowerCase();
   });
 
-  console.log(`[DataParser] Raw headers from row ${headerRowIndex}:`, headerRow.slice(0, 13));
-  console.log(`[DataParser] Processed headers:`, headers.slice(0, 13));
+  console.log(`[DataParser] Raw headers from row ${headerRowIndex}:`, headerRow.slice(0, 10));
+  console.log(`[DataParser] Processed headers:`, headers.slice(0, 10));
 
   const findHeaderIndex = (possibleNames: string[]): number => {
     for (const name of possibleNames) {
@@ -134,7 +131,6 @@ function processExcelData(rawData: any[][]): BaseCountryData[] {
     return -1;
   };
 
-  // Only map the 13 core fields (no projected or actual GDP growth fields)
   const headerMap = {
     country: findHeaderIndex(['Country', 'Nation Name', 'Nation', 'Country Name', 'name']),
     continent: findHeaderIndex(['Continent']),
@@ -147,6 +143,10 @@ function processExcelData(rawData: any[][]): BaseCountryData[] {
     maxGdpGrowthRate: findHeaderIndex(['Max GDPPC Grow Rt', 'Max Growth Rate', 'Max GDP Growth']),
     adjustedGdpGrowth: findHeaderIndex(['Adj GDPPC Growth', 'GDP Growth', 'Adjusted GDP Growth']),
     populationGrowthRate: findHeaderIndex(['Pop Growth Rate', 'Population Growth', 'popgrowthrate']),
+    projected2040Population: findHeaderIndex(['2040 Population']),
+    projected2040Gdp: findHeaderIndex(['2040 GDP']),
+    projected2040GdpPerCapita: findHeaderIndex(['2040 GDP PC']),
+    actualGdpGrowth: findHeaderIndex(['Actual GDP Growth']),
     landAreaKm: findHeaderIndex(['Area (km²)', 'Area (SqKm)', 'Land Area (km²)', 'Area km²', 'Area', 'landarea']),
     landAreaMi: findHeaderIndex(['Area (sq mi)', 'Area (SqMi)', 'Land Area (sq mi)', 'Area sq mi']),
   };
@@ -192,6 +192,10 @@ function processExcelData(rawData: any[][]): BaseCountryData[] {
     }
   }
 
+  const gameEpochYear = 2028;
+  const targetYear = 2040;
+  const yearsToTarget = targetYear - gameEpochYear;
+
   // Start processing from the row after headers
   for (let i = headerRowIndex + 1; i < rawData.length; i++) {
     const row = rawData[i];
@@ -228,13 +232,27 @@ function processExcelData(rawData: any[][]): BaseCountryData[] {
         maxGdpGrowthRate: parsePercentageRequired(row[headerMap.maxGdpGrowthRate], 0.05),
         adjustedGdpGrowth: parsePercentageRequired(row[headerMap.adjustedGdpGrowth], 0.03),
         populationGrowthRate: parsePercentageRequired(row[headerMap.populationGrowthRate], 0.01),
+        projected2040Population: parseNumberRequired(row[headerMap.projected2040Population], 0),
+        projected2040Gdp: parseNumberRequired(row[headerMap.projected2040Gdp], 0),
+        projected2040GdpPerCapita: parseNumberRequired(row[headerMap.projected2040GdpPerCapita], 0),
+        actualGdpGrowth: parsePercentageRequired(row[headerMap.actualGdpGrowth], 0),
         landArea: landAreaKm,
         areaSqMi: landAreaMi,
-        projected2040Population: 0,
-        projected2040Gdp: 0,
-        projected2040GdpPerCapita: 0,
-        actualGdpGrowth: 0
       };
+
+      // Calculate missing projections
+      if (countryData.projected2040Population === 0 && yearsToTarget > 0 && countryData.population > 0) {
+        countryData.projected2040Population = countryData.population * Math.pow(1 + countryData.populationGrowthRate, yearsToTarget);
+      }
+      if (countryData.projected2040GdpPerCapita === 0 && yearsToTarget > 0 && countryData.gdpPerCapita > 0) {
+        countryData.projected2040GdpPerCapita = countryData.gdpPerCapita * Math.pow(1 + countryData.adjustedGdpGrowth, yearsToTarget);
+      }
+      if (countryData.projected2040Gdp === 0 && countryData.projected2040Population > 0 && countryData.projected2040GdpPerCapita > 0) {
+        countryData.projected2040Gdp = countryData.projected2040Population * countryData.projected2040GdpPerCapita;
+      }
+      if (countryData.actualGdpGrowth === 0) {
+        countryData.actualGdpGrowth = (1 + countryData.populationGrowthRate) * (1 + countryData.adjustedGdpGrowth) - 1;
+      }
 
       // Apply minimums
       if (countryData.population <= 0) countryData.population = 1000;
@@ -254,37 +272,98 @@ function processExcelData(rawData: any[][]): BaseCountryData[] {
     }
   }
   
-  console.log(`[DataParser] Processed ${countries.length} valid countries from Excel file`);
+  console.log(`[DataParser] Processed ${countries.length} valid countries from ${isExcel ? 'Excel' : 'CSV'} file`);
   return countries;
+}
+
+function parseCsvData(csvString: string, headerSkipLines = 0): BaseCountryData[] {
+  console.log(`[DataParser] Parsing CSV with ${headerSkipLines} header skip lines`);
+  
+  // Handle different line endings and remove BOM if present
+  let cleanedCsv = csvString;
+  if (cleanedCsv.charCodeAt(0) === 0xFEFF) {
+    cleanedCsv = cleanedCsv.substring(1); // Remove BOM
+    console.log("[DataParser] Removed BOM from CSV");
+  }
+  
+  const lines = cleanedCsv.split(/\r\n|\n|\r/);
+  console.log(`[DataParser] Found ${lines.length} lines in CSV`);
+  
+  const dataLines = lines.slice(headerSkipLines);
+  
+  if (dataLines.length < 2) {
+    console.warn(`CSV has insufficient data (less than 2 effective rows after skipping ${headerSkipLines} lines).`);
+    return [];
+  }
+
+  const rawDataArrays: any[][] = [];
+  
+  for (let i = 0; i < dataLines.length; i++) {
+    const line = dataLines[i] ?? '';
+    if (line.trim() === "") continue;
+    
+    // Simple CSV parsing - split by comma but handle quoted fields
+    const values: string[] = [];
+    let inQuote = false;
+    let currentValue = "";
+    
+    for (let j = 0; j < line.length; j++) {
+      const char = line[j];
+      if (char === '"') {
+        inQuote = !inQuote;
+      } else if (char === ',' && !inQuote) {
+        values.push(currentValue.trim());
+        currentValue = "";
+      } else {
+        currentValue += char;
+      }
+    }
+    values.push(currentValue.trim());
+    
+    // Clean quoted values
+    const cleanedValues = values.map(val => {
+      if (val.startsWith('"') && val.endsWith('"')) {
+        return val.substring(1, val.length - 1).trim();
+      }
+      return val.trim();
+    });
+    
+    rawDataArrays.push(cleanedValues);
+    
+    // Debug first few rows
+    if (i < 3) {
+      console.log(`[DataParser] Parsed line ${i}:`, cleanedValues.slice(0, 5));
+    }
+  }
+
+  return processRawDataWithHeaderRecognition(rawDataArrays, false);
 }
 
 export async function parseRosterFile(fileBuffer: ArrayBuffer, fileName?: string): Promise<BaseCountryData[]> {
   console.log(`[DataParser] Parsing file: ${fileName}`);
   
-  // Only support Excel files now
-  if (fileName && !fileName.toLowerCase().match(/\.(xlsx|xls)$/)) {
-    throw new Error('Only Excel files (.xlsx, .xls) are supported. CSV import has been removed.');
+  if (fileName && fileName.toLowerCase().endsWith('.csv')) {
+    const csvString = new TextDecoder("utf-8").decode(fileBuffer);
+    console.log(`[DataParser] Processing CSV file with ${csvString.split('\n').length} lines`);
+    
+    // For your specific CSV format, don't skip any lines since headers are on line 1
+    const headerSkip = 0;
+    return parseCsvData(csvString, headerSkip);
+  } else {
+    // Excel file processing
+    const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
+      throw new Error('No worksheets found in the Excel file');
+    }
+    
+    const worksheet = workbook.Sheets[sheetName];
+    if (!worksheet) {
+      throw new Error('Worksheet not found in the Excel file');
+    }
+    
+    const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+    console.log(`[DataParser] Processing Excel file with ${rawData.length} rows`);
+    return processRawDataWithHeaderRecognition(rawData, true);
   }
-  
-  // Excel file processing
-  const workbook = XLSX.read(fileBuffer, { 
-    type: 'buffer',
-    cellDates: true,
-    cellNF: false,
-    cellText: false
-  });
-  
-  const sheetName = workbook.SheetNames[0];
-  if (!sheetName) {
-    throw new Error('No worksheets found in the Excel file');
-  }
-  
-  const worksheet = workbook.Sheets[sheetName];
-  if (!worksheet) {
-    throw new Error('Worksheet not found in the Excel file');
-  }
-  
-  const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
-  console.log(`[DataParser] Processing Excel file with ${rawData.length} rows`);
-  return processExcelData(rawData);
 }

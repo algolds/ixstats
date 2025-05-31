@@ -393,12 +393,12 @@ export class IxStatsExcelHandler {
       };
 
       // Calculate missing areaSqMi from landArea if needed
-      if (countryData.areaSqMi === null && countryData.landArea !== null) {
+      if (countryData.areaSqMi === null && countryData.landArea !== undefined) {
         countryData.areaSqMi = countryData.landArea / 2.58999;
       }
 
       // Calculate missing landArea from areaSqMi if needed
-      if (countryData.landArea === null && countryData.areaSqMi !== null) {
+      if (countryData.landArea === null && countryData.areaSqMi !== undefined) {
         countryData.landArea = countryData.areaSqMi * 2.58999;
       }
       

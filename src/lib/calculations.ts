@@ -51,10 +51,6 @@ export class IxStatsCalculator {
       country: baseData.country,
       continent: baseData.continent,
       region: baseData.region,
-      projected2040Population: baseData.population,
-      projected2040Gdp: totalGdp,
-      projected2040GdpPerCapita: baseData.gdpPerCapita,
-      actualGdpGrowth: baseData.adjustedGdpGrowth,
       governmentType: baseData.governmentType,
       religion: baseData.religion,
       leader: baseData.leader,
@@ -138,7 +134,7 @@ export class IxStatsCalculator {
       baselineStats.gdpPerCapita, // Use original roster GDP per capita as baseline
       baselineStats.adjustedGdpGrowth,
       baselineStats.maxGdpGrowthRate,
-      baselineStats.economicTier,
+      baselineStats.economicTier as EconomicTier,
       yearsFromBaseline,
       activeDmInputs
     );
@@ -289,7 +285,7 @@ export class IxStatsCalculator {
       currentStats.currentGdpPerCapita,
       currentStats.adjustedGdpGrowth,
       currentStats.maxGdpGrowthRate,
-      currentStats.economicTier,
+      currentStats.economicTier as EconomicTier,
       yearsElapsed,
       activeDmInputs
     );
