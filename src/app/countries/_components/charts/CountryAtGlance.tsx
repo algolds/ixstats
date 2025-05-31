@@ -1,24 +1,18 @@
-// src/app/countries/_components/charts/CountryAtGlance.tsx
+// src/app/countries/_components/detail/CountryAtGlance.tsx
 "use client";
 
 import { useMemo, useState } from "react";
-import { Activity, AlertTriangle, BarChart3, Loader2 } from "lucide-react";
+import { Skeleton } from "~/components/ui/skeleton";
+import { Card, CardHeader, CardContent } from "~/components/ui/card";
+import { BarChart3, Loader2 } from "lucide-react";
 import { useTheme } from "~/context/theme-context";
 import { IxTime } from "~/lib/ixtime";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "~/components/ui/card";
-import { Button } from "~/components/ui/button";
 import type { ChartType } from "../detail";
-import { CountryDashboard } from "./CountryDashboard";
-import { ChartDisplay } from "./ChartDisplay";
-import { CountryStats } from "./CountryStats";
+import { CountryDashboard } from "../charts/CountryDashboard";
+import { ChartDisplay } from "../charts/ChartDisplay";
+import { CountryStats } from "../charts/CountryStats";
 
-// Types remain mostly the same as original component
+// Keep existing types
 interface CountryData {
   id: string;
   name: string;
@@ -32,9 +26,6 @@ interface CountryData {
   landArea?: number | null;
   populationDensity?: number | null;
   gdpDensity?: number | null;
-  governmentType?: string | null;
-  leader?: string | null;
-  religion?: string | null;
 }
 
 interface HistoricalDataPoint {
@@ -46,30 +37,9 @@ interface HistoricalDataPoint {
   gdpDensity?: number | null;
 }
 
-interface ChartPoint {
-  period: string;
-  date: string;
-  ixTimeTimestamp: number;
-  population?: number;
-  gdpPerCapita?: number;
-  totalGdp?: number;
-  populationDensity?: number | null; // Keep as number | null | undefined
-  gdpDensity?: number | null;       // Keep as number | null | undefined
-  isForecast?: boolean;
-  historicalPopulation?: number;
-  forecastPopulation?: number;
-  historicalGdpPerCapita?: number;
-  forecastGdpPerCapita?: number;
-  historicalTotalGdp?: number;
-  forecastTotalGdp?: number;
-  historicalPopulationDensity?: number | null; // Allow null
-  forecastPopulationDensity?: number | null;   // MODIFIED: Allow null
-  historicalGdpDensity?: number | null;        // Allow null
-  forecastGdpDensity?: number | null;          // MODIFIED: Allow null
-}
-
 type TimeResolutionType = 'quarterly' | 'annual';
 
+// Keep the same props interface for backward compatibility
 interface CountryAtGlanceProps {
   country: CountryData;
   historicalData?: HistoricalDataPoint[];
@@ -98,264 +68,205 @@ export function CountryAtGlance({
   onChartViewChange,
 }: CountryAtGlanceProps) {
   const { theme } = useTheme();
-  const [showForecast, setShowForecast] = useState(true);
-  const [showDensity, setShowDensity] = useState(false);
+  const [showForecastButtonState, setShowForecastButtonState] = useState(true); // Renamed to avoid conflict with prop
+  const [showDensityButtonState, setShowDensityButtonState] = useState(false); // Renamed
 
-  // Improved historical data processing
   const historicalChartData = useMemo(() => {
     if (!historicalData || historicalData.length === 0) return [];
 
-    // Calculate a longer time window for better time series display
-    const timeWindowYears = timeResolution === 'quarterly' ? 2 : 10;
-    const windowStartTime = IxTime.addYears(targetTime, -timeWindowYears);
-
-    // Filter and validate data
-    const validData = historicalData
-      .filter(point => {
-        return (
-          point.ixTimeTimestamp >= windowStartTime && 
-          point.ixTimeTimestamp <= targetTime &&
-          isFinite(point.population) &&
-          isFinite(point.gdpPerCapita) &&
-          isFinite(point.totalGdp)
-        );
-      })
+    // Sort by timestamp to ensure correct order before processing
+    const sortedHistoricalData = [...historicalData]
+      .filter(point => point.ixTimeTimestamp && isFinite(point.ixTimeTimestamp)) // Ensure valid timestamps
       .sort((a, b) => a.ixTimeTimestamp - b.ixTimeTimestamp);
 
-    if (!validData.length) return [];
+    if (!sortedHistoricalData.length) return [];
 
-    // Group data by time period for aggregation
-    const groupedData = new Map<string, {
-      points: HistoricalDataPoint[];
-      avgTimestamp: number;
-      periodKey: string;
-    }>();
+    const timestampGroups: Record<string, {
+      points: HistoricalDataPoint[],
+      timestampSum: number,
+      count: number
+    }> = {};
 
-    validData.forEach(point => {
+    sortedHistoricalData.forEach(point => {
       const date = new Date(point.ixTimeTimestamp);
       let periodKey: string;
-      
+
       if (timeResolution === 'quarterly') {
         const quarter = Math.floor(date.getUTCMonth() / 3) + 1;
-        const year = date.getUTCFullYear();
-        periodKey = `${year}-Q${quarter}`;
-      } else {
+        periodKey = `${date.getUTCFullYear()}-Q${quarter}`;
+      } else { // annual
         periodKey = date.getUTCFullYear().toString();
       }
-      
-      if (!groupedData.has(periodKey)) {
-        groupedData.set(periodKey, {
-          points: [],
-          avgTimestamp: 0,
-          periodKey
-        });
+
+      if (!timestampGroups[periodKey]) {
+        timestampGroups[periodKey] = { points: [], timestampSum: 0, count: 0 };
       }
-      
-      groupedData.get(periodKey)!.points.push(point);
+
+      timestampGroups[periodKey]?.points.push(point);
+      timestampGroups[periodKey]!.timestampSum += point.ixTimeTimestamp;
+      timestampGroups[periodKey]!.count++;
     });
 
-    // Convert grouped data to chart points with proper averaging
-    return Array.from(groupedData.entries()).map(([periodKey, group]) => {
-      const points = group.points;
-      const count = points.length;
-      
-      if (count === 0) return null;
-      
-      // Calculate averages
-      const avgTimestamp = points.reduce((sum, p) => sum + p.ixTimeTimestamp, 0) / count;
-      const avgPopulation = points.reduce((sum, p) => sum + p.population, 0) / count;
-      const avgGdpPerCapita = points.reduce((sum, p) => sum + p.gdpPerCapita, 0) / count;
-      const avgTotalGdp = points.reduce((sum, p) => sum + p.totalGdp, 0) / count;
-      
-      // Handle optional density data
-      const densityPoints = points.filter(p => 
-        p.populationDensity != null && isFinite(p.populationDensity) &&
-        p.gdpDensity != null && isFinite(p.gdpDensity)
-      );
-      
-      const avgPopDensity = densityPoints.length > 0 
-        ? densityPoints.reduce((sum, p) => sum + (p.populationDensity || 0), 0) / densityPoints.length
-        : null; // MODIFIED: use null instead of undefined for consistency with ChartPoint
-        
-      const avgGdpDensity = densityPoints.length > 0 
-        ? densityPoints.reduce((sum, p) => sum + (p.gdpDensity || 0), 0) / densityPoints.length
-        : null; // MODIFIED: use null instead of undefined
+    return Object.entries(timestampGroups).map(([period, groupData]) => {
+      const points = groupData.points;
+      // Use the timestamp of the first point in the group for the period,
+      // or an average. First point is simpler for period start.
+      const representativeTimestamp = points.length > 0 && points[0] ? points[0].ixTimeTimestamp : (groupData.timestampSum / groupData.count);
+
+
+      const sum = points.reduce((acc, p) => ({
+        population: acc.population + (p.population || 0),
+        gdpPerCapita: acc.gdpPerCapita + (p.gdpPerCapita || 0),
+        totalGdp: acc.totalGdp + (p.totalGdp || 0),
+        populationDensity: acc.populationDensity + (p.populationDensity || 0),
+        gdpDensity: acc.gdpDensity + (p.gdpDensity || 0),
+      }), { population: 0, gdpPerCapita: 0, totalGdp: 0, populationDensity: 0, gdpDensity: 0 });
+
+      const count = points.length || 1;
 
       return {
-        period: periodKey,
-        date: periodKey,
-        ixTimeTimestamp: avgTimestamp,
-        population: avgPopulation / 1000000, // Convert to millions
-        gdpPerCapita: avgGdpPerCapita,
-        totalGdp: avgTotalGdp / 1000000000, // Convert to billions
-        populationDensity: avgPopDensity,
-        gdpDensity: avgGdpDensity ? avgGdpDensity / 1000000 : null, // Convert to millions, ensure null
+        period,
+        date: period,
+        ixTimeTimestamp: representativeTimestamp,
+        population: sum.population / count / 1000000, // Millions
+        gdpPerCapita: sum.gdpPerCapita / count,
+        totalGdp: sum.totalGdp / count / 1000000000, // Billions
+        populationDensity: sum.populationDensity / count,
+        gdpDensity: (sum.gdpDensity / count) / 1000000, // Millions
         isForecast: false,
       };
-    })
-    .filter((point): point is NonNullable<typeof point> => point !== null)
-    .sort((a, b) => a.ixTimeTimestamp - b.ixTimeTimestamp);
+    }).sort((a, b) => a.ixTimeTimestamp - b.ixTimeTimestamp);
+  }, [historicalData, timeResolution]);
 
-  }, [historicalData, targetTime, timeResolution]);
-
-  // Improved forecast data generation
   const forecastChartData = useMemo(() => {
     if (!showForecastInHistorical || forecastYears === 0) return [];
 
-    // Get the base point for forecasting
-    let basePoint: ChartPoint;
-    
-    if (historicalChartData.length > 0) {
-      // Use the last historical point
-      basePoint = historicalChartData[historicalChartData.length - 1]!;
-    } else {
-      // Create base point from current country data
-      const currentYear = IxTime.getCurrentGameYear(targetTime);
-      const periodKey = timeResolution === 'quarterly' 
-        ? `${currentYear}-Q${Math.floor(new Date(targetTime).getUTCMonth() / 3) + 1}`
-        : currentYear.toString();
-        
-      basePoint = {
-        period: periodKey,
-        date: periodKey,
-        population: country.currentPopulation / 1000000,
-        gdpPerCapita: country.currentGdpPerCapita,
-        totalGdp: country.currentTotalGdp / 1000000000,
-        populationDensity: country.populationDensity, // This can be null
-        gdpDensity: country.gdpDensity ? country.gdpDensity / 1000000 : null, // This can be null
-        ixTimeTimestamp: targetTime,
-        isForecast: false,
-      };
-    }
+    const basePointForForecast = historicalChartData.length > 0
+      ? historicalChartData[historicalChartData.length - 1]
+      : {
+          period: IxTime.formatIxTime(targetTime, false).split(',')[1]?.trim() || new Date(targetTime).getFullYear().toString(),
+          date: IxTime.formatIxTime(targetTime, false).split(',')[1]?.trim() || new Date(targetTime).getFullYear().toString(),
+          population: country.currentPopulation / 1000000,
+          gdpPerCapita: country.currentGdpPerCapita,
+          totalGdp: country.currentTotalGdp / 1000000000,
+          populationDensity: country.populationDensity ?? 0,
+          gdpDensity: (country.gdpDensity ?? 0) / 1000000,
+          ixTimeTimestamp: targetTime,
+        };
 
-    const forecastPoints: ChartPoint[] = [];
-    const numSteps = forecastYears * (timeResolution === 'quarterly' ? 4 : 1);
+    if (!basePointForForecast || !isFinite(basePointForForecast.ixTimeTimestamp)) return [];
 
-    // MODIFIED: Handle growth rates that might be percentages
-    const populationGrowthRateDecimal = country.populationGrowthRate && Math.abs(country.populationGrowthRate) > 1 && isFinite(country.populationGrowthRate)
-        ? country.populationGrowthRate / 100
-        : (country.populationGrowthRate || 0);
+    const forecastPoints = [];
+    const forecastStartTime = basePointForForecast.ixTimeTimestamp;
+    const numForecastSteps = forecastYears * (timeResolution === 'quarterly' ? 4 : 1);
 
-    const adjustedGdpGrowthDecimal = country.adjustedGdpGrowth && Math.abs(country.adjustedGdpGrowth) > 1 && isFinite(country.adjustedGdpGrowth)
-        ? country.adjustedGdpGrowth / 100
-        : (isFinite(country.adjustedGdpGrowth) ? country.adjustedGdpGrowth : 0);
-
-    // Generate forecast points
-    for (let i = 1; i <= numSteps; i++) {
+    for (let i = 1; i <= numForecastSteps; i++) {
       const yearOffset = timeResolution === 'quarterly' ? i / 4 : i;
-      const forecastTime = IxTime.addYears(basePoint.ixTimeTimestamp, yearOffset);
-      const forecastDate = new Date(forecastTime);
-      const forecastYear = IxTime.getCurrentGameYear(forecastTime);
-      
+      const currentForecastTime = IxTime.addYears(forecastStartTime, yearOffset);
+      const dateObj = new Date(currentForecastTime);
+
       let periodKey: string;
       if (timeResolution === 'quarterly') {
-        const quarter = Math.floor(forecastDate.getUTCMonth() / 3) + 1;
-        periodKey = `${forecastYear}-Q${quarter}`;
+        const quarter = Math.floor(dateObj.getUTCMonth() / 3) + 1;
+        periodKey = `${dateObj.getUTCFullYear()}-Q${quarter}`;
       } else {
-        periodKey = forecastYear.toString();
+        periodKey = dateObj.getUTCFullYear().toString();
       }
 
-      // Apply growth factors with safety checks
-      const popGrowthFactor = Math.pow(1 + populationGrowthRateDecimal, yearOffset);
-      const gdpGrowthFactor = Math.pow(1 + adjustedGdpGrowthDecimal, yearOffset);
+      const populationGrowthFactor = Math.pow(1 + country.populationGrowthRate, yearOffset);
+      const gdpGrowthFactor = Math.pow(1 + country.adjustedGdpGrowth, yearOffset);
 
-      // Ensure finite calculations
-      const projectedPopulation = (basePoint.population || 0) * (isFinite(popGrowthFactor) ? popGrowthFactor : 1);
-      const projectedGdpPerCapita = (basePoint.gdpPerCapita || 0) * (isFinite(gdpGrowthFactor) ? gdpGrowthFactor : 1);
-      const projectedTotalGdp = projectedPopulation * projectedGdpPerCapita / 1000; // Adjust for units
-      
-      const projectedPopDensity = basePoint.populationDensity != null // Check for null/undefined
-        ? basePoint.populationDensity * (isFinite(popGrowthFactor) ? popGrowthFactor : 1)
-        : null; // Ensure null if base is null
-        
-      const projectedGdpDensity = basePoint.gdpDensity != null // Check for null/undefined
-        ? basePoint.gdpDensity * (isFinite(gdpGrowthFactor) ? gdpGrowthFactor : 1)
-        : null; // Ensure null if base is null
-
+      const projectedPopulation = (basePointForForecast.population ?? 0) * populationGrowthFactor;
+      const projectedGdpPerCapita = (basePointForForecast.gdpPerCapita ?? 0) * gdpGrowthFactor;
+      const projectedTotalGdp = projectedPopulation * projectedGdpPerCapita / 1000; // From M * $ to B$
+      const projectedPopDensity = (basePointForForecast.populationDensity ?? 0) * populationGrowthFactor;
+      const projectedGdpDensity = (basePointForForecast.gdpDensity ?? 0) * gdpGrowthFactor;
 
       forecastPoints.push({
         period: periodKey,
         date: periodKey,
-        ixTimeTimestamp: forecastTime,
-        population: isFinite(projectedPopulation) ? projectedPopulation : basePoint.population || 0,
-        gdpPerCapita: isFinite(projectedGdpPerCapita) ? projectedGdpPerCapita : basePoint.gdpPerCapita || 0,
-        totalGdp: isFinite(projectedTotalGdp) ? projectedTotalGdp : basePoint.totalGdp || 0,
-        populationDensity: projectedPopDensity, // Can be null
-        gdpDensity: projectedGdpDensity,       // Can be null
+        ixTimeTimestamp: currentForecastTime,
+        population: projectedPopulation,
+        gdpPerCapita: projectedGdpPerCapita,
+        totalGdp: projectedTotalGdp,
+        populationDensity: projectedPopDensity,
+        gdpDensity: projectedGdpDensity,
         isForecast: true,
       });
     }
     
-    // Include transition point for continuity
-    return [{ ...basePoint, isForecast: true }, ...forecastPoints];
+    // Ensure the base point for forecast is included correctly for continuity
+    const baseForecastPoint = {...basePointForForecast, isForecast: true};
+    
+    // Avoid duplicate first point if historical data provides it
+    if (historicalChartData.length > 0 && forecastPoints.length > 0 &&
+        historicalChartData[historicalChartData.length-1]?.period === baseForecastPoint.period) {
+        return forecastPoints; // The forecast points already start from the next period
+    }
+
+    return [baseForecastPoint, ...forecastPoints].filter(p => p.ixTimeTimestamp >= targetTime);
+
   }, [country, historicalChartData, forecastYears, showForecastInHistorical, timeResolution, targetTime]);
 
-  // Combine historical and forecast data
   const combinedChartData = useMemo(() => {
-    const dataMap = new Map<string, ChartPoint>();
+    const dataMap = new Map();
 
-    // Add historical data
-    historicalChartData.forEach(point => {
-      dataMap.set(point.period, {
-        ...point,
-        historicalPopulation: point.population,
-        historicalGdpPerCapita: point.gdpPerCapita,
-        historicalTotalGdp: point.totalGdp,
-        historicalPopulationDensity: point.populationDensity, // Can be null
-        historicalGdpDensity: point.gdpDensity,          // Can be null
+    historicalChartData.forEach(p => {
+      dataMap.set(p.period, {
+        ...p,
+        historicalPopulation: p.population,
+        historicalGdpPerCapita: p.gdpPerCapita,
+        historicalTotalGdp: p.totalGdp,
+        historicalPopulationDensity: p.populationDensity,
+        historicalGdpDensity: p.gdpDensity,
       });
     });
 
-    // Add forecast data
-    forecastChartData.forEach(point => {
-      const existing = dataMap.get(point.period);
+    forecastChartData.forEach(p => {
+      const existing = dataMap.get(p.period);
       if (existing) {
-        dataMap.set(point.period, {
-          ...existing,
-          forecastPopulation: point.population,
-          forecastGdpPerCapita: point.gdpPerCapita,
-          forecastTotalGdp: point.totalGdp,
-          forecastPopulationDensity: point.populationDensity, // Can be null
-          forecastGdpDensity: point.gdpDensity,          // Can be null
+        // If forecast point aligns with an existing historical point, merge primarily taking forecast values
+        dataMap.set(p.period, {
+          ...existing, // keep historical values if not overridden by forecast
+          forecastPopulation: p.population,
+          forecastGdpPerCapita: p.gdpPerCapita,
+          forecastTotalGdp: p.totalGdp,
+          forecastPopulationDensity: p.populationDensity,
+          forecastGdpDensity: p.gdpDensity,
+           // ensure ixTimeTimestamp is consistent if merging, prefer forecast's if it's the exact same period
+          ixTimeTimestamp: p.ixTimeTimestamp || existing.ixTimeTimestamp,
         });
       } else {
-        dataMap.set(point.period, {
-          ...point,
-          forecastPopulation: point.population,
-          forecastGdpPerCapita: point.gdpPerCapita,
-          forecastTotalGdp: point.totalGdp,
-          forecastPopulationDensity: point.populationDensity, // Can be null
-          forecastGdpDensity: point.gdpDensity,          // Can be null
+        dataMap.set(p.period, {
+          ...p,
+          forecastPopulation: p.population,
+          forecastGdpPerCapita: p.gdpPerCapita,
+          forecastTotalGdp: p.totalGdp,
+          forecastPopulationDensity: p.populationDensity,
+          forecastGdpDensity: p.gdpDensity,
         });
       }
     });
-    
-    return Array.from(dataMap.values()).sort((a, b) => a.ixTimeTimestamp - b.ixTimeTimestamp);
+
+    return Array.from(dataMap.values())
+        .filter(p => p.ixTimeTimestamp && isFinite(p.ixTimeTimestamp))
+        .sort((a, b) => a.ixTimeTimestamp - b.ixTimeTimestamp);
   }, [historicalChartData, forecastChartData]);
 
-  // Chart type options
-  const chartOptions = [
-    { key: 'overview' as ChartType, label: 'Overview', icon: Activity },
-    { key: 'population' as ChartType, label: 'Population', icon: Activity },
-    { key: 'gdp' as ChartType, label: 'GDP', icon: Activity },
-    { key: 'density' as ChartType, label: 'Density', icon: Activity }
-  ];
-
-  if (isLoading && !historicalData?.length) {
+  if (isLoading && combinedChartData.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <CardTitle className="flex items-center">
-              <Activity className="h-5 w-5 mr-2 text-primary" />
-              Loading Data...
-            </CardTitle>
-          </div>
+          <Skeleton className="h-7 w-3/4 mb-2" />
+          <Skeleton className="h-4 w-1/2" />
         </CardHeader>
-        <CardContent>
-          <div className="h-80 flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="ml-2 text-muted-foreground">Loading chart data...</p>
+        <CardContent className="space-y-4">
+          <div className="flex gap-2 mb-4">
+            {/* Removed time resolution buttons from skeleton, as they are in ChartDisplay now */}
+          </div>
+          <Skeleton className="h-80 w-full rounded-lg" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
+            {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-md" />)}
           </div>
         </CardContent>
       </Card>
@@ -364,89 +275,44 @@ export function CountryAtGlance({
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <CardTitle className="flex items-center">
-            <Activity className="h-5 w-5 mr-2 text-primary" />
-            Economic Snapshot & Trends
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Resolution:</span>
-            <Button 
-              variant={timeResolution === 'quarterly' ? "secondary" : "ghost"} 
-              size="sm" 
-              onClick={() => onTimeResolutionChange('quarterly')}
-            >
-              Quarterly
-            </Button>
-            <Button 
-              variant={timeResolution === 'annual' ? "secondary" : "ghost"} 
-              size="sm" 
-              onClick={() => onTimeResolutionChange('annual')}
-            >
-              Annual
-            </Button>
-          </div>
-        </div>
-        <CardDescription>
-          Historical trends and {forecastYears > 0 ? `${forecastYears}-year forecast ` : ""}
-          ending {IxTime.formatIxTime(targetTime, false)}. Current Resolution: {timeResolution}.
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent>
+      <CardContent className="p-4 sm:p-6">
         {chartView === 'overview' ? (
-          <CountryDashboard country={country} onNavigate={onChartViewChange} />
-        ) : (
-          <div className="flex flex-wrap gap-2 mb-6">
-            {chartOptions.map(({ key, label, icon: Icon }) => (
-              <Button 
-                key={key} 
-                variant={chartView === key ? "default" : "outline"} 
-                size="sm" 
-                onClick={() => onChartViewChange(key)} 
-                className="flex items-center"
-              >
-                <Icon className="h-4 w-4 mr-1.5" />{label}
-              </Button>
-            ))}
-          </div>
-        )}
+          <CountryDashboard
+            country={country}
+            onNavigate={onChartViewChange}
+          />
+        ) : null}
 
         <div className="h-80 mb-4">
-          {(isLoading || (showForecastInHistorical && isLoadingForecast)) && combinedChartData.length === 0 ? (
+          {(isLoading || (showForecastInHistorical && isLoadingForecast && forecastYears > 0)) && combinedChartData.length === 0 ? (
             <div className="h-full flex items-center justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p className="ml-2 text-muted-foreground">Loading chart data...</p>
             </div>
           ) : combinedChartData.length > 0 ? (
-            <ChartDisplay 
+            <ChartDisplay
               chartView={chartView}
-              combinedData={combinedChartData as any} // Type assertion to resolve type mismatch
+              combinedData={combinedChartData}
               country={country}
               timeResolution={timeResolution}
               theme={theme}
-              showForecast={showForecast}
-              showDensity={showDensity}
-              onToggleForecast={() => setShowForecast(!showForecast)}
-              onToggleDensity={() => setShowDensity(!showDensity)}
+              showForecast={showForecastButtonState && forecastYears > 0}
+              showDensity={showDensityButtonState}
+              onToggleForecast={() => setShowForecastButtonState(!showForecastButtonState)}
+              onToggleDensity={() => setShowDensityButtonState(!showDensityButtonState)}
             />
           ) : (
-            <div className="h-full flex items-center justify-center text-center">
-              <div className="flex flex-col items-center">
-                <BarChart3 className="h-12 w-12 text-muted-foreground opacity-50 mb-2" />
-                <p className="text-muted-foreground">
-                  No historical data available for the selected period.
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Try adjusting the time period or resolution.
-                </p>
-              </div>
+            <div className="h-full flex flex-col items-center justify-center text-center">
+              <BarChart3 className="h-12 w-12 text-muted-foreground opacity-50 mb-2" />
+              <p className="text-muted-foreground">
+                No historical data available for the selected period.
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Try adjusting the time controls or check back later.
+              </p>
             </div>
           )}
         </div>
-
-        {/* Country Stats Component */}
         <CountryStats country={country} />
       </CardContent>
     </Card>
