@@ -13,7 +13,7 @@ import {
 import { Label } from "~/components/ui/label";
 import { IxTime } from "~/lib/ixtime";
 import type { CountryDetailData } from "~/app/countries/[id]/page";
-import { formatNumber } from "~/lib/theme-utils"; // Existing import
+import { formatNumber } from "~/lib/theme-utils"; // Ensure this imports the updated version
 
 // Import necessary Recharts components
 import {
@@ -65,51 +65,65 @@ export function CountryAtGlance({
   const formattedValues = useMemo(() => {
     const formatDisplayValue = (num: number | null | undefined, isCurrency: boolean, defaultPrecision: number, unit?: string): string => {
         if (num === null || num === undefined || isNaN(num)) {
-            return unit ? (isCurrency ? "$N/A" : "N/A") + (unit ? ` ${unit}`: "") : (isCurrency ? "$N/A" : "N/A");
+            let NALabel = "N/A";
+            if (isCurrency) {
+                 NALabel = "$" + NALabel;
+            }
+            if (unit) NALabel += ` ${unit}`;
+            return NALabel;
         }
-        if (num === 0 && !unit) return isCurrency ? "$0" : "0";
+
+        if (num === 0) {
+            const zeroStr = formatNumber(0, {
+                isCurrency: isCurrency,
+                precision: defaultPrecision,
+                compact: false
+            });
+            return unit ? zeroStr + ` ${unit}` : zeroStr;
+        }
 
         const tiers = [
-            { limit: 1e15, name: "Quadrillion" },
-            { limit: 1e12, name: "Trillion" },
-            { limit: 1e9,  name: "Billion" },
-            { limit: 1e6,  name: "Million" },
+            { limit: 1e33, name: "Decillion" }, { limit: 1e30, name: "Nonillion" },
+            { limit: 1e27, name: "Octillion" }, { limit: 1e24, name: "Septillion" },
+            { limit: 1e21, name: "Sextillion" }, { limit: 1e18, name: "Quintillion" },
+            { limit: 1e15, name: "Quadrillion" }, { limit: 1e12, name: "Trillion" },
+            { limit: 1e9,  name: "Billion" }, { limit: 1e6,  name: "Million" },
         ];
 
-        let valToShow = num;
-        let suffix = unit ? ` ${unit}` : ""; // Base unit like "per km²"
-        
-        if (!unit) { // Only apply large scale suffixes if no specific unit is already being handled (like per km^2)
+        let valToFormat = num;
+        let tierNameSuffix = unit ? ` ${unit}` : "";
+
+        if (!unit) {
             for (const tier of tiers) {
                 if (Math.abs(num) >= tier.limit) {
-                    valToShow = num / tier.limit;
-                    suffix = ` ${tier.name}`;
+                    valToFormat = num / tier.limit;
+                    tierNameSuffix = ` ${tier.name}`;
                     break;
                 }
             }
         }
         
-        // Use the provided formatNumber for the scaled value's numerical part
-        // Assuming formatNumber(value, isCurrencySymbolToBePrependedByFormatNumberItself, precision)
-        // We prepend $ manually here if isCurrency is true, so pass false for symbol to formatNumber.
-        let numStr = formatNumber(valToShow, false, defaultPrecision);
-        return (isCurrency ? "$" : "") + numStr + suffix;
+        const numStr = formatNumber(valToFormat, {
+            isCurrency: isCurrency,
+            precision: defaultPrecision,
+            compact: false 
+        });
+        
+        return numStr + tierNameSuffix;
     };
 
     return {
-        population: (() => {
-            if (country.currentPopulation === null || country.currentPopulation === undefined || isNaN(country.currentPopulation)) return "N/A";
-            if (Math.abs(country.currentPopulation) >= 1e6) {
-                return formatNumber(country.currentPopulation / 1e6, false, 2) + " million";
-            }
-            return formatNumber(country.currentPopulation, false, 0);
-        })(),
+        population: formatDisplayValue(
+            country.currentPopulation,
+            false, 
+            (country.currentPopulation && Math.abs(country.currentPopulation) >= 1e6 ? 2 : 0)
+        ),
         gdpPerCapita: formatDisplayValue(country.currentGdpPerCapita, true, 0),
         gdp: formatDisplayValue(country.currentTotalGdp, true, 2),
-        density: country.populationDensity
-          ? formatNumber(country.populationDensity, false, 1) + " per km²" // Specific unit
+        density: country.populationDensity !== null && country.populationDensity !== undefined
+          ? formatDisplayValue(country.populationDensity, false, 1, "per km²")
           : "N/A",
-        gdpDensity: formatDisplayValue(country.gdpDensity, true, 1, "per km²"), // Specific unit
+        gdpDensity: formatDisplayValue(country.gdpDensity, true, 1, "per km²"),
     };
   }, [country]);
 
@@ -144,45 +158,43 @@ export function CountryAtGlance({
         setChartData(processedHistoricalData as ChartDataPoint[]);
     }
 
-  }, [country, historicalData, targetTime, forecastYears, timeResolution]);
+  }, [historicalData, targetTime, forecastYears, timeResolution]);
 
 
   const yAxisTickFormatter = (value: any, isCurrency: boolean) => {
-    if (typeof value !== 'number' || isNaN(value)) return String(value); // Ensure it's a string for Recharts
+    if (typeof value !== 'number' || isNaN(value)) return String(value);
 
     const tiers = [
-        { limit: 1e15, suffix: "Q" }, // Quadrillion
-        { limit: 1e12, suffix: "T" }, // Trillion
-        { limit: 1e9,  suffix: "B" }, // Billion
-        { limit: 1e6,  suffix: "M" }, // Million
-        { limit: 1e3,  suffix: "k" }  // Thousand
+        { limit: 1e15, suffix: "Q" }, { limit: 1e12, suffix: "T" },
+        { limit: 1e9,  suffix: "B" }, { limit: 1e6,  suffix: "M" },
+        { limit: 1e3,  suffix: "k" }
     ];
 
     let val = value;
-    let suffix = "";
+    let tierSuffix = "";
 
     for (const tier of tiers) {
         if (Math.abs(value) >= tier.limit) {
             val = value / tier.limit;
-            suffix = tier.suffix;
+            tierSuffix = tier.suffix;
             break;
         }
     }
     
-    let precision = 0;
-    if (suffix && Math.abs(val) < 100 && val !== Math.floor(val)) { // Add precision for suffixed numbers like 1.2M, 12.3B
-        precision = Math.abs(val) < 10 ? 1 : 1; 
-    } else if (!suffix && val !== Math.floor(val) && Math.abs(val) < 1000) { // Precision for non-suffixed small numbers
-        precision = 2;
+    let tickPrecision = 0;
+    if (tierSuffix && Math.abs(val) < 100 && val !== Math.floor(val)) {
+        tickPrecision = Math.abs(val) < 10 ? 1 : 1; 
+    } else if (!tierSuffix && val !== Math.floor(val) && Math.abs(val) < 1000) {
+        tickPrecision = 2;
     }
 
-
-    // Assuming formatNumber(value, isCurrencySymbolToBePrependedByFormatNumberItself, precision)
-    // We prepend $ manually, so pass false for symbol part to formatNumber.
-    return (isCurrency ? "$" : "") + formatNumber(val, false, precision) + suffix;
+    return formatNumber(val, {
+        isCurrency: isCurrency,
+        precision: tickPrecision,
+        compact: false
+    }) + tierSuffix;
   };
 
-  // CustomTooltipContent remains the same as your existing one, ensuring it uses formatNumber
    const CustomTooltipContent = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -190,7 +202,6 @@ export function CountryAtGlance({
           <p className="label font-semibold">{`Period: ${label}`}</p>
           {payload.map((entry: any) => (
             <p key={`tooltip-${entry.name}`} style={{ color: entry.color }}>
-              {/* Apply more robust formatting here if needed, similar to yAxisTickFormatter or formatDisplayValue logic */}
               {`${entry.name}: ${yAxisTickFormatter(entry.value, (entry.name.includes("GDP") || entry.name.includes("$") || entry.name.toLowerCase().includes("density ($")))}`}
             </p>
           ))}
@@ -199,7 +210,6 @@ export function CountryAtGlance({
     }
     return null;
   };
-
 
   if (isLoading) {
     return (
