@@ -41,7 +41,7 @@ export function TimeControl({
   const targetTime = IxTime.addYears(actualCurrentTime, timeOffset);
   
   // Calculate min/max bounds
-  const maxPastYears = -(IxTime.getCurrentGameYear() - IxTime.getGameYear(actualGameEpoch));
+  const maxPastYears = -(IxTime.getCurrentGameYear(actualCurrentTime) - IxTime.getCurrentGameYear(actualGameEpoch)); // Use getCurrentGameYear
   const maxFutureYears = 10;
 
   // Auto-play functionality
@@ -138,10 +138,10 @@ export function TimeControl({
         <div className="text-center p-4 bg-[var(--color-bg-tertiary)] rounded-lg">
           <div className="text-sm text-[var(--color-text-muted)] mb-1">Game Year</div>
           <div className="text-lg font-semibold text-[var(--color-text-primary)]">
-            {IxTime.getGameYear(targetTime)}
+            {IxTime.getCurrentGameYear(targetTime)} {/* Use getCurrentGameYear */}
           </div>
           <div className="text-xs text-[var(--color-text-muted)]">
-            Year {IxTime.getGameYear(targetTime) - IxTime.getGameYear(actualGameEpoch)} of simulation
+            Year {IxTime.getCurrentGameYear(targetTime) - IxTime.getCurrentGameYear(actualGameEpoch)} of simulation {/* Use getCurrentGameYear */}
           </div>
         </div>
         
