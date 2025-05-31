@@ -21,7 +21,7 @@ import {
 } from "./_components";
 
 // Import SystemConfig from types
-import type { SystemConfig, CalculationLog as CalculationLogType, AdminPageBotStatusView, SystemStatus } from "~/types/ixstats";
+import type { SystemConfig, CalculationLog as CalculationLogType, AdminPageBotStatusView, SystemStatus, BaseCountryData, ImportAnalysis } from "~/types/ixstats";
 
 
 export default function AdminDashboard() {
@@ -38,14 +38,15 @@ export default function AdminDashboard() {
   const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showImportPreview, setShowImportPreview] = useState(false);
-  const [importChanges, setImportChanges] = useState<any[]>([]);
+  const [importChanges, setImportChanges] = useState<ImportAnalysis['changes']>([]);
   const [pendingFileData, setPendingFileData] = useState<string>("");
+  const [pendingFileName, setPendingFileName] = useState<string | undefined>(undefined);
+
 
   // Get system configuration
   const { data: systemConfig, refetch: refetchConfig, isLoading: configLoading } = api.admin.getSystemConfig.useQuery();
   const { data: calculationLogsData, refetch: refetchLogs, isLoading: logsLoading } = api.admin.getCalculationLogs.useQuery();
   
-  // Type the data from useQuery hooks explicitly for clarity
   const { data: systemStatusData, refetch: refetchStatus, isLoading: statusLoading } = api.admin.getSystemStatus.useQuery(undefined, {
     refetchInterval: 5000,
   });
@@ -53,7 +54,6 @@ export default function AdminDashboard() {
     refetchInterval: 10000, 
   });
   
-  // Cast to the correct types for component props
   const botStatusView: AdminPageBotStatusView | undefined = botStatusData as AdminPageBotStatusView | undefined;
   const systemStatusView: SystemStatus | undefined = systemStatusData as SystemStatus | undefined;
   const calculationLogs: CalculationLogType[] | undefined = calculationLogsData as CalculationLogType[] | undefined;
@@ -119,10 +119,9 @@ export default function AdminDashboard() {
     },
   });
 
-  // File upload mutations
   const analyzeImportMutation = api.countries.analyzeImport.useMutation({
     onSuccess: (data) => {
-      setImportChanges(data.changes);
+      setImportChanges(data.changes as ImportAnalysis['changes']); // Cast to ensure type alignment
       setShowImportPreview(true);
       setIsAnalyzing(false);
     },
@@ -138,13 +137,15 @@ export default function AdminDashboard() {
       setIsUploading(false);
       setShowImportPreview(false);
       setPendingFileData("");
+      setPendingFileName(undefined);
       
       const message = data.imported > 0 
         ? `Successfully imported ${data.imported} of ${data.totalInFile} countries!`
         : `No new countries imported. ${data.totalInFile} countries were analyzed.`;
       alert(message);
-      void refetchConfig(); // To update country count etc.
+      void refetchConfig(); 
       void refetchStatus();
+      void refetchCountries(); // Refetch country list on dashboard/countries page
     },
     onError: (error) => {
       console.error("Import error:", error);
@@ -152,15 +153,19 @@ export default function AdminDashboard() {
       setIsUploading(false);
     },
   });
+  
+  // Added to potentially refetch countries data on other pages after import
+  const { refetch: refetchCountries } = api.countries.getAll.useQuery(undefined, { enabled: false });
+
 
   useEffect(() => {
     const updateTimeDisplay = () => {
-      if (botStatusView?.formattedIxTime) { // Prioritize botStatusView which comes from admin.getBotStatus
+      if (botStatusView?.formattedIxTime) { 
         setCurrentIxTime(botStatusView.formattedIxTime);
-      } else if (systemStatusView?.ixTime?.formattedIxTime) { // Fallback to systemStatusView
+      } else if (systemStatusView?.ixTime?.formattedIxTime) { 
         setCurrentIxTime(systemStatusView.ixTime.formattedIxTime);
       } else {
-        setCurrentIxTime(IxTime.formatIxTime(IxTime.getCurrentIxTime(), true)); // Ultimate fallback
+        setCurrentIxTime(IxTime.formatIxTime(IxTime.getCurrentIxTime(), true)); 
       }
     };
 
@@ -185,11 +190,12 @@ export default function AdminDashboard() {
 
   const handleFileUpload = async (file: File) => {
     setIsAnalyzing(true);
+    setPendingFileName(file.name); 
     try {
       const arrayBuffer = await file.arrayBuffer();
       const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
       setPendingFileData(base64);
-      await analyzeImportMutation.mutateAsync({ fileData: base64 });
+      await analyzeImportMutation.mutateAsync({ fileData: base64, fileName: file.name }); 
     } catch (error) {
       console.error("File analysis error:", error);
       setIsAnalyzing(false);
@@ -203,18 +209,19 @@ export default function AdminDashboard() {
     try {
       await importMutation.mutateAsync({
         fileData: pendingFileData,
+        fileName: pendingFileName, 
         replaceExisting,
       });
     } catch (error) {
       console.error("File import error:", error);
       setIsUploading(false);
-      // Error is alerted in mutation's onError
     }
   };
 
   const handleClosePreview = () => {
     setShowImportPreview(false);
     setPendingFileData("");
+    setPendingFileName(undefined);
     setImportChanges([]);
   };
 
@@ -236,18 +243,19 @@ export default function AdminDashboard() {
       const desiredIxTimeEpoch = IxTime.createGameTime(year!, month!, day!, hour, minute);
 
       if (botSyncEnabled && botStatusView?.botHealth?.available) {
-        setBotTimeMutation.mutate({ ixTime: desiredIxTimeEpoch });
+        setBotTimeMutation.mutate({ ixTime: desiredIxTimeEpoch, multiplier: timeMultiplier }); // Pass multiplier
       } else {
-        // Fallback to legacy method - ensure this mutation exists or handle differently
-        // For now, let's assume setBotTimeMutation is the preferred way and local is a fallback.
-        // The original code had setCurrentIxTime which implies a different API.
-        // We are using setBotTimeOverride for bot interaction.
-        // If bot is not synced, changing time locally might be complex without a specific API endpoint for it.
-        // We'll rely on the bot for custom time setting if bot_sync_enabled.
-        alert("Bot sync is enabled. Custom time will be set via bot. If bot is offline, this might not take effect immediately on the bot.");
+         // If bot not synced, update local config directly if that's the desired behavior
+        updateConfigMutation.mutate({
+            configs: [
+                { key: 'time_multiplier', value: '0' }, // Pause time by setting multiplier to 0
+                // This approach for setting a specific date locally via config is not directly supported by current IxTime logic
+                // IxTime.setTimeOverride() is local to the class instance and not persisted.
+                // A robust solution for local custom time would involve a dedicated system config for the override timestamp.
+            ]
+        });
+        alert("Bot not available or sync disabled. Time override set locally (multiplier to 0). Specific date override requires bot or different config setup.");
         console.warn("Attempting to set custom time. Bot sync enabled:", botSyncEnabled, "Bot available:", botStatusView?.botHealth?.available);
-        // If truly local override is needed without bot, IxTime.setTimeOverride would be used,
-        // but this doesn't persist or reflect centrally unless explicitly designed.
       }
     }
   };
@@ -275,19 +283,17 @@ export default function AdminDashboard() {
   const handleResetToRealTime = () => {
     if (botSyncEnabled && botStatusView?.botHealth?.available) {
       clearBotOverridesMutation.mutate();
+       // Optionally, also reset local multiplier if it's managed separately
+       // For simplicity, we assume bot clear also handles this.
     } else {
-      // This part handles local reset if bot isn't synced/available
-      setTimeMultiplier(4); 
-      // IxTime.clearTimeOverride(); // Example if IxTime class handled this directly
-      // IxTime.clearMultiplierOverride();
-      // To persist, we should update config through mutation if these were config values
+      // Reset local config for time_multiplier
+      setTimeMultiplier(4); // Default multiplier
       updateConfigMutation.mutate({
          configs: [
-            { key: 'time_multiplier', value: '4' }, // Reset to default
-            // Potentially clear other local overrides if stored in DB via SystemConfig
+            { key: 'time_multiplier', value: '4' },
          ]
       });
-      alert("Local time settings reset towards default. Save config to persist.");
+      alert("Local time settings reset. Save config to persist.");
     }
   };
 
@@ -376,17 +382,11 @@ export default function AdminDashboard() {
           savePending={updateConfigMutation.isPending}
         />
         
-        {/*
-        <CalculationLogs
-          logs={calculationLogs}
-          isLoading={logsLoading}
-        />
-        */}
         { calculationLogs && calculationLogs.length > 0 && (
              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Calculation Logs</h2>
                 {logsLoading && <p>Loading logs...</p>}
-                <ul className="space-y-2 max-h-60 overflow-y-auto">
+                <ul className="space-y-2 max-h-60 overflow-y-auto scrollbar-thin">
                     {calculationLogs.map(log => (
                         <li key={log.id} className="text-xs p-2 bg-gray-50 dark:bg-gray-700 rounded">
                             {new Date(log.timestamp).toLocaleString()}: Updated {log.countriesUpdated} countries. IxTime: {new Date(log.ixTimeTimestamp).toLocaleTimeString()}. Duration: {log.executionTimeMs}ms.
