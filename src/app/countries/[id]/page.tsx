@@ -190,11 +190,11 @@ function CountryDetailPageContent() {
       localGrowthFactor: countryDataResult.localGrowthFactor,
       historicalData: historicalDataRaw?.map(p => ({ 
         ...p, 
-        ixTimeTimestamp: typeof p.ixTimeTimestamp === 'number' ? p.ixTimeTimestamp : p.ixTimeTimestamp.getTime()
+        ixTimeTimestamp: typeof p.ixTimeTimestamp === 'number' ? p.ixTimeTimestamp : new Date(p.ixTimeTimestamp).getTime()
       })) || [],
       dmInputs: countryDataResult.dmInputs?.map(d => ({ 
         ...d, 
-        ixTimeTimestamp: typeof d.ixTimeTimestamp === 'number' ? d.ixTimeTimestamp : d.ixTimeTimestamp.getTime()
+        ixTimeTimestamp: typeof d.ixTimeTimestamp === 'number' ? d.ixTimeTimestamp : new Date(d.ixTimeTimestamp).getTime()
       })) || [],
       forecastDataPoints: forecastDataFromApi?.dataPoints?.map(p => ({
         ...p,
