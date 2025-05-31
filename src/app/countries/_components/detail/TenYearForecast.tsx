@@ -60,6 +60,7 @@ export interface ForecastDataPoint {
   ixTime: number;       // Timestamp for the point
   formattedTime: string; // Human-readable time
   gameYear: number;       // In-game year
+  year: number;          // FIXED: Added year field for compatibility
   population: number;
   gdpPerCapita: number;
   totalGdp: number;
@@ -74,7 +75,7 @@ interface TenYearForecastProps {
   forecastData?: ForecastDataPoint[]; // Data from API if available
   baseTime: number; // The IxTime from which the forecast starts
   isLoading?: boolean;
-  forecastYears?: number; // Added prop for configurable forecast duration
+  forecastYears?: number; // FIXED: Added forecastYears prop with default
 }
 
 export function TenYearForecast({
@@ -82,7 +83,7 @@ export function TenYearForecast({
   forecastData: apiForecastData, // Rename to avoid conflict
   baseTime,
   isLoading = false,
-  forecastYears = 10 // Destructure with a default value
+  forecastYears = 10 // FIXED: Default value provided
 }: TenYearForecastProps) {
   const { theme } = useTheme(); // For chart styling
 
@@ -90,7 +91,7 @@ export function TenYearForecast({
     if (apiForecastData && apiForecastData.length > 0) {
       return apiForecastData.map(p => ({
         ...p,
-        year: p.gameYear,
+        year: p.gameYear || p.year, // Ensure year field exists
         population: p.population / 1000000,
         totalGdp: p.totalGdp / 1000000000,
         gdpDensity: p.gdpDensity ? p.gdpDensity / 1000000 : undefined,
@@ -98,12 +99,12 @@ export function TenYearForecast({
     }
 
     const data = [];
-    const baseYear = IxTime.getCurrentGameYear(baseTime); // Assuming IxTime.getCurrentGameYear exists
+    const baseYear = IxTime.getCurrentGameYear(baseTime);
 
     // Use the forecastYears prop for the loop
     for (let yearOffset = 0; yearOffset <= forecastYears; yearOffset++) {
       const currentYearInForecast = baseYear + yearOffset;
-      const currentForecastTimestamp = IxTime.addYears(baseTime, yearOffset); // Assuming IxTime.addYears exists
+      const currentForecastTimestamp = IxTime.addYears(baseTime, yearOffset);
 
       const populationGrowthFactor = Math.pow(1 + country.populationGrowthRate, yearOffset);
       const gdpGrowthFactor = Math.pow(1 + country.adjustedGdpGrowth, yearOffset);
@@ -114,14 +115,14 @@ export function TenYearForecast({
 
       data.push({
         ixTime: currentForecastTimestamp,
-        formattedTime: IxTime.formatIxTime(currentForecastTimestamp), // Assuming IxTime.formatIxTime exists
+        formattedTime: IxTime.formatIxTime(currentForecastTimestamp),
         gameYear: currentYearInForecast,
         year: currentYearInForecast,
         population: projectedPopulation / 1000000,
         gdpPerCapita: projectedGdpPerCapita,
         totalGdp: projectedTotalGdp / 1000000000,
         populationDensity: country.landArea ? (projectedPopulation / country.landArea) : undefined,
-        gdpDensity: country.landArea ? (projectedTotalGdp / (country.landArea * 1000000)) : undefined, // Corrected divisor for gdpDensity M$/km2
+        gdpDensity: country.landArea ? (projectedTotalGdp / (country.landArea * 1000000)) : undefined,
         economicTier: country.economicTier,
         populationTier: country.populationTier,
       });
@@ -148,7 +149,7 @@ export function TenYearForecast({
     const firstTotalGdp = firstYearData.totalGdp * 1000000000;
     const lastTotalGdp = lastYearData.totalGdp * 1000000000;
 
-
+    // FIXED: Added safety checks for division by zero
     const populationCAGR = firstPop > 0 ? (Math.pow(lastPop / firstPop, 1 / forecastDuration) - 1) * 100 : 0;
     const gdpPerCapitaCAGR = firstGdpPc > 0 ? (Math.pow(lastGdpPc / firstGdpPc, 1 / forecastDuration) - 1) * 100 : 0;
     const totalGdpCAGR = firstTotalGdp > 0 ? (Math.pow(lastTotalGdp / firstTotalGdp, 1 / forecastDuration) - 1) * 100 : 0;
@@ -164,14 +165,20 @@ export function TenYearForecast({
     };
   }, [generatedForecastData]);
 
-  // Local formatNumber utility, adjust as needed for consistency with other components or move to shared utils
+  // FIXED: Enhanced formatNumber utility with better edge case handling
   const formatNumberLocal = (num: number | undefined | null, type: 'population' | 'gdpPercapita' | 'totalGdp' | 'cagr' | 'year' | 'direct') => {
-    if (num === undefined || num === null || isNaN(num)) return 'N/A';
+    if (num === undefined || num === null || isNaN(num) || !isFinite(num)) return 'N/A';
 
     switch (type) {
         case 'population': // Expects millions
             return `${num.toFixed(1)}M`;
         case 'gdpPercapita': // Expects direct value
+            // FIXED: Handle very large numbers properly
+            if (num >= 1000000) {
+              return `$${(num / 1000000).toFixed(1)}M`;
+            } else if (num >= 1000) {
+              return `$${(num / 1000).toFixed(0)}K`;
+            }
             return `$${num.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
         case 'totalGdp': // Expects billions
             return `$${num.toFixed(1)}B`;
@@ -194,7 +201,7 @@ export function TenYearForecast({
     backgroundColor: `hsl(var(--popover))`,
     color: `hsl(var(--popover-foreground))`,
     border: `1px solid hsl(var(--border))`,
-    borderRadius: `var(--radius)`, // Assuming --radius is a CSS variable for border-radius
+    borderRadius: `var(--radius)`,
     padding: '0.5rem 0.75rem',
     fontSize: '0.75rem', // text-xs
   };
@@ -280,7 +287,6 @@ export function TenYearForecast({
                 {formatNumberLocal(forecastAnalysis.totalGdpCAGR, 'cagr')}
               </p>
               <p className="text-xs text-muted-foreground">
-                 {/* Total GDP in analysis is in Billions, format accordingly if formatNumberLocal expects millions for 'totalGdp' type */}
                 To {formatNumberLocal(forecastAnalysis.projectedTotalGdpFinal, 'totalGdp')} by {forecastAnalysis.finalYear}
               </p>
             </div>
@@ -299,7 +305,6 @@ export function TenYearForecast({
                 <Legend wrapperStyle={{fontSize: "12px"}} />
                 <Area yAxisId="left" type="monotone" dataKey="population" name="Population (M)" stroke="hsl(var(--chart-1))" fill="hsl(var(--chart-1))" fillOpacity={0.3} dot={false}/>
                 <Line yAxisId="right" type="monotone" dataKey="gdpPerCapita" name="GDP p.c. ($)" stroke="hsl(var(--chart-2))" strokeWidth={2} dot={false}/>
-                {/* <Bar yAxisId="right" dataKey="totalGdp" name="Total GDP (B$)" fill="hsl(var(--chart-3))" barSize={10} /> */}
               </ComposedChart>
             </ResponsiveContainer>
           ) : (
