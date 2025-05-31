@@ -596,3 +596,67 @@ body {
     box-shadow: none !important;
   }
 }
+/* Country detail page styles */
+.stat-block {
+  @apply flex items-center px-4 py-2 bg-[var(--color-bg-tertiary)] rounded-lg border border-[var(--color-border-primary)];
+}
+
+.stat-icon {
+  @apply h-5 w-5 mr-2 text-[var(--color-brand-primary)];
+}
+
+.stat-label {
+  @apply text-sm text-[var(--color-text-muted)] block;
+}
+
+.stat-value {
+  @apply font-semibold text-[var(--color-text-primary)];
+}
+
+.stat-block-small {
+  @apply bg-[var(--color-bg-tertiary)] rounded-lg border border-[var(--color-border-primary)] p-3;
+}
+
+.stat-label-small {
+  @apply text-xs text-[var(--color-text-muted)] block;
+}
+
+.stat-value-small {
+  @apply font-semibold text-[var(--color-text-primary)] text-sm;
+}
+
+.stat-row {
+  @apply flex justify-between items-center border-b border-[var(--color-border-primary)] pb-2;
+}
+
+.stat-row:last-child {
+  @apply border-b-0 pb-0;
+}
+
+.card {
+  @apply bg-[var(--color-bg-surface)] border border-[var(--color-border-primary)] rounded-lg shadow-sm overflow-hidden;
+}
+
+.card-header {
+  @apply p-4 border-b border-[var(--color-border-primary)];
+}
+
+.card-title {
+  @apply text-lg font-semibold text-[var(--color-text-primary)] flex items-center;
+}
+
+.card-icon {
+  @apply h-5 w-5 mr-2 text-[var(--color-brand-primary)];
+}
+
+.card-body {
+  @apply p-4;
+}
+
+.card-footer {
+  @apply px-4 py-3 bg-[var(--color-bg-tertiary)] border-t border-[var(--color-border-primary)];
+}
+
+.tier-badge {
+  @apply px-2 py-1 rounded-full text-xs font-medium;
+}
