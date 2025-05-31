@@ -44,7 +44,7 @@ import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils"; // Your utility for class names
 import { Button } from "~/components/ui/button";
 
-// Define the structure of country data this component expects
+// ... (Keep existing interfaces: CountryData, HistoricalDataPoint, ChartPoint, CountryAtGlanceProps) ...
 interface CountryData {
   id: string;
   name: string;
@@ -60,7 +60,6 @@ interface CountryData {
   gdpDensity?: number | null;
 }
 
-// Define the structure for historical data points
 interface HistoricalDataPoint {
   ixTimeTimestamp: number;
   population: number;
@@ -70,10 +69,9 @@ interface HistoricalDataPoint {
   gdpDensity?: number | null;
 }
 
-// Define the structure for chart data points
 interface ChartPoint {
   period: string;
-  date: string; // Kept for compatibility, can be same as period
+  date: string; 
   ixTimeTimestamp: number;
   population?: number;
   gdpPerCapita?: number;
@@ -83,7 +81,6 @@ interface ChartPoint {
   populationGrowth?: number;
   gdpGrowth?: number;
   isForecast?: boolean;
-  // For segmented rendering
   historicalPopulation?: number;
   forecastPopulation?: number;
   historicalGdpPerCapita?: number;
@@ -102,35 +99,70 @@ type TimeResolutionType = 'quarterly' | 'annual';
 interface CountryAtGlanceProps {
   country: CountryData;
   historicalData?: HistoricalDataPoint[];
-  targetTime: number; // Main IxTime timestamp for the current view
-  forecastYears: number; // Number of years to forecast from targetTime
+  targetTime: number; 
+  forecastYears: number; 
   isLoading?: boolean;
-  isLoadingForecast?: boolean; // Specific loading state for forecast data
-  chartView?: ChartViewType; // Control which chart to show
-  timeResolution?: TimeResolutionType; // Control time resolution of chart
+  isLoadingForecast?: boolean; 
+  chartView?: ChartViewType; 
+  timeResolution?: TimeResolutionType; 
   showForecastInHistorical?: boolean;
-  onTimeResolutionChange: (resolution: TimeResolutionType) => void; // Callback to change time resolution
-  onChartViewChange: (view: ChartViewType) => void; // Callback to change chart view
+  onTimeResolutionChange: (resolution: TimeResolutionType) => void; 
+  onChartViewChange: (view: ChartViewType) => void; 
 }
 
-// Utility function for formatting numbers (ideally from a shared utils file)
+
+// MODIFIED formatNumber function
 const formatNumber = (
     num: number | null | undefined,
     isCurrency = false,
-    precision = 2,
-    compact = false // Set to true if you want suffixes like K, M, B
+    precisionForNonCompactOrSmallNum = 2, // Default precision for non-compact, or for compact numbers < 1K
+    compact = false
   ): string => {
-    if (num == null || isNaN(num)) return isCurrency ? '$0.00' : '0';
+    if (num == null || isNaN(num)) {
+      if (isCurrency) return compact ? '$0' : '$0.00';
+      return '0';
+    }
 
     if (compact) {
-      if (Math.abs(num) >= 1e12) return `${isCurrency ? '$' : ''}${(num / 1e12).toFixed(precision)}T`;
-      if (Math.abs(num) >= 1e9) return `${isCurrency ? '$' : ''}${(num / 1e9).toFixed(precision)}B`;
-      if (Math.abs(num) >= 1e6) return `${isCurrency ? '$' : ''}${(num / 1e6).toFixed(precision)}M`;
-      if (Math.abs(num) >= 1e3) return `${isCurrency ? '$' : ''}${(num / 1e3).toFixed(precision)}K`;
+      const absNum = Math.abs(num);
+      let valToShow: number;
+      let suffix = '';
+      let fixedPrecision: number;
+
+      if (absNum >= 1e12) { // Trillions (always > 10B)
+        valToShow = num / 1e12;
+        suffix = 'T';
+        fixedPrecision = 2; // Consistent 2 decimal places for Trillions
+      } else if (absNum >= 10e9) { // 10 Billion to < 1 Trillion
+        valToShow = num / 1e9;
+        suffix = 'B';
+        fixedPrecision = 2; // 2 decimal places for numbers >= 10 Billion
+      } else if (absNum >= 1e9) { // 1 Billion to < 10 Billion
+        valToShow = num / 1e9;
+        suffix = 'B';
+        fixedPrecision = 1; // 1 decimal place for billions < 10B
+      } else if (absNum >= 1e6) { // Millions
+        valToShow = num / 1e6;
+        suffix = 'M';
+        fixedPrecision = 1; // 1 decimal place for millions
+      } else if (absNum >= 1e3) { // Thousands
+        valToShow = num / 1e3;
+        suffix = 'K';
+        fixedPrecision = 0; // 0 decimal places for thousands
+      } else { // Numbers less than 1000
+        fixedPrecision = isCurrency ? precisionForNonCompactOrSmallNum : 0;
+        return `${isCurrency ? '$' : ''}${num.toLocaleString(undefined, {
+          minimumFractionDigits: fixedPrecision,
+          maximumFractionDigits: fixedPrecision,
+        })}`;
+      }
+      return `${isCurrency ? '$' : ''}${valToShow.toFixed(fixedPrecision)}${suffix}`;
     }
+
+    // Non-compact formatting
     return `${isCurrency ? '$' : ''}${num.toLocaleString(undefined, {
-      minimumFractionDigits: isCurrency ? precision : 0, // Ensure currency always shows precision (e.g., $5.00) unless precision is 0
-      maximumFractionDigits: precision,
+      minimumFractionDigits: (isCurrency && num !== 0) ? precisionForNonCompactOrSmallNum : (num === 0 ? 0 : precisionForNonCompactOrSmallNum),
+      maximumFractionDigits: precisionForNonCompactOrSmallNum,
     })}`;
 };
 
@@ -145,11 +177,12 @@ export function CountryAtGlance({
   chartView = 'overview',
   timeResolution = 'annual',
   showForecastInHistorical = true,
-  onTimeResolutionChange, // Added prop
-  onChartViewChange,      // Added prop
+  onTimeResolutionChange, 
+  onChartViewChange,      
 }: CountryAtGlanceProps) {
-  const { theme } = useTheme(); // For chart styling
+  const { theme } = useTheme(); 
 
+  // ... (Keep useMemo for historicalChartData, forecastChartData, combinedChartData) ...
   const historicalChartData = useMemo(() => {
     if (!historicalData || historicalData.length === 0) return [];
 
@@ -242,7 +275,7 @@ export function CountryAtGlance({
 
     for (let i = 1; i <= numForecastSteps; i++) {
       const yearOffset = timeResolution === 'quarterly' ? i / 4 : i;
-      const currentForecastTime = IxTime.addYears(forecastStartTime, yearOffset); // Assuming IxTime.addYears exists and works correctly
+      const currentForecastTime = IxTime.addYears(forecastStartTime, yearOffset); 
       const dateObj = new Date(currentForecastTime);
       let periodKey: string;
       if (timeResolution === 'quarterly') {
@@ -257,7 +290,7 @@ export function CountryAtGlance({
 
       const projectedPopulation = (basePointForForecast.population ?? 0) * populationGrowthFactor;
       const projectedGdpPerCapita = (basePointForForecast.gdpPerCapita ?? 0) * gdpGrowthFactor;
-      const projectedTotalGdp = projectedPopulation * projectedGdpPerCapita / 1000;
+      const projectedTotalGdp = projectedPopulation * projectedGdpPerCapita / 1000; 
       const projectedPopDensity = (basePointForForecast.populationDensity ?? 0) * populationGrowthFactor;
       const projectedGdpDensity = (basePointForForecast.gdpDensity ?? 0) * gdpGrowthFactor;
 
@@ -357,6 +390,7 @@ export function CountryAtGlance({
     }
     return null;
   };
+  // ... (Keep renderChart, isLoading block, chartOptions) ...
 
   const renderChart = () => {
     const xAxisProps = {
@@ -473,13 +507,12 @@ export function CountryAtGlance({
       </Card>
     );
   }
-
-  const chartOptions = [
+    const chartOptions = [
     { key: 'overview', label: 'Overview', icon: Activity },
     { key: 'population', label: 'Population', icon: Users },
     { key: 'gdp', label: 'GDP', icon: DollarSign },
     { key: 'density', label: 'Density', icon: Globe }
-  ] as const; // Use "as const" for stronger typing of keys
+  ] as const;
 
   return (
     <Card>
@@ -491,7 +524,6 @@ export function CountryAtGlance({
             </CardTitle>
             <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">Resolution:</span>
-                {/* Corrected onClick handlers */}
                 <Button variant={timeResolution === 'quarterly' ? "secondary" : "ghost"} size="sm" onClick={() => onTimeResolutionChange('quarterly')}>Quarterly</Button>
                 <Button variant={timeResolution === 'annual' ? "secondary" : "ghost"} size="sm" onClick={() => onTimeResolutionChange('annual')}>Annual</Button>
             </div>
@@ -504,7 +536,6 @@ export function CountryAtGlance({
       <CardContent>
         <div className="flex flex-wrap gap-2 mb-6">
             {chartOptions.map(({ key, label, icon: Icon }) => (
-              // Corrected onClick handler and type assertion
               <Button key={key} variant={chartView === key ? "default" : "outline"} size="sm" onClick={() => onChartViewChange(key)} className="flex items-center">
                 <Icon className="h-4 w-4 mr-1.5" />{label}
               </Button>
@@ -531,12 +562,23 @@ export function CountryAtGlance({
           )}
         </div>
 
+        {/* MODIFIED Stats Display Section */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t">
           {[
-            // Using the defined formatNumber function
-            {label: "Population", value: formatNumber(country.currentPopulation / 1000000, false, 1, false) + "M", growth: country.populationGrowthRate},
-            {label: "GDP p.c.", value: formatNumber(country.currentGdpPerCapita, true, 0, false), growth: country.adjustedGdpGrowth},
-            {label: "Total GDP", value: formatNumber(country.currentTotalGdp / 1000000000, true, 1, false) + "B"},
+            {
+              label: "Population",
+              value: formatNumber(country.currentPopulation, false, 0, true), // Use compact, precision 0 for non-currency K or <1K
+              growth: country.populationGrowthRate
+            },
+            {
+              label: "GDP p.c.",
+              value: formatNumber(country.currentGdpPerCapita, true, 0, false), // Not compact, precision 0 for whole dollars
+              growth: country.adjustedGdpGrowth
+            },
+            {
+              label: "Total GDP",
+              value: formatNumber(country.currentTotalGdp, true, 2, true), // Use compact, precision 2 for currency K or <1K
+            },
             {label: "Economic Tier", value: country.economicTier, isBadge: true},
           ].map(stat => (
             <div key={stat.label} className="text-center sm:text-left">
