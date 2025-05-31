@@ -12,8 +12,8 @@ export interface ChartDataPoint {
   population?: number;
   gdpPerCapita?: number;
   totalGdp?: number;
-  populationDensity?: number;
-  gdpDensity?: number;
+  populationDensity?: number | null; // Allow null
+  gdpDensity?: number | null;       // Allow null
   
   // Boolean flags for data source
   isHistorical?: boolean;
@@ -88,7 +88,7 @@ export class ChartDataProcessor {
         ...point,
         ixTimeTimestamp: point.ixTimeTimestamp instanceof Date 
           ? point.ixTimeTimestamp.getTime() 
-          : point.ixTimeTimestamp
+          : point.ixTimeTimestamp // Ensures this is a number
       }))
       .sort((a, b) => a.ixTimeTimestamp - b.ixTimeTimestamp);
     
@@ -102,12 +102,13 @@ export class ChartDataProcessor {
     }
     
     // Group data points by time period based on resolution
-    const groupedData = this.groupDataByPeriod(filteredData, resolution);
+    // At this point, ixTimeTimestamp in filteredData elements is guaranteed to be a number.
+    const groupedData = this.groupDataByPeriod(filteredData as Array<HistoricalDataPoint & { ixTimeTimestamp: number }>, resolution);
     
     // Convert grouped data to ChartDataPoints
-    const chartData: ChartDataPoint[] = Object.entries(groupedData).map(([period, points]) => {
-      // Calculate average values for the period
-      const timestamp = points.reduce((sum, p) => sum + p.ixTimeTimestamp, 0) / points.length;
+    const chartData: ChartDataPoint[] = Object.entries(groupedData).map(([period, pointsInGroup]) => {
+      // Calculate average timestamp for the group
+      const timestamp = pointsInGroup.reduce((sum, p) => sum + p.ixTimeTimestamp, 0) / pointsInGroup.length;
       const formattedTime = IxTime.formatIxTime(timestamp);
       const gameYear = IxTime.getCurrentGameYear(timestamp);
       const isEpoch = Math.abs(timestamp - gameEpoch) < 86400000; // Within 1 day of epoch
@@ -115,20 +116,21 @@ export class ChartDataProcessor {
       
       // Calculate average values (with normalization if requested)
       const population = normalizePopulation 
-        ? this.safeAverage(points, 'population') / 1000000 // Convert to millions
-        : this.safeAverage(points, 'population');
+        ? (this.safeAverage(pointsInGroup, 'population') ?? 0) / 1000000 // Convert to millions
+        : this.safeAverage(pointsInGroup, 'population') ?? 0;
         
-      const gdpPerCapita = this.safeAverage(points, 'gdpPerCapita');
-      
-      const totalGdp = normalizeTotalGdp
-        ? this.safeAverage(points, 'totalGdp') / 1000000000 // Convert to billions
-        : this.safeAverage(points, 'totalGdp');
+      const gdpPerCapita = this.safeAverage(pointsInGroup, 'gdpPerCapita') ?? 0;
+      const totalGdpValue = this.safeAverage(pointsInGroup, 'totalGdp');
+      const totalGdp = normalizeTotalGdp && totalGdpValue != null
+        ? totalGdpValue / 1000000000 // Convert to billions
+        : totalGdpValue ?? 0;
         
-      const populationDensity = this.safeAverage(points, 'populationDensity');
-      
-      const gdpDensity = normalizeGdpDensity
-        ? this.safeAverage(points, 'gdpDensity') / 1000000 // Convert to millions
-        : this.safeAverage(points, 'gdpDensity');
+      const populationDensity = this.safeAverage(pointsInGroup, 'populationDensity'); // Can be undefined or null
+      const gdpDensityValue = this.safeAverage(pointsInGroup, 'gdpDensity'); // Can be undefined or null
+      const gdpDensity = normalizeGdpDensity && gdpDensityValue != null
+        ? gdpDensityValue / 1000000 // Convert to millions
+        : gdpDensityValue;
+
 
       return {
         timestamp,
@@ -138,8 +140,8 @@ export class ChartDataProcessor {
         population,
         gdpPerCapita,
         totalGdp,
-        populationDensity,
-        gdpDensity,
+        populationDensity: populationDensity === undefined ? null : populationDensity, // Ensure null for consistency
+        gdpDensity: gdpDensity === undefined ? null : gdpDensity,                   // Ensure null for consistency
         isHistorical: true,
         isForecast: false,
         isPresent,
@@ -206,8 +208,8 @@ export class ChartDataProcessor {
       const totalGdp = population && gdpPerCapita ? population * gdpPerCapita / 1000 : undefined; // Adjust for units
       
       // Calculate density metrics if base point has them
-      const populationDensity = basePoint.populationDensity ? basePoint.populationDensity * populationGrowthFactor : undefined;
-      const gdpDensity = basePoint.gdpDensity ? basePoint.gdpDensity * gdpGrowthFactor : undefined;
+      const populationDensity = basePoint.populationDensity != null ? basePoint.populationDensity * populationGrowthFactor : null;
+      const gdpDensity = basePoint.gdpDensity != null ? basePoint.gdpDensity * gdpGrowthFactor : null;
       
       forecastPoints.push({
         timestamp,
@@ -217,8 +219,8 @@ export class ChartDataProcessor {
         population,
         gdpPerCapita,
         totalGdp,
-        populationDensity,
-        gdpDensity,
+        populationDensity, // Can be null
+        gdpDensity,       // Can be null
         isHistorical: false,
         isForecast: true,
         isPresent: false,
@@ -283,13 +285,13 @@ export class ChartDataProcessor {
    * Group data points by time period
    */
   private static groupDataByPeriod(
-    data: HistoricalDataPoint[],
+    data: Array<HistoricalDataPoint & { ixTimeTimestamp: number }>, // Ensure ixTimeTimestamp is number here
     resolution: TimeResolutionType
-  ): Record<string, HistoricalDataPoint[]> {
-    const groupedData: Record<string, HistoricalDataPoint[]> = {};
+  ): Record<string, Array<HistoricalDataPoint & { ixTimeTimestamp: number }>> {
+    const groupedData: Record<string, Array<HistoricalDataPoint & { ixTimeTimestamp: number }>> = {};
     
     data.forEach(point => {
-      const timestamp = point.ixTimeTimestamp;
+      const timestamp = point.ixTimeTimestamp; // This is a number
       const period = this.generatePeriodKey(timestamp, resolution);
       
       if (!groupedData[period]) {
@@ -306,11 +308,10 @@ export class ChartDataProcessor {
    * Generate a period key from a timestamp based on resolution
    */
   private static generatePeriodKey(
-    timestamp: number | Date,
+    timestamp: number, // Expect number
     resolution: TimeResolutionType
   ): string {
-    const time = timestamp instanceof Date ? timestamp.getTime() : timestamp;
-    const date = new Date(time);
+    const date = new Date(timestamp); // No longer need instanceof Date check
     
     if (resolution === 'quarterly') {
       const year = date.getUTCFullYear();
@@ -325,16 +326,16 @@ export class ChartDataProcessor {
    * Safely calculate average of a property across data points
    */
   private static safeAverage(
-    points: HistoricalDataPoint[],
-    property: string
-  ): number | undefined {
+    points: Array<HistoricalDataPoint & { ixTimeTimestamp?: number }>, // ixTimeTimestamp may not be used here
+    property: keyof HistoricalDataPoint
+  ): number | null { // Return null if no valid points
     const validPoints = points.filter(p => 
       p[property] !== undefined && 
       p[property] !== null && 
-      isFinite(p[property])
+      isFinite(Number(p[property]))
     );
     
-    if (validPoints.length === 0) return undefined;
+    if (validPoints.length === 0) return null; // MODIFIED: Return null
     
     const sum = validPoints.reduce((acc, p) => acc + Number(p[property]), 0);
     return sum / validPoints.length;
@@ -350,7 +351,7 @@ export class ChartDataProcessor {
     if (data.length < 2) return data;
     
     const { resolution } = options;
-    const result: ChartDataPoint[] = [...data];
+    const result: ChartDataPoint[] = [...data]; // data is ChartDataPoint[]
     const timeStep = resolution === 'quarterly' ? 3 * 30 * 24 * 60 * 60 * 1000 : 365.25 * 24 * 60 * 60 * 1000;
     
     // Sort by timestamp
@@ -358,21 +359,27 @@ export class ChartDataProcessor {
     
     // Check for gaps
     const filledResult: ChartDataPoint[] = [];
-    filledResult.push(result[0]);
+    // `result[0]` is safe if data.length >=2, which is checked.
+    // TypeScript might still complain if it doesn't trace the length check perfectly.
+    if (result[0]) { // Explicit check to satisfy TS, though logically guaranteed
+        filledResult.push(result[0]);
+    }
     
     for (let i = 1; i < result.length; i++) {
-      const current = result[i];
-      const previous = result[i - 1];
+      const current = result[i]; // Safe
+      const previous = filledResult[filledResult.length -1]; // Use last element from filledResult for correct interpolation base
+
+      if (!current || !previous) continue; // Should not happen due to logic flow
       
       // Check if there's a gap
       const timeDiff = current.timestamp - previous.timestamp;
-      if (timeDiff > timeStep * 1.5) {
+      if (timeDiff > timeStep * 1.5) { // Consider 1.5 as a threshold to define a gap
         // Calculate how many periods should be in between
-        const periodsToAdd = Math.floor(timeDiff / timeStep) - 1;
+        const periodsToAdd = Math.max(0, Math.floor(timeDiff / timeStep) - 1);
         
         for (let j = 1; j <= periodsToAdd; j++) {
           const interpolationFactor = j / (periodsToAdd + 1);
-          const interpolatedTimestamp = previous.timestamp + (timeDiff * interpolationFactor);
+          const interpolatedTimestamp = previous.timestamp + (timeDiff * interpolationFactor); // timeDiff is current - previous
           
           // Generate interpolated data point
           const interpolatedPoint: ChartDataPoint = {
@@ -380,30 +387,38 @@ export class ChartDataProcessor {
             formattedTime: IxTime.formatIxTime(interpolatedTimestamp),
             period: this.generatePeriodKey(interpolatedTimestamp, resolution),
             gameYear: IxTime.getCurrentGameYear(interpolatedTimestamp),
-            isHistorical: true,
+            isHistorical: true, // Interpolated points are considered historical estimates
             isForecast: false,
             isPresent: false,
             isEpoch: Math.abs(interpolatedTimestamp - IxTime.getInGameEpoch()) < 86400000,
           };
           
           // Linearly interpolate numeric values
-          const numericProperties = [
+          const numericProperties: (keyof ChartDataPoint)[] = [
             'population', 'gdpPerCapita', 'totalGdp', 
             'populationDensity', 'gdpDensity'
           ];
           
           numericProperties.forEach(prop => {
-            if (previous[prop] !== undefined && current[prop] !== undefined) {
-              interpolatedPoint[prop] = previous[prop] + 
-                (current[prop] - previous[prop]) * interpolationFactor;
+            // MODIFIED: Safer access and type check for interpolation
+            const prevVal = previous[prop];
+            const currVal = current[prop];
+
+            if (prevVal != null && currVal != null && typeof prevVal === 'number' && typeof currVal === 'number' && isFinite(prevVal) && isFinite(currVal)) {
+              (interpolatedPoint as any)[prop] = prevVal + (currVal - prevVal) * interpolationFactor;
+            } else if (prevVal != null && typeof prevVal === 'number' && isFinite(prevVal)) { // If current is null, carry over previous
+                (interpolatedPoint as any)[prop] = prevVal;
+            } else {
+                (interpolatedPoint as any)[prop] = null; // Default to null if interpolation not possible
             }
           });
           
           filledResult.push(interpolatedPoint);
         }
       }
-      
-      filledResult.push(current);
+      if (current) { // Explicit check
+        filledResult.push(current);
+      }
     }
     
     return filledResult;
