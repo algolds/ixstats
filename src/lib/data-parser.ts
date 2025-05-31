@@ -230,6 +230,10 @@ function processExcelData(rawData: any[][]): BaseCountryData[] {
         populationGrowthRate: parsePercentageRequired(row[headerMap.populationGrowthRate], 0.01),
         landArea: landAreaKm,
         areaSqMi: landAreaMi,
+        projected2040Population: 0,
+        projected2040Gdp: 0,
+        projected2040GdpPerCapita: 0,
+        actualGdpGrowth: 0
       };
 
       // Apply minimums

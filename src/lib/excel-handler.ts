@@ -25,7 +25,7 @@ export interface ExcelFieldMapping {
   aliases: string[];
 }
 
-// Field mappings for the exact Excel structure (only 13 core fields)
+// Field mappings for the exact Excel structure (now includes all required fields)
 const FIELD_MAPPINGS: ExcelFieldMapping[] = [
   {
     excelHeader: 'Country',
@@ -100,23 +100,52 @@ const FIELD_MAPPINGS: ExcelFieldMapping[] = [
   {
     excelHeader: 'Max GDPPC Grow Rt',
     dbField: 'maxGdpGrowthRate',
-    required: false,
+    required: true, // As per schema if it's NOT NULL implicitly
     type: 'percentage',
     aliases: ['Max Growth Rate', 'Max GDP Growth']
   },
   {
     excelHeader: 'Adj GDPPC Growth',
     dbField: 'adjustedGdpGrowth',
-    required: false,
+    required: true, // As per schema
     type: 'percentage',
     aliases: ['GDP Growth', 'Adjusted GDP Growth']
   },
   {
     excelHeader: 'Pop Growth Rate',
     dbField: 'populationGrowthRate',
-    required: false,
+    required: true, // As per schema
     type: 'percentage',
     aliases: ['Population Growth', 'popgrowthrate']
+  },
+  // Added missing fields
+  {
+    excelHeader: '2040 Population',
+    dbField: 'projected2040Population',
+    required: true,
+    type: 'number',
+    aliases: ['2040 Pop']
+  },
+  {
+    excelHeader: '2040 GDP',
+    dbField: 'projected2040Gdp',
+    required: true,
+    type: 'number',
+    aliases: []
+  },
+  {
+    excelHeader: '2040 GDP PC',
+    dbField: 'projected2040GdpPerCapita',
+    required: true,
+    type: 'number',
+    aliases: ['2040 GDPPC']
+  },
+  {
+    excelHeader: 'Actual GDP Growth',
+    dbField: 'actualGdpGrowth',
+    required: true,
+    type: 'percentage',
+    aliases: ['Actual Growth']
   }
 ];
 
@@ -252,7 +281,9 @@ export class IxStatsExcelHandler {
       const headerIndex = this.findHeaderIndex(headers, mapping);
       if (headerIndex !== -1) {
         fieldMap.set(mapping.dbField, headerIndex);
-        console.log(`[Excel Handler] Mapped ${mapping.dbField} to column ${headerIndex} (${headers[headerIndex]})`);
+        // console.log(`[Excel Handler] Mapped ${mapping.dbField} to column ${headerIndex} (${headers[headerIndex]})`);
+      } else if (mapping.required) {
+        console.warn(`[Excel Handler] Required field "${mapping.excelHeader}" (or aliases) not found in headers.`);
       }
     }
     
@@ -267,6 +298,7 @@ export class IxStatsExcelHandler {
     
     for (const term of searchTerms) {
       const index = headers.findIndex(header => {
+        if (!header) return false; // handle undefined headers
         const headerLower = header.toLowerCase().trim();
         const termLower = term.toLowerCase().trim();
         
@@ -328,8 +360,10 @@ export class IxStatsExcelHandler {
     try {
       // Get country name first - it's required
       const countryIndex = fieldMap.get('country');
-      if (countryIndex === undefined) {
-        throw new Error('Country field not mapped');
+      if (countryIndex === undefined || row[countryIndex] === undefined) {
+        // throw new Error('Country field not mapped or missing in row'); // More specific error
+        console.warn("Skipping row due to missing country name or mapping");
+        return null;
       }
       
       const countryName = this.parseString(row[countryIndex]);
@@ -345,27 +379,32 @@ export class IxStatsExcelHandler {
         governmentType: this.parseOptionalString(row[fieldMap.get('governmentType') ?? -1]),
         religion: this.parseOptionalString(row[fieldMap.get('religion') ?? -1]),
         leader: this.parseOptionalString(row[fieldMap.get('leader') ?? -1]),
-        population: this.parseNumber(row[fieldMap.get('population') ?? -1], 1000),
-        gdpPerCapita: this.parseNumber(row[fieldMap.get('gdpPerCapita') ?? -1], 500),
+        population: this.parseNumber(row[fieldMap.get('population') ?? -1], 0), // Default 0, validation will catch
+        gdpPerCapita: this.parseNumber(row[fieldMap.get('gdpPerCapita') ?? -1], 0), // Default 0, validation will catch
         landArea: this.parseOptionalNumber(row[fieldMap.get('landArea') ?? -1]),
         areaSqMi: this.parseOptionalNumber(row[fieldMap.get('areaSqMi') ?? -1]),
-        maxGdpGrowthRate: this.parsePercentage(row[fieldMap.get('maxGdpGrowthRate') ?? -1], 0.05),
-        adjustedGdpGrowth: this.parsePercentage(row[fieldMap.get('adjustedGdpGrowth') ?? -1], 0.03),
-        populationGrowthRate: this.parsePercentage(row[fieldMap.get('populationGrowthRate') ?? -1], 0.01)
+        maxGdpGrowthRate: this.parsePercentage(row[fieldMap.get('maxGdpGrowthRate') ?? -1], 0.00), // Default to 0 if required and missing
+        adjustedGdpGrowth: this.parsePercentage(row[fieldMap.get('adjustedGdpGrowth') ?? -1], 0.00),
+        populationGrowthRate: this.parsePercentage(row[fieldMap.get('populationGrowthRate') ?? -1], 0.00),
+        projected2040Population: this.parseNumber(row[fieldMap.get('projected2040Population') ?? -1], 0),
+        projected2040Gdp: this.parseNumber(row[fieldMap.get('projected2040Gdp') ?? -1], 0),
+        projected2040GdpPerCapita: this.parseNumber(row[fieldMap.get('projected2040GdpPerCapita') ?? -1], 0),
+        actualGdpGrowth: this.parsePercentage(row[fieldMap.get('actualGdpGrowth') ?? -1], 0.00),
       };
 
       // Calculate missing areaSqMi from landArea if needed
-      if (!countryData.areaSqMi && countryData.landArea) {
+      if (countryData.areaSqMi === null && countryData.landArea !== null) {
         countryData.areaSqMi = countryData.landArea / 2.58999;
       }
 
       // Calculate missing landArea from areaSqMi if needed
-      if (!countryData.landArea && countryData.areaSqMi) {
+      if (countryData.landArea === null && countryData.areaSqMi !== null) {
         countryData.landArea = countryData.areaSqMi * 2.58999;
       }
-
+      
       // Validate the parsed data
       if (!this.validateCountryData(countryData)) {
+         console.warn(`[Excel Handler] Invalid data for country: ${countryName}. Pop: ${countryData.population}, GDPPC: ${countryData.gdpPerCapita}`);
         return null;
       }
 
@@ -455,8 +494,12 @@ export class IxStatsExcelHandler {
     } else {
       num = parseFloat(cleaned);
       // If the number is greater than 1 and doesn't have %, assume it's already a percentage that needs converting
-      if (num > 1) {
-        num = num / 100;
+      // Exception: if it's a very small decimal already, it might be correct (e.g. 0.05 for 5%)
+      if (num > 1 && num <= 100) { // if 5 is given for 5%, convert
+          num = num / 100;
+      } else if (num > 100) { // if 500 is given for 5%, this is likely an error or different format.
+          // Potentially handle as 5.00 if it was meant to be 5%
+          // For now, assume direct value if not a typical percentage string.
       }
     }
     
@@ -467,13 +510,21 @@ export class IxStatsExcelHandler {
    * Validate that country data meets minimum requirements
    */
   private validateCountryData(data: BaseCountryData): boolean {
-    return (
+    const isValid = 
       data.country.length > 0 &&
       data.population > 0 &&
       data.gdpPerCapita > 0 &&
+      data.projected2040Population >= 0 && // Allow 0 if truly the case
+      data.projected2040Gdp >= 0 &&
+      data.projected2040GdpPerCapita >= 0 &&
+      // actualGdpGrowth can be negative
       !data.country.toLowerCase().includes('#div/0!') &&
-      !data.country.includes('DIV')
-    );
+      !data.country.includes('DIV');
+
+    if (!isValid) {
+        // console.warn(`[ExcelHandler] Validation failed for ${data.country}: Pop=${data.population}, GDPPC=${data.gdpPerCapita}, ProjPop=${data.projected2040Population}, ProjGDP=${data.projected2040Gdp}, ProjGDPPC=${data.projected2040GdpPerCapita}`);
+    }
+    return isValid;
   }
 
   /**
@@ -494,7 +545,7 @@ export class IxStatsExcelHandler {
     return {
       valid: missing.length === 0,
       missing,
-      mapped
+      mapped: mapped as string[] // Cast for simplicity, assuming keys are strings
     };
   }
 }
