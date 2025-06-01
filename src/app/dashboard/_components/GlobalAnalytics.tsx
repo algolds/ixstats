@@ -56,7 +56,7 @@ import {
 } from "~/components/ui/select";
 import { Button } from "~/components/ui/button";
 import { useChartTheme } from "~/context/theme-context";
-import { formatPopulation, formatCurrency } from "~/lib/chart-utils";
+import { formatPopulation, formatCurrency, formatDensity } from "~/lib/chart-utils";
 
 export interface ProcessedCountryData {
   id: string;
@@ -423,9 +423,9 @@ export function GlobalAnalytics({ countries }: GlobalAnalyticsProps) {
                     const raw = (props.payload as any).rawValue;
                     switch (selectedMetric) {
                       case "populationDensity":
-                        return [`${raw.toFixed(1)}/km²`, "Pop Density"];
+                        return [formatDensity(raw, "/km²"), "Pop Density"];
                       case "gdpDensity":
-                        return [`${formatCurrency(raw)}/km²`, "GDP Density"];
+                        return [formatDensity(raw, "/km² GDP"), "GDP Density"];
                       case "currentPopulation":
                         return [formatPopulation(raw), "Population"];
                       case "currentGdpPerCapita":

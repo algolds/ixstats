@@ -3,13 +3,26 @@
 
 import { Globe, BarChart3, Users } from "lucide-react";
 import { Skeleton } from "~/components/ui/skeleton"; // Assuming Skeleton is in this path
+import {
+  formatPopulation,
+  formatCurrency
+} from '~/lib/chart-utils';
 
 interface CountriesPageHeaderProps {
-  totalCountries: number;
+  // totalCountries: number; // Removed
   isLoading?: boolean;
+  // showing?: number; // Removed
+  totalPopulation?: number; // Add totalPopulation prop
+  combinedGdp?: number; // Add combinedGdp prop
 }
 
-export function CountriesPageHeader({ totalCountries, isLoading = false }: CountriesPageHeaderProps) {
+export function CountriesPageHeader({
+  // totalCountries, // Removed
+  isLoading = false,
+  // showing, // Removed
+  totalPopulation, // Destructure totalPopulation prop
+  combinedGdp // Destructure combinedGdp prop
+}: CountriesPageHeaderProps) {
   // This function renders the header section for the countries page.
   // It displays the title, a brief description, and some quick stats like total countries.
   // It also handles a loading state by showing skeletons.
@@ -31,22 +44,73 @@ export function CountriesPageHeader({ totalCountries, isLoading = false }: Count
 
         {/* Right side: Quick Stats */}
         <div className="flex flex-col sm:flex-row gap-3">
-          {/* Stat Card: Total Countries */}
+          {/* Stat Card: Total Countries - Removed */}
+          {/*
           <div className="flex items-center px-4 py-2 bg-card text-card-foreground rounded-lg border">
             <Users className="h-5 w-5 mr-2 text-blue-500" />
             <div>
               <p className="text-xs text-muted-foreground">Total Countries</p>
               {isLoading ? (
-                // Show skeleton if data is loading
                 <Skeleton className="h-5 w-16 mt-1" />
               ) : (
-                // Show total countries count. Changed <p> to <div> to avoid hydration error.
                 <div className="font-semibold text-foreground">
                   {totalCountries.toLocaleString()}
                 </div>
               )}
             </div>
           </div>
+          */}
+
+          {/* Stat Card: Showing - Removed */}
+          {/*
+          {showing !== undefined && (
+            <div className="flex items-center px-4 py-2 bg-card text-card-foreground rounded-lg border">
+              <Users className="h-5 w-5 mr-2 text-blue-500" />
+              <div>
+                <p className="text-xs text-muted-foreground">Showing</p>
+                {isLoading ? (
+                  <Skeleton className="h-5 w-16 mt-1" />
+                ) : (
+                  <div className="font-semibold text-foreground">
+                    {showing.toLocaleString()}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          */}
+
+          {totalPopulation !== undefined && (
+            <div className="flex items-center px-4 py-2 bg-card text-card-foreground rounded-lg border">
+              <Users className="h-5 w-5 mr-2 text-blue-500" />
+              <div>
+                <p className="text-xs text-muted-foreground">Total Population</p>
+                {isLoading ? (
+                  <Skeleton className="h-5 w-16 mt-1" />
+                ) : (
+                  <div className="font-semibold text-foreground">
+                    {formatPopulation(totalPopulation)}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {combinedGdp !== undefined && (
+            <div className="flex items-center px-4 py-2 bg-card text-card-foreground rounded-lg border">
+              <BarChart3 className="h-5 w-5 mr-2 text-green-500" />
+              <div>
+                <p className="text-xs text-muted-foreground">Combined GDP</p>
+                {isLoading ? (
+                  <Skeleton className="h-5 w-20 mt-1" />
+                ) : (
+                  <div className="font-semibold text-foreground">
+                    {formatCurrency(combinedGdp)}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Stat Card: Active Stats */}
           <div className="flex items-center px-4 py-2 bg-card text-card-foreground rounded-lg border">
