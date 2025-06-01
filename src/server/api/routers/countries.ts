@@ -242,7 +242,7 @@ export const countriesRouter = createTRPCRouter({
       const base = prepareBaseCountryData(country);
       const baselineStats = calc.initializeCountryStats(base);
 
-      const dmInputs = country.dmInputs.map((i: any) => ({
+      const dmInputs = (country.dmInputs as any[]).map((i: any) => ({
         ...i,
         ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
       }));
@@ -257,7 +257,7 @@ export const countriesRouter = createTRPCRouter({
       const response: any = {
         ...country,
         calculatedStats: result.newStats,
-        dmInputs: country.dmInputs.map((dm: any) => ({
+        dmInputs: (country.dmInputs as any[]).map((dm: any) => ({
           ...dm,
           ixTimeTimestamp: dm.ixTimeTimestamp.getTime()
         })),
@@ -422,7 +422,7 @@ export const countriesRouter = createTRPCRouter({
         const base = prepareBaseCountryData(countryFromDb);
         const initialStats = calc.initializeCountryStats(base);
 
-        const dmInputs = countryFromDb.dmInputs.map((i: any) => ({
+        const dmInputs = (countryFromDb.dmInputs as any[]).map((i: any) => ({
           ...i,
           ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
         }));
@@ -493,7 +493,7 @@ export const countriesRouter = createTRPCRouter({
         baselineDate: countryFromDb.baselineDate,
         lastCalculated: countryFromDb.lastCalculated,
         calculatedStats,
-        dmInputs: countryFromDb.dmInputs.map((dm: any) => ({
+        dmInputs: (countryFromDb.dmInputs as any[]).map((dm: any) => ({
           ...dm,
           ixTimeTimestamp: dm.ixTimeTimestamp.getTime()
         })),
@@ -564,7 +564,7 @@ export const countriesRouter = createTRPCRouter({
       const base = prepareBaseCountryData(country);
       const baselineStats = calc.initializeCountryStats(base);
 
-      const dmInputs = country.dmInputs.map((i: any) => ({
+      const dmInputs = (country.dmInputs as any[]).map((i: any) => ({
         ...i,
         ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
       }));
@@ -633,7 +633,7 @@ export const countriesRouter = createTRPCRouter({
       const base = prepareBaseCountryData(country);
       const baselineStats = calc.initializeCountryStats(base);
 
-      const dmInputs = country.dmInputs.map((i: any) => ({
+      const dmInputs = (country.dmInputs as any[]).map((i: any) => ({
         ...i,
         ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
       }));
@@ -704,7 +704,7 @@ export const countriesRouter = createTRPCRouter({
         const calc = new IxStatsCalculator(econCfg, baselineDate);
         const base = prepareBaseCountryData(country);
         const baselineStats = calc.initializeCountryStats(base);
-        const dmInputs = country.dmInputs.map((i: any) => ({
+        const dmInputs = (country.dmInputs as any[]).map((i: any) => ({
           ...i,
           ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
         }));
@@ -754,7 +754,7 @@ export const countriesRouter = createTRPCRouter({
           continent: country.continent,
           region: country.region,
           calculatedStats: calculatedCountryStats,
-          dmInputs: country.dmInputs.map((dm: any) => ({
+          dmInputs: (country.dmInputs as any[]).map((dm: any) => ({
             ...dm,
             ixTimeTimestamp: dm.ixTimeTimestamp.getTime()
           })),
@@ -837,7 +837,7 @@ export const countriesRouter = createTRPCRouter({
         const calc = new IxStatsCalculator(econCfg, c.baselineDate.getTime());
         const base = prepareBaseCountryData(c);
         const baselineStats = calc.initializeCountryStats(base);
-        const dmInputs = c.dmInputs.map((i: any) => ({
+        const dmInputs = (c.dmInputs as any[]).map((i: any) => ({
           ...i,
           ixTimeTimestamp: i.ixTimeTimestamp.getTime()
         }));
@@ -895,7 +895,7 @@ export const countriesRouter = createTRPCRouter({
         const calc = new IxStatsCalculator(econCfg, c.baselineDate.getTime());
         const base = prepareBaseCountryData(c);
         const baselineStats = calc.initializeCountryStats(base);
-        const dmInputs = c.dmInputs.map((i: any) => ({
+        const dmInputs = (c.dmInputs as any[]).map((i: any) => ({
           ...i,
           ixTimeTimestamp: i.ixTimeTimestamp.getTime()
         }));

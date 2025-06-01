@@ -348,7 +348,7 @@ export function CountryEconomicDataSection({
             <TabsContent value="core" className="space-y-0">
               <CoreEconomicIndicators
                 indicators={economicData.coreIndicators}
-                onIndicatorsChange={(data) => handleDataChange('coreIndicators', data)}
+                onIndicatorsChangeAction={(data) => handleDataChange('coreIndicators', data)}
                 isReadOnly={!isEditMode}
                 showComparison={false}
               />

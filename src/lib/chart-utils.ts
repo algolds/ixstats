@@ -369,9 +369,10 @@ export function displayGrowthRate(decimalValue: number | null | undefined): stri
   if (decimalValue == null || !isFinite(decimalValue) || isNaN(decimalValue)) {
     return "N/A";
   }
-  
-  // Convert from decimal (0.005) to percentage (0.5%)
-  const percentage = decimalValue * 100;
+  // Check if the value is likely a growth factor (e.g., 1.03 for 3%)
+  // GROWTH PERCENTAGE MULTIPLER ---- LEAVE GROWTH DECIMAL BLANK TO APPLY NO ADDITIONAL MULTIPLIER
+  const growthDecimal = decimalValue >= 1 ? decimalValue - 1 : decimalValue;
+  const percentage = growthDecimal ;
   return `${percentage.toFixed(2)}%`;
 }
 

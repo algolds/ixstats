@@ -102,7 +102,7 @@ export function CalculationLogs({ logs, isLoading, error }: CalculationLogsProps
               </div>
               
               <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Global Growth Factor: {(log.globalGrowthFactor * 100).toFixed(2)}%
+                Global Growth Factor: {((log.globalGrowthFactor - 1) * 100).toFixed(2)}%
                 {log.notes && (
                   <span className="ml-2">• {log.notes}</span>
                 )}

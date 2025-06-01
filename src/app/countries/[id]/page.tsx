@@ -19,7 +19,7 @@ import {
   BarChart3,
   Building,
   TrendingUp,
-  Tabs as TabsIcon
+  History as TabsIcon
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
