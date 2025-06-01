@@ -40,6 +40,7 @@ import {
   Bar,
   Area,
   AreaChart,
+  BarChart,
 } from 'recharts';
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 
