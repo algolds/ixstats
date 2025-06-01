@@ -58,7 +58,7 @@ import {
 } from 'recharts';
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 
-export interface CountryComparison {
+interface CountryComparison {
   id: string;
   name: string;
   region: string;
@@ -76,7 +76,7 @@ export interface CountryComparison {
   color: string;
 }
 
-export interface RegionalData {
+interface RegionalData {
   region: string;
   countries: CountryComparison[];
   avgGdpPerCapita: number;
@@ -86,7 +86,7 @@ export interface RegionalData {
   totalPopulation: number;
 }
 
-export interface ComparativeAnalysisProps {
+interface ComparativeAnalysisProps {
   userCountry: CountryComparison;
   allCountries: CountryComparison[];
   onCountrySelect?: (countryId: string) => void;
