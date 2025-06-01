@@ -1,5 +1,5 @@
 // prisma/schema.prisma
-// Complete schema with all required fields
+// Enhanced schema with comprehensive economic data support
 
 generator client {
   provider = "prisma-client-js"
@@ -52,11 +52,57 @@ model Country {
   economicTier     String
   populationTier   String
 
-  // Projection fields (missing in original schema)
+  // Projection fields
   projected2040Population   Float @default(0)
   projected2040Gdp          Float @default(0)
   projected2040GdpPerCapita Float @default(0)
   actualGdpGrowth           Float @default(0)
+
+  // === NEW ECONOMIC DATA FIELDS ===
+
+  // Core Economic Indicators
+  nominalGDP              Float?
+  realGDPGrowthRate      Float?
+  inflationRate          Float?
+  currencyExchangeRate   Float?
+
+  // Labor & Employment
+  laborForceParticipationRate Float?
+  employmentRate             Float?
+  unemploymentRate           Float?
+  totalWorkforce            Float?
+  averageWorkweekHours      Float?
+  minimumWage               Float?
+  averageAnnualIncome       Float?
+
+  // Fiscal System - Basic
+  taxRevenueGDPPercent      Float?
+  governmentRevenueTotal    Float?
+  taxRevenuePerCapita      Float?
+  governmentBudgetGDPPercent Float?
+  budgetDeficitSurplus     Float?
+  internalDebtGDPPercent   Float?
+  externalDebtGDPPercent   Float?
+  totalDebtGDPRatio        Float?
+  debtPerCapita            Float?
+  interestRates            Float?
+  debtServiceCosts         Float?
+
+  // Income & Wealth
+  povertyRate              Float?
+  incomeInequalityGini     Float?
+  socialMobilityIndex      Float?
+
+  // Government Spending
+  totalGovernmentSpending  Float?
+  spendingGDPPercent      Float?
+  spendingPerCapita       Float?
+
+  // Demographics - Basic
+  lifeExpectancy          Float?
+  urbanPopulationPercent  Float?
+  ruralPopulationPercent  Float?
+  literacyRate           Float?
 
   // System Fields
   localGrowthFactor Float   @default(1.0)
@@ -66,14 +112,166 @@ model Country {
   updatedAt         DateTime @updatedAt
 
   // Relationships
-  historicalData HistoricalDataPoint[]
-  dmInputs       DmInputs[]
+  historicalData    HistoricalDataPoint[]
+  dmInputs          DmInputs[]
+  economicProfile   EconomicProfile?
+  laborMarket       LaborMarket?
+  fiscalSystem      FiscalSystem?
+  incomeDistribution IncomeDistribution?
+  governmentBudget  GovernmentBudget?
+  demographics      Demographics?
 
   @@index([name])
   @@index([economicTier])
   @@index([populationTier])
   @@index([continent])
   @@index([region])
+}
+
+// Detailed Economic Profile
+model EconomicProfile {
+  id        String @id @default(cuid())
+  countryId String @unique
+  country   Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  // Additional economic indicators
+  gdpGrowthVolatility    Float?
+  economicComplexity     Float?
+  innovationIndex        Float?
+  competitivenessRank    Int?
+  easeOfDoingBusiness    Int?
+  corruptionIndex        Float?
+  
+  // Sector breakdown (JSON)
+  sectorBreakdown        String? // JSON: {agriculture: %, industry: %, services: %}
+  
+  // Trade data
+  exportsGDPPercent      Float?
+  importsGDPPercent      Float?
+  tradeBalance           Float?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Labor Market Details
+model LaborMarket {
+  id        String @id @default(cuid())
+  countryId String @unique
+  country   Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  // Employment sectors (JSON)
+  employmentBySector     String? // JSON: {agriculture: %, industry: %, services: %}
+  
+  // Detailed employment data
+  youthUnemploymentRate  Float?
+  femaleParticipationRate Float?
+  informalEmploymentRate Float?
+  
+  // Wage data
+  medianWage            Float?
+  wageGrowthRate        Float?
+  wageBySector          String? // JSON: {agriculture: wage, industry: wage, services: wage}
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Fiscal System Details
+model FiscalSystem {
+  id        String @id @default(cuid())
+  countryId String @unique
+  country   Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  // Tax rates (JSON)
+  personalIncomeTaxRates String? // JSON: [{bracket: number, rate: number}]
+  corporateTaxRates      String? // JSON: [{size: string, rate: number}]
+  salesTaxRate          Float?
+  propertyTaxRate       Float?
+  payrollTaxRate        Float?
+  exciseTaxRates        String? // JSON: [{type: string, rate: number}]
+  wealthTaxRate         Float?
+  
+  // Budget breakdown (JSON)
+  spendingByCategory    String? // JSON: [{category: string, amount: number, percent: number}]
+  
+  // Additional fiscal data
+  fiscalBalanceGDPPercent Float?
+  primaryBalanceGDPPercent Float?
+  taxEfficiency         Float?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Income Distribution Details
+model IncomeDistribution {
+  id        String @id @default(cuid())
+  countryId String @unique
+  country   Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  // Economic classes (JSON)
+  economicClasses       String? // JSON: [{name: string, populationPercent: number, wealthPercent: number, averageIncome: number, color: string}]
+  
+  // Distribution metrics
+  top10PercentWealth    Float?
+  bottom50PercentWealth Float?
+  middleClassPercent    Float?
+  
+  // Social mobility
+  intergenerationalMobility Float?
+  educationMobility     Float?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Government Budget Details
+model GovernmentBudget {
+  id        String @id @default(cuid())
+  countryId String @unique
+  country   Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  // Spending categories (JSON)
+  spendingCategories    String? // JSON: [{category: string, amount: number, percent: number, icon: string, color: string, description: string}]
+  
+  // Budget efficiency metrics
+  spendingEfficiency    Float?
+  publicInvestmentRate  Float?
+  socialSpendingPercent Float?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Demographics Details
+model Demographics {
+  id        String @id @default(cuid())
+  countryId String @unique
+  country   Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  // Age distribution (JSON)
+  ageDistribution       String? // JSON: [{group: string, percent: number, color: string}]
+  
+  // Regional data (JSON)
+  regions              String? // JSON: [{name: string, population: number, urbanPercent: number, color: string}]
+  
+  // Education levels (JSON)
+  educationLevels      String? // JSON: [{level: string, percent: number, color: string}]
+  
+  // Citizenship status (JSON)
+  citizenshipStatuses  String? // JSON: [{status: string, percent: number, color: string}]
+  
+  // Additional demographic data
+  birthRate           Float?
+  deathRate           Float?
+  migrationRate       Float?
+  dependencyRatio     Float?
+  medianAge           Float?
+  populationGrowthProjection Float?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model HistoricalDataPoint {
