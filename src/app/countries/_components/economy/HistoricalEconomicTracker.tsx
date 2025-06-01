@@ -55,7 +55,7 @@ import {
 import { IxTime } from "~/lib/ixtime";
 import { formatCurrency, formatPopulation, displayGrowthRate } from "~/lib/chart-utils";
 
-interface EconomicEvent {
+export interface EconomicEvent {
   id: string;
   timestamp: number;
   type: 'dm_input' | 'policy_change' | 'economic_shift' | 'external_event';
@@ -74,7 +74,7 @@ interface EconomicEvent {
   isActive: boolean;
 }
 
-interface HistoricalDataPoint {
+export interface HistoricalDataPoint {
   timestamp: number;
   population: number;
   gdpPerCapita: number;
@@ -84,7 +84,7 @@ interface HistoricalDataPoint {
   events: EconomicEvent[];
 }
 
-interface HistoricalEconomicTrackerProps {
+export interface HistoricalEconomicTrackerProps {
   countryId: string;
   countryName: string;
   historicalData: HistoricalDataPoint[];

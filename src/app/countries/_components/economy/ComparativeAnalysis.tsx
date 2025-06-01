@@ -58,7 +58,7 @@ import {
 } from 'recharts';
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 
-interface CountryComparison {
+export interface CountryComparison {
   id: string;
   name: string;
   region: string;
@@ -86,7 +86,7 @@ interface RegionalData {
   totalPopulation: number;
 }
 
-interface ComparativeAnalysisProps {
+export interface ComparativeAnalysisProps {
   userCountry: CountryComparison;
   allCountries: CountryComparison[];
   onCountrySelect?: (countryId: string) => void;
