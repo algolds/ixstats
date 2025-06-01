@@ -1,7 +1,9 @@
 // src/server/api/root.ts
-import { countriesRouter } from "~/server/api/routers/countries"; // Ensure this path is correct
-import { adminRouter } from "~/server/api/routers/admin"; // Ensure this path is correct
+// FIXED: Updated main router with admin endpoints
+
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
+import { countriesRouter } from "./routers/countries";
+import { adminRouter } from "./routers/admin";
 
 /**
  * This is the primary router for your server.
@@ -10,7 +12,7 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
  */
 export const appRouter = createTRPCRouter({
   countries: countriesRouter,
-  admin: adminRouter,
+  admin: adminRouter, // FIXED: Added admin router
 });
 
 // export type definition of API
@@ -20,11 +22,7 @@ export type AppRouter = typeof appRouter;
  * Create a server-side caller for the tRPC API.
  * @example
  * const trpc = createCaller(createContext);
- * const res = await trpc.post.all();
- * ^? Post[]
+ * const res = await trpc.countries.getAll();
+ *       ^? CountryData[]
  */
 export const createCaller = createCallerFactory(appRouter);
-
-// The local definitions of countriesRouter and adminRouter have been removed.
-// They should be solely defined in their respective files:
-// ./routers/countries.ts and ./routers/admin.ts

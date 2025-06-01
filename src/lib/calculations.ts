@@ -1,5 +1,5 @@
 // src/lib/calculations.ts
-// FIXED: Proper percentage handling and updated tier classifications
+// FIXED: Proper growth factor handling and updated tier classifications
 
 import { IxTime } from './ixtime';
 import type { 
@@ -12,24 +12,24 @@ import type {
 
 // FIXED: Updated tier enums to match user specifications
 export enum EconomicTier {
-  IMPOVERISHED = "Impoverished",
-  DEVELOPING = "Developing", 
-  DEVELOPED = "Developed",
-  HEALTHY = "Healthy",
-  STRONG = "Strong",
-  VERY_STRONG = "Very Strong",
-  EXTRAVAGANT = "Extravagant"
+  IMPOVERISHED = "Impoverished",    // $0-$9,999 (10% max growth)
+  DEVELOPING = "Developing",        // $10,000-$24,999 (7.50% max growth)
+  DEVELOPED = "Developed",          // $25,000-$34,999 (5% max growth)
+  HEALTHY = "Healthy",              // $35,000-$44,999 (3.50% max growth)
+  STRONG = "Strong",                // $45,000-$54,999 (2.75% max growth)
+  VERY_STRONG = "Very Strong",      // $55,000-$64,999 (1.50% max growth)
+  EXTRAVAGANT = "Extravagant"       // $65,000+ (0.50% max growth)
 }
 
 export enum PopulationTier {
-  TIER_1 = "1",
-  TIER_2 = "2", 
-  TIER_3 = "3",
-  TIER_4 = "4",
-  TIER_5 = "5",
-  TIER_6 = "6",
-  TIER_7 = "7",
-  TIER_X = "X"
+  TIER_1 = "1",    // 0-9,999,999
+  TIER_2 = "2",    // 10,000,000-29,999,999
+  TIER_3 = "3",    // 30,000,000-49,999,999
+  TIER_4 = "4",    // 50,000,000-79,999,999
+  TIER_5 = "5",    // 80,000,000-119,999,999
+  TIER_6 = "6",    // 120,000,000-349,999,999
+  TIER_7 = "7",    // 350,000,000-499,999,999
+  TIER_X = "X"     // 500,000,000+
 }
 
 export enum DmInputType {
@@ -70,12 +70,15 @@ export class IxStatsCalculator {
     const populationDensity = landArea > 0 ? baseData.population / landArea : undefined;
     const gdpDensity = landArea > 0 ? totalGdp / landArea : undefined;
 
-    // FIXED: Growth rates are already in decimal form from parser (0.005 for 0.5%)
-    // No conversion needed - they're ready for calculations
+    // FIXED: Validate and ensure growth rates are in decimal form
     const populationGrowthDecimal = this.validateGrowthRate(baseData.populationGrowthRate);
     const maxGdpGrowthDecimal = this.validateGrowthRate(baseData.maxGdpGrowthRate);
     const adjustedGdpGrowthDecimal = this.validateGrowthRate(baseData.adjustedGdpGrowth);
     const actualGdpGrowthDecimal = baseData.actualGdpGrowth ? this.validateGrowthRate(baseData.actualGdpGrowth) : 0;
+
+    // FIXED: Determine tiers before creating stats
+    const economicTier = this.calculateEconomicTier(baseData.gdpPerCapita);
+    const populationTier = this.calculatePopulationTier(baseData.population);
 
     return {
       // Basic country data
@@ -90,7 +93,7 @@ export class IxStatsCalculator {
       landArea,
       areaSqMi: baseData.areaSqMi,
       
-      // Growth rates (stored as decimals for calculations)
+      // FIXED: Growth rates stored as decimals for calculations
       maxGdpGrowthRate: maxGdpGrowthDecimal,
       adjustedGdpGrowth: adjustedGdpGrowthDecimal,
       populationGrowthRate: populationGrowthDecimal,
@@ -117,18 +120,18 @@ export class IxStatsCalculator {
       lastCalculated: new Date(gameEpoch),
       baselineDate: new Date(gameEpoch),
       
-      // FIXED: Use updated tier calculations
-      economicTier: this.calculateEconomicTier(baseData.gdpPerCapita),
-      populationTier: this.calculatePopulationTier(baseData.population),
+      // FIXED: Use calculated tiers
+      economicTier,
+      populationTier,
       populationDensity,
       gdpDensity,
       localGrowthFactor: baseData.localGrowthFactor || 1.0,
-      globalGrowthFactor: this.config.globalGrowthFactor || 1.0
+      globalGrowthFactor: this.config.globalGrowthFactor || 1.0321
     };
   }
 
   /**
-   * FIXED: Validate growth rates (already in decimal form)
+   * FIXED: Validate growth rates (input should be in decimal form)
    */
   private validateGrowthRate(rate: number): number {
     const numValue = Number(rate);
@@ -181,7 +184,8 @@ export class IxStatsCalculator {
       baselineStats.maxGdpGrowthRate,
       baselineStats.economicTier as EconomicTier,
       yearsFromBaseline,
-      activeDmInputs
+      activeDmInputs,
+      baselineStats.localGrowthFactor
     );
 
     const newTotalGdp = newPopulation * newGdpPerCapita;
@@ -239,21 +243,33 @@ export class IxStatsCalculator {
     return baselinePopulation * Math.pow(1 + adjustedRate, yearsFromBaseline);
   }
 
+  /**
+   * FIXED: GDP per capita progression with proper global growth factor application
+   */
   private calculateGdpPerCapitaProgression(
     baselineGdpPerCapita: number,
     adjustedGrowthDecimal: number,
     maxGrowthRateDecimal: number,
     tier: EconomicTier,
     yearsFromBaseline: number,
-    dmInputs: DmInputRecord[]
+    dmInputs: DmInputRecord[],
+    localGrowthFactor: number = 1.0
   ): number {
+    // Start with the base adjusted growth rate
     let effectiveGrowthRate = adjustedGrowthDecimal;
     
-    // Apply tier and global modifiers
+    // FIXED: Apply global growth factor (3.21% = 1.0321 multiplier)
+    // The global growth factor amplifies the base growth rate
+    effectiveGrowthRate *= this.config.globalGrowthFactor;
+    
+    // Apply local growth factor
+    effectiveGrowthRate *= localGrowthFactor;
+    
+    // Apply tier growth modifiers (usually 1.0 unless specified otherwise)
     const tierModifier = this.config.tierGrowthModifiers[tier] || 1.0;
     effectiveGrowthRate *= tierModifier;
-    effectiveGrowthRate *= this.config.globalGrowthFactor;
 
+    // Apply DM inputs
     dmInputs.forEach(input => {
       const inputValue = this.validateGrowthRate(input.value);
       if (input.inputType === DmInputType.GDP_ADJUSTMENT) {
@@ -263,9 +279,12 @@ export class IxStatsCalculator {
       }
     });
 
-    // Apply growth rate caps
-    effectiveGrowthRate = Math.min(effectiveGrowthRate, maxGrowthRateDecimal);
-    effectiveGrowthRate = Math.max(effectiveGrowthRate, -0.1);
+    // FIXED: Apply tier-based growth rate caps AFTER global factor
+    const tierMaxRate = this.getTierMaxGrowthRate(tier);
+    effectiveGrowthRate = Math.min(effectiveGrowthRate, tierMaxRate);
+    
+    // Ensure no extreme negative growth
+    effectiveGrowthRate = Math.max(effectiveGrowthRate, -0.1); // -10% minimum
 
     // Apply diminishing returns for very high GDP per capita
     if (yearsFromBaseline > 0 && baselineGdpPerCapita > 60000) {
@@ -274,6 +293,23 @@ export class IxStatsCalculator {
     }
 
     return baselineGdpPerCapita * Math.pow(1 + effectiveGrowthRate, yearsFromBaseline);
+  }
+
+  /**
+   * FIXED: Get tier-specific maximum growth rates
+   */
+  private getTierMaxGrowthRate(tier: EconomicTier): number {
+    const maxRates = {
+      [EconomicTier.IMPOVERISHED]: 0.10,    // 10%
+      [EconomicTier.DEVELOPING]: 0.075,     // 7.50%
+      [EconomicTier.DEVELOPED]: 0.05,       // 5%
+      [EconomicTier.HEALTHY]: 0.035,        // 3.50%
+      [EconomicTier.STRONG]: 0.0275,        // 2.75%
+      [EconomicTier.VERY_STRONG]: 0.015,    // 1.50%
+      [EconomicTier.EXTRAVAGANT]: 0.005,    // 0.50%
+    };
+    
+    return maxRates[tier] || 0.05; // Default to 5% if tier not found
   }
 
   /**
@@ -347,7 +383,8 @@ export class IxStatsCalculator {
       currentStats.maxGdpGrowthRate,
       currentStats.economicTier as EconomicTier,
       yearsElapsed,
-      activeDmInputs
+      activeDmInputs,
+      currentStats.localGrowthFactor
     );
 
     const newTotalGdp = newPopulation * newGdpPerCapita;
@@ -489,5 +526,39 @@ export class IxStatsCalculator {
    */
   getGrowthRateAsPercentage(decimalRate: number): number {
     return decimalRate * 100;
+  }
+
+  /**
+   * FIXED: Helper to get effective growth rate after all modifiers
+   * This is useful for debugging and display purposes
+   */
+  getEffectiveGrowthRate(
+    baseGrowthRate: number,
+    tier: EconomicTier,
+    localGrowthFactor: number = 1.0
+  ): { 
+    baseRate: number; 
+    withGlobalFactor: number; 
+    withLocalFactor: number; 
+    withTierModifier: number; 
+    finalRate: number; 
+    tierMax: number;
+  } {
+    const baseRate = this.validateGrowthRate(baseGrowthRate);
+    const withGlobalFactor = baseRate * this.config.globalGrowthFactor;
+    const withLocalFactor = withGlobalFactor * localGrowthFactor;
+    const tierModifier = this.config.tierGrowthModifiers[tier] || 1.0;
+    const withTierModifier = withLocalFactor * tierModifier;
+    const tierMax = this.getTierMaxGrowthRate(tier);
+    const finalRate = Math.min(withTierModifier, tierMax);
+    
+    return {
+      baseRate,
+      withGlobalFactor,
+      withLocalFactor,
+      withTierModifier,
+      finalRate,
+      tierMax,
+    };
   }
 }
