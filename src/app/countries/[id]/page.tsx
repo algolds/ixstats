@@ -24,6 +24,7 @@ import {
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { ixnayWiki } from "~/lib/mediawiki-service";
+import { useEconomyData } from "~/hooks/useEconomyData";
 
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -102,15 +103,6 @@ interface CountryDetailData {
     duration?: number | null;
   }>;
   forecastDataPoints?: Array<TenYearForecastDataPoint>;
-  // Economic data
-  economicData?: {
-    nominalGDP?: number;
-    realGDPGrowthRate?: number;
-    inflationRate?: number;
-    laborForceParticipationRate?: number;
-    unemploymentRate?: number;
-    taxRevenueGDPPercent?: number;
-  };
 }
 
 function CountryDetailPageContent() {
@@ -173,6 +165,13 @@ function CountryDetailPageContent() {
       refetchOnWindowFocus: false,
       staleTime: 5 * 60 * 1000,
     });
+
+  // Fetch comprehensive economic data using the new hook
+  const {
+    economy: economyDataFromHook,
+    isLoading: isLoadingEconomy,
+    error: economyError
+  } = useEconomyData(countryId);
 
   // Load flag when country data is available
   useEffect(() => {
@@ -273,15 +272,6 @@ function CountryDetailPageContent() {
         ...p,
         year: p.gameYear
       })) || [],
-      // Economic data from enhanced query
-      economicData: {
-        nominalGDP: (countryDataResult as any).nominalGDP,
-        realGDPGrowthRate: (countryDataResult as any).realGDPGrowthRate,
-        inflationRate: (countryDataResult as any).inflationRate,
-        laborForceParticipationRate: (countryDataResult as any).laborForceParticipationRate,
-        unemploymentRate: (countryDataResult as any).unemploymentRate,
-        taxRevenueGDPPercent: (countryDataResult as any).taxRevenueGDPPercent,
-      }
     };
 
     return transformed;
@@ -372,8 +362,8 @@ function CountryDetailPageContent() {
 
   // Economic summary data for widget
   const economicSummaryData = useMemo(() => {
-    if (!transformedCountry) return null;
-    
+    if (!transformedCountry || !economyDataFromHook) return null;
+
     return {
       population: transformedCountry.currentPopulation,
       gdpPerCapita: transformedCountry.currentGdpPerCapita,
@@ -381,14 +371,14 @@ function CountryDetailPageContent() {
       economicTier: transformedCountry.economicTier,
       populationGrowthRate: transformedCountry.populationGrowthRate,
       gdpGrowthRate: transformedCountry.adjustedGdpGrowth,
-      unemploymentRate: transformedCountry.economicData?.unemploymentRate || 5.0,
-      laborForceParticipationRate: transformedCountry.economicData?.laborForceParticipationRate || 65.0,
-      taxRevenueGDPPercent: transformedCountry.economicData?.taxRevenueGDPPercent,
+      unemploymentRate: economyDataFromHook.labor.unemploymentRate || 5.0,
+      laborForceParticipationRate: economyDataFromHook.labor.laborForceParticipationRate || 65.0,
+      taxRevenueGDPPercent: economyDataFromHook.fiscal.taxRevenueGDPPercent,
       populationDensity: transformedCountry.populationDensity,
       gdpDensity: transformedCountry.gdpDensity,
       landArea: transformedCountry.landArea,
     };
-  }, [transformedCountry]);
+  }, [transformedCountry, economyDataFromHook]);
 
   // ... [Previous handler functions remain the same] ...
   
@@ -651,14 +641,30 @@ function CountryDetailPageContent() {
 
               <TabsContent value="economics" className="mt-0 space-y-6">
                 {/* Economic Data Display - Full Interface */}
-                <EconomicDataDisplay
-                  countryId={countryId}
-                  countryName={transformedCountry.name}
-                  isEditable={true}
-                  mode="full"
-                  showTabs={true}
-                  defaultTab="core"
-                />
+                {transformedCountry ? (
+                  <EconomicDataDisplay
+                    countryId={countryId}
+                    countryName={transformedCountry.name}
+                    isEditable={true}
+                    mode="full"
+                    showTabs={true}
+                    defaultTab="core"
+                  />
+                ) : (
+                 /* Display a placeholder/message if country data is loading or an error occurred */
+                  isLoadingCountry ? (
+                     <Card><CardHeader><Skeleton className="h-6 w-1/3 mb-2" /><Skeleton className="h-4 w-1/2" /></CardHeader><CardContent><Skeleton className="h-80 w-full rounded-lg" /></CardContent></Card>
+                  ) : countryError ? (
+                     <Alert variant="destructive">
+                       <AlertTriangle className="h-4 w-4" />
+                       <AlertTitle>Error Loading Country Data</AlertTitle>
+                       {/* Display a generic error message for simplicity */}
+                       <AlertDescription>Failed to load country data required for economic display.</AlertDescription>
+                     </Alert>
+                  ) : (
+                    <Card><CardHeader><CardTitle>Economic Data</CardTitle><CardDescription>Detailed economic data for this country</CardDescription></CardHeader><CardContent className="p-4 text-center"><Info className="h-10 w-10 text-muted-foreground mx-auto mb-3" /><p className="text-sm text-muted-foreground">Could not load country data required for economic display.</p></CardContent></Card>
+                   )
+                )}
               </TabsContent>
 
               <TabsContent value="history" className="mt-0 space-y-6">
