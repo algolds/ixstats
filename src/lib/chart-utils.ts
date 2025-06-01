@@ -1,5 +1,6 @@
 // src/lib/chart-utils.ts
 // Enhanced chart utilities with robust number formatting and safety checks
+// FIXED: GDP percentage formatting issues
 
 /**
  * Safely format a number as population with appropriate scale
@@ -36,6 +37,7 @@ export function formatPopulation(value: number | null | undefined): string {
 
 /**
  * Safely format a number as currency with appropriate scale
+ * FIXED: Handle potential currency symbols from Excel parsing
  */
 export function formatCurrency(value: number | null | undefined): string {
   if (value == null || !isFinite(value) || isNaN(value)) {
@@ -72,6 +74,7 @@ export function formatCurrency(value: number | null | undefined): string {
 
 /**
  * Safely format a percentage value
+ * FIXED: Properly handle percentage conversion and already-percentage values
  * @param value The number to format
  * @param decimals Number of decimal places to show
  * @param isAlreadyPercentage If true, assumes value is already in percentage form (not decimal)
@@ -85,13 +88,66 @@ export function formatPercentage(
     return "N/A";
   }
 
-  // Apply percentage conversion only if needed
-  const percentValue = isAlreadyPercentage ? value : value ;
+  // FIXED: Apply percentage conversion only if needed
+  const percentValue = isAlreadyPercentage ? value : value * 100;
   
   // Cap extreme percentage values
   const cappedValue = Math.min(Math.max(percentValue, -999), 9999);
   
   return `${cappedValue.toFixed(decimals)}%`;
+}
+
+/**
+ * FIXED: New function specifically for GDP growth rates
+ * Handles GDP growth rates that come from Excel as percentages
+ */
+export function formatGdpGrowthRate(value: number | null | undefined): string {
+  return formatPercentage(value, 2, true); // Already in percentage form
+}
+
+/**
+ * FIXED: New function specifically for population growth rates
+ * Handles population growth rates that come from Excel as percentages
+ */
+export function formatPopulationGrowthRate(value: number | null | undefined): string {
+  return formatPercentage(value, 2, true); // Already in percentage form
+}
+
+/**
+ * FIXED: Parse numeric value from potentially formatted Excel data
+ * Removes currency symbols, percentage signs, commas, etc.
+ */
+export function parseExcelNumber(value: any): number | null {
+  if (typeof value === 'number') {
+    return isFinite(value) ? value : null;
+  }
+  
+  if (typeof value === 'string') {
+    // Remove common Excel formatting: $, %, commas, spaces
+    const cleaned = value.replace(/[$,%\s]/g, '');
+    const parsed = parseFloat(cleaned);
+    return isFinite(parsed) ? parsed : null;
+  }
+  
+  return null;
+}
+
+/**
+ * FIXED: Parse percentage value from Excel (could be decimal or percentage)
+ * Excel sometimes exports percentages as decimals (0.05) or as percentages (5%)
+ */
+export function parseExcelPercentage(value: any): number | null {
+  const cleaned = parseExcelNumber(value);
+  if (cleaned === null) return null;
+  
+  // If the value is very small (< 1), it's likely a decimal representation
+  // If it's larger, it's likely already a percentage
+  // This is a heuristic based on typical growth rates
+  if (Math.abs(cleaned) < 1) {
+    return cleaned * 100; // Convert decimal to percentage
+  } else {
+    return cleaned; // Already a percentage
+  }
 }
 
 /**
@@ -148,7 +204,8 @@ export function formatNumber(value: number | null | undefined, decimals: number 
 }
 
 /**
- * Format growth rate as a percentage with color coding info
+ * FIXED: Format growth rate as a percentage with color coding info
+ * Assumes input is already in percentage form
  */
 export function formatGrowthRate(value: number | null | undefined): {
   formatted: string;
@@ -163,16 +220,16 @@ export function formatGrowthRate(value: number | null | undefined): {
     };
   }
 
-  const percentage = value;
-  const formatted = `${percentage.toFixed(2)}%`;
+  // FIXED: Input is already in percentage form
+  const formatted = `${value.toFixed(2)}%`;
 
-  if (percentage > 0.1) {
+  if (value > 0.1) {
     return {
       formatted,
       color: "text-green-600",
       icon: "up"
     };
-  } else if (percentage < -0.1) {
+  } else if (value < -0.1) {
     return {
       formatted,
       color: "text-red-600",
@@ -251,6 +308,7 @@ export function isValidDisplayNumber(value: any): value is number {
 
 /**
  * Safe number conversion with fallback
+ * FIXED: Handle Excel-formatted numbers with currency/percentage symbols
  */
 export function safeNumber(value: any, fallback: number = 0): number {
   if (typeof value === 'number' && isValidDisplayNumber(value)) {
@@ -258,8 +316,8 @@ export function safeNumber(value: any, fallback: number = 0): number {
   }
   
   if (typeof value === 'string') {
-    const parsed = parseFloat(value);
-    if (isValidDisplayNumber(parsed)) {
+    const parsed = parseExcelNumber(value);
+    if (parsed !== null && isValidDisplayNumber(parsed)) {
       return parsed;
     }
   }

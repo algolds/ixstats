@@ -35,7 +35,8 @@ import {
 import {
   formatPopulation,
   formatCurrency,
-  formatPercentage,
+  formatGdpGrowthRate,
+  formatPopulationGrowthRate,
 } from "~/lib/chart-utils";
 
 interface CountryAtGlanceData {
@@ -77,14 +78,14 @@ export function CountryAtGlance({
   const formatted = useMemo(() => {
     // Icons for growth arrows
     const getGrowthIcon = (rate: number) => {
-      if (rate > 0.001) return <ArrowUp className="h-3 w-3 text-green-600" />;
-      if (rate < -0.001) return <ArrowDown className="h-3 w-3 text-red-600" />;
+      if (rate > 0.1) return <ArrowUp className="h-3 w-3 text-green-600" />;
+      if (rate < -0.1) return <ArrowDown className="h-3 w-3 text-red-600" />;
       return <Minus className="h-3 w-3 text-gray-500" />;
     };
     // Color classes for growth text
     const getGrowthColor = (rate: number) => {
-      if (rate > 0.001) return "text-green-600";
-      if (rate < -0.001) return "text-red-600";
+      if (rate > 0.1) return "text-green-600";
+      if (rate < -0.1) return "text-red-600";
       return "text-gray-500";
     };
     // Badge variant per economic tier
@@ -103,8 +104,10 @@ export function CountryAtGlance({
       population: formatPopulation(country.currentPopulation),
       gdpPerCapita: formatCurrency(country.currentGdpPerCapita),
       totalGdp: formatCurrency(country.currentTotalGdp),
-      populationGrowth: formatPercentage(country.populationGrowthRate),
-      gdpGrowth: formatPercentage(country.adjustedGdpGrowth),
+      // FIXED: Use the correct formatting functions for growth rates
+      // These growth rates come from Excel as percentages already
+      populationGrowth: formatPopulationGrowthRate(country.populationGrowthRate),
+      gdpGrowth: formatGdpGrowthRate(country.adjustedGdpGrowth),
       populationDensity:
         country.populationDensity != null
           ? `${country.populationDensity.toFixed(1)}/km²`
@@ -271,7 +274,7 @@ export function CountryAtGlance({
                 <TooltipContent>
                   <p>
                     Current GDP per capita, capped at max rate{" "}
-                    {country.maxGdpGrowthRate * 100}%
+                    {formatGdpGrowthRate(country.maxGdpGrowthRate)}
                   </p>
                 </TooltipContent>
               </Tooltip>
