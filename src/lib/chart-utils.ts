@@ -384,7 +384,7 @@ export function getGrowthIcon(decimalValue: number | null | undefined): "up" | "
   }
   
   // Convert to percentage for threshold comparison
-  const percentage = decimalValue * 100;
+  const percentage = decimalValue * 10;
   
   if (percentage > 0.1) return "up";
   if (percentage < -0.1) return "down";
