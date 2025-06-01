@@ -1,99 +1,74 @@
 // src/app/admin/_components/BotStatusBanner.tsx
 "use client";
 
-import { Bot, Zap, AlertTriangle, CheckCircle2, RefreshCw, Loader2 } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
-import { Button } from "~/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
+import { Bot, ArrowLeftRight, RefreshCw } from "lucide-react";
 import type { AdminPageBotStatusView } from "~/types/ixstats";
 
 interface BotStatusBannerProps {
-  botStatus: AdminPageBotStatusView | null | undefined;
+  botStatus: AdminPageBotStatusView | undefined;
   onSync: () => void;
   onRefresh: () => void;
   syncPending: boolean;
 }
 
-export function BotStatusBanner({ botStatus, onSync, onRefresh, syncPending }: BotStatusBannerProps) {
-  if (!botStatus) {
-    return (
-      <Alert variant="default" className="mb-8 bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700">
-        <Bot className="h-5 w-5 text-gray-500" />
-        <AlertTitle className="font-semibold text-gray-700 dark:text-gray-300">Bot Status</AlertTitle>
-        <AlertDescription className="text-gray-600 dark:text-gray-400">
-          Loading bot status...
-        </AlertDescription>
-      </Alert>
-    );
-  }
+export function BotStatusBanner({ 
+  botStatus, 
+  onSync, 
+  onRefresh, 
+  syncPending 
+}: BotStatusBannerProps) {
+  if (!botStatus) return null;
 
-  const getVariant = () => {
-    if (!botStatus.isSynced || !botStatus.isActive || botStatus.isPaused) return "destructive";
-    return "default"; // Corresponds to a success/info state in shadcn
-  };
-  
-  const getTitle = () => {
-    if (botStatus.isPaused) return "Bot Paused";
-    if (!botStatus.isActive) return "Bot Inactive";
-    if (!botStatus.isSynced) return "Bot Out of Sync";
-    return "Bot Operational";
+  const getBotStatusColor = (healthAvailable: boolean, botIsReady?: boolean) => {
+    if (!healthAvailable) return "text-red-600 dark:text-red-400";
+    if (botIsReady === false) return "text-yellow-600 dark:text-yellow-400"; // Bot connected but not ready
+    return "text-green-600 dark:text-green-400"; // Bot connected and ready, or status unknown but health is ok
   };
 
-  const getDescription = () => {
-    let desc = `Last sync attempt: ${botStatus.lastSyncTime ? new Date(botStatus.lastSyncTime).toLocaleString() : 'Never'}. `;
-    if (botStatus.isPaused) desc += "The bot is currently paused and will not post updates.";
-    else if (!botStatus.isActive) desc += "The bot is not running or not reachable.";
-    else if (!botStatus.isSynced) desc += `Data out of sync. ${botStatus.syncError ? `Error: ${botStatus.syncError}` : ''}`;
-    else desc += "Bot is active and synchronized with the wiki.";
-    desc += ` ${botStatus.overriddenCountriesCount ?? 0} countries have overrides.`
-    return desc;
+  const getBannerColor = (healthAvailable: boolean) => {
+    return healthAvailable 
+      ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
+      : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
   };
 
-  const alertVariant = getVariant();
-  const IconComponent = alertVariant === "destructive" ? AlertTriangle : CheckCircle2;
-  const iconColor = alertVariant === "destructive" ? "text-yellow-500 dark:text-yellow-400" : "text-green-500 dark:text-green-400";
-  const bgColor = alertVariant === "destructive" ? "bg-yellow-50 dark:bg-yellow-900/30 border-yellow-300 dark:border-yellow-600" : "bg-green-50 dark:bg-green-900/30 border-green-300 dark:border-green-600";
-
+  const botUserDisplay = botStatus.botStatus?.botUser;
+  const botTag = botUserDisplay 
+    ? `${botUserDisplay.username}#${botUserDisplay.discriminator}`
+    : null;
 
   return (
-    <Alert className={`mb-8 ${bgColor}`}>
-      <IconComponent className={`h-5 w-5 ${iconColor}`} />
-      <AlertTitle className={`font-semibold ${alertVariant === "destructive" ? "text-yellow-700 dark:text-yellow-300" : "text-green-700 dark:text-green-300"}`}>
-        {getTitle()}
-      </AlertTitle>
-      <AlertDescription className={`${alertVariant === "destructive" ? "text-yellow-700 dark:text-yellow-300" : "text-green-700 dark:text-green-300"}`}>
-        {getDescription()}
-      </AlertDescription>
-      <div className="mt-3 flex gap-2">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="outline" size="sm" onClick={onRefresh} className="dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent className="dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700">
-              <p>Refresh Status</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        {!botStatus.isPaused && (
-            <Button
-            variant="outline"
-            size="sm"
+    <div className={`mb-6 p-4 rounded-lg border ${getBannerColor(botStatus.botHealth.available)}`}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <Bot className={`h-6 w-6 mr-3 ${getBotStatusColor(botStatus.botHealth.available, botStatus.botStatus?.botReady)}`} />
+          <div>
+            <h3 className={`font-medium ${getBotStatusColor(botStatus.botHealth.available, botStatus.botStatus?.botReady)}`}>
+              Discord Bot Status: {botStatus.botHealth.available ? (botStatus.botStatus?.botReady ? 'Connected & Ready' : 'Connected, Not Ready') : 'Disconnected'}
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {botStatus.botHealth.message}
+              {botTag && ` • ${botTag}`}
+            </p>
+          </div>
+        </div>
+        <div className="flex space-x-2">
+          <button
             onClick={onSync}
-            disabled={syncPending || !botStatus.isActive}
-            className="dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 disabled:opacity-70"
-            >
-            {syncPending ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-                <Zap className="h-4 w-4 mr-2" />
-            )}
-            {syncPending ? "Syncing..." : "Force Sync Bot"}
-            </Button>
-        )}
+            disabled={syncPending || !botStatus.botHealth.available}
+            className="px-3 py-1 bg-blue-100 hover:bg-blue-200 dark:bg-blue-700 dark:hover:bg-blue-600 text-blue-700 dark:text-blue-100 rounded-md text-sm flex items-center disabled:opacity-50"
+          >
+            <ArrowLeftRight className={`h-4 w-4 mr-1 ${syncPending ? 'animate-spin' : ''}`} />
+            Sync
+          </button>
+          <button
+            onClick={onRefresh}
+            className="px-3 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md text-sm flex items-center"
+          >
+            <RefreshCw className="h-4 w-4 mr-1" />
+            Refresh
+          </button>
+        </div>
       </div>
-    </Alert>
+    </div>
   );
 }

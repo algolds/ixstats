@@ -1,4 +1,6 @@
 // src/app/admin/page.tsx
+// FIXED: Updated admin page to work with current system
+
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -13,28 +15,23 @@ import {
   DataImportSection,
   WarningPanel,
   ImportPreviewDialog,
-} from "./_components"; // Assuming these are correctly refactored and exported from index
-import { AdminErrorBoundary } from "./_components/ErrorBoundary"; // Keep your error boundary
-
+} from "./_components";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { CONFIG_CONSTANTS } from "~/lib/config-service";
 import type { 
+  SystemStatus, 
+  AdminPageBotStatusView, 
   ImportAnalysis,
-  CalculationLog // Make sure this type is correctly defined or imported
+  BaseCountryData,
+  CalculationLog
 } from "~/types/ixstats";
-
-// Shadcn UI imports (if not handled by individual components)
-// import { Button } from "~/components/ui/button";
-// import { Toaster } from "~/components/ui/toaster"; // If you use toasts for notifications
-// import { useToast } from "~/components/ui/use-toast"; // For toast notifications
+import { AdminErrorBoundary } from "./_components/ErrorBoundary";
 
 export default function AdminPage() {
-  // const { toast } = useToast(); // For notifications
-
   // State management
   const [config, setConfig] = useState({
-    globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR as number,
+    globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR,
     autoUpdate: true,
     botSyncEnabled: true,
     timeMultiplier: 4.0,
@@ -50,7 +47,7 @@ export default function AdminPage() {
     isAnalyzing: false,
     analyzeError: null as string | null,
     importError: null as string | null,
-    previewData: null as ImportAnalysis | null, // Ensure ImportAnalysis has a 'changes' field
+    previewData: null as ImportAnalysis | null,
     showPreview: false,
   });
   
@@ -71,8 +68,8 @@ export default function AdminPage() {
     isLoading: statusLoading, 
     refetch: refetchStatus 
   } = api.admin.getSystemStatus.useQuery(undefined, {
-    refetchInterval: 30000,
-    refetchOnWindowFocus: true, // Consider if this is desired
+    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchOnWindowFocus: false,
   });
 
   const { 
@@ -80,8 +77,8 @@ export default function AdminPage() {
     isLoading: botStatusLoading,
     refetch: refetchBotStatus 
   } = api.admin.getBotStatus.useQuery(undefined, {
-    refetchInterval: 15000,
-    refetchOnWindowFocus: true, // Consider if this is desired
+    refetchInterval: 15000, // Refresh every 15 seconds
+    refetchOnWindowFocus: false,
   });
 
   const { 
@@ -91,21 +88,19 @@ export default function AdminPage() {
   } = api.admin.getConfig.useQuery();
 
   const { 
-    data: calculationLogsData, // Renamed to avoid conflict if CalculationLog type is also named 'calculationLogs'
+    data: calculationLogs, 
     isLoading: logsLoading,
     error: logsError 
   } = api.admin.getCalculationLogs.useQuery({ limit: 10 });
-  
-  const calculationLogs: CalculationLog[] | null | undefined = calculationLogsData;
-
 
   // TRPC Mutations
   const saveConfigMutation = api.admin.saveConfig.useMutation();
-  const forceCalculationMutation = api.countries.updateStats.useMutation(); // Assuming this is the correct mutation
+  const forceCalculationMutation = api.countries.updateStats.useMutation();
   const setCustomTimeMutation = api.admin.setCustomTime.useMutation();
   const analyzeImportMutation = api.admin.analyzeImport.useMutation();
   const importDataMutation = api.admin.importRosterData.useMutation();
 
+  // Bot control mutations
   const syncBotMutation = api.admin.syncBot.useMutation();
   const pauseBotMutation = api.admin.pauseBot.useMutation();
   const resumeBotMutation = api.admin.resumeBot.useMutation();
@@ -115,10 +110,10 @@ export default function AdminPage() {
   useEffect(() => {
     if (configData) {
       setConfig({
-        globalGrowthFactor: configData.globalGrowthFactor ?? (CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR as number),
+        globalGrowthFactor: configData.globalGrowthFactor || CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR,
         autoUpdate: configData.autoUpdate ?? true,
         botSyncEnabled: configData.botSyncEnabled ?? true,
-        timeMultiplier: configData.timeMultiplier ?? 4.0,
+        timeMultiplier: configData.timeMultiplier || 4.0,
       });
     }
   }, [configData]);
@@ -127,31 +122,27 @@ export default function AdminPage() {
   const handleSaveConfig = useCallback(async () => {
     setActionState(prev => ({ ...prev, savePending: true }));
     try {
-      await saveConfigMutation.mutateAsync(config); 
+      await saveConfigMutation.mutateAsync(config);
       setActionState(prev => ({ ...prev, lastUpdate: new Date() }));
       await refetchConfig();
-      // toast({ title: "Success", description: "Configuration saved." });
     } catch (error) {
       console.error("Failed to save config:", error);
-      // toast({ variant: "destructive", title: "Error", description: "Failed to save configuration." });
     } finally {
       setActionState(prev => ({ ...prev, savePending: false }));
     }
-  }, [config, saveConfigMutation, refetchConfig /*, toast*/]);
+  }, [config, saveConfigMutation, refetchConfig]);
 
   const handleForceCalculation = useCallback(async () => {
     setActionState(prev => ({ ...prev, calculationPending: true }));
     try {
       await forceCalculationMutation.mutateAsync({});
       await refetchStatus();
-      // toast({ title: "Initiated", description: "Forced calculation started." });
     } catch (error) {
       console.error("Failed to force calculation:", error);
-      // toast({ variant: "destructive", title: "Error", description: "Failed to start calculation." });
     } finally {
       setActionState(prev => ({ ...prev, calculationPending: false }));
     }
-  }, [forceCalculationMutation, refetchStatus /*, toast*/]);
+  }, [forceCalculationMutation, refetchStatus]);
 
   const handleSetCustomTime = useCallback(async () => {
     if (!timeState.customDate || !timeState.customTime) return;
@@ -172,91 +163,81 @@ export default function AdminPage() {
       });
       await refetchStatus();
       await refetchBotStatus();
-      // toast({ title: "Success", description: "Custom time set." });
     } catch (error) {
       console.error("Failed to set custom time:", error);
-      // toast({ variant: "destructive", title: "Error", description: "Failed to set custom time." });
     } finally {
       setActionState(prev => ({ ...prev, setTimePending: false }));
     }
-  }, [timeState, config.timeMultiplier, setCustomTimeMutation, refetchStatus, refetchBotStatus /*, toast*/]);
+  }, [timeState, config.timeMultiplier, setCustomTimeMutation, refetchStatus, refetchBotStatus]);
 
   const handleResetToRealTime = useCallback(async () => {
     setActionState(prev => ({ ...prev, setTimePending: true }));
     try {
       await setCustomTimeMutation.mutateAsync({ 
-        ixTime: IxTime.getCurrentIxTime(), // Ensure this provides the correct structure
+        ixTime: IxTime.getCurrentIxTime(),
         multiplier: 4.0 
       });
       setConfig(prev => ({ ...prev, timeMultiplier: 4.0 }));
       await refetchStatus();
       await refetchBotStatus();
-      // toast({ title: "Success", description: "Time reset to real-time." });
     } catch (error) {
       console.error("Failed to reset time:", error);
-      // toast({ variant: "destructive", title: "Error", description: "Failed to reset time." });
     } finally {
       setActionState(prev => ({ ...prev, setTimePending: false }));
     }
-  }, [setCustomTimeMutation, refetchStatus, refetchBotStatus /*, toast*/]);
+  }, [setCustomTimeMutation, refetchStatus, refetchBotStatus]);
 
+  // Bot control handlers
   const handleSyncBot = useCallback(async () => {
     setActionState(prev => ({ ...prev, syncPending: true }));
     try {
       await syncBotMutation.mutateAsync();
       await refetchBotStatus();
-      await refetchStatus(); // Also refresh system status as bot sync might impact it
-      // toast({ title: "Initiated", description: "Bot synchronization started." });
+      await refetchStatus();
     } catch (error) {
       console.error("Failed to sync bot:", error);
-      // toast({ variant: "destructive", title: "Error", description: "Failed to sync bot." });
     } finally {
       setActionState(prev => ({ ...prev, syncPending: false }));
     }
-  }, [syncBotMutation, refetchBotStatus, refetchStatus /*, toast*/]);
+  }, [syncBotMutation, refetchBotStatus, refetchStatus]);
 
   const handlePauseBot = useCallback(async () => {
     setActionState(prev => ({ ...prev, pausePending: true }));
     try {
       await pauseBotMutation.mutateAsync();
       await refetchBotStatus();
-      // toast({ title: "Success", description: "Bot paused." });
     } catch (error) {
       console.error("Failed to pause bot:", error);
-      // toast({ variant: "destructive", title: "Error", description: "Failed to pause bot." });
     } finally {
       setActionState(prev => ({ ...prev, pausePending: false }));
     }
-  }, [pauseBotMutation, refetchBotStatus /*, toast*/]);
+  }, [pauseBotMutation, refetchBotStatus]);
 
   const handleResumeBot = useCallback(async () => {
     setActionState(prev => ({ ...prev, resumePending: true }));
     try {
       await resumeBotMutation.mutateAsync();
       await refetchBotStatus();
-      // toast({ title: "Success", description: "Bot resumed." });
     } catch (error) {
       console.error("Failed to resume bot:", error);
-      // toast({ variant: "destructive", title: "Error", description: "Failed to resume bot." });
     } finally {
       setActionState(prev => ({ ...prev, resumePending: false }));
     }
-  }, [resumeBotMutation, refetchBotStatus /*, toast*/]);
+  }, [resumeBotMutation, refetchBotStatus]);
 
   const handleClearOverrides = useCallback(async () => {
     setActionState(prev => ({ ...prev, clearPending: true }));
     try {
       await clearBotOverridesMutation.mutateAsync();
       await refetchBotStatus();
-      // toast({ title: "Success", description: "Bot overrides cleared." });
     } catch (error) {
       console.error("Failed to clear overrides:", error);
-      // toast({ variant: "destructive", title: "Error", description: "Failed to clear overrides." });
     } finally {
       setActionState(prev => ({ ...prev, clearPending: false }));
     }
-  }, [clearBotOverridesMutation, refetchBotStatus /*, toast*/]);
+  }, [clearBotOverridesMutation, refetchBotStatus]);
 
+  // Import handlers
   const handleFileSelect = useCallback(async (file: File) => {
     setImportState(prev => ({ 
       ...prev, 
@@ -266,9 +247,14 @@ export default function AdminPage() {
     }));
 
     try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      // Convert file to ArrayBuffer for the mutation
       const arrayBuffer = await file.arrayBuffer();
+      
       const analysis = await analyzeImportMutation.mutateAsync({
-        fileData: Array.from(new Uint8Array(arrayBuffer)), // Ensure this matches backend expectations
+        fileData: Array.from(new Uint8Array(arrayBuffer)),
         fileName: file.name,
       });
       
@@ -278,13 +264,14 @@ export default function AdminPage() {
         showPreview: true 
       }));
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to analyze file";
-      setImportState(prev => ({ ...prev, analyzeError: errorMessage }));
-      // toast({ variant: "destructive", title: "Analysis Error", description: errorMessage });
+      setImportState(prev => ({ 
+        ...prev, 
+        analyzeError: error instanceof Error ? error.message : "Failed to analyze file" 
+      }));
     } finally {
       setImportState(prev => ({ ...prev, isAnalyzing: false }));
     }
-  }, [analyzeImportMutation /*, toast*/]);
+  }, [analyzeImportMutation]);
 
   const handleImportConfirm = useCallback(async (replaceExisting: boolean) => {
     if (!importState.previewData) return;
@@ -292,16 +279,9 @@ export default function AdminPage() {
     setImportState(prev => ({ ...prev, isUploading: true, importError: null }));
     
     try {
-      // Assuming analysisId is part of previewData or can be derived
-      // For example, if previewData itself is the analysis object expected by the backend
-      // or if it contains an ID. Using a simple string for now.
-      const analysisId = importState.previewData.totalCountries?.toString() ?? Date.now().toString();
-
       await importDataMutation.mutateAsync({
-        analysisId: analysisId, 
+        analysisId: importState.previewData.totalCountries.toString(), // Use a simple ID
         replaceExisting,
-        // Pass the actual data or reference if your backend analyzeImport created a temporary store
-        // This example assumes importRosterData uses the analysisId to fetch the analyzed data
       });
       
       setImportState(prev => ({ 
@@ -310,18 +290,18 @@ export default function AdminPage() {
         previewData: null 
       }));
       
+      // Refresh status and trigger recalculation
       await refetchStatus();
-      await handleForceCalculation(); // Optionally trigger recalculation
-      // toast({ title: "Success", description: "Data imported successfully." });
+      await handleForceCalculation();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to import data";
-      setImportState(prev => ({ ...prev, importError: errorMessage }));
-      // toast({ variant: "destructive", title: "Import Error", description: errorMessage });
+      setImportState(prev => ({ 
+        ...prev, 
+        importError: error instanceof Error ? error.message : "Failed to import data" 
+      }));
     } finally {
       setImportState(prev => ({ ...prev, isUploading: false }));
     }
-  }, [importState.previewData, importDataMutation, refetchStatus, handleForceCalculation /*, toast*/]);
-
+  }, [importState.previewData, importDataMutation, refetchStatus, handleForceCalculation]);
 
   const handleImportClose = useCallback(() => {
     setImportState(prev => ({ 
@@ -334,25 +314,24 @@ export default function AdminPage() {
   }, []);
 
   const handleRefreshStatus = useCallback(async () => {
-    // toast({ title: "Refreshing...", description: "Fetching latest status." });
     await Promise.all([
       refetchStatus(),
       refetchBotStatus(),
       refetchConfig(),
     ]);
-  }, [refetchStatus, refetchBotStatus, refetchConfig /*, toast*/]);
+  }, [refetchStatus, refetchBotStatus, refetchConfig]);
 
   return (
     <AdminErrorBoundary>
-      <div className="min-h-screen bg-background text-foreground">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               IxStats Admin Dashboard
             </h1>
-            <p className="mt-1 text-muted-foreground">
-              Manage system configuration, time settings, and data imports.
+            <p className="mt-2 text-gray-600 dark:text-gray-300">
+              Manage system configuration, time settings, and data imports
             </p>
           </div>
 
@@ -376,8 +355,9 @@ export default function AdminPage() {
           {/* Warning Panel */}
           <WarningPanel systemStatus={systemStatus} />
 
-          {/* Control Panels Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Control Panels */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            {/* Time Control */}
             <TimeControlPanel
               timeMultiplier={config.timeMultiplier}
               customDate={timeState.customDate}
@@ -398,6 +378,7 @@ export default function AdminPage() {
               setTimePending={actionState.setTimePending}
             />
 
+            {/* Economic Control */}
             <EconomicControlPanel
               globalGrowthFactor={config.globalGrowthFactor}
               autoUpdate={config.autoUpdate}
@@ -445,7 +426,7 @@ export default function AdminPage() {
 
           {/* Calculation Logs */}
           <CalculationLogs
-            logs={calculationLogs} // Use the renamed variable
+            logs={calculationLogs}
             isLoading={logsLoading}
             error={logsError?.message}
           />
@@ -456,13 +437,11 @@ export default function AdminPage() {
               isOpen={importState.showPreview}
               onClose={handleImportClose}
               onConfirm={handleImportConfirm}
-              // Ensure previewData.changes exists and matches ImportChange[]
-              changes={importState.previewData.changes ?? []} 
+              changes={importState.previewData.changes}
               isLoading={importState.isUploading}
             />
           )}
         </div>
-        {/* <Toaster /> */}
       </div>
     </AdminErrorBoundary>
   );

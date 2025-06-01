@@ -78,7 +78,12 @@ export default function Dashboard() {
       />
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-Based on the lint error shown in the context, there's a type mismatch with the `economicTierDistribution` property. The error indicates that the object is missing required properties from the `EconomicTier` type. Let's fix this by ensuring the distribution object has all required properties:
+        {adaptedGlobalStats && (
+          <GlobalStatsSection
+            globalStats={adaptedGlobalStats}
+            isLoading={globalStatsLoading}
+          />
+        )}
 
         {processedCountries.length > 0 && !countriesLoading ? (
           <GlobalAnalytics countries={processedCountries} />

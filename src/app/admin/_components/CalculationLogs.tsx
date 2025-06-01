@@ -1,110 +1,116 @@
 // src/app/admin/_components/CalculationLogs.tsx
 "use client";
 
-import { ListChecks, AlertCircle, Loader2 } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
-import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
-import { Badge } from "~/components/ui/badge"; // For status
-import { ScrollArea } from "~/components/ui/scroll-area";
-import type { CalculationLog } from "~/types/ixstats"; // Assuming type definition
+import { Database, AlertCircle, Clock, Zap } from "lucide-react";
+import type { CalculationLog } from "~/types/ixstats";
 
 interface CalculationLogsProps {
-  logs: CalculationLog[] | null | undefined;
+  logs: CalculationLog[] | undefined;
   isLoading: boolean;
   error?: string | null;
 }
 
 export function CalculationLogs({ logs, isLoading, error }: CalculationLogsProps) {
-  return (
-    <Card className="dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-      <CardHeader>
-        <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-          <ListChecks className="h-5 w-5 mr-2" />
+  if (error) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+          <Database className="h-5 w-5 mr-2" />
           Recent Calculation Logs
-        </CardTitle>
-        <CardDescription className="text-gray-600 dark:text-gray-400">
-          Shows the status of recent automated and manual calculations.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isLoading && (
-          <div className="flex items-center justify-center py-6">
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
-            <p className="ml-2 text-gray-600 dark:text-gray-400">Loading logs...</p>
+        </h2>
+        <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+          <div className="flex">
+            <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+            <p className="text-sm text-red-800 dark:text-red-200">
+              Error loading calculation logs: {error}
+            </p>
           </div>
-        )}
-        {error && !isLoading && (
-          <Alert variant="destructive" className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700">
-            <AlertCircle className="h-5 w-5 text-red-500" />
-            <AlertTitle className="text-red-700 dark:text-red-300">Error Loading Logs</AlertTitle>
-            <AlertDescription className="text-red-700 dark:text-red-300">
-              {error}
-            </AlertDescription>
-          </Alert>
-        )}
-        {!isLoading && !error && (!logs || logs.length === 0) && (
-          <p className="text-center text-gray-500 dark:text-gray-400 py-6">
-            No calculation logs found.
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+          <Database className="h-5 w-5 mr-2" />
+          Recent Calculation Logs
+        </h2>
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="animate-pulse bg-gray-200 dark:bg-gray-700 h-12 rounded"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!logs || logs.length === 0) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+          <Database className="h-5 w-5 mr-2" />
+          Recent Calculation Logs
+        </h2>
+        <div className="text-center py-8">
+          <Clock className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+          <p className="text-gray-500 dark:text-gray-400">No calculation logs available</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+            Logs will appear here after calculations are performed
           </p>
-        )}
-        {!isLoading && !error && logs && logs.length > 0 && (
-          <ScrollArea className="h-[300px] w-full rounded-md border dark:border-gray-700">
-            <Table>
-              <TableHeader className="sticky top-0 bg-gray-50 dark:bg-gray-700">
-                <TableRow>
-                  <TableHead className="w-[180px] text-gray-700 dark:text-gray-300">Timestamp</TableHead>
-                  <TableHead className="text-gray-700 dark:text-gray-300">Status</TableHead>
-                  <TableHead className="text-gray-700 dark:text-gray-300">Type</TableHead>
-                  <TableHead className="text-gray-700 dark:text-gray-300">Duration</TableHead>
-                  <TableHead className="text-gray-700 dark:text-gray-300">Details/Error</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {logs.map((log) => (
-                  <TableRow key={log.id} className="dark:border-gray-700">
-                    <TableCell className="font-medium text-gray-700 dark:text-gray-300">
-                      {new Date(log.timestamp).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={log.status === "SUCCESS" ? "default" : "destructive"}
-                        className={
-                            log.status === "SUCCESS" 
-                            ? "bg-green-100 text-green-700 dark:bg-green-700/30 dark:text-green-300 border-green-300 dark:border-green-600" 
-                            : "bg-red-100 text-red-700 dark:bg-red-700/30 dark:text-red-300 border-red-300 dark:border-red-600"
-                        }
-                      >
-                        {log.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-gray-600 dark:text-gray-400">{log.type}</TableCell>
-                    <TableCell className="text-gray-600 dark:text-gray-400">
-                      {log.durationMs !== null ? `${log.durationMs} ms` : "N/A"}
-                    </TableCell>
-                    <TableCell className="text-xs text-gray-500 dark:text-gray-500 max-w-xs truncate" title={log.details ?? undefined}>
-                      {log.details ?? "N/A"}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </ScrollArea>
-        )}
-      </CardContent>
-    </Card>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+        <Database className="h-5 w-5 mr-2" />
+        Recent Calculation Logs ({logs.length})
+      </h2>
+      
+      <div className="max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+        <div className="space-y-2">
+          {logs.map((log) => (
+            <div 
+              key={log.id} 
+              className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Zap className="h-4 w-4 text-green-500" />
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    {log.countriesUpdated} countries updated
+                  </span>
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  {log.executionTimeMs}ms
+                </div>
+              </div>
+              
+              <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-300">
+                <div>
+                  <span className="font-medium">Real Time:</span>{" "}
+                  {new Date(log.timestamp).toLocaleString()}
+                </div>
+                <div>
+                  <span className="font-medium">IxTime:</span>{" "}
+                  {new Date(log.ixTimeTimestamp).toLocaleString()}
+                </div>
+              </div>
+              
+              <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Global Growth Factor: {(log.globalGrowthFactor * 100).toFixed(2)}%
+                {log.notes && (
+                  <span className="ml-2">• {log.notes}</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

@@ -1,20 +1,11 @@
 // src/app/admin/_components/BotControlPanel.tsx
 "use client";
 
-import { Bot, Play, Pause, Trash2, Loader2, ShieldAlert } from "lucide-react";
-import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
-import type { AdminPageBotStatusView } from "~/types/ixstats";
+import { Bot, Pause, Play, RotateCcw, AlertTriangle } from "lucide-react";
+import type { AdminPageBotStatusView } from "~/types/ixstats"; 
 
 interface BotControlPanelProps {
-  botStatus: AdminPageBotStatusView | null | undefined;
+  botStatus: AdminPageBotStatusView | undefined; 
   onPauseBot: () => void;
   onResumeBot: () => void;
   onClearOverrides: () => void;
@@ -30,82 +21,57 @@ export function BotControlPanel({
   onClearOverrides,
   pausePending,
   resumePending,
-  clearPending,
+  clearPending
 }: BotControlPanelProps) {
-  const isBotActive = botStatus?.isActive ?? false;
-  const isBotPaused = botStatus?.isPaused ?? false;
+  if (!botStatus) return null;
 
   return (
-    <Card className="mb-8 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-      <CardHeader>
-        <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-          <Bot className="h-5 w-5 mr-2" />
-          Bot Controls
-        </CardTitle>
-        <CardDescription className="text-gray-600 dark:text-gray-400">
-          Manage the MediaWiki bot's operational state and data overrides.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {!isBotActive && (
-          <Alert variant="destructive" className="bg-yellow-50 dark:bg-yellow-900/30 border-yellow-300 dark:border-yellow-600">
-            <ShieldAlert className="h-5 w-5 text-yellow-500" />
-            <AlertTitle className="text-yellow-700 dark:text-yellow-300">Bot Not Active</AlertTitle>
-            <AlertDescription className="text-yellow-700 dark:text-yellow-300">
-              The bot is currently not running or unreachable. Controls may be limited.
-            </AlertDescription>
-          </Alert>
-        )}
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+        <Bot className="h-5 w-5 mr-2" />
+        Discord Bot Time Control
+      </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {isBotPaused ? (
-            <Button
-              onClick={onResumeBot}
-              disabled={resumePending || !isBotActive}
-              variant="outline"
-              className="w-full bg-green-500 hover:bg-green-600 text-white dark:bg-green-600 dark:hover:bg-green-700 dark:border-green-700"
-            >
-              {resumePending ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Play className="h-4 w-4 mr-2" />
-              )}
-              Resume Bot
-            </Button>
-          ) : (
-            <Button
-              onClick={onPauseBot}
-              disabled={pausePending || !isBotActive}
-              variant="outline"
-              className="w-full bg-yellow-500 hover:bg-yellow-600 text-white dark:bg-yellow-600 dark:hover:bg-yellow-700 dark:border-yellow-700"
-            >
-              {pausePending ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Pause className="h-4 w-4 mr-2" />
-              )}
-              Pause Bot
-            </Button>
-          )}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <button
+          onClick={onPauseBot}
+          disabled={pausePending || !botStatus.botHealth.available}
+          className="flex items-center justify-center px-4 py-2 bg-red-100 hover:bg-red-200 dark:bg-red-700 dark:hover:bg-red-600 text-red-700 dark:text-red-100 rounded-md disabled:opacity-50"
+        >
+          <Pause className="h-4 w-4 mr-2" />
+          Pause Bot Time
+        </button>
 
-          <Button
-            onClick={onClearOverrides}
-            disabled={clearPending || !isBotActive || (botStatus?.overriddenCountriesCount ?? 0) === 0}
-            variant="destructive"
-            className="w-full"
-          >
-            {clearPending ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Trash2 className="h-4 w-4 mr-2" />
-            )}
-            Clear All Overrides ({botStatus?.overriddenCountriesCount ?? 0})
-          </Button>
+        <button
+          onClick={onResumeBot}
+          disabled={resumePending || !botStatus.botHealth.available}
+          className="flex items-center justify-center px-4 py-2 bg-green-100 hover:bg-green-200 dark:bg-green-700 dark:hover:bg-green-600 text-green-700 dark:text-green-100 rounded-md disabled:opacity-50"
+        >
+          <Play className="h-4 w-4 mr-2" />
+          Resume Bot Time
+        </button>
+
+        <button
+          onClick={onClearOverrides}
+          disabled={clearPending || !botStatus.botHealth.available}
+          className="flex items-center justify-center px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md disabled:opacity-50"
+        >
+          <RotateCcw className="h-4 w-4 mr-2" />
+          Clear Bot Overrides
+        </button>
+      </div>
+
+      {/* Check the bot's direct override status via botStatus.botStatus (DerivedBotDisplayStatus) */}
+      {botStatus.botStatus?.hasTimeOverride && (
+        <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+          <div className="flex">
+            <AlertTriangle className="h-5 w-5 text-yellow-400 mr-2" />
+            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+              Bot has active time override. Click "Clear Bot Overrides" to return to normal time flow.
+            </p>
+          </div>
         </div>
-         <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-            Pausing the bot stops it from posting updates. Clearing overrides removes all manual DM inputs for country data from the bot's perspective (does not affect DB).
-          </p>
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 }
