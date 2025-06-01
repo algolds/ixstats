@@ -76,7 +76,7 @@ export interface CountryComparison {
   color: string;
 }
 
-interface RegionalData {
+export interface RegionalData {
   region: string;
   countries: CountryComparison[];
   avgGdpPerCapita: number;
