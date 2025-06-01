@@ -1,7 +1,7 @@
 // src/app/countries/_components/economy/EconomicDataDisplay.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   BarChart3, 
   Briefcase, 
@@ -15,7 +15,10 @@ import {
   Loader2,
   AlertCircle,
   Eye,
-  EyeOff
+  EyeOff,
+  Calendar,
+  BarChart2,
+  PieChart
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -28,6 +31,10 @@ import { api } from "~/trpc/react";
 import { CoreEconomicIndicators } from "./CoreEconomicIndicators";
 import { LaborEmployment } from "./LaborEmployment";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
+import { FiscalSystem } from "./FiscalSystem";
+import { Demographics } from "./Demographics";
+import { ComparativeAnalysis } from "./ComparativeAnalysis";
+import { HistoricalEconomicTracker } from "./HistoricalEconomicTracker";
 
 interface EconomicDataDisplayProps {
   countryId: string;
@@ -57,12 +64,44 @@ interface EconomicSummary {
     minimumWage: number;
     averageAnnualIncome: number;
   };
-  fiscalSystem?: {
+  fiscalSystem: {
     taxRevenueGDPPercent: number;
     governmentBudgetGDPPercent: number;
     totalDebtGDPRatio: number;
     budgetDeficitSurplus: number;
+    governmentRevenueTotal: number;
+    taxRevenuePerCapita: number;
+    internalDebtGDPPercent: number;
+    externalDebtGDPPercent: number;
+    debtPerCapita: number;
+    debtServiceCosts: number;
+    interestRates: number;
+    taxRates: any;
+    governmentSpendingByCategory: any;
   };
+  demographicData: {
+    ageDistribution: Array<{ group: string; percent: number; color: string }>;
+    lifeExpectancy: number;
+    urbanPopulationPercent: number;
+    ruralPopulationPercent: number;
+    regions: Array<{ name: string; population: number; urbanPercent: number; color: string }>;
+    educationLevels: Array<{ level: string; percent: number; color: string }>;
+    literacyRate: number;
+    citizenshipStatuses: Array<{ status: string; percent: number; color: string }>;
+  };
+  comparativeAnalysis: {
+    userCountry: any;
+    allCountries: any[];
+  };
+  historicalData: Array<{
+    timestamp: number;
+    population: number;
+    gdpPerCapita: number;
+    totalGdp: number;
+    unemploymentRate: number;
+    inflationRate: number;
+    events: Array<any>;
+  }>;
 }
 
 const defaultEconomicData: EconomicSummary = {
@@ -83,6 +122,60 @@ const defaultEconomicData: EconomicSummary = {
     minimumWage: 12,
     averageAnnualIncome: 35000,
   },
+  fiscalSystem: {
+    taxRevenueGDPPercent: 20,
+    governmentBudgetGDPPercent: 22,
+    totalDebtGDPRatio: 50,
+    budgetDeficitSurplus: (20 - 22) / 100 * 25000000000,
+    governmentRevenueTotal: 20 / 100 * 25000000000,
+    taxRevenuePerCapita: (20 / 100 * 25000000000) / 1000000,
+    internalDebtGDPPercent: 30,
+    externalDebtGDPPercent: 20,
+    debtPerCapita: (50 / 100 * 25000000000) / 1000000,
+    debtServiceCosts: (50 / 100 * 25000000000 * 3) / 10000,
+    interestRates: 3,
+    taxRates: {
+      personalIncomeTaxRates: [{ bracket: 50000, rate: 15 }, { bracket: 100000, rate: 25 }],
+      corporateTaxRates: [{ size: 'Small', rate: 10 }, { size: 'Large', rate: 20 }],
+      salesTaxRate: 5,
+      propertyTaxRate: 1,
+      payrollTaxRate: 15,
+      wealthTaxRate: 0,
+      exciseTaxRates: [{ type: 'Alcohol', rate: 10 }],
+    },
+    governmentSpendingByCategory: [
+      { category: 'Defense', amount: 0, percent: 15 },
+      { category: 'Education', amount: 0, percent: 20 },
+      { category: 'Healthcare', amount: 0, percent: 20 },
+      { category: 'Infrastructure', amount: 0, percent: 10 },
+      { category: 'Social Security', amount: 0, percent: 15 },
+      { category: 'Other', amount: 0, percent: 20 },
+    ],
+  },
+  demographicData: {
+    ageDistribution: [
+      { group: '0-15', percent: 20, color: '#FF6B6B' },
+      { group: '16-64', percent: 65, color: '#48BB78' },
+      { group: '65+', percent: 15, color: '#4299E1' },
+    ],
+    lifeExpectancy: 75,
+    urbanPopulationPercent: 60,
+    ruralPopulationPercent: 40,
+    regions: [],
+    educationLevels: [
+      { level: 'Primary', percent: 20, color: '#F6E05E' },
+      { level: 'Secondary', percent: 40, color: '#ED8936' },
+      { level: 'Higher Education', percent: 25, color: '#6B46C1' },
+      { level: 'No Formal Education', percent: 15, color: '#718096' },
+    ],
+    literacyRate: 90,
+    citizenshipStatuses: [],
+  },
+  comparativeAnalysis: {
+    userCountry: null,
+    allCountries: [],
+  },
+  historicalData: [],
 };
 
 export function EconomicDataDisplay({ 
@@ -110,6 +203,13 @@ export function EconomicDataDisplay({
     id: countryId,
   });
 
+  // Update economic data state when countryData is loaded
+  useEffect(() => {
+    if (countryData) {
+      setEconomicData(countryData);
+    }
+  }, [countryData]);
+
   // Update economic data mutation
   const updateEconomicDataMutation = api.countries.updateEconomicData.useMutation({
     onSuccess: () => {
@@ -120,6 +220,36 @@ export function EconomicDataDisplay({
     },
     onError: (error) => {
       console.error("Failed to update economic data:", error);
+    },
+  });
+
+  // Add event mutation for HistoricalEconomicTracker
+  const addEconomicEventMutation = api.countries.addEconomicEvent.useMutation({
+    onSuccess: () => {
+      void refetch();
+    },
+    onError: (error: Error) => {
+      console.error("Failed to add economic event:", error);
+    },
+  });
+
+  // Edit event mutation for HistoricalEconomicTracker
+  const editEconomicEventMutation = api.countries.editEconomicEvent.useMutation({
+    onSuccess: () => {
+      void refetch();
+    },
+    onError: (error) => {
+      console.error("Failed to edit economic event:", error);
+    },
+  });
+
+  // Delete event mutation for HistoricalEconomicTracker
+  const deleteEconomicEventMutation = api.countries.deleteEconomicEvent.useMutation({
+    onSuccess: () => {
+      void refetch();
+    },
+    onError: (error) => {
+      console.error("Failed to delete economic event:", error);
     },
   });
 
@@ -136,22 +266,7 @@ export function EconomicDataDisplay({
     try {
       await updateEconomicDataMutation.mutateAsync({
         countryId,
-        economicData: {
-          // Core indicators
-          nominalGDP: economicData.coreIndicators.nominalGDP,
-          realGDPGrowthRate: economicData.coreIndicators.realGDPGrowthRate,
-          inflationRate: economicData.coreIndicators.inflationRate,
-          currencyExchangeRate: economicData.coreIndicators.currencyExchangeRate,
-          
-          // Labor & Employment
-          laborForceParticipationRate: economicData.laborEmployment.laborForceParticipationRate,
-          employmentRate: economicData.laborEmployment.employmentRate,
-          unemploymentRate: economicData.laborEmployment.unemploymentRate,
-          totalWorkforce: economicData.laborEmployment.totalWorkforce,
-          averageWorkweekHours: economicData.laborEmployment.averageWorkweekHours,
-          minimumWage: economicData.laborEmployment.minimumWage,
-          averageAnnualIncome: economicData.laborEmployment.averageAnnualIncome,
-        },
+        economicData: economicData,
       });
     } catch (error) {
       console.error("Failed to save economic data:", error);
@@ -162,6 +277,18 @@ export function EconomicDataDisplay({
     setIsEditMode(false);
     setHasUnsavedChanges(false);
     void refetch();
+  };
+
+  const handleAddEvent = (event: any) => {
+    addEconomicEventMutation.mutate({ countryId, event });
+  };
+
+  const handleEditEvent = (eventId: string, event: any) => {
+    editEconomicEventMutation.mutate({ eventId, event });
+  };
+
+  const handleDeleteEvent = (eventId: string) => {
+    deleteEconomicEventMutation.mutate({ eventId });
   };
 
   const economicSections = [
@@ -184,28 +311,28 @@ export function EconomicDataDisplay({
       label: "Fiscal System",
       icon: Building,
       description: "Taxes, budget, debt",
-      disabled: true,
-    },
-    {
-      id: "income",
-      label: "Income & Wealth",
-      icon: Scale,
-      description: "Distribution, inequality, mobility",
-      disabled: true,
-    },
-    {
-      id: "spending",
-      label: "Gov. Spending",
-      icon: Building2,
-      description: "Budget allocation, priorities",
-      disabled: true,
+      component: FiscalSystem,
     },
     {
       id: "demographics",
       label: "Demographics",
       icon: Users,
       description: "Population structure, education",
-      disabled: true,
+      component: Demographics,
+    },
+    {
+      id: "comparative",
+      label: "Comparative",
+      icon: BarChart2,
+      description: "Compare with other countries/regions",
+      component: ComparativeAnalysis,
+    },
+    {
+      id: "history",
+      label: "History",
+      icon: Calendar,
+      description: "Historical data and events",
+      component: HistoricalEconomicTracker,
     },
   ];
 
@@ -394,7 +521,7 @@ export function EconomicDataDisplay({
           <Tabs value={selectedTab} onValueChange={setSelectedTab}>
             <TabsList className={`grid w-full ${compactView ? 'grid-cols-3' : 'grid-cols-6'}`}>
               {economicSections
-                .filter(section => compactView ? !section.disabled : true)
+                .filter(section => compactView ? (section.id === 'core' || section.id === 'labor' || section.id === 'fiscal') : true)
                 .map((section) => {
                   const Icon = section.icon;
                   return (
@@ -431,17 +558,67 @@ export function EconomicDataDisplay({
                 />
               </TabsContent>
 
-              {/* Placeholder tabs for future components */}
-              {economicSections.slice(2).map((section) => (
-                <TabsContent key={section.id} value={section.id} className="space-y-0">
+              <TabsContent value="fiscal" className="space-y-0">
+                {economicData.fiscalSystem && (
+                  <FiscalSystem
+                    fiscalData={economicData.fiscalSystem}
+                    nominalGDP={economicData.coreIndicators.nominalGDP}
+                    totalPopulation={economicData.coreIndicators.totalPopulation}
+                    onFiscalDataChange={(data) => handleDataChange('fiscalSystem', data)}
+                    isReadOnly={!isEditMode}
+                    showComparison={false}
+                  />
+                )}
+              </TabsContent>
+
+              <TabsContent value="demographics" className="space-y-0">
+                {economicData.demographicData && (
+                  <Demographics
+                    demographicData={economicData.demographicData}
+                    totalPopulation={economicData.coreIndicators.totalPopulation}
+                    onDemographicDataChangeAction={(data) => handleDataChange('demographicData', data)}
+                    isReadOnly={!isEditMode}
+                    showComparison={false}
+                  />
+                )}
+              </TabsContent>
+
+              <TabsContent value="comparative" className="space-y-0">
+                {economicData.comparativeAnalysis && economicData.comparativeAnalysis.userCountry && economicData.comparativeAnalysis.allCountries && (
+                  <ComparativeAnalysis
+                    userCountry={economicData.comparativeAnalysis.userCountry}
+                    allCountries={economicData.comparativeAnalysis.allCountries}
+                  />
+                )}
+                {(!economicData.comparativeAnalysis || !economicData.comparativeAnalysis.userCountry || !economicData.comparativeAnalysis.allCountries) && (
                   <div className="text-center py-8 text-muted-foreground">
-                    <section.icon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <h3 className="text-lg font-medium mb-2">{section.label}</h3>
-                    <p>{section.description}</p>
-                    <p className="text-sm mt-2">Coming soon...</p>
+                    <BarChart2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <h3 className="text-lg font-medium mb-2">Comparative Analysis Data Missing</h3>
+                    <p>Cannot display comparative analysis. Data might not be available for this country or in the current dataset.</p>
                   </div>
-                </TabsContent>
-              ))}
+                )}
+              </TabsContent>
+
+              <TabsContent value="history" className="space-y-0">
+                {economicData.historicalData && (
+                  <HistoricalEconomicTracker
+                    countryId={countryId}
+                    countryName={countryName}
+                    historicalData={economicData.historicalData}
+                    onAddEvent={handleAddEvent}
+                    onEditEvent={handleEditEvent}
+                    onDeleteEvent={handleDeleteEvent}
+                    isEditable={isEditable}
+                  />
+                )}
+                {!economicData.historicalData && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <h3 className="text-lg font-medium mb-2">Historical Data Missing</h3>
+                    <p>Cannot display historical economic data and events.</p>
+                  </div>
+                )}
+              </TabsContent>
             </div>
           </Tabs>
         ) : (
