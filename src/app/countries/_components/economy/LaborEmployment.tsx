@@ -1,17 +1,28 @@
-// src/app/countries/_components/economy/LaborEmployment.tsx
 "use client";
 
-import { useState } from "react";
-import { Users, Briefcase, Clock, DollarSign, TrendingDown, BarChart2, Info, AlertCircle } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
-import { Input } from "~/components/ui/input";
+import React, { useState } from "react";
+import {
+  Briefcase,
+  Users,
+  Clock,
+  BarChart2,
+  Info,
+} from "lucide-react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "~/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { Label } from "~/components/ui/label";
+import { Input } from "~/components/ui/input";
 import { Slider } from "~/components/ui/slider";
-import { Alert, AlertDescription } from "~/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Progress } from "~/components/ui/progress";
-import { formatCurrency, formatPopulation, displayGrowthRate } from "~/lib/chart-utils";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { Badge } from "~/components/ui/badge";
+import { formatPopulation, displayGrowthRate, formatCurrency } from "~/lib/chart-utils";
 
 export interface LaborEmploymentData {
   laborForceParticipationRate: number;
@@ -32,7 +43,8 @@ interface LaborEmploymentProps {
   laborData: LaborEmploymentData;
   referenceCountry?: RealCountryData;
   totalPopulation: number;
-  onLaborDataChange: (laborData: LaborEmploymentData) => void;
+  /** SERVER ACTION */
+  onLaborDataChangeAction: (d: LaborEmploymentData) => void;
   isReadOnly?: boolean;
   showComparison?: boolean;
 }
@@ -41,91 +53,97 @@ export function LaborEmployment({
   laborData,
   referenceCountry,
   totalPopulation,
-  onLaborDataChange,
+  onLaborDataChangeAction,
   isReadOnly = false,
   showComparison = true,
 }: LaborEmploymentProps) {
-  const [selectedView, setSelectedView] = useState<'overview' | 'detailed'>('overview');
+  const [view, setView] = useState<"overview" | "detailed">("overview");
 
-  const handleInputChange = (field: keyof LaborEmploymentData, value: number) => {
-    const newLaborData = { ...laborData, [field]: value };
-    
-    // Auto-calculate derived values
-    if (field === 'laborForceParticipationRate') {
-      const workingAgePopulation = totalPopulation * 0.65; // Assume 65% working age
-      newLaborData.totalWorkforce = Math.round(workingAgePopulation * (value / 100));
-    } else if (field === 'unemploymentRate') {
-      newLaborData.employmentRate = 100 - value;
-    } else if (field === 'employmentRate') {
-      newLaborData.unemploymentRate = 100 - value;
+  function handleField<K extends keyof LaborEmploymentData>(
+    field: K,
+    value: number
+  ) {
+    const next = { ...laborData, [field]: value };
+    if (field === "laborForceParticipationRate") {
+      const wap = totalPopulation * 0.65;
+      next.totalWorkforce = Math.round((value / 100) * wap);
+    } else if (field === "unemploymentRate") {
+      next.employmentRate = 100 - value;
+    } else if (field === "employmentRate") {
+      next.unemploymentRate = 100 - value;
     }
-    
-    onLaborDataChange(newLaborData);
-  };
+    onLaborDataChangeAction(next);
+  }
 
-  const workingAgePopulation = Math.round(totalPopulation * 0.65);
-  const laborForce = Math.round(workingAgePopulation * (laborData.laborForceParticipationRate / 100));
-  const employed = Math.round(laborForce * (laborData.employmentRate / 100));
-  const unemployed = laborForce - employed;
+  // Derived breakdown
+  const wap = Math.round(totalPopulation * 0.65);
+  const lf = Math.round((laborData.laborForceParticipationRate / 100) * wap);
+  const employed = Math.round((laborData.employmentRate / 100) * lf);
+  const unemployed = lf - employed;
 
-  const laborMetrics = [
+  function getHealth() {
+    if (laborData.unemploymentRate <= 4) {
+      return { label: "Full Employment", color: "text-green-600" };
+    }
+    if (laborData.unemploymentRate <= 7) {
+      return { label: "Healthy", color: "text-blue-600" };
+    }
+    if (laborData.unemploymentRate <= 12) {
+      return { label: "Moderate Concern", color: "text-yellow-600" };
+    }
+    return { label: "High Unemployment", color: "text-red-600" };
+  }
+  const health = getHealth();
+
+  const metrics = [
     {
-      label: "Labor Force Participation",
+      label: "Participation Rate",
+      field: "laborForceParticipationRate" as const,
       value: laborData.laborForceParticipationRate,
-      unit: "%",
       target: 65,
-      color: "bg-blue-500",
-      description: "% of working-age population in labor force"
+      reverse: false,
+      description: "% of working-age population",
     },
     {
       label: "Employment Rate",
+      field: "employmentRate" as const,
       value: laborData.employmentRate,
-      unit: "%",
       target: 95,
-      color: "bg-green-500",
-      description: "% of labor force employed"
+      reverse: false,
+      description: "% of labor force employed",
     },
     {
       label: "Unemployment Rate",
+      field: "unemploymentRate" as const,
       value: laborData.unemploymentRate,
-      unit: "%",
       target: 5,
-      color: "bg-red-500",
-      description: "% of labor force seeking employment",
-      reverse: true
+      reverse: true,
+      description: "% seeking work",
     },
   ];
 
-  const getEmploymentHealth = () => {
-    if (laborData.unemploymentRate <= 4) return { color: "text-green-600", label: "Full Employment" };
-    if (laborData.unemploymentRate <= 7) return { color: "text-blue-600", label: "Healthy" };
-    if (laborData.unemploymentRate <= 12) return { color: "text-yellow-600", label: "Moderate Concern" };
-    return { color: "text-red-600", label: "High Unemployment" };
-  };
-
-  const employmentHealth = getEmploymentHealth();
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex justify-between items-center">
         <div>
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <Briefcase className="h-5 w-5 text-primary" />
             Labor & Employment
           </h3>
           <p className="text-sm text-muted-foreground">
-            Workforce participation, employment levels, and labor market dynamics
+            Workforce participation & market dynamics
           </p>
         </div>
-        <Tabs value={selectedView} onValueChange={(value) => setSelectedView(value as 'overview' | 'detailed')}>
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs value={view} onValueChange={(v) => setView(v as any)}>
+          <TabsList className="grid grid-cols-2 w-[200px]">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="detailed">Detailed</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
 
-      {/* Labor Force Visualization */}
+      {/* Breakdown Visualization */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -134,279 +152,336 @@ export function LaborEmployment({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
-            <div className="space-y-1">
-              <div className="text-2xl font-bold text-foreground">
+          <div className="grid grid-cols-1 md:grid-cols-4 text-center gap-4">
+            <div>
+              <div className="text-2xl font-bold">
                 {formatPopulation(totalPopulation)}
               </div>
-              <div className="text-xs text-muted-foreground">Total Population</div>
+              <div className="text-xs text-muted-foreground">Total Pop</div>
             </div>
-            <div className="space-y-1">
+            <div>
               <div className="text-2xl font-bold text-blue-600">
-                {formatPopulation(workingAgePopulation)}
+                {formatPopulation(wap)}
               </div>
-              <div className="text-xs text-muted-foreground">Working Age (65%)</div>
+              <div className="text-xs text-muted-foreground">
+                Working Age
+              </div>
             </div>
-            <div className="space-y-1">
+            <div>
               <div className="text-2xl font-bold text-primary">
-                {formatPopulation(laborForce)}
+                {formatPopulation(lf)}
               </div>
               <div className="text-xs text-muted-foreground">Labor Force</div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
+              <div>
                 <div className="text-lg font-bold text-green-600">
                   {formatPopulation(employed)}
                 </div>
                 <div className="text-xs text-muted-foreground">Employed</div>
               </div>
-              <div className="space-y-1">
+              <div>
                 <div className="text-lg font-bold text-red-600">
                   {formatPopulation(unemployed)}
                 </div>
-                <div className="text-xs text-muted-foreground">Unemployed</div>
+                <div className="text-xs text-muted-foreground">
+                  Unemployed
+                </div>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Overview Metrics */}
       <TabsContent value="overview" className="space-y-4">
-        {/* Labor Metrics with Progress Bars */}
-        <div className="space-y-4">
-          {laborMetrics.map((metric) => {
-            const percentage = metric.reverse 
-              ? Math.max(0, 100 - metric.value) 
-              : Math.min(100, (metric.value / metric.target) * 100);
-            
-            return (
-              <Card key={metric.label}>
-                <CardContent className="pt-6">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm font-medium">{metric.label}</Label>
-                      <div className="text-sm font-semibold">
-                        {metric.value.toFixed(1)}{metric.unit}
-                      </div>
-                    </div>
-                    
-                    {isReadOnly ? (
-                      <Progress value={percentage} className="w-full" />
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="px-3">
-                          <Slider
-                            value={[metric.value]}
-                            onValueChange={(value) => handleInputChange(
-                              metric.label === "Labor Force Participation" ? 'laborForceParticipationRate' :
-                              metric.label === "Employment Rate" ? 'employmentRate' : 'unemploymentRate',
-                              value[0]!
-                            )}
-                            max={100}
-                            min={0}
-                            step={0.1}
-                            className="w-full"
-                          />
-                        </div>
-                        <Progress value={percentage} className="w-full" />
-                      </div>
-                    )}
-                    
-                    <div className="text-xs text-muted-foreground">
-                      {metric.description}
-                      {referenceCountry && metric.label === "Unemployment Rate" && (
-                        <span className="ml-2 text-primary">
-                          Ref: {referenceCountry.unemploymentRate.toFixed(1)}%
-                        </span>
-                      )}
-                    </div>
+        {metrics.map((m) => {
+          const pct = m.reverse
+            ? Math.max(0, 100 - m.value)
+            : Math.min(100, (m.value / m.target) * 100);
+          return (
+            <Card key={m.label}>
+              <CardContent>
+                <div className="flex justify-between items-center mb-2">
+                  <Label className="text-sm font-medium">{m.label}</Label>
+                  <div className="text-sm font-semibold">
+                    {m.value.toFixed(1)}%
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                </div>
+                {isReadOnly ? (
+                  <Progress value={pct} className="w-full" />
+                ) : (
+                  <>
+                    <Slider
+                      value={[m.value]}
+                      onValueChange={(vals) => {
+                        const v = vals?.[0] ?? 0;
+                        handleField(m.field, v);
+                      }}
+                      min={0}
+                      max={100}
+                      step={0.1}
+                      className="w-full mb-2"
+                    />
+                    <Progress value={pct} className="w-full" />
+                  </>
+                )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  {m.description}
+                  {referenceCountry && m.field === "unemploymentRate" && (
+                    <> • Ref: {referenceCountry.unemploymentRate.toFixed(1)}%</>
+                  )}
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })}
       </TabsContent>
 
+      {/* Detailed Inputs */}
       <TabsContent value="detailed" className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-primary" />
-                Work Conditions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="workweekHours">Average Workweek Hours</Label>
-                {isReadOnly ? (
-                  <div className="text-2xl font-bold">{laborData.averageWorkweekHours}h/week</div>
-                ) : (
-                  <>
-                    <div className="px-3">
-                      <Slider
-                        value={[laborData.averageWorkweekHours]}
-                        onValueChange={(value) => handleInputChange('averageWorkweekHours', value[0]!)}
-                        max={60}
-                        min={20}
-                        step={1}
-                        className="w-full"
-                      />
-                    </div>
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>20h</span>
-                      <span className="font-medium text-foreground">
-                        {laborData.averageWorkweekHours}h/week
-                      </span>
-                      <span>60h</span>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="minimumWage">Minimum Wage ($/hour)</Label>
-                {isReadOnly ? (
-                  <div className="space-y-1">
-                    <div className="text-2xl font-bold">{formatCurrency(laborData.minimumWage)}/hr</div>
-                    <div className="text-xs text-muted-foreground">
-                      Annual: {formatCurrency(laborData.minimumWage * laborData.averageWorkweekHours * 52)}
-                    </div>
+        {/* Work Conditions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-primary" />
+              Work Conditions
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="hours">Avg Workweek (hrs)</Label>
+              {isReadOnly ? (
+                <div className="text-2xl font-bold">
+                  {laborData.averageWorkweekHours}h
+                </div>
+              ) : (
+                <>
+                  <Slider
+                    id="hours"
+                    value={[laborData.averageWorkweekHours]}
+                    onValueChange={(vals) => {
+                      const v = vals?.[0] ?? 0;
+                      handleField("averageWorkweekHours", v);
+                    }}
+                    min={20}
+                    max={60}
+                    step={1}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>20h</span>
+                    <span>{laborData.averageWorkweekHours}h</span>
+                    <span>60h</span>
                   </div>
-                ) : (
-                  <>
-                    <Input
-                      id="minimumWage"
-                      type="number"
-                      value={laborData.minimumWage}
-                      onChange={(e) => handleInputChange('minimumWage', parseFloat(e.target.value) || 0)}
-                      step="0.25"
-                      min="0"
-                    />
-                    <div className="text-xs text-muted-foreground">
-                      Annual: {formatCurrency(laborData.minimumWage * laborData.averageWorkweekHours * 52)}
-                    </div>
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-primary" />
-                Income & Workforce
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="averageIncome">Average Annual Income ($)</Label>
-                {isReadOnly ? (
-                  <div className="space-y-1">
-                    <div className="text-2xl font-bold">{formatCurrency(laborData.averageAnnualIncome)}</div>
-                    <div className="text-xs text-muted-foreground">
-                      Hourly equiv: {formatCurrency(laborData.averageAnnualIncome / (laborData.averageWorkweekHours * 52))}/hour
-                    </div>
+                </>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="minw">Minimum Wage ($/h)</Label>
+              {isReadOnly ? (
+                <div className="space-y-1">
+                  <div className="text-2xl font-bold">
+                    ${laborData.minimumWage.toFixed(2)}
                   </div>
-                ) : (
-                  <>
-                    <Input
-                      id="averageIncome"
-                      type="number"
-                      value={laborData.averageAnnualIncome}
-                      onChange={(e) => handleInputChange('averageAnnualIncome', parseFloat(e.target.value) || 0)}
-                      step="1000"
-                      min="0"
-                    />
-                    <div className="text-xs text-muted-foreground">
-                      Hourly equiv: {formatCurrency(laborData.averageAnnualIncome / (laborData.averageWorkweekHours * 52))}/hour
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="totalWorkforce">Total Workforce</Label>
-                {isReadOnly ? (
-                  <div className="space-y-1">
-                    <div className="text-2xl font-bold">{formatPopulation(laborData.totalWorkforce)}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {((laborData.totalWorkforce / totalPopulation) * 100).toFixed(1)}% of total population
-                    </div>
+                  <div className="text-xs text-muted-foreground">
+                    Annual: $
+                    {(
+                      laborData.minimumWage *
+                      laborData.averageWorkweekHours *
+                      52
+                    ).toLocaleString()}
                   </div>
-                ) : (
-                  <>
-                    <Input
-                      id="totalWorkforce"
-                      type="number"
-                      value={laborData.totalWorkforce}
-                      onChange={(e) => handleInputChange('totalWorkforce', parseFloat(e.target.value) || 0)}
-                      step="1000"
-                      min="0"
-                    />
-                    <div className="text-xs text-muted-foreground">
-                      {((laborData.totalWorkforce / totalPopulation) * 100).toFixed(1)}% of total population
-                    </div>
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                </div>
+              ) : (
+                <>
+                  <Input
+                    id="minw"
+                    type="number"
+                    step={0.25}
+                    value={laborData.minimumWage}
+                    onChange={(e) =>
+                      handleField("minimumWage", +e.target.value || 0)
+                    }
+                  />
+                  <div className="text-xs text-muted-foreground">
+                    Annual: $
+                    {(
+                      laborData.minimumWage *
+                      laborData.averageWorkweekHours *
+                      52
+                    ).toLocaleString()}
+                  </div>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Detailed Labor Statistics */}
+        {/* Income & Workforce */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-primary" />
+              Income & Workforce
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="avginc">Avg Annual Income ($)</Label>
+              {isReadOnly ? (
+                <div className="space-y-1">
+                  <div className="text-2xl font-bold">
+                    ${laborData.averageAnnualIncome.toLocaleString()}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    ≈ $
+                    {(
+                      laborData.averageAnnualIncome /
+                      (laborData.averageWorkweekHours * 52)
+                    ).toFixed(2)}
+                    /h
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <Input
+                    id="avginc"
+                    type="number"
+                    step={1000}
+                    value={laborData.averageAnnualIncome}
+                    onChange={(e) =>
+                      handleField("averageAnnualIncome", +e.target.value || 0)
+                    }
+                  />
+                  <div className="text-xs text-muted-foreground">
+                    ≈ $
+                    {(
+                      laborData.averageAnnualIncome /
+                      (laborData.averageWorkweekHours * 52)
+                    ).toFixed(2)}
+                    /h
+                  </div>
+                </>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="tw">Total Workforce</Label>
+              {isReadOnly ? (
+                <div className="space-y-1">
+                  <div className="text-2xl font-bold">
+                    {formatPopulation(laborData.totalWorkforce)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {(
+                      (laborData.totalWorkforce / totalPopulation) *
+                      100
+                    ).toFixed(1)}
+                    % of pop
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <Input
+                    id="tw"
+                    type="number"
+                    step={1000}
+                    value={laborData.totalWorkforce}
+                    onChange={(e) =>
+                      handleField("totalWorkforce", +e.target.value || 0)
+                    }
+                  />
+                  <div className="text-xs text-muted-foreground">
+                    {(
+                      (laborData.totalWorkforce / totalPopulation) *
+                      100
+                    ).toFixed(1)}
+                    % of pop
+                  </div>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Labor Market Analysis */}
         <Card>
           <CardHeader>
             <CardTitle>Labor Market Analysis</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Participation Rate */}
               <div className="space-y-2">
-                <div className="text-sm font-medium text-muted-foreground">Participation Rate</div>
-                <div className="text-2xl font-bold">{laborData.laborForceParticipationRate.toFixed(1)}%</div>
-                <Badge variant={laborData.laborForceParticipationRate >= 60 ? "default" : "secondary"}>
+                <div className="text-sm font-medium text-muted-foreground">
+                  Participation Rate
+                </div>
+                <div className="text-2xl font-bold">
+                  {laborData.laborForceParticipationRate.toFixed(1)}%
+                </div>
+                <Badge
+                  variant={
+                    laborData.laborForceParticipationRate >= 60
+                      ? "default"
+                      : "secondary"
+                  }
+                >
                   {laborData.laborForceParticipationRate >= 60 ? "Good" : "Low"}
                 </Badge>
               </div>
+
+              {/* Employment-Population Ratio */}
               <div className="space-y-2">
-                <div className="text-sm font-medium text-muted-foreground">Employment-Population Ratio</div>
+                <div className="text-sm font-medium text-muted-foreground">
+                  Employment‐Population Ratio
+                </div>
                 <div className="text-2xl font-bold">
                   {((employed / totalPopulation) * 100).toFixed(1)}%
                 </div>
-                <Badge variant={employed / totalPopulation > 0.5 ? "default" : "secondary"}>
+                <Badge
+                  variant={employed / totalPopulation > 0.5 ? "default" : "secondary"}
+                >
                   {employed / totalPopulation > 0.5 ? "Strong" : "Weak"}
                 </Badge>
               </div>
+
+              {/* Labor Productivity */}
               <div className="space-y-2">
-                <div className="text-sm font-medium text-muted-foreground">Labor Productivity</div>
-                <div className="text-2xl font-bold">
-                  {formatCurrency(laborData.averageAnnualIncome / laborData.averageWorkweekHours / 52)}
+                <div className="text-sm font-medium text-muted-foreground">
+                  Labor Productivity
                 </div>
-                <div className="text-xs text-muted-foreground">per hour worked</div>
+                <div className="text-2xl font-bold">
+                  {formatCurrency(
+                    laborData.averageAnnualIncome /
+                      laborData.averageWorkweekHours /
+                      52
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  per hour worked
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
       </TabsContent>
 
+      {/* Health Alert */}
       <Alert>
         <Info className="h-4 w-4" />
         <AlertDescription>
-          <div className="font-medium mb-1">
-            Employment Health: <span className={employmentHealth.color}>{employmentHealth.label}</span>
+          <div className="font-medium">
+            Employment Health: <span className={health.color}>{health.label}</span>
           </div>
-          <div className="text-sm">
-            {laborData.unemploymentRate <= 4 
-              ? "Your economy is at full employment. Consider policies to avoid labor shortages."
+          <p className="text-sm">
+            {laborData.unemploymentRate <= 4
+              ? "Full employment—watch for shortages."
               : laborData.unemploymentRate <= 7
-              ? "Healthy employment levels with room for sustainable growth."
+              ? "Healthy levels."
               : laborData.unemploymentRate <= 12
-              ? "Moderate unemployment may require job creation programs."
-              : "High unemployment requires significant economic intervention and job creation initiatives."
-            }
-          </div>
+              ? "Moderate—consider job programs."
+              : "High—urgent intervention."}
+          </p>
         </AlertDescription>
       </Alert>
     </div>

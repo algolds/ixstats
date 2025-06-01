@@ -425,7 +425,7 @@ export function EconomicDataDisplay({
                 <LaborEmployment
                   laborData={economicData.laborEmployment}
                   totalPopulation={economicData.coreIndicators.totalPopulation}
-                  onLaborDataChange={(data) => handleDataChange('laborEmployment', data)}
+                  onLaborDataChangeAction={(data) => handleDataChange('laborEmployment', data)}
                   isReadOnly={!isEditMode}
                   showComparison={false}
                 />
