@@ -21,6 +21,7 @@ import {
   XCircle,
   Users,
 } from "lucide-react";
+import { type RouterOutputs } from "~/trpc/react";
 
 const DM_INPUT_TYPES = [
   { value: "population_adjustment", label: "Population Adjustment", icon: Users, color: "blue" },
@@ -33,6 +34,45 @@ const DM_INPUT_TYPES = [
 ] as const;
 
 type DmInputType = typeof DM_INPUT_TYPES[number]["value"];
+
+// Mapping for dynamic tailwind classes
+const colorClasses = {
+  blue: {
+    border: "border-blue-300 dark:border-blue-700 hover:border-blue-400 dark:hover:border-blue-600",
+    text: "text-blue-700 dark:text-blue-300",
+    icon: "text-blue-500 dark:text-blue-400",
+  },
+  green: {
+    border: "border-green-300 dark:border-green-700 hover:border-green-400 dark:hover:border-green-600",
+    text: "text-green-700 dark:text-green-300",
+    icon: "text-green-500 dark:text-green-400",
+  },
+  purple: {
+    border: "border-purple-300 dark:border-purple-700 hover:border-purple-400 dark:hover:border-purple-600",
+    text: "text-purple-700 dark:text-purple-300",
+    icon: "text-purple-500 dark:text-purple-400",
+  },
+  yellow: {
+    border: "border-yellow-300 dark:border-yellow-700 hover:border-yellow-400 dark:hover:border-yellow-600",
+    text: "text-yellow-700 dark:text-yellow-300",
+    icon: "text-yellow-500 dark:text-yellow-400",
+  },
+  indigo: {
+    border: "border-indigo-300 dark:border-indigo-700 hover:border-indigo-400 dark:hover:border-indigo-600",
+    text: "text-indigo-700 dark:text-indigo-300",
+    icon: "text-indigo-500 dark:text-indigo-400",
+  },
+  red: {
+    border: "border-red-300 dark:border-red-700 hover:border-red-400 dark:hover:border-red-600",
+    text: "text-red-700 dark:text-red-300",
+    icon: "text-red-500 dark:text-red-400",
+  },
+  orange: {
+    border: "border-orange-300 dark:border-orange-700 hover:border-orange-400 dark:hover:border-orange-600",
+    text: "text-orange-700 dark:text-orange-300",
+    icon: "text-orange-500 dark:text-orange-400",
+  },
+};
 
 interface DmInputFormData {
   countryId?: string;
@@ -55,6 +95,8 @@ interface DmInput {
   createdBy: string | null; // Prisma returns null, not undefined
 }
 
+type Country = RouterOutputs["countries"]["getAll"]["countries"][number];
+
 export default function DmDashboard() {
   const [showForm, setShowForm] = useState(false);
   const [editingInput, setEditingInput] = useState<string | null>(null);
@@ -66,7 +108,7 @@ export default function DmDashboard() {
   });
 
   // Queries
-  const { data: countries, isLoading: countriesLoading } = api.countries.getAll.useQuery();
+  const { data: countriesData, isLoading: countriesLoading } = api.countries.getAll.useQuery();
   const { data: dmInputs, refetch: refetchDmInputs, isLoading: inputsLoading } = api.countries.getDmInputs.useQuery({
     countryId: selectedCountry === "global" ? undefined : selectedCountry,
   });
@@ -82,7 +124,7 @@ export default function DmDashboard() {
         description: "",
       });
     },
-    onError: (error) => alert(`Error adding input: ${error.message}`),
+    onError: (error: any) => alert(`Error adding input: ${error.message}`),
   });
 
   const updateDmInputMutation = api.countries.updateDmInput.useMutation({
@@ -91,14 +133,14 @@ export default function DmDashboard() {
       setEditingInput(null);
       setShowForm(false);
     },
-    onError: (error) => alert(`Error updating input: ${error.message}`),
+    onError: (error: any) => alert(`Error updating input: ${error.message}`),
   });
 
   const deleteDmInputMutation = api.countries.deleteDmInput.useMutation({
     onSuccess: () => {
       void refetchDmInputs();
     },
-    onError: (error) => alert(`Error deleting input: ${error.message}`),
+    onError: (error: any) => alert(`Error deleting input: ${error.message}`),
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -189,7 +231,7 @@ export default function DmDashboard() {
                 >
                   <option value="global">🌍 Global Effects</option>
                   {countriesLoading && <option disabled>Loading countries...</option>}
-                  {countries?.map((country) => (
+                  {countriesData?.countries.map((country: Country) => (
                     <option key={country.id} value={country.id}>
                        {country.name}
                     </option>
@@ -223,7 +265,7 @@ export default function DmDashboard() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               {editingInput ? "Edit DM Input" : "Add New DM Input"}
-              {editingInput && countries?.find(c=>c.id === formData.countryId) ? ` for ${countries?.find(c=>c.id === formData.countryId)?.name}` : (selectedCountry !== "global" && countries?.find(c=>c.id === selectedCountry) ? ` for ${countries?.find(c=>c.id === selectedCountry)?.name}` : ' (Global)')}
+              {editingInput && countriesData?.countries.find(c=>c.id === formData.countryId) ? ` for ${countriesData?.countries.find(c=>c.id === formData.countryId)?.name}` : (selectedCountry !== "global" && countriesData?.countries.find(c=>c.id === selectedCountry) ? ` for ${countriesData?.countries.find(c=>c.id === selectedCountry)?.name}` : ' (Global)')}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -284,7 +326,7 @@ export default function DmDashboard() {
                         </label>
                         <input
                         type="text"
-                        value={formData.countryId ? countries?.find(c => c.id === formData.countryId)?.name : "Global Effect"}
+                        value={formData.countryId ? countriesData?.countries.find(c => c.id === formData.countryId)?.name : "Global Effect"}
                         disabled
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300"
                         />
@@ -337,7 +379,7 @@ export default function DmDashboard() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Active DM Inputs {selectedCountry === "global" ? "(Global)" : `(${countries?.find(c => c.id === selectedCountry)?.name || '...'})`}
+              Active DM Inputs {selectedCountry === "global" ? "(Global)" : `(${countriesData?.countries.find(c => c.id === selectedCountry)?.name || '...'})`}
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               {inputsLoading ? 'Loading inputs...' : `${dmInputs?.length || 0} active inputs affecting economic calculations`}
@@ -371,7 +413,7 @@ export default function DmDashboard() {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {dmInputs.map((input) => {
+                  {dmInputs.map((input: DmInput) => {
                     const typeInfo = getInputTypeInfo(input.inputType);
                     const Icon = typeInfo.icon;
                     
@@ -498,10 +540,10 @@ export default function DmDashboard() {
                   setShowForm(true);
                   setEditingInput(null);
                 }}
-                className={`p-4 border-2 border-dashed border-${preset.color}-300 dark:border-${preset.color}-700 rounded-lg hover:border-${preset.color}-400 dark:hover:border-${preset.color}-600 transition-colors text-left bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750`}
+                className={`p-4 border-2 border-dashed ${colorClasses[preset.color as keyof typeof colorClasses].border} rounded-lg hover:border-${preset.color}-400 dark:hover:border-${preset.color}-600 transition-colors text-left bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750`}
               >
-                <Icon className={`h-6 w-6 text-${preset.color}-500 dark:text-${preset.color}-400 mb-2`} />
-                <h3 className={`font-medium text-${preset.color}-700 dark:text-${preset.color}-300`}>
+                <Icon className={`h-6 w-6 ${colorClasses[preset.color as keyof typeof colorClasses].icon} mb-2`} />
+                <h3 className={`font-medium ${colorClasses[preset.color as keyof typeof colorClasses].text}`}>
                   {preset.title}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">

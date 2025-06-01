@@ -44,10 +44,12 @@ const safeFormatDensity = (num: number | null | undefined, unit: string): string
   if (num == null || !isFinite(num) || isNaN(num)) {
     return "N/A";
   }
-  if (num < 0.01) {
+  if (num < 0.01 && unit === "/km²") { // Only apply <0.01 logic for population density, not GDP
     return "< 0.01" + unit;
   }
-  return `${num.toFixed(1)}${unit}`;
+  // Apply currency formatting for GDP density, keep as is for population density
+  const formattedNum = unit.includes("GDP") ? safeFormatCurrency(num) : num.toFixed(1);
+  return `${formattedNum}${unit}`;
 };
 
 export function GlobalStatsSection({
@@ -72,7 +74,7 @@ export function GlobalStatsSection({
       countryCount: safeCountryCount.toLocaleString(),
       globalGrowthRate: `${((safeGrowthRate - 1) * 100).toFixed(2)}%`,
       averagePopulationDensity: safeFormatDensity(safeAvgPopDensity, "/km²"),
-      averageGdpDensity: safeFormatDensity(safeAvgGdpDensity, "/km²") + " GDP",
+      averageGdpDensity: safeFormatDensity(safeAvgGdpDensity, "/km² GDP"), // Keep the unit string for logic inside safeFormatDensity
       lastUpdated: globalStats.timestamp 
         ? IxTime.formatIxTime(globalStats.timestamp, true)
         : IxTime.formatIxTime(IxTime.getCurrentIxTime(), true)
@@ -215,20 +217,6 @@ export function GlobalStatsSection({
           );
         })}
       </div>
-
-      <Card className="mt-6">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <div className="flex items-center">
-              <Calendar className="h-3 w-3 mr-1" />
-              Last updated: {formattedData.lastUpdated}
-            </div>
-            <div>
-              {timeInfo.yearsSinceGameStart.toFixed(1)} years since game start
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

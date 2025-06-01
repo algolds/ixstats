@@ -2,7 +2,6 @@
 
 export { CountriesPageHeader } from './CountriesPageHeader';
 export { CountriesSearch } from './CountriesSearch';
-export { CountriesStats } from './CountriesStats';
 export { CountriesGrid } from './CountriesGrid';
 export { CountryListCard } from './CountryListCard';
 export { CountryInfobox } from './CountryInfobox';

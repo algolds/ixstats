@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect } from 'react';
 import {
   CountriesPageHeader,
   CountriesSearch,
-  CountriesStats,
   CountriesGrid
 } from './_components';
 import type {
@@ -148,8 +147,25 @@ export default function CountriesPage() {
       if (sortField === 'name') {
         return m * a.name.localeCompare(b.name);
       }
-      const va = (a as any)[sortField] ?? 0;
-      const vb = (b as any)[sortField] ?? 0;
+      let va, vb;
+      switch (sortField) {
+        case 'population':
+          va = a.currentPopulation ?? 0;
+          vb = b.currentPopulation ?? 0;
+          break;
+        case 'gdpPerCapita':
+          va = a.currentGdpPerCapita ?? 0;
+          vb = b.currentGdpPerCapita ?? 0;
+          break;
+        case 'totalGdp':
+          va = a.currentTotalGdp ?? 0;
+          vb = b.currentTotalGdp ?? 0;
+          break;
+        default:
+          va = (a as any)[sortField] ?? 0;
+          vb = (b as any)[sortField] ?? 0;
+          break;
+      }
       return m * (va - vb);
     });
     return arr;
@@ -196,8 +212,9 @@ export default function CountriesPage() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         <CountriesPageHeader
-          totalCountries={processed.length}
           isLoading={isLoading}
+          totalPopulation={totalPop}
+          combinedGdp={totalGdp}
         />
 
         <CountriesSearch
@@ -221,13 +238,6 @@ export default function CountriesPage() {
           filteredResults={filtered.length}
           availableContinents={availableContinents}
           availableRegions={availableRegions}
-        />
-
-        <CountriesStats
-          totalCountries={processed.length}
-          showing={filtered.length}
-          totalPopulation={totalPop}
-          combinedGdp={totalGdp}
         />
 
         <CountriesGrid
