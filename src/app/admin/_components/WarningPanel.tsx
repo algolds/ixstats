@@ -2,27 +2,38 @@
 "use client";
 
 import { AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
+import type { SystemStatus } from "~/types/ixstats";
 
 interface WarningPanelProps {
-  systemStatus: any;
+  systemStatus: SystemStatus | null | undefined;
 }
 
 export function WarningPanel({ systemStatus }: WarningPanelProps) {
-  if (!systemStatus?.ixTime?.isPaused) return null;
+  const warnings = [];
+  if (systemStatus?.databaseStatus !== "OK") {
+    warnings.push(`Database connection issue: ${systemStatus?.databaseStatus ?? 'Unknown status'}.`);
+  }
+  if (systemStatus?.lastCalculationError) {
+    warnings.push(`Last calculation failed: ${systemStatus.lastCalculationError}.`);
+  }
+  // Add any other conditions that should trigger a warning
+
+  if (warnings.length === 0) {
+    return null; // No warnings to display
+  }
 
   return (
-    <div className="bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-lg p-4 mt-6">
-      <div className="flex">
-        <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400" />
-        <div className="ml-3">
-          <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
-            IxTime is currently paused
-          </h3>
-          <p className="mt-1 text-sm text-red-700 dark:text-red-300">
-            Economic calculations and time progression have been suspended. Countries will not update automatically.
-          </p>
-        </div>
-      </div>
-    </div>
+    <Alert variant="destructive" className="mb-8 bg-yellow-50 dark:bg-yellow-900/30 border-yellow-300 dark:border-yellow-600">
+      <AlertTriangle className="h-5 w-5 text-yellow-500 dark:text-yellow-400" />
+      <AlertTitle className="font-semibold text-yellow-700 dark:text-yellow-300">System Warnings</AlertTitle>
+      <AlertDescription className="text-yellow-700 dark:text-yellow-300">
+        <ul className="list-disc pl-5 space-y-1">
+          {warnings.map((warning, index) => (
+            <li key={index}>{warning}</li>
+          ))}
+        </ul>
+      </AlertDescription>
+    </Alert>
   );
 }

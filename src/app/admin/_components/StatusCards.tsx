@@ -1,142 +1,136 @@
 // src/app/admin/_components/StatusCards.tsx
 "use client";
 
-import { Clock, Zap, TrendingUp, Server, Users, Wifi, WifiOff, AlertCircle } from "lucide-react";
-import type { AdminPageBotStatusView, SystemStatus } from "~/types/ixstats";
+import { Server, Users, Database, Clock, BarChart2, Bot, AlertCircle, CheckCircle2, Settings2, Zap } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Skeleton } from "~/components/ui/skeleton"; // For loading state
+import type { SystemStatus, AdminPageBotStatusView } from "~/types/ixstats";
+import { IxTime } from "~/lib/ixtime"; // Assuming IxTime is correctly imported
 
 interface StatusCardsProps {
-  systemStatus: SystemStatus | undefined;
-  botStatus: AdminPageBotStatusView | undefined; 
+  systemStatus: SystemStatus | null | undefined;
+  botStatus: AdminPageBotStatusView | null | undefined;
   statusLoading: boolean;
   configLoading: boolean;
   globalGrowthFactor: number;
 }
 
-export function StatusCards({ 
-  systemStatus, 
-  botStatus, 
-  statusLoading, 
-  configLoading, 
-  globalGrowthFactor 
-}: StatusCardsProps) {
-  const getMultiplierColor = (multiplier: number | undefined) => {
-    if (multiplier === undefined) return "text-gray-600 dark:text-gray-400";
-    if (multiplier === 0) return "text-red-600 dark:text-red-400";
-    if (multiplier < 2) return "text-yellow-600 dark:text-yellow-400";
-    if (multiplier === 4) return "text-green-600 dark:text-green-400";
-    return "text-blue-600 dark:text-blue-400";
-  };
-
-  const getEffectiveBotStatusColor = (adminBotState?: AdminPageBotStatusView) => {
-    if (!adminBotState?.botHealth.available) return "text-red-600 dark:text-red-400";
-    if (adminBotState.botStatus?.botReady === false) return "text-yellow-600 dark:text-yellow-400";
-    return "text-green-600 dark:text-green-400";
-  };
-
-  const getEffectiveBotStatusIcon = (adminBotState?: AdminPageBotStatusView) => {
-    if (!adminBotState?.botHealth.available) return <WifiOff className="h-5 w-5" />;
-    if (adminBotState.botStatus?.botReady === false) return <AlertCircle className="h-5 w-5" />;
-    return <Wifi className="h-5 w-5" />;
-  };
-  
-  const currentIxTimeForDisplay = statusLoading ? "Loading..." : botStatus?.formattedIxTime ?? systemStatus?.ixTime?.formattedIxTime ?? "N/A";
-  
-  const effectiveMultiplier = botStatus?.botStatus?.multiplier ?? botStatus?.multiplier ?? systemStatus?.ixTime?.multiplier ?? 4;
-  const effectiveIsPaused = botStatus?.botStatus?.isPaused ?? botStatus?.isPaused ?? systemStatus?.ixTime?.isPaused ?? false;
+const StatusItem = ({ title, value, icon: Icon, description, isLoading, statusColor }: {
+  title: string;
+  value: string | number | undefined;
+  icon: React.ElementType;
+  description?: string;
+  isLoading?: boolean;
+  statusColor?: string; // e.g., 'text-green-500', 'text-red-500'
+}) => {
+  if (isLoading) {
+    return (
+      <Card className="dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">{title}</CardTitle>
+          <Icon className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-6 w-3/4 mb-1" />
+          {description && <Skeleton className="h-4 w-1/2" />}
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-      {/* Current IxTime */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center">
-          <Clock className={`h-8 w-8 ${getMultiplierColor(effectiveMultiplier)}`} />
-          <div className="ml-4">
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Current IxTime</p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">
-              {currentIxTimeForDisplay}
-            </p>
-            {botStatus?.botHealth?.available && botStatus?.botStatus && (
-              <p className="text-xs text-green-600 dark:text-green-400">
-                Synced with bot
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
+    <Card className="dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">{title}</CardTitle>
+        <Icon className={`h-5 w-5 ${statusColor ?? 'text-muted-foreground dark:text-gray-300'}`} />
+      </CardHeader>
+      <CardContent>
+        <div className={`text-2xl font-bold text-gray-900 dark:text-white ${statusColor ?? ''}`}>{value ?? "N/A"}</div>
+        {description && <p className="text-xs text-muted-foreground dark:text-gray-500">{description}</p>}
+      </CardContent>
+    </Card>
+  );
+};
 
-      {/* Time Multiplier */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center">
-          <Zap className={`h-8 w-8 ${getMultiplierColor(effectiveMultiplier)}`} />
-          <div className="ml-4">
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Time Multiplier</p>
-            <p className={`text-lg font-semibold ${getMultiplierColor(effectiveMultiplier)}`}>
-              {statusLoading ? "Loading..." : (effectiveIsPaused ? "PAUSED" : `${effectiveMultiplier}x Speed`)}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {botStatus?.botHealth?.available && botStatus?.botStatus ? "Bot controlled" : "Local/Config"}
-            </p>
-          </div>
-        </div>
-      </div>
+export function StatusCards({
+  systemStatus,
+  botStatus,
+  statusLoading,
+  configLoading,
+  globalGrowthFactor,
+}: StatusCardsProps) {
+  const currentTime = systemStatus?.currentTime
+    ? IxTime.fromJSON(systemStatus.currentTime).toDisplayDateTime()
+    : "N/A";
+  
+  const nextUpdateTime = systemStatus?.nextScheduledUpdate
+    ? new Date(systemStatus.nextScheduledUpdate).toLocaleTimeString()
+    : "N/A";
 
-      {/* Global Growth */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center">
-          <TrendingUp className="h-8 w-8 text-green-500" />
-          <div className="ml-4">
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Global Growth</p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">
-              {configLoading ? "Loading..." : ((globalGrowthFactor - 1) * 100).toFixed(2)}%
-            </p>
-          </div>
-        </div>
-      </div>
+  const botStatusText = botStatus?.isPaused ? "Paused" : botStatus?.isActive ? "Active" : "Inactive";
+  const botStatusColor = botStatus?.isPaused ? "text-yellow-500" : botStatus?.isActive ? "text-green-500" : "text-red-500";
 
-      {/* Last Calculation */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center">
-          <Server className="h-8 w-8 text-cyan-500" />
-          <div className="ml-4">
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Last Calculation</p>
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">
-              {statusLoading || !systemStatus?.lastCalculation ? "N/A" : new Date(systemStatus.lastCalculation.timestamp).toLocaleTimeString()}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {statusLoading || !systemStatus?.lastCalculation ? "" : `${systemStatus.lastCalculation.countriesUpdated} countries`}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Total Countries */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center">
-          <Users className="h-8 w-8 text-purple-500" />
-          <div className="ml-4">
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Countries</p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">
-              {statusLoading || systemStatus?.countryCount === undefined ? "N/A" : systemStatus.countryCount}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Bot Sync Status */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center">
-          {getEffectiveBotStatusIcon(botStatus)}
-          <div className="ml-4">
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Bot Sync Status</p>
-            <p className={`text-lg font-semibold ${getEffectiveBotStatusColor(botStatus)}`}>
-              {botStatus?.botHealth?.available ? (botStatus.botStatus?.botReady ? 'Online & Ready' : 'Online, Not Ready') : 'Offline'}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {botStatus?.lastSyncTime ? `Last sync: ${new Date(botStatus.lastSyncTime).toLocaleTimeString()}` : 'Never synced'}
-            </p>
-          </div>
-        </div>
-      </div>
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-8">
+      <StatusItem
+        title="System Status"
+        value={systemStatus?.databaseStatus === "OK" ? "Operational" : "Error"}
+        icon={systemStatus?.databaseStatus === "OK" ? CheckCircle2 : AlertCircle}
+        description={`DB: ${systemStatus?.databaseStatus ?? 'N/A'}`}
+        isLoading={statusLoading}
+        statusColor={systemStatus?.databaseStatus === "OK" ? "text-green-500" : "text-red-500"}
+      />
+      <StatusItem
+        title="Current IxTime"
+        value={currentTime}
+        icon={Clock}
+        description={`Multiplier: ${systemStatus?.timeMultiplier ?? 'N/A'}x`}
+        isLoading={statusLoading}
+      />
+      <StatusItem
+        title="Total Countries"
+        value={systemStatus?.totalCountries}
+        icon={Users}
+        description="Tracked in database"
+        isLoading={statusLoading}
+      />
+      <StatusItem
+        title="Next Update"
+        value={nextUpdateTime}
+        icon={Zap}
+        description={systemStatus?.autoUpdateEnabled ? "Auto-update ON" : "Auto-update OFF"}
+        isLoading={statusLoading}
+      />
+      <StatusItem
+        title="Bot Status"
+        value={botStatusText}
+        icon={Bot}
+        description={`Last Sync: ${botStatus?.lastSyncTime ? new Date(botStatus.lastSyncTime).toLocaleTimeString() : 'N/A'}`}
+        isLoading={botStatusLoading}
+        statusColor={botStatusColor}
+      />
+       <StatusItem
+        title="Bot Overrides"
+        value={botStatus?.overriddenCountriesCount ?? 0}
+        icon={Settings2}
+        description="Countries with manual inputs"
+        isLoading={botStatusLoading}
+      />
+      <StatusItem
+        title="Global Growth"
+        value={`${(globalGrowthFactor * 100).toFixed(2)}%`}
+        icon={BarChart2}
+        description="Annual economic adjustment"
+        isLoading={configLoading}
+      />
+      <StatusItem
+        title="Last Calculation"
+        value={systemStatus?.lastCalculationTime ? new Date(systemStatus.lastCalculationTime).toLocaleTimeString() : "Never"}
+        icon={Database}
+        description={systemStatus?.lastCalculationError ? "Failed" : "Successful"}
+        isLoading={statusLoading}
+        statusColor={systemStatus?.lastCalculationError ? "text-red-500" : undefined}
+      />
     </div>
   );
 }
