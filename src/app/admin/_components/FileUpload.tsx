@@ -2,6 +2,8 @@
 "use client";
 
 import { Upload, Loader2 } from "lucide-react";
+import { Button } from "~/components/ui/button"; // For a more styled trigger if desired
+import { cn } from "~/lib/utils";
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
@@ -15,6 +17,8 @@ export function FileUpload({ onFileSelect, isUploading, isAnalyzing }: FileUploa
     if (file) {
       onFileSelect(file);
     }
+    // Reset file input to allow selecting the same file again
+    event.target.value = "";
   };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
@@ -34,44 +38,49 @@ export function FileUpload({ onFileSelect, isUploading, isAnalyzing }: FileUploa
     }
   };
 
+  const isDisabled = isUploading || isAnalyzing;
+
   return (
-    <div 
-      className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
+    <div
+      className={cn(
+        "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
+        isDisabled 
+          ? "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-not-allowed" 
+          : "border-gray-300 dark:border-gray-600 hover:border-indigo-500 dark:hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-gray-700/50 cursor-pointer"
+      )}
+      onDragOver={isDisabled ? undefined : handleDragOver}
+      onDrop={isDisabled ? undefined : handleDrop}
+      onClick={() => !isDisabled && document.getElementById("file-upload")?.click()} // Trigger click on div click
     >
-      <div className="text-center">
-        {isAnalyzing || isUploading ? (
-          <Loader2 className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 animate-spin" />
-        ) : (
-          <Upload className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
-        )}
-        <div className="mt-4">
-          <label htmlFor="file-upload" className="cursor-pointer">
-            <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">
-              Upload Excel roster file
-            </span>
-            <input
-              id="file-upload"
-              name="file-upload"
-              type="file"
-              accept=".xlsx,.xls"
-              className="sr-only"
-              onChange={handleFileChange}
-              disabled={isUploading || isAnalyzing}
-            />
-            <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              {isAnalyzing ? "Analyzing changes..." : isUploading ? "Importing..." : "Click to select file or drag and drop"}
-            </div>
-          </label>
-        </div>
-        <div className="mt-4 text-xs text-gray-400 dark:text-gray-500">
-          <p>• Supports .xlsx / .xls formats only</p>
-          <p>• Excel files should have headers in the first row</p>
-          <p>• Required columns: Country, Population, GDP PC</p>
-          <p>• Upload will show a preview of changes before importing</p>
-        </div>
-      </div>
+      <input
+        id="file-upload"
+        name="file-upload"
+        type="file"
+        accept=".xlsx,.xls" // Ensure this matches your backend
+        className="sr-only"
+        onChange={handleFileChange}
+        disabled={isDisabled}
+      />
+      {isDisabled ? (
+        <Loader2 className="mx-auto h-10 w-10 text-gray-400 dark:text-gray-500 animate-spin" />
+      ) : (
+        <Upload className="mx-auto h-10 w-10 text-gray-400 dark:text-gray-500 group-hover:text-indigo-500 dark:group-hover:text-indigo-400" />
+      )}
+      <p className="mt-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+        {isAnalyzing ? "Analyzing file..." : isUploading ? "Importing data..." : "Click or drag & drop Excel file"}
+      </p>
+      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        Supports .xlsx, .xls. Headers in first row.
+      </p>
+       <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        Required: Country, Population, GDP PC.
+      </p>
+      {/* Example of using a styled button if you prefer a more explicit click target
+          This button would also need to trigger the hidden file input.
+      <Button variant="outline" size="sm" className="mt-4" disabled={isDisabled} onClick={(e) => { e.stopPropagation(); document.getElementById('file-upload')?.click(); }}>
+        Select File
+      </Button>
+      */}
     </div>
   );
 }
