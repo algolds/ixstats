@@ -1,5 +1,5 @@
 // src/server/api/routers/countries.ts
-// Enhanced router with comprehensive economic data support
+// FIXED: Comprehensive economic data support with proper error handling
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
@@ -7,7 +7,7 @@ import { IxTime } from "~/lib/ixtime";
 import { IxStatsCalculator } from "~/lib/calculations";
 import type { EconomicConfig, BaseCountryData, CountryStats } from "~/types/ixstats";
 
-// Economic data validation schemas
+// FIXED: Comprehensive economic data validation schemas
 const economicProfileSchema = z.object({
   gdpGrowthVolatility: z.number().optional(),
   economicComplexity: z.number().optional(),
@@ -15,38 +15,38 @@ const economicProfileSchema = z.object({
   competitivenessRank: z.number().int().optional(),
   easeOfDoingBusiness: z.number().int().optional(),
   corruptionIndex: z.number().optional(),
-  sectorBreakdown: z.string().optional(), // JSON
+  sectorBreakdown: z.any().optional(), // Will be JSON stringified
   exportsGDPPercent: z.number().optional(),
   importsGDPPercent: z.number().optional(),
   tradeBalance: z.number().optional(),
 });
 
 const laborMarketSchema = z.object({
-  employmentBySector: z.string().optional(), // JSON
+  employmentBySector: z.any().optional(), // Will be JSON stringified
   youthUnemploymentRate: z.number().optional(),
   femaleParticipationRate: z.number().optional(),
   informalEmploymentRate: z.number().optional(),
   medianWage: z.number().optional(),
   wageGrowthRate: z.number().optional(),
-  wageBySector: z.string().optional(), // JSON
+  wageBySector: z.any().optional(), // Will be JSON stringified
 });
 
 const fiscalSystemSchema = z.object({
-  personalIncomeTaxRates: z.string().optional(), // JSON
-  corporateTaxRates: z.string().optional(), // JSON
+  personalIncomeTaxRates: z.any().optional(), // Will be JSON stringified
+  corporateTaxRates: z.any().optional(), // Will be JSON stringified
   salesTaxRate: z.number().optional(),
   propertyTaxRate: z.number().optional(),
   payrollTaxRate: z.number().optional(),
-  exciseTaxRates: z.string().optional(), // JSON
+  exciseTaxRates: z.any().optional(), // Will be JSON stringified
   wealthTaxRate: z.number().optional(),
-  spendingByCategory: z.string().optional(), // JSON
+  spendingByCategory: z.any().optional(), // Will be JSON stringified
   fiscalBalanceGDPPercent: z.number().optional(),
   primaryBalanceGDPPercent: z.number().optional(),
   taxEfficiency: z.number().optional(),
 });
 
 const incomeDistributionSchema = z.object({
-  economicClasses: z.string().optional(), // JSON
+  economicClasses: z.any().optional(), // Will be JSON stringified
   top10PercentWealth: z.number().optional(),
   bottom50PercentWealth: z.number().optional(),
   middleClassPercent: z.number().optional(),
@@ -55,17 +55,17 @@ const incomeDistributionSchema = z.object({
 });
 
 const governmentBudgetSchema = z.object({
-  spendingCategories: z.string().optional(), // JSON
+  spendingCategories: z.any().optional(), // Will be JSON stringified
   spendingEfficiency: z.number().optional(),
   publicInvestmentRate: z.number().optional(),
   socialSpendingPercent: z.number().optional(),
 });
 
 const demographicsSchema = z.object({
-  ageDistribution: z.string().optional(), // JSON
-  regions: z.string().optional(), // JSON
-  educationLevels: z.string().optional(), // JSON
-  citizenshipStatuses: z.string().optional(), // JSON
+  ageDistribution: z.any().optional(), // Will be JSON stringified
+  regions: z.any().optional(), // Will be JSON stringified
+  educationLevels: z.any().optional(), // Will be JSON stringified
+  citizenshipStatuses: z.any().optional(), // Will be JSON stringified
   birthRate: z.number().optional(),
   deathRate: z.number().optional(),
   migrationRate: z.number().optional(),
@@ -74,6 +74,7 @@ const demographicsSchema = z.object({
   populationGrowthProjection: z.number().optional(),
 });
 
+// FIXED: Economic data schema that includes all the fields components expect
 const economicDataSchema = z.object({
   // Core Economic Indicators
   nominalGDP: z.number().optional(),
@@ -198,6 +199,28 @@ const prepareBaseCountryData = (country: any): BaseCountryData => ({
   localGrowthFactor: country.localGrowthFactor || 1.0,
 });
 
+// FIXED: Helper function to safely parse JSON
+const safeParseJSON = (jsonString: string | null | undefined): any => {
+  if (!jsonString) return null;
+  try {
+    return JSON.parse(jsonString);
+  } catch (error) {
+    console.warn('Failed to parse JSON:', jsonString, error);
+    return null;
+  }
+};
+
+// FIXED: Helper function to safely stringify JSON
+const safeStringifyJSON = (data: any): string | undefined => {
+  if (data === null || data === undefined) return undefined;
+  try {
+    return JSON.stringify(data);
+  } catch (error) {
+    console.warn('Failed to stringify JSON:', data, error);
+    return undefined;
+  }
+};
+
 export const countriesRouter = createTRPCRouter({
   // Get all countries with basic info + total count
   getAll: publicProcedure
@@ -241,7 +264,7 @@ export const countriesRouter = createTRPCRouter({
       return { countries, total };
     }),
 
-  // Get country by ID with full economic data
+  // FIXED: Get country by ID with full economic data
   getByIdWithEconomicData: publicProcedure
     .input(z.object({
       id: z.string(),
@@ -294,68 +317,42 @@ export const countriesRouter = createTRPCRouter({
           ...dm,
           ixTimeTimestamp: dm.ixTimeTimestamp.getTime()
         })),
-        // Parse JSON fields for complex data
+        // FIXED: Parse JSON fields for complex data
         economicProfile: country.economicProfile ? {
           ...country.economicProfile,
-          sectorBreakdown: country.economicProfile.sectorBreakdown 
-            ? JSON.parse(country.economicProfile.sectorBreakdown) 
-            : null,
+          sectorBreakdown: safeParseJSON(country.economicProfile.sectorBreakdown),
         } : null,
         laborMarket: country.laborMarket ? {
           ...country.laborMarket,
-          employmentBySector: country.laborMarket.employmentBySector 
-            ? JSON.parse(country.laborMarket.employmentBySector) 
-            : null,
-          wageBySector: country.laborMarket.wageBySector 
-            ? JSON.parse(country.laborMarket.wageBySector) 
-            : null,
+          employmentBySector: safeParseJSON(country.laborMarket.employmentBySector),
+          wageBySector: safeParseJSON(country.laborMarket.wageBySector),
         } : null,
         fiscalSystem: country.fiscalSystem ? {
           ...country.fiscalSystem,
-          personalIncomeTaxRates: country.fiscalSystem.personalIncomeTaxRates 
-            ? JSON.parse(country.fiscalSystem.personalIncomeTaxRates) 
-            : null,
-          corporateTaxRates: country.fiscalSystem.corporateTaxRates 
-            ? JSON.parse(country.fiscalSystem.corporateTaxRates) 
-            : null,
-          exciseTaxRates: country.fiscalSystem.exciseTaxRates 
-            ? JSON.parse(country.fiscalSystem.exciseTaxRates) 
-            : null,
-          spendingByCategory: country.fiscalSystem.spendingByCategory 
-            ? JSON.parse(country.fiscalSystem.spendingByCategory) 
-            : null,
+          personalIncomeTaxRates: safeParseJSON(country.fiscalSystem.personalIncomeTaxRates),
+          corporateTaxRates: safeParseJSON(country.fiscalSystem.corporateTaxRates),
+          exciseTaxRates: safeParseJSON(country.fiscalSystem.exciseTaxRates),
+          spendingByCategory: safeParseJSON(country.fiscalSystem.spendingByCategory),
         } : null,
         incomeDistribution: country.incomeDistribution ? {
           ...country.incomeDistribution,
-          economicClasses: country.incomeDistribution.economicClasses 
-            ? JSON.parse(country.incomeDistribution.economicClasses) 
-            : null,
+          economicClasses: safeParseJSON(country.incomeDistribution.economicClasses),
         } : null,
         governmentBudget: country.governmentBudget ? {
           ...country.governmentBudget,
-          spendingCategories: country.governmentBudget.spendingCategories 
-            ? JSON.parse(country.governmentBudget.spendingCategories) 
-            : null,
+          spendingCategories: safeParseJSON(country.governmentBudget.spendingCategories),
         } : null,
         demographics: country.demographics ? {
           ...country.demographics,
-          ageDistribution: country.demographics.ageDistribution 
-            ? JSON.parse(country.demographics.ageDistribution) 
-            : null,
-          regions: country.demographics.regions 
-            ? JSON.parse(country.demographics.regions) 
-            : null,
-          educationLevels: country.demographics.educationLevels 
-            ? JSON.parse(country.demographics.educationLevels) 
-            : null,
-          citizenshipStatuses: country.demographics.citizenshipStatuses 
-            ? JSON.parse(country.demographics.citizenshipStatuses) 
-            : null,
+          ageDistribution: safeParseJSON(country.demographics.ageDistribution),
+          regions: safeParseJSON(country.demographics.regions),
+          educationLevels: safeParseJSON(country.demographics.educationLevels),
+          citizenshipStatuses: safeParseJSON(country.demographics.citizenshipStatuses),
         } : null,
       };
     }),
 
-  // Update country economic data
+  // FIXED: Update country economic data
   updateEconomicData: publicProcedure
     .input(z.object({
       countryId: z.string(),
@@ -417,16 +414,12 @@ export const countriesRouter = createTRPCRouter({
           where: { countryId },
           update: {
             ...economicData.economicProfile,
-            sectorBreakdown: economicData.economicProfile.sectorBreakdown 
-              ? JSON.stringify(economicData.economicProfile.sectorBreakdown) 
-              : undefined,
+            sectorBreakdown: safeStringifyJSON(economicData.economicProfile.sectorBreakdown),
           },
           create: {
             countryId,
             ...economicData.economicProfile,
-            sectorBreakdown: economicData.economicProfile.sectorBreakdown 
-              ? JSON.stringify(economicData.economicProfile.sectorBreakdown) 
-              : undefined,
+            sectorBreakdown: safeStringifyJSON(economicData.economicProfile.sectorBreakdown),
           },
         });
       }
@@ -436,22 +429,14 @@ export const countriesRouter = createTRPCRouter({
           where: { countryId },
           update: {
             ...economicData.laborMarket,
-            employmentBySector: economicData.laborMarket.employmentBySector 
-              ? JSON.stringify(economicData.laborMarket.employmentBySector) 
-              : undefined,
-            wageBySector: economicData.laborMarket.wageBySector 
-              ? JSON.stringify(economicData.laborMarket.wageBySector) 
-              : undefined,
+            employmentBySector: safeStringifyJSON(economicData.laborMarket.employmentBySector),
+            wageBySector: safeStringifyJSON(economicData.laborMarket.wageBySector),
           },
           create: {
             countryId,
             ...economicData.laborMarket,
-            employmentBySector: economicData.laborMarket.employmentBySector 
-              ? JSON.stringify(economicData.laborMarket.employmentBySector) 
-              : undefined,
-            wageBySector: economicData.laborMarket.wageBySector 
-              ? JSON.stringify(economicData.laborMarket.wageBySector) 
-              : undefined,
+            employmentBySector: safeStringifyJSON(economicData.laborMarket.employmentBySector),
+            wageBySector: safeStringifyJSON(economicData.laborMarket.wageBySector),
           },
         });
       }
@@ -461,34 +446,18 @@ export const countriesRouter = createTRPCRouter({
           where: { countryId },
           update: {
             ...economicData.fiscalSystem,
-            personalIncomeTaxRates: economicData.fiscalSystem.personalIncomeTaxRates 
-              ? JSON.stringify(economicData.fiscalSystem.personalIncomeTaxRates) 
-              : undefined,
-            corporateTaxRates: economicData.fiscalSystem.corporateTaxRates 
-              ? JSON.stringify(economicData.fiscalSystem.corporateTaxRates) 
-              : undefined,
-            exciseTaxRates: economicData.fiscalSystem.exciseTaxRates 
-              ? JSON.stringify(economicData.fiscalSystem.exciseTaxRates) 
-              : undefined,
-            spendingByCategory: economicData.fiscalSystem.spendingByCategory 
-              ? JSON.stringify(economicData.fiscalSystem.spendingByCategory) 
-              : undefined,
+            personalIncomeTaxRates: safeStringifyJSON(economicData.fiscalSystem.personalIncomeTaxRates),
+            corporateTaxRates: safeStringifyJSON(economicData.fiscalSystem.corporateTaxRates),
+            exciseTaxRates: safeStringifyJSON(economicData.fiscalSystem.exciseTaxRates),
+            spendingByCategory: safeStringifyJSON(economicData.fiscalSystem.spendingByCategory),
           },
           create: {
             countryId,
             ...economicData.fiscalSystem,
-            personalIncomeTaxRates: economicData.fiscalSystem.personalIncomeTaxRates 
-              ? JSON.stringify(economicData.fiscalSystem.personalIncomeTaxRates) 
-              : undefined,
-            corporateTaxRates: economicData.fiscalSystem.corporateTaxRates 
-              ? JSON.stringify(economicData.fiscalSystem.corporateTaxRates) 
-              : undefined,
-            exciseTaxRates: economicData.fiscalSystem.exciseTaxRates 
-              ? JSON.stringify(economicData.fiscalSystem.exciseTaxRates) 
-              : undefined,
-            spendingByCategory: economicData.fiscalSystem.spendingByCategory 
-              ? JSON.stringify(economicData.fiscalSystem.spendingByCategory) 
-              : undefined,
+            personalIncomeTaxRates: safeStringifyJSON(economicData.fiscalSystem.personalIncomeTaxRates),
+            corporateTaxRates: safeStringifyJSON(economicData.fiscalSystem.corporateTaxRates),
+            exciseTaxRates: safeStringifyJSON(economicData.fiscalSystem.exciseTaxRates),
+            spendingByCategory: safeStringifyJSON(economicData.fiscalSystem.spendingByCategory),
           },
         });
       }
@@ -498,16 +467,12 @@ export const countriesRouter = createTRPCRouter({
           where: { countryId },
           update: {
             ...economicData.incomeDistribution,
-            economicClasses: economicData.incomeDistribution.economicClasses 
-              ? JSON.stringify(economicData.incomeDistribution.economicClasses) 
-              : undefined,
+            economicClasses: safeStringifyJSON(economicData.incomeDistribution.economicClasses),
           },
           create: {
             countryId,
             ...economicData.incomeDistribution,
-            economicClasses: economicData.incomeDistribution.economicClasses 
-              ? JSON.stringify(economicData.incomeDistribution.economicClasses) 
-              : undefined,
+            economicClasses: safeStringifyJSON(economicData.incomeDistribution.economicClasses),
           },
         });
       }
@@ -517,16 +482,12 @@ export const countriesRouter = createTRPCRouter({
           where: { countryId },
           update: {
             ...economicData.governmentBudget,
-            spendingCategories: economicData.governmentBudget.spendingCategories 
-              ? JSON.stringify(economicData.governmentBudget.spendingCategories) 
-              : undefined,
+            spendingCategories: safeStringifyJSON(economicData.governmentBudget.spendingCategories),
           },
           create: {
             countryId,
             ...economicData.governmentBudget,
-            spendingCategories: economicData.governmentBudget.spendingCategories 
-              ? JSON.stringify(economicData.governmentBudget.spendingCategories) 
-              : undefined,
+            spendingCategories: safeStringifyJSON(economicData.governmentBudget.spendingCategories),
           },
         });
       }
@@ -536,34 +497,18 @@ export const countriesRouter = createTRPCRouter({
           where: { countryId },
           update: {
             ...economicData.demographics,
-            ageDistribution: economicData.demographics.ageDistribution 
-              ? JSON.stringify(economicData.demographics.ageDistribution) 
-              : undefined,
-            regions: economicData.demographics.regions 
-              ? JSON.stringify(economicData.demographics.regions) 
-              : undefined,
-            educationLevels: economicData.demographics.educationLevels 
-              ? JSON.stringify(economicData.demographics.educationLevels) 
-              : undefined,
-            citizenshipStatuses: economicData.demographics.citizenshipStatuses 
-              ? JSON.stringify(economicData.demographics.citizenshipStatuses) 
-              : undefined,
+            ageDistribution: safeStringifyJSON(economicData.demographics.ageDistribution),
+            regions: safeStringifyJSON(economicData.demographics.regions),
+            educationLevels: safeStringifyJSON(economicData.demographics.educationLevels),
+            citizenshipStatuses: safeStringifyJSON(economicData.demographics.citizenshipStatuses),
           },
           create: {
             countryId,
             ...economicData.demographics,
-            ageDistribution: economicData.demographics.ageDistribution 
-              ? JSON.stringify(economicData.demographics.ageDistribution) 
-              : undefined,
-            regions: economicData.demographics.regions 
-              ? JSON.stringify(economicData.demographics.regions) 
-              : undefined,
-            educationLevels: economicData.demographics.educationLevels 
-              ? JSON.stringify(economicData.demographics.educationLevels) 
-              : undefined,
-            citizenshipStatuses: economicData.demographics.citizenshipStatuses 
-              ? JSON.stringify(economicData.demographics.citizenshipStatuses) 
-              : undefined,
+            ageDistribution: safeStringifyJSON(economicData.demographics.ageDistribution),
+            regions: safeStringifyJSON(economicData.demographics.regions),
+            educationLevels: safeStringifyJSON(economicData.demographics.educationLevels),
+            citizenshipStatuses: safeStringifyJSON(economicData.demographics.citizenshipStatuses),
           },
         });
       }
@@ -571,7 +516,7 @@ export const countriesRouter = createTRPCRouter({
       return { success: true, message: "Economic data updated successfully" };
     }),
 
-  // Get country by ID at a specific IxTime (existing endpoint - keeping for compatibility)
+  // FIXED: Get country by ID at a specific IxTime (existing endpoint - keeping for compatibility)
   getByIdAtTime: publicProcedure
     .input(z.object({
       id: z.string(),
@@ -1097,7 +1042,7 @@ export const countriesRouter = createTRPCRouter({
         return updated;
       }
 
-      // Update all countries
+      // Update all countries logic remains the same...
       const all = await ctx.db.country.findMany({
         include: {
           dmInputs: {
