@@ -34,11 +34,16 @@ export interface CoreEconomicIndicatorsData {
     debtPerCapita: number
     interestRates: number               // decimal
     debtServiceCosts: number
-    // For detailed JSON-typed fields you can use `Record<string, unknown>`
-    personalIncomeTaxRates?: any[]
-    corporateTaxRates?: any[]
-    exciseTaxRates?: any[]
-    spendingByCategory?: { category: string; amount: number; percent: number }[]
+    taxRates: {
+      personalIncomeTaxRates: Array<{ bracket: number; rate: number }>
+      corporateTaxRates: Array<{ size: string; rate: number }>
+      salesTaxRate: number
+      propertyTaxRate: number
+      payrollTaxRate: number
+      exciseTaxRates: Array<{ type: string; rate: number }>
+      wealthTaxRate: number
+    }
+    governmentSpendingByCategory: Array<{ category: string; amount: number; percent: number }>
   }
   
   // Income & wealth distribution
@@ -48,7 +53,7 @@ export interface CoreEconomicIndicatorsData {
       populationPercent: number
       wealthPercent: number
       averageIncome: number
-      color?: string
+      color: string
     }>
     povertyRate: number        // percent
     incomeInequalityGini: number  // decimal
@@ -57,10 +62,10 @@ export interface CoreEconomicIndicatorsData {
   
   // Government spending
   export interface GovernmentSpendingData {
-    totalGovernmentSpending: number
+    totalSpending: number
     spendingGDPPercent: number
     spendingPerCapita: number
-    budgetDeficitSurplus: number
+    deficitSurplus: number
     spendingCategories: Array<{
       category: string
       amount: number
@@ -74,8 +79,7 @@ export interface CoreEconomicIndicatorsData {
   // Demographics
   export interface DemographicsData {
     lifeExpectancy: number
-    urbanPopulationPercent: number
-    ruralPopulationPercent: number
+    urbanRuralSplit: { urban: number; rural: number }
     ageDistribution: Array<{ group: string; percent: number; color?: string }>
     regions: Array<{ name: string; population: number; urbanPercent: number; color?: string }>
     educationLevels: Array<{ level: string; percent: number; color?: string }>

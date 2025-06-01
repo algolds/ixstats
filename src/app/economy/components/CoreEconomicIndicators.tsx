@@ -1,7 +1,7 @@
 // src/app/economy/components/CoreEconomicIndicators.tsx
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   DollarSign,
   Users,
@@ -18,14 +18,36 @@ import { getTierStyle } from "~/lib/theme-utils";
 
 interface CoreEconomicIndicatorsProps {
   indicators: CoreEconomicIndicators;
-  referenceCountry: RealCountryData;
-  onIndicatorsChange: (indicators: CoreEconomicIndicators) => void;
+  referenceCountry?: RealCountryData;
+  /** SERVER ACTION */
+  onIndicatorsChangeAction: (i: CoreEconomicIndicators) => void;
+  isReadOnly?: boolean;
+  showComparison?: boolean;
+}
+
+function getEconomicTier(gdp: number): string {
+  if (gdp >= 65000) return "Extravagant";
+  if (gdp >= 55000) return "Very Strong";
+  if (gdp >= 45000) return "Strong";
+  if (gdp >= 35000) return "Healthy";
+  if (gdp >= 25000) return "Developed";
+  if (gdp >= 10000) return "Emerging";
+  return "Developing";
+}
+
+function computeHealth(g: number, i: number) {
+  if (g > 0.04 && i < 0.03) return { label: "Excellent", color: "text-green-600" };
+  if (g > 0.02 && i < 0.05) return { label: "Good", color: "text-blue-600" };
+  if (g > 0 && i < 0.08) return { label: "Moderate", color: "text-yellow-600" };
+  return { label: "Concerning", color: "text-red-600" };
 }
 
 export function CoreEconomicIndicatorsComponent({
   indicators,
   referenceCountry,
-  onIndicatorsChange,
+  onIndicatorsChangeAction,
+  isReadOnly = false,
+  showComparison = true,
 }: CoreEconomicIndicatorsProps) {
   const [selectedView, setSelectedView] = useState<'overview' | 'detailed'>('overview');
 
@@ -39,7 +61,7 @@ export function CoreEconomicIndicatorsComponent({
       newIndicators.nominalGDP = newIndicators.gdpPerCapita * newIndicators.totalPopulation;
     }
     
-    onIndicatorsChange(newIndicators);
+    onIndicatorsChangeAction(newIndicators);
   };
 
   const formatNumber = (num: number, precision = 1, isCurrency = true): string => {
@@ -60,34 +82,27 @@ export function CoreEconomicIndicatorsComponent({
     {
       label: "GDP per Capita",
       userValue: indicators.gdpPerCapita,
-      refValue: referenceCountry.gdpPerCapita,
+      refValue: referenceCountry?.gdpPerCapita || 0,
       format: (v: number) => formatNumber(v, 2),
       icon: DollarSign,
     },
     {
       label: "Population",
       userValue: indicators.totalPopulation,
-      refValue: referenceCountry.population,
+      refValue: referenceCountry?.population || 0,
       format: (v: number) => formatPopulation(v),
       icon: Users,
     },
     {
       label: "Total GDP",
       userValue: indicators.nominalGDP,
-      refValue: referenceCountry.gdp,
+      refValue: referenceCountry?.gdp || 0,
       format: (v: number) => formatNumber(v, 1),
       icon: Globe,
     },
   ];
 
-  const getHealthIndicator = (growth: number, inflation: number) => {
-    if (growth > 4 && inflation < 3) return { color: "text-green-600", label: "Excellent" };
-    if (growth > 2 && inflation < 5) return { color: "text-blue-600", label: "Good" };
-    if (growth > 0 && inflation < 8) return { color: "text-yellow-600", label: "Moderate" };
-    return { color: "text-red-600", label: "Concerning" };
-  };
-
-  const healthIndicator = getHealthIndicator(indicators.realGDPGrowthRate, indicators.inflationRate);
+  const healthIndicator = computeHealth(indicators.realGDPGrowthRate, indicators.inflationRate);
 
   return (
     <div className="space-y-6">
@@ -143,7 +158,7 @@ export function CoreEconomicIndicatorsComponent({
                     Ref: {item.format(item.refValue)}
                   </div>
                   <div className={`text-xs font-medium ${isHigher ? 'text-green-600' : 'text-red-600'}`}>
-                    {isHigher ? '+' : ''}{difference.toFixed(1)}% vs {referenceCountry.name}
+                    {isHigher ? '+' : ''}{difference.toFixed(1)}% vs {referenceCountry?.name || 'Unknown'}
                   </div>
                 </div>
               </div>
@@ -172,7 +187,7 @@ export function CoreEconomicIndicatorsComponent({
               </div>
             </div>
             <div className="text-xs text-[var(--color-text-muted)]">
-              Ref: {formatPopulation(referenceCountry.population)}
+              Ref: {formatPopulation(referenceCountry?.population || 0)}
             </div>
           </div>
 
@@ -194,7 +209,7 @@ export function CoreEconomicIndicatorsComponent({
               </div>
             </div>
             <div className="text-xs text-[var(--color-text-muted)]">
-              Ref: ${referenceCountry.gdpPerCapita.toLocaleString()}
+              Ref: ${referenceCountry?.gdpPerCapita.toLocaleString() || 'N/A'}
             </div>
           </div>
 
@@ -216,7 +231,7 @@ export function CoreEconomicIndicatorsComponent({
               </div>
             </div>
             <div className="text-xs text-[var(--color-text-muted)]">
-              Ref: {formatNumber(referenceCountry.gdp)}
+              Ref: {formatNumber(referenceCountry?.gdp || 0)}
             </div>
           </div>
         </div>
