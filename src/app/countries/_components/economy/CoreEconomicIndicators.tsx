@@ -1,17 +1,31 @@
-// src/app/countries/_components/economy/CoreEconomicIndicators.tsx
 "use client";
 
-import { useState } from "react";
-import { DollarSign, Users, TrendingUp, BarChart3, Globe, Coins, Info, AlertCircle } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import React, { useState } from "react";
+import {
+  DollarSign,
+  Users,
+  Globe,
+  BarChart3,
+  Info,
+} from "lucide-react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { Label } from "~/components/ui/label";
+import { Input } from "~/components/ui/input";
 import { Slider } from "~/components/ui/slider";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { formatCurrency, formatPopulation, displayGrowthRate } from "~/lib/chart-utils";
+import {
+  formatCurrency,
+  formatPopulation,
+  displayGrowthRate,
+} from "~/lib/chart-utils";
 import { getTierStyle } from "~/lib/theme-utils";
 
 export interface CoreEconomicIndicators {
@@ -34,19 +48,27 @@ export interface RealCountryData {
 interface CoreEconomicIndicatorsProps {
   indicators: CoreEconomicIndicators;
   referenceCountry?: RealCountryData;
-  onIndicatorsChangeAction: (indicators: CoreEconomicIndicators) => void;
+  /** SERVER ACTION */
+  onIndicatorsChangeAction: (i: CoreEconomicIndicators) => void;
   isReadOnly?: boolean;
   showComparison?: boolean;
 }
 
-function getEconomicTier(gdpPerCapita: number): string {
-  if (gdpPerCapita >= 65000) return 'Extravagant';
-  if (gdpPerCapita >= 55000) return 'Very Strong';
-  if (gdpPerCapita >= 45000) return 'Strong';
-  if (gdpPerCapita >= 35000) return 'Healthy';
-  if (gdpPerCapita >= 25000) return 'Developed';
-  if (gdpPerCapita >= 10000) return 'Developing';
-  return 'Impoverished';
+function getEconomicTier(gdp: number): string {
+  if (gdp >= 65000) return "Extravagant";
+  if (gdp >= 55000) return "Very Strong";
+  if (gdp >= 45000) return "Strong";
+  if (gdp >= 35000) return "Healthy";
+  if (gdp >= 25000) return "Developed";
+  if (gdp >= 10000) return "Developing";
+  return "Impoverished";
+}
+
+function computeHealth(g: number, i: number) {
+  if (g > 0.04 && i < 0.03) return { label: "Excellent", color: "text-green-600" };
+  if (g > 0.02 && i < 0.05) return { label: "Good", color: "text-blue-600" };
+  if (g > 0 && i < 0.08) return { label: "Moderate", color: "text-yellow-600" };
+  return { label: "Concerning", color: "text-red-600" };
 }
 
 export function CoreEconomicIndicators({
@@ -56,104 +78,105 @@ export function CoreEconomicIndicators({
   isReadOnly = false,
   showComparison = true,
 }: CoreEconomicIndicatorsProps) {
-  const [selectedView, setSelectedView] = useState<'overview' | 'detailed'>('overview');
+  const [view, setView] = useState<"overview" | "detailed">("overview");
+  const tier = getEconomicTier(indicators.gdpPerCapita);
+  const tierStyle = getTierStyle(tier);
+  const health = computeHealth(
+    indicators.realGDPGrowthRate,
+    indicators.inflationRate
+  );
 
-  const handleInputChange = (field: keyof CoreEconomicIndicators, value: number) => {
-    const newIndicators = { ...indicators, [field]: value };
-    
-    // Auto-calculate derived values
-    if (field === 'totalPopulation' || field === 'nominalGDP') {
-      newIndicators.gdpPerCapita = newIndicators.nominalGDP / newIndicators.totalPopulation;
-    } else if (field === 'gdpPerCapita') {
-      newIndicators.nominalGDP = newIndicators.gdpPerCapita * newIndicators.totalPopulation;
+  function handleField<K extends keyof CoreEconomicIndicators>(
+    field: K,
+    value: number
+  ) {
+    const next = { ...indicators, [field]: value };
+    if (field === "totalPopulation" || field === "nominalGDP") {
+      next.gdpPerCapita = next.nominalGDP / next.totalPopulation;
+    } else if (field === "gdpPerCapita") {
+      next.nominalGDP = next.gdpPerCapita * next.totalPopulation;
     }
-    
-    onIndicatorsChangeAction(newIndicators);
-  };
+    onIndicatorsChangeAction(next);
+  }
 
-  const economicTier = getEconomicTier(indicators.gdpPerCapita);
-  const tierStyle = getTierStyle(economicTier);
-
-  const comparisonData = referenceCountry ? [
-    {
-      label: "GDP per Capita",
-      userValue: indicators.gdpPerCapita,
-      refValue: referenceCountry.gdpPerCapita,
-      format: (v: number) => formatCurrency(v),
-      icon: DollarSign,
-    },
-    {
-      label: "Population",
-      userValue: indicators.totalPopulation,
-      refValue: referenceCountry.population,
-      format: (v: number) => formatPopulation(v),
-      icon: Users,
-    },
-    {
-      label: "Total GDP",
-      userValue: indicators.nominalGDP,
-      refValue: referenceCountry.population * referenceCountry.gdpPerCapita,
-      format: (v: number) => formatCurrency(v),
-      icon: Globe,
-    },
-  ] : [];
-
-  const getHealthIndicator = (growth: number, inflation: number) => {
-    if (growth > 0.04 && inflation < 0.03) return { color: "text-green-600", label: "Excellent" };
-    if (growth > 0.02 && inflation < 0.05) return { color: "text-blue-600", label: "Good" };
-    if (growth > 0 && inflation < 0.08) return { color: "text-yellow-600", label: "Moderate" };
-    return { color: "text-red-600", label: "Concerning" };
-  };
-
-  const healthIndicator = getHealthIndicator(indicators.realGDPGrowthRate, indicators.inflationRate);
+  const comparison = referenceCountry
+    ? [
+        {
+          label: "GDP per Capita",
+          user: indicators.gdpPerCapita,
+          ref: referenceCountry.gdpPerCapita,
+          fmt: formatCurrency,
+          Icon: DollarSign,
+        },
+        {
+          label: "Population",
+          user: indicators.totalPopulation,
+          ref: referenceCountry.population,
+          fmt: formatPopulation,
+          Icon: Users,
+        },
+        {
+          label: "Total GDP",
+          user: indicators.nominalGDP,
+          ref: referenceCountry.population * referenceCountry.gdpPerCapita,
+          fmt: formatCurrency,
+          Icon: Globe,
+        },
+      ]
+    : [];
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header + Tabs */}
+      <div className="flex justify-between items-center">
         <div>
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-primary" />
             Core Economic Indicators
           </h3>
           <p className="text-sm text-muted-foreground">
-            Fundamental economic metrics and performance indicators
+            Fundamental metrics and performance
           </p>
         </div>
-        <Tabs value={selectedView} onValueChange={(value) => setSelectedView(value as 'overview' | 'detailed')}>
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs value={view} onValueChange={(v) => setView(v as any)}>
+          <TabsList className="grid grid-cols-2 w-[200px]">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="detailed">Detailed</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
 
+      {/* Overview Comparison */}
       <TabsContent value="overview" className="space-y-4">
         {showComparison && referenceCountry && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {comparisonData.map((item) => {
-              const Icon = item.icon;
-              const difference = ((item.userValue - item.refValue) / item.refValue) * 100;
-              const isHigher = difference > 0;
-              
+            {comparison.map(({ label, user, ref, fmt, Icon }) => {
+              const diff = ((user - ref) / ref) * 100;
+              const positive = diff >= 0;
               return (
-                <Card key={item.label}>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">{item.label}</CardTitle>
+                <Card key={label}>
+                  <CardHeader className="flex justify-between items-center pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      {label}
+                    </CardTitle>
                     <Icon className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-1">
-                      <div className="text-2xl font-bold">
-                        {item.format(item.userValue)}
-                      </div>
-                      {item.label === "GDP per Capita" && (
-                        <Badge className={tierStyle.className}>{economicTier}</Badge>
+                      <div className="text-2xl font-bold">{fmt(user)}</div>
+                      {label === "GDP per Capita" && (
+                        <Badge className={tierStyle.className}>{tier}</Badge>
                       )}
                       <div className="text-xs text-muted-foreground">
-                        Ref: {item.format(item.refValue)}
+                        Ref: {fmt(ref)}
                       </div>
-                      <div className={`text-xs font-medium ${isHigher ? 'text-green-600' : 'text-red-600'}`}>
-                        {isHigher ? '+' : ''}{difference.toFixed(1)}% vs {referenceCountry.name}
+                      <div
+                        className={`text-xs font-medium ${
+                          positive ? "text-green-600" : "text-red-600"
+                        }`}
+                      >
+                        {positive ? "+" : ""}
+                        {diff.toFixed(1)}%
                       </div>
                     </div>
                   </CardContent>
@@ -164,8 +187,10 @@ export function CoreEconomicIndicators({
         )}
       </TabsContent>
 
+      {/* Detailed Inputs */}
       <TabsContent value="detailed" className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Population & Output */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -174,108 +199,98 @@ export function CoreEconomicIndicators({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="population">Total Population</Label>
+              <div>
+                <Label htmlFor="pop">Total Population</Label>
                 {isReadOnly ? (
-                  <div className="text-2xl font-bold">{formatPopulation(indicators.totalPopulation)}</div>
-                ) : (
-                  <>
-                    <Input
-                      id="population"
-                      type="number"
-                      value={indicators.totalPopulation}
-                      onChange={(e) => handleInputChange('totalPopulation', parseFloat(e.target.value) || 0)}
-                      step="1000"
-                    />
-                    <div className="text-xs text-muted-foreground">
-                      Display: {formatPopulation(indicators.totalPopulation)}
-                      {referenceCountry && (
-                        <span className="ml-2">
-                          Ref: {formatPopulation(referenceCountry.population)}
-                        </span>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="gdpPerCapita">GDP per Capita ($)</Label>
-                {isReadOnly ? (
-                  <div className="flex items-center gap-2">
-                    <div className="text-2xl font-bold">{formatCurrency(indicators.gdpPerCapita)}</div>
-                    <Badge className={tierStyle.className}>{economicTier}</Badge>
+                  <div className="text-2xl font-bold">
+                    {formatPopulation(indicators.totalPopulation)}
                   </div>
                 ) : (
-                  <>
-                    <Input
-                      id="gdpPerCapita"
-                      type="number"
-                      value={indicators.gdpPerCapita}
-                      onChange={(e) => handleInputChange('gdpPerCapita', parseFloat(e.target.value) || 0)}
-                      step="100"
-                    />
-                    <div className="flex items-center justify-between">
-                      <Badge className={tierStyle.className}>{economicTier}</Badge>
-                      {referenceCountry && (
-                        <div className="text-xs text-muted-foreground">
-                          Ref: {formatCurrency(referenceCountry.gdpPerCapita)}
-                        </div>
-                      )}
-                    </div>
-                  </>
+                  <Input
+                    id="pop"
+                    type="number"
+                    value={indicators.totalPopulation}
+                    onChange={(e) =>
+                      handleField("totalPopulation", +e.target.value || 0)
+                    }
+                    step={1000}
+                  />
                 )}
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="nominalGDP">Nominal GDP ($)</Label>
+              <div>
+                <Label htmlFor="gpc">GDP per Capita ($)</Label>
                 {isReadOnly ? (
-                  <div className="text-2xl font-bold">{formatCurrency(indicators.nominalGDP)}</div>
-                ) : (
-                  <>
-                    <Input
-                      id="nominalGDP"
-                      type="number"
-                      value={indicators.nominalGDP}
-                      onChange={(e) => handleInputChange('nominalGDP', parseFloat(e.target.value) || 0)}
-                      step="1000000"
-                    />
-                    <div className="text-xs text-muted-foreground">
-                      Display: {formatCurrency(indicators.nominalGDP)}
+                  <div className="flex items-center gap-2">
+                    <div className="text-2xl font-bold">
+                      {formatCurrency(indicators.gdpPerCapita)}
                     </div>
-                  </>
+                    <Badge className={tierStyle.className}>{tier}</Badge>
+                  </div>
+                ) : (
+                  <Input
+                    id="gpc"
+                    type="number"
+                    value={indicators.gdpPerCapita}
+                    onChange={(e) =>
+                      handleField("gdpPerCapita", +e.target.value || 0)
+                    }
+                    step={100}
+                  />
+                )}
+              </div>
+              <div>
+                <Label htmlFor="ngdp">Nominal GDP ($)</Label>
+                {isReadOnly ? (
+                  <div className="text-2xl font-bold">
+                    {formatCurrency(indicators.nominalGDP)}
+                  </div>
+                ) : (
+                  <Input
+                    id="ngdp"
+                    type="number"
+                    value={indicators.nominalGDP}
+                    onChange={(e) =>
+                      handleField("nominalGDP", +e.target.value || 0)
+                    }
+                    step={1_000_000}
+                  />
                 )}
               </div>
             </CardContent>
           </Card>
 
+          {/* Growth & Stability */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-primary" />
+                <BarChart3 className="h-4 w-4 text-primary" />
                 Growth & Stability
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="gdpGrowth">Real GDP Growth Rate</Label>
+              <div>
+                <Label htmlFor="growth">Real GDP Growth</Label>
                 {isReadOnly ? (
-                  <div className="text-2xl font-bold">{displayGrowthRate(indicators.realGDPGrowthRate)}</div>
+                  <div className="text-2xl font-bold">
+                    {displayGrowthRate(indicators.realGDPGrowthRate)}
+                  </div>
                 ) : (
                   <>
-                    <div className="px-3">
-                      <Slider
-                        value={[indicators.realGDPGrowthRate * 100]}
-                        onValueChange={(value) => handleInputChange('realGDPGrowthRate', value[0]! / 100)}
-                        max={10}
-                        min={-5}
-                        step={0.1}
-                        className="w-full"
-                      />
-                    </div>
+                    <Slider
+                      id="growth"
+                      value={[indicators.realGDPGrowthRate * 100]}
+                      onValueChange={(vals) => {
+                        const v = vals?.[0] ?? 0;
+                        handleField("realGDPGrowthRate", v / 100);
+                      }}
+                      min={-5}
+                      max={10}
+                      step={0.1}
+                      className="w-full"
+                    />
                     <div className="flex justify-between text-xs text-muted-foreground">
                       <span>-5%</span>
-                      <span className="font-medium text-foreground">
+                      <span className="font-medium">
                         {displayGrowthRate(indicators.realGDPGrowthRate)}
                       </span>
                       <span>10%</span>
@@ -283,26 +298,29 @@ export function CoreEconomicIndicators({
                   </>
                 )}
               </div>
-
-              <div className="space-y-2">
+              <div>
                 <Label htmlFor="inflation">Inflation Rate</Label>
                 {isReadOnly ? (
-                  <div className="text-2xl font-bold">{displayGrowthRate(indicators.inflationRate)}</div>
+                  <div className="text-2xl font-bold">
+                    {displayGrowthRate(indicators.inflationRate)}
+                  </div>
                 ) : (
                   <>
-                    <div className="px-3">
-                      <Slider
-                        value={[indicators.inflationRate * 100]}
-                        onValueChange={(value) => handleInputChange('inflationRate', value[0]! / 100)}
-                        max={15}
-                        min={0}
-                        step={0.1}
-                        className="w-full"
-                      />
-                    </div>
+                    <Slider
+                      id="inflation"
+                      value={[indicators.inflationRate * 100]}
+                      onValueChange={(vals) => {
+                        const v = vals?.[0] ?? 0;
+                        handleField("inflationRate", v / 100);
+                      }}
+                      min={0}
+                      max={15}
+                      step={0.1}
+                      className="w-full"
+                    />
                     <div className="flex justify-between text-xs text-muted-foreground">
                       <span>0%</span>
-                      <span className="font-medium text-foreground">
+                      <span className="font-medium">
                         {displayGrowthRate(indicators.inflationRate)}
                       </span>
                       <span>15%</span>
@@ -310,25 +328,23 @@ export function CoreEconomicIndicators({
                   </>
                 )}
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="exchangeRate">Currency Exchange Rate</Label>
+              <div>
+                <Label htmlFor="fx">Exchange Rate (USD=1)</Label>
                 {isReadOnly ? (
-                  <div className="text-2xl font-bold">{indicators.currencyExchangeRate.toFixed(2)}</div>
+                  <div className="text-2xl font-bold">
+                    {indicators.currencyExchangeRate.toFixed(2)}
+                  </div>
                 ) : (
-                  <>
-                    <Input
-                      id="exchangeRate"
-                      type="number"
-                      value={indicators.currencyExchangeRate}
-                      onChange={(e) => handleInputChange('currencyExchangeRate', parseFloat(e.target.value) || 1)}
-                      step="0.01"
-                      min="0.01"
-                    />
-                    <div className="text-xs text-muted-foreground">
-                      Value relative to USD (1.0 = parity)
-                    </div>
-                  </>
+                  <Input
+                    id="fx"
+                    type="number"
+                    value={indicators.currencyExchangeRate}
+                    onChange={(e) =>
+                      handleField("currencyExchangeRate", +e.target.value || 1)
+                    }
+                    step={0.01}
+                    min={0.01}
+                  />
                 )}
               </div>
             </CardContent>
@@ -336,16 +352,17 @@ export function CoreEconomicIndicators({
         </div>
       </TabsContent>
 
+      {/* Health Alert */}
       <Alert>
         <Info className="h-4 w-4" />
         <AlertDescription>
-          <div className="font-medium mb-1">
-            Economic Health: <span className={healthIndicator.color}>{healthIndicator.label}</span>
+          <div className="font-medium">
+            Economic Health: <span className={health.color}>{health.label}</span>
           </div>
-          <div className="text-sm">
-            Based on {displayGrowthRate(indicators.realGDPGrowthRate)} growth and {displayGrowthRate(indicators.inflationRate)} inflation. 
-            Optimal: 2-4% growth with 2-3% inflation for sustainable development.
-          </div>
+          <p className="text-sm">
+            Based on {displayGrowthRate(indicators.realGDPGrowthRate)} growth &
+            {displayGrowthRate(indicators.inflationRate)} inflation.
+          </p>
         </AlertDescription>
       </Alert>
     </div>
