@@ -21,7 +21,7 @@ import { Progress } from "~/components/ui/progress";
 import { formatCurrency, formatPopulation, displayGrowthRate } from "~/lib/chart-utils";
 import { getTierStyle } from "~/lib/theme-utils";
 
-export interface EconomicSummaryData {
+interface EconomicSummaryData {
   // Core metrics
   population: number;
   gdpPerCapita: number;
@@ -57,7 +57,7 @@ interface EconomicSummaryWidgetProps {
   isEditable?: boolean;
 }
 
-export interface MetricCardProps {
+interface MetricCardProps {
   icon: React.ElementType;
   label: string;
   value: string;

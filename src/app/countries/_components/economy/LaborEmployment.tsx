@@ -132,9 +132,6 @@ export function LaborEmployment({
             <BarChart2 className="h-4 w-4 text-primary" />
             Labor Force Breakdown
           </CardTitle>
-          <CardDescription>
-            Distribution of population across employment categories
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
@@ -239,9 +236,6 @@ export function LaborEmployment({
                 <Clock className="h-4 w-4 text-primary" />
                 Work Conditions
               </CardTitle>
-              <CardDescription>
-                Working hours and wage policies
-              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -305,9 +299,6 @@ export function LaborEmployment({
                 <DollarSign className="h-4 w-4 text-primary" />
                 Income & Workforce
               </CardTitle>
-              <CardDescription>
-                Compensation and workforce size
-              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -369,9 +360,6 @@ export function LaborEmployment({
         <Card>
           <CardHeader>
             <CardTitle>Labor Market Analysis</CardTitle>
-            <CardDescription>
-              Key metrics and productivity indicators
-            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
