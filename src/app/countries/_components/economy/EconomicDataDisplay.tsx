@@ -1,7 +1,7 @@
 // src/app/countries/_components/economy/EconomicDataDisplay.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   BarChart3, 
   Briefcase, 
@@ -15,7 +15,9 @@ import {
   Loader2,
   AlertCircle,
   Eye,
-  EyeOff
+  EyeOff,
+  Info,
+  RefreshCw
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -25,9 +27,16 @@ import { Badge } from "~/components/ui/badge";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import { api } from "~/trpc/react";
-import { CoreEconomicIndicators } from "./CoreEconomicIndicators";
-import { LaborEmployment } from "./LaborEmployment";
+import { CoreEconomicIndicatorsComponent } from "~/app/economy/components/CoreEconomicIndicators";
+import { LaborEmploymentComponent } from "~/app/economy/components/LaborEmployment";
+import { FiscalSystemComponent } from "~/app/economy/components/FiscalSystem";
+import { IncomeWealthDistribution } from "~/app/economy/components/IncomeWealthDistribution";
+import { GovernmentSpending } from "~/app/economy/components/GovernmentSpending";
+import { Demographics } from "~/app/economy/components/Demographics";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
+import { Skeleton } from "~/components/ui/skeleton";
+import type { TRPCClientError } from "@trpc/client";
+import type { EconomyData, CoreEconomicIndicatorsData, LaborEmploymentData, FiscalSystemData, IncomeWealthDistributionData, GovernmentSpendingData, DemographicsData } from "~/types/economics";
 
 interface EconomicDataDisplayProps {
   countryId: string;
@@ -38,52 +47,6 @@ interface EconomicDataDisplayProps {
   defaultTab?: string;
   onDataChange?: (data: any) => void;
 }
-
-interface EconomicSummary {
-  coreIndicators: {
-    totalPopulation: number;
-    nominalGDP: number;
-    gdpPerCapita: number;
-    realGDPGrowthRate: number;
-    inflationRate: number;
-    currencyExchangeRate: number;
-  };
-  laborEmployment: {
-    laborForceParticipationRate: number;
-    employmentRate: number;
-    unemploymentRate: number;
-    totalWorkforce: number;
-    averageWorkweekHours: number;
-    minimumWage: number;
-    averageAnnualIncome: number;
-  };
-  fiscalSystem?: {
-    taxRevenueGDPPercent: number;
-    governmentBudgetGDPPercent: number;
-    totalDebtGDPRatio: number;
-    budgetDeficitSurplus: number;
-  };
-}
-
-const defaultEconomicData: EconomicSummary = {
-  coreIndicators: {
-    totalPopulation: 1000000,
-    nominalGDP: 25000000000,
-    gdpPerCapita: 25000,
-    realGDPGrowthRate: 0.03,
-    inflationRate: 0.02,
-    currencyExchangeRate: 1.0,
-  },
-  laborEmployment: {
-    laborForceParticipationRate: 65,
-    employmentRate: 95,
-    unemploymentRate: 5,
-    totalWorkforce: 650000,
-    averageWorkweekHours: 40,
-    minimumWage: 12,
-    averageAnnualIncome: 35000,
-  },
-};
 
 export function EconomicDataDisplay({ 
   countryId, 
@@ -96,7 +59,7 @@ export function EconomicDataDisplay({
 }: EconomicDataDisplayProps) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedTab, setSelectedTab] = useState(defaultTab);
-  const [economicData, setEconomicData] = useState<EconomicSummary>(defaultEconomicData);
+  const [economicData, setEconomicData] = useState<EconomyData | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [compactView, setCompactView] = useState(mode === "compact");
 
@@ -110,48 +73,58 @@ export function EconomicDataDisplay({
     id: countryId,
   });
 
+  // Initialize state with fetched data when available
+  useEffect(() => {
+    if (countryData?.economy) {
+      setEconomicData(countryData.economy);
+    }
+  }, [countryData?.economy]);
+
   // Update economic data mutation
   const updateEconomicDataMutation = api.countries.updateEconomicData.useMutation({
     onSuccess: () => {
       setHasUnsavedChanges(false);
       setIsEditMode(false);
       void refetch();
-      onDataChange?.(economicData);
+      if (economicData) {
+        onDataChange?.(economicData);
+      }
     },
     onError: (error) => {
       console.error("Failed to update economic data:", error);
     },
   });
 
-  const handleDataChange = (section: keyof EconomicSummary, newData: any) => {
-    setEconomicData(prev => ({
-      ...prev,
-      [section]: newData
-    }));
+  const handleDataChange = (section: keyof EconomyData, newData: any) => {
+    setEconomicData(prev => {
+      if (!prev) return null; // Should not happen if data is loaded
+      const updatedData = {
+        ...prev,
+        [section]: {
+           ...(prev[section] as any),
+           ...newData
+        } as any
+      };
+      return updatedData;
+    });
     setHasUnsavedChanges(true);
-    onDataChange?.(economicData);
   };
 
   const handleSave = async () => {
+    if (!economicData) return; // Cannot save if data is not loaded
+    const flattenedEconomicData = {
+        ...economicData.core,
+        ...economicData.labor,
+        ...economicData.fiscal,
+        ...economicData.income,
+        ...economicData.spending,
+        ...economicData.demographics,
+    };
+
     try {
       await updateEconomicDataMutation.mutateAsync({
         countryId,
-        economicData: {
-          // Core indicators
-          nominalGDP: economicData.coreIndicators.nominalGDP,
-          realGDPGrowthRate: economicData.coreIndicators.realGDPGrowthRate,
-          inflationRate: economicData.coreIndicators.inflationRate,
-          currencyExchangeRate: economicData.coreIndicators.currencyExchangeRate,
-          
-          // Labor & Employment
-          laborForceParticipationRate: economicData.laborEmployment.laborForceParticipationRate,
-          employmentRate: economicData.laborEmployment.employmentRate,
-          unemploymentRate: economicData.laborEmployment.unemploymentRate,
-          totalWorkforce: economicData.laborEmployment.totalWorkforce,
-          averageWorkweekHours: economicData.laborEmployment.averageWorkweekHours,
-          minimumWage: economicData.laborEmployment.minimumWage,
-          averageAnnualIncome: economicData.laborEmployment.averageAnnualIncome,
-        },
+        economicData: flattenedEconomicData
       });
     } catch (error) {
       console.error("Failed to save economic data:", error);
@@ -170,42 +143,48 @@ export function EconomicDataDisplay({
       label: "Core Indicators",
       icon: BarChart3,
       description: "GDP, population, growth rates",
-      component: CoreEconomicIndicators,
+      component: CoreEconomicIndicatorsComponent,
+      disabled: false,
     },
     {
       id: "labor",
       label: "Labor & Employment",
       icon: Briefcase,
       description: "Workforce, unemployment, wages",
-      component: LaborEmployment,
+      component: LaborEmploymentComponent,
+      disabled: false,
     },
     {
       id: "fiscal",
       label: "Fiscal System",
       icon: Building,
       description: "Taxes, budget, debt",
-      disabled: true,
+      component: FiscalSystemComponent,
+      disabled: false,
     },
     {
       id: "income",
       label: "Income & Wealth",
       icon: Scale,
       description: "Distribution, inequality, mobility",
-      disabled: true,
+      component: IncomeWealthDistribution,
+      disabled: false,
     },
     {
       id: "spending",
       label: "Gov. Spending",
       icon: Building2,
       description: "Budget allocation, priorities",
-      disabled: true,
+      component: GovernmentSpending,
+      disabled: false,
     },
     {
       id: "demographics",
       label: "Demographics",
       icon: Users,
       description: "Population structure, education",
-      disabled: true,
+      component: Demographics,
+      disabled: false,
     },
   ];
 
@@ -239,25 +218,25 @@ export function EconomicDataDisplay({
             <div className="space-y-1">
               <div className="text-sm text-muted-foreground">Population</div>
               <div className="text-lg font-semibold">
-                {formatPopulation(economicData.coreIndicators.totalPopulation)}
+                {formatPopulation(economicData?.core?.totalPopulation || 0)}
               </div>
             </div>
             <div className="space-y-1">
               <div className="text-sm text-muted-foreground">GDP per Capita</div>
               <div className="text-lg font-semibold">
-                {formatCurrency(economicData.coreIndicators.gdpPerCapita)}
+                {formatCurrency(economicData?.core?.gdpPerCapita || 0)}
               </div>
             </div>
             <div className="space-y-1">
               <div className="text-sm text-muted-foreground">Total GDP</div>
               <div className="text-lg font-semibold">
-                {formatCurrency(economicData.coreIndicators.nominalGDP)}
+                {formatCurrency(economicData?.core?.nominalGDP || 0)}
               </div>
             </div>
             <div className="space-y-1">
               <div className="text-sm text-muted-foreground">Unemployment</div>
               <div className="text-lg font-semibold">
-                {economicData.laborEmployment.unemploymentRate.toFixed(1)}%
+                {economicData?.labor?.unemploymentRate !== undefined ? economicData.labor.unemploymentRate.toFixed(1) + '%' : "N/A"}
               </div>
             </div>
           </div>
@@ -266,20 +245,18 @@ export function EconomicDataDisplay({
     );
   }
 
-  // Loading state
-  if (isLoading) {
+  // Loading state (for full mode before data is fetched)
+  if (isLoading || (mode === "full" && showTabs && !economicData)) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Economic Data
-          </CardTitle>
+          <Skeleton className="h-6 w-1/3 mb-2" />
+          <Skeleton className="h-4 w-1/2" />
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <span className="ml-2">Loading economic data...</span>
+            <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
+            Loading economic data...
           </div>
         </CardContent>
       </Card>
@@ -288,6 +265,7 @@ export function EconomicDataDisplay({
 
   // Error state
   if (error) {
+    const trpcError = error as TRPCClientError<any>;
     return (
       <Card>
         <CardHeader>
@@ -300,161 +278,153 @@ export function EconomicDataDisplay({
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Failed to load economic data: {error.message}
+              Failed to load economic data: {trpcError.message || "An unknown error occurred."}
             </AlertDescription>
           </Alert>
+          <div className="mt-4 text-center">
+            <Button onClick={() => refetch()} className="mt-4" size="sm">
+                <RefreshCw className="h-4 w-4 mr-2" /> Retry
+              </Button>
+          </div>
         </CardContent>
       </Card>
     );
   }
 
-  // Full mode with tabs
+  // Full mode with tabs (and data is loaded)
+  if (mode === "full" && showTabs && economicData) {
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-2xl font-bold">Economic Data</CardTitle>
+          {isEditable && (
+            <div className="flex items-center space-x-2">
+              {isEditMode && hasUnsavedChanges && (
+                <Badge variant="secondary" className="flex items-center">
+                  <AlertCircle className="h-3 w-3 mr-1" /> Unsaved Changes
+                </Badge>
+              )}
+              {updateEconomicDataMutation.isPending && (
+                <Badge variant="outline" className="flex items-center">
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Saving...
+                </Badge>
+              )}
+              <Button
+                onClick={() => setIsEditMode(!isEditMode)}
+                variant="outline"
+                size="sm"
+                disabled={updateEconomicDataMutation.isPending}
+              >
+                <Edit3 className="h-4 w-4 mr-2" />
+                {isEditMode ? "Cancel Edit" : "Edit Data"}
+              </Button>
+              {isEditMode && (
+                <Button onClick={handleSave} size="sm" disabled={!hasUnsavedChanges || updateEconomicDataMutation.isPending}>
+                  <Save className="h-4 w-4 mr-2" /> Save
+                </Button>
+              )}
+              {isEditMode && hasUnsavedChanges && (
+                <Button onClick={handleCancel} size="sm" variant="ghost" disabled={updateEconomicDataMutation.isPending}>
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          )}
+        </CardHeader>
+        <CardContent className="p-6">
+          <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 mb-4">
+              {economicSections.map((section) => (
+                <TabsTrigger key={section.id} value={section.id} disabled={section.disabled}>
+                  {section.icon && <section.icon className="h-4 w-4 mr-1" />} {section.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+
+            {economicSections.map((section) => {
+              const SectionComponent = section.component;
+              if (!SectionComponent || section.disabled) return null; // Skip if no component or disabled
+
+              return (
+                <TabsContent key={section.id} value={section.id} className="mt-0">
+                  {section.id === 'core' && economicData.core && (
+                    <SectionComponent 
+                      indicators={economicData.core} 
+                      onIndicatorsChange={newData => handleDataChange('core', newData)} 
+                      isReadOnly={!isEditMode}
+                      showComparison={false}
+                    />
+                  )}
+                  {section.id === 'labor' && economicData.labor && economicData.core?.totalPopulation !== undefined && (
+                    <SectionComponent 
+                      laborData={economicData.labor} 
+                      onLaborDataChange={newData => handleDataChange('labor', newData)} 
+                      totalPopulation={economicData.core.totalPopulation} 
+                      isReadOnly={!isEditMode}
+                      showComparison={false}
+                    />
+                  )}
+                  {section.id === 'fiscal' && economicData.fiscal && economicData.core?.nominalGDP !== undefined && economicData.core?.totalPopulation !== undefined && (
+                    <SectionComponent 
+                      fiscalData={economicData.fiscal} 
+                      onFiscalDataChange={newData => handleDataChange('fiscal', newData)} 
+                      nominalGDP={economicData.core.nominalGDP}
+                      totalPopulation={economicData.core.totalPopulation}
+                      isReadOnly={!isEditMode}
+                    />
+                  )}
+                  {section.id === 'income' && economicData.income && economicData.core?.totalPopulation !== undefined && economicData.core?.gdpPerCapita !== undefined && (
+                    <SectionComponent 
+                      incomeData={economicData.income} 
+                      onIncomeDataChange={newData => handleDataChange('income', newData)} 
+                      totalPopulation={economicData.core.totalPopulation}
+                      gdpPerCapita={economicData.core.gdpPerCapita}
+                      isReadOnly={!isEditMode}
+                    />
+                  )}
+                  {section.id === 'spending' && economicData.spending && economicData.core?.nominalGDP !== undefined && economicData.core?.totalPopulation !== undefined && (
+                    <SectionComponent 
+                      spendingData={economicData.spending} 
+                      onSpendingDataChange={newData => handleDataChange('spending', newData)} 
+                      nominalGDP={economicData.core.nominalGDP}
+                      totalPopulation={economicData.core.totalPopulation}
+                      isReadOnly={!isEditMode}
+                    />
+                  )}
+                  {section.id === 'demographics' && economicData.demographics && economicData.core?.totalPopulation !== undefined && (
+                    <SectionComponent 
+                      demographicData={{
+                        ...economicData.demographics,
+                        ageDistribution: economicData.demographics.ageDistribution.map(group => ({
+                          ...group,
+                          color: group.color || '#000000' // Provide default color if undefined
+                        }))
+                      }}
+                      onDemographicDataChange={newData => handleDataChange('demographics', newData)} 
+                      totalPopulation={economicData.core.totalPopulation}
+                      isReadOnly={!isEditMode}
+                    />
+                  )}
+                  )}
+                </TabsContent>
+              );
+            })}
+          </Tabs>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Default fallback (e.g., if mode is not 'full' or 'overview', or data is unexpectedly null after loading)
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Economic Data
-            </CardTitle>
-            <CardDescription>
-              Comprehensive economic profile for {countryName}
-            </CardDescription>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {mode === "full" && (
-              <div className="flex items-center space-x-2">
-                <Switch 
-                  id="compact-view" 
-                  checked={compactView}
-                  onCheckedChange={setCompactView}
-                />
-                <Label htmlFor="compact-view" className="text-sm">
-                  {compactView ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Label>
-              </div>
-            )}
-            
-            {hasUnsavedChanges && (
-              <Badge variant="outline" className="text-yellow-600">
-                Unsaved Changes
-              </Badge>
-            )}
-            
-            {isEditable && (
-              <div className="flex gap-2">
-                {isEditMode ? (
-                  <>
-                    <Button
-                      onClick={handleSave}
-                      disabled={updateEconomicDataMutation.isPending}
-                      size="sm"
-                    >
-                      {updateEconomicDataMutation.isPending ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="h-4 w-4 mr-2" />
-                          Save
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      onClick={handleCancel}
-                      variant="outline"
-                      size="sm"
-                    >
-                      <X className="h-4 w-4 mr-2" />
-                      Cancel
-                    </Button>
-                  </>
-                ) : (
-                  <Button
-                    onClick={() => setIsEditMode(true)}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <Edit3 className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
+        <CardTitle>Economic Data</CardTitle>
+        <CardDescription>Detailed economic data for {countryName}</CardDescription>
       </CardHeader>
-      
-      <CardContent>
-        {showTabs ? (
-          <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-            <TabsList className={`grid w-full ${compactView ? 'grid-cols-3' : 'grid-cols-6'}`}>
-              {economicSections
-                .filter(section => compactView ? !section.disabled : true)
-                .map((section) => {
-                  const Icon = section.icon;
-                  return (
-                    <TabsTrigger 
-                      key={section.id} 
-                      value={section.id}
-                      disabled={section.disabled}
-                      className="flex flex-col gap-1 p-2 h-auto"
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span className="text-xs">{section.label}</span>
-                    </TabsTrigger>
-                  );
-                })}
-            </TabsList>
-
-            <div className="mt-6">
-              <TabsContent value="core" className="space-y-0">
-                <CoreEconomicIndicators
-                  indicators={economicData.coreIndicators}
-                  onIndicatorsChangeAction={(data) => handleDataChange('coreIndicators', data)}
-                  isReadOnly={!isEditMode}
-                  showComparison={false}
-                />
-              </TabsContent>
-
-              <TabsContent value="labor" className="space-y-0">
-                <LaborEmployment
-                  laborData={economicData.laborEmployment}
-                  totalPopulation={economicData.coreIndicators.totalPopulation}
-                  onLaborDataChangeAction={(data) => handleDataChange('laborEmployment', data)}
-                  isReadOnly={!isEditMode}
-                  showComparison={false}
-                />
-              </TabsContent>
-
-              {/* Placeholder tabs for future components */}
-              {economicSections.slice(2).map((section) => (
-                <TabsContent key={section.id} value={section.id} className="space-y-0">
-                  <div className="text-center py-8 text-muted-foreground">
-                    <section.icon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <h3 className="text-lg font-medium mb-2">{section.label}</h3>
-                    <p>{section.description}</p>
-                    <p className="text-sm mt-2">Coming soon...</p>
-                  </div>
-                </TabsContent>
-              ))}
-            </div>
-          </Tabs>
-        ) : (
-          // No tabs mode - single section display
-          <div className="space-y-6">
-            <CoreEconomicIndicators
-              indicators={economicData.coreIndicators}
-              onIndicatorsChangeAction={(data) => handleDataChange('coreIndicators', data)}
-              isReadOnly={!isEditMode}
-              showComparison={false}
-            />
-          </div>
-        )}
+      <CardContent className="p-4 text-center">
+        <Info className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+        <p className="text-sm text-muted-foreground">Economic data display mode not configured or data is unavailable.</p>
       </CardContent>
     </Card>
   );

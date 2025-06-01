@@ -26,8 +26,29 @@ import {
 } from "~/app/countries/_components/economy";
 import { IxTimeCalendar } from "~/app/countries/_components/charts/IxTimeCalendar";
 import { Skeleton } from "~/components/ui/skeleton";
-import { AlertTriangle } from "lucide-react";
-import { formatNumber } from "~/lib/chart-utils"; // Corrected import path
+import { AlertTriangle, Info } from "lucide-react";
+import { formatNumber, formatGrowthRateFromDecimal } from "~/lib/chart-utils"; // Corrected import path
+import { Alert, AlertDescription } from "~/components/ui/alert";
+
+// Helper function to compute economic health
+function computeHealth(g: number, i: number) {
+  if (g > 0.04 && i < 0.03) return { label: "Excellent", color: "text-green-600" };
+  if (g > 0.02 && i < 0.05) return { label: "Good", color: "text-blue-600" };
+  if (g > 0 && i < 0.08) return { label: "Moderate", color: "text-yellow-600" };
+  return { label: "Concerning", color: "text-red-600" };
+}
+
+// Helper function to get economic health color
+function getEconomicHealthColor(realGDPGrowthRate: number, inflationRate: number): string {
+  const health = computeHealth(realGDPGrowthRate, inflationRate);
+  return health.color;
+}
+
+// Helper function to get economic health label
+function getEconomicHealthLabel(realGDPGrowthRate: number, inflationRate: number): string {
+  const health = computeHealth(realGDPGrowthRate, inflationRate);
+  return health.label;
+}
 
 interface CountryDetailPageProps {
   params: { id: string };
@@ -36,7 +57,7 @@ interface CountryDetailPageProps {
 export default function CountryDetailPage({ params }: CountryDetailPageProps) {
   const { data: country, isLoading, error } = api.countries.getByIdWithEconomicData.useQuery({ id: params.id });
   const { data: systemStatus, isLoading: systemStatusLoading, error: systemStatusError } = api.admin.getSystemStatus.useQuery();
-  const currentIxTime = systemStatus?.ixTime.currentIxTime; // Access the IxTime from system status
+  const currentIxTime = typeof systemStatus?.ixTime?.currentIxTime === 'number' ? systemStatus.ixTime.currentIxTime : undefined; // Access the IxTime from system status, ensure it's a number
 
   if (isLoading || systemStatusLoading) {
     return (
@@ -121,27 +142,42 @@ export default function CountryDetailPage({ params }: CountryDetailPageProps) {
               <TabsTrigger value="modeling">Modeling</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="economy" className="mt-4">
+            <TabsContent value="overview" className="mt-4">
               <div className="space-y-6">
+                {country && (
+                  <CountryAtGlance country={country} currentIxTime={currentIxTime ?? 0} isLoading={isLoading} />
+                )}
                 {country && country.currentStats && <EconomicSummaryWidget countryName={country.name} data={country.currentStats} />}
-                {country && country.currentStats && <CoreEconomicIndicators indicators={country.currentStats} onIndicatorsChangeAction={function (i: CoreEconomicIndicators): void {
-                  throw new Error("Function not implemented.");
-                } } />}
               </div>
             </TabsContent>
 
-            <TabsContent value="detailed-stats" className="mt-4">
+            <TabsContent value="economy" className="mt-4">
               <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Detailed Economic Indicators</CardTitle>
-                    <CardDescription>In-depth economic metrics for {country.name}.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <p className="text-muted-foreground col-span-full">Detailed economic data display is not yet implemented as individual cards.</p>
-                  </CardContent>
-                </Card>
-                <p className="text-muted-foreground">Comparative analysis requires data for all countries, which is not currently fetched on this page.</p>
+                {country && country.currentStats && <EconomicSummaryWidget countryName={country.name} data={country.currentStats} />}
+                {country && country.currentStats && (
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      <div className="font-medium">
+                        Economic Health: <span className={getEconomicHealthColor(country.currentStats.realGDPGrowthRate, country.currentStats.inflationRate)}>{getEconomicHealthLabel(country.currentStats.realGDPGrowthRate, country.currentStats.inflationRate)}</span>
+                      </div>
+                      <p className="text-sm">
+                        Based on {formatGrowthRateFromDecimal(country.currentStats.realGDPGrowthRate)} growth &
+                        {formatGrowthRateFromDecimal(country.currentStats.inflationRate)} inflation.
+                      </p>
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {country && (
+                  <EconomicDataDisplay
+                    countryId={country.id}
+                    countryName={country.name}
+                    isEditable={true}
+                    mode="full"
+                    showTabs={true}
+                    defaultTab="core"
+                  />
+                )}
               </div>
             </TabsContent>
 
