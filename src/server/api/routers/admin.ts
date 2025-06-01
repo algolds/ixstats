@@ -1,6 +1,5 @@
 // src/server/api/routers/admin.ts
 // FIXED: Complete admin router with proper functionality
-// FIXED: Corrected botStatus handling, method names for IxTime and Date conversions
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
@@ -14,62 +13,36 @@ import type {
   ImportAnalysis,
   BaseCountryData,
   CalculationLog,
-  EconomicConfig,
-  IxTimeState,
-  DerivedBotDisplayStatus 
+  EconomicConfig
 } from "~/types/ixstats";
 
-// Utility function to ensure botStatus is complete
-function ensureCompleteDerivedBotStatus(
-    incompleteStatus: Partial<DerivedBotDisplayStatus> | null | undefined, // Input can be partial or null/undefined
-    fallbackTimestamp: number
-): DerivedBotDisplayStatus | null {
-    if (!incompleteStatus) {
-        return null;
-    }
-    // Ensure that required fields from BotTimeResponse are present
-    const timestamp = incompleteStatus.ixTimeTimestamp ?? fallbackTimestamp;
-    return {
-        ixTimeTimestamp: timestamp,
-        ixTimeFormatted: incompleteStatus.ixTimeFormatted ?? IxTime.formatIxTime(timestamp, true),
-        multiplier: incompleteStatus.multiplier ?? IxTime.getTimeMultiplier(),
-        isPaused: incompleteStatus.isPaused ?? IxTime.isPaused(),
-        hasTimeOverride: incompleteStatus.hasTimeOverride ?? false,
-        hasMultiplierOverride: incompleteStatus.hasMultiplierOverride ?? false,
-        realWorldTime: incompleteStatus.realWorldTime ?? Date.now(),
-        gameYear: incompleteStatus.gameYear ?? IxTime.getCurrentGameYear(timestamp),
-        // Fields specific to DerivedBotDisplayStatus (can be optional or defaulted)
-        pausedAt: incompleteStatus.pausedAt ?? null,
-        pauseTimestamp: incompleteStatus.pauseTimestamp ?? null,
-        botReady: incompleteStatus.botReady ?? false,
-        botUser: incompleteStatus.botUser ?? undefined,
-        guilds: incompleteStatus.guilds ?? undefined,
-        uptime: incompleteStatus.uptime ?? undefined,
-    };
-}
-
-
 export const adminRouter = createTRPCRouter({
+  // Get system status
   getSystemStatus: publicProcedure
     .query(async ({ ctx }) => {
       try {
         const [countryCount, activeDmInputs, lastCalculation] = await Promise.all([
           ctx.db.country.count(),
           ctx.db.dmInputs.count({ where: { isActive: true } }),
-          ctx.db.calculationLog.findFirst({ orderBy: { timestamp: "desc" } })
+          ctx.db.calculationLog.findFirst({
+            orderBy: { timestamp: "desc" }
+          })
         ]);
 
-        const rawIxTimeStatus = await IxTime.getStatus();
-        const fallbackTsForBotStatus = Date.parse(rawIxTimeStatus.currentIxTime);
-        const correctedBotStatus = ensureCompleteDerivedBotStatus(rawIxTimeStatus.botStatus, fallbackTsForBotStatus);
-
-        const finalIxTimeState: IxTimeState = {
-            ...rawIxTimeStatus,
-            botStatus: correctedBotStatus,
-        };
+        // Get current IxTime status
+        const ixTimeStatus = await IxTime.getStatus();
 
         const systemStatus: SystemStatus = {
-          ixTime: finalIxTimeState,
+          ixTime: {
+            currentRealTime: new Date().toISOString(),
+            currentIxTime: new Date(IxTime.getCurrentIxTime()).toISOString(),
+            formattedIxTime: IxTime.formatIxTime(IxTime.getCurrentIxTime(), true),
+            multiplier: IxTime.getTimeMultiplier(),
+            isPaused: IxTime.isPaused(),
+            hasTimeOverride: ixTimeStatus.hasTimeOverride,
+            timeOverrideValue: ixTimeStatus.timeOverrideValue,
+            botStatus: null, // Will be populated by getBotStatus
+          },
           countryCount,
           activeDmInputs,
           lastCalculation: lastCalculation ? {
@@ -79,6 +52,7 @@ export const adminRouter = createTRPCRouter({
             executionTimeMs: lastCalculation.executionTimeMs,
           } : null,
         };
+
         return systemStatus;
       } catch (error) {
         console.error("Failed to get system status:", error);
@@ -86,73 +60,57 @@ export const adminRouter = createTRPCRouter({
       }
     }),
 
+  // Get bot status with health check
   getBotStatus: publicProcedure
-    .query(async ({ ctx }): Promise<AdminPageBotStatusView> => {
+    .query(async ({ ctx }) => {
       try {
-        const [botHealth, rawIxTimeStatusDetails] = await Promise.all([
+        const [botHealth, ixTimeStatus] = await Promise.all([
           IxTime.checkBotHealth(),
-          IxTime.getStatus() 
+          IxTime.getStatus()
         ]);
-        
-        const fallbackTsForBotStatus = Date.parse(rawIxTimeStatusDetails.currentIxTime);
-        const correctedBotStatus = ensureCompleteDerivedBotStatus(rawIxTimeStatusDetails.botStatus, fallbackTsForBotStatus);
 
-        const botStatusView: AdminPageBotStatusView = {
-          ...rawIxTimeStatusDetails, 
-          botStatus: correctedBotStatus,
+        const botStatus: AdminPageBotStatusView = {
+          ...ixTimeStatus,
           botHealth,
         };
-        return botStatusView;
+
+        return botStatus;
       } catch (error) {
         console.error("Failed to get bot status:", error);
-        const currentIx = IxTime.getCurrentIxTime();
-        const gameEpochNumber = IxTime.getInGameEpoch ? IxTime.getInGameEpoch() : undefined;
-        const currentGameYear = IxTime.getCurrentGameYear(currentIx);
-        
-        let yearsSinceGameStart = 0;
-        if (typeof gameEpochNumber === 'number' && isFinite(gameEpochNumber)) {
-            yearsSinceGameStart = IxTime.getYearsElapsed(gameEpochNumber, currentIx);
-        }
-        
-        const realWorldEpochNumber = IxTime.getRealWorldEpoch ? IxTime.getRealWorldEpoch() : undefined;
-
+        // Return offline status if bot check fails
         return {
           currentRealTime: new Date().toISOString(),
-          currentIxTime: new Date(currentIx).toISOString(),
-          formattedIxTime: IxTime.formatIxTime(currentIx, true),
+          currentIxTime: new Date(IxTime.getCurrentIxTime()).toISOString(),
+          formattedIxTime: IxTime.formatIxTime(IxTime.getCurrentIxTime(), true),
           multiplier: IxTime.getTimeMultiplier(),
           isPaused: IxTime.isPaused(),
           hasTimeOverride: false,
-          timeOverrideValue: null,
-          hasMultiplierOverride: false,
-          multiplierOverrideValue: null,
-          realWorldEpoch: typeof realWorldEpochNumber === 'number' ? new Date(realWorldEpochNumber).toISOString() : new Date(0).toISOString(),
-          inGameEpoch: typeof gameEpochNumber === 'number' && isFinite(gameEpochNumber) ? new Date(gameEpochNumber).toISOString() : new Date(0).toISOString(),
-          yearsSinceGameStart: yearsSinceGameStart,
-          currentGameYear: currentGameYear,
-          gameTimeDescription: `Year ${currentGameYear}`,
-          botAvailable: false,
-          lastSyncTime: null,
-          lastKnownBotTime: null,
-          botStatus: null, 
+          botStatus: null,
           botHealth: {
             available: false,
-            message: `Bot connection failed: ${error instanceof Error ? error.message : String(error)}`
+            message: "Bot connection failed"
           }
-        };
+        } as AdminPageBotStatusView;
       }
     }),
 
+  // Get system configuration
   getConfig: publicProcedure
     .query(async ({ ctx }) => {
       try {
         const configs = await ctx.db.systemConfig.findMany({
-          where: { key: { in: ['globalGrowthFactor', 'autoUpdate', 'botSyncEnabled', 'timeMultiplier'] } }
+          where: {
+            key: {
+              in: ['globalGrowthFactor', 'autoUpdate', 'botSyncEnabled', 'timeMultiplier']
+            }
+          }
         });
+
         const configMap = configs.reduce((acc, config) => {
           acc[config.key] = config.value;
           return acc;
         }, {} as Record<string, string>);
+
         return {
           globalGrowthFactor: parseFloat(configMap.globalGrowthFactor || CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR.toString()),
           autoUpdate: configMap.autoUpdate === 'true',
@@ -161,8 +119,9 @@ export const adminRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("Failed to get config:", error);
+        // Return defaults if database fails
         return {
-          globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR as number,
+          globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR,
           autoUpdate: true,
           botSyncEnabled: true,
           timeMultiplier: 4.0,
@@ -170,6 +129,7 @@ export const adminRouter = createTRPCRouter({
       }
     }),
 
+  // Save system configuration
   saveConfig: publicProcedure
     .input(z.object({
       globalGrowthFactor: z.number().min(0.5).max(2.0),
@@ -178,7 +138,6 @@ export const adminRouter = createTRPCRouter({
       timeMultiplier: z.number().min(0).max(10),
     }))
     .mutation(async ({ ctx, input }) => {
-      // ... (rest of the function unchanged)
       try {
         const configUpdates = [
           { key: 'globalGrowthFactor', value: input.globalGrowthFactor.toString() },
@@ -198,27 +157,43 @@ export const adminRouter = createTRPCRouter({
             },
           });
         }
+
         return { success: true, message: "Configuration saved successfully" };
       } catch (error) {
         console.error("Failed to save config:", error);
         throw new Error("Failed to save configuration");
       }
     }),
-    
+
+  // Set custom time via bot or local override
   setCustomTime: publicProcedure
-    .input(z.object({ ixTime: z.number(), multiplier: z.number().optional() }))
-    .mutation(async ({ ctx, input }) => { 
-      // ... (rest of the function unchanged) 
+    .input(z.object({
+      ixTime: z.number(),
+      multiplier: z.number().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
       try {
+        // Try to set via bot first
         const botResult = await IxTime.setBotTimeOverride(input.ixTime, input.multiplier);
+        
         if (botResult.success) {
-          return { success: true, message: "Time set via Discord bot", method: "bot" };
+          return { 
+            success: true, 
+            message: "Time set via Discord bot",
+            method: "bot" 
+          };
         } else {
+          // Fall back to local override
           IxTime.setTimeOverride(input.ixTime);
           if (input.multiplier !== undefined) {
             IxTime.setMultiplierOverride(input.multiplier);
           }
-          return { success: true, message: "Time set locally (bot unavailable)", method: "local" };
+          
+          return { 
+            success: true, 
+            message: "Time set locally (bot unavailable)",
+            method: "local" 
+          };
         }
       } catch (error) {
         console.error("Failed to set custom time:", error);
@@ -226,115 +201,240 @@ export const adminRouter = createTRPCRouter({
       }
     }),
 
-  syncBot: publicProcedure.mutation(async () => { /* ... unchanged ... */ 
-    try { return await IxTime.syncWithBot(); }
-    catch (e) { console.error("Sync bot error:", e); throw new Error("Failed to sync bot"); }
-  }),
-  pauseBot: publicProcedure.mutation(async () => { /* ... unchanged ... */ 
-    try { return await IxTime.pauseBotTime(); }
-    catch (e) { console.error("Pause bot error:", e); throw new Error("Failed to pause bot"); }
-  }),
-  resumeBot: publicProcedure.mutation(async () => { /* ... unchanged ... */ 
-    try { return await IxTime.resumeBotTime(); }
-    catch (e) { console.error("Resume bot error:", e); throw new Error("Failed to resume bot"); }
-  }),
-  clearBotOverrides: publicProcedure.mutation(async () => { /* ... unchanged ... */ 
-    try { return await IxTime.clearBotOverrides(); }
-    catch (e) { console.error("Clear overrides error:", e); throw new Error("Failed to clear overrides"); }
-  }),
+  // Bot control operations
+  syncBot: publicProcedure
+    .mutation(async ({ ctx }) => {
+      try {
+        const result = await IxTime.syncWithBot();
+        return result;
+      } catch (error) {
+        console.error("Failed to sync bot:", error);
+        throw new Error("Failed to sync with Discord bot");
+      }
+    }),
 
+  pauseBot: publicProcedure
+    .mutation(async ({ ctx }) => {
+      try {
+        const result = await IxTime.pauseBotTime();
+        return result;
+      } catch (error) {
+        console.error("Failed to pause bot:", error);
+        throw new Error("Failed to pause bot time");
+      }
+    }),
+
+  resumeBot: publicProcedure
+    .mutation(async ({ ctx }) => {
+      try {
+        const result = await IxTime.resumeBotTime();
+        return result;
+      } catch (error) {
+        console.error("Failed to resume bot:", error);
+        throw new Error("Failed to resume bot time");
+      }
+    }),
+
+  clearBotOverrides: publicProcedure
+    .mutation(async ({ ctx }) => {
+      try {
+        const result = await IxTime.clearBotOverrides();
+        return result;
+      } catch (error) {
+        console.error("Failed to clear bot overrides:", error);
+        throw new Error("Failed to clear bot overrides");
+      }
+    }),
+
+  // Get calculation logs
   getCalculationLogs: publicProcedure
-    .input(z.object({ limit: z.number().optional().default(10) }))
-    .query(async ({ ctx, input }) => { 
-      // ... (rest of the function unchanged) 
+    .input(z.object({
+      limit: z.number().optional().default(10),
+    }))
+    .query(async ({ ctx, input }) => {
       try {
         const logs = await ctx.db.calculationLog.findMany({
           orderBy: { timestamp: "desc" },
           take: input.limit,
         });
-        return logs.map(log => ({ ...log })); // simple map if types are compatible
+
+        return logs.map(log => ({
+          id: log.id,
+          timestamp: log.timestamp,
+          ixTimeTimestamp: log.ixTimeTimestamp,
+          countriesUpdated: log.countriesUpdated,
+          executionTimeMs: log.executionTimeMs,
+          globalGrowthFactor: log.globalGrowthFactor,
+          notes: log.notes,
+        }));
       } catch (error) {
         console.error("Failed to get calculation logs:", error);
         throw new Error("Failed to retrieve calculation logs");
       }
     }),
 
+  // Analyze import file
   analyzeImport: publicProcedure
-    .input(z.object({ fileData: z.array(z.number()), fileName: z.string() }))
-    .mutation(async ({ ctx, input }) => { 
-      // ... (rest of the function unchanged, assuming previous fixes were sufficient) 
+    .input(z.object({
+      fileData: z.array(z.number()), // Uint8Array as number array
+      fileName: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
       try {
         const fileBuffer = new Uint8Array(input.fileData).buffer;
         const countries = await parseRosterFile(fileBuffer, input.fileName);
-        if (countries.length === 0) throw new Error("No valid countries in file");
+        
+        if (countries.length === 0) {
+          throw new Error("No valid countries found in the file");
+        }
 
+        // Check for existing countries
         const existingCountries = await ctx.db.country.findMany({
-          where: { name: { in: countries.map(c => c.country) } },
-          select: { name: true, baselinePopulation: true, baselineGdpPerCapita: true, maxGdpGrowthRate: true, adjustedGdpGrowth: true, populationGrowthRate: true }
+          where: {
+            name: { in: countries.map(c => c.country) }
+          },
+          select: { 
+            name: true, 
+            baselinePopulation: true,
+            baselineGdpPerCapita: true,
+            maxGdpGrowthRate: true,
+            adjustedGdpGrowth: true,
+            populationGrowthRate: true,
+          }
         });
+
         const existingMap = new Map(existingCountries.map(c => [c.name, c]));
+        
         const changes = countries.map(country => {
           const existing = existingMap.get(country.country);
-          if (!existing) return { type: 'new' as const, country, changes: [] }; // Ensure changes is always present
           
-          const fieldChanges: Array<{field: string; fieldLabel: string; oldValue: any; newValue: any}> = [];
-            
-            // Explicitly check and compare relevant fields
-            const compareField = (field: keyof BaseCountryData, label: string, threshold: number) => {
-                const oldValue = existing[field as keyof typeof existing];
-                const newValue = country[field];
-                if (typeof newValue === 'number' && typeof oldValue === 'number') {
-                    if (Math.abs(newValue - oldValue) > threshold) {
-                        fieldChanges.push({ field: field as string, fieldLabel: label, oldValue, newValue });
-                    }
-                } else if (newValue !== oldValue) { // For non-numeric or if one is null/undefined
-                     // fieldChanges.push({ field: field as string, fieldLabel: label, oldValue, newValue }); // Optional: track non-numeric changes too
-                }
+          if (!existing) {
+            return {
+              type: 'new' as const,
+              country,
             };
+          } else {
+            // Compare significant fields
+            const fieldChanges = [];
+            
+            if (Math.abs(existing.baselinePopulation - country.population) > 1000) {
+              fieldChanges.push({
+                field: 'population',
+                fieldLabel: 'Population',
+                oldValue: existing.baselinePopulation,
+                newValue: country.population,
+              });
+            }
+            
+            if (Math.abs(existing.baselineGdpPerCapita - country.gdpPerCapita) > 100) {
+              fieldChanges.push({
+                field: 'gdpPerCapita',
+                fieldLabel: 'GDP per Capita',
+                oldValue: existing.baselineGdpPerCapita,
+                newValue: country.gdpPerCapita,
+              });
+            }
+            
+            if (Math.abs(existing.maxGdpGrowthRate - country.maxGdpGrowthRate) > 0.001) {
+              fieldChanges.push({
+                field: 'maxGdpGrowthRate',
+                fieldLabel: 'Max GDP Growth Rate',
+                oldValue: existing.maxGdpGrowthRate,
+                newValue: country.maxGdpGrowthRate,
+              });
+            }
 
-            compareField('population', 'Population', 1000);
-            compareField('gdpPerCapita', 'GDP per Capita', 100);
-            compareField('maxGdpGrowthRate', 'Max GDP Growth Rate', 0.001);
-            compareField('adjustedGdpGrowth', 'Adjusted GDP Growth', 0.001);
-            compareField('populationGrowthRate', 'Population Growth Rate', 0.001);
+            if (Math.abs(existing.adjustedGdpGrowth - country.adjustedGdpGrowth) > 0.001) {
+              fieldChanges.push({
+                field: 'adjustedGdpGrowth',
+                fieldLabel: 'Adjusted GDP Growth',
+                oldValue: existing.adjustedGdpGrowth,
+                newValue: country.adjustedGdpGrowth,
+              });
+            }
 
-          return { type: 'update' as const, country, existingData: existing, changes: fieldChanges };
+            if (Math.abs(existing.populationGrowthRate - country.populationGrowthRate) > 0.001) {
+              fieldChanges.push({
+                field: 'populationGrowthRate',
+                fieldLabel: 'Population Growth Rate',
+                oldValue: existing.populationGrowthRate,
+                newValue: country.populationGrowthRate,
+              });
+            }
+            
+            return {
+              type: 'update' as const,
+              country,
+              existingData: existing,
+              changes: fieldChanges,
+            };
+          }
         });
-        return {
+
+        const analysis: ImportAnalysis = {
           totalCountries: countries.length,
           newCountries: changes.filter(c => c.type === 'new').length,
-          updatedCountries: changes.filter(c => c.type === 'update' && c.changes.length > 0).length,
-          unchangedCountries: changes.filter(c => c.type === 'update' && c.changes.length === 0).length,
+          updatedCountries: changes.filter(c => c.type === 'update').length,
+          unchangedCountries: changes.filter(c => c.type === 'update' && (!c.changes || c.changes.length === 0)).length,
           changes,
           analysisTime: Date.now(),
-        } as ImportAnalysis; // ensure return type matches
+        };
+
+        return analysis;
       } catch (error) {
-        console.error("Analyze import error:", error);
-        throw new Error(error instanceof Error ? error.message : "Analysis failed");
+        console.error("Failed to analyze import:", error);
+        throw new Error(error instanceof Error ? error.message : "Failed to analyze import file");
       }
     }),
 
+  // Import roster data
   importRosterData: publicProcedure
-    .input(z.object({ analysisId: z.string(), replaceExisting: z.boolean() }))
-    .mutation(async () => { /* ... unchanged ... */ throw new Error("Import not implemented"); }),
+    .input(z.object({
+      analysisId: z.string(),
+      replaceExisting: z.boolean(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // For this implementation, we'll need to re-parse the file
+        // In a production system, you'd want to cache the analysis results
+        throw new Error("Import functionality requires file caching - implement based on your needs");
+        
+        // TODO: Implement actual import logic
+        // This would involve:
+        // 1. Retrieving cached analysis data
+        // 2. Creating/updating countries in database
+        // 3. Recalculating current stats
+        // 4. Creating historical data points
+        
+      } catch (error) {
+        console.error("Failed to import data:", error);
+        throw new Error("Import functionality not yet implemented");
+      }
+    }),
 
+  // Force recalculation of all countries
   forceRecalculation: publicProcedure
-    .mutation(async ({ ctx }) => { 
-      // ... (rest of the function unchanged, assuming previous fixes were sufficient and baseCountryData mapping is complete) 
+    .mutation(async ({ ctx }) => {
       try {
         const startTime = Date.now();
-        const countriesFromDb = await ctx.db.country.findMany({ // Renamed to avoid conflict
-          include: { dmInputs: { where: { isActive: true }, orderBy: { ixTimeTimestamp: "desc" } } }
+        const countries = await ctx.db.country.findMany({
+          include: {
+            dmInputs: {
+              where: { isActive: true },
+              orderBy: { ixTimeTimestamp: "desc" }
+            }
+          }
         });
+
         const econConfig = getDefaultEconomicConfig();
         const currentIxTime = IxTime.getCurrentIxTime();
+        
         let updatedCount = 0;
-
-        for (const country of countriesFromDb) { // Use renamed variable
+        
+        for (const country of countries) {
           try {
             const calc = new IxStatsCalculator(econConfig, country.baselineDate.getTime());
             
-            // Properly map all fields from country to BaseCountryData
             const baseCountryData: BaseCountryData = {
               country: country.name,
               continent: country.continent,
@@ -352,17 +452,21 @@ export const adminRouter = createTRPCRouter({
               projected2040Population: country.projected2040Population || 0,
               projected2040Gdp: country.projected2040Gdp || 0,
               projected2040GdpPerCapita: country.projected2040GdpPerCapita || 0,
-              actualGdpGrowth: country.actualGdpGrowth || 0, // ensure actualGdpGrowth exists on country model or is handled
+              actualGdpGrowth: country.actualGdpGrowth || 0,
               localGrowthFactor: country.localGrowthFactor,
             };
 
             const initialStats = calc.initializeCountryStats(baseCountryData);
-            const dmInputs = country.dmInputs.map(d => ({ ...d, ixTimeTimestamp: d.ixTimeTimestamp.getTime() }));
+            const dmInputs = country.dmInputs.map(d => ({
+              ...d,
+              ixTimeTimestamp: d.ixTimeTimestamp.getTime(),
+            }));
+
             const result = calc.calculateTimeProgression(initialStats, currentIxTime, dmInputs);
-            
+
             await ctx.db.country.update({
               where: { id: country.id },
-              data: { 
+              data: {
                 currentPopulation: result.newStats.currentPopulation,
                 currentGdpPerCapita: result.newStats.currentGdpPerCapita,
                 currentTotalGdp: result.newStats.currentTotalGdp,
@@ -371,34 +475,79 @@ export const adminRouter = createTRPCRouter({
                 populationDensity: result.newStats.populationDensity,
                 gdpDensity: result.newStats.gdpDensity,
                 lastCalculated: new Date(currentIxTime),
-               }
+              }
             });
+
             updatedCount++;
-          } catch (e) { console.error(`Failed for ${country.name}:`, e); }
+          } catch (countryError) {
+            console.error(`Failed to update country ${country.name}:`, countryError);
+          }
         }
+
         const executionTime = Date.now() - startTime;
+
+        // Log the calculation
         await ctx.db.calculationLog.create({
-          data: { timestamp: new Date(), ixTimeTimestamp: new Date(currentIxTime), countriesUpdated: updatedCount, executionTimeMs: executionTime, globalGrowthFactor: econConfig.globalGrowthFactor, notes: "Manual recalculation" }
+          data: {
+            timestamp: new Date(),
+            ixTimeTimestamp: new Date(currentIxTime),
+            countriesUpdated: updatedCount,
+            executionTimeMs: executionTime,
+            globalGrowthFactor: econConfig.globalGrowthFactor,
+            notes: "Manual recalculation from admin panel",
+          }
         });
-        return { success: true, countriesUpdated: updatedCount, executionTimeMs: executionTime };
-      } catch (e) { console.error("Recalculation error:", e); throw new Error("Recalculation failed"); }
+
+        return {
+          success: true,
+          message: `Updated ${updatedCount} countries in ${executionTime}ms`,
+          countriesUpdated: updatedCount,
+          executionTimeMs: executionTime,
+        };
+      } catch (error) {
+        console.error("Failed to force recalculation:", error);
+        throw new Error("Failed to recalculate country statistics");
+      }
     }),
 
+  // Get system health
   getSystemHealth: publicProcedure
-    .query(async ({ ctx }) => { 
-      // ... (rest of the function unchanged) 
+    .query(async ({ ctx }) => {
       try {
-        const [countryCount, recentCalculations, botHealth] = await Promise.all([
+        const [
+          countryCount,
+          recentCalculations,
+          botHealth
+        ] = await Promise.all([
           ctx.db.country.count(),
-          ctx.db.calculationLog.count({ where: { timestamp: { gte: new Date(Date.now() - 24*60*60*1000) } } }),
+          ctx.db.calculationLog.count({
+            where: {
+              timestamp: {
+                gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
+              }
+            }
+          }),
           IxTime.checkBotHealth()
         ]);
+
         return {
-          database: { connected: true, countries: countryCount, recentCalculations },
+          database: {
+            connected: true,
+            countries: countryCount,
+            recentCalculations,
+          },
           bot: botHealth,
-          ixTime: { current: IxTime.getCurrentIxTime(), formatted: IxTime.formatIxTime(IxTime.getCurrentIxTime(), true), multiplier: IxTime.getTimeMultiplier(), isPaused: IxTime.isPaused() },
-          lastUpdate: new Date().toISOString()
+          ixTime: {
+            current: IxTime.getCurrentIxTime(),
+            formatted: IxTime.formatIxTime(IxTime.getCurrentIxTime(), true),
+            multiplier: IxTime.getTimeMultiplier(),
+            isPaused: IxTime.isPaused(),
+          },
+          lastUpdate: new Date().toISOString(),
         };
-      } catch (e) { console.error("System health error:", e); throw new Error("Failed to get system health"); }
+      } catch (error) {
+        console.error("Failed to get system health:", error);
+        throw new Error("Failed to retrieve system health status");
+      }
     }),
 });
