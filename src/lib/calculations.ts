@@ -1,12 +1,7 @@
 // src/lib/calculations.ts
-// Updated calculations with proper percentage handling
+// FIXED: Proper percentage handling and updated tier classifications
 
 import { IxTime } from './ixtime';
-import { 
-  DmInputType, 
-  EconomicTier, 
-  PopulationTier 
-} from '../types/ixstats';
 import type { 
   BaseCountryData, 
   CountryStats, 
@@ -15,44 +10,72 @@ import type {
   HistoricalDataPoint 
 } from '../types/ixstats';
 
+// FIXED: Updated tier enums to match user specifications
+export enum EconomicTier {
+  IMPOVERISHED = "Impoverished",
+  DEVELOPING = "Developing", 
+  DEVELOPED = "Developed",
+  HEALTHY = "Healthy",
+  STRONG = "Strong",
+  VERY_STRONG = "Very Strong",
+  EXTRAVAGANT = "Extravagant"
+}
+
+export enum PopulationTier {
+  TIER_1 = "1",
+  TIER_2 = "2", 
+  TIER_3 = "3",
+  TIER_4 = "4",
+  TIER_5 = "5",
+  TIER_6 = "6",
+  TIER_7 = "7",
+  TIER_X = "X"
+}
+
+export enum DmInputType {
+  POPULATION_ADJUSTMENT = "population_adjustment",
+  GDP_ADJUSTMENT = "gdp_adjustment", 
+  GROWTH_RATE_MODIFIER = "growth_rate_modifier",
+  SPECIAL_EVENT = "special_event",
+  TRADE_AGREEMENT = "trade_agreement",
+  NATURAL_DISASTER = "natural_disaster",
+  ECONOMIC_POLICY = "economic_policy"
+}
+
 export interface StatsCalculationResult {
   country: string;
   oldStats: Partial<CountryStats>;
   newStats: CountryStats;
   timeElapsed: number;
-  calculationDate: number; // IxTime timestamp
+  calculationDate: number;
 }
 
 export class IxStatsCalculator {
   private config: EconomicConfig;
-  private baselineDate: number; // IxTime timestamp for roster baseline (January 1, 2028)
+  private baselineDate: number;
 
   constructor(config: EconomicConfig, baselineDate?: number) {
     this.config = config;
-    // If no baseline provided, use the in-game epoch (January 1, 2028)
-    // This is when the roster data represents - the "in-game year zero"
     this.baselineDate = baselineDate || IxTime.getInGameEpoch();
   }
 
   /**
-   * Initialize country stats from roster data
-   * Roster data represents stats as of January 1, 2028 (in-game epoch)
-   * FIXED: Handle growth rates that come as percentages from Excel
+   * FIXED: Initialize country stats with proper growth rate handling
    */
   initializeCountryStats(baseData: BaseCountryData): CountryStats {
     const totalGdp = baseData.population * baseData.gdpPerCapita;
-    const gameEpoch = IxTime.getInGameEpoch(); // January 1, 2028
+    const gameEpoch = IxTime.getInGameEpoch();
     
     const landArea = baseData.landArea || 0;
     const populationDensity = landArea > 0 ? baseData.population / landArea : undefined;
     const gdpDensity = landArea > 0 ? totalGdp / landArea : undefined;
 
-    // FIXED: Convert growth rates from percentage to decimal for calculations
-    // Excel data comes as percentages (e.g., 2.5 for 2.5%), but calculations expect decimals (0.025)
-    const populationGrowthDecimal = this.normalizeGrowthRate(baseData.populationGrowthRate);
-    const maxGdpGrowthDecimal = this.normalizeGrowthRate(baseData.maxGdpGrowthRate);
-    const adjustedGdpGrowthDecimal = this.normalizeGrowthRate(baseData.adjustedGdpGrowth);
-    const actualGdpGrowthDecimal = baseData.actualGdpGrowth ? this.normalizeGrowthRate(baseData.actualGdpGrowth) : 0;
+    // FIXED: Growth rates are already in decimal form from parser (0.005 for 0.5%)
+    // No conversion needed - they're ready for calculations
+    const populationGrowthDecimal = this.validateGrowthRate(baseData.populationGrowthRate);
+    const maxGdpGrowthDecimal = this.validateGrowthRate(baseData.maxGdpGrowthRate);
+    const adjustedGdpGrowthDecimal = this.validateGrowthRate(baseData.adjustedGdpGrowth);
+    const actualGdpGrowthDecimal = baseData.actualGdpGrowth ? this.validateGrowthRate(baseData.actualGdpGrowth) : 0;
 
     return {
       // Basic country data
@@ -67,58 +90,57 @@ export class IxStatsCalculator {
       landArea,
       areaSqMi: baseData.areaSqMi,
       
-      // FIXED: Store growth rates as decimals for calculations, but keep original percentage values for display
+      // Growth rates (stored as decimals for calculations)
       maxGdpGrowthRate: maxGdpGrowthDecimal,
       adjustedGdpGrowth: adjustedGdpGrowthDecimal,
       populationGrowthRate: populationGrowthDecimal,
       actualGdpGrowth: actualGdpGrowthDecimal,
       
-      // Add missing required fields
+      // Required fields
       projected2040Population: baseData.projected2040Population || 0,
       projected2040Gdp: baseData.projected2040Gdp || 0,
       projected2040GdpPerCapita: baseData.projected2040GdpPerCapita || 0,
       
-      // Baseline values (from roster - represents 2028 baseline)
+      // Baseline values
       population: baseData.population,
       gdpPerCapita: baseData.gdpPerCapita,
       
       name: baseData.country,
       totalGdp,
       
-      // Current stats start as baseline stats (roster data)
+      // Current stats start as baseline stats
       currentPopulation: baseData.population,
       currentGdpPerCapita: baseData.gdpPerCapita,
       currentTotalGdp: totalGdp,
       
-      // Baseline date is January 1, 2028 (when roster data represents)
+      // Timestamps
       lastCalculated: new Date(gameEpoch),
       baselineDate: new Date(gameEpoch),
       
+      // FIXED: Use updated tier calculations
       economicTier: this.calculateEconomicTier(baseData.gdpPerCapita),
       populationTier: this.calculatePopulationTier(baseData.population),
       populationDensity,
       gdpDensity,
-      localGrowthFactor: baseData.localGrowthFactor || 1.0, 
+      localGrowthFactor: baseData.localGrowthFactor || 1.0,
       globalGrowthFactor: this.config.globalGrowthFactor || 1.0
     };
   }
 
   /**
-   * FIXED: Normalize growth rates to decimal form for calculations
-   * Handles both decimal (0.025) and percentage (2.5) inputs
+   * FIXED: Validate growth rates (already in decimal form)
    */
-  private normalizeGrowthRate(rate: number): number {
-    // If the rate is greater than 1, assume it's in percentage form and convert to decimal
-    // This is a heuristic: rates like 2.5% would be 2.5, rates like 0.025 would be 0.025
-    if (Math.abs(rate) > 1) {
-      return rate / 1; // Convert percentage to decimal
-    }
-    return rate; // Already in decimal form
+  private validateGrowthRate(rate: number): number {
+    const numValue = Number(rate);
+    if (!isFinite(numValue) || isNaN(numValue)) return 0;
+    
+    // Growth rates should be reasonable decimals
+    // Cap at -50% to +50% annually
+    return Math.min(Math.max(numValue, -0.5), 0.5);
   }
 
   /**
    * Calculate country stats for a specific point in time
-   * This handles both historical (before baseline) and future projections
    */
   calculateTimeProgression(
     baselineStats: CountryStats,
@@ -128,12 +150,9 @@ export class IxStatsCalculator {
     const targetTimeMs = targetTime || IxTime.getCurrentIxTime();
     const baselineTimeMs = this.baselineDate;
     
-    // Calculate years from baseline (January 1, 2028) to target time
-    // Negative means going back before roster data baseline
-    // Positive means projecting forward from roster data baseline
     const yearsFromBaseline = IxTime.getYearsElapsed(baselineTimeMs, targetTimeMs);
     
-    if (Math.abs(yearsFromBaseline) < 0.001) { // Essentially no time change
+    if (Math.abs(yearsFromBaseline) < 0.001) {
       return {
         country: baselineStats.country,
         oldStats: baselineStats,
@@ -149,18 +168,17 @@ export class IxStatsCalculator {
     const oldStats = { ...baselineStats };
     const activeDmInputs = this.getActiveDmInputs(dmInputs, baselineTimeMs, targetTimeMs);
     
-    // Calculate progression from baseline (rates are now in decimal form)
     const newPopulation = this.calculatePopulationProgression(
-      baselineStats.population, // Use original roster population as baseline
-      baselineStats.populationGrowthRate, // Already normalized to decimal
+      baselineStats.population,
+      baselineStats.populationGrowthRate,
       yearsFromBaseline,
       activeDmInputs
     );
 
     const newGdpPerCapita = this.calculateGdpPerCapitaProgression(
-      baselineStats.gdpPerCapita, // Use original roster GDP per capita as baseline
-      baselineStats.adjustedGdpGrowth, // Already normalized to decimal
-      baselineStats.maxGdpGrowthRate, // Already normalized to decimal
+      baselineStats.gdpPerCapita,
+      baselineStats.adjustedGdpGrowth,
+      baselineStats.maxGdpGrowthRate,
       baselineStats.economicTier as EconomicTier,
       yearsFromBaseline,
       activeDmInputs
@@ -188,7 +206,6 @@ export class IxStatsCalculator {
     
     const modifiedStats = this.applySpecialModifiers(updatedStats, activeDmInputs);
     
-    // Recalculate densities if modifiers changed population or GDP
     if (modifiedStats.currentPopulation !== updatedStats.currentPopulation || 
         modifiedStats.currentTotalGdp !== updatedStats.currentTotalGdp) {
       modifiedStats.populationDensity = landArea > 0 ? modifiedStats.currentPopulation / landArea : undefined;
@@ -204,39 +221,28 @@ export class IxStatsCalculator {
     };
   }
 
-  /**
-   * Calculate population progression from baseline (can be negative for historical)
-   * FIXED: Growth rate is already in decimal form
-   */
   private calculatePopulationProgression(
     baselinePopulation: number,
-    growthRateDecimal: number, // Already in decimal form (e.g., 0.025 for 2.5%)
+    growthRateDecimal: number,
     yearsFromBaseline: number,
     dmInputs: DmInputRecord[]
   ): number {
     let adjustedRate = growthRateDecimal;
     
-    // Apply DM input modifications (DM inputs should also be normalized)
     dmInputs.forEach(input => {
-      const inputValue = this.normalizeGrowthRate(input.value);
+      const inputValue = this.validateGrowthRate(input.value);
       if (input.inputType === DmInputType.POPULATION_ADJUSTMENT) {
         adjustedRate += inputValue;
       }
     });
     
-    // Use compound growth/decline formula
-    // For negative years, this naturally calculates backwards
     return baselinePopulation * Math.pow(1 + adjustedRate, yearsFromBaseline);
   }
 
-  /**
-   * Calculate GDP per capita progression from baseline (can be negative for historical)
-   * FIXED: Growth rates are already in decimal form
-   */
   private calculateGdpPerCapitaProgression(
     baselineGdpPerCapita: number,
-    adjustedGrowthDecimal: number, // Already in decimal form
-    maxGrowthRateDecimal: number, // Already in decimal form
+    adjustedGrowthDecimal: number,
+    maxGrowthRateDecimal: number,
     tier: EconomicTier,
     yearsFromBaseline: number,
     dmInputs: DmInputRecord[]
@@ -248,9 +254,8 @@ export class IxStatsCalculator {
     effectiveGrowthRate *= tierModifier;
     effectiveGrowthRate *= this.config.globalGrowthFactor;
 
-    // Apply DM input modifications
     dmInputs.forEach(input => {
-      const inputValue = this.normalizeGrowthRate(input.value);
+      const inputValue = this.validateGrowthRate(input.value);
       if (input.inputType === DmInputType.GDP_ADJUSTMENT) {
         effectiveGrowthRate += inputValue;
       } else if (input.inputType === DmInputType.GROWTH_RATE_MODIFIER) {
@@ -260,22 +265,46 @@ export class IxStatsCalculator {
 
     // Apply growth rate caps
     effectiveGrowthRate = Math.min(effectiveGrowthRate, maxGrowthRateDecimal);
-    effectiveGrowthRate = Math.max(effectiveGrowthRate, -0.1); // Max 10% annual decline
+    effectiveGrowthRate = Math.max(effectiveGrowthRate, -0.1);
 
     // Apply diminishing returns for very high GDP per capita
-    // Only apply this for positive growth periods
     if (yearsFromBaseline > 0 && baselineGdpPerCapita > 60000) {
       const diminishingFactor = Math.log(baselineGdpPerCapita / 60000 + 1) / Math.log(2);
       effectiveGrowthRate /= (1 + diminishingFactor * 0.5);
     }
 
-    // Use compound growth/decline formula
     return baselineGdpPerCapita * Math.pow(1 + effectiveGrowthRate, yearsFromBaseline);
   }
 
   /**
+   * FIXED: Updated economic tier calculation per user specifications
+   */
+  private calculateEconomicTier(gdpPerCapita: number): EconomicTier {
+    if (gdpPerCapita >= 65000) return EconomicTier.EXTRAVAGANT;
+    if (gdpPerCapita >= 55000) return EconomicTier.VERY_STRONG;
+    if (gdpPerCapita >= 45000) return EconomicTier.STRONG;
+    if (gdpPerCapita >= 35000) return EconomicTier.HEALTHY;
+    if (gdpPerCapita >= 25000) return EconomicTier.DEVELOPED;
+    if (gdpPerCapita >= 10000) return EconomicTier.DEVELOPING;
+    return EconomicTier.IMPOVERISHED;
+  }
+
+  /**
+   * FIXED: Updated population tier calculation per user specifications
+   */
+  private calculatePopulationTier(population: number): PopulationTier {
+    if (population >= 500_000_000) return PopulationTier.TIER_X;
+    if (population >= 350_000_000) return PopulationTier.TIER_7;
+    if (population >= 120_000_000) return PopulationTier.TIER_6;
+    if (population >= 80_000_000) return PopulationTier.TIER_5;
+    if (population >= 50_000_000) return PopulationTier.TIER_4;
+    if (population >= 30_000_000) return PopulationTier.TIER_3;
+    if (population >= 10_000_000) return PopulationTier.TIER_2;
+    return PopulationTier.TIER_1;
+  }
+
+  /**
    * Enhanced method to calculate stats relative to current time
-   * This is useful for the existing update systems that work from "current" state
    */
   calculateCurrentTimeProgression(
     currentStats: CountryStats,
@@ -305,14 +334,14 @@ export class IxStatsCalculator {
     const oldStats = { ...currentStats };
     const activeDmInputs = this.getActiveDmInputs(dmInputs, lastCalculatedMs, nowIxTimeMs);
     
-    const newPopulation = this.calculatePopulationGrowth(
+    const newPopulation = this.calculatePopulationProgression(
       currentStats.currentPopulation,
       currentStats.populationGrowthRate,
       yearsElapsed,
       activeDmInputs
     );
 
-    const newGdpPerCapita = this.calculateGdpPerCapitaGrowth(
+    const newGdpPerCapita = this.calculateGdpPerCapitaProgression(
       currentStats.currentGdpPerCapita,
       currentStats.adjustedGdpGrowth,
       currentStats.maxGdpGrowthRate,
@@ -343,7 +372,6 @@ export class IxStatsCalculator {
     
     const modifiedStats = this.applySpecialModifiers(updatedStats, activeDmInputs);
     
-    // Recalculate densities if modifiers changed population or GDP
     if (modifiedStats.currentPopulation !== updatedStats.currentPopulation || 
         modifiedStats.currentTotalGdp !== updatedStats.currentTotalGdp) {
       modifiedStats.populationDensity = landArea > 0 ? modifiedStats.currentPopulation / landArea : undefined;
@@ -359,62 +387,19 @@ export class IxStatsCalculator {
     };
   }
 
-  // Legacy methods for backward compatibility
-  private calculatePopulationGrowth(
-    basePopulation: number,
-    growthRate: number,
-    years: number,
-    dmInputs: DmInputRecord[]
-  ): number {
-    return this.calculatePopulationProgression(basePopulation, growthRate, years, dmInputs);
-  }
-
-  private calculateGdpPerCapitaGrowth(
-    baseGdpPerCapita: number,
-    adjustedGrowth: number,
-    maxGrowthRate: number,
-    tier: EconomicTier,
-    years: number,
-    dmInputs: DmInputRecord[]
-  ): number {
-    return this.calculateGdpPerCapitaProgression(
-      baseGdpPerCapita, adjustedGrowth, maxGrowthRate, tier, years, dmInputs
-    );
-  }
-
-  private calculateEconomicTier(gdpPerCapita: number): EconomicTier {
-    const thresholds = this.config.economicTierThresholds;
-    if (gdpPerCapita >= thresholds.advanced) return EconomicTier.ADVANCED;
-    if (gdpPerCapita >= thresholds.developed) return EconomicTier.DEVELOPED;
-    if (gdpPerCapita >= thresholds.emerging) return EconomicTier.EMERGING;
-    return EconomicTier.DEVELOPING;
-  }
-
-  private calculatePopulationTier(population: number): PopulationTier {
-    const thresholds = this.config.populationTierThresholds;
-    if (population >= thresholds.large) return PopulationTier.MASSIVE;
-    if (population >= thresholds.medium) return PopulationTier.LARGE;
-    if (population >= thresholds.small) return PopulationTier.MEDIUM;
-    if (population >= thresholds.micro) return PopulationTier.SMALL;
-    return PopulationTier.MICRO;
-  }
-
   private getActiveDmInputs(dmInputs: DmInputRecord[], startTime: number, endTime: number): DmInputRecord[] {
     return dmInputs.filter(input => {
       const inputTime = input.ixTimeTimestamp instanceof Date 
         ? input.ixTimeTimestamp.getTime() 
         : input.ixTimeTimestamp;
       
-      // Input must have been created before or at the end time
       if (inputTime > endTime) return false;
       
-      // If input has duration, check if it's still active during the period
       if (input.duration) {
         const inputEndTime = IxTime.addYears(inputTime, input.duration);
-        return inputEndTime >= startTime; // Input effect ends after or during the period
+        return inputEndTime >= startTime;
       }
       
-      // Permanent inputs are active if they were created before the end time
       return inputTime <= endTime;
     });
   }
@@ -423,39 +408,33 @@ export class IxStatsCalculator {
     let modifiedStats = { ...stats };
     
     dmInputs.forEach(input => {
-      const inputValue = this.normalizeGrowthRate(input.value);
+      const inputValue = this.validateGrowthRate(input.value);
       switch (input.inputType) {
         case DmInputType.NATURAL_DISASTER:
-          // Natural disasters typically reduce both population and GDP
           modifiedStats.currentPopulation *= (1 + inputValue);
-          modifiedStats.currentTotalGdp *= (1 + inputValue * 1.5); // GDP hit harder
+          modifiedStats.currentTotalGdp *= (1 + inputValue * 1.5);
           break;
           
         case DmInputType.TRADE_AGREEMENT:
-          // Trade agreements typically boost GDP per capita
           modifiedStats.currentGdpPerCapita *= (1 + inputValue); 
           break;
           
         case DmInputType.ECONOMIC_POLICY:
-          // Economic policies modify the local growth factor
           modifiedStats.localGrowthFactor *= (1 + inputValue);
           break;
           
         case DmInputType.SPECIAL_EVENT:
-          // Special events can have varied effects - apply as population modifier
           modifiedStats.currentPopulation *= (1 + inputValue * 0.5);
           modifiedStats.currentGdpPerCapita *= (1 + inputValue * 0.8);
           break;
       }
     });
 
-    // Recalculate total GDP if individual components changed
     if (modifiedStats.currentPopulation !== stats.currentPopulation || 
         modifiedStats.currentGdpPerCapita !== stats.currentGdpPerCapita) {
       modifiedStats.currentTotalGdp = modifiedStats.currentPopulation * modifiedStats.currentGdpPerCapita;
     }
     
-    // Recalculate tiers if stats changed significantly
     modifiedStats.economicTier = this.calculateEconomicTier(modifiedStats.currentGdpPerCapita);
     modifiedStats.populationTier = this.calculatePopulationTier(modifiedStats.currentPopulation);
 
@@ -484,23 +463,14 @@ export class IxStatsCalculator {
     this.config = { ...this.config, ...newConfig };
   }
 
-  /**
-   * Get the baseline date for this calculator (January 1, 2028)
-   */
   getBaselineDate(): number {
     return this.baselineDate;
   }
 
-  /**
-   * Helper method to determine if a target time is before or after baseline
-   */
   isHistoricalTime(targetTime: number): boolean {
     return targetTime < this.baselineDate;
   }
 
-  /**
-   * Get a description of the time relationship to baseline
-   */
   getTimeDescription(targetTime: number): string {
     const yearsFromBaseline = IxTime.getYearsElapsed(this.baselineDate, targetTime);
     
@@ -515,7 +485,7 @@ export class IxStatsCalculator {
 
   /**
    * FIXED: Helper to get growth rates in percentage form for display
-   * Converts internal decimal rates back to percentages for UI display
+   * Converts internal decimal rates to percentages for UI display
    */
   getGrowthRateAsPercentage(decimalRate: number): number {
     return decimalRate * 100;

@@ -1,20 +1,27 @@
 // src/types/ixstats.ts
-// Core type definitions for IxStats system - Excel-only with reduced field set
+// FIXED: Updated tier classifications and comprehensive type system
 
-// Economic and Population Tier Enums
+// FIXED: Economic Tier Enums per user specifications
 export enum EconomicTier {
-  DEVELOPING = "Developing",
-  EMERGING = "Emerging",
-  DEVELOPED = "Developed",
-  ADVANCED = "Advanced"
+  IMPOVERISHED = "Impoverished",    // $0-$9,999 (10% max growth)
+  DEVELOPING = "Developing",        // $10,000-$24,999 (7.50% max growth)
+  DEVELOPED = "Developed",          // $25,000-$34,999 (5% max growth)
+  HEALTHY = "Healthy",              // $35,000-$44,999 (3.50% max growth)
+  STRONG = "Strong",                // $45,000-$54,999 (2.75% max growth)
+  VERY_STRONG = "Very Strong",      // $55,000-$64,999 (1.50% max growth)
+  EXTRAVAGANT = "Extravagant"       // $65,000+ (0.50% max growth)
 }
 
+// FIXED: Population Tier Enums per user specifications
 export enum PopulationTier {
-  MICRO = "Micro",
-  SMALL = "Small",
-  MEDIUM = "Medium",
-  LARGE = "Large",
-  MASSIVE = "Massive"
+  TIER_1 = "1",    // 0-9,999,999
+  TIER_2 = "2",    // 10,000,000-29,999,999
+  TIER_3 = "3",    // 30,000,000-49,999,999
+  TIER_4 = "4",    // 50,000,000-79,999,999
+  TIER_5 = "5",    // 80,000,000-119,999,999
+  TIER_6 = "6",    // 120,000,000-349,999,999
+  TIER_7 = "7",    // 350,000,000-499,999,999
+  TIER_X = "X"     // 500,000,000+
 }
 
 // DM Input Types
@@ -28,9 +35,8 @@ export enum DmInputType {
   ECONOMIC_POLICY = "economic_policy"
 }
 
-// Base country data from Excel roster (reduced field set)
+// Base country data from Excel roster
 export interface BaseCountryData {
-  localGrowthFactor: number;
   country: string; // From Excel "Country"
   continent?: string | null; // From Excel "Continent"
   region?: string | null; // From Excel "Region"
@@ -40,15 +46,20 @@ export interface BaseCountryData {
   population: number; // From Excel "Population"
   gdpPerCapita: number; // From Excel "GDP PC"
   landArea?: number | null; // From Excel "Area (km²)"
-  areaSqMi?: number | null; // From Excel "Area (sq mi)" - for reference
-  maxGdpGrowthRate: number; // From Excel "Max GDPPC Grow Rt"
-  adjustedGdpGrowth: number; // From Excel "Adj GDPPC Growth"
-  populationGrowthRate: number; // From Excel "Pop Growth Rate"
-  // Added missing NOT NULL fields from schema
+  areaSqMi?: number | null; // From Excel "Area (sq mi)"
+  
+  // FIXED: Growth rates stored as decimals (0.005 for 0.5%)
+  maxGdpGrowthRate: number; // From Excel "Max GDPPC Grow Rt" - as decimal
+  adjustedGdpGrowth: number; // From Excel "Adj GDPPC Growth" - as decimal
+  populationGrowthRate: number; // From Excel "Pop Growth Rate" - as decimal
+  actualGdpGrowth: number; // Calculated or from Excel - as decimal
+  
+  // Projection fields
   projected2040Population: number;
   projected2040Gdp: number;
   projected2040GdpPerCapita: number;
-  actualGdpGrowth: number;
+  
+  localGrowthFactor: number;
 }
 
 // Current country statistics (calculated)
@@ -66,7 +77,7 @@ export interface CountryStats extends BaseCountryData {
   areaSqMi?: number | null;
 
   // Calculated current values
-  totalGdp: number; // Derived from population * gdpPerCapita initially
+  totalGdp: number; // Derived from population * gdpPerCapita
   currentPopulation: number;
   currentGdpPerCapita: number;
   currentTotalGdp: number;
@@ -75,7 +86,7 @@ export interface CountryStats extends BaseCountryData {
   lastCalculated: Date | number;
   baselineDate: Date | number;
 
-  // Categorization
+  // FIXED: Use updated tier classifications
   economicTier: EconomicTier;
   populationTier: PopulationTier;
 
@@ -99,8 +110,8 @@ export interface HistoricalDataPoint {
   population: number;
   gdpPerCapita: number;
   totalGdp: number;
-  populationGrowthRate: number;
-  gdpGrowthRate: number;
+  populationGrowthRate: number; // Stored as decimal
+  gdpGrowthRate: number; // Stored as decimal
   landArea?: number | null;
   populationDensity?: number | null;
   gdpDensity?: number | null;
@@ -112,29 +123,41 @@ export interface DmInputs {
   countryId?: string | null;
   ixTimeTimestamp: Date | number;
   inputType: DmInputType | string;
-  value: number;
+  value: number; // Should be in decimal form for growth rates
   description?: string | null;
   duration?: number | null;
   isActive: boolean;
   createdBy?: string | null;
 }
 
-// Economic configuration
+// FIXED: Economic configuration with updated tier thresholds
 export interface EconomicConfig {
   globalGrowthFactor: number;
   baseInflationRate: number;
+  
+  // FIXED: Economic tier thresholds per user specifications
   economicTierThresholds: {
-    developing: number;
-    emerging: number;
-    developed: number;
-    advanced: number;
+    impoverished: number;    // $0-$9,999
+    developing: number;      // $10,000-$24,999
+    developed: number;       // $25,000-$34,999
+    healthy: number;         // $35,000-$44,999
+    strong: number;          // $45,000-$54,999
+    veryStrong: number;      // $55,000-$64,999
+    extravagant: number;     // $65,000+
   };
+  
+  // FIXED: Population tier thresholds per user specifications
   populationTierThresholds: {
-    micro: number;
-    small: number;
-    medium: number;
-    large: number;
+    tier1: number;          // 0-9,999,999
+    tier2: number;          // 10,000,000-29,999,999
+    tier3: number;          // 30,000,000-49,999,999
+    tier4: number;          // 50,000,000-79,999,999
+    tier5: number;          // 80,000,000-119,999,999
+    tier6: number;          // 120,000,000-349,999,999
+    tier7: number;          // 350,000,000-499,999,999
+    tierX: number;          // 500,000,000+
   };
+  
   tierGrowthModifiers: Record<string, number>;
   calculationIntervalMs: number;
   ixTimeUpdateFrequency: number;
@@ -171,23 +194,22 @@ export interface GlobalEconomicSnapshot {
   ixTimeTimestamp: number;
 }
 
-// Bot time response types (common fields)
+// Bot time response types
 export interface BotTimeResponse {
   ixTimeTimestamp: number;
   ixTimeFormatted: string;
   multiplier: number;
   isPaused: boolean;
-  hasTimeOverride: boolean; // Bot's own time override status
-  hasMultiplierOverride: boolean; // Bot's own multiplier override status
+  hasTimeOverride: boolean;
+  hasMultiplierOverride: boolean;
   realWorldTime: number;
   gameYear: number;
 }
 
-// Represents the direct response from the bot's /ixtime/status endpoint
 export interface BotEndpointStatusResponse extends BotTimeResponse {
   pausedAt?: number | null;
   pauseTimestamp?: number | null;
-  botStatus: { // The nested object with bot's specific ready/user state
+  botStatus: {
     ready: boolean;
     user?: {
       id: string;
@@ -199,8 +221,6 @@ export interface BotEndpointStatusResponse extends BotTimeResponse {
   };
 }
 
-// Represents the derived/flattened bot status object
-// This is the structure for the `botStatus` field within `IxTimeState` and `AdminPageBotStatusView`
 export interface DerivedBotDisplayStatus extends BotTimeResponse {
   pausedAt?: number | null;
   pauseTimestamp?: number | null;
@@ -214,7 +234,6 @@ export interface DerivedBotDisplayStatus extends BotTimeResponse {
   uptime?: number;
 }
 
-// Output of IxTime.getStatus() method - represents the comprehensive local/fallback IxTime state
 export interface IxTimeState {
   currentRealTime: string;
   currentIxTime: string;
@@ -224,7 +243,7 @@ export interface IxTimeState {
   hasTimeOverride: boolean;
   timeOverrideValue?: string | null;
   hasMultiplierOverride?: boolean;
-  multiplierOverrideValue?: number | null | undefined; // Allowing null and undefined
+  multiplierOverrideValue?: number | null | undefined;
   realWorldEpoch?: string;
   inGameEpoch?: string;
   yearsSinceGameStart?: number;
@@ -233,20 +252,18 @@ export interface IxTimeState {
   botAvailable?: boolean;
   lastSyncTime?: string | null;
   lastKnownBotTime?: string | null;
-  botStatus: DerivedBotDisplayStatus | null; // The derived/flattened object from bot, if available
+  botStatus: DerivedBotDisplayStatus | null;
 }
 
-// Output of adminRouter.getBotStatus procedure (passed to admin components)
-export interface AdminPageBotStatusView extends IxTimeState { // Inherits all fields from IxTimeState
-  botHealth: { // Specific health check result
+export interface AdminPageBotStatusView extends IxTimeState {
+  botHealth: {
     available: boolean;
     message: string;
   };
 }
 
-// SystemStatus: Type for the `adminRouter.getSystemStatus` output
 export interface SystemStatus {
-  ixTime: IxTimeState; // Uses the direct output of IxTime.getStatus()
+  ixTime: IxTimeState;
   countryCount: number;
   activeDmInputs: number;
   lastCalculation?: {
@@ -273,7 +290,7 @@ export interface CalculationResult {
   };
 }
 
-// Import/Export types (Excel-only)
+// Import/Export types
 export interface ImportAnalysis {
   totalCountries: number;
   newCountries: number;
@@ -281,7 +298,7 @@ export interface ImportAnalysis {
   unchangedCountries: number;
   changes: Array<{
     type: 'new' | 'update';
-    country: BaseCountryData; // Changed to BaseCountryData for analysis
+    country: BaseCountryData;
     existingData?: any;
     changes?: Array<{
       field: string;
@@ -412,7 +429,7 @@ export type RequiredKeys<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K
 // Database model types (matching Prisma schema)
 export interface Country {
   id: string;
-  name: string; // Unique identifier
+  name: string;
   continent?: string | null;
   region?: string | null;
   governmentType?: string | null;
@@ -422,9 +439,9 @@ export interface Country {
 
   baselinePopulation: number;
   baselineGdpPerCapita: number;
-  maxGdpGrowthRate: number;
-  adjustedGdpGrowth: number;
-  populationGrowthRate: number;
+  maxGdpGrowthRate: number; // Stored as decimal in DB
+  adjustedGdpGrowth: number; // Stored as decimal in DB
+  populationGrowthRate: number; // Stored as decimal in DB
   landArea?: number | null;
   currentPopulation: number;
   currentGdpPerCapita: number;
@@ -433,8 +450,8 @@ export interface Country {
   gdpDensity?: number | null;
   lastCalculated: Date;
   baselineDate: Date;
-  economicTier: string; // Should map to EconomicTier enum
-  populationTier: string; // Should map to PopulationTier enum
+  economicTier: string; // Maps to EconomicTier enum
+  populationTier: string; // Maps to PopulationTier enum
   localGrowthFactor: number;
   createdAt: Date;
   updatedAt: Date;
@@ -449,7 +466,6 @@ export interface SystemConfig {
   updatedAt: Date;
 }
 
-// Original CalculationLog type
 export interface CalculationLog {
   id: string;
   timestamp: Date;
@@ -458,4 +474,54 @@ export interface CalculationLog {
   executionTimeMs: number;
   globalGrowthFactor: number;
   notes?: string | null;
+}
+
+// FIXED: Tier mapping utilities
+export const ECONOMIC_TIER_INFO: Record<EconomicTier, { min: number; max: number; maxGrowth: number }> = {
+  [EconomicTier.IMPOVERISHED]: { min: 0, max: 9999, maxGrowth: 0.10 },
+  [EconomicTier.DEVELOPING]: { min: 10000, max: 24999, maxGrowth: 0.075 },
+  [EconomicTier.DEVELOPED]: { min: 25000, max: 34999, maxGrowth: 0.05 },
+  [EconomicTier.HEALTHY]: { min: 35000, max: 44999, maxGrowth: 0.035 },
+  [EconomicTier.STRONG]: { min: 45000, max: 54999, maxGrowth: 0.0275 },
+  [EconomicTier.VERY_STRONG]: { min: 55000, max: 64999, maxGrowth: 0.015 },
+  [EconomicTier.EXTRAVAGANT]: { min: 65000, max: Infinity, maxGrowth: 0.005 },
+};
+
+export const POPULATION_TIER_INFO: Record<PopulationTier, { min: number; max: number }> = {
+  [PopulationTier.TIER_1]: { min: 0, max: 9_999_999 },
+  [PopulationTier.TIER_2]: { min: 10_000_000, max: 29_999_999 },
+  [PopulationTier.TIER_3]: { min: 30_000_000, max: 49_999_999 },
+  [PopulationTier.TIER_4]: { min: 50_000_000, max: 79_999_999 },
+  [PopulationTier.TIER_5]: { min: 80_000_000, max: 119_999_999 },
+  [PopulationTier.TIER_6]: { min: 120_000_000, max: 349_999_999 },
+  [PopulationTier.TIER_7]: { min: 350_000_000, max: 499_999_999 },
+  [PopulationTier.TIER_X]: { min: 500_000_000, max: Infinity },
+};
+
+// Helper functions for tier determination
+export function getEconomicTierFromGdpPerCapita(gdpPerCapita: number): EconomicTier {
+  for (const [tier, info] of Object.entries(ECONOMIC_TIER_INFO)) {
+    if (gdpPerCapita >= info.min && gdpPerCapita <= info.max) {
+      return tier as EconomicTier;
+    }
+  }
+  return EconomicTier.IMPOVERISHED;
+}
+
+export function getPopulationTierFromPopulation(population: number): PopulationTier {
+  for (const [tier, info] of Object.entries(POPULATION_TIER_INFO)) {
+    if (population >= info.min && population <= info.max) {
+      return tier as PopulationTier;
+    }
+  }
+  return PopulationTier.TIER_X;
+}
+
+// FIXED: Growth rate conversion utilities
+export function decimalToPercentage(decimal: number): number {
+  return decimal * 100;
+}
+
+export function percentageToDecimal(percentage: number): number {
+  return percentage / 100;
 }
