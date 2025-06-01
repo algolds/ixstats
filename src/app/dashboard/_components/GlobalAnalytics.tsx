@@ -1,8 +1,15 @@
 // src/app/dashboard/_components/GlobalAnalytics.tsx
 "use client";
 
-import { useState, useMemo } from "react";
-import { BarChart3, Target, Filter, X, Users, TrendingUp, Globe, Activity } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import {
+  BarChart3,
+  Target,
+  Users,
+  TrendingUp,
+  Globe,
+  Activity,
+} from "lucide-react";
 import {
   PieChart,
   Pie,
@@ -13,20 +20,16 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip as RechartsTooltip, // Renamed to avoid conflict
-  Legend,
-  LabelList
+  Tooltip as RechartsTooltip,
+  LabelList,
 } from "recharts";
 
-// Shadcn/ui chart components
 import {
   ChartContainer,
-  ChartTooltip, // This is shadcn/ui's ChartTooltip
+  ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
-} from "~/components/ui/chart"; // Ensure this path is correct
-
-// Shadcn/ui general components
+} from "~/components/ui/chart";
 import {
   Card,
   CardContent,
@@ -52,11 +55,9 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Button } from "~/components/ui/button";
+import { useChartTheme } from "~/context/theme-context";
+import { formatPopulation, formatCurrency } from "~/lib/chart-utils";
 
-// Your custom theme hook
-import { useChartTheme } from "~/context/theme-context"; // Ensure this path is correct
-
-// Define the structure of the country data processed for these charts
 export interface ProcessedCountryData {
   id: string;
   name: string;
@@ -70,10 +71,13 @@ export interface ProcessedCountryData {
   gdpDensity: number | null;
 }
 
-// Type for the metric filter dropdown
-type MetricFilter = 'populationDensity' | 'gdpDensity' | 'currentPopulation' | 'currentGdpPerCapita' | 'currentTotalGdp';
+type MetricFilter =
+  | "populationDensity"
+  | "gdpDensity"
+  | "currentPopulation"
+  | "currentGdpPerCapita"
+  | "currentTotalGdp";
 
-// Props for the modal that shows countries in a selected tier
 interface TierDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -81,11 +85,14 @@ interface TierDetailsModalProps {
   countries: ProcessedCountryData[];
 }
 
-// Modal component to display countries of a specific economic tier
-function TierDetailsModal({ isOpen, onClose, tier, countries }: TierDetailsModalProps) {
+function TierDetailsModal({
+  isOpen,
+  onClose,
+  tier,
+  countries,
+}: TierDetailsModalProps) {
   if (!isOpen || !tier) return null;
-
-  const tierCountries = countries.filter(country => country.economicTier === tier);
+  const tierCountries = countries.filter((c) => c.economicTier === tier);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -95,23 +102,29 @@ function TierDetailsModal({ isOpen, onClose, tier, countries }: TierDetailsModal
             {tier} Countries ({tierCountries.length})
           </DialogTitle>
           <DialogDescription>
-            List of countries within the {tier} economic tier.
+            Countries in the {tier} economic tier.
           </DialogDescription>
         </DialogHeader>
-        <div className="overflow-y-auto flex-grow pr-2 scrollbar-thin"> {/* Added scrollbar-thin for better scroll */}
-          <div className="grid grid-cols-1 gap-3">
-            {tierCountries.map((country, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
+        <div className="overflow-y-auto flex-grow pr-2 scrollbar-thin">
+          <div className="grid gap-3">
+            {tierCountries.map((c, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between p-3 bg-muted/50
+                           rounded-lg hover:bg-muted transition-colors"
+              >
                 <div>
-                  <h3 className="font-medium text-card-foreground">{country.name}</h3>
+                  <h3 className="font-medium text-card-foreground">
+                    {c.name}
+                  </h3>
                   <p className="text-sm text-muted-foreground">
-                    Pop: {(country.currentPopulation / 1e6).toFixed(1)}M |
-                    GDP p.c.: ${country.currentGdpPerCapita.toLocaleString()}
+                    Pop: {formatPopulation(c.currentPopulation)} • GDP p.c.:{" "}
+                    {formatCurrency(c.currentGdpPerCapita)}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-semibold text-card-foreground">
-                    ${(country.currentTotalGdp / 1e9).toFixed(1)}B
+                    {formatCurrency(c.currentTotalGdp)}
                   </p>
                   <p className="text-xs text-muted-foreground">Total GDP</p>
                 </div>
@@ -121,9 +134,7 @@ function TierDetailsModal({ isOpen, onClose, tier, countries }: TierDetailsModal
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Close
-            </Button>
+            <Button variant="outline">Close</Button>
           </DialogClose>
         </DialogFooter>
       </DialogContent>
@@ -131,7 +142,6 @@ function TierDetailsModal({ isOpen, onClose, tier, countries }: TierDetailsModal
   );
 }
 
-// Props for the main GlobalAnalytics component
 interface GlobalAnalyticsProps {
   countries: ProcessedCountryData[];
 }
@@ -139,121 +149,145 @@ interface GlobalAnalyticsProps {
 export function GlobalAnalytics({ countries }: GlobalAnalyticsProps) {
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [showTierModal, setShowTierModal] = useState(false);
-  const [selectedMetric, setSelectedMetric] = useState<MetricFilter>('populationDensity');
+  const [selectedMetric, setSelectedMetric] =
+    useState<MetricFilter>("populationDensity");
 
-  // useChartTheme provides colors for the bar chart.
-  // For the pie chart, we'll use specific tier colors from CSS variables.
-  const rechartsTheme = useChartTheme();
+  const theme = useChartTheme();
 
-  // Filter out countries with invalid or zero data for calculations
-  const validCountries = useMemo(() => countries.filter(country =>
-    country.currentPopulation > 0 &&
-    country.currentGdpPerCapita > 0 &&
-    country.currentTotalGdp > 0
-  ), [countries]);
+  // 1) Filter out any invalid entries
+  const validCountries = useMemo(
+    () =>
+      countries.filter(
+        (c) =>
+          c.currentPopulation > 0 &&
+          c.currentGdpPerCapita > 0 &&
+          c.currentTotalGdp > 0
+      ),
+    [countries]
+  );
 
-  // Memoized calculation for economic tier counts
+  // 2) Count per economic tier
   const economicTierCounts = useMemo(() => {
-    return validCountries.reduce((acc, country) => {
-      const tier = country.economicTier || 'Unknown';
-      acc[tier] = (acc[tier] || 0) + 1;
+    return validCountries.reduce((acc, c) => {
+      acc[c.economicTier] = (acc[c.economicTier] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
   }, [validCountries]);
 
-  // Memoized data for the pie chart
-  const pieChartData = useMemo(() => {
-    return Object.entries(economicTierCounts).map(([tierName, count]) => ({
-      tierName: tierName, // Key for chartConfig and labels
-      value: count,     // Data value for the pie slice
-    }));
-  }, [economicTierCounts]);
+  // 3) Build pie data
+  const pieChartData = useMemo(
+    () =>
+      Object.entries(economicTierCounts).map(([tier, count]) => ({
+        tierName: tier,
+        value: count,
+      })),
+    [economicTierCounts]
+  );
 
-  // Memoized chart configuration for the economic tier pie chart
+  // 4) Pie chart config
   const economicTierChartConfig = useMemo(() => {
-    const config: ChartConfig = {
-      value: { // 'value' is the dataKey for the Pie chart
-        label: "Countries",
-      },
+    const cfg: ChartConfig = { value: { label: "Countries" } };
+    const tierColors: Record<string, string> = {
+      Advanced: "var(--color-tier-advanced)",
+      Developed: "var(--color-tier-developed)",
+      Emerging: "var(--color-tier-emerging)",
+      Developing: "var(--color-tier-developing)",
     };
-    // Define colors for known tiers using CSS variables directly
-    const tierCssVarColors: Record<string, string> = {
-      "Advanced": "var(--color-tier-advanced)",
-      "Developed": "var(--color-tier-developed)",
-      "Emerging": "var(--color-tier-emerging)",
-      "Developing": "var(--color-tier-developing)",
-      "Unknown": "var(--muted)", // Assuming --muted is a valid color string or var
-    };
-
-    let fallbackColorIndex = 0;
-    const uniqueTiers = Object.keys(economicTierCounts);
-
-    for (const tier of uniqueTiers) {
-      config[tier] = {
+    let fallback = 0;
+    for (const tier of Object.keys(economicTierCounts)) {
+      cfg[tier] = {
         label: tier,
-        color: tierCssVarColors[tier] || rechartsTheme.colors[fallbackColorIndex % rechartsTheme.colors.length]
+        color:
+          tierColors[tier] ??
+          theme.colors[fallback++ % theme.colors.length],
       };
-      if (!tierCssVarColors[tier]) {
-        fallbackColorIndex++;
-      }
     }
-    return config;
-  }, [economicTierCounts, rechartsTheme.colors]) satisfies ChartConfig;
+    return cfg;
+  }, [economicTierCounts, theme.colors]);
 
-  // Memoized data for the top countries bar chart
+  // 5) Prepare bar data with both display & raw values
   const topCountriesData = useMemo(() => {
-    let filtered = validCountries;
-    if (selectedMetric === 'populationDensity') {
-      filtered = validCountries.filter(c => c.populationDensity != null && c.populationDensity > 0);
-    } else if (selectedMetric === 'gdpDensity') {
-      filtered = validCountries.filter(c => c.gdpDensity != null && c.gdpDensity > 0);
-    }
-
-    return filtered
-      .map(c => ({
-        name: c.name.length > 12 ? c.name.substring(0, 10) + '...' : c.name, // Adjusted for vertical chart
-        value: selectedMetric === 'gdpDensity' ? Number(((c.gdpDensity || 0) / 1000000).toFixed(2)) :
-               selectedMetric === 'currentPopulation' ? Number((c.currentPopulation / 1000000).toFixed(1)) :
-               selectedMetric === 'currentTotalGdp' ? Number((c.currentTotalGdp / 1000000000).toFixed(1)) :
-               Number((c[selectedMetric] || 0)),
-        fullName: c.name,
-      }))
+    return validCountries
+      .map((c) => {
+        let raw = 0;
+        let disp = 0;
+        switch (selectedMetric) {
+          case "populationDensity":
+            raw = c.populationDensity ?? 0;
+            disp = raw;
+            break;
+          case "gdpDensity":
+            raw = c.gdpDensity ?? 0;
+            disp = raw;
+            break;
+          case "currentPopulation":
+            raw = c.currentPopulation;
+            disp = raw / 1_000_000; // plot in millions
+            break;
+          case "currentGdpPerCapita":
+            raw = c.currentGdpPerCapita;
+            disp = raw;
+            break;
+          case "currentTotalGdp":
+            raw = c.currentTotalGdp;
+            disp = raw / 1_000_000_000; // plot in billions
+            break;
+        }
+        const name =
+          c.name.length > 12 ? c.name.slice(0, 10) + "…" : c.name;
+        return { name, fullName: c.name, value: disp, rawValue: raw };
+      })
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
   }, [validCountries, selectedMetric]);
 
-  // Handler for pie chart clicks
+  // 6) Pie slice click
   const handlePieClick = (data: any) => {
-    if (data.tierName) { // data.tierName is from pieChartData structure
-        setSelectedTier(data.tierName);
-        setShowTierModal(true);
-    }
+    setSelectedTier(data.tierName);
+    setShowTierModal(true);
   };
 
-  // Options for the metric selection dropdown
   const metricOptions = [
-    { key: 'populationDensity', label: 'Population Density', icon: Users },
-    { key: 'gdpDensity', label: 'GDP Density', icon: TrendingUp },
-    { key: 'currentPopulation', label: 'Total Population', icon: Users },
-    { key: 'currentGdpPerCapita', label: 'GDP per Capita', icon: TrendingUp },
-    { key: 'currentTotalGdp', label: 'Total GDP', icon: Globe },
+    {
+      key: "populationDensity",
+      label: "Population Density",
+      icon: Users,
+    },
+    {
+      key: "gdpDensity",
+      label: "GDP Density",
+      icon: TrendingUp,
+    },
+    {
+      key: "currentPopulation",
+      label: "Total Population",
+      icon: Users,
+    },
+    {
+      key: "currentGdpPerCapita",
+      label: "GDP per Capita",
+      icon: TrendingUp,
+    },
+    { key: "currentTotalGdp", label: "Total GDP", icon: Globe },
   ] as const;
 
-  // Display loading or no data message if necessary
+  // 7) No data guard
   if (validCountries.length === 0) {
     return (
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold text-foreground mb-6">Global Analytics</h2>
+        <h2 className="text-2xl font-semibold text-foreground mb-6">
+          Global Analytics
+        </h2>
         <Card className="text-center py-12">
           <CardHeader>
             <CardTitle className="flex justify-center items-center text-muted-foreground">
-              <BarChart3 className="mx-auto h-12 w-12 opacity-50 mr-2" />
-              No Data Available
+              <BarChart3 className="h-12 w-12 opacity-50 mr-2" />
+              No Data
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="mt-2 text-sm text-muted-foreground">
-              Global analytics will appear here once countries are loaded and have valid data.
+              Load some countries first.
             </p>
           </CardContent>
         </Card>
@@ -267,152 +301,163 @@ export function GlobalAnalytics({ countries }: GlobalAnalyticsProps) {
         isOpen={showTierModal}
         onClose={() => setShowTierModal(false)}
         tier={selectedTier}
-        countries={countries} // Pass original countries data to modal
+        countries={countries}
       />
 
-      <h2 className="text-2xl font-semibold text-foreground mb-6">Global Analytics</h2>
+      <h2 className="text-2xl font-semibold text-foreground mb-6">
+        Global Analytics
+      </h2>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Economic Tier Distribution Pie Chart */}
+        {/* Pie */}
         <Card className="flex flex-col">
-          <CardHeader className="items-center pb-0">
+          <CardHeader className="pb-0">
             <CardTitle className="flex items-center">
               <Activity className="h-5 w-5 mr-2" />
               Economic Tier Distribution
             </CardTitle>
-            <CardDescription>Count of countries by economic tier.</CardDescription>
+            <CardDescription>
+              Click a slice to view countries
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex-1 pb-0">
-            {pieChartData.length > 0 ? (
-              <ChartContainer
-                config={economicTierChartConfig}
-                className="[&_.recharts-pie-label-text]:fill-primary-foreground mx-auto aspect-square max-h-[300px]"
-              >
-                <PieChart>
-                  <ChartTooltip
-                     cursor={true} // Enable cursor for better UX on click
-                     content={<ChartTooltipContent hideLabel nameKey="value" />} // Use shadcn's tooltip
-                  />
-                  <Pie
-                    data={pieChartData}
-                    dataKey="value"
-                    nameKey="tierName"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    strokeWidth={2}
-                    onClick={(data) => handlePieClick(data.payload)} // data.payload contains the entry
-                  >
-                    {pieChartData.map((entry) => (
-                        <Cell
-                            key={`cell-${entry.tierName}`}
-                            fill={economicTierChartConfig[entry.tierName]?.color || rechartsTheme.colors[0]}
-                            className="focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                        />
-                    ))}
-                    <LabelList
-                      dataKey="tierName"
-                      className="fill-accent-foreground text-xs" // Use Tailwind class for label color
-                      stroke="none"
-                      fontSize={10}
-                      formatter={(value: keyof typeof economicTierChartConfig) =>
-                         economicTierChartConfig[value]?.label
+            <ChartContainer
+              config={economicTierChartConfig}
+              className="mx-auto aspect-square max-h-[300px]"
+            >
+              <PieChart>
+                <ChartTooltip
+                  content={<ChartTooltipContent hideLabel />}
+                />
+                <Pie
+                  data={pieChartData}
+                  dataKey="value"
+                  nameKey="tierName"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={96}
+                  onClick={(e) => handlePieClick(e.payload)}
+                >
+                  {pieChartData.map((entry) => (
+                    <Cell
+                      key={entry.tierName}
+                      fill={
+                        economicTierChartConfig[entry.tierName]?.color ||
+                        theme.colors[0]
                       }
                     />
-                  </Pie>
-                </PieChart>
-              </ChartContainer>
-            ) : (
-              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                <Activity className="h-8 w-8 mr-2 opacity-50" />
-                No economic tier data
-              </div>
-            )}
+                  ))}
+                  <LabelList
+                    dataKey="tierName"
+                    className="fill-primary-foreground text-xs"
+                    stroke="none"
+                    fontSize={10}
+                  />
+                </Pie>
+              </PieChart>
+            </ChartContainer>
           </CardContent>
-          <CardFooter className="flex-col gap-2 text-sm pt-4">
-            <div className="text-muted-foreground leading-none text-center">
-              Click a slice to view countries in that tier.
-            </div>
+          <CardFooter className="text-xs text-muted-foreground pt-4">
+            Tap a slice to drill in
           </CardFooter>
         </Card>
 
-        {/* Top Countries Bar Chart */}
+        {/* Bar */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex items-center justify-between">
             <CardTitle className="flex items-center">
               <Target className="h-5 w-5 mr-2" />
-              Top 10 Countries
+              Top 10 by{" "}
+              {
+                metricOptions.find((o) => o.key === selectedMetric)
+                  ?.label
+              }
             </CardTitle>
-             <div className="w-full sm:w-64">
-                <Select value={selectedMetric} onValueChange={(value) => setSelectedMetric(value as MetricFilter)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select metric" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {metricOptions.map((option) => (
-                      <SelectItem key={option.key} value={option.key}>
-                        <div className="flex items-center">
-                          <option.icon className="h-4 w-4 mr-2 text-muted-foreground" />
-                          {option.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-            </div>
+            <Select
+              value={selectedMetric}
+              onValueChange={(v) =>
+                setSelectedMetric(v as MetricFilter)
+              }
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Choose metric" />
+              </SelectTrigger>
+              <SelectContent>
+                {metricOptions.map((o) => (
+                  <SelectItem key={o.key} value={o.key}>
+                    <o.icon className="h-4 w-4 mr-2" />
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </CardHeader>
           <CardContent>
-            {topCountriesData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart
-                  data={topCountriesData}
-                  margin={{ top: 5, right: 5, left: 5, bottom: 60 }} // Adjusted margins
-                  layout="vertical"
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke={rechartsTheme.gridColor} opacity={0.3} />
-                  <XAxis type="number" tick={{ fontSize: 10, fill: rechartsTheme.textColor }} stroke={rechartsTheme.axisColor} />
-                  <YAxis
-                    dataKey="name"
-                    type="category"
-                    tick={{ fontSize: 10, fill: rechartsTheme.textColor, width: 70 }} // Adjusted tick width
-                    stroke={rechartsTheme.axisColor}
-                    width={75} // Adjusted YAxis width
-                    interval={0}
-                  />
-                  <RechartsTooltip // Using RechartsTooltip for the bar chart for now
-                    cursor={{ fill: `${rechartsTheme.gridColor}33` }} // Example cursor style
-                    contentStyle={{
-                       backgroundColor: rechartsTheme.tooltipBg,
-                       color: rechartsTheme.textColor,
-                       border: `1px solid ${rechartsTheme.gridColor}`,
-                       borderRadius: '0.375rem'
-                    }}
-                    formatter={(value: number, name: string, props: any) => {
-                      const metricInfo = metricOptions.find(m => m.label === name);
-                      const unit = metricInfo?.key === 'populationDensity' ? ' /km²' :
-                                   metricInfo?.key === 'gdpDensity' ? ' M$/km²' :
-                                   metricInfo?.key === 'currentPopulation' ? 'M' :
-                                   metricInfo?.key === 'currentGdpPerCapita' ? '$' :
-                                   metricInfo?.key === 'currentTotalGdp' ? 'B$' : '';
-                      return [`${value.toLocaleString()}${unit}`, metricInfo?.label || name];
-                    }}
-                    labelFormatter={(label, payload) => topCountriesData.find(c => c.name === label)?.fullName || label}
-                  />
-                  <Bar
-                    dataKey="value"
-                    name={metricOptions.find(m => m.key === selectedMetric)?.label || "Value"}
-                    fill={rechartsTheme.colors[1]} // Using color from your theme context
-                    radius={[0, 4, 4, 0]}
-                    barSize={15} // Adjusted bar size for vertical chart
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-               <div className="flex items-center justify-center h-64 text-muted-foreground">
-                <Target className="h-8 w-8 mr-2 opacity-50" />
-                No data for "{metricOptions.find(m => m.key === selectedMetric)?.label || 'selected metric'}"
-              </div>
-            )}
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                data={topCountriesData}
+                layout="vertical"
+                margin={{ top: 8, right: 8, bottom: 48, left: 64 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke={theme.gridColor}
+                  opacity={0.3}
+                />
+                <XAxis
+                  type="number"
+                  tick={{ fill: theme.textColor }}
+                  stroke={theme.axisColor}
+                />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  tick={{ fill: theme.textColor }}
+                  stroke={theme.axisColor}
+                  width={80}
+                  interval={0}
+                />
+                <RechartsTooltip
+                  cursor={{ fill: `${theme.gridColor}33` }}
+                  formatter={(val, name, props) => {
+                    const raw = (props.payload as any).rawValue;
+                    switch (selectedMetric) {
+                      case "populationDensity":
+                        return [`${raw.toFixed(1)}/km²`, "Pop Density"];
+                      case "gdpDensity":
+                        return [`${formatCurrency(raw)}/km²`, "GDP Density"];
+                      case "currentPopulation":
+                        return [formatPopulation(raw), "Population"];
+                      case "currentGdpPerCapita":
+                        return [formatCurrency(raw), "GDP p.c."];
+                      case "currentTotalGdp":
+                        return [formatCurrency(raw), "Total GDP"];
+                      default:
+                        return [String(raw), name];
+                    }
+                  }}
+                  labelFormatter={(label) =>
+                    topCountriesData.find((d) => d.name === label)
+                      ?.fullName || label
+                  }
+                  contentStyle={{
+                    backgroundColor: theme.tooltipBg,
+                    border: `1px solid ${theme.gridColor}`,
+                    color: theme.textColor,
+                  }}
+                />
+                <Bar
+                  dataKey="value"
+                  name={
+                    metricOptions.find((o) => o.key === selectedMetric)
+                      ?.label
+                  }
+                  fill={theme.colors[1]}
+                  radius={[0, 4, 4, 0]}
+                  barSize={14}
+                />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>

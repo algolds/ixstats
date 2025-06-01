@@ -10,6 +10,7 @@ import {
   CountriesSection,
   type ProcessedCountryData,
 } from "./index";
+import { IxTime } from "~/lib/ixtime";
 
 export default function Dashboard() {
   // 1) Fetch paginated country list (now returns { countries, total })
@@ -52,18 +53,20 @@ export default function Dashboard() {
     void refetchGlobalStats();
   };
 
-  // Adapt globalStats to shape expected by GlobalStatsSection
-  const adaptedGlobalStats = globalStatsData
-    ? {
-        ...globalStatsData,
-        countryCount: globalStatsData.totalCountries,
-        globalGrowthRate: globalStatsData.globalGrowthRate ?? 0,
-      }
-    : undefined;
+ // In Dashboard.tsx, update the adaptedGlobalStats section
+const adaptedGlobalStats = globalStatsData
+? {
+    ...globalStatsData,
+    countryCount: globalStatsData.totalCountries,
+    timestamp: IxTime.getCurrentIxTime(), // Add timestamp for formatting
+  }
+: undefined;
+
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <DashboardHeader onRefresh={handleGlobalRefresh} isLoading={isLoading} />
+      <DashboardHeader
+    onRefreshAction={handleGlobalRefresh} isLoading={isLoading}  />
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {adaptedGlobalStats && (

@@ -39,7 +39,7 @@ export default async function Home() {
 
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-300 mb-2">
-              Alpha version 0.7.0
+              Alpha version 0.8.0
             </p>
             <p className="text-xs text-gray-400">
               build version: 33240f2

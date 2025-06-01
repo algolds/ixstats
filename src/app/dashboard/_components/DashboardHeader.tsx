@@ -4,42 +4,42 @@
 import { useState, useEffect } from "react";
 import { Clock, Wifi, WifiOff, RefreshCw } from "lucide-react";
 import { IxTime } from "~/lib/ixtime";
-import { Button } from "~/components/ui/button"; // Import shadcn/ui Button
-import { useStatusColors } from "~/context/theme-context"; // Assuming this provides CSS variables
+import { Button } from "~/components/ui/button";
+import { useStatusColors } from "~/context/theme-context";
 
 interface DashboardHeaderProps {
-  onRefresh: () => void;
+  onRefreshAction: () => void;  // renamed
   isLoading?: boolean;
 }
 
-export function DashboardHeader({ onRefresh, isLoading = false }: DashboardHeaderProps) {
+export function DashboardHeader({
+  onRefreshAction,
+  isLoading = false,
+}: DashboardHeaderProps) {
   const [currentIxTime, setCurrentIxTime] = useState<string>("");
-  const [botConnected, setBotConnected] = useState<boolean>(true);
-  const statusColors = useStatusColors(); // This seems to provide CSS variable names
+  const [botConnected, setBotConnected] = useState(true);
+  const statusColors = useStatusColors();
 
   useEffect(() => {
-    let isActive = true;
-    const updateTime = async () => {
+    let active = true;
+    const tick = async () => {
       try {
-        const currentTime = await IxTime.getCurrentIxTimeFromBot();
-        if (isActive) {
-          setCurrentIxTime(IxTime.formatIxTime(currentTime, true));
-          setBotConnected(true);
-        }
-      } catch (error) {
-        if (isActive) {
-          const localTime = IxTime.getCurrentIxTime();
-          setCurrentIxTime(IxTime.formatIxTime(localTime, true));
-          setBotConnected(false);
-          console.warn('[Dashboard] Using local time fallback:', error);
-        }
+        const now = await IxTime.getCurrentIxTimeFromBot();
+        if (!active) return;
+        setCurrentIxTime(IxTime.formatIxTime(now, true));
+        setBotConnected(true);
+      } catch {
+        if (!active) return;
+        const now = IxTime.getCurrentIxTime();
+        setCurrentIxTime(IxTime.formatIxTime(now, true));
+        setBotConnected(false);
       }
     };
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
+    tick();
+    const iv = setInterval(tick, 1000);
     return () => {
-      isActive = false;
-      clearInterval(interval);
+      active = false;
+      clearInterval(iv);
     };
   }, []);
 
@@ -53,30 +53,34 @@ export function DashboardHeader({ onRefresh, isLoading = false }: DashboardHeade
               Real-time economic statistics
             </p>
           </div>
-
           <div className="flex items-center space-x-4">
             <div className="flex items-center text-sm text-muted-foreground">
-              <div className="flex items-center space-x-2">
-                <Clock className="h-4 w-4" />
-                <span className="font-medium">{currentIxTime}</span>
-                {!botConnected ? (
-                  <div className="flex items-center" style={{ color: statusColors.warning }}>
-                    <WifiOff className="h-3 w-3 ml-1" />
-                    <span className="text-xs ml-1">(Local)</span>
-                  </div>
-                ) : (
-                  <Wifi className="h-3 w-3 ml-1" style={{ color: statusColors.online }} />
-                )}
-              </div>
+              <Clock className="h-4 w-4" />
+              <span className="font-medium">{currentIxTime}</span>
+              {botConnected ? (
+                <Wifi
+                  className="h-3 w-3 ml-1"
+                  style={{ color: statusColors.online }}
+                />
+              ) : (
+                <div
+                  className="flex items-center ml-1"
+                  style={{ color: statusColors.warning }}
+                >
+                  <WifiOff className="h-3 w-3" />
+                  <span className="text-xs ml-1">(Local)</span>
+                </div>
+              )}
             </div>
-
             <Button
               variant="outline"
               size="sm"
-              onClick={onRefresh}
+              onClick={onRefreshAction}
               disabled={isLoading}
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
+              />
               Refresh All
             </Button>
           </div>

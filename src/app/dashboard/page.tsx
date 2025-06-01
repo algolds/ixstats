@@ -7,7 +7,7 @@ function DashboardLoading() {
     <div className="min-h-screen bg-[var(--color-bg-primary)] flex items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[var(--color-brand-primary)] mx-auto"></div>
-        <p className="mt-4 text-[var(--color-text-muted)]">Loading IxStats Dashboard...</p>
+        <p className="mt-4 text-[var(--color-text-muted)]">Loading IxStats...</p>
       </div>
     </div>
   );
