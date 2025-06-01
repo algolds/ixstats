@@ -31,19 +31,18 @@ export { EconomicModelingEngine } from './EconomicModelingEngine';
 
 // Re-export types for convenience
 export type {
-  EconomicSummaryData,
-  HistoricalDataPoint,
-  CountryComparison,
-  RegionalData,
-  MetricCardProps
-} from './EconomicSummaryWidget';
-
-export type {
-  HistoricalEconomicTrackerProps,
-  EconomicEvent as HistoricalEconomicEvent
-} from './HistoricalEconomicTracker';
-
-export type {
-  ComparativeAnalysisProps,
-  CountryComparison as ComparisonData
-} from './ComparativeAnalysis';
+    EconomicSummaryData,
+    MetricCardProps
+  } from './EconomicSummaryWidget';
+  
+  export type {
+    HistoricalEconomicTrackerProps,
+    EconomicEvent as HistoricalEconomicEvent,
+    HistoricalDataPoint
+  } from './HistoricalEconomicTracker';
+  
+  export type {
+    ComparativeAnalysisProps,
+    CountryComparison,
+    RegionalData
+  } from './ComparativeAnalysis';
