@@ -383,7 +383,7 @@ function CountryDetailPageContent() {
   // Get wiki URL for country
   const getWikiUrl = () => {
     if (!transformedCountry?.name) return '#';
-    return `https://ixwiki.com/${encodeURIComponent(transformedCountry.name.replace(/ /g, '_'))}`;
+    return `https://ixwiki.com/wiki/${encodeURIComponent(transformedCountry.name.replace(/ /g, '_'))}`;
   };
 
   // Enhanced loading state

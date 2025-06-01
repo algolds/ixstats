@@ -3,11 +3,19 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { RefreshCw, Users, TrendingUp, MapPin, Scaling, Info, Flag } from "lucide-react";
+import {
+  RefreshCw,
+  Users,
+  TrendingUp,
+  MapPin,
+  Scaling,
+  Info,
+  Flag,
+} from "lucide-react";
 import { api } from "~/trpc/react";
-import { formatNumber as formatNumberUtil, cn, getTierStyle } from "~/lib/theme-utils";
+import { formatNumber, cn, getTierStyle } from "~/lib/theme-utils";
 import type { CountryStats } from "~/types/ixstats";
-import { ixnayWiki } from "~/lib/mediawiki-service"; // For fetching flag
+import { ixnayWiki } from "~/lib/mediawiki-service";
 import {
   Card,
   CardContent,
@@ -28,15 +36,19 @@ import { Skeleton } from "~/components/ui/skeleton";
 
 interface CountryCardProps {
   country: CountryStats;
-  onUpdate: () => void; // Keeping this name for now, but we'll handle the warning
+  // Renamed to indicate client‐side callback
+  onUpdateAction: () => void;
 }
 
-export function CountryCard({ country, onUpdate }: CountryCardProps) {
+export function CountryCard({
+  country,
+  onUpdateAction,
+}: CountryCardProps) {
   const [flagUrl, setFlagUrl] = useState<string | null>(null);
   const [flagLoading, setFlagLoading] = useState<boolean>(true);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
-  // Effect to load the flag URL when the component mounts or country name changes
+  // fetch flag
   useEffect(() => {
     let isMounted = true;
     const loadFlag = async () => {
@@ -47,100 +59,131 @@ export function CountryCard({ country, onUpdate }: CountryCardProps) {
         }
         return;
       }
-      if (isMounted) {
-        setFlagLoading(true);
-      }
+      if (isMounted) setFlagLoading(true);
       try {
         const url = await ixnayWiki.getFlagUrl(country.name);
-        if (isMounted) {
-          setFlagUrl(url);
-        }
-      } catch (error) {
-        console.warn(`Failed to load flag for ${country.name}:`, error);
-        if (isMounted) {
-          setFlagUrl(null);
-        }
+        if (isMounted) setFlagUrl(url);
+      } catch {
+        if (isMounted) setFlagUrl(null);
       } finally {
-        if (isMounted) {
-          setFlagLoading(false);
-        }
+        if (isMounted) setFlagLoading(false);
       }
     };
-
     void loadFlag();
     return () => {
       isMounted = false;
     };
   }, [country.name]);
 
+  // update mutation
   const updateMutation = api.countries.updateStats.useMutation({
     onSuccess: () => {
       setUpdateError(null);
-      onUpdate();
+      onUpdateAction();
     },
-    onError: (error: Error) => { // Fixed type safety issue
-      console.error(`Failed to update ${country.name}:`, error);
-      setUpdateError(error.message);
-    }
+    onError: (err) => {
+      console.error(`Failed to update ${country.name}:`, err);
+      setUpdateError(err.message);
+    },
   });
 
   const handleUpdate = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent Link navigation
-    e.stopPropagation(); // Stop event bubbling
-    
-    // Clear any previous errors
+    e.preventDefault();
+    e.stopPropagation();
     setUpdateError(null);
-    
-    // Call the mutation
     updateMutation.mutate({ countryId: country.id });
   };
 
-  const formatNumberDisplay = (num: number | null | undefined, options: { isCurrency?: boolean; precision?: number; compact?: boolean } = {}) => {
-    return formatNumberUtil(num, options);
-  };
-
-  const getEfficiencyRating = (currentCountry: CountryStats): { rating: string; color: string; description: string } => {
-    if (!currentCountry.landArea || currentCountry.landArea === 0 || !currentCountry.populationDensity) {
-      return { rating: 'N/A', color: 'text-muted-foreground', description: 'Insufficient data' };
+  // efficiency helper
+  const getEfficiencyRating = (c: CountryStats) => {
+    if (
+      !c.landArea ||
+      c.landArea === 0 ||
+      !c.populationDensity ||
+      c.populationDensity === 0
+    ) {
+      return {
+        rating: "N/A",
+        color: "text-muted-foreground",
+        description: "Insufficient data",
+      };
     }
-    const economicDensity = currentCountry.currentTotalGdp / currentCountry.landArea;
-    const populationEfficiency = currentCountry.currentGdpPerCapita / currentCountry.populationDensity;
-    const efficiencyScore = (economicDensity / 1000000) + (populationEfficiency / 100);
+    const economicDensity = c.currentTotalGdp / c.landArea;
+    const populationEfficiency = c.currentGdpPerCapita / c.populationDensity;
+    const score = economicDensity / 1_000_000 + populationEfficiency / 100;
 
-    if (efficiencyScore > 100) return { rating: 'Excellent', color: 'text-green-500', description: 'Exceptional output per land/pop density' };
-    if (efficiencyScore > 50) return { rating: 'Good', color: 'text-sky-500', description: 'Strong efficiency & resource use' };
-    if (efficiencyScore > 25) return { rating: 'Average', color: 'text-yellow-500', description: 'Moderate economic efficiency' };
-    return { rating: 'Needs Impr.', color: 'text-orange-500', description: 'Low economic efficiency' };
+    if (score > 100)
+      return {
+        rating: "Excellent",
+        color: "text-green-500",
+        description: "Exceptional output per land/pop density",
+      };
+    if (score > 50)
+      return {
+        rating: "Good",
+        color: "text-sky-500",
+        description: "Strong efficiency & resource use",
+      };
+    if (score > 25)
+      return {
+        rating: "Average",
+        color: "text-yellow-500",
+        description: "Moderate economic efficiency",
+      };
+    return {
+      rating: "Needs Impr.",
+      color: "text-orange-500",
+      description: "Low economic efficiency",
+    };
   };
 
   const efficiency = getEfficiencyRating(country);
-  const tierStyle = getTierStyle(country.economicTier); // Assuming this returns { className: string, color: string }
+  const tierStyle = getTierStyle(country.economicTier);
 
   const stats = [
     {
       icon: Users,
       label: "Population",
-      value: formatNumberDisplay(country.currentPopulation, { isCurrency: false, precision: 0, compact: true }),
-      color: "text-sky-500"
+      value: formatNumber(country.currentPopulation, {
+        precision: 0,
+        compact: true,
+      }),
+      color: "text-sky-500",
     },
     {
       icon: TrendingUp,
       label: "GDP p.c.",
-      value: formatNumberDisplay(country.currentGdpPerCapita, { precision: 0, compact: true }),
-      color: "text-green-500"
+      value: formatNumber(country.currentGdpPerCapita, {
+        isCurrency: true,
+        precision: 0,
+        compact: true,
+      }),
+      color: "text-green-500",
     },
     {
       icon: MapPin,
       label: "Land Area",
-      value: country.landArea ? `${formatNumberDisplay(country.landArea, { isCurrency: false, precision: 0, compact: true })} km²` : 'N/A',
-      color: "text-orange-500"
+      value:
+        country.landArea != null
+          ? `${formatNumber(country.landArea, {
+              precision: 0,
+              compact: true,
+            })} km²`
+          : "N/A",
+      color: "text-orange-500",
     },
     {
       icon: Scaling,
       label: "Pop. Density",
-      value: country.populationDensity ? `${country.populationDensity.toFixed(1)}/km²` : 'N/A',
-      color: "text-purple-500"
-    }
+      value:
+        country.populationDensity != null
+          ? `${formatNumber(country.populationDensity, {
+              precision: 1,
+              compact: true,
+            })}/km²`
+          : "N/A",
+      color: "text-purple-500",
+    },
   ];
 
   return (
@@ -154,7 +197,6 @@ export function CountryCard({ country, onUpdate }: CountryCardProps) {
         <CardHeader className="pb-4">
           <div className="flex justify-between items-start">
             <div className="flex items-center space-x-3 min-w-0">
-              {/* Flag Icon Placeholder/Image */}
               <div className="flex-shrink-0 w-8 h-6 relative">
                 {flagLoading ? (
                   <Skeleton className="h-full w-full rounded" />
@@ -163,7 +205,10 @@ export function CountryCard({ country, onUpdate }: CountryCardProps) {
                     src={flagUrl}
                     alt={`Flag of ${country.name}`}
                     className="h-full w-full object-cover rounded border border-border"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; setFlagUrl(null); }} // Hide on error, fallback to icon
+                    onError={(e) => {
+                      ;(e.target as HTMLImageElement).style.display = "none";
+                      setFlagUrl(null);
+                    }}
                   />
                 ) : (
                   <div className="h-full w-full bg-muted rounded border border-border flex items-center justify-center">
@@ -171,7 +216,10 @@ export function CountryCard({ country, onUpdate }: CountryCardProps) {
                   </div>
                 )}
               </div>
-              <CardTitle className="text-xl group-hover:text-primary transition-colors truncate" title={country.name}>
+              <CardTitle
+                className="text-xl group-hover:text-primary transition-colors truncate"
+                title={country.name}
+              >
                 {country.name}
               </CardTitle>
             </div>
@@ -183,10 +231,14 @@ export function CountryCard({ country, onUpdate }: CountryCardProps) {
                     size="icon"
                     onClick={handleUpdate}
                     disabled={updateMutation.isPending}
-                    className="h-7 w-7 flex-shrink-0" // Ensure button doesn't cause overflow
-                    aria-label={`Update ${country.name} statistics`}
+                    className="h-7 w-7 flex-shrink-0"
+                    aria-label={`Update ${country.name}`}
                   >
-                    <RefreshCw className={`h-4 w-4 ${updateMutation.isPending ? 'animate-spin' : ''}`} />
+                    <RefreshCw
+                      className={`h-4 w-4 ${
+                        updateMutation.isPending ? "animate-spin" : ""
+                      }`}
+                    />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -196,7 +248,8 @@ export function CountryCard({ country, onUpdate }: CountryCardProps) {
             </TooltipProvider>
           </div>
           <CardDescription className="text-xs mt-1">
-            {country.continent || 'N/A Continent'} {country.continent && country.region ? ' - ' : ''} {country.region || ''}
+            {country.continent || "N/A Continent"}{" "}
+            {country.region ? ` - ${country.region}` : ""}
           </CardDescription>
         </CardHeader>
 
@@ -210,8 +263,13 @@ export function CountryCard({ country, onUpdate }: CountryCardProps) {
                     className={cn("h-4 w-4 mt-0.5 flex-shrink-0", stat.color)}
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-muted-foreground truncate">{stat.label}</p>
-                    <p className="font-medium text-card-foreground truncate" title={stat.value}>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {stat.label}
+                    </p>
+                    <p
+                      className="font-medium text-card-foreground truncate"
+                      title={stat.value}
+                    >
                       {stat.value}
                     </p>
                   </div>
@@ -221,11 +279,20 @@ export function CountryCard({ country, onUpdate }: CountryCardProps) {
           </div>
 
           <div className="flex justify-between items-center py-2 px-3 bg-muted/50 rounded-md">
-            <span className="text-xs text-muted-foreground">Economic Efficiency</span>
+            <span className="text-xs text-muted-foreground">
+              Economic Efficiency
+            </span>
             <TooltipProvider delayDuration={100}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Badge variant="outline" className="text-xs" style={{ color: efficiency.color, borderColor: `${efficiency.color}80` }}>
+                  <Badge
+                    variant="outline"
+                    className="text-xs"
+                    style={{
+                      color: efficiency.color,
+                      borderColor: `${efficiency.color}80`,
+                    }}
+                  >
                     {efficiency.rating}
                   </Badge>
                 </TooltipTrigger>
@@ -240,14 +307,19 @@ export function CountryCard({ country, onUpdate }: CountryCardProps) {
         <CardFooter className="text-xs pt-4">
           <div className="flex justify-between items-center w-full">
             <Badge
-              // Use the className from getTierStyle for background/border, and color for text
-              className={cn(tierStyle.className, '!text-white')} // Force white text or adjust based on badge background
-              style={{ backgroundColor: tierStyle.color }} // Apply the direct color
+              className={cn(tierStyle.className, "!text-white")}
+              style={{ backgroundColor: tierStyle.color }}
             >
               {country.economicTier}
             </Badge>
-            <span className="text-muted-foreground" title={`Last calculation: ${new Date(country.lastCalculated).toLocaleString()}`}>
-              Updated: {new Date(country.lastCalculated).toLocaleDateString()}
+            <span
+              className="text-muted-foreground"
+              title={`Last calculation: ${new Date(
+                country.lastCalculated
+              ).toLocaleString()}`}
+            >
+              Updated:{" "}
+              {new Date(country.lastCalculated).toLocaleDateString()}
             </span>
           </div>
         </CardFooter>

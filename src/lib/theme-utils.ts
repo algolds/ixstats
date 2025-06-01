@@ -6,7 +6,9 @@
  */
 export function getCSSVar(property: string): string {
   if (typeof window !== "undefined") {
-    return getComputedStyle(document.documentElement).getPropertyValue(property);
+    return getComputedStyle(document.documentElement).getPropertyValue(
+      property
+    );
   }
   return "";
 }
@@ -14,45 +16,47 @@ export function getCSSVar(property: string): string {
 /**
  * Economic tier styling helper
  */
-export function getTierStyle(tier: string): { className: string; color: string } {
+export function getTierStyle(
+  tier: string
+): { className: string; color: string } {
   const tierMap: Record<string, { className: string; color: string }> = {
-    "Advanced": {
+    Advanced: {
       className: "tier-badge tier-advanced",
-      color: "var(--color-tier-advanced)"
+      color: "var(--color-tier-advanced)",
     },
-    "Developed": {
+    Developed: {
       className: "tier-badge tier-developed",
-      color: "var(--color-tier-developed)"
+      color: "var(--color-tier-developed)",
     },
-    "Emerging": {
+    Emerging: {
       className: "tier-badge tier-emerging",
-      color: "var(--color-tier-emerging)"
+      color: "var(--color-tier-emerging)",
     },
-    "Developing": {
+    Developing: {
       className: "tier-badge tier-developing",
-      color: "var(--color-tier-developing)"
-    }
+      color: "var(--color-tier-developing)",
+    },
   };
-
-  return tierMap[tier] || tierMap["Developing"]!;
+  return tierMap[tier] || tierMap.Developing!;
 }
 
 /**
  * Status indicator helper
  */
-export function getStatusStyle(status: "online" | "offline" | "warning" | "info" | "active" | "inactive"): {
-  className: string;
-  color: string;
-} {
+export function getStatusStyle(
+  status: "online" | "offline" | "warning" | "info" | "active" | "inactive"
+): { className: string; color: string } {
   const statusMap = {
     online: { className: "status-online", color: "var(--color-success)" },
     offline: { className: "status-offline", color: "var(--color-error)" },
     warning: { className: "status-warning", color: "var(--color-warning)" },
     info: { className: "status-info", color: "var(--color-info)" },
     active: { className: "status-online", color: "var(--color-success)" },
-    inactive: { className: "text-[var(--color-text-muted)]", color: "var(--color-text-muted)" }
+    inactive: {
+      className: "text-[var(--color-text-muted)]",
+      color: "var(--color-text-muted)",
+    },
   };
-
   return statusMap[status];
 }
 
@@ -79,11 +83,10 @@ export function getChartColors(): {
       getCSSVar("--color-chart-3") || "#84cc16",
       getCSSVar("--color-chart-4") || "#f97316",
       getCSSVar("--color-chart-5") || "#ec4899",
-      getCSSVar("--color-chart-6") || "#14b8a6"
-    ]
+      getCSSVar("--color-chart-6") || "#14b8a6",
+    ],
   };
 }
-
 
 /**
  * Get responsive class names based on screen size
@@ -102,7 +105,9 @@ export function getResponsiveClasses(
 /**
  * Conditional class helper
  */
-export function cn(...classes: (string | undefined | null | false)[]): string {
+export function cn(
+  ...classes: (string | undefined | null | false)[]
+): string {
   return classes.filter(Boolean).join(" ");
 }
 
@@ -114,29 +119,26 @@ export function getButtonClasses(
   size: "sm" | "md" | "lg" = "md",
   disabled: boolean = false
 ): string {
-  const baseClasses = "inline-flex items-center justify-center font-medium rounded-md transition-all focus:outline-none focus-ring";
-
-  const variantClasses = {
+  const base =
+    "inline-flex items-center justify-center font-medium rounded-md " +
+    "transition-all focus:outline-none focus-ring";
+  const variants = {
     primary: "btn-primary",
     secondary: "btn-secondary",
-    danger: "bg-[var(--color-error)] hover:bg-[var(--color-error-dark)] text-white border-[var(--color-error)]",
-    success: "bg-[var(--color-success)] hover:bg-[var(--color-success-dark)] text-white border-[var(--color-success)]"
+    danger:
+      "bg-[var(--color-error)] hover:bg-[var(--color-error-dark)] " +
+      "text-white border-[var(--color-error)]",
+    success:
+      "bg-[var(--color-success)] hover:bg-[var(--color-success-dark)] " +
+      "text-white border-[var(--color-success)]",
   };
-
-  const sizeClasses = {
+  const sizes = {
     sm: "px-3 py-1.5 text-sm",
     md: "px-4 py-2 text-sm",
-    lg: "px-6 py-3 text-base"
+    lg: "px-6 py-3 text-base",
   };
-
-  const disabledClasses = disabled ? "opacity-50 cursor-not-allowed" : "";
-
-  return cn(
-    baseClasses,
-    variantClasses[variant],
-    sizeClasses[size],
-    disabledClasses
-  );
+  const disabledCls = disabled ? "opacity-50 cursor-not-allowed" : "";
+  return cn(base, variants[variant], sizes[size], disabledCls);
 }
 
 /**
@@ -146,19 +148,17 @@ export function getInputClasses(
   hasError: boolean = false,
   size: "sm" | "md" | "lg" = "md"
 ): string {
-  const baseClasses = "form-input";
-
-  const sizeClasses = {
+  const base = "form-input";
+  const sizes = {
     sm: "px-2.5 py-1.5 text-sm",
     md: "px-3 py-2 text-sm",
-    lg: "px-4 py-3 text-base"
+    lg: "px-4 py-3 text-base",
   };
-
-  const errorClasses = hasError
-    ? "border-[var(--color-error)] focus:border-[var(--color-error)] focus:shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
+  const errorCls = hasError
+    ? "border-[var(--color-error)] focus:border-[var(--color-error)] " +
+      "focus:shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
     : "";
-
-  return cn(baseClasses, sizeClasses[size], errorClasses);
+  return cn(base, sizes[size], errorCls);
 }
 
 /**
@@ -168,30 +168,24 @@ export function getCardClasses(
   variant: "default" | "elevated" | "bordered" = "default",
   interactive: boolean = false
 ): string {
-  const baseClasses = "card";
-
-  const variantClasses = {
-    default: "",
-    elevated: "shadow-lg",
-    bordered: "border-2"
-  };
-
-  const interactiveClasses = interactive ? "cursor-pointer" : "";
-
-  return cn(baseClasses, variantClasses[variant], interactiveClasses);
+  const base = "card";
+  const variants = { default: "", elevated: "shadow-lg", bordered: "border-2" };
+  const interactiveCls = interactive ? "cursor-pointer" : "";
+  return cn(base, variants[variant], interactiveCls);
 }
 
 /**
  * Loading state class generator
  */
-export function getLoadingClasses(type: "spinner" | "skeleton" | "pulse" = "spinner"): string {
-  const loadingMap = {
+export function getLoadingClasses(
+  type: "spinner" | "skeleton" | "pulse" = "spinner"
+): string {
+  const map = {
     spinner: "loading-spinner",
     skeleton: "loading-skeleton rounded",
-    pulse: "animate-pulse-slow"
+    pulse: "animate-pulse-slow",
   };
-
-  return loadingMap[type];
+  return map[type];
 }
 
 /**
@@ -201,11 +195,11 @@ export function getChartTooltipStyle(): React.CSSProperties {
   return {
     backgroundColor: getCSSVar("--color-surface-blur"),
     border: `1px solid ${getCSSVar("--color-border-primary")}`,
-    borderRadius: "0.375rem", // "rounded-md"
+    borderRadius: "0.375rem",
     color: getCSSVar("--color-text-primary"),
-    fontSize: "0.875rem", // "text-sm"
+    fontSize: "0.875rem",
     boxShadow: getCSSVar("--shadow-lg"),
-    backdropFilter: "blur(8px)"
+    backdropFilter: "blur(8px)",
   };
 }
 
@@ -213,14 +207,13 @@ export function getChartTooltipStyle(): React.CSSProperties {
  * Migration helper - converts old Tailwind classes to new system
  */
 export function migrateClasses(oldClasses: string): string {
-  const migrationMap: Record<string, string> = {
+  const map: Record<string, string> = {
     // Backgrounds
     "bg-gray-50": "bg-[var(--color-bg-primary)]",
     "bg-gray-100": "bg-[var(--color-bg-tertiary)]",
     "bg-gray-800": "bg-[var(--color-bg-secondary)]",
     "bg-gray-900": "bg-[var(--color-bg-primary)]",
     "bg-white": "bg-[var(--color-bg-surface)]",
-
     // Text colors
     "text-gray-50": "text-[var(--color-text-primary)]",
     "text-gray-200": "text-[var(--color-text-secondary)]",
@@ -232,33 +225,27 @@ export function migrateClasses(oldClasses: string): string {
     "text-gray-800": "text-[var(--color-text-primary)]",
     "text-gray-900": "text-[var(--color-text-primary)]",
     "text-white": "text-[var(--color-text-primary)]",
-
     // Borders
     "border-gray-200": "border-[var(--color-border-primary)]",
     "border-gray-300": "border-[var(--color-border-secondary)]",
     "border-gray-600": "border-[var(--color-border-secondary)]",
     "border-gray-700": "border-[var(--color-border-primary)]",
-
     // Brand colors
     "text-indigo-600": "text-[var(--color-brand-primary)]",
     "text-indigo-400": "text-[var(--color-brand-secondary)]",
     "bg-indigo-600": "bg-[var(--color-brand-primary)]",
     "bg-indigo-500": "bg-[var(--color-brand-primary)]",
-
     // Status colors
     "text-green-600": "status-online",
     "text-red-600": "status-offline",
     "text-yellow-600": "status-warning",
-    "text-blue-600": "status-info"
+    "text-blue-600": "status-info",
   };
-
-  let migratedClasses = oldClasses;
-
-  Object.entries(migrationMap).forEach(([oldClass, newClass]) => {
-    migratedClasses = migratedClasses.replace(new RegExp(`\\b${oldClass}\\b`, 'g'), newClass);
+  let result = oldClasses;
+  Object.entries(map).forEach(([oldCls, newCls]) => {
+    result = result.replace(new RegExp(`\\b${oldCls}\\b`, "g"), newCls);
   });
-
-  return migratedClasses;
+  return result;
 }
 
 /**
@@ -272,39 +259,39 @@ export function themeClass(darkClass: string, lightClass?: string): string {
 /**
  * Generate animation classes
  */
-export function getAnimationClasses(animation: "fade-in" | "slide-up" | "pulse-slow" = "fade-in"): string {
-  const animationMap = {
+export function getAnimationClasses(
+  animation: "fade-in" | "slide-up" | "pulse-slow" = "fade-in"
+): string {
+  const map = {
     "fade-in": "animate-fade-in",
     "slide-up": "animate-slide-up",
-    "pulse-slow": "animate-pulse-slow"
+    "pulse-slow": "animate-pulse-slow",
   };
-
-  return animationMap[animation];
+  return map[animation];
 }
 
-// Add to src/lib/theme-utils.ts
+/**
+ * Format a number, optionally as USD currency, with precision and
+ * compact notation support.
+ */
 export function formatNumber(
   num: number | null | undefined,
-  options: { isCurrency?: boolean; precision?: number; compact?: boolean } = {}
+  options: {
+    isCurrency?: boolean;
+    precision?: number;
+    compact?: boolean;
+  } = {}
 ): string {
-  if (num === null || num === undefined) return 'N/A'; // Or some other placeholder
-
-  // Example formatting logic (you'll need to implement your desired formatting)
-  if (options.isCurrency) {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD', // Or your desired currency
-      minimumFractionDigits: options.precision,
-      maximumFractionDigits: options.precision,
-    }).format(num);
+  if (num == null || !isFinite(num)) {
+    return "N/A";
   }
-
-  if (options.compact && num >= 1000000) {
-    return (num / 1000000).toFixed(options.precision || 1) + 'M';
-  }
-  if (options.compact && num >= 1000) {
-    return (num / 1000).toFixed(options.precision || 1) + 'K';
-  }
-
-  return num.toFixed(options.precision || 0);
+  const { isCurrency = false, precision = 0, compact = false } = options;
+  const nfOpts: Intl.NumberFormatOptions = {
+    style: isCurrency ? "currency" : "decimal",
+    currency: isCurrency ? "USD" : undefined,
+    minimumFractionDigits: precision,
+    maximumFractionDigits: precision,
+    notation: compact ? "compact" : "standard",
+  };
+  return new Intl.NumberFormat("en-US", nfOpts).format(num);
 }
