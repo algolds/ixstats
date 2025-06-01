@@ -1,4 +1,4 @@
-// src/app/countries/[id]/page.tsx
+// src/app/countries/[id]/page.tsx - Enhanced with Economic Integration
 "use client";
 
 import { useState, useEffect, useMemo, Suspense } from "react";
@@ -15,7 +15,11 @@ import {
   Info,
   Settings2,
   Flag,
-  ExternalLink
+  ExternalLink,
+  BarChart3,
+  Building,
+  TrendingUp,
+  Tabs as TabsIcon
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
@@ -24,6 +28,7 @@ import { ixnayWiki } from "~/lib/mediawiki-service";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -48,11 +53,14 @@ import {
   ChartTypeSelector,
   TenYearForecast,
 } from "../_components/detail";
+import { EconomicDataDisplay } from "../_components/economy/EconomicDataDisplay";
+import { EconomicSummaryWidget } from "../_components/economy/EconomicSummaryWidget";
 import type { ForecastDataPoint as TenYearForecastDataPoint } from "../_components/detail/TenYearForecast";
 import { Badge } from "~/components/ui/badge";
 
-// Define a more specific type for the data used in this page
-export interface CountryDetailData {
+// ... [Previous interfaces and types remain the same] ...
+
+interface CountryDetailData {
   id: string;
   name: string;
   continent: string | null;
@@ -72,8 +80,8 @@ export interface CountryDetailData {
   currentTotalGdp: number;
   populationDensity: number | null;
   gdpDensity: number | null;
-  lastCalculated: number; // Timestamp
-  baselineDate: number; // Timestamp
+  lastCalculated: number;
+  baselineDate: number;
   economicTier: string;
   populationTier: string;
   localGrowthFactor: number;
@@ -94,6 +102,15 @@ export interface CountryDetailData {
     duration?: number | null;
   }>;
   forecastDataPoints?: Array<TenYearForecastDataPoint>;
+  // Economic data
+  economicData?: {
+    nominalGDP?: number;
+    realGDPGrowthRate?: number;
+    inflationRate?: number;
+    laborForceParticipationRate?: number;
+    unemploymentRate?: number;
+    taxRevenueGDPPercent?: number;
+  };
 }
 
 function CountryDetailPageContent() {
@@ -109,6 +126,7 @@ function CountryDetailPageContent() {
   const [customEndTime, setCustomEndTime] = useState<number>();
   const [showForecast, setShowForecast] = useState<boolean>(false);
   const [infoboxExpanded, setInfoboxExpanded] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'statistics' | 'economics' | 'history'>('overview');
   
   // Flag state management
   const [flagUrl, setFlagUrl] = useState<string | null>(null);
@@ -255,11 +273,22 @@ function CountryDetailPageContent() {
         ...p,
         year: p.gameYear
       })) || [],
+      // Economic data from enhanced query
+      economicData: {
+        nominalGDP: (countryDataResult as any).nominalGDP,
+        realGDPGrowthRate: (countryDataResult as any).realGDPGrowthRate,
+        inflationRate: (countryDataResult as any).inflationRate,
+        laborForceParticipationRate: (countryDataResult as any).laborForceParticipationRate,
+        unemploymentRate: (countryDataResult as any).unemploymentRate,
+        taxRevenueGDPPercent: (countryDataResult as any).taxRevenueGDPPercent,
+      }
     };
 
     return transformed;
   }, [countryDataResult, historicalDataRaw, forecastDataFromApi]);
 
+  // ... [Previous processing code remains the same] ...
+  
   // Process historical data for charts
   const processedHistoricalData = useMemo(() => {
     if (!historicalDataRaw || historicalDataRaw.length === 0) {
@@ -321,8 +350,8 @@ function CountryDetailPageContent() {
       totalGdp: point.totalGdp,
       populationDensity: point.populationDensity,
       gdpDensity: point.gdpDensity,
-      populationGrowthRate: 0, // Could be calculated if needed
-      gdpGrowthRate: 0, // Could be calculated if needed
+      populationGrowthRate: 0,
+      gdpGrowthRate: 0,
       landArea: transformedCountry?.landArea || null,
     }));
   }, [forecastDataFromApi, transformedCountry]);
@@ -341,13 +370,28 @@ function CountryDetailPageContent() {
     };
   }, [transformedCountry, currentIxTime, timeContext.gameEpoch, processedHistoricalData, processedForecastData]);
 
-  const availableDataForCharts = useMemo(() => ({
-    hasLandArea: !!(transformedCountry?.landArea),
-    hasHistoricalData: processedHistoricalData.length > 0,
-    hasComparison: false,
-    hasDensityData: !!(transformedCountry?.populationDensity && transformedCountry?.gdpDensity)
-  }), [transformedCountry, processedHistoricalData]);
+  // Economic summary data for widget
+  const economicSummaryData = useMemo(() => {
+    if (!transformedCountry) return null;
+    
+    return {
+      population: transformedCountry.currentPopulation,
+      gdpPerCapita: transformedCountry.currentGdpPerCapita,
+      totalGdp: transformedCountry.currentTotalGdp,
+      economicTier: transformedCountry.economicTier,
+      populationGrowthRate: transformedCountry.populationGrowthRate,
+      gdpGrowthRate: transformedCountry.adjustedGdpGrowth,
+      unemploymentRate: transformedCountry.economicData?.unemploymentRate || 5.0,
+      laborForceParticipationRate: transformedCountry.economicData?.laborForceParticipationRate || 65.0,
+      taxRevenueGDPPercent: transformedCountry.economicData?.taxRevenueGDPPercent,
+      populationDensity: transformedCountry.populationDensity,
+      gdpDensity: transformedCountry.gdpDensity,
+      landArea: transformedCountry.landArea,
+    };
+  }, [transformedCountry]);
 
+  // ... [Previous handler functions remain the same] ...
+  
   const handleTimeChange = (newIxTime: number) => {
     setCurrentIxTime(newIxTime);
   };
@@ -377,10 +421,9 @@ function CountryDetailPageContent() {
     void refetch();
   };
 
-  const isTimeTravel = Math.abs(currentIxTime - IxTime.getCurrentIxTime()) > 60000; // 1 minute tolerance
+  const isTimeTravel = Math.abs(currentIxTime - IxTime.getCurrentIxTime()) > 60000;
   const isLoadingPage = isLoadingCountry && !transformedCountry;
 
-  // Get wiki URL for country
   const getWikiUrl = () => {
     if (!transformedCountry?.name) return '#';
     return `https://ixwiki.com/wiki/${encodeURIComponent(transformedCountry.name.replace(/ /g, '_'))}`;
@@ -486,7 +529,6 @@ function CountryDetailPageContent() {
                       : transformedCountry.continent || 'Country Dashboard'
                     }
                   </p>
-                  {/* Wiki Link */}
                   <Button variant="outline" size="sm" asChild>
                     <a href={getWikiUrl()} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
@@ -535,50 +577,123 @@ function CountryDetailPageContent() {
           </div>
         </div>
 
-        <div className={`grid gap-6 lg:gap-8 transition-all duration-300 ${infoboxExpanded ? 'lg:grid-cols-[1fr_320px]' : 'lg:grid-cols-[1fr_400px]'}`}>
-          <div className="space-y-6 lg:space-y-8">
-            {/* Time Control */}
-            <TimeControl
-              onTimeChange={handleTimeChange}
-              onForecastChange={handleForecastChange}
-              currentTime={currentIxTime}
-              gameEpoch={timeContext.gameEpoch}
-              isLoading={isLoadingCountry || isLoadingHistorical || isLoadingForecast}
-            />
+        {/* Enhanced Tab System */}
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview" className="flex items-center gap-2">
+              <Globe className="h-4 w-4" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="statistics" className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Statistics
+            </TabsTrigger>
+            <TabsTrigger value="economics" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Economics
+            </TabsTrigger>
+            <TabsTrigger value="history" className="flex items-center gap-2">
+              <TabsIcon className="h-4 w-4" />
+              History
+            </TabsTrigger>
+          </TabsList>
 
-            {/* Country At-a-Glance */}
-            <CountryAtGlance
-              country={transformedCountry}
-              currentIxTime={currentIxTime}
-              isLoading={isLoadingCountry}
-            />
+          <div className={`grid gap-6 lg:gap-8 transition-all duration-300 mt-6 ${infoboxExpanded ? 'lg:grid-cols-[1fr_320px]' : 'lg:grid-cols-[1fr_400px]'}`}>
+            <div className="space-y-6 lg:space-y-8">
+              <TabsContent value="overview" className="mt-0 space-y-6">
+                {/* Time Control */}
+                <TimeControl
+                  onTimeChange={handleTimeChange}
+                  onForecastChange={handleForecastChange}
+                  currentTime={currentIxTime}
+                  gameEpoch={timeContext.gameEpoch}
+                  isLoading={isLoadingCountry || isLoadingHistorical || isLoadingForecast}
+                />
 
-            {/* Enhanced Chart System */}
-            {chartData && (
-              <IxStatsCharts
-                data={chartData}
-                selectedChartType={selectedChartType}
-                onChartTypeChangeAction={handleChartChange}
-                selectedTimeRange={selectedTimeRange}
-                onTimeRangeChangeAction={handleTimeRangeChange}
-                customStartTime={customStartTime}
-                customEndTime={customEndTime}
-                onCustomTimeChangeAction={handleCustomTimeChange}
-                isLoading={isLoadingHistorical}
-                showForecast={showForecast}
-                onForecastToggleAction={setShowForecast}
+                {/* Country At-a-Glance */}
+                <CountryAtGlance
+                  country={transformedCountry}
+                  currentIxTime={currentIxTime}
+                  isLoading={isLoadingCountry}
+                />
+
+                {/* Economic Summary Widget */}
+                {economicSummaryData && (
+                  <EconomicSummaryWidget
+                    countryName={transformedCountry.name}
+                    data={economicSummaryData}
+                    compactMode={false}
+                    showDetails={true}
+                    onViewDetails={() => setActiveTab('economics')}
+                    isEditable={true}
+                  />
+                )}
+              </TabsContent>
+
+              <TabsContent value="statistics" className="mt-0 space-y-6">
+                {/* Enhanced Chart System */}
+                {chartData && (
+                  <IxStatsCharts
+                    data={chartData}
+                    selectedChartType={selectedChartType}
+                    onChartTypeChangeAction={handleChartChange}
+                    selectedTimeRange={selectedTimeRange}
+                    onTimeRangeChangeAction={handleTimeRangeChange}
+                    customStartTime={customStartTime}
+                    customEndTime={customEndTime}
+                    onCustomTimeChangeAction={handleCustomTimeChange}
+                    isLoading={isLoadingHistorical}
+                    showForecast={showForecast}
+                    onForecastToggleAction={setShowForecast}
+                  />
+                )}
+              </TabsContent>
+
+              <TabsContent value="economics" className="mt-0 space-y-6">
+                {/* Economic Data Display - Full Interface */}
+                <EconomicDataDisplay
+                  countryId={countryId}
+                  countryName={transformedCountry.name}
+                  isEditable={true}
+                  mode="full"
+                  showTabs={true}
+                  defaultTab="core"
+                />
+              </TabsContent>
+
+              <TabsContent value="history" className="mt-0 space-y-6">
+                {/* Historical Analysis and DM Inputs */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Building className="h-5 w-5" />
+                      Historical Analysis & Events
+                    </CardTitle>
+                    <CardDescription>
+                      Track economic changes over time and review DM inputs
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Building className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <h3 className="text-lg font-medium mb-2">Historical Analysis</h3>
+                      <p>Comprehensive historical tracking and event analysis</p>
+                      <p className="text-sm mt-2">Coming soon...</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </div>
+            
+            <aside className="lg:sticky lg:top-20 self-start">
+              <CountryInfobox
+                countryName={transformedCountry.name}
+                onToggle={handleInfoboxToggle}
+                initialExpanded={infoboxExpanded}
               />
-            )}
+            </aside>
           </div>
-          
-          <aside className="lg:sticky lg:top-20 self-start">
-            <CountryInfobox
-              countryName={transformedCountry.name}
-              onToggle={handleInfoboxToggle}
-              initialExpanded={infoboxExpanded}
-            />
-          </aside>
-        </div>
+        </Tabs>
       </div>
     </div>
   );
