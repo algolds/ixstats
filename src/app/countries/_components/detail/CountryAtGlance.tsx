@@ -1,4 +1,6 @@
 // src/app/countries/_components/detail/CountryAtGlance.tsx
+// FIXED: Proper growth rate formatting and tier handling
+
 "use client";
 
 import { useMemo } from "react";
@@ -35,8 +37,10 @@ import {
 import {
   formatPopulation,
   formatCurrency,
-  formatGdpGrowthRate,
-  formatPopulationGrowthRate,
+  formatGrowthRateFromDecimal,
+  displayGrowthRate,
+  getGrowthIcon,
+  getGrowthColor,
 } from "~/lib/chart-utils";
 
 interface CountryAtGlanceData {
@@ -52,9 +56,9 @@ interface CountryAtGlanceData {
   currentPopulation: number;
   currentGdpPerCapita: number;
   currentTotalGdp: number;
-  populationGrowthRate: number;
-  adjustedGdpGrowth: number;
-  maxGdpGrowthRate: number;
+  populationGrowthRate: number; // In decimal form (0.01 for 1%)
+  adjustedGdpGrowth: number; // In decimal form (0.005 for 0.5%)
+  maxGdpGrowthRate: number; // In decimal form (0.05 for 5%)
   populationDensity?: number | null;
   gdpDensity?: number | null;
   economicTier: string;
@@ -76,27 +80,27 @@ export function CountryAtGlance({
   isLoading = false,
 }: CountryAtGlanceProps) {
   const formatted = useMemo(() => {
-    // Icons for growth arrows
-    const getGrowthIcon = (rate: number) => {
-      if (rate > 0.1) return <ArrowUp className="h-3 w-3 text-green-600" />;
-      if (rate < -0.1) return <ArrowDown className="h-3 w-3 text-red-600" />;
+    // FIXED: Icons for growth arrows based on decimal values
+    const getGrowthIconComponent = (rate: number) => {
+      const icon = getGrowthIcon(rate);
+      if (icon === "up") return <ArrowUp className="h-3 w-3 text-green-600" />;
+      if (icon === "down") return <ArrowDown className="h-3 w-3 text-red-600" />;
       return <Minus className="h-3 w-3 text-gray-500" />;
     };
-    // Color classes for growth text
-    const getGrowthColor = (rate: number) => {
-      if (rate > 0.1) return "text-green-600";
-      if (rate < -0.1) return "text-red-600";
-      return "text-gray-500";
-    };
-    // Badge variant per economic tier
+
+    // FIXED: Badge variant per economic tier (updated tiers)
     const getTierBadgeVariant = (tier: string) => {
       switch (tier.toLowerCase()) {
-        case "advanced":
+        case "extravagant":
+        case "very strong":
           return "default";
-        case "developed":
+        case "strong":
+        case "healthy":
           return "secondary";
-        default:
+        case "developed":
           return "outline";
+        default:
+          return "destructive";
       }
     };
 
@@ -104,10 +108,12 @@ export function CountryAtGlance({
       population: formatPopulation(country.currentPopulation),
       gdpPerCapita: formatCurrency(country.currentGdpPerCapita),
       totalGdp: formatCurrency(country.currentTotalGdp),
-      // FIXED: Use the correct formatting functions for growth rates
-      // These growth rates come from Excel as percentages already
-      populationGrowth: formatPopulationGrowthRate(country.populationGrowthRate),
-      gdpGrowth: formatGdpGrowthRate(country.adjustedGdpGrowth),
+      
+      // FIXED: Use proper decimal-to-percentage formatting
+      populationGrowth: displayGrowthRate(country.populationGrowthRate),
+      gdpGrowth: displayGrowthRate(country.adjustedGdpGrowth),
+      maxGdpGrowth: displayGrowthRate(country.maxGdpGrowthRate),
+      
       populationDensity:
         country.populationDensity != null
           ? `${country.populationDensity.toFixed(1)}/km²`
@@ -124,8 +130,8 @@ export function CountryAtGlance({
         country.areaSqMi != null
           ? `${country.areaSqMi.toLocaleString()} sq mi`
           : "N/A",
-      getGrowthIcon,
-      getGrowthColor,
+      getGrowthIconComponent,
+      getGrowthColorClass: getGrowthColor,
       getTierBadgeVariant,
     };
   }, [country]);
@@ -181,7 +187,7 @@ export function CountryAtGlance({
               <Badge variant={formatted.getTierBadgeVariant(country.economicTier)}>
                 {country.economicTier}
               </Badge>
-              <Badge variant="outline">{country.populationTier}</Badge>
+              <Badge variant="outline">Tier {country.populationTier}</Badge>
             </div>
           </CardTitle>
         </CardHeader>
@@ -257,14 +263,14 @@ export function CountryAtGlance({
                       <p className="text-xs text-muted-foreground">
                         GDP per Capita
                       </p>
-                      {formatted.getGrowthIcon(country.adjustedGdpGrowth)}
+                      {formatted.getGrowthIconComponent(country.adjustedGdpGrowth)}
                     </div>
                     <p className="text-lg font-semibold">
                       {formatted.gdpPerCapita}
                     </p>
                     <p
                       className={`text-xs ${
-                        formatted.getGrowthColor(country.adjustedGdpGrowth)
+                        formatted.getGrowthColorClass(country.adjustedGdpGrowth)
                       }`}
                     >
                       {formatted.gdpGrowth} annually
@@ -273,8 +279,10 @@ export function CountryAtGlance({
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>
-                    Current GDP per capita, capped at max rate{" "}
-                    {formatGdpGrowthRate(country.maxGdpGrowthRate)}
+                    Current GDP per capita, growth capped at max rate {formatted.maxGdpGrowth}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Economic Tier: {country.economicTier}
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -294,7 +302,10 @@ export function CountryAtGlance({
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Gross domestic product (total output)</p>
+                  <p>Gross domestic product (total economic output)</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Population × GDP per Capita
+                  </p>
                 </TooltipContent>
               </Tooltip>
 
@@ -313,12 +324,12 @@ export function CountryAtGlance({
                         {formatted.gdpDensity}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        per km²
+                        economic output per km²
                       </p>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>GDP per square kilometer</p>
+                    <p>GDP per square kilometer of land area</p>
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -340,14 +351,14 @@ export function CountryAtGlance({
                   <div className="p-3 bg-muted/50 rounded-lg">
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-xs text-muted-foreground">Population</p>
-                      {formatted.getGrowthIcon(country.populationGrowthRate)}
+                      {formatted.getGrowthIconComponent(country.populationGrowthRate)}
                     </div>
                     <p className="text-lg font-semibold">
                       {formatted.population}
                     </p>
                     <p
                       className={`text-xs ${
-                        formatted.getGrowthColor(country.populationGrowthRate)
+                        formatted.getGrowthColorClass(country.populationGrowthRate)
                       }`}
                     >
                       {formatted.populationGrowth} annually
@@ -356,6 +367,9 @@ export function CountryAtGlance({
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Current population and annual growth rate</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Population Tier: {country.populationTier}
+                  </p>
                 </TooltipContent>
               </Tooltip>
 
@@ -379,7 +393,7 @@ export function CountryAtGlance({
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Population per square kilometer</p>
+                    <p>Population per square kilometer of land area</p>
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -402,10 +416,61 @@ export function CountryAtGlance({
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Country land area in km² and sq mi</p>
+                    <p>Total land area in metric and imperial units</p>
                   </TooltipContent>
                 </Tooltip>
               )}
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Growth Factors & Modifiers */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-semibold text-muted-foreground flex items-center">
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Growth Factors
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-xs text-muted-foreground">Max GDP Growth</p>
+                      <BarChart3 className="h-3 w-3 text-muted-foreground" />
+                    </div>
+                    <p className="text-lg font-semibold">
+                      {formatted.maxGdpGrowth}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      tier-based cap
+                    </p>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Maximum allowed GDP growth rate for {country.economicTier} economies</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-xs text-muted-foreground">Local Factor</p>
+                      <Activity className="h-3 w-3 text-muted-foreground" />
+                    </div>
+                    <p className="text-lg font-semibold">
+                      {country.localGrowthFactor.toFixed(2)}×
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      growth modifier
+                    </p>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Local growth factor affecting economic development</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
 
@@ -422,7 +487,7 @@ export function CountryAtGlance({
               {timeInfo.yearsSinceBaseline !== 0 && (
                 <span className="ml-1">
                   ({timeInfo.yearsSinceBaseline > 0 ? "+" : ""}
-                  {timeInfo.yearsSinceBaseline.toFixed(1)}y)
+                  {timeInfo.yearsSinceBaseline.toFixed(1)}y from baseline)
                 </span>
               )}
             </div>

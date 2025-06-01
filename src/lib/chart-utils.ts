@@ -1,6 +1,5 @@
 // src/lib/chart-utils.ts
-// Enhanced chart utilities with robust number formatting and safety checks
-// FIXED: GDP percentage formatting issues
+// FIXED: Consistent percentage and number formatting
 
 /**
  * Safely format a number as population with appropriate scale
@@ -10,12 +9,10 @@ export function formatPopulation(value: number | null | undefined): string {
     return "N/A";
   }
 
-  // Handle extreme values that might cause scientific notation
   if (value < 0) {
     return "0";
   }
 
-  // Cap extremely large values to prevent overflow display issues
   if (value > 1e15) {
     return "> 1,000T";
   }
@@ -37,19 +34,16 @@ export function formatPopulation(value: number | null | undefined): string {
 
 /**
  * Safely format a number as currency with appropriate scale
- * FIXED: Handle potential currency symbols from Excel parsing
  */
 export function formatCurrency(value: number | null | undefined): string {
   if (value == null || !isFinite(value) || isNaN(value)) {
     return "N/A";
   }
 
-  // Handle extreme values that might cause scientific notation
   if (value < 0) {
     return "$0";
   }
 
-  // Cap extremely large values to prevent overflow display issues
   if (value > 1e15) {
     return "> $1,000T";
   }
@@ -73,23 +67,20 @@ export function formatCurrency(value: number | null | undefined): string {
 }
 
 /**
- * Safely format a percentage value
- * FIXED: Properly handle percentage conversion and already-percentage values
- * @param value The number to format
+ * FIXED: Format growth rates from decimal to percentage
+ * @param value The decimal growth rate (e.g., 0.005 for 0.5%)
  * @param decimals Number of decimal places to show
- * @param isAlreadyPercentage If true, assumes value is already in percentage form (not decimal)
  */
-export function formatPercentage(
+export function formatGrowthRateFromDecimal(
   value: number | null | undefined, 
-  decimals: number = 2,
-  isAlreadyPercentage: boolean = false
+  decimals: number = 2
 ): string {
   if (value == null || !isFinite(value) || isNaN(value)) {
     return "N/A";
   }
 
-  // FIXED: Apply percentage conversion only if needed
-  const percentValue = isAlreadyPercentage ? value : value * 100;
+  // Convert decimal to percentage (0.005 → 0.5%)
+  const percentValue = value * 100;
   
   // Cap extreme percentage values
   const cappedValue = Math.min(Math.max(percentValue, -999), 9999);
@@ -98,24 +89,42 @@ export function formatPercentage(
 }
 
 /**
- * FIXED: New function specifically for GDP growth rates
- * Handles GDP growth rates that come from Excel as percentages
+ * FIXED: Format GDP growth rates specifically
+ * Assumes input is in decimal form (0.005 for 0.5%)
  */
 export function formatGdpGrowthRate(value: number | null | undefined): string {
-  return formatPercentage(value, 2, true); // Already in percentage form
+  return formatGrowthRateFromDecimal(value, 2);
 }
 
 /**
- * FIXED: New function specifically for population growth rates
- * Handles population growth rates that come from Excel as percentages
+ * FIXED: Format population growth rates specifically  
+ * Assumes input is in decimal form (0.01 for 1%)
  */
 export function formatPopulationGrowthRate(value: number | null | undefined): string {
-  return formatPercentage(value, 2, true); // Already in percentage form
+  return formatGrowthRateFromDecimal(value, 2);
 }
 
 /**
- * FIXED: Parse numeric value from potentially formatted Excel data
- * Removes currency symbols, percentage signs, commas, etc.
+ * Legacy percentage formatter - assumes value is already in percentage form
+ * @param value The number to format (already as percentage, e.g., 0.5 for 0.5%)
+ * @param decimals Number of decimal places to show
+ */
+export function formatPercentage(
+  value: number | null | undefined, 
+  decimals: number = 2
+): string {
+  if (value == null || !isFinite(value) || isNaN(value)) {
+    return "N/A";
+  }
+
+  // Value is already in percentage form
+  const cappedValue = Math.min(Math.max(value, -999), 9999);
+  
+  return `${cappedValue.toFixed(decimals)}%`;
+}
+
+/**
+ * Parse numeric value from potentially formatted Excel data
  */
 export function parseExcelNumber(value: any): number | null {
   if (typeof value === 'number') {
@@ -133,21 +142,30 @@ export function parseExcelNumber(value: any): number | null {
 }
 
 /**
- * FIXED: Parse percentage value from Excel (could be decimal or percentage)
- * Excel sometimes exports percentages as decimals (0.05) or as percentages (5%)
+ * Parse percentage value from Excel (handles both decimal and percentage formats)
  */
 export function parseExcelPercentage(value: any): number | null {
-  const cleaned = parseExcelNumber(value);
-  if (cleaned === null) return null;
-  
-  // If the value is very small (< 1), it's likely a decimal representation
-  // If it's larger, it's likely already a percentage
-  // This is a heuristic based on typical growth rates
-  if (Math.abs(cleaned) < 1) {
-    return cleaned * 100; // Convert decimal to percentage
-  } else {
-    return cleaned; // Already a percentage
+  if (typeof value === 'number') {
+    return isFinite(value) ? value : null;
   }
+  
+  if (typeof value === 'string') {
+    const hasPercent = value.includes('%');
+    const cleaned = value.replace(/[%$,\s]/g, '');
+    const parsed = parseFloat(cleaned);
+    
+    if (!isFinite(parsed)) return null;
+    
+    if (hasPercent) {
+      // Convert percentage to decimal (50% → 0.5)
+      return parsed / 100;
+    } else {
+      // Assume it's already decimal or determine by magnitude
+      return parsed > 1 ? parsed / 100 : parsed;
+    }
+  }
+  
+  return null;
 }
 
 /**
@@ -162,7 +180,6 @@ export function formatDensity(value: number | null | undefined, unit: string = "
     return `0${unit}`;
   }
 
-  // Cap extremely large density values
   if (value > 1e12) {
     return `> 1T${unit}`;
   }
@@ -192,7 +209,6 @@ export function formatNumber(value: number | null | undefined, decimals: number 
     return "N/A";
   }
 
-  // Cap extremely large values
   if (value > 1e15) {
     return "> 1,000,000,000,000,000";
   }
@@ -204,8 +220,8 @@ export function formatNumber(value: number | null | undefined, decimals: number 
 }
 
 /**
- * FIXED: Format growth rate as a percentage with color coding info
- * Assumes input is already in percentage form
+ * FIXED: Format growth rate with color coding info
+ * Assumes input is in decimal form (0.005 for 0.5%)
  */
 export function formatGrowthRate(value: number | null | undefined): {
   formatted: string;
@@ -220,16 +236,17 @@ export function formatGrowthRate(value: number | null | undefined): {
     };
   }
 
-  // FIXED: Input is already in percentage form
-  const formatted = `${value.toFixed(2)}%`;
+  // Convert decimal to percentage for display
+  const percentValue = value * 100;
+  const formatted = `${percentValue.toFixed(2)}%`;
 
-  if (value > 0.1) {
+  if (percentValue > 0.1) {
     return {
       formatted,
       color: "text-green-600",
       icon: "up"
     };
-  } else if (value < -0.1) {
+  } else if (percentValue < -0.1) {
     return {
       formatted,
       color: "text-red-600",
@@ -275,7 +292,6 @@ export function formatLargeNumber(value: number | null | undefined): string {
     return "0";
   }
 
-  // Cap extremely large values
   if (value > 1e15) {
     return "> 1,000T";
   }
@@ -296,7 +312,7 @@ export function formatLargeNumber(value: number | null | undefined): string {
 }
 
 /**
- * Validate if a number is reasonable for display (not infinite, not NaN, not extremely large)
+ * Validate if a number is reasonable for display
  */
 export function isValidDisplayNumber(value: any): value is number {
   return typeof value === 'number' && 
@@ -308,7 +324,6 @@ export function isValidDisplayNumber(value: any): value is number {
 
 /**
  * Safe number conversion with fallback
- * FIXED: Handle Excel-formatted numbers with currency/percentage symbols
  */
 export function safeNumber(value: any, fallback: number = 0): number {
   if (typeof value === 'number' && isValidDisplayNumber(value)) {
@@ -344,4 +359,50 @@ export function formatChartNumber(value: number): string {
   } else {
     return value.toFixed(0);
   }
+}
+
+/**
+ * FIXED: Format decimal growth rate as percentage for display
+ * This is the main function components should use for growth rate display
+ */
+export function displayGrowthRate(decimalValue: number | null | undefined): string {
+  if (decimalValue == null || !isFinite(decimalValue) || isNaN(decimalValue)) {
+    return "N/A";
+  }
+  
+  // Convert from decimal (0.005) to percentage (0.5%)
+  const percentage = decimalValue * 100;
+  return `${percentage.toFixed(2)}%`;
+}
+
+/**
+ * FIXED: Get growth icon based on decimal value
+ */
+export function getGrowthIcon(decimalValue: number | null | undefined): "up" | "down" | "neutral" {
+  if (decimalValue == null || !isFinite(decimalValue) || isNaN(decimalValue)) {
+    return "neutral";
+  }
+  
+  // Convert to percentage for threshold comparison
+  const percentage = decimalValue * 100;
+  
+  if (percentage > 0.1) return "up";
+  if (percentage < -0.1) return "down";
+  return "neutral";
+}
+
+/**
+ * FIXED: Get growth color based on decimal value  
+ */
+export function getGrowthColor(decimalValue: number | null | undefined): string {
+  if (decimalValue == null || !isFinite(decimalValue) || isNaN(decimalValue)) {
+    return "text-muted-foreground";
+  }
+  
+  // Convert to percentage for threshold comparison  
+  const percentage = decimalValue * 100;
+  
+  if (percentage > 0.1) return "text-green-600";
+  if (percentage < -0.1) return "text-red-600";
+  return "text-gray-500";
 }

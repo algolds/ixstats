@@ -1,32 +1,51 @@
 // src/server/api/routers/countries.ts
+// FIXED: Updated tier classifications and proper economic configuration
+
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { IxStatsCalculator } from "~/lib/calculations";
-import type { EconomicConfig, BaseCountryData, CountryStats, EconomicTier, PopulationTier } from "~/types/ixstats";
+import type { EconomicConfig, BaseCountryData, CountryStats } from "~/types/ixstats";
 
-// Helper function to get the economic configuration
+// FIXED: Updated economic configuration to match user specifications
 const getEconomicConfig = (): EconomicConfig => ({
   globalGrowthFactor: 1.0,
   baseInflationRate: 0.02,
+  
+  // FIXED: Economic tier thresholds per user specifications
   economicTierThresholds: {
-    developing: 5000,
-    emerging: 15000,
-    developed: 35000,
-    advanced: 60000,
+    impoverished: 0,        // $0-$9,999
+    developing: 10000,      // $10,000-$24,999  
+    developed: 25000,       // $25,000-$34,999
+    healthy: 35000,         // $35,000-$44,999
+    strong: 45000,          // $45,000-$54,999
+    veryStrong: 55000,      // $55,000-$64,999
+    extravagant: 65000,     // $65,000+
   },
+  
+  // FIXED: Population tier thresholds per user specifications
   populationTierThresholds: {
-    micro: 1_000_000,
-    small: 5_000_000,
-    medium: 25_000_000,
-    large: 100_000_000,
+    tier1: 0,               // 0-9,999,999
+    tier2: 10_000_000,      // 10,000,000-29,999,999
+    tier3: 30_000_000,      // 30,000,000-49,999,999
+    tier4: 50_000_000,      // 50,000,000-79,999,999
+    tier5: 80_000_000,      // 80,000,000-119,999,999
+    tier6: 120_000_000,     // 120,000,000-349,999,999
+    tier7: 350_000_000,     // 350,000,000-499,999,999
+    tierX: 500_000_000,     // 500,000,000+
   },
+  
+  // FIXED: Growth rate modifiers per tier (max growth rates from user specs)
   tierGrowthModifiers: {
-    Developing: 1.2,
-    Emerging: 1.1,
-    Developed: 1.0,
-    Advanced: 0.9,
+    "Impoverished": 1.0,    // 10% max
+    "Developing": 1.0,      // 7.50% max  
+    "Developed": 1.0,       // 5% max
+    "Healthy": 1.0,         // 3.50% max
+    "Strong": 1.0,          // 2.75% max
+    "Very Strong": 1.0,     // 1.50% max
+    "Extravagant": 1.0,     // 0.50% max
   },
+  
   calculationIntervalMs: 60_000,
   ixTimeUpdateFrequency: 30_000,
 });
@@ -44,17 +63,17 @@ const prepareBaseCountryData = (country: any): BaseCountryData => ({
   landArea: country.landArea,
   areaSqMi: country.areaSqMi,
   maxGdpGrowthRate: country.maxGdpGrowthRate,
-  adjustedGdpGrowth: country.adjustedGdpGrowth, // Raw value from DB for calculator input
-  populationGrowthRate: country.populationGrowthRate, // Raw value from DB for calculator input
+  adjustedGdpGrowth: country.adjustedGdpGrowth,
+  populationGrowthRate: country.populationGrowthRate,
   projected2040Population: country.projected2040Population,
   projected2040Gdp: country.projected2040Gdp,
   projected2040GdpPerCapita: country.projected2040GdpPerCapita,
-  actualGdpGrowth: country.actualGdpGrowth, // Raw value from DB for calculator input
+  actualGdpGrowth: country.actualGdpGrowth,
   localGrowthFactor: country.localGrowthFactor,
 });
 
 export const countriesRouter = createTRPCRouter({
-  // 1) Get all countries with basic info + total count
+  // Get all countries with basic info + total count
   getAll: publicProcedure
     .input(
       z
@@ -98,7 +117,7 @@ export const countriesRouter = createTRPCRouter({
       return { countries, total };
     }),
 
-  // 2) Get country by ID at a specific IxTime
+  // Get country by ID at a specific IxTime
   getByIdAtTime: publicProcedure
     .input(
       z.object({
@@ -108,7 +127,7 @@ export const countriesRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       const targetTime = input.timestamp ?? IxTime.getCurrentIxTime();
-      const countryFromDb = await ctx.db.country.findUnique({ // Renamed to avoid confusion
+      const countryFromDb = await ctx.db.country.findUnique({
         where: { id: input.id },
         include: {
           dmInputs: {
@@ -127,10 +146,11 @@ export const countriesRouter = createTRPCRouter({
 
       let calculatedStats: CountryStats; 
 
+      // FIXED: Proper growth rate validation - values are already in decimal form
       const validateGrowthRate = (value: number | null | undefined): number => {
         const numValue = Number(value); 
         if (!isFinite(numValue) || isNaN(numValue)) return 0;
-        return Math.min(Math.max(numValue, -0.5), 0.5); 
+        return Math.min(Math.max(numValue, -0.5), 0.5); // ±50% max
       };
       
       const validateNumber = (value: number | null | undefined, max: number = 1e18, min: number = 0): number => {
@@ -140,6 +160,7 @@ export const countriesRouter = createTRPCRouter({
       };
 
       if (isCurrentTime) {
+        // Use current database values
         calculatedStats = {
           country: countryFromDb.name,
           continent: countryFromDb.continent,
@@ -152,14 +173,15 @@ export const countriesRouter = createTRPCRouter({
           landArea: countryFromDb.landArea,
           areaSqMi: countryFromDb.areaSqMi,
           maxGdpGrowthRate: countryFromDb.maxGdpGrowthRate, 
-          // This is the actual current GDP per capita growth rate, validated.
-          // Frontend should use this value and format as percentage (e.g., 0.05 -> 5.00%).
+          
+          // FIXED: Growth rates are stored as decimals and should be validated as such
           adjustedGdpGrowth: validateGrowthRate(countryFromDb.adjustedGdpGrowth), 
           populationGrowthRate: validateGrowthRate(countryFromDb.populationGrowthRate),
+          actualGdpGrowth: validateGrowthRate(countryFromDb.actualGdpGrowth), 
+          
           projected2040Population: countryFromDb.projected2040Population || 0,
           projected2040Gdp: countryFromDb.projected2040Gdp || 0,
           projected2040GdpPerCapita: countryFromDb.projected2040GdpPerCapita || 0,
-          actualGdpGrowth: validateGrowthRate(countryFromDb.actualGdpGrowth), 
           localGrowthFactor: countryFromDb.localGrowthFactor,
           id: countryFromDb.id,
           name: countryFromDb.name,
@@ -169,17 +191,18 @@ export const countriesRouter = createTRPCRouter({
           currentTotalGdp: countryFromDb.currentTotalGdp,
           lastCalculated: countryFromDb.lastCalculated.getTime(),
           baselineDate: countryFromDb.baselineDate.getTime(),
-          economicTier: countryFromDb.economicTier as EconomicTier,
-          populationTier: countryFromDb.populationTier as PopulationTier,
+          economicTier: countryFromDb.economicTier as any,
+          populationTier: countryFromDb.populationTier as any,
           populationDensity: countryFromDb.populationDensity,
           gdpDensity: countryFromDb.gdpDensity,
           globalGrowthFactor: getEconomicConfig().globalGrowthFactor, 
         };
       } else {
+        // Calculate for specific time
         const econCfg = getEconomicConfig();
         const baselineDate = countryFromDb.baselineDate.getTime();
         const calc = new IxStatsCalculator(econCfg, baselineDate);
-        const base = prepareBaseCountryData(countryFromDb); // Pass the DB object
+        const base = prepareBaseCountryData(countryFromDb);
         const initialStats = calc.initializeCountryStats(base);
 
         const dmInputs = countryFromDb.dmInputs.map((i) => ({
@@ -201,13 +224,11 @@ export const countriesRouter = createTRPCRouter({
             populationDensity: result.newStats.populationDensity ? validateNumber(result.newStats.populationDensity, 1e7) : null,
             gdpDensity: result.newStats.gdpDensity ? validateNumber(result.newStats.gdpDensity, 1e12) : null,
             populationGrowthRate: validateGrowthRate(result.newStats.populationGrowthRate),
-            // This is the actual current GDP per capita growth rate, validated.
-            // Frontend should use this value and format as percentage (e.g., 0.05 -> 5.00%).
             adjustedGdpGrowth: validateGrowthRate(result.newStats.adjustedGdpGrowth),
             actualGdpGrowth: validateGrowthRate(result.newStats.actualGdpGrowth), 
             country: result.newStats.country || base.country,
-            name: result.newStats.name || base.country, // Ensure name is consistent
-            id: countryFromDb.id, // Ensure ID is from the original DB object
+            name: result.newStats.name || base.country,
+            id: countryFromDb.id,
             continent: result.newStats.continent || base.continent,
             region: result.newStats.region || base.region,
             governmentType: result.newStats.governmentType || base.governmentType,
@@ -231,7 +252,7 @@ export const countriesRouter = createTRPCRouter({
         };
       }
 
-      // Return a structured object. Static fields at top level, all calculated/dynamic fields in `calculatedStats`.
+      // Return structured object with static and calculated fields separated
       return {
         id: countryFromDb.id,
         name: countryFromDb.name,
@@ -242,29 +263,31 @@ export const countriesRouter = createTRPCRouter({
         leader: countryFromDb.leader,
         areaSqMi: countryFromDb.areaSqMi,
         landArea: countryFromDb.landArea,
-        // Baseline fields that are static inputs to calculations
+        
+        // Baseline fields from roster
         baselinePopulation: countryFromDb.baselinePopulation,
         baselineGdpPerCapita: countryFromDb.baselineGdpPerCapita,
-        maxGdpGrowthRate: countryFromDb.maxGdpGrowthRate, // This is a baseline parameter/cap
-        localGrowthFactor: countryFromDb.localGrowthFactor, // Baseline parameter
-        // Projected fields from DB (can be considered static baselines for display)
+        maxGdpGrowthRate: countryFromDb.maxGdpGrowthRate,
+        localGrowthFactor: countryFromDb.localGrowthFactor,
+        
+        // Projected fields  
         projected2040Population: countryFromDb.projected2040Population,
         projected2040Gdp: countryFromDb.projected2040Gdp,
         projected2040GdpPerCapita: countryFromDb.projected2040GdpPerCapita,
+        
         // Timestamps
         createdAt: countryFromDb.createdAt,
         updatedAt: countryFromDb.updatedAt,
-        baselineDate: countryFromDb.baselineDate, // Original baseline date from DB
-        lastCalculated: countryFromDb.lastCalculated, // Original lastCalculated from DB
+        baselineDate: countryFromDb.baselineDate,
+        lastCalculated: countryFromDb.lastCalculated,
 
-        // All currently calculated or validated dynamic statistics are in this object.
-        // The frontend should primarily use fields from `calculatedStats` for display of current values.
+        // All dynamic/calculated statistics
         calculatedStats, 
         dmInputs: countryFromDb.dmInputs.map(dm => ({...dm, ixTimeTimestamp: dm.ixTimeTimestamp.getTime()})),
       };
     }),
 
-  // 3) Get historical data points for a country
+  // Get historical data points for a country
   getHistoricalAtTime: publicProcedure
     .input(
       z.object({
@@ -276,6 +299,7 @@ export const countriesRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
+      // Check for existing historical data first
       const existing = await ctx.db.historicalDataPoint.findMany({
         where: {
           countryId: input.id,
@@ -287,6 +311,7 @@ export const countriesRouter = createTRPCRouter({
         orderBy: { ixTimeTimestamp: "asc" },
         take: input.limit,
       });
+      
       if (existing.length >= input.limit || (existing.length > 10 && input.limit > 50)) { 
         return existing.map((p) => ({
           ...p,
@@ -302,6 +327,7 @@ export const countriesRouter = createTRPCRouter({
         }));
       }
 
+      // Generate historical data if not enough exists
       const country = await ctx.db.country.findUnique({
         where: { id: input.id },
         include: {
@@ -355,7 +381,7 @@ export const countriesRouter = createTRPCRouter({
       return dataPoints;
     }),
 
-  // 4) Get forecast data
+  // Get forecast data
   getForecast: publicProcedure
     .input(
       z.object({
@@ -406,11 +432,10 @@ export const countriesRouter = createTRPCRouter({
       for (let i = 0; i <= input.points; i++) { 
         let forecastTime = input.startTime + (i * intervalMs);
         
-        if (i === input.points) { // For the last point, ensure it's exactly endTime or capped if overshot
+        if (i === input.points) {
             forecastTime = Math.min(forecastTime, input.endTime);
         }
-        if (forecastTime > input.endTime && i < input.points) break; // Don't calculate beyond endTime for intermediate points
-
+        if (forecastTime > input.endTime && i < input.points) break;
 
         const res = calc.calculateTimeProgression(
           baselineStats,
@@ -429,7 +454,7 @@ export const countriesRouter = createTRPCRouter({
           economicTier: res.newStats.economicTier,
           populationTier: res.newStats.populationTier,
         });
-         if (forecastTime >= input.endTime && i <= input.points) break; // Ensure we capture the point at endTime
+         if (forecastTime >= input.endTime && i <= input.points) break;
       }
       return {
         countryId: input.id,
@@ -440,7 +465,7 @@ export const countriesRouter = createTRPCRouter({
       };
     }),
 
-  // 5) Compare multiple countries at one time
+  // Compare multiple countries at one time
   getMultipleAtTime: publicProcedure
     .input(
       z.object({
@@ -489,9 +514,9 @@ export const countriesRouter = createTRPCRouter({
         );
         
         const calculatedCountryStats: CountryStats = {
-            ...res.newStats, // Spread first
-            id: country.id, // Ensure original ID is used
-            name: res.newStats.name || base.country, // Fallback for name
+            ...res.newStats,
+            id: country.id,
+            name: res.newStats.name || base.country,
             currentPopulation: validateNumber(res.newStats.currentPopulation, 1e11),
             currentGdpPerCapita: validateNumber(res.newStats.currentGdpPerCapita, 1e7, 1),
             currentTotalGdp: validateNumber(res.newStats.currentTotalGdp, 1e18, 1),
@@ -522,13 +547,10 @@ export const countriesRouter = createTRPCRouter({
         };
 
         results.push({
-          // Static fields from DB
           id: country.id,
           name: country.name,
           continent: country.continent,
           region: country.region,
-          // ... other necessary static fields from country object
-          // Dynamic/Calculated fields
           calculatedStats: calculatedCountryStats,
           dmInputs: country.dmInputs.map(dm => ({...dm, ixTimeTimestamp: dm.ixTimeTimestamp.getTime()})),
         });
@@ -536,7 +558,7 @@ export const countriesRouter = createTRPCRouter({
       return results;
     }),
 
-  // 6) Global statistics
+  // Global statistics
   getGlobalStats: publicProcedure
     .input(
       z
@@ -593,7 +615,7 @@ export const countriesRouter = createTRPCRouter({
       };
     }),
 
-  // 7) Update stats for one or all countries
+  // Update stats for one or all countries  
   updateStats: publicProcedure
     .input(z.object({ countryId: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
@@ -652,6 +674,7 @@ export const countriesRouter = createTRPCRouter({
         return updated;
       }
 
+      // Update all countries
       const all = await ctx.db.country.findMany({
         include: { dmInputs: { where: { isActive: true }, orderBy: {ixTimeTimestamp: "desc"} } }, 
       });
