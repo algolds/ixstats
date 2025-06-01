@@ -1,311 +1,289 @@
 // src/lib/chart-utils.ts
-// Utility functions for chart data processing and formatting
+// Enhanced chart utilities with robust number formatting and safety checks
 
-import { IxTime } from "./ixtime";
-
-// Chart color palettes
-export const CHART_COLORS = {
-  primary: [
-    "#8b5cf6", "#06b6d4", "#84cc16", "#f97316", 
-    "#ec4899", "#14b8a6", "#f59e0b", "#ef4444"
-  ],
-  economic: {
-    Advanced: "#22c55e",    // Green
-    Developed: "#3b82f6",   // Blue  
-    Emerging: "#f59e0b",    // Orange
-    Developing: "#ef4444",  // Red
-  },
-  population: {
-    Massive: "#7c3aed",     // Purple
-    Large: "#2563eb",       // Blue
-    Medium: "#059669",      // Green
-    Small: "#d97706",       // Orange
-    Micro: "#dc2626",       // Red
-  }
-};
-
-// Data formatting utilities
-export class ChartDataFormatter {
-  static formatPopulation(value: number): string {
-    if (value >= 1000000000) return `${(value / 1000000000).toFixed(1)}B`;
-    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
-    if (value >= 1000) return `${(value / 1000).toFixed(0)}K`;
-    return value.toLocaleString();
+/**
+ * Safely format a number as population with appropriate scale
+ */
+export function formatPopulation(value: number | null | undefined): string {
+  if (value == null || !isFinite(value) || isNaN(value)) {
+    return "N/A";
   }
 
-  static formatCurrency(value: number): string {
-    if (value >= 1000000000000) return `$${(value / 1000000000000).toFixed(1)}T`;
-    if (value >= 1000000000) return `$${(value / 1000000000).toFixed(1)}B`;
-    if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
-    if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
-    return `$${value.toLocaleString()}`;
+  // Handle extreme values that might cause scientific notation
+  if (value < 0) {
+    return "0";
   }
 
-  static formatPercentage(value: number, decimals: number = 2): string {
-    return `${(value * 100).toFixed(decimals)}%`;
+  // Cap extremely large values to prevent overflow display issues
+  if (value > 1e15) {
+    return "> 1,000T";
   }
 
-  static formatDensity(value: number, unit: string = "km²"): string {
-    if (value >= 1000) return `${(value / 1000).toFixed(1)}K/${unit}`;
-    return `${value.toFixed(1)}/${unit}`;
-  }
+  const absValue = Math.abs(value);
 
-  static formatGrowthRate(value: number): string {
-    const percentage = value * 100;
-    const sign = percentage >= 0 ? "+" : "";
-    return `${sign}${percentage.toFixed(2)}%`;
-  }
-
-  static formatArea(value: number): string {
-    return `${value.toLocaleString()} km²`;
-  }
-
-  static formatGameYear(ixTime: number): string {
-    return `Year ${IxTime.getCurrentGameYear(ixTime)}`;
-  }
-
-  static formatIxTimeShort(ixTime: number): string {
-    const date = new Date(ixTime);
-    return date.toLocaleDateString();
+  if (absValue >= 1e12) {
+    return `${(value / 1e12).toFixed(1)}T`;
+  } else if (absValue >= 1e9) {
+    return `${(value / 1e9).toFixed(1)}B`;
+  } else if (absValue >= 1e6) {
+    return `${(value / 1e6).toFixed(1)}M`;
+  } else if (absValue >= 1e3) {
+    return `${(value / 1e3).toFixed(1)}K`;
+  } else {
+    return value.toLocaleString(undefined, { maximumFractionDigits: 0 });
   }
 }
 
-// Chart data processing utilities
-export class ChartDataProcessor {
-  // Smooth data for better visualization
-  static smoothData(data: Array<{ixTimeTimestamp: number, [key: string]: any}>, windowSize: number = 3): typeof data {
-    if (data.length <= windowSize) return data;
-    
-    const smoothed = [...data];
-    const numericKeys = this.getNumericKeys(data[0] || {});
-    
-    for (let i = Math.floor(windowSize / 2); i < data.length - Math.floor(windowSize / 2); i++) {
-      const window = data.slice(i - Math.floor(windowSize / 2), i + Math.floor(windowSize / 2) + 1);
-      
-      numericKeys.forEach(key => {
-        const values = window.map(point => point[key]).filter(val => typeof val === 'number');
-        if (values.length > 0) {
-          smoothed[i] = {
-            ...smoothed[i]!,
-            [key]: values.reduce((sum, val) => sum + val, 0) / values.length
-          };
-        }
-      });
-    }
-    
-    return smoothed;
+/**
+ * Safely format a number as currency with appropriate scale
+ */
+export function formatCurrency(value: number | null | undefined): string {
+  if (value == null || !isFinite(value) || isNaN(value)) {
+    return "N/A";
   }
 
-  // Resample data to specific intervals
-  static resampleData(
-    data: Array<{ixTimeTimestamp: number, [key: string]: any}>, 
-    targetPoints: number
-  ): typeof data {
-    if (data.length <= targetPoints) return data;
-    
-    const sortedData = [...data].sort((a, b) => a.ixTimeTimestamp - b.ixTimeTimestamp);
-    const step = Math.floor(sortedData.length / targetPoints);
-    
-    return sortedData.filter((_, index) => index % step === 0);
+  // Handle extreme values that might cause scientific notation
+  if (value < 0) {
+    return "$0";
   }
 
-  // Calculate moving averages
-  static addMovingAverage(
-    data: Array<{[key: string]: any}>, 
-    field: string, 
-    window: number = 5,
-    outputField?: string
-  ): typeof data {
-    const result = [...data];
-    const output = outputField || `${field}MA`;
-    
-    for (let i = 0; i < result.length; i++) {
-      const start = Math.max(0, i - window + 1);
-      const values = result.slice(start, i + 1)
-        .map(point => point[field])
-        .filter(val => typeof val === 'number');
-      
-      if (values.length > 0) {
-        result[i] = {
-          ...result[i],
-          [output]: values.reduce((sum, val) => sum + val, 0) / values.length
-        };
-      }
-    }
-    
-    return result;
+  // Cap extremely large values to prevent overflow display issues
+  if (value > 1e15) {
+    return "> $1,000T";
   }
 
-  // Calculate growth rates
-  static addGrowthRates(
-    data: Array<{ixTimeTimestamp: number, [key: string]: any}>, 
-    field: string,
-    outputField?: string
-  ): typeof data {
-    const result = [...data];
-    const output = outputField || `${field}Growth`;
-    
-    for (let i = 1; i < result.length; i++) {
-      const current = result[i]![field];
-      const previous = result[i-1]![field];
-      
-      if (typeof current === 'number' && typeof previous === 'number' && previous !== 0) {
-        const timeSpan = IxTime.getYearsElapsed(result[i-1]!.ixTimeTimestamp, result[i]!.ixTimeTimestamp);
-        const growthRate = timeSpan > 0 ? Math.pow(current / previous, 1 / timeSpan) - 1 : 0;
-        
-        result[i] = {
-          ...result[i]!,
-          [output]: growthRate
-        };
-      }
-    }
-    
-    return result;
-  }
+  const absValue = Math.abs(value);
 
-  // Normalize data for comparison
-  static normalizeData(
-    data: Array<{[key: string]: any}>, 
-    fields: string[],
-    method: 'minmax' | 'zscore' = 'minmax'
-  ): typeof data {
-    const result = [...data];
-    
-    fields.forEach(field => {
-      const values = data.map(point => point[field]).filter(val => typeof val === 'number');
-      
-      if (values.length === 0) return;
-      
-      if (method === 'minmax') {
-        const min = Math.min(...values);
-        const max = Math.max(...values);
-        const range = max - min;
-        
-        if (range > 0) {
-          result.forEach((point, index) => {
-            if (typeof point[field] === 'number') {
-              result[index] = {
-                ...result[index],
-                [`${field}Normalized`]: (point[field] - min) / range
-              };
-            }
-          });
-        }
-      } else if (method === 'zscore') {
-        const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
-        const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
-        const stdDev = Math.sqrt(variance);
-        
-        if (stdDev > 0) {
-          result.forEach((point, index) => {
-            if (typeof point[field] === 'number') {
-              result[index] = {
-                ...result[index],
-                [`${field}Normalized`]: (point[field] - mean) / stdDev
-              };
-            }
-          });
-        }
-      }
-    });
-    
-    return result;
-  }
-
-  // Get numeric keys from data object
-  private static getNumericKeys(obj: Record<string, any>): string[] {
-    return Object.keys(obj).filter(key => 
-      key !== 'ixTimeTimestamp' && 
-      key !== 'formattedDate' && 
-      key !== 'gameYear' &&
-      typeof obj[key] === 'number'
-    );
-  }
-
-  // Calculate correlation between two data series
-  static calculateCorrelation(
-    data: Array<{[key: string]: any}>, 
-    field1: string, 
-    field2: string
-  ): number {
-    const pairs = data
-      .map(point => [point[field1], point[field2]])
-      .filter(([x, y]) => typeof x === 'number' && typeof y === 'number') as [number, number][];
-    
-    if (pairs.length < 2) return 0;
-    
-    const n = pairs.length;
-    const sumX = pairs.reduce((sum, [x]) => sum + x, 0);
-    const sumY = pairs.reduce((sum, [, y]) => sum + y, 0);
-    const sumXY = pairs.reduce((sum, [x, y]) => sum + x * y, 0);
-    const sumX2 = pairs.reduce((sum, [x]) => sum + x * x, 0);
-    const sumY2 = pairs.reduce((sum, [, y]) => sum + y * y, 0);
-    
-    const numerator = n * sumXY - sumX * sumY;
-    const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
-    
-    return denominator === 0 ? 0 : numerator / denominator;
-  }
-
-  // Generate trend line data
-  static generateTrendLine(
-    data: Array<{ixTimeTimestamp: number, [key: string]: any}>, 
-    field: string
-  ): Array<{ixTimeTimestamp: number, trend: number}> {
-    const points = data
-      .map((point, index) => [index, point[field]])
-      .filter(([, y]) => typeof y === 'number') as [number, number][];
-    
-    if (points.length < 2) return [];
-    
-    // Simple linear regression
-    const n = points.length;
-    const sumX = points.reduce((sum, [x]) => sum + x, 0);
-    const sumY = points.reduce((sum, [, y]) => sum + y, 0);
-    const sumXY = points.reduce((sum, [x, y]) => sum + x * y, 0);
-    const sumX2 = points.reduce((sum, [x]) => sum + x * x, 0);
-    
-    const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-    const intercept = (sumY - slope * sumX) / n;
-    
-    return data.map((point, index) => ({
-      ixTimeTimestamp: point.ixTimeTimestamp,
-      trend: slope * index + intercept
-    }));
+  if (absValue >= 1e12) {
+    return `$${(value / 1e12).toFixed(1)}T`;
+  } else if (absValue >= 1e9) {
+    return `$${(value / 1e9).toFixed(1)}B`;
+  } else if (absValue >= 1e6) {
+    return `$${(value / 1e6).toFixed(1)}M`;
+  } else if (absValue >= 1e3) {
+    return `$${(value / 1e3).toFixed(1)}K`;
+  } else {
+    return `$${value.toLocaleString(undefined, { 
+      minimumFractionDigits: 0, 
+      maximumFractionDigits: 0 
+    })}`;
   }
 }
 
-// Chart theme utilities
-export class ChartThemeUtils {
-  static getThemeColors(theme: 'light' | 'dark') {
+/**
+ * Safely format a percentage value
+ * @param value The number to format
+ * @param decimals Number of decimal places to show
+ * @param isAlreadyPercentage If true, assumes value is already in percentage form (not decimal)
+ */
+export function formatPercentage(
+  value: number | null | undefined, 
+  decimals: number = 2,
+  isAlreadyPercentage: boolean = false
+): string {
+  if (value == null || !isFinite(value) || isNaN(value)) {
+    return "N/A";
+  }
+
+  // Apply percentage conversion only if needed
+  const percentValue = isAlreadyPercentage ? value : value ;
+  
+  // Cap extreme percentage values
+  const cappedValue = Math.min(Math.max(percentValue, -999), 9999);
+  
+  return `${cappedValue.toFixed(decimals)}%`;
+}
+
+/**
+ * Format a density value (population or economic per km²)
+ */
+export function formatDensity(value: number | null | undefined, unit: string = "/km²"): string {
+  if (value == null || !isFinite(value) || isNaN(value)) {
+    return "N/A";
+  }
+
+  if (value < 0) {
+    return `0${unit}`;
+  }
+
+  // Cap extremely large density values
+  if (value > 1e12) {
+    return `> 1T${unit}`;
+  }
+
+  const absValue = Math.abs(value);
+
+  if (absValue >= 1e9) {
+    return `${(value / 1e9).toFixed(1)}B${unit}`;
+  } else if (absValue >= 1e6) {
+    return `${(value / 1e6).toFixed(1)}M${unit}`;
+  } else if (absValue >= 1e3) {
+    return `${(value / 1e3).toFixed(1)}K${unit}`;
+  } else if (absValue >= 1) {
+    return `${value.toFixed(1)}${unit}`;
+  } else if (absValue >= 0.01) {
+    return `${value.toFixed(2)}${unit}`;
+  } else {
+    return `< 0.01${unit}`;
+  }
+}
+
+/**
+ * Format a raw number without currency or scale indicators
+ */
+export function formatNumber(value: number | null | undefined, decimals: number = 0): string {
+  if (value == null || !isFinite(value) || isNaN(value)) {
+    return "N/A";
+  }
+
+  // Cap extremely large values
+  if (value > 1e15) {
+    return "> 1,000,000,000,000,000";
+  }
+
+  return value.toLocaleString(undefined, { 
+    minimumFractionDigits: decimals, 
+    maximumFractionDigits: decimals 
+  });
+}
+
+/**
+ * Format growth rate as a percentage with color coding info
+ */
+export function formatGrowthRate(value: number | null | undefined): {
+  formatted: string;
+  color: string;
+  icon: "up" | "down" | "neutral";
+} {
+  if (value == null || !isFinite(value) || isNaN(value)) {
     return {
-      grid: theme === 'dark' ? '#374151' : '#e5e7eb',
-      text: theme === 'dark' ? '#9ca3af' : '#6b7280',
-      axis: theme === 'dark' ? '#6b7280' : '#9ca3af',
-      background: theme === 'dark' ? '#1f2937' : '#ffffff',
-      tooltip: {
-        backgroundColor: theme === 'dark' ? '#1f2937' : '#ffffff',
-        border: `1px solid ${theme === 'dark' ? '#374151' : '#e5e7eb'}`,
-        color: theme === 'dark' ? '#f9fafb' : '#111827',
-      },
+      formatted: "N/A",
+      color: "text-muted-foreground",
+      icon: "neutral"
     };
   }
 
-  static getResponsiveMargin(width: number) {
-    if (width < 400) return { top: 5, right: 5, left: 10, bottom: 5 };
-    if (width < 800) return { top: 10, right: 15, left: 20, bottom: 10 };
-    return { top: 20, right: 30, left: 20, bottom: 20 };
-  }
+  const percentage = value;
+  const formatted = `${percentage.toFixed(2)}%`;
 
-  static getFontSize(width: number) {
-    if (width < 400) return 10;
-    if (width < 800) return 12;
-    return 14;
+  if (percentage > 0.1) {
+    return {
+      formatted,
+      color: "text-green-600",
+      icon: "up"
+    };
+  } else if (percentage < -0.1) {
+    return {
+      formatted,
+      color: "text-red-600",
+      icon: "down"
+    };
+  } else {
+    return {
+      formatted,
+      color: "text-gray-500",
+      icon: "neutral"
+    };
   }
 }
 
-// Export utility functions
-export const formatPopulation = ChartDataFormatter.formatPopulation;
-export const formatCurrency = ChartDataFormatter.formatCurrency;
-export const formatPercentage = ChartDataFormatter.formatPercentage;
-export const formatGrowthRate = ChartDataFormatter.formatGrowthRate;
+/**
+ * Format time duration in a human-readable way
+ */
+export function formatDuration(seconds: number): string {
+  if (!isFinite(seconds) || isNaN(seconds) || seconds < 0) {
+    return "N/A";
+  }
+
+  if (seconds < 60) {
+    return `${seconds.toFixed(1)}s`;
+  } else if (seconds < 3600) {
+    return `${(seconds / 60).toFixed(1)}m`;
+  } else if (seconds < 86400) {
+    return `${(seconds / 3600).toFixed(1)}h`;
+  } else {
+    return `${(seconds / 86400).toFixed(1)}d`;
+  }
+}
+
+/**
+ * Format a large number with automatic scale detection
+ */
+export function formatLargeNumber(value: number | null | undefined): string {
+  if (value == null || !isFinite(value) || isNaN(value)) {
+    return "N/A";
+  }
+
+  if (value < 0) {
+    return "0";
+  }
+
+  // Cap extremely large values
+  if (value > 1e15) {
+    return "> 1,000T";
+  }
+
+  const absValue = Math.abs(value);
+
+  if (absValue >= 1e12) {
+    return `${(value / 1e12).toFixed(2)}T`;
+  } else if (absValue >= 1e9) {
+    return `${(value / 1e9).toFixed(2)}B`;
+  } else if (absValue >= 1e6) {
+    return `${(value / 1e6).toFixed(2)}M`;
+  } else if (absValue >= 1e3) {
+    return `${(value / 1e3).toFixed(2)}K`;
+  } else {
+    return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+}
+
+/**
+ * Validate if a number is reasonable for display (not infinite, not NaN, not extremely large)
+ */
+export function isValidDisplayNumber(value: any): value is number {
+  return typeof value === 'number' && 
+         isFinite(value) && 
+         !isNaN(value) && 
+         value >= 0 && 
+         value < 1e15;
+}
+
+/**
+ * Safe number conversion with fallback
+ */
+export function safeNumber(value: any, fallback: number = 0): number {
+  if (typeof value === 'number' && isValidDisplayNumber(value)) {
+    return value;
+  }
+  
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value);
+    if (isValidDisplayNumber(parsed)) {
+      return parsed;
+    }
+  }
+  
+  return fallback;
+}
+
+/**
+ * Chart-friendly number formatter that ensures clean axis labels
+ */
+export function formatChartNumber(value: number): string {
+  if (!isValidDisplayNumber(value)) {
+    return "0";
+  }
+
+  const absValue = Math.abs(value);
+
+  if (absValue >= 1e9) {
+    return `${(value / 1e9).toFixed(0)}B`;
+  } else if (absValue >= 1e6) {
+    return `${(value / 1e6).toFixed(0)}M`;
+  } else if (absValue >= 1e3) {
+    return `${(value / 1e3).toFixed(0)}K`;
+  } else {
+    return value.toFixed(0);
+  }
+}

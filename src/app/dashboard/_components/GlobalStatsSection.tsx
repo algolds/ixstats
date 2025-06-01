@@ -25,24 +25,54 @@ interface GlobalStatsSectionProps {
   isLoading?: boolean;
 }
 
+// Helper function to safely format numbers - same approach as countries page
+const safeFormatPopulation = (num: number | null | undefined): string => {
+  if (num == null || !isFinite(num) || isNaN(num)) {
+    return "N/A";
+  }
+  return formatPopulation(num);
+};
+
+const safeFormatCurrency = (num: number | null | undefined): string => {
+  if (num == null || !isFinite(num) || isNaN(num)) {
+    return "N/A";
+  }
+  return formatCurrency(num);
+};
+
+const safeFormatDensity = (num: number | null | undefined, unit: string): string => {
+  if (num == null || !isFinite(num) || isNaN(num)) {
+    return "N/A";
+  }
+  if (num < 0.01) {
+    return "< 0.01" + unit;
+  }
+  return `${num.toFixed(1)}${unit}`;
+};
+
 export function GlobalStatsSection({
   globalStats,
   isLoading = false,
 }: GlobalStatsSectionProps) {
-  // Process and format data with useMemo to match CountryAtGlance approach
+  // Process and format data with useMemo - using safe formatting functions
   const formattedData = useMemo(() => {
+    // Add safety checks for all numeric values
+    const safePopulation = globalStats.totalPopulation || 0;
+    const safeGdp = globalStats.totalGdp || 0;
+    const safeAvgGdpPc = globalStats.averageGdpPerCapita || 0;
+    const safeCountryCount = globalStats.countryCount || 0;
+    const safeAvgPopDensity = globalStats.averagePopulationDensity;
+    const safeAvgGdpDensity = globalStats.averageGdpDensity;
+    const safeGrowthRate = globalStats.globalGrowthRate || 0;
+
     return {
-      totalPopulation: formatPopulation(globalStats.totalPopulation),
-      totalGdp: formatCurrency(globalStats.totalGdp),
-      averageGdpPerCapita: formatCurrency(globalStats.averageGdpPerCapita),
-      countryCount: globalStats.countryCount.toLocaleString(),
-      globalGrowthRate: formatPercentage(globalStats.globalGrowthRate || 0),
-      averagePopulationDensity: globalStats.averagePopulationDensity != null 
-        ? `${globalStats.averagePopulationDensity.toFixed(1)}/km²` 
-        : "N/A",
-      averageGdpDensity: globalStats.averageGdpDensity != null 
-        ? `${formatCurrency(globalStats.averageGdpDensity)}/km²` 
-        : "N/A",
+      totalPopulation: safeFormatPopulation(safePopulation),
+      totalGdp: safeFormatCurrency(safeGdp),
+      averageGdpPerCapita: safeFormatCurrency(safeAvgGdpPc),
+      countryCount: safeCountryCount.toLocaleString(),
+      globalGrowthRate: formatPercentage(safeGrowthRate),
+      averagePopulationDensity: safeFormatDensity(safeAvgPopDensity, "/km²"),
+      averageGdpDensity: safeFormatDensity(safeAvgGdpDensity, "/km²") + " GDP",
       lastUpdated: globalStats.timestamp 
         ? IxTime.formatIxTime(globalStats.timestamp, true)
         : IxTime.formatIxTime(IxTime.getCurrentIxTime(), true)
