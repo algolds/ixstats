@@ -30,6 +30,7 @@ export enum DmInputType {
 
 // Base country data from Excel roster (reduced field set)
 export interface BaseCountryData {
+  localGrowthFactor: number;
   country: string; // From Excel "Country"
   continent?: string | null; // From Excel "Continent"
   region?: string | null; // From Excel "Region"
