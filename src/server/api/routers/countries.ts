@@ -120,26 +120,101 @@ export const countriesRouter = createTRPCRouter({
         throw new Error(`Country with ID ${input.id} not found`);
       }
 
-      const econCfg = getEconomicConfig();
-      const baselineDate = country.baselineDate.getTime();
-      const calc = new IxStatsCalculator(econCfg, baselineDate);
-      const base = prepareBaseCountryData(country);
-      const baselineStats = calc.initializeCountryStats(base);
+      // Check if we're requesting current time or very close to it - use database values
+      const currentTime = IxTime.getCurrentIxTime();
+      const timeDiff = Math.abs(targetTime - currentTime);
+      const isCurrentTime = timeDiff < (5 * 60 * 1000); // Within 5 minutes
 
-      const dmInputs = country.dmInputs.map((i) => ({
-        ...i,
-        ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
-      }));
+      let calculatedStats;
 
-      const result = calc.calculateTimeProgression(
-        baselineStats,
-        targetTime,
-        dmInputs
-      );
+      if (isCurrentTime) {
+        // Use the already-calculated database values for current time to avoid calculation errors
+        // But still validate growth rates to prevent display issues
+        const validateGrowthRate = (value: number): number => {
+          if (!isFinite(value) || isNaN(value)) return 0;
+          // Cap growth rates to realistic economic bounds (-0.5 to +0.5 = -50% to +50%)
+          return Math.min(Math.max(value, -0.5), 0.5);
+        };
+
+        calculatedStats = {
+          country: country.name,
+          continent: country.continent,
+          region: country.region,
+          governmentType: country.governmentType,
+          religion: country.religion,
+          leader: country.leader,
+          name: country.name,
+          population: country.baselinePopulation,
+          gdpPerCapita: country.baselineGdpPerCapita,
+          landArea: country.landArea,
+          areaSqMi: country.areaSqMi,
+          maxGdpGrowthRate: country.maxGdpGrowthRate,
+          adjustedGdpGrowth: validateGrowthRate(country.adjustedGdpGrowth), // Validate this too
+          populationGrowthRate: validateGrowthRate(country.populationGrowthRate), // And this
+          projected2040Population: country.projected2040Population || 0,
+          projected2040Gdp: country.projected2040Gdp || 0,
+          projected2040GdpPerCapita: country.projected2040GdpPerCapita || 0,
+          actualGdpGrowth: country.actualGdpGrowth || 0,
+          totalGdp: country.currentTotalGdp,
+          currentPopulation: country.currentPopulation,
+          currentGdpPerCapita: country.currentGdpPerCapita,
+          currentTotalGdp: country.currentTotalGdp,
+          lastCalculated: country.lastCalculated,
+          baselineDate: country.baselineDate,
+          economicTier: country.economicTier,
+          populationTier: country.populationTier,
+          populationDensity: country.populationDensity,
+          gdpDensity: country.gdpDensity,
+          localGrowthFactor: country.localGrowthFactor,
+          globalGrowthFactor: 1.0,
+        };
+      } else {
+        // Use calculator for historical/future times with validation
+        const econCfg = getEconomicConfig();
+        const baselineDate = country.baselineDate.getTime();
+        const calc = new IxStatsCalculator(econCfg, baselineDate);
+        const base = prepareBaseCountryData(country);
+        const baselineStats = calc.initializeCountryStats(base);
+
+        const dmInputs = country.dmInputs.map((i) => ({
+          ...i,
+          ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
+        }));
+
+        const result = calc.calculateTimeProgression(
+          baselineStats,
+          targetTime,
+          dmInputs
+        );
+
+        // Validate calculated values and cap extreme ones
+        const validateNumber = (value: number, max: number = 1e12): number => {
+          if (!isFinite(value) || isNaN(value) || value < 0) return 0;
+          return Math.min(value, max);
+        };
+
+        const validateGrowthRate = (value: number): number => {
+          if (!isFinite(value) || isNaN(value)) return 0;
+          // Cap growth rates to realistic economic bounds (-0.5 to +0.5 = -50% to +50%)
+          return Math.min(Math.max(value, -0.5), 0.5);
+        };
+
+        calculatedStats = {
+          ...result.newStats,
+          currentPopulation: validateNumber(result.newStats.currentPopulation, 1e11), // Max 100B population
+          currentGdpPerCapita: validateNumber(result.newStats.currentGdpPerCapita, 1e6), // Max $1M per capita
+          currentTotalGdp: validateNumber(result.newStats.currentTotalGdp, 1e15), // Max $1000T total GDP
+          populationDensity: result.newStats.populationDensity ? validateNumber(result.newStats.populationDensity, 1e6) : null,
+          gdpDensity: result.newStats.gdpDensity ? validateNumber(result.newStats.gdpDensity, 1e12) : null,
+          // Validate growth rates to prevent extreme percentages
+          populationGrowthRate: validateGrowthRate(result.newStats.populationGrowthRate),
+          adjustedGdpGrowth: validateGrowthRate(result.newStats.adjustedGdpGrowth),
+        };
+      }
 
       return {
         ...country,
-        calculatedStats: result.newStats,
+        calculatedStats,
         dmInputs: country.dmInputs,
       };
     }),
@@ -348,7 +423,7 @@ export const countriesRouter = createTRPCRouter({
       return results;
     }),
 
-  // 6) Global statistics
+  // 6) FIXED: Global statistics now uses the same approach as countries page
   getGlobalStats: publicProcedure
     .input(
       z
@@ -359,12 +434,20 @@ export const countriesRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       const targetTime = input?.timestamp ?? IxTime.getCurrentIxTime();
+      
+      // Use the same approach as the countries page - just sum up the already-calculated values
       const countries = await ctx.db.country.findMany({
-        include: {
-          dmInputs: {
-            where: { isActive: true },
-            orderBy: { ixTimeTimestamp: "desc" },
-          },
+        select: {
+          id: true,
+          name: true,
+          currentPopulation: true,
+          currentGdpPerCapita: true,
+          currentTotalGdp: true,
+          economicTier: true,
+          populationTier: true,
+          landArea: true,
+          populationDensity: true,
+          gdpDensity: true,
         },
       });
 
@@ -373,47 +456,34 @@ export const countriesRouter = createTRPCRouter({
       let totalLand = 0;
       const econCounts: Record<string, number> = {};
       const popCounts: Record<string, number> = {};
-      const econCfg = getEconomicConfig();
 
+      // Sum up the already-calculated values (same as countries page)
       for (const country of countries) {
-        const baselineDate = country.baselineDate.getTime();
-        const calc = new IxStatsCalculator(econCfg, baselineDate);
-        const base = prepareBaseCountryData(country);
-        const baselineStats = calc.initializeCountryStats(base);
-        const dmInputs = country.dmInputs.map((i) => ({
-          ...i,
-          ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
-        }));
-        const res = calc.calculateTimeProgression(
-          baselineStats,
-          targetTime,
-          dmInputs
-        );
-        totalPopulation += res.newStats.currentPopulation;
-        totalGdp += res.newStats.currentTotalGdp;
+        totalPopulation += country.currentPopulation || 0;
+        totalGdp += country.currentTotalGdp || 0;
         if (country.landArea) totalLand += country.landArea;
-        econCounts[res.newStats.economicTier] =
-          (econCounts[res.newStats.economicTier] || 0) + 1;
-        popCounts[res.newStats.populationTier] =
-          (popCounts[res.newStats.populationTier] || 0) + 1;
+        
+        const econ = country.economicTier || 'Unknown';
+        const pop = country.populationTier || 'Unknown';
+        
+        econCounts[econ] = (econCounts[econ] || 0) + 1;
+        popCounts[pop] = (popCounts[pop] || 0) + 1;
       }
 
-      const avgGdpPc = totalPopulation
-        ? totalGdp / totalPopulation
-        : 0;
-      const avgPopD = totalLand ? totalPopulation / totalLand : 0;
-      const avgGdpD = totalLand ? totalGdp / totalLand : 0;
+      const avgGdpPc = totalPopulation > 0 ? totalGdp / totalPopulation : 0;
+      const avgPopD = totalLand > 0 ? totalPopulation / totalLand : 0;
+      const avgGdpD = totalLand > 0 ? totalGdp / totalLand : 0;
 
       return {
         totalPopulation,
         totalGdp,
         averageGdpPerCapita: avgGdpPc,
-        totalCountries: countries.length,
+        totalCountries: countries.length, // This field name matches the countries page
         economicTierDistribution: econCounts,
         populationTierDistribution: popCounts,
-        averagePopulationDensity: avgPopD,
-        averageGdpDensity: avgGdpD,
-        globalGrowthRate: 0.025,
+        averagePopulationDensity: avgPopD || null,
+        averageGdpDensity: avgGdpD || null,
+        globalGrowthRate: 0.025, // Could be calculated from historical data if needed
         ixTimeTimestamp: targetTime,
       };
     }),

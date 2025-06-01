@@ -53,20 +53,29 @@ export default function Dashboard() {
     void refetchGlobalStats();
   };
 
- // In Dashboard.tsx, update the adaptedGlobalStats section
-const adaptedGlobalStats = globalStatsData
-? {
-    ...globalStatsData,
-    countryCount: globalStatsData.totalCountries,
-    timestamp: IxTime.getCurrentIxTime(), // Add timestamp for formatting
-  }
-: undefined;
-
+  // FIXED: Properly adapt global stats to match the interface and ensure number consistency
+  const adaptedGlobalStats = globalStatsData
+    ? {
+        totalPopulation: globalStatsData.totalPopulation,
+        totalGdp: globalStatsData.totalGdp,
+        averageGdpPerCapita: globalStatsData.averageGdpPerCapita,
+        countryCount: globalStatsData.totalCountries, // Map totalCountries to countryCount
+        economicTierDistribution: globalStatsData.economicTierDistribution,
+        populationTierDistribution: globalStatsData.populationTierDistribution,
+        averagePopulationDensity: globalStatsData.averagePopulationDensity || 0, // Convert null to 0
+        averageGdpDensity: globalStatsData.averageGdpDensity || 0, // Convert null to 0
+        globalGrowthRate: globalStatsData.globalGrowthRate,
+        timestamp: globalStatsData.ixTimeTimestamp, // Use the actual timestamp from API
+        ixTimeTimestamp: globalStatsData.ixTimeTimestamp,
+      }
+    : undefined;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <DashboardHeader
-    onRefreshAction={handleGlobalRefresh} isLoading={isLoading}  />
+        onRefreshAction={handleGlobalRefresh} 
+        isLoading={isLoading}  
+      />
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {adaptedGlobalStats && (
@@ -86,7 +95,7 @@ const adaptedGlobalStats = globalStatsData
           </div>
         ) : null}
 
-<CountriesSection onGlobalRefreshAction={handleGlobalRefresh} />
+        <CountriesSection onGlobalRefreshAction={handleGlobalRefresh} />
       </div>
     </div>
   );
