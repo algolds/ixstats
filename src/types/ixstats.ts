@@ -157,6 +157,7 @@ export interface IxStatsConfig {
 
 // Global economic snapshot
 export interface GlobalEconomicSnapshot {
+  timestamp: any;
   totalPopulation: number;
   totalGdp: number;
   averageGdpPerCapita: number;
