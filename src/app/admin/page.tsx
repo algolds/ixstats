@@ -1,512 +1,448 @@
 // src/app/admin/page.tsx
+// FIXED: Updated admin page to work with current system
+
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { api } from "~/trpc/react";
-import { IxTime } from "~/lib/ixtime";
-import { Settings } from "lucide-react";
-
-// Import all the components
-import {
-  ImportPreviewDialog,
+import { 
   StatusCards,
   BotStatusBanner,
   BotControlPanel,
   TimeControlPanel,
   EconomicControlPanel,
   ActionPanel,
+  CalculationLogs,
   DataImportSection,
-  WarningPanel
+  WarningPanel,
+  ImportPreviewDialog,
 } from "./_components";
-
-// Import the CalculationLogs component
-import { CalculationLogs } from "./_components/CalculationLogs";
-
-// Import types with proper error handling
+import { api } from "~/trpc/react";
+import { IxTime } from "~/lib/ixtime";
+import { CONFIG_CONSTANTS } from "~/lib/config-service";
 import type { 
-  SystemConfig, 
-  CalculationLog, 
-  AdminPageBotStatusView, 
   SystemStatus, 
-  BaseCountryData, 
-  ImportAnalysis 
+  AdminPageBotStatusView, 
+  ImportAnalysis,
+  BaseCountryData,
+  CalculationLog
 } from "~/types/ixstats";
+import { AdminErrorBoundary } from "./_components/ErrorBoundary";
 
-export default function AdminDashboard() {
-  // Local state
-  const [currentIxTime, setCurrentIxTime] = useState<string>("");
-  const [timeMultiplier, setTimeMultiplier] = useState(4);
-  const [customDate, setCustomDate] = useState("");
-  const [customTime, setCustomTime] = useState("");
-  const [globalGrowthFactor, setGlobalGrowthFactor] = useState(1.0321);
-  const [autoUpdate, setAutoUpdate] = useState(true);
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const [botSyncEnabled, setBotSyncEnabled] = useState(true);
+export default function AdminPage() {
+  // State management
+  const [config, setConfig] = useState({
+    globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR,
+    autoUpdate: true,
+    botSyncEnabled: true,
+    timeMultiplier: 4.0,
+  });
+  
+  const [timeState, setTimeState] = useState({
+    customDate: new Date().toISOString().split('T')[0] || "",
+    customTime: "12:00",
+  });
+  
+  const [importState, setImportState] = useState({
+    isUploading: false,
+    isAnalyzing: false,
+    analyzeError: null as string | null,
+    importError: null as string | null,
+    previewData: null as ImportAnalysis | null,
+    showPreview: false,
+  });
+  
+  const [actionState, setActionState] = useState({
+    calculationPending: false,
+    setTimePending: false,
+    savePending: false,
+    syncPending: false,
+    pausePending: false,
+    resumePending: false,
+    clearPending: false,
+    lastUpdate: null as Date | null,
+  });
 
-  // File upload state
-  const [isUploading, setIsUploading] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [showImportPreview, setShowImportPreview] = useState(false);
-  const [importChanges, setImportChanges] = useState<ImportAnalysis['changes']>([]);
-  const [pendingFileData, setPendingFileData] = useState<string>("");
-  const [pendingFileName, setPendingFileName] = useState<string | undefined>(undefined);
-  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
-  const [importError, setImportError] = useState<string | null>(null);
-
-  // Data queries with proper error handling
+  // TRPC Queries
   const { 
-    data: systemConfig, 
-    refetch: refetchConfig, 
-    isLoading: configLoading,
-    error: configError 
-  } = api.admin.getSystemConfig.useQuery(undefined, {
-    retry: 2,
-    retryDelay: 1000,
+    data: systemStatus, 
+    isLoading: statusLoading, 
+    refetch: refetchStatus 
+  } = api.admin.getSystemStatus.useQuery(undefined, {
+    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchOnWindowFocus: false,
   });
 
   const { 
-    data: calculationLogsData, 
-    refetch: refetchLogs, 
+    data: botStatus, 
+    isLoading: botStatusLoading,
+    refetch: refetchBotStatus 
+  } = api.admin.getBotStatus.useQuery(undefined, {
+    refetchInterval: 15000, // Refresh every 15 seconds
+    refetchOnWindowFocus: false,
+  });
+
+  const { 
+    data: configData, 
+    isLoading: configLoading,
+    refetch: refetchConfig 
+  } = api.admin.getConfig.useQuery();
+
+  const { 
+    data: calculationLogs, 
     isLoading: logsLoading,
     error: logsError 
-  } = api.admin.getCalculationLogs.useQuery(undefined, {
-    retry: 2,
-    retryDelay: 1000,
-  });
-  
-  const { 
-    data: systemStatusData, 
-    refetch: refetchStatus, 
-    isLoading: statusLoading,
-    error: statusError 
-  } = api.admin.getSystemStatus.useQuery(undefined, {
-    refetchInterval: 5000,
-    retry: 2,
-    retryDelay: 1000,
-  });
+  } = api.admin.getCalculationLogs.useQuery({ limit: 10 });
 
-  const { 
-    data: botStatusData, 
-    refetch: refetchBotStatus,
-    error: botStatusError 
-  } = api.admin.getBotStatus.useQuery(undefined, {
-    refetchInterval: 10000,
-    retry: 1,
-    retryDelay: 2000,
-  });
-  
-  // Type-safe data parsing with fallbacks
-  const botStatusView: AdminPageBotStatusView | undefined = (() => {
+  // TRPC Mutations
+  const saveConfigMutation = api.admin.saveConfig.useMutation();
+  const forceCalculationMutation = api.countries.updateStats.useMutation();
+  const setCustomTimeMutation = api.admin.setCustomTime.useMutation();
+  const analyzeImportMutation = api.admin.analyzeImport.useMutation();
+  const importDataMutation = api.admin.importRosterData.useMutation();
+
+  // Bot control mutations
+  const syncBotMutation = api.admin.syncBot.useMutation();
+  const pauseBotMutation = api.admin.pauseBot.useMutation();
+  const resumeBotMutation = api.admin.resumeBot.useMutation();
+  const clearBotOverridesMutation = api.admin.clearBotOverrides.useMutation();
+
+  // Load initial config
+  useEffect(() => {
+    if (configData) {
+      setConfig({
+        globalGrowthFactor: configData.globalGrowthFactor || CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR,
+        autoUpdate: configData.autoUpdate ?? true,
+        botSyncEnabled: configData.botSyncEnabled ?? true,
+        timeMultiplier: configData.timeMultiplier || 4.0,
+      });
+    }
+  }, [configData]);
+
+  // Handlers
+  const handleSaveConfig = useCallback(async () => {
+    setActionState(prev => ({ ...prev, savePending: true }));
     try {
-      return botStatusData ? (botStatusData as unknown as AdminPageBotStatusView) : undefined;
-    } catch {
-      return undefined;
-    }
-  })();
-
-  const systemStatusView: SystemStatus | undefined = (() => {
-    try {
-      return systemStatusData ? (systemStatusData as SystemStatus) : undefined;
-    } catch {
-      return undefined;
-    }
-  })();
-
-  const calculationLogs: CalculationLog[] | undefined = (() => {
-    try {
-      return calculationLogsData ? (calculationLogsData as CalculationLog[]) : undefined;
-    } catch {
-      return undefined;
-    }
-  })();
-
-  // Mutations with proper error handling
-  const updateConfigMutation = api.admin.updateSystemConfig.useMutation({
-    onSuccess: () => {
-      void refetchConfig();
-      setLastUpdate(new Date());
-    },
-    onError: (error) => {
-      console.error("Config update error:", error);
-      alert(`Configuration update failed: ${error.message}`);
-    },
-  });
-
-  const forceCalculationMutation = api.admin.forceCalculation.useMutation({
-    onSuccess: (data) => {
-      setLastUpdate(new Date());
-      void refetchLogs();
-      void refetchStatus();
-      alert(`Calculation complete: ${data?.updated || 0} countries updated in ${data?.executionTime || 0}ms using ${data?.message?.includes('bot') ? 'bot' : 'local'} time.`);
-    },
-    onError: (error) => {
-      console.error("Calculation error:", error);
-      alert(`Calculation error: ${error.message}`);
-    }
-  });
-
-  const setBotTimeMutation = api.admin.setBotTimeOverride.useMutation({
-    onSuccess: () => {
-      setLastUpdate(new Date());
-      void refetchStatus();
-      void refetchBotStatus();
-    },
-    onError: (error) => {
-      console.error("Bot time override error:", error);
-      alert(`Failed to set bot time: ${error.message}`);
-    },
-  });
-
-  const syncWithBotMutation = api.admin.syncWithBot.useMutation({
-    onSuccess: (data) => {
-      setLastUpdate(new Date());
-      void refetchStatus();
-      void refetchBotStatus();
-      alert(data?.success ? 'Successfully synced with Discord bot!' : `Sync failed: ${data?.message || 'Unknown error'}`);
-    },
-    onError: (error) => {
-      console.error("Bot sync error:", error);
-      alert(`Sync error: ${error.message}`);
-    }
-  });
-
-  const pauseBotMutation = api.admin.pauseBotTime.useMutation({
-    onSuccess: () => {
-      void refetchStatus();
-      void refetchBotStatus();
-    },
-    onError: (error) => {
-      console.error("Pause bot error:", error);
-      alert(`Failed to pause bot: ${error.message}`);
-    },
-  });
-
-  const resumeBotMutation = api.admin.resumeBotTime.useMutation({
-    onSuccess: () => {
-      void refetchStatus();
-      void refetchBotStatus();
-    },
-    onError: (error) => {
-      console.error("Resume bot error:", error);
-      alert(`Failed to resume bot: ${error.message}`);
-    },
-  });
-
-  const clearBotOverridesMutation = api.admin.clearBotOverrides.useMutation({
-    onSuccess: () => {
-      void refetchStatus();
-      void refetchBotStatus();
-    },
-    onError: (error) => {
-      console.error("Clear bot overrides error:", error);
-      alert(`Failed to clear bot overrides: ${error.message}`);
-    },
-  });
-
-  const analyzeImportMutation = api.countries.analyzeImport.useMutation({
-    onSuccess: (data) => {
-      setImportChanges((data.changes as ImportAnalysis['changes']) || []);
-      setShowImportPreview(true);
-      setIsAnalyzing(false);
-      setAnalyzeError(null);
-    },
-    onError: (error) => {
-      console.error("Import analysis error:", error);
-      setAnalyzeError(error.message);
-      setIsAnalyzing(false);
-    },
-  });
-
-  const importMutation = api.countries.importFromExcel.useMutation({
-    onSuccess: (data) => {
-      setIsUploading(false);
-      setShowImportPreview(false);
-      setPendingFileData("");
-      setPendingFileName(undefined);
-      setImportError(null);
-      
-      const message = (data?.imported || 0) > 0 
-        ? `Successfully imported ${data.imported} of ${data.totalInFile || 0} countries!`
-        : `No new countries imported. ${data?.totalInFile || 0} countries were analyzed.`;
-      alert(message);
-      
-      void refetchConfig(); 
-      void refetchStatus();
-    },
-    onError: (error) => {
-      console.error("Import error:", error);
-      setImportError(error.message);
-      setIsUploading(false);
-    },
-  });
-
-  // Time display update effect
-  const updateTimeDisplay = useCallback(() => {
-    try {
-      if (botStatusView?.formattedIxTime) { 
-        setCurrentIxTime(botStatusView.formattedIxTime);
-      } else if (systemStatusView?.ixTime?.formattedIxTime) { 
-        setCurrentIxTime(systemStatusView.ixTime.formattedIxTime);
-      } else {
-        setCurrentIxTime(IxTime.formatIxTime(IxTime.getCurrentIxTime(), true)); 
-      }
+      await saveConfigMutation.mutateAsync(config);
+      setActionState(prev => ({ ...prev, lastUpdate: new Date() }));
+      await refetchConfig();
     } catch (error) {
-      console.error("Error updating time display:", error);
-      setCurrentIxTime("Error");
+      console.error("Failed to save config:", error);
+    } finally {
+      setActionState(prev => ({ ...prev, savePending: false }));
     }
-  }, [botStatusView?.formattedIxTime, systemStatusView?.ixTime?.formattedIxTime]);
+  }, [config, saveConfigMutation, refetchConfig]);
 
-  useEffect(() => {
-    updateTimeDisplay();
-    const interval = setInterval(updateTimeDisplay, 1000);
-    return () => clearInterval(interval);
-  }, [updateTimeDisplay]);
-
-  // System config effect
-  useEffect(() => {
-    if (systemConfig && Array.isArray(systemConfig)) {
-      try {
-        const multiplierConfig = systemConfig.find(c => c.key === 'time_multiplier');
-        const growthConfig = systemConfig.find(c => c.key === 'global_growth_factor');
-        const autoUpdateConfig = systemConfig.find(c => c.key === 'auto_update');
-        const botSyncConfig = systemConfig.find(c => c.key === 'bot_sync_enabled');
-
-        if (multiplierConfig) setTimeMultiplier(parseFloat(multiplierConfig.value) || 4);
-        if (growthConfig) setGlobalGrowthFactor(parseFloat(growthConfig.value) || 1.0321);
-        if (autoUpdateConfig) setAutoUpdate(autoUpdateConfig.value === 'true');
-        if (botSyncConfig) setBotSyncEnabled(botSyncConfig.value === 'true');
-      } catch (error) {
-        console.error("Error parsing system config:", error);
-      }
-    }
-  }, [systemConfig]);
-
-  // Event handlers
-  const handleFileUpload = async (file: File) => {
-    setIsAnalyzing(true);
-    setAnalyzeError(null);
-    setPendingFileName(file.name); 
-    
+  const handleForceCalculation = useCallback(async () => {
+    setActionState(prev => ({ ...prev, calculationPending: true }));
     try {
+      await forceCalculationMutation.mutateAsync({});
+      await refetchStatus();
+    } catch (error) {
+      console.error("Failed to force calculation:", error);
+    } finally {
+      setActionState(prev => ({ ...prev, calculationPending: false }));
+    }
+  }, [forceCalculationMutation, refetchStatus]);
+
+  const handleSetCustomTime = useCallback(async () => {
+    if (!timeState.customDate || !timeState.customTime) return;
+    
+    setActionState(prev => ({ ...prev, setTimePending: true }));
+    try {
+      const ixTime = IxTime.createGameTime(
+        parseInt(timeState.customDate.split('-')[0]!),
+        parseInt(timeState.customDate.split('-')[1]!),
+        parseInt(timeState.customDate.split('-')[2]!),
+        parseInt(timeState.customTime.split(':')[0]!),
+        parseInt(timeState.customTime.split(':')[1]!)
+      );
+      
+      await setCustomTimeMutation.mutateAsync({ 
+        ixTime, 
+        multiplier: config.timeMultiplier 
+      });
+      await refetchStatus();
+      await refetchBotStatus();
+    } catch (error) {
+      console.error("Failed to set custom time:", error);
+    } finally {
+      setActionState(prev => ({ ...prev, setTimePending: false }));
+    }
+  }, [timeState, config.timeMultiplier, setCustomTimeMutation, refetchStatus, refetchBotStatus]);
+
+  const handleResetToRealTime = useCallback(async () => {
+    setActionState(prev => ({ ...prev, setTimePending: true }));
+    try {
+      await setCustomTimeMutation.mutateAsync({ 
+        ixTime: IxTime.getCurrentIxTime(),
+        multiplier: 4.0 
+      });
+      setConfig(prev => ({ ...prev, timeMultiplier: 4.0 }));
+      await refetchStatus();
+      await refetchBotStatus();
+    } catch (error) {
+      console.error("Failed to reset time:", error);
+    } finally {
+      setActionState(prev => ({ ...prev, setTimePending: false }));
+    }
+  }, [setCustomTimeMutation, refetchStatus, refetchBotStatus]);
+
+  // Bot control handlers
+  const handleSyncBot = useCallback(async () => {
+    setActionState(prev => ({ ...prev, syncPending: true }));
+    try {
+      await syncBotMutation.mutateAsync();
+      await refetchBotStatus();
+      await refetchStatus();
+    } catch (error) {
+      console.error("Failed to sync bot:", error);
+    } finally {
+      setActionState(prev => ({ ...prev, syncPending: false }));
+    }
+  }, [syncBotMutation, refetchBotStatus, refetchStatus]);
+
+  const handlePauseBot = useCallback(async () => {
+    setActionState(prev => ({ ...prev, pausePending: true }));
+    try {
+      await pauseBotMutation.mutateAsync();
+      await refetchBotStatus();
+    } catch (error) {
+      console.error("Failed to pause bot:", error);
+    } finally {
+      setActionState(prev => ({ ...prev, pausePending: false }));
+    }
+  }, [pauseBotMutation, refetchBotStatus]);
+
+  const handleResumeBot = useCallback(async () => {
+    setActionState(prev => ({ ...prev, resumePending: true }));
+    try {
+      await resumeBotMutation.mutateAsync();
+      await refetchBotStatus();
+    } catch (error) {
+      console.error("Failed to resume bot:", error);
+    } finally {
+      setActionState(prev => ({ ...prev, resumePending: false }));
+    }
+  }, [resumeBotMutation, refetchBotStatus]);
+
+  const handleClearOverrides = useCallback(async () => {
+    setActionState(prev => ({ ...prev, clearPending: true }));
+    try {
+      await clearBotOverridesMutation.mutateAsync();
+      await refetchBotStatus();
+    } catch (error) {
+      console.error("Failed to clear overrides:", error);
+    } finally {
+      setActionState(prev => ({ ...prev, clearPending: false }));
+    }
+  }, [clearBotOverridesMutation, refetchBotStatus]);
+
+  // Import handlers
+  const handleFileSelect = useCallback(async (file: File) => {
+    setImportState(prev => ({ 
+      ...prev, 
+      isAnalyzing: true, 
+      analyzeError: null, 
+      importError: null 
+    }));
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      // Convert file to ArrayBuffer for the mutation
       const arrayBuffer = await file.arrayBuffer();
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-      setPendingFileData(base64);
-      await analyzeImportMutation.mutateAsync({ fileData: base64, fileName: file.name }); 
+      
+      const analysis = await analyzeImportMutation.mutateAsync({
+        fileData: Array.from(new Uint8Array(arrayBuffer)),
+        fileName: file.name,
+      });
+      
+      setImportState(prev => ({ 
+        ...prev, 
+        previewData: analysis, 
+        showPreview: true 
+      }));
     } catch (error) {
-      console.error("File analysis error:", error);
-      setAnalyzeError(error instanceof Error ? error.message : 'Unknown error');
-      setIsAnalyzing(false);
+      setImportState(prev => ({ 
+        ...prev, 
+        analyzeError: error instanceof Error ? error.message : "Failed to analyze file" 
+      }));
+    } finally {
+      setImportState(prev => ({ ...prev, isAnalyzing: false }));
     }
-  };
+  }, [analyzeImportMutation]);
 
-  const handleConfirmImport = async (replaceExisting: boolean) => {
-    if (!pendingFileData) return;
-    setIsUploading(true);
-    setImportError(null);
+  const handleImportConfirm = useCallback(async (replaceExisting: boolean) => {
+    if (!importState.previewData) return;
+    
+    setImportState(prev => ({ ...prev, isUploading: true, importError: null }));
     
     try {
-      await importMutation.mutateAsync({
-        fileData: pendingFileData,
-        fileName: pendingFileName, 
+      await importDataMutation.mutateAsync({
+        analysisId: importState.previewData.totalCountries.toString(), // Use a simple ID
         replaceExisting,
       });
+      
+      setImportState(prev => ({ 
+        ...prev, 
+        showPreview: false, 
+        previewData: null 
+      }));
+      
+      // Refresh status and trigger recalculation
+      await refetchStatus();
+      await handleForceCalculation();
     } catch (error) {
-      console.error("File import error:", error);
-      setImportError(error instanceof Error ? error.message : 'Unknown error');
-      setIsUploading(false);
+      setImportState(prev => ({ 
+        ...prev, 
+        importError: error instanceof Error ? error.message : "Failed to import data" 
+      }));
+    } finally {
+      setImportState(prev => ({ ...prev, isUploading: false }));
     }
-  };
+  }, [importState.previewData, importDataMutation, refetchStatus, handleForceCalculation]);
 
-  const handleClosePreview = () => {
-    setShowImportPreview(false);
-    setPendingFileData("");
-    setPendingFileName(undefined);
-    setImportChanges([]);
-    setAnalyzeError(null);
-    setImportError(null);
-  };
+  const handleImportClose = useCallback(() => {
+    setImportState(prev => ({ 
+      ...prev, 
+      showPreview: false, 
+      previewData: null,
+      analyzeError: null,
+      importError: null 
+    }));
+  }, []);
 
-  const handleSaveConfig = () => {
-    updateConfigMutation.mutate({
-      configs: [
-        { key: 'time_multiplier', value: timeMultiplier.toString() },
-        { key: 'global_growth_factor', value: globalGrowthFactor.toString() },
-        { key: 'auto_update', value: autoUpdate.toString() },
-        { key: 'bot_sync_enabled', value: botSyncEnabled.toString() },
-      ]
-    });
-  };
-
-  const handleSetCustomTime = () => {
-    if (customDate && customTime) {
-      try {
-        const [year, month, day] = customDate.split('-').map(Number);
-        const [hour, minute] = customTime.split(':').map(Number);
-        
-        if (!year || !month || !day || hour === undefined || minute === undefined) {
-          alert("Invalid date or time format");
-          return;
-        }
-        
-        const desiredIxTimeEpoch = IxTime.createGameTime(year, month, day, hour, minute);
-
-        if (botSyncEnabled && botStatusView?.botHealth?.available) {
-          setBotTimeMutation.mutate({ ixTime: desiredIxTimeEpoch, multiplier: timeMultiplier });
-        } else {
-          updateConfigMutation.mutate({
-            configs: [
-              { key: 'time_multiplier', value: '0' },
-            ]
-          });
-          alert("Bot not available or sync disabled. Time multiplier set to 0 (paused). Specific date override requires bot sync.");
-        }
-      } catch (error) {
-        console.error("Error setting custom time:", error);
-        alert("Failed to set custom time. Please check your date and time values.");
-      }
-    }
-  };
-
-  const handleResetToRealTime = () => {
-    if (botSyncEnabled && botStatusView?.botHealth?.available) {
-      clearBotOverridesMutation.mutate();
-    } else {
-      setTimeMultiplier(4);
-      updateConfigMutation.mutate({
-        configs: [
-          { key: 'time_multiplier', value: '4' },
-        ]
-      });
-    }
-  };
-
-  // Show error state if critical queries fail
-  if (configError || statusError) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
-            <h1 className="text-xl font-bold text-red-800 dark:text-red-200 mb-2">
-              Admin Dashboard Error
-            </h1>
-            <p className="text-red-700 dark:text-red-300">
-              Failed to load admin dashboard data. Please check your server configuration.
-            </p>
-            {configError && (
-              <p className="text-sm text-red-600 dark:text-red-400 mt-2">
-                Config Error: {configError.message}
-              </p>
-            )}
-            {statusError && (
-              <p className="text-sm text-red-600 dark:text-red-400 mt-2">
-                Status Error: {statusError.message}
-              </p>
-            )}
-            <button 
-              onClick={() => window.location.reload()} 
-              className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-            >
-              Reload Page
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleRefreshStatus = useCallback(async () => {
+    await Promise.all([
+      refetchStatus(),
+      refetchBotStatus(),
+      refetchConfig(),
+    ]);
+  }, [refetchStatus, refetchBotStatus, refetchConfig]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white">
-      <ImportPreviewDialog
-        isOpen={showImportPreview}
-        onClose={handleClosePreview}
-        onConfirm={handleConfirmImport}
-        changes={importChanges}
-        isLoading={isUploading}
-      />
+    <AdminErrorBoundary>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              IxStats Admin Dashboard
+            </h1>
+            <p className="mt-2 text-gray-600 dark:text-gray-300">
+              Manage system configuration, time settings, and data imports
+            </p>
+          </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
-            <Settings className="h-8 w-8 mr-3 text-indigo-600 dark:text-indigo-400" />
-            IxStats Admin Dashboard
-          </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Control IxTime flow, global economic factors, data imports, and system operations. Current IxTime: {currentIxTime}
-          </p>
+          {/* Bot Status Banner */}
+          <BotStatusBanner
+            botStatus={botStatus}
+            onSync={handleSyncBot}
+            onRefresh={handleRefreshStatus}
+            syncPending={actionState.syncPending}
+          />
+
+          {/* Status Cards */}
+          <StatusCards
+            systemStatus={systemStatus}
+            botStatus={botStatus}
+            statusLoading={statusLoading || botStatusLoading}
+            configLoading={configLoading}
+            globalGrowthFactor={config.globalGrowthFactor}
+          />
+
+          {/* Warning Panel */}
+          <WarningPanel systemStatus={systemStatus} />
+
+          {/* Control Panels */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            {/* Time Control */}
+            <TimeControlPanel
+              timeMultiplier={config.timeMultiplier}
+              customDate={timeState.customDate}
+              customTime={timeState.customTime}
+              botSyncEnabled={config.botSyncEnabled}
+              botStatus={botStatus}
+              onTimeMultiplierChange={(value) => 
+                setConfig(prev => ({ ...prev, timeMultiplier: value }))
+              }
+              onCustomDateChange={(value) => 
+                setTimeState(prev => ({ ...prev, customDate: value }))
+              }
+              onCustomTimeChange={(value) => 
+                setTimeState(prev => ({ ...prev, customTime: value }))
+              }
+              onSetCustomTime={handleSetCustomTime}
+              onResetToRealTime={handleResetToRealTime}
+              setTimePending={actionState.setTimePending}
+            />
+
+            {/* Economic Control */}
+            <EconomicControlPanel
+              globalGrowthFactor={config.globalGrowthFactor}
+              autoUpdate={config.autoUpdate}
+              botSyncEnabled={config.botSyncEnabled}
+              onGlobalGrowthFactorChange={(value) => 
+                setConfig(prev => ({ ...prev, globalGrowthFactor: value }))
+              }
+              onAutoUpdateChange={(value) => 
+                setConfig(prev => ({ ...prev, autoUpdate: value }))
+              }
+              onBotSyncEnabledChange={(value) => 
+                setConfig(prev => ({ ...prev, botSyncEnabled: value }))
+              }
+              onForceCalculation={handleForceCalculation}
+              calculationPending={actionState.calculationPending}
+            />
+          </div>
+
+          {/* Bot Control Panel */}
+          <BotControlPanel
+            botStatus={botStatus}
+            onPauseBot={handlePauseBot}
+            onResumeBot={handleResumeBot}
+            onClearOverrides={handleClearOverrides}
+            pausePending={actionState.pausePending}
+            resumePending={actionState.resumePending}
+            clearPending={actionState.clearPending}
+          />
+
+          {/* Data Import Section */}
+          <DataImportSection
+            onFileSelect={handleFileSelect}
+            isUploading={importState.isUploading}
+            isAnalyzing={importState.isAnalyzing}
+            analyzeError={importState.analyzeError}
+            importError={importState.importError}
+          />
+
+          {/* Action Panel */}
+          <ActionPanel
+            lastUpdate={actionState.lastUpdate}
+            onSaveConfig={handleSaveConfig}
+            savePending={actionState.savePending}
+          />
+
+          {/* Calculation Logs */}
+          <CalculationLogs
+            logs={calculationLogs}
+            isLoading={logsLoading}
+            error={logsError?.message}
+          />
+
+          {/* Import Preview Dialog */}
+          {importState.showPreview && importState.previewData && (
+            <ImportPreviewDialog
+              isOpen={importState.showPreview}
+              onClose={handleImportClose}
+              onConfirm={handleImportConfirm}
+              changes={importState.previewData.changes}
+              isLoading={importState.isUploading}
+            />
+          )}
         </div>
-
-        <BotStatusBanner
-          botStatus={botStatusView}
-          onSync={() => syncWithBotMutation.mutate()}
-          onRefresh={() => void refetchBotStatus()}
-          syncPending={syncWithBotMutation.isPending}
-        />
-
-        <StatusCards
-          systemStatus={systemStatusView}
-          botStatus={botStatusView}
-          statusLoading={statusLoading}
-          configLoading={configLoading}
-          globalGrowthFactor={globalGrowthFactor}
-        />
-
-        <DataImportSection
-          onFileSelect={handleFileUpload}
-          isUploading={isUploading}
-          isAnalyzing={isAnalyzing}
-          analyzeError={analyzeError}
-          importError={importError}
-        />
-
-        <BotControlPanel
-          botStatus={botStatusView}
-          onPauseBot={() => pauseBotMutation.mutate()}
-          onResumeBot={() => resumeBotMutation.mutate()}
-          onClearOverrides={() => clearBotOverridesMutation.mutate()}
-          pausePending={pauseBotMutation.isPending}
-          resumePending={resumeBotMutation.isPending}
-          clearPending={clearBotOverridesMutation.isPending}
-        />
-
-        <TimeControlPanel
-          timeMultiplier={timeMultiplier}
-          customDate={customDate}
-          customTime={customTime}
-          botSyncEnabled={botSyncEnabled}
-          botStatus={botStatusView}
-          onTimeMultiplierChange={setTimeMultiplier}
-          onCustomDateChange={setCustomDate}
-          onCustomTimeChange={setCustomTime}
-          onSetCustomTime={handleSetCustomTime}
-          onResetToRealTime={handleResetToRealTime}
-          setTimePending={setBotTimeMutation.isPending}
-        />
-
-        <EconomicControlPanel
-          globalGrowthFactor={globalGrowthFactor}
-          autoUpdate={autoUpdate}
-          botSyncEnabled={botSyncEnabled}
-          onGlobalGrowthFactorChange={setGlobalGrowthFactor}
-          onAutoUpdateChange={setAutoUpdate}
-          onBotSyncEnabledChange={setBotSyncEnabled}
-          onForceCalculation={() => forceCalculationMutation.mutate()}
-          calculationPending={forceCalculationMutation.isPending}
-        />
-
-        <ActionPanel
-          lastUpdate={lastUpdate}
-          onSaveConfig={handleSaveConfig}
-          savePending={updateConfigMutation.isPending}
-        />
-        
-        <CalculationLogs
-          logs={calculationLogs}
-          isLoading={logsLoading}
-          error={logsError?.message}
-        />
-
-        <WarningPanel systemStatus={systemStatusView} />
       </div>
-    </div>
+    </AdminErrorBoundary>
   );
 }
