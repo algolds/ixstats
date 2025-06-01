@@ -1,5 +1,6 @@
 // src/app/admin/page.tsx
 // FIXED: Updated admin page to work with current system
+// FIXED: Ensured globalGrowthFactor is treated as number
 
 "use client";
 
@@ -31,7 +32,7 @@ import { AdminErrorBoundary } from "./_components/ErrorBoundary";
 export default function AdminPage() {
   // State management
   const [config, setConfig] = useState({
-    globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR,
+    globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR as number, // Ensure type is number
     autoUpdate: true,
     botSyncEnabled: true,
     timeMultiplier: 4.0,
@@ -110,7 +111,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (configData) {
       setConfig({
-        globalGrowthFactor: configData.globalGrowthFactor || CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR,
+        globalGrowthFactor: configData.globalGrowthFactor || (CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR as number), // Ensure type is number
         autoUpdate: configData.autoUpdate ?? true,
         botSyncEnabled: configData.botSyncEnabled ?? true,
         timeMultiplier: configData.timeMultiplier || 4.0,
@@ -122,7 +123,8 @@ export default function AdminPage() {
   const handleSaveConfig = useCallback(async () => {
     setActionState(prev => ({ ...prev, savePending: true }));
     try {
-      await saveConfigMutation.mutateAsync(config);
+      // config already has globalGrowthFactor as number, so saveConfigMutation should accept it
+      await saveConfigMutation.mutateAsync(config); 
       setActionState(prev => ({ ...prev, lastUpdate: new Date() }));
       await refetchConfig();
     } catch (error) {

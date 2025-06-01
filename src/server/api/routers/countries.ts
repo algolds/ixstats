@@ -1,5 +1,6 @@
 // src/server/api/routers/countries.ts
 // FIXED: TypeScript errors, growth rate processing, and validation
+// FIXED: Ensured nullable fields are handled with ?? null for Prisma createMany
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
@@ -675,7 +676,7 @@ export const countriesRouter = createTRPCRouter({
             totalGdp: validateNumber(res.newStats.currentTotalGdp, 1e18, 1),
             populationGrowthRate: validateGrowthRate(res.newStats.populationGrowthRate), 
             gdpGrowthRate: validateGrowthRate(res.newStats.adjustedGdpGrowth), 
-            landArea: c.landArea,
+            landArea: c.landArea ?? null, // Ensure null if undefined
             populationDensity: res.newStats.populationDensity ? validateNumber(res.newStats.populationDensity, 1e7) : null,
             gdpDensity: res.newStats.gdpDensity ? validateNumber(res.newStats.gdpDensity, 1e12) : null,
           },
@@ -735,7 +736,7 @@ export const countriesRouter = createTRPCRouter({
           totalGdp: validateNumber(res.newStats.currentTotalGdp, 1e18, 1),
           populationGrowthRate: validateGrowthRate(res.newStats.populationGrowthRate),
           gdpGrowthRate: validateGrowthRate(res.newStats.adjustedGdpGrowth),
-          landArea: c.landArea,
+          landArea: c.landArea ?? null, // Ensure null if undefined
           populationDensity: res.newStats.populationDensity ? validateNumber(res.newStats.populationDensity, 1e7) : null,
           gdpDensity: res.newStats.gdpDensity ? validateNumber(res.newStats.gdpDensity, 1e12) : null,
         });
@@ -745,7 +746,7 @@ export const countriesRouter = createTRPCRouter({
       if (historicalPointsToCreate.length > 0) {
         try {
           await ctx.db.historicalDataPoint.createMany({
-            data: historicalPointsToCreate,
+            data: historicalPointsToCreate, // Already contains null-checked values
             skipDuplicates: true, 
           });
         } catch (error) {
