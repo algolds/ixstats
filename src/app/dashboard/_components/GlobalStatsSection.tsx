@@ -70,7 +70,7 @@ export function GlobalStatsSection({
       totalGdp: safeFormatCurrency(safeGdp),
       averageGdpPerCapita: safeFormatCurrency(safeAvgGdpPc),
       countryCount: safeCountryCount.toLocaleString(),
-      globalGrowthRate: formatPercentage(safeGrowthRate),
+      globalGrowthRate: `${((safeGrowthRate - 1) * 100).toFixed(2)}%`,
       averagePopulationDensity: safeFormatDensity(safeAvgPopDensity, "/km²"),
       averageGdpDensity: safeFormatDensity(safeAvgGdpDensity, "/km²") + " GDP",
       lastUpdated: globalStats.timestamp 

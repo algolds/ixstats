@@ -34,7 +34,7 @@ export interface RealCountryData {
 interface CoreEconomicIndicatorsProps {
   indicators: CoreEconomicIndicators;
   referenceCountry?: RealCountryData;
-  onIndicatorsChange: (indicators: CoreEconomicIndicators) => void;
+  onIndicatorsChangeAction: (indicators: CoreEconomicIndicators) => void;
   isReadOnly?: boolean;
   showComparison?: boolean;
 }
@@ -52,7 +52,7 @@ function getEconomicTier(gdpPerCapita: number): string {
 export function CoreEconomicIndicators({
   indicators,
   referenceCountry,
-  onIndicatorsChange,
+  onIndicatorsChangeAction,
   isReadOnly = false,
   showComparison = true,
 }: CoreEconomicIndicatorsProps) {
@@ -68,7 +68,7 @@ export function CoreEconomicIndicators({
       newIndicators.nominalGDP = newIndicators.gdpPerCapita * newIndicators.totalPopulation;
     }
     
-    onIndicatorsChange(newIndicators);
+    onIndicatorsChangeAction(newIndicators);
   };
 
   const economicTier = getEconomicTier(indicators.gdpPerCapita);

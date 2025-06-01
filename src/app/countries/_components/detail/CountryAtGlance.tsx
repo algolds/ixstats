@@ -460,7 +460,7 @@ export function CountryAtGlance({
                       <Activity className="h-3 w-3 text-muted-foreground" />
                     </div>
                     <p className="text-lg font-semibold">
-                      {country.localGrowthFactor.toFixed(2)}×
+                      {((country.localGrowthFactor - 1) * 100).toFixed(2)}%
                     </p>
                     <p className="text-xs text-muted-foreground">
                       growth modifier

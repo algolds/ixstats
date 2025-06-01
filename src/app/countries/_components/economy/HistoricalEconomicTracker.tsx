@@ -466,8 +466,8 @@ export function HistoricalEconomicTracker({
                 <EventCard
                   key={event.id}
                   event={event}
-                  onEdit={isEditable ? (event) => onEditEvent?.(event.id, event) : undefined}
-                  onDelete={isEditable ? () => onDeleteEvent?.(event.id) : undefined}
+                  onEdit={isEditable ? (event) => onEditEvent?.(event.id as string, event) : undefined}
+                  onDelete={isEditable ? () => onDeleteEvent?.(event.id as string) : undefined}
                 />
               ))
             )}
