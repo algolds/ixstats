@@ -126,10 +126,10 @@ export function GovernmentSpending({
 
   // Calculate metrics
   const largestCategory = spendingData.spendingCategories.reduce((max, cat) => 
-    cat.percent > max.percent ? cat : max, spendingData.spendingCategories[0]
+    cat.percent > (max?.percent || 0) ? cat : max, spendingData.spendingCategories[0]
   );
 
-  const getPerCapitaSpending = (amount: number) => amount / totalPopulation;
+  const getPerCapitaSpending = (amount: number) => totalPopulation ? amount / totalPopulation : 0;
 
   // Prepare data for visualizations
   const pieData = spendingData.spendingCategories.map((cat, index) => ({
