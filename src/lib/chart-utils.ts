@@ -362,18 +362,20 @@ export function formatChartNumber(value: number): string {
 }
 
 /**
- * FIXED: Format decimal growth rate as percentage for display
+ * FIXED: Format growth rate as percentage for display
  * This is the main function components should use for growth rate display
+ * Assumes input is already in percentage form (6.59 for 6.59%)
  */
-export function displayGrowthRate(decimalValue: number | null | undefined): string {
-  if (decimalValue == null || !isFinite(decimalValue) || isNaN(decimalValue)) {
+export function displayGrowthRate(percentageValue: number | null | undefined): string {
+  if (percentageValue == null || !isFinite(percentageValue) || isNaN(percentageValue)) {
     return "N/A";
   }
-  // Check if the value is likely a growth factor (e.g., 1.03 for 3%)
-  // GROWTH PERCENTAGE MULTIPLER ---- LEAVE GROWTH DECIMAL BLANK TO APPLY NO ADDITIONAL MULTIPLIER
-  const growthDecimal = decimalValue >= 1 ? decimalValue - 1 : decimalValue;
-  const percentage = growthDecimal ;
-  return `${percentage.toFixed(2)}%`;
+  
+  // Value is already in percentage form, just format it
+  // Cap extreme values for display
+  const cappedPercentage = Math.min(Math.max(percentageValue, -999), 999);
+  
+  return `${cappedPercentage.toFixed(2)}%`;
 }
 
 /**
@@ -406,4 +408,17 @@ export function getGrowthColor(decimalValue: number | null | undefined): string 
   if (percentage > 0.1) return "text-green-600";
   if (percentage < -0.1) return "text-red-600";
   return "text-gray-500";
+}
+
+function smartNormalizeGrowthRate(value: number | null | undefined, fallback: number = 3.0): number {
+  if (!value || !isFinite(value)) return fallback;
+  
+  // If the value is extremely large (> 100%), it's likely incorrectly stored
+  // and needs to be divided by 100
+  if (Math.abs(value) > 100) {
+    return value / 100;
+  }
+  
+  // Otherwise, the value is reasonable as-is
+  return value;
 }

@@ -1,0 +1,1 @@
+export { GovernmentSpending } from '../../../economy/components/GovernmentSpending'; 

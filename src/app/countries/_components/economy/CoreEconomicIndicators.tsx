@@ -21,11 +21,7 @@ import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
 import { Slider } from "~/components/ui/slider";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import {
-  formatCurrency,
-  formatPopulation,
-  displayGrowthRate,
-} from "~/lib/chart-utils";
+import { formatCurrency, formatPopulation, formatPercentage } from "./utils";
 import { getTierStyle } from "~/lib/theme-utils";
 
 export interface CoreEconomicIndicators {
@@ -272,7 +268,7 @@ export function CoreEconomicIndicators({
                 <Label htmlFor="growth">Real GDP Growth</Label>
                 {isReadOnly ? (
                   <div className="text-2xl font-bold">
-                    {displayGrowthRate(indicators.realGDPGrowthRate)}
+                    {formatPercentage(indicators.realGDPGrowthRate * 100)}
                   </div>
                 ) : (
                   <>
@@ -291,7 +287,7 @@ export function CoreEconomicIndicators({
                     <div className="flex justify-between text-xs text-muted-foreground">
                       <span>-5%</span>
                       <span className="font-medium">
-                        {displayGrowthRate(indicators.realGDPGrowthRate)}
+                        {formatPercentage(indicators.realGDPGrowthRate * 100)}
                       </span>
                       <span>10%</span>
                     </div>
@@ -302,7 +298,7 @@ export function CoreEconomicIndicators({
                 <Label htmlFor="inflation">Inflation Rate</Label>
                 {isReadOnly ? (
                   <div className="text-2xl font-bold">
-                    {displayGrowthRate(indicators.inflationRate)}
+                    {formatPercentage(indicators.inflationRate * 100)}
                   </div>
                 ) : (
                   <>
@@ -321,7 +317,7 @@ export function CoreEconomicIndicators({
                     <div className="flex justify-between text-xs text-muted-foreground">
                       <span>0%</span>
                       <span className="font-medium">
-                        {displayGrowthRate(indicators.inflationRate)}
+                        {formatPercentage(indicators.inflationRate * 100)}
                       </span>
                       <span>15%</span>
                     </div>
@@ -360,8 +356,8 @@ export function CoreEconomicIndicators({
             Economic Health: <span className={health.color}>{health.label}</span>
           </div>
           <p className="text-sm">
-            Based on {displayGrowthRate(indicators.realGDPGrowthRate)} growth &
-            {displayGrowthRate(indicators.inflationRate)} inflation.
+            Based on {formatPercentage(indicators.realGDPGrowthRate * 100)} growth &
+            {formatPercentage(indicators.inflationRate * 100)} inflation.
           </p>
         </AlertDescription>
       </Alert>

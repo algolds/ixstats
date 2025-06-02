@@ -14,46 +14,12 @@ import {
   Info,
 } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LineChart, Line } from 'recharts';
-
-interface AgeGroup {
-  group: string;
-  percent: number;
-  color: string;
-}
-
-interface Region {
-  name: string;
-  population: number;
-  urbanPercent: number;
-  color: string;
-}
-
-interface EducationLevel {
-  level: string;
-  percent: number;
-  color: string;
-}
-
-interface CitizenshipStatus {
-  status: string;
-  percent: number;
-  color: string;
-}
-
-interface DemographicData {
-  ageDistribution: AgeGroup[];
-  lifeExpectancy: number;
-  urbanRuralSplit: { urban: number; rural: number };
-  regions: Region[];
-  educationLevels: EducationLevel[];
-  literacyRate: number;
-  citizenshipStatuses: CitizenshipStatus[];
-}
+import type { DemographicsData } from "~/types/economics";
 
 interface DemographicsProps {
-  demographicData: DemographicData;
+  demographicData: DemographicsData;
   totalPopulation: number;
-  onDemographicDataChange: (demographicData: DemographicData) => void;
+  onDemographicDataChange: (demographicData: DemographicsData) => void;
 }
 
 export function Demographics({
@@ -222,15 +188,14 @@ export function Demographics({
         };
       });
       
-     // src/app/economy/components/Demographics.tsx (continued)
-     onDemographicDataChange({
+      onDemographicDataChange({
         ...demographicData,
         citizenshipStatuses: normalizedStatuses
       });
     }
   };
 
-  const handleInputChange = (field: keyof DemographicData, value: number) => {
+  const handleInputChange = (field: keyof DemographicsData, value: number) => {
     if (typeof value !== 'number') return;
     
     onDemographicDataChange({
@@ -253,7 +218,7 @@ export function Demographics({
   const ageData = demographicData.ageDistribution.map(group => ({
     name: group.group,
     value: group.percent,
-    color: group.color,
+    color: group.color || '#8884d8',
     population: calculatePopulationInGroup(group.percent)
   }));
 
@@ -268,21 +233,21 @@ export function Demographics({
     name: region.name,
     population: region.population,
     urbanPercent: region.urbanPercent,
-    color: region.color
+    color: region.color || '#8884d8'
   }));
 
   // Data for education levels pie chart
   const educationData = demographicData.educationLevels.map(level => ({
     name: level.level,
     value: level.percent,
-    color: level.color
+    color: level.color || '#8884d8'
   }));
 
   // Data for citizenship statuses pie chart
   const citizenshipData = demographicData.citizenshipStatuses.map(status => ({
     name: status.status,
     value: status.percent,
-    color: status.color
+    color: status.color || '#8884d8'
   }));
 
   // Population pyramid data
@@ -439,7 +404,7 @@ export function Demographics({
                   <div key={group.group} className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-sm font-medium text-[var(--color-text-primary)] flex items-center">
-                        <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: group.color }}></div>
+                        <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: group.color || '#8884d8' }}></div>
                         {group.group} Age Group
                       </label>
                       <div className="text-sm text-[var(--color-text-muted)]">
@@ -600,7 +565,7 @@ export function Demographics({
               <div key={region.name} className="p-4 bg-[var(--color-bg-tertiary)] rounded-lg border border-[var(--color-border-primary)]">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center">
-                    <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: region.color }}></div>
+                    <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: region.color || '#8884d8' }}></div>
                     <h5 className="font-medium text-[var(--color-text-primary)]">{region.name}</h5>
                   </div>
                   <div className="text-sm text-[var(--color-text-muted)]">
@@ -740,7 +705,7 @@ export function Demographics({
                   <div key={level.level} className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-sm font-medium text-[var(--color-text-primary)] flex items-center">
-                        <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: level.color }}></div>
+                        <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: level.color || '#8884d8' }}></div>
                         {level.level}
                       </label>
                       <div className="text-sm text-[var(--color-text-muted)]">
@@ -771,7 +736,7 @@ export function Demographics({
                   <div key={status.status} className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-sm font-medium text-[var(--color-text-primary)] flex items-center">
-                        <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: status.color }}></div>
+                        <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: status.color || '#8884d8' }}></div>
                         {status.status}
                       </label>
                       <div className="text-sm text-[var(--color-text-muted)]">

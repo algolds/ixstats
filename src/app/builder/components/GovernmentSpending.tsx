@@ -1,7 +1,7 @@
 // src/app/economy/components/GovernmentSpending.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, type ElementType } from "react"; 
 import {
   Building,
   Shield,
@@ -14,16 +14,19 @@ import {
   Scale,
   BarChart2,
   Info,
+  MoreHorizontal // Added MoreHorizontal as a fallback icon
 } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import type { CoreEconomicIndicatorsData } from "~/types/economics"; // Import if needed for props
 
+// Match the SpendingCategory type from src/types/economics.ts for data consistency
 interface SpendingCategory {
   category: string;
   amount: number;
   percent: number;
-  icon: React.ElementType;
-  color: string;
-  description: string;
+  icon?: string; // Icon is a string (name of Lucide icon or similar)
+  color?: string; 
+  description?: string;
 }
 
 interface GovernmentSpendingData {
@@ -38,26 +41,48 @@ interface GovernmentSpendingProps {
   spendingData: GovernmentSpendingData;
   nominalGDP: number;
   totalPopulation: number;
-  onSpendingDataChange: (spendingData: GovernmentSpendingData) => void;
+  onSpendingDataChangeAction: (spendingData: GovernmentSpendingData) => void; // Renamed prop
+  isReadOnly?: boolean; 
+  // Add missing props if this component is also expected to handle core indicators
+  indicators?: CoreEconomicIndicatorsData; 
+  onIndicatorsChangeAction?: (newData: CoreEconomicIndicatorsData) => void;
 }
+
+// Mapping from icon string names to Lucide components
+const iconMap: { [key: string]: ElementType } = {
+  Shield,
+  GraduationCap,
+  Heart,
+  Truck,
+  Users2,
+  Briefcase,
+  Globe,
+  Scale,
+  Building,
+  MoreHorizontal, // Default/fallback icon
+  // Add other icons by name as needed
+};
+
 
 export function GovernmentSpending({
   spendingData,
   nominalGDP,
   totalPopulation,
-  onSpendingDataChange,
+  onSpendingDataChangeAction, // Use renamed prop
+  isReadOnly = false, 
+  indicators, // Accept indicators
+  onIndicatorsChangeAction // Accept onIndicatorsChangeAction
 }: GovernmentSpendingProps) {
   const [selectedView, setSelectedView] = useState<'overview' | 'detailed' | 'comparison'>('overview');
 
   const handleSpendingPercentChange = (index: number, value: number) => {
+    if (isReadOnly) return;
     const newCategories = [...spendingData.spendingCategories];
     
-    // Calculate the total of all other percentages
     const totalOthers = newCategories.reduce((sum, cat, idx) => 
       idx !== index ? sum + cat.percent : sum, 0);
     
-    // Adjust the new value to ensure total is 100%
-    const adjustedValue = Math.min(value, 100 - totalOthers);
+    const adjustedValue = Math.min(value, Math.max(0, 100 - totalOthers)); 
     
     if (newCategories[index]) {
       newCategories[index] = {
@@ -66,12 +91,27 @@ export function GovernmentSpending({
         amount: (spendingData.totalSpending * adjustedValue) / 100
       };
       
-      // Normalize other values to ensure total is 100%
       const remainingPercent = 100 - adjustedValue;
+      const sumOfOthersForNormalization = newCategories
+        .filter((_, idx) => idx !== index)
+        .reduce((sum, cat) => sum + cat.percent, 0);
+
       const normalizedCategories = newCategories.map((cat, idx) => {
         if (idx === index) return cat;
+        if (sumOfOthersForNormalization === 0) { 
+            const otherCatsCount = newCategories.length -1;
+            if (otherCatsCount > 0) {
+                const equalShare = remainingPercent / otherCatsCount;
+                 return {
+                    ...cat,
+                    percent: equalShare,
+                    amount: (spendingData.totalSpending * equalShare) / 100
+                };
+            }
+            return cat; 
+        }
         
-        const normalizedPercent = (cat.percent / totalOthers) * remainingPercent;
+        const normalizedPercent = (cat.percent / sumOfOthersForNormalization) * remainingPercent;
         return {
           ...cat,
           percent: normalizedPercent,
@@ -79,7 +119,7 @@ export function GovernmentSpending({
         };
       });
       
-      onSpendingDataChange({
+      onSpendingDataChangeAction({ // Use renamed prop
         ...spendingData,
         spendingCategories: normalizedCategories
       });
@@ -87,27 +127,29 @@ export function GovernmentSpending({
   };
 
   const handleTotalSpendingChange = (value: number) => {
+    if (isReadOnly) return;
     const newSpendingData = { ...spendingData };
     newSpendingData.totalSpending = value;
-    newSpendingData.spendingGDPPercent = (value / nominalGDP) * 100;
-    newSpendingData.spendingPerCapita = value / totalPopulation;
+    newSpendingData.spendingGDPPercent = nominalGDP > 0 ? (value / nominalGDP) * 100 : 0;
+    newSpendingData.spendingPerCapita = totalPopulation > 0 ? value / totalPopulation : 0;
     
-    // Update amounts for all categories
     newSpendingData.spendingCategories = spendingData.spendingCategories.map(cat => ({
       ...cat,
       amount: (value * cat.percent) / 100
     }));
     
-    onSpendingDataChange(newSpendingData);
+    onSpendingDataChangeAction(newSpendingData); // Use renamed prop
   };
 
   const handleSpendingGDPPercentChange = (value: number) => {
+    if (isReadOnly) return;
     const newTotalSpending = (nominalGDP * value) / 100;
     handleTotalSpendingChange(newTotalSpending);
   };
 
   const formatNumber = (num: number, precision = 1, isCurrency = true): string => {
     const prefix = isCurrency ? '$' : '';
+    if (num === undefined || num === null || isNaN(num)) return isCurrency ? `${prefix}N/A` : 'N/A';
     if (Math.abs(num) >= 1e12) return `${prefix}${(num / 1e12).toFixed(precision)}T`;
     if (Math.abs(num) >= 1e9) return `${prefix}${(num / 1e9).toFixed(precision)}B`;
     if (Math.abs(num) >= 1e6) return `${prefix}${(num / 1e6).toFixed(precision)}M`;
@@ -117,7 +159,7 @@ export function GovernmentSpending({
 
   const getBudgetHealth = () => {
     const deficit = spendingData.deficitSurplus;
-    const deficitPercent = (deficit / nominalGDP) * 100;
+    const deficitPercent = nominalGDP > 0 ? (deficit / nominalGDP) * 100 : 0;
     
     if (deficitPercent > 1) return { color: "text-green-600", label: "Surplus" };
     if (deficitPercent > -2) return { color: "text-blue-600", label: "Balanced" };
@@ -127,26 +169,28 @@ export function GovernmentSpending({
 
   const budgetHealth = getBudgetHealth();
 
-  // Data for pie chart
   const pieData = spendingData.spendingCategories.map(cat => ({
     name: cat.category,
     value: cat.percent,
-    color: cat.color
+    color: cat.color || '#CCCCCC' 
   }));
 
-  // Data for bar chart
   const barData = spendingData.spendingCategories.map(cat => ({
     name: cat.category,
     amount: cat.amount,
-    color: cat.color
+    color: cat.color || '#CCCCCC'
   }));
 
-  // Per capita spending data
   const perCapitaData = spendingData.spendingCategories.map(cat => ({
     name: cat.category,
-    amount: cat.amount / totalPopulation,
-    color: cat.color
+    amount: totalPopulation > 0 ? cat.amount / totalPopulation : 0,
+    color: cat.color || '#CCCCCC'
   }));
+
+  const renderIcon = (iconName?: string) => {
+    const IconComponent = iconName ? iconMap[iconName] : null;
+    return IconComponent ? <IconComponent className="h-4 w-4 mr-2" /> : <MoreHorizontal className="h-4 w-4 mr-2 text-gray-400" />;
+  };
 
   return (
     <div className="space-y-6">
@@ -172,7 +216,6 @@ export function GovernmentSpending({
         </div>
       </div>
 
-      {/* Spending Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="p-4 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)]">
           <div className="flex items-center justify-between mb-2">
@@ -256,6 +299,7 @@ export function GovernmentSpending({
                   value={spendingData.spendingGDPPercent}
                   onChange={(e) => handleSpendingGDPPercentChange(parseFloat(e.target.value))}
                   className="w-full h-2 bg-[var(--color-bg-tertiary)] rounded-lg appearance-none cursor-pointer slider"
+                  disabled={isReadOnly}
                 />
                 <div className="flex justify-between text-xs text-[var(--color-text-muted)]">
                   <span>10%</span>
@@ -270,20 +314,18 @@ export function GovernmentSpending({
             <div className="p-4 bg-[var(--color-bg-tertiary)] rounded-lg border border-[var(--color-border-primary)]">
               <h5 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Spending Summary</h5>
               <div className="space-y-2">
-                {spendingData.spendingCategories.map(cat => {
-                  const Icon = cat.icon;
-                  return (
+                {spendingData.spendingCategories.map(cat => (
                     <div key={cat.category} className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <Icon className="h-4 w-4 mr-2" style={{ color: cat.color }} />
+                      <div className="flex items-center" style={{ color: cat.color }}>
+                        {renderIcon(cat.icon)}
                         <span className="text-sm text-[var(--color-text-primary)]">{cat.category}</span>
                       </div>
                       <div className="text-sm font-medium text-[var(--color-text-primary)]">
                         {formatNumber(cat.amount)}
                       </div>
                     </div>
-                  );
-                })}
+                  )
+                )}
               </div>
             </div>
           </div>
@@ -310,13 +352,11 @@ export function GovernmentSpending({
           <div className="space-y-4">
             <h4 className="text-md font-semibold text-[var(--color-text-primary)]">Spending Categories</h4>
             
-            {spendingData.spendingCategories.map((cat, index) => {
-              const Icon = cat.icon;
-              return (
+            {spendingData.spendingCategories.map((cat, index) => (
                 <div key={cat.category} className="p-4 bg-[var(--color-bg-tertiary)] rounded-lg border border-[var(--color-border-primary)]">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center">
-                      <Icon className="h-5 w-5 mr-2" style={{ color: cat.color }} />
+                    <div className="flex items-center" style={{ color: cat.color }}>
+                      {renderIcon(cat.icon)}
                       <h5 className="font-medium text-[var(--color-text-primary)]">{cat.category}</h5>
                     </div>
                     <div className="text-sm text-[var(--color-text-muted)]">
@@ -335,18 +375,19 @@ export function GovernmentSpending({
                         value={cat.percent}
                         onChange={(e) => handleSpendingPercentChange(index, parseFloat(e.target.value))}
                         className="w-full h-2 bg-[var(--color-bg-tertiary)] rounded-lg appearance-none cursor-pointer slider mr-2"
+                        disabled={isReadOnly}
                       />
                       <span className="text-sm font-medium text-[var(--color-text-primary)] w-12 text-right">
                         {cat.percent.toFixed(1)}%
                       </span>
                     </div>
                     <div className="text-xs text-[var(--color-text-muted)]">
-                      {formatNumber(cat.amount / totalPopulation)} per capita
+                      {formatNumber(totalPopulation > 0 ? cat.amount / totalPopulation : 0)} per capita
                     </div>
                   </div>
                 </div>
-              );
-            })}
+              )
+            )}
           </div>
         </div>
       )}
@@ -374,21 +415,19 @@ export function GovernmentSpending({
               <div className="space-y-3">
                 {spendingData.spendingCategories
                   .sort((a, b) => b.percent - a.percent)
-                  .map((cat, index) => {
-                    const Icon = cat.icon;
-                    return (
+                  .map((cat, index) => (
                       <div key={cat.category} className="flex items-center justify-between">
-                        <div className="flex items-center">
+                        <div className="flex items-center" style={{ color: cat.color }}>
                           <div className="w-5 text-center text-xs font-medium text-[var(--color-text-muted)]">{index + 1}</div>
-                          <Icon className="h-4 w-4 mx-2" style={{ color: cat.color }} />
+                          {renderIcon(cat.icon)}
                           <span className="text-sm text-[var(--color-text-primary)]">{cat.category}</span>
                         </div>
                         <div className="text-sm font-medium text-[var(--color-text-primary)]">
                           {cat.percent.toFixed(1)}%
                         </div>
                       </div>
-                    );
-                  })}
+                    )
+                  )}
               </div>
             </div>
 
@@ -396,21 +435,19 @@ export function GovernmentSpending({
               <h5 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Per Capita Analysis</h5>
               <div className="space-y-3">
                 {spendingData.spendingCategories
-                  .sort((a, b) => (b.amount / totalPopulation) - (a.amount / totalPopulation))
-                  .map((cat, index) => {
-                    const Icon = cat.icon;
-                    return (
+                  .sort((a, b) => (totalPopulation > 0 ? (b.amount / totalPopulation) - (a.amount / totalPopulation) : 0))
+                  .map((cat) => (
                       <div key={cat.category} className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <Icon className="h-4 w-4 mr-2" style={{ color: cat.color }} />
+                        <div className="flex items-center" style={{ color: cat.color }}>
+                           {renderIcon(cat.icon)}
                           <span className="text-sm text-[var(--color-text-primary)]">{cat.category}</span>
                         </div>
                         <div className="text-sm font-medium text-[var(--color-text-primary)]">
-                          {formatNumber(cat.amount / totalPopulation)}
+                          {formatNumber(totalPopulation > 0 ? cat.amount / totalPopulation : 0)}
                         </div>
                       </div>
-                    );
-                  })}
+                    )
+                  )}
               </div>
             </div>
           </div>
@@ -429,7 +466,7 @@ export function GovernmentSpending({
               with the highest allocation to {
                 spendingData.spendingCategories.sort((a, b) => b.percent - a.percent)[0]?.category ?? 'Unknown'
               } ({
-                spendingData.spendingCategories.sort((a, b) => b.percent - a.percent)[0]?.percent.toFixed(1) ?? '0.0'
+                (spendingData.spendingCategories.sort((a, b) => b.percent - a.percent)[0]?.percent ?? 0).toFixed(1)
               }%). 
               The budget is currently {
                 spendingData.deficitSurplus >= 0 

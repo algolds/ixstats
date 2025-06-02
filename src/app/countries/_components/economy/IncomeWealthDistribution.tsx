@@ -1,0 +1,1 @@
+export { IncomeWealthDistribution } from '../../../economy/components/IncomeWealthDistribution'; 
