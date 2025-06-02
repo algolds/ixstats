@@ -33,7 +33,7 @@ import { FiscalSystemComponent } from "./FiscalSystemComponent";
 import { IncomeWealthDistribution } from "./IncomeWealthDistribution";
 import { GovernmentSpending } from "./GovernmentSpending";
 import { Demographics } from "./Demographics";
-import { formatCurrency, formatPopulation } from "./utils";
+import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { Skeleton } from "~/components/ui/skeleton";
 import type { TRPCClientError } from "@trpc/client";
 import type { 
@@ -45,6 +45,29 @@ import type {
   GovernmentSpendingData, 
   DemographicsData 
 } from "~/types/economics";
+
+// Helper function to convert DemographicsData to the format expected by Demographics component
+const convertDemographicsData = (data: DemographicsData) => {
+  return {
+    ...data,
+    ageDistribution: data.ageDistribution.map((group, index) => ({
+      ...group,
+      color: group.color || `hsl(${(index * 60) % 360}, 70%, 50%)` // Provide default colors
+    })),
+    regions: data.regions.map((region, index) => ({
+      ...region,
+      color: region.color || `hsl(${(index * 45) % 360}, 60%, 60%)`
+    })),
+    educationLevels: data.educationLevels.map((level, index) => ({
+      ...level,
+      color: level.color || `hsl(${(index * 90) % 360}, 55%, 65%)`
+    })),
+    citizenshipStatuses: data.citizenshipStatuses.map((status, index) => ({
+      ...status,
+      color: status.color || `hsl(${(index * 120) % 360}, 50%, 70%)`
+    }))
+  };
+};
 
 interface EconomicDataDisplayProps {
   countryId: string;
@@ -86,75 +109,71 @@ export function EconomicDataDisplay({
     if (countryData?.economy) {
       setEconomicData(countryData.economy);
     } else if (countryData) {
-      // Construct economy data from individual fields if economy object is missing
-      const constructedEconomyData: EconomyData = {
-        core: {
-          totalPopulation: countryData.baselinePopulation,
-          nominalGDP: countryData.nominalGDP ?? (countryData.baselinePopulation * countryData.baselineGdpPerCapita),
-          gdpPerCapita: countryData.currentGdpPerCapita,
-          realGDPGrowthRate: countryData.realGDPGrowthRate ?? countryData.adjustedGdpGrowth ?? 0.03,
-          inflationRate: countryData.inflationRate ?? 0.02,
-          currencyExchangeRate: countryData.currencyExchangeRate ?? 1.0,
-        },
-        labor: {
-          laborForceParticipationRate: countryData.laborForceParticipationRate ?? 65,
-          employmentRate: countryData.employmentRate ?? 95,
-          unemploymentRate: countryData.unemploymentRate ?? 5,
-          totalWorkforce: countryData.totalWorkforce ?? Math.round(countryData.baselinePopulation * 0.65),
-          averageWorkweekHours: countryData.averageWorkweekHours ?? 40,
-          minimumWage: countryData.minimumWage ?? 12,
-          averageAnnualIncome: countryData.averageAnnualIncome ?? 35000,
-        },
-        fiscal: {
-          taxRevenueGDPPercent: countryData.taxRevenueGDPPercent ?? 20,
-          governmentRevenueTotal: countryData.governmentRevenueTotal ?? ((countryData.nominalGDP ?? 0) * 0.20),
-          taxRevenuePerCapita: countryData.taxRevenuePerCapita ?? (((countryData.nominalGDP ?? 0) * 0.20) / countryData.baselinePopulation),
-          governmentBudgetGDPPercent: countryData.governmentBudgetGDPPercent ?? 22,
-          budgetDeficitSurplus: countryData.budgetDeficitSurplus ?? 0,
-          internalDebtGDPPercent: countryData.internalDebtGDPPercent ?? 30,
-          externalDebtGDPPercent: countryData.externalDebtGDPPercent ?? 20,
-          totalDebtGDPRatio: countryData.totalDebtGDPRatio ?? 50,
-          debtPerCapita: countryData.debtPerCapita ?? 0,
-          interestRates: countryData.interestRates ?? 0.03,
-          debtServiceCosts: countryData.debtServiceCosts ?? 0,
-          taxRates: {
-            personalIncomeTaxRates: [],
-            corporateTaxRates: [],
-            salesTaxRate: 0,
-            propertyTaxRate: 0,
-            payrollTaxRate: 0,
-            exciseTaxRates: [],
-            wealthTaxRate: 0
-          },
-          governmentSpendingByCategory: [],
-        },
-        income: {
-          economicClasses: [],
-          povertyRate: countryData.povertyRate ?? 15,
-          incomeInequalityGini: countryData.incomeInequalityGini ?? 0.35,
-          socialMobilityIndex: countryData.socialMobilityIndex ?? 50,
-        },
-        spending: {
-          totalSpending: countryData.totalGovernmentSpending ?? 0,
-          spendingGDPPercent: countryData.spendingGDPPercent ?? 22,
-          spendingPerCapita: countryData.spendingPerCapita ?? 0,
-          deficitSurplus: countryData.budgetDeficitSurplus ?? 0,
-          spendingCategories: []
-        },
-        demographics: {
-          lifeExpectancy: countryData.lifeExpectancy ?? 75,
-          urbanRuralSplit: {
-            urban: countryData.urbanPopulationPercent ?? 60,
-            rural: countryData.ruralPopulationPercent ?? 40
-          },
-          ageDistribution: [],
-          regions: [],
-          educationLevels: [],
-          literacyRate: countryData.literacyRate ?? 90,
-          citizenshipStatuses: []
-        },
-      };
-      setEconomicData(constructedEconomyData);
+        // If countryData.economy is missing, try to construct it from top-level fields
+        // This provides a fallback if the 'economy' object isn't populated as expected
+        // but the individual fields are on the countryData object.
+        const constructedEconomyData: EconomyData = {
+            core: {
+                totalPopulation: countryData.baselinePopulation,
+                nominalGDP: countryData.nominalGDP ?? (countryData.baselinePopulation * countryData.baselineGdpPerCapita),
+                gdpPerCapita: countryData.currentGdpPerCapita,
+                realGDPGrowthRate: countryData.realGDPGrowthRate ?? countryData.adjustedGdpGrowth ?? 0.03,
+                inflationRate: countryData.inflationRate ?? 0.02,
+                currencyExchangeRate: countryData.currencyExchangeRate ?? 1.0,
+            },
+            labor: {
+                laborForceParticipationRate: countryData.laborForceParticipationRate ?? 65,
+                employmentRate: countryData.employmentRate ?? 95,
+                unemploymentRate: countryData.unemploymentRate ?? 5,
+                totalWorkforce: countryData.totalWorkforce ?? Math.round(countryData.baselinePopulation * 0.65),
+                averageWorkweekHours: countryData.averageWorkweekHours ?? 40,
+                minimumWage: countryData.minimumWage ?? 12,
+                averageAnnualIncome: countryData.averageAnnualIncome ?? 35000,
+            },
+            fiscal: {
+                taxRevenueGDPPercent: countryData.taxRevenueGDPPercent ?? 20,
+                governmentRevenueTotal: countryData.governmentRevenueTotal ?? ((countryData.nominalGDP ?? 0) * 0.20),
+                taxRevenuePerCapita: countryData.taxRevenuePerCapita ?? (((countryData.nominalGDP ?? 0) * 0.20) / countryData.baselinePopulation),
+                governmentBudgetGDPPercent: countryData.governmentBudgetGDPPercent ?? 22,
+                budgetDeficitSurplus: countryData.budgetDeficitSurplus ?? 0,
+                internalDebtGDPPercent: countryData.internalDebtGDPPercent ?? 30,
+                externalDebtGDPPercent: countryData.externalDebtGDPPercent ?? 20,
+                totalDebtGDPRatio: countryData.totalDebtGDPRatio ?? 50,
+                debtPerCapita: countryData.debtPerCapita ?? 0,
+                interestRates: countryData.interestRates ?? 0.03,
+                debtServiceCosts: countryData.debtServiceCosts ?? 0,
+                taxRates: (countryData.fiscalSystem as any)?.taxRates ?? { // Type assertion if fiscalSystem might be missing
+                    personalIncomeTaxRates: [], corporateTaxRates: [], salesTaxRate: 0, propertyTaxRate: 0, payrollTaxRate: 0, exciseTaxRates: [], wealthTaxRate: 0
+                },
+                governmentSpendingByCategory: (countryData.governmentBudget as any)?.spendingCategories ?? [],
+            },
+            income: {
+                economicClasses: (countryData.incomeDistribution as any)?.economicClasses ? JSON.parse((countryData.incomeDistribution as any).economicClasses as string) : [],
+                povertyRate: countryData.povertyRate ?? 15,
+                incomeInequalityGini: countryData.incomeInequalityGini ?? 0.35,
+                socialMobilityIndex: countryData.socialMobilityIndex ?? 50,
+            },
+            spending: {
+              spendingGDPPercent: countryData.spendingGDPPercent ?? 22,
+              spendingPerCapita: countryData.spendingPerCapita ?? 0,
+              deficitSurplus: countryData.budgetDeficitSurplus ?? 0,
+              spendingCategories: (countryData.governmentBudget as any)?.spendingCategories ? JSON.parse((countryData.governmentBudget as any).spendingCategories as string) : [],
+              totalSpending: 0
+            },
+            demographics: {
+              lifeExpectancy: countryData.lifeExpectancy ?? 75,
+              literacyRate: countryData.literacyRate ?? 90,
+              ageDistribution: (countryData.demographics as any)?.ageDistribution ? JSON.parse((countryData.demographics as any).ageDistribution as string) : [],
+              urbanRuralSplit: {
+                urban: 0,
+                rural: 0
+              },
+              regions: [],
+              educationLevels: [],
+              citizenshipStatuses: []
+            },
+        };
+        setEconomicData(constructedEconomyData);
     }
   }, [countryData]);
 
@@ -178,7 +197,10 @@ export function EconomicDataDisplay({
       if (!prev) return null; 
       const updatedData = {
         ...prev,
-        [section]: newData
+        [section]: {
+           ...(prev[section] as any), // Cast to any to allow spread of potentially different structures
+           ...newData
+        } as any // Cast the specific section to any
       };
       return updatedData;
     });
@@ -188,12 +210,12 @@ export function EconomicDataDisplay({
   const handleSave = async () => {
     if (!economicData) return; 
     const flattenedEconomicData = {
-      ...economicData.core,
-      ...economicData.labor,
-      ...economicData.fiscal,
-      ...economicData.income,
-      ...economicData.spending,
-      ...economicData.demographics,
+        ...economicData.core,
+        ...economicData.labor,
+        ...economicData.fiscal,
+        ...economicData.income,
+        ...economicData.spending,
+        ...economicData.demographics,
     };
 
     try {
@@ -320,8 +342,8 @@ export function EconomicDataDisplay({
     );
   }
 
-  // Loading state
-  if (isLoading || !economicData) {
+  // Loading state (for full mode before data is fetched)
+  if (isLoading || (mode === "full" && showTabs && !economicData)) {
     return (
       <Card>
         <CardHeader>
@@ -340,7 +362,7 @@ export function EconomicDataDisplay({
 
   // Error state
   if (error) {
-    const trpcError = error as TRPCClientError<any>;
+    const trpcError = error as TRPCClientError<any>; // Type assertion
     return (
       <Card>
         <CardHeader>
@@ -358,128 +380,151 @@ export function EconomicDataDisplay({
           </Alert>
           <div className="mt-4 text-center">
             <Button onClick={() => refetch()} className="mt-4" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" /> Retry
-            </Button>
+                <RefreshCw className="h-4 w-4 mr-2" /> Retry
+              </Button>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  // Full mode with tabs
+  // Full mode with tabs (and data is loaded)
+  if (mode === "full" && showTabs && economicData) {
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-2xl font-bold">Economic Data</CardTitle>
+          {isEditable && (
+            <div className="flex items-center space-x-2">
+              {isEditMode && hasUnsavedChanges && (
+                <Badge variant="secondary" className="flex items-center">
+                  <AlertCircle className="h-3 w-3 mr-1" /> Unsaved Changes
+                </Badge>
+              )}
+              {updateEconomicDataMutation.isPending && (
+                <Badge variant="outline" className="flex items-center">
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Saving...
+                </Badge>
+              )}
+              <Button
+                onClick={() => setIsEditMode(!isEditMode)}
+                variant="outline"
+                size="sm"
+                disabled={updateEconomicDataMutation.isPending}
+              >
+                <Edit3 className="h-4 w-4 mr-2" />
+                {isEditMode ? "Cancel Edit" : "Edit Data"}
+              </Button>
+              {isEditMode && (
+                <Button onClick={handleSave} size="sm" disabled={!hasUnsavedChanges || updateEconomicDataMutation.isPending}>
+                  <Save className="h-4 w-4 mr-2" /> Save
+                </Button>
+              )}
+              {isEditMode && hasUnsavedChanges && (
+                <Button onClick={handleCancel} size="sm" variant="ghost" disabled={updateEconomicDataMutation.isPending}>
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          )}
+        </CardHeader>
+        <CardContent className="p-6">
+          <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 mb-4">
+              {economicSections.map((section) => (
+                <TabsTrigger key={section.id} value={section.id} disabled={section.disabled}>
+                  {section.icon && <section.icon className="h-4 w-4 mr-1" />} {section.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+
+            {economicSections.map((section) => {
+              if (section.disabled) return null;
+
+              return (
+                <TabsContent key={section.id} value={section.id} className="mt-0">
+                  {section.id === 'core' && economicData.core && (
+                    <CoreEconomicIndicators 
+                      indicators={economicData.core}
+                      onIndicatorsChangeAction={(newData: CoreEconomicIndicatorsData) => handleDataChange('core', newData)}
+                      isReadOnly={!isEditMode}
+                      showComparison={false}
+                    />
+                  )}
+                  {section.id === 'labor' && economicData.labor && economicData.core?.totalPopulation !== undefined && (
+                    <LaborEmployment 
+                      laborData={economicData.labor}
+                      onLaborDataChangeAction={(newData: LaborEmploymentData) => handleDataChange('labor', newData)}
+                      totalPopulation={economicData.core.totalPopulation}
+                      isReadOnly={!isEditMode}
+                      showComparison={false}
+                    />
+                  )}
+                  {section.id === 'fiscal' && economicData.fiscal && economicData.core?.nominalGDP !== undefined && economicData.core?.totalPopulation !== undefined && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Fiscal System</CardTitle>
+                        <CardDescription>Tax revenue, budget, and debt information</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-muted-foreground">Fiscal system component will be implemented.</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                  {section.id === 'income' && economicData.income && economicData.core?.totalPopulation !== undefined && economicData.core?.gdpPerCapita !== undefined && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Income & Wealth Distribution</CardTitle>
+                        <CardDescription>Economic classes and inequality metrics</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-muted-foreground">Income distribution component will be implemented.</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                  {section.id === 'spending' && economicData.spending && economicData.core?.nominalGDP !== undefined && economicData.core?.totalPopulation !== undefined && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Government Spending</CardTitle>
+                        <CardDescription>Budget allocation and spending priorities</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-muted-foreground">Government spending component will be implemented.</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                  {section.id === 'demographics' && economicData.demographics && economicData.core?.totalPopulation !== undefined && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Demographics</CardTitle>
+                        <CardDescription>Population structure and education</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-muted-foreground">Demographics component will be implemented.</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </TabsContent>
+              );
+            })}
+          </Tabs>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  // Fallback for compact mode or if data isn't loaded after checks
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-2xl font-bold">Economic Data</CardTitle>
-        {isEditable && (
-          <div className="flex items-center space-x-2">
-            {isEditMode && hasUnsavedChanges && (
-              <Badge variant="secondary" className="flex items-center">
-                <AlertCircle className="h-3 w-3 mr-1" /> Unsaved Changes
-              </Badge>
-            )}
-            {updateEconomicDataMutation.isPending && (
-              <Badge variant="outline" className="flex items-center">
-                <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Saving...
-              </Badge>
-            )}
-            <Button
-              onClick={() => setIsEditMode(!isEditMode)}
-              variant="outline"
-              size="sm"
-              disabled={updateEconomicDataMutation.isPending}
-            >
-              <Edit3 className="h-4 w-4 mr-2" />
-              {isEditMode ? "Cancel Edit" : "Edit Data"}
-            </Button>
-            {isEditMode && (
-              <Button onClick={handleSave} size="sm" disabled={!hasUnsavedChanges || updateEconomicDataMutation.isPending}>
-                <Save className="h-4 w-4 mr-2" /> Save
-              </Button>
-            )}
-            {isEditMode && hasUnsavedChanges && (
-              <Button onClick={handleCancel} size="sm" variant="ghost" disabled={updateEconomicDataMutation.isPending}>
-                <X className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        )}
+      <CardHeader>
+        <CardTitle>Economic Data</CardTitle>
+        <CardDescription>Detailed economic data for {countryName}</CardDescription>
       </CardHeader>
-      <CardContent className="p-6">
-        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 mb-4">
-            {economicSections.map((section) => (
-              <TabsTrigger key={section.id} value={section.id} disabled={section.disabled}>
-                <section.icon className="h-4 w-4 mr-1" /> {section.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          {economicSections.map((section) => {
-            if (section.disabled) return null;
-
-            return (
-              <TabsContent key={section.id} value={section.id} className="mt-0">
-                {section.id === 'core' && economicData.core && (
-                  <CoreEconomicIndicators 
-                    indicators={economicData.core}
-                    onIndicatorsChangeAction={(newData: CoreEconomicIndicatorsData) => handleDataChange('core', newData)}
-                    isReadOnly={!isEditMode}
-                    showComparison={false}
-                  />
-                )}
-                {section.id === 'labor' && economicData.labor && economicData.core?.totalPopulation !== undefined && (
-                  <LaborEmployment 
-                    laborData={economicData.labor}
-                    onLaborDataChangeAction={(newData: LaborEmploymentData) => handleDataChange('labor', newData)}
-                    totalPopulation={economicData.core.totalPopulation}
-                    isReadOnly={!isEditMode}
-                    showComparison={false}
-                  />
-                )}
-                {section.id === 'fiscal' && economicData.fiscal && economicData.core?.nominalGDP !== undefined && economicData.core?.totalPopulation !== undefined && (
-                  <FiscalSystemComponent
-                    fiscalData={economicData.fiscal}
-                    nominalGDP={economicData.core.nominalGDP}
-                    totalPopulation={economicData.core.totalPopulation}
-                    onFiscalDataChange={(newData: FiscalSystemData) => handleDataChange('fiscal', newData)}
-                    isReadOnly={!isEditMode}
-                    showAnalytics={true}
-                  />
-                )}
-                {section.id === 'income' && economicData.income && economicData.core?.totalPopulation !== undefined && economicData.core?.gdpPerCapita !== undefined && (
-                  <IncomeWealthDistribution
-                    incomeData={economicData.income}
-                    totalPopulation={economicData.core.totalPopulation}
-                    gdpPerCapita={economicData.core.gdpPerCapita}
-                    onIncomeDataChange={(newData: IncomeWealthDistributionData) => handleDataChange('income', newData)}
-                    isReadOnly={!isEditMode}
-                    showAnalytics={true}
-                  />
-                )}
-                {section.id === 'spending' && economicData.spending && economicData.core?.nominalGDP !== undefined && economicData.core?.totalPopulation !== undefined && (
-                  <GovernmentSpending
-                    spendingData={economicData.spending}
-                    nominalGDP={economicData.core.nominalGDP}
-                    totalPopulation={economicData.core.totalPopulation}
-                    onSpendingDataChangeAction={(newData: GovernmentSpendingData) => handleDataChange('spending', newData)}
-                    isReadOnly={!isEditMode}
-                    showAnalytics={true}
-                  />
-                )}
-                {section.id === 'demographics' && economicData.demographics && economicData.core?.totalPopulation !== undefined && (
-                  <Demographics
-                    demographicData={economicData.demographics}
-                    totalPopulation={economicData.core.totalPopulation}
-                    onDemographicDataChange={(newData: DemographicsData) => handleDataChange('demographics', newData)}
-                    isReadOnly={!isEditMode}
-                    showAnalytics={true}
-                  />
-                )}
-              </TabsContent>
-            );
-          })}
-        </Tabs>
+      <CardContent className="p-4 text-center">
+        <Info className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+        <p className="text-sm text-muted-foreground">
+          {isLoading ? "Loading data..." : "Economic data display mode not configured or data is unavailable."}
+        </p>
       </CardContent>
     </Card>
   );

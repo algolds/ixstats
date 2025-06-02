@@ -43,7 +43,11 @@ export interface CoreEconomicIndicatorsData {
       exciseTaxRates: Array<{ type: string; rate: number }>
       wealthTaxRate: number
     }
-    governmentSpendingByCategory: Array<{ category: string; amount: number; percent: number }>
+    governmentSpendingByCategory: Array<{
+        color: string | undefined
+        icon(icon: any): import("react").ReactNode
+        description: ReactNode category: string; amount: number; percent: number 
+}>
   }
   
   // Income & wealth distribution
