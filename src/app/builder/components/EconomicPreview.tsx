@@ -92,8 +92,8 @@ export function EconomicPreview({
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-semibold text-[var(--color-text-primary)] mb-1">Economic Preview: {inputs.countryName}</h2>
-          <p className="text-[var(--color-text-muted)]">Review and compare your nation's economic profile.</p>
+          <h2 className="text-xl font-semibold text-[var(--color-text-primary)] mb-1">Country Preview: {inputs.countryName}</h2>
+          <p className="text-[var(--color-text-muted)]">Review your custom nation before finalizing.</p>
         </div>
         <button onClick={onBack} className="btn-secondary text-sm py-1.5 px-3">
           <ArrowLeft className="h-4 w-4 mr-1.5" /> Back
@@ -188,13 +188,13 @@ export function EconomicPreview({
       <div className="bg-[var(--color-brand-primary)] bg-opacity-10 border border-[var(--color-brand-primary)] border-opacity-30 rounded-lg p-6">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
-            <h3 className="text-lg font-semibold text-[var(--color-brand-primary)] mb-1">Ready to Set Baseline?</h3>
+            <h3 className="text-lg font-semibold text-[var(--color-brand-primary)] mb-1">Ready to Create Your Country?</h3>
             <p className="text-[var(--color-text-secondary)] text-sm">
-              This will lock in parameters for {inputs.countryName}. Next, you can apply DM modifications.
+              This will finalize {inputs.countryName} and make it available for use in your campaigns.
             </p>
           </div>
           <button onClick={onConfirm} className="btn-primary flex-shrink-0">
-            <CheckCircle className="h-5 w-5 mr-2" /> Confirm Baseline
+            <CheckCircle className="h-5 w-5 mr-2" /> Create Country
           </button>
         </div>
       </div>

@@ -1,4 +1,4 @@
-// src/app/economy/components/EconomicInputForm.tsx
+// src/app/builder/components/EconomicInputForm.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -23,6 +23,7 @@ import { FiscalSystemComponent } from "./FiscalSystem";
 import { IncomeWealthDistribution } from "./IncomeWealthDistribution";
 import { GovernmentSpending } from "./GovernmentSpending";
 import { Demographics } from "./Demographics";
+import type { DemographicsData } from "~/types/economics";
 
 interface EconomicInputFormProps {
   inputs: EconomicInputs;
@@ -170,8 +171,8 @@ export function EconomicInputForm({
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-semibold text-[var(--color-text-primary)] mb-1">Economic Framework</h2>
-          <p className="text-[var(--color-text-muted)]">Building comprehensive economic model for {inputs.countryName || 'your nation'}</p>
+          <h2 className="text-xl font-semibold text-[var(--color-text-primary)] mb-1">Customize Your Country</h2>
+          <p className="text-[var(--color-text-muted)]">Fine-tune the economic parameters for {inputs.countryName || 'your custom nation'}</p>
         </div>
         <button onClick={onBack} className="btn-secondary text-sm py-1.5 px-3">
           <ArrowLeft className="h-4 w-4 mr-1.5" /> Back
@@ -195,7 +196,7 @@ export function EconomicInputForm({
 
       {/* Economic Summary */}
       <div className="bg-[var(--color-bg-tertiary)] rounded-lg p-4 mb-6 border border-[var(--color-border-primary)]">
-        <h3 className="text-sm font-medium text-[var(--color-text-secondary)] mb-3">Live Economic Summary</h3>
+        <h3 className="text-sm font-medium text-[var(--color-text-secondary)] mb-3">Country Economic Overview</h3>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
           {[
             {label: "Total GDP", value: formatNumber(inputs.coreIndicators.nominalGDP)},
@@ -241,7 +242,7 @@ export function EconomicInputForm({
           <CoreEconomicIndicatorsComponent
             indicators={inputs.coreIndicators}
             referenceCountry={referenceCountry}
-            onIndicatorsChange={handleCoreIndicatorsChange}
+            onIndicatorsChangeAction={handleCoreIndicatorsChange}
           />
         )}
         
@@ -250,7 +251,7 @@ export function EconomicInputForm({
             laborData={inputs.laborEmployment}
             referenceCountry={referenceCountry}
             totalPopulation={inputs.coreIndicators.totalPopulation}
-            onLaborDataChange={handleLaborDataChange}
+            onLaborDataChangeAction={handleLaborDataChange}
           />
         )}
         
@@ -275,10 +276,10 @@ export function EconomicInputForm({
 
         {activeSection === 'spending' && (
           <GovernmentSpending
-            spendingData={inputs.governmentSpending}
+            spendingData={inputs.governmentSpending as any} // Type assertion to bypass type incompatibility
             nominalGDP={inputs.coreIndicators.nominalGDP}
             totalPopulation={inputs.coreIndicators.totalPopulation}
-            onSpendingDataChange={handleGovernmentSpendingChange}
+            onSpendingDataChangeAction={(spendingData: any) => handleGovernmentSpendingChange(spendingData as typeof inputs.governmentSpending)} // Type assertion for parameter
           />
         )}
 
@@ -286,7 +287,7 @@ export function EconomicInputForm({
           <Demographics
             demographicData={inputs.demographics}
             totalPopulation={inputs.coreIndicators.totalPopulation}
-            onDemographicDataChange={handleDemographicsChange}
+            onDemographicDataChange={(demographicData: DemographicsData) => handleDemographicsChange(demographicData as typeof inputs.demographics)}
           />
         )}
       </div>

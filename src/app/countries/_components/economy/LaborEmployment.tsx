@@ -22,7 +22,7 @@ import { Slider } from "~/components/ui/slider";
 import { Progress } from "~/components/ui/progress";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
-import { formatPopulation, displayGrowthRate, formatCurrency } from "~/lib/chart-utils";
+import { formatPopulation, formatPercentage, formatCurrency } from "./utils";
 
 export interface LaborEmploymentData {
   laborForceParticipationRate: number;

@@ -1,0 +1,1 @@
+export { Demographics } from '../../../economy/components/Demographics'; 

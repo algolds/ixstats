@@ -53,10 +53,10 @@ export function CountrySelector({ countries, onCountrySelect, selectedCountry }:
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-[var(--color-text-primary)] mb-2 flex items-center">
           <Globe className="h-5 w-5 mr-2 text-[var(--color-brand-primary)]" />
-          Select Reference Country
+          Choose a Foundation Country
         </h2>
         <p className="text-[var(--color-text-muted)]">
-          Choose a real-world country to baseline your nation's economy. Parameters can be customized.
+          Select a real-world country to use as the economic foundation for your custom nation. All parameters can be customized in the next step.
         </p>
       </div>
 

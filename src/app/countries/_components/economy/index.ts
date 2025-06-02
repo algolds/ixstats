@@ -7,3 +7,7 @@ export { HistoricalEconomicTracker } from "./HistoricalEconomicTracker"
 export { EconomicModelingEngine } from "./EconomicModelingEngine"
 export { EconomicSummaryWidget } from "./EconomicSummaryWidget"
 export { EconomicDataDisplay } from "./EconomicDataDisplay"
+export { IncomeWealthDistribution } from './IncomeWealthDistribution';
+export { Demographics } from './Demographics';
+export { FiscalSystemComponent } from './FiscalSystemComponent';
+export { GovernmentSpending } from './GovernmentSpending';
