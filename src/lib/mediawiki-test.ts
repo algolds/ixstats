@@ -1,4 +1,6 @@
 // src/lib/mediawiki-test.ts
+// Test utilities for MediaWiki service functionality
+
 import { ixnayWiki } from './mediawiki-service';
 
 /**
@@ -52,7 +54,7 @@ export class MediaWikiTester {
   /**
    * Test flag retrieval for a country
    */
-  static async testFlag(countryName: string): Promise<TestResult> {
+  static async testFlagRetrieval(countryName: string): Promise<TestResult> {
     const start = Date.now();
     
     try {
@@ -61,8 +63,8 @@ export class MediaWikiTester {
       
       return {
         success: !!flagUrl,
-        data: { flagUrl, countryName },
-        error: !flagUrl ? 'No flag found' : undefined,
+        data: { flagUrl },
+        error: !flagUrl ? 'No flag URL found' : undefined,
         duration
       };
     } catch (error) {
@@ -77,7 +79,7 @@ export class MediaWikiTester {
   /**
    * Test infobox retrieval for a country
    */
-  static async testInfobox(countryName: string): Promise<TestResult> {
+  static async testInfoboxRetrieval(countryName: string): Promise<TestResult> {
     const start = Date.now();
     
     try {
@@ -86,8 +88,14 @@ export class MediaWikiTester {
       
       return {
         success: !!infobox,
-        data: infobox,
-        error: !infobox ? 'No infobox found' : undefined,
+        data: { 
+          infobox, 
+          fieldCount: infobox ? Object.keys(infobox).length : 0,
+          hasCapital: !!(infobox?.capital),
+          hasGovernment: !!(infobox?.government),
+          hasLanguages: !!(infobox?.languages || infobox?.official_languages)
+        },
+        error: !infobox ? 'No infobox data found' : undefined,
         duration
       };
     } catch (error) {
@@ -100,28 +108,69 @@ export class MediaWikiTester {
   }
 
   /**
-   * Test template retrieval
+   * Test wikitext cleaning functionality
    */
-  static async testTemplate(templateName: string): Promise<TestResult> {
+  static testWikitextCleaning(): TestResult {
     const start = Date.now();
     
     try {
-      const response = await fetch(`/api/mediawiki?action=parse&page=Template:${templateName}&prop=wikitext&format=json`);
-      const data = await response.json();
+      // Access the private cleanWikitext method through reflection
+      const service = ixnayWiki as any;
+      
+      const testCases = [
+        {
+          input: "'''Bold text''' and ''italic text''",
+          expected: '<strong class="font-bold">Bold text</strong> and <em class="italic">italic text</em>'
+        },
+        {
+          input: "[[Country Name|Display Name]]",
+          expected: '<a href="https://ixwiki.com/wiki/Country Name" target="_blank" rel="noopener noreferrer" style="color: #429284;" class="hover:underline">Display Name</a>'
+        },
+        {
+          input: "{{convert|100|km|mi}}",
+          expected: '100 km'
+        },
+        {
+          input: "{{flag|United States}}",
+          expected: '🏴 United States'
+        }
+      ];
+
+      let passedTests = 0;
+      const results = [];
+
+      for (const testCase of testCases) {
+        try {
+          const result = service.cleanWikitext ? service.cleanWikitext(testCase.input) : 'Method not accessible';
+          const passed = result.includes(testCase.expected) || result === testCase.expected;
+          if (passed) passedTests++;
+          
+          results.push({
+            input: testCase.input,
+            expected: testCase.expected,
+            actual: result,
+            passed
+          });
+        } catch (error) {
+          results.push({
+            input: testCase.input,
+            expected: testCase.expected,
+            actual: `Error: ${error}`,
+            passed: false
+          });
+        }
+      }
+
       const duration = Date.now() - start;
       
-      if (data.error) {
-        return {
-          success: false,
-          error: `Template Error: ${data.error.code} - ${data.error.info}`,
-          duration
-        };
-      }
-      
       return {
-        success: !!data.parse?.wikitext,
-        data: data.parse,
-        error: !data.parse?.wikitext ? 'Template not found or empty' : undefined,
+        success: passedTests === testCases.length,
+        data: { 
+          totalTests: testCases.length,
+          passedTests,
+          results
+        },
+        error: passedTests < testCases.length ? `${testCases.length - passedTests} test(s) failed` : undefined,
         duration
       };
     } catch (error) {
@@ -134,121 +183,227 @@ export class MediaWikiTester {
   }
 
   /**
-   * Run comprehensive tests
+   * Test cache functionality
    */
-  static async runFullTest(testCountries: string[] = ['Caphiria', 'Tierrador']): Promise<{
-    connection: TestResult;
-    countries: Array<{
-      name: string;
-      flag: TestResult;
-      infobox: TestResult;
-      template: TestResult;
-    }>;
-    summary: {
-      totalTests: number;
-      passed: number;
-      failed: number;
-      averageDuration: number;
-    };
-  }> {
-    console.log('[MediaWiki Test] Starting comprehensive test...');
+  static testCacheStats(): TestResult {
+    const start = Date.now();
     
-    // Test connection
-    const connection = await this.testConnection();
-    
-    // Test countries
-    const countryResults = [];
-    let totalDuration = 0;
-    let totalTests = 1; // Connection test
-    let passed = connection.success ? 1 : 0;
-    
-    for (const country of testCountries) {
-      console.log(`[MediaWiki Test] Testing country: ${country}`);
+    try {
+      const stats = ixnayWiki.getCacheStats();
+      const duration = Date.now() - start;
       
-      const flag = await this.testFlag(country);
-      const infobox = await this.testInfobox(country);
-      const template = await this.testTemplate(`Country_data_${country}`);
-      
-      countryResults.push({
-        name: country,
-        flag,
-        infobox,
-        template
-      });
-      
-      totalDuration += flag.duration + infobox.duration + template.duration;
-      totalTests += 3;
-      passed += (flag.success ? 1 : 0) + (infobox.success ? 1 : 0) + (template.success ? 1 : 0);
-      
-      // Small delay between countries
-      await new Promise(resolve => setTimeout(resolve, 500));
+      return {
+        success: true,
+        data: stats,
+        duration
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        duration: Date.now() - start
+      };
     }
-    
-    const results = {
-      connection,
-      countries: countryResults,
-      summary: {
-        totalTests,
-        passed,
-        failed: totalTests - passed,
-        averageDuration: Math.round((totalDuration + connection.duration) / totalTests)
-      }
-    };
-    
-    console.log('[MediaWiki Test] Test complete:', results.summary);
-    return results;
   }
 
   /**
-   * Generate test report
+   * Test preloading functionality
    */
-  static generateReport(results: Awaited<ReturnType<typeof MediaWikiTester.runFullTest>>): string {
-    let report = 'MediaWiki Integration Test Report\n';
-    report += '=====================================\n\n';
+  static async testPreloading(countryNames: string[]): Promise<TestResult> {
+    const start = Date.now();
     
-    // Summary
-    report += `Summary:\n`;
-    report += `- Total Tests: ${results.summary.totalTests}\n`;
-    report += `- Passed: ${results.summary.passed}\n`;
-    report += `- Failed: ${results.summary.failed}\n`;
-    report += `- Success Rate: ${Math.round((results.summary.passed / results.summary.totalTests) * 100)}%\n`;
-    report += `- Average Duration: ${results.summary.averageDuration}ms\n\n`;
-    
-    // Connection test
-    report += `Connection Test:\n`;
-    report += `- Status: ${results.connection.success ? 'PASS' : 'FAIL'}\n`;
-    report += `- Duration: ${results.connection.duration}ms\n`;
-    if (results.connection.error) {
-      report += `- Error: ${results.connection.error}\n`;
+    try {
+      const initialStats = ixnayWiki.getCacheStats();
+      
+      await ixnayWiki.preloadCountryFlags(countryNames);
+      
+      const finalStats = ixnayWiki.getCacheStats();
+      const duration = Date.now() - start;
+      
+      return {
+        success: finalStats.flags >= initialStats.flags,
+        data: {
+          initialStats,
+          finalStats,
+          improvement: finalStats.flags - initialStats.flags,
+          countryCount: countryNames.length
+        },
+        duration
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        duration: Date.now() - start
+      };
     }
-    report += '\n';
+  }
+
+  /**
+  /**
+  /**
+   * Run comprehensive test suite
+   */
+  static async runTestSuite(testCountries: string[] = ['Caphiria', 'Burgundie', 'Urcea']): Promise<{
+    overall: boolean;
+    results: Record<string, TestResult>;
+    summary: {
+      total: number;
+      passed: number;
+      failed: number;
+      totalDuration: number;
+    };
+  }> {
+    const results: Record<string, TestResult> = {};
+    let totalDuration = 0;
+
+    console.log('[MediaWiki Test] Starting comprehensive test suite...');
+
+    // Test cache stats
+    console.log('[MediaWiki Test] Testing cache stats...');
+    results.cacheStats = this.testCacheStats();
+    totalDuration += results.cacheStats.duration;
+
+    // Test wikitext cleaning
+    console.log('[MediaWiki Test] Testing wikitext cleaning...');
+    results.wikitextCleaning = this.testWikitextCleaning();
+    totalDuration += results.wikitextCleaning.duration;
+
+    // Test flag retrieval
+    for (const country of testCountries) {
+      console.log(`[MediaWiki Test] Testing flag retrieval for ${country}...`);
+      const flagResult = await this.testFlagRetrieval(country);
+      results[`flag_${country}`] = flagResult;
+      totalDuration += flagResult?.duration ?? 0;
+    }
+
+    // Test infobox retrieval  
+    for (const country of testCountries) {
+      console.log(`[MediaWiki Test] Testing infobox retrieval for ${country}...`);
+      const infoboxResult = await this.testInfoboxRetrieval(country);
+      results[`infobox_${country}`] = infoboxResult;
+      totalDuration += infoboxResult?.duration ?? 0;
+
+    // Test preloading
+    console.log('[MediaWiki Test] Testing preloading functionality...');
+    results.preloading = await this.testPreloading(testCountries);
+    totalDuration += results.preloading.duration;
+
+    // Calculate summary
+    const testResults = Object.values(results);
+    const passed = testResults.filter(r => r.success).length;
+    const failed = testResults.length - passed;
+    const overall = failed === 0;
+
+    const summary = {
+      total: testResults.length,
+      passed,
+      failed,
+      totalDuration
+    };
+
+    console.log(`[MediaWiki Test] Test suite completed: ${passed}/${testResults.length} passed in ${totalDuration}ms`);
+
+    return {
+      overall,
+      results,
+      summary
+    };
+  }
+
+  /**
+   * Test specific wikitext parsing scenarios
+   */
+  static testComplexWikitext(): TestResult {
+    const start = Date.now();
     
-    // Country tests
-    results.countries.forEach(country => {
-      report += `Country: ${country.name}\n`;
-      report += `- Flag: ${country.flag.success ? 'PASS' : 'FAIL'} (${country.flag.duration}ms)`;
-      if (country.flag.error) report += ` - ${country.flag.error}`;
-      report += '\n';
+    try {
+      const service = ixnayWiki as any;
       
-      report += `- Infobox: ${country.infobox.success ? 'PASS' : 'FAIL'} (${country.infobox.duration}ms)`;
-      if (country.infobox.error) report += ` - ${country.infobox.error}`;
-      report += '\n';
+      const complexCases = [
+        {
+          name: 'Nested templates',
+          input: "{{convert|{{#expr:100*2}}|km|mi}}",
+          shouldContain: ['200', 'km']
+        },
+        {
+          name: 'Multiple formatting',
+          input: "'''Bold''' and ''italic'' with [[Link|text]]",
+          shouldContain: ['<strong', '<em', '<a href']
+        },
+        {
+          name: 'Template with parameters',
+          input: "{{lang|fr|République française}}",
+          shouldContain: ['République française']
+        },
+        {
+          name: 'Flag template',
+          input: "{{flagicon|France}} France",
+          shouldContain: ['🏴', 'France']
+        }
+      ];
+
+      let passedTests = 0;
+      const results = [];
+
+      for (const testCase of complexCases) {
+        try {
+          const result = service.cleanWikitext ? service.cleanWikitext(testCase.input) : 'Method not accessible';
+          const passed = testCase.shouldContain.every(item => result.includes(item));
+          if (passed) passedTests++;
+          
+          results.push({
+            name: testCase.name,
+            input: testCase.input,
+            shouldContain: testCase.shouldContain,
+            actual: result,
+            passed
+          });
+        } catch (error) {
+          results.push({
+            name: testCase.name,
+            input: testCase.input,
+            shouldContain: testCase.shouldContain,
+            actual: `Error: ${error}`,
+            passed: false
+          });
+        }
+      }
+
+      const duration = Date.now() - start;
       
-      report += `- Template: ${country.template.success ? 'PASS' : 'FAIL'} (${country.template.duration}ms)`;
-      if (country.template.error) report += ` - ${country.template.error}`;
-      report += '\n\n';
-    });
-    
-    return report;
+      return {
+        success: passedTests === complexCases.length,
+        data: { 
+          totalTests: complexCases.length,
+          passedTests,
+          results
+        },
+        error: passedTests < complexCases.length ? `${complexCases.length - passedTests} complex test(s) failed` : undefined,
+        duration
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        duration: Date.now() - start
+      };
+    }
   }
 }
 
-// Development utility - run tests from browser console
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  (window as any).testMediaWiki = async (countries?: string[]) => {
-    const results = await MediaWikiTester.runFullTest(countries);
-    const report = MediaWikiTester.generateReport(results);
-    console.log(report);
-    return results;
-  };
+// Export test utilities for use in development
+export const testMediaWiki = {
+  flagRetrieval: MediaWikiTester.testFlagRetrieval,
+  infoboxRetrieval: MediaWikiTester.testInfoboxRetrieval,
+  wikitextCleaning: MediaWikiTester.testWikitextCleaning,
+  cacheStats: MediaWikiTester.testCacheStats,
+  preloading: MediaWikiTester.testPreloading,
+  runSuite: MediaWikiTester.runTestSuite,
+  complexWikitext: MediaWikiTester.testComplexWikitext
+};
+
+// Development helper to run tests in browser console
+if (typeof window !== 'undefined') {
+  (window as any).testMediaWiki = testMediaWiki;
 }

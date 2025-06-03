@@ -253,6 +253,66 @@ body {
   padding: 1.5rem;
 }
 
+.card-footer {
+  padding: 1rem 1.5rem;
+  background-color: var(--color-bg-tertiary);
+  border-top: 1px solid var(--color-border-primary);
+}
+
+.card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+}
+
+.card-icon {
+  height: 1.25rem;
+  width: 1.25rem;
+  margin-right: 0.5rem;
+  color: var(--color-brand-primary);
+}
+
+.card-body {
+  padding: 1rem;
+}
+
+/* WikiLink styles for MediaWiki content */
+.wikilink {
+  color: #429284 !important;
+  text-decoration: none;
+  transition: color 0.2s ease, text-decoration 0.2s ease;
+}
+
+.wikilink:hover {
+  text-decoration: underline;
+  color: #357063 !important;
+}
+
+/* Support for wikilinks in infobox content */
+.country-infobox-content a[href*="ixwiki.com"] {
+  color: #429284 !important;
+  text-decoration: none;
+  transition: color 0.2s ease, text-decoration 0.2s ease;
+}
+
+.country-infobox-content a[href*="ixwiki.com"]:hover {
+  text-decoration: underline;
+  color: #357063 !important;
+}
+
+/* Dark mode support for wikilinks */
+.dark .wikilink,
+.dark .country-infobox-content a[href*="ixwiki.com"] {
+  color: #52a694 !important;
+}
+
+.dark .wikilink:hover,
+.dark .country-infobox-content a[href*="ixwiki.com"]:hover {
+  color: #6bb8a6 !important;
+}
+
 /* Form Elements */
 .form-input {
   background-color: var(--color-input-bg);
@@ -421,6 +481,70 @@ body {
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: capitalize;
+}
+
+/* ===================================
+   COUNTRY DETAIL PAGE STYLES
+   =================================== */
+
+/* Statistics Display Components */
+.stat-block {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--color-bg-tertiary);
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border-primary);
+}
+
+.stat-icon {
+  height: 1.25rem;
+  width: 1.25rem;
+  margin-right: 0.5rem;
+  color: var(--color-brand-primary);
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  display: block;
+}
+
+.stat-value {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.stat-block-small {
+  background-color: var(--color-bg-tertiary);
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border-primary);
+  padding: 0.75rem;
+}
+
+.stat-label-small {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  display: block;
+}
+
+.stat-value-small {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border-primary);
+  padding-bottom: 0.5rem;
+}
+
+.stat-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
 }
 
 /* Loading States */
@@ -636,70 +760,6 @@ body {
     border: 1px solid #000 !important;
     box-shadow: none !important;
   }
-}
-/* Country detail page styles */
-.stat-block {
-  @apply flex items-center px-4 py-2 bg-[var(--color-bg-tertiary)] rounded-lg border border-[var(--color-border-primary)];
-}
-
-.stat-icon {
-  @apply h-5 w-5 mr-2 text-[var(--color-brand-primary)];
-}
-
-.stat-label {
-  @apply text-sm text-[var(--color-text-muted)] block;
-}
-
-.stat-value {
-  @apply font-semibold text-[var(--color-text-primary)];
-}
-
-.stat-block-small {
-  @apply bg-[var(--color-bg-tertiary)] rounded-lg border border-[var(--color-border-primary)] p-3;
-}
-
-.stat-label-small {
-  @apply text-xs text-[var(--color-text-muted)] block;
-}
-
-.stat-value-small {
-  @apply font-semibold text-[var(--color-text-primary)] text-sm;
-}
-
-.stat-row {
-  @apply flex justify-between items-center border-b border-[var(--color-border-primary)] pb-2;
-}
-
-.stat-row:last-child {
-  @apply border-b-0 pb-0;
-}
-
-.card { /* This redefines .card, ensure this is intended or scope it appropriately if it's specific to country detail pages */
-  @apply bg-[var(--color-bg-surface)] border border-[var(--color-border-primary)] rounded-lg shadow-sm overflow-hidden;
-}
-
-.card-header { /* This redefines .card-header */
-  @apply p-4 border-b border-[var(--color-border-primary)];
-}
-
-.card-title {
-  @apply text-lg font-semibold text-[var(--color-text-primary)] flex items-center;
-}
-
-.card-icon {
-  @apply h-5 w-5 mr-2 text-[var(--color-brand-primary)];
-}
-
-.card-body {
-  @apply p-4;
-}
-
-.card-footer {
-  @apply px-4 py-3 bg-[var(--color-bg-tertiary)] border-t border-[var(--color-border-primary)];
-}
-
-.tier-badge { /* This redefines .tier-badge */
-  @apply px-2 py-1 rounded-full text-xs font-medium;
 }
 
 /*
