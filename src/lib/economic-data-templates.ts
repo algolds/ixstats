@@ -51,6 +51,7 @@ export function generateLaborEmploymentData(profile: CountryProfile): LaborEmplo
   const employmentRate = 100 - unemploymentRate;
 
   return {
+    // Basic metrics
     laborForceParticipationRate: participationRate,
     employmentRate: employmentRate,
     unemploymentRate: unemploymentRate,
@@ -58,6 +59,66 @@ export function generateLaborEmploymentData(profile: CountryProfile): LaborEmplo
     averageWorkweekHours: getAverageWorkweek(profile.economicTier),
     minimumWage: getMinimumWage(profile.gdpPerCapita),
     averageAnnualIncome: getAverageIncome(profile.gdpPerCapita),
+    
+    // Employment by sector
+    employmentBySector: {
+      agriculture: getAgricultureEmployment(profile.economicTier),
+      industry: getIndustryEmployment(profile.economicTier),
+      services: getServicesEmployment(profile.economicTier),
+    },
+    
+    // Employment by type
+    employmentByType: {
+      fullTime: getFullTimeEmployment(profile.economicTier),
+      partTime: getPartTimeEmployment(profile.economicTier),
+      temporary: getTemporaryEmployment(profile.economicTier),
+      selfEmployed: getSelfEmployment(profile.economicTier),
+      informal: getInformalEmployment(profile.economicTier),
+    },
+    
+    // Skills and productivity
+    skillsAndProductivity: {
+      averageEducationYears: getAverageEducationYears(profile.economicTier),
+      tertiaryEducationRate: getTertiaryEducationRate(profile.economicTier),
+      vocationalTrainingRate: getVocationalTrainingRate(profile.economicTier),
+      skillsGapIndex: getSkillsGapIndex(profile.economicTier),
+      laborProductivityIndex: getLaborProductivityIndex(profile.economicTier),
+      productivityGrowthRate: getProductivityGrowthRate(profile.economicTier),
+    },
+    
+    // Demographics and conditions
+    demographicsAndConditions: {
+      youthUnemploymentRate: getYouthUnemploymentRate(profile.economicTier, unemploymentRate),
+      femaleParticipationRate: getFemaleParticipationRate(profile.economicTier),
+      genderPayGap: getGenderPayGap(profile.economicTier),
+      unionizationRate: getUnionizationRate(profile.economicTier),
+      workplaceSafetyIndex: getWorkplaceSafetyIndex(profile.economicTier),
+      averageCommutingTime: getAverageCommutingTime(profile.economicTier),
+    },
+    
+    // Regional breakdown
+    regionalEmployment: {
+      urban: {
+        participationRate: participationRate + getUrbanParticipationBonus(profile.economicTier),
+        unemploymentRate: unemploymentRate - getUrbanUnemploymentAdjustment(profile.economicTier),
+        averageIncome: getAverageIncome(profile.gdpPerCapita) * getUrbanIncomeMultiplier(profile.economicTier),
+      },
+      rural: {
+        participationRate: participationRate - getRuralParticipationPenalty(profile.economicTier),
+        unemploymentRate: unemploymentRate + getRuralUnemploymentAdjustment(profile.economicTier),
+        averageIncome: getAverageIncome(profile.gdpPerCapita) * getRuralIncomeMultiplier(profile.economicTier),
+      },
+    },
+    
+    // Benefits and social protection
+    socialProtection: {
+      unemploymentBenefitCoverage: getUnemploymentBenefitCoverage(profile.economicTier),
+      pensionCoverage: getPensionCoverage(profile.economicTier),
+      healthInsuranceCoverage: getHealthInsuranceCoverage(profile.economicTier),
+      paidSickLeaveDays: getPaidSickLeaveDays(profile.economicTier),
+      paidVacationDays: getPaidVacationDays(profile.economicTier),
+      parentalLeaveWeeks: getParentalLeaveWeeks(profile.economicTier),
+    },
   };
 }
 
@@ -85,7 +146,7 @@ export function generateFiscalSystemData(profile: CountryProfile): FiscalSystemD
     interestRates: getInterestRates(profile.economicTier),
     debtServiceCosts: (profile.totalGdp * (debtPercent / 100)) * 0.05, // 5% of debt
     taxRates: getDefaultTaxRates(profile.economicTier),
-    governmentSpendingByCategory: getDefaultSpendingCategories(),
+    governmentSpendingByCategory: getSpendingCategoriesWithAmounts(totalSpending),
   };
 }
 
@@ -529,10 +590,423 @@ function getLiteracyRate(tier: string): number {
 
 function getCitizenshipStatuses() {
   return [
-    { status: "Citizens", percent: 85, color: "#3b82f6" },
-    { status: "Permanent Residents", percent: 10, color: "#10b981" },
-    { status: "Temporary Residents", percent: 5, color: "#f59e0b" },
+    { status: 'Citizens', percent: 85, color: '#3b82f6' },
+    { status: 'Permanent Residents', percent: 10, color: '#10b981' },
+    { status: 'Temporary Workers', percent: 4, color: '#f59e0b' },
+    { status: 'Other', percent: 1, color: '#6b7280' },
   ];
+}
+
+// Enhanced Labor Market Helper Functions
+
+function getAgricultureEmployment(tier: string): number {
+  const rates = {
+    'Extravagant': 2,
+    'Very Strong': 3,
+    'Strong': 4,
+    'Healthy': 6,
+    'Developed': 5,
+    'Emerging': 15,
+    'Developing': 35,
+  };
+  return rates[tier as keyof typeof rates] || 10;
+}
+
+function getIndustryEmployment(tier: string): number {
+  const rates = {
+    'Extravagant': 20,
+    'Very Strong': 22,
+    'Strong': 25,
+    'Healthy': 28,
+    'Developed': 25,
+    'Emerging': 30,
+    'Developing': 25,
+  };
+  return rates[tier as keyof typeof rates] || 25;
+}
+
+function getServicesEmployment(tier: string): number {
+  const agriculture = getAgricultureEmployment(tier);
+  const industry = getIndustryEmployment(tier);
+  return Math.max(0, 100 - agriculture - industry);
+}
+
+function getFullTimeEmployment(tier: string): number {
+  const rates = {
+    'Extravagant': 85,
+    'Very Strong': 82,
+    'Strong': 80,
+    'Healthy': 78,
+    'Developed': 80,
+    'Emerging': 75,
+    'Developing': 70,
+  };
+  return rates[tier as keyof typeof rates] || 78;
+}
+
+function getPartTimeEmployment(tier: string): number {
+  const rates = {
+    'Extravagant': 12,
+    'Very Strong': 14,
+    'Strong': 15,
+    'Healthy': 16,
+    'Developed': 15,
+    'Emerging': 12,
+    'Developing': 10,
+  };
+  return rates[tier as keyof typeof rates] || 14;
+}
+
+function getTemporaryEmployment(tier: string): number {
+  const rates = {
+    'Extravagant': 8,
+    'Very Strong': 10,
+    'Strong': 12,
+    'Healthy': 15,
+    'Developed': 12,
+    'Emerging': 18,
+    'Developing': 25,
+  };
+  return rates[tier as keyof typeof rates] || 15;
+}
+
+function getSelfEmployment(tier: string): number {
+  const rates = {
+    'Extravagant': 12,
+    'Very Strong': 14,
+    'Strong': 16,
+    'Healthy': 18,
+    'Developed': 15,
+    'Emerging': 25,
+    'Developing': 35,
+  };
+  return rates[tier as keyof typeof rates] || 20;
+}
+
+function getInformalEmployment(tier: string): number {
+  const rates = {
+    'Extravagant': 5,
+    'Very Strong': 8,
+    'Strong': 12,
+    'Healthy': 15,
+    'Developed': 10,
+    'Emerging': 30,
+    'Developing': 50,
+  };
+  return rates[tier as keyof typeof rates] || 20;
+}
+
+function getAverageEducationYears(tier: string): number {
+  const years = {
+    'Extravagant': 14.5,
+    'Very Strong': 13.8,
+    'Strong': 13.2,
+    'Healthy': 12.5,
+    'Developed': 12.8,
+    'Emerging': 10.5,
+    'Developing': 8.2,
+  };
+  return years[tier as keyof typeof years] || 11;
+}
+
+function getTertiaryEducationRate(tier: string): number {
+  const rates = {
+    'Extravagant': 55,
+    'Very Strong': 48,
+    'Strong': 42,
+    'Healthy': 38,
+    'Developed': 40,
+    'Emerging': 25,
+    'Developing': 15,
+  };
+  return rates[tier as keyof typeof rates] || 35;
+}
+
+function getVocationalTrainingRate(tier: string): number {
+  const rates = {
+    'Extravagant': 35,
+    'Very Strong': 40,
+    'Strong': 45,
+    'Healthy': 50,
+    'Developed': 45,
+    'Emerging': 30,
+    'Developing': 20,
+  };
+  return rates[tier as keyof typeof rates] || 35;
+}
+
+function getSkillsGapIndex(tier: string): number {
+  const indices = {
+    'Extravagant': 85,
+    'Very Strong': 80,
+    'Strong': 75,
+    'Healthy': 70,
+    'Developed': 75,
+    'Emerging': 60,
+    'Developing': 45,
+  };
+  return indices[tier as keyof typeof indices] || 65;
+}
+
+function getLaborProductivityIndex(tier: string): number {
+  const indices = {
+    'Extravagant': 140,
+    'Very Strong': 125,
+    'Strong': 115,
+    'Healthy': 108,
+    'Developed': 110,
+    'Emerging': 95,
+    'Developing': 80,
+  };
+  return indices[tier as keyof typeof indices] || 100;
+}
+
+function getProductivityGrowthRate(tier: string): number {
+  const rates = {
+    'Extravagant': 2.5,
+    'Very Strong': 3.0,
+    'Strong': 3.5,
+    'Healthy': 4.0,
+    'Developed': 3.0,
+    'Emerging': 4.5,
+    'Developing': 5.0,
+  };
+  return rates[tier as keyof typeof rates] || 3.5;
+}
+
+function getYouthUnemploymentRate(tier: string, baseUnemploymentRate: number): number {
+  const multipliers = {
+    'Extravagant': 1.5,
+    'Very Strong': 1.8,
+    'Strong': 2.0,
+    'Healthy': 2.2,
+    'Developed': 2.0,
+    'Emerging': 2.5,
+    'Developing': 3.0,
+  };
+  const multiplier = multipliers[tier as keyof typeof multipliers] || 2.0;
+  return Math.min(baseUnemploymentRate * multiplier, 50); // Cap at 50%
+}
+
+function getFemaleParticipationRate(tier: string): number {
+  const rates = {
+    'Extravagant': 72,
+    'Very Strong': 68,
+    'Strong': 65,
+    'Healthy': 62,
+    'Developed': 64,
+    'Emerging': 55,
+    'Developing': 45,
+  };
+  return rates[tier as keyof typeof rates] || 60;
+}
+
+function getGenderPayGap(tier: string): number {
+  const gaps = {
+    'Extravagant': 8,
+    'Very Strong': 12,
+    'Strong': 15,
+    'Healthy': 18,
+    'Developed': 15,
+    'Emerging': 25,
+    'Developing': 35,
+  };
+  return gaps[tier as keyof typeof gaps] || 20;
+}
+
+function getUnionizationRate(tier: string): number {
+  const rates = {
+    'Extravagant': 25,
+    'Very Strong': 30,
+    'Strong': 35,
+    'Healthy': 40,
+    'Developed': 35,
+    'Emerging': 20,
+    'Developing': 15,
+  };
+  return rates[tier as keyof typeof rates] || 25;
+}
+
+function getWorkplaceSafetyIndex(tier: string): number {
+  const indices = {
+    'Extravagant': 95,
+    'Very Strong': 90,
+    'Strong': 85,
+    'Healthy': 80,
+    'Developed': 85,
+    'Emerging': 70,
+    'Developing': 55,
+  };
+  return indices[tier as keyof typeof indices] || 75;
+}
+
+function getAverageCommutingTime(tier: string): number {
+  const times = {
+    'Extravagant': 25,
+    'Very Strong': 28,
+    'Strong': 32,
+    'Healthy': 35,
+    'Developed': 30,
+    'Emerging': 40,
+    'Developing': 45,
+  };
+  return times[tier as keyof typeof times] || 35;
+}
+
+function getUrbanParticipationBonus(tier: string): number {
+  const bonuses = {
+    'Extravagant': 5,
+    'Very Strong': 4,
+    'Strong': 3,
+    'Healthy': 2,
+    'Developed': 3,
+    'Emerging': 8,
+    'Developing': 12,
+  };
+  return bonuses[tier as keyof typeof bonuses] || 5;
+}
+
+function getUrbanUnemploymentAdjustment(tier: string): number {
+  const adjustments = {
+    'Extravagant': 1,
+    'Very Strong': 1,
+    'Strong': 0.5,
+    'Healthy': 0,
+    'Developed': 0.5,
+    'Emerging': -2,
+    'Developing': -3,
+  };
+  return adjustments[tier as keyof typeof adjustments] || 0;
+}
+
+function getUrbanIncomeMultiplier(tier: string): number {
+  const multipliers = {
+    'Extravagant': 1.3,
+    'Very Strong': 1.25,
+    'Strong': 1.2,
+    'Healthy': 1.15,
+    'Developed': 1.2,
+    'Emerging': 1.4,
+    'Developing': 1.6,
+  };
+  return multipliers[tier as keyof typeof multipliers] || 1.25;
+}
+
+function getRuralParticipationPenalty(tier: string): number {
+  const penalties = {
+    'Extravagant': 3,
+    'Very Strong': 4,
+    'Strong': 5,
+    'Healthy': 6,
+    'Developed': 5,
+    'Emerging': 10,
+    'Developing': 15,
+  };
+  return penalties[tier as keyof typeof penalties] || 7;
+}
+
+function getRuralUnemploymentAdjustment(tier: string): number {
+  const adjustments = {
+    'Extravagant': 1,
+    'Very Strong': 1.5,
+    'Strong': 2,
+    'Healthy': 2.5,
+    'Developed': 2,
+    'Emerging': 3,
+    'Developing': 4,
+  };
+  return adjustments[tier as keyof typeof adjustments] || 2;
+}
+
+function getRuralIncomeMultiplier(tier: string): number {
+  const multipliers = {
+    'Extravagant': 0.8,
+    'Very Strong': 0.75,
+    'Strong': 0.7,
+    'Healthy': 0.65,
+    'Developed': 0.7,
+    'Emerging': 0.5,
+    'Developing': 0.4,
+  };
+  return multipliers[tier as keyof typeof multipliers] || 0.65;
+}
+
+function getUnemploymentBenefitCoverage(tier: string): number {
+  const coverages = {
+    'Extravagant': 85,
+    'Very Strong': 80,
+    'Strong': 75,
+    'Healthy': 70,
+    'Developed': 75,
+    'Emerging': 45,
+    'Developing': 25,
+  };
+  return coverages[tier as keyof typeof coverages] || 60;
+}
+
+function getPensionCoverage(tier: string): number {
+  const coverages = {
+    'Extravagant': 95,
+    'Very Strong': 90,
+    'Strong': 85,
+    'Healthy': 80,
+    'Developed': 85,
+    'Emerging': 60,
+    'Developing': 40,
+  };
+  return coverages[tier as keyof typeof coverages] || 75;
+}
+
+function getHealthInsuranceCoverage(tier: string): number {
+  const coverages = {
+    'Extravagant': 98,
+    'Very Strong': 95,
+    'Strong': 90,
+    'Healthy': 85,
+    'Developed': 90,
+    'Emerging': 65,
+    'Developing': 40,
+  };
+  return coverages[tier as keyof typeof coverages] || 80;
+}
+
+function getPaidSickLeaveDays(tier: string): number {
+  const days = {
+    'Extravagant': 15,
+    'Very Strong': 12,
+    'Strong': 10,
+    'Healthy': 8,
+    'Developed': 10,
+    'Emerging': 5,
+    'Developing': 2,
+  };
+  return days[tier as keyof typeof days] || 8;
+}
+
+function getPaidVacationDays(tier: string): number {
+  const days = {
+    'Extravagant': 30,
+    'Very Strong': 25,
+    'Strong': 22,
+    'Healthy': 20,
+    'Developed': 22,
+    'Emerging': 15,
+    'Developing': 10,
+  };
+  return days[tier as keyof typeof days] || 20;
+}
+
+function getParentalLeaveWeeks(tier: string): number {
+  const weeks = {
+    'Extravagant': 20,
+    'Very Strong': 16,
+    'Strong': 14,
+    'Healthy': 12,
+    'Developed': 14,
+    'Emerging': 8,
+    'Developing': 4,
+  };
+  return weeks[tier as keyof typeof weeks] || 12;
 }
 
 /**

@@ -10,8 +10,9 @@ export interface CoreEconomicIndicatorsData {
     currencyExchangeRate: number
   }
   
-  // Labor & employment
+  // Labor & employment - Enhanced with detailed metrics
   export interface LaborEmploymentData {
+    // Basic metrics
     laborForceParticipationRate: number  // percent
     employmentRate: number               // percent
     unemploymentRate: number             // percent
@@ -19,6 +20,66 @@ export interface CoreEconomicIndicatorsData {
     averageWorkweekHours: number
     minimumWage: number
     averageAnnualIncome: number
+    
+    // Employment by sector
+    employmentBySector: {
+      agriculture: number        // percent of workforce
+      industry: number          // percent of workforce  
+      services: number          // percent of workforce
+    }
+    
+    // Employment by type
+    employmentByType: {
+      fullTime: number          // percent of workforce
+      partTime: number          // percent of workforce
+      temporary: number         // percent of workforce
+      selfEmployed: number      // percent of workforce
+      informal: number          // percent of workforce
+    }
+    
+    // Skills and productivity
+    skillsAndProductivity: {
+      averageEducationYears: number
+      tertiaryEducationRate: number      // percent
+      vocationalTrainingRate: number     // percent
+      skillsGapIndex: number             // 0-100 scale
+      laborProductivityIndex: number     // base 100
+      productivityGrowthRate: number     // percent annual
+    }
+    
+    // Demographics and conditions
+    demographicsAndConditions: {
+      youthUnemploymentRate: number      // ages 15-24, percent
+      femaleParticipationRate: number    // percent
+      genderPayGap: number              // percent
+      unionizationRate: number          // percent
+      workplaceSafetyIndex: number      // 0-100 scale
+      averageCommutingTime: number      // minutes
+    }
+    
+    // Regional breakdown
+    regionalEmployment: {
+      urban: {
+        participationRate: number       // percent
+        unemploymentRate: number        // percent
+        averageIncome: number
+      }
+      rural: {
+        participationRate: number       // percent
+        unemploymentRate: number        // percent
+        averageIncome: number
+      }
+    }
+    
+    // Benefits and social protection
+    socialProtection: {
+      unemploymentBenefitCoverage: number  // percent of unemployed
+      pensionCoverage: number             // percent of workforce
+      healthInsuranceCoverage: number     // percent of workforce
+      paidSickLeaveDays: number           // average days per year
+      paidVacationDays: number            // average days per year
+      parentalLeaveWeeks: number          // weeks
+    }
   }
   
   // Fiscal system
@@ -44,10 +105,13 @@ export interface CoreEconomicIndicatorsData {
       wealthTaxRate: number
     }
     governmentSpendingByCategory: Array<{
-        color: string | undefined
-        icon(icon: any): import("react").ReactNode
-        description: ReactNode category: string; amount: number; percent: number 
-}>
+      category: string
+      amount: number
+      percent: number
+      icon?: string
+      color?: string
+      description?: string
+    }>
   }
   
   // Income & wealth distribution

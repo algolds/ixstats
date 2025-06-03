@@ -1,7 +1,7 @@
 // src/app/countries/_components/economy/HistoricalEconomicTracker.tsx
 "use client";
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { 
   Calendar,
   TrendingUp,
@@ -16,9 +16,21 @@ import {
   Eye,
   BarChart3,
   FileText,
-  Zap
+  Zap,
+  Pencil,
+  HelpCircle,
+  Activity,
+  LineChart,
+  RotateCcw,
+  Search,
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -41,19 +53,26 @@ import {
   DialogTrigger,
 } from "~/components/ui/dialog";
 import { 
-  LineChart, 
+  LineChart as RechartsLineChart, 
   Line, 
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  Tooltip, 
+  Tooltip as RechartsTooltip, 
   ResponsiveContainer,
   ReferenceLine,
   ScatterChart,
-  Scatter
+  Scatter,
+  ComposedChart,
+  Bar,
+  Legend,
 } from 'recharts';
+import { Progress } from "~/components/ui/progress";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { Separator } from "~/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import { IxTime } from "~/lib/ixtime";
-import { formatCurrency, formatPopulation, displayGrowthRate } from "~/lib/chart-utils";
+import { formatCurrency, formatPopulation, formatPercentage } from "./utils";
 
 interface EconomicEvent {
   id: string;
@@ -92,13 +111,14 @@ interface HistoricalEconomicTrackerProps {
   onEditEvent?: (id: string, event: Partial<EconomicEvent>) => void;
   onDeleteEvent?: (id: string) => void;
   isEditable?: boolean;
+  totalPopulation: number;
 }
 
 const eventTypes = [
-  { value: 'dm_input', label: 'DM Input', icon: Zap },
-  { value: 'policy_change', label: 'Policy Change', icon: FileText },
-  { value: 'economic_shift', label: 'Economic Shift', icon: TrendingUp },
-  { value: 'external_event', label: 'External Event', icon: AlertCircle },
+  { value: 'dm_input', label: 'DM Input', icon: Zap, color: 'purple' },
+  { value: 'policy_change', label: 'Policy Change', icon: FileText, color: 'blue' },
+  { value: 'economic_shift', label: 'Economic Shift', icon: TrendingUp, color: 'green' },
+  { value: 'external_event', label: 'External Event', icon: AlertCircle, color: 'red' },
 ];
 
 const eventCategories = [
@@ -116,11 +136,11 @@ const eventCategories = [
   'Other'
 ];
 
-const severityColors = {
-  minor: 'bg-blue-100 text-blue-800 border-blue-200',
-  moderate: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  major: 'bg-orange-100 text-orange-800 border-orange-200',
-  critical: 'bg-red-100 text-red-800 border-red-200',
+const severityConfig = {
+  minor: { color: 'bg-blue-100 text-blue-800 border-blue-200', label: 'Minor' },
+  moderate: { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: 'Moderate' },
+  major: { color: 'bg-orange-100 text-orange-800 border-orange-200', label: 'Major' },
+  critical: { color: 'bg-red-100 text-red-800 border-red-200', label: 'Critical' },
 };
 
 export function HistoricalEconomicTracker({
@@ -130,8 +150,11 @@ export function HistoricalEconomicTracker({
   onAddEvent,
   onEditEvent,
   onDeleteEvent,
-  isEditable = false
+  isEditable = false,
+  totalPopulation,
 }: HistoricalEconomicTrackerProps) {
+  const [view, setView] = useState<"timeline" | "events" | "analysis">("timeline");
+  const [editMode, setEditMode] = useState(false);
   const [selectedTimeRange, setSelectedTimeRange] = useState<'1Y' | '5Y' | '10Y' | 'ALL'>('5Y');
   const [selectedEventType, setSelectedEventType] = useState<string>('all');
   const [selectedSeverity, setSelectedSeverity] = useState<string>('all');
@@ -247,7 +270,7 @@ export function HistoricalEconomicTracker({
       case 'population':
         return formatPopulation(value);
       case 'unemployment':
-        return `${value.toFixed(1)}%`;
+        return formatPercentage(value);
     }
   };
 
@@ -262,7 +285,35 @@ export function HistoricalEconomicTracker({
     }
   };
 
+  const clearFilters = () => {
+    setSelectedEventType('all');
+    setSelectedSeverity('all');
+    setSearchQuery('');
+    setSelectedTimeRange('5Y');
+  };
+
+  const hasActiveFilters = selectedEventType !== 'all' || selectedSeverity !== 'all' || searchQuery !== '';
+
+  // Calculate economic health trends
+  const economicHealthTrend = useMemo(() => {
+    if (chartData.length < 2) return { trend: 'stable', value: 0 };
+    
+    const recent = chartData.slice(-3);
+    const older = chartData.slice(-6, -3);
+    
+    if (recent.length === 0 || older.length === 0) return { trend: 'stable', value: 0 };
+    
+    const recentAvg = recent.reduce((sum, point) => sum + point.gdpPerCapita, 0) / recent.length;
+    const olderAvg = older.reduce((sum, point) => sum + point.gdpPerCapita, 0) / older.length;
+    
+    const change = ((recentAvg - olderAvg) / olderAvg) * 100;
+    
+    if (Math.abs(change) < 1) return { trend: 'stable', value: change };
+    return { trend: change > 0 ? 'improving' : 'declining', value: change };
+  }, [chartData]);
+
   return (
+    <TooltipProvider>
     <div className="space-y-6">
       {/* Header and Controls */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -277,7 +328,18 @@ export function HistoricalEconomicTracker({
         </div>
         
         <div className="flex items-center gap-2">
-          {isEditable && (
+            {!isEditable && (
+              <Button
+                variant={editMode ? "default" : "outline"}
+                size="sm"
+                onClick={() => setEditMode(!editMode)}
+              >
+                {editMode ? <Eye className="h-4 w-4 mr-1" /> : <Pencil className="h-4 w-4 mr-1" />}
+                {editMode ? "View" : "Edit"}
+              </Button>
+            )}
+            
+            {(isEditable || editMode) && (
             <Dialog open={isAddingEvent} onOpenChange={setIsAddingEvent}>
               <DialogTrigger asChild>
                 <Button size="sm">
@@ -285,7 +347,7 @@ export function HistoricalEconomicTracker({
                   Add Event
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+                <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>Add Economic Event</DialogTitle>
                   <DialogDescription>
@@ -310,7 +372,101 @@ export function HistoricalEconomicTracker({
         </div>
       </div>
 
+        {/* Economic Health Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">Economic Trend</span>
+                </div>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Recent economic performance trend</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <div className="space-y-1">
+                <div className={`text-2xl font-bold ${
+                  economicHealthTrend.trend === 'improving' ? 'text-green-600' :
+                  economicHealthTrend.trend === 'declining' ? 'text-red-600' : 'text-blue-600'
+                }`}>
+                  {economicHealthTrend.trend === 'improving' ? '↗' : 
+                   economicHealthTrend.trend === 'declining' ? '↘' : '→'}
+                </div>
+                <div className="text-xs text-muted-foreground capitalize">
+                  {economicHealthTrend.trend}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {Math.abs(economicHealthTrend.value).toFixed(1)}% change
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">Total Events</span>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-2xl font-bold">{allEvents.length}</div>
+                <div className="text-xs text-muted-foreground">
+                  {selectedTimeRange === 'ALL' ? 'All time' : `Last ${selectedTimeRange.replace('Y', ' year(s)')}`}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">Critical Events</span>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-2xl font-bold text-red-600">
+                  {allEvents.filter(e => e.severity === 'critical').length}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Requiring attention
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">Active Policies</span>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-2xl font-bold text-blue-600">
+                  {allEvents.filter(e => e.isActive && e.type === 'policy_change').length}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Currently in effect
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
       {/* Filters */}
+        <Card>
+          <CardContent className="p-4">
       <div className="flex flex-wrap gap-4 items-center">
         <div className="flex items-center gap-2">
           <Label htmlFor="timeRange" className="text-sm">Time Range:</Label>
@@ -358,21 +514,52 @@ export function HistoricalEconomicTracker({
           </Select>
         </div>
 
-        <div className="flex-1 min-w-[200px]">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="severity" className="text-sm">Severity:</Label>
+                <Select value={selectedSeverity} onValueChange={setSelectedSeverity}>
+                  <SelectTrigger className="w-28">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="critical">Critical</SelectItem>
+                    <SelectItem value="major">Major</SelectItem>
+                    <SelectItem value="moderate">Moderate</SelectItem>
+                    <SelectItem value="minor">Minor</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex-1 min-w-[200px] relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search events..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full"
+                  className="pl-10"
           />
         </div>
-      </div>
 
-      <Tabs defaultValue="timeline" className="w-full">
+              {hasActiveFilters && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={clearFilters}
+                  className="flex items-center gap-1"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                  Clear
+                </Button>
+              )}
+      </div>
+          </CardContent>
+        </Card>
+
+        <Tabs value={view} onValueChange={(v) => setView(v as any)} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="timeline">Timeline View</TabsTrigger>
           <TabsTrigger value="events">Events List</TabsTrigger>
-          <TabsTrigger value="impact">Impact Analysis</TabsTrigger>
+            <TabsTrigger value="analysis">Impact Analysis</TabsTrigger>
         </TabsList>
 
         <TabsContent value="timeline" className="space-y-4">
@@ -380,18 +567,18 @@ export function HistoricalEconomicTracker({
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
+                  <LineChart className="h-5 w-5" />
                 {selectedMetric === 'gdp' ? 'GDP per Capita' : 
                  selectedMetric === 'population' ? 'Population' : 'Unemployment Rate'} Over Time
               </CardTitle>
               <CardDescription>
-                Economic trend with event markers
+                  Economic trend with event markers • {chartData.length} data points
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
+                    <ComposedChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
                       dataKey="gameYear"
@@ -400,9 +587,13 @@ export function HistoricalEconomicTracker({
                     <YAxis 
                       tickFormatter={formatMetricValue}
                     />
-                    <Tooltip 
+                      <RechartsTooltip 
                       labelFormatter={(value) => `Year ${value}`}
-                      formatter={(value: number) => [formatMetricValue(value), selectedMetric]}
+                        formatter={(value: number, name: string) => [
+                          formatMetricValue(value), 
+                          selectedMetric === 'gdp' ? 'GDP per Capita' : 
+                          selectedMetric === 'population' ? 'Population' : 'Unemployment Rate'
+                        ]}
                     />
                     <Line 
                       type="monotone" 
@@ -412,24 +603,30 @@ export function HistoricalEconomicTracker({
                       strokeWidth={2}
                       dot={{ fill: getMetricColor(), strokeWidth: 2 }}
                     />
+                      <Bar 
+                        dataKey="eventsCount" 
+                        fill="rgba(239, 68, 68, 0.3)"
+                        yAxisId="right"
+                      />
                     
                     {/* Event Reference Lines */}
-                    {eventMarkers.map((marker, index) => (
+                      {eventMarkers.slice(0, 10).map((marker, index) => (
                       <ReferenceLine
                         key={index}
                         x={IxTime.getCurrentGameYear(marker.timestamp)}
                         stroke="#ef4444"
                         strokeDasharray="5 5"
+                          strokeOpacity={0.7}
                       />
                     ))}
-                  </LineChart>
+                    </ComposedChart>
                 </ResponsiveContainer>
               </div>
               
               {/* Event Markers Legend */}
               {eventMarkers.length > 0 && (
                 <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-                  <h6 className="text-sm font-medium mb-2">Events in Timeline:</h6>
+                    <h6 className="text-sm font-medium mb-2">Recent Events in Timeline:</h6>
                   <div className="flex flex-wrap gap-2">
                     {eventMarkers.slice(0, 6).map((marker, index) => (
                       <Badge key={index} variant="outline" className="text-xs">
@@ -456,9 +653,14 @@ export function HistoricalEconomicTracker({
                 <CardContent className="text-center py-8">
                   <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <h3 className="text-lg font-medium mb-2">No Events Found</h3>
-                  <p className="text-muted-foreground">
+                    <p className="text-muted-foreground mb-4">
                     No economic events match your current filters.
                   </p>
+                    {hasActiveFilters && (
+                      <Button variant="outline" onClick={clearFilters}>
+                        Clear Filters
+                      </Button>
+                    )}
                 </CardContent>
               </Card>
             ) : (
@@ -466,30 +668,33 @@ export function HistoricalEconomicTracker({
                 <EventCard
                   key={event.id}
                   event={event}
-                  onEdit={isEditable ? (event) => onEditEvent?.(event.id as string, event) : undefined}
-                  onDelete={isEditable ? () => onDeleteEvent?.(event.id as string) : undefined}
+                    onEdit={isEditable || editMode ? (event) => onEditEvent?.(event.id as string, event) : undefined}
+                    onDelete={isEditable || editMode ? () => onDeleteEvent?.(event.id as string) : undefined}
                 />
               ))
             )}
           </div>
         </TabsContent>
 
-        <TabsContent value="impact" className="space-y-4">
+          <TabsContent value="analysis" className="space-y-4">
           {/* Impact Analysis */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
               <CardHeader>
                 <CardTitle>Event Distribution</CardTitle>
+                  <CardDescription>Breakdown by type and frequency</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {eventTypes.map(type => {
                     const count = allEvents.filter(e => e.type === type.value).length;
                     const percentage = allEvents.length > 0 ? (count / allEvents.length) * 100 : 0;
+                      const TypeIcon = type.icon;
+                      
                     return (
                       <div key={type.value} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <type.icon className="h-4 w-4" />
+                            <TypeIcon className="h-4 w-4" />
                           <span className="text-sm">{type.label}</span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -511,19 +716,19 @@ export function HistoricalEconomicTracker({
             <Card>
               <CardHeader>
                 <CardTitle>Severity Distribution</CardTitle>
+                  <CardDescription>Impact assessment breakdown</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {Object.keys(severityColors).map(severity => {
+                    {Object.entries(severityConfig).map(([severity, config]) => {
                     const count = allEvents.filter(e => e.severity === severity).length;
                     const percentage = allEvents.length > 0 ? (count / allEvents.length) * 100 : 0;
+                      
                     return (
                       <div key={severity} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Badge 
-                            className={`${severityColors[severity as keyof typeof severityColors]} text-xs`}
-                          >
-                            {severity}
+                            <Badge className={`${config.color} text-xs`}>
+                              {config.label}
                           </Badge>
                         </div>
                         <div className="flex items-center gap-2">
@@ -541,10 +746,54 @@ export function HistoricalEconomicTracker({
                 </div>
               </CardContent>
             </Card>
+
+              <Card className="md:col-span-2">
+                <CardHeader>
+                  <CardTitle>Economic Impact Summary</CardTitle>
+                  <CardDescription>Aggregate effects of tracked events</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <div className="text-2xl font-bold text-green-600">
+                        {allEvents.filter(e => e.impact.gdp && e.impact.gdp > 0).length}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Positive GDP Events</div>
+                    </div>
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <div className="text-2xl font-bold text-red-600">
+                        {allEvents.filter(e => e.impact.gdp && e.impact.gdp < 0).length}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Negative GDP Events</div>
+                    </div>
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {allEvents.filter(e => e.isActive).length}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Active Events</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
           </div>
         </TabsContent>
       </Tabs>
+
+        {/* Summary Alert */}
+        <Alert>
+          <Activity className="h-4 w-4" />
+          <AlertDescription>
+            <div className="font-medium">Historical Overview</div>
+            <p className="text-sm mt-1">
+              {allEvents.length} events tracked over {selectedTimeRange === 'ALL' ? 'all time' : `the last ${selectedTimeRange.replace('Y', ' year(s)')}`}.
+              Economic trend is {economicHealthTrend.trend} with {Math.abs(economicHealthTrend.value).toFixed(1)}% change.
+              {allEvents.filter(e => e.severity === 'critical').length > 0 && 
+                ` ${allEvents.filter(e => e.severity === 'critical').length} critical event(s) require attention.`}
+            </p>
+          </AlertDescription>
+        </Alert>
     </div>
+    </TooltipProvider>
   );
 }
 
@@ -559,6 +808,12 @@ function EventCard({
 }) {
   const eventTypeInfo = eventTypes.find(t => t.value === event.type);
   const Icon = eventTypeInfo?.icon || AlertCircle;
+  const severityConfig = {
+    minor: { color: 'bg-blue-100 text-blue-800 border-blue-200', label: 'Minor' },
+    moderate: { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: 'Moderate' },
+    major: { color: 'bg-orange-100 text-orange-800 border-orange-200', label: 'Major' },
+    critical: { color: 'bg-red-100 text-red-800 border-red-200', label: 'Critical' },
+  };
 
   return (
     <Card>
@@ -572,12 +827,17 @@ function EventCard({
             <div className="flex-1 space-y-2">
               <div className="flex items-center gap-2 flex-wrap">
                 <h4 className="font-medium">{event.title}</h4>
-                <Badge className={severityColors[event.severity]}>
-                  {event.severity}
+                <Badge className={severityConfig[event.severity].color}>
+                  {severityConfig[event.severity].label}
                 </Badge>
                 <Badge variant="outline" className="text-xs">
                   {event.category}
                 </Badge>
+                {event.isActive && (
+                  <Badge className="bg-green-100 text-green-800 text-xs">
+                    Active
+                  </Badge>
+                )}
               </div>
               
               <p className="text-sm text-muted-foreground">
@@ -652,6 +912,7 @@ function AddEventForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.title.trim()) return;
     onSubmit(formData);
   };
 
@@ -664,6 +925,7 @@ function AddEventForm({
             id="title"
             value={formData.title}
             onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+            placeholder="Enter event title"
             required
           />
         </div>
@@ -722,6 +984,7 @@ function AddEventForm({
           id="description"
           value={formData.description}
           onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+          placeholder="Describe the event and its context"
           rows={3}
         />
       </div>
@@ -733,6 +996,7 @@ function AddEventForm({
             id="gdpImpact"
             type="number"
             step="0.1"
+            placeholder="e.g., 2.5"
             value={formData.impact.gdp || ''}
             onChange={(e) => setFormData(prev => ({ 
               ...prev, 
@@ -746,6 +1010,7 @@ function AddEventForm({
             id="populationImpact"
             type="number"
             step="0.1"
+            placeholder="e.g., 1.2"
             value={formData.impact.population || ''}
             onChange={(e) => setFormData(prev => ({ 
               ...prev, 
@@ -759,6 +1024,7 @@ function AddEventForm({
             id="employmentImpact"
             type="number"
             step="0.1"
+            placeholder="e.g., -0.5"
             value={formData.impact.employment || ''}
             onChange={(e) => setFormData(prev => ({ 
               ...prev, 
@@ -768,7 +1034,31 @@ function AddEventForm({
         </div>
       </div>
 
-      <div className="flex justify-end gap-2">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="duration">Duration (months)</Label>
+          <Input
+            id="duration"
+            type="number"
+            min="1"
+            placeholder="e.g., 12"
+            value={formData.duration || ''}
+            onChange={(e) => setFormData(prev => ({ ...prev, duration: parseInt(e.target.value) || undefined }))}
+          />
+        </div>
+        <div className="flex items-center space-x-2 pt-6">
+          <input
+            type="checkbox"
+            id="isActive"
+            checked={formData.isActive}
+            onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+            className="rounded"
+          />
+          <Label htmlFor="isActive" className="text-sm">Event is currently active</Label>
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-2 pt-4">
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
