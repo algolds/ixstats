@@ -27,7 +27,7 @@ export interface MediaWikiConfig {
 export const MEDIAWIKI_CONFIG: MediaWikiConfig = {
   baseUrl: env.NEXT_PUBLIC_MEDIAWIKI_URL || 'https://ixwiki.com',
   apiEndpoint: '/api.php',
-  userAgent: 'IxStats/1.0 (https://ixstats.com; contact@ixstats.com)',
+  userAgent: 'IxStats/1.0 (https://stats.ixwiki.com; contact@ixstats.com)',
   timeout: 10000, // 10 seconds
   
   rateLimit: {
@@ -94,6 +94,14 @@ export const API_PARAMS = {
     prop: 'revisions',
     rvprop: 'content',
     rvslots: 'main',
+    format: 'json',
+    formatversion: '2',
+  },
+  queryRevisionsSection: {
+    action: 'query',
+    prop: 'revisions',
+    rvprop: 'content',
+    rvsection: '0', // Get only section 0 (intro section with infobox)
     format: 'json',
     formatversion: '2',
   },
@@ -179,6 +187,11 @@ export const COMMON_API_CALLS = {
   getPageWikitext: (pageName: string) => ({
     ...API_PARAMS.parseWikitext,
     page: sanitizePageName(pageName),
+  }),
+  
+  getPageWikitextSection: (pageName: string) => ({
+    ...API_PARAMS.queryRevisionsSection,
+    titles: sanitizePageName(pageName),
   }),
   
   getPageHtml: (pageName: string) => ({

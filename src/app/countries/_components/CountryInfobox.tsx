@@ -36,6 +36,7 @@ import {
 } from "~/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Separator } from "~/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 
 interface CountryInfoboxProps {
   countryName: string;
@@ -60,14 +61,17 @@ interface LoadingState {
 export function CountryInfobox({ countryName, onToggle, initialExpanded = false }: CountryInfoboxProps) {
   const [infobox, setInfobox] = useState<CountryInfoboxType | null>(null);
   const [flagUrl, setFlagUrl] = useState<string | null>(null);
+  const [coatOfArmsUrl, setCoatOfArmsUrl] = useState<string | null>(null);
+  const [mapImageUrl, setMapImageUrl] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(initialExpanded);
+  const [activeTab, setActiveTab] = useState<string>("structured");
   const [loadingState, setLoadingState] = useState<LoadingState>({
     isLoading: true,
     error: null,
     retryCount: 0
   });
 
-  const MAX_RETRIES = 2;
+  const MAX_RETRIES = 3;
 
   const loadInfoboxData = async (isRetry = false) => {
     if (!countryName) {
@@ -82,21 +86,83 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
       }
 
       console.log(`[CountryInfobox] Loading data for: ${countryName}`);
+      
+      // Special handling for Caphiria - first clear the cache to ensure fresh data
+      if (countryName.toLowerCase() === 'caphiria' && isRetry) {
+        console.log(`[CountryInfobox] Applying special handling for Caphiria - clearing cache`);
+        await fetch(`/api/mediawiki?country=Caphiria`, { method: 'DELETE' });
+      }
+      
       const [flag, data] = await Promise.all([
         ixnayWiki.getFlagUrl(countryName),
         ixnayWiki.getCountryInfobox(countryName)
       ]);
 
-      setFlagUrl(flag);
+      // Ensure flag URL uses the correct MediaWiki domain
+      let processedFlagUrl = flag;
+      if (processedFlagUrl && (processedFlagUrl.includes('localhost') || processedFlagUrl.includes('127.0.0.1'))) {
+        processedFlagUrl = processedFlagUrl.replace(/https?:\/\/[^\/]+/, 'https://ixwiki.com');
+      }
+      setFlagUrl(processedFlagUrl);
       setInfobox(data);
+      
+      // If this country has parsed HTML, default to HTML tab
+      if (data?.renderedHtml) {
+        setActiveTab("html");
+        console.log(`[CountryInfobox] Received HTML content for ${countryName}, defaulting to HTML tab`);
+      }
+      
+      // Load image URLs if we have image references
+      if (data) {
+        if (data.coat_of_arms || data.image_coat) {
+          const coatName = data.coat_of_arms || data.image_coat;
+          if (coatName) {
+            let coatUrl = await ixnayWiki.getFileUrl(coatName);
+            // Ensure we use the correct MediaWiki domain
+            if (coatUrl && (coatUrl.includes('localhost') || coatUrl.includes('127.0.0.1'))) {
+              coatUrl = coatUrl.replace(/https?:\/\/[^\/]+/, 'https://ixwiki.com');
+            }
+            setCoatOfArmsUrl(coatUrl);
+          }
+        }
+        
+        if (data.locator_map || data.image_map) {
+          const mapName = data.locator_map || data.image_map;
+          if (mapName) {
+            // Handle both simple filenames and complex descriptions from switcher templates
+            let actualFileName = mapName;
+            
+            // If the mapName looks like it came from a switcher template, try to extract filename
+            // Pattern: Look for file extensions in the string
+            const fileMatch = mapName.match(/([^\/\s]+\.(?:png|jpg|jpeg|gif|svg|webp))/i);
+            if (fileMatch && fileMatch[1]) {
+              actualFileName = fileMatch[1];
+            }
+            
+            console.log(`[CountryInfobox] Processing map image: "${mapName}" -> "${actualFileName}"`);
+            let mapUrl = await ixnayWiki.getFileUrl(actualFileName);
+            // Ensure we use the correct MediaWiki domain
+            if (mapUrl && (mapUrl.includes('localhost') || mapUrl.includes('127.0.0.1'))) {
+              mapUrl = mapUrl.replace(/https?:\/\/[^\/]+/, 'https://ixwiki.com');
+            }
+            setMapImageUrl(mapUrl);
+          }
+        }
+      }
+      
       setLoadingState(prev => ({ ...prev, isLoading: false, error: null }));
 
       if (data) {
         console.log(`[CountryInfobox] Successfully loaded infobox for: ${countryName}`);
       } else {
         console.log(`[CountryInfobox] No infobox data found for: ${countryName}`);
-        // Optionally set a specific error or message if data is null but no exception occurred
-        // setLoadingState(prev => ({ ...prev, isLoading: false, error: "No infobox data found."}));
+        
+        // For special countries, show more specific error
+        if (countryName.toLowerCase() === 'caphiria' && !isRetry) {
+          console.log(`[CountryInfobox] Automatically retrying for Caphiria with special handling`);
+          loadInfoboxData(true);
+          return;
+        }
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load country information';
@@ -120,6 +186,22 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
     }
   };
 
+  const handleClearCache = async () => {
+    try {
+      setLoadingState(prev => ({ ...prev, isLoading: true, error: null }));
+      await fetch(`/api/mediawiki?country=${encodeURIComponent(countryName)}`, { method: 'DELETE' });
+      console.log(`[CountryInfobox] Cache cleared for ${countryName}, reloading data`);
+      loadInfoboxData(true);
+    } catch (error) {
+      console.error(`[CountryInfobox] Error clearing cache:`, error);
+      setLoadingState(prev => ({
+        isLoading: false,
+        error: "Failed to clear cache. Please try again.",
+        retryCount: prev.retryCount
+      }));
+    }
+  };
+
   const handleToggle = () => {
     const newExpanded = !isExpanded;
     setIsExpanded(newExpanded);
@@ -139,26 +221,52 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
       priority: number;
       formatter?: (value: string) => string;
     }> = [
-      { keys: ['capital'], label: 'Capital', icon: Building, priority: 1 },
+      { keys: ['capital', 'capital_city'], label: 'Capital', icon: Building, priority: 1 },
       { keys: ['largest_city'], label: 'Largest City', icon: Building, priority: 2 },
-      { keys: ['official_name', 'conventional_long_name'], label: 'Official Name', icon: Globe, priority: 3 },
-      { keys: ['motto'], label: 'Motto', icon: Info, priority: 4 },
-      { keys: ['continent'], label: 'Continent', icon: Globe, priority: 5 },
-      { keys: ['area', 'area_km2'], label: 'Area', icon: MapPin, priority: 6, formatter: (v) => v.includes('km') ? v : `${parseFloat(v).toLocaleString()} km²` },
-      { keys: ['population', 'population_estimate'], label: 'Population', icon: Users, priority: 7, formatter: (v) => parseFloat(v).toLocaleString() },
-      { keys: ['currency', 'currency_code'], label: 'Currency', icon: DollarSign, priority: 8 },
-      { keys: ['government', 'government_type'], label: 'Government', icon: Building, priority: 9 },
-      { keys: ['leader_title1', 'head_of_state'], label: 'Head of State', icon: Users, priority: 10 },
-      { keys: ['leader_name1', 'leader'], label: 'Leader', icon: Users, priority: 11 },
-      { keys: ['legislature'], label: 'Legislature', icon: Building, priority: 12 },
-      { keys: ['established_event1', 'established_date1', 'established'], label: 'Established', icon: Clock, priority: 13 },
-      { keys: ['gdp_ppp', 'GDP_PPP', 'gdp_nominal', 'GDP_nominal', 'gdp'], label: 'GDP', icon: DollarSign, priority: 14 },
-      { keys: ['languages', 'official_languages'], label: 'Languages', icon: Languages, priority: 15 },
-      { keys: ['religion', 'state_religion'], label: 'Religion', icon: Info, priority: 16 },
-      { keys: ['timezone', 'time_zone'], label: 'Timezone', icon: Clock, priority: 17 },
-      { keys: ['calling_code', 'callingCode'], label: 'Calling Code', icon: Phone, priority: 18 },
-      { keys: ['internetTld', 'cctld'], label: 'Internet TLD', icon: Wifi, priority: 19 },
-      { keys: ['driving_side', 'drives_on'], label: 'Driving Side', icon: Navigation, priority: 20 },
+      { keys: ['conventional_long_name', 'official_name'], label: 'Official Name', icon: Globe, priority: 3 },
+      { keys: ['native_name'], label: 'Native Name', icon: Globe, priority: 4 },
+      { keys: ['motto', 'national_motto'], label: 'National Motto', icon: Info, priority: 5 },
+      { keys: ['englishmotto'], label: 'English Motto', icon: Info, priority: 6 },
+      { keys: ['continent'], label: 'Continent', icon: Globe, priority: 7 },
+      { keys: ['area', 'area_km2', 'area_total'], label: 'Area', icon: MapPin, priority: 8, formatter: (v) => v.includes('km') ? v : `${parseFloat(v).toLocaleString()} km²` },
+      { keys: ['currency', 'currency_code'], label: 'Currency', icon: DollarSign, priority: 12 },
+      { keys: ['government', 'government_type'], label: 'Government', icon: Building, priority: 13 },
+      { keys: ['leader_title1', 'head_of_state'], label: 'Head of State', icon: Users, priority: 14 },
+      { keys: ['leader_name1', 'leader'], label: 'Leader', icon: Users, priority: 15 },
+      { keys: ['leader_title2'], label: 'Deputy Title', icon: Users, priority: 16 },
+      { keys: ['leader_name2', 'deputy_leader'], label: 'Deputy Leader', icon: Users, priority: 17 },
+      { keys: ['legislature'], label: 'Legislature', icon: Building, priority: 18 },
+      { keys: ['upper_house'], label: 'Upper House', icon: Building, priority: 19 },
+      { keys: ['lower_house'], label: 'Lower House', icon: Building, priority: 20 },
+      { keys: ['established', 'established_event1', 'established_date1'], label: 'Established', icon: Clock, priority: 21 },
+      { keys: ['established_event2'], label: 'Other Event', icon: Clock, priority: 22 },
+      { keys: ['established_date2'], label: 'Other Date', icon: Clock, priority: 23 },
+      { keys: ['established_event3'], label: 'Historical Event', icon: Clock, priority: 24 },
+      { keys: ['established_date3'], label: 'Historical Date', icon: Clock, priority: 25 },
+      { keys: ['established_event4'], label: 'Historical Event', icon: Clock, priority: 26 },
+      { keys: ['established_date4'], label: 'Historical Date', icon: Clock, priority: 27 },
+      { keys: ['established_event5'], label: 'Historical Event', icon: Clock, priority: 28 },
+      { keys: ['established_date5'], label: 'Historical Date', icon: Clock, priority: 29 },
+      { keys: ['established_event6'], label: 'Historical Event', icon: Clock, priority: 30 },
+      { keys: ['established_date6'], label: 'Historical Date', icon: Clock, priority: 31 },
+      { keys: ['independence', 'independence_date'], label: 'Independence', icon: Clock, priority: 32 },
+      { keys: ['languages', 'official_languages', 'official_language'], label: 'Official Languages', icon: Languages, priority: 33 },
+      { keys: ['national_language'], label: 'National Language', icon: Languages, priority: 34 },
+      { keys: ['regional_languages'], label: 'Regional Languages', icon: Languages, priority: 35 },
+      { keys: ['recognized_languages'], label: 'Recognized Languages', icon: Languages, priority: 36 },
+      { keys: ['religion', 'state_religion'], label: 'Religion', icon: Info, priority: 37 },
+      { keys: ['ethnic_groups'], label: 'Ethnic Groups', icon: Users, priority: 38 },
+      { keys: ['demonym'], label: 'Demonym', icon: Users, priority: 39 },
+      { keys: ['timezone', 'time_zone'], label: 'Timezone', icon: Clock, priority: 40 },
+      { keys: ['calling_code', 'callingCode'], label: 'Calling Code', icon: Phone, priority: 41 },
+      { keys: ['internetTld', 'cctld'], label: 'Internet TLD', icon: Wifi, priority: 42 },
+      { keys: ['driving_side', 'drives_on', 'drivingSide'], label: 'Driving Side', icon: Navigation, priority: 43 },
+      { keys: ['national_anthem'], label: 'National Anthem', icon: Info, priority: 44 },
+      { keys: ['royal_anthem'], label: 'Royal Anthem', icon: Info, priority: 45 },
+      { keys: ['patron_saint'], label: 'Patron Saint', icon: Info, priority: 46 },
+      { keys: ['sovereignty_type'], label: 'Sovereignty Type', icon: Building, priority: 47 },
+      { keys: ['area_rank'], label: 'Area Rank', icon: MapPin, priority: 48 },
+      { keys: ['electricity'], label: 'Electricity', icon: Info, priority: 49 },
     ];
 
     for (const mapping of fieldMappings) {
@@ -177,17 +285,36 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
         fields.push({ key: usedKey, label: mapping.label, value: formattedValue, icon: mapping.icon, priority: mapping.priority });
       }
     }
-    // Add other fields not explicitly mapped, with lower priority
+    
+    // Add other fields not explicitly mapped, with lower priority, but exclude visual elements and data pulled from ixstats
     const mappedKeys = new Set(fieldMappings.flatMap(m => m.keys));
+    // Exclude visual fields and fields pulled from ixstats (population, GDP)
+    const excludedKeys = new Set<string>([
+      'image_flag', 'flag', 'image_coat', 'coat_of_arms', 'locator_map', 'image_map', 'flag_caption',
+      'alt_map', 'image_map2', 'alt_map2', 'map_caption2', 'map_caption',
+      // Exclude population and GDP fields since they're pulled from ixstats
+      'population_estimate', 'population_census', 'population', 'population_density_km2',
+      'GDP_PPP', 'GDP_PPP_per_capita', 'GDP_nominal', 'GDP_nominal_per_capita', 'gdp', 'gdp_ppp', 'gdp_nominal',
+      // Exclude raw content and technical fields
+      'renderedHtml', 'rawWikitext', 'parsedTemplateData',
+      // Exclude empty or very short values that are likely formatting artifacts
+      'name' // The name is already shown in the header
+    ]);
     const standardKeys = new Set<keyof CountryInfoboxType>(['name', 'conventional_long_name', 'native_name', 'image_flag', 'flag', 'image_coat', 'locator_map', 'image_map']);
 
     Object.entries(currentInfobox).forEach(([key, value]) => {
-        if (!mappedKeys.has(key as keyof CountryInfoboxType) && !standardKeys.has(key as keyof CountryInfoboxType) && value && typeof value === 'string' && value.trim()) {
+        if (!mappedKeys.has(key as keyof CountryInfoboxType) && 
+            !standardKeys.has(key as keyof CountryInfoboxType) && 
+            !excludedKeys.has(key) &&
+            value && typeof value === 'string' && value.trim() && 
+            value.length > 2 && // Exclude very short values
+            !value.includes('{{') && // Exclude values that still contain template syntax
+            !value.includes('|') // Exclude values that look like they weren't parsed properly
+        ) {
             const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            fields.push({ key, label, value, icon: Info, priority: 99 }); // Low priority for other fields
+            fields.push({ key, label, value: value.trim(), icon: Info, priority: 99 }); // Low priority for other fields
         }
     });
-
 
     return fields.sort((a, b) => a.priority - b.priority);
   };
@@ -228,12 +355,18 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
             <AlertTitle>Error Loading Infobox</AlertTitle>
             <AlertDescription>
               {loadingState.error}
-              {canRetry && (
-                <Button onClick={handleRetry} variant="outline" size="sm" className="mt-2">
+              <div className="flex gap-2 mt-2">
+                {canRetry && (
+                  <Button onClick={handleRetry} variant="outline" size="sm">
+                    <RefreshCw className="h-3 w-3 mr-1.5" />
+                    Retry ({loadingState.retryCount + 1}/{MAX_RETRIES})
+                  </Button>
+                )}
+                <Button onClick={handleClearCache} variant="outline" size="sm">
                   <RefreshCw className="h-3 w-3 mr-1.5" />
-                  Try Again ({loadingState.retryCount + 1}/{MAX_RETRIES})
+                  Clear Cache
                 </Button>
-              )}
+              </div>
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -260,6 +393,10 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
         <CardContent className="p-4 text-center">
           <Info className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">No detailed infobox data found on Ixnay Wiki for this country.</p>
+          <Button onClick={handleClearCache} variant="outline" size="sm" className="mt-3">
+            <RefreshCw className="h-3 w-3 mr-1.5" />
+            Clear Cache and Retry
+          </Button>
         </CardContent>
         <CardFooter className="p-4 border-t">
             <Button variant="outline" asChild className="w-full">
@@ -273,10 +410,10 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
   }
 
   const fields = formatInfoboxFields(infobox);
-  const displayFields = isExpanded ? fields : fields.slice(0, 6);
-  const mapImage = infobox.locator_map || infobox.image_map;
-  const coatOfArms = infobox.image_coat || infobox.coat_of_arms;
-
+  const displayFields = isExpanded ? fields : fields.slice(0, 8); // Show more fields by default
+  
+  // Check if we have parsed HTML content
+  const hasHtmlContent = Boolean(infobox.renderedHtml);
 
   return (
     <Card className="transition-all duration-300">
@@ -293,56 +430,210 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
             </Button>
         </div>
         {infobox.native_name && infobox.native_name !== countryName && (
-          <CardDescription className="text-sm italic">
-            {infobox.native_name}
-          </CardDescription>
+          <CardDescription 
+            className="text-sm italic"
+            dangerouslySetInnerHTML={{ __html: infobox.native_name }}
+          />
         )}
       </CardHeader>
 
-      <CardContent className="px-4 pt-0 pb-4">
-        {(flagUrl || coatOfArms || mapImage) && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 my-4">
+      <CardContent className="px-4 pt-0 pb-4 country-infobox-content">
+        {(flagUrl || coatOfArmsUrl || mapImageUrl) && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-4">
             {flagUrl && (
                 <div className="flex flex-col items-center">
-                <img src={flagUrl} alt={`Flag of ${countryName}`} className="h-16 max-w-full object-contain border rounded shadow-sm bg-muted/20" />
+                <img 
+                  src={flagUrl} 
+                  alt={`Flag of ${countryName}`} 
+                  className="h-16 max-w-full object-contain border rounded shadow-sm bg-muted/20" 
+                  onError={(e) => { 
+                    console.error(`Failed to load flag: ${flagUrl}`);
+                    (e.target as HTMLImageElement).style.display = 'none'; 
+                  }}
+                />
                 <span className="text-xs text-muted-foreground mt-1">Flag</span>
                 </div>
             )}
-            {coatOfArms && (
+            {coatOfArmsUrl && (
                 <div className="flex flex-col items-center">
-                <img src={`https://ixwiki.com/images/${coatOfArms.replace(/ /g, '_')}`} alt="Coat of Arms" className="h-16 max-w-full object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
+                <img 
+                  src={coatOfArmsUrl} 
+                  alt="Coat of Arms" 
+                  className="h-16 max-w-full object-contain" 
+                  onError={(e) => { 
+                    console.error(`Failed to load coat of arms: ${coatOfArmsUrl}`);
+                    (e.target as HTMLImageElement).style.display = 'none'; 
+                  }}
+                />
                 <span className="text-xs text-muted-foreground mt-1">Coat of Arms</span>
                 </div>
             )}
-            {mapImage && (
+            {mapImageUrl && (
                 <div className="flex flex-col items-center">
-                <img src={`https://ixwiki.com/images/${mapImage.replace(/ /g, '_')}`} alt="Map" className="h-16 max-w-full object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
+                <img 
+                  src={mapImageUrl} 
+                  alt="Map" 
+                  className="h-16 max-w-full object-contain" 
+                  onError={(e) => { 
+                    console.error(`Failed to load map: ${mapImageUrl}`);
+                    (e.target as HTMLImageElement).style.display = 'none'; 
+                  }}
+                />
                 <span className="text-xs text-muted-foreground mt-1">Map</span>
                 </div>
             )}
             </div>
         )}
-        {displayFields.length > 0 && <Separator className="my-3" />}
-
-        <div className="space-y-2.5">
-          {displayFields.map((field) => {
-            const Icon = field.icon;
-            return (
-              <div key={field.key} className="flex items-start text-sm">
-                <Icon className="h-4 w-4 mt-0.5 text-primary mr-2.5 flex-shrink-0" />
-                <span className="font-medium text-muted-foreground w-28 sm:w-32 flex-shrink-0 truncate" title={field.label}>
-                  {field.label}:
-                </span>
-                <span className="text-foreground break-words flex-1 text-right sm:text-left" title={field.value}>
-                  {field.value}
-                </span>
+        
+        {hasHtmlContent ? (
+          // Use tabs for countries with both structured data and HTML
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="structured">Structured</TabsTrigger>
+              <TabsTrigger value="html">Full Infobox</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="structured">
+              {displayFields.length > 0 && <Separator className="my-3" />}
+              <div className="space-y-3">
+                {displayFields.map((field) => {
+                  const Icon = field.icon;
+                  
+                  return (
+                    <div key={field.key} className="flex items-start text-sm">
+                      <Icon className="h-4 w-4 mt-0.5 text-primary mr-3 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <span className="text-muted-foreground font-medium mr-2">{field.label}:</span>
+                        <span 
+                          className="text-foreground"
+                          dangerouslySetInnerHTML={{ __html: field.value }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
+              
+              {fields.length > 8 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleToggle}
+                  className="w-full text-primary hover:text-primary/90 mt-4"
+                >
+                  {isExpanded ? (
+                    <ChevronUp className="h-4 w-4 mr-1.5" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 mr-1.5" />
+                  )}
+                  {isExpanded ? 'Show Less' : `Show ${fields.length - 8} More Field${fields.length - 8 > 1 ? 's' : ''}`}
+                </Button>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="html">
+              <div 
+                className="wiki-infobox prose prose-sm max-w-none mt-4 overflow-x-auto styled-infobox"
+                dangerouslySetInnerHTML={{ __html: infobox.renderedHtml || '' }}
+              />
+              <style jsx global>{`
+                .styled-infobox table.infobox,
+                .styled-infobox .infobox,
+                .styled-infobox table.wikitable {
+                  width: 100%;
+                  border-collapse: collapse;
+                  font-size: 0.9rem;
+                  background-color: rgba(var(--card-rgb), 0.2);
+                  border-radius: 0.5rem;
+                  overflow: hidden;
+                }
+                .styled-infobox table.infobox th,
+                .styled-infobox .infobox th,
+                .styled-infobox table.wikitable th {
+                  background-color: rgba(var(--card-rgb), 0.5);
+                  color: var(--foreground);
+                  font-weight: 600;
+                  text-align: left;
+                  padding: 0.5rem;
+                  vertical-align: top;
+                  border-bottom: 1px solid rgba(var(--card-foreground-rgb), 0.1);
+                }
+                .styled-infobox table.infobox td,
+                .styled-infobox .infobox td,
+                .styled-infobox table.wikitable td {
+                  padding: 0.5rem;
+                  vertical-align: top;
+                  border-bottom: 1px solid rgba(var(--card-foreground-rgb), 0.1);
+                }
+                .styled-infobox .infobox caption,
+                .styled-infobox table.infobox caption,
+                .styled-infobox table.wikitable caption {
+                  font-weight: bold;
+                  font-size: 1rem;
+                  padding: 0.5rem;
+                  background-color: rgba(var(--card-rgb), 0.8);
+                  text-align: center;
+                }
+                .styled-infobox .infobox img,
+                .styled-infobox table.infobox img,
+                .styled-infobox table.wikitable img {
+                  max-width: 100%;
+                  height: auto;
+                  margin: 0 auto;
+                  display: block;
+                }
+                .styled-infobox .infobox a,
+                .styled-infobox table.infobox a,
+                .styled-infobox table.wikitable a {
+                  color: var(--primary);
+                  text-decoration: none;
+                }
+                .styled-infobox .infobox a:hover,
+                .styled-infobox table.infobox a:hover,
+                .styled-infobox table.wikitable a:hover {
+                  text-decoration: underline;
+                }
+                
+                /* Special styles for Caphiria-style tables */
+                .styled-infobox table tr[style*="background"] td {
+                  background-color: rgba(var(--card-rgb), 0.3) !important;
+                }
+                .styled-infobox table td[style*="background"] {
+                  background-color: rgba(var(--card-rgb), 0.3) !important;
+                }
+                .styled-infobox table tr[bgcolor] td {
+                  background-color: rgba(var(--card-rgb), 0.3) !important;
+                }
+              `}</style>
+            </TabsContent>
+          </Tabs>
+        ) : (
+          // Standard display for countries with only structured data
+          <>
+            {displayFields.length > 0 && <Separator className="my-3" />}
+            <div className="space-y-3">
+              {displayFields.map((field) => {
+                const Icon = field.icon;
+                
+                return (
+                  <div key={field.key} className="flex items-start text-sm">
+                    <Icon className="h-4 w-4 mt-0.5 text-primary mr-3 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <span className="text-muted-foreground font-medium mr-2">{field.label}:</span>
+                      <span 
+                        className="text-foreground"
+                        dangerouslySetInnerHTML={{ __html: field.value }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
       </CardContent>
 
-      {fields.length > 6 && (
+      {!hasHtmlContent && fields.length > 8 && (
         <CardFooter className="p-4 border-t">
           <Button
             variant="ghost"
@@ -355,7 +646,7 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
             ) : (
               <ChevronDown className="h-4 w-4 mr-1.5" />
             )}
-            {isExpanded ? 'Show Less' : `Show ${fields.length - 6} More Field${fields.length - 6 > 1 ? 's' : ''}`}
+            {isExpanded ? 'Show Less' : `Show ${fields.length - 8} More Field${fields.length - 8 > 1 ? 's' : ''}`}
           </Button>
         </CardFooter>
       )}
