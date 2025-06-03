@@ -276,20 +276,10 @@ export default function CountryDetailPage({ params }: CountryDetailPageProps) {
                 {/* Fiscal System */}
                 <FiscalSystemComponent
                   fiscalData={economyData.fiscal}
-                  referenceCountry={{
-                    name: "Reference Country",
-                    countryCode: "REF",
-                    gdp: economyData.core.nominalGDP,
-                    population: economyData.core.totalPopulation,
-                    gdpPerCapita: economyData.core.gdpPerCapita,
-                    taxRevenuePercent: economyData.fiscal.taxRevenueGDPPercent,
-                    unemploymentRate: economyData.labor.unemploymentRate,
-                  }}
                   nominalGDP={economyData.core.nominalGDP}
                   totalPopulation={economyData.core.totalPopulation}
                   onFiscalDataChange={() => {}}
                 />
-                
                 {/* Government Spending */}
                 <GovernmentSpending
                   spendingData={economyData.spending}

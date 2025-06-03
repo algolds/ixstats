@@ -1,13 +1,18 @@
 // src/app/countries/_components/economy/index.ts
 
-export { CoreEconomicIndicators } from "./CoreEconomicIndicators"
-export { LaborEmployment } from "./LaborEmployment"
-export { ComparativeAnalysis } from "./ComparativeAnalysis"
-export { HistoricalEconomicTracker } from "./HistoricalEconomicTracker"
-export { EconomicModelingEngine } from "./EconomicModelingEngine"
-export { EconomicSummaryWidget } from "./EconomicSummaryWidget"
-export { EconomicDataDisplay } from "./EconomicDataDisplay"
-export { IncomeWealthDistribution } from './IncomeWealthDistribution';
-export { Demographics } from './Demographics';
+// Economy components barrel export
+export { CoreEconomicIndicators } from './CoreEconomicIndicators';
+export { LaborEmployment } from './LaborEmployment';
 export { FiscalSystemComponent } from './FiscalSystemComponent';
+export { IncomeWealthDistribution } from './IncomeWealthDistribution';
 export { GovernmentSpending } from './GovernmentSpending';
+export { Demographics } from './Demographics';
+export { EconomicDataDisplay } from './EconomicDataDisplay';
+export { EconomicSummaryWidget } from './EconomicSummaryWidget';
+export { CountryEconomicDataSection } from './CountryEconomicDataSection';
+export { HistoricalEconomicTracker } from './HistoricalEconomicTracker';
+export { ComparativeAnalysis } from './ComparativeAnalysis';
+export { EconomicModelingEngine } from './EconomicModelingEngine';
+
+// Utility exports
+export * from './utils';
