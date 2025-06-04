@@ -4,11 +4,11 @@ import { MEDIAWIKI_CONFIG, buildApiUrl } from '~/lib/mediawiki-config';
 // Main interface that allows additional dynamic string properties
 export interface CountryInfobox {
   name: string;
-  // Raw template data
+  // Raw template data - excluded from index signature
   rawWikitext?: string;
   parsedTemplateData?: Record<string, string>;
   
-  // Fully rendered HTML from MediaWiki parser
+  // Fully rendered HTML from MediaWiki parser - excluded from index signature  
   renderedHtml?: string;
   
   // Core identification
@@ -24,6 +24,12 @@ export interface CountryInfobox {
   coat_of_arms?: string;
   locator_map?: string;
   image_map?: string;
+  flag_caption?: string;
+  alt_map?: string;
+  image_map2?: string;
+  alt_map2?: string;
+  map_caption?: string;
+  map_caption2?: string;
   
   // Geographic data
   capital?: string;
@@ -42,6 +48,10 @@ export interface CountryInfobox {
   leader_name1?: string;
   leader_title2?: string;
   leader_name2?: string;
+  leader_title3?: string;
+  leader_name3?: string;
+  leader_title4?: string;
+  leader_name4?: string;
   head_of_state?: string;
   deputy_leader?: string;
   leader?: string;
@@ -61,6 +71,13 @@ export interface CountryInfobox {
   currency?: string;
   currency_code?: string;
   
+  // Population data (excluded from structured display since pulled from ixstats)
+  population_estimate?: string;
+  population_census?: string;
+  population?: string;
+  population_density_km2?: string;
+  population_density?: string;
+  
   // Cultural data
   official_languages?: string;
   official_language?: string;
@@ -76,7 +93,7 @@ export interface CountryInfobox {
   royal_anthem?: string;
   patron_saint?: string;
   
-  // Historical data
+  // Historical data - comprehensive establishment events
   established_event1?: string;
   established_date1?: string;
   established_event2?: string;
@@ -89,6 +106,10 @@ export interface CountryInfobox {
   established_date5?: string;
   established_event6?: string;
   established_date6?: string;
+  established_event7?: string;
+  established_date7?: string;
+  established_event8?: string;
+  established_date8?: string;
   established?: string;
   independence_date?: string;
   independence?: string;
@@ -111,6 +132,11 @@ export interface CountryInfobox {
   englishmotto?: string;
 }
 
+// Allow additional dynamic string properties via intersection type
+export type CountryInfoboxWithDynamicProps = CountryInfobox & {
+  [key: string]: string | undefined | Record<string, string>;
+};
+
 interface CacheEntry<T> {
   data: T;
   timestamp: number;
@@ -120,7 +146,7 @@ interface CacheEntry<T> {
 class IxnayWikiService {
   private readonly API_BASE_URL = `${MEDIAWIKI_CONFIG.baseUrl}${MEDIAWIKI_CONFIG.apiEndpoint}`;
   private readonly FLAG_CACHE = new Map<string, CacheEntry<string | null>>();
-  private readonly INFOBOX_CACHE = new Map<string, CacheEntry<CountryInfobox | null>>();
+  private readonly INFOBOX_CACHE = new Map<string, CacheEntry<CountryInfoboxWithDynamicProps | null>>();
   private readonly TEMPLATE_CACHE = new Map<string, CacheEntry<string | null>>();
   private readonly FILE_CACHE = new Map<string, CacheEntry<string | null>>();
   private readonly WIKITEXT_CACHE = new Map<string, CacheEntry<string | null>>();
@@ -286,16 +312,15 @@ class IxnayWikiService {
         params.title = title;
       }
 
+      // Use GET request like other working methods
       const apiUrl = buildApiUrl(MEDIAWIKI_CONFIG.baseUrl, params);
+      console.log(`[MediaWiki] Parsing wikitext via GET request: ${apiUrl.substring(0, 150)}...`);
 
       const response = await fetch(apiUrl, {
-        method: 'POST',
         headers: {
           'User-Agent': MEDIAWIKI_CONFIG.userAgent,
           'Accept': 'application/json',
-          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: new URLSearchParams(params),
         cache: 'no-store'
       });
 
@@ -327,31 +352,70 @@ class IxnayWikiService {
   }
 
   /**
-   * Extract Infobox country template from wikitext
+   * Extract Infobox country template from wikitext with enhanced pattern matching and robust brace counting
    */
   extractInfoboxTemplate(wikitext: string): string | null {
     try {
       console.log(`[MediaWiki] Extracting infobox template from wikitext (${wikitext.length} chars)`);
       
-      // Enhanced patterns to match various infobox country template formats
-      const infoboxPatterns = [
-        /\{\{\s*Infobox\s+country\s*([\s\S]*?)\n\}\}/i,
-        /\{\{\s*Infobox_country\s*([\s\S]*?)\n\}\}/i,
-        /\{\{\s*Country\s+infobox\s*([\s\S]*?)\n\}\}/i,
-        /\{\{\s*Country_infobox\s*([\s\S]*?)\n\}\}/i,
+      // First, find where the infobox starts
+      const infoboxStartPatterns = [
+        /\{\{\s*Infobox\s+country/i,
+        /\{\{\s*Infobox_country/i,
+        /\{\{\s*Country\s+infobox/i,
+        /\{\{\s*Country_infobox/i,
       ];
 
-      for (const pattern of infoboxPatterns) {
+      let startMatch = null;
+      let startIndex = -1;
+      
+      for (const pattern of infoboxStartPatterns) {
         const match = wikitext.match(pattern);
-        if (match && match[1]) {
-          const templateContent = `{{Infobox country${match[1]}\n}}`;
-          console.log(`[MediaWiki] Found infobox template: ${templateContent.length} characters`);
-          return templateContent;
+        if (match) {
+          startMatch = match;
+          startIndex = wikitext.indexOf(match[0]);
+          console.log(`[MediaWiki] Found infobox start pattern at index ${startIndex}: ${match[0]}`);
+          break;
         }
       }
 
-      console.warn(`[MediaWiki] No infobox country template found in wikitext`);
-      return null;
+      if (!startMatch || startIndex === -1) {
+        console.warn(`[MediaWiki] No infobox country template found in wikitext`);
+        return null;
+      }
+
+      // Now find the complete template by counting braces
+      let braceDepth = 0;
+      let templateEnd = wikitext.length;
+      let i = startIndex;
+      
+      while (i < wikitext.length - 1) {
+        const char = wikitext[i];
+        const nextChar = wikitext[i + 1];
+        
+        if (char === '{' && nextChar === '{') {
+          braceDepth++;
+          i += 2;
+        } else if (char === '}' && nextChar === '}') {
+          braceDepth--;
+          if (braceDepth === 0) {
+            templateEnd = i + 2; // Include the closing }}
+            break;
+          }
+          i += 2;
+        } else {
+          i++;
+        }
+      }
+
+      const templateContent = wikitext.substring(startIndex, templateEnd);
+      console.log(`[MediaWiki] Extracted complete infobox template: ${templateContent.length} characters`);
+      
+      // Log some stats about the extracted template
+      const paramCount = (templateContent.match(/\|\s*[^=\|\n]+\s*=/g) || []).length;
+      console.log(`[MediaWiki] Template appears to contain approximately ${paramCount} parameters`);
+      
+      return templateContent;
 
     } catch (error) {
       console.error(`[MediaWiki] Error extracting infobox template:`, error);
@@ -360,13 +424,13 @@ class IxnayWikiService {
   }
 
   /**
-   * Parse infobox template parameters with comprehensive handling of nested templates
+   * Enhanced parser for infobox template parameters using two-phase approach
    */
   async parseInfoboxParameters(templateWikitext: string): Promise<Record<string, string>> {
     const parameters: Record<string, string> = {};
     
     try {
-      console.log(`[MediaWiki] Parsing infobox parameters from template (${templateWikitext.length} chars)`);
+      console.log(`[MediaWiki] Two-phase parsing of infobox parameters from template (${templateWikitext.length} chars)`);
       
       // Extract just the content between {{Infobox country and }}
       const content = this.extractTemplateContent(templateWikitext);
@@ -377,134 +441,256 @@ class IxnayWikiService {
       
       console.log(`[MediaWiki] Extracted content: ${content.length} characters`);
       
-      // Use regex to find all parameter patterns, handling nested templates
-      const parameterRegex = /\|\s*([^=\|]+?)\s*=\s*((?:[^|]|\|(?![^=]*=))*?)(?=\s*\|\s*[^=\|]+?\s*=|\s*$)/gs;
+      // Phase 1: Find all parameter boundaries
+      const parameterBoundaries = this.findParameterBoundaries(content);
+      console.log(`[MediaWiki] Phase 1: Found ${parameterBoundaries.length} parameter boundaries`);
       
-      let match;
-      let paramCount = 0;
+      // Phase 2: Extract parameter values using boundaries
+      const parsedParams = this.extractParameterValues(content, parameterBoundaries);
+      console.log(`[MediaWiki] Phase 2: Extracted ${Object.keys(parsedParams).length} parameters`);
       
-      while ((match = parameterRegex.exec(content)) !== null) {
-        const paramName = match[1]?.trim();
-        const paramValue = match[2]?.trim();
-        
-        if (paramName && paramValue !== undefined) {
-          paramCount++;
-          let cleanValue = this.cleanParameterValue(paramValue);
+      // Clean and process each parameter
+      for (const [key, value] of Object.entries(parsedParams)) {
+        if (key && value !== undefined) {
+          // Don't clean parameter values that contain templates yet - we'll process them later
+          let processedValue = value.trim();
           
-          parameters[paramName] = cleanValue;
-          console.log(`[MediaWiki] Parameter ${paramCount}: ${paramName} = ${cleanValue.substring(0, 80)}${cleanValue.length > 80 ? '...' : ''}`);
-        }
-      }
-      
-      // Fallback: if regex didn't capture enough, try manual splitting
-      if (paramCount < 10) {
-        console.log(`[MediaWiki] Regex only found ${paramCount} parameters, trying manual parsing`);
-        const manualParams = this.manualParameterExtraction(content);
-        
-        for (const [key, value] of Object.entries(manualParams)) {
-          if (!parameters[key]) {
-            parameters[key] = value;
-            console.log(`[MediaWiki] Manual parameter: ${key} = ${value.substring(0, 80)}${value.length > 80 ? '...' : ''}`);
+          // Only do basic cleaning for non-template values
+          if (!processedValue.includes('{{')) {
+            processedValue = this.cleanParameterValue(processedValue);
           }
+          
+          parameters[key] = processedValue;
+          console.log(`[MediaWiki] Parameter: ${key} = ${processedValue.substring(0, 100)}${processedValue.length > 100 ? '...' : ''}`);
         }
       }
-
-      console.log(`[MediaWiki] Successfully parsed ${Object.keys(parameters).length} total parameters`);
       
-      // Log all parameter names for debugging
+      console.log(`[MediaWiki] Successfully parsed ${Object.keys(parameters).length} total parameters`);
       console.log(`[MediaWiki] All parameters: ${Object.keys(parameters).join(', ')}`);
       
       return parameters;
 
     } catch (error) {
-      console.error(`[MediaWiki] Error parsing infobox parameters:`, error);
-      return parameters;
+      console.error(`[MediaWiki] Error in two-phase parsing:`, error);
+      // Fallback to regex-based parsing
+      const content = this.extractTemplateContent(templateWikitext);
+      return this.regexFallbackParsing(content || templateWikitext);
     }
   }
 
   /**
-   * Extract the content between {{Infobox country and }}
+   * Phase 1: Find all parameter boundaries in the template content
    */
-  private extractTemplateContent(templateWikitext: string): string | null {
-    const trimmed = templateWikitext.trim();
+  private findParameterBoundaries(content: string): Array<{name: string, start: number, nameEnd: number}> {
+    const boundaries: Array<{name: string, start: number, nameEnd: number}> = [];
     
-    // Find the start after "{{Infobox country"
-    const startMatch = trimmed.match(/^\{\{\s*Infobox\s+country\s*/i);
-    if (!startMatch) {
-      return null;
-    }
+    // Use regex to find all potential parameter starts: |param_name =
+    const parameterPattern = /\|\s*([^=\|\{\[\n]+?)\s*=/g;
+    let match;
     
-    const contentStart = startMatch[0].length;
-    
-    // Find the matching closing }} by counting braces
-    let braceDepth = 1; // We already have the opening {{
-    let contentEnd = trimmed.length;
-    
-    for (let i = contentStart; i < trimmed.length - 1; i++) {
-      if (trimmed[i] === '{' && trimmed[i + 1] === '{') {
-        braceDepth++;
-        i++; // Skip next char
-      } else if (trimmed[i] === '}' && trimmed[i + 1] === '}') {
-        braceDepth--;
-        if (braceDepth === 0) {
-          contentEnd = i;
-          break;
-        }
-        i++; // Skip next char
+    while ((match = parameterPattern.exec(content)) !== null) {
+      const paramName = match[1]?.trim();
+      if (paramName && paramName.length > 0) {
+        const start = match.index;
+        const nameEnd = match.index + match[0].length;
+        
+        boundaries.push({
+          name: paramName,
+          start: start,
+          nameEnd: nameEnd
+        });
+        console.log(`[MediaWiki] Found parameter boundary: ${paramName} at position ${start}`);
       }
     }
     
-    return trimmed.substring(contentStart, contentEnd);
+    return boundaries;
   }
 
   /**
-   * Manual parameter extraction for complex cases
+   * Phase 2: Extract parameter values using the boundaries
    */
-  private manualParameterExtraction(content: string): Record<string, string> {
+  private extractParameterValues(content: string, boundaries: Array<{name: string, start: number, nameEnd: number}>): Record<string, string> {
     const parameters: Record<string, string> = {};
     
-    // Split by | but only at the top level
-    const lines = content.split('\n');
-    let currentParam = '';
-    let currentValue = '';
-    let inParameter = false;
-    
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-      if (!trimmedLine) continue;
+    for (let i = 0; i < boundaries.length; i++) {
+      const current = boundaries[i];
+      const next = boundaries[i + 1];
       
-      // Look for parameter start
-      const paramMatch = trimmedLine.match(/^\|\s*([^=]+?)\s*=\s*(.*)$/);
-      if (paramMatch) {
-        // Save previous parameter
-        if (inParameter && currentParam && currentValue.trim()) {
-          parameters[currentParam] = this.cleanParameterValue(currentValue.trim());
-        }
-        
-        // Start new parameter
-        currentParam = paramMatch[1]?.trim();
-        currentValue = paramMatch[2] || '';
-        inParameter = true;
-      } else if (inParameter) {
-        // Continue current parameter value
-        currentValue += (currentValue ? ' ' : '') + trimmedLine;
+      if (!current) continue;
+      
+      const valueStart = current.nameEnd;
+      const valueEnd = next ? next.start : content.length;
+      
+      let rawValue = content.substring(valueStart, valueEnd);
+      
+      // Clean up the raw value
+      rawValue = rawValue.trim();
+      
+      // Remove trailing | if it exists (from next parameter)
+      if (rawValue.endsWith('|')) {
+        rawValue = rawValue.slice(0, -1).trim();
       }
-    }
-    
-    // Save last parameter
-    if (inParameter && currentParam && currentValue.trim()) {
-      parameters[currentParam] = this.cleanParameterValue(currentValue.trim());
+      
+      parameters[current.name] = rawValue;
+      console.log(`[MediaWiki] Extracted ${current.name}: ${rawValue.substring(0, 150)}${rawValue.length > 150 ? '...' : ''}`);
     }
     
     return parameters;
   }
 
   /**
+   * Regex-based fallback parsing for when the two-phase approach fails
+   */
+  private regexFallbackParsing(content: string): Record<string, string> {
+    const parameters: Record<string, string> = {};
+    
+    console.log(`[MediaWiki] Using regex fallback parsing`);
+    
+    // Split content into lines first, then process line by line
+    const lines = content.split('\n');
+    let currentParam = '';
+    let currentValue = '';
+    let inMultilineParam = false;
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line) continue;
+      
+      const trimmedLine = line.trim();
+      
+      // Check if this line starts a new parameter
+      const paramMatch = trimmedLine.match(/^\|\s*([^=]+?)\s*=\s*(.*)$/);
+      
+      if (paramMatch) {
+        // Save previous parameter if we have one
+        if (inMultilineParam && currentParam) {
+          parameters[currentParam] = currentValue.trim();
+          console.log(`[MediaWiki] Regex fallback - ${currentParam}: ${currentValue.substring(0, 100)}${currentValue.length > 100 ? '...' : ''}`);
+        }
+        
+        // Start new parameter
+        const paramName = paramMatch[1]?.trim();
+        if (paramName) {
+          currentParam = paramName;
+          currentValue = paramMatch[2] || '';
+          inMultilineParam = true;
+          
+          // Check if this parameter value spans multiple lines by looking for unbalanced structures
+          const openBraces = (currentValue.match(/\{\{/g) || []).length;
+          const closeBraces = (currentValue.match(/\}\}/g) || []).length;
+          const openBrackets = (currentValue.match(/\[\[/g) || []).length;
+          const closeBrackets = (currentValue.match(/\]\]/g) || []).length;
+          
+          if (openBraces === closeBraces && openBrackets === closeBrackets && !currentValue.includes('{{')) {
+            // This parameter is complete on one line
+            parameters[currentParam] = this.cleanParameterValue(currentValue);
+            console.log(`[MediaWiki] Regex fallback - ${currentParam}: ${currentValue.substring(0, 100)}${currentValue.length > 100 ? '...' : ''}`);
+            inMultilineParam = false;
+          }
+        }
+      } else if (inMultilineParam) {
+        // Continue the current parameter value
+        currentValue += '\n' + trimmedLine;
+        
+        // Check if we've balanced the structures
+        const openBraces = (currentValue.match(/\{\{/g) || []).length;
+        const closeBraces = (currentValue.match(/\}\}/g) || []).length;
+        const openBrackets = (currentValue.match(/\[\[/g) || []).length;
+        const closeBrackets = (currentValue.match(/\]\]/g) || []).length;
+        
+        if (openBraces === closeBraces && openBrackets === closeBrackets) {
+          // This parameter is now complete
+          parameters[currentParam] = currentValue.trim();
+          console.log(`[MediaWiki] Regex fallback - ${currentParam}: ${currentValue.substring(0, 100)}${currentValue.length > 100 ? '...' : ''}`);
+          inMultilineParam = false;
+        }
+      }
+    }
+    
+    // Save the last parameter if we have one
+    if (inMultilineParam && currentParam) {
+      parameters[currentParam] = currentValue.trim();
+      console.log(`[MediaWiki] Regex fallback - ${currentParam}: ${currentValue.substring(0, 100)}${currentValue.length > 100 ? '...' : ''}`);
+    }
+    
+    return parameters;
+  }
+
+  /**
+   * Extract the content between {{Infobox country and }} with improved robustness
+   */
+  private extractTemplateContent(templateWikitext: string): string | null {
+    const trimmed = templateWikitext.trim();
+    
+    // Find the start after "{{Infobox country" with more flexible matching
+    const startPatterns = [
+      /^\{\{\s*Infobox\s+country\s*/i,
+      /^\{\{\s*Infobox_country\s*/i,
+      /^\{\{\s*infobox\s*country\s*/i
+    ];
+    
+    let startMatch = null;
+    let contentStart = 0;
+    
+    for (const pattern of startPatterns) {
+      startMatch = trimmed.match(pattern);
+      if (startMatch) {
+        contentStart = startMatch[0].length;
+        break;
+      }
+    }
+    
+    if (!startMatch) {
+      console.error('[MediaWiki] Could not find infobox start pattern');
+      return null;
+    }
+    
+    console.log(`[MediaWiki] Found infobox start at position ${contentStart}`);
+    
+    // Find the matching closing }} by counting braces more carefully
+    let braceDepth = 1; // We already have the opening {{
+    let contentEnd = trimmed.length;
+    let i = contentStart;
+    
+    while (i < trimmed.length - 1) {
+      const char = trimmed[i];
+      const nextChar = trimmed[i + 1];
+      
+      if (char === '{' && nextChar === '{') {
+        braceDepth++;
+        console.log(`[MediaWiki] Found {{ at position ${i}, depth now ${braceDepth}`);
+        i += 2; // Skip both chars
+      } else if (char === '}' && nextChar === '}') {
+        braceDepth--;
+        console.log(`[MediaWiki] Found }} at position ${i}, depth now ${braceDepth}`);
+        if (braceDepth === 0) {
+          contentEnd = i;
+          break;
+        }
+        i += 2; // Skip both chars
+      } else {
+        i++;
+      }
+    }
+    
+    const extractedContent = trimmed.substring(contentStart, contentEnd);
+    console.log(`[MediaWiki] Extracted template content: ${extractedContent.length} characters (from ${contentStart} to ${contentEnd})`);
+    
+    // Validate that we have a reasonable amount of content
+    if (extractedContent.length < 100) {
+      console.warn(`[MediaWiki] Extracted content seems too short (${extractedContent.length} chars), might be incomplete`);
+      console.log(`[MediaWiki] Content preview: ${extractedContent.substring(0, 200)}`);
+    }
+    
+    return extractedContent;
+  }
+
+  /**
    * Get country infobox data with complete template parsing
    */
-  async getCountryInfobox(countryName: string): Promise<CountryInfobox | null> {
+  async getCountryInfobox(countryName: string): Promise<CountryInfoboxWithDynamicProps | null> {
     // Check cache first
-    const cached = this.getCacheValue(this.INFOBOX_CACHE, countryName);
+    const cached = this.getCacheValue(this.INFOBOX_CACHE, countryName) as CountryInfoboxWithDynamicProps | null;
     if (cached !== null) {
       return cached;
     }
@@ -528,21 +714,21 @@ class IxnayWikiService {
         return null;
       }
 
-      // Step 3: Parse template parameters
+      // Step 3: Parse template parameters with enhanced logic
       const templateData = await this.parseInfoboxParameters(infoboxTemplate);
 
       // Step 4: Render the complete template to HTML
       const renderedHtml = await this.parseWikitextToHtml(infoboxTemplate, countryName);
 
       // Step 5: Create the infobox object
-      const infobox: CountryInfobox = {
+      const infobox: CountryInfoboxWithDynamicProps = {
         name: countryName,
         rawWikitext: infoboxTemplate,
         parsedTemplateData: templateData,
         renderedHtml: renderedHtml || undefined,
       };
 
-      // Step 6: Map template parameters to infobox properties
+      // Step 6: Map template parameters to infobox properties (including dynamic ones)
       this.mapTemplateDataToInfobox(templateData, infobox);
 
       // Step 7: Process any special template values (like {{Switcher}})
@@ -564,232 +750,254 @@ class IxnayWikiService {
   /**
    * Map template data to infobox properties with comprehensive field support
    */
-  private mapTemplateDataToInfobox(templateData: Record<string, string>, infobox: CountryInfobox): void {
-    // Direct mapping of template parameters to infobox properties
-    const fieldMappings: Record<string, keyof CountryInfobox> = {
-      // Core identification
-      'conventional_long_name': 'conventional_long_name',
-      'native_name': 'native_name',
-      'common_name': 'common_name',
-      
-      // Visual elements
-      'image_flag': 'image_flag',
-      'flag': 'flag',
-      'image_coat': 'image_coat',
-      'locator_map': 'locator_map',
-      'image_map': 'image_map',
-      
-      // Geographic
-      'capital': 'capital',
-      'largest_city': 'largest_city',
-      'area': 'area',
-      'area_km2': 'area_km2',
-      'area_rank': 'area_rank',
-      
-      // Government
-      'government_type': 'government_type',
-      'government': 'government',
-      'leader_title1': 'leader_title1',
-      'leader_name1': 'leader_name1',
-      'leader_title2': 'leader_title2',
-      'leader_name2': 'leader_name2',
-      'legislature': 'legislature',
-      'upper_house': 'upper_house',
-      'lower_house': 'lower_house',
-      'sovereignty_type': 'sovereignty_type',
-      
-      // Cultural
-      'official_languages': 'official_languages',
-      'ethnic_groups': 'ethnic_groups',
-      'religion': 'religion',
-      'demonym': 'demonym',
-      'national_anthem': 'national_anthem',
-      
-      // Historical - all establishment events
-      'established_event1': 'established_event1',
-      'established_date1': 'established_date1',
-      'established_event2': 'established_event2',
-      'established_date2': 'established_date2',
-      'established_event3': 'established_event3',
-      'established_date3': 'established_date3',
-      'established_event4': 'established_event4',
-      'established_date4': 'established_date4',
-      'established_event5': 'established_event5',
-      'established_date5': 'established_date5',
-      'established_event6': 'established_event6',
-      'established_date6': 'established_date6',
-      
-      // Economic
-      'currency': 'currency',
-      'currency_code': 'currency_code',
-      'GDP_nominal': 'GDP_nominal',
-      'GDP_nominal_per_capita': 'GDP_nominal_per_capita',
-      
-      // Technical
-      'time_zone': 'time_zone',
-      'drives_on': 'drives_on',
-      'cctld': 'cctld',
-      'calling_code': 'calling_code',
-      
-      // Mottos and symbols
-      'national_motto': 'national_motto',
-      'englishmotto': 'englishmotto',
-    };
-
-    // Apply direct mappings
-    for (const [templateKey, infoboxKey] of Object.entries(fieldMappings)) {
-      if (templateData[templateKey]) {
-        (infobox as any)[infoboxKey] = templateData[templateKey];
+  private mapTemplateDataToInfobox(templateData: Record<string, string>, infobox: CountryInfoboxWithDynamicProps): void {
+    // Map ALL template parameters to the infobox object (not just predefined ones)
+    for (const [key, value] of Object.entries(templateData)) {
+      if (key && value && value.trim()) {
+        (infobox as any)[key] = value;
       }
     }
 
-    console.log(`[MediaWiki] Mapped ${Object.keys(templateData).length} template parameters to infobox`);
+    console.log(`[MediaWiki] Mapped ALL ${Object.keys(templateData).length} template parameters to infobox`);
   }
 
   /**
-   * Process special templates like {{Switcher}} within parameter values
+   * Enhanced template processing that handles all nested templates
    */
-  private async processSpecialTemplates(infobox: CountryInfobox): Promise<void> {
+  async processSpecialTemplates(infobox: CountryInfoboxWithDynamicProps): Promise<void> {
     if (!infobox.parsedTemplateData) return;
 
     try {
-      console.log(`[MediaWiki] Processing special templates in infobox parameters`);
+      console.log(`[MediaWiki] Enhanced processing of special templates in infobox parameters`);
       
       for (const [key, value] of Object.entries(infobox.parsedTemplateData)) {
         if (value && value.includes('{{')) {
-          // This parameter contains templates - try to parse them
-          const processedValue = await this.processParameterTemplates(value, key);
+          console.log(`[MediaWiki] Processing templates in parameter: ${key}`);
+          
+          // Enhanced template processing
+          let processedValue = value;
+          
+          // Handle Switcher templates specifically
+          if (value.includes('{{Switcher') || value.includes('{{switcher')) {
+            processedValue = this.enhancedSwitcherProcessing(value);
+          }
+          // Handle other common templates
+          else if (value.includes('{{')) {
+            processedValue = await this.processGenericTemplates(value);
+          }
+          
           if (processedValue && processedValue !== value) {
             // Update the parsed data
             infobox.parsedTemplateData[key] = processedValue;
             
-            // Only update the infobox property if it's a known property
-            if (key in infobox) {
-              (infobox as any)[key] = processedValue;
-            }
+            // Update the infobox property
+            (infobox as any)[key] = processedValue;
             
-            console.log(`[MediaWiki] Processed template in ${key}: ${value.substring(0, 50)}... -> ${processedValue.substring(0, 50)}...`);
+            console.log(`[MediaWiki] Enhanced processing of ${key}:`);
+            console.log(`  Original: ${value.substring(0, 100)}${value.length > 100 ? '...' : ''}`);
+            console.log(`  Processed: ${processedValue.substring(0, 100)}${processedValue.length > 100 ? '...' : ''}`);
           }
         }
       }
       
     } catch (error) {
-      console.error(`[MediaWiki] Error processing special templates:`, error);
+      console.error(`[MediaWiki] Error in enhanced template processing:`, error);
     }
   }
 
   /**
-   * Process templates within a parameter value
+   * Enhanced Switcher template processing with better parsing
    */
-  private async processParameterTemplates(parameterValue: string, parameterName: string): Promise<string> {
+  private enhancedSwitcherProcessing(switcherTemplate: string): string {
     try {
-      // Handle {{Switcher}} templates specifically for image_map and similar parameters
-      if (parameterValue.includes('{{Switcher') || parameterValue.includes('{{switcher')) {
-        return this.processSwitcherTemplate(parameterValue);
-      }
-
-      // For other templates, try to parse them via MediaWiki API
-      const rendered = await this.parseWikitextToHtml(parameterValue);
-      if (rendered) {
-        // Extract plain text from rendered HTML for simple cases
-        const textContent = rendered.replace(/<[^>]+>/g, '').trim();
-        if (textContent && textContent.length < parameterValue.length * 2) {
-          return textContent;
-        }
-      }
-
-      return parameterValue;
-
-    } catch (error) {
-      console.error(`[MediaWiki] Error processing parameter templates for ${parameterName}:`, error);
-      return parameterValue;
-    }
-  }
-
-  /**
-   * Process {{Switcher}} template to extract the primary value
-   */
-  private processSwitcherTemplate(switcherTemplate: string): string {
-    try {
-      console.log(`[MediaWiki] Processing Switcher template: ${switcherTemplate.substring(0, 100)}...`);
+      console.log(`[MediaWiki] Enhanced Switcher processing: ${switcherTemplate.substring(0, 200)}...`);
       
-      // Extract content from {{Switcher | content }}
-      const match = switcherTemplate.match(/\{\{\s*Switcher\s*\|([\s\S]*?)\}\}/i);
-      if (!match || !match[1]) {
+      // More robust extraction of Switcher content
+      const switcherMatch = switcherTemplate.match(/\{\{\s*Switcher\s*\|([\s\S]*)\}\}/i);
+      if (!switcherMatch || !switcherMatch[1]) {
+        console.log('[MediaWiki] No Switcher match found');
         return switcherTemplate;
       }
 
-      const content = match[1];
+      const content = switcherMatch[1];
+      console.log(`[MediaWiki] Switcher content: ${content.substring(0, 200)}...`);
       
-      // Split by | but respect nested brackets and templates
-      const parts: string[] = [];
-      let currentPart = '';
-      let templateDepth = 0;
-      let bracketDepth = 0;
+      // Enhanced splitting that respects nested structures
+      const parts = this.splitSwitcherContent(content);
+      console.log(`[MediaWiki] Switcher split into ${parts.length} parts`);
       
-      for (let i = 0; i < content.length; i++) {
-        const char = content[i];
-        const nextChar = content[i + 1];
-        
-        if (char === '{' && nextChar === '{') {
-          templateDepth++;
-          currentPart += char;
-        } else if (char === '}' && nextChar === '}') {
-          templateDepth--;
-          currentPart += char;
-        } else if (char === '[' && nextChar === '[') {
-          bracketDepth++;
-          currentPart += char;
-        } else if (char === ']' && nextChar === ']') {
-          bracketDepth--;
-          currentPart += char;
-        } else if (char === '|' && templateDepth === 0 && bracketDepth === 0) {
-          if (currentPart.trim()) {
-            parts.push(currentPart.trim());
-          }
-          currentPart = '';
-        } else {
-          currentPart += char;
-        }
-      }
-      
-      if (currentPart.trim()) {
-        parts.push(currentPart.trim());
-      }
-
       if (parts.length === 0) {
         return switcherTemplate;
       }
 
-      // Look for file references first (common in image_map parameters)
+      // Log each part for debugging
+      parts.forEach((part, index) => {
+        console.log(`[MediaWiki] Switcher part ${index}: ${part.substring(0, 100)}${part.length > 100 ? '...' : ''}`);
+      });
+
+      // Strategy 1: Look for file references (for image_map type parameters)
       for (const part of parts) {
-        if (part.includes('File:') || /\.(png|jpg|jpeg|gif|svg|webp)/i.test(part)) {
-          // Extract just the filename from [[File:name.png|300px]] format
-          const fileMatch = part.match(/\[\[File:([^\|\]]+)/i) || part.match(/([^\/\s\[\]]+\.(?:png|jpg|jpeg|gif|svg|webp))/i);
+        const cleanPart = part.trim();
+        
+        // Check for File: references in various formats
+        const filePatterns = [
+          /\[\[File:([^\|\]]+)/i,
+          /File:([^\|\]\s]+)/i,
+          /([^\/\s\[\]]+\.(?:png|jpg|jpeg|gif|svg|webp))/i
+        ];
+        
+        for (const pattern of filePatterns) {
+          const fileMatch = cleanPart.match(pattern);
           if (fileMatch && fileMatch[1]) {
             const fileName = fileMatch[1].trim();
-            console.log(`[MediaWiki] Extracted file from Switcher: ${fileName}`);
+            console.log(`[MediaWiki] Found file in Switcher: ${fileName}`);
             return fileName;
           }
         }
       }
 
-      // If no files found, return the first meaningful text content (cleaned)
+      // Strategy 2: Look for meaningful text content (non-file)
       for (const part of parts) {
         const cleaned = this.cleanParameterValue(part);
-        if (cleaned && cleaned.length > 3 && !cleaned.startsWith('[[File:') && !cleaned.includes('.png')) {
-          console.log(`[MediaWiki] Extracted text from Switcher: ${cleaned.substring(0, 50)}...`);
+        if (cleaned && 
+            cleaned.length > 5 && 
+            !cleaned.toLowerCase().includes('file:') && 
+            !cleaned.includes('.png') && 
+            !cleaned.includes('.jpg') &&
+            !cleaned.includes('.svg')) {
+          console.log(`[MediaWiki] Found text content in Switcher: ${cleaned.substring(0, 100)}...`);
           return cleaned;
         }
       }
 
-      // Fallback to first part, cleaned
+      // Strategy 3: Return first non-empty part, cleaned
+      for (const part of parts) {
+        const cleaned = this.cleanParameterValue(part);
+        if (cleaned && cleaned.length > 1) {
+          console.log(`[MediaWiki] Fallback Switcher result: ${cleaned.substring(0, 100)}...`);
+          return cleaned;
+        }
+      }
+
+      // Final fallback
       const fallback = this.cleanParameterValue(parts[0] || switcherTemplate);
+      console.log(`[MediaWiki] Final Switcher fallback: ${fallback.substring(0, 100)}...`);
       return fallback;
 
     } catch (error) {
-      console.error(`[MediaWiki] Error processing Switcher template:`, error);
+      console.error(`[MediaWiki] Error in enhanced Switcher processing:`, error);
       return switcherTemplate;
+    }
+  }
+
+  /**
+   * Split Switcher content while respecting nested structures
+   */
+  private splitSwitcherContent(content: string): string[] {
+    const parts: string[] = [];
+    let currentPart = '';
+    let braceDepth = 0;
+    let bracketDepth = 0;
+    
+    for (let i = 0; i < content.length; i++) {
+      const char = content[i];
+      const nextChar = i + 1 < content.length ? content[i + 1] : '';
+      
+      if (char === '{' && nextChar === '{') {
+        braceDepth++;
+        currentPart += char + nextChar;
+        i++; // Skip next char
+      } else if (char === '}' && nextChar === '}') {
+        braceDepth--;
+        currentPart += char + nextChar;
+        i++; // Skip next char
+      } else if (char === '[' && nextChar === '[') {
+        bracketDepth++;
+        currentPart += char + nextChar;
+        i++; // Skip next char
+      } else if (char === ']' && nextChar === ']') {
+        bracketDepth--;
+        currentPart += char + nextChar;
+        i++; // Skip next char
+      } else if (char === '|' && braceDepth === 0 && bracketDepth === 0) {
+        // This is a separator at the top level
+        if (currentPart.trim()) {
+          parts.push(currentPart.trim());
+        }
+        currentPart = '';
+      } else {
+        currentPart += char;
+      }
+    }
+    
+    // Add the last part
+    if (currentPart.trim()) {
+      parts.push(currentPart.trim());
+    }
+    
+    return parts;
+  }
+
+  /**
+   * Process generic templates by trying to render them or extract meaningful content
+   */
+  private async processGenericTemplates(templateValue: string): Promise<string> {
+    try {
+      // Try to render the template via MediaWiki API
+      const rendered = await this.parseWikitextToHtml(templateValue);
+      if (rendered) {
+        // Extract text content from HTML, preserving structure
+        let textContent = rendered
+          .replace(/<br\s*\/?>/gi, ' ')
+          .replace(/<\/p><p>/gi, ' ')
+          .replace(/<[^>]+>/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        
+        // If the rendered content is reasonable, use it
+        if (textContent && textContent.length > 0 && textContent.length < templateValue.length * 3) {
+          return textContent;
+        }
+      }
+      
+      // If rendering failed, try to extract meaningful content manually
+      return this.extractTemplateContentManually(templateValue) || templateValue;
+      
+    } catch (error) {
+      console.error(`[MediaWiki] Error processing generic template:`, error);
+      return templateValue;
+    }
+  }
+
+  /**
+   * Manually extract content from templates when API parsing fails
+   */
+  private extractTemplateContentManually(templateValue: string): string | null {
+    try {
+      // Try to extract meaningful text from common template patterns
+      const patterns = [
+        // Extract text from {{template|text}} patterns
+        /\{\{[^}]+\|([^}]+)\}\}/,
+        // Extract text from {{template|param=text}} patterns
+        /\{\{[^}]+\|[^=]+=([^}|]+)[\|}]/,
+        // Extract any standalone text outside templates
+        /([A-Za-z][A-Za-z\s]{10,})/
+      ];
+
+      for (const pattern of patterns) {
+        const match = templateValue.match(pattern);
+        if (match && match[1]) {
+          const extracted = match[1].trim();
+          if (extracted.length > 5) {
+            return this.cleanParameterValue(extracted);
+          }
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error('[MediaWiki] Error in manual template extraction:', error);
+      return null;
     }
   }
 
@@ -1075,7 +1283,7 @@ class IxnayWikiService {
     
     // Handle special templates like {{Switcher}}
     if (cleaned.includes('{{Switcher')) {
-      cleaned = this.processSwitcherTemplate(cleaned);
+      cleaned = this.enhancedSwitcherProcessing(cleaned);
     }
     
     // Handle wiki links more carefully

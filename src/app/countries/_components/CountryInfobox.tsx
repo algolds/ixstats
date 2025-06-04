@@ -154,6 +154,7 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
 
       if (data) {
         console.log(`[CountryInfobox] Successfully loaded infobox for: ${countryName}`);
+        console.log(`[CountryInfobox] Infobox has ${Object.keys(data).length} properties`);
       } else {
         console.log(`[CountryInfobox] No infobox data found for: ${countryName}`);
         
@@ -214,69 +215,89 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
 
   const formatInfoboxFields = (currentInfobox: CountryInfoboxType): InfoboxField[] => {
     const fields: InfoboxField[] = [];
+    
+    // Enhanced field mappings with more comprehensive coverage
     const fieldMappings: Array<{
-      keys: (keyof CountryInfoboxType)[]; // Ensure keys are valid
+      keys: string[]; // Use string array instead of keyof to handle dynamic properties
       label: string;
       icon: React.ComponentType<{ className?: string }>;
       priority: number;
       formatter?: (value: string) => string;
     }> = [
+      // Core identification
       { keys: ['capital', 'capital_city'], label: 'Capital', icon: Building, priority: 1 },
       { keys: ['largest_city'], label: 'Largest City', icon: Building, priority: 2 },
       { keys: ['conventional_long_name', 'official_name'], label: 'Official Name', icon: Globe, priority: 3 },
       { keys: ['native_name'], label: 'Native Name', icon: Globe, priority: 4 },
       { keys: ['motto', 'national_motto'], label: 'National Motto', icon: Info, priority: 5 },
       { keys: ['englishmotto'], label: 'English Motto', icon: Info, priority: 6 },
+      
+      // Geographic
       { keys: ['continent'], label: 'Continent', icon: Globe, priority: 7 },
       { keys: ['area', 'area_km2', 'area_total'], label: 'Area', icon: MapPin, priority: 8, formatter: (v) => v.includes('km') ? v : `${parseFloat(v).toLocaleString()} km²` },
-      { keys: ['currency', 'currency_code'], label: 'Currency', icon: DollarSign, priority: 12 },
-      { keys: ['government', 'government_type'], label: 'Government', icon: Building, priority: 13 },
-      { keys: ['leader_title1', 'head_of_state'], label: 'Head of State', icon: Users, priority: 14 },
-      { keys: ['leader_name1', 'leader'], label: 'Leader', icon: Users, priority: 15 },
-      { keys: ['leader_title2'], label: 'Deputy Title', icon: Users, priority: 16 },
-      { keys: ['leader_name2', 'deputy_leader'], label: 'Deputy Leader', icon: Users, priority: 17 },
-      { keys: ['legislature'], label: 'Legislature', icon: Building, priority: 18 },
-      { keys: ['upper_house'], label: 'Upper House', icon: Building, priority: 19 },
-      { keys: ['lower_house'], label: 'Lower House', icon: Building, priority: 20 },
-      { keys: ['established', 'established_event1', 'established_date1'], label: 'Established', icon: Clock, priority: 21 },
-      { keys: ['established_event2'], label: 'Other Event', icon: Clock, priority: 22 },
-      { keys: ['established_date2'], label: 'Other Date', icon: Clock, priority: 23 },
-      { keys: ['established_event3'], label: 'Historical Event', icon: Clock, priority: 24 },
-      { keys: ['established_date3'], label: 'Historical Date', icon: Clock, priority: 25 },
-      { keys: ['established_event4'], label: 'Historical Event', icon: Clock, priority: 26 },
-      { keys: ['established_date4'], label: 'Historical Date', icon: Clock, priority: 27 },
-      { keys: ['established_event5'], label: 'Historical Event', icon: Clock, priority: 28 },
-      { keys: ['established_date5'], label: 'Historical Date', icon: Clock, priority: 29 },
-      { keys: ['established_event6'], label: 'Historical Event', icon: Clock, priority: 30 },
-      { keys: ['established_date6'], label: 'Historical Date', icon: Clock, priority: 31 },
-      { keys: ['independence', 'independence_date'], label: 'Independence', icon: Clock, priority: 32 },
-      { keys: ['languages', 'official_languages', 'official_language'], label: 'Official Languages', icon: Languages, priority: 33 },
-      { keys: ['national_language'], label: 'National Language', icon: Languages, priority: 34 },
-      { keys: ['regional_languages'], label: 'Regional Languages', icon: Languages, priority: 35 },
-      { keys: ['recognized_languages'], label: 'Recognized Languages', icon: Languages, priority: 36 },
-      { keys: ['religion', 'state_religion'], label: 'Religion', icon: Info, priority: 37 },
-      { keys: ['ethnic_groups'], label: 'Ethnic Groups', icon: Users, priority: 38 },
-      { keys: ['demonym'], label: 'Demonym', icon: Users, priority: 39 },
-      { keys: ['timezone', 'time_zone'], label: 'Timezone', icon: Clock, priority: 40 },
-      { keys: ['calling_code', 'callingCode'], label: 'Calling Code', icon: Phone, priority: 41 },
-      { keys: ['internetTld', 'cctld'], label: 'Internet TLD', icon: Wifi, priority: 42 },
-      { keys: ['driving_side', 'drives_on', 'drivingSide'], label: 'Driving Side', icon: Navigation, priority: 43 },
-      { keys: ['national_anthem'], label: 'National Anthem', icon: Info, priority: 44 },
-      { keys: ['royal_anthem'], label: 'Royal Anthem', icon: Info, priority: 45 },
-      { keys: ['patron_saint'], label: 'Patron Saint', icon: Info, priority: 46 },
-      { keys: ['sovereignty_type'], label: 'Sovereignty Type', icon: Building, priority: 47 },
-      { keys: ['area_rank'], label: 'Area Rank', icon: MapPin, priority: 48 },
-      { keys: ['electricity'], label: 'Electricity', icon: Info, priority: 49 },
+      { keys: ['area_rank'], label: 'Area Rank', icon: MapPin, priority: 9 },
+      
+      // Government
+      { keys: ['government', 'government_type'], label: 'Government', icon: Building, priority: 10 },
+      { keys: ['leader_title1', 'head_of_state'], label: 'Head of State', icon: Users, priority: 11 },
+      { keys: ['leader_name1', 'leader'], label: 'Leader', icon: Users, priority: 12 },
+      { keys: ['leader_title2'], label: 'Deputy Title', icon: Users, priority: 13 },
+      { keys: ['leader_name2', 'deputy_leader'], label: 'Deputy Leader', icon: Users, priority: 14 },
+      { keys: ['legislature'], label: 'Legislature', icon: Building, priority: 15 },
+      { keys: ['upper_house'], label: 'Upper House', icon: Building, priority: 16 },
+      { keys: ['lower_house'], label: 'Lower House', icon: Building, priority: 17 },
+      { keys: ['sovereignty_type'], label: 'Sovereignty Type', icon: Building, priority: 18 },
+      
+      // Economic
+      { keys: ['currency', 'currency_code'], label: 'Currency', icon: DollarSign, priority: 19 },
+      { keys: ['GDP_nominal'], label: 'GDP (Nominal)', icon: DollarSign, priority: 20 },
+      { keys: ['GDP_nominal_per_capita'], label: 'GDP per Capita', icon: DollarSign, priority: 21 },
+      
+      // Cultural
+      { keys: ['official_languages', 'official_language'], label: 'Official Languages', icon: Languages, priority: 22 },
+      { keys: ['national_language'], label: 'National Language', icon: Languages, priority: 23 },
+      { keys: ['regional_languages'], label: 'Regional Languages', icon: Languages, priority: 24 },
+      { keys: ['recognized_languages'], label: 'Recognized Languages', icon: Languages, priority: 25 },
+      { keys: ['languages'], label: 'Languages', icon: Languages, priority: 26 },
+      { keys: ['ethnic_groups'], label: 'Ethnic Groups', icon: Users, priority: 27 },
+      { keys: ['religion', 'state_religion'], label: 'Religion', icon: Info, priority: 28 },
+      { keys: ['demonym'], label: 'Demonym', icon: Users, priority: 29 },
+      { keys: ['national_anthem'], label: 'National Anthem', icon: Info, priority: 30 },
+      { keys: ['royal_anthem'], label: 'Royal Anthem', icon: Info, priority: 31 },
+      { keys: ['patron_saint'], label: 'Patron Saint', icon: Info, priority: 32 },
+      
+      // Historical - all establishment events
+      { keys: ['established_event1'], label: 'Foundation', icon: Clock, priority: 33 },
+      { keys: ['established_date1'], label: 'Foundation Date', icon: Clock, priority: 34 },
+      { keys: ['established_event2'], label: 'Historical Event', icon: Clock, priority: 35 },
+      { keys: ['established_date2'], label: 'Historical Date', icon: Clock, priority: 36 },
+      { keys: ['established_event3'], label: 'Historical Event', icon: Clock, priority: 37 },
+      { keys: ['established_date3'], label: 'Historical Date', icon: Clock, priority: 38 },
+      { keys: ['established_event4'], label: 'Historical Event', icon: Clock, priority: 39 },
+      { keys: ['established_date4'], label: 'Historical Date', icon: Clock, priority: 40 },
+      { keys: ['established_event5'], label: 'Historical Event', icon: Clock, priority: 41 },
+      { keys: ['established_date5'], label: 'Historical Date', icon: Clock, priority: 42 },
+      { keys: ['established_event6'], label: 'Historical Event', icon: Clock, priority: 43 },
+      { keys: ['established_date6'], label: 'Historical Date', icon: Clock, priority: 44 },
+      { keys: ['independence', 'independence_date'], label: 'Independence', icon: Clock, priority: 45 },
+      
+      // Technical
+      { keys: ['timezone', 'time_zone'], label: 'Timezone', icon: Clock, priority: 46 },
+      { keys: ['calling_code', 'callingCode'], label: 'Calling Code', icon: Phone, priority: 47 },
+      { keys: ['internetTld', 'cctld'], label: 'Internet TLD', icon: Wifi, priority: 48 },
+      { keys: ['driving_side', 'drives_on', 'drivingSide'], label: 'Driving Side', icon: Navigation, priority: 49 },
+      { keys: ['electricity'], label: 'Electricity', icon: Info, priority: 50 },
     ];
 
+    // Apply direct mappings
     for (const mapping of fieldMappings) {
       let value: string | undefined;
       let usedKey: string | undefined;
       for (const key of mapping.keys) {
-        const val = currentInfobox[key];
+        const val = (currentInfobox as any)[key];
         if (val && String(val).trim()) {
           value = String(val);
-          usedKey = String(key);
+          usedKey = key;
           break;
         }
       }
@@ -286,7 +307,7 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
       }
     }
     
-    // Add other fields not explicitly mapped, with lower priority, but exclude visual elements and data pulled from ixstats
+    // Add all other dynamic fields that weren't explicitly mapped
     const mappedKeys = new Set(fieldMappings.flatMap(m => m.keys));
     // Exclude visual fields and fields pulled from ixstats (population, GDP)
     const excludedKeys = new Set<string>([
@@ -294,31 +315,31 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
       'alt_map', 'image_map2', 'alt_map2', 'map_caption2', 'map_caption',
       // Exclude population and GDP fields since they're pulled from ixstats
       'population_estimate', 'population_census', 'population', 'population_density_km2',
-      'GDP_PPP', 'GDP_PPP_per_capita', 'GDP_nominal', 'GDP_nominal_per_capita', 'gdp', 'gdp_ppp', 'gdp_nominal',
+      'GDP_PPP', 'GDP_PPP_per_capita', 'gdp', 'gdp_ppp',
       // Exclude raw content and technical fields
       'renderedHtml', 'rawWikitext', 'parsedTemplateData',
       // Exclude empty or very short values that are likely formatting artifacts
       'name' // The name is already shown in the header
     ]);
-    const standardKeys = new Set<keyof CountryInfoboxType>(['name', 'conventional_long_name', 'native_name', 'image_flag', 'flag', 'image_coat', 'locator_map', 'image_map']);
 
+    // Get all dynamic properties from the infobox
     Object.entries(currentInfobox).forEach(([key, value]) => {
-        if (!mappedKeys.has(key as keyof CountryInfoboxType) && 
-            !standardKeys.has(key as keyof CountryInfoboxType) && 
+        if (!mappedKeys.has(key) && 
             !excludedKeys.has(key) &&
             value && typeof value === 'string' && value.trim() && 
             value.length > 2 && // Exclude very short values
             !value.includes('{{') && // Exclude values that still contain template syntax
-            !value.includes('|') // Exclude values that look like they weren't parsed properly
+            !value.startsWith('|') && // Exclude values that look like they weren't parsed properly
+            !key.startsWith('_') && // Exclude internal properties
+            !/^\d+$/.test(value) // Exclude values that are just numbers (likely technical)
         ) {
             const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            fields.push({ key, label, value: value.trim(), icon: Info, priority: 99 }); // Low priority for other fields
+            fields.push({ key, label, value: value.trim(), icon: Info, priority: 100 }); // Low priority for dynamic fields
         }
     });
 
     return fields.sort((a, b) => a.priority - b.priority);
   };
-
 
   if (loadingState.isLoading) {
     return (
@@ -410,7 +431,7 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
   }
 
   const fields = formatInfoboxFields(infobox);
-  const displayFields = isExpanded ? fields : fields.slice(0, 8); // Show more fields by default
+  const displayFields = isExpanded ? fields : fields.slice(0, 12); // Show more fields by default since we have better parsing
   
   // Check if we have parsed HTML content
   const hasHtmlContent = Boolean(infobox.renderedHtml);
@@ -514,7 +535,7 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
                 })}
               </div>
               
-              {fields.length > 8 && (
+              {fields.length > 12 && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -526,7 +547,7 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
                   ) : (
                     <ChevronDown className="h-4 w-4 mr-1.5" />
                   )}
-                  {isExpanded ? 'Show Less' : `Show ${fields.length - 8} More Field${fields.length - 8 > 1 ? 's' : ''}`}
+                  {isExpanded ? 'Show Less' : `Show ${fields.length - 12} More Field${fields.length - 12 > 1 ? 's' : ''}`}
                 </Button>
               )}
             </TabsContent>
@@ -594,7 +615,7 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
                   text-decoration: underline;
                 }
                 
-                /* Special styles for Caphiria-style tables */
+                /* Special styles for complex infoboxes */
                 .styled-infobox table tr[style*="background"] td {
                   background-color: rgba(var(--card-rgb), 0.3) !important;
                 }
@@ -633,7 +654,7 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
         )}
       </CardContent>
 
-      {!hasHtmlContent && fields.length > 8 && (
+      {!hasHtmlContent && fields.length > 12 && (
         <CardFooter className="p-4 border-t">
           <Button
             variant="ghost"
@@ -646,11 +667,10 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
             ) : (
               <ChevronDown className="h-4 w-4 mr-1.5" />
             )}
-            {isExpanded ? 'Show Less' : `Show ${fields.length - 8} More Field${fields.length - 8 > 1 ? 's' : ''}`}
+            {isExpanded ? 'Show Less' : `Show ${fields.length - 12} More Field${fields.length - 12 > 1 ? 's' : ''}`}
           </Button>
         </CardFooter>
       )}
     </Card>
   );
 }
-
