@@ -60,7 +60,7 @@ export function useGlobalFlagPreloader(): GlobalFlagPreloader {
 
   updateStatsRef.current = updateStats;
 
-  // Preload flags for multiple countries with improved batching
+  // Preload flags for multiple countries with improved batching and caching
   const preloadAllFlags = useCallback(async (countryNames: string[]) => {
     if (countryNames.length === 0) return;
 
@@ -68,10 +68,23 @@ export function useGlobalFlagPreloader(): GlobalFlagPreloader {
     const startTime = Date.now();
     
     try {
-      console.log(`[FlagPreloader] Starting preload for ${countryNames.length} countries`);
+      console.log(`[FlagPreloader] Starting intelligent preload for ${countryNames.length} countries`);
+      
+      // Check which countries already have cached flags
+      const cacheStats = ixnayWiki.getCacheStats();
+      console.log(`[FlagPreloader] Current cache state: ${cacheStats.flags} flags cached`);
+      
+      // The service will handle filtering out already cached items
       await ixnayWiki.preloadCountryFlags(countryNames);
-      console.log(`[FlagPreloader] Preload completed in ${Date.now() - startTime}ms`);
-      setLastPreloadTime(Date.now());
+      
+      const endTime = Date.now();
+      console.log(`[FlagPreloader] Intelligent preload completed in ${endTime - startTime}ms`);
+      
+      // Update cache stats
+      const newCacheStats = ixnayWiki.getCacheStats();
+      console.log(`[FlagPreloader] Cache after preload: ${newCacheStats.flags} flags cached (added ${newCacheStats.flags - cacheStats.flags})`);
+      
+      setLastPreloadTime(endTime);
     } catch (error) {
       console.error('[FlagPreloader] Preload failed:', error);
     } finally {
@@ -161,7 +174,7 @@ export function useFlagPreloader(countryName?: string) {
 }
 
 /**
- * Flag URL retrieval hook for individual countries with improved performance
+ * Flag URL retrieval hook for individual countries with improved performance and caching
  */
 export function useFlagUrl(countryName: string) {
   const [flagUrl, setFlagUrl] = useState<string | null>(null);
@@ -178,24 +191,31 @@ export function useFlagUrl(countryName: string) {
 
     const loadFlag = async () => {
       try {
+        // The service will check cache first, so this is efficient
         const url = await ixnayWiki.getFlagUrl(countryName);
         if (isMounted) {
           setFlagUrl(url);
           setIsLoading(false);
         }
-      } catch (error) {
-        if (isMounted) {
-          console.warn(`Failed to load flag for ${countryName}:`, error);
-          setFlagUrl(null);
-          setIsLoading(false);
+              } catch (error) {
+          if (isMounted) {
+            // Only warn if it's not a rate limit error (which we expect during heavy loading)
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            if (!errorMessage.includes('429') && !errorMessage.includes('Too Many Requests')) {
+              console.warn(`Failed to load flag for ${countryName}:`, error);
+            }
+            setFlagUrl(null);
+            setIsLoading(false);
+          }
         }
-      }
     };
 
-    loadFlag();
+    // Small delay to allow batch preloading to complete first
+    const timer = setTimeout(loadFlag, 100);
 
     return () => {
       isMounted = false;
+      clearTimeout(timer);
     };
   }, [countryName]);
 
