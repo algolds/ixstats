@@ -7,8 +7,18 @@ import { ixnayWiki } from '~/lib/mediawiki-service';
 const RATE_LIMIT_WINDOW = MEDIAWIKI_CONFIG.rateLimit.windowMs; // 1 minute
 const RATE_LIMIT_MAX_REQUESTS = MEDIAWIKI_CONFIG.rateLimit.maxRequests; // 30 requests per minute
 
-// Simple in-memory rate limiting (use Redis in production)
+// Simple in-memory rate limiting with cleanup (use Redis in production)
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+// Cleanup expired rate limit entries every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, limit] of rateLimitMap.entries()) {
+    if (now > limit.resetTime) {
+      rateLimitMap.delete(key);
+    }
+  }
+}, 5 * 60 * 1000);
 
 function getRateLimitKey(request: NextRequest): string {
   const forwarded = request.headers.get('x-forwarded-for');
@@ -39,7 +49,7 @@ function checkRateLimit(key: string): { allowed: boolean; remaining: number; res
   };
 }
 
-export async function GET(request: NextRequest) {
+async function handleMediaWikiRequest(request: NextRequest, searchParams: URLSearchParams, requestBody?: any) {
   // Rate limiting
   const rateLimitKey = getRateLimitKey(request);
   const rateLimit = checkRateLimit(rateLimitKey);
@@ -61,8 +71,6 @@ export async function GET(request: NextRequest) {
       }
     );
   }
-
-  const { searchParams } = new URL(request.url);
   
   // Handle enhanced infobox extraction endpoint
   if (searchParams.get('getInfoboxHtml') === 'true') {
@@ -234,68 +242,69 @@ export async function GET(request: NextRequest) {
     params[key] = value;
   });
   
+  // Add any parameters from request body (for POST requests)
+  if (requestBody) {
+    Object.keys(requestBody).forEach(key => {
+      if (requestBody[key] !== undefined) {
+        params[key] = requestBody[key];
+      }
+    });
+  }
+  
   // Ensure format is set
   params.format = params.format || 'json';
   params.formatversion = params.formatversion || '2';
 
-  const apiUrl = buildApiUrl(MEDIAWIKI_CONFIG.baseUrl, params);
-  console.log(`[MediaWiki API] Making standard request to: ${apiUrl}`);
+  // Determine if we should use GET or POST based on content length
+  const isLongContent = requestBody && requestBody.text && requestBody.text.length > 1500;
+  
+  let response;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), MEDIAWIKI_CONFIG.timeout);
 
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), MEDIAWIKI_CONFIG.timeout);
+    if (isLongContent) {
+      // Use POST for long content to avoid URI too long errors
+      const formData = new URLSearchParams();
+      Object.keys(params).forEach(key => {
+        const value = params[key];
+        if (value !== undefined) {
+          formData.append(key, value);
+        }
+      });
 
-    const response = await fetch(apiUrl, {
-      method: 'GET',
-      headers: {
-        'User-Agent': MEDIAWIKI_CONFIG.userAgent,
-        'Accept': 'application/json',
-      },
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      console.error(`[MediaWiki API] HTTP Error: ${response.status} ${response.statusText}`);
-      return NextResponse.json(
-        { 
-          error: `MediaWiki API returned status ${response.status}`,
-          message: response.statusText,
-          status: response.status
+      console.log(`[MediaWiki API] Making POST request for long content (${requestBody.text.length} chars)`);
+      
+      response = await fetch(`${MEDIAWIKI_CONFIG.baseUrl}${MEDIAWIKI_CONFIG.apiEndpoint}`, {
+        method: 'POST',
+        headers: {
+          'User-Agent': MEDIAWIKI_CONFIG.userAgent,
+          'Accept': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        { status: response.status }
-      );
-    }
+        body: formData,
+        signal: controller.signal,
+      });
+    } else {
+      // Use GET for regular requests
+      const apiUrl = buildApiUrl(MEDIAWIKI_CONFIG.baseUrl, params);
+      console.log(`[MediaWiki API] Making GET request to: ${apiUrl}`);
 
-    const data = await response.json();
-
-    // Check for MediaWiki API errors
-    if (data.error) {
-      console.error(`[MediaWiki API] API Error:`, data.error);
-      return NextResponse.json(
-        { 
-          error: 'MediaWiki API Error',
-          code: data.error.code,
-          message: data.error.info || data.error.message,
-          details: data.error
+      response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'User-Agent': MEDIAWIKI_CONFIG.userAgent,
+          'Accept': 'application/json',
         },
-        { status: 400 }
-      );
+        signal: controller.signal,
+      });
     }
-
-    // Add rate limit headers to successful responses
-    return NextResponse.json(data, {
-      headers: {
-        'X-RateLimit-Limit': RATE_LIMIT_MAX_REQUESTS.toString(),
-        'X-RateLimit-Remaining': rateLimit.remaining.toString(),
-        'X-RateLimit-Reset': rateLimit.resetTime.toString(),
-        'Cache-Control': `public, max-age=${MEDIAWIKI_CONFIG.cache.pageTtl / 1000 / 12}, s-maxage=${MEDIAWIKI_CONFIG.cache.pageTtl / 1000 / 12}`, // 5 minute cache
-      }
-    });
 
   } catch (error) {
-    console.error('[MediaWiki API] Standard request failed:', error);
+    clearTimeout(timeoutId);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('[MediaWiki API] Request failed:', error);
+    }
     
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
@@ -320,6 +329,75 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+
+  clearTimeout(timeoutId);
+
+  if (!response.ok) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(`[MediaWiki API] HTTP Error: ${response.status} ${response.statusText}`);
+    }
+    return NextResponse.json(
+      { 
+        error: `MediaWiki API returned status ${response.status}`,
+        message: response.statusText,
+        status: response.status
+      },
+      { status: response.status }
+    );
+  }
+
+  const data = await response.json();
+
+  // Check for MediaWiki API errors
+  if (data.error) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(`[MediaWiki API] API Error:`, data.error);
+    }
+    return NextResponse.json(
+      { 
+        error: 'MediaWiki API Error',
+        code: data.error.code,
+        message: data.error.info || data.error.message,
+        details: data.error
+      },
+      { status: 400 }
+    );
+  }
+
+  // Add rate limit headers to successful responses
+  return NextResponse.json(data, {
+    headers: {
+      'X-RateLimit-Limit': RATE_LIMIT_MAX_REQUESTS.toString(),
+      'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+      'X-RateLimit-Reset': rateLimit.resetTime.toString(),
+      'Cache-Control': `public, max-age=${MEDIAWIKI_CONFIG.cache.pageTtl / 1000 / 12}, s-maxage=${MEDIAWIKI_CONFIG.cache.pageTtl / 1000 / 12}`, // 5 minute cache
+    }
+  });
+}
+
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  return handleMediaWikiRequest(request, searchParams);
+}
+
+export async function POST(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  let requestBody = {};
+  
+  try {
+    const contentType = request.headers.get('content-type') || '';
+    
+    if (contentType.includes('application/json')) {
+      requestBody = await request.json();
+    } else if (contentType.includes('application/x-www-form-urlencoded')) {
+      const formData = await request.formData();
+      requestBody = Object.fromEntries(formData.entries());
+    }
+  } catch (error) {
+    console.error('[MediaWiki API] Error parsing request body:', error);
+  }
+  
+  return handleMediaWikiRequest(request, searchParams, requestBody);
 }
 
 /**

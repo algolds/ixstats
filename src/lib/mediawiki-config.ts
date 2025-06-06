@@ -31,13 +31,13 @@ export const MEDIAWIKI_CONFIG: MediaWikiConfig = {
   timeout: 10000, // 10 seconds
   
   rateLimit: {
-    maxRequests: 30,
+    maxRequests: 90,
     windowMs: 60 * 1000, // 1 minute
   },
   
   cache: {
     infoboxTtl: 24 * 60 * 60 * 1000, // 24 hours
-    flagTtl: 7 * 24 * 60 * 60 * 1000, // 7 days
+    flagTtl: 30 * 24 * 60 * 60 * 1000, // 30 days - flags rarely change
     templateTtl: 24 * 60 * 60 * 1000, // 24 hours
     pageTtl: 6 * 60 * 60 * 1000, // 6 hours
     maxSize: 1000, // Max cache entries
