@@ -1,11 +1,59 @@
 // src/server/api/routers/countries.ts
-// FIXED: Graceful handling of missing relations and proper error handling
+// FIXED: Complete countries router with proper functionality and optimizations
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
+import { getDefaultEconomicConfig, CONFIG_CONSTANTS } from "~/lib/config-service";
+import { parseRosterFile } from "~/lib/data-parser";
 import { IxStatsCalculator } from "~/lib/calculations";
-import type { EconomicConfig, BaseCountryData, CountryStats } from "~/types/ixstats";
+import type { 
+  SystemStatus, 
+  AdminPageBotStatusView, 
+  ImportAnalysis,
+  BaseCountryData,
+  CalculationLog,
+  EconomicConfig,
+  Country,
+  CountryStats
+} from "~/types/ixstats";
+
+// Simple in-memory cache for frequently accessed data
+const cache = new Map<string, { data: any; timestamp: number; ttl: number }>();
+const CACHE_CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
+// Cleanup expired cache entries
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of cache.entries()) {
+    if (now - value.timestamp > value.ttl) {
+      cache.delete(key);
+    }
+  }
+}, CACHE_CLEANUP_INTERVAL);
+
+function getCacheKey(operation: string, params: any): string {
+  return `${operation}_${JSON.stringify(params)}`;
+}
+
+function getCachedData(key: string): any | null {
+  const cached = cache.get(key);
+  if (cached && Date.now() - cached.timestamp < cached.ttl) {
+    return cached.data;
+  }
+  if (cached) {
+    cache.delete(key);
+  }
+  return null;
+}
+
+function setCachedData(key: string, data: any, ttl: number = 30000): void {
+  cache.set(key, {
+    data,
+    timestamp: Date.now(),
+    ttl
+  });
+}
 
 // Economic configuration
 const getEconomicConfig = (): EconomicConfig => ({
@@ -769,50 +817,78 @@ export const countriesRouter = createTRPCRouter({
     }).optional())
     .query(async ({ ctx, input }) => {
       const targetTime = input?.timestamp ?? IxTime.getCurrentIxTime();
-      const countries = await ctx.db.country.findMany({
-        select: {
-          id: true,
-          name: true,
-          currentPopulation: true,
-          currentTotalGdp: true,
-          economicTier: true,
-          populationTier: true,
-          landArea: true,
-        },
-      });
-
-      let totalPopulation = 0;
-      let totalGdp = 0;
-      let totalLand = 0;
-      const econCounts: Record<string, number> = {};
-      const popCounts: Record<string, number> = {};
-
-      for (const country of countries) {
-        totalPopulation += validateNumber(country.currentPopulation || 0, 1e11);
-        totalGdp += validateNumber(country.currentTotalGdp || 0, 1e18);
-        if (country.landArea) totalLand += country.landArea;
-        const econ = country.economicTier || 'Unknown';
-        const pop = country.populationTier || 'Unknown';
-        econCounts[econ] = (econCounts[econ] || 0) + 1;
-        popCounts[pop] = (popCounts[pop] || 0) + 1;
+      
+      // Check cache first
+      const cacheKey = getCacheKey('globalStats', { timestamp: targetTime });
+      const cached = getCachedData(cacheKey);
+      if (cached) {
+        return cached;
       }
+
+      // Use optimized database query with aggregation
+      const result = await ctx.db.$queryRaw`
+        SELECT 
+          COUNT(*) as totalCountries,
+          SUM(COALESCE(currentPopulation, 0)) as totalPopulation,
+          SUM(COALESCE(currentTotalGdp, 0)) as totalGdp,
+          SUM(COALESCE(landArea, 0)) as totalLand,
+          COUNT(CASE WHEN economicTier = 'Advanced' THEN 1 END) as advancedCount,
+          COUNT(CASE WHEN economicTier = 'Developed' THEN 1 END) as developedCount,
+          COUNT(CASE WHEN economicTier = 'Emerging' THEN 1 END) as emergingCount,
+          COUNT(CASE WHEN economicTier = 'Developing' THEN 1 END) as developingCount,
+          COUNT(CASE WHEN economicTier = 'Impoverished' THEN 1 END) as impoverishedCount,
+          COUNT(CASE WHEN populationTier = '1' THEN 1 END) as popTier1Count,
+          COUNT(CASE WHEN populationTier = '2' THEN 1 END) as popTier2Count,
+          COUNT(CASE WHEN populationTier = '3' THEN 1 END) as popTier3Count,
+          COUNT(CASE WHEN populationTier = '4' THEN 1 END) as popTier4Count,
+          COUNT(CASE WHEN populationTier = '5' THEN 1 END) as popTier5Count
+        FROM Country
+      `;
+
+      const stats = result[0] as any;
+      
+      const totalPopulation = validateNumber(stats.totalPopulation || 0, 1e11);
+      const totalGdp = validateNumber(stats.totalGdp || 0, 1e18);
+      const totalLand = stats.totalLand || 0;
+      const totalCountries = Number(stats.totalCountries) || 0;
 
       const avgGdpPc = totalPopulation > 0 ? totalGdp / totalPopulation : 0;
       const avgPopD = totalLand > 0 ? totalPopulation / totalLand : 0;
       const avgGdpD = totalLand > 0 ? totalGdp / totalLand : 0;
 
-      return {
+      const economicTierDistribution = {
+        'Advanced': Number(stats.advancedCount) || 0,
+        'Developed': Number(stats.developedCount) || 0,
+        'Emerging': Number(stats.emergingCount) || 0,
+        'Developing': Number(stats.developingCount) || 0,
+        'Impoverished': Number(stats.impoverishedCount) || 0,
+      };
+
+      const populationTierDistribution = {
+        '1': Number(stats.popTier1Count) || 0,
+        '2': Number(stats.popTier2Count) || 0,
+        '3': Number(stats.popTier3Count) || 0,
+        '4': Number(stats.popTier4Count) || 0,
+        '5': Number(stats.popTier5Count) || 0,
+      };
+
+      const response = {
         totalPopulation,
         totalGdp,
         averageGdpPerCapita: avgGdpPc,
-        totalCountries: countries.length,
-        economicTierDistribution: econCounts,
-        populationTierDistribution: popCounts,
+        totalCountries,
+        economicTierDistribution,
+        populationTierDistribution,
         averagePopulationDensity: avgPopD || null,
         averageGdpDensity: avgGdpD || null,
         globalGrowthRate: getEconomicConfig().globalGrowthFactor,
         ixTimeTimestamp: targetTime,
       };
+
+      // Cache the result for 30 seconds
+      setCachedData(cacheKey, response, 30000);
+
+      return response;
     }),
 
   updateStats: publicProcedure

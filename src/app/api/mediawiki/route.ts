@@ -418,12 +418,18 @@ export async function DELETE(request: Request) {
     // Clear cache for the specific country
     ixnayWiki.clearCountryCache(countryName);
     
-    console.log(`[MediaWiki API] Cache cleared for country: ${countryName}`);
+    console.log(`[MediaWiki API] Cache cleared for country: ${countryName} - will use enhanced template and wikilink processing`);
     
     return NextResponse.json({
       success: true,
-      message: `Cache cleared for ${countryName}. The country will now use complete template parsing.`,
-      country: countryName
+      message: `Cache cleared for ${countryName}. The country will now use enhanced template and wikilink processing with clickable links.`,
+      country: countryName,
+      features: [
+        'Enhanced template processing ({{wp}}, {{link}}, etc.)',
+        'Clickable wikilinks with color #429284',
+        'Proper HTML rendering with hover effects',
+        'XSS protection and URL normalization'
+      ]
     });
     
   } catch (error) {
