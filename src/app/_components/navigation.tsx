@@ -23,7 +23,7 @@ export function Navigation() {
     },
     {
       name: "Economy Builder",
-      href: "/economy",
+      href: "/builder",
       icon: Building,
     },
     {

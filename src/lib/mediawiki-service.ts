@@ -143,14 +143,84 @@ interface CacheEntry<T> {
   ttl: number;
 }
 
+// --- GLOBAL CONCURRENCY LIMITER AND NOT FOUND TRACKING ---
+const MAX_CONCURRENT_REQUESTS = 4;
+let currentRequests = 0;
+const requestQueue: Array<() => void> = [];
+const NOT_FOUND_SET = new Set<string>(); // Tracks not found keys for session
+const ERROR_TTL = 60 * 1000; // 1 minute for error/null cache entries
+
+function normalizeKey(key: string): string {
+  return key ? key.toLowerCase().trim() : '';
+}
+
+function runNextRequest() {
+  if (currentRequests < MAX_CONCURRENT_REQUESTS && requestQueue.length > 0) {
+    const next = requestQueue.shift();
+    if (next) next();
+  }
+}
+
+async function throttledRequest<T>(fn: () => Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const exec = () => {
+      currentRequests++;
+      fn().then(
+        (res) => {
+          currentRequests--;
+          runNextRequest();
+          resolve(res);
+        },
+        (err) => {
+          currentRequests--;
+          runNextRequest();
+          reject(err);
+        }
+      );
+    };
+    if (currentRequests < MAX_CONCURRENT_REQUESTS) {
+      exec();
+    } else {
+      requestQueue.push(exec);
+    }
+  });
+}
+// --- END GLOBAL CONCURRENCY LIMITER ---
+
+class LRUCache<K, V> extends Map<K, V> {
+  maxSize: number;
+  constructor(maxSize: number) {
+    super();
+    this.maxSize = maxSize;
+  }
+  get(key: K): V | undefined {
+    if (!super.has(key)) return undefined;
+    const value = super.get(key)!;
+    super.delete(key);
+    super.set(key, value);
+    return value;
+  }
+  set(key: K, value: V): this {
+    if (super.has(key)) super.delete(key);
+    super.set(key, value);
+    if (super.size > this.maxSize) {
+      const firstKey = super.keys().next().value;
+      if (firstKey !== undefined) {
+        super.delete(firstKey);
+      }
+    }
+    return this;
+  }
+}
+
 class IxnayWikiService {
   private readonly API_BASE_URL = `${MEDIAWIKI_CONFIG.baseUrl}${MEDIAWIKI_CONFIG.apiEndpoint}`;
-  private readonly FLAG_CACHE = new Map<string, CacheEntry<string | null>>();
-  private readonly INFOBOX_CACHE = new Map<string, CacheEntry<CountryInfoboxWithDynamicProps | null>>();
-  private readonly TEMPLATE_CACHE = new Map<string, CacheEntry<string | null>>();
-  private readonly FILE_CACHE = new Map<string, CacheEntry<string | null>>();
-  private readonly WIKITEXT_CACHE = new Map<string, CacheEntry<string | null>>();
-  private readonly RENDERED_HTML_CACHE = new Map<string, CacheEntry<string | null>>();
+  private readonly FLAG_CACHE = new LRUCache<string, CacheEntry<string | null>>(MEDIAWIKI_CONFIG.cache.maxSize);
+  private readonly INFOBOX_CACHE = new LRUCache<string, CacheEntry<CountryInfoboxWithDynamicProps | null>>(MEDIAWIKI_CONFIG.cache.maxSize);
+  private readonly TEMPLATE_CACHE = new LRUCache<string, CacheEntry<string | null>>(MEDIAWIKI_CONFIG.cache.maxSize);
+  private readonly FILE_CACHE = new LRUCache<string, CacheEntry<string | null>>(MEDIAWIKI_CONFIG.cache.maxSize);
+  private readonly WIKITEXT_CACHE = new LRUCache<string, CacheEntry<string | null>>(MEDIAWIKI_CONFIG.cache.maxSize);
+  private readonly RENDERED_HTML_CACHE = new LRUCache<string, CacheEntry<string | null>>(MEDIAWIKI_CONFIG.cache.maxSize);
   
   // Request queue to prevent rate limiting
   private readonly REQUEST_QUEUE = new Map<string, Promise<any>>();
@@ -240,12 +310,14 @@ class IxnayWikiService {
    * Get from cache or return null if expired/missing
    */
   private getCacheValue<T>(cache: Map<string, CacheEntry<T>>, key: string): T | null {
-    const entry = cache.get(key);
+    const normKey = normalizeKey(key);
+    if (NOT_FOUND_SET.has(normKey)) return null;
+    const entry = cache.get(normKey);
     if (this.isCacheValid(entry)) {
       return entry!.data;
     }
     if (entry) {
-      cache.delete(key);
+      cache.delete(normKey);
     }
     return null;
   }
@@ -254,37 +326,32 @@ class IxnayWikiService {
    * Set cache value with TTL and size enforcement
    */
   private setCacheValue<T>(cache: Map<string, CacheEntry<T>>, key: string, value: T, ttl: number): void {
-    // Enforce cache size limit
-    if (cache.size >= MEDIAWIKI_CONFIG.cache.maxSize) {
-      // Remove oldest entry
-      const oldestKey = cache.keys().next().value;
-      if (oldestKey) {
-        cache.delete(oldestKey);
-      }
-    }
-    
-    cache.set(key, {
+    const normKey = normalizeKey(key);
+    // Use error TTL for null/error values
+    const useTtl = value === null ? ERROR_TTL : ttl;
+    cache.set(normKey, {
       data: value,
       timestamp: Date.now(),
-      ttl
+      ttl: useTtl
     });
+    if (value === null) NOT_FOUND_SET.add(normKey);
   }
 
   /**
    * Deduplicate requests to prevent multiple concurrent requests for the same resource
    */
   private async getOrCreateRequest<T>(key: string, requestFn: () => Promise<T>): Promise<T> {
-    const existingRequest = this.REQUEST_QUEUE.get(key);
+    const normKey = normalizeKey(key);
+    if (NOT_FOUND_SET.has(normKey)) return null as T;
+    const existingRequest = this.REQUEST_QUEUE.get(normKey);
     if (existingRequest) {
-      console.log(`[MediaWiki] Deduplicating request for: ${key}`);
+      console.log(`[MediaWiki] Deduplicating request for: ${normKey}`);
       return existingRequest;
     }
-
-    const request = requestFn().finally(() => {
-      this.REQUEST_QUEUE.delete(key);
+    const request = throttledRequest(requestFn).finally(() => {
+      this.REQUEST_QUEUE.delete(normKey);
     });
-
-    this.REQUEST_QUEUE.set(key, request);
+    this.REQUEST_QUEUE.set(normKey, request);
     return request;
   }
 
@@ -298,91 +365,74 @@ class IxnayWikiService {
   /**
    * Get raw wikitext for a page using MediaWiki API via Next.js API route to avoid CORS issues
    */
-  async getPageWikitext(pageName: string): Promise<string | null> {
-    const cacheKey = `wikitext_${pageName.toLowerCase()}`;
-    const cached = this.getCacheValue(this.WIKITEXT_CACHE, cacheKey);
+  async getPageWikitext(pageName: string): Promise<string | { error: string }> {
+    const normName = normalizeKey(pageName);
+    const cached = this.getCacheValue(this.WIKITEXT_CACHE, normName);
     if (cached !== null) {
       return cached;
     }
-
-    try {
-      console.log(`[MediaWiki] Getting raw wikitext for: ${pageName}`);
-      
-      const params = new URLSearchParams({
-        action: 'query',
-        prop: 'revisions',
-        rvprop: 'content',
-        titles: pageName,
-        rvsection: '0', // Get only section 0 (intro section with infobox)
-        format: 'json',
-        formatversion: '2'
-      });
-
-      const apiUrl = `/api/mediawiki?${params.toString()}`;
-      console.log(`[MediaWiki] Fetching wikitext via Next.js API route`);
-
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Accept': 'application/json',
-        },
-        cache: 'no-store'
-      });
-
-      if (!response.ok) {
-        console.error(`[MediaWiki] HTTP Error: ${response.status} ${response.statusText}`);
-        this.setCacheValue(this.WIKITEXT_CACHE, cacheKey, null, this.WIKITEXT_TTL);
-        return null;
+    return this.getOrCreateRequest(`wikitext_${normName}`, async () => {
+      try {
+        return await throttledRequest(async () => {
+          const params = new URLSearchParams({
+            action: 'query',
+            prop: 'revisions',
+            rvprop: 'content',
+            titles: pageName,
+            rvsection: '0',
+            format: 'json',
+            formatversion: '2'
+          });
+          const apiUrl = `/api/mediawiki?${params.toString()}`;
+          const response = await fetch(apiUrl, {
+            headers: { 'Accept': 'application/json' },
+            cache: 'no-store'
+          });
+          if (!response.ok) {
+            this.setCacheValue(this.WIKITEXT_CACHE, normName, null, ERROR_TTL);
+            NOT_FOUND_SET.add(normName);
+            return { error: `[MediaWiki] HTTP Error: ${response.status} ${response.statusText}` };
+          }
+          const data = await response.json();
+          if (data.error) {
+            this.setCacheValue(this.WIKITEXT_CACHE, normName, null, ERROR_TTL);
+            NOT_FOUND_SET.add(normName);
+            return { error: `[MediaWiki] API Error: ${JSON.stringify(data.error)}` };
+          }
+          const pages = data.query?.pages;
+          if (!pages || !Array.isArray(pages) || pages.length === 0) {
+            this.setCacheValue(this.WIKITEXT_CACHE, normName, null, ERROR_TTL);
+            NOT_FOUND_SET.add(normName);
+            return { error: `[MediaWiki] No pages found for ${pageName}` };
+          }
+          const page = pages[0];
+          if (!page || page.missing) {
+            this.setCacheValue(this.WIKITEXT_CACHE, normName, null, ERROR_TTL);
+            NOT_FOUND_SET.add(normName);
+            return { error: `[MediaWiki] Page ${pageName} not found or missing` };
+          }
+          const revisions = page.revisions;
+          if (!revisions || !Array.isArray(revisions) || revisions.length === 0) {
+            this.setCacheValue(this.WIKITEXT_CACHE, normName, null, ERROR_TTL);
+            NOT_FOUND_SET.add(normName);
+            return { error: `[MediaWiki] No revisions found for ${pageName}` };
+          }
+          const revision = revisions[0];
+          const wikitext = revision?.content;
+          if (!wikitext) {
+            this.setCacheValue(this.WIKITEXT_CACHE, normName, null, ERROR_TTL);
+            NOT_FOUND_SET.add(normName);
+            return { error: `[MediaWiki] No content found in revision for ${pageName}` };
+          }
+          this.setCacheValue(this.WIKITEXT_CACHE, normName, wikitext, this.WIKITEXT_TTL);
+          return wikitext;
+        });
+      } catch (error) {
+        this.setCacheValue(this.WIKITEXT_CACHE, normName, null, ERROR_TTL);
+        NOT_FOUND_SET.add(normName);
+        return { error: `[MediaWiki] Exception: ${error}` };
       }
-
-      const data = await response.json();
-
-      if (data.error) {
-        console.warn(`[MediaWiki] API Error for ${pageName}:`, data.error);
-        this.setCacheValue(this.WIKITEXT_CACHE, cacheKey, null, this.WIKITEXT_TTL);
-        return null;
-      }
-
-      // Navigate the response structure: query.pages[pageId].revisions[0].content
-      const pages = data.query?.pages;
-      if (!pages || !Array.isArray(pages) || pages.length === 0) {
-        console.warn(`[MediaWiki] No pages found for ${pageName}`);
-        this.setCacheValue(this.WIKITEXT_CACHE, cacheKey, null, this.WIKITEXT_TTL);
-        return null;
-      }
-
-      const page = pages[0];
-      if (!page || page.missing) {
-        console.warn(`[MediaWiki] Page ${pageName} not found or missing`);
-        this.setCacheValue(this.WIKITEXT_CACHE, cacheKey, null, this.WIKITEXT_TTL);
-        return null;
-      }
-
-      const revisions = page.revisions;
-      if (!revisions || !Array.isArray(revisions) || revisions.length === 0) {
-        console.warn(`[MediaWiki] No revisions found for ${pageName}`);
-        this.setCacheValue(this.WIKITEXT_CACHE, cacheKey, null, this.WIKITEXT_TTL);
-        return null;
-      }
-
-      const revision = revisions[0];
-      const wikitext = revision?.content;
-      
-      if (!wikitext) {
-        console.warn(`[MediaWiki] No content found in revision for ${pageName}`);
-        this.setCacheValue(this.WIKITEXT_CACHE, cacheKey, null, this.WIKITEXT_TTL);
-        return null;
-      }
-
-      console.log(`[MediaWiki] Got wikitext for ${pageName}: ${wikitext.length} characters (section 0 only)`);
-      
-      this.setCacheValue(this.WIKITEXT_CACHE, cacheKey, wikitext, this.WIKITEXT_TTL);
-      return wikitext;
-
-    } catch (error) {
-      console.error(`[MediaWiki] Error getting wikitext for ${pageName}:`, error);
-      this.setCacheValue(this.WIKITEXT_CACHE, cacheKey, null, this.WIKITEXT_TTL);
-      return null;
-    }
+    });
   }
 
   /**
@@ -857,11 +907,32 @@ class IxnayWikiService {
       // Step 6: Map template parameters to infobox properties (including dynamic ones)
       this.mapTemplateDataToInfobox(templateData, infobox);
 
-      // Step 7: Process any special template values (like {{Switcher}})
+      // Step 7: Process any special template values (like {{Switcher}}, templates, and wikilinks)
       await this.processSpecialTemplates(infobox);
 
       console.log(`[MediaWiki] Successfully created complete infobox for ${countryName}`);
       console.log(`[MediaWiki] Infobox has ${Object.keys(infobox).length} total properties`);
+      
+      // Debug: Check for any remaining unprocessed templates or wikilinks
+      const hasUnprocessedTemplates = Object.entries(infobox).some(([key, value]) => 
+        typeof value === 'string' && value.includes('{{') && 
+        key !== 'rawWikitext' && key !== 'renderedHtml'
+      );
+      const hasUnprocessedWikilinks = Object.entries(infobox).some(([key, value]) => 
+        typeof value === 'string' && value.includes('[[') && 
+        key !== 'rawWikitext' && key !== 'renderedHtml'
+      );
+      
+      if (hasUnprocessedTemplates) {
+        console.warn(`[MediaWiki] ${countryName} still has unprocessed templates in some fields`);
+      }
+      if (hasUnprocessedWikilinks) {
+        console.warn(`[MediaWiki] ${countryName} still has unprocessed wikilinks in some fields`);
+      }
+      
+      if (!hasUnprocessedTemplates && !hasUnprocessedWikilinks) {
+        console.log(`[MediaWiki] ✓ ${countryName} - All templates and wikilinks processed successfully`);
+      }
       
       this.setCacheValue(this.INFOBOX_CACHE, countryName, infobox, this.INFOBOX_TTL);
       return infobox;
@@ -881,7 +952,16 @@ class IxnayWikiService {
     // Map ALL template parameters to the infobox object (not just predefined ones)
     for (const [key, value] of Object.entries(templateData)) {
       if (key && value && value.trim()) {
-        (infobox as any)[key] = value;
+        let processedValue = value;
+        
+        // Apply basic cleaning to all values (including wikilink processing)
+        // But don't process templates here as they'll be handled in processSpecialTemplates
+        if (value.includes('[[') && !value.includes('{{')) {
+          processedValue = this.cleanParameterValue(value);
+          console.log(`[MediaWiki] Pre-processed wikilinks in ${key}: "${value.substring(0, 50)}..." -> "${processedValue.substring(0, 50)}..."`);
+        }
+        
+        (infobox as any)[key] = processedValue;
       }
     }
 
@@ -898,8 +978,8 @@ class IxnayWikiService {
       console.log(`[MediaWiki] Enhanced processing of special templates in infobox parameters`);
       
       for (const [key, value] of Object.entries(infobox.parsedTemplateData)) {
-        if (value && value.includes('{{')) {
-          console.log(`[MediaWiki] Processing templates in parameter: ${key}`);
+        if (value && (value.includes('{{') || value.includes('[['))) {
+          console.log(`[MediaWiki] Processing templates/wikilinks in parameter: ${key}`);
           
           // Enhanced template processing
           let processedValue = value;
@@ -908,10 +988,22 @@ class IxnayWikiService {
           if (value.includes('{{Switcher') || value.includes('{{switcher')) {
             processedValue = this.enhancedSwitcherProcessing(value);
           }
-          // Handle other common templates - disabled to avoid API errors
-          // else if (value.includes('{{')) {
-          //   processedValue = await this.processGenericTemplates(value);
-          // }
+          
+          // Always apply common template processing and wikilink processing
+          if (value.includes('{{') || value.includes('[[')) {
+            // First pass: handle templates
+            if (processedValue.includes('{{')) {
+              processedValue = this.processCommonTemplates(processedValue);
+            }
+            
+            // Second pass: clean any remaining templates
+            if (processedValue.includes('{{')) {
+              processedValue = this.cleanRemainingTemplates(processedValue);
+            }
+            
+            // Third pass: apply the main cleaning (which handles wikilinks)
+            processedValue = this.cleanParameterValue(processedValue);
+          }
           
           if (processedValue && processedValue !== value) {
             // Update the parsed data
@@ -921,6 +1013,25 @@ class IxnayWikiService {
             (infobox as any)[key] = processedValue;
             
             console.log(`[MediaWiki] Enhanced processing of ${key}:`);
+            console.log(`  Original: ${value.substring(0, 100)}${value.length > 100 ? '...' : ''}`);
+            console.log(`  Processed: ${processedValue.substring(0, 100)}${processedValue.length > 100 ? '...' : ''}`);
+          }
+        }
+      }
+      
+      // Also process any direct infobox properties that might have templates/wikilinks
+      console.log(`[MediaWiki] Processing direct infobox properties for templates/wikilinks`);
+      
+      for (const [key, value] of Object.entries(infobox)) {
+        if (key !== 'parsedTemplateData' && key !== 'rawWikitext' && key !== 'renderedHtml' && 
+            typeof value === 'string' && (value.includes('{{') || value.includes('[['))) {
+          
+          console.log(`[MediaWiki] Processing direct property: ${key}`);
+          let processedValue = this.cleanParameterValue(value);
+          
+          if (processedValue && processedValue !== value) {
+            (infobox as any)[key] = processedValue;
+            console.log(`[MediaWiki] Updated direct property ${key}:`);
             console.log(`  Original: ${value.substring(0, 100)}${value.length > 100 ? '...' : ''}`);
             console.log(`  Processed: ${processedValue.substring(0, 100)}${processedValue.length > 100 ? '...' : ''}`);
           }
@@ -1131,89 +1242,69 @@ class IxnayWikiService {
   /**
    * Get flag URL for a country by extracting from Country_data template
    */
-  async getFlagUrl(countryName: string): Promise<string | null> {
-    const cached = this.getCacheValue(this.FLAG_CACHE, countryName);
+  async getFlagUrl(countryName: string): Promise<string | { error: string }> {
+    const normName = normalizeKey(countryName);
+    const cached = this.getCacheValue(this.FLAG_CACHE, normName);
     if (cached !== null) {
-      console.log(`[MediaWiki] Flag cache hit for: ${countryName}`);
-      return cached;
+      if (typeof cached === 'string') {
+        return cached;
+      } else {
+        // If cached is not a string (shouldn't happen, but for safety)
+        return cached;
+      }
     }
-
-    return this.getOrCreateRequest(`flag_${countryName}`, async () => {
+    return this.getOrCreateRequest(`flag_${normName}`, async () => {
       try {
-        console.log(`[MediaWiki] Getting flag for: ${countryName}`);
-        
-        // First try to get flag from Country_data template (most reliable)
+        // Try Country_data template
         const countryDataTemplateName = `Template:Country_data_${countryName}`;
         const templateContent = await this.getTemplate(countryDataTemplateName);
-        
-        if (templateContent) {
-          console.log(`[MediaWiki] Found Country_data template for ${countryName}`);
+        if (templateContent && typeof templateContent === 'string') {
           const flagFileName = this.extractFlagFromCountryDataTemplate(templateContent);
-          
           if (flagFileName) {
-            console.log(`[MediaWiki] Extracted flag filename from Country_data template: ${flagFileName}`);
             const flagUrl = await this.getFileUrl(flagFileName);
-            if (flagUrl) {
-              console.log(`[MediaWiki] Successfully got flag URL from Country_data template: ${flagUrl}`);
-              this.setCacheValue(this.FLAG_CACHE, countryName, flagUrl, this.FLAG_TTL);
+            if (typeof flagUrl === 'string') {
+              this.setCacheValue(this.FLAG_CACHE, normName, flagUrl, this.FLAG_TTL);
               return flagUrl;
+            } else if (flagUrl && typeof flagUrl === 'object' && 'error' in flagUrl) {
+              // Do not cache the error object as a string
+              return { error: flagUrl.error };
             }
           }
-        } else {
-          console.log(`[MediaWiki] No Country_data template found for ${countryName}`);
+        } else if (templateContent && typeof templateContent === 'object' && 'error' in templateContent) {
+          this.setCacheValue(this.FLAG_CACHE, normName, null, ERROR_TTL);
+          return { error: templateContent.error };
         }
-        
-        // Fallback: Get flag from country infobox
+        // Fallback: infobox
         const infobox = await this.getCountryInfobox(countryName);
         if (infobox) {
-          console.log(`[MediaWiki] Falling back to infobox for ${countryName}`);
-          // Try multiple flag-related fields from the infobox
-          const flagFields = [
-            infobox.image_flag,
-            infobox.flag,
-            infobox.flag_caption, // Sometimes flag info is in caption
-          ];
-          
+          const flagFields = [infobox.image_flag, infobox.flag, infobox.flag_caption];
           for (const flagFile of flagFields) {
             if (flagFile && flagFile.trim()) {
-              console.log(`[MediaWiki] Trying flag field: ${flagFile}`);
-              
-              // Clean the flag file name - remove File: prefix if present
               let cleanFlagFile = flagFile.trim();
               if (cleanFlagFile.startsWith('File:')) {
                 cleanFlagFile = cleanFlagFile.substring(5);
               }
-              
               const flagUrl = await this.getFileUrl(cleanFlagFile);
-              if (flagUrl) {
-                console.log(`[MediaWiki] Successfully got flag URL from infobox: ${flagUrl}`);
-                this.setCacheValue(this.FLAG_CACHE, countryName, flagUrl, this.FLAG_TTL);
+              if (typeof flagUrl === 'string') {
+                this.setCacheValue(this.FLAG_CACHE, normName, flagUrl, this.FLAG_TTL);
                 return flagUrl;
-              } else {
-                console.log(`[MediaWiki] Failed to get URL for flag file: ${cleanFlagFile}`);
+              } else if (flagUrl && typeof flagUrl === 'object' && 'error' in flagUrl) {
+                // Do not cache the error object as a string
+                return { error: flagUrl.error };
               }
             }
           }
-          
-          console.log(`[MediaWiki] No valid flag file found in infobox for ${countryName}`);
-          console.log(`[MediaWiki] Available infobox fields:`, Object.keys(infobox).join(', '));
-        } else {
-          console.log(`[MediaWiki] No infobox found for ${countryName}`);
         }
-
-        // No flag found
-        this.setCacheValue(this.FLAG_CACHE, countryName, null, this.FLAG_TTL);
-        return null;
-
+        this.setCacheValue(this.FLAG_CACHE, normName, null, ERROR_TTL);
+        NOT_FOUND_SET.add(normName);
+        return { error: `[MediaWiki] No flag found for ${countryName}` };
       } catch (error) {
-        console.error(`[MediaWiki] Error getting flag for ${countryName}:`, error);
-        this.setCacheValue(this.FLAG_CACHE, countryName, null, this.FLAG_TTL);
-        return null;
+        this.setCacheValue(this.FLAG_CACHE, normName, null, ERROR_TTL);
+        NOT_FOUND_SET.add(normName);
+        return { error: `[MediaWiki] Exception: ${error}` };
       }
     });
   }
-
-
 
   /**
    * Extract flag filename from Country_data template content
@@ -1300,190 +1391,147 @@ class IxnayWikiService {
   /**
    * Get template content with caching
    */
-  private async getTemplate(templateName: string): Promise<string | null> {
-    const cached = this.getCacheValue(this.TEMPLATE_CACHE, templateName);
+  private async getTemplate(templateName: string): Promise<string | { error: string }> {
+    const normName = normalizeKey(templateName);
+    const cached = this.getCacheValue(this.TEMPLATE_CACHE, normName);
     if (cached !== null) {
       return cached;
     }
-    
-    try {
-      console.log(`[MediaWiki] Fetching template: ${templateName}`);
-      
-      const params = new URLSearchParams({
-        action: 'query',
-        prop: 'revisions',
-        rvprop: 'content',
-        titles: templateName,
-        format: 'json',
-        formatversion: '2'
-      });
-      
-      const templateUrl = `/api/mediawiki?${params.toString()}`;
-      
-      const response = await fetch(templateUrl, {
-        headers: {
-          'Accept': 'application/json'
-        },
-        cache: 'no-store'
-      });
-      
-      if (!response.ok) {
-        console.error(`[MediaWiki] HTTP Error fetching template ${templateName}: ${response.status}`);
-        this.setCacheValue(this.TEMPLATE_CACHE, templateName, null, this.TEMPLATE_TTL);
-        return null;
+    return this.getOrCreateRequest(`template_${normName}`, async () => {
+      try {
+        return await throttledRequest(async () => {
+          const params = new URLSearchParams({
+            action: 'query',
+            prop: 'revisions',
+            rvprop: 'content',
+            titles: templateName,
+            format: 'json',
+            formatversion: '2'
+          });
+          const templateUrl = `/api/mediawiki?${params.toString()}`;
+          const response = await fetch(templateUrl, {
+            headers: { 'Accept': 'application/json' },
+            cache: 'no-store'
+          });
+          if (!response.ok) {
+            this.setCacheValue(this.TEMPLATE_CACHE, normName, null, ERROR_TTL);
+            NOT_FOUND_SET.add(normName);
+            return { error: `[MediaWiki] HTTP Error fetching template ${templateName}: ${response.status}` };
+          }
+          const data = await response.json();
+          if (data.error) {
+            this.setCacheValue(this.TEMPLATE_CACHE, normName, null, ERROR_TTL);
+            NOT_FOUND_SET.add(normName);
+            return { error: `[MediaWiki] API Error: ${JSON.stringify(data.error)}` };
+          }
+          const pages = data.query?.pages;
+          if (!pages || !Array.isArray(pages) || pages.length === 0) {
+            this.setCacheValue(this.TEMPLATE_CACHE, normName, null, ERROR_TTL);
+            NOT_FOUND_SET.add(normName);
+            return { error: `[MediaWiki] No pages found for template ${templateName}` };
+          }
+          const page = pages[0];
+          if (!page || page.missing) {
+            this.setCacheValue(this.TEMPLATE_CACHE, normName, null, ERROR_TTL);
+            NOT_FOUND_SET.add(normName);
+            return { error: `[MediaWiki] Template ${templateName} not found or missing` };
+          }
+          const revisions = page.revisions;
+          if (!revisions || !Array.isArray(revisions) || revisions.length === 0) {
+            this.setCacheValue(this.TEMPLATE_CACHE, normName, null, ERROR_TTL);
+            NOT_FOUND_SET.add(normName);
+            return { error: `[MediaWiki] No revisions found for template ${templateName}` };
+          }
+          const revision = revisions[0];
+          const content = revision?.content;
+          if (!content) {
+            this.setCacheValue(this.TEMPLATE_CACHE, normName, null, ERROR_TTL);
+            NOT_FOUND_SET.add(normName);
+            return { error: `[MediaWiki] No content found in revision for template ${templateName}` };
+          }
+          this.setCacheValue(this.TEMPLATE_CACHE, normName, content, this.TEMPLATE_TTL);
+          return content;
+        });
+      } catch (error) {
+        this.setCacheValue(this.TEMPLATE_CACHE, normName, null, ERROR_TTL);
+        NOT_FOUND_SET.add(normName);
+        return { error: `[MediaWiki] Exception: ${error}` };
       }
-      
-      const data = await response.json();
-      
-      if (data.error) {
-        console.warn(`[MediaWiki] API Error fetching template ${templateName}:`, data.error);
-        this.setCacheValue(this.TEMPLATE_CACHE, templateName, null, this.TEMPLATE_TTL);
-        return null;
-      }
-      
-      // Navigate the response structure: query.pages[pageId].revisions[0].content
-      const pages = data.query?.pages;
-      if (!pages || !Array.isArray(pages) || pages.length === 0) {
-        console.warn(`[MediaWiki] No pages found for template ${templateName}`);
-        this.setCacheValue(this.TEMPLATE_CACHE, templateName, null, this.TEMPLATE_TTL);
-        return null;
-      }
-
-      const page = pages[0];
-      if (!page || page.missing) {
-        console.warn(`[MediaWiki] Template ${templateName} not found or missing`);
-        this.setCacheValue(this.TEMPLATE_CACHE, templateName, null, this.TEMPLATE_TTL);
-        return null;
-      }
-
-      const revisions = page.revisions;
-      if (!revisions || !Array.isArray(revisions) || revisions.length === 0) {
-        console.warn(`[MediaWiki] No revisions found for template ${templateName}`);
-        this.setCacheValue(this.TEMPLATE_CACHE, templateName, null, this.TEMPLATE_TTL);
-        return null;
-      }
-
-      const revision = revisions[0];
-      const content = revision?.content;
-      
-      if (!content) {
-        console.warn(`[MediaWiki] No content found in revision for template ${templateName}`);
-        this.setCacheValue(this.TEMPLATE_CACHE, templateName, null, this.TEMPLATE_TTL);
-        return null;
-      }
-
-      console.log(`[MediaWiki] Successfully fetched template ${templateName}: ${content.length} characters`);
-      
-      this.setCacheValue(this.TEMPLATE_CACHE, templateName, content, this.TEMPLATE_TTL);
-      return content;
-      
-    } catch (error) {
-      console.error(`[MediaWiki] Error fetching template ${templateName}:`, error);
-      this.setCacheValue(this.TEMPLATE_CACHE, templateName, null, this.TEMPLATE_TTL);
-      return null;
-    }
+    });
   }
 
   /**
    * Get the URL for a file with improved caching
    */
-  async getFileUrl(fileName: string): Promise<string | null> {
-    if (!fileName) return null;
-    
+  async getFileUrl(fileName: string): Promise<string | { error: string }> {
+    if (!fileName) return { error: 'No fileName provided' };
     const cleanFileName = fileName.replace(/^File:/i, '').trim();
-    if (!cleanFileName) return null;
-    
+    if (!cleanFileName) return { error: 'No fileName after cleaning' };
     const cached = this.getCacheValue(this.FILE_CACHE, cleanFileName);
     if (cached !== null) {
       return cached;
     }
-    
-    try {
-      console.log(`[MediaWiki] Getting file URL for: ${cleanFileName}`);
-      
-      const params = new URLSearchParams({
-        action: 'query',
-        titles: `File:${cleanFileName}`,
-        prop: 'imageinfo',
-        iiprop: 'url',
-        format: 'json',
-        formatversion: '2'
-      });
-      
-      const fileUrl = `/api/mediawiki?${params.toString()}`;
-      
-      const response = await fetch(fileUrl, {
-        headers: {
-          'Accept': 'application/json'
-        },
-        cache: 'no-store'
-      });
-      
-      if (!response.ok) {
-        console.error(`[MediaWiki] HTTP Error getting file ${cleanFileName}: ${response.status} ${response.statusText}`);
-        this.setCacheValue(this.FILE_CACHE, cleanFileName, null, this.FILE_TTL);
-        return null;
+    return this.getOrCreateRequest(`file_${cleanFileName}`, async () => {
+      try {
+        return await throttledRequest(async () => {
+          const params = new URLSearchParams({
+            action: 'query',
+            titles: `File:${cleanFileName}`,
+            prop: 'imageinfo',
+            iiprop: 'url',
+            format: 'json',
+            formatversion: '2'
+          });
+          const fileUrl = `/api/mediawiki?${params.toString()}`;
+          const response = await fetch(fileUrl, {
+            headers: { 'Accept': 'application/json' },
+            cache: 'no-store'
+          });
+          if (!response.ok) {
+            const errMsg = `[MediaWiki] HTTP Error getting file ${cleanFileName}: ${response.status} ${response.statusText}`;
+            this.setCacheValue(this.FILE_CACHE, cleanFileName, null, ERROR_TTL);
+            NOT_FOUND_SET.add(normalizeKey(cleanFileName));
+            return { error: errMsg };
+          }
+          const data = await response.json();
+          if (data.error) {
+            this.setCacheValue(this.FILE_CACHE, cleanFileName, null, ERROR_TTL);
+            NOT_FOUND_SET.add(normalizeKey(cleanFileName));
+            return { error: `[MediaWiki] API Error: ${JSON.stringify(data.error)}` };
+          }
+          const pages = data.query?.pages;
+          if (!pages || !Array.isArray(pages) || pages.length === 0) {
+            this.setCacheValue(this.FILE_CACHE, cleanFileName, null, ERROR_TTL);
+            NOT_FOUND_SET.add(normalizeKey(cleanFileName));
+            return { error: `[MediaWiki] No pages found for file ${cleanFileName}` };
+          }
+          const page = pages[0];
+          if (!page) {
+            this.setCacheValue(this.FILE_CACHE, cleanFileName, null, ERROR_TTL);
+            NOT_FOUND_SET.add(normalizeKey(cleanFileName));
+            return { error: `[MediaWiki] No page data for file ${cleanFileName}` };
+          }
+          const imageinfo = page.imageinfo;
+          if (!imageinfo || !Array.isArray(imageinfo) || imageinfo.length === 0) {
+            this.setCacheValue(this.FILE_CACHE, cleanFileName, null, ERROR_TTL);
+            NOT_FOUND_SET.add(normalizeKey(cleanFileName));
+            return { error: `[MediaWiki] No imageinfo found for file ${cleanFileName}` };
+          }
+          const url = imageinfo[0]?.url;
+          if (!url) {
+            this.setCacheValue(this.FILE_CACHE, cleanFileName, null, ERROR_TTL);
+            NOT_FOUND_SET.add(normalizeKey(cleanFileName));
+            return { error: `[MediaWiki] No URL found in imageinfo for file ${cleanFileName}` };
+          }
+          this.setCacheValue(this.FILE_CACHE, cleanFileName, url, this.FILE_TTL);
+          return url;
+        });
+      } catch (error) {
+        this.setCacheValue(this.FILE_CACHE, cleanFileName, null, ERROR_TTL);
+        NOT_FOUND_SET.add(normalizeKey(cleanFileName));
+        return { error: `[MediaWiki] Exception: ${error}` };
       }
-      
-      const data = await response.json();
-      console.log(`[MediaWiki] File API response for ${cleanFileName}:`, JSON.stringify(data, null, 2));
-      
-      if (data.error) {
-        console.warn(`[MediaWiki] API Error getting file ${cleanFileName}:`, data.error);
-        this.setCacheValue(this.FILE_CACHE, cleanFileName, null, this.FILE_TTL);
-        return null;
-      }
-      
-      // Handle formatversion=2 response structure
-      const pages = data.query?.pages;
-      if (!pages || !Array.isArray(pages) || pages.length === 0) {
-        console.warn(`[MediaWiki] No pages found for file ${cleanFileName}`);
-        this.setCacheValue(this.FILE_CACHE, cleanFileName, null, this.FILE_TTL);
-        return null;
-      }
-      
-      const page = pages[0];
-      if (!page) {
-        console.warn(`[MediaWiki] No page data for file ${cleanFileName}`);
-        this.setCacheValue(this.FILE_CACHE, cleanFileName, null, this.FILE_TTL);
-        return null;
-      }
-      
-      // Check if file has imageinfo (works for both local and Commons files)
-      const imageinfo = page.imageinfo;
-      if (!imageinfo || !Array.isArray(imageinfo) || imageinfo.length === 0) {
-        if (page.missing) {
-          console.warn(`[MediaWiki] File ${cleanFileName} is missing and has no imageinfo`);
-        } else {
-          console.warn(`[MediaWiki] No imageinfo found for file ${cleanFileName}`);
-        }
-        this.setCacheValue(this.FILE_CACHE, cleanFileName, null, this.FILE_TTL);
-        return null;
-      }
-      
-      // Log file repository info for debugging
-      if (process.env.NODE_ENV !== 'production') {
-        const repository = page.imagerepository || 'local';
-        const status = page.missing ? 'missing locally' : 'available locally';
-        console.log(`[MediaWiki] File ${cleanFileName} - Repository: ${repository}, Status: ${status}`);
-      }
-      
-      const url = imageinfo[0]?.url;
-      if (!url) {
-        console.warn(`[MediaWiki] No URL found in imageinfo for file ${cleanFileName}`);
-        this.setCacheValue(this.FILE_CACHE, cleanFileName, null, this.FILE_TTL);
-        return null;
-      }
-      
-      console.log(`[MediaWiki] Successfully got file URL for ${cleanFileName}: ${url}`);
-      this.setCacheValue(this.FILE_CACHE, cleanFileName, url, this.FILE_TTL);
-      return url;
-      
-    } catch (error) {
-      console.error(`[MediaWiki] Error getting file URL for ${fileName}:`, error);
-      this.setCacheValue(this.FILE_CACHE, cleanFileName, null, this.FILE_TTL);
-      return null;
-    }
+    });
   }
 
   /**
@@ -1664,6 +1712,21 @@ class IxnayWikiService {
   }
 
   /**
+   * Helper function to escape HTML characters and create safe wiki links
+   */
+  private createWikiLink(target: string, display: string): string {
+    const normalizedTarget = target.replace(/ /g, '_').replace(/^_+|_+$/g, '');
+    const wikiUrl = `https://ixwiki.com/wiki/${encodeURIComponent(normalizedTarget)}`;
+    const safeDisplay = display.replace(/[&<>"']/g, (char: string) => {
+      const escapeMap: Record<string, string> = {
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      };
+      return escapeMap[char] || char;
+    });
+    return `<a href="${wikiUrl}" target="_blank" rel="noopener noreferrer" style="color: #429284; text-decoration: none;">${safeDisplay}</a>`;
+  }
+
+  /**
    * Enhanced parameter value cleaning with comprehensive wiki syntax handling
    */
   private cleanParameterValue(value: string): string {
@@ -1679,11 +1742,20 @@ class IxnayWikiService {
       cleaned = this.enhancedSwitcherProcessing(cleaned);
     }
     
-    // Handle wiki links more carefully
-    // Convert [[Page|Display Text]] to just "Display Text"  
-    cleaned = cleaned.replace(/\[\[([^\|\]]+)\|([^\]]+)\]\]/g, '$2');
-    // Convert [[Page]] to just "Page"
-    cleaned = cleaned.replace(/\[\[([^\]]+)\]\]/g, '$1');
+    // Handle common MediaWiki templates before general wiki syntax
+    cleaned = this.processCommonTemplates(cleaned);
+    
+    // Handle wiki links - convert to proper HTML links with the specified color
+    // Convert [[Page|Display Text]] to HTML link
+    cleaned = cleaned.replace(/\[\[([^\|\]]+)\|([^\]]+)\]\]/g, (_match: string, page: string, display: string) => {
+      return this.createWikiLink(page.trim(), display.trim());
+    });
+    
+    // Convert [[Page]] to HTML link using page name as display text
+    cleaned = cleaned.replace(/\[\[([^\]]+)\]\]/g, (_match: string, page: string) => {
+      const cleanPage = page.trim();
+      return this.createWikiLink(cleanPage, cleanPage);
+    });
     
     // Handle file links specially - extract just the filename
     cleaned = cleaned.replace(/\[\[File:([^\|\]]+)(?:\|[^\]]+)?\]\]/g, '$1');
@@ -1698,24 +1770,165 @@ class IxnayWikiService {
       .replace(/\s+/g, ' ')            // Multiple spaces
       .trim();
     
-    // If it's still a complex template that we couldn't process, return a clean version
-    if (cleaned.includes('{{') && cleaned.includes('}}')) {
-      // Try to extract meaningful content from unprocessed templates
-      const templateContent = cleaned.match(/\{\{[^}]*\}\}/g);
-      if (templateContent) {
-        // Remove the template syntax and just keep the content
-        cleaned = cleaned.replace(/\{\{[^}]*\}\}/g, '').trim();
-        if (!cleaned) {
-          // If nothing left, try to extract text from the template
-          const textMatch = value.match(/([A-Za-z][A-Za-z\s]{5,})/);
-          if (textMatch && textMatch[1]) {
-            cleaned = textMatch[1].trim();
-          }
-        }
+    // Final cleanup of any remaining simple templates
+    cleaned = this.cleanRemainingTemplates(cleaned);
+    
+    return cleaned;
+  }
+
+  /**
+   * Process common MediaWiki templates to extract readable text
+   */
+  private processCommonTemplates(text: string): string {
+    let processed = text;
+    let iterations = 0;
+    const maxIterations = 3; // Prevent infinite loops
+    
+    // Process templates iteratively to handle nested templates
+    while (processed.includes('{{') && iterations < maxIterations) {
+      const beforeProcessing = processed;
+      iterations++;
+      
+      // Handle {{wp|target|display}} and {{wp|target}} templates (Wikipedia links)
+      // Convert to ixwiki.com links with proper formatting
+      processed = processed.replace(/\{\{wp\|([^|}]+)\|([^}]+)\}\}/g, (_match: string, target: string, display: string) => {
+        return this.createWikiLink(target.trim(), display.trim());
+      });
+      
+      processed = processed.replace(/\{\{wp\|([^}]+)\}\}/g, (_match: string, target: string) => {
+        const cleanTarget = target.trim();
+        return this.createWikiLink(cleanTarget, cleanTarget);
+      });
+      
+      // Handle similar link templates
+      processed = processed.replace(/\{\{link\|([^|}]+)\|([^}]+)\}\}/g, (_match: string, target: string, display: string) => {
+        return this.createWikiLink(target.trim(), display.trim());
+      });
+      
+      processed = processed.replace(/\{\{link\|([^}]+)\}\}/g, (_match: string, target: string) => {
+        const cleanTarget = target.trim();
+        return this.createWikiLink(cleanTarget, cleanTarget);
+      });
+      
+      // Handle {{lang|code|text}} templates (language templates)
+      processed = processed.replace(/\{\{lang\|[^|]+\|([^}]+)\}\}/g, '$1'); // {{lang|en|English}} -> English
+      
+      // Handle {{nowrap|text}} templates
+      processed = processed.replace(/\{\{nowrap\|([^}]+)\}\}/g, '$1'); // {{nowrap|text}} -> text
+      
+      // Handle {{small|text}} templates
+      processed = processed.replace(/\{\{small\|([^}]+)\}\}/g, '$1'); // {{small|text}} -> text
+      
+      // Handle {{big|text}} templates
+      processed = processed.replace(/\{\{big\|([^}]+)\}\}/g, '$1'); // {{big|text}} -> text
+      
+      // Handle {{abbr|abbreviation|full form}} templates
+      processed = processed.replace(/\{\{abbr\|([^|]+)\|([^}]+)\}\}/g, '$1'); // {{abbr|US|United States}} -> US
+      
+      // Handle {{convert|number|unit|...}} templates by extracting just the number and first unit
+      processed = processed.replace(/\{\{convert\|([^|]+)\|([^|]+)[\|][^}]*\}\}/g, (_match: string, num: string, unit: string) => `${num.trim()} ${unit.trim()}`);
+      processed = processed.replace(/\{\{convert\|([^|]+)\|([^}]+)\}\}/g, (_match: string, num: string, unit: string) => `${num.trim()} ${unit.trim()}`);
+      
+      // Handle {{currency|amount|code}} templates
+      processed = processed.replace(/\{\{currency\|([^|]+)\|([^}]+)\}\}/g, (_match: string, amount: string, code: string) => `${amount.trim()} ${code.trim()}`);
+      
+      // Handle {{coord|...}} templates by removing them (too complex to parse meaningfully)
+      processed = processed.replace(/\{\{coord\|[^}]+\}\}/g, '');
+      
+      // Handle {{age|...}} templates by removing them (time-sensitive)
+      processed = processed.replace(/\{\{age\|[^}]+\}\}/g, '');
+      
+      // Handle {{date|...}} templates by extracting the date
+      processed = processed.replace(/\{\{date\|([^|}]+)[\|][^}]*\}\}/g, (_match: string, date: string) => date.trim());
+      processed = processed.replace(/\{\{date\|([^}]+)\}\}/g, (_match: string, date: string) => date.trim());
+      
+      // Handle {{flag|country}} templates - convert to links
+      processed = processed.replace(/\{\{flag\|([^}]+)\}\}/g, (_match: string, country: string) => {
+        const cleanCountry = country.trim();
+        return this.createWikiLink(cleanCountry, cleanCountry);
+      });
+      
+      // Handle {{flagicon|country}} templates by removing them (just icons)
+      processed = processed.replace(/\{\{flagicon\|[^}]+\}\}/g, '');
+      
+      // Handle {{color|color|text}} templates
+      processed = processed.replace(/\{\{color\|[^|]+\|([^}]+)\}\}/g, (_match: string, text: string) => text.trim());
+      
+      // Handle simple formatting templates
+      processed = processed.replace(/\{\{b\|([^}]+)\}\}/g, '$1'); // {{b|text}} -> text (bold)
+      processed = processed.replace(/\{\{i\|([^}]+)\}\}/g, '$1'); // {{i|text}} -> text (italic)
+      processed = processed.replace(/\{\{u\|([^}]+)\}\}/g, '$1'); // {{u|text}} -> text (underline)
+      
+      // Handle {{nbsp}} (non-breaking space)
+      processed = processed.replace(/\{\{nbsp\}\}/g, ' ');
+      
+      // Handle {{•}} (bullet point)
+      processed = processed.replace(/\{\{•\}\}/g, '•');
+      
+      // Handle {{and}} and similar joining templates
+      processed = processed.replace(/\{\{and\}\}/g, ' and ');
+      processed = processed.replace(/\{\{or\}\}/g, ' or ');
+      processed = processed.replace(/\{\{comma\}\}/g, ', ');
+      
+      // Handle line break templates
+      processed = processed.replace(/\{\{br\}\}/g, ' ');
+      processed = processed.replace(/\{\{break\}\}/g, ' ');
+      
+      // Handle mathematical/scientific notation templates
+      processed = processed.replace(/\{\{sup\|([^}]+)\}\}/g, '^$1'); // {{sup|2}} -> ^2
+      processed = processed.replace(/\{\{sub\|([^}]+)\}\}/g, '_$1'); // {{sub|2}} -> _2
+      
+      // If no change in this iteration, break to avoid infinite loop
+      if (beforeProcessing === processed) {
+        break;
       }
     }
     
-    return cleaned;
+    if (text !== processed) {
+      console.log(`[MediaWiki] Common template processing successful (${iterations} iterations):`);
+      console.log(`  Input:  "${text.substring(0, 150)}${text.length > 150 ? '...' : ''}"`);
+      console.log(`  Output: "${processed.substring(0, 150)}${processed.length > 150 ? '...' : ''}"`);
+    }
+    
+    return processed;
+  }
+
+  /**
+   * Clean any remaining simple templates that weren't handled by specific processors
+   */
+  private cleanRemainingTemplates(text: string): string {
+    let cleaned = text;
+    
+    // For any remaining simple templates with just one parameter, extract the parameter
+    // Pattern: {{template|content}} -> content
+    cleaned = cleaned.replace(/\{\{[^|{}]+\|([^}]+)\}\}/g, '$1');
+    
+    // For templates with no parameters, remove them entirely
+    // Pattern: {{template}} -> (empty)
+    cleaned = cleaned.replace(/\{\{[^|}]+\}\}/g, '');
+    
+    // For complex templates that still remain, try to extract any meaningful text
+    const complexTemplateMatch = cleaned.match(/\{\{([^}]+)\}\}/);
+    if (complexTemplateMatch && complexTemplateMatch[1]) {
+      const templateContent = complexTemplateMatch[1];
+      // Try to find text that looks like readable content (not parameter names)
+      const readableText = templateContent.split('|').find(part => {
+        const trimmed = part.trim();
+        return trimmed.length > 3 && 
+               !trimmed.includes('=') && 
+               /^[A-Za-z]/.test(trimmed) &&
+               !trimmed.match(/^[a-z_]+$/); // Not just parameter names
+      });
+      
+      if (readableText) {
+        cleaned = cleaned.replace(complexTemplateMatch[0], readableText.trim());
+      } else {
+        // Remove the template entirely if no readable content found
+        cleaned = cleaned.replace(complexTemplateMatch[0], '');
+      }
+    }
+    
+    return cleaned.trim();
   }
 }
 

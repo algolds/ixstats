@@ -190,8 +190,18 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
   const handleClearCache = async () => {
     try {
       setLoadingState(prev => ({ ...prev, isLoading: true, error: null }));
+      
+      // Clear both country cache and force reload
       await fetch(`/api/mediawiki?country=${encodeURIComponent(countryName)}`, { method: 'DELETE' });
-      console.log(`[CountryInfobox] Cache cleared for ${countryName}, reloading data`);
+      console.log(`[CountryInfobox] Cache cleared for ${countryName}, reloading data with enhanced template processing`);
+      
+      // Reset local state
+      setInfobox(null);
+      setFlagUrl(null);
+      setCoatOfArmsUrl(null);
+      setMapImageUrl(null);
+      
+      // Force reload with enhanced processing
       loadInfoboxData(true);
     } catch (error) {
       console.error(`[CountryInfobox] Error clearing cache:`, error);
@@ -385,7 +395,7 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
                 )}
                 <Button onClick={handleClearCache} variant="outline" size="sm">
                   <RefreshCw className="h-3 w-3 mr-1.5" />
-                  Clear Cache
+                  Force Refresh
                 </Button>
               </div>
             </AlertDescription>
@@ -416,7 +426,7 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
           <p className="text-sm text-muted-foreground">No detailed infobox data found on Ixnay Wiki for this country.</p>
           <Button onClick={handleClearCache} variant="outline" size="sm" className="mt-3">
             <RefreshCw className="h-3 w-3 mr-1.5" />
-            Clear Cache and Retry
+            Force Refresh with Enhanced Processing
           </Button>
         </CardContent>
         <CardFooter className="p-4 border-t">
@@ -526,14 +536,33 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
                       <div className="min-w-0 flex-1">
                         <span className="text-muted-foreground font-medium mr-2">{field.label}:</span>
                         <span 
-                          className="text-foreground"
+                          className="text-foreground wiki-content"
                           dangerouslySetInnerHTML={{ __html: field.value }}
+                          title={field.value !== (infobox.parsedTemplateData?.[field.key] || field.value) ? 
+                                 `Original: ${infobox.parsedTemplateData?.[field.key] || 'N/A'}` : undefined}
                         />
                       </div>
                     </div>
                   );
                 })}
               </div>
+              
+              <style jsx global>{`
+                .wiki-content a {
+                  color: #429284 !important;
+                  text-decoration: none !important;
+                  border-bottom: 1px solid transparent;
+                  transition: all 0.2s ease;
+                }
+                .wiki-content a:hover {
+                  color: #2d6b5f !important;
+                  border-bottom-color: #429284;
+                  text-decoration: none !important;
+                }
+                .wiki-content a:visited {
+                  color: #357a6e !important;
+                }
+              `}</style>
               
               {fields.length > 12 && (
                 <Button
@@ -606,13 +635,22 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
                 .styled-infobox .infobox a,
                 .styled-infobox table.infobox a,
                 .styled-infobox table.wikitable a {
-                  color: var(--primary);
-                  text-decoration: none;
+                  color: #429284 !important;
+                  text-decoration: none !important;
+                  border-bottom: 1px solid transparent;
+                  transition: all 0.2s ease;
                 }
                 .styled-infobox .infobox a:hover,
                 .styled-infobox table.infobox a:hover,
                 .styled-infobox table.wikitable a:hover {
-                  text-decoration: underline;
+                  color: #2d6b5f !important;
+                  border-bottom-color: #429284;
+                  text-decoration: none !important;
+                }
+                .styled-infobox .infobox a:visited,
+                .styled-infobox table.infobox a:visited,
+                .styled-infobox table.wikitable a:visited {
+                  color: #357a6e !important;
                 }
                 
                 /* Special styles for complex infoboxes */
@@ -632,7 +670,7 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
           // Standard display for countries with only structured data
           <>
             {displayFields.length > 0 && <Separator className="my-3" />}
-            <div className="space-y-3">
+                        <div className="space-y-3">
               {displayFields.map((field) => {
                 const Icon = field.icon;
                 
@@ -642,8 +680,10 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
                     <div className="min-w-0 flex-1">
                       <span className="text-muted-foreground font-medium mr-2">{field.label}:</span>
                       <span 
-                        className="text-foreground"
+                        className="text-foreground wiki-content"
                         dangerouslySetInnerHTML={{ __html: field.value }}
+                        title={field.value !== (infobox.parsedTemplateData?.[field.key] || field.value) ? 
+                               `Original: ${infobox.parsedTemplateData?.[field.key] || 'N/A'}` : undefined}
                       />
                     </div>
                   </div>
