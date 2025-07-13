@@ -58,7 +58,7 @@ export function CountryCard({
       alive && setFlagLoading(true);
       try {
         const url = await ixnayWiki.getFlagUrl(country.name);
-        alive && setFlagUrl(url);
+        alive && setFlagUrl(typeof url === 'string' ? url : null);
       } catch {
         alive && setFlagUrl(null);
       } finally {

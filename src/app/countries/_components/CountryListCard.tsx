@@ -52,7 +52,7 @@ export function CountryListCard({ country }: CountryListCardProps) {
       mounted && setFlagState('loading');
       try {
         const url = await ixnayWiki.getFlagUrl(country.name);
-        if (mounted && url) {
+        if (mounted && typeof url === 'string') {
           setFlagUrl(url);
           mounted && setFlagState('loaded');
         } else {

@@ -99,11 +99,15 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
       ]);
 
       // Ensure flag URL uses the correct MediaWiki domain
-      let processedFlagUrl = flag;
-      if (processedFlagUrl && (processedFlagUrl.includes('localhost') || processedFlagUrl.includes('127.0.0.1'))) {
-        processedFlagUrl = processedFlagUrl.replace(/https?:\/\/[^\/]+/, 'https://ixwiki.com');
+      if (typeof flag === 'string') {
+        let processedFlagUrl = flag;
+        if (processedFlagUrl.includes('localhost') || processedFlagUrl.includes('127.0.0.1')) {
+          processedFlagUrl = processedFlagUrl.replace(/https?:\/\/[^\/]+/, 'https://ixwiki.com');
+        }
+        setFlagUrl(processedFlagUrl);
+      } else {
+        setFlagUrl(null);
       }
-      setFlagUrl(processedFlagUrl);
       setInfobox(data);
       
       // If this country has parsed HTML, default to HTML tab
@@ -117,12 +121,17 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
         if (data.coat_of_arms || data.image_coat) {
           const coatName = data.coat_of_arms || data.image_coat;
           if (coatName) {
-            let coatUrl = await ixnayWiki.getFileUrl(coatName);
+            const coatUrl = await ixnayWiki.getFileUrl(coatName);
             // Ensure we use the correct MediaWiki domain
-            if (coatUrl && (coatUrl.includes('localhost') || coatUrl.includes('127.0.0.1'))) {
-              coatUrl = coatUrl.replace(/https?:\/\/[^\/]+/, 'https://ixwiki.com');
+            if (typeof coatUrl === 'string') {
+              let processedCoatUrl = coatUrl;
+              if (processedCoatUrl.includes('localhost') || processedCoatUrl.includes('127.0.0.1')) {
+                processedCoatUrl = processedCoatUrl.replace(/https?:\/\/[^\/]+/, 'https://ixwiki.com');
+              }
+              setCoatOfArmsUrl(processedCoatUrl);
+            } else {
+              setCoatOfArmsUrl(null);
             }
-            setCoatOfArmsUrl(coatUrl);
           }
         }
         
@@ -140,12 +149,17 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
             }
             
             console.log(`[CountryInfobox] Processing map image: "${mapName}" -> "${actualFileName}"`);
-            let mapUrl = await ixnayWiki.getFileUrl(actualFileName);
+            const mapUrl = await ixnayWiki.getFileUrl(actualFileName);
             // Ensure we use the correct MediaWiki domain
-            if (mapUrl && (mapUrl.includes('localhost') || mapUrl.includes('127.0.0.1'))) {
-              mapUrl = mapUrl.replace(/https?:\/\/[^\/]+/, 'https://ixwiki.com');
+            if (typeof mapUrl === 'string') {
+              let processedMapUrl = mapUrl;
+              if (processedMapUrl.includes('localhost') || processedMapUrl.includes('127.0.0.1')) {
+                processedMapUrl = processedMapUrl.replace(/https?:\/\/[^\/]+/, 'https://ixwiki.com');
+              }
+              setMapImageUrl(processedMapUrl);
+            } else {
+              setMapImageUrl(null);
             }
-            setMapImageUrl(mapUrl);
           }
         }
       }

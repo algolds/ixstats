@@ -213,7 +213,7 @@ class LRUCache<K, V> extends Map<K, V> {
   }
 }
 
-class IxnayWikiService {
+export class IxnayWikiService {
   private readonly API_BASE_URL = `${MEDIAWIKI_CONFIG.baseUrl}${MEDIAWIKI_CONFIG.apiEndpoint}`;
   private readonly FLAG_CACHE = new LRUCache<string, CacheEntry<string | null>>(MEDIAWIKI_CONFIG.cache.maxSize);
   private readonly INFOBOX_CACHE = new LRUCache<string, CacheEntry<CountryInfoboxWithDynamicProps | null>>(MEDIAWIKI_CONFIG.cache.maxSize);
@@ -875,7 +875,7 @@ class IxnayWikiService {
       
       // Step 1: Get raw wikitext for the page
       const wikitext = await this.getPageWikitext(countryName);
-      if (!wikitext) {
+      if (!wikitext || typeof wikitext === 'object') {
         console.warn(`[MediaWiki] No wikitext found for ${countryName}`);
         this.setCacheValue(this.INFOBOX_CACHE, countryName, null, this.INFOBOX_TTL);
         return null;
@@ -1391,7 +1391,7 @@ class IxnayWikiService {
   /**
    * Get template content with caching
    */
-  private async getTemplate(templateName: string): Promise<string | { error: string }> {
+  async getTemplate(templateName: string): Promise<string | { error: string }> {
     const normName = normalizeKey(templateName);
     const cached = this.getCacheValue(this.TEMPLATE_CACHE, normName);
     if (cached !== null) {
