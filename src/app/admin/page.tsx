@@ -16,6 +16,7 @@ import {
   WarningPanel,
   ImportPreviewDialog,
 } from "./_components";
+import { FlagCacheManager } from "~/components/FlagCacheManager";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { CONFIG_CONSTANTS } from "~/lib/config-service";
@@ -31,7 +32,7 @@ import { AdminErrorBoundary } from "./_components/ErrorBoundary";
 export default function AdminPage() {
   // State management
   const [config, setConfig] = useState({
-    globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR,
+    globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR as number,
     autoUpdate: true,
     botSyncEnabled: true,
     timeMultiplier: 4.0,
@@ -384,7 +385,7 @@ export default function AdminPage() {
               autoUpdate={config.autoUpdate}
               botSyncEnabled={config.botSyncEnabled}
               onGlobalGrowthFactorChange={(value) => 
-                setConfig(prev => ({ ...prev, globalGrowthFactor: value }))
+                setConfig(prev => ({ ...prev, globalGrowthFactor: value as number }))
               }
               onAutoUpdateChange={(value) => 
                 setConfig(prev => ({ ...prev, autoUpdate: value }))
@@ -430,6 +431,11 @@ export default function AdminPage() {
             isLoading={logsLoading}
             error={logsError?.message}
           />
+
+          {/* Flag Cache Manager */}
+          <div className="mb-8">
+            <FlagCacheManager />
+          </div>
 
           {/* Import Preview Dialog */}
           {importState.showPreview && importState.previewData && (
