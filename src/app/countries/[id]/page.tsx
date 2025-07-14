@@ -43,6 +43,7 @@ import {
   generateCountryEconomicData, 
   type CountryProfile 
 } from "~/lib/economic-data-templates";
+import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 
 // Helper function to compute economic health
 function computeHealth(g: number, i: number) {
@@ -163,173 +164,192 @@ export default function CountryDetailPage({ params }: CountryDetailPageProps) {
   const economyData = generateEconomicDataForCountry(country);
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/countries">Countries</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{country.name}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+    <>
+      <SignedIn>
+        <div className="container mx-auto px-4 py-8 space-y-6">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/countries">Countries</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{country.name}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
 
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">{country.name}</h1>
-          <p className="text-muted-foreground">
-            Detailed information and economic statistics for {country.name}.
-          </p>
+          <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold">{country.name}</h1>
+              <p className="text-muted-foreground">
+                Detailed information and economic statistics for {country.name}.
+              </p>
+            </div>
+            {currentIxTime && (
+              <Card className="p-0">
+                <CardHeader className="p-2">
+                  <CardTitle className="text-sm">Current IxTime</CardTitle>
+                </CardHeader>
+                <CardContent className="p-2">
+                  <div className="text-lg font-semibold">
+                    {systemStatus?.ixTime?.formattedIxTime ?? 'Loading...'}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </header>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1">
+              <CountryInfobox countryName={country.name} />
+            </div>
+            <div className="lg:col-span-2">
+              <Tabs defaultValue="overview" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7">
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="economy">Economy</TabsTrigger>
+                  <TabsTrigger value="labor">Labor</TabsTrigger>
+                  <TabsTrigger value="government">Government</TabsTrigger>
+                  <TabsTrigger value="income">Income</TabsTrigger>
+                  <TabsTrigger value="demographics">Demographics</TabsTrigger>
+                  <TabsTrigger value="historical-data">History</TabsTrigger>
+                  <TabsTrigger value="modeling">Modeling</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="overview" className="mt-4">
+                  <div className="space-y-6">
+                    {country && (
+                      <CountryAtGlance 
+                        country={{
+                          ...country,
+                          // Smart normalize only obviously wrong values
+                          populationGrowthRate: smartNormalizeGrowthRate(country.populationGrowthRate, 1.0),
+                          adjustedGdpGrowth: smartNormalizeGrowthRate(country.adjustedGdpGrowth, 3.0),
+                          maxGdpGrowthRate: smartNormalizeGrowthRate(country.maxGdpGrowthRate, 5.0),
+                        }} 
+                        currentIxTime={currentIxTime ?? 0} 
+                        isLoading={isLoading} 
+                      />
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="economy" className="mt-4">
+                  <div className="space-y-6">
+                    {/* Economic Summary Widget */}
+                    {country && <EconomicSummaryWidget countryName={country.name} data={{
+                      population: economyData.core.totalPopulation,
+                      gdpPerCapita: economyData.core.gdpPerCapita,
+                      totalGdp: economyData.core.nominalGDP,
+                      economicTier: country.economicTier || "Developing",
+                      populationGrowthRate: smartNormalizeGrowthRate(country.populationGrowthRate, 1.0),
+                      gdpGrowthRate: smartNormalizeGrowthRate(country.realGDPGrowthRate || country.adjustedGdpGrowth, 3.0),
+                      unemploymentRate: economyData.labor.unemploymentRate,
+                      laborForceParticipationRate: economyData.labor.laborForceParticipationRate,
+                      taxRevenueGDPPercent: economyData.fiscal.taxRevenueGDPPercent,
+                      budgetBalance: economyData.fiscal.budgetDeficitSurplus,
+                      debtToGDP: economyData.fiscal.totalDebtGDPRatio,
+                      populationDensity: country.populationDensity,
+                      gdpDensity: country.gdpDensity,
+                      landArea: country.landArea,
+                    }} />}
+                    
+                    <CoreEconomicIndicators
+                      indicators={economyData.core}
+                      onIndicatorsChangeAction={() => {}}
+                      isReadOnly={true}
+                      showComparison={false}
+                    />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="labor" className="mt-4">
+                  <LaborEmployment
+                    laborData={economyData.labor}
+                    totalPopulation={economyData.core.totalPopulation}
+                    onLaborDataChangeAction={() => {}}
+                    isReadOnly={true}
+                    showComparison={false}
+                  />
+                </TabsContent>
+
+                <TabsContent value="government" className="mt-4">
+                  <div className="space-y-6">
+                    {/* Fiscal System */}
+                    <FiscalSystemComponent
+                      fiscalData={economyData.fiscal}
+                      nominalGDP={economyData.core.nominalGDP}
+                      totalPopulation={economyData.core.totalPopulation}
+                      onFiscalDataChange={() => {}}
+                    />
+                    {/* Government Spending */}
+                    <GovernmentSpending
+                      spendingData={economyData.spending}
+                      nominalGDP={economyData.core.nominalGDP}
+                      totalPopulation={economyData.core.totalPopulation}
+                      onSpendingDataChangeAction={() => {}}
+                      isReadOnly={true}
+                    />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="income" className="mt-4">
+                  <IncomeWealthDistribution
+                    incomeData={economyData.income}
+                    totalPopulation={economyData.core.totalPopulation}
+                    gdpPerCapita={economyData.core.gdpPerCapita}
+                    onIncomeDataChange={() => {}}
+                  />
+                </TabsContent>
+
+                <TabsContent value="demographics" className="mt-4">
+                  <Demographics
+                    demographicData={{
+                      ...economyData.demographics,
+                      ageDistribution: economyData.demographics.ageDistribution.map(group => ({
+                        ...group,
+                        color: group.color ?? '#000000' // Use nullish coalescing for cleaner default
+                      }))
+                    }}
+                    totalPopulation={economyData.core.totalPopulation}
+                    onDemographicDataChange={() => {}}
+                  />
+                </TabsContent>
+
+                <TabsContent value="historical-data" className="mt-4">
+                  {country && country.historicalData && (
+                    <HistoricalEconomicTracker
+                      countryId={country.id}
+                      countryName={country.name}
+                      historicalData={country.historicalData}
+                    />
+                  )}
+                </TabsContent>
+
+                <TabsContent value="modeling" className="mt-4">
+                  {country && <EconomicModelingEngine country={country} />}
+                </TabsContent>
+              </Tabs>
+            </div>
+          </div>
         </div>
-        {currentIxTime && (
-          <Card className="p-0">
-            <CardHeader className="p-2">
-              <CardTitle className="text-sm">Current IxTime</CardTitle>
+      </SignedIn>
+      <SignedOut>
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <Card className="max-w-md w-full text-center">
+            <CardHeader>
+              <CardTitle>Sign In Required</CardTitle>
+              <CardDescription>
+                You must be signed in to view country details.
+              </CardDescription>
             </CardHeader>
-            <CardContent className="p-2">
-              <div className="text-lg font-semibold">
-                {systemStatus?.ixTime?.formattedIxTime ?? 'Loading...'}
-              </div>
+            <CardContent>
+              <SignInButton mode="modal" />
             </CardContent>
           </Card>
-        )}
-      </header>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
-          <CountryInfobox countryName={country.name} />
         </div>
-        <div className="lg:col-span-2">
-          <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="economy">Economy</TabsTrigger>
-              <TabsTrigger value="labor">Labor</TabsTrigger>
-              <TabsTrigger value="government">Government</TabsTrigger>
-              <TabsTrigger value="income">Income</TabsTrigger>
-              <TabsTrigger value="demographics">Demographics</TabsTrigger>
-              <TabsTrigger value="historical-data">History</TabsTrigger>
-              <TabsTrigger value="modeling">Modeling</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="overview" className="mt-4">
-              <div className="space-y-6">
-                {country && (
-                  <CountryAtGlance 
-                    country={{
-                      ...country,
-                      // Smart normalize only obviously wrong values
-                      populationGrowthRate: smartNormalizeGrowthRate(country.populationGrowthRate, 1.0),
-                      adjustedGdpGrowth: smartNormalizeGrowthRate(country.adjustedGdpGrowth, 3.0),
-                      maxGdpGrowthRate: smartNormalizeGrowthRate(country.maxGdpGrowthRate, 5.0),
-                    }} 
-                    currentIxTime={currentIxTime ?? 0} 
-                    isLoading={isLoading} 
-                  />
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="economy" className="mt-4">
-              <div className="space-y-6">
-                {/* Economic Summary Widget */}
-                {country && <EconomicSummaryWidget countryName={country.name} data={{
-                  population: economyData.core.totalPopulation,
-                  gdpPerCapita: economyData.core.gdpPerCapita,
-                  totalGdp: economyData.core.nominalGDP,
-                  economicTier: country.economicTier || "Developing",
-                  populationGrowthRate: smartNormalizeGrowthRate(country.populationGrowthRate, 1.0),
-                  gdpGrowthRate: smartNormalizeGrowthRate(country.realGDPGrowthRate || country.adjustedGdpGrowth, 3.0),
-                  unemploymentRate: economyData.labor.unemploymentRate,
-                  laborForceParticipationRate: economyData.labor.laborForceParticipationRate,
-                  taxRevenueGDPPercent: economyData.fiscal.taxRevenueGDPPercent,
-                  budgetBalance: economyData.fiscal.budgetDeficitSurplus,
-                  debtToGDP: economyData.fiscal.totalDebtGDPRatio,
-                  populationDensity: country.populationDensity,
-                  gdpDensity: country.gdpDensity,
-                  landArea: country.landArea,
-                }} />}
-                
-                <CoreEconomicIndicators
-                  indicators={economyData.core}
-                  onIndicatorsChangeAction={() => {}}
-                  isReadOnly={true}
-                  showComparison={false}
-                />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="labor" className="mt-4">
-              <LaborEmployment
-                laborData={economyData.labor}
-                totalPopulation={economyData.core.totalPopulation}
-                onLaborDataChangeAction={() => {}}
-                isReadOnly={true}
-                showComparison={false}
-              />
-            </TabsContent>
-
-            <TabsContent value="government" className="mt-4">
-              <div className="space-y-6">
-                {/* Fiscal System */}
-                <FiscalSystemComponent
-                  fiscalData={economyData.fiscal}
-                  nominalGDP={economyData.core.nominalGDP}
-                  totalPopulation={economyData.core.totalPopulation}
-                  onFiscalDataChange={() => {}}
-                />
-                {/* Government Spending */}
-                <GovernmentSpending
-                  spendingData={economyData.spending}
-                  nominalGDP={economyData.core.nominalGDP}
-                  totalPopulation={economyData.core.totalPopulation}
-                  onSpendingDataChangeAction={() => {}}
-                  isReadOnly={true}
-                />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="income" className="mt-4">
-              <IncomeWealthDistribution
-                incomeData={economyData.income}
-                totalPopulation={economyData.core.totalPopulation}
-                gdpPerCapita={economyData.core.gdpPerCapita}
-                onIncomeDataChange={() => {}}
-              />
-            </TabsContent>
-
-            <TabsContent value="demographics" className="mt-4">
-              <Demographics
-                demographicData={{
-                  ...economyData.demographics,
-                  ageDistribution: economyData.demographics.ageDistribution.map(group => ({
-                    ...group,
-                    color: group.color ?? '#000000' // Use nullish coalescing for cleaner default
-                  }))
-                }}
-                totalPopulation={economyData.core.totalPopulation}
-                onDemographicDataChange={() => {}}
-              />
-            </TabsContent>
-
-            <TabsContent value="historical-data" className="mt-4">
-              {country && country.historicalData && (
-                <HistoricalEconomicTracker
-                  countryId={country.id}
-                  countryName={country.name}
-                  historicalData={country.historicalData}
-                />
-              )}
-            </TabsContent>
-
-            <TabsContent value="modeling" className="mt-4">
-              {country && <EconomicModelingEngine country={country} />}
-            </TabsContent>
-          </Tabs>
-        </div>
-      </div>
-    </div>
+      </SignedOut>
+    </>
   );
 }

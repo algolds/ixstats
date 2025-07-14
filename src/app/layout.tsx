@@ -4,9 +4,11 @@ import "~/styles/globals.css";
 import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 
+import { ClerkProvider } from "@clerk/nextjs";
 import { TRPCReactProvider } from "~/trpc/react";
 import { ThemeProvider } from "~/context/theme-context";
 import { Navigation } from "~/app/_components/navigation";
+import { SetupRedirect } from "~/app/_components/SetupRedirect";
 
 export const metadata: Metadata = {
   title: "IxStats - Alpha version",
@@ -25,16 +27,19 @@ const RootLayout = ({
   return (
     <html lang="en" className={`${geist.variable}`} suppressHydrationWarning>
       <body className="min-h-screen transition-colors duration-200">
-        <TRPCReactProvider>
-          <ThemeProvider>
-            <div className="min-h-screen flex flex-col">
-              <Navigation />
-              <main className="flex-1">
-                {children}
-              </main>
-            </div>
-          </ThemeProvider>
-        </TRPCReactProvider>
+        <ClerkProvider>
+          <TRPCReactProvider>
+            <ThemeProvider>
+              <div className="min-h-screen flex flex-col">
+                <Navigation />
+                <SetupRedirect />
+                <main className="flex-1">
+                  {children}
+                </main>
+              </div>
+            </ThemeProvider>
+          </TRPCReactProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

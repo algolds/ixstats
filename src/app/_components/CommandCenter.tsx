@@ -7,8 +7,6 @@ import { LeaderboardsSection } from "./LeaderboardsSection";
 import { TierVisualization } from "./TierVisualization";
 import { ActivityFeed } from "./ActivityFeed";
 import { FeaturedArticle } from "./FeaturedArticle";
-import { Navigation } from "./navigation";
-
 export function CommandCenter() {
   // Fetch all necessary data
   const {
@@ -66,8 +64,6 @@ export function CommandCenter() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Navigation />
-      
       {/* Live Game Banner with Global Stats */}
       <LiveGameBanner 
         onRefresh={handleRefresh} 

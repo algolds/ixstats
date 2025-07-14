@@ -16,6 +16,8 @@ import type {
   EconomicConfig
 } from "~/types/ixstats";
 
+// Remove unused import - we use ctx.db instead
+
 export const adminRouter = createTRPCRouter({
   // Get system status
   getSystemStatus: publicProcedure
@@ -69,9 +71,16 @@ export const adminRouter = createTRPCRouter({
           IxTime.getStatus()
         ]);
 
+        const { botStatus: originalBotStatus, ...ixTimeStatusWithoutBot } = ixTimeStatus;
+        
         const botStatus: AdminPageBotStatusView = {
-          ...ixTimeStatus,
+          ...ixTimeStatusWithoutBot,
           botHealth,
+          botStatus: originalBotStatus ? {
+            ...originalBotStatus,
+            realWorldTime: Date.now(),
+            gameYear: IxTime.getCurrentGameYear(),
+          } : null,
         };
 
         return botStatus;
@@ -548,6 +557,94 @@ export const adminRouter = createTRPCRouter({
       } catch (error) {
         console.error("Failed to get system health:", error);
         throw new Error("Failed to retrieve system health status");
+      }
+    }),
+
+  // --- Clerk User-Country Mapping Endpoints ---
+  // Note: User procedures are commented out until User model is properly configured
+
+  // Get the countryId mapped to a Clerk user
+  /*
+  getUserCountry: publicProcedure
+    .input(z.object({ clerkUserId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const user = await ctx.db.user.findUnique({
+        where: { clerkUserId: input.clerkUserId },
+        select: { countryId: true },
+      });
+      return { countryId: user?.countryId || null };
+    }),
+
+  // Set or update the countryId for a Clerk user
+  setUserCountry: publicProcedure
+    .input(z.object({ clerkUserId: z.string(), countryId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.db.user.upsert({
+        where: { clerkUserId: input.clerkUserId },
+        update: { countryId: input.countryId },
+        create: { clerkUserId: input.clerkUserId, countryId: input.countryId },
+      });
+      return { success: true, user };
+    }),
+
+  // Create a user record if it does not exist (on registration)
+  createUserIfNotExists: publicProcedure
+    .input(z.object({ clerkUserId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.db.user.upsert({
+        where: { clerkUserId: input.clerkUserId },
+        update: {},
+        create: { clerkUserId: input.clerkUserId },
+      });
+      return { user };
+    }),
+  */
+
+  // Sync with Discord bot
+  syncWithBot: publicProcedure
+    .mutation(async () => {
+      try {
+        const result = await IxTime.syncWithBot();
+        return result;
+      } catch (error) {
+        console.error("Failed to sync with bot:", error);
+        throw new Error("Failed to sync with Discord bot");
+      }
+    }),
+
+  // Pause bot time
+  pauseBot: publicProcedure
+    .mutation(async () => {
+      try {
+        const result = await IxTime.pauseBotTime();
+        return result;
+      } catch (error) {
+        console.error("Failed to pause bot:", error);
+        throw new Error("Failed to pause bot time");
+      }
+    }),
+
+  // Resume bot time
+  resumeBot: publicProcedure
+    .mutation(async () => {
+      try {
+        const result = await IxTime.resumeBotTime();
+        return result;
+      } catch (error) {
+        console.error("Failed to resume bot:", error);
+        throw new Error("Failed to resume bot time");
+      }
+    }),
+
+  // Clear bot overrides
+  clearBotOverrides: publicProcedure
+    .mutation(async () => {
+      try {
+        const result = await IxTime.clearBotOverrides();
+        return result;
+      } catch (error) {
+        console.error("Failed to clear bot overrides:", error);
+        throw new Error("Failed to clear bot overrides");
       }
     }),
 });

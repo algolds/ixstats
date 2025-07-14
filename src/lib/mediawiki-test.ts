@@ -240,8 +240,6 @@ export class MediaWikiTester {
   }
 
   /**
-  /**
-  /**
    * Run comprehensive test suite
    */
   static async runTestSuite(testCountries: string[] = ['Caphiria', 'Burgundie', 'Urcea']): Promise<{
@@ -283,6 +281,7 @@ export class MediaWikiTester {
       const infoboxResult = await this.testInfoboxRetrieval(country);
       results[`infobox_${country}`] = infoboxResult;
       totalDuration += infoboxResult?.duration ?? 0;
+    }
 
     // Test preloading
     console.log('[MediaWiki Test] Testing preloading functionality...');

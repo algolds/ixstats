@@ -1,6 +1,7 @@
 // src/app/dashboard/page.tsx
 import { Suspense } from "react";
 import Dashboard from "./_components/Dashboard";
+import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 
 function DashboardLoading() {
   return (
@@ -15,9 +16,18 @@ function DashboardLoading() {
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<DashboardLoading />}>
-      <Dashboard />
-    </Suspense>
+    <>
+      <SignedIn>
+        <Suspense fallback={<DashboardLoading />}>
+          <Dashboard />
+        </Suspense>
+      </SignedIn>
+      <SignedOut>
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <SignInButton mode="modal" />
+        </div>
+      </SignedOut>
+    </>
   );
 }
 

@@ -148,6 +148,13 @@ const FIELD_MAPPINGS: ExcelFieldMapping[] = [
     required: false, // Not in standardized headers, will calculate defaults
     type: 'percentage',
     aliases: ['Actual Growth']
+  },
+  {
+    excelHeader: 'Local Growth Factor',
+    dbField: 'localGrowthFactor',
+    required: false, // Not in standardized headers, will use default 1.0
+    type: 'number',
+    aliases: ['Growth Factor', 'Local Factor']
   }
 ];
 
@@ -391,6 +398,7 @@ export class IxStatsExcelHandler {
         projected2040Gdp: this.parseOptionalNumber(row[fieldMap.get('projected2040Gdp') ?? -1]) ?? 0,
         projected2040GdpPerCapita: this.parseOptionalNumber(row[fieldMap.get('projected2040GdpPerCapita') ?? -1]) ?? 0,
         actualGdpGrowth: this.parseOptionalNumber(row[fieldMap.get('actualGdpGrowth') ?? -1]) ?? 0,
+        localGrowthFactor: this.parseNumber(row[fieldMap.get('localGrowthFactor') ?? -1], 1.0), // Default to 1.0
       };
 
       // Calculate missing areaSqMi from landArea if needed

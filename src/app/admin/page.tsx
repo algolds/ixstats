@@ -28,8 +28,36 @@ import type {
   CalculationLog
 } from "~/types/ixstats";
 import { AdminErrorBoundary } from "./_components/ErrorBoundary";
+import { SignedIn, SignedOut, SignInButton, useUser, UserButton } from "@clerk/nextjs";
 
 export default function AdminPage() {
+  const { user, isLoaded } = useUser();
+
+  // Show loading spinner while Clerk is loading
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If user is signed in but not an admin, show access denied
+  if (user && user.publicMetadata?.role !== "admin") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center border border-gray-200 dark:border-gray-700">
+          <h1 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">Access Denied</h1>
+          <p className="text-gray-700 dark:text-gray-300 mb-6">You do not have permission to view this page.</p>
+          <UserButton afterSignOutUrl="/" />
+        </div>
+      </div>
+    );
+  }
+
   // State management
   const [config, setConfig] = useState({
     globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR as number,
@@ -323,132 +351,141 @@ export default function AdminPage() {
   }, [refetchStatus, refetchBotStatus, refetchConfig]);
 
   return (
-    <AdminErrorBoundary>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              IxStats Admin Dashboard
-            </h1>
-            <p className="mt-2 text-gray-600 dark:text-gray-300">
-              Manage system configuration, time settings, and data imports
-            </p>
+    <>
+      <SignedIn>
+        <AdminErrorBoundary>
+          <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              {/* Header */}
+              <div className="mb-8">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                  IxStats Admin Dashboard
+                </h1>
+                <p className="mt-2 text-gray-600 dark:text-gray-300">
+                  Manage system configuration, time settings, and data imports
+                </p>
+              </div>
+
+              {/* Bot Status Banner */}
+              <BotStatusBanner
+                botStatus={botStatus}
+                onSync={handleSyncBot}
+                onRefresh={handleRefreshStatus}
+                syncPending={actionState.syncPending}
+              />
+
+              {/* Status Cards */}
+              <StatusCards
+                systemStatus={systemStatus}
+                botStatus={botStatus}
+                statusLoading={statusLoading || botStatusLoading}
+                configLoading={configLoading}
+                globalGrowthFactor={config.globalGrowthFactor}
+              />
+
+              {/* Warning Panel */}
+              <WarningPanel systemStatus={systemStatus} />
+
+              {/* Control Panels */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                {/* Time Control */}
+                <TimeControlPanel
+                  timeMultiplier={config.timeMultiplier}
+                  customDate={timeState.customDate}
+                  customTime={timeState.customTime}
+                  botSyncEnabled={config.botSyncEnabled}
+                  botStatus={botStatus}
+                  onTimeMultiplierChange={(value) => 
+                    setConfig(prev => ({ ...prev, timeMultiplier: value }))
+                  }
+                  onCustomDateChange={(value) => 
+                    setTimeState(prev => ({ ...prev, customDate: value }))
+                  }
+                  onCustomTimeChange={(value) => 
+                    setTimeState(prev => ({ ...prev, customTime: value }))
+                  }
+                  onSetCustomTime={handleSetCustomTime}
+                  onResetToRealTime={handleResetToRealTime}
+                  setTimePending={actionState.setTimePending}
+                />
+
+                {/* Economic Control */}
+                <EconomicControlPanel
+                  globalGrowthFactor={config.globalGrowthFactor}
+                  autoUpdate={config.autoUpdate}
+                  botSyncEnabled={config.botSyncEnabled}
+                  onGlobalGrowthFactorChange={(value) => 
+                    setConfig(prev => ({ ...prev, globalGrowthFactor: value as number }))
+                  }
+                  onAutoUpdateChange={(value) => 
+                    setConfig(prev => ({ ...prev, autoUpdate: value }))
+                  }
+                  onBotSyncEnabledChange={(value) => 
+                    setConfig(prev => ({ ...prev, botSyncEnabled: value }))
+                  }
+                  onForceCalculation={handleForceCalculation}
+                  calculationPending={actionState.calculationPending}
+                />
+              </div>
+
+              {/* Bot Control Panel */}
+              <BotControlPanel
+                botStatus={botStatus}
+                onPauseBot={handlePauseBot}
+                onResumeBot={handleResumeBot}
+                onClearOverrides={handleClearOverrides}
+                pausePending={actionState.pausePending}
+                resumePending={actionState.resumePending}
+                clearPending={actionState.clearPending}
+              />
+
+              {/* Data Import Section */}
+              <DataImportSection
+                onFileSelect={handleFileSelect}
+                isUploading={importState.isUploading}
+                isAnalyzing={importState.isAnalyzing}
+                analyzeError={importState.analyzeError}
+                importError={importState.importError}
+              />
+
+              {/* Action Panel */}
+              <ActionPanel
+                lastUpdate={actionState.lastUpdate}
+                onSaveConfig={handleSaveConfig}
+                savePending={actionState.savePending}
+              />
+
+              {/* Calculation Logs */}
+              <CalculationLogs
+                logs={calculationLogs}
+                isLoading={logsLoading}
+                error={logsError?.message}
+              />
+
+              {/* Flag Cache Manager */}
+              <div className="mb-8">
+                <FlagCacheManager />
+              </div>
+
+              {/* Import Preview Dialog */}
+              {importState.showPreview && importState.previewData && (
+                <ImportPreviewDialog
+                  isOpen={importState.showPreview}
+                  onClose={handleImportClose}
+                  onConfirm={handleImportConfirm}
+                  changes={importState.previewData.changes}
+                  isLoading={importState.isUploading}
+                />
+              )}
+            </div>
           </div>
-
-          {/* Bot Status Banner */}
-          <BotStatusBanner
-            botStatus={botStatus}
-            onSync={handleSyncBot}
-            onRefresh={handleRefreshStatus}
-            syncPending={actionState.syncPending}
-          />
-
-          {/* Status Cards */}
-          <StatusCards
-            systemStatus={systemStatus}
-            botStatus={botStatus}
-            statusLoading={statusLoading || botStatusLoading}
-            configLoading={configLoading}
-            globalGrowthFactor={config.globalGrowthFactor}
-          />
-
-          {/* Warning Panel */}
-          <WarningPanel systemStatus={systemStatus} />
-
-          {/* Control Panels */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            {/* Time Control */}
-            <TimeControlPanel
-              timeMultiplier={config.timeMultiplier}
-              customDate={timeState.customDate}
-              customTime={timeState.customTime}
-              botSyncEnabled={config.botSyncEnabled}
-              botStatus={botStatus}
-              onTimeMultiplierChange={(value) => 
-                setConfig(prev => ({ ...prev, timeMultiplier: value }))
-              }
-              onCustomDateChange={(value) => 
-                setTimeState(prev => ({ ...prev, customDate: value }))
-              }
-              onCustomTimeChange={(value) => 
-                setTimeState(prev => ({ ...prev, customTime: value }))
-              }
-              onSetCustomTime={handleSetCustomTime}
-              onResetToRealTime={handleResetToRealTime}
-              setTimePending={actionState.setTimePending}
-            />
-
-            {/* Economic Control */}
-            <EconomicControlPanel
-              globalGrowthFactor={config.globalGrowthFactor}
-              autoUpdate={config.autoUpdate}
-              botSyncEnabled={config.botSyncEnabled}
-              onGlobalGrowthFactorChange={(value) => 
-                setConfig(prev => ({ ...prev, globalGrowthFactor: value as number }))
-              }
-              onAutoUpdateChange={(value) => 
-                setConfig(prev => ({ ...prev, autoUpdate: value }))
-              }
-              onBotSyncEnabledChange={(value) => 
-                setConfig(prev => ({ ...prev, botSyncEnabled: value }))
-              }
-              onForceCalculation={handleForceCalculation}
-              calculationPending={actionState.calculationPending}
-            />
-          </div>
-
-          {/* Bot Control Panel */}
-          <BotControlPanel
-            botStatus={botStatus}
-            onPauseBot={handlePauseBot}
-            onResumeBot={handleResumeBot}
-            onClearOverrides={handleClearOverrides}
-            pausePending={actionState.pausePending}
-            resumePending={actionState.resumePending}
-            clearPending={actionState.clearPending}
-          />
-
-          {/* Data Import Section */}
-          <DataImportSection
-            onFileSelect={handleFileSelect}
-            isUploading={importState.isUploading}
-            isAnalyzing={importState.isAnalyzing}
-            analyzeError={importState.analyzeError}
-            importError={importState.importError}
-          />
-
-          {/* Action Panel */}
-          <ActionPanel
-            lastUpdate={actionState.lastUpdate}
-            onSaveConfig={handleSaveConfig}
-            savePending={actionState.savePending}
-          />
-
-          {/* Calculation Logs */}
-          <CalculationLogs
-            logs={calculationLogs}
-            isLoading={logsLoading}
-            error={logsError?.message}
-          />
-
-          {/* Flag Cache Manager */}
-          <div className="mb-8">
-            <FlagCacheManager />
-          </div>
-
-          {/* Import Preview Dialog */}
-          {importState.showPreview && importState.previewData && (
-            <ImportPreviewDialog
-              isOpen={importState.showPreview}
-              onClose={handleImportClose}
-              onConfirm={handleImportConfirm}
-              changes={importState.previewData.changes}
-              isLoading={importState.isUploading}
-            />
-          )}
+        </AdminErrorBoundary>
+      </SignedIn>
+      <SignedOut>
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <SignInButton mode="modal" />
         </div>
-      </div>
-    </AdminErrorBoundary>
+      </SignedOut>
+    </>
   );
 }
