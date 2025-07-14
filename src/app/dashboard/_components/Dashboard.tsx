@@ -1,7 +1,9 @@
 // src/app/dashboard/_components/Dashboard.tsx
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
 import {
   DashboardHeader,
@@ -13,6 +15,24 @@ import {
 import { IxTime } from "~/lib/ixtime";
 
 export default function Dashboard() {
+  const { user, isLoaded } = useUser();
+  const router = useRouter();
+
+  // Check if user has completed setup
+  const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
+    { userId: user?.id || '' },
+    { enabled: !!user?.id }
+  );
+
+  // Redirect to setup if user hasn't completed it
+  useEffect(() => {
+    if (isLoaded && user && !profileLoading) {
+      if (userProfile && !userProfile.countryId) {
+        router.push('/setup');
+      }
+    }
+  }, [isLoaded, user, profileLoading, userProfile, router]);
+
   // 1) Fetch paginated country list (now returns { countries, total })
   const {
     data: allData,
@@ -46,7 +66,19 @@ export default function Dashboard() {
     })
   );
 
-  const isLoading = countriesLoading || globalStatsLoading;
+  const isLoading = countriesLoading || globalStatsLoading || profileLoading;
+
+  // Show loading while checking setup status
+  if (isLoaded && user && profileLoading) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Checking setup status...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleGlobalRefresh = () => {
     void refetchCountries();

@@ -4,6 +4,7 @@
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { countriesRouter } from "./routers/countries";
 import { adminRouter } from "./routers/admin";
+import { usersRouter } from "./routers/users";
 
 /**
  * This is the primary router for your server.
@@ -13,6 +14,7 @@ import { adminRouter } from "./routers/admin";
 export const appRouter = createTRPCRouter({
   countries: countriesRouter,
   admin: adminRouter, // FIXED: Added admin router
+  users: usersRouter, // FIXED: Added users router
 });
 
 // export type definition of API

@@ -1034,4 +1034,135 @@ export const countriesRouter = createTRPCRouter({
         executionTimeMs: Date.now() - start,
       };
     }),
+
+  // DM Input Management
+  getDmInputs: publicProcedure
+    .input(z.object({
+      countryId: z.string().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const whereClause = input.countryId 
+          ? { countryId: input.countryId, isActive: true }
+          : { isActive: true };
+
+        const dmInputs = await ctx.db.dmInputs.findMany({
+          where: whereClause,
+          orderBy: { ixTimeTimestamp: "desc" },
+          include: {
+            country: {
+              select: { name: true }
+            }
+          }
+        });
+
+        return dmInputs;
+      } catch (error) {
+        console.error("Failed to get DM inputs:", error);
+        throw new Error("Failed to retrieve DM inputs");
+      }
+    }),
+
+  addDmInput: publicProcedure
+    .input(z.object({
+      countryId: z.string().optional(),
+      inputType: z.string(),
+      value: z.number(),
+      description: z.string(),
+      duration: z.number().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const dmInput = await ctx.db.dmInputs.create({
+          data: {
+            countryId: input.countryId || null,
+            ixTimeTimestamp: new Date(IxTime.getCurrentIxTime()),
+            inputType: input.inputType,
+            value: input.value,
+            description: input.description,
+            duration: input.duration || null,
+            isActive: true,
+            createdBy: "admin", // TODO: Get from auth context
+          },
+        });
+
+        return dmInput;
+      } catch (error) {
+        console.error("Failed to add DM input:", error);
+        throw new Error("Failed to add DM input");
+      }
+    }),
+
+  updateDmInput: publicProcedure
+    .input(z.object({
+      id: z.string(),
+      inputType: z.string(),
+      value: z.number(),
+      description: z.string(),
+      duration: z.number().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const dmInput = await ctx.db.dmInputs.update({
+          where: { id: input.id },
+          data: {
+            inputType: input.inputType,
+            value: input.value,
+            description: input.description,
+            duration: input.duration || null,
+            updatedAt: new Date(),
+          },
+        });
+
+        return dmInput;
+      } catch (error) {
+        console.error("Failed to update DM input:", error);
+        throw new Error("Failed to update DM input");
+      }
+    }),
+
+  deleteDmInput: publicProcedure
+    .input(z.object({
+      id: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Soft delete by setting isActive to false
+        const dmInput = await ctx.db.dmInputs.update({
+          where: { id: input.id },
+          data: {
+            isActive: false,
+            updatedAt: new Date(),
+          },
+        });
+
+        return dmInput;
+      } catch (error) {
+        console.error("Failed to delete DM input:", error);
+        throw new Error("Failed to delete DM input");
+      }
+    }),
+
+  // Update country name
+  updateCountryName: publicProcedure
+    .input(z.object({
+      countryId: z.string(),
+      name: z.string().min(1).max(100),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const updatedCountry = await ctx.db.country.update({
+          where: { id: input.countryId },
+          data: {
+            name: input.name.trim(),
+            updatedAt: new Date(),
+          },
+        });
+
+        return updatedCountry;
+      } catch (error) {
+        console.error("Failed to update country name:", error);
+        throw new Error("Failed to update country name");
+      }
+    }),
 });

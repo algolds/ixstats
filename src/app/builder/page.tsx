@@ -7,6 +7,7 @@ import { EconomicInputForm } from "./components/EconomicInputForm";
 import { EconomicPreview } from "./components/EconomicPreview";
 import type { RealCountryData, EconomicInputs } from "./lib/economy-data-service";
 import { parseEconomyData, createDefaultEconomicInputs, saveBaselineToStorage } from "./lib/economy-data-service";
+import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 
 type BuilderPhase = 'select' | 'customize' | 'preview';
 
@@ -70,47 +71,56 @@ export default function CreateCountryBuilder() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg-primary)]">
-      <div className="container mx-auto">
-        {currentPhase === 'select' && (
-          <div>
-            <div className="text-center py-8">
-              <h1 className="text-3xl font-bold text-[var(--color-text-primary)] mb-2">
-                Create a Country
-              </h1>
-              <p className="text-[var(--color-text-muted)] text-lg">
-                Build a custom nation for your campaign using real-world economic data as a foundation
-              </p>
-            </div>
-            <CountrySelector
-              countries={allCountries}
-              onCountrySelect={handleCountrySelect}
-              selectedCountry={selectedCountry}
-            />
+    <>
+      <SignedIn>
+        <div className="min-h-screen bg-[var(--color-bg-primary)]">
+          <div className="container mx-auto">
+            {currentPhase === 'select' && (
+              <div>
+                <div className="text-center py-8">
+                  <h1 className="text-3xl font-bold text-[var(--color-text-primary)] mb-2">
+                    Create a Country
+                  </h1>
+                  <p className="text-[var(--color-text-muted)] text-lg">
+                    Build a custom nation for your campaign using real-world economic data as a foundation
+                  </p>
+                </div>
+                <CountrySelector
+                  countries={allCountries}
+                  onCountrySelect={handleCountrySelect}
+                  selectedCountry={selectedCountry}
+                />
+              </div>
+            )}
+
+            {currentPhase === 'customize' && selectedCountry && economicInputs && (
+              <EconomicInputForm
+                inputs={economicInputs}
+                referenceCountry={selectedCountry}
+                onInputsChange={handleInputsChange}
+                onPreview={handlePreview}
+                onBack={handleBack}
+              />
+            )}
+
+            {currentPhase === 'preview' && selectedCountry && economicInputs && (
+              <EconomicPreview
+                inputs={economicInputs}
+                referenceCountry={selectedCountry}
+                allCountries={allCountries}
+                onBack={handleBack}
+                onConfirm={handleConfirmBaseline}
+              />
+            )}
           </div>
-        )}
-
-        {currentPhase === 'customize' && selectedCountry && economicInputs && (
-          <EconomicInputForm
-            inputs={economicInputs}
-            referenceCountry={selectedCountry}
-            onInputsChange={handleInputsChange}
-            onPreview={handlePreview}
-            onBack={handleBack}
-          />
-        )}
-
-        {currentPhase === 'preview' && selectedCountry && economicInputs && (
-          <EconomicPreview
-            inputs={economicInputs}
-            referenceCountry={selectedCountry}
-            allCountries={allCountries}
-            onBack={handleBack}
-            onConfirm={handleConfirmBaseline}
-          />
-        )}
-      </div>
-    </div>
+        </div>
+      </SignedIn>
+      <SignedOut>
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <SignInButton mode="modal" />
+        </div>
+      </SignedOut>
+    </>
   );
 }
 

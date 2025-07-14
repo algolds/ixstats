@@ -149,6 +149,7 @@ function processRawDataWithHeaderRecognition(rawData: any[][], isExcel: boolean)
     actualGdpGrowth: findHeaderIndex(['Actual GDP Growth']),
     landAreaKm: findHeaderIndex(['Area (km²)', 'Area (SqKm)', 'Land Area (km²)', 'Area km²', 'Area', 'landarea']),
     landAreaMi: findHeaderIndex(['Area (sq mi)', 'Area (SqMi)', 'Land Area (sq mi)', 'Area sq mi']),
+    localGrowthFactor: findHeaderIndex(['Local Growth Factor', 'Growth Factor', 'Local Factor']),
   };
 
   console.log("[DataParser] Header mapping results:");
@@ -238,6 +239,7 @@ function processRawDataWithHeaderRecognition(rawData: any[][], isExcel: boolean)
         actualGdpGrowth: parsePercentageRequired(row[headerMap.actualGdpGrowth], 0),
         landArea: landAreaKm,
         areaSqMi: landAreaMi,
+        localGrowthFactor: parseNumberRequired(row[headerMap.localGrowthFactor] || 1.0, 1.0),
       };
 
       // Calculate missing projections
