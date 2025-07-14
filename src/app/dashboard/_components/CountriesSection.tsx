@@ -8,6 +8,8 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { CountryCard } from "./CountryCard";
 import type { CountryStats } from "~/types/ixstats";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { useBulkFlagCache } from "~/hooks/useBulkFlagCache";
+import { useMemo } from "react";
 
 interface CountriesSectionProps {
   // Rename to end with Action so Next.js knows it's a client callback
@@ -67,6 +69,10 @@ export function CountriesSection({
     void refetchCountries();
     onGlobalRefreshAction();
   };
+
+  // Use bulk flag cache for all countries
+  const countryNames = useMemo(() => transformedCountries.map(c => c.name), [transformedCountries]);
+  const { flagUrls, isLoading: flagsLoading } = useBulkFlagCache(countryNames);
 
   // Loading skeleton
   if (countriesLoading && transformedCountries.length === 0) {
@@ -139,6 +145,8 @@ export function CountriesSection({
               key={country.id}
               country={country}
               onUpdateAction={handleIndividualUpdate}
+              flagUrl={flagUrls[country.name] || null}
+              flagLoading={flagsLoading}
             />
           ))}
         </div>

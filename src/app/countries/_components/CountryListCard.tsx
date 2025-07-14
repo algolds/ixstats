@@ -36,34 +36,54 @@ export interface CountryData {
 
 interface CountryListCardProps {
   country: CountryData;
+  flagUrl?: string | null;
+  flagLoading?: boolean;
 }
 
-export function CountryListCard({ country }: CountryListCardProps) {
-  const [flagUrl, setFlagUrl] = useState<string | null>(null);
-  const [flagState, setFlagState] = useState<'loading'|'loaded'|'error'>('loading');
+export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: propFlagLoading }: CountryListCardProps) {
+  // Use props if provided, otherwise fall back to individual loading
+  const [localFlagUrl, setLocalFlagUrl] = useState<string | null>(null);
+  const [localFlagState, setLocalFlagState] = useState<'loading'|'loaded'|'error'>('loading');
 
+  // Determine which flag data to use
+  const flagUrl = propFlagUrl !== undefined ? propFlagUrl : localFlagUrl;
+  const flagLoading = propFlagLoading !== undefined ? propFlagLoading : localFlagState === 'loading';
+  const flagState = propFlagUrl !== undefined ? (propFlagUrl ? 'loaded' : 'error') : localFlagState;
+
+  // Only load individually if props are not provided
   useEffect(() => {
+    if (propFlagUrl !== undefined || propFlagLoading !== undefined) {
+      return; // Use props, don't load individually
+    }
+
     let mounted = true;
     (async () => {
       if (!country.name) {
-        mounted && setFlagState('error');
+        mounted && setLocalFlagState('error');
         return;
       }
-      mounted && setFlagState('loading');
+      mounted && setLocalFlagState('loading');
       try {
         const url = await ixnayWiki.getFlagUrl(country.name);
-        if (mounted && typeof url === 'string') {
-          setFlagUrl(url);
-          mounted && setFlagState('loaded');
-        } else {
-          mounted && setFlagState('error');
+        if (mounted) {
+          if (typeof url === 'string') {
+            setLocalFlagUrl(url);
+            setLocalFlagState('loaded');
+          } else if (url && typeof url === 'object' && 'error' in url) {
+            // Handle error object (legacy case)
+            setLocalFlagState('error');
+          } else {
+            setLocalFlagState('error');
+          }
         }
       } catch {
-        mounted && setFlagState('error');
+        if (mounted) {
+          setLocalFlagState('error');
+        }
       }
     })();
     return () => { mounted = false; };
-  }, [country.name]);
+  }, [country.name, propFlagUrl, propFlagLoading]);
 
   const wikiUrl = `https://ixwiki.com/wiki/${encodeURIComponent(
     country.name.replace(/ /g, '_')
@@ -83,21 +103,25 @@ export function CountryListCard({ country }: CountryListCardProps) {
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <div className="w-12 h-9 relative flex-shrink-0">
-              {flagState === 'loading' && (
+              {flagLoading && (
                 <div className="w-12 h-9 bg-[var(--color-bg-tertiary)]
                                 rounded border border-[var(--color-border-primary)]
                                 animate-pulse" />
               )}
-              {flagState === 'loaded' && flagUrl && (
+              {!flagLoading && flagUrl && (
                 <img
                   src={flagUrl}
                   alt={`Flag of ${country.name}`}
                   className="w-12 h-9 object-cover rounded
                              border border-[var(--color-border-primary)]"
-                  onError={() => setFlagState('error')}
+                  onError={() => {
+                    if (propFlagUrl === undefined) {
+                      setLocalFlagState('error');
+                    }
+                  }}
                 />
               )}
-              {flagState === 'error' && (
+              {!flagLoading && !flagUrl && (
                 <div className="w-12 h-9 bg-muted rounded border-border 
                                flex items-center justify-center">
                   <FlagIcon className="h-5 w-5 text-muted-foreground" />

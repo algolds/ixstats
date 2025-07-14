@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Moon, Sun, BarChart3, Globe, Settings, Database, Building } from "lucide-react";
+import { Moon, Sun, BarChart3, Globe, Settings, Database, Building, TestTube } from "lucide-react";
 import { useTheme } from "~/context/theme-context";
 
 export function Navigation() {
@@ -35,6 +35,11 @@ export function Navigation() {
       name: "Admin",
       href: "/admin",
       icon: Settings,
+    },
+    {
+      name: "Test",
+      href: "/test-command-center",
+      icon: TestTube,
     },
   ];
 

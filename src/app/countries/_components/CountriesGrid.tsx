@@ -10,6 +10,8 @@ import {
   CardTitle,
   CardContent
 } from '~/components/ui/card';
+import { useBulkFlagCache } from '~/hooks/useBulkFlagCache';
+import { useMemo } from 'react';
 import type { PageCountryData } from '../page';
 
 interface CountriesGridProps {
@@ -29,6 +31,10 @@ export function CountriesGrid({
   pageCount,
   onPageChangeAction
 }: CountriesGridProps) {
+  // Use bulk flag cache for all countries
+  const countryNames = useMemo(() => countries.map(c => c.name), [countries]);
+  const { flagUrls, isLoading: flagsLoading } = useBulkFlagCache(countryNames);
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -71,7 +77,12 @@ export function CountriesGrid({
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {countries.map((c) => (
-          <CountryListCard key={c.id} country={c} />
+          <CountryListCard 
+            key={c.id} 
+            country={c} 
+            flagUrl={flagUrls[c.name] || null}
+            flagLoading={flagsLoading}
+          />
         ))}
       </div>
 

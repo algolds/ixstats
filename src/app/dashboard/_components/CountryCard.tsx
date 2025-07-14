@@ -37,39 +37,51 @@ import { Skeleton } from "~/components/ui/skeleton";
 interface CountryCardProps {
   country: CountryStats;
   onUpdateAction: () => void;
+  flagUrl?: string | null;
+  flagLoading?: boolean;
 }
 
 export function CountryCard({
   country,
   onUpdateAction,
+  flagUrl: propFlagUrl,
+  flagLoading: propFlagLoading,
 }: CountryCardProps) {
-  const [flagUrl, setFlagUrl] = useState<string | null>(null);
-  const [flagLoading, setFlagLoading] = useState(true);
+  const [localFlagUrl, setLocalFlagUrl] = useState<string | null>(null);
+  const [localFlagLoading, setLocalFlagLoading] = useState(true);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
-  // load flag from wiki
+  // Determine which flag data to use
+  const flagUrl = propFlagUrl !== undefined ? propFlagUrl : localFlagUrl;
+  const flagLoading = propFlagLoading !== undefined ? propFlagLoading : localFlagLoading;
+
+  // load flag from wiki (only if props are not provided)
   useEffect(() => {
+    if (propFlagUrl !== undefined || propFlagLoading !== undefined) {
+      return; // Use props, don't load individually
+    }
+
     let alive = true;
     const load = async () => {
       if (!country.name) {
-        alive && setFlagLoading(false) && setFlagUrl(null);
+        alive && setLocalFlagLoading(false) && setLocalFlagUrl(null);
         return;
       }
-      alive && setFlagLoading(true);
+      alive && setLocalFlagLoading(true);
       try {
         const url = await ixnayWiki.getFlagUrl(country.name);
-        alive && setFlagUrl(typeof url === 'string' ? url : null);
+        alive && setLocalFlagUrl(typeof url === 'string' ? url : null);
       } catch {
-        alive && setFlagUrl(null);
+        alive && setLocalFlagUrl(null);
       } finally {
-        alive && setFlagLoading(false);
+        alive && setLocalFlagLoading(false);
       }
     };
     void load();
     return () => {
       alive = false;
     };
-  }, [country.name]);
+  }, [country.name, propFlagUrl, propFlagLoading]);
 
   // update mutation
   const updateMutation = api.countries.updateStats.useMutation({
@@ -189,8 +201,10 @@ export function CountryCard({
                     alt={`Flag of ${country.name}`}
                     className="h-full w-full object-cover rounded border border-border"
                     onError={(e) => {
-                      ;(e.target as HTMLImageElement).style.display = "none";
-                      setFlagUrl(null);
+                      (e.target as HTMLImageElement).style.display = "none";
+                      if (propFlagUrl === undefined) {
+                        setLocalFlagUrl(null);
+                      }
                     }}
                   />
                 ) : (
