@@ -23,7 +23,9 @@ import {
   Monitor,
   Shield,
   Key,
-  Palette
+  Palette,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
@@ -37,6 +39,7 @@ export default function ProfilePage() {
   const [isEditingCountry, setIsEditingCountry] = useState(false);
   const [newCountryName, setNewCountryName] = useState("");
   const [showPreferences, setShowPreferences] = useState(false);
+  const [showAccountInfo, setShowAccountInfo] = useState(false);
 
   // Get user profile
   const { data: userProfile, isLoading: profileLoading, refetch: refetchProfile } = api.users.getProfile.useQuery(
@@ -121,16 +124,34 @@ export default function ProfilePage() {
                         Account Information
                       </h2>
                     </div>
-                    <UserButton 
-                      appearance={{
-                        elements: {
-                          avatarBox: "h-8 w-8"
-                        }
-                      }}
-                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setShowAccountInfo(!showAccountInfo)}
+                        className="flex items-center gap-2 px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+                      >
+                        {showAccountInfo ? (
+                          <>
+                            <EyeOff className="h-4 w-4" />
+                            Hide
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="h-4 w-4" />
+                            Show
+                          </>
+                        )}
+                      </button>
+                      <UserButton 
+                        appearance={{
+                          elements: {
+                            avatarBox: "h-8 w-8"
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
                   
-                  <div className="space-y-4">
+                  <div className={`space-y-4 transition-all duration-300 ${showAccountInfo ? 'opacity-100' : 'opacity-0 blur-sm pointer-events-none'}`}>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Name
@@ -192,6 +213,14 @@ export default function ProfilePage() {
                       </div>
                     </div>
                   </div>
+                  
+                  {!showAccountInfo && (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Click "Show" to reveal account information
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Country Information */}

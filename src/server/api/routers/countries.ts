@@ -264,6 +264,13 @@ export const countriesRouter = createTRPCRouter({
           where: { isActive: true },
           orderBy: { ixTimeTimestamp: "desc" },
         },
+        // --- ADVANCED MODELING ---
+        // economicModel: {
+        //   include: {
+        //     sectoralOutputs: true,
+        //     policyEffects: true,
+        //   },
+        // },
       };
 
       // Only include relations that exist in the database
@@ -301,6 +308,15 @@ export const countriesRouter = createTRPCRouter({
         dmInputs
       );
 
+      // --- ADVANCED MODELING: Attach economicModel (with arrays) to response ---
+      // const economicModel = country.economicModel
+      //   ? {
+      //       ...country.economicModel,
+      //       sectoralOutputs: country.economicModel.sectoralOutputs,
+      //       policyEffects: country.economicModel.policyEffects,
+      //     }
+      //   : null;
+
       // FIXED: Build response with available data and fallbacks for missing fields
       const response: any = {
         ...country,
@@ -309,6 +325,7 @@ export const countriesRouter = createTRPCRouter({
           ...dm,
           ixTimeTimestamp: dm.ixTimeTimestamp.getTime()
         })),
+        // economicModel, // <-- removed advanced modeling
         
         // FIXED: Provide fallback values for expected economic fields
         nominalGDP: country.nominalGDP || (country.baselinePopulation * country.baselineGdpPerCapita),
@@ -341,7 +358,38 @@ export const countriesRouter = createTRPCRouter({
   updateEconomicData: publicProcedure
     .input(z.object({
       countryId: z.string(),
-      economicData: economicDataSchema,
+      economicData: economicDataSchema.extend({
+        economicModel: z.object({
+          baseYear: z.number(),
+          projectionYears: z.number(),
+          gdpGrowthRate: z.number(),
+          inflationRate: z.number(),
+          unemploymentRate: z.number(),
+          interestRate: z.number(),
+          exchangeRate: z.number(),
+          populationGrowthRate: z.number(),
+          investmentRate: z.number(),
+          fiscalBalance: z.number(),
+          tradeBalance: z.number(),
+          sectoralOutputs: z.array(z.object({
+            year: z.number(),
+            agriculture: z.number(),
+            industry: z.number(),
+            services: z.number(),
+            government: z.number(),
+            totalGDP: z.number(),
+          })).optional(),
+          policyEffects: z.array(z.object({
+            name: z.string(),
+            description: z.string(),
+            gdpEffectPercentage: z.number(),
+            inflationEffectPercentage: z.number(),
+            employmentEffectPercentage: z.number(),
+            yearImplemented: z.number(),
+            durationYears: z.number(),
+          })).optional(),
+        }).optional(),
+      }),
     }))
     .mutation(async ({ ctx, input }) => {
       const { countryId, economicData } = input;
@@ -389,10 +437,82 @@ export const countriesRouter = createTRPCRouter({
         );
 
         // Update country with basic fields
-        const updatedCountry = await ctx.db.country.update({
+        await ctx.db.country.update({
           where: { id: countryId },
           data: filteredBasicFields,
         });
+
+        // --- ADVANCED MODELING: Upsert EconomicModel, SectoralOutputs, PolicyEffects ---
+        // if (economicData.economicModel) {
+        //   // Upsert EconomicModel
+        //   const model = await ctx.db.economicModel.upsert({
+        //     where: { countryId },
+        //     update: {
+        //       baseYear: economicData.economicModel.baseYear,
+        //       projectionYears: economicData.economicModel.projectionYears,
+        //       gdpGrowthRate: economicData.economicModel.gdpGrowthRate,
+        //       inflationRate: economicData.economicModel.inflationRate,
+        //       unemploymentRate: economicData.economicModel.unemploymentRate,
+        //       interestRate: economicData.economicModel.interestRate,
+        //       exchangeRate: economicData.economicModel.exchangeRate,
+        //       populationGrowthRate: economicData.economicModel.populationGrowthRate,
+        //       investmentRate: economicData.economicModel.investmentRate,
+        //       fiscalBalance: economicData.economicModel.fiscalBalance,
+        //       tradeBalance: economicData.economicModel.tradeBalance,
+        //     },
+        //     create: {
+        //       countryId,
+        //       baseYear: economicData.economicModel.baseYear,
+        //       projectionYears: economicData.economicModel.projectionYears,
+        //       gdpGrowthRate: economicData.economicModel.gdpGrowthRate,
+        //       inflationRate: economicData.economicModel.inflationRate,
+        //       unemploymentRate: economicData.economicModel.unemploymentRate,
+        //       interestRate: economicData.economicModel.interestRate,
+        //       exchangeRate: economicData.economicModel.exchangeRate,
+        //       populationGrowthRate: economicData.economicModel.populationGrowthRate,
+        //       investmentRate: economicData.economicModel.investmentRate,
+        //       fiscalBalance: economicData.economicModel.fiscalBalance,
+        //       tradeBalance: economicData.economicModel.tradeBalance,
+        //     },
+        //   });
+
+        //   // Replace all SectoralOutputs
+        //   if (economicData.economicModel.sectoralOutputs) {
+        //     await ctx.db.sectoralOutput.deleteMany({ where: { economicModelId: model.id } });
+        //     for (const s of economicData.economicModel.sectoralOutputs) {
+        //       await ctx.db.sectoralOutput.create({
+        //         data: {
+        //           economicModelId: model.id,
+        //           year: s.year,
+        //           agriculture: s.agriculture,
+        //           industry: s.industry,
+        //           services: s.services,
+        //           government: s.government,
+        //           totalGDP: s.totalGDP,
+        //         },
+        //       });
+        //     }
+        //   }
+
+        //   // Replace all PolicyEffects
+        //   if (economicData.economicModel.policyEffects) {
+        //     await ctx.db.policyEffect.deleteMany({ where: { economicModelId: model.id } });
+        //     for (const p of economicData.economicModel.policyEffects) {
+        //       await ctx.db.policyEffect.create({
+        //         data: {
+        //           economicModelId: model.id,
+        //           name: p.name,
+        //           description: p.description,
+        //           gdpEffectPercentage: p.gdpEffectPercentage,
+        //           inflationEffectPercentage: p.inflationEffectPercentage,
+        //           employmentEffectPercentage: p.employmentEffectPercentage,
+        //           yearImplemented: p.yearImplemented,
+        //           durationYears: p.durationYears,
+        //         },
+        //       });
+        //     }
+        //   }
+        // }
 
         return { success: true, message: "Economic data updated successfully" };
       } catch (error) {
@@ -845,7 +965,7 @@ export const countriesRouter = createTRPCRouter({
         FROM Country
       `;
 
-      const stats = result[0] as any;
+      const stats = (result as any[])[0] as any;
       
       const totalPopulation = validateNumber(stats.totalPopulation || 0, 1e11);
       const totalGdp = validateNumber(stats.totalGdp || 0, 1e18);
