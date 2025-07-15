@@ -76,6 +76,7 @@ export function DataImportSection({
               <li>• Required fields: Country, Population, GDP PC</li>
               <li>• Only tracks 13 core fields from roster data</li>
               <li>• CSV support has been completely removed</li>
+              <li>• Option to sync epoch time with imported data for accurate tracking</li>
             </ul>
           </div>
         </div>

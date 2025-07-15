@@ -16,7 +16,9 @@ interface TimeControlPanelProps {
   onCustomTimeChange: (value: string) => void;
   onSetCustomTime: () => void;
   onResetToRealTime: () => void;
+  onSyncEpoch?: (targetEpoch: number) => void;
   setTimePending: boolean;
+  syncEpochPending?: boolean;
 }
 
 export function TimeControlPanel({
@@ -30,7 +32,9 @@ export function TimeControlPanel({
   onCustomTimeChange,
   onSetCustomTime,
   onResetToRealTime,
-  setTimePending
+  onSyncEpoch,
+  setTimePending,
+  syncEpochPending = false
 }: TimeControlPanelProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
@@ -44,7 +48,7 @@ export function TimeControlPanel({
         )}
       </h2>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Time Multiplier */}
         <div>
           <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-3">
@@ -154,6 +158,54 @@ export function TimeControlPanel({
             )}
           </div>
         </div>
+
+        {/* Epoch Sync */}
+        {onSyncEpoch && (
+          <div>
+            <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-3">
+              Epoch Synchronization
+            </h3>
+            <div className="space-y-4">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                <p><strong>Current Epoch:</strong> {IxTime.formatIxTime(IxTime.getInGameEpoch())}</p>
+                <p className="text-xs mt-1">Sync epoch with data baseline for accurate calculations</p>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Target Year:
+                </label>
+                <input
+                  type="number"
+                  defaultValue={new Date(IxTime.getInGameEpoch()).getFullYear()}
+                  onChange={(e) => {
+                    const year = parseInt(e.target.value);
+                    if (!isNaN(year)) {
+                      const newEpoch = IxTime.createGameTime(year, 1, 1);
+                      // Store the epoch for the button click
+                      (e.target as any).dataEpoch = newEpoch;
+                    }
+                  }}
+                  className="w-20 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  min="2020"
+                  max="2100"
+                />
+              </div>
+              
+              <button
+                onClick={(e) => {
+                  const target = e.currentTarget.previousElementSibling as HTMLInputElement;
+                  const epoch = (target as any).dataEpoch || IxTime.getInGameEpoch();
+                  onSyncEpoch(epoch);
+                }}
+                disabled={syncEpochPending}
+                className="w-full px-4 py-2 bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600 disabled:opacity-50 text-white rounded-md text-sm font-medium"
+              >
+                {syncEpochPending ? "Syncing..." : "Sync Epoch"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

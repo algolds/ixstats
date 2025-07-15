@@ -19,7 +19,8 @@ export function SetupRedirect() {
     '/api', 
     '/trpc',
     '/_next',
-    '/favicon.ico'
+    '/favicon.ico',
+    '/admin' // <-- Add this line to always skip setup redirect for admin page
   ];
   
   const shouldSkipSetup = skipSetupPaths.some(path => 

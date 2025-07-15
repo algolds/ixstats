@@ -5,36 +5,22 @@ import {
   CountriesPageHeader,
   CountriesSearch,
   CountriesGrid
-} from './_components';
+} from '../countries/_components';
 import type {
   SortField,
   SortDirection,
   TierFilter,
   PopulationRange
-} from './_components';
+} from '../countries/_components/CountriesSearch';
 import { api } from '~/trpc/react';
-import CountriesFilterSidebar from './_components/CountriesFilterSidebar';
-import CountriesSortBar from './_components/CountriesSortBar';
-import { CountryComparisonModal } from './_components/CountryComparisonModal';
+import CountriesFilterSidebar from '../countries/_components/CountriesFilterSidebar';
+import CountriesSortBar from '../countries/_components/CountriesSortBar';
+import { CountryComparisonModal } from '../countries/_components/CountryComparisonModal';
 import { useCountryComparison } from '~/hooks/useCountryComparison';
 
-export type PageCountryData = {
-  id: string;
-  name: string;
-  continent: string | null;
-  region: string | null;
-  economicTier: string | null;
-  populationTier: string | null;
-  currentPopulation: number;
-  currentGdpPerCapita: number;
-  currentTotalGdp: number;
-  landArea: number | null;
-  populationDensity: number | null;
-  gdpDensity: number | null;
-  lastCalculated: string;
-};
+import type { PageCountryData } from '../countries/_components/CountriesGrid';
 
-export default function CountriesPage() {
+export default function ExplorePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [tierFilter, setTierFilter] =
     useState<TierFilter>('all');
@@ -55,26 +41,14 @@ export default function CountriesPage() {
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
   const { comparisonCountries, addCountryToComparison, removeCountryFromComparison, clearComparison, getAvailableCountries, isLoading: isLoadingComparison } = useCountryComparison();
 
-  const queryInput = useMemo(() => ({
-    search: searchTerm || undefined,
-    continent:
-      continentFilter === 'all'
-        ? undefined
-        : continentFilter,
-    economicTier:
-      tierFilter === 'all' ? undefined : tierFilter,
-    limit: 1000
-  }), [
-    searchTerm,
-    continentFilter,
-    tierFilter
-  ]);
-
+  // Get all countries without filtering at the API level to enable client-side filtering
   const {
     data: countriesResult,
     isLoading,
     error
-  } = api.countries.getAll.useQuery(queryInput, {
+  } = api.countries.getAll.useQuery({
+    limit: 1000 // Get all countries for client-side filtering
+  }, {
     refetchOnWindowFocus: false,
     staleTime: 30 * 1000
   });
@@ -118,7 +92,7 @@ export default function CountriesPage() {
           .map((c) => c.continent)
           .filter((x): x is string => !!x)
       )
-    );
+    ).sort();
   }, [processed]);
 
   const availableRegions = useMemo(() => {
@@ -130,26 +104,47 @@ export default function CountriesPage() {
           .map((c) => c.region)
           .filter((x): x is string => !!x)
       )
-    );
+    ).sort();
   }, [processed, continentFilter]);
 
   const filtered = useMemo(() => {
     let arr = [...processed];
-    const term = searchTerm.toLowerCase();
-    if (term) arr = arr.filter((c) =>
-      c.name.toLowerCase().includes(term)
-    );
-    if (tierFilter !== 'all')
+    
+    // Search filter
+    const term = searchTerm.toLowerCase().trim();
+    if (term) {
+      arr = arr.filter((c) =>
+        c.name.toLowerCase().includes(term) ||
+        c.continent?.toLowerCase().includes(term) ||
+        c.region?.toLowerCase().includes(term)
+      );
+    }
+    
+    // Tier filter
+    if (tierFilter !== 'all') {
       arr = arr.filter((c) => c.economicTier === tierFilter);
-    if (continentFilter !== 'all')
+    }
+    
+    // Continent filter
+    if (continentFilter !== 'all') {
       arr = arr.filter((c) => c.continent === continentFilter);
-    if (regionFilter !== 'all')
+    }
+    
+    // Region filter
+    if (regionFilter !== 'all') {
       arr = arr.filter((c) => c.region === regionFilter);
+    }
+    
+    // Population range filter
     const { min, max } = populationRange;
-    if (min !== undefined)
+    if (min !== undefined) {
       arr = arr.filter((c) => c.currentPopulation >= min);
-    if (max !== undefined)
+    }
+    if (max !== undefined) {
       arr = arr.filter((c) => c.currentPopulation <= max);
+    }
+    
+    // Sorting
     const m = sortDirection === 'asc' ? 1 : -1;
     arr = arr.sort((a, b) => {
       if (sortField === 'name') {
@@ -168,6 +163,26 @@ export default function CountriesPage() {
         case 'totalGdp':
           va = a.currentTotalGdp ?? 0;
           vb = b.currentTotalGdp ?? 0;
+          break;
+        case 'economicTier':
+          va = a.economicTier ?? '';
+          vb = b.economicTier ?? '';
+          return m * va.localeCompare(vb);
+        case 'continent':
+          va = a.continent ?? '';
+          vb = b.continent ?? '';
+          return m * va.localeCompare(vb);
+        case 'region':
+          va = a.region ?? '';
+          vb = b.region ?? '';
+          return m * va.localeCompare(vb);
+        case 'landArea':
+          va = a.landArea ?? 0;
+          vb = b.landArea ?? 0;
+          break;
+        case 'populationDensity':
+          va = a.populationDensity ?? 0;
+          vb = b.populationDensity ?? 0;
           break;
         default:
           va = (a as any)[sortField] ?? 0;
@@ -188,7 +203,7 @@ export default function CountriesPage() {
     sortDirection
   ]);
 
-  // reset page when filters change
+  // Reset page when filters change
   useEffect(() => {
     setPage(1);
   }, [
@@ -314,4 +329,4 @@ export default function CountriesPage() {
       />
     </div>
   );
-}
+} 

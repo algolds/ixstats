@@ -31,9 +31,7 @@ import {
   BarChart3,
   Target,
   Layers,
-  Plus,
   Minus,
-  Search,
 } from "lucide-react";
 import { IxTime } from "~/lib/ixtime";
 import { useTheme } from "~/context/theme-context";
@@ -46,7 +44,6 @@ import {
 } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Input } from "~/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -54,18 +51,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "~/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
+import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 
 // Country data for comparison
 interface ComparisonCountry {
@@ -105,12 +91,6 @@ type ComparisonChartType =
   | 'scatter'
   | 'radar';
 
-const CHART_COLORS = [
-  "#8b5cf6", "#06b6d4", "#84cc16", "#f97316", 
-  "#ec4899", "#14b8a6", "#f59e0b", "#ef4444",
-  "#8b5cf6", "#06b6d4"
-];
-
 export function ComparisonCharts({
   countries,
   onCountriesChangeAction,
@@ -120,8 +100,6 @@ export function ComparisonCharts({
 }: ComparisonChartsProps) {
   const { theme } = useTheme();
   const [selectedChartType, setSelectedChartType] = useState<ComparisonChartType>('population');
-  const [countrySearchOpen, setCountrySearchOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
 
   // Chart theme
   const chartTheme = useMemo(() => {
@@ -138,52 +116,25 @@ export function ComparisonCharts({
     };
   }, [theme]);
 
-  // Filter available countries for search
-  const filteredCountries = useMemo(() => {
-    const selectedIds = new Set(countries.map(c => c.id));
-    return availableCountries
-      .filter(country => !selectedIds.has(country.id))
-      .filter(country => 
-        searchValue === "" || 
-        country.name.toLowerCase().includes(searchValue.toLowerCase())
-      );
-  }, [availableCountries, countries, searchValue]);
-
-  // Add country to comparison
-  const addCountry = (countryId: string) => {
-    const country = availableCountries.find(c => c.id === countryId);
-    if (!country || countries.length >= 8) return;
-
-    // This would need to fetch the full country data
-    // For now, we'll create a placeholder
-    const newCountry: ComparisonCountry = {
-      id: country.id,
-      name: country.name,
-      currentPopulation: 0, // Would be fetched
-      currentGdpPerCapita: 0, // Would be fetched
-      currentTotalGdp: 0, // Would be fetched
-      populationGrowthRate: 0, // Would be fetched
-      adjustedGdpGrowth: 0, // Would be fetched
-      economicTier: country.economicTier,
-      populationTier: "Medium", // Would be fetched
-      continent: country.continent,
-      color: CHART_COLORS[countries.length] || "#8b5cf6",
-    };
-
-    onCountriesChangeAction([...countries, newCountry]);
-    setCountrySearchOpen(false);
-    setSearchValue("");
-  };
-
   // Remove country from comparison
   const removeCountry = (countryId: string) => {
     const newCountries = countries
       .filter(c => c.id !== countryId)
       .map((country, index) => ({
         ...country,
-        color: CHART_COLORS[index] || "#8b5cf6",
+        color: getChartColor(index),
       }));
     onCountriesChangeAction(newCountries);
+  };
+
+  // Get chart color for index
+  const getChartColor = (index: number) => {
+    const colors = [
+      "#8b5cf6", "#06b6d4", "#84cc16", "#f97316", 
+      "#ec4899", "#14b8a6", "#f59e0b", "#ef4444",
+      "#8b5cf6", "#06b6d4"
+    ];
+    return colors[index] || "#8b5cf6";
   };
 
   // Chart data processing
@@ -241,6 +192,35 @@ export function ComparisonCharts({
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload || !payload.length) return null;
 
+    const formatValue = (value: number, dataKey: string) => {
+      switch (dataKey) {
+        case 'value':
+          return formatPopulation(value * 1000000); // Convert back from millions
+        case 'gdpPerCapita':
+          return formatCurrency(value * 1000); // Convert back from thousands
+        case 'totalGdp':
+          return formatCurrency(value * 1000000000); // Convert back from billions
+        case 'populationGrowth':
+        case 'gdpGrowth':
+          return `${value.toFixed(2)}%`;
+        case 'x':
+          return formatCurrency(value * 1000); // GDP per capita
+        case 'y':
+          return formatPopulation(value * 1000000); // Population
+        case 'z':
+          return formatCurrency(value * 1000000000); // Total GDP
+        case 'population':
+          return `${value.toFixed(1)} (log scale)`;
+        case 'popGrowth':
+        case 'gdpGrowth':
+          return `${value.toFixed(1)} (scaled)`;
+        case 'density':
+          return `${value.toFixed(1)}/km²`;
+        default:
+          return typeof value === 'number' ? value.toFixed(2) : value;
+      }
+    };
+
     return (
       <div 
         className="p-3 rounded-lg border shadow-lg backdrop-blur-sm"
@@ -254,7 +234,7 @@ export function ComparisonCharts({
                 {entry.name}:
               </span>
               <span className="font-medium text-sm">
-                {typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}
+                {formatValue(entry.value, entry.dataKey)}
               </span>
             </div>
           ))}
@@ -340,16 +320,41 @@ export function ComparisonCharts({
             <PolarAngleAxis dataKey="name" tick={{ fontSize: 10, fill: chartTheme.text }} />
             <PolarRadiusAxis tick={{ fontSize: 8, fill: chartTheme.text }} />
             <Tooltip content={<CustomTooltip />} />
-            {countries.map((country, index) => (
-              <Radar
-                key={country.id}
-                name={country.name}
-                dataKey={`value${index}`}
-                stroke={country.color}
-                fill={country.color}
-                fillOpacity={0.1}
-              />
-            ))}
+            <Radar
+              name="Population"
+              dataKey="population"
+              stroke="#8b5cf6"
+              fill="#8b5cf6"
+              fillOpacity={0.1}
+            />
+            <Radar
+              name="GDP per Capita"
+              dataKey="gdpPerCapita"
+              stroke="#06b6d4"
+              fill="#06b6d4"
+              fillOpacity={0.1}
+            />
+            <Radar
+              name="Population Growth"
+              dataKey="popGrowth"
+              stroke="#84cc16"
+              fill="#84cc16"
+              fillOpacity={0.1}
+            />
+            <Radar
+              name="GDP Growth"
+              dataKey="gdpGrowth"
+              stroke="#f97316"
+              fill="#f97316"
+              fillOpacity={0.1}
+            />
+            <Radar
+              name="Density"
+              dataKey="density"
+              stroke="#ec4899"
+              fill="#ec4899"
+              fillOpacity={0.1}
+            />
           </RadarChart>
         )
       },
@@ -417,43 +422,6 @@ export function ComparisonCharts({
                 </Button>
               </Badge>
             ))}
-
-            {countries.length < 8 && (
-              <Popover open={countrySearchOpen} onOpenChange={setCountrySearchOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8">
-                    <Plus className="h-3 w-3 mr-1" />
-                    Add Country
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80">
-                  <Command>
-                    <CommandInput 
-                      placeholder="Search countries..." 
-                      value={searchValue}
-                      onValueChange={setSearchValue}
-                    />
-                    <CommandEmpty>No countries found.</CommandEmpty>
-                    <CommandGroup className="max-h-60 overflow-y-auto">
-                      {filteredCountries.map((country) => (
-                        <CommandItem
-                          key={country.id}
-                          onSelect={() => addCountry(country.id)}
-                          className="cursor-pointer"
-                        >
-                          <div className="flex flex-col">
-                            <span>{country.name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {country.continent} • {country.economicTier}
-                            </span>
-                          </div>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            )}
           </div>
 
           {/* Chart Type Selection */}
@@ -528,19 +496,19 @@ export function ComparisonCharts({
               <div>
                 <p className="text-sm text-muted-foreground">Total Population</p>
                 <p className="text-lg font-semibold">
-                  {(countries.reduce((sum, c) => sum + c.currentPopulation, 0) / 1000000).toFixed(1)}M
+                  {formatPopulation(countries.reduce((sum, c) => sum + c.currentPopulation, 0))}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total GDP</p>
                 <p className="text-lg font-semibold">
-                  ${(countries.reduce((sum, c) => sum + c.currentTotalGdp, 0) / 1000000000).toFixed(1)}B
+                  {formatCurrency(countries.reduce((sum, c) => sum + c.currentTotalGdp, 0))}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Avg GDP/Capita</p>
                 <p className="text-lg font-semibold">
-                  ${(countries.reduce((sum, c) => sum + c.currentGdpPerCapita, 0) / countries.length / 1000).toFixed(0)}K
+                  {formatCurrency(countries.reduce((sum, c) => sum + c.currentGdpPerCapita, 0) / countries.length)}
                 </p>
               </div>
             </div>

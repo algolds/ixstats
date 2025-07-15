@@ -12,7 +12,22 @@ import {
 } from '~/components/ui/card';
 import { useBulkFlagCache } from '~/hooks/useBulkFlagCache';
 import { useMemo } from 'react';
-import type { PageCountryData } from '../page';
+// Define the type locally to avoid circular imports
+export interface PageCountryData {
+  id: string;
+  name: string;
+  continent: string | null;
+  region: string | null;
+  economicTier: string | null;
+  populationTier: string | null;
+  currentPopulation: number;
+  currentGdpPerCapita: number;
+  currentTotalGdp: number;
+  landArea: number | null;
+  populationDensity: number | null;
+  gdpDensity: number | null;
+  lastCalculated: string;
+}
 
 interface CountriesGridProps {
   countries: PageCountryData[];

@@ -30,7 +30,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { AlertTriangle, Info } from "lucide-react";
 import { formatNumber, formatGrowthRateFromDecimal } from "~/lib/chart-utils";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import type { 
   CoreEconomicIndicatorsData, 
   LaborEmploymentData, 
@@ -214,8 +214,17 @@ export default function CountryDetailPage({ params }: CountryDetailPageProps) {
                   <TabsTrigger value="income">Income</TabsTrigger>
                   <TabsTrigger value="demographics">Demographics</TabsTrigger>
                   <TabsTrigger value="historical-data">History</TabsTrigger>
-                  <TabsTrigger value="modeling">Modeling</TabsTrigger>
                 </TabsList>
+
+                {/* Modeling button as a card in the main content area */}
+                <div className="my-4">
+                  <a
+                    href={`/countries/${country.id}/modeling`}
+                    className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors"
+                  >
+                    Advanced Modeling
+                  </a>
+                </div>
 
                 <TabsContent value="overview" className="mt-4">
                   <div className="space-y-6">
@@ -281,7 +290,8 @@ export default function CountryDetailPage({ params }: CountryDetailPageProps) {
                       fiscalData={economyData.fiscal}
                       nominalGDP={economyData.core.nominalGDP}
                       totalPopulation={economyData.core.totalPopulation}
-                      onFiscalDataChange={() => {}}
+                      isReadOnly={true}
+                      showAnalytics={true}
                     />
                     {/* Government Spending */}
                     <GovernmentSpending
@@ -299,7 +309,7 @@ export default function CountryDetailPage({ params }: CountryDetailPageProps) {
                     incomeData={economyData.income}
                     totalPopulation={economyData.core.totalPopulation}
                     gdpPerCapita={economyData.core.gdpPerCapita}
-                    onIncomeDataChange={() => {}}
+                    onIncomeDataChangeAction={() => {}}
                   />
                 </TabsContent>
 
@@ -313,22 +323,22 @@ export default function CountryDetailPage({ params }: CountryDetailPageProps) {
                       }))
                     }}
                     totalPopulation={economyData.core.totalPopulation}
-                    onDemographicDataChange={() => {}}
+                    onDemographicDataChangeAction={() => {}}
                   />
                 </TabsContent>
 
                 <TabsContent value="historical-data" className="mt-4">
-                  {country && country.historicalData && (
-                    <HistoricalEconomicTracker
-                      countryId={country.id}
-                      countryName={country.name}
+                  {/* Hydration-safe milestone/history rendering */}
+                  {country && country.historicalData?.length > 0 ? (
+                    <HistoryMilestonesList
                       historicalData={country.historicalData}
                     />
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p className="text-sm">No historical data or milestones available yet.</p>
+                      <p className="text-xs">Updates and milestones will appear here as the country is updated.</p>
+                    </div>
                   )}
-                </TabsContent>
-
-                <TabsContent value="modeling" className="mt-4">
-                  {country && <EconomicModelingEngine country={country} />}
                 </TabsContent>
               </Tabs>
             </div>
@@ -351,5 +361,50 @@ export default function CountryDetailPage({ params }: CountryDetailPageProps) {
         </div>
       </SignedOut>
     </>
+  );
+}
+
+function HistoryMilestonesList({ historicalData }: { historicalData?: any[] }) {
+  const [formattedHistory, setFormattedHistory] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && historicalData) {
+      setFormattedHistory(
+        historicalData.slice(-20).reverse().map((point) => ({
+          ...point,
+          formattedDate: point.ixTimeTimestamp ? new Date(point.ixTimeTimestamp).toLocaleDateString() : '',
+        }))
+      );
+    }
+  }, [historicalData]);
+
+  if (typeof window === 'undefined') {
+    // On server, render nothing to avoid hydration mismatch
+    return null;
+  }
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold mb-2">Recent Updates & Milestones</h3>
+      <ul className="divide-y divide-border">
+        {formattedHistory.map((point, idx) => (
+          <li key={idx} className="py-2 flex flex-col md:flex-row md:items-center md:justify-between">
+            <span>
+              <span className="font-medium">{point.formattedDate}</span>
+              {point.population && (
+                <span className="ml-2 text-sm text-muted-foreground">Pop: {point.population.toLocaleString()}</span>
+              )}
+              {point.gdpPerCapita && (
+                <span className="ml-2 text-sm text-muted-foreground">GDP p.c.: ${point.gdpPerCapita.toLocaleString()}</span>
+              )}
+              {point.totalGdp && (
+                <span className="ml-2 text-sm text-muted-foreground">Total GDP: ${point.totalGdp.toLocaleString()}</span>
+              )}
+            </span>
+            <span className="text-xs text-muted-foreground mt-1 md:mt-0">{point.populationGrowthRate !== undefined ? `Pop Growth: ${(point.populationGrowthRate * 100).toFixed(2)}%` : ''} {point.gdpGrowthRate !== undefined ? `GDP Growth: ${(point.gdpGrowthRate * 100).toFixed(2)}%` : ''}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

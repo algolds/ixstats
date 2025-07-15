@@ -401,23 +401,220 @@ export const adminRouter = createTRPCRouter({
     .input(z.object({
       analysisId: z.string(),
       replaceExisting: z.boolean(),
+      fileData: z.array(z.number()).optional(), // Accept fileData for now
+      fileName: z.string().optional(),
+      changes: z.any().optional(), // Accept changes directly for now
     }))
     .mutation(async ({ ctx, input }) => {
       try {
-        // For this implementation, we'll need to re-parse the file
-        // In a production system, you'd want to cache the analysis results
-        throw new Error("Import functionality requires file caching - implement based on your needs");
-        
-        // TODO: Implement actual import logic
-        // This would involve:
-        // 1. Retrieving cached analysis data
-        // 2. Creating/updating countries in database
-        // 3. Recalculating current stats
-        // 4. Creating historical data points
-        
+        // For now, require fileData and fileName to be passed in (since we have no persistent cache)
+        if (!input.fileData || !input.fileName) {
+          throw new Error("File data and file name are required for import (no persistent cache implemented)");
+        }
+        const fileBuffer = new Uint8Array(input.fileData).buffer;
+        const countries = await parseRosterFile(fileBuffer, input.fileName);
+        if (countries.length === 0) {
+          throw new Error("No valid countries found in the file");
+        }
+        // Get all existing countries by name
+        const existingCountries = await ctx.db.country.findMany({
+          where: {
+            name: { in: countries.map(c => c.country) }
+          },
+        });
+        const existingMap = new Map(existingCountries.map(c => [c.name, c]));
+        let created = 0;
+        let updated = 0;
+        let skipped = 0;
+        let errors: string[] = [];
+        for (const country of countries) {
+          const existing = existingMap.get(country.country);
+          try {
+            if (!existing) {
+              // Compute required calculated fields for new country
+              const totalGdp = country.population * country.gdpPerCapita;
+              const currentPopulation = country.population;
+              const currentGdpPerCapita = country.gdpPerCapita;
+              const currentTotalGdp = totalGdp;
+              // Import enums for economicTier and populationTier
+              const { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation, EconomicTier, PopulationTier } = require("~/types/ixstats");
+              const economicTier = getEconomicTierFromGdpPerCapita
+                ? getEconomicTierFromGdpPerCapita(country.gdpPerCapita)
+                : EconomicTier.DEVELOPING;
+              const populationTier = getPopulationTierFromPopulation
+                ? getPopulationTierFromPopulation(country.population)
+                : PopulationTier.TIER_1;
+              await ctx.db.country.create({
+                data: {
+                  name: country.country,
+                  continent: country.continent,
+                  region: country.region,
+                  governmentType: country.governmentType,
+                  religion: country.religion,
+                  leader: country.leader,
+                  baselinePopulation: country.population,
+                  baselineGdpPerCapita: country.gdpPerCapita,
+                  landArea: country.landArea,
+                  areaSqMi: country.areaSqMi,
+                  maxGdpGrowthRate: country.maxGdpGrowthRate,
+                  adjustedGdpGrowth: country.adjustedGdpGrowth,
+                  populationGrowthRate: country.populationGrowthRate,
+                  projected2040Population: country.projected2040Population,
+                  projected2040Gdp: country.projected2040Gdp,
+                  projected2040GdpPerCapita: country.projected2040GdpPerCapita,
+                  actualGdpGrowth: country.actualGdpGrowth,
+                  localGrowthFactor: country.localGrowthFactor,
+                  baselineDate: new Date(IxTime.getInGameEpoch()),
+                  lastCalculated: new Date(IxTime.getInGameEpoch()),
+                  currentPopulation,
+                  currentGdpPerCapita,
+                  currentTotalGdp,
+                  economicTier,
+                  populationTier
+                }
+              });
+              created++;
+            } else if (input.replaceExisting) {
+              // Replace all fields
+              const totalGdp = country.population * country.gdpPerCapita;
+              const currentPopulation = country.population;
+              const currentGdpPerCapita = country.gdpPerCapita;
+              const currentTotalGdp = totalGdp;
+              const { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation, EconomicTier, PopulationTier } = require("~/types/ixstats");
+              const economicTier = getEconomicTierFromGdpPerCapita
+                ? getEconomicTierFromGdpPerCapita(country.gdpPerCapita)
+                : EconomicTier.DEVELOPING;
+              const populationTier = getPopulationTierFromPopulation
+                ? getPopulationTierFromPopulation(country.population)
+                : PopulationTier.TIER_1;
+              await ctx.db.country.update({
+                where: { id: existing.id },
+                data: {
+                  name: country.country,
+                  continent: country.continent,
+                  region: country.region,
+                  governmentType: country.governmentType,
+                  religion: country.religion,
+                  leader: country.leader,
+                  baselinePopulation: country.population,
+                  baselineGdpPerCapita: country.gdpPerCapita,
+                  landArea: country.landArea,
+                  areaSqMi: country.areaSqMi,
+                  maxGdpGrowthRate: country.maxGdpGrowthRate,
+                  adjustedGdpGrowth: country.adjustedGdpGrowth,
+                  populationGrowthRate: country.populationGrowthRate,
+                  projected2040Population: country.projected2040Population,
+                  projected2040Gdp: country.projected2040Gdp,
+                  projected2040GdpPerCapita: country.projected2040GdpPerCapita,
+                  actualGdpGrowth: country.actualGdpGrowth,
+                  localGrowthFactor: country.localGrowthFactor,
+                  currentPopulation,
+                  currentGdpPerCapita,
+                  currentTotalGdp,
+                  economicTier,
+                  populationTier
+                  // Do not update baselineDate or lastCalculated here
+                }
+              });
+              updated++;
+            } else {
+              // Only update changed fields (basic check)
+              const updateData: any = {};
+              if (existing.baselinePopulation !== country.population) updateData.baselinePopulation = country.population;
+              if (existing.baselineGdpPerCapita !== country.gdpPerCapita) updateData.baselineGdpPerCapita = country.gdpPerCapita;
+              if (existing.maxGdpGrowthRate !== country.maxGdpGrowthRate) updateData.maxGdpGrowthRate = country.maxGdpGrowthRate;
+              if (existing.adjustedGdpGrowth !== country.adjustedGdpGrowth) updateData.adjustedGdpGrowth = country.adjustedGdpGrowth;
+              if (existing.populationGrowthRate !== country.populationGrowthRate) updateData.populationGrowthRate = country.populationGrowthRate;
+              // Also update calculated fields if needed
+              if (Object.keys(updateData).length > 0) {
+                await ctx.db.country.update({
+                  where: { id: existing.id },
+                  data: updateData
+                });
+                updated++;
+              } else {
+                skipped++;
+              }
+            }
+          } catch (err) {
+            errors.push(`Error processing country ${country.country}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+          }
+        }
+        // After import, trigger recalculation for all affected countries
+        await ctx.db.calculationLog.create({
+          data: {
+            timestamp: new Date(),
+            ixTimeTimestamp: new Date(IxTime.getCurrentIxTime()),
+            countriesUpdated: created + updated,
+            executionTimeMs: 0,
+            globalGrowthFactor: getDefaultEconomicConfig().globalGrowthFactor,
+            notes: `Import: ${created} created, ${updated} updated, ${skipped} skipped, ${errors.length} errors.`
+          }
+        });
+        return {
+          success: true,
+          created,
+          updated,
+          skipped,
+          errors,
+          total: countries.length
+        };
       } catch (error) {
         console.error("Failed to import data:", error);
-        throw new Error("Import functionality not yet implemented");
+        throw new Error(error instanceof Error ? error.message : "Failed to import data");
+      }
+    }),
+
+  // Sync epoch time with imported data
+  syncEpochWithData: publicProcedure
+    .input(z.object({
+      targetEpoch: z.number(), // The target epoch timestamp to sync to
+      reason: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const currentEpoch = IxTime.getInGameEpoch();
+        const currentIxTime = IxTime.getCurrentIxTime();
+        
+        // Calculate the time difference
+        const timeDifference = input.targetEpoch - currentEpoch;
+        const yearsDifference = IxTime.getYearsElapsed(currentEpoch, input.targetEpoch);
+        
+        // Update all countries' baseline dates to the new epoch
+        const updateResult = await ctx.db.country.updateMany({
+          data: {
+            baselineDate: new Date(input.targetEpoch),
+            lastCalculated: new Date(input.targetEpoch),
+          }
+        });
+        
+        // Set the bot time override to the new epoch
+        const botResult = await IxTime.setBotTimeOverride(input.targetEpoch);
+        
+        // Log the epoch sync
+        await ctx.db.calculationLog.create({
+          data: {
+            timestamp: new Date(),
+            ixTimeTimestamp: new Date(input.targetEpoch),
+            countriesUpdated: updateResult.count,
+            executionTimeMs: 0,
+            globalGrowthFactor: getDefaultEconomicConfig().globalGrowthFactor,
+            notes: `Epoch sync: ${yearsDifference.toFixed(1)} years adjustment. ${updateResult.count} countries updated. ${input.reason || 'Manual epoch sync'}.`
+          }
+        });
+        
+        return {
+          success: true,
+          message: `Epoch synchronized successfully. Adjusted ${yearsDifference.toFixed(1)} years.`,
+          previousEpoch: currentEpoch,
+          newEpoch: input.targetEpoch,
+          yearsDifference: yearsDifference,
+          countriesUpdated: updateResult.count,
+          botSyncSuccess: botResult.success,
+        };
+      } catch (error) {
+        console.error("Failed to sync epoch:", error);
+        throw new Error(error instanceof Error ? error.message : "Failed to sync epoch time");
       }
     }),
 
@@ -646,5 +843,67 @@ export const adminRouter = createTRPCRouter({
         console.error("Failed to clear bot overrides:", error);
         throw new Error("Failed to clear bot overrides");
       }
+    }),
+
+  // === ADMIN USER/COUNTRY MANAGEMENT ENDPOINTS ===
+
+  // List all users and their claimed countries
+  listUsersWithCountries: publicProcedure.query(async ({ ctx }) => {
+    // TODO: Replace with real admin check (e.g., ctx.user?.role === 'admin')
+    // if (!ctx.user || ctx.user.role !== 'admin') throw new Error('Unauthorized');
+    const users = await ctx.db.user.findMany({
+      include: { country: true },
+      orderBy: { createdAt: 'asc' },
+    });
+    return users.map(u => ({
+      id: u.id,
+      clerkUserId: u.clerkUserId,
+      country: u.country ? { id: u.country.id, name: u.country.name } : null,
+      createdAt: u.createdAt,
+      updatedAt: u.updatedAt,
+    }));
+  }),
+
+  // List all countries and their assigned users
+  listCountriesWithUsers: publicProcedure.query(async ({ ctx }) => {
+    // TODO: Replace with real admin check
+    const countries = await ctx.db.country.findMany({
+      include: { user: true },
+      orderBy: { name: 'asc' },
+    });
+    return countries.map(c => ({
+      id: c.id,
+      name: c.name,
+      user: c.user ? { id: c.user.id, clerkUserId: c.user.clerkUserId } : null,
+      createdAt: c.createdAt,
+      updatedAt: c.updatedAt,
+    }));
+  }),
+
+  // Assign a user to a country (admin override)
+  assignUserToCountry: publicProcedure
+    .input(z.object({ userId: z.string(), countryId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // TODO: Replace with real admin check
+      // Unlink any user currently assigned to this country
+      await ctx.db.user.updateMany({ where: { countryId: input.countryId }, data: { countryId: null } });
+      // Unlink this user from any country they currently claim
+      await ctx.db.user.updateMany({ where: { clerkUserId: input.userId }, data: { countryId: null } });
+      // Link user to country
+      await ctx.db.user.upsert({
+        where: { clerkUserId: input.userId },
+        update: { countryId: input.countryId },
+        create: { clerkUserId: input.userId, countryId: input.countryId },
+      });
+      return { success: true };
+    }),
+
+  // Unassign a user from a country (admin override)
+  unassignUserFromCountry: publicProcedure
+    .input(z.object({ userId: z.string(), countryId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // TODO: Replace with real admin check
+      await ctx.db.user.updateMany({ where: { clerkUserId: input.userId, countryId: input.countryId }, data: { countryId: null } });
+      return { success: true };
     }),
 });

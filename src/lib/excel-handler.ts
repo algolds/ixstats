@@ -33,91 +33,91 @@ const FIELD_MAPPINGS: ExcelFieldMapping[] = [
     dbField: 'country',
     required: true,
     type: 'string',
-    aliases: ['Nation Name', 'Nation', 'Country Name', 'name']
+    aliases: ['Nation Name', 'Nation', 'Country Name', 'name', 'Country (2028)', 'Country Name (2028)', 'Country*', 'Country (current)']
   },
   {
     excelHeader: 'Continent',
     dbField: 'continent',
     required: false,
     type: 'string',
-    aliases: []
+    aliases: ['Continent Name', 'Continent*']
   },
   {
     excelHeader: 'Region',
     dbField: 'region',
     required: false,
     type: 'string',
-    aliases: []
+    aliases: ['Region Name', 'Region*']
   },
   {
     excelHeader: 'Government Type',
     dbField: 'governmentType',
     required: false,
     type: 'string',
-    aliases: ['Govt Type', 'Government', 'Gov Type']
+    aliases: ['Govt Type', 'Government', 'Gov Type', 'Type of Government', 'GovernmentType']
   },
   {
     excelHeader: 'Religion',
     dbField: 'religion',
     required: false,
     type: 'string',
-    aliases: []
+    aliases: ['Primary Religion', 'Major Religion', 'Religions']
   },
   {
     excelHeader: 'Leader',
     dbField: 'leader',
     required: false,
     type: 'string',
-    aliases: []
+    aliases: ['Head of State', 'President', 'Prime Minister', 'Leader Name']
   },
   {
     excelHeader: 'Population',
     dbField: 'population',
     required: true,
     type: 'number',
-    aliases: ['Current Population', 'Pop', 'Population (current)']
+    aliases: ['Current Population', 'Pop', 'Population (current)', 'Population (2028)', 'Population*', 'Population (baseline)']
   },
   {
     excelHeader: 'GDP PC',
     dbField: 'gdpPerCapita',
     required: true,
     type: 'number',
-    aliases: ['GDP per Capita', 'GDPPC', 'GDPperCap', 'GDP/Capita', 'gdppercapita']
+    aliases: ['GDP per Capita', 'GDPPC', 'GDPperCap', 'GDP/Capita', 'gdppercapita', 'GDP Per Capita (USD)', 'GDP Per Capita*', 'GDP Per Capita (2028)']
   },
   {
     excelHeader: 'Area (km²)',
     dbField: 'landArea',
     required: false,
     type: 'number',
-    aliases: ['Area (SqKm)', 'Land Area (km²)', 'Area km²', 'Area', 'landarea']
+    aliases: ['Area (SqKm)', 'Land Area (km²)', 'Area km²', 'Area', 'landarea', 'Land Area', 'Area (km2)', 'Area (km^2)']
   },
   {
     excelHeader: 'Area (sq mi)',
     dbField: 'areaSqMi',
     required: false,
     type: 'number',
-    aliases: ['Area (SqMi)', 'Land Area (sq mi)', 'Area sq mi']
+    aliases: ['Area (SqMi)', 'Land Area (sq mi)', 'Area sq mi', 'Area (mi2)', 'Area (mi^2)']
   },
   {
     excelHeader: 'Max GDPPC Grow Rt',
     dbField: 'maxGdpGrowthRate',
     required: true,
     type: 'percentage',
-    aliases: ['Max Growth Rate', 'Max GDP Growth']
+    aliases: ['Max Growth Rate', 'Max GDP Growth', 'Max GDPPC Growth Rate', 'Max GDP Growth Rate', 'Max GDPPC Growth', 'Max GDP Growth (%)', 'Max GDPPC Grow Rate']
   },
   {
     excelHeader: 'Adj GDPPC Growth',
     dbField: 'adjustedGdpGrowth',
     required: true,
     type: 'percentage',
-    aliases: ['GDP Growth', 'Adjusted GDP Growth']
+    aliases: ['GDP Growth', 'Adjusted GDP Growth', 'Adj GDP Growth', 'Adj GDPPC Growth Rate', 'GDP Growth Rate', 'GDP Growth (%)', 'Adjusted GDP Growth Rate']
   },
   {
     excelHeader: 'Pop Growth Rate',
     dbField: 'populationGrowthRate',
     required: true,
     type: 'percentage',
-    aliases: ['Population Growth', 'popgrowthrate']
+    aliases: ['Population Growth', 'popgrowthrate', 'Population Growth Rate', 'Pop Growth', 'Population Growth (%)', 'Population Growth Rate (%)']
   },
   
   // Required fields that aren't in standard headers - will use defaults
@@ -304,33 +304,18 @@ export class IxStatsExcelHandler {
    */
   private findHeaderIndex(headers: string[], mapping: ExcelFieldMapping): number {
     const searchTerms = [mapping.excelHeader, ...mapping.aliases];
-    
     for (const term of searchTerms) {
-      const index = headers.findIndex(header => {
-        if (!header) return false; // handle undefined headers
-        const headerLower = header.toLowerCase().trim();
-        const termLower = term.toLowerCase().trim();
-        
-        // Exact match first
-        if (headerLower === termLower) return true;
-        
-        // Contains match
-        if (headerLower.includes(termLower) || termLower.includes(headerLower)) return true;
-        
-        // Match without spaces/special chars
-        const headerClean = headerLower.replace(/[\s\(\)²]/g, '');
-        const termClean = termLower.replace(/[\s\(\)²]/g, '');
-        
-        return headerClean === termClean || 
-               headerClean.includes(termClean) || 
-               termClean.includes(headerClean);
-      });
-      
-      if (index !== -1) {
-        return index;
+      const termLower = term.toLowerCase().replace(/[^a-z0-9]/g, '');
+      for (let i = 0; i < headers.length; i++) {
+        const header = headers[i];
+        if (!header) continue;
+        const headerLower = header.toLowerCase().replace(/[^a-z0-9]/g, '');
+        // Exact match or substring match
+        if (headerLower === termLower || headerLower.includes(termLower) || termLower.includes(headerLower)) {
+          return i;
+        }
       }
     }
-    
     return -1;
   }
 
@@ -364,6 +349,7 @@ export class IxStatsExcelHandler {
 
   /**
    * Parse a single data row into BaseCountryData
+   * Add more logging and user-facing error/warning messages for skipped rows and fields.
    */
   private parseRow(row: any[], fieldMap: Map<keyof BaseCountryData, number>): BaseCountryData | null {
     try {
@@ -371,14 +357,12 @@ export class IxStatsExcelHandler {
       const countryIndex = fieldMap.get('country');
       if (countryIndex === undefined || row[countryIndex] === undefined) {
         console.warn("Skipping row due to missing country name or mapping");
-        return null;
+        throw new Error('Missing country name');
       }
-      
       const countryName = this.parseString(row[countryIndex]);
       if (!countryName || countryName.toLowerCase().includes('#div/0!')) {
-        return null; // Skip invalid country names
+        throw new Error('Invalid country name');
       }
-
       // Parse all fields with safe fallbacks
       const countryData: BaseCountryData = {
         country: countryName,
@@ -387,18 +371,18 @@ export class IxStatsExcelHandler {
         governmentType: this.parseOptionalString(row[fieldMap.get('governmentType') ?? -1]),
         religion: this.parseOptionalString(row[fieldMap.get('religion') ?? -1]),
         leader: this.parseOptionalString(row[fieldMap.get('leader') ?? -1]),
-        population: this.parseNumber(row[fieldMap.get('population') ?? -1], 0), // Default 0, validation will catch
-        gdpPerCapita: this.parseNumber(row[fieldMap.get('gdpPerCapita') ?? -1], 0), // Default 0, validation will catch
+        population: this.parseNumber(row[fieldMap.get('population') ?? -1], 0),
+        gdpPerCapita: this.parseNumber(row[fieldMap.get('gdpPerCapita') ?? -1], 0),
         landArea: this.parseOptionalNumber(row[fieldMap.get('landArea') ?? -1]),
         areaSqMi: this.parseOptionalNumber(row[fieldMap.get('areaSqMi') ?? -1]),
-        maxGdpGrowthRate: this.parsePercentage(row[fieldMap.get('maxGdpGrowthRate') ?? -1], 0.05), // Default to 5% if required and missing
-        adjustedGdpGrowth: this.parsePercentage(row[fieldMap.get('adjustedGdpGrowth') ?? -1], 0.03), // Default to 3%
-        populationGrowthRate: this.parsePercentage(row[fieldMap.get('populationGrowthRate') ?? -1], 0.01), // Default to 1%
+        maxGdpGrowthRate: this.parsePercentage(row[fieldMap.get('maxGdpGrowthRate') ?? -1], 0.05),
+        adjustedGdpGrowth: this.parsePercentage(row[fieldMap.get('adjustedGdpGrowth') ?? -1], 0.03),
+        populationGrowthRate: this.parsePercentage(row[fieldMap.get('populationGrowthRate') ?? -1], 0.01),
         projected2040Population: this.parseOptionalNumber(row[fieldMap.get('projected2040Population') ?? -1]) ?? 0,
         projected2040Gdp: this.parseOptionalNumber(row[fieldMap.get('projected2040Gdp') ?? -1]) ?? 0,
         projected2040GdpPerCapita: this.parseOptionalNumber(row[fieldMap.get('projected2040GdpPerCapita') ?? -1]) ?? 0,
         actualGdpGrowth: this.parseOptionalNumber(row[fieldMap.get('actualGdpGrowth') ?? -1]) ?? 0,
-        localGrowthFactor: this.parseNumber(row[fieldMap.get('localGrowthFactor') ?? -1], 1.0), // Default to 1.0
+        localGrowthFactor: this.parseNumber(row[fieldMap.get('localGrowthFactor') ?? -1], 1.0),
       };
 
       // Calculate missing areaSqMi from landArea if needed
@@ -440,14 +424,21 @@ export class IxStatsExcelHandler {
       
       // Validate the parsed data
       if (!this.validateCountryData(countryData)) {
-        console.warn(`[Excel Handler] Invalid data for country: ${countryName}. Pop: ${countryData.population}, GDPPC: ${countryData.gdpPerCapita}`);
-        return null;
+        const msg = `[Excel Handler] Invalid data for country: ${countryName}. Pop: ${countryData.population}, GDPPC: ${countryData.gdpPerCapita}`;
+        console.warn(msg);
+        throw new Error(msg);
       }
 
       return countryData;
 
     } catch (error) {
-      throw new Error(`Failed to parse row: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // Always report why a row was skipped
+      if (error instanceof Error) {
+        console.warn(`[Excel Handler] Skipped row: ${error.message}`);
+      } else {
+        console.warn('[Excel Handler] Skipped row: Unknown error');
+      }
+      return null;
     }
   }
 
@@ -514,31 +505,23 @@ export class IxStatsExcelHandler {
 
   /**
    * Parse a percentage field (converts percentage strings to decimals)
+   * Accepts: '5', '5%', '0.05', '0.5%', '5.0', etc.
    */
   private parsePercentage(value: any, defaultValue: number): number {
     if (value === null || value === undefined) return defaultValue;
-    
     const asString = String(value).trim();
-    if (asString === '' || asString.toLowerCase() === '#div/0!') return defaultValue;
-    
-    const isPercentString = asString.includes('%');
-    const cleaned = asString.replace(/[,%$"]/g, '').trim();
-    
+    if (asString === '' || asString.toLowerCase() === '#div/0!' || asString.toLowerCase() === 'n/a') return defaultValue;
+    // Accept both percent and decimal
     let num: number;
-    if (isPercentString) {
-      num = parseFloat(cleaned.replace(/%/g, '')) / 100;
+    if (asString.includes('%')) {
+      num = parseFloat(asString.replace(/[^0-9.\-]/g, '')) / 100;
     } else {
-      num = parseFloat(cleaned);
-      // If the number is greater than 1 and doesn't have %, assume it's already a percentage that needs converting
-      // Exception: if it's a very small decimal already, it might be correct (e.g. 0.05 for 5%)
-      if (num > 1 && num <= 100) { // if 5 is given for 5%, convert
-          num = num / 100;
-      } else if (num > 100) { // if 500 is given for 5%, this is likely an error or different format.
-          // Potentially handle as 5.00 if it was meant to be 5%
-          // For now, assume direct value if not a typical percentage string.
+      num = parseFloat(asString.replace(/[^0-9.\-]/g, ''));
+      // If the number is > 1, assume it's a percent (5 = 5%)
+      if (num > 1 && num <= 100) {
+        num = num / 100;
       }
     }
-    
     return isNaN(num) ? defaultValue : num;
   }
 

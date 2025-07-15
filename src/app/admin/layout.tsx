@@ -15,6 +15,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   );
 }
 
+// Helper component for admin dashboard wrapping (not a layout export)
 export function AdminDashboardWrapper({ children }: { children: React.ReactNode }) {
   return (
     <AdminErrorBoundary>

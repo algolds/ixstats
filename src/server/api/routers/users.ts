@@ -13,7 +13,6 @@ import type {
 } from "~/types/ixstats";
 
 // Temporary storage for user-country mappings until we fix the User model
-const userCountryMappings = new Map<string, string>();
 
 export const usersRouter = createTRPCRouter({
   // Get user profile with linked country
@@ -25,10 +24,12 @@ export const usersRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        // Get country ID from temporary storage
-        const countryId = userCountryMappings.get(input.userId);
-        
-        if (!countryId) {
+        // Get user from DB
+        const user = await ctx.db.user.findUnique({
+          where: { clerkUserId: input.userId },
+          include: { country: true },
+        });
+        if (!user || !user.countryId) {
           return {
             userId: input.userId,
             countryId: null,
@@ -36,10 +37,9 @@ export const usersRouter = createTRPCRouter({
             hasCompletedSetup: false,
           };
         }
-
         // Get country details
         const country = await ctx.db.country.findUnique({
-          where: { id: countryId },
+          where: { id: user.countryId },
           include: {
             dmInputs: {
               where: { isActive: true },
@@ -47,7 +47,6 @@ export const usersRouter = createTRPCRouter({
             },
           },
         });
-
         return {
           userId: input.userId,
           countryId: country?.id || null,
@@ -70,18 +69,27 @@ export const usersRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
+        // Check if user already has a country
+        const user = await ctx.db.user.findUnique({ where: { clerkUserId: input.userId } });
+        if (user && user.countryId) {
+          throw new Error("User already has a linked country");
+        }
+        // Check if country is already claimed
+        const claimedUser = await ctx.db.user.findFirst({ where: { countryId: input.countryId } });
+        if (claimedUser) {
+          throw new Error("Country is already claimed by another user");
+        }
         // Check if country exists
-        const country = await ctx.db.country.findUnique({
-          where: { id: input.countryId },
-        });
-
+        const country = await ctx.db.country.findUnique({ where: { id: input.countryId } });
         if (!country) {
           throw new Error("Country not found");
         }
-
-        // Store the mapping in temporary storage
-        userCountryMappings.set(input.userId, input.countryId);
-
+        // Link user to country
+        await ctx.db.user.upsert({
+          where: { clerkUserId: input.userId },
+          update: { countryId: input.countryId },
+          create: { clerkUserId: input.userId, countryId: input.countryId },
+        });
         // Get the updated country with user info
         const updatedCountry = await ctx.db.country.findUnique({
           where: { id: input.countryId },
@@ -92,7 +100,6 @@ export const usersRouter = createTRPCRouter({
             },
           },
         });
-
         return {
           success: true,
           country: updatedCountry,
@@ -123,11 +130,10 @@ export const usersRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       try {
         // Check if user already has a country
-        const existingCountryId = userCountryMappings.get(input.userId);
-        if (existingCountryId) {
+        const user = await ctx.db.user.findUnique({ where: { clerkUserId: input.userId } });
+        if (user && user.countryId) {
           throw new Error("User already has a linked country");
         }
-
         // Create default country data
         const defaultData = {
           name: input.countryName,
@@ -140,11 +146,9 @@ export const usersRouter = createTRPCRouter({
           lastCalculated: new Date(IxTime.getCurrentIxTime()),
           localGrowthFactor: 1.0,
         };
-
         // Calculate initial stats using the calculator
         const config = getDefaultEconomicConfig();
         const calculator = new IxStatsCalculator(config, defaultData.baselineDate.getTime());
-        
         const baseCountryData: BaseCountryData = {
           country: defaultData.name,
           continent: defaultData.continent,
@@ -161,10 +165,8 @@ export const usersRouter = createTRPCRouter({
           projected2040GdpPerCapita: defaultData.baselineGdpPerCapita * 1.25, // 25% per capita growth projection
           localGrowthFactor: 1.0,
         };
-
         const initialStats = calculator.initializeCountryStats(baseCountryData);
         const currentStats = calculator.calculateTimeProgression(initialStats);
-
         // Create the country record
         const newCountry = await ctx.db.country.create({
           data: {
@@ -187,7 +189,12 @@ export const usersRouter = createTRPCRouter({
             },
           },
         });
-
+        // Link user to country
+        await ctx.db.user.upsert({
+          where: { clerkUserId: input.userId },
+          update: { countryId: newCountry.id },
+          create: { clerkUserId: input.userId, countryId: newCountry.id },
+        });
         // Create initial historical data point
         await ctx.db.historicalDataPoint.create({
           data: {
@@ -203,10 +210,6 @@ export const usersRouter = createTRPCRouter({
             gdpDensity: currentStats.newStats.gdpDensity,
           },
         });
-
-        // Store the mapping in temporary storage
-        userCountryMappings.set(input.userId, newCountry.id);
-
         return {
           success: true,
           country: newCountry,
@@ -228,15 +231,16 @@ export const usersRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        // Check if country exists and is linked to the user
-        const linkedCountryId = userCountryMappings.get(input.userId);
-        if (linkedCountryId !== input.countryId) {
+        // Check if user is linked to the country
+        const user = await ctx.db.user.findUnique({ where: { clerkUserId: input.userId } });
+        if (!user || user.countryId !== input.countryId) {
           throw new Error("Country not found or not linked to user");
         }
-
-        // Remove the mapping from temporary storage
-        userCountryMappings.delete(input.userId);
-
+        // Unlink user from country
+        await ctx.db.user.update({
+          where: { clerkUserId: input.userId },
+          data: { countryId: null },
+        });
         return {
           success: true,
           message: "Country unlinked successfully",
@@ -256,13 +260,12 @@ export const usersRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const countryId = userCountryMappings.get(input.userId);
-        if (!countryId) {
+        const user = await ctx.db.user.findUnique({ where: { clerkUserId: input.userId }, include: { country: true } });
+        if (!user || !user.countryId) {
           return null;
         }
-
         const country = await ctx.db.country.findUnique({
-          where: { id: countryId },
+          where: { id: user.countryId },
           include: {
             dmInputs: {
               where: { isActive: true },
@@ -274,7 +277,6 @@ export const usersRouter = createTRPCRouter({
             },
           },
         });
-
         return country;
       } catch (error) {
         console.error("Error fetching linked country:", error);

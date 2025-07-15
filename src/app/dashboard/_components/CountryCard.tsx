@@ -1,7 +1,7 @@
 // src/app/dashboard/_components/CountryCard.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   RefreshCw,
@@ -47,18 +47,35 @@ export function CountryCard({
   flagUrl: propFlagUrl,
   flagLoading: propFlagLoading,
 }: CountryCardProps) {
+  // Add a ref to cache the flag URL for this country
+  const cachedFlagUrl = useRef<string | null>(null);
   const [localFlagUrl, setLocalFlagUrl] = useState<string | null>(null);
   const [localFlagLoading, setLocalFlagLoading] = useState(true);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
   // Determine which flag data to use
-  const flagUrl = propFlagUrl !== undefined ? propFlagUrl : localFlagUrl;
-  const flagLoading = propFlagLoading !== undefined ? propFlagLoading : localFlagLoading;
+  let flagUrl = propFlagUrl !== undefined ? propFlagUrl : localFlagUrl;
+  let flagLoading = propFlagLoading !== undefined ? propFlagLoading : localFlagLoading;
 
-  // load flag from wiki (only if props are not provided)
+  // If we have a cached flag URL, always use it
+  if (cachedFlagUrl.current) {
+    flagUrl = cachedFlagUrl.current;
+    flagLoading = false;
+  }
+
+  // load flag from wiki (only if props are not provided and not already cached)
   useEffect(() => {
     if (propFlagUrl !== undefined || propFlagLoading !== undefined) {
+      // If propFlagUrl is provided, cache it
+      if (propFlagUrl && !cachedFlagUrl.current) {
+        cachedFlagUrl.current = propFlagUrl;
+      }
       return; // Use props, don't load individually
+    }
+
+    // If already cached for this country, do not reload
+    if (cachedFlagUrl.current) {
+      return;
     }
 
     let alive = true;
@@ -70,7 +87,14 @@ export function CountryCard({
       alive && setLocalFlagLoading(true);
       try {
         const url = await ixnayWiki.getFlagUrl(country.name);
-        alive && setLocalFlagUrl(typeof url === 'string' ? url : null);
+        if (alive) {
+          if (typeof url === 'string') {
+            setLocalFlagUrl(url);
+            cachedFlagUrl.current = url; // Cache the loaded flag
+          } else {
+            setLocalFlagUrl(null);
+          }
+        }
       } catch {
         alive && setLocalFlagUrl(null);
       } finally {
