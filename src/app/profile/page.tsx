@@ -411,11 +411,11 @@ export default function ProfilePage() {
                     )}
                     
                     <Link
-                      href="/countries"
+                      href="/explore"
                       className="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                     >
                       <Globe className="h-4 w-4 mr-2" />
-                      All Countries
+                      Explore Countries
                     </Link>
                     
                     <Link

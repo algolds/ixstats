@@ -31,7 +31,84 @@ import { AdminErrorBoundary } from "./_components/ErrorBoundary";
 import { SignedIn, SignedOut, SignInButton, useUser, UserButton } from "@clerk/nextjs";
 
 export default function AdminPage() {
+  // All hooks must be called before any early returns!
+  // (This is required by React. Do not move hooks inside conditionals or after returns.)
   const { user, isLoaded } = useUser();
+
+  // State management
+  const [config, setConfig] = useState({
+    globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR as number,
+    autoUpdate: true,
+    botSyncEnabled: true,
+    timeMultiplier: 4.0,
+  });
+  const [timeState, setTimeState] = useState({
+    customDate: new Date().toISOString().split('T')[0] || "",
+    customTime: "12:00",
+  });
+  // Import preview dialog state: keep previewData and showPreview until user closes dialog
+  const [importState, setImportState] = useState({
+    isUploading: false,
+    isAnalyzing: false,
+    analyzeError: null as string | null,
+    importError: null as string | null,
+    previewData: null as ImportAnalysis | null,
+    showPreview: false,
+    fileData: null as number[] | null, // Store fileData separately
+    fileName: null as string | null,   // Store fileName separately
+  });
+  const [actionState, setActionState] = useState({
+    calculationPending: false,
+    setTimePending: false,
+    savePending: false,
+    syncPending: false,
+    pausePending: false,
+    resumePending: false,
+    clearPending: false,
+    syncEpochPending: false,
+    lastUpdate: null as Date | null,
+  });
+
+  // TRPC Queries
+  const { 
+    data: systemStatus, 
+    isLoading: statusLoading, 
+    refetch: refetchStatus 
+  } = api.admin.getSystemStatus.useQuery(undefined, {
+    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchOnWindowFocus: false,
+  });
+  const { 
+    data: botStatus, 
+    isLoading: botStatusLoading,
+    refetch: refetchBotStatus 
+  } = api.admin.getBotStatus.useQuery(undefined, {
+    refetchInterval: 15000, // Refresh every 15 seconds
+    refetchOnWindowFocus: false,
+  });
+  const { 
+    data: configData, 
+    isLoading: configLoading,
+    refetch: refetchConfig 
+  } = api.admin.getConfig.useQuery();
+  const { 
+    data: calculationLogs, 
+    isLoading: logsLoading,
+    error: logsError 
+  } = api.admin.getCalculationLogs.useQuery({ limit: 10 });
+
+  // TRPC Mutations
+  const saveConfigMutation = api.admin.saveConfig.useMutation();
+  const forceCalculationMutation = api.countries.updateStats.useMutation();
+  const setCustomTimeMutation = api.admin.setCustomTime.useMutation();
+  const analyzeImportMutation = api.admin.analyzeImport.useMutation();
+  const importDataMutation = api.admin.importRosterData.useMutation();
+  const syncEpochMutation = api.admin.syncEpochWithData.useMutation();
+  // Bot control mutations
+  const syncBotMutation = api.admin.syncBot.useMutation();
+  const pauseBotMutation = api.admin.pauseBot.useMutation();
+  const resumeBotMutation = api.admin.resumeBot.useMutation();
+  const clearBotOverridesMutation = api.admin.clearBotOverrides.useMutation();
 
   // Show loading spinner while Clerk is loading
   if (!isLoaded) {
@@ -57,83 +134,6 @@ export default function AdminPage() {
       </div>
     );
   }
-
-  // State management
-  const [config, setConfig] = useState({
-    globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR as number,
-    autoUpdate: true,
-    botSyncEnabled: true,
-    timeMultiplier: 4.0,
-  });
-  
-  const [timeState, setTimeState] = useState({
-    customDate: new Date().toISOString().split('T')[0] || "",
-    customTime: "12:00",
-  });
-  
-  const [importState, setImportState] = useState({
-    isUploading: false,
-    isAnalyzing: false,
-    analyzeError: null as string | null,
-    importError: null as string | null,
-    previewData: null as ImportAnalysis | null,
-    showPreview: false,
-  });
-  
-  const [actionState, setActionState] = useState({
-    calculationPending: false,
-    setTimePending: false,
-    savePending: false,
-    syncPending: false,
-    pausePending: false,
-    resumePending: false,
-    clearPending: false,
-    lastUpdate: null as Date | null,
-  });
-
-  // TRPC Queries
-  const { 
-    data: systemStatus, 
-    isLoading: statusLoading, 
-    refetch: refetchStatus 
-  } = api.admin.getSystemStatus.useQuery(undefined, {
-    refetchInterval: 30000, // Refresh every 30 seconds
-    refetchOnWindowFocus: false,
-  });
-
-  const { 
-    data: botStatus, 
-    isLoading: botStatusLoading,
-    refetch: refetchBotStatus 
-  } = api.admin.getBotStatus.useQuery(undefined, {
-    refetchInterval: 15000, // Refresh every 15 seconds
-    refetchOnWindowFocus: false,
-  });
-
-  const { 
-    data: configData, 
-    isLoading: configLoading,
-    refetch: refetchConfig 
-  } = api.admin.getConfig.useQuery();
-
-  const { 
-    data: calculationLogs, 
-    isLoading: logsLoading,
-    error: logsError 
-  } = api.admin.getCalculationLogs.useQuery({ limit: 10 });
-
-  // TRPC Mutations
-  const saveConfigMutation = api.admin.saveConfig.useMutation();
-  const forceCalculationMutation = api.countries.updateStats.useMutation();
-  const setCustomTimeMutation = api.admin.setCustomTime.useMutation();
-  const analyzeImportMutation = api.admin.analyzeImport.useMutation();
-  const importDataMutation = api.admin.importRosterData.useMutation();
-
-  // Bot control mutations
-  const syncBotMutation = api.admin.syncBot.useMutation();
-  const pauseBotMutation = api.admin.pauseBot.useMutation();
-  const resumeBotMutation = api.admin.resumeBot.useMutation();
-  const clearBotOverridesMutation = api.admin.clearBotOverrides.useMutation();
 
   // Load initial config
   useEffect(() => {
@@ -175,7 +175,6 @@ export default function AdminPage() {
 
   const handleSetCustomTime = useCallback(async () => {
     if (!timeState.customDate || !timeState.customTime) return;
-    
     setActionState(prev => ({ ...prev, setTimePending: true }));
     try {
       const ixTime = IxTime.createGameTime(
@@ -185,7 +184,6 @@ export default function AdminPage() {
         parseInt(timeState.customTime.split(':')[0]!),
         parseInt(timeState.customTime.split(':')[1]!)
       );
-      
       await setCustomTimeMutation.mutateAsync({ 
         ixTime, 
         multiplier: config.timeMultiplier 
@@ -215,6 +213,22 @@ export default function AdminPage() {
       setActionState(prev => ({ ...prev, setTimePending: false }));
     }
   }, [setCustomTimeMutation, refetchStatus, refetchBotStatus]);
+
+  const handleSyncEpoch = useCallback(async (targetEpoch: number) => {
+    setActionState(prev => ({ ...prev, syncEpochPending: true }));
+    try {
+      await syncEpochMutation.mutateAsync({
+        targetEpoch,
+        reason: 'Manual epoch sync from admin panel'
+      });
+      await refetchStatus();
+      await refetchBotStatus();
+    } catch (error) {
+      console.error("Failed to sync epoch:", error);
+    } finally {
+      setActionState(prev => ({ ...prev, syncEpochPending: false }));
+    }
+  }, [syncEpochMutation, refetchStatus, refetchBotStatus]);
 
   // Bot control handlers
   const handleSyncBot = useCallback(async () => {
@@ -272,73 +286,88 @@ export default function AdminPage() {
       ...prev, 
       isAnalyzing: true, 
       analyzeError: null, 
-      importError: null 
+      importError: null,
+      fileData: null,
+      fileName: null
     }));
-
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      // Convert file to ArrayBuffer for the mutation
       const arrayBuffer = await file.arrayBuffer();
-      
+      const fileData = Array.from(new Uint8Array(arrayBuffer));
+      const fileName = file.name;
       const analysis = await analyzeImportMutation.mutateAsync({
-        fileData: Array.from(new Uint8Array(arrayBuffer)),
-        fileName: file.name,
+        fileData,
+        fileName,
       });
-      
       setImportState(prev => ({ 
         ...prev, 
         previewData: analysis, 
-        showPreview: true 
+        showPreview: true,
+        importError: null,
+        fileData, // Save fileData for later import
+        fileName, // Save fileName for later import
       }));
     } catch (error) {
       setImportState(prev => ({ 
         ...prev, 
-        analyzeError: error instanceof Error ? error.message : "Failed to analyze file" 
+        analyzeError: error instanceof Error ? error.message : "Failed to analyze file",
+        showPreview: false,
+        previewData: null,
+        fileData: null,
+        fileName: null
       }));
     } finally {
       setImportState(prev => ({ ...prev, isAnalyzing: false }));
     }
   }, [analyzeImportMutation]);
 
-  const handleImportConfirm = useCallback(async (replaceExisting: boolean) => {
-    if (!importState.previewData) return;
-    
+  // Only clear previewData/showPreview after user closes dialog, not immediately after import
+  const handleImportConfirm = useCallback(async (replaceExisting: boolean, syncEpoch?: boolean, targetEpoch?: number) => {
+    if (!importState.previewData || !importState.fileData || !importState.fileName) return;
     setImportState(prev => ({ ...prev, isUploading: true, importError: null }));
-    
     try {
+      // First, import the data
       await importDataMutation.mutateAsync({
-        analysisId: importState.previewData.totalCountries.toString(), // Use a simple ID
+        analysisId: importState.previewData.totalCountries.toString(),
         replaceExisting,
+        fileData: importState.fileData,
+        fileName: importState.fileName
       });
       
-      setImportState(prev => ({ 
-        ...prev, 
-        showPreview: false, 
-        previewData: null 
-      }));
+      // Then, if epoch sync is requested, sync the epoch time
+      if (syncEpoch && targetEpoch) {
+        await syncEpochMutation.mutateAsync({
+          targetEpoch,
+          reason: `Import sync: ${importState.fileName}`
+        });
+      }
       
-      // Refresh status and trigger recalculation
+      setImportState(prev => ({
+        ...prev,
+        isUploading: false,
+        // Do not clear previewData/showPreview here; let user close dialog
+      }));
+      // Optionally, you can show a success message here
       await refetchStatus();
       await handleForceCalculation();
     } catch (error) {
-      setImportState(prev => ({ 
-        ...prev, 
-        importError: error instanceof Error ? error.message : "Failed to import data" 
+      setImportState(prev => ({
+        ...prev,
+        importError: error instanceof Error ? error.message : "Failed to import data",
+        isUploading: false
       }));
-    } finally {
-      setImportState(prev => ({ ...prev, isUploading: false }));
     }
-  }, [importState.previewData, importDataMutation, refetchStatus, handleForceCalculation]);
+  }, [importState.previewData, importState.fileData, importState.fileName, importDataMutation, syncEpochMutation, refetchStatus, handleForceCalculation]);
 
+  // Only clear previewData/showPreview when user closes the dialog
   const handleImportClose = useCallback(() => {
     setImportState(prev => ({ 
       ...prev, 
       showPreview: false, 
       previewData: null,
       analyzeError: null,
-      importError: null 
+      importError: null,
+      fileData: null,
+      fileName: null
     }));
   }, []);
 
@@ -406,7 +435,9 @@ export default function AdminPage() {
                   }
                   onSetCustomTime={handleSetCustomTime}
                   onResetToRealTime={handleResetToRealTime}
+                  onSyncEpoch={handleSyncEpoch}
                   setTimePending={actionState.setTimePending}
+                  syncEpochPending={actionState.syncEpochPending}
                 />
 
                 {/* Economic Control */}

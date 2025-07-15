@@ -93,6 +93,10 @@ export function EconomicDataDisplay({
   const [economicData, setEconomicData] = useState<EconomyData | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [compactView, setCompactView] = useState(mode === "compact");
+  // Add validation state for fiscal/government
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [milestones, setMilestones] = useState<any[]>([]); // For improved milestone logic
 
   // Fetch country economic data
   const { 
@@ -129,6 +133,54 @@ export function EconomicDataDisplay({
                 averageWorkweekHours: countryData.averageWorkweekHours ?? 40,
                 minimumWage: countryData.minimumWage ?? 12,
                 averageAnnualIncome: countryData.averageAnnualIncome ?? 35000,
+                employmentBySector: {
+                  agriculture: 10,
+                  industry: 25,
+                  services: 65,
+                },
+                employmentByType: {
+                  fullTime: 80,
+                  partTime: 12,
+                  temporary: 5,
+                  selfEmployed: 10,
+                  informal: 8,
+                },
+                skillsAndProductivity: {
+                  averageEducationYears: 12,
+                  tertiaryEducationRate: 30,
+                  vocationalTrainingRate: 20,
+                  skillsGapIndex: 60,
+                  laborProductivityIndex: 100,
+                  productivityGrowthRate: 2.5,
+                },
+                demographicsAndConditions: {
+                  youthUnemploymentRate: 10,
+                  femaleParticipationRate: 60,
+                  genderPayGap: 15,
+                  unionizationRate: 20,
+                  workplaceSafetyIndex: 80,
+                  averageCommutingTime: 30,
+                },
+                regionalEmployment: {
+                  urban: {
+                    participationRate: 70,
+                    unemploymentRate: 4,
+                    averageIncome: 40000,
+                  },
+                  rural: {
+                    participationRate: 60,
+                    unemploymentRate: 7,
+                    averageIncome: 25000,
+                  },
+                },
+                socialProtection: {
+                  unemploymentBenefitCoverage: 60,
+                  pensionCoverage: 70,
+                  healthInsuranceCoverage: 80,
+                  paidSickLeaveDays: 8,
+                  paidVacationDays: 15,
+                  parentalLeaveWeeks: 12,
+                },
             },
             fiscal: {
                 taxRevenueGDPPercent: countryData.taxRevenueGDPPercent ?? 20,
@@ -202,13 +254,44 @@ export function EconomicDataDisplay({
            ...newData
         } as any // Cast the specific section to any
       };
+      // Milestone logic: check for major changes in fiscal/government
+      if (section === 'fiscal') {
+        const prevGdp = prev?.core?.nominalGDP || 0;
+        const newGdp = updatedData.core?.nominalGDP || 0;
+        if (prevGdp < 1_000_000_000_000 && newGdp >= 1_000_000_000_000) {
+          setMilestones(m => [...m, { type: 'milestone', message: 'GDP surpassed $1T', date: new Date() }]);
+        }
+        // Add more milestone checks as needed
+      }
+      if (section === 'fiscal' && newData.budgetDeficitSurplus !== undefined) {
+        if (newData.budgetDeficitSurplus > 0 && (prev?.fiscal?.budgetDeficitSurplus ?? 0) <= 0) {
+          setMilestones(m => [...m, { type: 'milestone', message: 'Budget turned to surplus', date: new Date() }]);
+        }
+        if (newData.budgetDeficitSurplus < 0 && (prev?.fiscal?.budgetDeficitSurplus ?? 0) >= 0) {
+          setMilestones(m => [...m, { type: 'milestone', message: 'Budget turned to deficit', date: new Date() }]);
+        }
+      }
+      setHasUnsavedChanges(true);
       return updatedData;
     });
-    setHasUnsavedChanges(true);
   };
 
   const handleSave = async () => {
+    setValidationErrors([]);
+    setSuccessMessage(null);
     if (!economicData) return; 
+    // Simple validation example for fiscal
+    const errors: string[] = [];
+    if (economicData.fiscal.taxRevenueGDPPercent < 0 || economicData.fiscal.taxRevenueGDPPercent > 100) {
+      errors.push('Tax revenue % must be between 0 and 100.');
+    }
+    if (economicData.fiscal.governmentBudgetGDPPercent < 0 || economicData.fiscal.governmentBudgetGDPPercent > 100) {
+      errors.push('Budget % must be between 0 and 100.');
+    }
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
     const flattenedEconomicData = {
         ...economicData.core,
         ...economicData.labor,
@@ -223,7 +306,9 @@ export function EconomicDataDisplay({
         countryId,
         economicData: flattenedEconomicData
       });
+      setSuccessMessage('Economic data saved successfully.');
     } catch (error) {
+      setValidationErrors(['Failed to save economic data.']);
       console.error("Failed to save economic data:", error);
     }
   };
@@ -438,6 +523,16 @@ export function EconomicDataDisplay({
               ))}
             </TabsList>
 
+            {validationErrors.length > 0 && (
+              <div className="mb-4">
+                {validationErrors.map((err, i) => (
+                  <div key={i} className="text-red-600 text-sm">{err}</div>
+                ))}
+              </div>
+            )}
+            {successMessage && (
+              <div className="mb-4 text-green-600 text-sm">{successMessage}</div>
+            )}
             {economicSections.map((section) => {
               if (section.disabled) return null;
 
@@ -461,15 +556,14 @@ export function EconomicDataDisplay({
                     />
                   )}
                   {section.id === 'fiscal' && economicData.fiscal && economicData.core?.nominalGDP !== undefined && economicData.core?.totalPopulation !== undefined && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Fiscal System</CardTitle>
-                        <CardDescription>Tax revenue, budget, and debt information</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-muted-foreground">Fiscal system component will be implemented.</p>
-                      </CardContent>
-                    </Card>
+                    <FiscalSystemComponent
+                      fiscalData={economicData.fiscal}
+                      nominalGDP={economicData.core.nominalGDP}
+                      totalPopulation={economicData.core.totalPopulation}
+                      onFiscalDataChange={isEditMode ? (data) => handleDataChange('fiscal', data) : undefined}
+                      isReadOnly={!isEditMode}
+                      showAnalytics={true}
+                    />
                   )}
                   {section.id === 'income' && economicData.income && economicData.core?.totalPopulation !== undefined && economicData.core?.gdpPerCapita !== undefined && (
                     <Card>
@@ -483,15 +577,13 @@ export function EconomicDataDisplay({
                     </Card>
                   )}
                   {section.id === 'spending' && economicData.spending && economicData.core?.nominalGDP !== undefined && economicData.core?.totalPopulation !== undefined && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Government Spending</CardTitle>
-                        <CardDescription>Budget allocation and spending priorities</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-muted-foreground">Government spending component will be implemented.</p>
-                      </CardContent>
-                    </Card>
+                    <GovernmentSpending
+                      spendingData={economicData.spending}
+                      nominalGDP={economicData.core.nominalGDP}
+                      totalPopulation={economicData.core.totalPopulation}
+                      onSpendingDataChangeAction={(data) => { if (isEditMode) { handleDataChange('spending', data); } }}
+                      isReadOnly={!isEditMode}
+                    />
                   )}
                   {section.id === 'demographics' && economicData.demographics && economicData.core?.totalPopulation !== undefined && (
                     <Card>

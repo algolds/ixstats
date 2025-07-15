@@ -95,25 +95,21 @@ export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: pr
 
   return (
     <div
-      className="card group hover:scale-[1.02] transition-all duration-300 
-                 flex flex-col h-full cursor-pointer"
+      className="card group hover:scale-[1.01] transition-all duration-200 flex flex-col h-full cursor-pointer min-h-0"
       onClick={goToDetail}
     >
-      <div className="p-6 flex-grow">
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="w-12 h-9 relative flex-shrink-0">
+      <div className="p-3 flex-grow min-h-0">
+        <div className="flex justify-between items-start mb-2 gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className="w-8 h-6 relative flex-shrink-0">
               {flagLoading && (
-                <div className="w-12 h-9 bg-[var(--color-bg-tertiary)]
-                                rounded border border-[var(--color-border-primary)]
-                                animate-pulse" />
+                <div className="w-8 h-6 bg-[var(--color-bg-tertiary)] rounded border border-[var(--color-border-primary)] animate-pulse" />
               )}
               {!flagLoading && flagUrl && (
                 <img
                   src={flagUrl}
                   alt={`Flag of ${country.name}`}
-                  className="w-12 h-9 object-cover rounded
-                             border border-[var(--color-border-primary)]"
+                  className="w-8 h-6 object-cover rounded border border-[var(--color-border-primary)]"
                   onError={() => {
                     if (propFlagUrl === undefined) {
                       setLocalFlagState('error');
@@ -122,24 +118,31 @@ export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: pr
                 />
               )}
               {!flagLoading && !flagUrl && (
-                <div className="w-12 h-9 bg-muted rounded border-border 
-                               flex items-center justify-center">
-                  <FlagIcon className="h-5 w-5 text-muted-foreground" />
+                <div className="w-8 h-6 bg-muted rounded border-border flex items-center justify-center">
+                  <FlagIcon className="h-4 w-4 text-muted-foreground" />
                 </div>
               )}
             </div>
-
-            <h3
-              className="text-xl font-semibold text-[var(--color-text-primary)]
-                         group-hover:text-[var(--color-brand-primary)]
-                         transition-colors truncate"
-              title={country.name}
-            >
-              {country.name}
-            </h3>
+            <div className="min-w-0">
+              <h3
+                className="text-base font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-brand-primary)] transition-colors truncate"
+                title={country.name}
+              >
+                {country.name}
+              </h3>
+              {(country.continent || country.region) && (
+                <div className="flex items-center text-[10px] text-[var(--color-text-muted)] mt-0.5 truncate">
+                  <LocateFixed className="h-3 w-3 mr-1 text-[var(--color-brand-secondary)]" />
+                  <span className="truncate">
+                    {country.continent || '—'}
+                    {country.continent && country.region ? ' – ' : ''}
+                    {country.region || '—'}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
-
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
             <Button
               variant="outline"
               size="icon"
@@ -148,69 +151,40 @@ export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: pr
                 window.open(wikiUrl, '_blank', 'noopener');
               }}
               aria-label={`View ${country.name} on IxWiki`}
+              className="h-7 w-7"
             >
-              <ExternalLink className="h-4 w-4 text-muted-foreground" />
+              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
             </Button>
             <ArrowRight
-              className="h-5 w-5 text-muted-foreground
-                         group-hover:text-[var(--color-brand-primary)]
-                         transition-all group-hover:translate-x-1"
+              className="h-4 w-4 text-muted-foreground group-hover:text-[var(--color-brand-primary)] transition-all group-hover:translate-x-0.5"
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-          <div className="flex flex-col items-center text-center">
-            <Users className="h-4 w-4 mb-1 text-[var(--color-info)]" />
-            <span className="text-xs text-[var(--color-text-muted)]">Pop</span>
-            <span className="font-medium text-[var(--color-text-secondary)]">
-              {formatPopulation(country.currentPopulation)}
-            </span>
+        {/* Compact stats row */}
+        <div className="flex items-center justify-between gap-2 text-xs mb-2">
+          <div className="flex items-center gap-1">
+            <Users className="h-3 w-3 text-[var(--color-info)]" />
+            <span>{formatPopulation(country.currentPopulation)}</span>
           </div>
-
-          <div className="flex flex-col items-center text-center">
-            <TrendingUp className="h-4 w-4 mb-1 text-[var(--color-success)]" />
-            <span className="text-xs text-[var(--color-text-muted)]">GDP p.c.</span>
-            <span className="font-medium text-[var(--color-text-secondary)]">
-              {formatCurrency(country.currentGdpPerCapita)}
-            </span>
+          <div className="flex items-center gap-1">
+            <TrendingUp className="h-3 w-3 text-[var(--color-success)]" />
+            <span>{formatCurrency(country.currentGdpPerCapita)}</span>
           </div>
-
-          <div className="flex flex-col items-center text-center">
-            <GlobeIcon className="h-4 w-4 mb-1 text-[var(--color-chart-1)]" />
-            <span className="text-xs text-[var(--color-text-muted)]">Total GDP</span>
-            <span className="font-medium text-[var(--color-text-secondary)]">
-              {formatCurrency(country.currentTotalGdp)}
-            </span>
+          <div className="flex items-center gap-1">
+            <GlobeIcon className="h-3 w-3 text-[var(--color-chart-1)]" />
+            <span>{formatCurrency(country.currentTotalGdp)}</span>
           </div>
-
-          <div className="flex flex-col items-center text-center">
-            <Scaling className="h-4 w-4 mb-1 text-[var(--color-warning)]" />
-            <span className="text-xs text-[var(--color-text-muted)]">Density</span>
-            <span className="font-medium text-[var(--color-text-secondary)]">
-              {country.populationDensity != null
-                ? `${country.populationDensity.toFixed(1)}/km²`
-                : 'N/A'}
-            </span>
+          <div className="flex items-center gap-1">
+            <Scaling className="h-3 w-3 text-[var(--color-warning)]" />
+            <span>{country.populationDensity != null ? `${country.populationDensity.toFixed(1)}/km²` : 'N/A'}</span>
           </div>
         </div>
-
-        {(country.continent || country.region) && (
-          <div className="flex items-center justify-center text-xs
-                          text-[var(--color-text-muted)] mb-4">
-            <LocateFixed className="h-3 w-3 mr-1 text-[var(--color-brand-secondary)]" />
-            <span className="truncate">
-              {country.continent || '—'}
-              {country.continent && country.region ? ' – ' : ''}
-              {country.region || '—'}
-            </span>
-          </div>
-        )}
       </div>
 
-      <CardFooter className="px-6 pb-6 pt-0 flex justify-between">
-        <Badge className="text-xs">{country.economicTier ?? '—'}</Badge>
-        <Badge variant="outline" className="text-xs">
+      <CardFooter className="px-3 pb-3 pt-0 flex justify-between items-center gap-2 min-h-0">
+        <Badge className="text-[10px] px-2 py-0.5">{country.economicTier ?? '—'}</Badge>
+        <Badge variant="outline" className="text-[10px] px-2 py-0.5">
           {country.populationTier ?? '—'}
         </Badge>
       </CardFooter>

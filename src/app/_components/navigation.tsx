@@ -55,8 +55,8 @@ export function Navigation() {
       requiresAuth: true,
     },
     {
-      name: "Countries",
-      href: "/countries",
+      name: "Explore",
+      href: "/explore",
       icon: Globe,
       requiresAuth: false,
     },

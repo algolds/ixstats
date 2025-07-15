@@ -120,7 +120,7 @@ model Country {
   incomeDistribution IncomeDistribution?
   governmentBudget  GovernmentBudget?
   demographics      Demographics?
-  users             User[]
+  user   User?
 
   @@index([name])
   @@index([economicTier])
@@ -344,7 +344,7 @@ model CalculationLog {
 model User {
   id           String   @id @default(cuid())
   clerkUserId  String   @unique // Clerk user ID
-  countryId    String?  // Foreign key to Country
+  countryId    String?  @unique // Foreign key to Country, enforce one-to-one
   country      Country? @relation(fields: [countryId], references: [id], onDelete: SetNull)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

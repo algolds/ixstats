@@ -13,8 +13,10 @@ import {
   ChevronUp,
   Info,
   Loader2, // Added Loader2
+  Clock,
 } from "lucide-react";
 import type { BaseCountryData } from "~/types/ixstats";
+import { IxTime } from "~/lib/ixtime";
 
 interface ImportChange {
   type: 'new' | 'update';
@@ -31,7 +33,7 @@ interface ImportChange {
 interface ImportPreviewDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (replaceExisting: boolean) => void;
+  onConfirm: (replaceExisting: boolean, syncEpoch?: boolean, targetEpoch?: number) => void;
   changes: ImportChange[];
   isLoading: boolean;
 }
@@ -87,6 +89,8 @@ export function ImportPreviewDialog({
 }: ImportPreviewDialogProps) {
   const [confirmReplace, setConfirmReplace] = useState(false);
   const [expandedCountry, setExpandedCountry] = useState<string | null>(null);
+  const [syncEpoch, setSyncEpoch] = useState(false);
+  const [targetEpoch, setTargetEpoch] = useState<number>(IxTime.getInGameEpoch());
 
   if (!isOpen) return null;
 
@@ -258,6 +262,64 @@ export function ImportPreviewDialog({
 
         {/* Footer */}
         <div className="border-t border-gray-200 dark:border-gray-700 p-6 bg-gray-50 dark:bg-gray-900">
+          {/* Epoch Sync Section */}
+          <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-700">
+            <div className="flex items-start space-x-3">
+              <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-2">
+                  Epoch Time Synchronization
+                </h4>
+                <p className="text-xs text-amber-700 dark:text-amber-300 mb-3">
+                  Sync the game epoch with your imported data to ensure accurate tracking. 
+                  This aligns the baseline calculation date with your roster data.
+                </p>
+                
+                <label className="flex items-center cursor-pointer mb-3">
+                  <input
+                    type="checkbox"
+                    checked={syncEpoch}
+                    onChange={(e) => setSyncEpoch(e.target.checked)}
+                    className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 dark:border-gray-600 rounded"
+                  />
+                  <span className="ml-2 text-sm text-amber-800 dark:text-amber-200 font-medium">
+                    Sync epoch time with imported data
+                  </span>
+                </label>
+                
+                {syncEpoch && (
+                  <div className="ml-6 space-y-2">
+                    <div className="text-xs text-amber-700 dark:text-amber-300">
+                      <p><strong>Current Epoch:</strong> {IxTime.formatIxTime(IxTime.getInGameEpoch())}</p>
+                      <p><strong>Target Epoch:</strong> {IxTime.formatIxTime(targetEpoch)}</p>
+                      <p><strong>Time Difference:</strong> {IxTime.getYearsElapsed(IxTime.getInGameEpoch(), targetEpoch).toFixed(1)} years</p>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <label className="text-xs text-amber-700 dark:text-amber-300">
+                        Target Year:
+                      </label>
+                      <input
+                        type="number"
+                        value={new Date(targetEpoch).getFullYear()}
+                        onChange={(e) => {
+                          const year = parseInt(e.target.value);
+                          if (!isNaN(year)) {
+                            const newEpoch = IxTime.createGameTime(year, 1, 1);
+                            setTargetEpoch(newEpoch);
+                          }
+                        }}
+                        className="w-20 px-2 py-1 text-xs border border-amber-300 dark:border-amber-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                        min="2020"
+                        max="2100"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
           {updatedCountries.length > 0 && (
             <div className="mb-4">
               <label className="flex items-center cursor-pointer">
@@ -283,7 +345,11 @@ export function ImportPreviewDialog({
               Cancel
             </button>
             <button
-              onClick={() => onConfirm(updatedCountries.length > 0 ? confirmReplace : false)}
+              onClick={() => onConfirm(
+                updatedCountries.length > 0 ? confirmReplace : false,
+                syncEpoch,
+                syncEpoch ? targetEpoch : undefined
+              )}
               disabled={isLoading || (updatedCountries.length > 0 && !confirmReplace) || changes.length === 0}
               className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center focus-ring"
             >
