@@ -1,3 +1,4 @@
+"use client";
 import { use } from "react";
 import { api } from "~/trpc/react";
 import { EconomicModelingEngine } from "~/app/countries/_components/economy";

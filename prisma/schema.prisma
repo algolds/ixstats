@@ -121,6 +121,7 @@ model Country {
   governmentBudget  GovernmentBudget?
   demographics      Demographics?
   user   User?
+  economicModel    EconomicModel?
 
   @@index([name])
   @@index([economicTier])
@@ -351,4 +352,64 @@ model User {
 
   @@index([clerkUserId])
   @@index([countryId])
+}
+
+// === ADVANCED MODELING MODULE ===
+model EconomicModel {
+  id              String           @id @default(cuid())
+  countryId       String           @unique
+  country         Country          @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  // Model parameters
+  baseYear        Int
+  projectionYears Int
+  gdpGrowthRate   Float
+  inflationRate   Float
+  unemploymentRate Float
+  interestRate    Float
+  exchangeRate    Float
+  populationGrowthRate Float
+  investmentRate  Float
+  fiscalBalance   Float
+  tradeBalance    Float
+
+  // Relations
+  sectoralOutputs SectoralOutput[]
+  policyEffects   PolicyEffect[]
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model SectoralOutput {
+  id              String           @id @default(cuid())
+  economicModelId String
+  economicModel   EconomicModel    @relation(fields: [economicModelId], references: [id], onDelete: Cascade)
+
+  year            Int
+  agriculture     Float
+  industry        Float
+  services        Float
+  government      Float
+  totalGDP        Float
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model PolicyEffect {
+  id                        String        @id @default(cuid())
+  economicModelId           String
+  economicModel             EconomicModel @relation(fields: [economicModelId], references: [id], onDelete: Cascade)
+
+  name                      String
+  description               String
+  gdpEffectPercentage       Float
+  inflationEffectPercentage Float
+  employmentEffectPercentage Float
+  yearImplemented           Int
+  durationYears             Int
+
+  createdAt                 DateTime      @default(now())
+  updatedAt                 DateTime      @updatedAt
 }

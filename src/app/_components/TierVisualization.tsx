@@ -158,7 +158,9 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
 
     // Calculate percentages
     Object.keys(distribution).forEach(tier => {
-      distribution[tier].percentage = (distribution[tier].count / countries.length) * 100;
+      if (distribution[tier]) {
+        distribution[tier].percentage = (distribution[tier].count / countries.length) * 100;
+      }
     });
 
     return distribution;

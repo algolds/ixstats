@@ -27,7 +27,7 @@ import {
 import { IncomeWealthDistribution, Demographics, FiscalSystemComponent, GovernmentSpending } from "~/app/countries/_components/economy";
 import { IxTimeCalendar } from "~/app/countries/_components/charts/IxTimeCalendar";
 import { Skeleton } from "~/components/ui/skeleton";
-import { AlertTriangle, Info } from "lucide-react";
+import { AlertTriangle, Info, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatNumber, formatGrowthRateFromDecimal } from "~/lib/chart-utils";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import React, { useEffect, useState } from "react";
@@ -44,6 +44,9 @@ import {
   type CountryProfile 
 } from "~/lib/economic-data-templates";
 import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "~/components/ui/accordion";
+import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 
 // Helper function to compute economic health
 function computeHealth(g: number, i: number) {
@@ -128,6 +131,41 @@ export default function CountryDetailPage({ params }: CountryDetailPageProps) {
   const { data: systemStatus, isLoading: systemStatusLoading, error: systemStatusError } = api.admin.getSystemStatus.useQuery();
   const currentIxTime = typeof systemStatus?.ixTime?.currentIxTime === 'number' ? systemStatus.ixTime.currentIxTime : undefined;
 
+  // Get current user and their linked countryId
+  const { user, isLoaded } = useUser();
+  const { data: userProfile } = api.users.getProfile.useQuery(
+    { userId: user?.id || '' },
+    { enabled: !!user?.id }
+  );
+  const isOwnCountry = userProfile?.countryId && country?.id && userProfile.countryId === country.id;
+
+  // Horizontal collapse state for infobox
+  const [infoboxCollapsed, setInfoboxCollapsed] = React.useState(false);
+
+  // Responsive effect: collapsed by default on mobile, expanded on desktop
+  React.useEffect(() => {
+    const handleResize = () => {
+      if (typeof window !== 'undefined') {
+        setInfoboxCollapsed(window.innerWidth < 1024); // <lg breakpoint
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const router = useRouter();
+
+  // Track if component is mounted to avoid SSR/CSR mismatch
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => { setMounted(true); }, []);
+
+  // Accordion default value: only set after mount to avoid hydration mismatch
+  const [accordionValue, setAccordionValue] = React.useState<string | undefined>(undefined);
+  React.useEffect(() => {
+    setAccordionValue(window.innerWidth < 1024 ? undefined : 'infobox');
+  }, []);
+
   if (isLoading || systemStatusLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -179,34 +217,42 @@ export default function CountryDetailPage({ params }: CountryDetailPageProps) {
             </BreadcrumbList>
           </Breadcrumb>
 
-          <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold">{country.name}</h1>
-              <p className="text-muted-foreground">
-                Detailed information and economic statistics for {country.name}.
-              </p>
-            </div>
-            {currentIxTime && (
-              <Card className="p-0">
-                <CardHeader className="p-2">
-                  <CardTitle className="text-sm">Current IxTime</CardTitle>
-                </CardHeader>
-                <CardContent className="p-2">
-                  <div className="text-lg font-semibold">
-                    {systemStatus?.ixTime?.formattedIxTime ?? 'Loading...'}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </header>
-
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1">
-              <CountryInfobox countryName={country.name} />
+            {/* Horizontally and vertically collapsible infobox sidebar */}
+            <div
+              className={`transition-all duration-300 relative ${infoboxCollapsed ? 'w-14 min-w-[3.5rem] max-w-[3.5rem] overflow-x-hidden' : 'w-full min-w-[260px] max-w-lg'} lg:col-span-1`}
+              style={{ minHeight: '100%' }}
+            >
+              {/* Horizontal collapse/expand button - moved to left edge */}
+              <button
+                className="absolute top-2 left-2 z-10 bg-muted rounded-full p-1 hover:bg-accent transition-colors"
+                onClick={() => setInfoboxCollapsed((c) => !c)}
+                aria-label={infoboxCollapsed ? 'Expand infobox' : 'Collapse infobox'}
+              >
+                {infoboxCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+              </button>
+              {/* Vertically collapsible infobox, only show trigger when horizontally collapsed */}
+              <div className={`transition-all duration-300 ${infoboxCollapsed ? 'flex flex-col items-center justify-start' : ''}`}>
+                {/* Only render Accordion after mount to avoid hydration mismatch */}
+                {mounted && (
+                  <Accordion type="single" collapsible defaultValue={accordionValue}>
+                    <AccordionItem value="infobox">
+                      <AccordionTrigger className={`text-lg font-semibold ${infoboxCollapsed ? 'justify-center px-0' : ''}`}></AccordionTrigger>
+                      {/* Only show details if not horizontally collapsed */}
+                      {!infoboxCollapsed && (
+                        <AccordionContent>
+                          <CountryInfobox countryName={country.name} />
+                        </AccordionContent>
+                      )}
+                    </AccordionItem>
+                  </Accordion>
+                )}
+              </div>
             </div>
             <div className="lg:col-span-2">
               <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7">
+                {/* TabsList: main navbar for country sections */}
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-8">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="economy">Economy</TabsTrigger>
                   <TabsTrigger value="labor">Labor</TabsTrigger>
@@ -214,17 +260,19 @@ export default function CountryDetailPage({ params }: CountryDetailPageProps) {
                   <TabsTrigger value="income">Income</TabsTrigger>
                   <TabsTrigger value="demographics">Demographics</TabsTrigger>
                   <TabsTrigger value="historical-data">History</TabsTrigger>
+                  {/* Advanced Modeling as a real tab, only for own country */}
+                  {isOwnCountry && (
+                    <TabsTrigger
+                      value="modeling"
+                      onClick={e => {
+                        e.preventDefault();
+                        router.push(`/countries/${country.id}/modeling`);
+                      }}
+                    >
+                      Advanced Modeling
+                    </TabsTrigger>
+                  )}
                 </TabsList>
-
-                {/* Modeling button as a card in the main content area */}
-                <div className="my-4">
-                  <a
-                    href={`/countries/${country.id}/modeling`}
-                    className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors"
-                  >
-                    Advanced Modeling
-                  </a>
-                </div>
 
                 <TabsContent value="overview" className="mt-4">
                   <div className="space-y-6">
@@ -364,11 +412,13 @@ export default function CountryDetailPage({ params }: CountryDetailPageProps) {
   );
 }
 
+// In HistoryMilestonesList, only render on client (after mount) to avoid hydration mismatch
 function HistoryMilestonesList({ historicalData }: { historicalData?: any[] }) {
   const [formattedHistory, setFormattedHistory] = useState<any[]>([]);
-
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
-    if (typeof window !== 'undefined' && historicalData) {
+    if (mounted && historicalData) {
       setFormattedHistory(
         historicalData.slice(-20).reverse().map((point) => ({
           ...point,
@@ -376,13 +426,8 @@ function HistoryMilestonesList({ historicalData }: { historicalData?: any[] }) {
         }))
       );
     }
-  }, [historicalData]);
-
-  if (typeof window === 'undefined') {
-    // On server, render nothing to avoid hydration mismatch
-    return null;
-  }
-
+  }, [historicalData, mounted]);
+  if (!mounted) return null;
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold mb-2">Recent Updates & Milestones</h3>

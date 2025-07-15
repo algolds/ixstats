@@ -180,10 +180,10 @@ async function handleMediaWikiRequest(request: NextRequest, searchParams: URLSea
     try {
       const wikitext = await ixnayWiki.getPageWikitext(pageName);
       
-      if (!wikitext) {
+      if (!wikitext || typeof wikitext !== 'string') {
         return NextResponse.json(
           {
-            error: 'Failed to get page wikitext',
+            error: typeof wikitext === 'object' && wikitext.error ? wikitext.error : 'Failed to get page wikitext',
             page: pageName,
             timestamp: new Date().toISOString()
           },

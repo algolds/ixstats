@@ -93,22 +93,38 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
         await fetch(`/api/mediawiki?country=Caphiria`, { method: 'DELETE' });
       }
       
-      const [flag, data] = await Promise.all([
-        ixnayWiki.getFlagUrl(countryName),
-        ixnayWiki.getCountryInfobox(countryName)
-      ]);
-
-      // Ensure flag URL uses the correct MediaWiki domain
-      if (typeof flag === 'string') {
-        let processedFlagUrl = flag;
-        if (processedFlagUrl.includes('localhost') || processedFlagUrl.includes('127.0.0.1')) {
-          processedFlagUrl = processedFlagUrl.replace(/https?:\/\/[^\/]+/, 'https://ixwiki.com');
+      // Load infobox data first, then flag separately to avoid overwhelming the API
+      const data = await ixnayWiki.getCountryInfobox(countryName);
+      
+      if (!data) {
+        console.warn(`[CountryInfobox] No infobox data found for: ${countryName}`);
+        setLoadingState(prev => ({ 
+          ...prev, 
+          isLoading: false, 
+          error: `No infobox data found for ${countryName}. The country page may not exist or may not have an infobox template.`,
+          retryCount: prev.retryCount + 1
+        }));
+        return;
+      }
+      
+      setInfobox(data);
+      
+      // Load flag separately to avoid concurrent request issues
+      try {
+        const flag = await ixnayWiki.getFlagUrl(countryName);
+        if (typeof flag === 'string') {
+          let processedFlagUrl = flag;
+          if (processedFlagUrl.includes('localhost') || processedFlagUrl.includes('127.0.0.1')) {
+            processedFlagUrl = processedFlagUrl.replace(/https?:\/\/[^\/]+/, 'https://ixwiki.com');
+          }
+          setFlagUrl(processedFlagUrl);
+        } else {
+          setFlagUrl(null);
         }
-        setFlagUrl(processedFlagUrl);
-      } else {
+      } catch (flagError) {
+        console.warn(`[CountryInfobox] Failed to load flag for ${countryName}:`, flagError);
         setFlagUrl(null);
       }
-      setInfobox(data);
       
       // If this country has parsed HTML, default to HTML tab
       if (data?.renderedHtml) {
@@ -116,48 +132,58 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
         console.log(`[CountryInfobox] Received HTML content for ${countryName}, defaulting to HTML tab`);
       }
       
-      // Load image URLs if we have image references
+      // Load image URLs if we have image references (do this asynchronously)
       if (data) {
+        // Load coat of arms
         if (data.coat_of_arms || data.image_coat) {
           const coatName = data.coat_of_arms || data.image_coat;
           if (coatName) {
-            const coatUrl = await ixnayWiki.getFileUrl(coatName);
-            // Ensure we use the correct MediaWiki domain
-            if (typeof coatUrl === 'string') {
-              let processedCoatUrl = coatUrl;
-              if (processedCoatUrl.includes('localhost') || processedCoatUrl.includes('127.0.0.1')) {
-                processedCoatUrl = processedCoatUrl.replace(/https?:\/\/[^\/]+/, 'https://ixwiki.com');
+            try {
+              const coatUrl = await ixnayWiki.getFileUrl(coatName);
+              if (typeof coatUrl === 'string') {
+                let processedCoatUrl = coatUrl;
+                if (processedCoatUrl.includes('localhost') || processedCoatUrl.includes('127.0.0.1')) {
+                  processedCoatUrl = processedCoatUrl.replace(/https?:\/\/[^\/]+/, 'https://ixwiki.com');
+                }
+                setCoatOfArmsUrl(processedCoatUrl);
+              } else {
+                setCoatOfArmsUrl(null);
               }
-              setCoatOfArmsUrl(processedCoatUrl);
-            } else {
+            } catch (coatError) {
+              console.warn(`[CountryInfobox] Failed to load coat of arms for ${countryName}:`, coatError);
               setCoatOfArmsUrl(null);
             }
           }
         }
         
+        // Load map image
         if (data.locator_map || data.image_map) {
           const mapName = data.locator_map || data.image_map;
           if (mapName) {
-            // Handle both simple filenames and complex descriptions from switcher templates
-            let actualFileName = mapName;
-            
-            // If the mapName looks like it came from a switcher template, try to extract filename
-            // Pattern: Look for file extensions in the string
-            const fileMatch = mapName.match(/([^\/\s]+\.(?:png|jpg|jpeg|gif|svg|webp))/i);
-            if (fileMatch && fileMatch[1]) {
-              actualFileName = fileMatch[1];
-            }
-            
-            console.log(`[CountryInfobox] Processing map image: "${mapName}" -> "${actualFileName}"`);
-            const mapUrl = await ixnayWiki.getFileUrl(actualFileName);
-            // Ensure we use the correct MediaWiki domain
-            if (typeof mapUrl === 'string') {
-              let processedMapUrl = mapUrl;
-              if (processedMapUrl.includes('localhost') || processedMapUrl.includes('127.0.0.1')) {
-                processedMapUrl = processedMapUrl.replace(/https?:\/\/[^\/]+/, 'https://ixwiki.com');
+            try {
+              // Handle both simple filenames and complex descriptions from switcher templates
+              let actualFileName = mapName;
+              
+              // If the mapName looks like it came from a switcher template, try to extract filename
+              // Pattern: Look for file extensions in the string
+              const fileMatch = mapName.match(/([^\/\s]+\.(?:png|jpg|jpeg|gif|svg|webp))/i);
+              if (fileMatch && fileMatch[1]) {
+                actualFileName = fileMatch[1];
               }
-              setMapImageUrl(processedMapUrl);
-            } else {
+              
+              console.log(`[CountryInfobox] Processing map image: "${mapName}" -> "${actualFileName}"`);
+              const mapUrl = await ixnayWiki.getFileUrl(actualFileName);
+              if (typeof mapUrl === 'string') {
+                let processedMapUrl = mapUrl;
+                if (processedMapUrl.includes('localhost') || processedMapUrl.includes('127.0.0.1')) {
+                  processedMapUrl = processedMapUrl.replace(/https?:\/\/[^\/]+/, 'https://ixwiki.com');
+                }
+                setMapImageUrl(processedMapUrl);
+              } else {
+                setMapImageUrl(null);
+              }
+            } catch (mapError) {
+              console.warn(`[CountryInfobox] Failed to load map image for ${countryName}:`, mapError);
               setMapImageUrl(null);
             }
           }
@@ -166,19 +192,9 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
       
       setLoadingState(prev => ({ ...prev, isLoading: false, error: null }));
 
-      if (data) {
-        console.log(`[CountryInfobox] Successfully loaded infobox for: ${countryName}`);
-        console.log(`[CountryInfobox] Infobox has ${Object.keys(data).length} properties`);
-      } else {
-        console.log(`[CountryInfobox] No infobox data found for: ${countryName}`);
-        
-        // For special countries, show more specific error
-        if (countryName.toLowerCase() === 'caphiria' && !isRetry) {
-          console.log(`[CountryInfobox] Automatically retrying for Caphiria with special handling`);
-          loadInfoboxData(true);
-          return;
-        }
-      }
+      console.log(`[CountryInfobox] Successfully loaded infobox for: ${countryName}`);
+      console.log(`[CountryInfobox] Infobox has ${Object.keys(data).length} properties`);
+      
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load country information';
       console.error(`[CountryInfobox] Error loading data for ${countryName}:`, error);
@@ -197,7 +213,17 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
 
   const handleRetry = () => {
     if (loadingState.retryCount < MAX_RETRIES) {
-      loadInfoboxData(true);
+      console.log(`[CountryInfobox] Retrying load for ${countryName} (attempt ${loadingState.retryCount + 1}/${MAX_RETRIES})`);
+      // Add a small delay before retrying to avoid overwhelming the server
+      setTimeout(() => {
+        loadInfoboxData(true);
+      }, 1000 * (loadingState.retryCount + 1)); // Exponential backoff: 1s, 2s, 3s
+    } else {
+      console.warn(`[CountryInfobox] Max retries reached for ${countryName}`);
+      setLoadingState(prev => ({
+        ...prev,
+        error: `Failed to load infobox after ${MAX_RETRIES} attempts. Please try refreshing the page or contact support if the problem persists.`
+      }));
     }
   };
 

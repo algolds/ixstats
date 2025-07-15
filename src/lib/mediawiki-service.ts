@@ -144,7 +144,7 @@ interface CacheEntry<T> {
 }
 
 // --- GLOBAL CONCURRENCY LIMITER AND NOT FOUND TRACKING ---
-const MAX_CONCURRENT_REQUESTS = 4; // Reduced from 8 to 4 to avoid rate limiting
+const MAX_CONCURRENT_REQUESTS = 6; // Increased from 4 to 6 to handle infobox loading better
 let currentRequests = 0;
 const requestQueue: Array<() => void> = [];
 const NOT_FOUND_SET = new Set<string>(); // Tracks not found keys for session
@@ -406,35 +406,48 @@ export class IxnayWikiService {
             formatversion: '2'
           });
           const apiUrl = `/api/mediawiki?${params.toString()}`;
+          console.log(`[MediaWiki] Fetching wikitext for: ${pageName}`);
+          
+          // Create an AbortController for timeout
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), MEDIAWIKI_CONFIG.timeout);
+          
           const response = await fetch(apiUrl, {
             headers: { 'Accept': 'application/json' },
-            cache: 'no-store'
+            cache: 'no-store',
+            signal: controller.signal
           });
+          
+          clearTimeout(timeoutId);
+          
           if (!response.ok) {
-            this.setCacheValue(this.WIKITEXT_CACHE, normName, null, ERROR_TTL);
-            NOT_FOUND_SET.add(normName);
+            console.error(`[MediaWiki] HTTP Error for ${pageName}: ${response.status} ${response.statusText}`);
+            // Don't cache HTTP errors immediately - let them retry
             return { error: `[MediaWiki] HTTP Error: ${response.status} ${response.statusText}` };
           }
           const data = await response.json();
           if (data.error) {
-            this.setCacheValue(this.WIKITEXT_CACHE, normName, null, ERROR_TTL);
-            NOT_FOUND_SET.add(normName);
+            console.error(`[MediaWiki] API Error for ${pageName}:`, data.error);
+            // Don't cache API errors immediately - let them retry
             return { error: `[MediaWiki] API Error: ${JSON.stringify(data.error)}` };
           }
           const pages = data.query?.pages;
           if (!pages || !Array.isArray(pages) || pages.length === 0) {
+            console.warn(`[MediaWiki] No pages found for ${pageName}`);
             this.setCacheValue(this.WIKITEXT_CACHE, normName, null, ERROR_TTL);
             NOT_FOUND_SET.add(normName);
             return { error: `[MediaWiki] No pages found for ${pageName}` };
           }
           const page = pages[0];
           if (!page || page.missing) {
+            console.warn(`[MediaWiki] Page ${pageName} not found or missing`);
             this.setCacheValue(this.WIKITEXT_CACHE, normName, null, ERROR_TTL);
             NOT_FOUND_SET.add(normName);
             return { error: `[MediaWiki] Page ${pageName} not found or missing` };
           }
           const revisions = page.revisions;
           if (!revisions || !Array.isArray(revisions) || revisions.length === 0) {
+            console.warn(`[MediaWiki] No revisions found for ${pageName}`);
             this.setCacheValue(this.WIKITEXT_CACHE, normName, null, ERROR_TTL);
             NOT_FOUND_SET.add(normName);
             return { error: `[MediaWiki] No revisions found for ${pageName}` };
@@ -442,16 +455,24 @@ export class IxnayWikiService {
           const revision = revisions[0];
           const wikitext = revision?.content;
           if (!wikitext) {
+            console.warn(`[MediaWiki] No content found in revision for ${pageName}`);
             this.setCacheValue(this.WIKITEXT_CACHE, normName, null, ERROR_TTL);
             NOT_FOUND_SET.add(normName);
             return { error: `[MediaWiki] No content found in revision for ${pageName}` };
           }
+          console.log(`[MediaWiki] Successfully fetched wikitext for ${pageName} (${wikitext.length} chars)`);
           this.setCacheValue(this.WIKITEXT_CACHE, normName, wikitext, this.WIKITEXT_TTL);
           return wikitext;
         });
       } catch (error) {
-        this.setCacheValue(this.WIKITEXT_CACHE, normName, null, ERROR_TTL);
-        NOT_FOUND_SET.add(normName);
+        console.error(`[MediaWiki] Exception getting wikitext for ${pageName}:`, error);
+        // Don't cache exceptions immediately - let them retry
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            return { error: `[MediaWiki] Request timeout for ${pageName}` };
+          }
+          return { error: `[MediaWiki] Exception: ${error.message}` };
+        }
         return { error: `[MediaWiki] Exception: ${error}` };
       }
     });
@@ -893,75 +914,76 @@ export class IxnayWikiService {
 
     return this.getOrCreateRequest(`infobox_${countryName}`, async () => {
       try {
-      console.log(`[MediaWiki] Getting complete infobox for: ${countryName}`);
-      
-      // Step 1: Get raw wikitext for the page
-      const wikitext = await this.getPageWikitext(countryName);
-      if (!wikitext || typeof wikitext === 'object') {
-        console.warn(`[MediaWiki] No wikitext found for ${countryName}`);
-        this.setCacheValue(this.INFOBOX_CACHE, countryName, null, this.INFOBOX_TTL);
-        return null;
-      }
+        console.log(`[MediaWiki] Getting complete infobox for: ${countryName}`);
+        
+        // Step 1: Get raw wikitext for the page
+        const wikitext = await this.getPageWikitext(countryName);
+        if (!wikitext || typeof wikitext === 'object') {
+          console.warn(`[MediaWiki] No wikitext found for ${countryName}:`, wikitext);
+          this.setCacheValue(this.INFOBOX_CACHE, countryName, null, this.INFOBOX_TTL);
+          return null;
+        }
 
-      // Step 2: Extract the infobox template
-      const infoboxTemplate = this.extractInfoboxTemplate(wikitext);
-      if (!infoboxTemplate) {
-        console.warn(`[MediaWiki] No infobox template found for ${countryName}`);
-        this.setCacheValue(this.INFOBOX_CACHE, countryName, null, this.INFOBOX_TTL);
-        return null;
-      }
+        // Step 2: Extract the infobox template
+        const infoboxTemplate = this.extractInfoboxTemplate(wikitext);
+        if (!infoboxTemplate) {
+          console.warn(`[MediaWiki] No infobox template found for ${countryName}`);
+          this.setCacheValue(this.INFOBOX_CACHE, countryName, null, this.INFOBOX_TTL);
+          return null;
+        }
 
-      // Step 3: Parse template parameters with enhanced logic
-      const templateData = await this.parseInfoboxParameters(infoboxTemplate);
+        // Step 3: Parse template parameters with enhanced logic
+        const templateData = await this.parseInfoboxParameters(infoboxTemplate);
 
-      // Step 4: Skip HTML rendering for now to avoid API errors
-      // const renderedHtml = await this.parseWikitextToHtml(infoboxTemplate, countryName);
-      const renderedHtml = null;
+        // Step 4: Skip HTML rendering for now to avoid API errors
+        // const renderedHtml = await this.parseWikitextToHtml(infoboxTemplate, countryName);
+        const renderedHtml = null;
 
-      // Step 5: Create the infobox object
-      const infobox: CountryInfoboxWithDynamicProps = {
-        name: countryName,
-        rawWikitext: infoboxTemplate,
-        parsedTemplateData: templateData,
-        renderedHtml: renderedHtml || undefined,
-      };
+        // Step 5: Create the infobox object
+        const infobox: CountryInfoboxWithDynamicProps = {
+          name: countryName,
+          rawWikitext: infoboxTemplate,
+          parsedTemplateData: templateData,
+          renderedHtml: renderedHtml || undefined,
+        };
 
-      // Step 6: Map template parameters to infobox properties (including dynamic ones)
-      this.mapTemplateDataToInfobox(templateData, infobox);
+        // Step 6: Map template parameters to infobox properties (including dynamic ones)
+        this.mapTemplateDataToInfobox(templateData, infobox);
 
-      // Step 7: Process any special template values (like {{Switcher}}, templates, and wikilinks)
-      await this.processSpecialTemplates(infobox);
+        // Step 7: Process any special template values (like {{Switcher}}, templates, and wikilinks)
+        await this.processSpecialTemplates(infobox);
 
-      console.log(`[MediaWiki] Successfully created complete infobox for ${countryName}`);
-      console.log(`[MediaWiki] Infobox has ${Object.keys(infobox).length} total properties`);
-      
-      // Debug: Check for any remaining unprocessed templates or wikilinks
-      const hasUnprocessedTemplates = Object.entries(infobox).some(([key, value]) => 
-        typeof value === 'string' && value.includes('{{') && 
-        key !== 'rawWikitext' && key !== 'renderedHtml'
-      );
-      const hasUnprocessedWikilinks = Object.entries(infobox).some(([key, value]) => 
-        typeof value === 'string' && value.includes('[[') && 
-        key !== 'rawWikitext' && key !== 'renderedHtml'
-      );
-      
-      if (hasUnprocessedTemplates) {
-        console.warn(`[MediaWiki] ${countryName} still has unprocessed templates in some fields`);
-      }
-      if (hasUnprocessedWikilinks) {
-        console.warn(`[MediaWiki] ${countryName} still has unprocessed wikilinks in some fields`);
-      }
-      
-      if (!hasUnprocessedTemplates && !hasUnprocessedWikilinks) {
-        console.log(`[MediaWiki] ✓ ${countryName} - All templates and wikilinks processed successfully`);
-      }
-      
-      this.setCacheValue(this.INFOBOX_CACHE, countryName, infobox, this.INFOBOX_TTL);
-      return infobox;
+        console.log(`[MediaWiki] Successfully created complete infobox for ${countryName}`);
+        console.log(`[MediaWiki] Infobox has ${Object.keys(infobox).length} total properties`);
+        
+        // Debug: Check for any remaining unprocessed templates or wikilinks
+        const hasUnprocessedTemplates = Object.entries(infobox).some(([key, value]) => 
+          typeof value === 'string' && value.includes('{{') && 
+          key !== 'rawWikitext' && key !== 'renderedHtml'
+        );
+        const hasUnprocessedWikilinks = Object.entries(infobox).some(([key, value]) => 
+          typeof value === 'string' && value.includes('[[') && 
+          key !== 'rawWikitext' && key !== 'renderedHtml'
+        );
+        
+        if (hasUnprocessedTemplates) {
+          console.warn(`[MediaWiki] ${countryName} still has unprocessed templates in some fields`);
+        }
+        if (hasUnprocessedWikilinks) {
+          console.warn(`[MediaWiki] ${countryName} still has unprocessed wikilinks in some fields`);
+        }
+        
+        if (!hasUnprocessedTemplates && !hasUnprocessedWikilinks) {
+          console.log(`[MediaWiki] ✓ ${countryName} - All templates and wikilinks processed successfully`);
+        }
+        
+        this.setCacheValue(this.INFOBOX_CACHE, countryName, infobox, this.INFOBOX_TTL);
+        return infobox;
 
       } catch (error) {
         console.error(`[MediaWiki] Error getting complete infobox for ${countryName}:`, error);
-        this.setCacheValue(this.INFOBOX_CACHE, countryName, null, this.INFOBOX_TTL);
+        // Don't cache errors for infobox - let it retry
+        // this.setCacheValue(this.INFOBOX_CACHE, countryName, null, this.INFOBOX_TTL);
         return null;
       }
     });

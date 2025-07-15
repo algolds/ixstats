@@ -124,8 +124,11 @@ interface PolicyData {
   economicModelId: string;
 }
 
+// Use a fixed default year for SSR safety
+const DEFAULT_YEAR = 2020;
+
 const initialSectorData: SectorData = {
-  year: new Date().getFullYear(),
+  year: DEFAULT_YEAR,
   agriculture: 0,
   industry: 0,
   services: 0,
@@ -140,7 +143,7 @@ const initialPolicyData: PolicyData = {
   gdpEffectPercentage: 0,
   inflationEffectPercentage: 0,
   employmentEffectPercentage: 0,
-  yearImplemented: new Date().getFullYear(),
+  yearImplemented: DEFAULT_YEAR,
   durationYears: 1,
   economicModelId: "",
 };
@@ -237,7 +240,7 @@ export function EconomicModelingEngine({
 
   // Model parameters state
   const [parameters, setParameters] = useState<ModelParameters>({
-    baseYear: country.economicModel?.baseYear ?? new Date().getFullYear(),
+    baseYear: country.economicModel?.baseYear ?? DEFAULT_YEAR,
     projectionYears: country.economicModel?.projectionYears ?? 5,
     gdpGrowthRate: country.economicModel?.gdpGrowthRate ?? 3.0,
     inflationRate: country.economicModel?.inflationRate ?? 2.0,
@@ -260,6 +263,17 @@ export function EconomicModelingEngine({
     (country.economicModel?.policyEffects as PolicyData[]) ?? [],
   );
 
+  // On client, update year to real current year if needed
+  React.useEffect(() => {
+    const realYear = new Date().getFullYear();
+    setParameters(prev => ({
+      ...prev,
+      baseYear: country.economicModel?.baseYear ?? realYear,
+    }));
+    setSectoralOutputs(outputs => outputs.map((s, i) => i === 0 ? { ...s, year: realYear } : s));
+    setPolicyEffects(effects => effects.map((p, i) => i === 0 ? { ...p, yearImplemented: realYear } : p));
+  }, []);
+
   const updateEconomicModelMutation = api.countries.updateEconomicData.useMutation({
     onSuccess: (data) => {
       toast.success("Economic model updated successfully!");
@@ -273,33 +287,6 @@ export function EconomicModelingEngine({
       setIsLoading(false);
     },
   });
-
-  // Update parameters when country data changes
-  useEffect(() => {
-    if (country.economicModel) {
-      setParameters({
-        baseYear: country.economicModel.baseYear ?? new Date().getFullYear(),
-        projectionYears: country.economicModel.projectionYears ?? 5,
-        gdpGrowthRate: country.economicModel.gdpGrowthRate ?? 3.0,
-        inflationRate: country.economicModel.inflationRate ?? 2.0,
-        unemploymentRate: country.economicModel.unemploymentRate ?? 5.0,
-        interestRate: country.economicModel.interestRate ?? 3.0,
-        exchangeRate: country.economicModel.exchangeRate ?? 1.0,
-        populationGrowthRate: country.economicModel.populationGrowthRate ?? 1.0,
-        investmentRate: country.economicModel.investmentRate ?? 20.0,
-        fiscalBalance: country.economicModel.fiscalBalance ?? 0.0,
-        tradeBalance: country.economicModel.tradeBalance ?? 0.0,
-      });
-      setSectoralOutputs(
-        (country.economicModel.sectoralOutputs as SectorData[]) ?? [
-          { ...initialSectorData, year: parameters.baseYear },
-        ],
-      );
-      setPolicyEffects(
-        (country.economicModel.policyEffects as PolicyData[]) ?? [],
-      );
-    }
-  }, [country.economicModel, parameters.baseYear]);
 
   // Parameter handlers
   const handleParameterChange = <K extends keyof ModelParameters>(
@@ -368,12 +355,14 @@ export function EconomicModelingEngine({
     setPolicyEffects(updatedPolicies);
   };
 
+  // Use a deterministic counter for temp IDs
+  const tempIdRef = React.useRef(0);
   const addPolicyEffect = () => {
     setPolicyEffects([
       ...policyEffects,
       {
         ...initialPolicyData,
-        id: `temp-${Date.now()}`,
+        id: `temp-${tempIdRef.current++}`,
         economicModelId: country.economicModel?.id ?? "",
       },
     ]);
@@ -454,6 +443,7 @@ export function EconomicModelingEngine({
     const population = country.population ?? 0;
     const totalGDP = sectoralOutputs[0]?.totalGDP ?? 0;
     
+    // --- ADVANCED MODELING: Send full model to backend ---
     const modelData = {
       countryId: country.id,
       economicData: {
@@ -489,8 +479,39 @@ export function EconomicModelingEngine({
         lifeExpectancy: 75,
         urbanPopulationPercent: 60,
         ruralPopulationPercent: 40,
-        literacyRate: 90
-      }
+        literacyRate: 90,
+        // --- ADVANCED MODELING ---
+        economicModel: {
+          baseYear: parameters.baseYear,
+          projectionYears: parameters.projectionYears,
+          gdpGrowthRate: parameters.gdpGrowthRate,
+          inflationRate: parameters.inflationRate,
+          unemploymentRate: parameters.unemploymentRate,
+          interestRate: parameters.interestRate,
+          exchangeRate: parameters.exchangeRate,
+          populationGrowthRate: parameters.populationGrowthRate,
+          investmentRate: parameters.investmentRate,
+          fiscalBalance: parameters.fiscalBalance,
+          tradeBalance: parameters.tradeBalance,
+          sectoralOutputs: sectoralOutputs.map(s => ({
+            year: s.year,
+            agriculture: s.agriculture,
+            industry: s.industry,
+            services: s.services,
+            government: s.government,
+            totalGDP: s.totalGDP,
+          })),
+          policyEffects: policyEffects.map(p => ({
+            name: p.name,
+            description: p.description,
+            gdpEffectPercentage: p.gdpEffectPercentage,
+            inflationEffectPercentage: p.inflationEffectPercentage,
+            employmentEffectPercentage: p.employmentEffectPercentage,
+            yearImplemented: p.yearImplemented,
+            durationYears: p.durationYears,
+          })),
+        },
+      },
     };
     
     updateEconomicModelMutation.mutate(modelData);
