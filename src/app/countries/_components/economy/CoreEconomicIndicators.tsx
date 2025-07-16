@@ -8,13 +8,7 @@ import {
   BarChart3,
   Info,
 } from "lucide-react";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "~/components/ui/card";
+import { GlassCard } from "~/components/ui/enhanced-card";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { Label } from "~/components/ui/label";
@@ -150,33 +144,31 @@ export function CoreEconomicIndicators({
               const diff = ((user - ref) / ref) * 100;
               const positive = diff >= 0;
               return (
-                <Card key={label}>
-                  <CardHeader className="flex justify-between items-center pb-2">
-                    <CardTitle className="text-sm font-medium">
+                <GlassCard key={label} variant="glass">
+                  <div className="flex justify-between items-center pb-2">
+                    <h4 className="text-sm font-medium">
                       {label}
-                    </CardTitle>
+                    </h4>
                     <Icon className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-1">
-                      <div className="text-2xl font-bold">{fmt(user)}</div>
-                      {label === "GDP per Capita" && (
-                        <Badge className={tierStyle.className}>{tier}</Badge>
-                      )}
-                      <div className="text-xs text-muted-foreground">
-                        Ref: {fmt(ref)}
-                      </div>
-                      <div
-                        className={`text-xs font-medium ${
-                          positive ? "text-green-600" : "text-red-600"
-                        }`}
-                      >
-                        {positive ? "+" : ""}
-                        {diff.toFixed(1)}%
-                      </div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-2xl font-bold">{fmt(user)}</div>
+                    {label === "GDP per Capita" && (
+                      <Badge className={tierStyle.className}>{tier}</Badge>
+                    )}
+                    <div className="text-xs text-muted-foreground">
+                      Ref: {fmt(ref)}
                     </div>
-                  </CardContent>
-                </Card>
+                    <div
+                      className={`text-xs font-medium ${
+                        positive ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      {positive ? "+" : ""}
+                      {diff.toFixed(1)}%
+                    </div>
+                  </div>
+                </GlassCard>
               );
             })}
           </div>
@@ -187,14 +179,14 @@ export function CoreEconomicIndicators({
       <TabsContent value="detailed" className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Population & Output */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-primary" />
+          <GlassCard variant="glass">
+            <div className="flex items-center gap-2 pb-2">
+              <Users className="h-4 w-4 text-primary" />
+              <h4 className="text-sm font-medium">
                 Population & Output
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              </h4>
+            </div>
+            <div className="space-y-4">
               <div>
                 <Label htmlFor="pop">Total Population</Label>
                 {isReadOnly ? (
@@ -252,18 +244,18 @@ export function CoreEconomicIndicators({
                   />
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </GlassCard>
 
           {/* Growth & Stability */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-primary" />
+          <GlassCard variant="glass">
+            <div className="flex items-center gap-2 pb-2">
+              <BarChart3 className="h-4 w-4 text-primary" />
+              <h4 className="text-sm font-medium">
                 Growth & Stability
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              </h4>
+            </div>
+            <div className="space-y-4">
               <div>
                 <Label htmlFor="growth">Real GDP Growth</Label>
                 {isReadOnly ? (
@@ -343,8 +335,8 @@ export function CoreEconomicIndicators({
                   />
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </GlassCard>
         </div>
       </TabsContent>
 

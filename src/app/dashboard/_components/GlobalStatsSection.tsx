@@ -1,6 +1,7 @@
 // src/app/dashboard/_components/GlobalStatsSection.tsx
 "use client";
 
+import React from "react";
 import { useMemo } from "react";
 import { Users, Globe, TrendingUp, MapPin, Scaling, Layers, Calendar } from "lucide-react";
 import type { GlobalEconomicSnapshot } from "~/types/ixstats";
@@ -11,17 +12,41 @@ import {
   CardTitle,
   CardContent,
   CardFooter,
-} from "~/components/ui/card";
-import { Skeleton } from "~/components/ui/skeleton";
-import { Separator } from "~/components/ui/separator";
+} from "../../../components/ui/card";
+import { Skeleton } from "../../../components/ui/skeleton";
+import { Separator } from "../../../components/ui/separator";
 import { 
   formatPopulation, 
   formatCurrency, 
   formatPercentage 
 } from "~/lib/chart-utils";
+import { GlassCard } from "../../../components/ui/enhanced-card";
+import { Badge } from "../../../components/ui/badge";
+import { TierVisualization } from "../../_components/TierVisualization";
+import type { Country } from "~/types/ixstats";
+import { useBulkFlagCache } from "~/hooks/useBulkFlagCache";
 
 interface GlobalStatsSectionProps {
   globalStats: GlobalEconomicSnapshot;
+  isLoading?: boolean;
+}
+
+interface ExecutiveSummaryProps {
+  globalStats: GlobalEconomicSnapshot;
+  topCountries: Array<{
+    id: string;
+    name: string;
+    flagUrl?: string;
+    currentTotalGdp: number;
+    economicTier: string;
+  }>;
+  economicTrends: Array<{
+    label: string;
+    value: number;
+    suffix?: string;
+    trend: 'up' | 'down' | 'stable';
+    description: string;
+  }>;
   isLoading?: boolean;
 }
 
@@ -52,171 +77,168 @@ const safeFormatDensity = (num: number | null | undefined, unit: string): string
   return `${formattedNum}${unit}`;
 };
 
-export function GlobalStatsSection({
+class ExecutiveSummaryErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) {
+      return <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 text-center">An error occurred in Executive Summary.</div>;
+    }
+    return this.props.children;
+  }
+}
+
+function ExecutiveSummaryImpl({
   globalStats,
+  topCountries = [],
+  economicTrends = [],
   isLoading = false,
-}: GlobalStatsSectionProps) {
-  // Process and format data with useMemo - using safe formatting functions
-  const formattedData = useMemo(() => {
-    // Add safety checks for all numeric values
-    const safePopulation = globalStats.totalPopulation || 0;
-    const safeGdp = globalStats.totalGdp || 0;
-    const safeAvgGdpPc = globalStats.averageGdpPerCapita || 0;
-    const safeCountryCount = globalStats.countryCount || 0;
-    const safeAvgPopDensity = globalStats.averagePopulationDensity;
-    const safeAvgGdpDensity = globalStats.averageGdpDensity;
-    const safeGrowthRate = globalStats.globalGrowthRate || 0;
-
-    return {
-      totalPopulation: safeFormatPopulation(safePopulation),
-      totalGdp: safeFormatCurrency(safeGdp),
-      averageGdpPerCapita: safeFormatCurrency(safeAvgGdpPc),
-      countryCount: safeCountryCount.toLocaleString(),
-      globalGrowthRate: `${((safeGrowthRate - 1) * 100).toFixed(2)}%`,
-      averagePopulationDensity: safeFormatDensity(safeAvgPopDensity, "/km²"),
-      averageGdpDensity: safeFormatDensity(safeAvgGdpDensity, "/km² GDP"), // Keep the unit string for logic inside safeFormatDensity
-      lastUpdated: globalStats.timestamp 
-        ? IxTime.formatIxTime(globalStats.timestamp, true)
-        : IxTime.formatIxTime(IxTime.getCurrentIxTime(), true)
-    };
-  }, [globalStats]);
-
-  // Current game year info
-  const timeInfo = useMemo(() => {
-    return {
-      currentGameYear: IxTime.getCurrentGameYear(),
-      yearsSinceGameStart: IxTime.getYearsSinceGameEpoch(),
-    };
-  }, []);
-
+}: ExecutiveSummaryProps) {
   if (isLoading) {
     return (
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold text-foreground mb-6">Global Statistics</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className="h-6 w-24 mb-2" />
-                <Skeleton className="h-4 w-32" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-1/2" />
-              </CardContent>
-            </Card>
+        <h2 className="text-2xl font-semibold text-foreground mb-6">Executive Summary</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <GlassCard key={i} className="h-64" />
           ))}
         </div>
       </div>
     );
   }
-
-  const primaryStats = [
-    {
-      icon: Users,
-      label: "Total Population",
-      value: formattedData.totalPopulation,
-      color: "text-blue-500",
-      description: "Combined population across all nations",
-    },
-    {
-      icon: Globe,
-      label: "Total GDP",
-      value: formattedData.totalGdp,
-      color: "text-green-500",
-      description: "Combined economic output",
-    },
-    {
-      icon: TrendingUp,
-      label: "Avg GDP p.c.",
-      value: formattedData.averageGdpPerCapita,
-      color: "text-purple-500",
-      description: "Average GDP per capita",
-    },
-    {
-      icon: MapPin,
-      label: "Countries",
-      value: formattedData.countryCount,
-      color: "text-yellow-500",
-      description: `Total number of nations (Game Year ${timeInfo.currentGameYear})`,
-    },
-  ];
-
-  const geographicStats = [
-    {
-      icon: Scaling,
-      label: "Avg. Population Density",
-      value: formattedData.averagePopulationDensity,
-      color: "text-teal-500",
-      description: "Average population per km²",
-    },
-    {
-      icon: Layers,
-      label: "Avg. GDP Density",
-      value: formattedData.averageGdpDensity,
-      color: "text-pink-500",
-      description: "Average economic output per km²",
-    },
-  ];
-
+  // Get the names of the top countries
+  const topCountryNames = topCountries.map(c => c.name);
+  // Use the bulk flag cache hook
+  const { flagUrls } = useBulkFlagCache(topCountryNames);
+  const countries: Country[] = [];
   return (
-    <div className="mb-8">
-      <h2 className="text-2xl font-semibold text-foreground mb-6">
-        Global Statistics
-      </h2>
+    <section className="executive-summary py-8">
+      <div className="container mx-auto px-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Economic Tier Distribution */}
+          <GlassCard variant="economic" hover="lift" className="tier-distribution">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span>📊</span>
+                Economic Tiers
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TierVisualization 
+                countries={countries}
+                isLoading={isLoading}
+              />
+              <div className="tier-legend mt-4 space-y-2">
+                {Object.entries(globalStats.economicTierDistribution || {}).map(([tier, count]) => (
+                  <div key={tier} className="flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full tier-indicator-${tier.toLowerCase()}`} />
+                      {tier}
+                    </span>
+                    <span className="font-medium">{count} nations</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </GlassCard>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        {primaryStats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <Card
-              key={stat.label}
-              className="group transition-all hover:shadow-lg"
-            >
-              <CardHeader className="flex items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {stat.label}
-                </CardTitle>
-                <Icon className={`h-5 w-5 ${stat.color}`} />
-              </CardHeader>
-              <CardContent className="pb-3">
-                <div className="text-3xl font-bold text-foreground">
-                  {stat.value}
-                </div>
-                <p className="text-xs text-muted-foreground pt-1">
-                  {stat.description}
-                </p>
-              </CardContent>
-            </Card>
-          );
-        })}
+          {/* Top Performing Countries */}
+          <GlassCard variant="diplomatic" hover="lift" className="top-countries">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span>🏆</span>
+                Leading Nations
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {topCountries.slice(0, 5).map((country, index) => (
+                  <div key={country.id} className="top-country-item">
+                    <div className="flex items-center gap-3">
+                      <div className="rank-badge">#{index + 1}</div>
+                      <div className="country-flag w-8 h-6 rounded overflow-hidden">
+                        <img 
+                          src={flagUrls[country.name] || '/placeholder-flag.png'} 
+                          alt={`${country.name} flag`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-medium text-[var(--color-text-primary)]">
+                          {country.name}
+                        </div>
+                        <div className="text-sm text-[var(--color-text-muted)]">
+                          ${(country.currentTotalGdp / 1e12).toFixed(1)}T GDP
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="tier-badge">
+                        {country.economicTier}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </GlassCard>
+
+          {/* Global Trends */}
+          <GlassCard variant="cultural" hover="lift" className="global-trends">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span>📈</span>
+                Global Trends
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {economicTrends.map((trend) => (
+                  <TrendItem key={trend.label} {...trend} />
+                ))}
+              </div>
+            </CardContent>
+          </GlassCard>
+        </div>
       </div>
+    </section>
+  );
+}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {geographicStats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <Card
-              key={stat.label}
-              className="group transition-all hover:shadow-md"
-            >
-              <CardHeader className="flex items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {stat.label}
-                </CardTitle>
-                <Icon className={`h-5 w-5 ${stat.color}`} />
-              </CardHeader>
-              <CardContent className="pb-3">
-                <div className="text-2xl font-semibold text-foreground">
-                  {stat.value}
-                </div>
-                <p className="text-xs text-muted-foreground pt-1">
-                  {stat.description}
-                </p>
-              </CardContent>
-            </Card>
-          );
-        })}
+function TrendItem({ 
+  label, 
+  value, 
+  suffix = '', 
+  trend, 
+  description 
+}: {
+  label: string;
+  value: number;
+  suffix?: string;
+  trend: 'up' | 'down' | 'stable';
+  description: string;
+}) {
+  return (
+    <div className="trend-item">
+      <div className="flex items-center justify-between mb-1">
+        <span className="font-medium text-[var(--color-text-primary)]">
+          {label}
+        </span>
+        <span className="font-bold text-[var(--color-text-primary)]">
+          {value > 0 ? '+' : ''}{value}{suffix}
+        </span>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-[var(--color-text-muted)]">
+          {description}
+        </span>
+        {/* You can use TrendIndicator here if desired */}
       </div>
     </div>
   );
+}
+
+export function ExecutiveSummary(props: ExecutiveSummaryProps) {
+  return <ExecutiveSummaryErrorBoundary><ExecutiveSummaryImpl {...props} /></ExecutiveSummaryErrorBoundary>;
 }

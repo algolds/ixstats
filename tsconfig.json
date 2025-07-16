@@ -32,7 +32,8 @@
       "~/lib/utils": ["./src/lib/utils"],
       "~/components/ui/*": ["./src/components/ui/*"],
       "~/lib/*": ["./src/lib/*"],
-      "~/hooks/*": ["./src/hooks/*"]
+      "~/hooks/*": ["./src/hooks/*"],
+      "@/*": ["./src/*"]
     }
   },
   "include": [

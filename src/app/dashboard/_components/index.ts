@@ -2,7 +2,7 @@
 // Dashboard component exports for clean imports
 
 export { DashboardHeader } from './DashboardHeader';
-export { GlobalStatsSection } from './GlobalStatsSection';
+export { ExecutiveSummary } from './GlobalStatsSection';
 export { GlobalAnalytics } from './GlobalAnalytics';
 export { CountriesSection } from './CountriesSection';
 export { CountryCard } from './CountryCard';

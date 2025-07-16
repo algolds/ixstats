@@ -17,6 +17,10 @@ import { formatPopulation, formatCurrency } from '~/lib/chart-utils';
 import { Button } from '~/components/ui/button';
 import { CardFooter } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
+import { GlassCard } from '~/components/ui/enhanced-card';
+import { FastAverageColor } from 'fast-average-color';
+import { useRef } from 'react';
+import { cn } from '~/lib/utils';
 
 export interface CountryData {
   id: string;
@@ -38,6 +42,28 @@ interface CountryListCardProps {
   country: CountryData;
   flagUrl?: string | null;
   flagLoading?: boolean;
+}
+
+// Add a hook to extract the dominant color from the flag
+function useDominantColor(imageUrl: string | null | undefined) {
+  const [color, setColor] = useState<string | null>(null);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    if (!imageUrl) return;
+    const fac = new FastAverageColor();
+    const img = new window.Image();
+    img.crossOrigin = 'anonymous';
+    img.src = imageUrl;
+    img.onload = () => {
+      const result = fac.getColor(img);
+      setColor(result.hex);
+    };
+    img.onerror = () => setColor(null);
+    imgRef.current = img;
+    return () => { imgRef.current = null; };
+  }, [imageUrl]);
+  return color;
 }
 
 export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: propFlagLoading }: CountryListCardProps) {
@@ -85,6 +111,8 @@ export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: pr
     return () => { mounted = false; };
   }, [country.name, propFlagUrl, propFlagLoading]);
 
+  const dominantColor = useDominantColor(flagUrl);
+
   const wikiUrl = `https://ixwiki.com/wiki/${encodeURIComponent(
     country.name.replace(/ /g, '_')
   )}`;
@@ -94,11 +122,42 @@ export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: pr
   };
 
   return (
-    <div
-      className="card group hover:scale-[1.01] transition-all duration-200 flex flex-col h-full cursor-pointer min-h-0"
+    <GlassCard
+      variant="diplomatic"
+      hover="lift"
+      className={cn(
+        "group hover:scale-[1.01] transition-all duration-200 flex flex-col h-full cursor-pointer min-h-0 overflow-hidden",
+        dominantColor && "border-2",
+        "glass-hover-animate"
+      )}
+      style={dominantColor ? { boxShadow: `0 0 0 3px ${dominantColor}55, 0 4px 24px ${dominantColor}33` } : undefined}
       onClick={goToDetail}
     >
-      <div className="p-3 flex-grow min-h-0">
+      {/* Flag as blurred glassy background with waving animation */}
+      {flagUrl && (
+        <div
+          className="absolute inset-0 z-0 flag-waving-bg"
+          style={{
+            backgroundImage: `url(${flagUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'blur(12px) brightness(0.7) saturate(1.2)',
+            opacity: 0.7,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+      {/* Animated overlay using dominant color */}
+      {dominantColor && (
+        <div
+          className="absolute inset-0 z-10 pointer-events-none animate-pulse"
+          style={{
+            background: `radial-gradient(circle at 70% 30%, ${dominantColor}33 0%, transparent 70%)`,
+            mixBlendMode: 'lighten',
+          }}
+        />
+      )}
+      <div className="relative z-20 p-3 flex-grow min-h-0">
         <div className="flex justify-between items-start mb-2 gap-2">
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <div className="w-8 h-6 relative flex-shrink-0">
@@ -182,12 +241,36 @@ export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: pr
         </div>
       </div>
 
-      <CardFooter className="px-3 pb-3 pt-0 flex justify-between items-center gap-2 min-h-0">
+      <CardFooter className="relative z-20 px-3 pb-3 pt-0 flex justify-between items-center gap-2 min-h-0">
         <Badge className="text-[10px] px-2 py-0.5">{country.economicTier ?? '—'}</Badge>
         <Badge variant="outline" className="text-[10px] px-2 py-0.5">
           {country.populationTier ?? '—'}
         </Badge>
       </CardFooter>
-    </div>
+      <style jsx>{`
+        .flag-waving-bg {
+          animation: flag-wave 6s ease-in-out infinite;
+          will-change: transform;
+          mask-image: linear-gradient(to bottom, rgba(0,0,0,0.7) 80%, transparent 100%);
+        }
+        @keyframes flag-wave {
+          0% { transform: skewY(0deg) scaleX(1) translateY(0); }
+          10% { transform: skewY(-2deg) scaleX(1.01) translateY(-1px); }
+          20% { transform: skewY(2deg) scaleX(0.99) translateY(1px); }
+          30% { transform: skewY(-1deg) scaleX(1.01) translateY(-2px); }
+          40% { transform: skewY(1deg) scaleX(0.99) translateY(2px); }
+          50% { transform: skewY(0deg) scaleX(1) translateY(0); }
+          100% { transform: skewY(0deg) scaleX(1) translateY(0); }
+        }
+        .glass-hover-animate {
+          transition: box-shadow 0.4s cubic-bezier(0.4,0.2,0.2,1), transform 0.3s cubic-bezier(0.4,0.2,0.2,1);
+        }
+        .glass-hover-animate:hover {
+          box-shadow: 0 8px 32px 0 rgba(99,102,241,0.18), 0 1.5px 8px 0 rgba(0,0,0,0.10);
+          background: rgba(255,255,255,0.08);
+          filter: brightness(1.05) saturate(1.1);
+        }
+      `}</style>
+    </GlassCard>
   );
 }

@@ -5,11 +5,10 @@ import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
+import { ExecutiveSummary, GlobalAnalytics, CountriesSection } from "./index";
+import { QuickActionButton } from "~/components/ui/quick-action-button";
 import {
   DashboardHeader,
-  GlobalStatsSection,
-  GlobalAnalytics,
-  CountriesSection,
   type ProcessedCountryData,
 } from "./index";
 import { IxTime } from "~/lib/ixtime";
@@ -111,11 +110,39 @@ export default function Dashboard() {
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {adaptedGlobalStats && (
-          <GlobalStatsSection
+          <ExecutiveSummary
             globalStats={adaptedGlobalStats}
             isLoading={globalStatsLoading}
+            topCountries={processedCountries
+              .slice()
+              .sort((a, b) => b.currentTotalGdp - a.currentTotalGdp)
+              .slice(0, 5)
+              .map((c) => ({
+                id: c.id,
+                name: c.name,
+                flagUrl: undefined, // Add flagUrl if available
+                currentTotalGdp: c.currentTotalGdp,
+                economicTier: c.economicTier,
+              }))}
+            economicTrends={[
+              { label: "Economic Growth", value: adaptedGlobalStats.globalGrowthRate ?? 0, suffix: "%", trend: "up", description: "Average annual GDP growth" },
+              { label: "Population Growth", value: 1.2, suffix: "%", trend: "stable", description: "Global population increase" },
+              { label: "Trade Volume", value: 2.5, suffix: "%", trend: "up", description: "International trade growth" },
+              { label: "Diplomatic Activity", value: 15, trend: "up", description: "Treaties and agreements" },
+            ]}
           />
         )}
+
+        {/* Quick Actions Section */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold text-foreground mb-6">Quick Actions</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <QuickActionButton href="/countries" icon="🏛️">Browse Nations</QuickActionButton>
+            <QuickActionButton href="/setup" icon="⭐">MyCountry®</QuickActionButton>
+            <QuickActionButton href="/dashboard" icon="📊">Analytics</QuickActionButton>
+            <QuickActionButton href="/admin" icon="⚙️">Admin Panel</QuickActionButton>
+          </div>
+        </div>
 
         {processedCountries.length > 0 && !countriesLoading ? (
           <GlobalAnalytics countries={processedCountries} />

@@ -42,6 +42,7 @@ import {
   getGrowthIcon,
   getGrowthColor,
 } from "~/lib/chart-utils";
+import { GlassCard } from "~/components/ui/enhanced-card";
 
 interface CountryAtGlanceData {
   id: string;
@@ -176,7 +177,7 @@ export function CountryAtGlance({
 
   return (
     <TooltipProvider>
-      <Card>
+      <GlassCard variant="diplomatic">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center">
@@ -493,7 +494,7 @@ export function CountryAtGlance({
             </div>
           </div>
         </CardContent>
-      </Card>
+      </GlassCard>
     </TooltipProvider>
   );
 }

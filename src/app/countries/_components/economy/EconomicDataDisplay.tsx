@@ -19,7 +19,8 @@ import {
   Info,
   RefreshCw
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { GlassCard } from "~/components/ui/enhanced-card";
+import { CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Alert, AlertDescription } from "~/components/ui/alert";
@@ -373,7 +374,7 @@ export function EconomicDataDisplay({
   // Overview mode - compact summary
   if (mode === "overview") {
     return (
-      <Card>
+      <GlassCard variant="glass">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -423,14 +424,14 @@ export function EconomicDataDisplay({
             </div>
           </div>
         </CardContent>
-      </Card>
+      </GlassCard>
     );
   }
 
   // Loading state (for full mode before data is fetched)
   if (isLoading || (mode === "full" && showTabs && !economicData)) {
     return (
-      <Card>
+      <GlassCard variant="glass">
         <CardHeader>
           <Skeleton className="h-6 w-1/3 mb-2" />
           <Skeleton className="h-4 w-1/2" />
@@ -441,7 +442,7 @@ export function EconomicDataDisplay({
             Loading economic data...
           </div>
         </CardContent>
-      </Card>
+      </GlassCard>
     );
   }
 
@@ -449,7 +450,7 @@ export function EconomicDataDisplay({
   if (error) {
     const trpcError = error as TRPCClientError<any>; // Type assertion
     return (
-      <Card>
+      <GlassCard variant="glass">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-destructive" />
@@ -469,14 +470,14 @@ export function EconomicDataDisplay({
               </Button>
           </div>
         </CardContent>
-      </Card>
+      </GlassCard>
     );
   }
 
   // Full mode with tabs (and data is loaded)
   if (mode === "full" && showTabs && economicData) {
     return (
-      <Card>
+      <GlassCard variant="glass">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-2xl font-bold">Economic Data</CardTitle>
           {isEditable && (
@@ -566,7 +567,7 @@ export function EconomicDataDisplay({
                     />
                   )}
                   {section.id === 'income' && economicData.income && economicData.core?.totalPopulation !== undefined && economicData.core?.gdpPerCapita !== undefined && (
-                    <Card>
+                    <GlassCard variant="glass">
                       <CardHeader>
                         <CardTitle>Income & Wealth Distribution</CardTitle>
                         <CardDescription>Economic classes and inequality metrics</CardDescription>
@@ -574,7 +575,7 @@ export function EconomicDataDisplay({
                       <CardContent>
                         <p className="text-muted-foreground">Income distribution component will be implemented.</p>
                       </CardContent>
-                    </Card>
+                    </GlassCard>
                   )}
                   {section.id === 'spending' && economicData.spending && economicData.core?.nominalGDP !== undefined && economicData.core?.totalPopulation !== undefined && (
                     <GovernmentSpending
@@ -586,7 +587,7 @@ export function EconomicDataDisplay({
                     />
                   )}
                   {section.id === 'demographics' && economicData.demographics && economicData.core?.totalPopulation !== undefined && (
-                    <Card>
+                    <GlassCard variant="glass">
                       <CardHeader>
                         <CardTitle>Demographics</CardTitle>
                         <CardDescription>Population structure and education</CardDescription>
@@ -594,20 +595,20 @@ export function EconomicDataDisplay({
                       <CardContent>
                         <p className="text-muted-foreground">Demographics component will be implemented.</p>
                       </CardContent>
-                    </Card>
+                    </GlassCard>
                   )}
                 </TabsContent>
               );
             })}
           </Tabs>
         </CardContent>
-      </Card>
+      </GlassCard>
     );
   }
   
   // Fallback for compact mode or if data isn't loaded after checks
   return (
-    <Card>
+    <GlassCard variant="glass">
       <CardHeader>
         <CardTitle>Economic Data</CardTitle>
         <CardDescription>Detailed economic data for {countryName}</CardDescription>
@@ -618,6 +619,6 @@ export function EconomicDataDisplay({
           {isLoading ? "Loading data..." : "Economic data display mode not configured or data is unavailable."}
         </p>
       </CardContent>
-    </Card>
+    </GlassCard>
   );
 }

@@ -20,6 +20,7 @@ import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { formatCurrency, formatPopulation, displayGrowthRate } from "~/lib/chart-utils";
 import { getTierStyle } from "~/lib/theme-utils";
+import { GlassCard } from "~/components/ui/enhanced-card";
 
 interface EconomicSummaryData {
   // Core metrics
@@ -217,7 +218,7 @@ export function EconomicSummaryWidget({
 
   if (compactMode && !expanded) {
     return (
-      <Card className="cursor-pointer" onClick={() => setExpanded(true)}>
+      <GlassCard variant="glass" className="cursor-pointer" onClick={() => setExpanded(true)}>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -232,12 +233,12 @@ export function EconomicSummaryWidget({
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </div>
         </CardContent>
-      </Card>
+      </GlassCard>
     );
   }
 
   return (
-    <Card>
+    <GlassCard variant="glass">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -393,6 +394,6 @@ export function EconomicSummaryWidget({
           </div>
         </div>
       </CardContent>
-    </Card>
+    </GlassCard>
   );
 }
