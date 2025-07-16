@@ -8,6 +8,8 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { RefreshCw, Clock, Globe, TrendingUp, Users, DollarSign, Building2, MapPin, Activity, Target } from "lucide-react";
 import type { GlobalEconomicSnapshot } from "~/types/ixstats";
+import { GlassCard } from "~/components/ui/enhanced-card";
+import { GlassButton } from "~/components/ui/enhanced-button";
 
 interface LiveGameBannerProps {
   onRefresh: () => void;
@@ -183,41 +185,38 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
   ] : [];
 
   return (
-    <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white">
+    <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white relative">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        {/* Main Banner Row */}
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
-          {/* Game Time Section */}
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
-              <Clock className="h-6 w-6" />
-              <div>
-                <div className="text-2xl font-bold">{currentTime.greeting}</div>
-                <div className="text-sm opacity-90">The date is {currentTime.dateDisplay}</div>
-                <div className="text-sm opacity-90">{currentTime.timeDisplay}</div>
+        {/* GlassCard overlay for main info/time block */}
+        <div className="relative z-10 max-w-2xl mx-auto mb-6">
+          <GlassCard variant="glass" className="p-6 flex flex-col lg:flex-row items-center justify-between gap-4 shadow-xl animate-fade-in">
+            {/* Game Time Section */}
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3">
+                <Clock className="h-6 w-6" />
+                <div>
+                  <div className="text-2xl font-bold">{currentTime.greeting}</div>
+                  <div className="text-sm opacity-90">The date is {currentTime.dateDisplay}</div>
+                  <div className="text-sm opacity-90">{currentTime.timeDisplay}</div>
+                </div>
               </div>
             </div>
-            
-            <div className="hidden md:flex items-center gap-3">
-             
+            {/* Refresh Button with glass effect */}
+            <div className="flex items-center gap-4">
+              <GlassButton
+                onClick={handleRefresh}
+                disabled={isLoading}
+                glass
+                size="sm"
+                className="text-white border-white/30"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh All
+              </GlassButton>
             </div>
-          </div>
-
-         
-
-          {/* Refresh Button */}
-          <div className="flex items-center gap-4">
-            <Button
-              onClick={handleRefresh}
-              disabled={isLoading}
-              size="sm"
-              variant="secondary"
-              className="bg-white/20 hover:bg-white/30 text-white border-white/30"
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh All
-            </Button>
-          </div>
+          </GlassCard>
+          {/* Aurora/animated background effect (optional, subtle) */}
+          <div className="aurora-bg absolute inset-0 pointer-events-none rounded-2xl z-0" />
         </div>
 
         {/* Mobile-friendly time display */}

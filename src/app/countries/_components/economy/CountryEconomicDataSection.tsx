@@ -15,7 +15,7 @@ import {
   Loader2,
   AlertCircle
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { GlassCard } from "~/components/ui/enhanced-card";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Alert, AlertDescription } from "~/components/ui/alert";
@@ -23,6 +23,7 @@ import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
 import { CoreEconomicIndicators } from "./CoreEconomicIndicators";
 import { LaborEmployment } from "./LaborEmployment";
+import type { LaborEmploymentData } from "~/types/economics";
 // Import other economic components as they're created
 // import { FiscalSystem } from "./FiscalSystem";
 // import { IncomeWealthDistribution } from "./IncomeWealthDistribution";
@@ -44,15 +45,7 @@ interface EconomicData {
     inflationRate: number;
     currencyExchangeRate: number;
   };
-  laborEmployment: {
-    laborForceParticipationRate: number;
-    employmentRate: number;
-    unemploymentRate: number;
-    totalWorkforce: number;
-    averageWorkweekHours: number;
-    minimumWage: number;
-    averageAnnualIncome: number;
-  };
+  laborEmployment: LaborEmploymentData;
   // Add other economic data structures as components are created
 }
 
@@ -73,6 +66,36 @@ const defaultEconomicData: EconomicData = {
     averageWorkweekHours: 40,
     minimumWage: 12,
     averageAnnualIncome: 35000,
+    employmentBySector: { agriculture: 10, industry: 30, services: 60 },
+    employmentByType: { fullTime: 70, partTime: 15, temporary: 5, selfEmployed: 5, informal: 5 },
+    skillsAndProductivity: {
+      averageEducationYears: 12,
+      tertiaryEducationRate: 30,
+      vocationalTrainingRate: 20,
+      skillsGapIndex: 50,
+      laborProductivityIndex: 100,
+      productivityGrowthRate: 2,
+    },
+    demographicsAndConditions: {
+      youthUnemploymentRate: 10,
+      femaleParticipationRate: 50,
+      genderPayGap: 15,
+      unionizationRate: 20,
+      workplaceSafetyIndex: 80,
+      averageCommutingTime: 30,
+    },
+    regionalEmployment: {
+      urban: { participationRate: 70, unemploymentRate: 6, averageIncome: 40000 },
+      rural: { participationRate: 60, unemploymentRate: 8, averageIncome: 25000 },
+    },
+    socialProtection: {
+      unemploymentBenefitCoverage: 60,
+      pensionCoverage: 70,
+      healthInsuranceCoverage: 80,
+      paidSickLeaveDays: 10,
+      paidVacationDays: 15,
+      parentalLeaveWeeks: 12,
+    },
   },
 };
 
@@ -128,6 +151,36 @@ export function CountryEconomicDataSection({
           averageWorkweekHours: countryData.averageWorkweekHours || 40,
           minimumWage: countryData.minimumWage || 12,
           averageAnnualIncome: countryData.averageAnnualIncome || 35000,
+          employmentBySector: { agriculture: 10, industry: 30, services: 60 },
+          employmentByType: { fullTime: 70, partTime: 15, temporary: 5, selfEmployed: 5, informal: 5 },
+          skillsAndProductivity: {
+            averageEducationYears: 12,
+            tertiaryEducationRate: 30,
+            vocationalTrainingRate: 20,
+            skillsGapIndex: 50,
+            laborProductivityIndex: 100,
+            productivityGrowthRate: 2,
+          },
+          demographicsAndConditions: {
+            youthUnemploymentRate: 10,
+            femaleParticipationRate: 50,
+            genderPayGap: 15,
+            unionizationRate: 20,
+            workplaceSafetyIndex: 80,
+            averageCommutingTime: 30,
+          },
+          regionalEmployment: {
+            urban: { participationRate: 70, unemploymentRate: 6, averageIncome: 40000 },
+            rural: { participationRate: 60, unemploymentRate: 8, averageIncome: 25000 },
+          },
+          socialProtection: {
+            unemploymentBenefitCoverage: 60,
+            pensionCoverage: 70,
+            healthInsuranceCoverage: 80,
+            paidSickLeaveDays: 10,
+            paidVacationDays: 15,
+            parentalLeaveWeeks: 12,
+          },
         },
       };
       setEconomicData(loadedData);
@@ -222,186 +275,166 @@ export function CountryEconomicDataSection({
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Economic Data
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <span className="ml-2">Loading economic data...</span>
-          </div>
-        </CardContent>
-      </Card>
+      <GlassCard variant="glass">
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span className="ml-2">Loading economic data...</span>
+        </div>
+      </GlassCard>
     );
   }
 
   if (error) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-destructive" />
-            Economic Data
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Failed to load economic data: {error.message}
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
+      <GlassCard variant="glass">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load economic data: {error.message}
+          </AlertDescription>
+        </Alert>
+      </GlassCard>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Economic Data
-            </CardTitle>
-            <CardDescription>
-              Comprehensive economic profile for {countryName}
-            </CardDescription>
-          </div>
-          
-          {isEditable && (
-            <div className="flex items-center gap-2">
-              {hasUnsavedChanges && (
-                <Badge variant="outline" className="text-yellow-600">
-                  Unsaved Changes
-                </Badge>
-              )}
-              
-              {isEditMode ? (
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleSave}
-                    disabled={updateEconomicDataMutation.isPending}
-                    size="sm"
-                  >
-                    {updateEconomicDataMutation.isPending ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Save
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    onClick={handleCancel}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel
-                  </Button>
-                </div>
-              ) : (
+    <GlassCard variant="glass">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="flex items-center gap-2 text-lg font-medium">
+            <BarChart3 className="h-5 w-5" />
+            Economic Data
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Comprehensive economic profile for {countryName}
+          </p>
+        </div>
+        
+        {isEditable && (
+          <div className="flex items-center gap-2">
+            {hasUnsavedChanges && (
+              <Badge variant="outline" className="text-yellow-600">
+                Unsaved Changes
+              </Badge>
+            )}
+            
+            {isEditMode ? (
+              <div className="flex gap-2">
                 <Button
-                  onClick={() => setIsEditMode(true)}
+                  onClick={handleSave}
+                  disabled={updateEconomicDataMutation.isPending}
+                  size="sm"
+                >
+                  {updateEconomicDataMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={handleCancel}
                   variant="outline"
                   size="sm"
                 >
-                  <Edit3 className="h-4 w-4 mr-2" />
-                  Edit
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
                 </Button>
-              )}
-            </div>
-          )}
-        </div>
-      </CardHeader>
-      
-      <CardContent>
-        <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-          <TabsList className="grid w-full grid-cols-6">
-            {economicSections.map((section) => {
-              const Icon = section.icon;
-              return (
-                <TabsTrigger 
-                  key={section.id} 
-                  value={section.id}
-                  disabled={section.disabled}
-                  className="flex flex-col gap-1 p-2 h-auto"
-                >
-                  <Icon className="h-4 w-4" />
-                  <span className="text-xs">{section.label}</span>
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
-
-          <div className="mt-6">
-            <TabsContent value="core" className="space-y-0">
-              <CoreEconomicIndicators
-                indicators={economicData.coreIndicators}
-                onIndicatorsChangeAction={(data) => handleDataChange('coreIndicators', data)}
-                isReadOnly={!isEditMode}
-                showComparison={false}
-              />
-            </TabsContent>
-
-            <TabsContent value="labor" className="space-y-0">
-              <LaborEmployment
-                laborData={economicData.laborEmployment}
-                totalPopulation={economicData.coreIndicators.totalPopulation}
-                onLaborDataChange={(data) => handleDataChange('laborEmployment', data)}
-                isReadOnly={!isEditMode}
-                showComparison={false}
-              />
-            </TabsContent>
-
-            <TabsContent value="fiscal" className="space-y-0">
-              <div className="text-center py-8 text-muted-foreground">
-                <Building className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-medium mb-2">Fiscal System</h3>
-                <p>Tax rates, government budget, and debt management</p>
-                <p className="text-sm mt-2">Coming soon...</p>
               </div>
-            </TabsContent>
-
-            <TabsContent value="income" className="space-y-0">
-              <div className="text-center py-8 text-muted-foreground">
-                <Scale className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-medium mb-2">Income & Wealth Distribution</h3>
-                <p>Economic classes, inequality metrics, and social mobility</p>
-                <p className="text-sm mt-2">Coming soon...</p>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="spending" className="space-y-0">
-              <div className="text-center py-8 text-muted-foreground">
-                <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-medium mb-2">Government Spending</h3>
-                <p>Budget allocation and spending priorities</p>
-                <p className="text-sm mt-2">Coming soon...</p>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="demographics" className="space-y-0">
-              <div className="text-center py-8 text-muted-foreground">
-                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-medium mb-2">Demographics</h3>
-                <p>Population structure, education levels, and regional distribution</p>
-                <p className="text-sm mt-2">Coming soon...</p>
-              </div>
-            </TabsContent>
+            ) : (
+              <Button
+                onClick={() => setIsEditMode(true)}
+                variant="outline"
+                size="sm"
+              >
+                <Edit3 className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            )}
           </div>
-        </Tabs>
-      </CardContent>
-    </Card>
+        )}
+      </div>
+      
+      <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+        <TabsList className="grid w-full grid-cols-6">
+          {economicSections.map((section) => {
+            const Icon = section.icon;
+            return (
+              <TabsTrigger 
+                key={section.id} 
+                value={section.id}
+                disabled={section.disabled}
+                className="flex flex-col gap-1 p-2 h-auto"
+              >
+                <Icon className="h-4 w-4" />
+                <span className="text-xs">{section.label}</span>
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+
+        <div className="mt-6">
+          <TabsContent value="core" className="space-y-0">
+            <CoreEconomicIndicators
+              indicators={economicData.coreIndicators}
+              onIndicatorsChangeAction={(data) => handleDataChange('coreIndicators', data)}
+              isReadOnly={!isEditMode}
+              showComparison={false}
+            />
+          </TabsContent>
+
+          <TabsContent value="labor" className="space-y-0">
+            <LaborEmployment
+              laborData={economicData.laborEmployment}
+              totalPopulation={economicData.coreIndicators.totalPopulation}
+              onLaborDataChange={(data: LaborEmploymentData) => handleDataChange('laborEmployment', data)}
+              isReadOnly={!isEditMode}
+              showComparison={false}
+            />
+          </TabsContent>
+
+          <TabsContent value="fiscal" className="space-y-0">
+            <div className="text-center py-8 text-muted-foreground">
+              <Building className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-medium mb-2">Fiscal System</h3>
+              <p>Tax rates, government budget, and debt management</p>
+              <p className="text-sm mt-2">Coming soon...</p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="income" className="space-y-0">
+            <div className="text-center py-8 text-muted-foreground">
+              <Scale className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-medium mb-2">Income & Wealth Distribution</h3>
+              <p>Economic classes, inequality metrics, and social mobility</p>
+              <p className="text-sm mt-2">Coming soon...</p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="spending" className="space-y-0">
+            <div className="text-center py-8 text-muted-foreground">
+              <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-medium mb-2">Government Spending</h3>
+              <p>Budget allocation and spending priorities</p>
+              <p className="text-sm mt-2">Coming soon...</p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="demographics" className="space-y-0">
+            <div className="text-center py-8 text-muted-foreground">
+              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-medium mb-2">Demographics</h3>
+              <p>Population structure, education levels, and regional distribution</p>
+              <p className="text-sm mt-2">Coming soon...</p>
+            </div>
+          </TabsContent>
+        </div>
+      </Tabs>
+    </GlassCard>
   );
 }

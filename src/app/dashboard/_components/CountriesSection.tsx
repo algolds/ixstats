@@ -1,6 +1,7 @@
 // src/app/dashboard/_components/CountriesSection.tsx
 "use client";
 
+import React from "react";
 import { RefreshCw, Globe } from "lucide-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
@@ -16,7 +17,21 @@ interface CountriesSectionProps {
   onGlobalRefreshAction: () => void;
 }
 
-export function CountriesSection({
+class CountriesErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) {
+      return <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 text-center">An error occurred in Countries Section.</div>;
+    }
+    return this.props.children;
+  }
+}
+
+function CountriesSectionImpl({
   onGlobalRefreshAction,
 }: CountriesSectionProps) {
   // getAll now returns { countries, total }
@@ -175,4 +190,8 @@ export function CountriesSection({
       )}
     </div>
   );
+}
+
+export function CountriesSection(props: CountriesSectionProps) {
+  return <CountriesErrorBoundary><CountriesSectionImpl {...props} /></CountriesErrorBoundary>;
 }

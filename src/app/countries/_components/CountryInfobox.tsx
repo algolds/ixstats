@@ -26,14 +26,8 @@ import { ixnayWiki } from "~/lib/mediawiki-service";
 import type { CountryInfobox as CountryInfoboxType } from "~/lib/mediawiki-service"; // Renamed to avoid conflict
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-  CardDescription,
-} from "~/components/ui/card";
+import { GlassCard } from "~/components/ui/enhanced-card";
+import { CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from "~/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Separator } from "~/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -393,7 +387,7 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
 
   if (loadingState.isLoading) {
     return (
-      <Card>
+      <GlassCard variant="diplomatic">
         <CardHeader>
           <Skeleton className="h-6 w-3/4 mb-2" />
           <Skeleton className="h-4 w-1/2" />
@@ -407,14 +401,14 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
             </div>
           ))}
         </CardContent>
-      </Card>
+      </GlassCard>
     );
   }
 
   if (loadingState.error) {
     const canRetry = loadingState.retryCount < MAX_RETRIES;
     return (
-      <Card>
+      <GlassCard variant="diplomatic">
         <CardHeader>
           <CardTitle className="flex items-center">
             <Globe className="h-5 w-5 mr-2" /> Country Information
@@ -448,13 +442,13 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
                 </a>
             </Button>
         </CardFooter>
-      </Card>
+      </GlassCard>
     );
   }
 
   if (!infobox) {
     return (
-      <Card>
+      <GlassCard variant="diplomatic">
         <CardHeader>
           <CardTitle className="flex items-center">
             <Globe className="h-5 w-5 mr-2" /> {countryName}
@@ -476,7 +470,7 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
                 </a>
             </Button>
         </CardFooter>
-      </Card>
+      </GlassCard>
     );
   }
 
@@ -487,7 +481,7 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
   const hasHtmlContent = Boolean(infobox.renderedHtml);
 
   return (
-    <Card className="transition-all duration-300">
+    <GlassCard variant="diplomatic" className="transition-all duration-300">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center text-lg">
@@ -751,6 +745,6 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
           </Button>
         </CardFooter>
       )}
-    </Card>
+    </GlassCard>
   );
 }

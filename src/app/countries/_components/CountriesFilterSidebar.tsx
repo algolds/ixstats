@@ -3,6 +3,7 @@ import { Input } from '~/components/ui/input';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '~/components/ui/select';
+import { GlassCard } from '~/components/ui/enhanced-card';
 // import { Slider } from '~/components/ui/slider'; // Uncomment if you have a slider component
 
 export default function CountriesFilterSidebar({
@@ -51,7 +52,8 @@ export default function CountriesFilterSidebar({
   ];
 
   return (
-    <aside className="space-y-4">
+    <GlassCard variant="glass" className="space-y-4 p-4">
+      {/* All content is now direct children of GlassCard. No nested Card/GlassCard. */}
       {hasFilters && (
         <div className="flex flex-wrap gap-1 mb-2">
           {searchTerm && <Badge variant="secondary">Search: {searchTerm}</Badge>}
@@ -71,13 +73,13 @@ export default function CountriesFilterSidebar({
           placeholder="Search by country name..."
           value={searchTerm}
           onChange={e => onSearchChange(e.target.value)}
-          className="w-full"
+          className="w-full glass-input"
         />
       </div>
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">Economic Tier</label>
         <Select value={tierFilter} onValueChange={onTierFilterChange}>
-          <SelectTrigger>
+          <SelectTrigger className="glass-input">
             <SelectValue placeholder="Select tier" />
           </SelectTrigger>
           <SelectContent>
@@ -90,7 +92,7 @@ export default function CountriesFilterSidebar({
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">Continent</label>
         <Select value={continentFilter} onValueChange={onContinentFilterChange}>
-          <SelectTrigger>
+          <SelectTrigger className="glass-input">
             <SelectValue placeholder="Select continent" />
           </SelectTrigger>
           <SelectContent>
@@ -108,7 +110,7 @@ export default function CountriesFilterSidebar({
           onValueChange={onRegionFilterChange}
           disabled={continentFilter === 'all' || availableRegions.length === 0}
         >
-          <SelectTrigger>
+          <SelectTrigger className="glass-input">
             <SelectValue placeholder="Select region" />
           </SelectTrigger>
           <SelectContent>
@@ -127,20 +129,20 @@ export default function CountriesFilterSidebar({
             placeholder="Min"
             value={populationRange.min ?? ''}
             onChange={e => onPopulationRangeChange({ min: e.target.value ? parseInt(e.target.value, 10) : undefined, max: populationRange.max })}
-            className="flex-1"
+            className="flex-1 glass-input"
           />
           <Input
             type="number"
             placeholder="Max"
             value={populationRange.max ?? ''}
             onChange={e => onPopulationRangeChange({ min: populationRange.min, max: e.target.value ? parseInt(e.target.value, 10) : undefined })}
-            className="flex-1"
+            className="flex-1 glass-input"
           />
         </div>
         {/*
         <Slider ... />
         */}
       </div>
-    </aside>
+    </GlassCard>
   );
 } 

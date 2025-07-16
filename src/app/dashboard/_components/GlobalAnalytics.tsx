@@ -57,6 +57,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { useChartTheme } from "~/context/theme-context";
 import { formatPopulation, formatCurrency, formatDensity } from "~/lib/chart-utils";
+import { Skeleton } from "~/components/ui/skeleton";
 
 export interface ProcessedCountryData {
   id: string;
@@ -144,9 +145,24 @@ function TierDetailsModal({
 
 interface GlobalAnalyticsProps {
   countries: ProcessedCountryData[];
+  isLoading?: boolean;
 }
 
-export function GlobalAnalytics({ countries }: GlobalAnalyticsProps) {
+class AnalyticsErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) {
+      return <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 text-center">An error occurred in Analytics.</div>;
+    }
+    return this.props.children;
+  }
+}
+
+export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalyticsProps) {
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [showTierModal, setShowTierModal] = useState(false);
   const [selectedMetric, setSelectedMetric] =
@@ -291,6 +307,27 @@ export function GlobalAnalytics({ countries }: GlobalAnalyticsProps) {
             </p>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="mb-8">
+        <h2 className="text-2xl font-semibold text-foreground mb-6">Global Analytics</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <Card key={i} className="flex flex-col">
+              <CardHeader>
+                <Skeleton className="h-6 w-24 mb-2" />
+                <Skeleton className="h-4 w-32" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-40 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
@@ -463,4 +500,9 @@ export function GlobalAnalytics({ countries }: GlobalAnalyticsProps) {
       </div>
     </div>
   );
+}
+
+// Wrap export in error boundary
+export default function GlobalAnalyticsWithBoundary(props: GlobalAnalyticsProps) {
+  return <AnalyticsErrorBoundary><GlobalAnalytics {...props} /></AnalyticsErrorBoundary>;
 }
