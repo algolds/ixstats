@@ -15,6 +15,40 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Button } from '../../components/ui/button';
 import GlobalOverview from '../../components/sdi/GlobalOverview';
 import { api } from '~/trpc/react';
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import { InterfaceSwitcher } from '../../components/shared/InterfaceSwitcher';
+import { getUserInterfacePreferences } from '../../lib/interface-routing';
+import { UnifiedSidebar } from '../../components/ui/UnifiedSidebar';
+
+// SidebarContent for both desktop and mobile
+function SidebarContent({ profile, countryId }: { profile: any; countryId?: string }) {
+  return (
+    <div className="h-full w-64 sdi-sidebar flex flex-col py-8 px-4">
+      <div className="mb-8 text-center">
+        <div className="w-20 h-20 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center text-3xl shadow-lg mx-auto mb-4 medallion-glow">
+          🌐
+        </div>
+        <h1 className="text-2xl font-bold text-blue-100 diplomatic-header">SDI</h1>
+        <p className="text-sm text-blue-200">Sovereign Digital Interface</p>
+      </div>
+      <nav className="flex flex-col gap-2">
+        <SidebarLink link={{ label: 'Global Overview', href: '/sdi', icon: <FaGlobe /> }} />
+        <SidebarLink link={{ label: 'Intelligence Feed', href: '#intelligence', icon: <FaSatellite /> }} />
+        <SidebarLink link={{ label: 'Secure Comms', href: '#comms', icon: <FaLock /> }} />
+        <SidebarLink link={{ label: 'Crisis Management', href: '#crisis', icon: <FaExclamationTriangle /> }} />
+        <SidebarLink link={{ label: 'Economic Intelligence', href: '#economic', icon: <FaChartLine /> }} />
+        <SidebarLink link={{ label: 'Diplomatic Matrix', href: '#diplomatic', icon: <FaHandshake /> }} />
+      </nav>
+      {/* Interface Switcher for cross-navigation */}
+      {profile && (
+        <div className="mt-8">
+          <InterfaceSwitcher currentInterface="sdi" countryId={countryId || undefined} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 function CrisisManagement() {
   // Live tRPC queries for real-time data
@@ -50,6 +84,15 @@ function CrisisManagement() {
       maximumFractionDigits: 1
     }).format(amount);
   };
+
+  const { user } = useUser();
+  const { data: userProfile } = api.users.getProfile.useQuery(
+    { userId: user?.id || '' },
+    { enabled: !!user?.id }
+  );
+  const userCountryId = userProfile?.countryId;
+  const userRole = (userProfile as any)?.role || 'user';
+  const router = useRouter();
 
   return (
     <div className="max-w-7xl mx-auto w-full animate-fade-in">
@@ -114,8 +157,17 @@ function CrisisManagement() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-blue-300">Affected Countries:</span>
-                    <div className="text-blue-200 font-medium">
-                      {(crisis.affectedCountries || []).join(', ')}
+                    <div className="text-blue-200 font-medium flex flex-wrap gap-2">
+                      {(crisis.affectedCountries || []).map((countryId: string) => (
+                        <span key={countryId} className="flex items-center gap-1">
+                          {countryId}
+                          {(userRole === 'admin' || userRole === 'dm' || userCountryId === countryId) && (
+                            <Button size="sm" className="ml-1 bg-orange-600/80 text-white border-orange-500/30 hover:bg-orange-600/90" onClick={() => router.push('/eci')}>
+                              🏛️ View in ECI
+                            </Button>
+                          )}
+                        </span>
+                      ))}
                     </div>
                   </div>
                   <div>
@@ -232,6 +284,15 @@ function EconomicIntelligence() {
     };
     return colors[severity as keyof typeof colors] || 'bg-gray-500';
   };
+
+  const { user } = useUser();
+  const { data: userProfile } = api.users.getProfile.useQuery(
+    { userId: user?.id || '' },
+    { enabled: !!user?.id }
+  );
+  const userCountryId = userProfile?.countryId;
+  const userRole = (userProfile as any)?.role || 'user';
+  const router = useRouter();
 
   return (
     <div className="max-w-7xl mx-auto w-full animate-fade-in">
@@ -354,6 +415,15 @@ function EconomicIntelligence() {
                       <div>
                         <h4 className="text-blue-100 font-medium">{alert.title}</h4>
                         <p className="text-blue-200 text-sm mt-1">{alert.description}</p>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {(alert.affectedCountries || []).map((countryId: string) => (
+                            (userRole === 'admin' || userRole === 'dm' || userCountryId === countryId) && (
+                              <Button key={countryId} size="sm" className="bg-orange-600/80 text-white border-orange-500/30 hover:bg-orange-600/90" onClick={() => router.push('/eci')}>
+                                🏛️ View in ECI ({countryId})
+                              </Button>
+                            )
+                          ))}
+                        </div>
                       </div>
                     </div>
                     <span className="text-xs text-blue-300">
@@ -378,12 +448,12 @@ function EconomicIntelligence() {
                   <div className="text-blue-400 text-xs mt-1">Based on 24h data</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-yellow-400 mb-2">{marketData?.currencyVolatility ?? '--'}%</div>
+                  <div className="text-2xl font-bold text-yellow-400 mb-2">--</div>
                   <div className="text-blue-300 text-sm">Currency Volatility</div>
                   <div className="text-blue-400 text-xs mt-1">Above average</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-400 mb-2">{marketData ? formatCurrency(marketData.tradeVolume) : '--'}</div>
+                  <div className="text-2xl font-bold text-blue-400 mb-2">--</div>
                   <div className="text-sm text-blue-300">Trade Volume</div>
                   <div className="text-blue-400 text-xs mt-1">Monthly total</div>
                 </div>
@@ -400,7 +470,7 @@ function DiplomaticMatrix() {
   // Live tRPC queries for real-time data
   const { data: diplomaticRelations = [], isLoading: loadingRelations, error: errorRelations } = api.sdi.getDiplomaticRelations.useQuery(undefined, { refetchInterval: 5000 });
   const { data: activeTreaties = [], isLoading: loadingTreaties, error: errorTreaties } = api.sdi.getActiveTreaties.useQuery(undefined, { refetchInterval: 5000 });
-  const { data: diplomaticEvents = [], isLoading: loadingEvents, error: errorEvents } = api.sdi.getDiplomaticEvents.useQuery(undefined, { refetchInterval: 5000 });
+  // const { data: diplomaticEvents = [], isLoading: loadingEvents, error: errorEvents } = api.sdi.getDiplomaticEvents.useQuery(undefined, { refetchInterval: 5000 });
 
   const getRelationshipColor = (relationship: string) => {
     const colors = {
@@ -439,6 +509,15 @@ function DiplomaticMatrix() {
       day: 'numeric'
     });
   };
+
+  const { user } = useUser();
+  const { data: userProfile } = api.users.getProfile.useQuery(
+    { userId: user?.id || '' },
+    { enabled: !!user?.id }
+  );
+  const userCountryId = userProfile?.countryId;
+  const userRole = (userProfile as any)?.role || 'user';
+  const router = useRouter();
 
   return (
     <div className="max-w-7xl mx-auto w-full animate-fade-in">
@@ -515,6 +594,15 @@ function DiplomaticMatrix() {
                       ))}
                     </div>
                   </div>
+                  <div className="flex gap-2 mt-2">
+                    {['country1', 'country2'].map((key) => (
+                      (userRole === 'admin' || userRole === 'dm' || userCountryId === relation[key]) && (
+                        <Button key={relation[key]} size="sm" className="bg-orange-600/80 text-white border-orange-500/30 hover:bg-orange-600/90" onClick={() => router.push('/eci')}>
+                          🏛️ View in ECI ({relation[key]})
+                        </Button>
+                      )
+                    ))}
+                  </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" className="border-blue-600 text-blue-200">
                       View Details
@@ -559,6 +647,15 @@ function DiplomaticMatrix() {
                     <span>Signed: {treaty.signedDate ? formatDate(treaty.signedDate) : ''}</span>
                     <span>Expires: {treaty.expiryDate ? formatDate(treaty.expiryDate) : ''}</span>
                   </div>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {(treaty.parties || []).map((partyId: string) => (
+                      (userRole === 'admin' || userRole === 'dm' || userCountryId === partyId) && (
+                        <Button key={partyId} size="sm" className="bg-orange-600/80 text-white border-orange-500/30 hover:bg-orange-600/90" onClick={() => router.push('/eci')}>
+                          🏛️ View in ECI ({partyId})
+                        </Button>
+                      )
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -568,10 +665,10 @@ function DiplomaticMatrix() {
         {/* Upcoming Diplomatic Events */}
         <div>
           <h3 className="text-xl font-semibold text-blue-100 mb-4">Upcoming Events</h3>
-          {loadingEvents && <div className="text-blue-300 text-center py-4">Loading events...</div>}
-          {errorEvents && <div className="text-red-400 text-center py-4">Error loading events: {errorEvents.message}</div>}
+          {/* {loadingEvents && <div className="text-blue-300 text-center py-4">Loading events...</div>} */}
+          {/* {errorEvents && <div className="text-red-400 text-center py-4">Error loading events: {errorEvents.message}</div>} */}
           <div className="space-y-4">
-            {diplomaticEvents.map((event: any) => (
+            {/* {diplomaticEvents.map((event: any) => (
               <Card key={event.id} className="bg-blue-900/20 border-blue-700/30">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
@@ -593,7 +690,7 @@ function DiplomaticMatrix() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            ))} */}
           </div>
         </div>
     </GlassCard>
@@ -611,41 +708,54 @@ const MODULES = [
 ];
 
 export default function SDIPage() {
-  const [selected, setSelected] = useState('summary');
+  const [selectedModule, setSelectedModule] = useState('summary');
+  const { user } = useUser();
+  const { data: profile } = api.users.getProfile.useQuery(
+    { userId: user?.id || '' },
+    { enabled: !!user?.id }
+  );
+  const countryId = profile?.countryId;
+
+  // Sidebar links for all SDI submodules
+  const sdiLinks = [
+    { key: 'summary', label: 'Global Overview', href: '/sdi', icon: <FaGlobe /> },
+    { key: 'intelligence', label: 'Intelligence Feed', href: '/sdi/intelligence', icon: <FaSatellite /> },
+    { key: 'comms', label: 'Secure Comms', href: '/sdi/communications', icon: <FaLock /> },
+    { key: 'crisis', label: 'Crisis Management', href: '/sdi/crisis', icon: <FaExclamationTriangle /> },
+    { key: 'economic', label: 'Economic Intelligence', href: '/sdi/economic', icon: <FaChartLine /> },
+    { key: 'diplomatic', label: 'Diplomatic Matrix', href: '/sdi/diplomatic', icon: <FaHandshake /> },
+  ];
+
+  // Handle sidebar navigation
+  const handleSidebarNav = (key: string) => {
+    setSelectedModule(key);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-slate-900 text-white">
-      <div className="flex flex-row h-screen w-full overflow-hidden">
-        {/* Sidebar Navigation */}
-        <div className="h-full w-64 sdi-sidebar flex flex-col py-8 px-4">
-          <div className="mb-8 text-center">
-            <div className="w-20 h-20 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center text-3xl shadow-lg mx-auto mb-4 medallion-glow">
-              🌐
-            </div>
-            <h1 className="text-2xl font-bold text-blue-100 diplomatic-header">SDI</h1>
-            <p className="text-sm text-blue-200">Sovereign Digital Interface</p>
-          </div>
-          <nav className="flex flex-col gap-2">
-            {MODULES.map((mod) => (
-              <button
-                key={mod.key}
-                className={`w-full text-left px-4 py-2 rounded-lg transition-all font-medium text-blue-100 hover:bg-indigo-700/20 focus:bg-indigo-700/30 ${selected === mod.key ? 'bg-indigo-700/30 font-bold shadow-lg' : ''}`}
-                onClick={() => setSelected(mod.key)}
-              >
-                {mod.label}
-              </button>
-            ))}
-          </nav>
-        </div>
-        {/* Main Content */}
-        <main className="flex-1 flex flex-col h-full overflow-y-auto px-6 py-10 bg-transparent">
-          {selected === 'summary' && <GlobalOverview />}
-          {selected === 'intelligence' && <IntelligenceFeed />}
-          {selected === 'comms' && <SecureComms />}
-          {selected === 'crisis' && <CrisisManagement />}
-          {selected === 'economic' && <EconomicIntelligence />}
-          {selected === 'diplomatic' && <DiplomaticMatrix />}
-        </main>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-slate-900 text-white flex flex-row h-screen w-full overflow-hidden">
+      {/* Unified Sidebar outside main content */}
+      <UnifiedSidebar
+        current="sdi"
+        profile={{
+          name: (profile as any)?.name,
+          role: (profile as any)?.role,
+          avatarUrl: (profile as any)?.avatarUrl,
+          email: (profile as any)?.email,
+        }}
+        countryId={countryId || undefined}
+        links={sdiLinks}
+        activeKey={selectedModule}
+        onNav={handleSidebarNav}
+      />
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col h-full overflow-y-auto px-6 py-10 bg-transparent">
+        {selectedModule === 'summary' && <GlobalOverview />}
+        {selectedModule === 'intelligence' && <IntelligenceFeed />}
+        {selectedModule === 'comms' && <SecureComms />}
+        {selectedModule === 'crisis' && <CrisisManagement />}
+        {selectedModule === 'economic' && <EconomicIntelligence />}
+        {selectedModule === 'diplomatic' && <DiplomaticMatrix />}
+      </main>
     </div>
   );
 } 

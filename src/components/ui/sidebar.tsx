@@ -1,9 +1,8 @@
 "use client";
-import { cn } from '../../lib/utils';
+import { cn } from "../../lib/utils";
 import React, { useState, createContext, useContext } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { IconMenu2, IconX } from "@tabler/icons-react";
-import { usePathname } from 'next/navigation';
 
 interface Links {
   label: string;
@@ -86,23 +85,22 @@ export const DesktopSidebar = ({
 }: React.ComponentProps<typeof motion.div>) => {
   const { open, setOpen, animate } = useSidebar();
   return (
-    <motion.div
-      className={cn(
-        // More prominent glassmorphism: higher opacity, stronger blur, enhanced border
-        'h-full px-4 py-6 hidden md:flex md:flex-col bg-white/80 dark:bg-neutral-900/80 backdrop-blur-[18px] border-r border-blue-300/40 dark:border-blue-900/50 shadow-2xl transition-all duration-300',
-        'glass-card-diplomatic',
-        className
-      )}
-      animate={{
-        width: animate ? (open ? '260px' : '72px') : '260px',
-      }}
-      transition={{ duration: 0.35, ease: 'easeInOut' }}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-      {...props}
-    >
-      {children}
-    </motion.div>
+    <>
+      <motion.div
+        className={cn(
+          "h-full px-4 py-4 hidden  md:flex md:flex-col bg-neutral-100 dark:bg-neutral-800 w-[300px] shrink-0",
+          className
+        )}
+        animate={{
+          width: animate ? (open ? "300px" : "60px") : "300px",
+        }}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        {...props}
+      >
+        {children}
+      </motion.div>
+    </>
   );
 };
 
@@ -165,29 +163,23 @@ export const SidebarLink = ({
   className?: string;
 }) => {
   const { open, animate } = useSidebar();
-  const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
-  // Use Next.js usePathname if available
-  // const pathname = usePathname ? usePathname() : '';
-  const isActive = pathname === link.href;
   return (
     <a
       href={link.href}
       className={cn(
-        'flex items-center gap-3 group/sidebar py-2 px-3 rounded-lg transition-all duration-200',
-        'hover:bg-blue-100/40 dark:hover:bg-blue-900/30 hover:shadow-md',
-        isActive ? 'bg-blue-500/20 text-blue-700 dark:text-blue-200 font-semibold shadow-lg border border-blue-400/30' : 'text-neutral-700 dark:text-neutral-200',
+        "flex items-center justify-start gap-2  group/sidebar py-2",
         className
       )}
-      style={{ minHeight: 44 }}
       {...props}
     >
-      <span className="text-xl">{link.icon}</span>
+      {link.icon}
+
       <motion.span
         animate={{
-          display: animate ? (open ? 'inline-block' : 'none') : 'inline-block',
+          display: animate ? (open ? "inline-block" : "none") : "inline-block",
           opacity: animate ? (open ? 1 : 0) : 1,
         }}
-        className="text-base group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
+        className="text-neutral-700 dark:text-neutral-200 text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
       >
         {link.label}
       </motion.span>

@@ -180,7 +180,7 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
 
     // Calculate percentages
     Object.keys(distribution).forEach(tier => {
-      distribution[tier].percentage = (distribution[tier].count / countries.length) * 100;
+      distribution[tier]!.percentage = (distribution[tier]!.count / countries.length) * 100;
     });
 
     return distribution;
@@ -211,11 +211,11 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
                         <div className={`w-3 h-3 rounded-full ${config.color}`} />
                         <span className="font-medium text-sm">{tier}</span>
                         <Badge variant="secondary" className="text-xs">
-                          {data.count} countries
+                          {data?.count} countries
                         </Badge>
                       </div>
                       <span className="text-sm text-muted-foreground">
-                        {data.percentage.toFixed(1)}%
+                        {data?.percentage.toFixed(1)}%
                       </span>
                     </div>
                     <Progress value={data.percentage} className="h-2" />
@@ -262,11 +262,11 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
                         <span className="font-medium text-sm">Tier {tier}</span>
                         <span className="text-xs text-muted-foreground">({config.label})</span>
                         <Badge variant="secondary" className="text-xs">
-                          {data.count} countries
+                          {data?.count} countries
                         </Badge>
                       </div>
                       <span className="text-sm text-muted-foreground">
-                        {data.percentage.toFixed(1)}%
+                        {data?.percentage.toFixed(1)}%
                       </span>
                     </div>
                     <Progress value={data.percentage} className="h-2" />

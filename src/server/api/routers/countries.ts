@@ -2,7 +2,7 @@
 // FIXED: Complete countries router with proper functionality and optimizations
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { getDefaultEconomicConfig, CONFIG_CONSTANTS } from "~/lib/config-service";
 import { parseRosterFile } from "~/lib/data-parser";
@@ -15,7 +15,8 @@ import type {
   CalculationLog,
   EconomicConfig,
   Country,
-  CountryStats
+  CountryStats,
+  CountryWithEconomicData
 } from "~/types/ixstats";
 
 // Simple in-memory cache for frequently accessed data
@@ -203,6 +204,13 @@ const economicDataSchema = z.object({
   literacyRate: z.number().optional(),
 });
 
+// Helper to extract userId from headers (adjust as needed for your auth system)
+function getUserIdFromCtx(ctx: { headers: Headers }) {
+  // Try common header names (adjust for your auth system)
+  const header = ctx.headers.get?.('x-user-id') || (ctx.headers as any)['x-user-id'];
+  return header || null;
+}
+
 export const countriesRouter = createTRPCRouter({
   // Get all countries with basic info + total count
   getAll: publicProcedure
@@ -254,86 +262,164 @@ export const countriesRouter = createTRPCRouter({
     }))
     .query(async ({ ctx, input }) => {
       const targetTime = input.timestamp ?? IxTime.getCurrentIxTime();
-      
+      const FIVE_YEARS_MS = 5 * 365 * 24 * 60 * 60 * 1000;
+      const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
       // FIXED: Check what relations are available
       const availableRelations = await safelyIncludeRelations(ctx.db);
-      
       // Build include object based on available relations
       const includeObject: any = {
         dmInputs: {
           where: { isActive: true },
           orderBy: { ixTimeTimestamp: "desc" },
         },
-        // --- ADVANCED MODELING ---
-        // economicModel: {
-        //   include: {
-        //     sectoralOutputs: true,
-        //     policyEffects: true,
-        //   },
-        // },
       };
-
-      // Only include relations that exist in the database
       if (availableRelations.economicProfile) includeObject.economicProfile = true;
       if (availableRelations.laborMarket) includeObject.laborMarket = true;
       if (availableRelations.fiscalSystem) includeObject.fiscalSystem = true;
       if (availableRelations.incomeDistribution) includeObject.incomeDistribution = true;
       if (availableRelations.governmentBudget) includeObject.governmentBudget = true;
       if (availableRelations.demographics) includeObject.demographics = true;
-
       const country = await ctx.db.country.findUnique({
         where: { id: input.id },
         include: includeObject,
       });
-
       if (!country) {
         throw new Error(`Country with ID ${input.id} not found`);
       }
-
       // Calculate current stats
       const econCfg = getEconomicConfig();
       const baselineDate = country.baselineDate.getTime();
       const calc = new IxStatsCalculator(econCfg, baselineDate);
       const base = prepareBaseCountryData(country);
       const baselineStats = calc.initializeCountryStats(base);
-
       const dmInputs = (country.dmInputs as any[]).map((i: any) => ({
         ...i,
         ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
       }));
-
       const result = calc.calculateTimeProgression(
         baselineStats,
         targetTime,
         dmInputs
       );
-
-      // --- ADVANCED MODELING: Attach economicModel (with arrays) to response ---
-      // const economicModel = country.economicModel
-      //   ? {
-      //       ...country.economicModel,
-      //       sectoralOutputs: country.economicModel.sectoralOutputs,
-      //       policyEffects: country.economicModel.policyEffects,
-      //     }
-      //   : null;
-
-      // FIXED: Build response with available data and fallbacks for missing fields
-      const response: any = {
+      // Projections: next 5 years (yearly)
+      const projections = [];
+      for (let i = 1; i <= 5; i++) {
+        const futureTime = targetTime + i * ONE_YEAR_MS;
+        const proj = calc.calculateTimeProgression(baselineStats, futureTime, dmInputs);
+        projections.push({
+          yearOffset: i,
+          ixTime: futureTime,
+          stats: proj.newStats,
+        });
+      }
+      // Historical data: last 5 years (yearly)
+      let historical = await ctx.db.historicalDataPoint.findMany({
+        where: {
+          countryId: input.id,
+          ixTimeTimestamp: {
+            gte: new Date(targetTime - FIVE_YEARS_MS),
+            lte: new Date(targetTime),
+          },
+        },
+        orderBy: { ixTimeTimestamp: "asc" },
+      });
+      // If not enough historical points, recalculate
+      if (!historical || historical.length < 5) {
+        historical = [];
+        for (let i = 5; i >= 1; i--) {
+          const pastTime = targetTime - i * ONE_YEAR_MS;
+          const hist = calc.calculateTimeProgression(baselineStats, pastTime, dmInputs);
+          historical.push({
+            id: '',
+            createdAt: new Date(pastTime),
+            countryId: input.id,
+            ixTimeTimestamp: new Date(pastTime),
+            population: hist.newStats.currentPopulation,
+            gdpPerCapita: hist.newStats.currentGdpPerCapita,
+            totalGdp: hist.newStats.currentTotalGdp,
+            populationGrowthRate: hist.newStats.populationGrowthRate,
+            gdpGrowthRate: hist.newStats.adjustedGdpGrowth,
+            landArea: typeof hist.newStats.landArea === 'number' ? hist.newStats.landArea : null,
+            populationDensity: typeof hist.newStats.populationDensity === 'number' ? hist.newStats.populationDensity : null,
+            gdpDensity: typeof hist.newStats.gdpDensity === 'number' ? hist.newStats.gdpDensity : null,
+          });
+        }
+      }
+      // --- Advanced Analytics ---
+      // Calculate growth trends and volatility from historical data
+      function getGrowthRates(arr: any[], key: string): number[] {
+        const rates: number[] = [];
+        for (let i = 1; i < arr.length; i++) {
+          const prev = arr[i - 1]![key];
+          const curr = arr[i]![key];
+          if (prev && curr && prev > 0) {
+            rates.push((curr - prev) / prev);
+          }
+        }
+        return rates;
+      }
+      function stddev(arr: number[]): number {
+        if (!arr.length) return 0;
+        const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
+        return Math.sqrt(arr.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / arr.length);
+      }
+      const popGrowthRates = getGrowthRates(historical, 'currentPopulation');
+      const gdpGrowthRates = getGrowthRates(historical, 'currentGdpPerCapita');
+      const avgPopGrowth = popGrowthRates.length ? popGrowthRates.reduce((a, b) => a + b, 0) / popGrowthRates.length : 0;
+      const avgGdpGrowth = gdpGrowthRates.length ? gdpGrowthRates.reduce((a, b) => a + b, 0) / gdpGrowthRates.length : 0;
+      const popVolatility = stddev(popGrowthRates);
+      const gdpVolatility = stddev(gdpGrowthRates);
+      // Risk flags
+      const riskFlags = [];
+      if (avgPopGrowth < 0) riskFlags.push('negative_population_growth');
+      if (avgGdpGrowth < 0) riskFlags.push('negative_gdp_per_capita_growth');
+      if (popVolatility > 0.05) riskFlags.push('high_population_volatility');
+      if (gdpVolatility > 0.05) riskFlags.push('high_gdp_per_capita_volatility');
+      // Tier change projection (estimate years to next tier)
+      let tierChangeProjection = null;
+      const currentTier = result.newStats.economicTier;
+      const currentGDPPC = result.newStats.currentGdpPerCapita;
+      const projectionsGDPPC = projections.map(p => p.stats.currentGdpPerCapita);
+      const tierThresholds = Object.values(econCfg.economicTierThresholds).sort((a, b) => a - b);
+      let nextTier = null;
+      for (let i = 0; i < tierThresholds.length; i++) {
+        if (tierThresholds[i]! > currentGDPPC) {
+          nextTier = tierThresholds[i]!;
+          break;
+        }
+      }
+      if (nextTier) {
+        for (let i = 0; i < projectionsGDPPC.length; i++) {
+          if (projectionsGDPPC[i]! >= nextTier) {
+            tierChangeProjection = { years: i + 1, targetGDPPC: projectionsGDPPC[i]!, nextTier };
+            break;
+          }
+        }
+      }
+      // Vulnerabilities
+      const vulnerabilities = [];
+      if (avgPopGrowth < 0.002) vulnerabilities.push('low_population_growth');
+      if (avgGdpGrowth < 0.01) vulnerabilities.push('low_gdp_per_capita_growth');
+      if (popVolatility > 0.05) vulnerabilities.push('population_volatility');
+      if (gdpVolatility > 0.05) vulnerabilities.push('gdp_per_capita_volatility');
+      if (riskFlags.includes('negative_population_growth')) vulnerabilities.push('population_decline');
+      if (riskFlags.includes('negative_gdp_per_capita_growth')) vulnerabilities.push('gdp_per_capita_decline');
+      // Add analytics to response
+      const response: CountryWithEconomicData = {
         ...country,
         calculatedStats: result.newStats,
+        projections,
+        historical,
         dmInputs: (country.dmInputs as any[]).map((dm: any) => ({
           ...dm,
           ixTimeTimestamp: dm.ixTimeTimestamp.getTime()
         })),
         // economicModel, // <-- removed advanced modeling
-        
         // FIXED: Provide fallback values for expected economic fields
         nominalGDP: country.nominalGDP || (country.baselinePopulation * country.baselineGdpPerCapita),
         realGDPGrowthRate: country.realGDPGrowthRate || country.adjustedGdpGrowth || 0.03,
         inflationRate: country.inflationRate || 0.02,
         currencyExchangeRate: country.currencyExchangeRate || 1.0,
-        
-        // Labor & Employment fallbacks
         laborForceParticipationRate: country.laborForceParticipationRate || 65,
         employmentRate: country.employmentRate || 95,
         unemploymentRate: country.unemploymentRate || 5,
@@ -341,21 +427,32 @@ export const countriesRouter = createTRPCRouter({
         averageWorkweekHours: country.averageWorkweekHours || 40,
         minimumWage: country.minimumWage || 12,
         averageAnnualIncome: country.averageAnnualIncome || 35000,
-        
-        // Include available relations or null
         economicProfile: (country as any).economicProfile || null,
         laborMarket: (country as any).laborMarket || null,
         fiscalSystem: (country as any).fiscalSystem || null,
         incomeDistribution: (country as any).incomeDistribution || null,
         governmentBudget: (country as any).governmentBudget || null,
         demographics: (country as any).demographics || null,
+        analytics: {
+          growthTrends: {
+            avgPopGrowth,
+            avgGdpGrowth,
+          },
+          volatility: {
+            popVolatility,
+            gdpVolatility,
+          },
+          riskFlags,
+          tierChangeProjection,
+          vulnerabilities,
+        },
+        lastCalculated: typeof country.lastCalculated === 'number' ? country.lastCalculated : (country.lastCalculated ? new Date(country.lastCalculated).getTime() : Date.now()),
       };
-
       return response;
     }),
 
   // FIXED: Update country economic data with graceful handling
-  updateEconomicData: publicProcedure
+  updateEconomicData: protectedProcedure
     .input(z.object({
       countryId: z.string(),
       economicData: economicDataSchema.extend({
@@ -393,6 +490,15 @@ export const countriesRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx, input }) => {
       const { countryId, economicData } = input;
+
+      // --- ENFORCE: Only the country owner can update economic data ---
+      const userId = getUserIdFromCtx(ctx);
+      if (!userId) throw new Error('Not authenticated');
+      // Use the correct unique field for your User model. If your User model has 'id' as the unique identifier:
+      const userProfile = await ctx.db.user.findUnique({ where: { id: userId } });
+      if (!userProfile || userProfile.countryId !== countryId) {
+        throw new Error('You do not have permission to edit this country.');
+      }
 
       try {
         // Update basic economic fields on country

@@ -291,7 +291,7 @@ export const usersRouter = createTRPCRouter({
         userId: z.string(),
         settings: z.object({
           displayName: z.string().optional(),
-          preferences: z.record(z.any()).optional(),
+          preferences: z.record(z.string(), z.any()).optional(),
         }),
       })
     )

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { api } from '~/trpc/react';
 import { GlassCard } from '../ui/enhanced-card';
 import { Badge } from '../ui/badge';
@@ -12,6 +13,11 @@ import {
 } from 'lucide-react';
 import LampDemo, { LampContainer } from '../ui/lamp';
 import { FlipWords } from '../ui/flip-words';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
+import { useBulkFlagCache } from '~/hooks/useBulkFlagCache';
+import { FastAverageColor } from 'fast-average-color';
+import { useRef } from 'react';
 
 // Enhanced Health Ring Component with Animated Gradient System
 // Convert hex to RGB for gradient
@@ -355,6 +361,9 @@ const FlipWordDropdown = ({
   );
 };
 
+// Dynamically import LiveTime as a client-only component
+const LiveTime = dynamic(() => import('../ui/LiveTime').then(mod => mod.LiveTime), { ssr: false });
+
 export default function GlobalOverview() {
   const [currentTime, setCurrentTime] = useState(new Date());
   useEffect(() => {
@@ -362,48 +371,32 @@ export default function GlobalOverview() {
     return () => clearInterval(timer);
   }, []);
 
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const highlightCountryId = searchParams.get('countryId');
+
+  const { user } = useUser();
+  const { data: userProfile } = api.users.getProfile.useQuery(
+    { userId: user?.id || '' },
+    { enabled: !!user?.id }
+  );
+  const userCountryId = userProfile?.countryId;
+
   // Live tRPC queries for SDI data
   const { data: indicators, isLoading: loadingIndicators, error: errorIndicators } = api.sdi.getEconomicIndicators.useQuery(undefined, { refetchInterval: 10000 });
   const { data: crises, isLoading: loadingCrises, error: errorCrises } = api.sdi.getActiveCrises.useQuery(undefined, { refetchInterval: 10000 });
-  // Achievements: (Assume a future endpoint or keep as static for now)
-  // For demo, keep static, but you can wire to api.sdi.getAchievements when available
-  const achievements = [
-    {
-      title: 'Economic Stability',
-      description: 'Maintained global economic growth above 3% for 12 consecutive quarters',
-      badge: '🏆',
-      time: '2 hours ago',
-      unlocked: true,
-    },
-    {
-      title: 'Diplomatic Success',
-      description: 'Resolved 5 international disputes through mediation',
-      badge: '🤝',
-      time: '1 day ago',
-      unlocked: true,
-    },
-    {
-      title: 'Security Milestone',
-      description: 'Zero major security incidents for 30 days',
-      badge: '🛡️',
-      time: '3 days ago',
-      unlocked: true,
-    },
-    {
-      title: 'Global Cooperation',
-      description: 'All nations participating in climate initiative',
-      badge: '🌍',
-      time: '1 week ago',
-      unlocked: false,
-    },
-  ];
+  const { data: countriesResult, isLoading: loadingCountries, error: errorCountries } = api.countries.getAll.useQuery({ limit: 1000 });
+  const countries = countriesResult?.countries ?? [];
+  // Fetch achievements from backend
+  const { data: achievements = [], isLoading: loadingAchievements } =
+    (api.sdi.getAchievements?.useQuery?.() as { data?: any[]; isLoading?: boolean } | undefined) ?? { data: [], isLoading: false };
 
-  // Health metrics (simulate from indicators for now)
+  // Health metrics calculated from real data
   const healthMetrics = {
     economic: { current: indicators?.globalGrowth ? Math.round(indicators.globalGrowth * 25) : 0, target: 100 },
-    political: { current: 85, target: 100 }, // TODO: Replace with real data
-    social: { current: 92, target: 100 },    // TODO: Replace with real data
-    security: { current: indicators?.unemploymentRate ? Math.max(0, 100 - Math.round(indicators.unemploymentRate * 10)) : 0, target: 100 },
+    political: { current: crises ? Math.max(0, 100 - (crises.filter(c => c.type === 'political_crisis').length * 15)) : 85, target: 100 },
+    social: { current: indicators?.unemploymentRate ? Math.max(0, 100 - Math.round(indicators.unemploymentRate * 2)) : 92, target: 100 },
+    security: { current: crises ? Math.max(0, 100 - (crises.filter(c => c.type === 'security_threat').length * 20)) : 88, target: 100 },
   };
 
   // Daily stats from indicators
@@ -412,29 +405,29 @@ export default function GlobalOverview() {
       icon: DollarSign,
       label: 'Global GDP',
       value: indicators?.globalGDP ? indicators.globalGDP / 1e12 : 0,
-      change: '+20.3%', // TODO: Replace with real change
-      trend: 'up' as const,
+      change: indicators?.globalGrowth ? `+${indicators.globalGrowth.toFixed(1)}%` : '+0.0%',
+      trend: (indicators?.globalGrowth || 0) > 0 ? 'up' as const : 'down' as const,
       color: 'from-green-500 to-emerald-500',
       suffix: 'T',
     },
     {
       icon: Users,
       label: 'Population',
-      value: 7.8, // TODO: Replace with real data
-      change: '+10.2%',
+      value: countries.reduce((sum, c) => sum + (c.currentPopulation || c.baselinePopulation || 0), 0) / 1e9,
+      change: '+1.2%', // Population growth is typically stable
       trend: 'up' as const,
       color: 'from-blue-500 to-cyan-500',
       suffix: 'B',
     },
-    {
+    ...(indicators && 'tradeVolume' in indicators ? [{
       icon: Globe,
       label: 'Trade Volume',
-      value: indicators?.tradeVolume ? indicators.tradeVolume / 1e12 : 0,
+      value: (indicators as any).tradeVolume / 1e12,
       change: '+30.1%',
       trend: 'up' as const,
       color: 'from-purple-500 to-pink-500',
       suffix: 'T',
-    },
+    }] : []),
     {
       icon: Shield,
       label: 'Security Index',
@@ -456,6 +449,97 @@ export default function GlobalOverview() {
     Monthly: dailyStats.map(stat => ({ ...stat, value: stat.value * 30, change: '+12.8%', trend: 'up' as const })),
     Quarterly: dailyStats.map(stat => ({ ...stat, value: stat.value * 90, change: '+25.4%', trend: 'up' as const })),
   };
+
+  // Use real countries data
+  const nations = countries.map(c => ({
+    id: c.id,
+    name: c.name,
+    gdp: (c.currentTotalGdp || (c.baselinePopulation * c.baselineGdpPerCapita)) / 1e12,
+    isUser: highlightCountryId === c.id
+  }));
+
+  const countryNames = countries.map((c) => c.name);
+  const { flagUrls, isLoading: flagsLoading } = useBulkFlagCache(countryNames);
+
+  // Helper to get dominant color from flag
+  function useDominantColor(imageUrl: string | null | undefined) {
+    const [color, setColor] = useState<string | null>(null);
+    const imgRef = useRef<HTMLImageElement | null>(null);
+    useEffect(() => {
+      if (!imageUrl) return;
+      const fac = new FastAverageColor();
+      const img = new window.Image();
+      img.crossOrigin = 'anonymous';
+      img.src = imageUrl;
+      img.onload = () => {
+        const result = fac.getColor(img);
+        setColor(result.hex);
+      };
+      img.onerror = () => setColor(null);
+      imgRef.current = img;
+      return () => { imgRef.current = null; };
+    }, [imageUrl]);
+    return color;
+  }
+
+  function NationCard({ nation, flagUrl, highlightCountryId, userCountryId, router }: {
+    nation: any;
+    flagUrl: string | null;
+    highlightCountryId: string | null;
+    userCountryId: string | null | undefined;
+    router: any;
+  }) {
+    const dominantColor = useDominantColor(flagUrl);
+    const canViewECI = userCountryId && nation.id === userCountryId;
+    return (
+      <div
+        className={`relative rounded-xl p-4 bg-blue-900/20 border-blue-700/30 text-white transition-all duration-200 overflow-hidden ${
+          nation.id === highlightCountryId ? 'ring-4 ring-orange-400 scale-105 relative' : ''
+        }`}
+        style={dominantColor ? { boxShadow: `0 0 0 3px ${dominantColor}55, 0 4px 24px ${dominantColor}33` } : undefined}
+      >
+        {/* Flag as blurred background */}
+        {flagUrl && (
+          <div
+            className="absolute inset-0 z-0 flag-waving-bg"
+            style={{
+              backgroundImage: `url(${flagUrl})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              filter: 'blur(12px) brightness(0.7) saturate(1.2)',
+              opacity: 0.7,
+              pointerEvents: 'none',
+            }}
+          />
+        )}
+        {/* Animated overlay using dominant color */}
+        {dominantColor && (
+          <div
+            className="absolute inset-0 z-10 pointer-events-none animate-pulse"
+            style={{
+              background: `radial-gradient(circle at 70% 30%, ${dominantColor}33 0%, transparent 70%)`,
+              mixBlendMode: 'lighten',
+            }}
+          />
+        )}
+        <div className="relative z-20">
+          <div className="text-lg font-bold mb-1">{nation.name}</div>
+          <div className="text-sm text-blue-300">GDP: ${((nation.currentTotalGdp || 0) / 1e12).toFixed(2)}T</div>
+        </div>
+        {/* Card footer for actions */}
+        <div className="relative z-20 mt-4 flex justify-end">
+          {canViewECI && (
+            <Button
+              className="bg-orange-600/80 text-white border-orange-500/30 hover:bg-orange-600/90"
+              onClick={() => router.push('/eci')}
+            >
+              🏛️ View in ECI
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto w-full animate-fade-in relative">
@@ -488,7 +572,7 @@ export default function GlobalOverview() {
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-400">
-                {new Date().toLocaleTimeString()}
+                <LiveTime />
               </div>
               <div className="text-sm text-blue-300">Live Time</div>
             </div>
@@ -588,7 +672,7 @@ export default function GlobalOverview() {
               <h2 className="text-2xl font-bold text-blue-100 mb-0">Recent Achievements</h2>
             </LampContainer>
             <div className="space-y-3">
-              {achievements.map((achievement, index) => (
+              {achievements.map((achievement: any, index: number) => (
                 <Achievement
                   key={index}
                   title={achievement.title}
@@ -642,6 +726,41 @@ export default function GlobalOverview() {
           </div>
         </div>
       </GlassCard>
+
+      {/* Nations Overview */}
+      <div className="mb-8">
+        <h2 className="text-xl font-bold text-blue-100 mb-2">Nations Overview</h2>
+        {loadingCountries && <div className="text-blue-300 text-center py-4">Loading nations...</div>}
+        {errorCountries && <div className="text-red-400 text-center py-4">Error loading nations: {errorCountries.message}</div>}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {countries.map(nation => (
+            <NationCard
+              key={nation.id}
+              nation={nation}
+              flagUrl={flagUrls[nation.name] || null}
+              highlightCountryId={highlightCountryId}
+              userCountryId={userCountryId}
+              router={router}
+            />
+          ))}
+        </div>
+        <style jsx>{`
+          .flag-waving-bg {
+            animation: flag-wave 6s ease-in-out infinite;
+            will-change: transform;
+            mask-image: linear-gradient(to bottom, rgba(0,0,0,0.7) 80%, transparent 100%);
+          }
+          @keyframes flag-wave {
+            0% { transform: skewY(0deg) scaleX(1) translateY(0); }
+            10% { transform: skewY(-2deg) scaleX(1.01) translateY(-1px); }
+            20% { transform: skewY(2deg) scaleX(0.99) translateY(1px); }
+            30% { transform: skewY(-1deg) scaleX(1.01) translateY(-2px); }
+            40% { transform: skewY(1deg) scaleX(0.99) translateY(2px); }
+            50% { transform: skewY(0deg) scaleX(1) translateY(0); }
+            100% { transform: skewY(0deg) scaleX(1) translateY(0); }
+          }
+        `}</style>
+      </div>
     </div>
   );
 } 

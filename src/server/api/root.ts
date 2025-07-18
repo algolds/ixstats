@@ -6,6 +6,8 @@ import { countriesRouter } from "./routers/countries";
 import { adminRouter } from "./routers/admin";
 import { usersRouter } from "./routers/users";
 import { sdiRouter } from "./routers/sdi";
+import { intelligenceRouter } from "./routers/intelligence";
+import { eciRouter } from "./routers/eci";
 
 /**
  * This is the primary router for your server.
@@ -17,6 +19,9 @@ export const appRouter = createTRPCRouter({
   admin: adminRouter, // FIXED: Added admin router
   users: usersRouter, // FIXED: Added users router
   sdi: sdiRouter,
+  intelligence: intelligenceRouter,
+  eci: eciRouter, // ECI router for Executive Command Interface
+  system: adminRouter, // Alias for global stats
 });
 
 // export type definition of API

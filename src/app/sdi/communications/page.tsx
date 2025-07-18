@@ -1,13 +1,34 @@
-import { GlassCard } from '../../../components/ui/enhanced-card';
+import SecureComms from '../../../components/sdi/SecureComms';
+import { InterfaceSwitcher } from '../../../components/shared/InterfaceSwitcher';
+import { Button } from '../../../components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
 export default function SecureCommunicationsPage() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-8">
-      <GlassCard variant="diplomatic" blur="prominent" glow="hover" className="max-w-2xl w-full p-12 animate-fade-in">
-        <h1 className="text-4xl font-bold text-blue-100 mb-4">Secure Communications Center</h1>
-        <p className="text-lg text-blue-200 mb-2">Encrypted diplomatic channels and secure correspondence.</p>
-        <div className="text-blue-300">(Module under construction)</div>
-      </GlassCard>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
+      {/* Header */}
+      <header className="bg-black/20 backdrop-blur-md border-b border-white/10 p-4">
+        <div className="flex items-center justify-between max-w-7xl mx-auto">
+          <div className="flex items-center gap-4">
+            <Link href="/sdi">
+              <Button variant="ghost" size="sm" className="text-blue-300 hover:text-blue-200">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to SDI
+              </Button>
+            </Link>
+            <h1 className="text-2xl font-bold text-white">Secure Communications</h1>
+          </div>
+          <InterfaceSwitcher currentInterface="sdi" />
+        </div>
+      </header>
+      
+      {/* Main Content */}
+      <main className="p-6">
+        <div className="max-w-7xl mx-auto">
+          <SecureComms />
+        </div>
+      </main>
     </div>
   );
 } 

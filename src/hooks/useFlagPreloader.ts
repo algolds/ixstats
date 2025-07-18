@@ -144,7 +144,12 @@ export function useFlagPreloader(countryName?: string) {
 
     try {
       const url = await ixnayWiki.getFlagUrl(name);
-      setFlagUrl(url);
+      if (typeof url === 'string') {
+        setFlagUrl(url);
+      } else {
+        setError(url.error);
+        setFlagUrl(null);
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load flag';
       setError(errorMessage);
@@ -194,7 +199,12 @@ export function useFlagUrl(countryName: string) {
         // The service will check cache first, so this is efficient
         const url = await ixnayWiki.getFlagUrl(countryName);
         if (isMounted) {
-          setFlagUrl(url);
+          if (typeof url === 'string') {
+            setFlagUrl(url);
+          } else {
+            setError(url.error);
+            setFlagUrl(null);
+          }
           setIsLoading(false);
         }
               } catch (error) {
