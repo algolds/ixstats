@@ -7,6 +7,10 @@ import {
   formatPopulation,
   formatCurrency
 } from '~/lib/chart-utils';
+import { ExpandableStatCard } from '~/components/ui/ExpandableStatCard';
+import { useState } from 'react';
+import dynamic from 'next/dynamic';
+import { useMemo } from 'react';
 
 interface CountriesPageHeaderProps {
   // totalCountries: number; // Removed
@@ -16,21 +20,52 @@ interface CountriesPageHeaderProps {
   combinedGdp?: number; // Add combinedGdp prop
 }
 
+// Dynamically import react-wavify to avoid SSR issues
+const Wave = dynamic(() => import('react-wavify').then(mod => mod.default), { ssr: false });
+
+function FlagWaveBackground({ flagUrl }: { flagUrl: string }) {
+  // The SVG wave overlays the flag image for a realistic effect
+  return (
+    <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden flex items-end justify-center" style={{ minHeight: 120 }}>
+      <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', background: `url(${flagUrl}) center/cover no-repeat`, opacity: 0.22, filter: 'blur(0.5px) saturate(1.2)' }} />
+      <div style={{ position: 'absolute', bottom: 0, width: '100%', height: '100%' }}>
+        <Wave
+          fill="url(#flag-gradient)"
+          options={{ height: 60, amplitude: 18, speed: 0.18, points: 5 }}
+          style={{ width: '100%', height: 120, minHeight: 80, opacity: 0.7 }}
+        >
+          <defs>
+            <linearGradient id="flag-gradient" gradientTransform="rotate(90)">
+              <stop offset="0%" stopColor="#fff" stopOpacity="0.7" />
+              <stop offset="100%" stopColor="#fff" stopOpacity="0.1" />
+            </linearGradient>
+          </defs>
+        </Wave>
+      </div>
+    </div>
+  );
+}
+
 export function CountriesPageHeader({
-  // totalCountries, // Removed
   isLoading = false,
-  // showing, // Removed
-  totalPopulation, // Destructure totalPopulation prop
-  combinedGdp // Destructure combinedGdp prop
-}: CountriesPageHeaderProps) {
-  // This function renders the header section for the countries page.
-  // It displays the title, a brief description, and some quick stats like total countries.
-  // It also handles a loading state by showing skeletons.
+  totalPopulation,
+  combinedGdp,
+  filteredCountries = [],
+}: CountriesPageHeaderProps & { filteredCountries?: any[] }) {
+  // Find top 3 countries by GDP for the GDP card
+  const topGdpCountries = useMemo(() => (filteredCountries || [])
+    .slice()
+    .sort((a, b) => (b.currentTotalGdp ?? 0) - (a.currentTotalGdp ?? 0))
+    .slice(0, 3), [filteredCountries]);
+
+  // Use a prominent flag for the background (e.g., United States or a world flag)
+  const flagUrl = '/flags/United_States.png';
 
   return (
-    <div className="mb-8">
-      {/* Main container for the header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="mb-8 relative">
+      {/* Realistic waving flag background using react-wavify */}
+      <FlagWaveBackground flagUrl={flagUrl} />
+      <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         {/* Left side: Title and description */}
         <div>
           <h1 className="text-3xl md:text-4xl font-bold text-foreground flex items-center">
@@ -41,93 +76,38 @@ export function CountriesPageHeader({
             Browse detailed statistics for all countries in the world.
           </p>
         </div>
-
-        {/* Right side: Quick Stats */}
+        {/* Right side: Expandable Stat Cards */}
         <div className="flex flex-col sm:flex-row gap-3">
-          {/* Stat Card: Total Countries - Removed */}
-          {/*
-          <div className="flex items-center px-4 py-2 bg-card text-card-foreground rounded-lg border">
-            <Users className="h-5 w-5 mr-2 text-blue-500" />
-            <div>
-              <p className="text-xs text-muted-foreground">Total Countries</p>
-              {isLoading ? (
-                <Skeleton className="h-5 w-16 mt-1" />
-              ) : (
-                <div className="font-semibold text-foreground">
-                  {totalCountries.toLocaleString()}
-                </div>
-              )}
-            </div>
-          </div>
-          */}
-
-          {/* Stat Card: Showing - Removed */}
-          {/*
-          {showing !== undefined && (
-            <div className="flex items-center px-4 py-2 bg-card text-card-foreground rounded-lg border">
-              <Users className="h-5 w-5 mr-2 text-blue-500" />
-              <div>
-                <p className="text-xs text-muted-foreground">Showing</p>
-                {isLoading ? (
-                  <Skeleton className="h-5 w-16 mt-1" />
-                ) : (
-                  <div className="font-semibold text-foreground">
-                    {showing.toLocaleString()}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-          */}
-
-          {totalPopulation !== undefined && (
-            <div className="flex items-center px-4 py-2 bg-card text-card-foreground rounded-lg border">
-              <Users className="h-5 w-5 mr-2 text-blue-500" />
-              <div>
-                <p className="text-xs text-muted-foreground">Total Population</p>
-                {isLoading ? (
-                  <Skeleton className="h-5 w-16 mt-1" />
-                ) : (
-                  <div className="font-semibold text-foreground">
-                    {formatPopulation(totalPopulation)}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {combinedGdp !== undefined && (
-            <div className="flex items-center px-4 py-2 bg-card text-card-foreground rounded-lg border">
-              <BarChart3 className="h-5 w-5 mr-2 text-green-500" />
-              <div>
-                <p className="text-xs text-muted-foreground">Combined GDP</p>
-                {isLoading ? (
-                  <Skeleton className="h-5 w-20 mt-1" />
-                ) : (
-                  <div className="font-semibold text-foreground">
-                    {formatCurrency(combinedGdp)}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Stat Card: Active Stats */}
-          <div className="flex items-center px-4 py-2 bg-card text-card-foreground rounded-lg border">
-            <BarChart3 className="h-5 w-5 mr-2 text-green-500" />
-            <div>
-              <p className="text-xs text-muted-foreground">Active Stats</p>
-              {isLoading ? (
-                // Show skeleton if data is loading
-                <Skeleton className="h-5 w-20 mt-1" />
-              ) : (
-                // Show "Real-time" text. Changed <p> to <div> to avoid hydration error.
-                <div className="font-semibold text-foreground">
-                  Real-time
-                </div>
-              )}
-            </div>
-          </div>
+          <ExpandableStatCard
+            icon={<Users className="h-5 w-5 mr-2 text-blue-500" />}
+            label="Total Population"
+            value={isLoading ? undefined : totalPopulation}
+            isLoading={isLoading}
+            type="population"
+            formattedValue={isLoading ? undefined : formatPopulation(totalPopulation)}
+          />
+          <ExpandableStatCard
+            icon={<BarChart3 className="h-5 w-5 mr-2 text-green-500" />}
+            label="Combined GDP"
+            value={isLoading ? undefined : combinedGdp}
+            isLoading={isLoading}
+            type="gdp"
+            topCountries={topGdpCountries}
+            formattedValue={isLoading ? undefined : formatCurrency(combinedGdp)}
+          />
+          <ExpandableStatCard
+            icon={<BarChart3 className="h-5 w-5 mr-2 text-green-500" />}
+            label="Active Stats"
+            value={isLoading ? undefined : 'Real-time'}
+            isLoading={isLoading}
+            type="active"
+            extraStats={{
+              countryCount: filteredCountries.length,
+              avgGdpPerCapita: filteredCountries.length > 0 ? Math.round(filteredCountries.reduce((sum, c) => sum + (c.currentGdpPerCapita ?? 0), 0) / filteredCountries.length) : 0,
+              avgPopulationDensity: filteredCountries.length > 0 ? (filteredCountries.reduce((sum, c) => sum + (c.populationDensity ?? 0), 0) / filteredCountries.length) : 0,
+            }}
+            formattedValue={isLoading ? undefined : 'Real-time'}
+          />
         </div>
       </div>
     </div>

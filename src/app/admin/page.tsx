@@ -15,7 +15,14 @@ import {
   DataImportSection,
   WarningPanel,
   ImportPreviewDialog,
+  SdiAdminPanel,
+  CountryAdminPanel,
 } from "./_components";
+import { GlassCard, EnhancedCard } from "~/components/ui/enhanced-card";
+import { BentoGrid } from "~/components/ui/bento-grid";
+import { AnimatedNumber } from "~/components/ui/animated-number";
+import { TrendIndicator } from "~/components/ui/trend-indicator";
+import { HealthRing } from "~/components/ui/health-ring";
 import { FlagCacheManager } from "~/components/FlagCacheManager";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
@@ -29,13 +36,17 @@ import type {
 } from "~/types/ixstats";
 import { AdminErrorBoundary } from "./_components/ErrorBoundary";
 import { SignedIn, SignedOut, SignInButton, useUser, UserButton } from "@clerk/nextjs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
+import { Sidebar, SidebarBody, SidebarLink } from "~/components/ui/sidebar";
+import { Settings, Clock, TrendingUp, Bot, Database, Upload, List, Shield, Users } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
+import { Skeleton } from "~/components/ui/skeleton";
+import { BarChart3, Users as UsersIcon } from "lucide-react";
+import { formatPopulation, formatCurrency } from '~/lib/chart-utils';
 
 export default function AdminPage() {
-  // All hooks must be called before any early returns!
-  // (This is required by React. Do not move hooks inside conditionals or after returns.)
+  // All hooks must be called unconditionally and at the top
   const { user, isLoaded } = useUser();
-
-  // State management
   const [config, setConfig] = useState({
     globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR as number,
     autoUpdate: true,
@@ -46,7 +57,6 @@ export default function AdminPage() {
     customDate: new Date().toISOString().split('T')[0] || "",
     customTime: "12:00",
   });
-  // Import preview dialog state: keep previewData and showPreview until user closes dialog
   const [importState, setImportState] = useState({
     isUploading: false,
     isAnalyzing: false,
@@ -54,8 +64,8 @@ export default function AdminPage() {
     importError: null as string | null,
     previewData: null as ImportAnalysis | null,
     showPreview: false,
-    fileData: null as number[] | null, // Store fileData separately
-    fileName: null as string | null,   // Store fileName separately
+    fileData: null as number[] | null,
+    fileName: null as string | null,
   });
   const [actionState, setActionState] = useState({
     calculationPending: false,
@@ -68,6 +78,17 @@ export default function AdminPage() {
     syncEpochPending: false,
     lastUpdate: null as Date | null,
   });
+  const [selectedSection, setSelectedSection] = useState("overview");
+  const sidebarLinks = [
+    { label: "Overview", value: "overview", icon: <Settings /> },
+    { label: "Time Controls", value: "time", icon: <Clock /> },
+    { label: "Economic Controls", value: "economic", icon: <TrendingUp /> },
+    { label: "Bot Controls", value: "bot", icon: <Bot /> },
+    { label: "Data Import", value: "import", icon: <Upload /> },
+    { label: "Calculation Logs", value: "logs", icon: <List /> },
+    { label: "Country Admin", value: "country-admin", icon: <Users /> },
+    { label: "SDI Admin", value: "sdi", icon: <Shield /> },
+  ];
 
   // TRPC Queries
   const { 
@@ -110,7 +131,7 @@ export default function AdminPage() {
   const resumeBotMutation = api.admin.resumeBot.useMutation();
   const clearBotOverridesMutation = api.admin.clearBotOverrides.useMutation();
 
-  // Show loading spinner while Clerk is loading
+  // Early return: loading
   if (!isLoaded) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -122,7 +143,16 @@ export default function AdminPage() {
     );
   }
 
-  // If user is signed in but not an admin, show access denied
+  // Early return: not signed in
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <SignInButton mode="modal" />
+      </div>
+    );
+  }
+
+  // Early return: not admin
   if (user && user.publicMetadata?.role !== "admin") {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
@@ -381,142 +411,264 @@ export default function AdminPage() {
 
   return (
     <>
-      <SignedIn>
-        <AdminErrorBoundary>
-          <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              {/* Header */}
-              <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                  IxStats Admin Dashboard
-                </h1>
-                <p className="mt-2 text-gray-600 dark:text-gray-300">
-                  Manage system configuration, time settings, and data imports
-                </p>
+      <AdminErrorBoundary>
+        <div className="min-h-screen bg-background text-foreground flex">
+          <Sidebar>
+            <SidebarBody className="h-screen">
+              <div className="flex flex-col gap-2 mt-4">
+                {sidebarLinks.map((link) => (
+                  <div
+                    key={link.value}
+                    onClick={e => { e.preventDefault(); setSelectedSection(link.value); }}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <SidebarLink
+                      link={{ label: link.label, href: `#${link.value}`, icon: link.icon }}
+                      className={selectedSection === link.value ? "bg-blue-500/20 text-blue-700 dark:text-blue-200 font-semibold shadow-lg border border-blue-400/30" : ""}
+                    />
+                  </div>
+                ))}
               </div>
-
-              {/* Bot Status Banner */}
-              <BotStatusBanner
-                botStatus={botStatus}
-                onSync={handleSyncBot}
-                onRefresh={handleRefreshStatus}
-                syncPending={actionState.syncPending}
-              />
-
-              {/* Status Cards */}
-              <StatusCards
-                systemStatus={systemStatus}
-                botStatus={botStatus}
-                statusLoading={statusLoading || botStatusLoading}
-                configLoading={configLoading}
-                globalGrowthFactor={config.globalGrowthFactor}
-              />
-
-              {/* Warning Panel */}
-              <WarningPanel systemStatus={systemStatus} />
-
-              {/* Control Panels */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                {/* Time Control */}
-                <TimeControlPanel
-                  timeMultiplier={config.timeMultiplier}
-                  customDate={timeState.customDate}
-                  customTime={timeState.customTime}
-                  botSyncEnabled={config.botSyncEnabled}
-                  botStatus={botStatus}
-                  onTimeMultiplierChange={(value) => 
-                    setConfig(prev => ({ ...prev, timeMultiplier: value }))
-                  }
-                  onCustomDateChange={(value) => 
-                    setTimeState(prev => ({ ...prev, customDate: value }))
-                  }
-                  onCustomTimeChange={(value) => 
-                    setTimeState(prev => ({ ...prev, customTime: value }))
-                  }
-                  onSetCustomTime={handleSetCustomTime}
-                  onResetToRealTime={handleResetToRealTime}
-                  onSyncEpoch={handleSyncEpoch}
-                  setTimePending={actionState.setTimePending}
-                  syncEpochPending={actionState.syncEpochPending}
-                />
-
-                {/* Economic Control */}
-                <EconomicControlPanel
-                  globalGrowthFactor={config.globalGrowthFactor}
-                  autoUpdate={config.autoUpdate}
-                  botSyncEnabled={config.botSyncEnabled}
-                  onGlobalGrowthFactorChange={(value) => 
-                    setConfig(prev => ({ ...prev, globalGrowthFactor: value as number }))
-                  }
-                  onAutoUpdateChange={(value) => 
-                    setConfig(prev => ({ ...prev, autoUpdate: value }))
-                  }
-                  onBotSyncEnabledChange={(value) => 
-                    setConfig(prev => ({ ...prev, botSyncEnabled: value }))
-                  }
-                  onForceCalculation={handleForceCalculation}
-                  calculationPending={actionState.calculationPending}
-                />
-              </div>
-
-              {/* Bot Control Panel */}
-              <BotControlPanel
-                botStatus={botStatus}
-                onPauseBot={handlePauseBot}
-                onResumeBot={handleResumeBot}
-                onClearOverrides={handleClearOverrides}
-                pausePending={actionState.pausePending}
-                resumePending={actionState.resumePending}
-                clearPending={actionState.clearPending}
-              />
-
-              {/* Data Import Section */}
-              <DataImportSection
-                onFileSelect={handleFileSelect}
-                isUploading={importState.isUploading}
-                isAnalyzing={importState.isAnalyzing}
-                analyzeError={importState.analyzeError}
-                importError={importState.importError}
-              />
-
-              {/* Action Panel */}
-              <ActionPanel
-                lastUpdate={actionState.lastUpdate}
-                onSaveConfig={handleSaveConfig}
-                savePending={actionState.savePending}
-              />
-
-              {/* Calculation Logs */}
-              <CalculationLogs
-                logs={calculationLogs}
-                isLoading={logsLoading}
-                error={logsError?.message}
-              />
-
-              {/* Flag Cache Manager */}
-              <div className="mb-8">
-                <FlagCacheManager />
-              </div>
-
-              {/* Import Preview Dialog */}
-              {importState.showPreview && importState.previewData && (
-                <ImportPreviewDialog
-                  isOpen={importState.showPreview}
-                  onClose={handleImportClose}
-                  onConfirm={handleImportConfirm}
-                  changes={importState.previewData.changes}
-                  isLoading={importState.isUploading}
-                />
+            </SidebarBody>
+          </Sidebar>
+          <main className="flex-1 min-h-screen px-0 md:px-8 py-8">
+            <div className="max-w-7xl mx-auto">
+              {selectedSection === "overview" && (
+                <>
+                  {/* Header with quick stats */}
+                  <div className="mb-8">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      {/* Left: Title and description */}
+                      <div>
+                        <h1 className="text-3xl md:text-4xl font-bold text-foreground flex items-center">
+                          <Settings className="h-8 w-8 md:h-10 md:w-10 mr-3 text-primary" />
+                          Admin Overview
+                        </h1>
+                        <p className="mt-2 text-base md:text-lg text-muted-foreground">
+                          System status, time, bot, and cache controls for IxStats.
+                        </p>
+                      </div>
+                      {/* Right: Stat cards */}
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        {/* IxTime Stat */}
+                        <div className="flex items-center px-4 py-2 bg-card text-card-foreground rounded-lg border">
+                          <Clock className="h-5 w-5 mr-2 text-blue-500" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">Current IxTime</p>
+                            {statusLoading ? (
+                              <Skeleton className="h-5 w-24 mt-1" />
+                            ) : (
+                              <div className="font-semibold text-foreground">
+                                {systemStatus?.ixTime?.formattedIxTime || "N/A"}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        {/* Bot Status Stat */}
+                        <div className="flex items-center px-4 py-2 bg-card text-card-foreground rounded-lg border">
+                          <Bot className="h-5 w-5 mr-2 text-green-500" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">Bot Status</p>
+                            {botStatusLoading ? (
+                              <Skeleton className="h-5 w-16 mt-1" />
+                            ) : (
+                              <div className={`font-semibold ${botStatus?.botHealth?.available ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                {botStatus?.botHealth?.available ? 'Online' : 'Offline'}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        {/* Global Growth Stat */}
+                        <div className="flex items-center px-4 py-2 bg-card text-card-foreground rounded-lg border">
+                          <TrendingUp className="h-5 w-5 mr-2 text-indigo-500" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">Global Growth</p>
+                            {configLoading ? (
+                              <Skeleton className="h-5 w-12 mt-1" />
+                            ) : (
+                              <div className="font-semibold text-foreground">
+                                {((config.globalGrowthFactor - 1) * 100).toFixed(2)}%
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Main grid of admin cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    {/* Time Controls Card */}
+                    <Card className="flex flex-col h-full">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Clock className="h-5 w-5 text-blue-500" />
+                          Time Controls
+                        </CardTitle>
+                        <div className="text-sm text-muted-foreground mt-1">
+                          Adjust IxTime, multiplier, and sync epoch.
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-2">
+                        <TimeControlPanel
+                          timeMultiplier={config.timeMultiplier}
+                          customDate={timeState.customDate}
+                          customTime={timeState.customTime}
+                          botSyncEnabled={config.botSyncEnabled}
+                          botStatus={botStatus}
+                          onTimeMultiplierChange={(value) => setConfig(prev => ({ ...prev, timeMultiplier: value }))}
+                          onCustomDateChange={(value) => setTimeState(prev => ({ ...prev, customDate: value }))}
+                          onCustomTimeChange={(value) => setTimeState(prev => ({ ...prev, customTime: value }))}
+                          onSetCustomTime={handleSetCustomTime}
+                          onResetToRealTime={handleResetToRealTime}
+                          onSyncEpoch={handleSyncEpoch}
+                          setTimePending={actionState.setTimePending}
+                          syncEpochPending={actionState.syncEpochPending}
+                        />
+                      </CardContent>
+                    </Card>
+                    {/* Bot Controls Card */}
+                    <Card className="flex flex-col h-full">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Bot className="h-5 w-5 text-green-500" />
+                          Bot Controls
+                        </CardTitle>
+                        <div className="text-sm text-muted-foreground mt-1">
+                          Pause, resume, or sync the Discord bot.
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-2">
+                        <BotControlPanel
+                          botStatus={botStatus}
+                          onPauseBot={handlePauseBot}
+                          onResumeBot={handleResumeBot}
+                          onClearOverrides={handleClearOverrides}
+                          pausePending={actionState.pausePending}
+                          resumePending={actionState.resumePending}
+                          clearPending={actionState.clearPending}
+                        />
+                      </CardContent>
+                    </Card>
+                    {/* Flag Cache Manager Card */}
+                    <Card className="flex flex-col h-full">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Database className="h-5 w-5 text-purple-500" />
+                          Flag Cache Manager
+                        </CardTitle>
+                        <div className="text-sm text-muted-foreground mt-1">
+                          Manage and refresh cached country flags for the dashboard.
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-2">
+                        <FlagCacheManager />
+                      </CardContent>
+                    </Card>
+                  </div>
+                  <WarningPanel systemStatus={systemStatus} />
+                </>
+              )}
+              {selectedSection === "time" && (
+                <EnhancedCard variant="glass" className="mb-8">
+                  <TimeControlPanel
+                    timeMultiplier={config.timeMultiplier}
+                    customDate={timeState.customDate}
+                    customTime={timeState.customTime}
+                    botSyncEnabled={config.botSyncEnabled}
+                    botStatus={botStatus}
+                    onTimeMultiplierChange={(value) => setConfig(prev => ({ ...prev, timeMultiplier: value }))}
+                    onCustomDateChange={(value) => setTimeState(prev => ({ ...prev, customDate: value }))}
+                    onCustomTimeChange={(value) => setTimeState(prev => ({ ...prev, customTime: value }))}
+                    onSetCustomTime={handleSetCustomTime}
+                    onResetToRealTime={handleResetToRealTime}
+                    onSyncEpoch={handleSyncEpoch}
+                    setTimePending={actionState.setTimePending}
+                    syncEpochPending={actionState.syncEpochPending}
+                  />
+                </EnhancedCard>
+              )}
+              {selectedSection === "economic" && (
+                <>
+                  <EnhancedCard variant="glass" className="mb-8">
+                    <EconomicControlPanel
+                      globalGrowthFactor={config.globalGrowthFactor}
+                      autoUpdate={config.autoUpdate}
+                      botSyncEnabled={config.botSyncEnabled}
+                      onGlobalGrowthFactorChange={(value) => setConfig(prev => ({ ...prev, globalGrowthFactor: value as number }))}
+                      onAutoUpdateChange={(value) => setConfig(prev => ({ ...prev, autoUpdate: value }))}
+                      onBotSyncEnabledChange={(value) => setConfig(prev => ({ ...prev, botSyncEnabled: value }))}
+                      onForceCalculation={handleForceCalculation}
+                      calculationPending={actionState.calculationPending}
+                    />
+                  </EnhancedCard>
+                  <GlassCard className="mb-8">
+                    <ActionPanel
+                      lastUpdate={actionState.lastUpdate}
+                      onSaveConfig={handleSaveConfig}
+                      savePending={actionState.savePending}
+                    />
+                  </GlassCard>
+                </>
+              )}
+              {selectedSection === "bot" && (
+                <GlassCard className="mb-8">
+                  <BotControlPanel
+                    botStatus={botStatus}
+                    onPauseBot={handlePauseBot}
+                    onResumeBot={handleResumeBot}
+                    onClearOverrides={handleClearOverrides}
+                    pausePending={actionState.pausePending}
+                    resumePending={actionState.resumePending}
+                    clearPending={actionState.clearPending}
+                  />
+                </GlassCard>
+              )}
+              {selectedSection === "import" && (
+                <>
+                  <EnhancedCard variant="glass" className="mb-8">
+                    <DataImportSection
+                      onFileSelect={handleFileSelect}
+                      isUploading={importState.isUploading}
+                      isAnalyzing={importState.isAnalyzing}
+                      analyzeError={importState.analyzeError}
+                      importError={importState.importError}
+                    />
+                  </EnhancedCard>
+                  {importState.showPreview && importState.previewData && (
+                    <ImportPreviewDialog
+                      isOpen={importState.showPreview}
+                      onClose={handleImportClose}
+                      onConfirm={handleImportConfirm}
+                      changes={importState.previewData.changes}
+                      isLoading={importState.isUploading}
+                    />
+                  )}
+                </>
+              )}
+              {selectedSection === "logs" && (
+                <EnhancedCard variant="glass" className="mb-8">
+                  <CalculationLogs
+                    logs={calculationLogs}
+                    isLoading={logsLoading}
+                    error={logsError?.message}
+                  />
+                </EnhancedCard>
+              )}
+              {selectedSection === "country-admin" && (
+                <EnhancedCard variant="glass" className="mb-8">
+                  {/* CountryAdminPanel will be implemented here */}
+                  <CountryAdminPanel />
+                </EnhancedCard>
+              )}
+              {selectedSection === "sdi" && (
+                <EnhancedCard variant="glass" className="mb-8">
+                  <SdiAdminPanel />
+                </EnhancedCard>
               )}
             </div>
-          </div>
-        </AdminErrorBoundary>
-      </SignedIn>
-      <SignedOut>
-        <div className="flex flex-col items-center justify-center min-h-screen">
-          <SignInButton mode="modal" />
+          </main>
         </div>
-      </SignedOut>
+      </AdminErrorBoundary>
     </>
   );
 }

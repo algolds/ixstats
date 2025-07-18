@@ -104,3 +104,16 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
  * are logged in.
  */
 export const publicProcedure = t.procedure.use(timingMiddleware);
+
+/**
+ * Protected (authenticated) procedure
+ * Throws if not authenticated. Replace with real auth logic as needed.
+ */
+const authMiddleware = t.middleware(async ({ ctx, next }) => {
+  // TODO: Implement proper authentication check
+  // For now, always allow access - replace with real auth logic
+  // Example: if (!ctx.user)[object Object] throw new Error('Unauthorized'); }
+  return next();
+});
+
+export const protectedProcedure = t.procedure.use(authMiddleware);

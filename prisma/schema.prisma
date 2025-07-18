@@ -1,6 +1,3 @@
-// prisma/schema.prisma
-// Enhanced schema with comprehensive economic data support
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -20,108 +17,78 @@ model Post {
 }
 
 model Country {
-  id   String @id @default(cuid())
-  name String @unique
-
-  // Geographic and Political Information
-  continent      String?
-  region         String?
-  governmentType String?
-  religion       String?
-  leader         String?
-
-  // Area Information
-  landArea  Float? // Area in km²
-  areaSqMi  Float? // Area in square miles
-
-  // Baseline Economic Data (from roster - 2028 baseline)
-  baselinePopulation     Float
-  baselineGdpPerCapita   Float
-  maxGdpGrowthRate       Float
-  adjustedGdpGrowth      Float
-  populationGrowthRate   Float
-
-  // Current Calculated Values (updated by system)
-  currentPopulation    Float
-  currentGdpPerCapita  Float
-  currentTotalGdp      Float
-  populationDensity    Float?
-  gdpDensity           Float?
-
-  // Classification
-  economicTier     String
-  populationTier   String
-
-  // Projection fields
-  projected2040Population   Float @default(0)
-  projected2040Gdp          Float @default(0)
-  projected2040GdpPerCapita Float @default(0)
-  actualGdpGrowth           Float @default(0)
-
-  // === NEW ECONOMIC DATA FIELDS ===
-
-  // Core Economic Indicators
-  nominalGDP              Float?
-  realGDPGrowthRate      Float?
-  inflationRate          Float?
-  currencyExchangeRate   Float?
-
-  // Labor & Employment
+  id                          String                @id @default(cuid())
+  name                        String                @unique
+  continent                   String?
+  region                      String?
+  governmentType              String?
+  religion                    String?
+  leader                      String?
+  landArea                    Float?
+  areaSqMi                    Float?
+  baselinePopulation          Float
+  baselineGdpPerCapita        Float
+  maxGdpGrowthRate            Float
+  adjustedGdpGrowth           Float
+  populationGrowthRate        Float
+  currentPopulation           Float
+  currentGdpPerCapita         Float
+  currentTotalGdp             Float
+  populationDensity           Float?
+  gdpDensity                  Float?
+  economicTier                String
+  populationTier              String
+  projected2040Population     Float                 @default(0)
+  projected2040Gdp            Float                 @default(0)
+  projected2040GdpPerCapita   Float                 @default(0)
+  actualGdpGrowth             Float                 @default(0)
+  nominalGDP                  Float?
+  realGDPGrowthRate           Float?
+  inflationRate               Float?
+  currencyExchangeRate        Float?
   laborForceParticipationRate Float?
-  employmentRate             Float?
-  unemploymentRate           Float?
-  totalWorkforce            Float?
-  averageWorkweekHours      Float?
-  minimumWage               Float?
-  averageAnnualIncome       Float?
-
-  // Fiscal System - Basic
-  taxRevenueGDPPercent      Float?
-  governmentRevenueTotal    Float?
-  taxRevenuePerCapita      Float?
-  governmentBudgetGDPPercent Float?
-  budgetDeficitSurplus     Float?
-  internalDebtGDPPercent   Float?
-  externalDebtGDPPercent   Float?
-  totalDebtGDPRatio        Float?
-  debtPerCapita            Float?
-  interestRates            Float?
-  debtServiceCosts         Float?
-
-  // Income & Wealth
-  povertyRate              Float?
-  incomeInequalityGini     Float?
-  socialMobilityIndex      Float?
-
-  // Government Spending
-  totalGovernmentSpending  Float?
-  spendingGDPPercent      Float?
-  spendingPerCapita       Float?
-
-  // Demographics - Basic
-  lifeExpectancy          Float?
-  urbanPopulationPercent  Float?
-  ruralPopulationPercent  Float?
-  literacyRate           Float?
-
-  // System Fields
-  localGrowthFactor Float   @default(1.0)
-  lastCalculated    DateTime @default(now())
-  baselineDate      DateTime @default(now())
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  // Relationships
-  historicalData    HistoricalDataPoint[]
-  dmInputs          DmInputs[]
-  economicProfile   EconomicProfile?
-  laborMarket       LaborMarket?
-  fiscalSystem      FiscalSystem?
-  incomeDistribution IncomeDistribution?
-  governmentBudget  GovernmentBudget?
-  demographics      Demographics?
-  user   User?
-  economicModel    EconomicModel?
+  employmentRate              Float?
+  unemploymentRate            Float?
+  totalWorkforce              Float?
+  averageWorkweekHours        Float?
+  minimumWage                 Float?
+  averageAnnualIncome         Float?
+  taxRevenueGDPPercent        Float?
+  governmentRevenueTotal      Float?
+  taxRevenuePerCapita         Float?
+  governmentBudgetGDPPercent  Float?
+  budgetDeficitSurplus        Float?
+  internalDebtGDPPercent      Float?
+  externalDebtGDPPercent      Float?
+  totalDebtGDPRatio           Float?
+  debtPerCapita               Float?
+  interestRates               Float?
+  debtServiceCosts            Float?
+  povertyRate                 Float?
+  incomeInequalityGini        Float?
+  socialMobilityIndex         Float?
+  totalGovernmentSpending     Float?
+  spendingGDPPercent          Float?
+  spendingPerCapita           Float?
+  lifeExpectancy              Float?
+  urbanPopulationPercent      Float?
+  ruralPopulationPercent      Float?
+  literacyRate                Float?
+  localGrowthFactor           Float                 @default(1.0)
+  lastCalculated              DateTime              @default(now())
+  baselineDate                DateTime              @default(now())
+  createdAt                   DateTime              @default(now())
+  updatedAt                   DateTime              @updatedAt
+  demographics                Demographics?
+  dmInputs                    DmInputs[]
+  economicModel               EconomicModel?
+  economicProfile             EconomicProfile?
+  fiscalSystem                FiscalSystem?
+  governmentBudget            GovernmentBudget?
+  historicalData              HistoricalDataPoint[]
+  incomeDistribution          IncomeDistribution?
+  laborMarket                 LaborMarket?
+  user                        User?
 
   @@index([name])
   @@index([economicTier])
@@ -130,167 +97,116 @@ model Country {
   @@index([region])
 }
 
-// Detailed Economic Profile
 model EconomicProfile {
-  id        String @id @default(cuid())
-  countryId String @unique
-  country   Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
-
-  // Additional economic indicators
-  gdpGrowthVolatility    Float?
-  economicComplexity     Float?
-  innovationIndex        Float?
-  competitivenessRank    Int?
-  easeOfDoingBusiness    Int?
-  corruptionIndex        Float?
-  
-  // Sector breakdown (JSON)
-  sectorBreakdown        String? // JSON: {agriculture: %, industry: %, services: %}
-  
-  // Trade data
-  exportsGDPPercent      Float?
-  importsGDPPercent      Float?
-  tradeBalance           Float?
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  countryId           String   @unique
+  gdpGrowthVolatility Float?
+  economicComplexity  Float?
+  innovationIndex     Float?
+  competitivenessRank Int?
+  easeOfDoingBusiness Int?
+  corruptionIndex     Float?
+  sectorBreakdown     String?
+  exportsGDPPercent   Float?
+  importsGDPPercent   Float?
+  tradeBalance        Float?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  country             Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
 }
 
-// Labor Market Details
 model LaborMarket {
-  id        String @id @default(cuid())
-  countryId String @unique
-  country   Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
-
-  // Employment sectors (JSON)
-  employmentBySector     String? // JSON: {agriculture: %, industry: %, services: %}
-  
-  // Detailed employment data
-  youthUnemploymentRate  Float?
+  id                      String   @id @default(cuid())
+  countryId               String   @unique
+  employmentBySector      String?
+  youthUnemploymentRate   Float?
   femaleParticipationRate Float?
-  informalEmploymentRate Float?
-  
-  // Wage data
-  medianWage            Float?
-  wageGrowthRate        Float?
-  wageBySector          String? // JSON: {agriculture: wage, industry: wage, services: wage}
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  informalEmploymentRate  Float?
+  medianWage              Float?
+  wageGrowthRate          Float?
+  wageBySector            String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  country                 Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
 }
 
-// Fiscal System Details
 model FiscalSystem {
-  id        String @id @default(cuid())
-  countryId String @unique
-  country   Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
-
-  // Tax rates (JSON)
-  personalIncomeTaxRates String? // JSON: [{bracket: number, rate: number}]
-  corporateTaxRates      String? // JSON: [{size: string, rate: number}]
-  salesTaxRate          Float?
-  propertyTaxRate       Float?
-  payrollTaxRate        Float?
-  exciseTaxRates        String? // JSON: [{type: string, rate: number}]
-  wealthTaxRate         Float?
-  
-  // Budget breakdown (JSON)
-  spendingByCategory    String? // JSON: [{category: string, amount: number, percent: number}]
-  
-  // Additional fiscal data
-  fiscalBalanceGDPPercent Float?
+  id                       String   @id @default(cuid())
+  countryId                String   @unique
+  personalIncomeTaxRates   String?
+  corporateTaxRates        String?
+  salesTaxRate             Float?
+  propertyTaxRate          Float?
+  payrollTaxRate           Float?
+  exciseTaxRates           String?
+  wealthTaxRate            Float?
+  spendingByCategory       String?
+  fiscalBalanceGDPPercent  Float?
   primaryBalanceGDPPercent Float?
-  taxEfficiency         Float?
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  taxEfficiency            Float?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  country                  Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
 }
 
-// Income Distribution Details
 model IncomeDistribution {
-  id        String @id @default(cuid())
-  countryId String @unique
-  country   Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
-
-  // Economic classes (JSON)
-  economicClasses       String? // JSON: [{name: string, populationPercent: number, wealthPercent: number, averageIncome: number, color: string}]
-  
-  // Distribution metrics
-  top10PercentWealth    Float?
-  bottom50PercentWealth Float?
-  middleClassPercent    Float?
-  
-  // Social mobility
+  id                        String   @id @default(cuid())
+  countryId                 String   @unique
+  economicClasses           String?
+  top10PercentWealth        Float?
+  bottom50PercentWealth     Float?
+  middleClassPercent        Float?
   intergenerationalMobility Float?
-  educationMobility     Float?
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  educationMobility         Float?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+  country                   Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
 }
 
-// Government Budget Details
 model GovernmentBudget {
-  id        String @id @default(cuid())
-  countryId String @unique
-  country   Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
-
-  // Spending categories (JSON)
-  spendingCategories    String? // JSON: [{category: string, amount: number, percent: number, icon: string, color: string, description: string}]
-  
-  // Budget efficiency metrics
+  id                    String   @id @default(cuid())
+  countryId             String   @unique
+  spendingCategories    String?
   spendingEfficiency    Float?
   publicInvestmentRate  Float?
   socialSpendingPercent Float?
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  country               Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
 }
 
-// Demographics Details
 model Demographics {
-  id        String @id @default(cuid())
-  countryId String @unique
-  country   Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
-
-  // Age distribution (JSON)
-  ageDistribution       String? // JSON: [{group: string, percent: number, color: string}]
-  
-  // Regional data (JSON)
-  regions              String? // JSON: [{name: string, population: number, urbanPercent: number, color: string}]
-  
-  // Education levels (JSON)
-  educationLevels      String? // JSON: [{level: string, percent: number, color: string}]
-  
-  // Citizenship status (JSON)
-  citizenshipStatuses  String? // JSON: [{status: string, percent: number, color: string}]
-  
-  // Additional demographic data
-  birthRate           Float?
-  deathRate           Float?
-  migrationRate       Float?
-  dependencyRatio     Float?
-  medianAge           Float?
+  id                         String   @id @default(cuid())
+  countryId                  String   @unique
+  ageDistribution            String?
+  regions                    String?
+  educationLevels            String?
+  citizenshipStatuses        String?
+  birthRate                  Float?
+  deathRate                  Float?
+  migrationRate              Float?
+  dependencyRatio            Float?
+  medianAge                  Float?
   populationGrowthProjection Float?
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+  country                    Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
 }
 
 model HistoricalDataPoint {
-  id              String   @id @default(cuid())
-  countryId       String
-  ixTimeTimestamp DateTime
-  population      Float
-  gdpPerCapita    Float
-  totalGdp        Float
+  id                   String   @id @default(cuid())
+  countryId            String
+  ixTimeTimestamp      DateTime
+  population           Float
+  gdpPerCapita         Float
+  totalGdp             Float
   populationGrowthRate Float
-  gdpGrowthRate   Float
-  landArea        Float?
-  populationDensity Float?
-  gdpDensity      Float?
-  createdAt       DateTime @default(now())
-
-  country Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  gdpGrowthRate        Float
+  landArea             Float?
+  populationDensity    Float?
+  gdpDensity           Float?
+  createdAt            DateTime @default(now())
+  country              Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
 
   @@index([countryId])
   @@index([ixTimeTimestamp])
@@ -303,13 +219,12 @@ model DmInputs {
   inputType       String
   value           Float
   description     String?
-  duration        Int?     // Duration in days
+  duration        Int?
   isActive        Boolean  @default(true)
   createdBy       String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-
-  country Country? @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  country         Country? @relation(fields: [countryId], references: [id], onDelete: Cascade)
 
   @@index([countryId])
   @@index([ixTimeTimestamp])
@@ -329,87 +244,149 @@ model SystemConfig {
 }
 
 model CalculationLog {
-  id                String   @id @default(cuid())
-  timestamp         DateTime @default(now())
-  ixTimeTimestamp   DateTime
-  countriesUpdated  Int
-  executionTimeMs   Int
+  id                 String   @id @default(cuid())
+  timestamp          DateTime @default(now())
+  ixTimeTimestamp    DateTime
+  countriesUpdated   Int
+  executionTimeMs    Int
   globalGrowthFactor Float
-  notes             String?
-  createdAt         DateTime @default(now())
+  notes              String?
+  createdAt          DateTime @default(now())
 
   @@index([timestamp])
   @@index([ixTimeTimestamp])
 }
 
 model User {
-  id           String   @id @default(cuid())
-  clerkUserId  String   @unique // Clerk user ID
-  countryId    String?  @unique // Foreign key to Country, enforce one-to-one
-  country      Country? @relation(fields: [countryId], references: [id], onDelete: SetNull)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String   @id @default(cuid())
+  clerkUserId String   @unique
+  countryId   String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  country     Country? @relation(fields: [countryId], references: [id])
 
   @@index([clerkUserId])
   @@index([countryId])
 }
 
-// === ADVANCED MODELING MODULE ===
 model EconomicModel {
-  id              String           @id @default(cuid())
-  countryId       String           @unique
-  country         Country          @relation(fields: [countryId], references: [id], onDelete: Cascade)
-
-  // Model parameters
-  baseYear        Int
-  projectionYears Int
-  gdpGrowthRate   Float
-  inflationRate   Float
-  unemploymentRate Float
-  interestRate    Float
-  exchangeRate    Float
+  id                   String           @id @default(cuid())
+  countryId            String           @unique
+  baseYear             Int
+  projectionYears      Int
+  gdpGrowthRate        Float
+  inflationRate        Float
+  unemploymentRate     Float
+  interestRate         Float
+  exchangeRate         Float
   populationGrowthRate Float
-  investmentRate  Float
-  fiscalBalance   Float
-  tradeBalance    Float
-
-  // Relations
-  sectoralOutputs SectoralOutput[]
-  policyEffects   PolicyEffect[]
-
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  investmentRate       Float
+  fiscalBalance        Float
+  tradeBalance         Float
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  country              Country          @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  policyEffects        PolicyEffect[]
+  sectoralOutputs      SectoralOutput[]
 }
 
 model SectoralOutput {
-  id              String           @id @default(cuid())
+  id              String        @id @default(cuid())
   economicModelId String
-  economicModel   EconomicModel    @relation(fields: [economicModelId], references: [id], onDelete: Cascade)
-
   year            Int
   agriculture     Float
   industry        Float
   services        Float
   government      Float
   totalGDP        Float
-
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  economicModel   EconomicModel @relation(fields: [economicModelId], references: [id], onDelete: Cascade)
 }
 
 model PolicyEffect {
-  id                        String        @id @default(cuid())
-  economicModelId           String
-  economicModel             EconomicModel @relation(fields: [economicModelId], references: [id], onDelete: Cascade)
-
-  name                      String
-  description               String
-  gdpEffectPercentage       Float
-  inflationEffectPercentage Float
+  id                         String        @id @default(cuid())
+  economicModelId            String
+  name                       String
+  description                String
+  gdpEffectPercentage        Float
+  inflationEffectPercentage  Float
   employmentEffectPercentage Float
-  yearImplemented           Int
-  durationYears             Int
+  yearImplemented            Int
+  durationYears              Int
+  createdAt                  DateTime      @default(now())
+  updatedAt                  DateTime      @updatedAt
+  economicModel              EconomicModel @relation(fields: [economicModelId], references: [id], onDelete: Cascade)
+}
 
-  createdAt                 DateTime      @default(now())
-  updatedAt                 DateTime      @updatedAt
+model IntelligenceItem {
+  id                String   @id @default(cuid())
+  title             String
+  content           String
+  category          String
+  priority          String
+  source            String
+  timestamp         DateTime
+  region            String?
+  affectedCountries String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model CrisisEvent {
+  id                String   @id @default(cuid())
+  type              String
+  title             String
+  severity          String
+  affectedCountries String?
+  casualties        Int?
+  economicImpact    Float?
+  responseStatus    String?
+  timestamp         DateTime
+  description       String?
+  location          String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model DiplomaticRelation {
+  id                 String   @id @default(cuid())
+  country1           String
+  country2           String
+  relationship       String
+  strength           Int
+  treaties           String?
+  lastContact        DateTime
+  status             String
+  diplomaticChannels String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Treaty {
+  id             String   @id @default(cuid())
+  name           String
+  parties        String?
+  type           String
+  status         String
+  signedDate     DateTime
+  expiryDate     DateTime
+  description    String?
+  complianceRate Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model EconomicIndicator {
+  id                 String   @id @default(cuid())
+  globalGDP          Float
+  globalGrowth       Float
+  inflationRate      Float
+  unemploymentRate   Float
+  tradeVolume        Float
+  currencyVolatility Float
+  timestamp          DateTime
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 }
