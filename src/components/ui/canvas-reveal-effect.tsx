@@ -1,7 +1,7 @@
 "use client";
-import { cn } from "/lib/utils";
+import { cn } from "../../lib/utils";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import React, { useMemo, useRef } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
 export const CanvasRevealEffect = ({
@@ -97,9 +97,9 @@ const DotMatrix: React.FC<DotMatrixProps> = ({
     return {
       u_colors: {
         value: colorsArray.map((color) => [
-          color[0] / 255,
-          color[1] / 255,
-          color[2] / 255,
+          (color?.[0] ?? 0) / 255,
+          (color?.[1] ?? 0) / 255,
+          (color?.[2] ?? 0) / 255,
         ]),
         type: "uniform3fv",
       },
@@ -192,7 +192,7 @@ const ShaderMaterial = ({
   uniforms: Uniforms;
 }) => {
   const { size } = useThree();
-  const ref = useRef<THREE.Mesh>();
+  const ref = useRef<THREE.Mesh>(null);
   let lastFrameTime = 0;
 
   useFrame(({ clock }) => {

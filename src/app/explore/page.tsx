@@ -265,6 +265,7 @@ export default function ExplorePage() {
           isLoading={isLoading}
           totalPopulation={totalPop}
           combinedGdp={totalGdp}
+          filteredCountries={filtered}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
