@@ -45,7 +45,9 @@ const GlowingEffect = memo(
           const element = containerRef.current;
           if (!element) return;
 
-          const { left, top, width, height } = element.getBoundingClientRect();
+          const rect = element?.getBoundingClientRect?.();
+          if (!rect) return;
+          const { left, top, width, height } = rect;
           const mouseX = e?.x ?? lastPosition.current.x;
           const mouseY = e?.y ?? lastPosition.current.y;
 
@@ -54,6 +56,7 @@ const GlowingEffect = memo(
           }
 
           const center = [left + width * 0.5, top + height * 0.5];
+          if (!center || center[0] === undefined || center[1] === undefined) return;
           const distanceFromCenter = Math.hypot(
             mouseX - center[0],
             mouseY - center[1]

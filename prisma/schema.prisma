@@ -390,3 +390,16 @@ model EconomicIndicator {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 }
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String?  // Clerk userId (nullable for country-wide notifications)
+  countryId   String?  // Country id for country-wide notifications
+  title       String
+  description String?
+  read        Boolean  @default(false)
+  href        String?
+  type        String?  // e.g., 'crisis', 'economic', 'diplomatic', etc.
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

@@ -525,3 +525,66 @@ export function decimalToPercentage(decimal: number): number {
 export function percentageToDecimal(percentage: number): number {
   return percentage / 100;
 }
+
+export interface CountryWithEconomicData {
+  id: string;
+  name: string;
+  continent?: string | null;
+  region?: string | null;
+  governmentType?: string | null;
+  religion?: string | null;
+  leader?: string | null;
+  areaSqMi?: number | null;
+  baselinePopulation: number;
+  baselineGdpPerCapita: number;
+  maxGdpGrowthRate: number;
+  adjustedGdpGrowth: number;
+  populationGrowthRate: number;
+  landArea?: number | null;
+  currentPopulation: number;
+  currentGdpPerCapita: number;
+  currentTotalGdp: number;
+  populationDensity?: number | null;
+  gdpDensity?: number | null;
+  lastCalculated: Date | number;
+  baselineDate: Date | number;
+  economicTier: string;
+  populationTier: string;
+  localGrowthFactor: number;
+  createdAt: Date;
+  updatedAt: Date;
+  calculatedStats: any;
+  projections: any[];
+  historical: any[];
+  dmInputs: any[];
+  nominalGDP: number;
+  realGDPGrowthRate: number;
+  inflationRate: number;
+  currencyExchangeRate: number;
+  laborForceParticipationRate?: number;
+  employmentRate?: number;
+  unemploymentRate?: number;
+  totalWorkforce?: number;
+  averageWorkweekHours?: number;
+  minimumWage?: number;
+  averageAnnualIncome?: number;
+  economicProfile?: any;
+  laborMarket?: any;
+  fiscalSystem?: any;
+  incomeDistribution?: any;
+  governmentBudget?: any;
+  demographics?: any;
+  analytics: {
+    growthTrends: {
+      avgPopGrowth: number;
+      avgGdpGrowth: number;
+    };
+    volatility: {
+      popVolatility: number;
+      gdpVolatility: number;
+    };
+    riskFlags: string[];
+    tierChangeProjection: any;
+    vulnerabilities: string[];
+  };
+}

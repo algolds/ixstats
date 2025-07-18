@@ -1,31 +1,60 @@
-import React, { useState } from 'react';
+"use client";
+
+import React, { useState, useEffect } from 'react';
 import { GlassCard } from '../ui/enhanced-card';
 import { EnhancedButton } from '../ui/enhanced-button';
-
-const mockMessages = [
-  {
-    id: 1,
-    sender: 'SDI Command',
-    content: 'Welcome to the Secure Communications Center. All transmissions are encrypted.',
-    timestamp: '09:00',
-  },
-  {
-    id: 2,
-    sender: 'Crisis Management',
-    content: 'Crisis alert: Severe flooding in Sarpedon. Response teams mobilized.',
-    timestamp: '09:12',
-  },
-  {
-    id: 3,
-    sender: 'Diplomatic Matrix',
-    content: 'New diplomatic channel established with United Republics.',
-    timestamp: '09:30',
-  },
-];
+import { api } from '~/trpc/react';
 
 export default function SecureComms() {
-  const [messages, setMessages] = useState(mockMessages);
+  const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState('');
+  
+  // Fetch real data from intelligence feed and crises
+  const { data: intelligenceData } = api.sdi.getIntelligenceFeed.useQuery({ limit: 3 });
+  const { data: activeCrises } = api.sdi.getActiveCrises.useQuery();
+  const { data: systemStatus } = api.sdi.getSystemStatus.useQuery();
+  
+  useEffect(() => {
+    const realMessages = [];
+    
+    // Add system status message
+    if (systemStatus) {
+      realMessages.push({
+        id: 'system-status',
+        sender: 'SDI Command',
+        content: `System operational. ${systemStatus.activeCrises} active crises, ${systemStatus.intelligenceItems} intelligence items monitored.`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      });
+    }
+    
+    // Add recent intelligence as messages
+    if (intelligenceData?.data) {
+      intelligenceData.data.slice(0, 2).forEach((item, index) => {
+        realMessages.push({
+          id: `intel-${item.id}`,
+          sender: item.category === 'crisis' ? 'Crisis Management' : 
+                  item.category === 'diplomatic' ? 'Diplomatic Matrix' : 
+                  'Intelligence Center',
+          content: `${item.category.toUpperCase()}: ${item.title}`,
+          timestamp: new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        });
+      });
+    }
+    
+    // Add crisis alerts
+    if (activeCrises) {
+      activeCrises.slice(0, 1).forEach((crisis) => {
+        realMessages.push({
+          id: `crisis-${crisis.id}`,
+          sender: 'Crisis Management',
+          content: `${crisis.severity.toUpperCase()} ALERT: ${crisis.title}. Status: ${crisis.responseStatus}`,
+          timestamp: new Date(crisis.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        });
+      });
+    }
+    
+    setMessages(realMessages);
+  }, [intelligenceData, activeCrises, systemStatus]);
 
   function handleSend() {
     if (!input.trim()) return;

@@ -38,7 +38,54 @@ export function useEconomyData(countryId: string) {
         totalWorkforce: data.totalWorkforce!,
         averageWorkweekHours: data.averageWorkweekHours!,
         minimumWage: data.minimumWage!,
-        averageAnnualIncome: data.averageAnnualIncome!
+        averageAnnualIncome: data.averageAnnualIncome!,
+        employmentBySector: {
+          agriculture: 0,
+          industry: 0,
+          services: 0
+        },
+        employmentByType: {
+          fullTime: 0,
+          partTime: 0,
+          temporary: 0,
+          selfEmployed: 0,
+          informal: 0
+        },
+        skillsAndProductivity: {
+          averageEducationYears: 0,
+          tertiaryEducationRate: 0,
+          vocationalTrainingRate: 0,
+          skillsGapIndex: 0,
+          laborProductivityIndex: 100,
+          productivityGrowthRate: 0
+        },
+        demographicsAndConditions: {
+          youthUnemploymentRate: 0,
+          femaleParticipationRate: 0,
+          genderPayGap: 0,
+          unionizationRate: 0,
+          workplaceSafetyIndex: 0,
+          averageCommutingTime: 0
+        },
+        regionalEmployment: {
+          urban: {
+            participationRate: 0,
+            unemploymentRate: 0,
+            averageIncome: 0
+          },
+          rural: {
+            participationRate: 0,
+            unemploymentRate: 0,
+            averageIncome: 0
+          }
+        },
+        benefits: {
+          unemploymentBenefitRate: 0,
+          maxUnemploymentWeeks: 0,
+          pensionContributionRate: 0,
+          healthcareContributionRate: 0,
+          socialSecurityCoverage: 0
+        }
       },
       fiscal: {
         taxRevenueGDPPercent: data.taxRevenueGDPPercent!,

@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { GlassCard } from '../ui/enhanced-card';
 import { InfiniteMovingCards } from '../ui/infinite-moving-cards';
@@ -7,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { AlertTriangle, TrendingUp, Globe, Shield, DollarSign, Users, Clock } from 'lucide-react';
 import { api } from '~/trpc/react';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 
 interface IntelligenceItem {
   id: string;
@@ -40,6 +44,15 @@ const priorityColors = {
 export default function IntelligenceFeed() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedPriority, setSelectedPriority] = useState<string>('all');
+  const router = useRouter();
+
+  const { user } = useUser();
+  const { data: userProfile } = api.users.getProfile.useQuery(
+    { userId: user?.id || '' },
+    { enabled: !!user?.id }
+  );
+  const userCountryId = userProfile?.countryId;
+  const userRole = (userProfile as any)?.role || 'user';
 
   // Live tRPC query with polling
   const { data, isLoading, error } = api.sdi.getIntelligenceFeed.useQuery({
@@ -49,7 +62,16 @@ export default function IntelligenceFeed() {
     offset: 0,
   }, { refetchInterval: 5000 });
 
-  const filteredData: IntelligenceItem[] = data?.data ?? [];
+  const validCategories = ["economic", "crisis", "diplomatic", "security", "technology", "environment"];
+  const filteredData: IntelligenceItem[] = (data?.data ?? []).filter((item: any) => validCategories.includes(item.category)).map((item: any) => ({
+    ...item,
+    category: item.category as IntelligenceItem['category'],
+    affectedCountries: Array.isArray(item.affectedCountries)
+      ? item.affectedCountries
+      : (typeof item.affectedCountries === 'string' && item.affectedCountries
+        ? [item.affectedCountries]
+        : []),
+  }));
 
   const formatTimeAgo = (timestamp: Date) => {
     const now = new Date();
@@ -165,6 +187,17 @@ export default function IntelligenceFeed() {
                     <span>{item.source}</span>
                     {item.region && <span>{item.region}</span>}
                   </div>
+                  {Array.isArray(item.affectedCountries) && item.affectedCountries.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {item.affectedCountries.map((countryId: string) => (
+                        (userRole === 'admin' || userRole === 'dm' || userCountryId === countryId) && (
+                          <Button key={countryId} size="sm" className="bg-orange-600/80 text-white border-orange-500/30 hover:bg-orange-600/90" onClick={() => router.push('/eci')}>
+                            🏛️ View in ECI ({countryId})
+                          </Button>
+                        )
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );

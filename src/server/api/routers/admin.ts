@@ -19,6 +19,38 @@ import type {
 // Remove unused import - we use ctx.db instead
 
 export const adminRouter = createTRPCRouter({
+  // Get global statistics for SDI interface
+  getGlobalStats: publicProcedure
+    .query(async ({ ctx }) => {
+      try {
+        const totalNations = await ctx.db.country.count();
+        const totalGDP = await ctx.db.country.aggregate({
+          _sum: { currentTotalGdp: true }
+        });
+
+        // Real queries for each stat
+        const activeDiplomats = await ctx.db.user.count({ where: { role: 'diplomat' } });
+        // For onlineUsers, you may need a real-time tracking system; fallback to 0 for now
+        const onlineUsers = 0;
+        // For tradeVolume, sum trade records if available, else fallback to 0
+        const tradeVolume = await ctx.db.tradeRecord?.aggregate({ _sum: { volume: true } })._sum.volume || 0;
+        // For activeConflicts, count unresolved crisis events
+        const activeConflicts = await ctx.db.crisisEvent.count({ where: { responseStatus: { not: 'resolved' } } });
+
+        return {
+          totalNations,
+          globalGDP: (totalGDP._sum.currentTotalGdp || 0) / 1e12, // Convert to trillions
+          activeDiplomats,
+          onlineUsers,
+          tradeVolume,
+          activeConflicts
+        };
+      } catch (error) {
+        console.error("Failed to get global stats:", error);
+        throw new Error("Failed to retrieve global statistics");
+      }
+    }),
+
   // Get system status
   getSystemStatus: publicProcedure
     .query(async ({ ctx }) => {
@@ -809,41 +841,6 @@ export const adminRouter = createTRPCRouter({
       }
     }),
 
-  // Pause bot time
-  pauseBot: publicProcedure
-    .mutation(async () => {
-      try {
-        const result = await IxTime.pauseBotTime();
-        return result;
-      } catch (error) {
-        console.error("Failed to pause bot:", error);
-        throw new Error("Failed to pause bot time");
-      }
-    }),
-
-  // Resume bot time
-  resumeBot: publicProcedure
-    .mutation(async () => {
-      try {
-        const result = await IxTime.resumeBotTime();
-        return result;
-      } catch (error) {
-        console.error("Failed to resume bot:", error);
-        throw new Error("Failed to resume bot time");
-      }
-    }),
-
-  // Clear bot overrides
-  clearBotOverrides: publicProcedure
-    .mutation(async () => {
-      try {
-        const result = await IxTime.clearBotOverrides();
-        return result;
-      } catch (error) {
-        console.error("Failed to clear bot overrides:", error);
-        throw new Error("Failed to clear bot overrides");
-      }
-    }),
 
   // === ADMIN USER/COUNTRY MANAGEMENT ENDPOINTS ===
 

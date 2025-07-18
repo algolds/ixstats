@@ -21,6 +21,8 @@ import { Progress } from "~/components/ui/progress";
 import { formatCurrency, formatPopulation, displayGrowthRate } from "~/lib/chart-utils";
 import { getTierStyle } from "~/lib/theme-utils";
 import { GlassCard } from "~/components/ui/enhanced-card";
+import type { VariantProps } from "class-variance-authority";
+import { badgeVariants } from "@/components/ui/badge";
 
 interface EconomicSummaryData {
   // Core metrics
@@ -70,7 +72,7 @@ interface MetricCardProps {
   color?: string;
   badge?: {
     text: string;
-    variant: string;
+    variant?: VariantProps<typeof badgeVariants>["variant"];
   };
 }
 
@@ -83,6 +85,9 @@ function MetricCard({
   color = "text-primary",
   badge 
 }: MetricCardProps) {
+  // Only allow valid badge variants
+  const allowedBadgeVariants: string[] = ['default', 'secondary', 'destructive', 'outline'];
+  const safeBadgeVariant = badge && allowedBadgeVariants.includes(badge.variant as any) ? badge.variant : undefined;
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -91,7 +96,7 @@ function MetricCard({
           <span className="text-sm font-medium text-muted-foreground">{label}</span>
         </div>
         {badge && (
-          <Badge variant={badge.variant as any} className="text-xs">
+          <Badge variant={safeBadgeVariant} className="text-xs">
             {badge.text}
           </Badge>
         )}
@@ -175,6 +180,10 @@ export function EconomicSummaryWidget({
   const [expanded, setExpanded] = useState(!compactMode);
   
   const tierStyle = getTierStyle(data.economicTier);
+  // Only allow valid badge variants for the main badge
+  const allowedBadgeVariants = ['default', 'secondary', 'destructive', 'outline'] as const;
+  const mainBadgeVariant = (data.economicTier === 'Advanced' || data.economicTier === 'Developed') ? 'default' : 'secondary';
+  const safeMainBadgeVariant = allowedBadgeVariants.includes(mainBadgeVariant as any) ? mainBadgeVariant : undefined;
   
   // Calculate health scores
   const getEconomicHealth = () => {
@@ -245,11 +254,10 @@ export function EconomicSummaryWidget({
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5" />
               Economic Summary
-              <Badge className={tierStyle.className}>{data.economicTier}</Badge>
+              <Badge variant={safeMainBadgeVariant} className={tierStyle.className}>{data.economicTier}</Badge>
             </CardTitle>
             <CardDescription>Key economic indicators for {countryName}</CardDescription>
           </div>
-          
           <div className="flex items-center gap-2">
             {compactMode && (
               <Button 
@@ -260,14 +268,12 @@ export function EconomicSummaryWidget({
                 Collapse
               </Button>
             )}
-            
             {showDetails && onViewDetails && (
               <Button variant="outline" size="sm" onClick={onViewDetails}>
                 <Eye className="h-4 w-4 mr-2" />
                 View Details
               </Button>
             )}
-            
             {isEditable && onEdit && (
               <Button variant="outline" size="sm" onClick={onEdit}>
                 Edit
@@ -276,7 +282,6 @@ export function EconomicSummaryWidget({
           </div>
         </div>
       </CardHeader>
-      
       <CardContent className="space-y-6">
         {/* Core Metrics Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -291,7 +296,6 @@ export function EconomicSummaryWidget({
             }}
             color="text-blue-600"
           />
-          
           <MetricCard
             icon={DollarSign}
             label="GDP per Capita"
@@ -304,10 +308,9 @@ export function EconomicSummaryWidget({
             color="text-green-600"
             badge={{
               text: data.economicTier,
-              variant: tierStyle.className.includes('advanced') ? 'default' : 'secondary'
+              variant: (data.economicTier === 'Advanced' || data.economicTier === 'Developed') ? 'default' : 'secondary'
             }}
           />
-          
           <MetricCard
             icon={Briefcase}
             label="Employment"
@@ -315,7 +318,6 @@ export function EconomicSummaryWidget({
             subValue={`${data.unemploymentRate.toFixed(1)}% unemployed`}
             color="text-purple-600"
           />
-          
           <MetricCard
             icon={BarChart3}
             label="Economic Health"
@@ -324,14 +326,12 @@ export function EconomicSummaryWidget({
             color={getHealthColor(healthScore)}
           />
         </div>
-        
         {/* Health Indicators */}
         <div className="space-y-4">
           <h4 className="text-sm font-semibold flex items-center gap-2">
             <Info className="h-4 w-4" />
             Economic Health Indicators
           </h4>
-          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <HealthIndicator
               label="Unemployment Rate"
@@ -339,14 +339,12 @@ export function EconomicSummaryWidget({
               max={25}
               optimal={{ min: 3, max: 7 }}
             />
-            
             <HealthIndicator
               label="Labor Force Participation"
               value={data.laborForceParticipationRate}
               max={100}
               optimal={{ min: 60, max: 80 }}
             />
-            
             {data.taxRevenueGDPPercent && (
               <HealthIndicator
                 label="Tax Revenue (% of GDP)"
@@ -355,7 +353,6 @@ export function EconomicSummaryWidget({
                 optimal={{ min: 15, max: 30 }}
               />
             )}
-            
             {data.debtToGDP && (
               <HealthIndicator
                 label="Government Debt (% of GDP)"
@@ -366,7 +363,6 @@ export function EconomicSummaryWidget({
             )}
           </div>
         </div>
-        
         {/* Additional Insights */}
         <div className="p-4 bg-muted/50 rounded-lg">
           <h5 className="text-sm font-semibold mb-2">Economic Insights</h5>

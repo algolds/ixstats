@@ -439,6 +439,72 @@ html {
   border-bottom-color: var(--color-border-primary);
 }
 
+/* === SDI & ECI SPECIFIC STYLES === */
+
+/* Aurora Effect for SDI */
+.aurora-bg {
+  background: linear-gradient(
+    45deg,
+    rgba(59, 130, 246, 0.1) 0%,
+    rgba(139, 92, 246, 0.1) 25%,
+    rgba(16, 185, 129, 0.1) 50%,
+    rgba(245, 158, 11, 0.1) 75%,
+    rgba(59, 130, 246, 0.1) 100%
+  );
+  background-size: 400% 400%;
+  animation: aurora-flow 20s ease infinite;
+}
+
+@keyframes aurora-flow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Enhanced Medallion Glow */
+.medallion-glow {
+  filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.4));
+  transition: filter var(--transition-standard);
+}
+
+.medallion-glow:hover {
+  filter: drop-shadow(0 0 20px rgba(99, 102, 241, 0.6));
+}
+
+/* SDI Specific Styling */
+.sdi-interface {
+  background: radial-gradient(ellipse at top, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+}
+
+/* ECI Specific Styling */
+.eci-interface {
+  background: radial-gradient(ellipse at top, rgba(245, 158, 11, 0.1) 0%, transparent 50%);
+}
+
+/* Focus Card Animations */
+.focus-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.focus-card:hover {
+  transform: translateY(-4px);
+}
+
+.focus-card.selected {
+  transform: scale(1.02);
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3);
+}
+
+/* Interface Transition */
+.interface-transition {
+  transition: all 0.5s ease-in-out;
+}
+
+/* Number Ticker Enhancement */
+.number-ticker {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
 .prose thead th {
   vertical-align: bottom;
   padding-right: 0.5714286em;

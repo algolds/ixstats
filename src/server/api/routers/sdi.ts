@@ -42,180 +42,302 @@ export const sdiRouter = createTRPCRouter({
   // Crisis Management
   getActiveCrises: publicProcedure.query(async ({ ctx }) => {
     const crises = await ctx.db.crisisEvent.findMany({
-      where: {},
       orderBy: { timestamp: 'desc' },
     });
-    // Parse affectedCountries from JSON string to array for each crisis
     return crises.map((crisis: any) => ({
       ...crisis,
       affectedCountries: crisis.affectedCountries ? JSON.parse(crisis.affectedCountries) : [],
     }));
   }),
 
+  getCrisisEvents: publicProcedure.query(async ({ ctx }) => {
+    const crises = await ctx.db.crisisEvent.findMany({
+      orderBy: { timestamp: 'desc' },
+      take: 50
+    });
+    return crises.map((crisis: any) => ({
+      ...crisis,
+      status: crisis.responseStatus || 'monitoring', // Map responseStatus to status for compatibility
+      affectedCountries: crisis.affectedCountries ? JSON.parse(crisis.affectedCountries) : [],
+    }));
+  }),
+
   getResponseTeams: publicProcedure.query(async ({ ctx }) => {
-    // Mock data - replace with real database queries
-    return [
-      { id: '1', name: 'International Aid Coordination', status: 'deployed', location: 'Sarpedon' },
-      { id: '2', name: 'Economic Stabilization Unit', status: 'standby', location: 'Global' },
-      { id: '3', name: 'Diplomatic Crisis Team', status: 'monitoring', location: 'Multiple' }
-    ];
+    // Generate response teams based on active crises
+    const activeCrises = await ctx.db.crisisEvent.findMany({
+      where: { responseStatus: { not: 'resolved' } },
+      orderBy: { timestamp: 'desc' }
+    });
+
+    const responseTeams = [];
+    
+    // Generate teams based on crisis types
+    const crisisTypes = new Set(activeCrises.map(c => c.type));
+    
+    if (crisisTypes.has('economic_crisis')) {
+      responseTeams.push({
+        id: 'economic-team',
+        name: 'Economic Stabilization Unit',
+        status: 'deployed',
+        location: 'Global',
+        assignedCrises: activeCrises.filter(c => c.type === 'economic_crisis').length
+      });
+    }
+    
+    if (crisisTypes.has('natural_disaster')) {
+      const disasters = activeCrises.filter(c => c.type === 'natural_disaster');
+      responseTeams.push({
+        id: 'disaster-team',
+        name: 'International Aid Coordination',
+        status: disasters.length > 0 ? 'deployed' : 'standby',
+        location: disasters.length > 0 ? JSON.parse(disasters[0]?.affectedCountries || '[]')[0] || 'Multiple' : 'Standby',
+        assignedCrises: disasters.length
+      });
+    }
+    
+    if (crisisTypes.has('political_crisis')) {
+      responseTeams.push({
+        id: 'diplomatic-team',
+        name: 'Diplomatic Crisis Team',
+        status: 'monitoring',
+        location: 'Multiple',
+        assignedCrises: activeCrises.filter(c => c.type === 'political_crisis').length
+      });
+    }
+    
+    // Always have a general monitoring team
+    responseTeams.push({
+      id: 'general-team',
+      name: 'Global Monitoring Center',
+      status: activeCrises.length > 0 ? 'active' : 'standby',
+      location: 'Global',
+      assignedCrises: activeCrises.length
+    });
+    
+    return responseTeams;
   }),
 
   // Economic Intelligence
   getEconomicIndicators: publicProcedure.query(async ({ ctx }) => {
-    // Mock data - replace with real database queries
+    // Aggregate live data from all countries at current IxTime
+    const targetTime = require("~/lib/ixtime").IxTime.getCurrentIxTime();
+    const countries = await ctx.db.country.findMany({});
+
+    let globalGDP = 0;
+    let totalGrowth = 0;
+    let totalInflation = 0;
+    let totalUnemployment = 0;
+    let count = 0;
+
+    for (const c of countries) {
+      globalGDP += c.currentTotalGdp || (c.baselinePopulation * c.baselineGdpPerCapita) || 0;
+      totalGrowth += c.realGDPGrowthRate || c.adjustedGdpGrowth || 0.03;
+      totalInflation += c.inflationRate || 0.02;
+      totalUnemployment += c.unemploymentRate || 5.0;
+      count++;
+    }
+
+    // Calculate averages
+    const globalGrowth = count > 0 ? (totalGrowth / count) * 100 : 0;
+    const inflationRate = count > 0 ? (totalInflation / count) * 100 : 0;
+    const unemploymentRate = count > 0 ? (totalUnemployment / count) : 0;
+
     return {
-      globalGDP: 125700000000000,
-      globalGrowth: 3.2,
-      inflationRate: 2.8,
-      unemploymentRate: 5.2,
-      tradeVolume: 28500000000000,
-      currencyVolatility: 12.5,
-      timestamp: new Date()
+      globalGDP,
+      globalGrowth,
+      inflationRate,
+      unemploymentRate,
+      timestamp: new Date(targetTime)
     };
   }),
 
   getCommodityPrices: publicProcedure.query(async ({ ctx }) => {
-    // Mock data - replace with real database queries
-    return [
-      { name: 'Oil (Brent)', price: 85.20, change: 2.3, trend: 'up' as const },
-      { name: 'Gold', price: 1950.50, change: -0.8, trend: 'down' as const },
-      { name: 'Copper', price: 3.85, change: 1.2, trend: 'up' as const },
-      { name: 'Wheat', price: 5.20, change: -1.5, trend: 'down' as const },
-      { name: 'Natural Gas', price: 2.85, change: 3.1, trend: 'up' as const }
+    // Calculate commodity prices based on economic indicators and crises
+    const [recentIndicators, crises] = await Promise.all([
+      ctx.db.economicIndicator.findMany({
+        orderBy: { timestamp: 'desc' },
+        take: 2
+      }),
+      ctx.db.crisisEvent.findMany({
+        where: {
+          type: { in: ['economic_crisis', 'natural_disaster', 'environmental'] },
+          timestamp: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } // Last 30 days
+        }
+      })
+    ]);
+    
+    // Base prices (can be adjusted based on real economic data)
+    const basePrices = {
+      oil: 85.20,
+      gold: 1950.50,
+      copper: 3.85,
+      wheat: 5.20,
+      gas: 2.85
+    };
+    
+    // Calculate price changes based on economic indicators
+    let inflationFactor = 1.0;
+    let volatilityFactor = 1.0;
+    
+    if (recentIndicators.length >= 2) {
+      const latest = recentIndicators[0]!;
+      const previous = recentIndicators[1]!;
+      
+      inflationFactor = 1 + (latest.inflationRate - previous.inflationRate) / 100;
+      volatilityFactor = 1 + (latest.currencyVolatility - previous.currencyVolatility) / 100;
+    }
+    
+    // Crisis impact on commodities
+    const crisisImpact = {
+      oil: 0,
+      gold: 0,
+      copper: 0,
+      wheat: 0,
+      gas: 0
+    };
+    
+    crises.forEach(crisis => {
+      const severity = crisis.severity === 'critical' ? 0.15 : 
+                     crisis.severity === 'high' ? 0.10 : 
+                     crisis.severity === 'medium' ? 0.05 : 0.02;
+      
+      if (crisis.type === 'economic_crisis') {
+        crisisImpact.gold += severity; // Safe haven demand
+        crisisImpact.oil -= severity * 0.5; // Reduced demand
+      } else if (crisis.type === 'natural_disaster') {
+        crisisImpact.wheat += severity; // Food security
+        crisisImpact.copper -= severity * 0.3; // Infrastructure damage
+      } else if (crisis.type === 'environmental') {
+        crisisImpact.gas += severity; // Energy transition
+        crisisImpact.copper += severity * 0.2; // Green tech demand
+      }
+    });
+    
+    // Calculate final prices and trends
+    const commodities = [
+      {
+        name: 'Oil (Brent)',
+        price: Number((basePrices.oil * inflationFactor * (1 + crisisImpact.oil)).toFixed(2)),
+        change: Number((crisisImpact.oil * 100).toFixed(1)),
+        trend: crisisImpact.oil > 0.01 ? 'up' as const : crisisImpact.oil < -0.01 ? 'down' as const : 'stable' as const
+      },
+      {
+        name: 'Gold',
+        price: Number((basePrices.gold * inflationFactor * (1 + crisisImpact.gold)).toFixed(2)),
+        change: Number((crisisImpact.gold * 100).toFixed(1)),
+        trend: crisisImpact.gold > 0.01 ? 'up' as const : crisisImpact.gold < -0.01 ? 'down' as const : 'stable' as const
+      },
+      {
+        name: 'Copper',
+        price: Number((basePrices.copper * inflationFactor * (1 + crisisImpact.copper)).toFixed(2)),
+        change: Number((crisisImpact.copper * 100).toFixed(1)),
+        trend: crisisImpact.copper > 0.01 ? 'up' as const : crisisImpact.copper < -0.01 ? 'down' as const : 'stable' as const
+      },
+      {
+        name: 'Wheat',
+        price: Number((basePrices.wheat * inflationFactor * (1 + crisisImpact.wheat)).toFixed(2)),
+        change: Number((crisisImpact.wheat * 100).toFixed(1)),
+        trend: crisisImpact.wheat > 0.01 ? 'up' as const : crisisImpact.wheat < -0.01 ? 'down' as const : 'stable' as const
+      },
+      {
+        name: 'Natural Gas',
+        price: Number((basePrices.gas * inflationFactor * (1 + crisisImpact.gas)).toFixed(2)),
+        change: Number((crisisImpact.gas * 100).toFixed(1)),
+        trend: crisisImpact.gas > 0.01 ? 'up' as const : crisisImpact.gas < -0.01 ? 'down' as const : 'stable' as const
+      }
     ];
+    
+    return commodities;
   }),
 
   getEconomicAlerts: publicProcedure.query(async ({ ctx }) => {
-    // Mock data - replace with real database queries
-    return [
-      {
-        id: '1',
-        type: 'market_volatility',
-        title: 'Currency Markets Volatile',
-        severity: 'high',
-        description: 'Major currency pairs showing increased volatility due to central bank policy shifts.',
-        timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000)
+    // Generate alerts based on recent crisis events with economic impact
+    const recentCrises = await ctx.db.crisisEvent.findMany({
+      where: {
+        type: { in: ['economic_crisis', 'natural_disaster'] } // Use actual field name from schema
       },
-      {
-        id: '2',
-        type: 'trade_disruption',
-        title: 'Supply Chain Disruption',
-        severity: 'medium',
-        description: 'Shipping routes affected by geopolitical tensions in key regions.',
-        timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000)
-      }
-    ];
+      orderBy: { timestamp: 'desc' },
+      take: 10
+    });
+
+    return recentCrises.map(crisis => ({
+      id: crisis.id,
+      type: crisis.type,
+      title: crisis.title,
+      severity: crisis.severity,
+      description: crisis.description || `${crisis.title} - Economic impact analysis ongoing`,
+      timestamp: crisis.timestamp,
+      affectedCountries: crisis.affectedCountries
+    }));
   }),
 
   // Diplomatic Relations
   getDiplomaticRelations: publicProcedure.query(async ({ ctx }) => {
-    // Mock data - replace with real database queries
-    const mockRelations: DiplomaticRelation[] = [
-      {
-        id: '1',
-        country1: 'Latium',
-        country2: 'Sarpedon',
-        relationship: 'alliance',
-        strength: 85,
-        treaties: ['Trade Agreement', 'Defense Pact'],
-        lastContact: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        status: 'active',
-        diplomaticChannels: ['Embassy', 'Trade Mission', 'Cultural Exchange']
-      },
-      {
-        id: '2',
-        country1: 'Urcea',
-        country2: 'Burgundie',
-        relationship: 'neutral',
-        strength: 45,
-        treaties: ['Basic Trade'],
-        lastContact: new Date(Date.now() - 6 * 60 * 60 * 1000),
-        status: 'active',
-        diplomaticChannels: ['Embassy']
-      },
-      {
-        id: '3',
-        country1: 'Caphiria',
-        country2: 'United Republics',
-        relationship: 'tension',
-        strength: 25,
-        treaties: [],
-        lastContact: new Date(Date.now() - 12 * 60 * 60 * 1000),
-        status: 'monitoring',
-        diplomaticChannels: ['Limited Contact']
-      }
-    ];
-
-    return mockRelations;
+    const relations = await ctx.db.diplomaticRelation.findMany({
+      orderBy: { lastContact: 'desc' },
+    });
+    return relations.map((relation: any) => ({
+      ...relation,
+      treaties: relation.treaties ? JSON.parse(relation.treaties) : [],
+      diplomaticChannels: relation.diplomaticChannels ? JSON.parse(relation.diplomaticChannels) : [],
+    }));
   }),
 
   getActiveTreaties: publicProcedure.query(async ({ ctx }) => {
-    // Mock data - replace with real database queries
-    const mockTreaties: Treaty[] = [
-      {
-        id: '1',
-        name: 'Global Trade Agreement',
-        parties: ['Latium', 'Sarpedon', 'Burgundie'],
-        type: 'economic',
-        status: 'active',
-        signedDate: new Date('2024-01-15'),
-        expiryDate: new Date('2029-01-15'),
-        description: 'Comprehensive trade agreement between major nations',
-        complianceRate: 95
-      },
-      {
-        id: '2',
-        name: 'Defense Cooperation Pact',
-        parties: ['Latium', 'Sarpedon'],
-        type: 'military',
-        status: 'active',
-        signedDate: new Date('2023-06-20'),
-        expiryDate: new Date('2028-06-20'),
-        description: 'Mutual defense agreement between allied nations',
-        complianceRate: 100
-      }
-    ];
-
-    return mockTreaties;
+    const treaties = await ctx.db.treaty.findMany({
+      orderBy: { signedDate: 'desc' },
+    });
+    return treaties.map((treaty: any) => ({
+      ...treaty,
+      parties: treaty.parties ? JSON.parse(treaty.parties) : [],
+    }));
   }),
 
-  getDiplomaticEvents: publicProcedure.query(async ({ ctx }) => {
-    // Mock data - replace with real database queries
-    return [
-      {
-        id: '1',
-        type: 'summit',
-        title: 'Regional Economic Summit',
-        participants: ['Latium', 'Sarpedon', 'Burgundie'],
-        date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-        status: 'scheduled',
-        location: 'Latium Capital'
-      },
-      {
-        id: '2',
-        type: 'negotiation',
-        title: 'Trade Dispute Resolution',
-        participants: ['Caphiria', 'United Republics'],
-        date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
-        status: 'preparing',
-        location: 'Neutral Territory'
-      }
-    ];
-  }),
+  // TODO: Implement getDiplomaticEvents when diplomaticEvent table/model is available
 
   // System Status
   getSystemStatus: publicProcedure.query(async ({ ctx }) => {
-    // Mock data - replace with real system monitoring
+    // Calculate real system metrics
+    const [crisisCount, intelligenceCount, treatyCount, relationCount] = await Promise.all([
+      ctx.db.crisisEvent.count({ where: { responseStatus: { not: 'resolved' } } }),
+      ctx.db.intelligenceItem.count({ where: { timestamp: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } }),
+      ctx.db.treaty.count({ where: { status: 'active' } }),
+      ctx.db.diplomaticRelation.count({ where: { status: 'active' } })
+    ]);
+    
+    // Calculate system health based on data freshness and crisis severity
+    const recentCrises = await ctx.db.crisisEvent.findMany({
+      where: { 
+        responseStatus: { not: 'resolved' },
+        timestamp: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } // Last 24 hours
+      }
+    });
+    
+    const criticalCrises = recentCrises.filter(c => c.severity === 'critical').length;
+    const highCrises = recentCrises.filter(c => c.severity === 'high').length;
+    
+    let systemHealth: 'operational' | 'warning' | 'critical' = 'operational';
+    let uptime = 99.8;
+    
+    if (criticalCrises > 0) {
+      systemHealth = 'critical';
+      uptime = 95.0;
+    } else if (highCrises > 2 || crisisCount > 10) {
+      systemHealth = 'warning';
+      uptime = 98.5;
+    }
+    
     return {
       timestamp: new Date(),
-      activeUsers: 23,
-      activeCrises: 2,
-      intelligenceItems: 6,
-      diplomaticEvents: 2,
-      systemHealth: 'operational' as const,
-      uptime: 99.8,
-      lastBackup: new Date(Date.now() - 6 * 60 * 60 * 1000) // 6 hours ago
+      activeUsers: Math.floor(Math.random() * 15) + 10, // Simulated user count
+      activeCrises: crisisCount,
+      intelligenceItems: intelligenceCount,
+      diplomaticEvents: relationCount,
+      systemHealth,
+      uptime,
+      lastBackup: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6 hours ago
+      activeTreaties: treatyCount,
+      criticalAlerts: criticalCrises
     };
   }),
 
@@ -484,28 +606,237 @@ export const sdiRouter = createTRPCRouter({
       }).optional()
     }))
     .query(async ({ ctx, input }) => {
-      // Mock search implementation - replace with real search logic
-      const mockResults = [
-        {
-          type: 'intelligence',
-          id: '1',
-          title: 'Major Trade Agreement Signed',
-          content: 'Comprehensive trade deal between Latium and Sarpedon...',
-          relevance: 0.95
-        },
-        {
-          type: 'crisis',
-          id: '2',
-          title: 'Severe Flooding in Sarpedon Region',
-          content: 'Catastrophic flooding affects three nations...',
-          relevance: 0.87
+      const searchTerm = input.query.toLowerCase();
+      const results: any[] = [];
+      
+      // Build date filter
+      const dateFilter = input.dateRange ? {
+        timestamp: {
+          gte: input.dateRange.start,
+          lte: input.dateRange.end
         }
-      ];
-
+      } : {};
+      
+      // Search intelligence items
+      if (!input.categories || input.categories.includes('intelligence')) {
+        const intelligenceItems = await ctx.db.intelligenceItem.findMany({
+          where: {
+            ...dateFilter,
+            OR: [
+              { title: { contains: searchTerm } },
+              { content: { contains: searchTerm } },
+              { source: { contains: searchTerm } }
+            ]
+          },
+          take: 20
+        });
+        
+        intelligenceItems.forEach(item => {
+          const titleMatch = item.title.toLowerCase().includes(searchTerm);
+          const contentMatch = item.content.toLowerCase().includes(searchTerm);
+          const relevance = titleMatch ? 0.9 : contentMatch ? 0.7 : 0.5;
+          
+          results.push({
+            type: 'intelligence',
+            id: item.id,
+            title: item.title,
+            content: item.content.substring(0, 200) + '...',
+            relevance,
+            timestamp: item.timestamp,
+            category: item.category
+          });
+        });
+      }
+      
+      // Search crisis events
+      if (!input.categories || input.categories.includes('crisis')) {
+        const crisisEvents = await ctx.db.crisisEvent.findMany({
+          where: {
+            ...dateFilter,
+            OR: [
+              { title: { contains: searchTerm } },
+              { description: { contains: searchTerm } },
+              { location: { contains: searchTerm } }
+            ]
+          },
+          take: 20
+        });
+        
+        crisisEvents.forEach(crisis => {
+          const titleMatch = crisis.title.toLowerCase().includes(searchTerm);
+          const descMatch = crisis.description?.toLowerCase().includes(searchTerm);
+          const locationMatch = crisis.location?.toLowerCase().includes(searchTerm);
+          const relevance = titleMatch ? 0.9 : descMatch ? 0.8 : locationMatch ? 0.6 : 0.5;
+          
+          results.push({
+            type: 'crisis',
+            id: crisis.id,
+            title: crisis.title,
+            content: crisis.description || 'No description available',
+            relevance,
+            timestamp: crisis.timestamp,
+            severity: crisis.severity,
+            location: crisis.location
+          });
+        });
+      }
+      
+      // Search treaties
+      if (!input.categories || input.categories.includes('diplomatic')) {
+        const treaties = await ctx.db.treaty.findMany({
+          where: {
+            OR: [
+              { name: { contains: searchTerm } },
+              { description: { contains: searchTerm } }
+            ]
+          },
+          take: 20
+        });
+        
+        treaties.forEach(treaty => {
+          const nameMatch = treaty.name.toLowerCase().includes(searchTerm);
+          const descMatch = treaty.description?.toLowerCase().includes(searchTerm);
+          const relevance = nameMatch ? 0.9 : descMatch ? 0.7 : 0.5;
+          
+          results.push({
+            type: 'treaty',
+            id: treaty.id,
+            title: treaty.name,
+            content: treaty.description || 'No description available',
+            relevance,
+            timestamp: treaty.signedDate,
+            status: treaty.status
+          });
+        });
+      }
+      
+      // Sort by relevance and timestamp
+      results.sort((a, b) => {
+        if (a.relevance !== b.relevance) return b.relevance - a.relevance;
+        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+      });
+      
       return {
-        results: mockResults,
-        total: mockResults.length,
+        results: results.slice(0, 50), // Limit to 50 results
+        total: results.length,
         query: input.query
       };
-    })
-}); 
+    }),
+
+  getNotifications: publicProcedure
+    .input(z.object({ userId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // Fetch notifications for the user or their country
+      const user = await ctx.db.user.findUnique({ where: { clerkUserId: input.userId } });
+      const countryId = user?.countryId;
+      const notifications = await ctx.db.notification.findMany({
+        where: {
+          OR: [
+            { userId: input.userId },
+            { countryId: countryId }
+          ]
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 20
+      });
+      return notifications;
+    }),
+  getUnreadNotifications: publicProcedure
+    .input(z.object({ userId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // Count unread notifications for the user or their country
+      const user = await ctx.db.user.findUnique({ where: { clerkUserId: input.userId } });
+      const countryId = user?.countryId;
+      const count = await ctx.db.notification.count({
+        where: {
+          read: false,
+          OR: [
+            { userId: input.userId },
+            { countryId: countryId }
+          ]
+        }
+      });
+      return count;
+    }),
+  createNotification: publicProcedure
+    .input(z.object({
+      userId: z.string().optional(),
+      countryId: z.string().optional(),
+      title: z.string(),
+      description: z.string().optional(),
+      href: z.string().optional(),
+      type: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const notification = await ctx.db.notification.create({
+        data: {
+          userId: input.userId,
+          countryId: input.countryId,
+          title: input.title,
+          description: input.description,
+          href: input.href,
+          type: input.type,
+        }
+      });
+      return notification;
+    }),
+  // --- BEGIN: getAchievements mock implementation ---
+  getAchievements: publicProcedure.query(async () => {
+    // TODO: Replace with real achievement logic
+    return [
+      {
+        id: '1',
+        title: 'First Crisis Resolved',
+        description: 'Successfully resolved your first crisis event.',
+        badge: '🏅',
+        time: new Date().toISOString(),
+        unlocked: true
+      },
+      {
+        id: '2',
+        title: 'Economic Boom',
+        description: 'Achieved 5%+ GDP growth in a single year.',
+        badge: '📈',
+        time: new Date(Date.now() - 86400000).toISOString(),
+        unlocked: false
+      },
+      {
+        id: '3',
+        title: 'Diplomatic Master',
+        description: 'Formed 3+ active alliances.',
+        badge: '🤝',
+        time: new Date(Date.now() - 2 * 86400000).toISOString(),
+        unlocked: true
+      }
+    ];
+  }),
+  // --- END: getAchievements mock implementation ---
+});
+
+// Helper function to trigger a notification (for use in other routers)
+export async function triggerNotification(ctx: any, {
+  userId,
+  countryId,
+  title,
+  description,
+  href,
+  type
+}: {
+  userId?: string,
+  countryId?: string,
+  title: string,
+  description?: string,
+  href?: string,
+  type?: string
+}) {
+  return ctx.db.notification.create({
+    data: {
+      userId,
+      countryId,
+      title,
+      description,
+      href,
+      type
+    }
+  });
+} 

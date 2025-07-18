@@ -12,6 +12,9 @@ import {
   type ProcessedCountryData,
 } from "./index";
 import { IxTime } from "~/lib/ixtime";
+import { CountryIntelligenceSection } from "~/app/countries/_components/CountryIntelligenceSection";
+import { CountryExecutiveSection } from "~/app/countries/_components/CountryExecutiveSection";
+import { GlassCard } from "~/components/ui/enhanced-card";
 
 export default function Dashboard() {
   const { user, isLoaded } = useUser();
@@ -109,29 +112,7 @@ export default function Dashboard() {
       />
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {adaptedGlobalStats && (
-          <ExecutiveSummary
-            globalStats={adaptedGlobalStats}
-            isLoading={globalStatsLoading}
-            topCountries={processedCountries
-              .slice()
-              .sort((a, b) => b.currentTotalGdp - a.currentTotalGdp)
-              .slice(0, 5)
-              .map((c) => ({
-                id: c.id,
-                name: c.name,
-                flagUrl: undefined, // Add flagUrl if available
-                currentTotalGdp: c.currentTotalGdp,
-                economicTier: c.economicTier,
-              }))}
-            economicTrends={[
-              { label: "Economic Growth", value: adaptedGlobalStats.globalGrowthRate ?? 0, suffix: "%", trend: "up", description: "Average annual GDP growth" },
-              { label: "Population Growth", value: 1.2, suffix: "%", trend: "stable", description: "Global population increase" },
-              { label: "Trade Volume", value: 2.5, suffix: "%", trend: "up", description: "International trade growth" },
-              { label: "Diplomatic Activity", value: 15, trend: "up", description: "Treaties and agreements" },
-            ]}
-          />
-        )}
+        {/* Remove ExecutiveSummary and tier visualizations */}
 
         {/* Quick Actions Section */}
         <div className="mb-8">
@@ -144,17 +125,25 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {processedCountries.length > 0 && !countriesLoading ? (
-          <GlobalAnalytics countries={processedCountries} />
-        ) : countriesLoading ? (
-          <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-            <p className="text-muted-foreground text-center">
-              Loading analytics data...
-            </p>
+        {/* User's Country Intelligence and Executive Sections */}
+        {userProfile?.countryId && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <GlassCard variant="glass" glow="hover" blur="prominent" hover="lift" className="h-full">
+              <div className="p-4">
+                <h2 className="text-xl font-bold mb-4">Intelligence & Diplomacy</h2>
+                <CountryIntelligenceSection countryId={userProfile.countryId} />
+              </div>
+            </GlassCard>
+            <GlassCard variant="glass" glow="hover" blur="prominent" hover="lift" className="h-full">
+              <div className="p-4">
+                <h2 className="text-xl font-bold mb-4">Executive Command</h2>
+                <CountryExecutiveSection countryId={userProfile.countryId} userId={user?.id} />
+              </div>
+            </GlassCard>
           </div>
-        ) : null}
+        )}
 
-        <CountriesSection onGlobalRefreshAction={handleGlobalRefresh} />
+        {/* Remove GlobalAnalytics and tier visualizations */}
       </div>
     </div>
   );
