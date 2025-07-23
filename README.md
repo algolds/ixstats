@@ -1,6 +1,6 @@
-# IxStats - Economic Statistics Platform
+# IxStats - Advanced Economic Simulation Platform
 
-A comprehensive web application for managing, analyzing, and visualizing economic data for fictional nations and real-world countries. Built for tabletop RPG campaigns, world-building, and economic simulation.
+A comprehensive Next.js 15 application for real-time economic modeling, strategic analysis, and nation management. Features custom time flow systems, tier-based economic modeling, and advanced analytics dashboards. Built for tabletop RPG campaigns, world-building, and complex economic simulation with Discord bot integration.
 
 ## 🚀 Quick Start
 
@@ -33,8 +33,9 @@ A comprehensive web application for managing, analyzing, and visualizing economi
    ```bash
    npm run dev
    ```
-   - Runs on port 3002 (port 3000 is used by time bot)
-   - Access at: http://localhost:3003/
+   - Runs on port 3000 with comprehensive validation
+   - Access at: http://localhost:3000/
+   - For simple mode without validation: `npm run dev:simple`
 
 ### Production Deployment
 
@@ -59,18 +60,20 @@ A comprehensive web application for managing, analyzing, and visualizing economi
 
 ### Development
 ```bash
-npm run dev              # Start development server (port 3002)
+npm run dev              # Start development server with comprehensive validation
 npm run dev:simple       # Start without validation checks
 npm run dev:auth         # Start with Clerk authentication emphasis
 npm run dev:db           # Setup database and start development
+npm run start:dev        # Start development server (port 3000, root path)
 ```
 
 ### Production
 ```bash
 npm run build            # Build for production
-npm run start:prod       # Start production server (port 3550)
+npm run start:prod       # Start production server (port 3550, /projects/ixstats basePath)
 npm run deploy:prod      # Build and start production server
 npm run preview          # Build and preview locally
+npm run validate:servers # Validate server configurations
 ```
 
 ### Code Quality
@@ -92,9 +95,6 @@ npm run db:migrate       # Run database migrations
 npm run db:init          # Initialize database with data
 npm run db:reset         # Reset database (force)
 npm run db:studio        # Open Prisma Studio
-npm run db:seed          # Seed database with sample data
-npm run db:backup        # Backup database
-npm run db:restore       # Restore database from backup
 ```
 
 ### Authentication
@@ -111,21 +111,20 @@ npm run test             # Run tests
 npm run test:watch       # Watch mode tests
 npm run test:coverage    # Test coverage
 npm run clean            # Clean build artifacts
-npm run clean:all        # Clean everything (including node_modules)
-npm run fresh            # Fresh install and setup
-npm run validate:servers # Validate server configurations
 ```
 
 ## 🏗️ Architecture
 
 ### Tech Stack
-- **Framework**: Next.js 15 with App Router
+- **Framework**: Next.js 15 with App Router and Turbopack
 - **Database**: SQLite (development) / PostgreSQL (production) with Prisma ORM
-- **API**: tRPC for type-safe API layer
-- **Authentication**: Clerk (optional)
-- **UI**: Tailwind CSS with Radix UI components
-- **Time System**: Custom IxTime for game world simulation
-- **Charts**: Recharts for data visualization
+- **API**: tRPC for type-safe API layer with input validation
+- **Authentication**: Clerk (optional, supports demo mode)
+- **UI**: Tailwind CSS with Radix UI components and Shadcn/ui
+- **Time System**: Custom IxTime system with Discord bot synchronization
+- **Charts**: Recharts and custom visualization components
+- **Validation**: Zod for runtime type checking
+- **Styling**: CSS-in-JS with responsive design patterns
 
 ### Project Structure
 ```
@@ -151,31 +150,78 @@ src/
 └── prisma/              # Database schema and migrations
 ```
 
+### Core Systems
+
+#### IxTime System (`src/lib/ixtime.ts`)
+The heart of the economic simulation, providing synchronized time flow:
+- **Real-world epoch**: October 4, 2020 (when IxTime started)
+- **In-game epoch**: January 1, 2028 (roster data baseline)
+- **Base time multiplier**: 4x faster than real time (configurable 0x-10x)
+- **Discord bot integration**: Synchronized time control across services
+- **Key functions**: `getCurrentIxTime()`, `getYearsSinceGameEpoch()`, `convertToIxTime()`
+
+#### Economic Calculation Engine (`src/lib/calculations.ts`)
+Real-time economic modeling with sophisticated tier-based growth:
+- **Tier-based growth caps**: 7 economic tiers with different maximum growth rates
+- **Global growth factor**: 3.21% (1.0321) multiplier applied before tier caps
+- **Population scaling**: 8 population tiers affecting economic dynamics
+- **DM input system**: Dynamic modifications for special events and policies
+- **Historical tracking**: Automatic data point creation and projection calculations
+
+#### Strategic Defense Initiative (SDI) (`src/app/sdi/`)
+Comprehensive intelligence and crisis management system:
+- **Intelligence Feed**: Real-time intelligence item management and analysis
+- **Crisis Events**: Event tracking with impact assessment and response planning
+- **Diplomatic Relations**: Bilateral relationship tracking with historical context
+- **Economic Indicators**: Advanced economic monitoring and trend analysis
+- **Treaty Management**: International agreement tracking and compliance monitoring
+
 ## 🎯 Core Features
 
-### Dashboard & Analytics
-- Global statistics overview with real-time metrics
-- Interactive charts for population and GDP analysis
-- Country leaderboards and tier classifications
-- Activity feed with live economic milestone updates
+### Executive Dashboard
+Complete nation management interface with:
+- **Cabinet Meeting Scheduler**: Minister invitations and meeting management
+- **Economic Policy Proposals**: Real-time policy impact preview and implementation
+- **National Security Dashboard**: Threat assessment and emergency protocols
+- **Performance Metrics**: Social, Security, and Political analytics with deep-dive modals
+- **GDP and Population Analytics**: Historical trends, projections, and tier analysis
 
-### Country Management
-- Browse and search 180+ countries with advanced filtering
-- Detailed country pages with comprehensive economic profiles
-- Historical data tracking with interactive charts
-- Comparative analysis across multiple economic metrics
+### MyCountry® Premium Suite
+Advanced analytics and planning tools:
+- **Strategic Planning Module**: Scenario builder with advanced planning tools
+- **Advanced Analytics Dashboard**: Custom charts and data exploration
+- **AI Advisor System**: Intelligent recommendations and insights
+- **Predictive Models**: Economic forecasting and scenario analysis
+- **Premium Tools Access**: Exclusive features for enhanced nation management
 
-### Economic Modeling
-- **IxTime System**: Custom time flow with configurable multipliers (0x to 10x)
-- **Tier-Based Growth**: 7 economic tiers with different growth rate caps
-- **Real-time Calculations**: Automatic updates based on elapsed time
-- **DM Controls**: Economic modifiers for special events and policies
+### Country Management & Analytics
+- **Country Browser**: 180+ countries with advanced filtering and search
+- **Detailed Country Profiles**: Comprehensive economic data with interactive charts
+- **Comparative Analysis**: Multi-country economic metric comparisons
+- **Historical Data Tracking**: Time-series analysis with projection capabilities
+- **Flag Management**: Automated flag fetching with caching and fallback systems
 
-### Data Management
-- Excel roster import with validation and preview
-- MediaWiki integration for country information and flags
-- Historical data projection and forecasting
-- Automated calculation logging and performance tracking
+### Economic Modeling Engine
+- **Real-time Calculations**: IxTime-synchronized economic updates
+- **Tier-Based Growth System**: 7 economic tiers with sophisticated growth caps
+- **Population Scaling**: 8-tier population system affecting economic dynamics
+- **Global Growth Factor**: 3.21% base multiplier with tier-specific limitations
+- **DM Input System**: Time-bound economic modifiers for events and policies
+
+### Strategic Defense Initiative (SDI)
+Comprehensive intelligence and crisis management:
+- **Intelligence Operations**: Real-time intelligence feed with analysis tools
+- **Crisis Management**: Event tracking with impact assessment and response protocols
+- **Diplomatic Relations**: Bilateral relationship monitoring with historical context
+- **Economic Intelligence**: Advanced economic indicator tracking and analysis
+- **Treaty Management**: International agreement compliance and monitoring
+
+### Administrative Systems
+- **Admin Panel**: System configuration, user management, and global settings
+- **DM Dashboard**: Economic policy controls, special event creation, and time management
+- **Country Builder**: Interactive country creation with economic profile customization
+- **Data Import System**: Excel roster import with validation and preview
+- **Calculation Logging**: Performance monitoring and debugging tools
 
 ## 🔧 Configuration
 
@@ -202,12 +248,26 @@ CLERK_SECRET_KEY="sk_live_..."
 
 #### Optional - External Services
 ```bash
-NEXT_PUBLIC_MEDIAWIKI_URL="https://ixwiki.com/"
-IXTIME_BOT_URL="http://localhost:3001"
-DISCORD_BOT_TOKEN="..."
-DISCORD_CLIENT_ID="..."
-DISCORD_GUILD_ID="..."
+NEXT_PUBLIC_MEDIAWIKI_URL="https://ixwiki.com/"  # MediaWiki API for country data
+IXTIME_BOT_URL="http://localhost:3001"           # Discord bot API endpoint
+DISCORD_BOT_TOKEN="..."                          # Discord bot integration
+DISCORD_CLIENT_ID="..."                          # Discord application ID
+DISCORD_GUILD_ID="..."                           # Discord server ID
 ```
+
+### API Structure (`src/server/api/routers/`)
+
+#### tRPC Routers
+- **`countries`**: Country data management, economic calculations, historical tracking
+- **`admin`**: System configuration, data import, time control, calculation logs
+- **`users`**: User management, authentication, and country assignments
+- **`sdi`**: Strategic Defense Initiative modules (intelligence, crisis, diplomatic, economic)
+
+#### Database Models (`prisma/schema.prisma`)
+- **Core Models**: Country, User, HistoricalDataPoint, DmInputs, SystemConfig
+- **Economic Models**: EconomicProfile, LaborMarket, FiscalSystem, IncomeDistribution, GovernmentBudget, Demographics
+- **SDI Models**: IntelligenceItem, CrisisEvent, DiplomaticRelation, Treaty, EconomicIndicator
+- **Monitoring**: CalculationLog for performance tracking and debugging
 
 ### Economic Tiers
 
@@ -232,19 +292,20 @@ DISCORD_GUILD_ID="..."
 
 ## 🚦 Environment-Specific Settings
 
-### Development (Port 3002)
-- **URL**: http://localhost:3003/
+### Development (Port 3000)
+- **URL**: http://localhost:3000/
 - **Base Path**: `/` (root)
 - **Database**: `dev.db`
 - **Hot Reload**: Enabled with Turbopack
 - **Authentication**: Clerk test keys or demo mode
+- **Time Bot**: Usually runs on port 3001 for integration testing
 
 ### Production (Port 3550)
-- **URL**: http://localhost:3550/projects/ixstats
+- **URL**: https://ixwiki.com/projects/ixstats
 - **Base Path**: `/projects/ixstats`
-- **Database**: `prisma/prod.db`
+- **Database**: Environment-specific (SQLite or PostgreSQL)
 - **Authentication**: Clerk production keys or disabled
-- **Reverse Proxy**: Required for external access
+- **Reverse Proxy**: Nginx configuration for external access
 
 ## 🛠️ Development Guidelines
 
@@ -271,8 +332,8 @@ DISCORD_GUILD_ID="..."
 ### Common Issues
 
 #### Port Conflicts
-- **Problem**: Port 3000 already in use (time bot)
-- **Solution**: Development server uses port 3002 automatically
+- **Problem**: Port conflicts between services
+- **Solution**: Default ports are 3000 (dev), 3550 (prod), 3001 (time bot)
 
 #### Authentication Issues
 - **Problem**: Clerk "Invalid host" errors
@@ -293,23 +354,26 @@ DISCORD_GUILD_ID="..."
 
 #### Check Running Servers
 ```bash
-# Development server (port 3002)
-netstat -tlnp | grep :3003
+# Development server (port 3000)
+netstat -tlnp | grep :3000
 
 # Production server (port 3550)
 netstat -tlnp | grep :3550
 
-# Time bot (port 3000)
-netstat -tlnp | grep :3000
+# Time bot (port 3001)
+netstat -tlnp | grep :3001
 ```
 
 #### Stop Servers
 ```bash
 # Stop development server
-kill $(lsof -ti:3003)
+kill $(lsof -ti:3000)
 
 # Stop production server
 kill $(lsof -ti:3550)
+
+# Stop time bot
+kill $(lsof -ti:3001)
 ```
 
 #### Background Server
@@ -321,31 +385,31 @@ nohup npm run start:prod > server.log 2>&1 &
 tail -f server.log
 ```
 
-## 🎮 System Features
+## 🎮 Advanced System Features
 
-### Admin Panel
-- System configuration and global growth factors
-- User management and role assignments
-- Data import with Excel file validation
-- Calculation logs and performance monitoring
+### Real-Time Economic Simulation
+- **IxTime Synchronization**: Discord bot integration for coordinated time control
+- **Dynamic Growth Modeling**: Tier-based economic growth with global factor application
+- **Historical Projection**: Automatic calculation of past and future economic trends
+- **Performance Monitoring**: Built-in calculation logging and optimization tracking
 
-### DM Dashboard
-- Economic policy modifications with duration
-- Special event creation (disasters, trade agreements)
-- Population and GDP adjustments
-- Time-based effect management
+### Flag Service & Media Integration
+- **Intelligent Flag Caching**: Bulk flag loading with fallback mechanisms
+- **MediaWiki Integration**: Real-time country data fetching from external wiki APIs
+- **Simple Flag Components**: Lightweight flag rendering with error handling
+- **Cache Management**: Efficient flag storage and retrieval systems
 
-### Country Builder
-- Start with real-world country data
-- Complete economic profile customization
-- Real-time validation and sustainability metrics
-- Economic health scoring and recommendations
+### Advanced Dashboard Analytics
+- **Executive Modals**: Cabinet meetings, economic policies, national security dashboards
+- **Premium Analytics**: Strategic planning tools, AI advisor, predictive modeling
+- **Performance Metrics**: Deep-dive analytics for social, security, and political indicators
+- **Focus Cards**: Government operations, foreign relations, social development tracking
 
-### Strategic Defense Initiative (SDI)
-- Intelligence feed management
-- Crisis event tracking
-- Diplomatic relation monitoring
-- Economic indicator analysis
+### Data Import & Management
+- **Excel Roster Import**: Comprehensive validation and preview systems
+- **Data Parser**: Robust handling of economic and demographic data
+- **Calculation Engine**: Real-time economic projections with tier-based constraints
+- **Historical Tracking**: Automated data point creation and trend analysis
 
 ## 📊 Performance & Monitoring
 

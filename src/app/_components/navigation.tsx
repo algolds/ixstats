@@ -39,8 +39,9 @@ import {
 import { useTheme } from "~/context/theme-context";
 import { UserButton, SignInButton, SignedIn, SignedOut, useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
-import { CountryFlag } from "./CountryFlag";
+import { useBulkFlagCache } from "~/hooks/useBulkFlagCache";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
+import { createUrl } from "~/lib/url-utils";
 
 interface NavigationItem {
   name: string;
@@ -65,6 +66,12 @@ export function Navigation() {
     { userId: user?.id || '' },
     { enabled: !!user?.id }
   );
+
+  // Get flag for user's country
+  const { flagUrls, isLoading: flagsLoading } = useBulkFlagCache(
+    userProfile?.country?.name ? [userProfile.country.name] : []
+  );
+  const userCountryFlag = userProfile?.country?.name ? flagUrls[userProfile.country.name] : null;
 
   // Close user menu when clicking outside
   useEffect(() => {
@@ -155,7 +162,7 @@ export function Navigation() {
           {/* Left: Logo */}
           <div className="flex items-center flex-shrink-0 z-20">
             <Link
-              href="/"
+              href={createUrl("/dashboard")}
               className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent hover:from-blue-300 hover:to-purple-400 transition-all duration-300"
             >
               IxStats™
@@ -231,7 +238,13 @@ export function Navigation() {
             
             {/* User Profile */}
             <div className="flex items-center ml-2">
-              <UserProfileMenu user={user} userProfile={userProfile} setupStatus={setupStatus} />
+              <UserProfileMenu 
+                user={user} 
+                userProfile={userProfile} 
+                setupStatus={setupStatus}
+                userCountryFlag={userCountryFlag}
+                flagsLoading={flagsLoading}
+              />
             </div>
           </div>
         </div>
@@ -301,10 +314,12 @@ export function Navigation() {
   );
 }
 
-function UserProfileMenu({ user, userProfile, setupStatus }: {
+function UserProfileMenu({ user, userProfile, setupStatus, userCountryFlag, flagsLoading }: {
   user: any;
   userProfile: any;
   setupStatus: string;
+  userCountryFlag: string | null;
+  flagsLoading: boolean;
 }) {
   const [showUserPopover, setShowUserPopover] = useState(false);
 
@@ -322,11 +337,11 @@ function UserProfileMenu({ user, userProfile, setupStatus }: {
   return (
     <Popover open={showUserPopover} onOpenChange={setShowUserPopover}>
       <PopoverTrigger className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors duration-200">
-          {setupStatus === 'complete' && userProfile?.country ? (
-            <CountryFlag 
-              countryName={userProfile.country.name} 
-              size="sm" 
-              className="w-8 h-8 rounded-full border border-white/20 object-cover" 
+          {setupStatus === 'complete' && userProfile?.country && userCountryFlag ? (
+            <img
+              src={userCountryFlag}
+              alt={`Flag of ${userProfile.country.name}`}
+              className="w-8 h-8 rounded-full border border-white/20 object-cover"
             />
           ) : (
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium border border-white/20">
@@ -350,11 +365,11 @@ function UserProfileMenu({ user, userProfile, setupStatus }: {
           {/* User Info */}
           <div className="px-4 py-3 border-b border-white/10">
             <div className="flex items-center gap-3">
-              {setupStatus === 'complete' && userProfile?.country ? (
-                <CountryFlag 
-                  countryName={userProfile.country.name} 
-                  size="lg" 
-                  className="w-12 h-12 rounded-full border border-white/20 object-cover" 
+              {setupStatus === 'complete' && userProfile?.country && userCountryFlag ? (
+                <img
+                  src={userCountryFlag}
+                  alt={`Flag of ${userProfile.country.name}`}
+                  className="w-12 h-12 rounded-full border border-white/20 object-cover"
                 />
               ) : (
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-lg border border-white/20">
@@ -375,37 +390,37 @@ function UserProfileMenu({ user, userProfile, setupStatus }: {
           {/* Menu Items */}
           <div className="py-1">
             {setupStatus === 'complete' && userProfile?.country && (
-              <a
-                href={`/countries/${userProfile.country.id}`}
+              <Link
+                href={createUrl(`/countries/${userProfile.country.id}`)}
                 className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
               >
                 <Crown className="h-4 w-4" />
                 My Country Dashboard
-              </a>
+              </Link>
             )}
             {setupStatus === 'needs-setup' && (
-              <a
-                href="/setup"
+              <Link
+                href={createUrl("/setup")}
                 className="flex items-center gap-3 px-4 py-2 text-sm text-amber-300 hover:text-amber-200 hover:bg-amber-500/10 transition-colors"
               >
                 <AlertCircle className="h-4 w-4" />
                 Complete Setup
-              </a>
+              </Link>
             )}
-            <a
-              href="/dashboard"
+            <Link
+              href={createUrl("/dashboard")}
               className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
             >
               <Home className="h-4 w-4" />
               Dashboard
-            </a>
-            <a
-              href="/profile"
+            </Link>
+            <Link
+              href={createUrl("/profile")}
               className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
             >
               <User className="h-4 w-4" />
               Profile Settings
-            </a>
+            </Link>
           </div>
           
           {/* Divider */}

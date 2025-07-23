@@ -28,6 +28,7 @@ import { IncomeWealthDistribution, Demographics, FiscalSystemComponent, Governme
 import { IxTimeCalendar } from "~/app/countries/_components/charts/IxTimeCalendar";
 import { Skeleton } from "~/components/ui/skeleton";
 import { AlertTriangle, Info, ChevronLeft, ChevronRight } from "lucide-react";
+import { createUrl } from "~/lib/url-utils";
 import { formatNumber, formatGrowthRateFromDecimal } from "~/lib/chart-utils";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import React, { useEffect, useState } from "react";
@@ -264,7 +265,7 @@ export default function CountryDetailPage({ params }: CountryDetailPageProps) {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink href="/countries">Countries</BreadcrumbLink>
+                <BreadcrumbLink href={createUrl("/countries")}>Countries</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>

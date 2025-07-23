@@ -96,6 +96,9 @@ npm run auth:check:prod
 # Interactive Clerk setup for development
 npm run clerk:setup
 
+# Validate production Clerk configuration
+npm run auth:validate:prod
+
 # Start development with authentication emphasis
 npm run dev:auth
 ```
@@ -252,6 +255,8 @@ Optional:
 - **Type Errors**: Run `npm run typecheck` and ensure Prisma client is generated
 - **Clerk "Invalid host" Error**: After changing from `/projects/ixstats` to root path, run `npm run clerk:setup` to configure proper development keys or comment out Clerk keys in `.env.local` for demo mode
 - **Authentication Issues**: Run `npm run auth:check:dev` to verify configuration, use `npm run clerk:setup` for interactive setup
+- **Production Authentication**: Ensure live Clerk keys are configured in `.env.production` (pk_live_*, sk_live_*). Run `npm run auth:validate:prod` to validate configuration
+- **Test Keys in Production**: If getting warnings about test keys in production, update `.env.production` with live keys and restart the server
 
 When working on economic features, always test with realistic country data and verify tier classifications are correct. The economic modeling system is the core of the application and requires careful attention to mathematical accuracy.
 

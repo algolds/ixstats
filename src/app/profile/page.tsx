@@ -41,6 +41,7 @@ import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { CountryFlag } from "~/app/_components/CountryFlag";
 import { useTheme } from "~/context/theme-context";
+import { createUrl } from "~/lib/url-utils";
 
 function ProfileContent() {
   const { user, isLoaded } = useUser();
@@ -141,7 +142,7 @@ function ProfileContent() {
             {/* Header */}
             <div className="mb-8">
               <Link
-                href="/dashboard"
+                href={createUrl("/dashboard")}
                 className="inline-flex items-center text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 mb-4"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -277,7 +278,7 @@ function ProfileContent() {
                         </h2>
                       </div>
                       <Link
-                        href={`/countries/${userProfile.country.id}`}
+                        href={createUrl(`/countries/${userProfile.country.id}`)}
                         className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-sm font-medium"
                       >
                         View Details →
@@ -462,7 +463,7 @@ function ProfileContent() {
                       You need to complete your account setup by linking to an existing country or creating a new one.
                     </p>
                     <Link
-                      href="/setup"
+                      href={createUrl("/setup")}
                       className="inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600 text-white rounded-md font-medium"
                     >
                       <Globe className="h-4 w-4 mr-2" />
@@ -539,7 +540,7 @@ function ProfileContent() {
                   </h3>
                   <div className="space-y-3">
                     <Link
-                      href="/dashboard"
+                      href={createUrl("/dashboard")}
                       className="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                     >
                       <BarChart3 className="h-4 w-4 mr-2" />
@@ -548,7 +549,7 @@ function ProfileContent() {
                     
                     {setupStatus === 'complete' && userProfile?.country && (
                       <Link
-                        href={`/countries/${userProfile.country.id}`}
+                        href={createUrl(`/countries/${userProfile.country.id}`)}
                         className="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                       >
                         <Crown className="h-4 w-4 mr-2" />
@@ -557,7 +558,7 @@ function ProfileContent() {
                     )}
                     
                     <Link
-                      href="/explore"
+                      href={createUrl("/explore")}
                       className="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                     >
                       <Globe className="h-4 w-4 mr-2" />
@@ -565,7 +566,7 @@ function ProfileContent() {
                     </Link>
                     
                     <Link
-                      href="/builder"
+                      href={createUrl("/builder")}
                       className="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                     >
                       <Building className="h-4 w-4 mr-2" />
@@ -648,14 +649,14 @@ export default function ProfilePage() {
           </p>
           <div className="flex gap-4 justify-center">
             <Link 
-              href="/dashboard"
+              href={createUrl("/dashboard")}
               className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium"
             >
               <BarChart3 className="h-4 w-4 mr-2" />
               View Dashboard
             </Link>
             <Link 
-              href="/countries"
+              href={createUrl("/countries")}
               className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md font-medium"
             >
               <Globe className="h-4 w-4 mr-2" />

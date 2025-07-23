@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser, SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
 import { api } from "~/trpc/react";
+import { navigateTo } from "~/lib/url-utils";
 import { 
   Globe, 
   Plus, 
@@ -55,7 +56,7 @@ export default function SetupPage() {
     if (isLoaded && user && userProfile) {
       if (userProfile.countryId) {
         // User already has a country linked, redirect to their country page
-        router.push(`/countries/${userProfile.countryId}`);
+        navigateTo(router, `/countries/${userProfile.countryId}`);
       }
     }
   }, [isLoaded, user, userProfile, router]);
@@ -99,7 +100,7 @@ export default function SetupPage() {
     if (!user?.id) return;
     
     // Redirect to builder instead of immediately creating country
-    router.push('/builder');
+    navigateTo(router, '/builder');
   };
 
   const handleComplete = async () => {
@@ -108,9 +109,9 @@ export default function SetupPage() {
     const countryId = updatedProfile.data?.countryId;
     
     if (countryId) {
-      router.push(`/countries/${countryId}`);
+      navigateTo(router, `/countries/${countryId}`);
     } else {
-      router.push('/dashboard');
+      navigateTo(router, '/dashboard');
     }
   };
 

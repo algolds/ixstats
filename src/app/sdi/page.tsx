@@ -17,6 +17,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { createUrl } from "~/lib/url-utils";
 import { 
   Shield,
   Settings,
@@ -431,10 +432,10 @@ export default function SovereignDigitalInterface() {
           </p>
           <div className="flex gap-4 justify-center">
             <Button asChild>
-              <a href="/dashboard">View Dashboard</a>
+              <a href={createUrl("/dashboard")}>View Dashboard</a>
             </Button>
             <Button variant="outline" asChild>
-              <a href="/countries">Browse Countries</a>
+              <a href={createUrl("/countries")}>Browse Countries</a>
             </Button>
           </div>
         </GlassCard>

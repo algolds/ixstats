@@ -13,7 +13,6 @@ import {
   Flag as FlagIcon,
   ExternalLink,
 } from 'lucide-react';
-import { flagService } from '~/lib/flag-service';
 import { formatPopulation, formatCurrency } from '~/lib/chart-utils';
 import { Button } from '~/components/ui/button';
 import { CardFooter } from '~/components/ui/card';
@@ -69,55 +68,10 @@ function useDominantColor(imageUrl: string | null | undefined) {
 
 export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: propFlagLoading }: CountryListCardProps) {
   const router = useRouter();
-  // Use props if provided, otherwise fall back to individual loading
-  const [localFlagUrl, setLocalFlagUrl] = useState<string | null>(null);
-  const [localFlagState, setLocalFlagState] = useState<'loading'|'loaded'|'error'>('loading');
-
-  // Determine which flag data to use
-  const flagUrl = propFlagUrl !== undefined ? propFlagUrl : localFlagUrl;
-  const flagLoading = propFlagLoading !== undefined ? propFlagLoading : localFlagState === 'loading';
-  const flagState = propFlagUrl !== undefined ? (propFlagUrl ? 'loaded' : 'error') : localFlagState;
-
-  // Only load individually if props are not provided
-  useEffect(() => {
-    if (propFlagUrl !== undefined || propFlagLoading !== undefined) {
-      return; // Use props, don't load individually
-    }
-
-    let mounted = true;
-    (async () => {
-      if (!country.name) {
-        mounted && setLocalFlagState('error');
-        return;
-      }
-      mounted && setLocalFlagState('loading');
-      try {
-        // Try cached flag first for immediate response
-        const cachedUrl = flagService.getCachedFlagUrl(country.name);
-        if (cachedUrl && mounted) {
-          setLocalFlagUrl(cachedUrl);
-          setLocalFlagState('loaded');
-          return;
-        }
-
-        // Fetch if not cached
-        const url = await flagService.getFlagUrl(country.name);
-        if (mounted) {
-          if (url) {
-            setLocalFlagUrl(url);
-            setLocalFlagState('loaded');
-          } else {
-            setLocalFlagState('error');
-          }
-        }
-      } catch {
-        if (mounted) {
-          setLocalFlagState('error');
-        }
-      }
-    })();
-    return () => { mounted = false; };
-  }, [country.name, propFlagUrl, propFlagLoading]);
+  
+  // Determine which flag data to use - prefer props when available
+  const flagUrl = propFlagUrl;
+  const flagLoading = propFlagLoading;
 
   const dominantColor = useDominantColor(flagUrl);
 
@@ -177,11 +131,6 @@ export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: pr
                   src={flagUrl}
                   alt={`Flag of ${country.name}`}
                   className="w-8 h-6 object-cover rounded border border-[var(--color-border-primary)]"
-                  onError={() => {
-                    if (propFlagUrl === undefined) {
-                      setLocalFlagState('error');
-                    }
-                  }}
                 />
               )}
               {!flagLoading && !flagUrl && (

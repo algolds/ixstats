@@ -11,11 +11,12 @@ import {
   Scaling,
   Flag,
 } from "lucide-react";
+import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { cn, getTierStyle } from "~/lib/theme-utils";
 import { formatPopulation, formatCurrency } from "~/lib/chart-utils";
 import type { CountryStats } from "~/types/ixstats";
-import { flagService } from "~/lib/flag-service";
+import { createUrl } from "~/lib/url-utils";
 import {
   Card,
   CardContent,
@@ -32,7 +33,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
-import { Skeleton } from "~/components/ui/skeleton";
 
 interface CountryCardProps {
   country: CountryStats;
@@ -47,76 +47,7 @@ export function CountryCard({
   flagUrl: propFlagUrl,
   flagLoading: propFlagLoading,
 }: CountryCardProps) {
-  // Add a ref to cache the flag URL for this country
-  const cachedFlagUrl = useRef<string | null>(null);
-  const [localFlagUrl, setLocalFlagUrl] = useState<string | null>(null);
-  const [localFlagLoading, setLocalFlagLoading] = useState(true);
   const [updateError, setUpdateError] = useState<string | null>(null);
-
-  // Determine which flag data to use
-  let flagUrl = propFlagUrl !== undefined ? propFlagUrl : localFlagUrl;
-  let flagLoading = propFlagLoading !== undefined ? propFlagLoading : localFlagLoading;
-  
-  // Debug logging
-  console.log(`[CountryCard] ${country.name} - propFlagUrl:`, propFlagUrl, 'localFlagUrl:', localFlagUrl, 'cachedUrl:', cachedFlagUrl.current, 'flagLoading:', flagLoading);
-
-  // If we have a cached flag URL, always use it
-  if (cachedFlagUrl.current) {
-    flagUrl = cachedFlagUrl.current;
-    flagLoading = false;
-  }
-
-  // load flag from wiki (only if props are not provided and not already cached)
-  useEffect(() => {
-    if (propFlagUrl !== undefined || propFlagLoading !== undefined) {
-      // If propFlagUrl is provided, cache it
-      if (propFlagUrl && !cachedFlagUrl.current) {
-        cachedFlagUrl.current = propFlagUrl;
-      }
-      return; // Use props, don't load individually
-    }
-
-    // If already cached for this country, do not reload
-    if (cachedFlagUrl.current) {
-      return;
-    }
-
-    let alive = true;
-    const load = async () => {
-      if (!country.name) {
-        alive && setLocalFlagLoading(false) && setLocalFlagUrl(null);
-        return;
-      }
-      alive && setLocalFlagLoading(true);
-      try {
-        // Try cached flag first for immediate response
-        const cachedUrl = flagService.getCachedFlagUrl(country.name);
-        if (cachedUrl) {
-          setLocalFlagUrl(cachedUrl);
-          cachedFlagUrl.current = cachedUrl;
-          setLocalFlagLoading(false);
-          return;
-        }
-
-        // Fetch if not cached
-        const url = await flagService.getFlagUrl(country.name);
-        if (alive && url) {
-          setLocalFlagUrl(url);
-          cachedFlagUrl.current = url; // Cache the loaded flag
-        } else if (alive) {
-          setLocalFlagUrl(null);
-        }
-      } catch {
-        alive && setLocalFlagUrl(null);
-      } finally {
-        alive && setLocalFlagLoading(false);
-      }
-    };
-    void load();
-    return () => {
-      alive = false;
-    };
-  }, [country.name, propFlagUrl, propFlagLoading]);
 
   // update mutation
   const updateMutation = api.countries.updateStats.useMutation({
@@ -223,29 +154,18 @@ export function CountryCard({
         </div>
       )}
 
-      <Link href={`/countries/${country.id}`} className="flex flex-col h-full">
+      <Link href={createUrl(`/countries/${country.id}`)} className="flex flex-col h-full">
         <CardHeader className="pb-4">
           <div className="flex justify-between items-start">
             <div className="flex items-center space-x-3 min-w-0">
               <div className="flex-shrink-0 w-8 h-6 relative">
-                {flagLoading ? (
+                {propFlagLoading ? (
                   <Skeleton className="h-full w-full rounded" />
-                ) : flagUrl ? (
+                ) : propFlagUrl ? (
                   <img
-                    src={flagUrl}
+                    src={propFlagUrl}
                     alt={`Flag of ${country.name}`}
                     className="h-full w-full object-cover rounded border border-border"
-                    onLoad={() => {
-                      console.log(`[CountryCard] Flag loaded successfully for ${country.name}:`, flagUrl);
-                    }}
-                    onError={(e) => {
-                      console.error(`[CountryCard] Flag failed to load for ${country.name}:`, flagUrl);
-                      console.error(`[CountryCard] Error details:`, e);
-                      (e.target as HTMLImageElement).style.display = "none";
-                      if (propFlagUrl === undefined) {
-                        setLocalFlagUrl(null);
-                      }
-                    }}
                   />
                 ) : (
                   <div className="h-full w-full bg-muted rounded border border-border flex items-center justify-center">

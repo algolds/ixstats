@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
+import { navigateTo } from "~/lib/url-utils";
 
 export function SetupRedirect() {
   const { user, isLoaded } = useUser();
@@ -56,7 +57,7 @@ export function SetupRedirect() {
       // If user has no country linked, redirect to setup
       if (userProfile && !userProfile.countryId) {
         hasRedirected.current = true;
-        router.push('/setup');
+        navigateTo(router, '/setup');
       }
     }
   }, [isLoaded, user, profileLoading, userProfile, profileError, router, shouldSkipSetup]);

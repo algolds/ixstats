@@ -1,10 +1,12 @@
 // src/app/dashboard/_components/Dashboard.tsx
 "use client";
 
-import React, { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
+import { createUrl } from "~/lib/url-utils";
 
 // Local interface for processed country data
 interface ProcessedCountryData {
@@ -21,18 +23,17 @@ interface ProcessedCountryData {
 }
 import { CountryIntelligenceSection } from "~/app/countries/_components/CountryIntelligenceSection";
 import { CountryExecutiveSection } from "~/app/countries/_components/CountryExecutiveSection";
-import { CountryFlag } from "~/app/_components/CountryFlag";
 import { AnimatedFlagsBackground } from "~/components/ui/animated-flags-background";
 import { GlassCard } from "~/components/ui/enhanced-card";
 import { CollapsibleCard } from "~/components/ui/collapsible-card";
 import { HealthRing } from "~/components/ui/health-ring";
 import { AnimatedNumber } from "~/components/ui/animated-number";
 import { ActivityPopover } from "~/components/ui/activity-modal";
+import { SimpleFlag } from "~/components/SimpleFlag";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { groupCountriesByPower, type CountryPowerData } from "~/lib/power-classification";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { Crown, Building2, Globe, Shield } from "lucide-react";
-
 // Define a type for globalStats
 interface GlobalStats {
   totalPopulation: number;
@@ -50,41 +51,47 @@ interface GlobalStats {
 // Add a type guard
 
 export default function Dashboard() {
-  const { user, isLoaded } = useUser();
-  const router = useRouter();
+  const { user } = useUser();
   const [activityPopoverOpen, setActivityPopoverOpen] = React.useState<number | null>(null);
 
-  // Check if user has completed setup
+  // Check if user has completed setup (non-blocking)
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
     { userId: user?.id || '' },
     { enabled: !!user?.id }
   );
 
-  // Redirect to setup if user hasn't completed it
-  useEffect(() => {
-    if (isLoaded && user && !profileLoading) {
-      if (userProfile && !userProfile.countryId) {
-        router.push('/setup');
-      }
-    }
-  }, [isLoaded, user, profileLoading, userProfile, router]);
-
-  // 1) Fetch paginated country list (now returns { countries, total })
+  // 1) Fetch paginated country list (with error handling)
   const {
     data: allData,
-  } = api.countries.getAll.useQuery();
+    isLoading: countriesLoading,
+    error: countriesError
+  } = api.countries.getAll.useQuery(undefined, {
+    retry: 1,
+    retryDelay: 1000
+  });
 
-  // 2) Fetch global stats
+  // 2) Fetch global stats (with error handling)
   const {
     data: globalStatsData,
-  } = api.countries.getGlobalStats.useQuery();
+    isLoading: statsLoading,
+    error: statsError
+  } = api.countries.getGlobalStats.useQuery(undefined, {
+    retry: 1,
+    retryDelay: 1000
+  });
 
-  // 3) Fetch user's country data
+  // 3) Fetch user's country data (with error handling)
   const {
     data: countryData,
+    isLoading: countryLoading,
+    error: countryError
   } = api.countries.getByIdWithEconomicData.useQuery(
     { id: userProfile?.countryId || '' },
-    { enabled: !!userProfile?.countryId }
+    { 
+      enabled: !!userProfile?.countryId,
+      retry: 1,
+      retryDelay: 1000
+    }
   );
 
   // 4) Always treat listData.countries as an array
@@ -108,17 +115,7 @@ export default function Dashboard() {
   const powerGrouped = groupCountriesByPower(processedCountries as CountryPowerData[]);
 
 
-  // Show loading while checking setup status
-  if (isLoaded && user && profileLoading) {
-    return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Checking setup status...</p>
-        </div>
-      </div>
-    );
-  }
+  // Allow dashboard to load even while checking setup status
 
   // No longer needed: handleActivityRingClick, handleActivityOverviewClick
 
@@ -137,28 +134,65 @@ export default function Dashboard() {
         ixTimeTimestamp: (globalStatsData as any).ixTimeTimestamp as number,
       } : undefined;
 
+  // Show any critical errors
+  if (countriesError || statsError) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <GlassCard variant="glass" className="text-center p-8">
+            <h2 className="text-2xl font-bold mb-4 text-red-600">Error Loading Dashboard</h2>
+            <p className="text-muted-foreground mb-6">
+              {countriesError?.message || statsError?.message || 'Unknown error occurred'}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-200"
+            >
+              Reload Page
+            </button>
+          </GlassCard>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-        {/* Setup Required */}
-        {!userProfile?.countryId && (
-          <GlassCard variant="glass" className="text-center p-8">
+        {/* Setup Required Banner (non-blocking) */}
+        {userProfile && !userProfile.countryId && (
+          <GlassCard variant="glass" className="text-center p-8 mb-6">
             <h2 className="text-2xl font-bold mb-4">Complete Your Setup</h2>
             <p className="text-muted-foreground mb-6">
               Set up your country profile to access MyCountry®, ECI, and SDI modules.
             </p>
-            <a
-              href="/setup"
+            <Link
+              href={createUrl("/setup")}
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200"
             >
               ⭐ Complete Setup
-            </a>
+            </Link>
           </GlassCard>
         )}
 
-        {/* Main Dashboard Grid - User's Country Modules */}
-        {userProfile?.countryId && (
+        {/* Loading states for various data */}
+        {profileLoading && (
+          <GlassCard variant="glass" className="text-center p-8 mb-6">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Loading profile...</p>
+          </GlassCard>
+        )}
+
+        {(countriesLoading || statsLoading) && (
+          <GlassCard variant="glass" className="text-center p-8 mb-6">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Loading dashboard data...</p>
+          </GlassCard>
+        )}
+
+        {/* Main Dashboard Grid - User's Country Modules (only when data is loaded) */}
+        {userProfile?.countryId && !countriesLoading && !statsLoading && allData && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* MyCountry® Overview - spans more columns, optimized spacing */}
             <div className="lg:col-span-8">
@@ -167,12 +201,12 @@ export default function Dashboard() {
                 icon={<Crown className="h-5 w-5 text-yellow-500" />}
                 variant="glass"
                 actions={
-                  <a
-                    href="/mycountry"
+                  <Link
+                    href={createUrl("/mycountry")}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-medium rounded-lg transition-all duration-200"
                   >
                     → Open
-                  </a>
+                  </Link>
                 }
                 defaultOpen={true}
                 className="relative overflow-hidden"
@@ -188,14 +222,37 @@ export default function Dashboard() {
                                       transform -skew-x-12 translate-x-full group-hover:translate-x-[-200%] 
                                       transition-transform duration-3000 ease-in-out animate-pulse" />
                         
-                        {/* Glassmorphic container */}
+                        {/* Glassmorphic container with real flag */}
                         <div className="w-full h-full backdrop-blur-[2px] bg-gradient-to-br from-white/20 via-white/10 to-white/5 
                                       rounded-2xl border border-white/30 shadow-2xl overflow-hidden">
                           <div className="w-full h-full bg-gradient-to-br from-white/10 to-transparent">
-                            <CountryFlag 
-                              countryName={countryData.name} 
-                              className="w-full h-full object-cover filter blur-[0.5px] opacity-90 mix-blend-overlay" 
-                            />
+                            {/* Real flag image with Framer Motion ripple animation */}
+                            <motion.div 
+                              className="w-full h-full"
+                              animate={{
+                                x: [0, 1, -0.5, 0.5, 0],
+                                skewX: [0, 0.5, -0.3, 0.2, 0],
+                                filter: [
+                                  "brightness(1)",
+                                  "brightness(1.05)",
+                                  "brightness(0.98)",
+                                  "brightness(1.02)",
+                                  "brightness(1)"
+                                ]
+                              }}
+                              transition={{
+                                duration: 8,
+                                ease: "easeInOut",
+                                repeat: Infinity,
+                                repeatType: "reverse"
+                              }}
+                            >
+                              <SimpleFlag 
+                                countryName={countryData.name}
+                                className="w-full h-full object-cover opacity-60"
+                                showPlaceholder={true}
+                              />
+                            </motion.div>
                           </div>
                         </div>
                         
@@ -326,12 +383,12 @@ export default function Dashboard() {
                 icon={<Globe className="h-5 w-5 text-blue-500" />}
                 variant="economic"
                 actions={
-                  <a
-                    href="/countries"
+                  <Link
+                    href={createUrl("/countries")}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-200"
                   >
                     → Browse
-                  </a>
+                  </Link>
                 }
                 defaultOpen={true}
                 className="relative overflow-hidden"
@@ -514,12 +571,12 @@ export default function Dashboard() {
                 icon={<Building2 className="h-5 w-5 text-indigo-500" />}
                 variant="diplomatic"
                 actions={
-                  <a
-                    href="/eci"
+                  <Link
+                    href={createUrl("/eci")}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-all duration-200"
                   >
                     → Open ECI
-                  </a>
+                  </Link>
                 }
                 defaultOpen={true}
               >
@@ -541,12 +598,12 @@ export default function Dashboard() {
                 icon={<Shield className="h-5 w-5 text-red-500" />}
                 variant="military"
                 actions={
-                  <a
-                    href="/sdi"
+                  <Link
+                    href={createUrl("/sdi")}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-all duration-200"
                   >
                     → Open SDI
-                  </a>
+                  </Link>
                 }
                 defaultOpen={true}
               >

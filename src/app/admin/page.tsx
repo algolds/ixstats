@@ -19,6 +19,7 @@ import {
   SdiAdminPanel,
   CountryAdminPanel,
   NotificationsAdmin,
+  UserManagement,
 } from "./_components";
 import { GlassCard, EnhancedCard } from "~/components/ui/enhanced-card";
 import { BentoGrid } from "~/components/ui/bento-grid";
@@ -90,6 +91,7 @@ export default function AdminPage() {
     { label: "Data Import", value: "import", icon: <Upload /> },
     { label: "Calculation Logs", value: "logs", icon: <List /> },
     { label: "Country Admin", value: "country-admin", icon: <Users /> },
+    { label: "User Management", value: "user-management", icon: <Users /> },
     { label: "SDI Admin", value: "sdi", icon: <Shield /> },
     { label: "Notifications", value: "notifications", icon: <Bell /> },
   ];
@@ -676,6 +678,11 @@ export default function AdminPage() {
               {selectedSection === "notifications" && (
                 <EnhancedCard variant="glass" className="mb-8">
                   <NotificationsAdmin />
+                </EnhancedCard>
+              )}
+              {selectedSection === "user-management" && (
+                <EnhancedCard variant="glass" className="mb-8">
+                  <UserManagement />
                 </EnhancedCard>
               )}
             </div>

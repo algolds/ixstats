@@ -17,6 +17,7 @@ import { api } from "~/trpc/react";
 import { cn, getTierStyle } from "~/lib/theme-utils";
 import { formatPopulation, formatCurrency } from "~/lib/chart-utils";
 import type { CountryStats } from "~/types/ixstats";
+import { createUrl } from "~/lib/url-utils";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import {
@@ -140,7 +141,7 @@ export function EnhancedCountryCard({
             <div className="min-w-0 flex-1">
               <CardTitle className="text-lg font-semibold truncate">
                 <Link 
-                  href={`/countries/${country.id}`}
+                  href={createUrl(`/countries/${country.id}`)}
                   className="hover:text-blue-600 transition-colors"
                 >
                   {country.name.replace(/_/g, ' ')}
@@ -285,7 +286,7 @@ export function EnhancedCountryCard({
             Updated: {new Date(country.lastCalculated).toLocaleDateString()}
           </div>
           
-          <Link href={`/countries/${country.id}`}>
+          <Link href={createUrl(`/countries/${country.id}`)}>
             <Button variant="outline" size="sm">
               View Details
             </Button>

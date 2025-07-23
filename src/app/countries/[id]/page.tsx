@@ -18,6 +18,7 @@ import { CountryAtGlance } from "~/app/countries/_components/detail";
 import { AlertTriangle, Eye, Users, DollarSign, TrendingUp, Globe, BarChart3, Activity } from "lucide-react";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { IxTime } from "~/lib/ixtime";
+import { createUrl } from "~/lib/url-utils";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { HealthRing } from "~/components/ui/health-ring";
@@ -106,7 +107,7 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink href="/countries">Countries</BreadcrumbLink>
+            <BreadcrumbLink href={createUrl("/countries")}>Countries</BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
@@ -127,7 +128,7 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
         
         <div className="flex items-center gap-3">
           {isOwnCountry && (
-            <Link href="/mycountry">
+            <Link href={createUrl("/mycountry")}>
               <Button className="flex items-center gap-2">
                 <Activity className="h-4 w-4" />
                 My Country Dashboard
@@ -321,7 +322,7 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
                   {isOwnCountry ? ' here' : ' with detailed analytics and management tools'}.
                 </span>
                 {isOwnCountry && (
-                  <Link href="/mycountry" className="text-blue-500 hover:underline ml-1">
+                  <Link href={createUrl("/mycountry")} className="text-blue-500 hover:underline ml-1">
                     View Full Dashboard
                   </Link>
                 )}

@@ -31,6 +31,7 @@ import { AlertTriangle, Settings, Crown, Save, Edit, BarChart3, Users, DollarSig
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import Link from "next/link";
+import { createUrl } from "~/lib/url-utils";
 import type { 
   CoreEconomicIndicatorsData, 
   LaborEmploymentData, 
@@ -201,10 +202,10 @@ function MyCountryContent() {
               or browse available countries to request ownership.
             </p>
             <div className="flex gap-4 justify-center">
-              <Link href="/countries">
+              <Link href={createUrl("/countries")}>
                 <Button variant="outline">Browse Countries</Button>
               </Link>
-              <Link href="/admin">
+              <Link href={createUrl("/admin")}>
                 <Button>Contact Admin</Button>
               </Link>
             </div>
@@ -241,7 +242,7 @@ function MyCountryContent() {
         </div>
         
         <div className="flex items-center gap-3">
-          <Link href={`/countries/${country.id}`}>
+          <Link href={createUrl(`/countries/${country.id}`)}>
             <Button variant="outline" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Public View
@@ -599,7 +600,7 @@ function MyCountryContent() {
               <p className="text-muted-foreground mb-4">
                 Access advanced economic modeling tools, scenario planning, and predictive analytics.
               </p>
-              <Link href={`/countries/${country.id}/modeling`}>
+              <Link href={createUrl(`/countries/${country.id}/modeling`)}>
                 <Button>Open Modeling Suite</Button>
               </Link>
             </CardContent>
@@ -626,10 +627,10 @@ export default function MyCountryPage() {
               to configure authentication or browse countries without signing in.
             </p>
             <div className="flex gap-4 justify-center">
-              <Link href="/countries">
+              <Link href={createUrl("/countries")}>
                 <Button variant="outline">Browse Countries</Button>
               </Link>
-              <Link href="/dashboard">
+              <Link href={createUrl("/dashboard")}>
                 <Button>View Dashboard</Button>
               </Link>
             </div>

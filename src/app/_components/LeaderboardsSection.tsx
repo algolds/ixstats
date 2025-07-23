@@ -16,6 +16,7 @@ import {
   Award
 } from "lucide-react";
 import Link from "next/link";
+import { createUrl } from "~/lib/url-utils";
 
 // Use a simplified interface for display purposes
 interface LeaderboardCountry {
@@ -150,7 +151,7 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
           return (
             <Link
               key={country.id}
-              href={`/countries/${country.id}`}
+              href={createUrl(`/countries/${country.id}`)}
               className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors group"
             >
               <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted">

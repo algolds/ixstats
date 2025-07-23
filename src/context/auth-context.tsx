@@ -25,8 +25,25 @@ const isClerkConfigured = Boolean(
 );
 
 const isDevEnvironment = process.env.NODE_ENV === 'development';
+const isProductionEnvironment = process.env.NODE_ENV === 'production';
 const isUsingTestKeys = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith('pk_test_');
 const isUsingLiveKeys = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith('pk_live_');
+
+// Enhanced logging for environment and key detection
+if (typeof window === 'undefined') { // Server-side only
+  console.log('🔐 Clerk Configuration Check:');
+  console.log(`   Environment: ${process.env.NODE_ENV}`);
+  console.log(`   Has Publishable Key: ${!!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}`);
+  console.log(`   Key Type: ${isUsingTestKeys ? 'TEST' : isUsingLiveKeys ? 'LIVE' : 'NONE/INVALID'}`);
+  console.log(`   Is Configured: ${isClerkConfigured}`);
+  
+  if (isProductionEnvironment && !isUsingLiveKeys) {
+    console.warn('⚠️  PRODUCTION WARNING: Not using live Clerk keys in production environment');
+  }
+  if (isDevEnvironment && isUsingLiveKeys) {
+    console.warn('⚠️  DEVELOPMENT WARNING: Using live Clerk keys in development environment');
+  }
+}
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
@@ -129,14 +146,25 @@ export function SignInButton({ children, mode, ...props }: { children?: React.Re
     );
   }
 
-  // Warn in development if using live keys
+  // Environment-specific key warnings
   if (isDevEnvironment && isUsingLiveKeys) {
-    console.warn('⚠️ WARNING: Using live Clerk keys in development. Switch to test keys (pk_test_*, sk_test_*) for development.');
+    console.warn('⚠️ DEVELOPMENT WARNING: Using live Clerk keys in development. Switch to test keys (pk_test_*, sk_test_*) for development.');
   }
 
-  // Warn in production if using test keys
-  if (!isDevEnvironment && isUsingTestKeys) {
-    console.warn('⚠️ WARNING: Using test Clerk keys in production. Switch to live keys (pk_live_*, sk_live_*) for production.');
+  if (isProductionEnvironment && isUsingTestKeys) {
+    console.error('🚨 PRODUCTION ERROR: Using test Clerk keys in production! Switch to live keys (pk_live_*, sk_live_*) for production.');
+    // Show a more prominent warning in production
+    if (typeof window !== 'undefined') {
+      console.error('🚨 Authentication will not work properly in production with test keys!');
+    }
+  }
+
+  // Success message for correct key usage
+  if (isProductionEnvironment && isUsingLiveKeys) {
+    console.log('✅ Production Clerk keys correctly configured');
+  }
+  if (isDevEnvironment && isUsingTestKeys) {
+    console.log('✅ Development Clerk keys correctly configured');
   }
   
   // Use actual Clerk SignInButton when configured

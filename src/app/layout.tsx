@@ -8,6 +8,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { TRPCReactProvider } from "~/trpc/react";
 import { ThemeProvider } from "~/context/theme-context";
 import { AuthProvider } from "~/context/auth-context";
+import { createUrl } from "~/lib/url-utils";
 import { Navigation } from "~/app/_components/navigation";
 import { SetupRedirect } from "~/app/_components/SetupRedirect";
 import { WebGLErrorHandler } from "~/components/webgl-error-handler";
@@ -63,6 +64,9 @@ const RootLayout = ({
           <ClerkProvider
             signInUrl="https://accounts.ixwiki.com/sign-in"
             signUpUrl="https://accounts.ixwiki.com/sign-up"
+            afterSignInUrl={createUrl("/dashboard")}
+            afterSignUpUrl={createUrl("/setup")}
+            redirectUrl={createUrl("/dashboard")}
           >
             <AppContent />
           </ClerkProvider>

@@ -15,6 +15,7 @@ import {
   ArrowUp
 } from "lucide-react";
 import Link from "next/link";
+import { createUrl } from "~/lib/url-utils";
 
 interface Country {
   id: string;
@@ -288,7 +289,7 @@ export function ActivityFeed({ countries, isLoading }: ActivityFeedProps) {
                     </span>
                     {activity.country && activity.countryId && (
                       <Link
-                        href={`/countries/${activity.countryId}`}
+                        href={createUrl(`/countries/${activity.countryId}`)}
                         className="text-xs text-primary hover:underline"
                       >
                         View {activity.country}
