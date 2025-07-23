@@ -42,7 +42,10 @@ export class AdminErrorBoundary extends Component<Props, State> {
   };
 
   handleGoHome = () => {
-    window.location.href = "/";
+    // Use window.location.assign to ensure base path is handled correctly
+    if (typeof window !== 'undefined') {
+      window.location.assign("/");
+    }
   };
 
   handleRetry = () => {

@@ -190,7 +190,7 @@ export function ComparisonCharts({
 
   // Custom tooltip
   const CustomTooltip = ({ active, payload, label }: any) => {
-    if (!active || !payload || !payload.length) return null;
+    if (!active || !payload?.length) return null;
 
     const formatValue = (value: number, dataKey: string) => {
       switch (dataKey) {

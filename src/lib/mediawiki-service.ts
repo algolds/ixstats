@@ -133,9 +133,7 @@ export interface CountryInfobox {
 }
 
 // Allow additional dynamic string properties via intersection type
-export type CountryInfoboxWithDynamicProps = CountryInfobox & {
-  [key: string]: string | undefined | Record<string, string>;
-};
+export type CountryInfoboxWithDynamicProps = CountryInfobox & Record<string, string | undefined | Record<string, string>>;
 
 interface CacheEntry<T> {
   data: T;
@@ -359,7 +357,7 @@ export class IxnayWikiService {
     if (existingRequest) {
       console.log(`[MediaWiki] Deduplicating request for: ${normKey}`);
       try {
-        return await existingRequest;
+        return await existingRequest as T;
       } catch (error) {
         console.log(`[MediaWiki] Deduplicated request failed for: ${normKey}, will retry`);
         this.REQUEST_QUEUE.delete(normKey);
@@ -482,7 +480,7 @@ export class IxnayWikiService {
    * Parse raw wikitext to HTML using MediaWiki parser via Next.js API route to avoid CORS issues
    */
   async parseWikitextToHtml(wikitext: string, title?: string): Promise<string | null> {
-    const cacheKey = `rendered_${title || 'unknown'}_${wikitext.substring(0, 100)}`;
+    const cacheKey = `rendered_${title ?? 'unknown'}_${wikitext.substring(0, 100)}`;
     const cached = this.getCacheValue(this.RENDERED_HTML_CACHE, cacheKey);
     if (cached !== null) {
       return cached;
@@ -491,7 +489,7 @@ export class IxnayWikiService {
     try {
       console.log(`[MediaWiki] Parsing wikitext to HTML (${wikitext.length} chars)`);
       
-      const requestData = {
+      const requestData: Record<string, string> = {
         action: 'parse',
         text: wikitext,
         format: 'json',
@@ -501,7 +499,7 @@ export class IxnayWikiService {
       };
 
       if (title) {
-        (requestData as any).title = title;
+        requestData.title = title;
       }
 
       // Determine if we should use GET or POST based on wikitext length
@@ -526,7 +524,10 @@ export class IxnayWikiService {
         // Use GET for short content
         const params = new URLSearchParams();
         Object.keys(requestData).forEach(key => {
-          params.set(key, (requestData as any)[key]);
+          const value = requestData[key];
+          if (value !== undefined) {
+            params.set(key, value);
+          }
         });
 
         const apiUrl = `/api/mediawiki?${params.toString()}`;
@@ -690,7 +691,7 @@ export class IxnayWikiService {
       console.error(`[MediaWiki] Error in two-phase parsing:`, error);
       // Fallback to regex-based parsing
       const content = this.extractTemplateContent(templateWikitext);
-      return this.regexFallbackParsing(content || templateWikitext);
+              return this.regexFallbackParsing(content ?? templateWikitext);
     }
   }
 
@@ -775,7 +776,7 @@ export class IxnayWikiService {
       const trimmedLine = line.trim();
       
       // Check if this line starts a new parameter
-      const paramMatch = trimmedLine.match(/^\|\s*([^=]+?)\s*=\s*(.*)$/);
+      const paramMatch = /^\|\s*([^=]+?)\s*=\s*(.*)$/.exec(trimmedLine);
       
       if (paramMatch) {
         // Save previous parameter if we have one
@@ -788,14 +789,14 @@ export class IxnayWikiService {
         const paramName = paramMatch[1]?.trim();
         if (paramName) {
           currentParam = paramName;
-          currentValue = paramMatch[2] || '';
+          currentValue = paramMatch[2] ?? '';
           inMultilineParam = true;
           
           // Check if this parameter value spans multiple lines by looking for unbalanced structures
-          const openBraces = (currentValue.match(/\{\{/g) || []).length;
-          const closeBraces = (currentValue.match(/\}\}/g) || []).length;
-          const openBrackets = (currentValue.match(/\[\[/g) || []).length;
-          const closeBrackets = (currentValue.match(/\]\]/g) || []).length;
+          const openBraces = (currentValue.match(/\{\{/g) ?? []).length;
+          const closeBraces = (currentValue.match(/\}\}/g) ?? []).length;
+          const openBrackets = (currentValue.match(/\[\[/g) ?? []).length;
+          const closeBrackets = (currentValue.match(/\]\]/g) ?? []).length;
           
           if (openBraces === closeBraces && openBrackets === closeBrackets && !currentValue.includes('{{')) {
             // This parameter is complete on one line
@@ -809,12 +810,12 @@ export class IxnayWikiService {
         currentValue += '\n' + trimmedLine;
         
         // Check if we've balanced the structures
-        const openBraces = (currentValue.match(/\{\{/g) || []).length;
-        const closeBraces = (currentValue.match(/\}\}/g) || []).length;
-        const openBrackets = (currentValue.match(/\[\[/g) || []).length;
-        const closeBrackets = (currentValue.match(/\]\]/g) || []).length;
+        const openBraces2 = (currentValue.match(/\{\{/g) ?? []).length;
+        const closeBraces2 = (currentValue.match(/\}\}/g) ?? []).length;
+        const openBrackets2 = (currentValue.match(/\[\[/g) ?? []).length;
+        const closeBrackets2 = (currentValue.match(/\]\]/g) ?? []).length;
         
-        if (openBraces === closeBraces && openBrackets === closeBrackets) {
+        if (openBraces2 === closeBraces2 && openBrackets2 === closeBrackets2) {
           // This parameter is now complete
           parameters[currentParam] = currentValue.trim();
           console.log(`[MediaWiki] Regex fallback - ${currentParam}: ${currentValue.substring(0, 100)}${currentValue.length > 100 ? '...' : ''}`);
@@ -906,7 +907,7 @@ export class IxnayWikiService {
    */
   async getCountryInfobox(countryName: string): Promise<CountryInfoboxWithDynamicProps | null> {
     // Check cache first
-    const cached = this.getCacheValue(this.INFOBOX_CACHE, countryName) as CountryInfoboxWithDynamicProps | null;
+    const cached = this.getCacheValue(this.INFOBOX_CACHE, countryName);
     if (cached !== null) {
       console.log(`[MediaWiki] Infobox cache hit for: ${countryName}`);
       return cached;
@@ -944,7 +945,7 @@ export class IxnayWikiService {
           name: countryName,
           rawWikitext: infoboxTemplate,
           parsedTemplateData: templateData,
-          renderedHtml: renderedHtml || undefined,
+          renderedHtml: renderedHtml ?? undefined,
         };
 
         // Step 6: Map template parameters to infobox properties (including dynamic ones)
@@ -1005,7 +1006,7 @@ export class IxnayWikiService {
           console.log(`[MediaWiki] Pre-processed wikilinks in ${key}: "${value.substring(0, 50)}..." -> "${processedValue.substring(0, 50)}..."`);
         }
         
-        (infobox as any)[key] = processedValue;
+        (infobox as Record<string, string>)[key] = processedValue;
       }
     }
 
@@ -1054,7 +1055,7 @@ export class IxnayWikiService {
             infobox.parsedTemplateData[key] = processedValue;
             
             // Update the infobox property
-            (infobox as any)[key] = processedValue;
+            (infobox as Record<string, string>)[key] = processedValue;
             
             console.log(`[MediaWiki] Enhanced processing of ${key}:`);
             console.log(`  Original: ${value.substring(0, 100)}${value.length > 100 ? '...' : ''}`);
@@ -1071,10 +1072,10 @@ export class IxnayWikiService {
             typeof value === 'string' && (value.includes('{{') || value.includes('[['))) {
           
           console.log(`[MediaWiki] Processing direct property: ${key}`);
-          let processedValue = this.cleanParameterValue(value);
+          const processedValue = this.cleanParameterValue(value);
           
           if (processedValue && processedValue !== value) {
-            (infobox as any)[key] = processedValue;
+            (infobox as Record<string, string>)[key] = processedValue;
             console.log(`[MediaWiki] Updated direct property ${key}:`);
             console.log(`  Original: ${value.substring(0, 100)}${value.length > 100 ? '...' : ''}`);
             console.log(`  Processed: ${processedValue.substring(0, 100)}${processedValue.length > 100 ? '...' : ''}`);
@@ -1095,8 +1096,8 @@ export class IxnayWikiService {
       console.log(`[MediaWiki] Enhanced Switcher processing: ${switcherTemplate.substring(0, 200)}...`);
       
       // More robust extraction of Switcher content
-      const switcherMatch = switcherTemplate.match(/\{\{\s*Switcher\s*\|([\s\S]*)\}\}/i);
-      if (!switcherMatch || !switcherMatch[1]) {
+      const switcherMatch = /\{\{\s*Switcher\s*\|([\s\S]*)\}\}/i.exec(switcherTemplate);
+      if (!switcherMatch?.[1]) {
         console.log('[MediaWiki] No Switcher match found');
         return switcherTemplate;
       }
@@ -1130,7 +1131,7 @@ export class IxnayWikiService {
         
         for (const pattern of filePatterns) {
           const fileMatch = cleanPart.match(pattern);
-          if (fileMatch && fileMatch[1]) {
+          if (fileMatch?.[1]) {
             const fileName = fileMatch[1].trim();
             console.log(`[MediaWiki] Found file in Switcher: ${fileName}`);
             return fileName;
@@ -1162,7 +1163,7 @@ export class IxnayWikiService {
       }
 
       // Final fallback
-      const fallback = this.cleanParameterValue(parts[0] || switcherTemplate);
+      const fallback = this.cleanParameterValue(parts[0] ?? switcherTemplate);
       console.log(`[MediaWiki] Final Switcher fallback: ${fallback.substring(0, 100)}...`);
       return fallback;
 
@@ -1229,7 +1230,7 @@ export class IxnayWikiService {
       const rendered = await this.parseWikitextToHtml(templateValue);
       if (rendered) {
         // Extract text content from HTML, preserving structure
-        let textContent = rendered
+        const textContent = rendered
           .replace(/<br\s*\/?>/gi, ' ')
           .replace(/<\/p><p>/gi, ' ')
           .replace(/<[^>]+>/g, '')
@@ -1243,7 +1244,7 @@ export class IxnayWikiService {
       }
       
       // If rendering failed, try to extract meaningful content manually
-      return this.extractTemplateContentManually(templateValue) || templateValue;
+      return this.extractTemplateContentManually(templateValue) ?? templateValue;
       
     } catch (error) {
       console.error(`[MediaWiki] Error processing generic template:`, error);
@@ -1268,7 +1269,7 @@ export class IxnayWikiService {
 
       for (const pattern of patterns) {
         const match = templateValue.match(pattern);
-        if (match && match[1]) {
+        if (match?.[1]) {
           const extracted = match[1].trim();
           if (extracted.length > 5) {
             return this.cleanParameterValue(extracted);
@@ -1297,87 +1298,116 @@ export class IxnayWikiService {
     
     console.log(`[MediaWiki] No cache hit for flag: ${countryName}, making request`);
     return this.getOrCreateRequest(`flag_${normName}`, async () => {
+      let lastError: Error | null = null;
+      
       try {
         console.log(`[MediaWiki] Starting flag request for: ${countryName}`);
         
         // Method 1: Try Country_data template first
-        const countryDataTemplateName = `Template:Country_data_${countryName}`;
-        console.log(`[MediaWiki] Trying Country_data template: ${countryDataTemplateName}`);
-        const templateContent = await this.getTemplate(countryDataTemplateName);
+        try {
+          const countryDataTemplateName = `Template:Country_data_${countryName}`;
+          console.log(`[MediaWiki] Trying Country_data template: ${countryDataTemplateName}`);
+          const templateContent = await this.getTemplate(countryDataTemplateName);
+          
+          if (templateContent && typeof templateContent === 'string') {
+            console.log(`[MediaWiki] Got Country_data template for: ${countryName}`);
+            const flagFileName = this.extractFlagFromCountryDataTemplate(templateContent);
+            if (flagFileName) {
+              console.log(`[MediaWiki] Found flag filename: ${flagFileName} for ${countryName}`);
+              const flagUrl = await this.getFileUrl(flagFileName);
+              console.log(`[MediaWiki] getFileUrl returned for ${countryName}:`, flagUrl);
+              if (typeof flagUrl === 'string') {
+                console.log(`[MediaWiki] Successfully got flag URL: ${flagUrl} for ${countryName}`);
+                this.setCacheValue(this.FLAG_CACHE, normName, flagUrl, this.FLAG_TTL);
+                console.log(`[MediaWiki] FINAL RETURN: ${countryName} -> ${flagUrl}`);
+                return flagUrl;
+              } else {
+                console.warn(`[MediaWiki] getFileUrl failed for ${countryName}:`, flagUrl);
+              }
+            }
+          }
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error(String(error));
+          console.warn(`[MediaWiki] Country_data template method failed for ${countryName}:`, error);
+        }
         
-        if (templateContent && typeof templateContent === 'string') {
-          console.log(`[MediaWiki] Got Country_data template for: ${countryName}`);
-          const flagFileName = this.extractFlagFromCountryDataTemplate(templateContent);
-          if (flagFileName) {
-            console.log(`[MediaWiki] Found flag filename: ${flagFileName} for ${countryName}`);
-            const flagUrl = await this.getFileUrl(flagFileName);
+        // Method 2: Try direct page infobox
+        try {
+          console.log(`[MediaWiki] Trying direct page infobox for: ${countryName}`);
+          const infobox = await this.getCountryInfobox(countryName);
+          if (infobox) {
+            console.log(`[MediaWiki] Got infobox for: ${countryName}`);
+            const flagFields = [infobox.image_flag, infobox.flag, infobox.flag_caption];
+            for (const flagFile of flagFields) {
+              if (flagFile?.trim()) {
+                let cleanFlagFile = flagFile.trim();
+                if (cleanFlagFile.startsWith('File:')) {
+                  cleanFlagFile = cleanFlagFile.substring(5);
+                }
+                console.log(`[MediaWiki] Trying flag file: ${cleanFlagFile} for ${countryName}`);
+                const flagUrl = await this.getFileUrl(cleanFlagFile);
+                if (typeof flagUrl === 'string') {
+                  console.log(`[MediaWiki] Successfully got flag URL from infobox: ${flagUrl} for ${countryName}`);
+                  this.setCacheValue(this.FLAG_CACHE, normName, flagUrl, this.FLAG_TTL);
+                  return flagUrl;
+                }
+              }
+            }
+          }
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error(String(error));
+          console.warn(`[MediaWiki] Infobox method failed for ${countryName}:`, error);
+        }
+        
+        // Method 3: Try common flag patterns with enhanced patterns
+        try {
+          console.log(`[MediaWiki] Trying common flag patterns for: ${countryName}`);
+          const normalizedName = countryName.replace(/\s+/g, '_');
+          const commonFlagPatterns = [
+            `Flag3 ${countryName}.png`,  // Most common pattern
+            `Flag_of_${countryName}.svg`,
+            `Flag_of_${countryName}.png`,
+            `Flag_of_${normalizedName}.svg`,
+            `Flag_of_${normalizedName}.png`,
+            `${countryName}_flag.svg`,
+            `${countryName}_flag.png`,
+            `Flag_${countryName}.svg`,
+            `Flag_${countryName}.png`,
+            `Flag ${countryName}.svg`,
+            `Flag ${countryName}.png`,
+            `${normalizedName}_flag.svg`,
+            `${normalizedName}_flag.png`,
+          ];
+          
+          for (const flagPattern of commonFlagPatterns) {
+            console.log(`[MediaWiki] Trying flag pattern: ${flagPattern} for ${countryName}`);
+            const flagUrl = await this.getFileUrl(flagPattern);
             if (typeof flagUrl === 'string') {
-              console.log(`[MediaWiki] Successfully got flag URL: ${flagUrl} for ${countryName}`);
+              console.log(`[MediaWiki] Successfully got flag URL from pattern: ${flagUrl} for ${countryName}`);
               this.setCacheValue(this.FLAG_CACHE, normName, flagUrl, this.FLAG_TTL);
               return flagUrl;
             }
           }
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error(String(error));
+          console.warn(`[MediaWiki] Pattern matching method failed for ${countryName}:`, error);
         }
         
-        // Method 2: Try direct page infobox
-        console.log(`[MediaWiki] Trying direct page infobox for: ${countryName}`);
-        const infobox = await this.getCountryInfobox(countryName);
-        if (infobox) {
-          console.log(`[MediaWiki] Got infobox for: ${countryName}`);
-          const flagFields = [infobox.image_flag, infobox.flag, infobox.flag_caption];
-          for (const flagFile of flagFields) {
-            if (flagFile && flagFile.trim()) {
-              let cleanFlagFile = flagFile.trim();
-              if (cleanFlagFile.startsWith('File:')) {
-                cleanFlagFile = cleanFlagFile.substring(5);
-              }
-              console.log(`[MediaWiki] Trying flag file: ${cleanFlagFile} for ${countryName}`);
-              const flagUrl = await this.getFileUrl(cleanFlagFile);
-              if (typeof flagUrl === 'string') {
-                console.log(`[MediaWiki] Successfully got flag URL from infobox: ${flagUrl} for ${countryName}`);
-                this.setCacheValue(this.FLAG_CACHE, normName, flagUrl, this.FLAG_TTL);
-                return flagUrl;
-              }
-            }
-          }
+        console.log(`[MediaWiki] No flag found for: ${countryName} after trying all methods`);
+        if (lastError) {
+          console.warn(`[MediaWiki] Last error for ${countryName}:`, lastError.message);
         }
         
-        // Method 3: Try common flag patterns
-        console.log(`[MediaWiki] Trying common flag patterns for: ${countryName}`);
-        const commonFlagPatterns = [
-          `Flag_of_${countryName}.svg`,
-          `Flag_of_${countryName}.png`,
-          `${countryName}_flag.svg`,
-          `${countryName}_flag.png`,
-          `Flag_${countryName}.svg`,
-          `Flag_${countryName}.png`,
-          `${countryName.replace(/\s+/g, '_')}_flag.svg`,
-          `${countryName.replace(/\s+/g, '_')}_flag.png`,
-        ];
-        
-        for (const flagPattern of commonFlagPatterns) {
-          console.log(`[MediaWiki] Trying flag pattern: ${flagPattern} for ${countryName}`);
-          const flagUrl = await this.getFileUrl(flagPattern);
-          if (typeof flagUrl === 'string') {
-            console.log(`[MediaWiki] Successfully got flag URL from pattern: ${flagUrl} for ${countryName}`);
-            this.setCacheValue(this.FLAG_CACHE, normName, flagUrl, this.FLAG_TTL);
-            return flagUrl;
-          }
-        }
-        
-        console.log(`[MediaWiki] No flag found for: ${countryName}`);
-        // Return a default flag URL instead of error to prevent broken images
-        const defaultFlagUrl = '/api/placeholder-flag.svg';
-        this.setCacheValue(this.FLAG_CACHE, normName, defaultFlagUrl, ERROR_TTL);
+        // Cache as null instead of placeholder to allow other systems to try
+        this.setCacheValue(this.FLAG_CACHE, normName, null, ERROR_TTL);
         NOT_FOUND_SET.add(normName);
-        return defaultFlagUrl;
+        return { error: `No flag found for ${countryName}` };
       } catch (error) {
-        console.error(`[MediaWiki] Exception in getFlagUrl for ${countryName}:`, error);
-        // Return a default flag URL instead of error to prevent broken images
-        const defaultFlagUrl = '/api/placeholder-flag.svg';
-        this.setCacheValue(this.FLAG_CACHE, normName, defaultFlagUrl, ERROR_TTL);
+        console.error(`[MediaWiki] Critical exception in getFlagUrl for ${countryName}:`, error);
+        // Cache as null and return error to allow other systems to handle fallback
+        this.setCacheValue(this.FLAG_CACHE, normName, null, ERROR_TTL);
         NOT_FOUND_SET.add(normName);
-        return defaultFlagUrl;
+        return { error: `Critical exception for ${countryName}: ${error instanceof Error ? error.message : String(error)}` };
       }
     });
   }
@@ -1412,7 +1442,7 @@ export class IxnayWikiService {
       
       for (const pattern of aliasPatterns) {
         const match = templateContent.match(pattern);
-        if (match && match[1]) {
+        if (match?.[1]) {
           let flagFileName = match[1].trim();
           
           // Clean up the flag filename
@@ -1445,8 +1475,8 @@ export class IxnayWikiService {
             (trimmedLine.includes('.svg') || trimmedLine.includes('.png'))) {
           
           // Extract filename from the line
-          const fileMatch = trimmedLine.match(/([^|\s\[\]]+(?:Flag[^|\s\[\]]*\.(?:svg|png|jpg|jpeg|gif)))/i);
-          if (fileMatch && fileMatch[1]) {
+          const fileMatch = /([^|\s\[\]]+(?:Flag[^|\s\[\]]*\.(?:svg|png|jpg|jpeg|gif)))/i.exec(trimmedLine);
+          if (fileMatch?.[1]) {
             let flagFileName = fileMatch[1].trim();
             
             // Remove File: prefix if present
@@ -1467,8 +1497,8 @@ export class IxnayWikiService {
             (trimmedLine.includes('.svg') || trimmedLine.includes('.png'))) {
           
           // Try to extract just the filename
-          const fileMatch = trimmedLine.match(/([^|\s\[\]]+\.(?:svg|png|jpg|jpeg|gif))/i);
-          if (fileMatch && fileMatch[1]) {
+          const fileMatch = /([^|\s\[\]]+\.(?:svg|png|jpg|jpeg|gif))/i.exec(trimmedLine);
+          if (fileMatch?.[1]) {
             let flagFileName = fileMatch[1].trim();
             
             // Remove File: prefix if present
@@ -1557,61 +1587,112 @@ export class IxnayWikiService {
    * Get the URL for a file with improved caching
    */
   async getFileUrl(fileName: string): Promise<string | { error: string }> {
-    if (!fileName) return { error: 'No fileName provided' };
-    const cleanFileName = fileName.replace(/^File:/i, '').trim();
-    if (!cleanFileName) return { error: 'No fileName after cleaning' };
-    const cached = this.getCacheValue(this.FILE_CACHE, cleanFileName);
-    if (cached !== null) {
-      return cached;
+    if (!fileName) {
+      return { error: '[MediaWiki] No filename provided' };
     }
-    return this.getOrCreateRequest(`file_${cleanFileName}`, async () => {
+
+    const cleanFileName = fileName.trim();
+    const normalizedKey = normalizeKey(cleanFileName);
+    
+    if (NOT_FOUND_SET.has(normalizedKey)) {
+      return { error: `[MediaWiki] File not found (cached): ${cleanFileName}` };
+    }
+
+    return this.getOrCreateRequest(`file:${normalizedKey}`, async () => {
       try {
-        return await throttledRequest(async () => {
-          const params = new URLSearchParams({
-            action: 'query',
-            titles: `File:${cleanFileName}`,
-            prop: 'imageinfo',
-            iiprop: 'url',
-            format: 'json',
-            formatversion: '2',
-          });
-          const fileUrl = `${MEDIAWIKI_CONFIG.baseUrl}${MEDIAWIKI_CONFIG.apiEndpoint}?${params.toString()}`;
-          const response = await fetch(fileUrl, {
-            headers: { 'Accept': 'application/json' },
-            cache: 'no-store'
-          });
-          if (!response.ok) {
-            const errMsg = `[MediaWiki] HTTP Error getting file ${cleanFileName}: ${response.status} ${response.statusText}`;
-            this.setCacheValue(this.FILE_CACHE, cleanFileName, null, ERROR_TTL);
-            NOT_FOUND_SET.add(normalizeKey(cleanFileName));
-            return { error: errMsg };
-          }
-          const data = await response.json();
-          if (data.error) {
-            this.setCacheValue(this.FILE_CACHE, cleanFileName, null, ERROR_TTL);
-            NOT_FOUND_SET.add(normalizeKey(cleanFileName));
-            return { error: `[MediaWiki] API Error: ${JSON.stringify(data.error)}` };
-          }
-          const pages = data.query?.pages;
-          if (!pages || !Array.isArray(pages) || pages.length === 0) {
-            this.setCacheValue(this.FILE_CACHE, cleanFileName, null, ERROR_TTL);
-            NOT_FOUND_SET.add(normalizeKey(cleanFileName));
-            return { error: `[MediaWiki] No pages found for file ${cleanFileName}` };
-          }
-          const page = pages[0];
-          if (!page.imageinfo || !Array.isArray(page.imageinfo) || page.imageinfo.length === 0) {
-            this.setCacheValue(this.FILE_CACHE, cleanFileName, null, ERROR_TTL);
-            NOT_FOUND_SET.add(normalizeKey(cleanFileName));
-            return { error: `[MediaWiki] No imageinfo found for file ${cleanFileName}` };
-          }
-          const url = page.imageinfo[0].url;
-          this.setCacheValue(this.FILE_CACHE, cleanFileName, url, this.FILE_TTL);
-          return url;
+        const params = new URLSearchParams({
+          action: 'query',
+          format: 'json',
+          titles: `File:${cleanFileName}`,
+          prop: 'imageinfo',
+          iiprop: 'url',
+          iilimit: '1'
         });
+
+        const response = await throttledRequest(() => 
+          fetch(`${this.API_BASE_URL}?${params.toString()}`)
+        );
+
+        if (!response.ok) {
+          this.setCacheValue(this.FILE_CACHE, cleanFileName, null, ERROR_TTL);
+          NOT_FOUND_SET.add(normalizedKey);
+          return { error: `[MediaWiki] HTTP ${response.status} getting file ${cleanFileName}` };
+        }
+
+        const data = await response.json() as {
+          error?: unknown;
+          query?: {
+            pages?: Record<string, {
+              imageinfo?: Array<{ url: string }>;
+              missing?: boolean;
+              pageid?: number;
+            }>;
+          };
+        };
+
+        if (data.error) {
+          console.error(`[MediaWiki] API Error for file ${cleanFileName}:`, data.error);
+          this.setCacheValue(this.FILE_CACHE, cleanFileName, null, ERROR_TTL);
+          NOT_FOUND_SET.add(normalizedKey);
+          return { error: `[MediaWiki] API Error: ${JSON.stringify(data.error)}` };
+        }
+
+        const pages = data.query?.pages;
+        if (!pages || typeof pages !== 'object') {
+          console.warn(`[MediaWiki] No pages object for file ${cleanFileName}`);
+          this.setCacheValue(this.FILE_CACHE, cleanFileName, null, ERROR_TTL);
+          NOT_FOUND_SET.add(normalizedKey);
+          return { error: `[MediaWiki] No pages found for file ${cleanFileName}` };
+        }
+
+        // MediaWiki API returns pages as an object with page IDs as keys
+        const pageIds = Object.keys(pages);
+        if (pageIds.length === 0) {
+          console.warn(`[MediaWiki] No page IDs for file ${cleanFileName}`);
+          this.setCacheValue(this.FILE_CACHE, cleanFileName, null, ERROR_TTL);
+          NOT_FOUND_SET.add(normalizedKey);
+          return { error: `[MediaWiki] No pages found for file ${cleanFileName}` };
+        }
+
+        const page = pages[pageIds[0]!];
+        if (!page) {
+          console.warn(`[MediaWiki] No page data for file ${cleanFileName}`);
+          this.setCacheValue(this.FILE_CACHE, cleanFileName, null, ERROR_TTL);
+          NOT_FOUND_SET.add(normalizedKey);
+          return { error: `[MediaWiki] No page found for file ${cleanFileName}` };
+        }
+
+        // Check if the page is missing (file doesn't exist)
+        if (page.missing) {
+          console.log(`[MediaWiki] File ${cleanFileName} is missing from MediaWiki`);
+          this.setCacheValue(this.FILE_CACHE, cleanFileName, null, ERROR_TTL);
+          NOT_FOUND_SET.add(normalizedKey);
+          return { error: `[MediaWiki] File ${cleanFileName} does not exist` };
+        }
+
+        if (!page.imageinfo || !Array.isArray(page.imageinfo) || page.imageinfo.length === 0) {
+          console.warn(`[MediaWiki] No imageinfo for file ${cleanFileName}`);
+          this.setCacheValue(this.FILE_CACHE, cleanFileName, null, ERROR_TTL);
+          NOT_FOUND_SET.add(normalizedKey);
+          return { error: `[MediaWiki] No imageinfo found for file ${cleanFileName}` };
+        }
+
+        const url = page.imageinfo[0]?.url;
+        if (!url) {
+          console.warn(`[MediaWiki] No URL in imageinfo for file ${cleanFileName}`);
+          this.setCacheValue(this.FILE_CACHE, cleanFileName, null, ERROR_TTL);
+          NOT_FOUND_SET.add(normalizedKey);
+          return { error: `[MediaWiki] No URL found in imageinfo for file ${cleanFileName}` };
+        }
+
+        console.log(`[MediaWiki] Successfully got file URL for ${cleanFileName}: ${url}`);
+        console.log(`[MediaWiki] File URL test - can we access it?`, url);
+        this.setCacheValue(this.FILE_CACHE, cleanFileName, url, this.FILE_TTL);
+        return url;
       } catch (error) {
         this.setCacheValue(this.FILE_CACHE, cleanFileName, null, ERROR_TTL);
-        NOT_FOUND_SET.add(normalizeKey(cleanFileName));
-        return { error: `[MediaWiki] Exception getting file ${cleanFileName}: ${error}` };
+        NOT_FOUND_SET.add(normalizedKey);
+        return { error: `[MediaWiki] Exception getting file ${cleanFileName}: ${error instanceof Error ? error.message : String(error)}` };
       }
     });
   }
@@ -1803,7 +1884,7 @@ export class IxnayWikiService {
       const escapeMap: Record<string, string> = {
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
       };
-      return escapeMap[char] || char;
+              return escapeMap[char] ?? char;
     });
     return `<a href="${wikiUrl}" target="_blank" rel="noopener noreferrer" style="color: #429284; text-decoration: none;">${safeDisplay}</a>`;
   }
@@ -1990,8 +2071,9 @@ export class IxnayWikiService {
     cleaned = cleaned.replace(/\{\{[^|}]+\}\}/g, '');
     
     // For complex templates that still remain, try to extract any meaningful text
-    const complexTemplateMatch = cleaned.match(/\{\{([^}]+)\}\}/);
-    if (complexTemplateMatch && complexTemplateMatch[1]) {
+    const complexTemplateRegex = /\{\{([^}]+)\}\}/;
+    const complexTemplateMatch = complexTemplateRegex.exec(cleaned);
+    if (complexTemplateMatch?.[1]) {
       const templateContent = complexTemplateMatch[1];
       // Try to find text that looks like readable content (not parameter names)
       const readableText = templateContent.split('|').find(part => {
@@ -1999,7 +2081,7 @@ export class IxnayWikiService {
         return trimmed.length > 3 && 
                !trimmed.includes('=') && 
                /^[A-Za-z]/.test(trimmed) &&
-               !trimmed.match(/^[a-z_]+$/); // Not just parameter names
+               !complexTemplateRegex.exec(trimmed); // Not just parameter names
       });
       
       if (readableText) {

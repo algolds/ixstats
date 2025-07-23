@@ -1,6 +1,6 @@
 "use client";
 
-import { useMotionValue, motion, useMotionTemplate } from "motion/react";
+import { useMotionValue, motion, useMotionTemplate } from "framer-motion";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import React, { useState } from "react";
 import { CanvasRevealEffect } from "./canvas-reveal-effect";
@@ -24,7 +24,7 @@ export const CardSpotlight = ({
     clientX,
     clientY,
   }: ReactMouseEvent<HTMLDivElement>) {
-    let { left, top } = currentTarget.getBoundingClientRect();
+    const { left, top } = currentTarget.getBoundingClientRect();
 
     mouseX.set(clientX - left);
     mouseY.set(clientY - top);
@@ -67,6 +67,9 @@ export const CardSpotlight = ({
             ]}
             dotSize={3}
           />
+        )}
+        {isHovering && (
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 pointer-events-none" />
         )}
       </motion.div>
       {children}

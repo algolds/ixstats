@@ -3,11 +3,13 @@
 
 import React from "react";
 import { RefreshCw, Globe } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { CountryCard } from "./CountryCard";
-import type { CountryStats } from "~/types/ixstats";
+import type { CountryStats, CountryWithEconomicData } from "~/types/ixstats";
+import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { useBulkFlagCache } from "~/hooks/useBulkFlagCache";
 import { useMemo } from "react";
@@ -34,6 +36,7 @@ class CountriesErrorBoundary extends React.Component<{children: React.ReactNode}
 function CountriesSectionImpl({
   onGlobalRefreshAction,
 }: CountriesSectionProps) {
+  const router = useRouter();
   // getAll now returns { countries, total }
   const {
     data: listData,
@@ -53,27 +56,51 @@ function CountriesSectionImpl({
     },
   });
 
-  // Always fall back to an array of any
-  const rawCountries = (listData?.countries ?? []) as any[];
-
-  // Map to the minimal shape CountryCard needs
-  const transformedCountries = rawCountries.map((country: any) => ({
+  /**
+   * Transform CountryWithEconomicData to CountryStats format
+   * Ensures all required fields are properly mapped and typed
+   */
+  const transformCountryData = (country: CountryWithEconomicData): CountryStats => ({
+    // BaseCountryData fields - mapping from CountryWithEconomicData structure
+    country: country.name,
+    continent: country.continent,
+    region: country.region,
+    governmentType: country.governmentType,
+    religion: country.religion,
+    leader: country.leader,
+    population: country.baselinePopulation, // Base population for calculations
+    gdpPerCapita: country.baselineGdpPerCapita, // Base GDP per capita
+    landArea: country.landArea,
+    areaSqMi: country.areaSqMi,
+    maxGdpGrowthRate: country.maxGdpGrowthRate,
+    adjustedGdpGrowth: country.adjustedGdpGrowth,
+    populationGrowthRate: country.populationGrowthRate,
+    actualGdpGrowth: country.adjustedGdpGrowth, // Use adjusted growth as actual
+    projected2040Population: country.currentPopulation * Math.pow(1 + country.populationGrowthRate, 20), // 20-year projection
+    projected2040Gdp: country.currentTotalGdp * Math.pow(1 + country.adjustedGdpGrowth, 20),
+    projected2040GdpPerCapita: country.currentGdpPerCapita * Math.pow(1 + country.adjustedGdpGrowth, 20),
+    localGrowthFactor: 1.0, // Default local growth factor
+    
+    // Additional required CountryStats fields
+    lastCalculated: Date.now(),
+    baselineDate: Date.now(),
+    globalGrowthFactor: 1.0321, // Standard global growth factor
+    populationDensity: country.populationDensity,
+    economicTier: getEconomicTierFromGdpPerCapita(country.currentGdpPerCapita),
+    populationTier: getPopulationTierFromPopulation(country.currentPopulation),
+    
+    // CountryStats specific fields (no duplicates)
     id: country.id,
     name: country.name,
+    totalGdp: country.currentTotalGdp,
     currentPopulation: country.currentPopulation,
     currentGdpPerCapita: country.currentGdpPerCapita,
     currentTotalGdp: country.currentTotalGdp,
-    populationDensity: country.populationDensity,
-    landArea: country.landArea,
-    continent: country.continent,
-    region: country.region,
-    economicTier: country.economicTier,
-    populationTier: country.populationTier,
-    lastCalculated:
-      typeof country.lastCalculated === "number"
-        ? country.lastCalculated
-        : new Date(country.lastCalculated).getTime(),
-  })) as CountryStats[]; // cast to satisfy CountryCard
+  });
+
+  // Transform the countries with proper type safety
+  const rawCountries = listData?.countries ?? [];
+  const transformedCountries: CountryStats[] = rawCountries.map(transformCountryData);
 
   const handleRefreshCountries = () => {
     // no countryId triggers bulk‐update path
@@ -181,7 +208,7 @@ function CountriesSectionImpl({
             <Button
               variant="secondary"
               className="mt-6"
-              onClick={() => (window.location.href = "/admin")}
+              onClick={() => router.push("/admin")}
             >
               Go to Admin Panel
             </Button>

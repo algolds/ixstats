@@ -51,6 +51,7 @@ export function FlagCacheManager() {
   };
 
   const getStatusColor = () => {
+    if (!stats) return "bg-gray-500";
     if (stats.isUpdating) return "bg-blue-500";
     if (stats.cachedFlags === stats.totalCountries) return "bg-green-500";
     if (stats.cachedFlags > stats.totalCountries * 0.8) return "bg-yellow-500";
@@ -58,6 +59,7 @@ export function FlagCacheManager() {
   };
 
   const getStatusText = () => {
+    if (!stats) return "Loading";
     if (stats.isUpdating) return "Updating";
     if (stats.cachedFlags === stats.totalCountries) return "Complete";
     if (stats.cachedFlags > stats.totalCountries * 0.8) return "Good";
@@ -114,7 +116,7 @@ export function FlagCacheManager() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalCountries}</div>
+            <div className="text-2xl font-bold">{stats?.totalCountries || 0}</div>
           </CardContent>
         </Card>
 
@@ -127,11 +129,11 @@ export function FlagCacheManager() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {stats.cachedFlags}
+              {stats?.cachedFlags || 0}
             </div>
             <p className="text-xs text-muted-foreground">
-              {stats.totalCountries > 0 
-                ? `${Math.round((stats.cachedFlags / stats.totalCountries) * 100)}% coverage`
+              {(stats?.totalCountries || 0) > 0 
+                ? `${Math.round(((stats?.cachedFlags || 0) / stats.totalCountries) * 100)}% coverage`
                 : "0% coverage"
               }
             </p>
@@ -147,7 +149,7 @@ export function FlagCacheManager() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              {stats.failedFlags}
+              {stats?.failedFlags || 0}
             </div>
           </CardContent>
         </Card>
@@ -168,18 +170,18 @@ export function FlagCacheManager() {
       </div>
 
       {/* Progress Bar */}
-      {stats.isUpdating && (
+      {stats?.isUpdating && (
         <Card>
           <CardHeader>
             <CardTitle className="text-sm">Update Progress</CardTitle>
             <CardDescription>
-              {stats.updateProgress.current} of {stats.updateProgress.total} countries processed
+              {stats?.updateProgress.current || 0} of {stats?.updateProgress.total || 0} countries processed
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Progress value={stats.updateProgress.percentage} className="w-full" />
+            <Progress value={stats?.updateProgress.percentage || 0} className="w-full" />
             <p className="text-sm text-muted-foreground mt-2">
-              {stats.updateProgress.percentage}% complete
+              {stats?.updateProgress.percentage || 0}% complete
             </p>
           </CardContent>
         </Card>
@@ -195,7 +197,7 @@ export function FlagCacheManager() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm">{formatTime(stats.lastUpdateTime)}</p>
+            <p className="text-sm">{formatTime(stats?.lastUpdateTime || null)}</p>
           </CardContent>
         </Card>
 
@@ -207,9 +209,9 @@ export function FlagCacheManager() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm">{formatTime(stats.nextUpdateTime)}</p>
+            <p className="text-sm">{formatTime(stats?.nextUpdateTime || null)}</p>
             <p className="text-xs text-muted-foreground">
-              in {formatTimeUntil(stats.nextUpdateTime)}
+              in {formatTimeUntil(stats?.nextUpdateTime || null)}
             </p>
           </CardContent>
         </Card>
@@ -236,7 +238,7 @@ export function FlagCacheManager() {
             
             <Button
               onClick={updateAllFlags}
-              disabled={isLoading || stats.isUpdating}
+              disabled={isLoading || stats?.isUpdating}
               variant="outline"
               className="flex items-center gap-2"
             >
@@ -270,8 +272,8 @@ export function FlagCacheManager() {
             <div className="flex items-center justify-between">
               <span className="text-sm">Cache Hit Rate</span>
               <span className="text-sm font-medium">
-                {stats.totalCountries > 0 
-                  ? `${Math.round((stats.cachedFlags / stats.totalCountries) * 100)}%`
+                {(stats?.totalCountries || 0) > 0 
+                  ? `${Math.round(((stats?.cachedFlags || 0) / stats.totalCountries) * 100)}%`
                   : "0%"
                 }
               </span>
@@ -280,25 +282,25 @@ export function FlagCacheManager() {
             <div className="flex items-center justify-between">
               <span className="text-sm">Failed Rate</span>
               <span className="text-sm font-medium text-red-600">
-                {stats.totalCountries > 0 
-                  ? `${Math.round((stats.failedFlags / stats.totalCountries) * 100)}%`
+                {(stats?.totalCountries || 0) > 0 
+                  ? `${Math.round(((stats?.failedFlags || 0) / stats.totalCountries) * 100)}%`
                   : "0%"
                 }
               </span>
             </div>
 
-            {stats.failedFlags > 0 && (
+            {(stats?.failedFlags || 0) > 0 && (
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
                 <div className="flex items-center gap-2 text-yellow-800">
                   <AlertCircle className="h-4 w-4" />
                   <span className="text-sm font-medium">
-                    {stats.failedFlags} flags failed to load. Consider retrying the update.
+                    {stats?.failedFlags || 0} flags failed to load. Consider retrying the update.
                   </span>
                 </div>
               </div>
             )}
 
-            {stats.cachedFlags === stats.totalCountries && stats.totalCountries > 0 && (
+            {(stats?.cachedFlags || 0) === (stats?.totalCountries || 0) && (stats?.totalCountries || 0) > 0 && (
               <div className="p-3 bg-green-50 border border-green-200 rounded-md">
                 <div className="flex items-center gap-2 text-green-800">
                   <CheckCircle className="h-4 w-4" />

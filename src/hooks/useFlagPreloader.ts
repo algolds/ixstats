@@ -184,11 +184,13 @@ export function useFlagPreloader(countryName?: string) {
 export function useFlagUrl(countryName: string) {
   const [flagUrl, setFlagUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!countryName) {
       setFlagUrl(null);
       setIsLoading(false);
+      setError(null);
       return;
     }
 
@@ -201,23 +203,25 @@ export function useFlagUrl(countryName: string) {
         if (isMounted) {
           if (typeof url === 'string') {
             setFlagUrl(url);
+            setError(null);
           } else {
             setError(url.error);
             setFlagUrl(null);
           }
           setIsLoading(false);
         }
-              } catch (error) {
-          if (isMounted) {
-            // Only warn if it's not a rate limit error (which we expect during heavy loading)
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            if (!errorMessage.includes('429') && !errorMessage.includes('Too Many Requests')) {
-              console.warn(`Failed to load flag for ${countryName}:`, error);
-            }
-            setFlagUrl(null);
-            setIsLoading(false);
+      } catch (error) {
+        if (isMounted) {
+          // Only warn if it's not a rate limit error (which we expect during heavy loading)
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          if (!errorMessage.includes('429') && !errorMessage.includes('Too Many Requests')) {
+            console.warn(`Failed to load flag for ${countryName}:`, error);
           }
+          setError(errorMessage);
+          setFlagUrl(null);
+          setIsLoading(false);
         }
+      }
     };
 
     // Small delay to allow batch preloading to complete first
@@ -229,7 +233,7 @@ export function useFlagUrl(countryName: string) {
     };
   }, [countryName]);
 
-  return { flagUrl, isLoading };
+  return { flagUrl, isLoading, error };
 }
 
 /**

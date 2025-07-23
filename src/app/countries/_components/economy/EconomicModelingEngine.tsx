@@ -309,7 +309,7 @@ export function EconomicModelingEngine({
       
       // Recalculate totalGDP for the changed sector
       if (field !== 'year' && field !== 'totalGDP') {
-        updatedOutputs[index]!.totalGDP =
+        updatedOutputs[index].totalGDP =
           (updatedOutputs[index]?.agriculture ?? 0) +
           (updatedOutputs[index]?.industry ?? 0) +
           (updatedOutputs[index]?.services ?? 0) +

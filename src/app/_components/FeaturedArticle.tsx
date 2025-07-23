@@ -484,10 +484,10 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
 
   const extractArticleData = (templateContent: string): FeaturedArticleData => {
     // Try to extract basic information from the template
-    const titleMatch = templateContent.match(/\|\s*title\s*=\s*([^|\n]+)/i);
-    const descriptionMatch = templateContent.match(/\|\s*description\s*=\s*([^|\n]+)/i);
-    const imageMatch = templateContent.match(/\|\s*image\s*=\s*([^|\n]+)/i);
-    const categoryMatch = templateContent.match(/\|\s*category\s*=\s*([^|\n]+)/i);
+    const titleMatch = /\|\s*title\s*=\s*([^|\n]+)/i.exec(templateContent);
+    const descriptionMatch = /\|\s*description\s*=\s*([^|\n]+)/i.exec(templateContent);
+    const imageMatch = /\|\s*image\s*=\s*([^|\n]+)/i.exec(templateContent);
+    const categoryMatch = /\|\s*category\s*=\s*([^|\n]+)/i.exec(templateContent);
 
     const title = titleMatch?.[1]?.trim() || "Featured Article";
     const description = descriptionMatch?.[1]?.trim() || "Discover today's featured article from the wiki.";
@@ -544,7 +544,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
         console.warn("Could not extract a valid title from the template");
       }
       
-      const imageMatch = templateContent.match(/\[\[File:([^|\]]+)/);
+      const imageMatch = /\[\[File:([^|\]]+)/.exec(templateContent);
       const imageFileName = imageMatch?.[1]?.trim();
       let summary = '';
       
@@ -588,7 +588,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
                   if (page && !page.missing && page.extract) {
                     summary = page.extract;
                     console.log('Successfully extracted summary:', summary.substring(0, 100) + '...');
-                  } else if (page && page.missing) {
+                  } else if (page?.missing) {
                     console.warn('Page not found:', title);
                     summary = `The article "${title}" could not be found. This featured article showcases the rich history, culture, and achievements that make this topic noteworthy.`;
                   }
@@ -621,8 +621,8 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
         if (!summary || typeof summary !== 'string' || summary.trim().length === 0) {
           // Try to extract a better title from the template content
           let betterTitle = title;
-          const titleInTemplate = templateContent.match(/titles\s*=\s*([^|\n\r&]+)/i);
-          if (titleInTemplate && titleInTemplate[1]) {
+          const titleInTemplate = /titles\s*=\s*([^|\n\r&]+)/i.exec(templateContent);
+          if (titleInTemplate?.[1]) {
             const extractedTitle = titleInTemplate[1].trim();
             if (extractedTitle && extractedTitle !== '<!--') {
               betterTitle = extractedTitle;

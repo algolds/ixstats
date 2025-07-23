@@ -1,8 +1,8 @@
 import React from "react";
-import { GlassCard } from "@/components/ui/enhanced-card";
-import { Badge } from "@/components/ui/badge";
-import { AnimatedNumber } from "@/components/ui/animated-number";
-import { TrendIndicator } from "@/components/ui/trend-indicator";
+import { GlassCard } from "~/components/ui/enhanced-card";
+import { Badge } from "~/components/ui/badge";
+import { AnimatedNumber } from "~/components/ui/animated-number";
+import { TrendIndicator } from "~/components/ui/trend-indicator";
 
 interface HeroSectionProps {
   systemStatus: {

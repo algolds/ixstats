@@ -1,11 +1,16 @@
 "use client";
-import { Button } from "@/components/ui/button";
+import { Button } from "~/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { api } from "@/trpc/react";
-import { getUserInterfacePreferences } from "@/lib/interface-routing";
+import { api } from "~/trpc/react";
+import { getUserInterfacePreferences } from "~/lib/interface-routing";
 
-export function InterfaceSwitcher({ currentInterface, countryId }: { currentInterface: 'sdi' | 'eci', countryId?: string }) {
+// Check if Clerk is configured
+const isClerkConfigured = Boolean(
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith('pk_')
+);
+
+function InterfaceSwitcherContent({ currentInterface, countryId }: { currentInterface: 'sdi' | 'eci', countryId?: string }) {
   const router = useRouter();
   const { user } = useUser();
   const { data: profile } = api.users.getProfile.useQuery(
@@ -51,4 +56,13 @@ export function InterfaceSwitcher({ currentInterface, countryId }: { currentInte
       )}
     </div>
   );
+}
+
+export function InterfaceSwitcher({ currentInterface, countryId }: { currentInterface: 'sdi' | 'eci', countryId?: string }) {
+  // Don't render anything when Clerk is not configured
+  if (!isClerkConfigured) {
+    return null;
+  }
+
+  return <InterfaceSwitcherContent currentInterface={currentInterface} countryId={countryId} />;
 }

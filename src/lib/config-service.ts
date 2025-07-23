@@ -80,7 +80,7 @@ export function getDefaultIxStatsConfig(): IxStatsConfig {
  * FIXED: Validate growth rate values to ensure they're in decimal form
  * Excel exports percentages as decimals (0.5% → 0.005)
  */
-export function validateGrowthRate(value: number, context: string = ""): number {
+export function validateGrowthRate(value: number, context = ""): number {
   const numValue = Number(value);
   
   if (!isFinite(numValue) || isNaN(numValue)) {
@@ -107,7 +107,7 @@ export function validateGrowthRate(value: number, context: string = ""): number 
 /**
  * FIXED: Validate GDP per capita value and determine appropriate tier with max growth rates
  */
-export function validateGdpPerCapita(value: number, countryName: string = ""): { 
+export function validateGdpPerCapita(value: number, countryName = ""): { 
   value: number; 
   tier: string; 
   maxGrowthRate: number 
@@ -144,7 +144,7 @@ export function validateGdpPerCapita(value: number, countryName: string = ""): {
 /**
  * FIXED: Validate population value and determine appropriate tier
  */
-export function validatePopulation(value: number, countryName: string = ""): { 
+export function validatePopulation(value: number, countryName = ""): { 
   value: number; 
   tier: string 
 } {
@@ -191,7 +191,7 @@ export function getMaxGrowthRateForGdpPerCapita(gdpPerCapita: number): number {
 export function adjustGrowthRateForTier(
   growthRate: number, 
   gdpPerCapita: number, 
-  context: string = ""
+  context = ""
 ): number {
   const validatedRate = validateGrowthRate(growthRate, context);
   const maxRate = getMaxGrowthRateForGdpPerCapita(gdpPerCapita);
@@ -213,8 +213,8 @@ export function adjustGrowthRateForTier(
 export function calculateEffectiveGrowthRate(
   baseGrowthRate: number,
   gdpPerCapita: number,
-  globalGrowthFactor: number = 1.0321,
-  localGrowthFactor: number = 1.0
+  globalGrowthFactor = 1.0321,
+  localGrowthFactor = 1.0
 ): number {
   const validatedBase = validateGrowthRate(baseGrowthRate);
   const maxAllowed = getMaxGrowthRateForGdpPerCapita(gdpPerCapita);
@@ -241,7 +241,7 @@ export function createCountrySpecificConfig(
   baseConfig: EconomicConfig,
   countryGdpPerCapita: number,
   countryPopulation: number,
-  localGrowthFactor: number = 1.0
+  localGrowthFactor = 1.0
 ): EconomicConfig & { 
   countryEconomicTier: string;
   countryPopulationTier: string;
@@ -265,7 +265,7 @@ export function createCountrySpecificConfig(
 /**
  * FIXED: Log configuration summary for debugging
  */
-export function logConfigSummary(config: EconomicConfig, context: string = ""): void {
+export function logConfigSummary(config: EconomicConfig, context = ""): void {
   console.log(`[Config] ${context} Configuration Summary:`);
   console.log(`  Global Growth Factor: ${((config.globalGrowthFactor - 1) * 100).toFixed(2)}% (${config.globalGrowthFactor}x)`);
   console.log(`  Base Inflation Rate: ${(config.baseInflationRate * 100).toFixed(2)}%`);

@@ -158,7 +158,7 @@ export function DemographicsFocus() {
               <span className="font-semibold text-purple-300">Risk Flags:</span>
               {riskFlags.length > 0 ? (
                 <ul className="list-disc ml-6 text-purple-200">
-                  {riskFlags.map((flag: string, i: number) => <li key={i}>{flag}</li>)}
+                  {riskFlags.map((flag: string, i: number) => <li key={`risk-${flag}-${i}`}>{flag}</li>)}
                 </ul>
               ) : <span className="text-gray-400 ml-2">None</span>}
             </div>
@@ -166,7 +166,7 @@ export function DemographicsFocus() {
               <span className="font-semibold text-purple-300">Vulnerabilities:</span>
               {vulnerabilities.length > 0 ? (
                 <ul className="list-disc ml-6 text-purple-200">
-                  {vulnerabilities.map((v: string, i: number) => <li key={i}>{v}</li>)}
+                  {vulnerabilities.map((v: string, i: number) => <li key={`vuln-${v}-${i}`}>{v}</li>)}
                 </ul>
               ) : <span className="text-gray-400 ml-2">None</span>}
             </div>

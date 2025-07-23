@@ -1,5 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, AlertTriangle, TrendingUp, Globe, Users, DollarSign, Zap, Eye, Target, Bell, Filter, Search, Calendar, MapPin, ArrowRight } from 'lucide-react';
+import { GlassCard } from '../src/components/ui/enhanced-card';
+
+interface IntelligenceItem {
+  id: number;
+  type: string;
+  priority: string;
+  title: string;
+  description: string;
+  impact: string;
+  source: string;
+  confidence: number;
+  timestamp: string;
+  countries: string[];
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+}
 
 const intelligenceData = [
   {
@@ -91,19 +107,11 @@ const networkActivity = {
 const IntelligenceFeed = () => {
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedIntel, setSelectedIntel] = useState(null);
+  const [selectedIntel, setSelectedIntel] = useState<IntelligenceItem | null>(null);
 
-  const GlassCard = ({ children, className = "", gradient = "" }) => (
-    <div className={`relative backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 ${gradient && `bg-gradient-to-br ${gradient}`} ${className}`}>
-      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-3xl" />
-      <div className="relative z-10">
-        {children}
-      </div>
-    </div>
-  );
 
-  const IntelCard = ({ intel }) => (
-    <GlassCard 
+  const IntelCard = ({ intel }: { intel: IntelligenceItem }) => (
+    <GlassCard variant="security" 
       className={`cursor-pointer hover:scale-[1.02] transition-all duration-300 ${
         selectedIntel?.id === intel.id ? 'ring-2 ring-blue-400/50' : ''
       }`}
@@ -136,7 +144,7 @@ const IntelligenceFeed = () => {
       
       <div className="flex items-center justify-between">
         <div className="flex space-x-1">
-          {intel.countries.slice(0, 3).map((country, idx) => (
+          {intel.countries.slice(0, 3).map((country: string, idx: number) => (
             <span key={idx} className="text-xs px-2 py-1 bg-white/10 rounded-full text-white/70">
               {country}
             </span>
@@ -177,7 +185,7 @@ const IntelligenceFeed = () => {
             <p className="text-white/60">Real-time global intelligence and early warning system</p>
           </div>
           <div className="flex items-center space-x-3">
-            <GlassCard className="px-4 py-2">
+            <GlassCard variant="security" className="px-4 py-2">
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
                 <span className="text-white/80 text-sm font-medium">{networkActivity.activeSources} Sources Active</span>
@@ -188,7 +196,7 @@ const IntelligenceFeed = () => {
 
         {/* Search and Filter */}
         <div className="flex space-x-4 mb-6">
-          <GlassCard className="flex-1">
+          <GlassCard variant="security" className="flex-1">
             <div className="flex items-center space-x-3">
               <Search className="w-5 h-5 text-white/60" />
               <input
@@ -201,7 +209,7 @@ const IntelligenceFeed = () => {
             </div>
           </GlassCard>
           
-          <GlassCard className="px-4 py-3">
+          <GlassCard variant="security" className="px-4 py-3">
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
@@ -228,7 +236,7 @@ const IntelligenceFeed = () => {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Network Status */}
-          <GlassCard gradient="from-blue-500/10 to-cyan-500/10">
+          <GlassCard variant="security" gradient="from-blue-500/10 to-cyan-500/10">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white font-bold">Network Status</h3>
               <Eye className="w-5 h-5 text-blue-400" />
@@ -255,7 +263,7 @@ const IntelligenceFeed = () => {
           </GlassCard>
 
           {/* Trending Topics */}
-          <GlassCard>
+          <GlassCard variant="security">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white font-bold">Trending Topics</h3>
               <TrendingUp className="w-5 h-5 text-green-400" />
@@ -283,7 +291,7 @@ const IntelligenceFeed = () => {
           </GlassCard>
 
           {/* Quick Actions */}
-          <GlassCard gradient="from-purple-500/10 to-pink-500/10">
+          <GlassCard variant="security" gradient="from-purple-500/10 to-pink-500/10">
             <h3 className="text-white font-bold mb-4">Quick Actions</h3>
             
             <div className="space-y-2">

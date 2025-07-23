@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = 'force-dynamic';
 import { use } from "react";
 import { api } from "~/trpc/react";
 import { EconomicModelingEngine } from "~/app/countries/_components/economy";
@@ -7,6 +8,8 @@ import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { Skeleton } from "~/components/ui/skeleton";
 import { AlertTriangle } from "lucide-react";
+import type { EconomicYearData, DMInputs } from "~/server/db/schema";
+import { getFlagColors, generateFlagThemeCSS } from "~/lib/flag-color-extractor";
 
 interface ModelingPageProps {
   params: Promise<{ id: string }>;
@@ -39,10 +42,23 @@ export default function ModelingPage({ params }: ModelingPageProps) {
     return <div className="container mx-auto px-4 py-8">Country not found.</div>;
   }
 
+  // Create a country object with the required economicYears property
+  const countryWithEconomicYears = {
+    ...country,
+    economicYears: [] // Empty array for now, can be populated later if needed
+  };
+
+  // Generate flag-based theme colors
+  const flagColors = getFlagColors(country.name);
+  const flagThemeCSS = generateFlagThemeCSS(flagColors);
+
   return (
     <>
       <SignedIn>
-        <div className="container mx-auto px-4 py-8 space-y-6">
+        <div 
+          className="container mx-auto px-4 py-8 space-y-6 country-themed"
+          style={flagThemeCSS}
+        >
           <div className="mb-6">
             <Link href={`/countries/${country.id}`} className="text-primary hover:underline">&larr; Back to {country.name}</Link>
           </div>
@@ -51,7 +67,22 @@ export default function ModelingPage({ params }: ModelingPageProps) {
               <CardTitle>Economic Modeling for {country.name}</CardTitle>
             </CardHeader>
             <CardContent>
-              <EconomicModelingEngine country={country} />
+              <EconomicModelingEngine
+                country={{
+                  ...country,
+                  economicYears: Array.isArray(country.historical)
+                    ? (country.historical.map((h) => ({
+                        year: h.year,
+                        gdp: h.gdp,
+                        inflation: undefined, // Map if available
+                        unemployment: undefined // Map if available
+                      })) as EconomicYearData[])
+                    : [],
+                  dmInputs: country.dmInputs?.[0]?.id && country.dmInputs[0].countryId
+                    ? { id: country.dmInputs[0].id, countryId: country.dmInputs[0].countryId } as DMInputs
+                    : undefined,
+                }}
+              />
             </CardContent>
           </Card>
         </div>

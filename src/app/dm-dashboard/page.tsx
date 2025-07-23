@@ -2,7 +2,16 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
+
+// Force dynamic rendering to avoid SSG issues with Clerk
+export const dynamic = 'force-dynamic';
+
+// Check if Clerk is configured
+const isClerkConfigured = Boolean(
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith('pk_')
+);
 import { IxTime } from "~/lib/ixtime";
 import {
   Database,
@@ -98,7 +107,7 @@ interface DmInput {
 
 type Country = RouterOutputs["countries"]["getAll"]["countries"][number];
 
-export default function DmDashboard() {
+function DmDashboardContent() {
   const [showForm, setShowForm] = useState(false);
   const [editingInput, setEditingInput] = useState<string | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<string>("global");
@@ -566,4 +575,40 @@ export default function DmDashboard() {
       </SignedOut>
     </>
   );
+}
+
+export default function DmDashboard() {
+  const router = useRouter();
+  
+  // Show message when Clerk is not configured
+  if (!isClerkConfigured) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center max-w-2xl mx-auto border border-gray-200 dark:border-gray-700">
+          <Database className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+          <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Authentication Not Configured</h1>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            User authentication is not set up for this application. The DM Dashboard requires 
+            authentication to access administrative features.
+          </p>
+          <div className="flex gap-4 justify-center">
+            <button 
+              onClick={() => router.push("/dashboard")}
+              className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium"
+            >
+              View Dashboard
+            </button>
+            <button 
+              onClick={() => router.push("/countries")}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md font-medium"
+            >
+              Browse Countries
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return <DmDashboardContent />;
 }

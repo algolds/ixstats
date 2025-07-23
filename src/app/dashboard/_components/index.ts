@@ -7,5 +7,4 @@ export { GlobalAnalytics } from './GlobalAnalytics';
 export { CountriesSection } from './CountriesSection';
 export { CountryCard } from './CountryCard';
 
-// Type exports that might be needed
-export type { ProcessedCountryData } from './GlobalAnalytics';
+// Note: ProcessedCountryData is now internal to GlobalAnalytics

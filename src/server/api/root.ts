@@ -8,6 +8,7 @@ import { usersRouter } from "./routers/users";
 import { sdiRouter } from "./routers/sdi";
 import { intelligenceRouter } from "./routers/intelligence";
 import { eciRouter } from "./routers/eci";
+import { notificationsRouter } from "./routers/notifications";
 
 /**
  * This is the primary router for your server.
@@ -21,6 +22,7 @@ export const appRouter = createTRPCRouter({
   sdi: sdiRouter,
   intelligence: intelligenceRouter,
   eci: eciRouter, // ECI router for Executive Command Interface
+  notifications: notificationsRouter, // Notifications router
   system: adminRouter, // Alias for global stats
 });
 

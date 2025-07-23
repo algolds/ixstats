@@ -20,12 +20,12 @@ import { IxTime } from "~/lib/ixtime";
 
 interface ImportChange {
   type: 'new' | 'update';
-  country: BaseCountryData; // This now includes continent, region, etc.
-  existingData?: any;
+  country: BaseCountryData;
+  existingData?: BaseCountryData;
   changes?: Array<{
     field: string;
-    oldValue: any;
-    newValue: any;
+    oldValue: string | number | null;
+    newValue: string | number | null;
     fieldLabel: string;
   }>;
 }
@@ -122,16 +122,16 @@ export function ImportPreviewDialog({
 
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-xl flex items-center justify-center z-50 p-4">
+      <div className="bg-slate-800/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+        <div className="flex items-center justify-between p-6 border-b border-white/10">
+          <h2 className="text-xl font-semibold text-white">
             Import Preview - {changes.length} Countries Found
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            className="text-white/60 hover:text-white transition-colors"
             aria-label="Close dialog"
           >
             <X className="h-6 w-6" />

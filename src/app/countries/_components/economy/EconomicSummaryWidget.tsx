@@ -1,7 +1,7 @@
 // src/app/countries/_components/economy/EconomicSummaryWidget.tsx
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { 
   DollarSign, 
   Users, 
@@ -22,7 +22,7 @@ import { formatCurrency, formatPopulation, displayGrowthRate } from "~/lib/chart
 import { getTierStyle } from "~/lib/theme-utils";
 import { GlassCard } from "~/components/ui/enhanced-card";
 import type { VariantProps } from "class-variance-authority";
-import { badgeVariants } from "@/components/ui/badge";
+import { type badgeVariants } from "@/components/ui/badge";
 
 interface EconomicSummaryData {
   // Core metrics
@@ -76,8 +76,18 @@ interface MetricCardProps {
   };
 }
 
+/**
+ * MetricCard component for displaying economic metrics with optional trends and badges
+ * @param icon - React component type for the metric icon
+ * @param label - Display label for the metric
+ * @param value - Primary value to display
+ * @param subValue - Optional secondary value
+ * @param trend - Optional trend data with value and direction
+ * @param color - CSS class for icon color
+ * @param badge - Optional badge with text and variant
+ */
 function MetricCard({ 
-  icon: Icon, 
+  icon: IconComponent, 
   label, 
   value, 
   subValue, 
@@ -85,14 +95,15 @@ function MetricCard({
   color = "text-primary",
   badge 
 }: MetricCardProps) {
-  // Only allow valid badge variants
+  // Only allow valid badge variants to prevent runtime errors
   const allowedBadgeVariants: string[] = ['default', 'secondary', 'destructive', 'outline'];
-  const safeBadgeVariant = badge && allowedBadgeVariants.includes(badge.variant as any) ? badge.variant : undefined;
+  const safeBadgeVariant = badge && allowedBadgeVariants.includes(String(badge.variant)) ? badge.variant : undefined;
+  
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Icon className={`h-4 w-4 ${color}`} />
+          {React.createElement(IconComponent, { className: `h-4 w-4 ${color}` })}
           <span className="text-sm font-medium text-muted-foreground">{label}</span>
         </div>
         {badge && (

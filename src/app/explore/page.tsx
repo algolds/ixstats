@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   CountriesPageHeader,
   CountriesSearch,
@@ -21,6 +22,7 @@ import { useCountryComparison } from '~/hooks/useCountryComparison';
 import type { PageCountryData } from '../countries/_components/CountriesGrid';
 
 export default function ExplorePage() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [tierFilter, setTierFilter] =
     useState<TierFilter>('all');
@@ -255,7 +257,7 @@ export default function ExplorePage() {
   // Handle country selection from comparison modal
   const handleCountrySelect = (countryId: string) => {
     // Navigate to country detail page
-    window.location.href = `/countries/${countryId}`;
+    router.push(`/countries/${countryId}`);
   };
 
   return (

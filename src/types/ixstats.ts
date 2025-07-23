@@ -299,11 +299,11 @@ export interface ImportAnalysis {
   changes: Array<{
     type: 'new' | 'update';
     country: BaseCountryData;
-    existingData?: any;
+    existingData?: BaseCountryData;
     changes?: Array<{
       field: string;
-      oldValue: any;
-      newValue: any;
+      oldValue: string | number | null;
+      newValue: string | number | null;
       fieldLabel: string;
     }>;
   }>;
@@ -366,14 +366,14 @@ export interface ChartDataPoint {
 }
 
 // API response wrappers
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
   message?: string;
 }
 
-export interface PaginatedResponse<T = any> {
+export interface PaginatedResponse<T = unknown> {
   data: T[];
   total: number;
   page: number;
@@ -397,19 +397,19 @@ export interface FormState {
 }
 
 // UI State types
-export interface LoadingState {
+type LoadingState<T = unknown> = {
   isLoading: boolean;
   error?: string | null;
-  data?: any;
-}
+  data?: T;
+};
 
-export interface TableColumn {
+export interface TableColumn<T = unknown> {
   key: string;
   label: string;
   sortable?: boolean;
   width?: string;
   align?: 'left' | 'center' | 'right';
-  render?: (value: any, row: any) => React.ReactNode;
+  render?: (value: T, row: T) => React.ReactNode;
 }
 
 // Theme types
@@ -526,7 +526,78 @@ export function percentageToDecimal(percentage: number): number {
   return percentage / 100;
 }
 
+// Define explicit types for complex fields
+export interface CalculatedStats {
+  gdpGrowth: number;
+  populationGrowth: number;
+  inflation: number;
+  // Add more fields as needed
+}
+
+export interface Projection {
+  year: number;
+  gdp: number;
+  population: number;
+  // Add more fields as needed
+}
+
+export interface HistoricalData {
+  year: number;
+  gdp: number;
+  population: number;
+  // Add more fields as needed
+}
+
+export interface DMInput {
+  id: string;
+  countryId: string;
+  inputType: string;
+  value: number;
+  description?: string;
+  timestamp: Date;
+}
+
+export interface EconomicProfile {
+  sectorBreakdown: Record<string, number>;
+  // Add more fields as needed
+}
+
+export interface LaborMarket {
+  employmentRate: number;
+  unemploymentRate: number;
+  // Add more fields as needed
+}
+
+export interface FiscalSystem {
+  taxRates: Record<string, number>;
+  // Add more fields as needed
+}
+
+export interface IncomeDistribution {
+  quintiles: number[];
+  // Add more fields as needed
+}
+
+export interface GovernmentBudget {
+  total: number;
+  categories: Record<string, number>;
+  // Add more fields as needed
+}
+
+export interface Demographics {
+  ageDistribution: Record<string, number>;
+  // Add more fields as needed
+}
+
+export interface TierChangeProjection {
+  year: number;
+  newTier: string;
+  // Add more fields as needed
+}
+
+// Update ImportAnalysis and CountryWithEconomicData to use these types
 export interface CountryWithEconomicData {
+  // Core country properties
   id: string;
   name: string;
   continent?: string | null;
@@ -553,14 +624,18 @@ export interface CountryWithEconomicData {
   localGrowthFactor: number;
   createdAt: Date;
   updatedAt: Date;
-  calculatedStats: any;
-  projections: any[];
-  historical: any[];
-  dmInputs: any[];
+  
+  // Economic data
+  calculatedStats: CalculatedStats;
+  projections: Projection[];
+  historical: HistoricalData[];
+  dmInputs: DMInput[];
   nominalGDP: number;
   realGDPGrowthRate: number;
   inflationRate: number;
   currencyExchangeRate: number;
+  
+  // Labor market data
   laborForceParticipationRate?: number;
   employmentRate?: number;
   unemploymentRate?: number;
@@ -568,12 +643,40 @@ export interface CountryWithEconomicData {
   averageWorkweekHours?: number;
   minimumWage?: number;
   averageAnnualIncome?: number;
-  economicProfile?: any;
-  laborMarket?: any;
-  fiscalSystem?: any;
-  incomeDistribution?: any;
-  governmentBudget?: any;
-  demographics?: any;
+  
+  // Fiscal and debt data
+  governmentRevenueTotal?: number | null;
+  taxRevenueGDPPercent?: number;
+  taxRevenuePerCapita?: number;
+  governmentBudgetGDPPercent?: number;
+  budgetDeficitSurplus?: number;
+  internalDebtGDPPercent?: number;
+  externalDebtGDPPercent?: number;
+  totalDebtGDPRatio?: number;
+  debtPerCapita?: number;
+  interestRates?: number;
+  debtServiceCosts?: number;
+  
+  // Government spending
+  totalGovernmentSpending?: number;
+  spendingGDPPercent?: number;
+  spendingPerCapita?: number;
+  
+  // Demographics
+  lifeExpectancy?: number;
+  urbanPopulationPercent?: number | null;
+  ruralPopulationPercent?: number | null;
+  literacyRate?: number;
+  
+  // Complex objects
+  economicProfile?: EconomicProfile;
+  laborMarket?: LaborMarket;
+  fiscalSystem?: FiscalSystem;
+  incomeDistribution?: IncomeDistribution;
+  governmentBudget?: GovernmentBudget;
+  demographics?: Demographics;
+  
+  // Analytics
   analytics: {
     growthTrends: {
       avgPopGrowth: number;
@@ -584,7 +687,31 @@ export interface CountryWithEconomicData {
       gdpVolatility: number;
     };
     riskFlags: string[];
-    tierChangeProjection: any;
+    tierChangeProjection: TierChangeProjection;
     vulnerabilities: string[];
   };
+}
+
+// Economic Policy Types
+export type PolicyCategory = 'fiscal' | 'monetary' | 'trade' | 'investment' | 'labor' | 'infrastructure';
+
+export type PolicyStatus = 'draft' | 'proposed' | 'under_review' | 'approved' | 'rejected' | 'implemented';
+
+export interface EconomicPolicy {
+  id: string;
+  title: string;
+  description: string;
+  category: PolicyCategory;
+  status: PolicyStatus;
+  proposedBy: string;
+  proposedDate: Date;
+  impact?: {
+    gdpGrowthProjection?: number;
+    unemploymentImpact?: number;
+    inflationImpact?: number;
+    budgetImpact?: number;
+  };
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
 }

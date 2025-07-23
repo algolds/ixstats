@@ -218,7 +218,7 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
                         {data?.percentage.toFixed(1)}%
                       </span>
                     </div>
-                    <Progress value={data.percentage} className="h-2" />
+                    <Progress value={data?.percentage ?? 0} className="h-2" />
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="left" className="max-w-xs">
@@ -226,8 +226,8 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
                     <div className="font-semibold">{tier}</div>
                     <div className="text-sm">{config.description}</div>
                     <div className="text-xs text-muted-foreground">
-                      Countries: {data.countries.slice(0, 5).join(", ")}
-                      {data.countries.length > 5 && ` +${data.countries.length - 5} more`}
+                      Countries: {data?.countries?.slice(0, 5).join(", ") ?? ""}
+                      {data?.countries && data.countries.length > 5 && ` +${data.countries.length - 5} more`}
                     </div>
                   </div>
                 </TooltipContent>
@@ -269,7 +269,7 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
                         {data?.percentage.toFixed(1)}%
                       </span>
                     </div>
-                    <Progress value={data.percentage} className="h-2" />
+                    <Progress value={data?.percentage ?? 0} className="h-2" />
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="left" className="max-w-xs">
@@ -277,8 +277,8 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
                     <div className="font-semibold">Population Tier {tier}</div>
                     <div className="text-sm">{config.description}</div>
                     <div className="text-xs text-muted-foreground">
-                      Countries: {data.countries.slice(0, 5).join(", ")}
-                      {data.countries.length > 5 && ` +${data.countries.length - 5} more`}
+                      Countries: {data?.countries?.slice(0, 5).join(", ") ?? ""}
+                      {data?.countries && data.countries.length > 5 && ` +${data.countries.length - 5} more`}
                     </div>
                   </div>
                 </TooltipContent>

@@ -16,11 +16,23 @@ import type {
   EconomicConfig,
   Country,
   CountryStats,
-  CountryWithEconomicData
+  CountryWithEconomicData,
+  CalculatedStats,
+  Projection,
+  HistoricalData,
+  DMInput,
+  EconomicProfile,
+  LaborMarket,
+  FiscalSystem,
+  IncomeDistribution,
+  GovernmentBudget,
+  Demographics,
+  TierChangeProjection
 } from "~/types/ixstats";
+import { getEconomicTierFromGdpPerCapita } from "~/types/ixstats";
 
 // Simple in-memory cache for frequently accessed data
-const cache = new Map<string, { data: any; timestamp: number; ttl: number }>();
+const cache = new Map<string, { data: unknown; timestamp: number; ttl: number }>();
 const CACHE_CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
 // Cleanup expired cache entries
@@ -37,7 +49,7 @@ function getCacheKey(operation: string, params: any): string {
   return `${operation}_${JSON.stringify(params)}`;
 }
 
-function getCachedData(key: string): any | null {
+function getCachedData(key: string): unknown | null {
   const cached = cache.get(key);
   if (cached && Date.now() - cached.timestamp < cached.ttl) {
     return cached.data;
@@ -48,7 +60,7 @@ function getCachedData(key: string): any | null {
   return null;
 }
 
-function setCachedData(key: string, data: any, ttl: number = 30000): void {
+function setCachedData(key: string, data: unknown, ttl = 30000): void {
   cache.set(key, {
     data,
     timestamp: Date.now(),
@@ -99,7 +111,7 @@ const validateGrowthRate = (value: number | null | undefined): number => {
   return Math.min(Math.max(numValue, -0.5), 0.5);
 };
 
-const validateNumber = (value: number | null | undefined, max: number = 1e18, min: number = 0): number => {
+const validateNumber = (value: number | null | undefined, max = 1e18, min = 0): number => {
   const numValue = Number(value);
   if (!isFinite(numValue) || isNaN(numValue)) return min > 0 ? min : 0;
   return Math.min(Math.max(numValue, min), max);
@@ -211,6 +223,125 @@ function getUserIdFromCtx(ctx: { headers: Headers }) {
   return header || null;
 }
 
+function toCountryWithEconomicData(raw: any): CountryWithEconomicData {
+  return {
+    id: raw.id,
+    name: raw.name,
+    continent: raw.continent ?? null,
+    region: raw.region ?? null,
+    governmentType: raw.governmentType ?? null,
+    religion: raw.religion ?? null,
+    leader: raw.leader ?? null,
+    areaSqMi: raw.areaSqMi ?? null,
+    baselinePopulation: raw.baselinePopulation ?? 0,
+    baselineGdpPerCapita: raw.baselineGdpPerCapita ?? 0,
+    maxGdpGrowthRate: raw.maxGdpGrowthRate ?? 0,
+    adjustedGdpGrowth: raw.adjustedGdpGrowth ?? 0,
+    populationGrowthRate: raw.populationGrowthRate ?? 0,
+    landArea: raw.landArea ?? null,
+    currentPopulation: raw.currentPopulation ?? 0,
+    currentGdpPerCapita: raw.currentGdpPerCapita ?? 0,
+    currentTotalGdp: raw.currentTotalGdp ?? 0,
+    populationDensity: raw.populationDensity ?? null,
+    gdpDensity: raw.gdpDensity ?? null,
+    lastCalculated: raw.lastCalculated ?? new Date(),
+    baselineDate: raw.baselineDate ?? new Date(),
+    economicTier: raw.economicTier ?? "Unknown",
+    populationTier: raw.populationTier ?? "Unknown",
+    localGrowthFactor: raw.localGrowthFactor ?? 1,
+    createdAt: raw.createdAt ?? new Date(),
+    updatedAt: raw.updatedAt ?? new Date(),
+    calculatedStats: raw.calculatedStats as CalculatedStats ?? { gdpGrowth: 0, populationGrowth: 0, inflation: 0 },
+    projections: Array.isArray(raw.projections) ? raw.projections as Projection[] : [],
+    historical: Array.isArray(raw.historical) ? raw.historical as HistoricalData[] : [],
+    dmInputs: Array.isArray(raw.dmInputs) ? raw.dmInputs as DMInput[] : [],
+    nominalGDP: raw.nominalGDP ?? 0,
+    realGDPGrowthRate: raw.realGDPGrowthRate ?? 0,
+    inflationRate: raw.inflationRate ?? 0,
+    currencyExchangeRate: raw.currencyExchangeRate ?? 1,
+    laborForceParticipationRate: raw.laborForceParticipationRate ?? 0,
+    employmentRate: raw.employmentRate ?? 0,
+    unemploymentRate: raw.unemploymentRate ?? 0,
+    totalWorkforce: raw.totalWorkforce ?? 0,
+    averageWorkweekHours: raw.averageWorkweekHours ?? 0,
+    minimumWage: raw.minimumWage ?? 0,
+    averageAnnualIncome: raw.averageAnnualIncome ?? 0,
+    governmentRevenueTotal: raw.governmentRevenueTotal ?? null,
+    taxRevenueGDPPercent: raw.taxRevenueGDPPercent ?? 0,
+    taxRevenuePerCapita: raw.taxRevenuePerCapita ?? 0,
+    governmentBudgetGDPPercent: raw.governmentBudgetGDPPercent ?? 0,
+    budgetDeficitSurplus: raw.budgetDeficitSurplus ?? 0,
+    internalDebtGDPPercent: raw.internalDebtGDPPercent ?? 0,
+    externalDebtGDPPercent: raw.externalDebtGDPPercent ?? 0,
+    totalDebtGDPRatio: raw.totalDebtGDPRatio ?? 0,
+    debtPerCapita: raw.debtPerCapita ?? 0,
+    interestRates: raw.interestRates ?? 0,
+    debtServiceCosts: raw.debtServiceCosts ?? 0,
+    totalGovernmentSpending: raw.totalGovernmentSpending ?? 0,
+    spendingGDPPercent: raw.spendingGDPPercent ?? 0,
+    spendingPerCapita: raw.spendingPerCapita ?? 0,
+    lifeExpectancy: raw.lifeExpectancy ?? 0,
+    urbanPopulationPercent: raw.urbanPopulationPercent ?? null,
+    ruralPopulationPercent: raw.ruralPopulationPercent ?? null,
+    literacyRate: raw.literacyRate ?? 0,
+    economicProfile: raw.economicProfile as EconomicProfile ?? undefined,
+    laborMarket: raw.laborMarket as LaborMarket ?? undefined,
+    fiscalSystem: raw.fiscalSystem as FiscalSystem ?? undefined,
+    incomeDistribution: raw.incomeDistribution as IncomeDistribution ?? undefined,
+    governmentBudget: raw.governmentBudget as GovernmentBudget ?? undefined,
+    demographics: raw.demographics as Demographics ?? undefined,
+    analytics: {
+      growthTrends: {
+        avgPopGrowth: raw.analytics?.growthTrends?.avgPopGrowth ?? 0,
+        avgGdpGrowth: raw.analytics?.growthTrends?.avgGdpGrowth ?? 0,
+      },
+      volatility: {
+        popVolatility: raw.analytics?.volatility?.popVolatility ?? 0,
+        gdpVolatility: raw.analytics?.volatility?.gdpVolatility ?? 0,
+      },
+      riskFlags: Array.isArray(raw.analytics?.riskFlags) ? raw.analytics.riskFlags : [],
+      tierChangeProjection: raw.analytics?.tierChangeProjection as TierChangeProjection ?? { year: 0, newTier: "Unknown" },
+      vulnerabilities: Array.isArray(raw.analytics?.vulnerabilities) ? raw.analytics.vulnerabilities : [],
+    },
+  };
+}
+
+// Helper to convert CountryStats to CalculatedStats
+function toCalculatedStats(stats: any): CalculatedStats {
+  return {
+    gdpGrowth: stats?.gdpGrowth ?? 0,
+    populationGrowth: stats?.populationGrowth ?? 0,
+    inflation: stats?.inflation ?? 0,
+  };
+}
+
+// Helper to convert raw projections to Projection[]
+function toProjections(arr: any[]): Projection[] {
+  return arr.map((item) => ({
+    year: item.year ?? 0,
+    gdp: item.gdp ?? 0,
+    population: item.population ?? 0,
+  }));
+}
+
+// Helper to convert raw historical data to HistoricalData[]
+function toHistorical(arr: any[]): HistoricalData[] {
+  return arr.map((item) => ({
+    year: item.year ?? 0,
+    gdp: item.gdp ?? 0,
+    population: item.population ?? 0,
+  }));
+}
+
+// Helper to convert raw tierChangeProjection
+function toTierChangeProjection(obj: any): TierChangeProjection {
+  if (!obj) return { year: 0, newTier: "Unknown" };
+  return {
+    year: obj.year ?? 0,
+    newTier: obj.newTier ?? "Unknown",
+  };
+}
+
 export const countriesRouter = createTRPCRouter({
   // Get all countries with basic info + total count
   getAll: publicProcedure
@@ -224,7 +355,7 @@ export const countriesRouter = createTRPCRouter({
       }).optional()
     )
     .query(async ({ ctx, input }) => {
-      const where: any = {};
+      const where: Record<string, unknown> = {};
       if (input?.search) {
         where.name = { contains: input.search, mode: "insensitive" };
       }
@@ -235,7 +366,7 @@ export const countriesRouter = createTRPCRouter({
         where.economicTier = input.economicTier;
       }
 
-      const [countries, total] = await Promise.all([
+      const [rawCountries, total] = await Promise.all([
         ctx.db.country.findMany({
           where,
           take: input?.limit,
@@ -250,6 +381,86 @@ export const countriesRouter = createTRPCRouter({
         }),
         ctx.db.country.count({ where }),
       ]);
+
+      // Map raw database results to CountryWithEconomicData
+      const countries: CountryWithEconomicData[] = rawCountries.map((country): CountryWithEconomicData => ({
+        ...country,
+        // Convert null to undefined for optional fields
+        landArea: country.landArea ?? undefined,
+        areaSqMi: country.areaSqMi ?? undefined,
+        populationDensity: country.populationDensity ?? undefined,
+        gdpDensity: country.gdpDensity ?? undefined,
+        continent: country.continent ?? undefined,
+        region: country.region ?? undefined,
+        governmentType: country.governmentType ?? undefined,
+        religion: country.religion ?? undefined,
+        leader: country.leader ?? undefined,
+        
+        calculatedStats: {
+          gdpGrowth: country.adjustedGdpGrowth || 0,
+          populationGrowth: country.populationGrowthRate || 0,
+          inflation: 0.02, // Default inflation rate
+        },
+        projections: [], // Will be calculated when needed
+        historical: [], // Will be calculated when needed
+        dmInputs: country.dmInputs.map((dm: any) => ({
+          id: dm.id,
+          countryId: dm.countryId,
+          inputType: dm.inputType,
+          value: dm.value,
+          description: dm.description,
+          timestamp: dm.ixTimeTimestamp,
+        })),
+        nominalGDP: country.baselinePopulation * country.baselineGdpPerCapita,
+        realGDPGrowthRate: country.adjustedGdpGrowth || 0.03,
+        inflationRate: 0.02,
+        currencyExchangeRate: 1.0,
+        // Provide default values for all optional economic fields
+        laborForceParticipationRate: undefined,
+        employmentRate: undefined,
+        unemploymentRate: undefined,
+        totalWorkforce: undefined,
+        averageWorkweekHours: undefined,
+        minimumWage: undefined,
+        averageAnnualIncome: undefined,
+        governmentRevenueTotal: undefined,
+        taxRevenueGDPPercent: undefined,
+        taxRevenuePerCapita: undefined,
+        governmentBudgetGDPPercent: undefined,
+        budgetDeficitSurplus: undefined,
+        internalDebtGDPPercent: undefined,
+        externalDebtGDPPercent: undefined,
+        totalDebtGDPRatio: undefined,
+        debtPerCapita: undefined,
+        interestRates: undefined,
+        debtServiceCosts: undefined,
+        totalGovernmentSpending: undefined,
+        spendingGDPPercent: undefined,
+        spendingPerCapita: undefined,
+        lifeExpectancy: undefined,
+        urbanPopulationPercent: undefined,
+        ruralPopulationPercent: undefined,
+        literacyRate: undefined,
+        economicProfile: undefined,
+        laborMarket: undefined,
+        fiscalSystem: undefined,
+        incomeDistribution: undefined,
+        governmentBudget: undefined,
+        demographics: undefined,
+        analytics: {
+          growthTrends: {
+            avgPopGrowth: country.populationGrowthRate || 0,
+            avgGdpGrowth: country.adjustedGdpGrowth || 0,
+          },
+          volatility: {
+            popVolatility: 0,
+            gdpVolatility: 0,
+          },
+          riskFlags: [],
+          tierChangeProjection: { year: new Date().getFullYear(), newTier: country.economicTier },
+          vulnerabilities: [],
+        },
+      }));
 
       return { countries, total };
     }),
@@ -377,7 +588,6 @@ export const countriesRouter = createTRPCRouter({
       if (gdpVolatility > 0.05) riskFlags.push('high_gdp_per_capita_volatility');
       // Tier change projection (estimate years to next tier)
       let tierChangeProjection = null;
-      const currentTier = result.newStats.economicTier;
       const currentGDPPC = result.newStats.currentGdpPerCapita;
       const projectionsGDPPC = projections.map(p => p.stats.currentGdpPerCapita);
       const tierThresholds = Object.values(econCfg.economicTierThresholds).sort((a, b) => a - b);
@@ -391,7 +601,7 @@ export const countriesRouter = createTRPCRouter({
       if (nextTier) {
         for (let i = 0; i < projectionsGDPPC.length; i++) {
           if (projectionsGDPPC[i]! >= nextTier) {
-            tierChangeProjection = { years: i + 1, targetGDPPC: projectionsGDPPC[i]!, nextTier };
+            tierChangeProjection = { year: new Date().getFullYear() + i + 1, newTier: getEconomicTierFromGdpPerCapita(projectionsGDPPC[i]!) };
             break;
           }
         }
@@ -407,9 +617,21 @@ export const countriesRouter = createTRPCRouter({
       // Add analytics to response
       const response: CountryWithEconomicData = {
         ...country,
-        calculatedStats: result.newStats,
-        projections,
-        historical,
+        calculatedStats: {
+          gdpGrowth: result.newStats.adjustedGdpGrowth || 0,
+          populationGrowth: result.newStats.populationGrowthRate || 0,
+          inflation: 0.02, // Default inflation rate
+        },
+        projections: projections.map(p => ({
+          year: new Date(p.ixTime).getFullYear(),
+          gdp: p.stats.currentTotalGdp,
+          population: p.stats.currentPopulation,
+        })),
+        historical: historical.map(h => ({
+          year: new Date(h.ixTimeTimestamp).getFullYear(), 
+          gdp: h.totalGdp,
+          population: h.population,
+        })),
         dmInputs: (country.dmInputs as any[]).map((dm: any) => ({
           ...dm,
           ixTimeTimestamp: dm.ixTimeTimestamp.getTime()
@@ -427,6 +649,25 @@ export const countriesRouter = createTRPCRouter({
         averageWorkweekHours: country.averageWorkweekHours || 40,
         minimumWage: country.minimumWage || 12,
         averageAnnualIncome: country.averageAnnualIncome || 35000,
+        // Handle nullable fields properly
+        governmentRevenueTotal: country.governmentRevenueTotal ?? null,
+        taxRevenueGDPPercent: country.taxRevenueGDPPercent ?? 20,
+        taxRevenuePerCapita: country.taxRevenuePerCapita ?? 0,
+        governmentBudgetGDPPercent: country.governmentBudgetGDPPercent ?? 22,
+        budgetDeficitSurplus: country.budgetDeficitSurplus ?? 0,
+        internalDebtGDPPercent: country.internalDebtGDPPercent ?? 30,
+        externalDebtGDPPercent: country.externalDebtGDPPercent ?? 20,
+        totalDebtGDPRatio: country.totalDebtGDPRatio ?? 50,
+        debtPerCapita: country.debtPerCapita ?? 0,
+        interestRates: country.interestRates ?? 0.03,
+        debtServiceCosts: country.debtServiceCosts ?? 0,
+        totalGovernmentSpending: country.totalGovernmentSpending ?? 0,
+        spendingGDPPercent: country.spendingGDPPercent ?? 22,
+        spendingPerCapita: country.spendingPerCapita ?? 0,
+        lifeExpectancy: country.lifeExpectancy ?? 75,
+        urbanPopulationPercent: country.urbanPopulationPercent ?? 70,
+        ruralPopulationPercent: country.ruralPopulationPercent ?? 30,
+        literacyRate: country.literacyRate ?? 90,
         economicProfile: (country as any).economicProfile || null,
         laborMarket: (country as any).laborMarket || null,
         fiscalSystem: (country as any).fiscalSystem || null,
@@ -443,7 +684,7 @@ export const countriesRouter = createTRPCRouter({
             gdpVolatility,
           },
           riskFlags,
-          tierChangeProjection,
+          tierChangeProjection: tierChangeProjection || { year: new Date().getFullYear(), newTier: country.economicTier },
           vulnerabilities,
         },
         lastCalculated: typeof country.lastCalculated === 'number' ? country.lastCalculated : (country.lastCalculated ? new Date(country.lastCalculated).getTime() : Date.now()),
@@ -1071,7 +1312,7 @@ export const countriesRouter = createTRPCRouter({
         FROM Country
       `;
 
-      const stats = (result as any[])[0] as any;
+      const stats = (result as any[])[0];
       
       const totalPopulation = validateNumber(stats.totalPopulation || 0, 1e11);
       const totalGdp = validateNumber(stats.totalGdp || 0, 1e18);
@@ -1102,6 +1343,7 @@ export const countriesRouter = createTRPCRouter({
         totalPopulation,
         totalGdp,
         averageGdpPerCapita: avgGdpPc,
+        averagePopulation: totalCountries > 0 ? totalPopulation / totalCountries : 0,
         totalCountries,
         economicTierDistribution,
         populationTierDistribution,
@@ -1389,6 +1631,256 @@ export const countriesRouter = createTRPCRouter({
       } catch (error) {
         console.error("Failed to update country name:", error);
         throw new Error("Failed to update country name");
+      }
+    }),
+
+  // Get recent historical data for trend analysis
+  getHistoricalData: publicProcedure
+    .input(z.object({
+      countryId: z.string(),
+      limit: z.number().optional().default(30),
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const now = IxTime.getCurrentIxTime();
+        const SIX_MONTHS_MS = 6 * 30 * 24 * 60 * 60 * 1000; // 6 months ago
+        
+        // First try to get existing historical data
+        const existingData = await ctx.db.historicalDataPoint.findMany({
+          where: {
+            countryId: input.countryId,
+            ixTimeTimestamp: {
+              gte: new Date(now - SIX_MONTHS_MS),
+              lte: new Date(now),
+            },
+          },
+          orderBy: { ixTimeTimestamp: "asc" },
+          take: input.limit,
+        });
+
+        // If we have enough data, return it
+        if (existingData.length >= Math.min(input.limit, 10)) {
+          return existingData.map((point) => ({
+            ...point,
+            ixTimeTimestamp: point.ixTimeTimestamp.getTime(),
+            population: validateNumber(point.population, 1e11),
+            gdpPerCapita: validateNumber(point.gdpPerCapita, 1e7, 1),
+            totalGdp: validateNumber(point.totalGdp, 1e18, 1),
+            populationGrowthRate: validateGrowthRate(point.populationGrowthRate),
+            gdpGrowthRate: validateGrowthRate(point.gdpGrowthRate),
+            populationDensity: point.populationDensity ? validateNumber(point.populationDensity, 1e7) : null,
+            gdpDensity: point.gdpDensity ? validateNumber(point.gdpDensity, 1e12) : null,
+          }));
+        }
+
+        // If not enough data, calculate historical points
+        const country = await ctx.db.country.findUnique({
+          where: { id: input.countryId },
+          include: {
+            dmInputs: {
+              where: { isActive: true },
+              orderBy: { ixTimeTimestamp: "desc" },
+            },
+          },
+        });
+
+        if (!country) {
+          throw new Error(`Country with ID ${input.countryId} not found`);
+        }
+
+        const econCfg = getEconomicConfig();
+        const baselineDate = country.baselineDate.getTime();
+        const calc = new IxStatsCalculator(econCfg, baselineDate);
+        const base = prepareBaseCountryData(country);
+        const baselineStats = calc.initializeCountryStats(base);
+
+        const dmInputs = (country.dmInputs as any[]).map((i: any) => ({
+          ...i,
+          ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
+        }));
+
+        const dataPoints = [];
+        const intervalMs = SIX_MONTHS_MS / input.limit;
+
+        for (let i = 0; i < input.limit; i++) {
+          const timePoint = now - SIX_MONTHS_MS + (i * intervalMs);
+          const res = calc.calculateTimeProgression(baselineStats, timePoint, dmInputs);
+          
+          dataPoints.push({
+            ixTimeTimestamp: timePoint,
+            population: validateNumber(res.newStats.currentPopulation, 1e11),
+            gdpPerCapita: validateNumber(res.newStats.currentGdpPerCapita, 1e7, 1),
+            totalGdp: validateNumber(res.newStats.currentTotalGdp, 1e18, 1),
+            populationGrowthRate: validateGrowthRate(res.newStats.populationGrowthRate),
+            gdpGrowthRate: validateGrowthRate(res.newStats.adjustedGdpGrowth),
+            landArea: res.newStats.landArea,
+            populationDensity: res.newStats.populationDensity ? validateNumber(res.newStats.populationDensity, 1e7) : null,
+            gdpDensity: res.newStats.gdpDensity ? validateNumber(res.newStats.gdpDensity, 1e12) : null,
+          });
+        }
+
+        return dataPoints;
+      } catch (error) {
+        console.error("Failed to get historical data:", error);
+        throw new Error("Failed to retrieve historical data");
+      }
+    }),
+
+  // Get top countries by GDP per capita for comparison
+  getTopCountriesByGdpPerCapita: publicProcedure
+    .input(z.object({
+      limit: z.number().optional().default(10),
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const cacheKey = getCacheKey("topCountriesByGdpPerCapita", { limit: input.limit });
+        const cached = getCachedData(cacheKey);
+        if (cached) return cached;
+
+        const countries = await ctx.db.country.findMany({
+          select: {
+            id: true,
+            name: true,
+            currentGdpPerCapita: true,
+            currentPopulation: true,
+            currentTotalGdp: true,
+            economicTier: true,
+            populationTier: true,
+          },
+          orderBy: { currentGdpPerCapita: "desc" },
+          take: input.limit,
+        });
+
+        const result = countries.map((country) => ({
+          ...country,
+          currentGdpPerCapita: validateNumber(country.currentGdpPerCapita ?? 0, 1e7, 1),
+          currentTotalGdp: validateNumber(country.currentTotalGdp ?? 0, 1e18, 1),
+          currentPopulation: validateNumber(country.currentPopulation ?? 0, 1e11, 1),
+        }));
+
+        // Cache for 5 minutes
+        cache.set(cacheKey, { data: result, timestamp: Date.now(), ttl: 5 * 60 * 1000 });
+        return result;
+      } catch (error) {
+        console.error("Failed to get top countries by GDP per capita:", error);
+        throw new Error("Failed to retrieve top countries data");
+      }
+    }),
+
+  // Get top countries by population for comparison
+  getTopCountriesByPopulation: publicProcedure
+    .input(z.object({
+      limit: z.number().optional().default(15),
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const cacheKey = getCacheKey("topCountriesByPopulation", { limit: input.limit });
+        const cached = getCachedData(cacheKey);
+        if (cached) return cached;
+
+        const countries = await ctx.db.country.findMany({
+          select: {
+            id: true,
+            name: true,
+            currentPopulation: true,
+            currentGdpPerCapita: true,
+            currentTotalGdp: true,
+            populationTier: true,
+            economicTier: true,
+            populationGrowthRate: true,
+          },
+          orderBy: { currentPopulation: "desc" },
+          take: input.limit,
+        });
+
+        const result = countries.map((country) => ({
+          ...country,
+          currentPopulation: validateNumber(country.currentPopulation ?? 0, 1e11, 1),
+          currentGdpPerCapita: validateNumber(country.currentGdpPerCapita ?? 0, 1e7, 1),
+          currentTotalGdp: validateNumber(country.currentTotalGdp ?? 0, 1e18, 1),
+          populationGrowthRate: validateGrowthRate(country.populationGrowthRate),
+        }));
+
+        // Cache for 5 minutes
+        cache.set(cacheKey, { data: result, timestamp: Date.now(), ttl: 5 * 60 * 1000 });
+        return result;
+      } catch (error) {
+        console.error("Failed to get top countries by population:", error);
+        throw new Error("Failed to retrieve top countries population data");
+      }
+    }),
+
+  // Get economic data for a country - simplified endpoint for modals
+  getEconomicData: publicProcedure
+    .input(z.object({
+      countryId: z.string(),
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const cacheKey = getCacheKey("economicData", { countryId: input.countryId });
+        const cached = getCachedData(cacheKey);
+        if (cached) return cached;
+
+        const country = await ctx.db.country.findUnique({
+          where: { id: input.countryId },
+          include: {
+            dmInputs: {
+              where: { isActive: true },
+              orderBy: { ixTimeTimestamp: "desc" },
+            },
+          },
+        });
+
+        if (!country) {
+          throw new Error(`Country with ID ${input.countryId} not found`);
+        }
+
+        // Calculate current stats for consistent data
+        const econCfg = getEconomicConfig();
+        const baselineDate = country.baselineDate.getTime();
+        const calc = new IxStatsCalculator(econCfg, baselineDate);
+        const base = prepareBaseCountryData(country);
+        const baselineStats = calc.initializeCountryStats(base);
+        const currentTime = IxTime.getCurrentIxTime();
+        
+        const dmInputs = (country.dmInputs as any[]).map((i: any) => ({
+          ...i,
+          ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
+        }));
+
+        const result = calc.calculateTimeProgression(
+          baselineStats,
+          currentTime,
+          dmInputs
+        );
+
+        const economicData = {
+          id: country.id,
+          name: country.name,
+          currentPopulation: validateNumber(result.newStats.currentPopulation, 1e11),
+          currentGdpPerCapita: validateNumber(result.newStats.currentGdpPerCapita, 1e7, 1),
+          currentTotalGdp: validateNumber(result.newStats.currentTotalGdp, 1e18, 1),
+          baselinePopulation: country.baselinePopulation,
+          baselineGdpPerCapita: country.baselineGdpPerCapita,
+          populationGrowthRate: validateGrowthRate(result.newStats.populationGrowthRate),
+          adjustedGdpGrowth: validateGrowthRate(result.newStats.adjustedGdpGrowth),
+          economicTier: result.newStats.economicTier,
+          populationTier: result.newStats.populationTier,
+          continent: country.continent,
+          region: country.region,
+          landArea: country.landArea,
+          populationDensity: result.newStats.populationDensity,
+          gdpDensity: result.newStats.gdpDensity,
+          lastCalculated: result.newStats.lastCalculated,
+          baselineDate: country.baselineDate.getTime(),
+        };
+
+        // Cache for 1 minute since this is current economic data
+        setCachedData(cacheKey, economicData, 60000);
+        return economicData;
+      } catch (error) {
+        console.error("Failed to get economic data:", error);
+        throw new Error("Failed to retrieve economic data");
       }
     }),
 });

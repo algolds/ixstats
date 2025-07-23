@@ -22,6 +22,7 @@ export interface CrisisEvent {
   affectedCountries: string[];
   casualties: number;
   economicImpact: number;
+  status: 'coordinating' | 'monitoring' | 'deployed' | 'standby' | 'resolved';
   responseStatus: 'coordinating' | 'monitoring' | 'deployed' | 'standby' | 'resolved';
   timestamp: Date;
   description: string;
@@ -205,10 +206,12 @@ export interface SDIPaginatedResponse<T> {
 }
 
 // Real-time update types
+export type SDIUpdateData = IntelligenceItem | CrisisEvent | DiplomaticRelation | Treaty | null;
+
 export interface SDIRealTimeUpdate {
   type: 'intelligence' | 'crisis' | 'economic' | 'diplomatic' | 'system';
   action: 'create' | 'update' | 'delete';
-  data: any;
+  data: SDIUpdateData;
   timestamp: Date;
   userId?: string;
 }

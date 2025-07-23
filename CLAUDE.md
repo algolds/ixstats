@@ -6,8 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Development
 ```bash
-# Start development server with turbo
+# Start development server with comprehensive validation (recommended)
 npm run dev
+
+# Start development server (simple mode)
+npm run dev:simple
 
 # Build for production
 npm run build
@@ -17,6 +20,18 @@ npm run preview
 
 # Clean build artifacts
 npm run clean
+```
+
+### Server Management
+```bash
+# Start development server (port 3000, root path)
+npm run start:dev
+
+# Start production server (port 3550, /projects/ixstats basePath)
+npm run start:prod
+
+# Validate server configurations
+npm run validate:servers
 ```
 
 ### Code Quality
@@ -65,6 +80,24 @@ npm run db:studio
 
 # Start dev server with fresh database
 npm run dev:db
+```
+
+### Authentication Management
+```bash
+# Check authentication configuration
+npm run auth:check
+
+# Check development environment auth config
+npm run auth:check:dev
+
+# Check production environment auth config
+npm run auth:check:prod
+
+# Interactive Clerk setup for development
+npm run clerk:setup
+
+# Start development with authentication emphasis
+npm run dev:auth
 ```
 
 ### Testing
@@ -151,8 +184,17 @@ Required variables:
 - `IXTIME_BOT_URL`: Discord bot API endpoint (default: http://localhost:3001)
 - `NEXT_PUBLIC_MEDIAWIKI_URL`: MediaWiki API for country data (default: https://ixwiki.com/)
 
+Authentication (Environment-Specific):
+- **Development**: Use `pk_test_*` and `sk_test_*` keys in `.env.local`
+- **Production**: Use `pk_live_*` and `sk_live_*` keys in `.env.production`
+- Run `npm run auth:check` to verify configuration
+
+Routing Configuration (Environment-Specific):
+- **Development**: Uses root path (`/`) - access at `http://localhost:3000/`
+- **Production**: Uses basePath (`/projects/ixstats`) - access at `https://ixwiki.com/projects/ixstats`
+- **Next.js Config**: Automatically handles environment-specific routing
+
 Optional:
-- `CLERK_SECRET_KEY` / `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`: Authentication
 - `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`, `DISCORD_GUILD_ID`: Bot integration
 
 ## Development Guidelines
@@ -208,6 +250,8 @@ Optional:
 - **Calculation Errors**: Check global growth factor application and tier cap logic
 - **Database Migration**: Run `npm run db:migrate` after schema changes
 - **Type Errors**: Run `npm run typecheck` and ensure Prisma client is generated
+- **Clerk "Invalid host" Error**: After changing from `/projects/ixstats` to root path, run `npm run clerk:setup` to configure proper development keys or comment out Clerk keys in `.env.local` for demo mode
+- **Authentication Issues**: Run `npm run auth:check:dev` to verify configuration, use `npm run clerk:setup` for interactive setup
 
 When working on economic features, always test with realistic country data and verify tier classifications are correct. The economic modeling system is the core of the application and requires careful attention to mathematical accuracy.
 
@@ -248,18 +292,18 @@ MyCountry® Premium Suite
 [ ] Premium Tools Modal
 [ ] Dashboard for premium features
 [ ] Quick links to advanced tools
-[ ] Strategic Planning Modal
-[ ] Strategic planning tools
-[ ] Scenario builder
-[ ] Advanced Analytics Modal
-[ ] Analytics dashboard
-[ ] Custom charts and data exploration
-[ ] AI Advisor Modal
-[ ] AI chat interface
-[ ] Recommendations and insights
-[ ] Predictive Models Modal
-[ ] Forecasts and scenario analysis
-[ ] Visualization of predictive models
+[x] Strategic Planning Modal
+[x] Strategic planning tools
+[x] Scenario builder
+[x] Advanced Analytics Modal
+[x] Analytics dashboard
+[x] Custom charts and data exploration
+[x] AI Advisor Modal
+[x] AI chat interface
+[x] Recommendations and insights
+[x] Predictive Models Modal
+[x] Forecasts and scenario analysis
+[x] Visualization of predictive models
 Focus Cards
 [ ] Government Operations
 [ ] Administrative efficiency metrics

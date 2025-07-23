@@ -1,5 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Shield, Activity, TrendingDown, Zap, Globe, Users, DollarSign, Clock, Target, CheckCircle, XCircle, AlertCircle, Play, Pause, RotateCcw } from 'lucide-react';
+import { GlassCard } from '../src/components/ui/enhanced-card';
+
+interface Crisis {
+  id: number;
+  title: string;
+  type: string;
+  severity: string;
+  status: string;
+  affected: string[];
+  startTime: string;
+  duration: string;
+  impact: {
+    economic: number;
+    political: number;
+    social: number;
+  };
+  description: string;
+  responseTeam: string;
+  nextAction: string;
+  confidence: number;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+}
 
 const activeCrises = [
   {
@@ -106,21 +129,13 @@ const responseProtocols = [
 ];
 
 const CrisisManagement = () => {
-  const [selectedCrisis, setSelectedCrisis] = useState(null);
+  const [selectedCrisis, setSelectedCrisis] = useState<Crisis | null>(null);
   const [alertLevel, setAlertLevel] = useState('normal'); // normal, elevated, high, critical
   const [simulationMode, setSimulationMode] = useState(false);
 
-  const GlassCard = ({ children, className = "", gradient = "" }) => (
-    <div className={`relative backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 ${gradient && `bg-gradient-to-br ${gradient}`} ${className}`}>
-      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-3xl" />
-      <div className="relative z-10">
-        {children}
-      </div>
-    </div>
-  );
 
-  const CrisisCard = ({ crisis }) => {
-    const getSeverityColor = (severity) => {
+  const CrisisCard = ({ crisis }: { crisis: any }) => {
+    const getSeverityColor = (severity: string) => {
       switch (severity) {
         case 'critical': return 'text-red-400 bg-red-500/20';
         case 'high': return 'text-orange-400 bg-orange-500/20';
@@ -130,7 +145,7 @@ const CrisisManagement = () => {
       }
     };
 
-    const getStatusIcon = (status) => {
+    const getStatusIcon = (status: string) => {
       switch (status) {
         case 'active': return <AlertTriangle className="w-4 h-4 text-red-400" />;
         case 'monitoring': return <AlertCircle className="w-4 h-4 text-yellow-400" />;
@@ -141,7 +156,7 @@ const CrisisManagement = () => {
     };
 
     return (
-      <GlassCard 
+      <GlassCard variant="security" 
         gradient={crisis.color}
         className={`cursor-pointer hover:scale-[1.02] transition-all duration-300 ${
           selectedCrisis?.id === crisis.id ? 'ring-2 ring-blue-400/50' : ''
@@ -175,7 +190,7 @@ const CrisisManagement = () => {
         <div className="flex items-center justify-between mb-3">
           <div className="text-xs text-white/60">{crisis.startTime} • {crisis.duration}</div>
           <div className="flex space-x-1">
-            {crisis.affected.slice(0, 3).map((country, idx) => (
+            {crisis.affected.slice(0, 3).map((country: string, idx: number) => (
               <span key={idx} className="text-xs px-2 py-1 bg-white/20 rounded-full text-white/80">
                 {country}
               </span>
@@ -232,7 +247,7 @@ const CrisisManagement = () => {
     );
   };
 
-  const getAlertLevelColor = (level) => {
+  const getAlertLevelColor = (level: string) => {
     switch (level) {
       case 'critical': return 'from-red-500 to-red-600';
       case 'high': return 'from-orange-500 to-red-500';
@@ -254,7 +269,7 @@ const CrisisManagement = () => {
           
           <div className="flex items-center space-x-3">
             {/* Alert Level Indicator */}
-            <GlassCard className={`px-4 py-2 bg-gradient-to-r ${getAlertLevelColor(alertLevel)}`}>
+            <GlassCard variant="security" className={`px-4 py-2 bg-gradient-to-r ${getAlertLevelColor(alertLevel)}`}>
               <div className="flex items-center space-x-2">
                 <Shield className="w-4 h-4 text-white" />
                 <span className="text-white font-medium text-sm">
@@ -264,7 +279,7 @@ const CrisisManagement = () => {
             </GlassCard>
 
             {/* Simulation Mode Toggle */}
-            <GlassCard className="px-4 py-2">
+            <GlassCard variant="security" className="px-4 py-2">
               <button
                 onClick={() => setSimulationMode(!simulationMode)}
                 className={`flex items-center space-x-2 text-sm font-medium transition-all ${
@@ -280,27 +295,27 @@ const CrisisManagement = () => {
 
         {/* System Status */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-          <GlassCard className="text-center">
+          <GlassCard variant="security" className="text-center">
             <div className="text-2xl font-bold text-red-400">{activeCrises.length}</div>
             <div className="text-white/60 text-sm">Active Crises</div>
           </GlassCard>
           
-          <GlassCard className="text-center">
+          <GlassCard variant="security" className="text-center">
             <div className="text-2xl font-bold text-green-400">3</div>
             <div className="text-white/60 text-sm">Response Teams</div>
           </GlassCard>
           
-          <GlassCard className="text-center">
+          <GlassCard variant="security" className="text-center">
             <div className="text-2xl font-bold text-blue-400">91%</div>
             <div className="text-white/60 text-sm">System Readiness</div>
           </GlassCard>
           
-          <GlassCard className="text-center">
+          <GlassCard variant="security" className="text-center">
             <div className="text-2xl font-bold text-yellow-400">12</div>
             <div className="text-white/60 text-sm">Risk Factors</div>
           </GlassCard>
           
-          <GlassCard className="text-center">
+          <GlassCard variant="security" className="text-center">
             <div className="text-2xl font-bold text-purple-400">00:15:32</div>
             <div className="text-white/60 text-sm">Avg Response</div>
           </GlassCard>
@@ -336,7 +351,7 @@ const CrisisManagement = () => {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Risk Assessment */}
-          <GlassCard>
+          <GlassCard variant="security">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white font-bold">Risk Assessment</h3>
               <Activity className="w-5 h-5 text-yellow-400" />
@@ -368,7 +383,7 @@ const CrisisManagement = () => {
           </GlassCard>
 
           {/* Response Protocols */}
-          <GlassCard>
+          <GlassCard variant="security">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white font-bold">Response Protocols</h3>
               <Shield className="w-5 h-5 text-green-400" />
@@ -398,7 +413,7 @@ const CrisisManagement = () => {
           </GlassCard>
 
           {/* Quick Actions */}
-          <GlassCard gradient="from-red-500/10 to-orange-500/10">
+          <GlassCard variant="security" gradient="from-red-500/10 to-orange-500/10">
             <h3 className="text-white font-bold mb-4">Emergency Actions</h3>
             
             <div className="space-y-2">

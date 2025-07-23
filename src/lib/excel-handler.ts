@@ -277,7 +277,7 @@ export class IxStatsExcelHandler {
       throw new Error('Worksheet not found in Excel file');
     }
     
-    return XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+    return XLSX.utils.sheet_to_json(worksheet, { header: 1 });
   }
 
   /**

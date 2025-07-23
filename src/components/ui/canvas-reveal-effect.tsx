@@ -1,8 +1,10 @@
 "use client";
 import { cn } from "../../lib/utils";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
 import * as THREE from "three";
+import { WebGLErrorBoundary } from "./webgl-error-boundary";
+import { webglContextManager } from "../../lib/webgl-context-manager";
 
 export const CanvasRevealEffect = ({
   animationSpeed = 0.4,
@@ -23,28 +25,69 @@ export const CanvasRevealEffect = ({
   dotSize?: number;
   showGradient?: boolean;
 }) => {
-  return (
-    <div className={cn("h-full relative bg-white w-full", containerClassName)}>
-      <div className="h-full w-full">
-        <DotMatrix
-          colors={colors ?? [[0, 255, 255]]}
-          dotSize={dotSize ?? 3}
-          opacities={
-            opacities ?? [0.3, 0.3, 0.3, 0.5, 0.5, 0.5, 0.8, 0.8, 0.8, 1]
-          }
-          shader={`
-              float animation_speed_factor = ${animationSpeed.toFixed(1)};
-              float intro_offset = distance(u_resolution / 2.0 / u_total_size, st2) * 0.01 + (random(st2) * 0.15);
-              opacity *= step(intro_offset, u_time * animation_speed_factor);
-              opacity *= clamp((1.0 - step(intro_offset + 0.1, u_time * animation_speed_factor)) * 1.25, 1.0, 1.25);
-            `}
-          center={["x", "y"]}
-        />
+  const [webglSupported, setWebglSupported] = useState(true);
+  const [contextAvailable, setContextAvailable] = useState(true);
+  const [contextId, setContextId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Check WebGL support
+    if (!webglContextManager.isWebGLSupported()) {
+      setWebglSupported(false);
+      return;
+    }
+
+    // Check if we can create more contexts
+    if (!webglContextManager.canCreateContext()) {
+      setContextAvailable(false);
+      return;
+    }
+
+    const id = webglContextManager.registerContext();
+    setContextId(id);
+    
+    return () => {
+      if (id) {
+        webglContextManager.unregisterContext(id);
+      }
+    };
+  }, []);
+
+  // Fallback for when WebGL is not supported or context limit reached
+  if (!webglSupported || !contextAvailable) {
+    return (
+      <div className={cn("h-full relative bg-white w-full", containerClassName)}>
+        <div className="h-full w-full bg-gradient-to-br from-cyan-500/20 to-blue-500/20" />
+        {showGradient && (
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-950 to-[84%]" />
+        )}
       </div>
-      {showGradient && (
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-950 to-[84%]" />
-      )}
-    </div>
+    );
+  }
+
+  return (
+    <WebGLErrorBoundary>
+      <div className={cn("h-full relative bg-white w-full", containerClassName)}>
+        <div className="h-full w-full">
+          <DotMatrix
+            colors={colors ?? [[0, 255, 255]]}
+            dotSize={dotSize ?? 3}
+            opacities={
+              opacities ?? [0.3, 0.3, 0.3, 0.5, 0.5, 0.5, 0.8, 0.8, 0.8, 1]
+            }
+            shader={`
+                float animation_speed_factor = ${animationSpeed.toFixed(1)};
+                float intro_offset = distance(u_resolution / 2.0 / u_total_size, st2) * 0.01 + (random(st2) * 0.15);
+                opacity *= step(intro_offset, u_time * animation_speed_factor);
+                opacity *= clamp((1.0 - step(intro_offset + 0.1, u_time * animation_speed_factor)) * 1.25, 1.0, 1.25);
+              `}
+            center={["x", "y"]}
+          />
+        </div>
+        {showGradient && (
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-950 to-[84%]" />
+        )}
+      </div>
+    </WebGLErrorBoundary>
   );
 };
 
@@ -175,12 +218,10 @@ const DotMatrix: React.FC<DotMatrixProps> = ({
   );
 };
 
-type Uniforms = {
-  [key: string]: {
+type Uniforms = Record<string, {
     value: number[] | number[][] | number;
     type: string;
-  };
-};
+  }>;
 const ShaderMaterial = ({
   source,
   uniforms,
@@ -193,6 +234,7 @@ const ShaderMaterial = ({
 }) => {
   const { size } = useThree();
   const ref = useRef<THREE.Mesh>(null);
+  const [materialError, setMaterialError] = useState(false);
   let lastFrameTime = 0;
 
   useFrame(({ clock }) => {
@@ -247,8 +289,8 @@ const ShaderMaterial = ({
       }
     }
 
-    preparedUniforms["u_time"] = { value: 0, type: "1f" };
-    preparedUniforms["u_resolution"] = {
+    preparedUniforms.u_time = { value: 0, type: "1f" };
+    preparedUniforms.u_resolution = {
       value: new THREE.Vector2(size.width * 2, size.height * 2),
     }; // Initialize u_resolution
     return preparedUniforms;
@@ -256,30 +298,40 @@ const ShaderMaterial = ({
 
   // Shader material
   const material = useMemo(() => {
-    const materialObject = new THREE.ShaderMaterial({
-      vertexShader: `
-      precision mediump float;
-      in vec2 coordinates;
-      uniform vec2 u_resolution;
-      out vec2 fragCoord;
-      void main(){
-        float x = position.x;
-        float y = position.y;
-        gl_Position = vec4(x, y, 0.0, 1.0);
-        fragCoord = (position.xy + vec2(1.0)) * 0.5 * u_resolution;
-        fragCoord.y = u_resolution.y - fragCoord.y;
-      }
-      `,
-      fragmentShader: source,
-      uniforms: getUniforms(),
-      glslVersion: THREE.GLSL3,
-      blending: THREE.CustomBlending,
-      blendSrc: THREE.SrcAlphaFactor,
-      blendDst: THREE.OneFactor,
-    });
+    try {
+      const materialObject = new THREE.ShaderMaterial({
+        vertexShader: `
+        precision mediump float;
+        in vec2 coordinates;
+        uniform vec2 u_resolution;
+        out vec2 fragCoord;
+        void main(){
+          float x = position.x;
+          float y = position.y;
+          gl_Position = vec4(x, y, 0.0, 1.0);
+          fragCoord = (position.xy + vec2(1.0)) * 0.5 * u_resolution;
+          fragCoord.y = u_resolution.y - fragCoord.y;
+        }
+        `,
+        fragmentShader: source,
+        uniforms: getUniforms(),
+        glslVersion: THREE.GLSL3,
+        blending: THREE.CustomBlending,
+        blendSrc: THREE.SrcAlphaFactor,
+        blendDst: THREE.OneFactor,
+      });
 
-    return materialObject;
+      return materialObject;
+    } catch (error) {
+      console.warn('Failed to create shader material:', error);
+      setMaterialError(true);
+      return null;
+    }
   }, [size.width, size.height, source]);
+
+  if (materialError || !material) {
+    return null;
+  }
 
   return (
     <mesh ref={ref as any}>
@@ -290,19 +342,36 @@ const ShaderMaterial = ({
 };
 
 const Shader: React.FC<ShaderProps> = ({ source, uniforms, maxFps = 60 }) => {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError) {
+    return (
+      <div className="absolute inset-0 h-full w-full bg-gradient-to-br from-cyan-500/20 to-blue-500/20" />
+    );
+  }
+
   return (
-    <Canvas className="absolute inset-0  h-full w-full">
+    <Canvas 
+      className="absolute inset-0 h-full w-full"
+      onCreated={({ gl }) => {
+        // Configure WebGL context
+        gl.setClearColor(0x000000, 0);
+        gl.autoClear = false;
+      }}
+      onError={(error) => {
+        console.warn('Canvas error:', error);
+        setHasError(true);
+      }}
+    >
       <ShaderMaterial source={source} uniforms={uniforms} maxFps={maxFps} />
     </Canvas>
   );
 };
 interface ShaderProps {
   source: string;
-  uniforms: {
-    [key: string]: {
+  uniforms: Record<string, {
       value: number[] | number[][] | number;
       type: string;
-    };
-  };
+    }>;
   maxFps?: number;
 }

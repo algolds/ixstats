@@ -155,6 +155,16 @@ export interface CoreEconomicIndicatorsData {
     citizenshipStatuses: Array<{ status: string; percent: number; color?: string }>
   }
   
+  // Spending Category type
+  export interface SpendingCategory {
+    category: string
+    amount: number
+    percent: number
+    icon?: string
+    color?: string
+    description?: string
+  }
+  
   // Aggregate
   export interface EconomyData {
     core: CoreEconomicIndicatorsData

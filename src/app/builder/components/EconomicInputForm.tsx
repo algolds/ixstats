@@ -24,6 +24,7 @@ import { IncomeWealthDistribution } from "./IncomeWealthDistribution";
 import { GovernmentSpending } from "./GovernmentSpending";
 import { Demographics } from "./Demographics";
 import type { DemographicsData } from "~/types/economics";
+import type { GovernmentSpendingData } from '~/types/economics';
 
 interface EconomicInputFormProps {
   inputs: EconomicInputs;
@@ -134,7 +135,7 @@ export function EconomicInputForm({
     onInputsChange({ ...inputs, incomeWealth });
   };
 
-  const handleGovernmentSpendingChange = (governmentSpending: typeof inputs.governmentSpending) => {
+  const handleGovernmentSpendingChange = (governmentSpending: GovernmentSpendingData) => {
     onInputsChange({ ...inputs, governmentSpending });
   };
 
@@ -276,10 +277,10 @@ export function EconomicInputForm({
 
         {activeSection === 'spending' && (
           <GovernmentSpending
-            spendingData={inputs.governmentSpending as any} // Type assertion to bypass type incompatibility
+            spendingData={inputs.governmentSpending}
             nominalGDP={inputs.coreIndicators.nominalGDP}
             totalPopulation={inputs.coreIndicators.totalPopulation}
-            onSpendingDataChangeAction={(spendingData: any) => handleGovernmentSpendingChange(spendingData as typeof inputs.governmentSpending)} // Type assertion for parameter
+            onSpendingDataChangeAction={(spendingData: GovernmentSpendingData) => handleGovernmentSpendingChange(spendingData)}
           />
         )}
 

@@ -253,7 +253,7 @@ export class IxStatsCalculator {
     tier: EconomicTier,
     yearsFromBaseline: number,
     dmInputs: DmInputRecord[],
-    localGrowthFactor: number = 1.0
+    localGrowthFactor = 1.0
   ): number {
     // Start with the base adjusted growth rate
     let effectiveGrowthRate = adjustedGrowthDecimal;
@@ -309,7 +309,7 @@ export class IxStatsCalculator {
       [EconomicTier.EXTRAVAGANT]: 0.005,    // 0.50%
     };
     
-    return maxRates[tier] || 0.05; // Default to 5% if tier not found
+    return maxRates[tier] ?? 0.05; // Default to 5% if tier not found
   }
 
   /**
@@ -442,7 +442,7 @@ export class IxStatsCalculator {
   }
 
   private applySpecialModifiers(stats: CountryStats, dmInputs: DmInputRecord[]): CountryStats {
-    let modifiedStats = { ...stats };
+    const modifiedStats = { ...stats };
     
     dmInputs.forEach(input => {
       const inputValue = this.validateGrowthRate(input.value);
@@ -535,7 +535,7 @@ export class IxStatsCalculator {
   getEffectiveGrowthRate(
     baseGrowthRate: number,
     tier: EconomicTier,
-    localGrowthFactor: number = 1.0
+    localGrowthFactor = 1.0
   ): { 
     baseRate: number; 
     withGlobalFactor: number; 

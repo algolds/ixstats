@@ -44,19 +44,6 @@ import {
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Separator } from "~/components/ui/separator";
-import {
-  Tooltip as UITooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "~/components/ui/tooltip";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
 import { Checkbox } from "~/components/ui/checkbox";
 import { IxTimeCalendar } from "./IxTimeCalendar";
 
@@ -180,7 +167,7 @@ export function IxStatsCharts({
       : [];
 
     // Combine historical and forecast data
-    const combined = [...historical, ...forecast].map(point => ({
+    const combined = [...historical, ...forecast].map((point, index) => ({
       ...point,
       // Scale values for better visualization
       populationM: point.population / 1000000,
@@ -188,6 +175,8 @@ export function IxStatsCharts({
       gdpPerCapitaK: point.gdpPerCapita / 1000,
       // Mark forecast points
       isForecast: point.ixTimeTimestamp > data.currentIxTime,
+      // Create unique key for chart
+      uniqueKey: `${point.gameYear}-${point.ixTimeTimestamp}-${index}`,
     }));
 
     return combined.sort((a, b) => a.ixTimeTimestamp - b.ixTimeTimestamp);
@@ -210,7 +199,7 @@ export function IxStatsCharts({
 
   // Custom tooltip component
   const CustomTooltip = ({ active, payload, label }: any) => {
-    if (!active || !payload || !payload.length) return null;
+    if (!active || !payload?.length) return null;
 
     const data = payload[0]?.payload;
     if (!data) return null;
@@ -382,64 +371,32 @@ export function IxStatsCharts({
         {/* Chart Controls */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
           {/* Chart Type Selector */}
-          <Select value={selectedChartType} onValueChange={onChartTypeChangeAction}>
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="overview">
-                <div className="flex items-center gap-2">
-                  <Activity className="h-4 w-4" />
-                  Overview
-                </div>
-              </SelectItem>
-              <SelectItem value="population">
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  Population
-                </div>
-              </SelectItem>
-              <SelectItem value="gdp">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" />
-                  GDP Analysis
-                </div>
-              </SelectItem>
-              <SelectItem value="growth">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  Growth Rates
-                </div>
-              </SelectItem>
-              <SelectItem value="density">
-                <div className="flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
-                  Density
-                </div>
-              </SelectItem>
-              <SelectItem value="efficiency">
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4" />
-                  Efficiency
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <select 
+            value={selectedChartType} 
+            onChange={(e) => onChartTypeChangeAction(e.target.value as ChartType)}
+            className="w-48 flex items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm"
+          >
+            <option value="overview">Overview</option>
+            <option value="population">Population</option>
+            <option value="gdp">GDP Analysis</option>
+            <option value="growth">Growth Rates</option>
+            <option value="density">Density</option>
+            <option value="efficiency">Efficiency</option>
+          </select>
 
           {/* Time Range Selector */}
-          <Select value={selectedTimeRange} onValueChange={onTimeRangeChangeAction}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1Y">1 Year</SelectItem>
-              <SelectItem value="5Y">5 Years</SelectItem>
-              <SelectItem value="10Y">10 Years</SelectItem>
-              <SelectItem value="15Y">15 Years</SelectItem>
-              <SelectItem value="ALL">All Time</SelectItem>
-              <SelectItem value="CUSTOM">Custom</SelectItem>
-            </SelectContent>
-          </Select>
+          <select
+            value={selectedTimeRange}
+            onChange={(e) => onTimeRangeChangeAction(e.target.value as TimeRange)}
+            className="w-32 flex items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm"
+          >
+            <option value="1Y">1 Year</option>
+            <option value="5Y">5 Years</option>
+            <option value="10Y">10 Years</option>
+            <option value="15Y">15 Years</option>
+            <option value="ALL">All Time</option>
+            <option value="CUSTOM">Custom</option>
+          </select>
 
           {/* Custom Time Range Controls */}
           {selectedTimeRange === 'CUSTOM' && onCustomTimeChangeAction && (
@@ -468,29 +425,20 @@ export function IxStatsCharts({
           {/* Series Visibility Controls */}
           <div className="flex flex-wrap gap-2">
             {currentConfig.series.map((series: any) => (
-              <TooltipProvider key={series.key}>
-                <UITooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id={series.key}
-                        checked={visibleSeries[series.key] ?? true}
-                        onCheckedChange={() => handleSeriesToggle(series.key)}
-                      />
-                      <label
-                        htmlFor={series.key}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        style={{ color: series.color }}
-                      >
-                        {series.name}
-                      </label>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Toggle {series.name} visibility</p>
-                  </TooltipContent>
-                </UITooltip>
-              </TooltipProvider>
+              <div key={series.key} className="flex items-center space-x-2" title={`Toggle ${series.name} visibility`}>
+                <Checkbox
+                  id={series.key}
+                  checked={visibleSeries[series.key] ?? true}
+                  onCheckedChange={() => handleSeriesToggle(series.key)}
+                />
+                <label
+                  htmlFor={series.key}
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  style={{ color: series.color }}
+                >
+                  {series.name}
+                </label>
+              </div>
             ))}
           </div>
 
@@ -500,9 +448,14 @@ export function IxStatsCharts({
               <ComposedChart data={processedData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} opacity={0.5} />
                 <XAxis 
-                  dataKey="gameYear" 
+                  dataKey="uniqueKey"
                   tick={{ fontSize: 12, fill: chartTheme.text }}
                   stroke={chartTheme.axis}
+                  tickFormatter={(value) => {
+                    // Extract gameYear from uniqueKey (format: gameYear-timestamp-index)
+                    const gameYear = value.split('-')[0];
+                    return gameYear;
+                  }}
                 />
                 
                 {currentConfig.yAxisLeft && (
@@ -529,13 +482,24 @@ export function IxStatsCharts({
                 <Legend />
 
                 {/* Reference line for current time */}
-                <ReferenceLine 
-                  x={IxTime.getCurrentGameYear(data.currentIxTime)} 
-                  stroke="#ef4444" 
-                  strokeDasharray="2 2"
-                  label="Present"
-                  yAxisId="left" // Adding yAxisId to fix the error
-                />
+                {(() => {
+                  const currentGameYear = IxTime.getCurrentGameYear(data.currentIxTime);
+                  const referencePoint = processedData.find(point => 
+                    Math.abs(point.gameYear - currentGameYear) < 0.1
+                  );
+                  if (referencePoint) {
+                    return (
+                      <ReferenceLine 
+                        x={referencePoint.uniqueKey} 
+                        stroke="#ef4444" 
+                        strokeDasharray="2 2"
+                        label="Present"
+                        yAxisId="left"
+                      />
+                    );
+                  }
+                  return null;
+                })()}
 
               {/* Render series based on configuration */}
 {currentConfig.series.map(series => {
@@ -587,11 +551,16 @@ export function IxStatsCharts({
 
                 {/* Brush for time navigation */}
                 <Brush 
-                  dataKey="gameYear" 
+                  dataKey="uniqueKey" 
                   height={30} 
                   stroke={chartTheme.axis}
                   fill={chartTheme.grid}
                   opacity={0.5}
+                  tickFormatter={(value) => {
+                    // Extract gameYear from uniqueKey (format: gameYear-timestamp-index)
+                    const gameYear = value.split('-')[0];
+                    return gameYear;
+                  }}
                 />
               </ComposedChart>
             </ResponsiveContainer>

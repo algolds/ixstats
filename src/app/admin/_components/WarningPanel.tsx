@@ -3,12 +3,32 @@
 
 import { AlertTriangle } from "lucide-react";
 
+interface IxTimeStatus {
+  isPaused: boolean;
+}
+
+interface SystemStatus {
+  ixTime?: IxTimeStatus;
+}
+
 interface WarningPanelProps {
-  systemStatus: any;
+  systemStatus: SystemStatus;
+}
+
+function hasIxTime(obj: unknown): obj is { ixTime: unknown } {
+  return typeof obj === 'object' && obj !== null && 'ixTime' in obj;
+}
+
+function hasIsPaused(obj: unknown): obj is { isPaused: boolean } {
+  return typeof obj === 'object' && obj !== null && 'isPaused' in obj;
 }
 
 export function WarningPanel({ systemStatus }: WarningPanelProps) {
-  if (!systemStatus?.ixTime?.isPaused) return null;
+  if (!hasIxTime(systemStatus)) {
+    return <div>No IxTime status available.</div>;
+  }
+  const ixTime = systemStatus.ixTime;
+  if (!hasIsPaused(ixTime) || !ixTime.isPaused) return null;
 
   return (
     <div className="bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-lg p-4 mt-6">

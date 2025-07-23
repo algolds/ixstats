@@ -4,7 +4,10 @@
 /**
  * Marks a function as a client-side callback to suppress Next.js warnings
  * about non-serializable props in "use client" components
+ *
+ * Note: If you need to support specific argument types, use a generic or overload as needed.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ClientCallback<T extends (...args: any[]) => any> = T & {
     readonly __clientCallback: true;
   };

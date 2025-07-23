@@ -1,8 +1,9 @@
 "use client";
+export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { useUser, SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { 
   Globe, 
@@ -15,7 +16,6 @@ import {
   CheckCircle,
   AlertCircle
 } from "lucide-react";
-import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 
 type SetupStep = 'welcome' | 'link-existing' | 'create-new' | 'complete';
 
@@ -98,23 +98,8 @@ export default function SetupPage() {
   const handleCreateCountry = async () => {
     if (!user?.id) return;
     
-    setIsCreating(true);
-    setError(null);
-    try {
-      const result = await createCountryMutation.mutateAsync({
-        userId: user.id,
-        countryName: `${user.firstName || user.username || 'New'}'s Country`,
-      });
-      
-      // Refetch profile to get updated data
-      await refetchProfile();
-      setCurrentStep('complete');
-    } catch (error) {
-      console.error('Failed to create country:', error);
-      setError(error instanceof Error ? error.message : 'Failed to create country');
-    } finally {
-      setIsCreating(false);
-    }
+    // Redirect to builder instead of immediately creating country
+    router.push('/builder');
   };
 
   const handleComplete = async () => {
@@ -153,7 +138,7 @@ export default function SetupPage() {
                     <Globe className="h-12 w-12 text-indigo-600 dark:text-indigo-400" />
                   </div>
                   <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                    Welcome to IxStats, {user?.firstName || user?.username}!
+                    Welcome to IxStats, {user?.firstName || 'User'}!
                   </h1>
                   <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
                     IxStats helps you track and manage economic data for your nation. 

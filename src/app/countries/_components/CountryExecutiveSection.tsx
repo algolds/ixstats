@@ -21,10 +21,22 @@ import {
   CheckCircle,
   Clock
 } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
+import { CabinetMeetingModal } from "~/components/modals/CabinetMeetingModal";
+import { EconomicPolicyModal } from "~/components/modals/EconomicPolicyModal";
+import { NationalSecurityModal } from "~/components/modals/NationalSecurityModal";
+import { TrendRiskAnalyticsModal } from "~/components/modals/TrendRiskAnalyticsModal";
 
 interface CountryExecutiveSectionProps {
   countryId: string;
   userId?: string;
+}
+
+interface CabinetMeeting {
+  id: string;
+  scheduledDate: string;
+  status: string;
+  // Add other fields as needed
 }
 
 export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveSectionProps) {
@@ -72,7 +84,7 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
     );
   }
 
-  const upcomingMeetings = cabinetMeetings?.filter((meeting: any) => 
+  const upcomingMeetings = cabinetMeetings?.filter((meeting: CabinetMeeting) => 
     new Date(meeting.scheduledDate) > new Date() && meeting.status === 'scheduled'
   ).slice(0, 3) || [];
 
@@ -119,30 +131,92 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <div className="mb-2">
-                  <span className="text-2xl font-bold text-purple-600">{realTimeMetrics.social}</span>
-                  <span className="text-sm text-muted-foreground ml-1">/100</span>
-                </div>
-                <Progress value={realTimeMetrics.social} className="mb-2" />
-                <p className="text-sm font-medium">Social Harmony</p>
-              </div>
-              <div className="text-center">
-                <div className="mb-2">
-                  <span className="text-2xl font-bold text-blue-600">{realTimeMetrics.security}</span>
-                  <span className="text-sm text-muted-foreground ml-1">/100</span>
-                </div>
-                <Progress value={realTimeMetrics.security} className="mb-2" />
-                <p className="text-sm font-medium">Security Index</p>
-              </div>
-              <div className="text-center">
-                <div className="mb-2">
-                  <span className="text-2xl font-bold text-green-600">{realTimeMetrics.political}</span>
-                  <span className="text-sm text-muted-foreground ml-1">/100</span>
-                </div>
-                <Progress value={realTimeMetrics.political} className="mb-2" />
-                <p className="text-sm font-medium">Political Stability</p>
-              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="text-center p-4 rounded-lg border bg-background hover:bg-accent/50 transition-all duration-300 hover:scale-105 cursor-pointer group">
+                    <div className="mb-3">
+                      <span className="text-3xl font-bold text-purple-600 group-hover:text-purple-500 transition-colors">{realTimeMetrics.social || 0}</span>
+                      <span className="text-sm text-muted-foreground ml-1">/100</span>
+                    </div>
+                    <Progress value={realTimeMetrics.social || 0} className="mb-3 h-2" />
+                    <p className="text-sm font-medium group-hover:text-purple-600 transition-colors">Social Harmony</p>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  <div className="space-y-2">
+                    <div className="font-semibold text-purple-300">Social Harmony Index</div>
+                    <div className="text-xs text-white/80">
+                      Measures citizen satisfaction, social cohesion, and quality of life indicators.
+                      Includes factors like education access, healthcare quality, and social programs effectiveness.
+                    </div>
+                    <div className="text-xs text-purple-200">
+                      Current Score: {realTimeMetrics.social || 0}/100
+                      {(realTimeMetrics.social || 0) >= 80 && " (Excellent)"}
+                      {(realTimeMetrics.social || 0) >= 60 && (realTimeMetrics.social || 0) < 80 && " (Good)"}
+                      {(realTimeMetrics.social || 0) >= 40 && (realTimeMetrics.social || 0) < 60 && " (Fair)"}
+                      {(realTimeMetrics.social || 0) < 40 && " (Needs Attention)"}
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="text-center p-4 rounded-lg border bg-background hover:bg-accent/50 transition-all duration-300 hover:scale-105 cursor-pointer group">
+                    <div className="mb-3">
+                      <span className="text-3xl font-bold text-blue-600 group-hover:text-blue-500 transition-colors">{realTimeMetrics.security || 0}</span>
+                      <span className="text-sm text-muted-foreground ml-1">/100</span>
+                    </div>
+                    <Progress value={realTimeMetrics.security || 0} className="mb-3 h-2" />
+                    <p className="text-sm font-medium group-hover:text-blue-600 transition-colors">Security Index</p>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  <div className="space-y-2">
+                    <div className="font-semibold text-blue-300">National Security Index</div>
+                    <div className="text-xs text-white/80">
+                      Evaluates national defense capabilities, internal security, and threat assessment.
+                      Includes military readiness, intelligence operations, and border security.
+                    </div>
+                    <div className="text-xs text-blue-200">
+                      Current Score: {realTimeMetrics.security || 0}/100
+                      {(realTimeMetrics.security || 0) >= 80 && " (Very Secure)"}
+                      {(realTimeMetrics.security || 0) >= 60 && (realTimeMetrics.security || 0) < 80 && " (Secure)"}
+                      {(realTimeMetrics.security || 0) >= 40 && (realTimeMetrics.security || 0) < 60 && " (Moderate)"}
+                      {(realTimeMetrics.security || 0) < 40 && " (At Risk)"}
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="text-center p-4 rounded-lg border bg-background hover:bg-accent/50 transition-all duration-300 hover:scale-105 cursor-pointer group">
+                    <div className="mb-3">
+                      <span className="text-3xl font-bold text-green-600 group-hover:text-green-500 transition-colors">{realTimeMetrics.political || 0}</span>
+                      <span className="text-sm text-muted-foreground ml-1">/100</span>
+                    </div>
+                    <Progress value={realTimeMetrics.political || 0} className="mb-3 h-2" />
+                    <p className="text-sm font-medium group-hover:text-green-600 transition-colors">Political Stability</p>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  <div className="space-y-2">
+                    <div className="font-semibold text-green-300">Political Stability Index</div>
+                    <div className="text-xs text-white/80">
+                      Assesses government effectiveness, policy consistency, and institutional strength.
+                      Includes democratic processes, corruption levels, and administrative efficiency.
+                    </div>
+                    <div className="text-xs text-green-200">
+                      Current Score: {realTimeMetrics.political || 0}/100
+                      {(realTimeMetrics.political || 0) >= 80 && " (Very Stable)"}
+                      {(realTimeMetrics.political || 0) >= 60 && (realTimeMetrics.political || 0) < 80 && " (Stable)"}
+                      {(realTimeMetrics.political || 0) >= 40 && (realTimeMetrics.political || 0) < 60 && " (Unstable)"}
+                      {(realTimeMetrics.political || 0) < 40 && " (Very Unstable)"}
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </CardContent>
         </Card>
@@ -161,16 +235,16 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
           <CardContent>
             {upcomingMeetings.length > 0 ? (
               <div className="space-y-3">
-                {upcomingMeetings.map((meeting: any) => (
+                {upcomingMeetings.map((meeting: CabinetMeeting) => (
                   <div key={meeting.id} className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-1">{meeting.title}</h4>
+                    <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-1">{(meeting as any).title || 'Cabinet Meeting'}</h4>
                     <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-400">
                       <Clock className="h-4 w-4" />
                       {new Date(meeting.scheduledDate).toLocaleString()}
                     </div>
-                    {meeting.agenda && meeting.agenda.length > 0 && (
+                    {(meeting as any).agenda && (meeting as any).agenda.length > 0 && (
                       <p className="text-xs text-blue-600 dark:text-blue-500 mt-1">
-                        {meeting.agenda.length} agenda items
+                        {(meeting as any).agenda.length} agenda items
                       </p>
                     )}
                   </div>
@@ -200,17 +274,17 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
                 {activePolicies.map((policy: any) => (
                   <div key={policy.id} className="p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
                     <div className="flex justify-between items-start mb-1">
-                      <h4 className="font-semibold text-green-900 dark:text-green-300">{policy.title}</h4>
+                      <h4 className="font-semibold text-green-900 dark:text-green-300">{policy.title || 'Economic Policy'}</h4>
                       <Badge 
                         variant="outline" 
                         className="text-green-700 border-green-400"
                       >
-                        {policy.category}
+                        {policy.category || 'General'}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
                       <CheckCircle className="h-4 w-4" />
-                      {policy.status}
+                      {policy.status || 'Active'}
                     </div>
                   </div>
                 ))}
@@ -239,7 +313,7 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
                 {activePlans.map((plan: any) => (
                   <div key={plan.id} className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
                     <div className="flex justify-between items-start mb-1">
-                      <h4 className="font-semibold text-purple-900 dark:text-purple-300">{plan.title}</h4>
+                      <h4 className="font-semibold text-purple-900 dark:text-purple-300">{plan.title || 'Strategic Plan'}</h4>
                       <Badge 
                         variant="outline" 
                         className={
@@ -249,11 +323,11 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
                           'text-green-700 border-green-400'
                         }
                       >
-                        {plan.priority}
+                        {plan.priority || 'medium'}
                       </Badge>
                     </div>
                     <div className="text-sm text-purple-700 dark:text-purple-400">
-                      {plan.timeframe.replace('_', ' ')} • {plan.objectives?.length || 0} objectives
+                      {(plan.timeframe || 'ongoing').replace('_', ' ')} • {plan.objectives?.length || 0} objectives
                     </div>
                   </div>
                 ))}
@@ -282,7 +356,7 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
                 {activeThreats.map((threat: any) => (
                   <div key={threat.id} className="p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
                     <div className="flex justify-between items-start mb-1">
-                      <h4 className="font-semibold text-red-900 dark:text-red-300">{threat.title}</h4>
+                      <h4 className="font-semibold text-red-900 dark:text-red-300">{threat.title || 'Security Threat'}</h4>
                       <Badge 
                         variant="destructive"
                         className={
@@ -291,12 +365,12 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
                           threat.severity === 'medium' ? 'bg-yellow-600' : 'bg-blue-600'
                         }
                       >
-                        {threat.severity}
+                        {threat.severity || 'medium'}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-red-700 dark:text-red-400">
                       <AlertTriangle className="h-4 w-4" />
-                      {threat.category}
+                      {threat.category || 'General'}
                     </div>
                   </div>
                 ))}
@@ -325,12 +399,12 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
               <div className="space-y-3">
                 {highPriorityRecommendations.map((rec: any) => (
                   <div key={rec.id} className="p-3 bg-cyan-50 dark:bg-cyan-950/20 rounded-lg border border-cyan-200 dark:border-cyan-800">
-                    <h4 className="font-semibold text-cyan-900 dark:text-cyan-300 mb-1">{rec.title}</h4>
-                    <p className="text-sm text-cyan-700 dark:text-cyan-400 mb-2">{rec.description}</p>
+                    <h4 className="font-semibold text-cyan-900 dark:text-cyan-300 mb-1">{rec.title || 'AI Recommendation'}</h4>
+                    <p className="text-sm text-cyan-700 dark:text-cyan-400 mb-2">{rec.description || 'No description available'}</p>
                     <div className="flex justify-between items-center text-xs text-cyan-600 dark:text-cyan-500">
-                      <span>{rec.category}</span>
+                      <span>{rec.category || 'General'}</span>
                       <Badge variant="outline" className="text-red-700 border-red-400">
-                        {rec.priority}
+                        {rec.priority || 'high'}
                       </Badge>
                     </div>
                   </div>
@@ -353,24 +427,36 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <Button 
-                variant="outline" 
-                className="w-full justify-start" 
-                size="sm"
-                onClick={() => window.open('/eci', '_blank')}
-              >
-                <Calendar className="h-4 w-4 mr-2" />
-                Schedule Cabinet Meeting
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full justify-start" 
-                size="sm"
-                onClick={() => window.open('/eci', '_blank')}
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Create Economic Policy
-              </Button>
+              <CabinetMeetingModal>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start" 
+                  size="sm"
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Schedule Cabinet Meeting
+                </Button>
+              </CabinetMeetingModal>
+              <EconomicPolicyModal>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start" 
+                  size="sm"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Create Economic Policy
+                </Button>
+              </EconomicPolicyModal>
+              <NationalSecurityModal>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start" 
+                  size="sm"
+                >
+                  <Shield className="h-4 w-4 mr-2" />
+                  Security Dashboard
+                </Button>
+              </NationalSecurityModal>
               <Button 
                 variant="outline" 
                 className="w-full justify-start" 
@@ -380,6 +466,16 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
                 <Target className="h-4 w-4 mr-2" />
                 New Strategic Plan
               </Button>
+              <TrendRiskAnalyticsModal countryId={countryId}>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start" 
+                  size="sm"
+                >
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Analytics Dashboard
+                </Button>
+              </TrendRiskAnalyticsModal>
               <Button 
                 variant="outline" 
                 className="w-full justify-start" 

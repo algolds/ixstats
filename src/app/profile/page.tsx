@@ -4,6 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
+
+// Force dynamic rendering to avoid SSG issues with Clerk
+export const dynamic = 'force-dynamic';
+
+// Check if Clerk is configured
+const isClerkConfigured = Boolean(
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith('pk_')
+);
 import { 
   User, 
   Crown, 
@@ -25,14 +33,16 @@ import {
   Key,
   Palette,
   Eye,
-  EyeOff
+  EyeOff,
+  Upload,
+  Flag
 } from "lucide-react";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { CountryFlag } from "~/app/_components/CountryFlag";
 import { useTheme } from "~/context/theme-context";
 
-export default function ProfilePage() {
+function ProfileContent() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
@@ -40,6 +50,8 @@ export default function ProfilePage() {
   const [newCountryName, setNewCountryName] = useState("");
   const [showPreferences, setShowPreferences] = useState(false);
   const [showAccountInfo, setShowAccountInfo] = useState(false);
+  const [flagUploadMode, setFlagUploadMode] = useState(false);
+  const [uploadedFlagUrl, setUploadedFlagUrl] = useState<string | null>(null);
 
   // Get user profile
   const { data: userProfile, isLoading: profileLoading, refetch: refetchProfile } = api.users.getProfile.useQuery(
@@ -65,6 +77,37 @@ export default function ProfilePage() {
     } catch (error) {
       console.error('Failed to update country name:', error);
     }
+  };
+
+  const handleFlagUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Simple validation
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    // Create a temporary URL for preview
+    const tempUrl = URL.createObjectURL(file);
+    setUploadedFlagUrl(tempUrl);
+    
+    // Here you would typically upload to a server
+    // For now, we'll just show the preview
+    console.log('Flag uploaded:', file.name);
+  };
+
+  const handleFlagSave = () => {
+    // Here you would save the flag to the backend
+    setFlagUploadMode(false);
+    // In a real implementation, you'd call an API to save the flag
+    console.log('Flag saved for country:', userProfile?.country?.name);
   };
 
   const getSetupStatus = () => {
@@ -275,27 +318,101 @@ export default function ProfilePage() {
                         ) : (
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              <CountryFlag 
-                                countryName={userProfile.country.name} 
-                                size="md" 
-                                className="rounded shadow-sm"
-                              />
+                              {uploadedFlagUrl ? (
+                                <img 
+                                  src={uploadedFlagUrl} 
+                                  alt="Custom flag" 
+                                  className="h-6 w-auto rounded shadow-sm"
+                                />
+                              ) : (
+                                <CountryFlag 
+                                  countryName={userProfile.country.name} 
+                                  size="md" 
+                                  className="rounded shadow-sm"
+                                />
+                              )}
                               <p className="text-gray-900 dark:text-white">
                                 {userProfile.country.name}
                               </p>
                             </div>
-                            <button
-                              onClick={() => {
-                                setIsEditingCountry(true);
-                                setNewCountryName(userProfile.country?.name ?? "");
-                              }}
-                              className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300"
-                            >
-                              <Edit3 className="h-4 w-4" />
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => setFlagUploadMode(!flagUploadMode)}
+                                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                                title="Upload custom flag"
+                              >
+                                <Flag className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setIsEditingCountry(true);
+                                  setNewCountryName(userProfile.country?.name ?? "");
+                                }}
+                                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300"
+                                title="Edit country name"
+                              >
+                                <Edit3 className="h-4 w-4" />
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
+
+                      {/* Flag Upload Section */}
+                      {flagUploadMode && (
+                        <div className="border border-blue-200 dark:border-blue-800 rounded-lg p-4 bg-blue-50 dark:bg-blue-900/20">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Flag className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            <h4 className="font-medium text-blue-900 dark:text-blue-100">Custom Flag Upload</h4>
+                          </div>
+                          <p className="text-sm text-blue-700 dark:text-blue-300 mb-4">
+                            Upload a custom flag for your country. This will override the automatic wiki flag if found.
+                          </p>
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-3">
+                              <label className="cursor-pointer">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={handleFlagUpload}
+                                  className="hidden"
+                                />
+                                <div className="flex items-center gap-2 px-3 py-2 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 rounded-md hover:bg-blue-200 dark:hover:bg-blue-700 transition-colors">
+                                  <Upload className="h-4 w-4" />
+                                  <span className="text-sm font-medium">Choose File</span>
+                                </div>
+                              </label>
+                              {uploadedFlagUrl && (
+                                <div className="flex items-center gap-2">
+                                  <img 
+                                    src={uploadedFlagUrl} 
+                                    alt="Flag preview" 
+                                    className="h-8 w-auto rounded border shadow-sm"
+                                  />
+                                  <button
+                                    onClick={handleFlagSave}
+                                    className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded"
+                                  >
+                                    Save
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setUploadedFlagUrl(null);
+                                      setFlagUploadMode(false);
+                                    }}
+                                    className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-sm rounded"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-xs text-blue-600 dark:text-blue-400">
+                              Supported formats: PNG, JPG, SVG • Max size: 5MB • Recommended dimensions: 2:3 ratio
+                            </p>
+                          </div>
+                        </div>
+                      )}
                       
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -515,4 +632,40 @@ export default function ProfilePage() {
       </SignedOut>
     </>
   );
+}
+
+export default function ProfilePage() {
+  // Show message when Clerk is not configured
+  if (!isClerkConfigured) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center max-w-2xl mx-auto">
+          <User className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+          <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Authentication Not Configured</h1>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            User authentication is not set up for this application. Please contact an administrator 
+            to configure authentication or browse the public dashboard.
+          </p>
+          <div className="flex gap-4 justify-center">
+            <Link 
+              href="/dashboard"
+              className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium"
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              View Dashboard
+            </Link>
+            <Link 
+              href="/countries"
+              className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md font-medium"
+            >
+              <Globe className="h-4 w-4 mr-2" />
+              Browse Countries
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return <ProfileContent />;
 } 

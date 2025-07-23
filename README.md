@@ -1,218 +1,217 @@
-# IxStats - Interactive Economic Statistics Platform
+# IxStats - Economic Statistics Platform
 
 A comprehensive web application for managing, analyzing, and visualizing economic data for fictional nations and real-world countries. Built for tabletop RPG campaigns, world-building, and economic simulation.
-
-## 🌟 Features
-
-### 📊 **Dashboard & Analytics**
-- **Global Statistics Overview**: Real-time population, GDP, and economic metrics
-- **Interactive Charts**: Population density, GDP density, and economic tier distributions
-- **Country Leaderboards**: Top performers across various economic indicators
-- **Activity Feed**: Live updates on economic milestones and tier changes
-- **Tier Visualizations**: Economic and population tier breakdowns
-
-### 🌍 **Country Management**
-- **Browse Countries**: Search, filter, and sort 180+ countries by various criteria
-- **Detailed Country Pages**: Comprehensive economic profiles with historical data
-- **Economic Data Display**: Core indicators, labor markets, fiscal systems, demographics
-- **Comparative Analysis**: Compare countries across multiple economic metrics
-- **Historical Tracking**: View economic changes over time with interactive charts
-
-### 🏗️ **Country Builder**
-- **Real-World Foundation**: Start with data from 180+ real countries
-- **Complete Customization**: Modify every economic aspect of your nation
-- **Economic Health Scoring**: Real-time analysis and recommendations
-- **Interactive Preview**: Comprehensive country preview before finalization
-- **Validation System**: Error checking and economic sustainability metrics
-
-### 🎮 **DM Controls**
-- **Economic Modifiers**: Adjust population, GDP, and growth rates
-- **Special Events**: Natural disasters, trade agreements, economic policies
-- **Time-Based Effects**: Duration-based modifications with automatic expiration
-- **Global vs Local**: Apply changes to specific countries or globally
-- **Quick Actions**: Preset modifications for common scenarios
-
-### ⚙️ **Admin Panel**
-- **System Configuration**: Global growth factors, time multipliers, auto-updates
-- **Bot Integration**: Discord bot synchronization for time management
-- **Data Import**: Excel roster import with validation and preview
-- **Time Control**: Custom time settings and IxTime management
-- **Calculation Logs**: Track system performance and updates
-
-### 🕐 **IxTime System**
-- **Custom Time Flow**: Configurable time multipliers (0x to 10x speed)
-- **Discord Bot Sync**: Real-time synchronization with Discord bot
-- **Historical Projections**: Forecast economic changes over time
-- **Time-Based Calculations**: Automatic updates based on elapsed time
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Node.js 18.17.0 or higher
 - npm 9.0.0 or higher
-- PostgreSQL database (for production)
+- SQLite (development) / PostgreSQL (production)
 
-### Installation
+### Development Setup
 
-1. **Clone the repository**
+1. **Clone and install**
    ```bash
    git clone <repository-url>
    cd ixstats
-   ```
-
-2. **Install dependencies**
-   ```bash
    npm install
    ```
 
-3. **Set up environment variables**
+2. **Set up environment**
    ```bash
    cp .env.example .env.local
    # Edit .env.local with your configuration
    ```
 
-4. **Set up the database**
+3. **Initialize database**
    ```bash
    npm run db:setup
    ```
 
-5. **Start the development server**
+4. **Start development server**
    ```bash
    npm run dev
    ```
+   - Runs on port 3002 (port 3000 is used by time bot)
+   - Access at: http://localhost:3003/
 
-6. **Open your browser**
-   Navigate to `http://localhost:3000`
+### Production Deployment
 
-## 📁 Project Structure
+1. **Build application**
+   ```bash
+   npm run build
+   ```
 
-```
-src/
-├── app/                          # Next.js app directory
-│   ├── _components/              # Shared components
-│   │   ├── ActivityFeed.tsx      # Live activity updates
-│   │   ├── CommandCenter.tsx     # Main dashboard layout
-│   │   ├── FeaturedArticle.tsx   # Wiki article integration
-│   │   ├── GlobalStatsOverview.tsx # Global statistics display
-│   │   ├── LeaderboardsSection.tsx # Country rankings
-│   │   ├── LiveGameBanner.tsx    # Time and status banner
-│   │   ├── TierVisualization.tsx # Economic tier charts
-│   │   └── navigation.tsx        # Main navigation
-│   ├── admin/                    # Admin panel
-│   │   ├── _components/          # Admin-specific components
-│   │   └── page.tsx              # Admin dashboard
-│   ├── builder/                  # Country creation tool
-│   │   ├── components/           # Builder components
-│   │   └── page.tsx              # Builder interface
-│   ├── countries/                # Country management
-│   │   ├── _components/          # Country components
-│   │   ├── [id]/                 # Individual country pages
-│   │   └── page.tsx              # Countries listing
-│   ├── dashboard/                # Main dashboard
-│   │   ├── _components/          # Dashboard components
-│   │   └── page.tsx              # Dashboard interface
-│   └── dm-dashboard/             # DM controls
-│       └── page.tsx              # DM interface
-├── components/                   # UI components
-│   └── ui/                       # Shadcn/ui components
-├── lib/                          # Utility libraries
-│   ├── calculations.ts           # Economic calculations
-│   ├── chart-utils.ts            # Chart formatting utilities
-│   ├── config-service.ts         # Configuration management
-│   ├── data-parser.ts            # Excel data parsing
-│   ├── ixtime.ts                 # Time management system
-│   └── mediawiki-service.ts      # Wiki integration
-├── server/                       # Backend API
-│   ├── api/                      # tRPC API routes
-│   └── db/                       # Database schema
-├── types/                        # TypeScript type definitions
-└── trpc/                         # tRPC configuration
-```
+2. **Start production server**
+   ```bash
+   npm run start:prod
+   ```
+   - Runs on port 3550 with `/projects/ixstats` base path
+   - Access at: http://localhost:3550/projects/ixstats
 
-## 🎯 Core Systems
+3. **One-command deployment**
+   ```bash
+   npm run deploy:prod
+   ```
 
-### Economic Calculation Engine
-- **Tier-Based Growth**: Economic tiers with different growth rate caps
-- **Population Dynamics**: Realistic population growth modeling
-- **GDP Calculations**: Per-capita and total GDP projections
-- **Density Metrics**: Population and GDP density calculations
-- **Historical Tracking**: Time-series data for analysis
+## 📋 Essential Commands
 
-### Time Management (IxTime)
-- **Custom Time Flow**: Configurable time multipliers
-- **Discord Bot Integration**: Real-time synchronization
-- **Historical Projections**: Future economic forecasting
-- **Time-Based Events**: Automatic calculation updates
-
-### Data Import System
-- **Excel Support**: Import country rosters from Excel files
-- **Validation**: Data validation and error checking
-- **Preview System**: Review changes before import
-- **Batch Processing**: Handle large datasets efficiently
-
-### Wiki Integration
-- **MediaWiki API**: Fetch country information and flags
-- **Infobox Parsing**: Extract structured data from wiki pages
-- **Template Processing**: Handle complex wiki templates
-- **Caching System**: Optimize API calls and performance
-
-## 🛠️ Development
-
-### Available Scripts
-
+### Development
 ```bash
-# Development
-npm run dev              # Start development server
+npm run dev              # Start development server (port 3002)
+npm run dev:simple       # Start without validation checks
+npm run dev:auth         # Start with Clerk authentication emphasis
+npm run dev:db           # Setup database and start development
+```
+
+### Production
+```bash
 npm run build            # Build for production
-npm run start            # Start production server
-npm run preview          # Preview production build
+npm run start:prod       # Start production server (port 3550)
+npm run deploy:prod      # Build and start production server
+npm run preview          # Build and preview locally
+```
 
-# Database
-npm run db:setup         # Set up database
-npm run db:migrate       # Run migrations
-npm run db:studio        # Open Prisma Studio
-npm run db:seed          # Seed database
-npm run db:backup        # Backup database
-npm run db:restore       # Restore database
-
-# Code Quality
+### Code Quality
+```bash
+npm run check            # Full check (lint + typecheck)
 npm run lint             # Run ESLint
 npm run lint:fix         # Fix linting issues
 npm run typecheck        # TypeScript type checking
+npm run format:write     # Format code with Prettier
 npm run format:check     # Check code formatting
-npm run format:write     # Format code
+```
 
-# Testing
+### Database
+```bash
+npm run db:setup         # Full database setup (generate + push + init)
+npm run db:generate      # Generate Prisma client
+npm run db:push          # Push schema changes to database
+npm run db:migrate       # Run database migrations
+npm run db:init          # Initialize database with data
+npm run db:reset         # Reset database (force)
+npm run db:studio        # Open Prisma Studio
+npm run db:seed          # Seed database with sample data
+npm run db:backup        # Backup database
+npm run db:restore       # Restore database from backup
+```
+
+### Authentication
+```bash
+npm run auth:check       # Check authentication configuration
+npm run auth:check:dev   # Check development auth config
+npm run auth:check:prod  # Check production auth config
+npm run clerk:setup      # Interactive Clerk setup for development
+```
+
+### Testing & Utilities
+```bash
 npm run test             # Run tests
 npm run test:watch       # Watch mode tests
 npm run test:coverage    # Test coverage
-
-# Utilities
 npm run clean            # Clean build artifacts
+npm run clean:all        # Clean everything (including node_modules)
 npm run fresh            # Fresh install and setup
+npm run validate:servers # Validate server configurations
 ```
+
+## 🏗️ Architecture
+
+### Tech Stack
+- **Framework**: Next.js 15 with App Router
+- **Database**: SQLite (development) / PostgreSQL (production) with Prisma ORM
+- **API**: tRPC for type-safe API layer
+- **Authentication**: Clerk (optional)
+- **UI**: Tailwind CSS with Radix UI components
+- **Time System**: Custom IxTime for game world simulation
+- **Charts**: Recharts for data visualization
+
+### Project Structure
+```
+src/
+├── app/                    # Next.js app directory
+│   ├── _components/        # Shared global components
+│   ├── admin/             # Admin panel with system controls
+│   ├── builder/           # Country creation/customization tool
+│   ├── countries/         # Country browsing and detailed views
+│   ├── dashboard/         # Main analytics dashboard
+│   ├── dm-dashboard/      # Dungeon Master controls
+│   └── sdi/               # Strategic Defense Initiative modules
+├── components/            # Reusable UI components
+│   └── ui/                # Shadcn/ui components
+├── lib/                   # Core utilities and services
+│   ├── calculations.ts    # Economic modeling engine
+│   ├── ixtime.ts         # Time management system
+│   ├── data-parser.ts    # Excel import handling
+│   └── mediawiki-service.ts # Wiki integration
+├── server/               # Backend API (tRPC)
+│   └── api/routers/      # API route definitions
+├── types/                # TypeScript type definitions
+└── prisma/              # Database schema and migrations
+```
+
+## 🎯 Core Features
+
+### Dashboard & Analytics
+- Global statistics overview with real-time metrics
+- Interactive charts for population and GDP analysis
+- Country leaderboards and tier classifications
+- Activity feed with live economic milestone updates
+
+### Country Management
+- Browse and search 180+ countries with advanced filtering
+- Detailed country pages with comprehensive economic profiles
+- Historical data tracking with interactive charts
+- Comparative analysis across multiple economic metrics
+
+### Economic Modeling
+- **IxTime System**: Custom time flow with configurable multipliers (0x to 10x)
+- **Tier-Based Growth**: 7 economic tiers with different growth rate caps
+- **Real-time Calculations**: Automatic updates based on elapsed time
+- **DM Controls**: Economic modifiers for special events and policies
+
+### Data Management
+- Excel roster import with validation and preview
+- MediaWiki integration for country information and flags
+- Historical data projection and forecasting
+- Automated calculation logging and performance tracking
+
+## 🔧 Configuration
 
 ### Environment Variables
 
+#### Required (All Environments)
 ```bash
-# Database
-DATABASE_URL="postgresql://..."
+DATABASE_URL="file:./dev.db"  # Development
+DATABASE_URL="file:./prisma/prod.db"  # Production
 
-# Authentication (if using Clerk)
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="..."
-CLERK_SECRET_KEY="..."
-
-# MediaWiki Integration
-MEDIAWIKI_API_URL="https://ixwiki.com/api.php"
-MEDIAWIKI_BASE_URL="https://ixwiki.com"
-
-# Discord Bot Integration
-DISCORD_BOT_API_URL="http://localhost:3001"
+NODE_ENV="development"  # or "production"
 ```
 
-## 📊 Economic Tiers
+#### Optional - Authentication (Clerk)
+```bash
+# Development Keys
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."
+CLERK_SECRET_KEY="sk_test_..."
 
-### Economic Tiers (GDP per Capita)
+# Production Keys
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_live_..."
+CLERK_SECRET_KEY="sk_live_..."
+```
+
+#### Optional - External Services
+```bash
+NEXT_PUBLIC_MEDIAWIKI_URL="https://ixwiki.com/"
+IXTIME_BOT_URL="http://localhost:3001"
+DISCORD_BOT_TOKEN="..."
+DISCORD_CLIENT_ID="..."
+DISCORD_GUILD_ID="..."
+```
+
+### Economic Tiers
+
+#### Economic Tiers (GDP per Capita)
 - **Impoverished**: $0-$9,999 (10% max growth)
 - **Developing**: $10,000-$24,999 (7.50% max growth)
 - **Developed**: $25,000-$34,999 (5% max growth)
@@ -221,75 +220,154 @@ DISCORD_BOT_API_URL="http://localhost:3001"
 - **Very Strong**: $55,000-$64,999 (1.50% max growth)
 - **Extravagant**: $65,000+ (0.50% max growth)
 
-### Population Tiers
-- **Tier 1**: 0-9,999,999
-- **Tier 2**: 10,000,000-29,999,999
-- **Tier 3**: 30,000,000-49,999,999
-- **Tier 4**: 50,000,000-79,999,999
-- **Tier 5**: 80,000,000-119,999,999
-- **Tier 6**: 120,000,000-349,999,999
-- **Tier 7**: 350,000,000-499,999,999
-- **Tier X**: 500,000,000+
+#### Population Tiers
+- **Tier 1**: 0-9.9M people
+- **Tier 2**: 10-29.9M people
+- **Tier 3**: 30-49.9M people
+- **Tier 4**: 50-79.9M people
+- **Tier 5**: 80-119.9M people
+- **Tier 6**: 120-349.9M people
+- **Tier 7**: 350-499.9M people
+- **Tier X**: 500M+ people
 
-## 🔧 Configuration
+## 🚦 Environment-Specific Settings
 
-### System Configuration
-- **Global Growth Factor**: Adjust overall economic growth (0.5x to 2.0x)
-- **Time Multiplier**: Control time flow speed (0x to 10x)
-- **Auto Updates**: Enable automatic calculations
-- **Bot Sync**: Discord bot time synchronization
+### Development (Port 3002)
+- **URL**: http://localhost:3003/
+- **Base Path**: `/` (root)
+- **Database**: `dev.db`
+- **Hot Reload**: Enabled with Turbopack
+- **Authentication**: Clerk test keys or demo mode
 
-### Economic Settings
-- **Base Inflation Rate**: Default inflation for calculations
-- **Tier Growth Modifiers**: Custom growth rates per tier
-- **Calculation Intervals**: Frequency of automatic updates
+### Production (Port 3550)
+- **URL**: http://localhost:3550/projects/ixstats
+- **Base Path**: `/projects/ixstats`
+- **Database**: `prisma/prod.db`
+- **Authentication**: Clerk production keys or disabled
+- **Reverse Proxy**: Required for external access
 
-## 🚀 Deployment
+## 🛠️ Development Guidelines
 
-### Production Build
+### Time System Integration
+- Always use `IxTime.getCurrentIxTime()` for current game time
+- Use `IxTime.getYearsSinceGameEpoch()` for time elapsed calculations
+- Store timestamps as IxTime values, not real-world time
+- Economic calculations should reference IxTime epochs
+
+### Database Operations
+- Use Prisma ORM for all database interactions
+- Historical data points created for significant calculations
+- DM inputs have duration and expiration logic
+- Always update `lastCalculated` timestamps
+
+### API Development
+- Use tRPC for type-safe APIs
+- Follow existing router patterns in `src/server/api/routers/`
+- Include proper error handling and validation
+- Document complex economic calculation endpoints
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+#### Port Conflicts
+- **Problem**: Port 3000 already in use (time bot)
+- **Solution**: Development server uses port 3002 automatically
+
+#### Authentication Issues
+- **Problem**: Clerk "Invalid host" errors
+- **Solution**: Run `npm run clerk:setup` or check keys in `.env.local`
+- **Check Config**: Run `npm run auth:check:dev`
+
+#### Database Problems
+- **Problem**: Database not found
+- **Solution**: Run `npm run db:setup` to initialize
+- **Reset**: Use `npm run db:reset` to start fresh
+
+#### Build Errors
+- **Problem**: TypeScript errors preventing build
+- **Solution**: Run `npm run typecheck` to identify issues
+- **Quick Fix**: Use `npm run build:no-check` temporarily
+
+### Server Management
+
+#### Check Running Servers
 ```bash
-npm run build
-npm run start
+# Development server (port 3002)
+netstat -tlnp | grep :3003
+
+# Production server (port 3550)
+netstat -tlnp | grep :3550
+
+# Time bot (port 3000)
+netstat -tlnp | grep :3000
 ```
 
-### Docker Deployment
+#### Stop Servers
 ```bash
-docker build -t ixstats .
-docker run -p 3000:3000 ixstats
+# Stop development server
+kill $(lsof -ti:3003)
+
+# Stop production server
+kill $(lsof -ti:3550)
 ```
 
-### Environment Setup
-1. Set up PostgreSQL database
-2. Configure environment variables
-3. Run database migrations
-4. Import initial country data
-5. Configure Discord bot integration (optional)
+#### Background Server
+```bash
+# Start production server in background
+nohup npm run start:prod > server.log 2>&1 &
 
-## 🤝 Contributing
+# View logs
+tail -f server.log
+```
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+## 🎮 System Features
 
-## 📝 License
+### Admin Panel
+- System configuration and global growth factors
+- User management and role assignments
+- Data import with Excel file validation
+- Calculation logs and performance monitoring
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+### DM Dashboard
+- Economic policy modifications with duration
+- Special event creation (disasters, trade agreements)
+- Population and GDP adjustments
+- Time-based effect management
 
-## 🆘 Support
+### Country Builder
+- Start with real-world country data
+- Complete economic profile customization
+- Real-time validation and sustainability metrics
+- Economic health scoring and recommendations
 
-For support and questions:
-- Check the documentation in `/docs`
-- Review existing issues on GitHub
-- Create a new issue for bugs or feature requests
+### Strategic Defense Initiative (SDI)
+- Intelligence feed management
+- Crisis event tracking
+- Diplomatic relation monitoring
+- Economic indicator analysis
 
-## 🔗 Related Projects
+## 📊 Performance & Monitoring
+
+### Built-in Monitoring
+- Page load timing tracking
+- API response time measurement
+- Database query performance logging
+- Component render optimization
+
+### Calculation Logging
+- Economic calculation execution tracking
+- Performance benchmarking
+- Error logging and debugging
+- System health indicators
+
+## 🔗 Related Systems
 
 - **IxWiki**: MediaWiki integration for country information
-- **Discord Bot**: Time synchronization and server management
-- **IxMaps**: Interactive mapping system for countries
+- **Discord Time Bot**: Synchronization for time management
+- **IxMaps**: Interactive mapping system integration
+- **IxTime API**: Game world time coordination
 
 ---
 
-**IxStats** - Empowering world-builders and game masters with comprehensive economic simulation tools.
+**IxStats** - Comprehensive economic simulation and analysis platform for world-builders and game masters.

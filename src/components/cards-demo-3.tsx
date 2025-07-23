@@ -1,5 +1,5 @@
 "use client";
-import { animate, motion } from "motion/react";
+import { animate, motion } from "framer-motion";
 import React, { useEffect, useState } from "react";
 import { cn } from "../lib/utils";
 import { GoCopilot } from "react-icons/go";

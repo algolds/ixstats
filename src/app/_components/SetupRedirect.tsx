@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 
 export function SetupRedirect() {
@@ -31,9 +31,10 @@ export function SetupRedirect() {
   const { data: userProfile, isLoading: profileLoading, error: profileError } = api.users.getProfile.useQuery(
     { userId: user?.id || '' },
     { 
-      enabled: !!user?.id && !shouldSkipSetup,
+      enabled: !!user?.id && !shouldSkipSetup && isLoaded,
       retry: false,
       staleTime: 30000, // Cache for 30 seconds to prevent excessive queries
+      refetchOnWindowFocus: false,
     }
   );
 

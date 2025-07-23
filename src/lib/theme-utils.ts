@@ -117,7 +117,7 @@ export function cn(
 export function getButtonClasses(
   variant: "primary" | "secondary" | "danger" | "success" = "primary",
   size: "sm" | "md" | "lg" = "md",
-  disabled: boolean = false
+  disabled = false
 ): string {
   const base =
     "inline-flex items-center justify-center font-medium rounded-md " +
@@ -145,7 +145,7 @@ export function getButtonClasses(
  * Theme-aware input class generator
  */
 export function getInputClasses(
-  hasError: boolean = false,
+  hasError = false,
   size: "sm" | "md" | "lg" = "md"
 ): string {
   const base = "form-input";
@@ -166,7 +166,7 @@ export function getInputClasses(
  */
 export function getCardClasses(
   variant: "default" | "elevated" | "bordered" = "default",
-  interactive: boolean = false
+  interactive = false
 ): string {
   const base = "card";
   const variants = { default: "", elevated: "shadow-lg", bordered: "border-2" };

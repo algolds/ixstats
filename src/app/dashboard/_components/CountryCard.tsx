@@ -15,7 +15,7 @@ import { api } from "~/trpc/react";
 import { cn, getTierStyle } from "~/lib/theme-utils";
 import { formatPopulation, formatCurrency } from "~/lib/chart-utils";
 import type { CountryStats } from "~/types/ixstats";
-import { ixnayWiki } from "~/lib/mediawiki-service";
+import { flagService } from "~/lib/flag-service";
 import {
   Card,
   CardContent,
@@ -56,6 +56,9 @@ export function CountryCard({
   // Determine which flag data to use
   let flagUrl = propFlagUrl !== undefined ? propFlagUrl : localFlagUrl;
   let flagLoading = propFlagLoading !== undefined ? propFlagLoading : localFlagLoading;
+  
+  // Debug logging
+  console.log(`[CountryCard] ${country.name} - propFlagUrl:`, propFlagUrl, 'localFlagUrl:', localFlagUrl, 'cachedUrl:', cachedFlagUrl.current, 'flagLoading:', flagLoading);
 
   // If we have a cached flag URL, always use it
   if (cachedFlagUrl.current) {
@@ -86,14 +89,22 @@ export function CountryCard({
       }
       alive && setLocalFlagLoading(true);
       try {
-        const url = await ixnayWiki.getFlagUrl(country.name);
-        if (alive) {
-          if (typeof url === 'string') {
-            setLocalFlagUrl(url);
-            cachedFlagUrl.current = url; // Cache the loaded flag
-          } else {
-            setLocalFlagUrl(null);
-          }
+        // Try cached flag first for immediate response
+        const cachedUrl = flagService.getCachedFlagUrl(country.name);
+        if (cachedUrl) {
+          setLocalFlagUrl(cachedUrl);
+          cachedFlagUrl.current = cachedUrl;
+          setLocalFlagLoading(false);
+          return;
+        }
+
+        // Fetch if not cached
+        const url = await flagService.getFlagUrl(country.name);
+        if (alive && url) {
+          setLocalFlagUrl(url);
+          cachedFlagUrl.current = url; // Cache the loaded flag
+        } else if (alive) {
+          setLocalFlagUrl(null);
         }
       } catch {
         alive && setLocalFlagUrl(null);
@@ -224,7 +235,12 @@ export function CountryCard({
                     src={flagUrl}
                     alt={`Flag of ${country.name}`}
                     className="h-full w-full object-cover rounded border border-border"
+                    onLoad={() => {
+                      console.log(`[CountryCard] Flag loaded successfully for ${country.name}:`, flagUrl);
+                    }}
                     onError={(e) => {
+                      console.error(`[CountryCard] Flag failed to load for ${country.name}:`, flagUrl);
+                      console.error(`[CountryCard] Error details:`, e);
                       (e.target as HTMLImageElement).style.display = "none";
                       if (propFlagUrl === undefined) {
                         setLocalFlagUrl(null);

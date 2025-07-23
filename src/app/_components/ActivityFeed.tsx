@@ -8,14 +8,11 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { 
   Activity, 
   TrendingUp, 
-  TrendingDown, 
   Star, 
   Users, 
   DollarSign,
   Clock,
-  ArrowUp,
-  ArrowDown,
-  Minus
+  ArrowUp
 } from "lucide-react";
 import Link from "next/link";
 
@@ -180,7 +177,7 @@ export function ActivityFeed({ countries, isLoading }: ActivityFeedProps) {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
+            {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-start gap-3">
                 <Skeleton className="h-8 w-8 rounded-full" />
                 <div className="flex-1 space-y-2">

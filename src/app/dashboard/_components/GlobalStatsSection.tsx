@@ -23,7 +23,21 @@ import {
 import { GlassCard } from "../../../components/ui/enhanced-card";
 import { Badge } from "../../../components/ui/badge";
 import { TierVisualization } from "../../_components/TierVisualization";
-import type { Country } from "~/types/ixstats";
+// Import TierVisualization's Country interface to avoid conflicts
+interface TierVisualizationCountry {
+  id: string;
+  name: string;
+  currentPopulation: number;
+  currentGdpPerCapita: number;
+  currentTotalGdp: number;
+  economicTier: string;
+  populationTier: string;
+  landArea: number | null;
+  populationDensity: number | null;
+  gdpDensity: number | null;
+  adjustedGdpGrowth: number;
+  populationGrowthRate: number;
+}
 import { useBulkFlagCache } from "~/hooks/useBulkFlagCache";
 
 interface GlobalStatsSectionProps {
@@ -113,7 +127,20 @@ function ExecutiveSummaryImpl({
   const topCountryNames = topCountries.map(c => c.name);
   // Use the bulk flag cache hook
   const { flagUrls } = useBulkFlagCache(topCountryNames);
-  const countries: Country[] = [];
+  const countries: TierVisualizationCountry[] = topCountries.map(country => ({
+    id: country.id,
+    name: country.name,
+    currentPopulation: 0, // Not available in topCountries
+    currentGdpPerCapita: 0, // Not available in topCountries
+    currentTotalGdp: country.currentTotalGdp,
+    economicTier: country.economicTier,
+    populationTier: "1", // Default value
+    landArea: null,
+    populationDensity: null,
+    gdpDensity: null,
+    adjustedGdpGrowth: 0, // Default value
+    populationGrowthRate: 0 // Default value
+  }));
   return (
     <section className="executive-summary py-8">
       <div className="container mx-auto px-4">
@@ -161,7 +188,7 @@ function ExecutiveSummaryImpl({
                       <div className="rank-badge">#{index + 1}</div>
                       <div className="country-flag w-8 h-6 rounded overflow-hidden">
                         <img 
-                          src={flagUrls[country.name] || '/placeholder-flag.png'} 
+                          src={flagUrls[country.name] || '/placeholder-flag.svg'} 
                           alt={`${country.name} flag`}
                           className="w-full h-full object-cover"
                         />

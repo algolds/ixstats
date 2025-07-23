@@ -205,7 +205,7 @@ export function HistoricalEconomicTracker({
 
   // Prepare chart data
   const chartData = useMemo(() => {
-    return filteredData.map(point => ({
+    return filteredData.map((point, index) => ({
       timestamp: point.timestamp,
       date: IxTime.formatIxTime(point.timestamp),
       gameYear: IxTime.getCurrentGameYear(point.timestamp),
@@ -216,6 +216,8 @@ export function HistoricalEconomicTracker({
       inflationRate: point.inflationRate,
       eventsCount: point.events.length,
       hasEvent: point.events.length > 0,
+      // Create unique key for chart
+      uniqueKey: `${IxTime.getCurrentGameYear(point.timestamp)}-${point.timestamp}-${index}`,
     }));
   }, [filteredData]);
 
@@ -581,8 +583,12 @@ export function HistoricalEconomicTracker({
                     <ComposedChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
-                      dataKey="gameYear"
-                      tickFormatter={(value) => `${value}`}
+                      dataKey="uniqueKey"
+                      tickFormatter={(value) => {
+                        // Extract gameYear from uniqueKey (format: gameYear-timestamp-index)
+                        const gameYear = value.split('-')[0];
+                        return `${gameYear}`;
+                      }}
                     />
                     <YAxis 
                       tickFormatter={formatMetricValue}
@@ -668,8 +674,8 @@ export function HistoricalEconomicTracker({
                 <EventCard
                   key={event.id}
                   event={event}
-                    onEdit={isEditable || editMode ? (event) => onEditEvent?.(event.id as string, event) : undefined}
-                    onDelete={isEditable || editMode ? () => onDeleteEvent?.(event.id as string) : undefined}
+                    onEdit={isEditable || editMode ? (event) => onEditEvent?.(event.id!, event) : undefined}
+                    onDelete={isEditable || editMode ? () => onDeleteEvent?.(event.id) : undefined}
                 />
               ))
             )}

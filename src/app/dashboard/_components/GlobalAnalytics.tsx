@@ -38,15 +38,7 @@ import {
   CardDescription,
   CardFooter,
 } from "~/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from "~/components/ui/dialog";
+import { Popover, PopoverContent } from "~/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -59,7 +51,7 @@ import { useChartTheme } from "~/context/theme-context";
 import { formatPopulation, formatCurrency, formatDensity } from "~/lib/chart-utils";
 import { Skeleton } from "~/components/ui/skeleton";
 
-export interface ProcessedCountryData {
+interface ProcessedCountryData {
   id: string;
   name: string;
   currentPopulation: number;
@@ -79,67 +71,48 @@ type MetricFilter =
   | "currentGdpPerCapita"
   | "currentTotalGdp";
 
-interface TierDetailsModalProps {
-  isOpen: boolean;
+interface TierDetailsPopoverProps {
+  open: boolean;
+  anchorEl: HTMLElement | null;
   onClose: () => void;
   tier: string | null;
   countries: ProcessedCountryData[];
 }
 
-function TierDetailsModal({
-  isOpen,
-  onClose,
-  tier,
-  countries,
-}: TierDetailsModalProps) {
-  if (!isOpen || !tier) return null;
+function TierDetailsPopover({ open, anchorEl, onClose, tier, countries }: TierDetailsPopoverProps) {
+  if (!open || !anchorEl || !tier) return null;
   const tierCountries = countries.filter((c) => c.economicTier === tier);
-
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[625px] max-h-[80vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>
-            {tier} Countries ({tierCountries.length})
-          </DialogTitle>
-          <DialogDescription>
-            Countries in the {tier} economic tier.
-          </DialogDescription>
-        </DialogHeader>
+    <Popover open={open} anchorEl={anchorEl} onOpenChange={onClose}>
+      <PopoverContent className="sm:max-w-[625px] max-h-[80vh] flex flex-col">
+        <div className="mb-4">
+          <div className="text-lg font-bold">{tier} Countries ({tierCountries.length})</div>
+          <div className="text-muted-foreground text-sm">Countries in the {tier} economic tier.</div>
+        </div>
         <div className="overflow-y-auto flex-grow pr-2 scrollbar-thin">
           <div className="grid gap-3">
             {tierCountries.map((c, i) => (
               <div
                 key={i}
-                className="flex items-center justify-between p-3 bg-muted/50
-                           rounded-lg hover:bg-muted transition-colors"
+                className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
               >
                 <div>
-                  <h3 className="font-medium text-card-foreground">
-                    {c.name}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Pop: {formatPopulation(c.currentPopulation)} • GDP p.c.:{" "}
-                    {formatCurrency(c.currentGdpPerCapita)}
-                  </p>
+                  <h3 className="font-medium text-card-foreground">{c.name}</h3>
+                  <p className="text-sm text-muted-foreground">Pop: {formatPopulation(c.currentPopulation)} • GDP p.c.: {formatCurrency(c.currentGdpPerCapita)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-semibold text-card-foreground">
-                    {formatCurrency(c.currentTotalGdp)}
-                  </p>
+                  <p className="text-lg font-semibold text-card-foreground">{formatCurrency(c.currentTotalGdp)}</p>
                   <p className="text-xs text-muted-foreground">Total GDP</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline">Close</Button>
-          </DialogClose>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        <div className="flex justify-end mt-4">
+          <Button variant="outline" onClick={onClose}>Close</Button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -164,7 +137,8 @@ class AnalyticsErrorBoundary extends React.Component<{children: React.ReactNode}
 
 export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalyticsProps) {
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
-  const [showTierModal, setShowTierModal] = useState(false);
+  const [showTierPopover, setShowTierPopover] = useState(false);
+  const [tierPopoverAnchor, setTierPopoverAnchor] = useState<HTMLElement | null>(null);
   const [selectedMetric, setSelectedMetric] =
     useState<MetricFilter>("populationDensity");
 
@@ -258,9 +232,10 @@ export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalytic
   }, [validCountries, selectedMetric]);
 
   // 6) Pie slice click
-  const handlePieClick = (data: any) => {
+  const handlePieClick = (data: any, event: React.MouseEvent<HTMLElement>) => {
     setSelectedTier(data.tierName);
-    setShowTierModal(true);
+    setTierPopoverAnchor(event.currentTarget as HTMLElement);
+    setShowTierPopover(true);
   };
 
   const metricOptions = [
@@ -334,9 +309,10 @@ export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalytic
 
   return (
     <div className="mb-8">
-      <TierDetailsModal
-        isOpen={showTierModal}
-        onClose={() => setShowTierModal(false)}
+      <TierDetailsPopover
+        open={showTierPopover}
+        anchorEl={tierPopoverAnchor}
+        onClose={() => setShowTierPopover(false)}
         tier={selectedTier}
         countries={countries}
       />
@@ -373,7 +349,7 @@ export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalytic
                   cx="50%"
                   cy="50%"
                   outerRadius={96}
-                  onClick={(e) => handlePieClick(e.payload)}
+                  onClick={(e) => handlePieClick(e.payload, e.event)}
                 >
                   {pieChartData.map((entry) => (
                     <Cell
@@ -457,7 +433,7 @@ export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalytic
                 <RechartsTooltip
                   cursor={{ fill: `${theme.gridColor}33` }}
                   formatter={(val, name, props) => {
-                    const raw = (props.payload as any).rawValue;
+                    const raw = (props.payload).rawValue;
                     switch (selectedMetric) {
                       case "populationDensity":
                         return [formatDensity(raw, "/km²"), "Pop Density"];

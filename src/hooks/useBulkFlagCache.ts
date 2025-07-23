@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { flagService } from "~/lib/flag-service";
 
 export interface BulkFlagCacheHook {
   flagUrls: Record<string, string | null>;
@@ -40,22 +41,45 @@ export function useBulkFlagCache(countryNames: string[]): BulkFlagCacheHook {
       setError(null);
 
       try {
-        // Create comma-separated list of country names for the query parameter
-        const countryParam = memoizedCountryNames.map(name => encodeURIComponent(name)).join(',');
-        const url = `/api/flag-cache?action=flags&countries=${countryParam}`;
+        // Step 1: Get all cached flags immediately
+        const cachedFlags: Record<string, string | null> = {};
+        const uncachedCountries: string[] = [];
         
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to fetch flag cache');
+        for (const countryName of memoizedCountryNames) {
+          const cachedFlag = flagService.getCachedFlagUrl(countryName);
+          if (cachedFlag) {
+            cachedFlags[countryName] = cachedFlag;
+          } else {
+            uncachedCountries.push(countryName);
+          }
         }
-
-        const data = await response.json();
-        if (data.success) {
-          setFlagUrls(data.flags);
-        } else {
-          throw new Error(data.error || 'Failed to fetch flag cache');
+        
+        // Set cached flags immediately for instant display
+        console.log(`[BulkFlagCache] Setting ${Object.keys(cachedFlags).length} cached flags:`, cachedFlags);
+        setFlagUrls(cachedFlags);
+        
+        // Step 2: Fetch uncached flags only if needed
+        if (uncachedCountries.length > 0) {
+          console.log(`[BulkFlagCache] Loading ${uncachedCountries.length} uncached flags:`, uncachedCountries);
+          
+          const fetchedFlags: Record<string, string | null> = {};
+          await Promise.allSettled(
+            uncachedCountries.map(async (countryName) => {
+              try {
+                const url = await flagService.getFlagUrl(countryName);
+                console.log(`[BulkFlagCache] Got URL for ${countryName}:`, url);
+                fetchedFlags[countryName] = url;
+              } catch (err) {
+                console.warn(`[BulkFlagCache] Failed to get URL for ${countryName}:`, err);
+                fetchedFlags[countryName] = null;
+              }
+            })
+          );
+          
+          // Merge cached and fetched flags
+          const finalFlags = { ...cachedFlags, ...fetchedFlags };
+          console.log(`[BulkFlagCache] Final flags for ${memoizedCountryNames.length} countries:`, finalFlags);
+          setFlagUrls(finalFlags);
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -79,22 +103,17 @@ export function useBulkFlagCache(countryNames: string[]): BulkFlagCacheHook {
     setError(null);
 
     try {
-      const countryParam = memoizedCountryNames.map(name => encodeURIComponent(name)).join(',');
-      const url = `/api/flag-cache?action=flags&countries=${countryParam}`;
-      
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch flag cache');
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        setFlagUrls(data.flags);
-      } else {
-        throw new Error(data.error || 'Failed to fetch flag cache');
-      }
+      const flagUrls: Record<string, string | null> = {};
+      await Promise.allSettled(
+        memoizedCountryNames.map(async (countryName) => {
+          try {
+            flagUrls[countryName] = await flagService.getFlagUrl(countryName);
+          } catch (err) {
+            flagUrls[countryName] = null;
+          }
+        })
+      );
+      setFlagUrls(flagUrls);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setError(errorMessage);

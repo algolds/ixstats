@@ -1,3 +1,5 @@
+"use client";
+export const dynamic = 'force-dynamic';
 // src/app/dashboard/page.tsx
 import { Suspense } from "react";
 import Dashboard from "./_components/Dashboard";
@@ -30,8 +32,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-export const metadata = {
-  title: "IxStats - Dashboard",
-  description: "Automated Economic Statistics for Ixnay",
-};

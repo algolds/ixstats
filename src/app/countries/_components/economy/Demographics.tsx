@@ -455,7 +455,7 @@ export function Demographics({
                           outerRadius={80}
                           fill="#8884d8"
                           dataKey="value"
-                          label={({ group, percent }) => `${group}: ${percent.toFixed(1)}%`}
+                          label={({ group, percent }: any) => `${group}: ${percent ? percent.toFixed(1) : '0'}%`}
                         >
                           {ageData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
@@ -486,7 +486,7 @@ export function Demographics({
                           outerRadius={80}
                           fill="#8884d8"
                           dataKey="value"
-                          label={({ name, value }) => `${name}: ${value.toFixed(0)}%`}
+                          label={({ name, value }: any) => `${name}: ${value ? value.toFixed(0) : '0'}%`}
                         >
                           {urbanRuralData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
@@ -731,7 +731,7 @@ export function Demographics({
                             outerRadius={80}
                             fill="#8884d8"
                             dataKey="value"
-                            label={({ level, percent }) => `${level}: ${percent.toFixed(1)}%`}
+                            label={({ level, percent }: any) => `${level}: ${percent ? percent.toFixed(1) : '0'}%`}
                           >
                             {educationData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.color} />
@@ -888,7 +888,7 @@ export function Demographics({
                           <div className="flex items-center gap-4">
                             <Slider
                               value={[demographicData.urbanRuralSplit.urban]}
-                              onValueChange={([value]) => handleUrbanRuralChange(value)}
+                              onValueChange={([value]) => handleUrbanRuralChange(value ?? 0)}
                               max={100}
                               step={1}
                               className="flex-1"

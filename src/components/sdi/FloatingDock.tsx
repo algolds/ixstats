@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, MotionValue } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, type MotionValue } from 'framer-motion';
 
 interface Module {
   id: string;
@@ -29,8 +29,7 @@ export default function FloatingDock() {
       <motion.div
         onMouseMove={e => mouseX.set(e.pageX)}
         onMouseLeave={() => mouseX.set(Infinity)}
-        className="mx-auto flex h-16 items-end gap-4 rounded-2xl glass-card px-4 pb-3 shadow-xl backdrop-blur-xl"
-        style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.1), inset 0 1px 0 rgba(255,255,255,0.2)' }}
+        className="mx-auto flex h-16 items-end gap-4 rounded-2xl glass-card px-4 pb-3"
       >
         {modules.map((mod) => (
           <IconContainer

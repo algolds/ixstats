@@ -24,6 +24,11 @@ interface CountryIntelligenceSectionProps {
   countryId: string;
 }
 
+interface UserProfile {
+  role?: string;
+  countryId?: string;
+}
+
 export function CountryIntelligenceSection({ countryId }: CountryIntelligenceSectionProps) {
   const { user } = useUser();
   
@@ -42,8 +47,8 @@ export function CountryIntelligenceSection({ countryId }: CountryIntelligenceSec
   const isLoading = crisisLoading || diplomacyLoading || economicLoading || intelligenceLoading;
 
   // Check if user has SDI/ECI access for navigation links
-  const canAccessSDI = userProfile ? hasInterfaceAccess((userProfile as any)?.role || 'user', userProfile.countryId || undefined, 'sdi') : false;
-  const canAccessECI = userProfile ? hasInterfaceAccess((userProfile as any)?.role || 'user', userProfile.countryId || undefined, 'eci') : false;
+  const canAccessSDI = userProfile ? hasInterfaceAccess((userProfile as UserProfile).role || 'user', userProfile.countryId || undefined, 'sdi') : false;
+  const canAccessECI = userProfile ? hasInterfaceAccess((userProfile as UserProfile).role || 'user', userProfile.countryId || undefined, 'eci') : false;
 
   // Filter data relevant to this country
   const relevantCrises = crisisEvents?.filter(crisis => 
@@ -137,8 +142,8 @@ export function CountryIntelligenceSection({ countryId }: CountryIntelligenceSec
                     </div>
                     <p className="text-sm text-red-800 dark:text-red-400 mb-2">{crisis.description}</p>
                     <div className="flex justify-between items-center text-xs text-red-600 dark:text-red-500">
-                      <span>Status: {crisis.status}</span>
-                      <span>{new Date(crisis.startDate).toLocaleDateString()}</span>
+                      <span>Status: {crisis.responseStatus}</span>
+                      <span>{new Date(crisis.timestamp).toLocaleDateString()}</span>
                     </div>
                   </div>
                 ))}
@@ -173,22 +178,19 @@ export function CountryIntelligenceSection({ countryId }: CountryIntelligenceSec
                   <div key={relation.id} className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
                     <div className="flex justify-between items-start mb-2">
                       <h4 className="font-semibold text-blue-900 dark:text-blue-300">
-                        {relation.relationshipType}
+                        {relation.relationship}
                       </h4>
                       <Badge 
                         variant="secondary"
                         className={
                           relation.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :
-                          relation.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' :
+                          relation.status === 'monitoring' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' :
                           'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
                         }
                       >
                         {relation.status}
                       </Badge>
                     </div>
-                    {relation.description && (
-                      <p className="text-sm text-blue-800 dark:text-blue-400 mb-2">{relation.description}</p>
-                    )}
                     <div className="text-xs text-blue-600 dark:text-blue-500">
                       Partner: {relation.country1 === countryId ? relation.country2 : relation.country1}
                     </div>
