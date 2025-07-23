@@ -18,3 +18,4 @@ export { SdiIntelligenceAdmin } from './sdi/SdiIntelligenceAdmin';
 export { SdiEconomicAdmin } from './sdi/SdiEconomicAdmin';
 export { SdiDiplomaticAdmin } from './sdi/SdiDiplomaticAdmin';
 export { CountryAdminPanel } from './CountryAdminPanel';
+export { NotificationsAdmin } from './NotificationsAdmin';

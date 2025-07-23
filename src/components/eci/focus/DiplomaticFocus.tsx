@@ -5,7 +5,7 @@ import { LoaderFour } from '@/components/ui/loader';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { api } from '@/trpc/react';
-import type { CountryWithEconomicData } from '@/types/ixstats';
+import type { CountryWithEconomicData, HistoricalData, Projection } from '@/types/ixstats';
 import { ChartContainer } from '@/components/ui/chart';
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 
@@ -53,16 +53,16 @@ export function DiplomaticFocus() {
   }
 
   // Prepare historical data for charts
-  const historical = (countryData.historical || []).map((point: any) => ({
-    date: point.formattedTime || point.ixTimeTimestamp || '',
-    tradeCapacity: point.totalGdp,
-    economicTierScore: tierToScore(point.economicTier),
+  const historical = (countryData.historical || []).map((point: HistoricalData) => ({
+    date: point.year?.toString() || '',
+    tradeCapacity: point.gdp ?? 0,
+    economicTierScore: tierToScore((point as any).economicTier),
   }));
   // Prepare projections for future chart
-  const projections = (countryData.projections || []).map((point: any) => ({
-    date: point.formattedTime || point.ixTime || '',
-    tradeCapacity: point.totalGdp,
-    economicTierScore: tierToScore(point.economicTier),
+  const projections = (countryData.projections || []).map((point: Projection) => ({
+    date: point.year?.toString() || '',
+    tradeCapacity: point.gdp ?? 0,
+    economicTierScore: tierToScore((point as any).economicTier),
   }));
   // Risk analytics
   const analytics = countryData.analytics || {};

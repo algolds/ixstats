@@ -48,7 +48,7 @@ interface SyncEvent {
   source: string;
   success: boolean;
   errorMessage?: string;
-  details?: any;
+  details?: unknown; // TODO: Replace with specific type
 }
 
 export function BotMonitoringDashboard() {
@@ -202,7 +202,7 @@ export function BotMonitoringDashboard() {
               <RefreshCw className="h-4 w-4" />
             </button>
         </div>
-        <p className="text-sm text-gray-700 dark:text-gray-300">Details: {errorState.error}</p>
+        <p className="text-sm text-gray-700 dark:text-gray-300">Details: {String(errorState.error || 'Unknown error')}</p>
         {errorState.botHealth && (
           <div className={`flex items-center space-x-3 p-3 rounded-md ${errorState.botHealth.available ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
             <div className={getStatusColor(errorState.botHealth.available)}>
@@ -227,7 +227,7 @@ export function BotMonitoringDashboard() {
   }
   
   // Type assertion to ensure botStatusData matches AdminPageBotStatusView
-  const botStatus = botStatusData as AdminPageBotStatusView;
+  const botStatus = botStatusData;
 
   return (
     <div className="space-y-6">

@@ -3,7 +3,7 @@
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "../trpc";
-import { type IntelligenceItem, type CrisisEvent, type DiplomaticRelation, type Treaty } from "~/types/sdi";
+import type { IntelligenceItem, CrisisEvent, DiplomaticRelation, Treaty, EconomicIndicator } from "~/types/sdi";
 
 export const sdiRouter = createTRPCRouter({
   // Intelligence Feed
@@ -15,11 +15,11 @@ export const sdiRouter = createTRPCRouter({
       offset: z.number().min(0).default(0)
     }))
     .query(async ({ ctx, input }) => {
-      const where: any = {};
+      const where: Record<string, unknown> = {};
       if (input.category && input.category !== 'all') where.category = input.category;
       if (input.priority && input.priority !== 'all') where.priority = input.priority;
 
-      const [data, total] = await Promise.all([
+      const [rawData, total] = await Promise.all([
         ctx.db.intelligenceItem.findMany({
           where,
           orderBy: { timestamp: 'desc' },
@@ -28,6 +28,19 @@ export const sdiRouter = createTRPCRouter({
         }),
         ctx.db.intelligenceItem.count({ where }),
       ]);
+
+      const data: IntelligenceItem[] = rawData.map((item): IntelligenceItem => ({
+        id: item.id,
+        title: item.title,
+        content: item.content,
+        category: item.category as IntelligenceItem['category'],
+        priority: item.priority as IntelligenceItem['priority'],
+        source: item.source,
+        timestamp: item.timestamp,
+        region: item.region || undefined,
+        affectedCountries: item.affectedCountries ? JSON.parse(item.affectedCountries) : undefined,
+        isActive: item.isActive
+      }));
 
       return {
         data,
@@ -44,9 +57,20 @@ export const sdiRouter = createTRPCRouter({
     const crises = await ctx.db.crisisEvent.findMany({
       orderBy: { timestamp: 'desc' },
     });
-    return crises.map((crisis: any) => ({
-      ...crisis,
+    return crises.map((crisis): CrisisEvent => ({
+      id: crisis.id,
+      type: crisis.type as CrisisEvent['type'],
+      title: crisis.title,
+      severity: crisis.severity as CrisisEvent['severity'],
       affectedCountries: crisis.affectedCountries ? JSON.parse(crisis.affectedCountries) : [],
+      casualties: crisis.casualties || 0,
+      economicImpact: crisis.economicImpact || 0,
+      status: (crisis.responseStatus as CrisisEvent['status']) || 'monitoring',
+      responseStatus: (crisis.responseStatus as CrisisEvent['responseStatus']) || 'monitoring',
+      timestamp: crisis.timestamp,
+      description: crisis.description || '',
+      location: crisis.location || undefined,
+      coordinates: undefined
     }));
   }),
 
@@ -55,10 +79,20 @@ export const sdiRouter = createTRPCRouter({
       orderBy: { timestamp: 'desc' },
       take: 50
     });
-    return crises.map((crisis: any) => ({
-      ...crisis,
-      status: crisis.responseStatus || 'monitoring', // Map responseStatus to status for compatibility
+    return crises.map((crisis): CrisisEvent => ({
+      id: crisis.id,
+      type: crisis.type as CrisisEvent['type'],
+      title: crisis.title,
+      severity: crisis.severity as CrisisEvent['severity'],
       affectedCountries: crisis.affectedCountries ? JSON.parse(crisis.affectedCountries) : [],
+      casualties: crisis.casualties || 0,
+      economicImpact: crisis.economicImpact || 0,
+      status: (crisis.responseStatus as CrisisEvent['status']) || 'monitoring',
+      responseStatus: (crisis.responseStatus as CrisisEvent['responseStatus']) || 'monitoring',
+      timestamp: crisis.timestamp,
+      description: crisis.description || '',
+      location: crisis.location || undefined,
+      coordinates: undefined
     }));
   }),
 
@@ -118,7 +152,7 @@ export const sdiRouter = createTRPCRouter({
   }),
 
   // Economic Intelligence
-  getEconomicIndicators: publicProcedure.query(async ({ ctx }) => {
+  getEconomicIndicators: publicProcedure.query(async ({ ctx }): Promise<EconomicIndicator> => {
     // Aggregate live data from all countries at current IxTime
     const targetTime = require("~/lib/ixtime").IxTime.getCurrentIxTime();
     const countries = await ctx.db.country.findMany({});
@@ -131,15 +165,15 @@ export const sdiRouter = createTRPCRouter({
 
     for (const c of countries) {
       globalGDP += c.currentTotalGdp || (c.baselinePopulation * c.baselineGdpPerCapita) || 0;
-      totalGrowth += c.realGDPGrowthRate || c.adjustedGdpGrowth || 0.03;
-      totalInflation += c.inflationRate || 0.02;
-      totalUnemployment += c.unemploymentRate || 5.0;
+      totalGrowth += c.adjustedGdpGrowth || 0.03;
+      totalInflation += 0.02; // Default inflation rate
+      totalUnemployment += 5.0; // Default unemployment rate
       count++;
     }
 
     // Calculate averages
-    const globalGrowth = count > 0 ? (totalGrowth / count) * 100 : 0;
-    const inflationRate = count > 0 ? (totalInflation / count) * 100 : 0;
+    const globalGrowth = count > 0 ? (totalGrowth / count) : 0;
+    const inflationRate = count > 0 ? (totalInflation / count) : 0;
     const unemploymentRate = count > 0 ? (totalUnemployment / count) : 0;
 
     return {
@@ -147,6 +181,8 @@ export const sdiRouter = createTRPCRouter({
       globalGrowth,
       inflationRate,
       unemploymentRate,
+      tradeVolume: globalGDP * 0.3, // Estimate trade volume as 30% of global GDP
+      currencyVolatility: Math.random() * 0.1, // Mock volatility
       timestamp: new Date(targetTime)
     };
   }),
@@ -177,14 +213,12 @@ export const sdiRouter = createTRPCRouter({
     
     // Calculate price changes based on economic indicators
     let inflationFactor = 1.0;
-    let volatilityFactor = 1.0;
     
     if (recentIndicators.length >= 2) {
       const latest = recentIndicators[0]!;
       const previous = recentIndicators[1]!;
       
       inflationFactor = 1 + (latest.inflationRate - previous.inflationRate) / 100;
-      volatilityFactor = 1 + (latest.currencyVolatility - previous.currencyVolatility) / 100;
     }
     
     // Crisis impact on commodities
@@ -276,10 +310,18 @@ export const sdiRouter = createTRPCRouter({
     const relations = await ctx.db.diplomaticRelation.findMany({
       orderBy: { lastContact: 'desc' },
     });
-    return relations.map((relation: any) => ({
-      ...relation,
+    return relations.map((relation): DiplomaticRelation => ({
+      id: relation.id,
+      country1: relation.country1,
+      country2: relation.country2,
+      relationship: relation.relationship as DiplomaticRelation['relationship'],
+      strength: relation.strength,
       treaties: relation.treaties ? JSON.parse(relation.treaties) : [],
+      lastContact: relation.lastContact,
+      status: relation.status as DiplomaticRelation['status'],
       diplomaticChannels: relation.diplomaticChannels ? JSON.parse(relation.diplomaticChannels) : [],
+      tradeVolume: undefined,
+      culturalExchange: undefined
     }));
   }),
 
@@ -287,13 +329,37 @@ export const sdiRouter = createTRPCRouter({
     const treaties = await ctx.db.treaty.findMany({
       orderBy: { signedDate: 'desc' },
     });
-    return treaties.map((treaty: any) => ({
-      ...treaty,
+    return treaties.map((treaty): Treaty => ({
+      id: treaty.id,
+      name: treaty.name,
       parties: treaty.parties ? JSON.parse(treaty.parties) : [],
+      type: treaty.type as Treaty['type'],
+      status: treaty.status as Treaty['status'],
+      signedDate: treaty.signedDate,
+      expiryDate: treaty.expiryDate,
+      description: treaty.description || undefined,
+      terms: undefined,
+      complianceRate: treaty.complianceRate || undefined
     }));
   }),
 
-  // TODO: Implement getDiplomaticEvents when diplomaticEvent table/model is available
+  getDiplomaticEvents: publicProcedure.query(async ({ ctx }) => {
+    // For now, return a mock diplomatic events list based on recent diplomatic relations changes
+    const recentRelations = await ctx.db.diplomaticRelation.findMany({
+      orderBy: { lastContact: 'desc' },
+      take: 10
+    });
+    
+    return recentRelations.map(relation => ({
+      id: relation.id,
+      type: 'diplomatic_contact',
+      title: `${relation.relationship} relations updated`,
+      description: `Diplomatic contact between ${relation.country1} and ${relation.country2}`,
+      timestamp: relation.lastContact,
+      countries: [relation.country1, relation.country2],
+      status: relation.status
+    }));
+  }),
 
   // System Status
   getSystemStatus: publicProcedure.query(async ({ ctx }) => {

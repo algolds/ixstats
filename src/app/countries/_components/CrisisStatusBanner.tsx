@@ -37,15 +37,16 @@ export function CrisisStatusBanner({ countryId }: CrisisStatusBannerProps) {
 
   // Filter crises affecting this country
   const activeCrises = crisisEvents?.filter(crisis => 
-    crisis.affectedCountries?.includes(countryId) && crisis.status === 'active'
+    crisis.affectedCountries?.includes(countryId) && 
+    crisis.status !== 'resolved' && crisis.status !== 'standby'
   ) || [];
 
   const criticalCrises = activeCrises.filter(crisis => crisis.severity === 'critical');
   const highCrises = activeCrises.filter(crisis => crisis.severity === 'high');
 
   // Check if user has access to relevant interfaces
-  const canAccessSDI = userProfile ? hasInterfaceAccess(userProfile.role, userProfile.countryId, 'sdi') : false;
-  const canAccessECI = userProfile ? hasInterfaceAccess(userProfile.role, userProfile.countryId, 'eci') : false;
+  const canAccessSDI = userProfile ? hasInterfaceAccess('user', userProfile.countryId ?? undefined, 'sdi') : false;
+  const canAccessECI = userProfile ? hasInterfaceAccess('user', userProfile.countryId ?? undefined, 'eci') : false;
 
   // Don't show banner if no active crises
   if (activeCrises.length === 0) {

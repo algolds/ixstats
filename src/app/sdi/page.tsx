@@ -1,761 +1,446 @@
 "use client";
-import { AuroraBackground } from '../../components/ui/aurora-background';
-import IntelligenceFeed from '../../components/sdi/IntelligenceFeed';
-import SecureComms from '../../components/sdi/SecureComms';
-import FloatingDock from '../../components/sdi/FloatingDock';
-import React, { useState } from 'react';
-import { Sidebar, SidebarBody, SidebarLink } from '../../components/ui/sidebar';
-import { IconMenu2, IconX } from '@tabler/icons-react';
-import { FaGlobe, FaSatellite, FaLock, FaExclamationTriangle, FaChartLine, FaHandshake } from 'react-icons/fa';
-import { ExecutiveSummary } from '../dashboard/_components/GlobalStatsSection';
-import { GlassCard } from '../../components/ui/enhanced-card';
-import { Badge } from '../../components/ui/badge';
-import { BentoGrid } from '../../components/ui/bento-grid';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import GlobalOverview from '../../components/sdi/GlobalOverview';
-import { api } from '~/trpc/react';
-import { useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
-import { InterfaceSwitcher } from '../../components/shared/InterfaceSwitcher';
-import { getUserInterfacePreferences } from '../../lib/interface-routing';
-import { UnifiedSidebar } from '../../components/ui/UnifiedSidebar';
 
-// SidebarContent for both desktop and mobile
-function SidebarContent({ profile, countryId }: { profile: any; countryId?: string }) {
+import { useState } from "react";
+import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import { api } from "~/trpc/react";
+
+// Force dynamic rendering to avoid SSG issues with Clerk
+export const dynamic = 'force-dynamic';
+
+// Check if Clerk is configured
+const isClerkConfigured = Boolean(
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith('pk_')
+);
+import { GlassCard } from "~/components/ui/enhanced-card";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { 
+  Shield,
+  Settings,
+  Satellite,
+  Globe,
+  AlertTriangle,
+  TrendingUp,
+  Activity,
+  Brain,
+  Users,
+  FileText,
+  Search,
+  Eye
+} from "lucide-react";
+import { Skeleton } from "~/components/ui/skeleton";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+
+function SdiLoadingSkeleton() {
   return (
-    <div className="h-full w-64 sdi-sidebar flex flex-col py-8 px-4">
-      <div className="mb-8 text-center">
-        <div className="w-20 h-20 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center text-3xl shadow-lg mx-auto mb-4 medallion-glow">
-          🌐
-        </div>
-        <h1 className="text-2xl font-bold text-blue-100 diplomatic-header">SDI</h1>
-        <p className="text-sm text-blue-200">Sovereign Digital Interface</p>
-      </div>
-      <nav className="flex flex-col gap-2">
-        <SidebarLink link={{ label: 'Global Overview', href: '/sdi', icon: <FaGlobe /> }} />
-        <SidebarLink link={{ label: 'Intelligence Feed', href: '#intelligence', icon: <FaSatellite /> }} />
-        <SidebarLink link={{ label: 'Secure Comms', href: '#comms', icon: <FaLock /> }} />
-        <SidebarLink link={{ label: 'Crisis Management', href: '#crisis', icon: <FaExclamationTriangle /> }} />
-        <SidebarLink link={{ label: 'Economic Intelligence', href: '#economic', icon: <FaChartLine /> }} />
-        <SidebarLink link={{ label: 'Diplomatic Matrix', href: '#diplomatic', icon: <FaHandshake /> }} />
-      </nav>
-      {/* Interface Switcher for cross-navigation */}
-      {profile && (
-        <div className="mt-8">
-          <InterfaceSwitcher currentInterface="sdi" countryId={countryId || undefined} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function CrisisManagement() {
-  // Live tRPC queries for real-time data
-  const { data: activeCrises = [], isLoading: loadingCrises, error: errorCrises } = api.sdi.getActiveCrises.useQuery(undefined, { refetchInterval: 5000 });
-  const { data: responseTeams = [], isLoading: loadingTeams, error: errorTeams } = api.sdi.getResponseTeams.useQuery(undefined, { refetchInterval: 5000 });
-
-  const getSeverityColor = (severity: string) => {
-    const colors = {
-      low: 'bg-yellow-500',
-      medium: 'bg-orange-500',
-      high: 'bg-red-500',
-      critical: 'bg-red-700'
-    };
-    return colors[severity as keyof typeof colors] || 'bg-gray-500';
-  };
-
-  const getStatusColor = (status: string) => {
-    const colors = {
-      coordinating: 'bg-blue-500',
-      monitoring: 'bg-yellow-500',
-      deployed: 'bg-green-500',
-      standby: 'bg-gray-500',
-      resolved: 'bg-gray-400'
-    };
-    return colors[status as keyof typeof colors] || 'bg-gray-500';
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      notation: 'compact',
-      maximumFractionDigits: 1
-    }).format(amount);
-  };
-
-  const { user } = useUser();
-  const { data: userProfile } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
-    { enabled: !!user?.id }
-  );
-  const userCountryId = userProfile?.countryId;
-  const userRole = (userProfile as any)?.role || 'user';
-  const router = useRouter();
-
-  return (
-    <div className="max-w-7xl mx-auto w-full animate-fade-in">
-      <GlassCard variant="diplomatic" blur="prominent" glow="hover" className="p-8 mb-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-3xl font-bold mb-2 text-blue-100 diplomatic-header">
-              Crisis Management Center
-            </h2>
-            <p className="text-lg text-blue-200"> 
-              Real-time monitoring of global crises and response coordination
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-red-400">{activeCrises.length}</div>
-              <div className="text-sm text-blue-300">Active Crises</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-400">{responseTeams.length}</div>
-              <div className="text-sm text-blue-300">Response Teams</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Loading/Error States */}
-        {loadingCrises && <div className="text-blue-300 text-center py-8">Loading crises...</div>}
-        {errorCrises && <div className="text-red-400 text-center py-8">Error loading crises: {errorCrises.message}</div>}
-
-        {/* Crisis Alert Banner */}
-        {activeCrises.some((crisis: any) => crisis.severity === 'critical') && (
-          <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4 mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-              <span className="text-red-200 font-semibold">CRITICAL ALERT: Active crisis requiring immediate attention</span>
-            </div>
-          </div>
-        )}
-
-        {/* Active Crises Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {activeCrises.map((crisis: any) => (
-            <Card key={crisis.id} className="bg-blue-900/20 border-blue-700/30">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <Badge className={`${getSeverityColor(crisis.severity)} text-white`}>
-                      {crisis.severity?.toUpperCase()}
-                    </Badge>
-                    <Badge className={`${getStatusColor(crisis.responseStatus)} text-white`}>
-                      {crisis.responseStatus}
-                    </Badge>
-                  </div>
-                  <span className="text-xs text-blue-300">
-                    {crisis.timestamp ? new Date(crisis.timestamp).toLocaleTimeString() : ''}
-                  </span>
-                </div>
-                <CardTitle className="text-blue-100 text-xl">{crisis.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-blue-200 mb-4">{crisis.description}</p>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-blue-300">Affected Countries:</span>
-                    <div className="text-blue-200 font-medium flex flex-wrap gap-2">
-                      {(crisis.affectedCountries || []).map((countryId: string) => (
-                        <span key={countryId} className="flex items-center gap-1">
-                          {countryId}
-                          {(userRole === 'admin' || userRole === 'dm' || userCountryId === countryId) && (
-                            <Button size="sm" className="ml-1 bg-orange-600/80 text-white border-orange-500/30 hover:bg-orange-600/90" onClick={() => router.push('/eci')}>
-                              🏛️ View in ECI
-                            </Button>
-                          )}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-blue-300">Economic Impact:</span>
-                    <div className="text-blue-200 font-medium">
-                      {formatCurrency(crisis.economicImpact)}
-                    </div>
-                  </div>
-                  {crisis.casualties > 0 && (
-                    <div>
-                      <span className="text-blue-300">Casualties:</span>
-                      <div className="text-red-200 font-medium">{crisis.casualties?.toLocaleString()}</div>
-                    </div>
-                  )}
-                </div>
-                <div className="mt-4 flex gap-2">
-                  <Button size="sm" variant="outline" className="border-blue-600 text-blue-200">
-                    View Details
-                  </Button>
-                  <Button size="sm" className="bg-blue-600 text-white">
-                    Coordinate Response
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-64 w-full" />
           ))}
         </div>
-
-        {/* Response Teams */}
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold text-blue-100 mb-4">Response Teams</h3>
-          {loadingTeams && <div className="text-blue-300 text-center py-4">Loading teams...</div>}
-          {errorTeams && <div className="text-red-400 text-center py-4">Error loading teams: {errorTeams.message}</div>}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {responseTeams.map((team: any) => (
-              <Card key={team.id} className="bg-blue-900/20 border-blue-700/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-blue-100 font-medium">{team.name}</h4>
-                    <Badge className={`${getStatusColor(team.status)} text-white`}>
-                      {team.status}
-                    </Badge>
-                  </div>
-                  <p className="text-blue-300 text-sm mb-3">Location: {team.location}</p>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="border-blue-600 text-blue-200">
-                      Deploy
-                    </Button>
-                    <Button size="sm" variant="outline" className="border-blue-600 text-blue-200">
-                      Status
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Predictive Analysis */}
-        <div>
-          <h3 className="text-xl font-semibold text-blue-100 mb-4">Predictive Analysis</h3>
-          <Card className="bg-blue-900/20 border-blue-700/30">
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-yellow-400 mb-2">3</div>
-                  <div className="text-blue-300 text-sm">Potential Crises</div>
-                  <div className="text-blue-400 text-xs mt-1">Next 48 hours</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-400 mb-2">85%</div>
-                  <div className="text-blue-300 text-sm">Response Readiness</div>
-                  <div className="text-blue-400 text-xs mt-1">Global average</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-400 mb-2">12</div>
-                  <div className="text-blue-300 text-sm">Available Teams</div>
-                  <div className="text-blue-400 text-xs mt-1">On standby</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-    </GlassCard>
+      </div>
     </div>
   );
 }
 
-function EconomicIntelligence() {
-  // Live tRPC queries for real-time data
-  const { data: marketData, isLoading: loadingMarket, error: errorMarket } = api.sdi.getEconomicIndicators.useQuery(undefined, { refetchInterval: 5000 });
-  const { data: commodityPrices = [], isLoading: loadingCommodities, error: errorCommodities } = api.sdi.getCommodityPrices.useQuery(undefined, { refetchInterval: 5000 });
-  const { data: economicAlerts = [], isLoading: loadingAlerts, error: errorAlerts } = api.sdi.getEconomicAlerts.useQuery(undefined, { refetchInterval: 5000 });
+function SdiContent() {
+  const { user, isLoaded } = useUser();
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState("overview");
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      notation: 'compact',
-      maximumFractionDigits: 1
-    }).format(amount);
-  };
-
-  const getTrendColor = (trend: string) => {
-    return trend === 'up' ? 'text-green-400' : 'text-red-400';
-  };
-
-  const getSeverityColor = (severity: string) => {
-    const colors = {
-      low: 'bg-yellow-500',
-      medium: 'bg-orange-500',
-      high: 'bg-red-500',
-      critical: 'bg-red-700'
-    };
-    return colors[severity as keyof typeof colors] || 'bg-gray-500';
-  };
-
-  const { user } = useUser();
-  const { data: userProfile } = api.users.getProfile.useQuery(
+  // Get user profile to check country assignment
+  const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
     { userId: user?.id || '' },
     { enabled: !!user?.id }
   );
-  const userCountryId = userProfile?.countryId;
-  const userRole = (userProfile as any)?.role || 'user';
-  const router = useRouter();
+
+  // Get country data if user has a country
+  const { data: countryData, isLoading: countryLoading } = api.countries.getByIdWithEconomicData.useQuery(
+    { id: userProfile?.countryId || '' },
+    { enabled: !!userProfile?.countryId }
+  );
+
+  // Get SDI-specific data
+  const { data: intelligenceFeed, isLoading: intelligenceLoading } = api.sdi.getIntelligenceFeed.useQuery(
+    { limit: 10 },
+    { enabled: !!user?.id && !!userProfile?.countryId }
+  );
+
+  const { data: activeCrises, isLoading: crisesLoading } = api.sdi.getActiveCrises.useQuery(
+    undefined,
+    { enabled: !!user?.id && !!userProfile?.countryId }
+  );
+
+  const { data: economicIndicators, isLoading: economicLoading } = api.sdi.getEconomicIndicators.useQuery(
+    undefined,
+    { enabled: !!user?.id && !!userProfile?.countryId }
+  );
+
+  const { data: diplomaticRelations, isLoading: diplomaticLoading } = api.sdi.getDiplomaticRelations.useQuery(
+    undefined,
+    { enabled: !!user?.id && !!userProfile?.countryId }
+  );
+
+  const { data: systemStatus, isLoading: statusLoading } = api.sdi.getSystemStatus.useQuery(
+    undefined,
+    { enabled: !!user?.id && !!userProfile?.countryId }
+  );
+
+  // Redirect to setup if no country
+  if (isLoaded && user && !profileLoading && userProfile && !userProfile.countryId) {
+    router.push('/setup');
+    return null;
+  }
+
+  // Loading state
+  if (!isLoaded || profileLoading || countryLoading) {
+    return <SdiLoadingSkeleton />;
+  }
+
+  // Not signed in
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Alert>
+          <Shield className="h-4 w-4" />
+          <AlertDescription>
+            Please sign in to access the Sovereign Digital Interface.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  // No country assigned
+  if (!userProfile?.countryId) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Alert>
+          <Settings className="h-4 w-4" />
+          <AlertDescription>
+            Complete your country setup to access intelligence features.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-7xl mx-auto w-full animate-fade-in">
-      <GlassCard variant="diplomatic" blur="prominent" glow="hover" className="p-8 mb-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-3xl font-bold mb-2 text-blue-100 diplomatic-header">
-              Economic Intelligence Hub
-            </h2>
-            <p className="text-lg text-blue-200">
-              Strategic economic intelligence and global financial analysis
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-400">{marketData?.globalGrowth ?? '--'}%</div>
-              <div className="text-sm text-blue-300">Global Growth</div>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/20 rounded-full">
+                <Shield className="h-8 w-8" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold">Sovereign Digital Interface</h1>
+                <p className="text-blue-100">
+                  Intelligence and diplomatic operations for {countryData?.name || 'your country'}
+                </p>
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-400">{marketData?.inflationRate ?? '--'}%</div>
-              <div className="text-sm text-blue-300">Inflation Rate</div>
+            <div className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${systemStatus?.systemHealth === 'operational' ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
+              <Badge variant="secondary" className="bg-white/20 text-white">
+                {statusLoading ? 'Loading...' : systemStatus?.systemHealth || 'Operational'}
+              </Badge>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Loading/Error States */}
-        {loadingMarket && <div className="text-blue-300 text-center py-8">Loading economic indicators...</div>}
-        {errorMarket && <div className="text-red-400 text-center py-8">Error loading indicators: {errorMarket.message}</div>}
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="intelligence">Intel</TabsTrigger>
+            <TabsTrigger value="crisis">Crisis</TabsTrigger>
+            <TabsTrigger value="economic">Economic</TabsTrigger>
+            <TabsTrigger value="diplomatic">Diplomatic</TabsTrigger>
+          </TabsList>
 
-        {/* Key Economic Indicators */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-blue-900/20 border-blue-700/30">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-100 mb-1">
-                  {marketData ? formatCurrency(marketData.globalGDP) : '--'}
-                </div>
-                <div className="text-sm text-blue-300">Global GDP</div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-blue-900/20 border-blue-700/30">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-400 mb-1">
-                  {marketData?.globalGrowth ?? '--'}%
-                </div>
-                <div className="text-sm text-blue-300">Growth Rate</div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-blue-900/20 border-blue-700/30">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-400 mb-1">
-                  {marketData?.inflationRate ?? '--'}%
-                </div>
-                <div className="text-sm text-blue-300">Inflation</div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-blue-900/20 border-blue-700/30">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-400 mb-1">
-                  {marketData?.unemploymentRate ?? '--'}%
-                </div>
-                <div className="text-sm text-blue-300">Unemployment</div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Commodity Prices */}
-        <div className="mb-8">
-          <h3 className="text-xl font-semibold text-blue-100 mb-4">Commodity Markets</h3>
-          {loadingCommodities && <div className="text-blue-300 text-center py-4">Loading commodities...</div>}
-          {errorCommodities && <div className="text-red-400 text-center py-4">Error loading commodities: {errorCommodities.message}</div>}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {commodityPrices.map((commodity: any) => (
-              <Card key={commodity.name} className="bg-blue-900/20 border-blue-700/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-blue-100 font-medium">{commodity.name}</h4>
-                    <span className={`text-sm font-medium ${getTrendColor(commodity.trend)}`}>
-                      {commodity.change > 0 ? '+' : ''}{commodity.change}%
-                    </span>
+          <TabsContent value="overview" className="space-y-6">
+            {/* System Status */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <GlassCard>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Active Crises</CardTitle>
+                  <AlertTriangle className="h-4 w-4 text-red-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {crisesLoading ? <Skeleton className="h-8 w-12" /> : activeCrises?.length || 0}
                   </div>
-                  <div className="text-2xl font-bold text-blue-200">
-                    ${commodity.price}
-                  </div>
-                  <div className="flex items-center gap-1 mt-1">
-                    <span className={`text-xs ${getTrendColor(commodity.trend)}`}>
-                      {commodity.trend === 'up' ? '↗' : '↘'}
-                    </span>
-                    <span className="text-xs text-blue-300">
-                      {commodity.trend === 'up' ? 'Rising' : 'Falling'}
-                    </span>
-                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Global monitoring
+                  </p>
                 </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+              </GlassCard>
 
-        {/* Economic Alerts */}
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold text-blue-100 mb-4">Economic Alerts</h3>
-          {loadingAlerts && <div className="text-blue-300 text-center py-4">Loading alerts...</div>}
-          {errorAlerts && <div className="text-red-400 text-center py-4">Error loading alerts: {errorAlerts.message}</div>}
-          <div className="space-y-4">
-            {economicAlerts.map((alert: any) => (
-              <Card key={alert.id} className="bg-blue-900/20 border-blue-700/30">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <Badge className={`${getSeverityColor(alert.severity)} text-white`}>
-                        {alert.severity}
-                      </Badge>
-                      <div>
-                        <h4 className="text-blue-100 font-medium">{alert.title}</h4>
-                        <p className="text-blue-200 text-sm mt-1">{alert.description}</p>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {(alert.affectedCountries || []).map((countryId: string) => (
-                            (userRole === 'admin' || userRole === 'dm' || userCountryId === countryId) && (
-                              <Button key={countryId} size="sm" className="bg-orange-600/80 text-white border-orange-500/30 hover:bg-orange-600/90" onClick={() => router.push('/eci')}>
-                                🏛️ View in ECI ({countryId})
-                              </Button>
-                            )
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <span className="text-xs text-blue-300">
-                      {alert.timestamp ? new Date(alert.timestamp).toLocaleTimeString() : ''}
-                    </span>
+              <GlassCard>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Intel Items</CardTitle>
+                  <Eye className="h-4 w-4 text-blue-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {intelligenceLoading ? <Skeleton className="h-8 w-12" /> : intelligenceFeed?.total || 0}
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    Last 7 days
+                  </p>
                 </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+              </GlassCard>
 
-        {/* Market Analysis */}
-        <div>
-          <h3 className="text-xl font-semibold text-blue-100 mb-4">Market Analysis</h3>
-          <Card className="bg-blue-900/20 border-blue-700/30">
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-400 mb-2">Bullish</div>
-                  <div className="text-blue-300 text-sm">Market Sentiment</div>
-                  <div className="text-blue-400 text-xs mt-1">Based on 24h data</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-yellow-400 mb-2">--</div>
-                  <div className="text-blue-300 text-sm">Currency Volatility</div>
-                  <div className="text-blue-400 text-xs mt-1">Above average</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-400 mb-2">--</div>
-                  <div className="text-sm text-blue-300">Trade Volume</div>
-                  <div className="text-blue-400 text-xs mt-1">Monthly total</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-    </GlassCard>
-    </div>
-  );
-}
+              <GlassCard>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Global GDP</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-green-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {economicLoading ? <Skeleton className="h-8 w-16" /> : 
+                      `$${((economicIndicators?.globalGDP || 0) / 1e12).toFixed(1)}T`}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    +{economicIndicators?.globalGrowth?.toFixed(1) || 0}% growth
+                  </p>
+                </CardContent>
+              </GlassCard>
 
-function DiplomaticMatrix() {
-  // Live tRPC queries for real-time data
-  const { data: diplomaticRelations = [], isLoading: loadingRelations, error: errorRelations } = api.sdi.getDiplomaticRelations.useQuery(undefined, { refetchInterval: 5000 });
-  const { data: activeTreaties = [], isLoading: loadingTreaties, error: errorTreaties } = api.sdi.getActiveTreaties.useQuery(undefined, { refetchInterval: 5000 });
-  // const { data: diplomaticEvents = [], isLoading: loadingEvents, error: errorEvents } = api.sdi.getDiplomaticEvents.useQuery(undefined, { refetchInterval: 5000 });
-
-  const getRelationshipColor = (relationship: string) => {
-    const colors = {
-      alliance: 'text-green-400',
-      neutral: 'text-yellow-400',
-      tension: 'text-red-400',
-      conflict: 'text-red-600'
-    };
-    return colors[relationship as keyof typeof colors] || 'text-gray-400';
-  };
-
-  const getStatusColor = (status: string) => {
-    const colors = {
-      active: 'bg-green-500',
-      monitoring: 'bg-yellow-500',
-      preparing: 'bg-blue-500',
-      scheduled: 'bg-purple-500'
-    };
-    return colors[status as keyof typeof colors] || 'bg-gray-500';
-  };
-
-  const getTreatyTypeColor = (type: string) => {
-    const colors = {
-      economic: 'text-green-400',
-      military: 'text-red-400',
-      cultural: 'text-blue-400',
-      environmental: 'text-emerald-400'
-    };
-    return colors[type as keyof typeof colors] || 'text-gray-400';
-  };
-
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const { user } = useUser();
-  const { data: userProfile } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
-    { enabled: !!user?.id }
-  );
-  const userCountryId = userProfile?.countryId;
-  const userRole = (userProfile as any)?.role || 'user';
-  const router = useRouter();
-
-  return (
-    <div className="max-w-7xl mx-auto w-full animate-fade-in">
-      <GlassCard variant="diplomatic" blur="prominent" glow="hover" className="p-8 mb-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-3xl font-bold mb-2 text-blue-100 diplomatic-header">
-              Diplomatic Relations Matrix
-            </h2>
-            <p className="text-lg text-blue-200">
-              Comprehensive diplomatic relationship tracking and analysis
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-400">{diplomaticRelations.length}</div>
-              <div className="text-sm text-blue-300">Active Relations</div>
+              <GlassCard>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">System Health</CardTitle>
+                  <Activity className="h-4 w-4 text-purple-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {statusLoading ? <Skeleton className="h-8 w-16" /> : 
+                      `${systemStatus?.uptime?.toFixed(1) || 99.9}%`}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Uptime
+                  </p>
+                </CardContent>
+              </GlassCard>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-400">{activeTreaties.length}</div>
-              <div className="text-sm text-blue-300">Active Treaties</div>
-            </div>
-          </div>
-        </div>
 
-        {/* Loading/Error States */}
-        {loadingRelations && <div className="text-blue-300 text-center py-8">Loading relations...</div>}
-        {errorRelations && <div className="text-red-400 text-center py-8">Error loading relations: {errorRelations.message}</div>}
-
-        {/* Diplomatic Relations Network */}
-        <div className="mb-8">
-          <h3 className="text-xl font-semibold text-blue-100 mb-4">Bilateral Relations</h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {diplomaticRelations.map((relation: any) => (
-              <Card key={relation.id} className="bg-blue-900/20 border-blue-700/30">
+            {/* Recent Activity */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <GlassCard>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Badge className={`${getStatusColor(relation.status)} text-white`}>
-                        {relation.status}
-                      </Badge>
-                      <span className={`font-medium ${getRelationshipColor(relation.relationship)}`}>
-                        {relation.relationship?.toUpperCase()}
-                      </span>
-                    </div>
-                    <span className="text-xs text-blue-300">
-                      {relation.lastContact ? new Date(relation.lastContact).toLocaleTimeString() : ''}
-                    </span>
-                  </div>
-                  <CardTitle className="text-blue-100 text-lg">
-                    {relation.country1} ↔ {relation.country2}
+                  <CardTitle className="flex items-center gap-2">
+                    <Satellite className="h-5 w-5" />
+                    Recent Intelligence
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-blue-300 text-sm">Relationship Strength</span>
-                      <span className="text-blue-200 font-medium">{relation.strength}%</span>
-                    </div>
-                    <div className="w-full bg-blue-800/30 rounded-full h-2">
-                      <div 
-                        className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${relation.strength}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  <div className="mb-4">
-                    <span className="text-blue-300 text-sm">Active Treaties:</span>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {(relation.treaties || []).map((treaty: string, index: number) => (
-                        <Badge key={index} variant="outline" className="text-blue-200 border-blue-600">
-                          {treaty}
-                        </Badge>
+                  {intelligenceLoading ? (
+                    <div className="space-y-2">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Skeleton key={i} className="h-12 w-full" />
                       ))}
                     </div>
-                  </div>
-                  <div className="flex gap-2 mt-2">
-                    {['country1', 'country2'].map((key) => (
-                      (userRole === 'admin' || userRole === 'dm' || userCountryId === relation[key]) && (
-                        <Button key={relation[key]} size="sm" className="bg-orange-600/80 text-white border-orange-500/30 hover:bg-orange-600/90" onClick={() => router.push('/eci')}>
-                          🏛️ View in ECI ({relation[key]})
-                        </Button>
-                      )
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="border-blue-600 text-blue-200">
-                      View Details
-                    </Button>
-                    <Button size="sm" className="bg-blue-600 text-white">
-                      Initiate Contact
-                    </Button>
-                  </div>
+                  ) : intelligenceFeed?.data && intelligenceFeed.data.length > 0 ? (
+                    <div className="space-y-3">
+                      {intelligenceFeed.data.slice(0, 5).map((item: any) => (
+                        <div key={item.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{item.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(item.timestamp).toLocaleDateString()} • {item.source}
+                            </p>
+                          </div>
+                          <Badge variant={item.priority === 'critical' ? 'destructive' : 'secondary'}>
+                            {item.priority}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground">No recent intelligence</p>
+                  )}
                 </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+              </GlassCard>
 
-        {/* Active Treaties */}
-        <div className="mb-8">
-          <h3 className="text-xl font-semibold text-blue-100 mb-4">Active Treaties</h3>
-          {loadingTreaties && <div className="text-blue-300 text-center py-4">Loading treaties...</div>}
-          {errorTreaties && <div className="text-red-400 text-center py-4">Error loading treaties: {errorTreaties.message}</div>}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {activeTreaties.map((treaty: any) => (
-              <Card key={treaty.id} className="bg-blue-900/20 border-blue-700/30">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h4 className="text-blue-100 font-medium">{treaty.name}</h4>
-                      <span className={`text-sm ${getTreatyTypeColor(treaty.type)}`}>
-                        {treaty.type?.charAt(0).toUpperCase() + treaty.type?.slice(1)}
-                      </span>
+              <GlassCard>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5" />
+                    Active Situations
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {crisesLoading ? (
+                    <div className="space-y-2">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <Skeleton key={i} className="h-16 w-full" />
+                      ))}
                     </div>
-                    <Badge className={`${getStatusColor(treaty.status)} text-white`}>
-                      {treaty.status}
-                    </Badge>
-                  </div>
-                  <div className="mb-3">
-                    <span className="text-blue-300 text-sm">Parties:</span>
-                    <div className="text-blue-200 text-sm mt-1">
-                      {(treaty.parties || []).join(', ')}
+                  ) : activeCrises && activeCrises.length > 0 ? (
+                    <div className="space-y-3">
+                      {activeCrises.slice(0, 3).map((crisis: any) => (
+                        <div key={crisis.id} className="p-3 bg-muted rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="font-medium">{crisis.title}</p>
+                            <Badge variant={crisis.severity === 'critical' ? 'destructive' : 'secondary'}>
+                              {crisis.severity}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Status: {crisis.status} • {new Date(crisis.timestamp).toLocaleDateString()}
+                          </p>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                  <div className="flex justify-between text-xs text-blue-300">
-                    <span>Signed: {treaty.signedDate ? formatDate(treaty.signedDate) : ''}</span>
-                    <span>Expires: {treaty.expiryDate ? formatDate(treaty.expiryDate) : ''}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {(treaty.parties || []).map((partyId: string) => (
-                      (userRole === 'admin' || userRole === 'dm' || userCountryId === partyId) && (
-                        <Button key={partyId} size="sm" className="bg-orange-600/80 text-white border-orange-500/30 hover:bg-orange-600/90" onClick={() => router.push('/eci')}>
-                          🏛️ View in ECI ({partyId})
-                        </Button>
-                      )
-                    ))}
-                  </div>
+                  ) : (
+                    <p className="text-muted-foreground">No active situations</p>
+                  )}
                 </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+              </GlassCard>
+            </div>
+          </TabsContent>
 
-        {/* Upcoming Diplomatic Events */}
-        <div>
-          <h3 className="text-xl font-semibold text-blue-100 mb-4">Upcoming Events</h3>
-          {/* {loadingEvents && <div className="text-blue-300 text-center py-4">Loading events...</div>} */}
-          {/* {errorEvents && <div className="text-red-400 text-center py-4">Error loading events: {errorEvents.message}</div>} */}
-          <div className="space-y-4">
-            {/* {diplomaticEvents.map((event: any) => (
-              <Card key={event.id} className="bg-blue-900/20 border-blue-700/30">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <Badge className={`${getStatusColor(event.status)} text-white`}>
-                        {event.status}
-                      </Badge>
-                      <div>
-                        <h4 className="text-blue-100 font-medium">{event.title}</h4>
-                        <p className="text-blue-200 text-sm mt-1">
-                          Participants: {(event.participants || []).join(', ')}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-blue-300 text-sm">{event.date ? formatDate(event.date) : ''}</div>
-                      <div className="text-blue-400 text-xs capitalize">{event.type}</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))} */}
-          </div>
-        </div>
-    </GlassCard>
+          <TabsContent value="intelligence" className="space-y-6">
+            <GlassCard>
+              <CardHeader>
+                <CardTitle>Intelligence Feed</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {intelligenceLoading ? (
+                  <Skeleton className="h-8 w-32" />
+                ) : intelligenceFeed?.data && intelligenceFeed.data.length > 0 ? (
+                  <ul className="space-y-2">
+                    {intelligenceFeed.data.map((item: any) => (
+                      <li key={item.id} className="border-b last:border-b-0 pb-2">
+                        <div className="font-semibold">{item.title || item.category}</div>
+                        <div className="text-xs text-muted-foreground">{item.timestamp ? new Date(item.timestamp).toLocaleString() : ''}</div>
+                        <div>{item.summary || item.content || item.description}</div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-muted-foreground">No intelligence items found.</p>
+                )}
+              </CardContent>
+            </GlassCard>
+          </TabsContent>
+
+          <TabsContent value="crisis" className="space-y-6">
+            <GlassCard>
+              <CardHeader>
+                <CardTitle>Crisis Management</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {crisesLoading ? (
+                  <Skeleton className="h-8 w-32" />
+                ) : activeCrises && activeCrises.length > 0 ? (
+                  <ul className="space-y-2">
+                    {activeCrises.map((crisis: any) => (
+                      <li key={crisis.id} className="border-b last:border-b-0 pb-2">
+                        <div className="font-semibold">{crisis.title || crisis.type}</div>
+                        <div className="text-xs text-muted-foreground">{crisis.timestamp ? new Date(crisis.timestamp).toLocaleString() : ''}</div>
+                        <div>{crisis.description || crisis.summary}</div>
+                        {crisis.affectedCountries && crisis.affectedCountries.length > 0 && (
+                          <div className="text-xs text-blue-500">Affected: {crisis.affectedCountries.join(', ')}</div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-muted-foreground">No active crises at this time.</p>
+                )}
+              </CardContent>
+            </GlassCard>
+          </TabsContent>
+
+          <TabsContent value="economic" className="space-y-6">
+            <GlassCard>
+              <CardHeader>
+                <CardTitle>Economic Intelligence</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {economicLoading ? (
+                  <Skeleton className="h-8 w-32" />
+                ) : economicIndicators && Object.keys(economicIndicators).length > 0 ? (
+                  <ul className="space-y-2">
+                    {Object.entries(economicIndicators).map(([key, value]) => (
+                      <li key={key} className="border-b last:border-b-0 pb-2 flex justify-between">
+                        <span className="font-semibold capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
+                        <span>{typeof value === 'number' ? value.toLocaleString() : String(value)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-muted-foreground">No economic indicators available.</p>
+                )}
+              </CardContent>
+            </GlassCard>
+          </TabsContent>
+
+          <TabsContent value="diplomatic" className="space-y-6">
+            <GlassCard>
+              <CardHeader>
+                <CardTitle>Diplomatic Relations</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {diplomaticLoading ? (
+                  <Skeleton className="h-8 w-32" />
+                ) : diplomaticRelations && diplomaticRelations.length > 0 ? (
+                  <ul className="space-y-2">
+                    {diplomaticRelations.map((relation: any) => (
+                      <li key={relation.id} className="border-b last:border-b-0 pb-2">
+                        <div className="font-semibold">{relation.countryName || relation.partnerName}</div>
+                        <div className="text-xs text-muted-foreground">Status: {relation.status || 'Unknown'}</div>
+                        <div>{relation.summary || relation.description}</div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-muted-foreground">No diplomatic relations data found.</p>
+                )}
+              </CardContent>
+            </GlassCard>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
 
-const MODULES = [
-  { key: 'summary', label: 'Global Overview' },
-  { key: 'intelligence', label: 'Intelligence Feed' },
-  { key: 'comms', label: 'Secure Comms' },
-  { key: 'crisis', label: 'Crisis Management' },
-  { key: 'economic', label: 'Economic Intelligence' },
-  { key: 'diplomatic', label: 'Diplomatic Matrix' },
-];
+export default function SovereignDigitalInterface() {
+  // Show message when Clerk is not configured
+  if (!isClerkConfigured) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <GlassCard className="p-8 text-center max-w-2xl mx-auto">
+          <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <h1 className="text-2xl font-bold mb-4">Authentication Not Configured</h1>
+          <p className="text-muted-foreground mb-6">
+            User authentication is not set up for this application. The Sovereign Digital Interface 
+            requires authentication to access intelligence features.
+          </p>
+          <div className="flex gap-4 justify-center">
+            <Button asChild>
+              <a href="/dashboard">View Dashboard</a>
+            </Button>
+            <Button variant="outline" asChild>
+              <a href="/countries">Browse Countries</a>
+            </Button>
+          </div>
+        </GlassCard>
+      </div>
+    );
+  }
 
-export default function SDIPage() {
-  const [selectedModule, setSelectedModule] = useState('summary');
-  const { user } = useUser();
-  const { data: profile } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
-    { enabled: !!user?.id }
-  );
-  const countryId = profile?.countryId;
-
-  // Sidebar links for all SDI submodules
-  const sdiLinks = [
-    { key: 'summary', label: 'Global Overview', href: '/sdi', icon: <FaGlobe /> },
-    { key: 'intelligence', label: 'Intelligence Feed', href: '/sdi/intelligence', icon: <FaSatellite /> },
-    { key: 'comms', label: 'Secure Comms', href: '/sdi/communications', icon: <FaLock /> },
-    { key: 'crisis', label: 'Crisis Management', href: '/sdi/crisis', icon: <FaExclamationTriangle /> },
-    { key: 'economic', label: 'Economic Intelligence', href: '/sdi/economic', icon: <FaChartLine /> },
-    { key: 'diplomatic', label: 'Diplomatic Matrix', href: '/sdi/diplomatic', icon: <FaHandshake /> },
-  ];
-
-  // Handle sidebar navigation
-  const handleSidebarNav = (key: string) => {
-    setSelectedModule(key);
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-slate-900 text-white flex flex-row h-screen w-full overflow-hidden">
-      {/* Unified Sidebar outside main content */}
-      <UnifiedSidebar
-        current="sdi"
-        profile={{
-          name: (profile as any)?.name,
-          role: (profile as any)?.role,
-          avatarUrl: (profile as any)?.avatarUrl,
-          email: (profile as any)?.email,
-        }}
-        countryId={countryId || undefined}
-        links={sdiLinks}
-        activeKey={selectedModule}
-        onNav={handleSidebarNav}
-      />
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col h-full overflow-y-auto px-6 py-10 bg-transparent">
-        {selectedModule === 'summary' && <GlobalOverview />}
-        {selectedModule === 'intelligence' && <IntelligenceFeed />}
-        {selectedModule === 'comms' && <SecureComms />}
-        {selectedModule === 'crisis' && <CrisisManagement />}
-        {selectedModule === 'economic' && <EconomicIntelligence />}
-        {selectedModule === 'diplomatic' && <DiplomaticMatrix />}
-      </main>
-    </div>
-  );
-} 
+  return <SdiContent />;
+}

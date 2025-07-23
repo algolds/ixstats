@@ -644,7 +644,7 @@ async function calculateRealTimeMetrics(db: any, countryId: string) {
     'Extravagant': 100
   };
   
-  const baseSocialScore = economicTierScores[country?.economicTier as string] || 50;
+  const baseSocialScore = economicTierScores[country?.economicTier as string] ?? 50;
   const socialPolicies = activePolicies.filter((p: any) => {
     const data = JSON.parse(p.value);
     return data.category === 'labor' || data.category === 'infrastructure';

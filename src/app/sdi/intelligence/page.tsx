@@ -8,7 +8,7 @@ export default function IntelligenceFeedPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
       {/* Header */}
-      <header className="bg-black/20 backdrop-blur-md border-b border-white/10 p-4">
+      <header className="bg-black/80 border-b border-white/10 p-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
             <Link href="/sdi">

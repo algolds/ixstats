@@ -11,19 +11,12 @@ import { AlertTriangle, TrendingUp, Globe, Shield, DollarSign, Users, Clock } fr
 import { api } from '~/trpc/react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
+import type { IntelligenceItem } from '~/types/sdi';
 
-interface IntelligenceItem {
-  id: string;
-  title: string;
-  content: string;
-  category: 'economic' | 'crisis' | 'diplomatic' | 'security' | 'technology' | 'environment';
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  source: string;
-  timestamp: Date;
-  region?: string;
-  affectedCountries?: string[];
-  isActive: boolean;
-}
+// Check if Clerk is configured
+const isClerkConfigured = Boolean(
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith('pk_')
+);
 
 const categoryIcons = {
   economic: DollarSign,
@@ -41,7 +34,7 @@ const priorityColors = {
   critical: 'bg-red-500'
 };
 
-export default function IntelligenceFeed() {
+function IntelligenceFeedContent() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedPriority, setSelectedPriority] = useState<string>('all');
   const router = useRouter();
@@ -52,7 +45,7 @@ export default function IntelligenceFeed() {
     { enabled: !!user?.id }
   );
   const userCountryId = userProfile?.countryId;
-  const userRole = (userProfile as any)?.role || 'user';
+  const userRole = user?.publicMetadata?.role || 'user';
 
   // Live tRPC query with polling
   const { data, isLoading, error } = api.sdi.getIntelligenceFeed.useQuery({
@@ -63,9 +56,9 @@ export default function IntelligenceFeed() {
   }, { refetchInterval: 5000 });
 
   const validCategories = ["economic", "crisis", "diplomatic", "security", "technology", "environment"];
-  const filteredData: IntelligenceItem[] = (data?.data ?? []).filter((item: any) => validCategories.includes(item.category)).map((item: any) => ({
+  const filteredData: IntelligenceItem[] = (data?.data ?? []).filter((item: IntelligenceItem) => validCategories.includes(item.category)).map((item: IntelligenceItem) => ({
     ...item,
-    category: item.category as IntelligenceItem['category'],
+    category: item.category,
     affectedCountries: Array.isArray(item.affectedCountries)
       ? item.affectedCountries
       : (typeof item.affectedCountries === 'string' && item.affectedCountries
@@ -163,14 +156,14 @@ export default function IntelligenceFeed() {
         {/* Intelligence Items Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           {filteredData.map((item: IntelligenceItem) => {
-            const IconComponent = categoryIcons[item.category as keyof typeof categoryIcons];
+            const IconComponent = categoryIcons[item.category];
             return (
               <Card key={item.id} className="bg-blue-900/20 border-blue-700/30 hover:bg-blue-800/30 transition-all">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
                       <IconComponent className={`w-5 h-5 ${getCategoryColor(item.category)}`} />
-                      <Badge className={`${priorityColors[item.priority as keyof typeof priorityColors]} text-white`}>
+                      <Badge className={`${priorityColors[item.priority]} text-white`}>
                         {item.priority}
                       </Badge>
                     </div>
@@ -223,4 +216,37 @@ export default function IntelligenceFeed() {
       </div>
     </GlassCard>
   );
+}
+
+export default function IntelligenceFeed() {
+  // Show message when Clerk is not configured
+  if (!isClerkConfigured) {
+    return (
+      <GlassCard variant="diplomatic" blur="prominent" glow="hover" className="p-8 text-center animate-fade-in">
+        <Shield className="h-12 w-12 mx-auto mb-4 text-blue-300" />
+        <h2 className="text-2xl font-bold mb-4 text-blue-100">Authentication Not Configured</h2>
+        <p className="text-blue-200 mb-6">
+          User authentication is not set up for this application. Intelligence features 
+          require authentication to access classified information.
+        </p>
+        <div className="flex gap-4 justify-center">
+          <Button 
+            onClick={() => router.push("/dashboard")}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            View Dashboard
+          </Button>
+          <Button 
+            onClick={() => router.push("/countries")}
+            variant="outline"
+            className="border-blue-500 text-blue-300 hover:bg-blue-800"
+          >
+            Browse Countries
+          </Button>
+        </div>
+      </GlassCard>
+    );
+  }
+
+  return <IntelligenceFeedContent />;
 } 

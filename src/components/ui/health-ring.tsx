@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { AnimatedNumber } from "./animated-number";
+import { Tooltip, TooltipTrigger, TooltipContent } from "./tooltip";
 
 function hexToRgb(hexInput?: string) {
   let hex = hexInput || '#10b981';
@@ -25,6 +26,9 @@ interface HealthRingProps {
   label?: string;
   target?: number; // for SDI-style (default 100)
   tooltip?: string;
+  className?: string;
+  onClick?: () => void;
+  isClickable?: boolean;
 }
 
 export const HealthRing: React.FC<HealthRingProps> = ({
@@ -34,9 +38,14 @@ export const HealthRing: React.FC<HealthRingProps> = ({
   label,
   target = 100,
   tooltip = '',
+  className = '',
+  onClick,
+  isClickable = false,
 }) => {
+  // Ensure size is a valid number
+  const validSize = typeof size === 'number' && !isNaN(size) && size > 0 ? size : 110;
   const stroke = 8;
-  const radius = (size - stroke * 2) / 2;
+  const radius = (validSize - stroke * 2) / 2;
   const circumference = 2 * Math.PI * radius;
   const progress = Math.max(0, Math.min(target, value));
   const offset = circumference - (progress / target) * circumference;
@@ -45,33 +54,53 @@ export const HealthRing: React.FC<HealthRingProps> = ({
   // Glassy border color
   const borderColor = `rgba(${rgb.r},${rgb.g},${rgb.b},0.45)`;
 
-  return (
+  const ringContent = (
     <div
-      className="relative flex items-center justify-center transition-all duration-300 group/healthring"
-      style={{ width: size, height: size }}
+      className={`relative flex items-center justify-center transition-all duration-300 group/healthring ${
+        isClickable ? 'cursor-pointer hover:scale-105 active:scale-95' : ''
+      } ${className}`}
+      style={{ width: validSize, height: validSize }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      tabIndex={0}
+      onClick={onClick}
+      tabIndex={isClickable ? 0 : -1}
       onFocus={() => setHovered(true)}
       onBlur={() => setHovered(false)}
-      title={tooltip || label}
+      role={isClickable ? "button" : undefined}
+      aria-label={isClickable ? `View details for ${label}` : undefined}
     >
-      {/* Glass blur border always visible, colored */}
+      {/* Enhanced glass border with multiple layers */}
       <div
         className="absolute inset-0 rounded-full pointer-events-none z-10"
         style={{
-          boxShadow: `0 0 0 6px ${borderColor}, 0 0 24px 8px ${borderColor}`,
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          opacity: hovered ? 1 : 0.7,
+          background: `linear-gradient(135deg, rgba(${rgb.r},${rgb.g},${rgb.b},0.15), rgba(${rgb.r},${rgb.g},${rgb.b},0.05))`,
+          boxShadow: `
+            0 0 0 2px rgba(${rgb.r},${rgb.g},${rgb.b},0.6),
+            0 0 20px 4px rgba(${rgb.r},${rgb.g},${rgb.b},0.4),
+            0 0 40px 8px rgba(${rgb.r},${rgb.g},${rgb.b},0.2),
+            inset 0 1px 0 rgba(255,255,255,0.3)
+          `,
+          backdropFilter: 'blur(12px) saturate(1.8)',
+          WebkitBackdropFilter: 'blur(12px) saturate(1.8)',
+          opacity: hovered ? 1 : 0.8,
+          transition: 'opacity 0.3s, transform 0.3s',
+          transform: hovered ? 'scale(1.05)' : 'scale(1)',
+        }}
+      />
+      {/* Inner glow layer */}
+      <div
+        className="absolute inset-1 rounded-full pointer-events-none z-5"
+        style={{
+          background: `radial-gradient(circle at 30% 30%, rgba(${rgb.r},${rgb.g},${rgb.b},0.2), transparent 70%)`,
+          opacity: hovered ? 0.8 : 0.4,
           transition: 'opacity 0.3s',
         }}
       />
-      <svg width={size} height={size} className="transform -rotate-90 z-20">
+      <svg width={validSize} height={validSize} className="transform -rotate-90 z-20">
         {/* Background circle */}
         <circle
-          cx={size / 2}
-          cy={size / 2}
+          cx={validSize / 2}
+          cy={validSize / 2}
           r={radius}
           fill="none"
           stroke="rgba(255,255,255,0.1)"
@@ -92,8 +121,8 @@ export const HealthRing: React.FC<HealthRingProps> = ({
           </linearGradient>
         </defs>
         <circle
-          cx={size / 2}
-          cy={size / 2}
+          cx={validSize / 2}
+          cy={validSize / 2}
           r={radius}
           fill="none"
           stroke={`url(#gradient-${label})`}
@@ -127,6 +156,22 @@ export const HealthRing: React.FC<HealthRingProps> = ({
       </div>
     </div>
   );
+
+  if (tooltip) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {ringContent}
+        </TooltipTrigger>
+        <TooltipContent side="top" sideOffset={8}>
+          <div className="font-medium">{label}</div>
+          <div className="text-white/80 text-xs mt-1">{tooltip}</div>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return ringContent;
 };
 
 export default HealthRing; 

@@ -19,18 +19,46 @@ import {
   ChevronDown,
   LogOut,
   UserCheck,
-  AlertCircle
+  AlertCircle,
+  Bell,
+  Clock,
+  X,
+  Info,
+  CheckCircle,
+  AlertTriangle
 } from "lucide-react";
+import { CommandPalette } from "~/components/CommandPalette";
+import {
+  NavigationMenu,
+  NavigationMenuList,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuTrigger,
+  NavigationMenuContent
+} from "~/components/ui/navigation-menu";
 import { useTheme } from "~/context/theme-context";
-import { UserButton, SignInButton, SignedIn, SignedOut, useUser } from "@clerk/nextjs";
+import { UserButton, SignInButton, SignedIn, SignedOut, useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { CountryFlag } from "./CountryFlag";
+import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
+
+interface NavigationItem {
+  name: string;
+  href: string;
+  icon: any;
+  requiresAuth?: boolean;
+  requiresCountry?: boolean;
+  adminOnly?: boolean;
+  description?: string;
+}
 
 export function Navigation() {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const { user, isLoaded } = useUser();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isSticky, setIsSticky] = useState(false);
+  const [hideSticky, setHideSticky] = useState(false);
 
   // Get user profile to show linked country
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
@@ -47,6 +75,17 @@ export function Navigation() {
     }
   }, [showUserMenu]);
 
+  // Sticky navigation scroll detection
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      setIsSticky(scrollY > 100);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const navigationItems = [
     {
       name: "Dashboard",
@@ -55,30 +94,41 @@ export function Navigation() {
       requiresAuth: true,
     },
     {
-      name: "Explore",
-      href: "/explore",
+      name: "Countries",
+      href: "/countries",
       icon: Globe,
       requiresAuth: false,
     },
     {
-      name: "Economy Builder",
-      href: "/builder",
-      icon: Building,
+      name: "MyCountry®",
+      href: "/mycountry",
+      icon: Crown,
       requiresAuth: true,
+      requiresCountry: true,
     },
     {
-      name: "DM Controls",
-      href: "/dm-dashboard",
+      name: "ECI",
+      href: "/eci",
+      icon: Building,
+      requiresAuth: true,
+      requiresCountry: true,
+      description: "Executive Command Interface",
+    },
+    {
+      name: "SDI",
+      href: "/sdi",
       icon: Database,
       requiresAuth: true,
+      requiresCountry: true,
+      description: "Sovereign Digital Interface",
     },
     {
       name: "Admin",
       href: "/admin",
       icon: Settings,
       requiresAuth: true,
+      adminOnly: true,
     }
-  
   ];
 
   const isCurrentPage = (href: string) => {
@@ -95,251 +145,288 @@ export function Navigation() {
   const setupStatus = getSetupStatus();
 
   return (
-    <nav className="border-b border-[var(--color-border-primary)] bg-[var(--color-bg-surface)] shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex">
-            {/* Logo */}
-            <div className="flex-shrink-0 flex items-center">
-              <Link
-                href="/"
-                className="text-2xl font-bold text-gradient hover:opacity-80 transition-opacity"
-              >
-                IxStats™
-              </Link>
-            </div>
-
-            {/* Navigation Links */}
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-2">
-              {navigationItems.map((item) => {
-                const Icon = item.icon;
-                const current = isCurrentPage(item.href);
-                const showItem = !item.requiresAuth || (user && setupStatus === 'complete');
-
-                if (!showItem) return null;
-
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={`nav-link ${current ? 'active' : ''}`}
-                    aria-current={current ? "page" : undefined}
-                  >
-                    <Icon className="h-4 w-4 mr-2" aria-hidden="true" />
-                    {item.name}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Right side: Theme toggle and Auth */}
-          <div className="flex items-center gap-3">
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className="btn-secondary p-2 rounded-md"
-              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
-            >
-              {theme === 'dark' ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )}
-            </button>
-
-            {/* Authentication Section */}
-            <SignedIn>
-              <div className="relative">
-                {/* User Status Display */}
-                <div className="flex items-center gap-2">
-                  {/* Setup Status Indicator */}
-                  {setupStatus === 'needs-setup' && (
-                    <Link
-                      href="/setup"
-                      className="flex items-center gap-1 px-2 py-1 bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-xs rounded-md hover:bg-amber-200 dark:hover:bg-amber-900/40 transition-colors"
-                    >
-                      <AlertCircle className="h-3 w-3" />
-                      Setup Required
-                    </Link>
-                  )}
-                  
-                  {/* User's Country Display */}
-                  {setupStatus === 'complete' && userProfile?.country && (
-                    <Link
-                      href={`/countries/${userProfile.country.id}`}
-                      className="flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs rounded-md hover:bg-blue-200 dark:hover:bg-blue-900/40 transition-colors"
-                    >
-                      <Crown className="h-3 w-3" />
-                      {userProfile.country.name}
-                    </Link>
-                  )}
-
-                  {/* User Menu Button */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowUserMenu(!showUserMenu);
-                    }}
-                    className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                  >
-                    <div className="flex items-center gap-2">
-                      {/* Avatar: Use country flag if available, else initials */}
-                      {setupStatus === 'complete' && userProfile?.country ? (
-                        <CountryFlag countryName={userProfile.country.name} size="md" className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 object-cover" />
-                      ) : (
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                          {user?.firstName?.[0] || user?.username?.[0] || 'U'}
-                        </div>
-                      )}
-                      <div className="hidden md:block text-left">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {user?.firstName || user?.username || 'User'}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {setupStatus === 'complete' ? 'Ready' : 'Setup Required'}
-                        </div>
-                      </div>
-                      <ChevronDown className={`h-4 w-4 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
-                    </div>
-                  </button>
-                </div>
-
-                {/* User Dropdown Menu */}
-                {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-50">
-                    <div className="py-2">
-                      {/* User Info */}
-                      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center gap-3">
-                          {/* Avatar: Use country flag if available, else initials */}
-                          {setupStatus === 'complete' && userProfile?.country ? (
-                            <CountryFlag countryName={userProfile.country.name} size="lg" className="w-10 h-10 rounded-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 object-cover" />
-                          ) : (
-                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium">
-                              {user?.firstName?.[0] || user?.username?.[0] || 'U'}
-                            </div>
-                          )}
-                          <div>
-                            <div className="font-medium text-gray-900 dark:text-white">
-                              {user?.firstName} {user?.lastName}
-                            </div>
-                            {/* Email hidden intentionally */}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Menu Items */}
-                      <div className="py-1">
-                        {setupStatus === 'complete' && userProfile?.country && (
-                          <Link
-                            href={`/countries/${userProfile.country.id}`}
-                            className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                            onClick={() => setShowUserMenu(false)}
-                          >
-                            <Crown className="h-4 w-4" />
-                            My Country: {userProfile.country.name}
-                          </Link>
-                        )}
-                        
-                        {setupStatus === 'needs-setup' && (
-                          <Link
-                            href="/setup"
-                            className="flex items-center gap-3 px-4 py-2 text-sm text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20"
-                            onClick={() => setShowUserMenu(false)}
-                          >
-                            <AlertCircle className="h-4 w-4" />
-                            Complete Setup
-                          </Link>
-                        )}
-
-                        <Link
-                          href="/dashboard"
-                          className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                          onClick={() => setShowUserMenu(false)}
-                        >
-                          <Home className="h-4 w-4" />
-                          Dashboard
-                        </Link>
-
-                        <Link
-                          href="/profile"
-                          className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                          onClick={() => setShowUserMenu(false)}
-                        >
-                          <User className="h-4 w-4" />
-                          Profile Settings
-                        </Link>
-                      </div>
-
-                      {/* Divider */}
-                      <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
-
-                      {/* Sign Out */}
-                      <div className="px-4 py-2">
-                        <UserButton 
-                          afterSignOutUrl="/"
-                          appearance={{
-                            elements: {
-                              userButtonBox: "w-full",
-                              userButtonTrigger: "w-full flex items-center gap-3 px-0 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-                            }
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </SignedIn>
-            
-            <SignedOut>
-              <SignInButton mode="modal">
-                <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-md font-medium transition-colors">
-                  <UserCheck className="h-4 w-4" />
-                  <span className="hidden sm:inline">Sign In</span>
-                </button>
-              </SignInButton>
-            </SignedOut>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Navigation */}
-      <div className="sm:hidden border-t border-[var(--color-border-primary)]">
-        <div className="px-2 pt-2 pb-3 space-y-1">
-          {navigationItems.map((item) => {
-            const Icon = item.icon;
-            const current = isCurrentPage(item.href);
-            const showItem = !item.requiresAuth || (user && setupStatus === 'complete');
-
-            if (!showItem) return null;
-
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`nav-link block w-full ${current ? 'active' : ''}`}
-                aria-current={current ? "page" : undefined}
-              >
-                <Icon className="h-4 w-4 mr-2 inline" aria-hidden="true" />
-                {item.name}
-              </Link>
-            );
-          })}
-          
-          {/* Mobile Setup Link */}
-          {setupStatus === 'needs-setup' && (
+    <>
+      <nav className="relative bg-gradient-to-r from-slate-900/95 via-slate-800/95 to-slate-900/95 backdrop-blur-xl border-b border-white/10 shadow-2xl">
+      {/* Curved bottom edge to match dynamic island */}
+      <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-b from-transparent to-slate-900/20 rounded-b-3xl"></div>
+      
+      <div className="max-w-none mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-stretch h-16 relative">
+          {/* Left: Logo */}
+          <div className="flex items-center flex-shrink-0 z-20">
             <Link
-              href="/setup"
-              className="nav-link block w-full text-amber-700 dark:text-amber-300"
+              href="/"
+              className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent hover:from-blue-300 hover:to-purple-400 transition-all duration-300"
             >
-              <AlertCircle className="h-4 w-4 mr-2 inline" aria-hidden="true" />
-              Complete Setup
+              IxStats™
             </Link>
-          )}
+          </div>
+          
+          {/* Left Navigation Items */}
+          <div className="flex items-center gap-2 z-10">
+            <NavigationMenu>
+              <NavigationMenuList>
+                {navigationItems.slice(0, Math.ceil(navigationItems.length / 2)).map((item) => {
+                  const Icon = item.icon;
+                  const current = isCurrentPage(item.href);
+                  let showItem = true;
+                  if (item.requiresAuth && !user) showItem = false;
+                  if (item.requiresCountry && setupStatus !== 'complete') showItem = false;
+                  if (item.adminOnly && (user as any)?.publicMetadata?.role !== 'admin') showItem = false;
+                  if (!showItem) return null;
+                  return (
+                    <NavigationMenuItem key={item.name}>
+                      <NavigationMenuLink
+                        href={item.href}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 hover:bg-white/10 hover:backdrop-blur-sm ${current ? 'bg-white/15 text-white shadow-lg' : 'text-white/80'}`}
+                        aria-current={current ? 'page' : undefined}
+                      >
+                        <Icon className="h-4 w-4" aria-hidden="true" />
+                        <span className="hidden lg:block">{item.name}</span>
+                      </NavigationMenuLink>
+                    </NavigationMenuItem>
+                  );
+                })}
+              </NavigationMenuList>
+            </NavigationMenu>
+          </div>
+          
+          {/* Center: Dynamic Island */}
+          <div className="flex flex-grow justify-center items-center min-w-0 mx-6 relative">
+            {/* Background glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-blue-500/5 rounded-full blur-2xl opacity-40"></div>
+            <div className="z-20 w-full flex justify-center">
+              <CommandPalette />
+            </div>
+          </div>
+          
+          {/* Right: Navigation Items + User Profile */}
+          <div className="flex items-center gap-4 z-10">
+            {/* Right Navigation Items */}
+            <NavigationMenu>
+              <NavigationMenuList>
+                {navigationItems.slice(Math.ceil(navigationItems.length / 2)).map((item) => {
+                  const Icon = item.icon;
+                  const current = isCurrentPage(item.href);
+                  let showItem = true;
+                  if (item.requiresAuth && !user) showItem = false;
+                  if (item.requiresCountry && setupStatus !== 'complete') showItem = false;
+                  if (item.adminOnly && (user as any)?.publicMetadata?.role !== 'admin') showItem = false;
+                  if (!showItem) return null;
+                  return (
+                    <NavigationMenuItem key={item.name}>
+                      <NavigationMenuLink
+                        href={item.href}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 hover:bg-white/10 hover:backdrop-blur-sm ${current ? 'bg-white/15 text-white shadow-lg' : 'text-white/80'}`}
+                        aria-current={current ? 'page' : undefined}
+                      >
+                        <Icon className="h-4 w-4" aria-hidden="true" />
+                        <span className="hidden lg:block">{item.name}</span>
+                      </NavigationMenuLink>
+                    </NavigationMenuItem>
+                  );
+                })}
+              </NavigationMenuList>
+            </NavigationMenu>
+            
+            {/* User Profile */}
+            <div className="flex items-center ml-2">
+              <UserProfileMenu user={user} userProfile={userProfile} setupStatus={setupStatus} />
+            </div>
+          </div>
         </div>
       </div>
-    </nav>
+      
+      {/* Mobile Navigation */}
+      <div className="lg:hidden">
+        <div className="border-t border-white/10 bg-slate-900/90 backdrop-blur-xl">
+          <div className="flex items-center justify-around px-4 py-2">
+            {navigationItems.filter(item => {
+              let showItem = true;
+              if (item.requiresAuth && !user) showItem = false;
+              if (item.requiresCountry && setupStatus !== 'complete') showItem = false;
+              if (item.adminOnly && (user as any)?.publicMetadata?.role !== 'admin') showItem = false;
+              return showItem;
+            }).slice(0, 5).map((item) => {
+              const Icon = item.icon;
+              const current = isCurrentPage(item.href);
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 ${
+                    current 
+                      ? 'text-white bg-white/15' 
+                      : 'text-white/60 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span className="text-xs font-medium">{item.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+      </nav>
+
+      {/* Sticky Navigation with Dynamic Island */}
+      {isSticky && !hideSticky && (
+        <div className="fixed top-0 left-0 right-0 z-[100] flex justify-center pt-2">
+          <div className="relative">
+            <CommandPalette isSticky={true} />
+            {/* Hide/Show Toggle */}
+            <button
+              onClick={() => setHideSticky(!hideSticky)}
+              className="absolute -right-12 top-1/2 -translate-y-1/2 w-8 h-8 bg-slate-800/90 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-slate-700/90 transition-all"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Show Sticky Toggle when hidden */}
+      {isSticky && hideSticky && (
+        <div className="fixed top-2 right-4 z-[100]">
+          <button
+            onClick={() => setHideSticky(false)}
+            className="w-10 h-10 bg-slate-800/90 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-slate-700/90 transition-all"
+          >
+            <Bell className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+
+function UserProfileMenu({ user, userProfile, setupStatus }: {
+  user: any;
+  userProfile: any;
+  setupStatus: string;
+}) {
+  const [showUserPopover, setShowUserPopover] = useState(false);
+
+  if (!user) {
+    return (
+      <SignInButton>
+        <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all duration-200">
+          <User className="h-4 w-4" />
+          <span className="hidden md:block text-sm">Sign In</span>
+        </button>
+      </SignInButton>
+    );
+  }
+
+  return (
+    <Popover open={showUserPopover} onOpenChange={setShowUserPopover}>
+      <PopoverTrigger className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors duration-200">
+          {setupStatus === 'complete' && userProfile?.country ? (
+            <CountryFlag 
+              countryName={userProfile.country.name} 
+              size="sm" 
+              className="w-8 h-8 rounded-full border border-white/20 object-cover" 
+            />
+          ) : (
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium border border-white/20">
+              {user?.firstName?.[0] || (user as any)?.username?.[0] || 'U'}
+            </div>
+          )}
+          <div className="hidden md:block text-left">
+            <div className="text-white text-sm font-medium">
+              {user?.firstName || (user as any)?.username || 'User'}
+            </div>
+            {setupStatus === 'complete' && userProfile?.country && (
+              <div className="text-white/60 text-xs">
+                {userProfile.country.name}
+              </div>
+            )}
+          </div>
+          <ChevronDown className="h-4 w-4 text-white/60" />
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64 p-0">
+        <div className="py-2">
+          {/* User Info */}
+          <div className="px-4 py-3 border-b border-white/10">
+            <div className="flex items-center gap-3">
+              {setupStatus === 'complete' && userProfile?.country ? (
+                <CountryFlag 
+                  countryName={userProfile.country.name} 
+                  size="lg" 
+                  className="w-12 h-12 rounded-full border border-white/20 object-cover" 
+                />
+              ) : (
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-lg border border-white/20">
+                  {user?.firstName?.[0] || (user as any)?.username?.[0] || 'U'}
+                </div>
+              )}
+              <div>
+                <div className="font-medium text-white">
+                  {user?.firstName} {user?.lastName}
+                </div>
+                <div className="text-sm text-white/70">
+                  {setupStatus === 'complete' && userProfile?.country ? userProfile.country.name : 'Not linked to country'}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Menu Items */}
+          <div className="py-1">
+            {setupStatus === 'complete' && userProfile?.country && (
+              <a
+                href={`/countries/${userProfile.country.id}`}
+                className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <Crown className="h-4 w-4" />
+                My Country Dashboard
+              </a>
+            )}
+            {setupStatus === 'needs-setup' && (
+              <a
+                href="/setup"
+                className="flex items-center gap-3 px-4 py-2 text-sm text-amber-300 hover:text-amber-200 hover:bg-amber-500/10 transition-colors"
+              >
+                <AlertCircle className="h-4 w-4" />
+                Complete Setup
+              </a>
+            )}
+            <a
+              href="/dashboard"
+              className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <Home className="h-4 w-4" />
+              Dashboard
+            </a>
+            <a
+              href="/profile"
+              className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <User className="h-4 w-4" />
+              Profile Settings
+            </a>
+          </div>
+          
+          {/* Divider */}
+          <div className="border-t border-white/10 my-1" />
+          
+          {/* Sign Out */}
+          <div className="px-4 py-2">
+            <button
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  window.location.href = '/sign-out';
+                }
+              }}
+              className="w-full flex items-center gap-3 px-0 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

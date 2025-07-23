@@ -3,10 +3,9 @@ import { cn } from '../../lib/utils';
 import React from "react";
 
 interface EnhancedCardProps extends React.ComponentProps<typeof Card> {
-  variant?: 'default' | 'glass' | 'diplomatic' | 'economic' | 'military' | 'cultural';
+  variant?: 'default' | 'glass' | 'diplomatic' | 'economic' | 'military' | 'cultural' | 'social' | 'security';
   glow?: boolean | 'hover' | 'active';
   hover?: 'none' | 'lift' | 'glow' | 'scale';
-  blur?: 'subtle' | 'moderate' | 'prominent';
 }
 
 export function EnhancedCard({ 
@@ -14,7 +13,6 @@ export function EnhancedCard({
   variant = 'default',
   glow = false,
   hover = 'lift',
-  blur = 'moderate',
   children,
   ...props 
 }: EnhancedCardProps) {
@@ -25,25 +23,21 @@ export function EnhancedCard({
     economic: 'glass-card-economic',
     military: 'glass-card-military',
     cultural: 'glass-card-cultural',
+    social: 'glass-card-social',
+    security: 'glass-card-security',
   };
   
   const hoverClasses = {
     none: '',
-    lift: 'hover:translate-y-[-2px] hover:shadow-glass-lg transition-all duration-250',
-    glow: 'hover:shadow-[var(--glow-interactive)] transition-all duration-250',
-    scale: 'hover:scale-[1.02] transition-all duration-250',
-  };
-  
-  const blurClasses = {
-    subtle: 'backdrop-blur-[var(--blur-subtle)]',
-    moderate: 'backdrop-blur-[var(--blur-moderate)]',
-    prominent: 'backdrop-blur-[var(--blur-prominent)]',
+    lift: 'hover:-translate-y-1 transition-all duration-300',
+    glow: 'hover:shadow-lg transition-all duration-300',
+    scale: 'hover:scale-[1.02] transition-all duration-300',
   };
   
   const glowClasses = {
-    true: 'shadow-[var(--glow-diplomatic)]',
-    hover: 'hover:shadow-[var(--glow-diplomatic)]',
-    active: 'focus:shadow-[var(--glow-diplomatic)]',
+    true: 'shadow-lg',
+    hover: 'hover:shadow-lg',
+    active: 'focus:shadow-lg',
     false: '',
   };
   
@@ -52,7 +46,6 @@ export function EnhancedCard({
       className={cn(
         variantClasses[variant],
         hoverClasses[hover],
-        blurClasses[blur],
         glowClasses[String(glow) as keyof typeof glowClasses],
         className
       )}

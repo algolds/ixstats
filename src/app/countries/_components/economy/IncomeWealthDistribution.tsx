@@ -132,11 +132,27 @@ export function IncomeWealthDistribution({
     onIncomeDataChangeAction(next);
   }
 
+  /**
+   * Handles changes to economic class data with proper type safety
+   * @param index - Index of the economic class to update
+   * @param field - Field name to update
+   * @param value - New value for the field
+   */
   function handleClassChange(index: number, field: keyof typeof incomeData.economicClasses[0], value: number) {
     if (index >= incomeData.economicClasses.length) return;
     
     const updatedClasses = [...incomeData.economicClasses];
-    updatedClasses[index] = { ...updatedClasses[index], [field]: value };
+    const currentClass = updatedClasses[index];
+    if (!currentClass) return;
+    
+    // Ensure all required properties are maintained when updating
+    updatedClasses[index] = {
+      name: currentClass.name,
+      populationPercent: field === 'populationPercent' ? value : currentClass.populationPercent,
+      wealthPercent: field === 'wealthPercent' ? value : currentClass.wealthPercent,
+      averageIncome: field === 'averageIncome' ? value : currentClass.averageIncome,
+      color: currentClass.color
+    };
     
     // Normalize percentages if needed
     if (field === 'populationPercent' || field === 'wealthPercent') {
@@ -441,7 +457,7 @@ export function IncomeWealthDistribution({
                           outerRadius={80}
                           fill="#8884d8"
                           dataKey="value"
-                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                          label={({ name, percent }: any) => `${name}: ${percent ? (percent * 100).toFixed(1) : '0'}%`}
                         >
                           {populationPieData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
@@ -472,7 +488,7 @@ export function IncomeWealthDistribution({
                           outerRadius={80}
                           fill="#8884d8"
                           dataKey="value"
-                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                          label={({ name, percent }: any) => `${name}: ${percent ? (percent * 100).toFixed(1) : '0'}%`}
                         >
                           {wealthPieData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
@@ -657,7 +673,7 @@ export function IncomeWealthDistribution({
                       {editMode ? (
                         <Slider
                           value={[incomeData.incomeInequalityGini * 100]}
-                          onValueChange={([value]) => handleField('incomeInequalityGini', value / 100)}
+                          onValueChange={([value]) => handleField('incomeInequalityGini', (value ?? 0) / 100)}
                           max={100}
                           step={1}
                           className="w-full"

@@ -7,8 +7,21 @@ import { Geist } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { TRPCReactProvider } from "~/trpc/react";
 import { ThemeProvider } from "~/context/theme-context";
+import { AuthProvider } from "~/context/auth-context";
 import { Navigation } from "~/app/_components/navigation";
 import { SetupRedirect } from "~/app/_components/SetupRedirect";
+import { WebGLErrorHandler } from "~/components/webgl-error-handler";
+import { ToastProvider } from "~/components/ui/toast";
+
+export const dynamic = 'force-dynamic';
+
+// Check if Clerk is configured with valid keys
+const isClerkConfigured = Boolean(
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && 
+  process.env.CLERK_SECRET_KEY &&
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith('pk_') &&
+  process.env.CLERK_SECRET_KEY.startsWith('sk_')
+);
 
 export const metadata: Metadata = {
   title: "IxStats - Alpha version",
@@ -24,22 +37,39 @@ const geist = Geist({
 const RootLayout = ({
   children,
 }: Readonly<{ children: React.ReactNode }>) => {
+  const AppContent = () => (
+    <TRPCReactProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <WebGLErrorHandler />
+            <div className="min-h-screen flex flex-col">
+              <Navigation />
+              <SetupRedirect />
+              <main className="flex-1">
+                {children}
+              </main>
+            </div>
+          </ToastProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </TRPCReactProvider>
+  );
+
   return (
     <html lang="en" className={`${geist.variable}`} suppressHydrationWarning>
       <body className="min-h-screen transition-colors duration-200">
-        <ClerkProvider>
-          <TRPCReactProvider>
-            <ThemeProvider>
-              <div className="min-h-screen flex flex-col">
-                <Navigation />
-                <SetupRedirect />
-                <main className="flex-1">
-                  {children}
-                </main>
-              </div>
-            </ThemeProvider>
-          </TRPCReactProvider>
-        </ClerkProvider>
+        {isClerkConfigured ? (
+          <ClerkProvider
+            signInUrl="https://accounts.ixwiki.com/sign-in"
+            signUpUrl="https://accounts.ixwiki.com/sign-up"
+          >
+            <AppContent />
+          </ClerkProvider>
+        ) : (
+          <AppContent />
+        )}
+        
       </body>
     </html>
   );

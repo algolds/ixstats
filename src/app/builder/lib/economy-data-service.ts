@@ -1,6 +1,6 @@
 // src/app/economy/lib/economy-data-service.ts
 import * as XLSX from 'xlsx';
-import { Shield, GraduationCap, Heart, Truck, Users2, MoreHorizontal } from 'lucide-react';
+import type { SpendingCategory, GovernmentSpendingData } from '~/types/economics';
 
 export interface RealCountryData {
   name: string;
@@ -73,23 +73,6 @@ export interface IncomeWealthData {
   povertyRate: number;
   incomeInequalityGini: number;
   socialMobilityIndex: number;
-}
-
-export interface SpendingCategory {
-  category: string;
-  amount: number;
-  percent: number;
-  icon: React.ElementType;
-  color: string;
-  description: string;
-}
-
-export interface GovernmentSpendingData {
-  totalSpending: number;
-  spendingGDPPercent: number;
-  spendingPerCapita: number;
-  spendingCategories: SpendingCategory[];
-  deficitSurplus: number;
 }
 
 export interface AgeGroup {
@@ -241,12 +224,12 @@ export function createDefaultEconomicInputs(referenceCountry?: RealCountryData):
       spendingGDPPercent: Math.min(baseTaxRevenuePercent + 2, 25),
       spendingPerCapita: totalSpending / basePopulation,
       spendingCategories: [
-        { category: "Defense", amount: totalSpending * 0.15, percent: 15, icon: Shield, color: "#4C51BF", description: "Military, security, and defense infrastructure" },
-        { category: "Education", amount: totalSpending * 0.18, percent: 18, icon: GraduationCap, color: "#4299E1", description: "Schools, universities, and education programs" },
-        { category: "Healthcare", amount: totalSpending * 0.22, percent: 22, icon: Heart, color: "#F56565", description: "Public health services and medical care" },
-        { category: "Infrastructure", amount: totalSpending * 0.12, percent: 12, icon: Truck, color: "#48BB78", description: "Roads, utilities, and public works" },
-        { category: "Social Security", amount: totalSpending * 0.20, percent: 20, icon: Users2, color: "#ECC94B", description: "Welfare, pensions, and social benefits" },
-        { category: "Other", amount: totalSpending * 0.13, percent: 13, icon: MoreHorizontal, color: "#A0AEC0", description: "Administration, debt service, and miscellaneous" }
+        { category: "Defense", amount: totalSpending * 0.15, percent: 15, icon: "Shield", color: "#4C51BF", description: "Military, security, and defense infrastructure" },
+        { category: "Education", amount: totalSpending * 0.18, percent: 18, icon: "GraduationCap", color: "#4299E1", description: "Schools, universities, and education programs" },
+        { category: "Healthcare", amount: totalSpending * 0.22, percent: 22, icon: "Heart", color: "#F56565", description: "Public health services and medical care" },
+        { category: "Infrastructure", amount: totalSpending * 0.12, percent: 12, icon: "Truck", color: "#48BB78", description: "Roads, utilities, and public works" },
+        { category: "Social Security", amount: totalSpending * 0.20, percent: 20, icon: "Users2", color: "#ECC94B", description: "Welfare, pensions, and social benefits" },
+        { category: "Other", amount: totalSpending * 0.13, percent: 13, icon: "MoreHorizontal", color: "#A0AEC0", description: "Administration, debt service, and miscellaneous" }
       ],
       deficitSurplus: ((baseNominalGDP * baseTaxRevenuePercent) / 100) - totalSpending
     },
@@ -305,7 +288,7 @@ export async function parseEconomyData(): Promise<RealCountryData[]> {
       throw new Error(`Sheet "${rlDataSheetName}" not found in the Excel file`);
     }
     
-    const sheetJson = XLSX.utils.sheet_to_json(rlDataSheet, { header: 1 }) as any[][];
+    const sheetJson = XLSX.utils.sheet_to_json(rlDataSheet, { header: 1 });
 
     if (sheetJson.length < 2) {
         console.warn("RLData sheet has insufficient data.");
@@ -317,14 +300,16 @@ export async function parseEconomyData(): Promise<RealCountryData[]> {
       return [];
     }
 
-    const headers = sheetJson[0].map(h => String(h).trim());
+    const headers = (sheetJson[0] as any[]).map((h: any) => String(h).trim());
     const rawData = sheetJson.slice(1);
 
-    const countries: RealCountryData[] = rawData.map((rowArray: any[]) => {
-      const row: any = {};
-      headers.forEach((header, index) => {
-          row[header] = rowArray[index];
-      });
+    const countries: RealCountryData[] = rawData
+      .filter((row): row is any[] => Array.isArray(row))
+      .map((rowArray: any[]) => {
+        const row: any = {};
+        headers.forEach((header: any, index: number) => {
+            row[header] = rowArray[index];
+        });
 
       const gdpString = String(row['GDP (current US$)'] || '0').trim();
       const gdpPerCapitaString = String(row['GDPperCap (current US$)'] || '0').trim();
@@ -332,13 +317,13 @@ export async function parseEconomyData(): Promise<RealCountryData[]> {
       const gdp = parseFloat(gdpString) || 0;
       const gdpPerCapita = parseFloat(gdpPerCapitaString) || 0;
       
-      let taxRevenuePercentString = String(row['Tax revenue (% of GDP)'] || '10').trim();
+      const taxRevenuePercentString = String(row['Tax revenue (% of GDP)'] || '10').trim();
       let taxRevenuePercent = parseFloat(taxRevenuePercentString);
       if (taxRevenuePercentString === '..' || isNaN(taxRevenuePercent)) {
         taxRevenuePercent = 10; 
       }
 
-      let unemploymentRateString = String(row['Unemployment (%)'] || '5').trim();
+      const unemploymentRateString = String(row['Unemployment (%)'] || '5').trim();
       let unemploymentRate = parseFloat(unemploymentRateString);
       if (unemploymentRateString === '..' || unemploymentRateString === '' || isNaN(unemploymentRate)) {
         unemploymentRate = 5; 
@@ -353,7 +338,7 @@ export async function parseEconomyData(): Promise<RealCountryData[]> {
 
       return {
         name: countryName,
-        countryCode: String(row['CC'] || '').trim(),
+        countryCode: String(row.CC || '').trim(),
         gdp,
         gdpPerCapita,
         taxRevenuePercent,
@@ -451,7 +436,7 @@ function generateMetricComparison(
   const minValue = userValue * (1 - tolerance);
   const maxValue = userValue * (1 + tolerance);
 
-  let similarCountries = allCountries
+  const similarCountries = allCountries
     .map(country => ({ country, value: getValue(country) }))
     .filter(({ country, value }) => 
       typeof value === 'number' && 

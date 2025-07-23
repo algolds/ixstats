@@ -1,7 +1,7 @@
 // src/app/countries/_components/economy/GovernmentSpending.tsx
 "use client";
 
-import { useState, type ElementType } from "react"; 
+import React, { useState, type ElementType } from "react"; 
 import {
   Building,
   Shield,
@@ -49,40 +49,12 @@ import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import type { CoreEconomicIndicatorsData } from "~/types/economics";
+import type { CoreEconomicIndicatorsData, SpendingCategory, GovernmentSpendingData } from "~/types/economics";
 import { Button } from "~/components/ui/button";
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 
-// Match the SpendingCategory type from src/types/economics.ts for data consistency
-interface SpendingCategory {
-  category: string;
-  amount: number;
-  percent: number;
-  icon?: string; // Icon is a string (name of Lucide icon or similar)
-  color?: string; 
-  description?: string;
-}
-
-interface GovernmentSpendingData {
-  totalSpending: number;
-  spendingGDPPercent: number;
-  spendingPerCapita: number;
-  spendingCategories: SpendingCategory[];
-  deficitSurplus: number;
-}
-
-interface GovernmentSpendingProps {
-  spendingData: GovernmentSpendingData;
-  nominalGDP: number;
-  totalPopulation: number;
-  onSpendingDataChangeAction: (spendingData: GovernmentSpendingData) => void;
-  isReadOnly?: boolean; 
-  indicators?: CoreEconomicIndicatorsData; 
-  onIndicatorsChangeAction?: (newData: CoreEconomicIndicatorsData) => void;
-}
-
 // Mapping from icon string names to Lucide components
-const iconMap: { [key: string]: ElementType } = {
+const iconMap: Record<string, ElementType> = {
   Shield,
   GraduationCap,
   Heart,
@@ -96,8 +68,21 @@ const iconMap: { [key: string]: ElementType } = {
   MoreHorizontal, // Default/fallback icon
 };
 
+interface GovernmentSpendingProps extends GovernmentSpendingData {
+  nominalGDP: number;
+  totalPopulation: number;
+  onSpendingDataChangeAction: (spendingData: GovernmentSpendingData) => void;
+  isReadOnly?: boolean; 
+  indicators?: CoreEconomicIndicatorsData; 
+  onIndicatorsChangeAction?: (newData: CoreEconomicIndicatorsData) => void;
+}
+
 export function GovernmentSpending({
-  spendingData,
+  totalSpending,
+  spendingGDPPercent,
+  spendingPerCapita,
+  spendingCategories,
+  deficitSurplus,
   nominalGDP,
   totalPopulation,
   onSpendingDataChangeAction,
@@ -105,6 +90,14 @@ export function GovernmentSpending({
   indicators,
   onIndicatorsChangeAction
 }: GovernmentSpendingProps) {
+  // Reconstruct spendingData object for compatibility
+  const spendingData: GovernmentSpendingData = {
+    totalSpending,
+    spendingGDPPercent,
+    spendingPerCapita,
+    spendingCategories,
+    deficitSurplus
+  };
   const [selectedView, setSelectedView] = useState<'overview' | 'breakdown' | 'efficiency' | 'analysis'>('overview');
   const [editMode, setEditMode] = useState(false);
 
@@ -166,7 +159,7 @@ export function GovernmentSpending({
     newSpendingData.spendingGDPPercent = nominalGDP > 0 ? (value / nominalGDP) * 100 : 0;
     newSpendingData.spendingPerCapita = totalPopulation > 0 ? value / totalPopulation : 0;
     
-    newSpendingData.spendingCategories = spendingData.spendingCategories.map(cat => ({
+    newSpendingData.spendingCategories = spendingData.spendingCategories.map((cat: SpendingCategory) => ({
       ...cat,
       amount: (value * cat.percent) / 100
     }));
@@ -202,26 +195,26 @@ export function GovernmentSpending({
 
   const budgetHealth = getBudgetHealth();
 
-  const pieData = spendingData.spendingCategories.map(cat => ({
+  const pieData = spendingData.spendingCategories.map((cat: SpendingCategory) => ({
     name: cat.category,
     value: cat.percent,
     color: cat.color || '#CCCCCC' 
   }));
 
-  const barData = spendingData.spendingCategories.map(cat => ({
+  const barData = spendingData.spendingCategories.map((cat: SpendingCategory) => ({
     name: cat.category,
     amount: cat.amount,
     color: cat.color || '#CCCCCC'
   }));
 
-  const perCapitaData = spendingData.spendingCategories.map(cat => ({
+  const perCapitaData = spendingData.spendingCategories.map((cat: SpendingCategory) => ({
     name: cat.category,
     amount: totalPopulation > 0 ? cat.amount / totalPopulation : 0,
     color: cat.color || '#CCCCCC'
   }));
 
   // Calculate efficiency metrics for each spending category
-  const efficiencyData = spendingData.spendingCategories.map(cat => {
+  const efficiencyData = spendingData.spendingCategories.map((cat: SpendingCategory) => {
     // This is a simplified efficiency score - in a real app, you'd use actual metrics
     // Efficiency is higher for categories with higher impact per dollar spent
     const efficiencyScore = Math.random() * 40 + 60; // Random score between 60-100 for demonstration
@@ -230,11 +223,18 @@ export function GovernmentSpending({
       efficiency: efficiencyScore,
       impact: (cat.amount / spendingData.totalSpending) * efficiencyScore
     };
-  }).sort((a, b) => b.impact - a.impact);
+  }).sort((a: any, b: any) => b.impact - a.impact);
 
-  const renderIcon = (iconName?: string) => {
-    const IconComponent = iconName ? iconMap[iconName] : null;
-    return IconComponent ? <IconComponent className="h-4 w-4 mr-2" /> : <MoreHorizontal className="h-4 w-4 mr-2 text-gray-400" />;
+  /**
+   * Renders an icon component based on the icon name
+   * @param iconName - The name of the icon to render
+   * @returns JSX element with the appropriate icon
+   */
+  const renderIcon = (iconName?: string): React.ReactElement => {
+    // Get the icon component from the icon map, ensuring type safety
+    const safeIconName = iconName ? String(iconName) : '';
+    const IconComponent: React.ElementType = safeIconName && iconMap[safeIconName] ? iconMap[safeIconName] as React.ElementType : MoreHorizontal;
+    return React.createElement(IconComponent, { className: "h-4 w-4 mr-2 text-gray-400" });
   };
 
   return (
@@ -404,9 +404,9 @@ export function GovernmentSpending({
                           outerRadius={80}
                           fill="#8884d8"
                           dataKey="value"
-                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                          label={({ name, percent }: any) => `${name}: ${percent ? (percent * 100).toFixed(1) : '0'}%`}
                         >
-                          {pieData.map((entry, index) => (
+                          {pieData.map((entry: any, index: number) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
@@ -450,7 +450,7 @@ export function GovernmentSpending({
                 <CardContent className="p-4">
                   <h5 className="text-sm font-semibold mb-3">Spending Summary</h5>
                   <div className="space-y-2">
-                    {spendingData.spendingCategories.map(cat => (
+                    {spendingData.spendingCategories.map((cat: SpendingCategory) => (
                       <div key={cat.category} className="flex items-center justify-between">
                         <div className="flex items-center" style={{ color: cat.color }}>
                           {renderIcon(cat.icon)}
@@ -483,7 +483,7 @@ export function GovernmentSpending({
                       <YAxis />
                       <RechartsTooltip formatter={(value) => formatNumber(value as number)} />
                       <Bar dataKey="amount" name="Spending Amount">
-                        {barData.map((entry, index) => (
+                        {barData.map((entry: any, index: number) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Bar>
@@ -496,7 +496,7 @@ export function GovernmentSpending({
             <div className="space-y-4">
               <h4 className="text-md font-semibold">Spending Categories</h4>
               
-              {spendingData.spendingCategories.map((cat, index) => (
+              {spendingData.spendingCategories.map((cat: SpendingCategory, index: number) => (
                 <Card key={cat.category}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-3">
@@ -552,7 +552,7 @@ export function GovernmentSpending({
                       <YAxis />
                       <RechartsTooltip formatter={(value) => formatNumber(value as number)} />
                       <Bar dataKey="amount" name="Per Capita Spending">
-                        {perCapitaData.map((entry, index) => (
+                        {perCapitaData.map((entry: any, index: number) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Bar>
@@ -570,8 +570,8 @@ export function GovernmentSpending({
                 <CardContent>
                   <div className="space-y-3">
                     {spendingData.spendingCategories
-                      .sort((a, b) => b.percent - a.percent)
-                      .map((cat, index) => (
+                      .sort((a: SpendingCategory, b: SpendingCategory) => b.percent - a.percent)
+                      .map((cat: SpendingCategory, index: number) => (
                         <div key={cat.category} className="flex items-center justify-between">
                           <div className="flex items-center" style={{ color: cat.color }}>
                             <div className="w-5 text-center text-xs font-medium text-muted-foreground">{index + 1}</div>
@@ -595,8 +595,8 @@ export function GovernmentSpending({
                 <CardContent>
                   <div className="space-y-3">
                     {spendingData.spendingCategories
-                      .sort((a, b) => (totalPopulation > 0 ? (b.amount / totalPopulation) - (a.amount / totalPopulation) : 0))
-                      .map((cat) => (
+                      .sort((a: SpendingCategory, b: SpendingCategory) => (totalPopulation > 0 ? (b.amount / totalPopulation) - (a.amount / totalPopulation) : 0))
+                      .map((cat: SpendingCategory) => (
                         <div key={cat.category} className="flex items-center justify-between">
                           <div className="flex items-center" style={{ color: cat.color }}>
                              {renderIcon(cat.icon)}
@@ -623,7 +623,7 @@ export function GovernmentSpending({
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {efficiencyData.map((cat) => (
+                  {efficiencyData.map((cat: any) => (
                     <div key={cat.category} className="space-y-1">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
@@ -710,9 +710,9 @@ export function GovernmentSpending({
             <p className="text-xs text-muted-foreground">
               Government spends {formatNumber(spendingData.totalSpending)} ({spendingData.spendingGDPPercent.toFixed(1)}% of GDP), 
               with the highest allocation to {
-                spendingData.spendingCategories.sort((a, b) => b.percent - a.percent)[0]?.category ?? 'Unknown'
+                spendingData.spendingCategories.sort((a: SpendingCategory, b: SpendingCategory) => b.percent - a.percent)[0]?.category ?? 'Unknown'
               } ({
-                (spendingData.spendingCategories.sort((a, b) => b.percent - a.percent)[0]?.percent ?? 0).toFixed(1)
+                (spendingData.spendingCategories.sort((a: SpendingCategory, b: SpendingCategory) => b.percent - a.percent)[0]?.percent ?? 0).toFixed(1)
               }%). 
               The budget is currently {
                 spendingData.deficitSurplus >= 0 

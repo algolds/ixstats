@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 import { cn } from "../../lib/utils";
 
 export default function LampDemo() {
@@ -30,7 +30,7 @@ export const LampContainer = ({
   className?: string;
 }) => {
   // If sdi-lamp-header is present, use compact lamp effect
-  if (className && className.includes('sdi-lamp-header')) {
+  if (className?.includes('sdi-lamp-header')) {
     return (
       <div className={cn("relative w-full h-20 flex items-end justify-start overflow-visible z-0", className)}>
         {/* Subtle lamp effect behind header */}

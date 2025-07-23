@@ -41,7 +41,7 @@ export class FlagCacheManager {
   private lastUpdateTime: number | null = null;
   private nextUpdateTime: number | null = null;
   private countryList: string[] = [];
-  private failedCountries: Set<string> = new Set();
+  private failedCountries = new Set<string>();
   private retryQueue: string[] = [];
   private wikiService: IxnayWikiService;
 
@@ -69,12 +69,24 @@ export class FlagCacheManager {
   }
 
   /**
+   * Get cached flag URL for a country (synchronous, no network requests)
+   */
+  getCachedFlagUrl(countryName: string): string | null {
+    try {
+      return this.wikiService.getCachedFlagUrl(countryName);
+    } catch (error) {
+      console.error(`[FlagCacheManager] Error getting cached flag for ${countryName}:`, error);
+      return null;
+    }
+  }
+
+  /**
    * Get flag URL for a specific country
    */
   async getFlagUrl(countryName: string): Promise<string | null> {
     try {
       // First check if we have it cached
-      const cachedUrl = this.wikiService.getCachedFlagUrl(countryName);
+      const cachedUrl = this.getCachedFlagUrl(countryName);
       if (cachedUrl) {
         return cachedUrl;
       }
@@ -132,10 +144,9 @@ export class FlagCacheManager {
                 console.log(`[FlagCacheManager] Successfully got flag URL: ${flagUrl} for ${countryName}`);
                 return flagUrl;
               } else {
-                debugLog?.push(`[FlagCacheManager] Failed to get file URL for ${flagAlias}`);
-                console.log(`[FlagCacheManager] Failed to get file URL for ${flagAlias}`);
-                // If the file does not exist, do NOT try to pattern match, just return null
-                return null;
+                debugLog?.push(`[FlagCacheManager] Failed to get file URL for ${flagAlias}: ${typeof flagUrl === 'object' && flagUrl && 'error' in flagUrl ? flagUrl.error : 'Unknown error'}`);
+                console.log(`[FlagCacheManager] Failed to get file URL for ${flagAlias}: ${typeof flagUrl === 'object' && flagUrl && 'error' in flagUrl ? flagUrl.error : 'Unknown error'}`);
+                // Continue to try pattern matching as fallback
               }
             } else {
               debugLog?.push(`[FlagCacheManager] No flag alias found in template for ${countryName} (template: ${templateName})`);
@@ -151,18 +162,26 @@ export class FlagCacheManager {
         }
       }
 
-      // Only try common flag patterns as fallback if no flag alias was found in any template
+      // Try common flag patterns as fallback
       debugLog?.push(`[FlagCacheManager] Trying common flag patterns for ${countryName}`);
       console.log(`[FlagCacheManager] Trying common flag patterns for ${countryName}`);
+      const normalizedName = countryName.replace(/\s+/g, '_');
       const commonFlagPatterns = [
+        `Flag3 ${countryName}.png`,  // Most common IxWiki pattern
         `Flag_of_${countryName}.svg`,
         `Flag_of_${countryName}.png`,
+        `Flag_of_${normalizedName}.svg`,
+        `Flag_of_${normalizedName}.png`,
         `${countryName}_flag.svg`,
         `${countryName}_flag.png`,
+        `${normalizedName}_flag.svg`,
+        `${normalizedName}_flag.png`,
         `Flag_${countryName}.svg`,
         `Flag_${countryName}.png`,
-        `${countryName.replace(/\s+/g, '_')}_flag.svg`,
-        `${countryName.replace(/\s+/g, '_')}_flag.png`,
+        `Flag ${countryName}.svg`,
+        `Flag ${countryName}.png`,
+        `${countryName} flag.svg`,
+        `${countryName} flag.png`,
       ];
 
       for (const flagPattern of commonFlagPatterns) {
@@ -209,7 +228,7 @@ export class FlagCacheManager {
       
       for (const pattern of aliasPatterns) {
         const match = templateContent.match(pattern);
-        if (match && match[1]) {
+        if (match?.[1]) {
           let flagAlias = match[1].trim();
           
           // Clean up the flag alias
@@ -242,8 +261,8 @@ export class FlagCacheManager {
             (trimmedLine.includes('.svg') || trimmedLine.includes('.png'))) {
           
           // Extract filename from the line
-          const fileMatch = trimmedLine.match(/([^|\s\[\]]+(?:Flag[^|\s\[\]]*\.(?:svg|png|jpg|jpeg|gif)))/i);
-          if (fileMatch && fileMatch[1]) {
+          const fileMatch = /([^|\s\[\]]+(?:Flag[^|\s\[\]]*\.(?:svg|png|jpg|jpeg|gif)))/i.exec(trimmedLine);
+          if (fileMatch?.[1]) {
             let flagAlias = fileMatch[1].trim();
             
             // Remove File: prefix if present

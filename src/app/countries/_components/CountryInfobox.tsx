@@ -23,10 +23,11 @@ import {
   RefreshCw
 } from "lucide-react";
 import { ixnayWiki } from "~/lib/mediawiki-service";
+import { flagService } from "~/lib/flag-service";
 import type { CountryInfobox as CountryInfoboxType } from "~/lib/mediawiki-service"; // Renamed to avoid conflict
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { GlassCard } from "~/components/ui/enhanced-card";
+import { Card } from "~/components/ui/card";
 import { CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from "~/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Separator } from "~/components/ui/separator";
@@ -103,17 +104,24 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
       
       setInfobox(data);
       
-      // Load flag separately to avoid concurrent request issues
+      // Load flag using the new cached flag service
       try {
-        const flag = await ixnayWiki.getFlagUrl(countryName);
-        if (typeof flag === 'string') {
-          let processedFlagUrl = flag;
-          if (processedFlagUrl.includes('localhost') || processedFlagUrl.includes('127.0.0.1')) {
-            processedFlagUrl = processedFlagUrl.replace(/https?:\/\/[^\/]+/, 'https://ixwiki.com');
-          }
-          setFlagUrl(processedFlagUrl);
+        // Try cached flag first
+        const cachedFlag = flagService.getCachedFlagUrl(countryName);
+        if (cachedFlag) {
+          setFlagUrl(cachedFlag);
         } else {
-          setFlagUrl(null);
+          // Fetch if not cached
+          const flag = await flagService.getFlagUrl(countryName);
+          if (flag) {
+            let processedFlagUrl = flag;
+            if (processedFlagUrl.includes('localhost') || processedFlagUrl.includes('127.0.0.1')) {
+              processedFlagUrl = processedFlagUrl.replace(/https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, 'https://ixwiki.com');
+            }
+            setFlagUrl(processedFlagUrl);
+          } else {
+            setFlagUrl(null);
+          }
         }
       } catch (flagError) {
         console.warn(`[CountryInfobox] Failed to load flag for ${countryName}:`, flagError);
@@ -137,7 +145,7 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
               if (typeof coatUrl === 'string') {
                 let processedCoatUrl = coatUrl;
                 if (processedCoatUrl.includes('localhost') || processedCoatUrl.includes('127.0.0.1')) {
-                  processedCoatUrl = processedCoatUrl.replace(/https?:\/\/[^\/]+/, 'https://ixwiki.com');
+                  processedCoatUrl = processedCoatUrl.replace(/https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, 'https://ixwiki.com');
                 }
                 setCoatOfArmsUrl(processedCoatUrl);
               } else {
@@ -160,8 +168,8 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
               
               // If the mapName looks like it came from a switcher template, try to extract filename
               // Pattern: Look for file extensions in the string
-              const fileMatch = mapName.match(/([^\/\s]+\.(?:png|jpg|jpeg|gif|svg|webp))/i);
-              if (fileMatch && fileMatch[1]) {
+              const fileMatch = /([^\/\s]+\.(?:png|jpg|jpeg|gif|svg|webp))/i.exec(mapName);
+              if (fileMatch?.[1]) {
                 actualFileName = fileMatch[1];
               }
               
@@ -170,7 +178,7 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
               if (typeof mapUrl === 'string') {
                 let processedMapUrl = mapUrl;
                 if (processedMapUrl.includes('localhost') || processedMapUrl.includes('127.0.0.1')) {
-                  processedMapUrl = processedMapUrl.replace(/https?:\/\/[^\/]+/, 'https://ixwiki.com');
+                  processedMapUrl = processedMapUrl.replace(/https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, 'https://ixwiki.com');
                 }
                 setMapImageUrl(processedMapUrl);
               } else {
@@ -387,7 +395,7 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
 
   if (loadingState.isLoading) {
     return (
-      <GlassCard variant="diplomatic">
+      <Card>
         <CardHeader>
           <Skeleton className="h-6 w-3/4 mb-2" />
           <Skeleton className="h-4 w-1/2" />
@@ -401,14 +409,14 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
             </div>
           ))}
         </CardContent>
-      </GlassCard>
+      </Card>
     );
   }
 
   if (loadingState.error) {
     const canRetry = loadingState.retryCount < MAX_RETRIES;
     return (
-      <GlassCard variant="diplomatic">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
             <Globe className="h-5 w-5 mr-2" /> Country Information
@@ -442,13 +450,13 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
                 </a>
             </Button>
         </CardFooter>
-      </GlassCard>
+      </Card>
     );
   }
 
   if (!infobox) {
     return (
-      <GlassCard variant="diplomatic">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
             <Globe className="h-5 w-5 mr-2" /> {countryName}
@@ -470,7 +478,7 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
                 </a>
             </Button>
         </CardFooter>
-      </GlassCard>
+      </Card>
     );
   }
 
@@ -481,7 +489,7 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
   const hasHtmlContent = Boolean(infobox.renderedHtml);
 
   return (
-    <GlassCard variant="diplomatic" className="transition-all duration-300">
+    <Card className="transition-all duration-300">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center text-lg">
@@ -745,6 +753,6 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
           </Button>
         </CardFooter>
       )}
-    </GlassCard>
+    </Card>
   );
 }

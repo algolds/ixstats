@@ -5,8 +5,15 @@ import { GlassCard } from '../ui/enhanced-card';
 import { EnhancedButton } from '../ui/enhanced-button';
 import { api } from '~/trpc/react';
 
+interface SecureCommsMessage {
+  id: string;
+  sender: string;
+  content: string;
+  timestamp: string;
+}
+
 export default function SecureComms() {
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<SecureCommsMessage[]>([]);
   const [input, setInput] = useState('');
   
   // Fetch real data from intelligence feed and crises
@@ -15,7 +22,7 @@ export default function SecureComms() {
   const { data: systemStatus } = api.sdi.getSystemStatus.useQuery();
   
   useEffect(() => {
-    const realMessages = [];
+    const realMessages: SecureCommsMessage[] = [];
     
     // Add system status message
     if (systemStatus) {
@@ -61,7 +68,7 @@ export default function SecureComms() {
     setMessages([
       ...messages,
       {
-        id: messages.length + 1,
+        id: `user-${messages.length + 1}`,
         sender: 'You',
         content: input,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -71,7 +78,7 @@ export default function SecureComms() {
   }
 
   return (
-    <GlassCard variant="diplomatic" blur="prominent" glow="hover" className="p-6 flex flex-col h-full min-h-[350px] animate-fade-in">
+    <GlassCard variant="diplomatic" glow="hover" className="p-6 flex flex-col h-full min-h-[350px] animate-fade-in">
       <h2 className="text-2xl font-bold mb-4 text-blue-100 diplomatic-header">Secure Communications</h2>
       <div className="flex-1 overflow-y-auto mb-4 space-y-3 pr-2">
         {messages.map((msg) => (

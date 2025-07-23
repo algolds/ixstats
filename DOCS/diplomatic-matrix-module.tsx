@@ -1,5 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { Globe, Heart, Shield, TrendingUp, Users, MessageSquare, Award, AlertTriangle, Handshake, Target, Eye, Filter, ArrowRight, BarChart3 } from 'lucide-react';
+import { GlassCard } from '../src/components/ui/enhanced-card';
+
+interface Country {
+  name: string;
+  flag: string;
+  power: string;
+}
+
+interface Relationship {
+  country1: Country;
+  country2: Country;
+  relationship: number;
+  trend: string;
+  type: string;
+  lastEvent: string;
+  eventTime: string;
+  tradeVolume: string;
+  militaryCooperation: string;
+  status: string;
+}
+
+interface DiplomaticEvent {
+  id: number;
+  type: string;
+  title: string;
+  participants: string[];
+  date: string;
+  priority: string;
+  impact: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+}
 
 const relationshipData = [
   {
@@ -98,27 +130,19 @@ const globalDiplomacy = {
 };
 
 const DiplomaticMatrix = () => {
-  const [selectedRelationship, setSelectedRelationship] = useState(null);
+  const [selectedRelationship, setSelectedRelationship] = useState<Relationship | null>(null);
   const [filterType, setFilterType] = useState('all');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'network'
 
-  const GlassCard = ({ children, className = "", gradient = "" }) => (
-    <div className={`relative backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 ${gradient && `bg-gradient-to-br ${gradient}`} ${className}`}>
-      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-3xl" />
-      <div className="relative z-10">
-        {children}
-      </div>
-    </div>
-  );
 
-  const RelationshipCard = ({ relationship }) => {
-    const getRelationshipColor = (score) => {
+  const RelationshipCard = ({ relationship }: { relationship: Relationship }) => {
+    const getRelationshipColor = (score: number) => {
       if (score >= 80) return 'text-green-400';
       if (score >= 60) return 'text-yellow-400';
       return 'text-red-400';
     };
 
-    const getStatusIcon = (status) => {
+    const getStatusIcon = (status: string) => {
       switch (status) {
         case 'improving': return '📈';
         case 'stable': return '🤝';
@@ -128,7 +152,7 @@ const DiplomaticMatrix = () => {
     };
 
     return (
-      <GlassCard 
+      <GlassCard variant="diplomatic" 
         className={`cursor-pointer hover:scale-[1.02] transition-all duration-300 ${
           selectedRelationship?.country1.name === relationship.country1.name && 
           selectedRelationship?.country2.name === relationship.country2.name ? 'ring-2 ring-blue-400/50' : ''
@@ -214,8 +238,8 @@ const DiplomaticMatrix = () => {
     );
   };
 
-  const EventCard = ({ event }) => (
-    <GlassCard gradient={event.color}>
+  const EventCard = ({ event }: { event: DiplomaticEvent }) => (
+    <GlassCard variant="diplomatic">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center space-x-3">
           <div className="p-2 rounded-xl bg-white/20">
@@ -235,7 +259,7 @@ const DiplomaticMatrix = () => {
       <p className="text-white/80 text-sm mb-3">{event.impact}</p>
       
       <div className="flex flex-wrap gap-1">
-        {event.participants.map((country, idx) => (
+                    {event.participants.map((country: string, idx: number) => (
           <span key={idx} className="text-xs px-2 py-1 bg-white/20 rounded-full text-white/80">
             {country}
           </span>
@@ -255,7 +279,7 @@ const DiplomaticMatrix = () => {
           </div>
           
           <div className="flex items-center space-x-3">
-            <GlassCard className="px-4 py-2">
+            <GlassCard variant="diplomatic" className="px-4 py-2">
               <div className="flex items-center space-x-2">
                 <Heart className="w-4 h-4 text-green-400" />
                 <span className="text-white/80 text-sm font-medium">
@@ -268,32 +292,32 @@ const DiplomaticMatrix = () => {
 
         {/* Global Diplomacy Overview */}
         <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
-          <GlassCard className="text-center">
+          <GlassCard variant="diplomatic" className="text-center">
             <div className="text-2xl font-bold text-white">{globalDiplomacy.totalRelationships}</div>
             <div className="text-white/60 text-sm">Total Relations</div>
           </GlassCard>
           
-          <GlassCard className="text-center">
+          <GlassCard variant="diplomatic" className="text-center">
             <div className="text-2xl font-bold text-yellow-400">{globalDiplomacy.activeNegotiations}</div>
             <div className="text-white/60 text-sm">Active Talks</div>
           </GlassCard>
           
-          <GlassCard className="text-center">
+          <GlassCard variant="diplomatic" className="text-center">
             <div className="text-2xl font-bold text-green-400">{globalDiplomacy.treatiesThisYear}</div>
             <div className="text-white/60 text-sm">Treaties (YTD)</div>
           </GlassCard>
           
-          <GlassCard className="text-center">
+          <GlassCard variant="diplomatic" className="text-center">
             <div className="text-2xl font-bold text-blue-400">{globalDiplomacy.cooperationIndex}</div>
             <div className="text-white/60 text-sm">Cooperation</div>
           </GlassCard>
           
-          <GlassCard className="text-center">
+          <GlassCard variant="diplomatic" className="text-center">
             <div className="text-2xl font-bold text-green-400">{globalDiplomacy.conflictRisk}</div>
             <div className="text-white/60 text-sm">Conflict Risk</div>
           </GlassCard>
           
-          <GlassCard className="text-center">
+          <GlassCard variant="diplomatic" className="text-center">
             <div className="text-2xl font-bold text-purple-400">74.2</div>
             <div className="text-white/60 text-sm">Avg Score</div>
           </GlassCard>
@@ -340,7 +364,7 @@ const DiplomaticMatrix = () => {
           </div>
 
           {/* Relationship Health */}
-          <GlassCard gradient="from-green-500/10 to-emerald-500/10">
+          <GlassCard variant="diplomatic">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white font-bold">Relationship Health</h3>
               <Heart className="w-5 h-5 text-green-400" />
@@ -367,7 +391,7 @@ const DiplomaticMatrix = () => {
           </GlassCard>
 
           {/* Quick Actions */}
-          <GlassCard>
+          <GlassCard variant="diplomatic">
             <h3 className="text-white font-bold mb-4">Quick Actions</h3>
             
             <div className="space-y-2">

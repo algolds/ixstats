@@ -725,7 +725,7 @@ export function FiscalSystemComponent({
                             outerRadius={80}
                             fill="#8884d8"
                             dataKey="value"
-                            label={({name, value}) => `${name}: ${value.toFixed(1)}%`}
+                            label={({name, value}: any) => `${name}: ${value ? value.toFixed(1) : '0'}%`}
                           >
                             {debtComposition.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.color} />

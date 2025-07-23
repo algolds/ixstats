@@ -117,7 +117,7 @@ export function applyEconomicEvents(
   events: EconomicEvent[],
   currentIxTime: number
 ): CoreEconomicIndicatorsData {
-  let modifiedIndicators = { ...baseIndicators };
+  const modifiedIndicators = { ...baseIndicators };
 
   for (const event of events) {
     const eventEndTime = IxTime.addYears(event.ixTime, event.durationYears);
@@ -153,7 +153,7 @@ export function generateEconomicHistory(
   populationGrowthRate: number,
   startIxTime: number,
   endIxTime: number,
-  intervalYears: number = 1
+  intervalYears = 1
 ): Array<{ ixTime: number; indicators: CoreEconomicIndicatorsData }> {
   const history: Array<{ ixTime: number; indicators: CoreEconomicIndicatorsData }> = [];
   
@@ -181,7 +181,7 @@ export function generateEconomicHistory(
  */
 export function getCurrentEconomicState(
   rosterBaselineData: CoreEconomicIndicatorsData,
-  populationGrowthRate: number = 0.01, // Default 1% annual growth
+  populationGrowthRate = 0.01, // Default 1% annual growth
   economicEvents: EconomicEvent[] = []
 ): CoreEconomicIndicatorsData {
   const rosterTime = IxTime.getInGameEpoch(); // January 1, 2028
@@ -208,7 +208,7 @@ export function getCurrentEconomicState(
  * Format time-based economic description
  */
 export function getEconomicTimeDescription(
-  baseYear: number = 2028,
+  baseYear = 2028,
   currentIxTime?: number
 ): string {
   const gameYear = IxTime.getCurrentGameYear(currentIxTime);

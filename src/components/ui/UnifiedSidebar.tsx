@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { GlassCard } from "./enhanced-card";
 import { cn } from "../../lib/utils";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Globe, Shield, User, LogOut, Settings, Menu, ChevronLeft, ChevronRight, Bell } from "lucide-react";
 import { InterfaceSwitcher } from "../shared/InterfaceSwitcher";
 import { Button } from "./button";
@@ -45,9 +45,9 @@ function getInitials(name?: string) {
   if (!name || typeof name !== 'string') return "?";
   const parts = name.split(" ").filter(Boolean);
   if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0] && parts[0][0] ? parts[0][0].toUpperCase() : "?";
-  const first = parts[0] && parts[0][0] ? parts[0][0].toUpperCase() : "";
-  const second = parts[1] && parts[1][0] ? parts[1][0].toUpperCase() : "";
+  if (parts.length === 1) return parts[0]?.[0] ? parts[0][0].toUpperCase() : "?";
+  const first = parts[0]?.[0] ? parts[0][0].toUpperCase() : "";
+  const second = parts[1]?.[0] ? parts[1][0].toUpperCase() : "";
   return first + second;
 }
 
@@ -106,7 +106,7 @@ export function UnifiedSidebar({
     <GlassCard
       variant="glass"
       className={cn(
-        "h-full flex flex-col justify-between p-4 w-64 min-w-[220px] max-w-[320px] border-none shadow-xl bg-white/70 dark:bg-neutral-900/70 backdrop-blur-[16px] transition-all duration-300",
+        "h-full flex flex-col justify-between p-4 w-64 min-w-[220px] max-w-[320px] border-none shadow-xl bg-white/95 dark:bg-neutral-900/95 transition-all duration-300",
         isCollapsed && "w-20 min-w-[60px] max-w-[80px] p-2"
       )}
     >
@@ -212,14 +212,14 @@ export function UnifiedSidebar({
         <div className="flex items-center gap-3 w-full">
           {/* Avatar with UserButton overlayed in the shadow location */}
           <div className="relative flex-shrink-0 w-10 h-10 rounded-full bg-blue-200 dark:bg-blue-900 flex items-center justify-center text-lg font-bold text-blue-700 dark:text-blue-200 overflow-hidden">
-            {profile && profile.avatarUrl ? (
+            {profile?.avatarUrl ? (
               <img
                 src={profile.avatarUrl}
                 alt={profile.name || "User"}
                 className="w-full h-full object-cover rounded-full"
               />
             ) : (
-              profile && profile.name ? getInitials(profile.name) : null
+              profile?.name ? getInitials(profile.name) : null
             )}
             {/* Clerk UserButton absolutely positioned over avatar shadow */}
             <div className="absolute inset-0 flex items-center justify-center">
@@ -227,7 +227,7 @@ export function UnifiedSidebar({
             </div>
           </div>
           {/* Name/role (hide if collapsed) */}
-          {!isCollapsed && profile && profile.name && profile.role && (
+          {!isCollapsed && profile?.name && profile.role && (
             <div className="flex flex-col min-w-0">
               <span className="font-semibold text-sm truncate">{profile.name}</span>
               <span className="text-xs text-blue-500 dark:text-blue-300 truncate">{profile.role}</span>

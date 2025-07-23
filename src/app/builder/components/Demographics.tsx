@@ -363,7 +363,7 @@ export function Demographics({
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                      label={({ name, percent }: any) => `${name}: ${percent ? (percent * 100).toFixed(1) : '0'}%`}
                     >
                       {ageData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -501,7 +501,7 @@ export function Demographics({
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                      label={({ name, percent }: any) => `${name}: ${percent ? (percent * 100).toFixed(1) : '0'}%`}
                     >
                       {urbanRuralData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -521,7 +521,7 @@ export function Demographics({
                   <BarChart data={regionData}>
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip formatter={(value) => formatNumber(value as number, 1)} />
+                    <Tooltip formatter={(value: any) => formatNumber(value as number, 1)} />
                     <Bar dataKey="population" name="Population">
                       {regionData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -632,7 +632,7 @@ export function Demographics({
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                      label={({ name, percent }: any) => `${name}: ${percent ? (percent * 100).toFixed(1) : '0'}%`}
                     >
                       {educationData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -658,7 +658,7 @@ export function Demographics({
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                      label={({ name, percent }: any) => `${name}: ${percent ? (percent * 100).toFixed(1) : '0'}%`}
                     >
                       {citizenshipData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />

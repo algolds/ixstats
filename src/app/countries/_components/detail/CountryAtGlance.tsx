@@ -3,7 +3,7 @@
 
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Users,
   DollarSign,
@@ -42,7 +42,11 @@ import {
   getGrowthIcon,
   getGrowthColor,
 } from "~/lib/chart-utils";
-import { GlassCard } from "~/components/ui/enhanced-card";
+// Removed GlassCard import as we're using standard Card components
+import { GdpDetailsModal } from "~/components/modals/GdpDetailsModal";
+import { GdpPerCapitaDetailsModal } from "~/components/modals/GdpPerCapitaDetailsModal";
+import { PopulationDetailsModal } from "~/components/modals/PopulationDetailsModal";
+import { PopulationTierDetailsModal } from "~/components/modals/PopulationTierDetailsModal";
 
 interface CountryAtGlanceData {
   id: string;
@@ -80,6 +84,10 @@ export function CountryAtGlance({
   currentIxTime,
   isLoading = false,
 }: CountryAtGlanceProps) {
+  const [isGdpModalOpen, setIsGdpModalOpen] = useState(false);
+  const [isGdpPerCapitaModalOpen, setIsGdpPerCapitaModalOpen] = useState(false);
+  const [isPopulationModalOpen, setIsPopulationModalOpen] = useState(false);
+  const [isPopulationTierModalOpen, setIsPopulationTierModalOpen] = useState(false);
   const formatted = useMemo(() => {
     // FIXED: Icons for growth arrows based on decimal values
     const getGrowthIconComponent = (rate: number) => {
@@ -177,7 +185,7 @@ export function CountryAtGlance({
 
   return (
     <TooltipProvider>
-      <GlassCard variant="diplomatic">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center">
@@ -188,7 +196,13 @@ export function CountryAtGlance({
               <Badge variant={formatted.getTierBadgeVariant(country.economicTier)}>
                 {country.economicTier}
               </Badge>
-              <Badge variant="outline">Tier {country.populationTier}</Badge>
+              <Badge 
+                variant="outline" 
+                className="cursor-pointer hover:bg-muted/70 transition-colors"
+                onClick={() => setIsPopulationTierModalOpen(true)}
+              >
+                Tier {country.populationTier}
+              </Badge>
             </div>
           </CardTitle>
         </CardHeader>
@@ -259,7 +273,10 @@ export function CountryAtGlance({
               {/* GDP per Capita */}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="p-3 bg-muted/50 rounded-lg">
+                  <div 
+                    className="p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 transition-colors"
+                    onClick={() => setIsGdpPerCapitaModalOpen(true)}
+                  >
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-xs text-muted-foreground">
                         GDP per Capita
@@ -285,13 +302,19 @@ export function CountryAtGlance({
                   <p className="text-xs text-muted-foreground mt-1">
                     Economic Tier: {country.economicTier}
                   </p>
+                  <p className="text-xs text-blue-500 mt-1">
+                    Click for detailed analysis
+                  </p>
                 </TooltipContent>
               </Tooltip>
 
               {/* Total GDP */}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="p-3 bg-muted/50 rounded-lg">
+                  <div 
+                    className="p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 transition-colors"
+                    onClick={() => setIsGdpModalOpen(true)}
+                  >
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-xs text-muted-foreground">Total GDP</p>
                       <BarChart3 className="h-3 w-3 text-muted-foreground" />
@@ -306,6 +329,9 @@ export function CountryAtGlance({
                   <p>Gross domestic product (total economic output)</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     Population × GDP per Capita
+                  </p>
+                  <p className="text-xs text-blue-500 mt-1">
+                    Click for detailed analysis
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -349,7 +375,10 @@ export function CountryAtGlance({
               {/* Population */}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="p-3 bg-muted/50 rounded-lg">
+                  <div 
+                    className="p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 transition-colors"
+                    onClick={() => setIsPopulationModalOpen(true)}
+                  >
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-xs text-muted-foreground">Population</p>
                       {formatted.getGrowthIconComponent(country.populationGrowthRate)}
@@ -370,6 +399,9 @@ export function CountryAtGlance({
                   <p>Current population and annual growth rate</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     Population Tier: {country.populationTier}
+                  </p>
+                  <p className="text-xs text-blue-500 mt-1">
+                    Click for detailed analysis
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -494,7 +526,35 @@ export function CountryAtGlance({
             </div>
           </div>
         </CardContent>
-      </GlassCard>
+      </Card>
+      
+      <GdpDetailsModal 
+        isOpen={isGdpModalOpen}
+        onClose={() => setIsGdpModalOpen(false)}
+        countryId={country.id}
+        countryName={country.name}
+      />
+      
+      <GdpPerCapitaDetailsModal 
+        isOpen={isGdpPerCapitaModalOpen}
+        onClose={() => setIsGdpPerCapitaModalOpen(false)}
+        countryId={country.id}
+        countryName={country.name}
+      />
+      
+      <PopulationDetailsModal 
+        isOpen={isPopulationModalOpen}
+        onClose={() => setIsPopulationModalOpen(false)}
+        countryId={country.id}
+        countryName={country.name}
+      />
+      
+      <PopulationTierDetailsModal 
+        isOpen={isPopulationTierModalOpen}
+        onClose={() => setIsPopulationTierModalOpen(false)}
+        countryId={country.id}
+        countryName={country.name}
+      />
     </TooltipProvider>
   );
 }

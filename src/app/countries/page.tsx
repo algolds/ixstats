@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   CountriesPageHeader,
   CountriesSearch,
@@ -35,6 +36,7 @@ export type PageCountryData = {
 };
 
 export default function CountriesPage() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [tierFilter, setTierFilter] =
     useState<TierFilter>('all');
@@ -240,7 +242,7 @@ export default function CountriesPage() {
   // Handle country selection from comparison modal
   const handleCountrySelect = (countryId: string) => {
     // Navigate to country detail page
-    window.location.href = `/countries/${countryId}`;
+    router.push(`/countries/${countryId}`);
   };
 
   return (
@@ -253,8 +255,8 @@ export default function CountriesPage() {
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
-          {/* Sidebar: Filters (sticky on desktop) */}
-          <div className="hidden lg:block">
+          {/* Sidebar: Filters */}
+          <div className="order-last lg:order-first lg:block">
             <CountriesFilterSidebar
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
@@ -272,14 +274,10 @@ export default function CountriesPage() {
             />
           </div>
 
-          {/* Main content: Sort/search bar, grid, pagination */}
+          {/* Main content: Sort bar, grid, pagination */}
           <div>
-            {/* On mobile, show filter button to open modal (not implemented yet) */}
-            <div className="lg:hidden mb-4">
-              <button className="btn-secondary w-full py-2 rounded-md">Show Filters</button>
-            </div>
 
-            {/* Sort/search bar and compare button */}
+            {/* Sort bar and compare button */}
             <CountriesSortBar
               sortField={sortField}
               sortDirection={sortDirection}
@@ -287,8 +285,6 @@ export default function CountriesPage() {
                 setSortField(f);
                 setSortDirection(d);
               }}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
               onCompare={handleCompare}
             />
 

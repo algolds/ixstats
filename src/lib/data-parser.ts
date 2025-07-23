@@ -172,7 +172,7 @@ function processRawDataWithHeaderRecognition(rawData: any[][], isExcel: boolean)
       headerMap.population = headers.findIndex(h => h.includes('pop'));
       if (headerMap.population === -1) {
         // Look for numeric-looking headers that might be population
-        headerMap.population = headers.findIndex(h => h.match(/pop|population/i));
+        headerMap.population = headers.findIndex(h => /pop|population/i.exec(h));
       }
     }
     if (headerMap.gdpPerCapita === -1) {
@@ -344,7 +344,7 @@ function parseCsvData(csvString: string, headerSkipLines = 0): BaseCountryData[]
 export async function parseRosterFile(fileBuffer: ArrayBuffer, fileName?: string): Promise<BaseCountryData[]> {
   console.log(`[DataParser] Parsing file: ${fileName}`);
   
-  if (fileName && fileName.toLowerCase().endsWith('.csv')) {
+  if (fileName?.toLowerCase().endsWith('.csv')) {
     const csvString = new TextDecoder("utf-8").decode(fileBuffer);
     console.log(`[DataParser] Processing CSV file with ${csvString.split('\n').length} lines`);
     
@@ -364,8 +364,8 @@ export async function parseRosterFile(fileBuffer: ArrayBuffer, fileName?: string
       throw new Error('Worksheet not found in the Excel file');
     }
     
-    const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+    const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
     console.log(`[DataParser] Processing Excel file with ${rawData.length} rows`);
-    return processRawDataWithHeaderRecognition(rawData, true);
+    return processRawDataWithHeaderRecognition(rawData as any[][], true);
   }
 }

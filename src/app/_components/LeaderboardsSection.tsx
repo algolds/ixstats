@@ -17,7 +17,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-interface Country {
+// Use a simplified interface for display purposes
+interface LeaderboardCountry {
   id: string;
   name: string;
   currentPopulation: number;
@@ -33,7 +34,7 @@ interface Country {
 }
 
 interface LeaderboardsSectionProps {
-  countries: Country[];
+  countries: LeaderboardCountry[];
   isLoading: boolean;
 }
 
@@ -43,28 +44,28 @@ const leaderboardConfig = {
   gdp: {
     title: "Total GDP",
     icon: DollarSign,
-    sortKey: "currentTotalGdp" as keyof Country,
+    sortKey: "currentTotalGdp" as keyof LeaderboardCountry,
     formatValue: (value: number) => formatCurrency(value),
     description: "Largest economies by total GDP",
   },
   perCapita: {
     title: "GDP per Capita",
     icon: Crown,
-    sortKey: "currentGdpPerCapita" as keyof Country,
+    sortKey: "currentGdpPerCapita" as keyof LeaderboardCountry,
     formatValue: (value: number) => formatCurrency(value),
     description: "Highest standard of living",
   },
   growth: {
     title: "Economic Growth",
     icon: TrendingUp,
-    sortKey: "adjustedGdpGrowth" as keyof Country,
+    sortKey: "adjustedGdpGrowth" as keyof LeaderboardCountry,
     formatValue: (value: number) => formatGrowthRateFromDecimal(value),
     description: "Fastest growing economies",
   },
   population: {
     title: "Population",
     icon: Users,
-    sortKey: "currentPopulation" as keyof Country,
+    sortKey: "currentPopulation" as keyof LeaderboardCountry,
     formatValue: (value: number) => formatPopulation(value),
     description: "Most populous nations",
   },

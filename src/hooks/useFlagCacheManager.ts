@@ -2,7 +2,20 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { flagCacheManager, type FlagCacheStats } from "~/lib/flag-cache-manager";
+
+export interface FlagCacheStats {
+  totalCountries: number;
+  cachedFlags: number;
+  failedFlags: number;
+  lastUpdateTime: number | null;
+  nextUpdateTime: number | null;
+  isUpdating: boolean;
+  updateProgress: {
+    current: number;
+    total: number;
+    percentage: number;
+  };
+}
 
 export interface FlagCacheManagerHook {
   stats: FlagCacheStats;
@@ -31,28 +44,24 @@ export function useFlagCacheManager(): FlagCacheManagerHook {
   const [error, setError] = useState<string | null>(null);
   const statsIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Update stats from the cache manager
-  const updateStats = useCallback(() => {
-    const currentStats = flagCacheManager.getStats();
-    setStats(currentStats);
-  }, []);
-
   // Refresh stats from the API
   const refreshStats = useCallback(async () => {
     try {
       const response = await fetch('/api/flag-cache?action=status');
       if (response.ok) {
         const data = await response.json();
-        if (data.success) {
+        if (data.success && data.flagCache) {
           setStats(data.flagCache);
         }
       }
     } catch (error) {
       console.warn('[FlagCacheManager] Could not refresh stats from API:', error);
-      // Fallback to local stats
-      updateStats();
+      setError(error instanceof Error ? error.message : 'Failed to fetch stats');
     }
-  }, [updateStats]);
+  }, []);
+
+  // Update stats (alias for refreshStats)
+  const updateStats = refreshStats;
 
   // Update all flags
   const updateAllFlags = useCallback(async () => {
@@ -73,7 +82,8 @@ export function useFlagCacheManager(): FlagCacheManagerHook {
 
       const data = await response.json();
       if (data.success) {
-        setStats(data.stats);
+        // Refresh stats after successful update
+        await refreshStats();
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -82,7 +92,7 @@ export function useFlagCacheManager(): FlagCacheManagerHook {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [refreshStats]);
 
   // Initialize cache
   const initializeCache = useCallback(async () => {
@@ -101,7 +111,8 @@ export function useFlagCacheManager(): FlagCacheManagerHook {
 
       const data = await response.json();
       if (data.success) {
-        setStats(data.stats);
+        // Refresh stats after successful initialization
+        await refreshStats();
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -110,7 +121,7 @@ export function useFlagCacheManager(): FlagCacheManagerHook {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [refreshStats]);
 
   // Clear cache
   const clearCache = useCallback(async () => {
@@ -127,8 +138,8 @@ export function useFlagCacheManager(): FlagCacheManagerHook {
         throw new Error(errorData.error || 'Failed to clear cache');
       }
 
-      // Update local stats after clearing
-      updateStats();
+      // Refresh stats after clearing
+      await refreshStats();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setError(errorMessage);
@@ -136,18 +147,18 @@ export function useFlagCacheManager(): FlagCacheManagerHook {
     } finally {
       setIsLoading(false);
     }
-  }, [updateStats]);
+  }, [refreshStats]);
 
   // Set up periodic stats updates
   useEffect(() => {
     // Initial stats update
-    updateStats();
+    refreshStats();
     
     // Update stats every 5 seconds when updating, otherwise every 30 seconds
     const updateInterval = stats.isUpdating ? 5000 : 30000;
     
     statsIntervalRef.current = setInterval(() => {
-      updateStats();
+      refreshStats();
     }, updateInterval);
 
     return () => {
@@ -156,7 +167,7 @@ export function useFlagCacheManager(): FlagCacheManagerHook {
         statsIntervalRef.current = null;
       }
     };
-  }, [updateStats, stats.isUpdating]);
+  }, [refreshStats, stats.isUpdating]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -193,16 +204,25 @@ export function useFlagCacheStats(): FlagCacheStats {
   });
 
   useEffect(() => {
-    const updateStats = () => {
-      const currentStats = flagCacheManager.getStats();
-      setStats(currentStats);
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/flag-cache?action=status');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.flagCache) {
+            setStats(data.flagCache);
+          }
+        }
+      } catch (error) {
+        console.warn('[FlagCacheStats] Could not fetch stats:', error);
+      }
     };
 
     // Initial update
-    updateStats();
+    fetchStats();
 
     // Update every 30 seconds
-    const interval = setInterval(updateStats, 30000);
+    const interval = setInterval(fetchStats, 30000);
 
     return () => clearInterval(interval);
   }, []);

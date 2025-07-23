@@ -1,5 +1,6 @@
-// src/app/economy/page.tsx
 "use client";
+export const dynamic = 'force-dynamic';
+// src/app/economy/page.tsx
 
 import { useState, useEffect } from "react";
 import { CountrySelector } from "./components/CountrySelector";
@@ -8,15 +9,25 @@ import { EconomicPreview } from "./components/EconomicPreview";
 import type { RealCountryData, EconomicInputs } from "./lib/economy-data-service";
 import { parseEconomyData, createDefaultEconomicInputs, saveBaselineToStorage } from "./lib/economy-data-service";
 import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import { api } from "~/trpc/react";
 
 type BuilderPhase = 'select' | 'customize' | 'preview';
 
 export default function CreateCountryBuilder() {
+  const { user } = useUser();
+  const router = useRouter();
   const [currentPhase, setCurrentPhase] = useState<BuilderPhase>('select');
   const [allCountries, setAllCountries] = useState<RealCountryData[]>([]);
   const [selectedCountry, setSelectedCountry] = useState<RealCountryData | null>(null);
   const [economicInputs, setEconomicInputs] = useState<EconomicInputs | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
+
+  // TRPC mutations
+  const createCountryMutation = api.users.createCountry.useMutation();
+  const linkCountryMutation = api.users.linkCountry.useMutation();
 
   useEffect(() => {
     const loadData = async () => {
@@ -51,11 +62,36 @@ export default function CreateCountryBuilder() {
     else if (currentPhase === 'preview') setCurrentPhase('customize');
   };
 
-  const handleConfirmBaseline = () => {
-    if (economicInputs) {
+  const handleConfirmBaseline = async () => {
+    if (!economicInputs || !user?.id) return;
+    
+    setIsCreating(true);
+    try {
+      // Create the country in the database with the built economic data
+      const result = await createCountryMutation.mutateAsync({
+        userId: user.id,
+        countryName: economicInputs.countryName,
+        economicData: {
+          baselinePopulation: economicInputs.population,
+          baselineGdpPerCapita: economicInputs.gdpPerCapita,
+          populationGrowthRate: economicInputs.populationGrowthRate,
+          realGDPGrowthRate: economicInputs.gdpGrowthRate,
+          inflationRate: economicInputs.inflationRate,
+          unemploymentRate: economicInputs.unemploymentRate,
+          // Add any other economic data fields from economicInputs
+        }
+      });
+
+      // Save to local storage as well for backup
       saveBaselineToStorage(economicInputs);
-      alert(`${economicInputs.countryName} has been created successfully! You can now use it in the campaign.`);
-      // Could redirect to countries list or dashboard here
+      
+      // Redirect to the newly created country
+      router.push(`/mycountry`);
+    } catch (error) {
+      console.error('Failed to create country:', error);
+      alert(`Failed to create ${economicInputs.countryName}. Please try again.`);
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -110,6 +146,7 @@ export default function CreateCountryBuilder() {
                 allCountries={allCountries}
                 onBack={handleBack}
                 onConfirm={handleConfirmBaseline}
+                isCreating={isCreating}
               />
             )}
           </div>

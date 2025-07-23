@@ -28,6 +28,7 @@ import { IxTime } from '~/lib/ixtime';
 import { formatCurrency, formatPopulation } from '~/lib/chart-utils';
 import { api } from '~/trpc/react';
 import { toast } from 'sonner';
+import type { CountryWithEconomicData, CalculatedStats } from '~/types/ixstats';
 
 // Define the type for countries that can be compared
 export interface ComparisonCountry {
@@ -126,28 +127,22 @@ export function CountryComparisonModal({
       }
 
       const result = await response.json();
-      const countryData = result[0]?.result?.data?.json;
+      const countryData = result[0]?.result?.data?.json as CountryWithEconomicData;
       
       if (countryData) {
-        const calculatedStats = countryData.calculatedStats;
-        
-        // Verify that we have valid calculated stats
-        if (!calculatedStats || !calculatedStats.currentPopulation || !calculatedStats.currentGdpPerCapita) {
-          console.warn('Missing calculated stats for country:', countryData.name, calculatedStats);
-        }
-        
+        // Use properties directly from countryData, not calculatedStats
         const newCountry: ComparisonCountry = {
           id: countryData.id,
           name: countryData.name,
-          currentPopulation: calculatedStats?.currentPopulation || countryData.baselinePopulation || 0,
-          currentGdpPerCapita: calculatedStats?.currentGdpPerCapita || countryData.baselineGdpPerCapita || 0,
-          currentTotalGdp: calculatedStats?.currentTotalGdp || (calculatedStats?.currentPopulation * calculatedStats?.currentGdpPerCapita) || 0,
+          currentPopulation: countryData.currentPopulation || countryData.baselinePopulation || 0,
+          currentGdpPerCapita: countryData.currentGdpPerCapita || countryData.baselineGdpPerCapita || 0,
+          currentTotalGdp: countryData.currentTotalGdp || (countryData.currentPopulation * countryData.currentGdpPerCapita) || 0,
           populationGrowthRate: countryData.populationGrowthRate || 0,
           adjustedGdpGrowth: countryData.adjustedGdpGrowth || 0,
-          economicTier: calculatedStats?.economicTier || countryData.economicTier || country.economicTier,
-          populationTier: calculatedStats?.populationTier || countryData.populationTier || "Unknown",
-          populationDensity: calculatedStats?.populationDensity || countryData.populationDensity,
-          gdpDensity: calculatedStats?.gdpDensity || countryData.gdpDensity,
+          economicTier: countryData.economicTier || country.economicTier,
+          populationTier: countryData.populationTier || "Unknown",
+          populationDensity: countryData.populationDensity,
+          gdpDensity: countryData.gdpDensity,
           landArea: countryData.landArea,
           continent: countryData.continent || country.continent,
           color: CHART_COLORS[selectedCountries.length] || "#8b5cf6",
@@ -230,7 +225,7 @@ export function CountryComparisonModal({
                   Add Country ({selectedCountries.length}/8)
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80 p-0" align="start">
+              <PopoverContent className="w-80" align="start">
                 <Command>
                   <CommandInput 
                     placeholder="Search countries..." 

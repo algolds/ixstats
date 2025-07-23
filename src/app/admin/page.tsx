@@ -2,6 +2,7 @@
 // FIXED: Updated admin page to work with current system
 
 "use client";
+export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback } from "react";
 import { 
@@ -17,6 +18,7 @@ import {
   ImportPreviewDialog,
   SdiAdminPanel,
   CountryAdminPanel,
+  NotificationsAdmin,
 } from "./_components";
 import { GlassCard, EnhancedCard } from "~/components/ui/enhanced-card";
 import { BentoGrid } from "~/components/ui/bento-grid";
@@ -24,6 +26,7 @@ import { AnimatedNumber } from "~/components/ui/animated-number";
 import { TrendIndicator } from "~/components/ui/trend-indicator";
 import { HealthRing } from "~/components/ui/health-ring";
 import { FlagCacheManager } from "~/components/FlagCacheManager";
+import { FlagTestComponent } from "~/components/FlagTestComponent";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { CONFIG_CONSTANTS } from "~/lib/config-service";
@@ -38,7 +41,7 @@ import { AdminErrorBoundary } from "./_components/ErrorBoundary";
 import { SignedIn, SignedOut, SignInButton, useUser, UserButton } from "@clerk/nextjs";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { Sidebar, SidebarBody, SidebarLink } from "~/components/ui/sidebar";
-import { Settings, Clock, TrendingUp, Bot, Database, Upload, List, Shield, Users } from "lucide-react";
+import { Settings, Clock, TrendingUp, Bot, Database, Upload, List, Shield, Users, Bell } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { BarChart3, Users as UsersIcon } from "lucide-react";
@@ -88,9 +91,10 @@ export default function AdminPage() {
     { label: "Calculation Logs", value: "logs", icon: <List /> },
     { label: "Country Admin", value: "country-admin", icon: <Users /> },
     { label: "SDI Admin", value: "sdi", icon: <Shield /> },
+    { label: "Notifications", value: "notifications", icon: <Bell /> },
   ];
 
-  // TRPC Queries
+  // TRPC Queries - all called unconditionally
   const { 
     data: systemStatus, 
     isLoading: statusLoading, 
@@ -118,7 +122,7 @@ export default function AdminPage() {
     error: logsError 
   } = api.admin.getCalculationLogs.useQuery({ limit: 10 });
 
-  // TRPC Mutations
+  // TRPC Mutations - all called unconditionally
   const saveConfigMutation = api.admin.saveConfig.useMutation();
   const forceCalculationMutation = api.countries.updateStats.useMutation();
   const setCustomTimeMutation = api.admin.setCustomTime.useMutation();
@@ -131,41 +135,7 @@ export default function AdminPage() {
   const resumeBotMutation = api.admin.resumeBot.useMutation();
   const clearBotOverridesMutation = api.admin.clearBotOverrides.useMutation();
 
-  // Early return: loading
-  if (!isLoaded) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Early return: not signed in
-  if (!user) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <SignInButton mode="modal" />
-      </div>
-    );
-  }
-
-  // Early return: not admin
-  if (user && user.publicMetadata?.role !== "admin") {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center border border-gray-200 dark:border-gray-700">
-          <h1 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">Access Denied</h1>
-          <p className="text-gray-700 dark:text-gray-300 mb-6">You do not have permission to view this page.</p>
-          <UserButton afterSignOutUrl="/" />
-        </div>
-      </div>
-    );
-  }
-
-  // Load initial config
+  // Load initial config - called unconditionally
   useEffect(() => {
     if (configData) {
       setConfig({
@@ -177,7 +147,7 @@ export default function AdminPage() {
     }
   }, [configData]);
 
-  // Handlers
+  // Handlers - all called unconditionally
   const handleSaveConfig = useCallback(async () => {
     setActionState(prev => ({ ...prev, savePending: true }));
     try {
@@ -409,6 +379,38 @@ export default function AdminPage() {
     ]);
   }, [refetchStatus, refetchBotStatus, refetchConfig]);
 
+  // Early returns after all hooks are called
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <SignInButton mode="modal" />
+      </div>
+    );
+  }
+
+  if (user && user.publicMetadata?.role !== "admin") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center border border-gray-200 dark:border-gray-700">
+          <h1 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">Access Denied</h1>
+          <p className="text-gray-700 dark:text-gray-300 mb-6">You do not have permission to view this page.</p>
+          <UserButton afterSignOutUrl="/" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <AdminErrorBoundary>
@@ -562,10 +564,16 @@ export default function AdminPage() {
                       </CardHeader>
                       <CardContent className="pt-2">
                         <FlagCacheManager />
+                        
+                        {/* Debug: Flag Test Component */}
+                        <div className="mt-4 pt-4 border-t">
+                          <h4 className="text-sm font-medium mb-2">Debug: Flag Loading Test</h4>
+                          <FlagTestComponent />
+                        </div>
                       </CardContent>
                     </Card>
                   </div>
-                  <WarningPanel systemStatus={systemStatus} />
+                  {systemStatus && <WarningPanel systemStatus={systemStatus} />}
                 </>
               )}
               {selectedSection === "time" && (
@@ -594,7 +602,7 @@ export default function AdminPage() {
                       globalGrowthFactor={config.globalGrowthFactor}
                       autoUpdate={config.autoUpdate}
                       botSyncEnabled={config.botSyncEnabled}
-                      onGlobalGrowthFactorChange={(value) => setConfig(prev => ({ ...prev, globalGrowthFactor: value as number }))}
+                      onGlobalGrowthFactorChange={(value) => setConfig(prev => ({ ...prev, globalGrowthFactor: value }))}
                       onAutoUpdateChange={(value) => setConfig(prev => ({ ...prev, autoUpdate: value }))}
                       onBotSyncEnabledChange={(value) => setConfig(prev => ({ ...prev, botSyncEnabled: value }))}
                       onForceCalculation={handleForceCalculation}
@@ -663,6 +671,11 @@ export default function AdminPage() {
               {selectedSection === "sdi" && (
                 <EnhancedCard variant="glass" className="mb-8">
                   <SdiAdminPanel />
+                </EnhancedCard>
+              )}
+              {selectedSection === "notifications" && (
+                <EnhancedCard variant="glass" className="mb-8">
+                  <NotificationsAdmin />
                 </EnhancedCard>
               )}
             </div>

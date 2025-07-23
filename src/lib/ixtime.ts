@@ -22,7 +22,7 @@ export class IxTime {
   private static multiplierOverride: number | null = null;
   private static lastKnownBotTime: number | null = null;
   private static lastSyncTime: number | null = null;
-  private static botAvailable: boolean = true;
+  private static botAvailable = true;
 
   /**
    * Get the in-game epoch timestamp (January 1, 2028)

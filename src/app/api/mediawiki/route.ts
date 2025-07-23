@@ -1,5 +1,5 @@
 // src/app/api/mediawiki/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { MEDIAWIKI_CONFIG, buildApiUrl } from '~/lib/mediawiki-config';
 import { ixnayWiki } from '~/lib/mediawiki-service';
 
@@ -256,7 +256,7 @@ async function handleMediaWikiRequest(request: NextRequest, searchParams: URLSea
   params.formatversion = params.formatversion || '2';
 
   // Determine if we should use GET or POST based on content length
-  const isLongContent = requestBody && requestBody.text && requestBody.text.length > 1500;
+  const isLongContent = requestBody?.text && requestBody.text.length > 1500;
   
   let response;
   const controller = new AbortController();

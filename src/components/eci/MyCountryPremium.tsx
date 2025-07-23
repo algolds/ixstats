@@ -11,6 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState } from "react";
 import { api } from "@/trpc/react";
 import { toast } from "sonner";
+import { StrategicPlanningModal } from "@/components/modals/StrategicPlanningModal";
+import { AdvancedAnalyticsModal } from "@/components/modals/AdvancedAnalyticsModal";
+import { AIAdvisorModal } from "@/components/modals/AIAdvisorModal";
+import { PredictiveModelsModal } from "@/components/modals/PredictiveModelsModal";
 
 interface UserProfile {
   id: string;
@@ -34,6 +38,12 @@ export function MyCountryPremium({ profile, userId }: MyCountryPremiumProps) {
     priority: 'medium' as const,
     targetMetrics: [{ metric: '', currentValue: '', targetValue: '', deadline: '' }]
   });
+
+  // Get country data for the StrategicPlanningModal
+  const { data: countryData } = api.countries.getByIdWithEconomicData.useQuery(
+    { id: profile?.countryId || '' },
+    { enabled: !!profile?.countryId }
+  );
 
   // API hooks
   const { data: strategicPlans, refetch: refetchPlans } = api.eci.getStrategicPlans.useQuery(
@@ -208,9 +218,45 @@ export function MyCountryPremium({ profile, userId }: MyCountryPremiumProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Upgrade to Premium</DialogTitle>
-            <DialogDescription>Unlock advanced analytics, AI advisor, and more. (Feature coming soon!)</DialogDescription>
+            <DialogDescription>Unlock advanced analytics, AI advisor, strategic planning tools, and predictive economic models.</DialogDescription>
           </DialogHeader>
-          <div className="py-4">[Upgrade form, pricing, benefits, etc.]</div>
+          <div className="py-4 space-y-6">
+            <div className="text-center">
+              <div className="text-6xl mb-4">⭐</div>
+              <h3 className="text-xl font-bold text-white mb-2">MyCountry® Premium</h3>
+              <p className="text-white/70 mb-6">Transform your nation management with premium tools</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 bg-purple-900/20 rounded-lg border border-purple-500/30">
+                <h4 className="font-semibold text-purple-300 mb-2">🎯 Strategic Planning</h4>
+                <p className="text-sm text-purple-400">Create comprehensive long-term plans with target metrics and timeline tracking.</p>
+              </div>
+              <div className="p-4 bg-blue-900/20 rounded-lg border border-blue-500/30">
+                <h4 className="font-semibold text-blue-300 mb-2">📊 Advanced Analytics</h4>
+                <p className="text-sm text-blue-400">Deep-dive analysis with volatility metrics, trend detection, and correlation studies.</p>
+              </div>
+              <div className="p-4 bg-cyan-900/20 rounded-lg border border-cyan-500/30">
+                <h4 className="font-semibold text-cyan-300 mb-2">🤖 AI Economic Advisor</h4>
+                <p className="text-sm text-cyan-400">Personalized recommendations based on your nation's unique economic profile.</p>
+              </div>
+              <div className="p-4 bg-green-900/20 rounded-lg border border-green-500/30">
+                <h4 className="font-semibold text-green-300 mb-2">📈 Predictive Models</h4>
+                <p className="text-sm text-green-400">Multi-scenario economic forecasting with confidence intervals and risk assessment.</p>
+              </div>
+            </div>
+            
+            <div className="bg-gradient-to-r from-purple-900/30 to-pink-900/30 p-4 rounded-lg border border-purple-500/20">
+              <h4 className="font-semibold text-white mb-2">Premium Benefits</h4>
+              <ul className="text-sm text-white/70 space-y-1">
+                <li>• Priority access to new features</li>
+                <li>• Advanced economic modeling tools</li>
+                <li>• Detailed risk and volatility analysis</li>
+                <li>• AI-powered strategic recommendations</li>
+                <li>• Export and sharing capabilities</li>
+              </ul>
+            </div>
+          </div>
           <DialogClose asChild>
             <Button variant="outline">Close</Button>
           </DialogClose>
@@ -220,326 +266,94 @@ export function MyCountryPremium({ profile, userId }: MyCountryPremiumProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Premium Tools</DialogTitle>
-            <DialogDescription>Access all premium features. (Feature coming soon!)</DialogDescription>
+            <DialogDescription>Welcome to your premium dashboard - access advanced tools and analytics.</DialogDescription>
           </DialogHeader>
-          <div className="py-4">[Premium dashboard, quick links, etc.]</div>
-          <DialogClose asChild>
-            <Button variant="outline">Close</Button>
-          </DialogClose>
-        </DialogContent>
-      </Dialog>
-      <Dialog open={openModal === 'planning'} onOpenChange={v => setOpenModal(v ? 'planning' : null)}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Strategic Planning Suite</DialogTitle>
-            <DialogDescription>Create and manage long-term strategic plans for your nation</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-6 py-4">
-            {/* Existing plans */}
-            {strategicPlans && strategicPlans.length > 0 && (
-              <div>
-                <h4 className="text-sm font-semibold text-white/90 mb-2">Current Strategic Plans</h4>
-                <div className="space-y-2 max-h-32 overflow-y-auto">
-                  {strategicPlans.slice(0, 3).map((plan: any) => (
-                    <div key={plan.id} className="p-2 bg-emerald-900/20 rounded border border-emerald-700/30">
-                      <div className="text-sm font-medium text-emerald-300">{plan.title}</div>
-                      <div className="text-xs text-emerald-400 flex gap-2">
-                        <span className="capitalize">{plan.timeframe.replace('_', ' ')}</span>
-                        <span>•</span>
-                        <span className="capitalize">{plan.priority} Priority</span>
-                        <span>•</span>
-                        <span className="capitalize">{plan.status}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+          <div className="py-4 space-y-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <button 
+                onClick={() => setOpenModal('planning')}
+                className="p-4 bg-purple-900/20 rounded-lg border border-purple-500/30 hover:bg-purple-900/30 transition-colors text-center"
+              >
+                <div className="text-2xl mb-2">🎯</div>
+                <div className="text-sm font-medium text-purple-300">Strategic Planning</div>
+              </button>
+              <button 
+                onClick={() => setOpenModal('analytics')}
+                className="p-4 bg-blue-900/20 rounded-lg border border-blue-500/30 hover:bg-blue-900/30 transition-colors text-center"
+              >
+                <div className="text-2xl mb-2">📊</div>
+                <div className="text-sm font-medium text-blue-300">Advanced Analytics</div>
+              </button>
+              <button 
+                onClick={() => setOpenModal('ai')}
+                className="p-4 bg-cyan-900/20 rounded-lg border border-cyan-500/30 hover:bg-cyan-900/30 transition-colors text-center"
+              >
+                <div className="text-2xl mb-2">🤖</div>
+                <div className="text-sm font-medium text-cyan-300">AI Advisor</div>
+              </button>
+              <button 
+                onClick={() => setOpenModal('predictive')}
+                className="p-4 bg-green-900/20 rounded-lg border border-green-500/30 hover:bg-green-900/30 transition-colors text-center"
+              >
+                <div className="text-2xl mb-2">📈</div>
+                <div className="text-sm font-medium text-green-300">Predictive Models</div>
+              </button>
+            </div>
             
-            {/* New plan form */}
-            <div>
-              <h4 className="text-sm font-semibold text-white/90 mb-3">Create New Strategic Plan</h4>
-              <div className="grid grid-cols-2 gap-4">
+            <div className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 p-4 rounded-lg border">
+              <h4 className="font-semibold text-white mb-3">Quick Stats</h4>
+              <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <Label htmlFor="plan-title" className="text-xs text-white/70">Plan Title *</Label>
-                  <Input
-                    id="plan-title"
-                    value={planForm.title}
-                    onChange={(e) => setPlanForm(prev => ({ ...prev, title: e.target.value }))}
-                    placeholder="e.g., Economic Diversification Initiative"
-                    className="mt-1"
-                  />
+                  <div className="text-lg font-bold text-purple-400">{strategicPlans?.length || 0}</div>
+                  <div className="text-xs text-white/60">Active Plans</div>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label htmlFor="plan-timeframe" className="text-xs text-white/70">Timeframe</Label>
-                    <Select value={planForm.timeframe} onValueChange={(value: any) => setPlanForm(prev => ({ ...prev, timeframe: value }))}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="short_term">Short Term (1-2 years)</SelectItem>
-                        <SelectItem value="medium_term">Medium Term (3-5 years)</SelectItem>
-                        <SelectItem value="long_term">Long Term (5+ years)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="plan-priority" className="text-xs text-white/70">Priority</Label>
-                    <Select value={planForm.priority} onValueChange={(value: any) => setPlanForm(prev => ({ ...prev, priority: value }))}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="critical">Critical</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div>
+                  <div className="text-lg font-bold text-blue-400">{advancedAnalytics?.dataPoints || 0}</div>
+                  <div className="text-xs text-white/60">Data Points</div>
                 </div>
-              </div>
-              
-              <div className="mt-4">
-                <Label htmlFor="plan-description" className="text-xs text-white/70">Description *</Label>
-                <Textarea
-                  id="plan-description"
-                  value={planForm.description}
-                  onChange={(e) => setPlanForm(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Detailed plan description, rationale, and expected outcomes..."
-                  className="mt-1"
-                  rows={3}
-                />
-              </div>
-
-              <div className="mt-4">
-                <div className="flex justify-between items-center mb-2">
-                  <Label className="text-xs text-white/70">Strategic Objectives</Label>
-                  <Button type="button" size="sm" variant="outline" onClick={addObjective}>
-                    Add Objective
-                  </Button>
+                <div>
+                  <div className="text-lg font-bold text-green-400">{aiRecommendations?.length || 0}</div>
+                  <div className="text-xs text-white/60">AI Insights</div>
                 </div>
-                {planForm.objectives.map((objective, index) => (
-                  <div key={index} className="flex gap-2 mb-2">
-                    <Input
-                      value={objective}
-                      onChange={(e) => updateObjective(index, e.target.value)}
-                      placeholder={`Objective ${index + 1}`}
-                      className="flex-1"
-                    />
-                    {planForm.objectives.length > 1 && (
-                      <Button type="button" size="sm" variant="ghost" onClick={() => removeObjective(index)}>
-                        ×
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-4">
-                <div className="flex justify-between items-center mb-2">
-                  <Label className="text-xs text-white/70">Target Metrics (Optional)</Label>
-                  <Button type="button" size="sm" variant="outline" onClick={addMetric}>
-                    Add Metric
-                  </Button>
-                </div>
-                {planForm.targetMetrics.map((metric, index) => (
-                  <div key={index} className="grid grid-cols-5 gap-2 mb-2">
-                    <Input
-                      value={metric.metric}
-                      onChange={(e) => updateMetric(index, 'metric', e.target.value)}
-                      placeholder="Metric name"
-                      className="col-span-2"
-                    />
-                    <Input
-                      type="number"
-                      value={metric.currentValue}
-                      onChange={(e) => updateMetric(index, 'currentValue', e.target.value)}
-                      placeholder="Current"
-                    />
-                    <Input
-                      type="number"
-                      value={metric.targetValue}
-                      onChange={(e) => updateMetric(index, 'targetValue', e.target.value)}
-                      placeholder="Target"
-                    />
-                    <Input
-                      type="date"
-                      value={metric.deadline}
-                      onChange={(e) => updateMetric(index, 'deadline', e.target.value)}
-                    />
-                    {planForm.targetMetrics.length > 1 && (
-                      <Button type="button" size="sm" variant="ghost" onClick={() => removeMetric(index)} className="col-span-1">
-                        ×
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex gap-2 mt-6">
-                <Button 
-                  onClick={handleSubmitPlan} 
-                  disabled={createPlanMutation.isPending}
-                  className="bg-emerald-600 hover:bg-emerald-700"
-                >
-                  {createPlanMutation.isPending ? 'Creating...' : 'Create Plan'}
-                </Button>
-                <DialogClose asChild>
-                  <Button variant="outline">Cancel</Button>
-                </DialogClose>
               </div>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-      <Dialog open={openModal === 'analytics'} onOpenChange={v => setOpenModal(v ? 'analytics' : null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Advanced Analytics</DialogTitle>
-            <DialogDescription>Deep-dive analytics and trend analysis for your nation</DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            {advancedAnalytics ? (
-              <>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-blue-900/20 rounded border border-blue-700/30">
-                    <h4 className="text-sm font-semibold text-blue-300 mb-2">Economic Volatility</h4>
-                    <div className="text-lg font-bold text-white">{advancedAnalytics.volatility?.overall?.toFixed(2) || 'N/A'}</div>
-                    <div className="text-xs text-blue-400">GDP Volatility: {advancedAnalytics.volatility?.gdp?.toFixed(2) || 'N/A'}</div>
-                  </div>
-                  <div className="p-4 bg-green-900/20 rounded border border-green-700/30">
-                    <h4 className="text-sm font-semibold text-green-300 mb-2">Trend Analysis</h4>
-                    <div className="text-lg font-bold text-white capitalize">{advancedAnalytics.trends?.overall || 'Stable'}</div>
-                    <div className="text-xs text-green-400">GDP: {advancedAnalytics.trends?.gdp || 'Stable'}</div>
-                  </div>
-                </div>
-                <div className="p-4 bg-purple-900/20 rounded border border-purple-700/30">
-                  <h4 className="text-sm font-semibold text-purple-300 mb-2">Correlation Analysis</h4>
-                  <div className="grid grid-cols-3 gap-2 text-xs">
-                    <div>GDP-Population: <span className="font-semibold">{advancedAnalytics.correlations?.gdpPopulation?.toFixed(2) || 'N/A'}</span></div>
-                    <div>Growth-Stability: <span className="font-semibold">{advancedAnalytics.correlations?.gdpGrowthStability?.toFixed(2) || 'N/A'}</span></div>
-                    <div>Overall Health: <span className="font-semibold">{advancedAnalytics.correlations?.overallHealth?.toFixed(2) || 'N/A'}</span></div>
-                  </div>
-                </div>
-                <div className="text-xs text-white/60">
-                  Data points analyzed: {advancedAnalytics.dataPoints || 0} | Last updated: {new Date(advancedAnalytics.lastUpdated).toLocaleString()}
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-8 text-white/60">Loading analytics data...</div>
-            )}
+            
+            <div className="text-center">
+              <p className="text-sm text-white/60">
+                Your premium subscription gives you access to advanced economic modeling, 
+                strategic planning tools, and AI-powered insights.
+              </p>
+            </div>
           </div>
           <DialogClose asChild>
             <Button variant="outline">Close</Button>
           </DialogClose>
         </DialogContent>
       </Dialog>
-      <Dialog open={openModal === 'ai'} onOpenChange={v => setOpenModal(v ? 'ai' : null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>AI Economic Advisor</DialogTitle>
-            <DialogDescription>AI-powered recommendations based on your nation's data</DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            {aiRecommendations ? (
-              <div className="space-y-3">
-                <h4 className="text-sm font-semibold text-white/90">Current Recommendations</h4>
-                {aiRecommendations.map((rec: any, index: number) => (
-                  <div key={rec.id || index} className="p-4 bg-cyan-900/20 rounded border border-cyan-700/30">
-                    <div className="flex justify-between items-start mb-2">
-                      <h5 className="text-sm font-semibold text-cyan-300">{rec.title}</h5>
-                      <Badge className={`text-xs ${
-                        rec.priority === 'high' ? 'bg-red-900/30 text-red-300' :
-                        rec.priority === 'medium' ? 'bg-yellow-900/30 text-yellow-300' :
-                        'bg-green-900/30 text-green-300'
-                      }`}>
-                        {rec.priority} priority
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-cyan-400 mb-2">{rec.description}</p>
-                    <div className="text-xs text-cyan-500">
-                      <span className="font-semibold">Category:</span> {rec.category} • 
-                      <span className="font-semibold"> Impact:</span> {rec.impact}
-                    </div>
-                  </div>
-                ))}
-                {aiRecommendations.length === 0 && (
-                  <div className="text-center py-8 text-white/60">
-                    No specific recommendations at this time. Your nation appears to be performing well!
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-white/60">Analyzing your nation's data...</div>
-            )}
-          </div>
-          <DialogClose asChild>
-            <Button variant="outline">Close</Button>
-          </DialogClose>
-        </DialogContent>
-      </Dialog>
-      <Dialog open={openModal === 'predictive'} onOpenChange={v => setOpenModal(v ? 'predictive' : null)}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Predictive Economic Models</DialogTitle>
-            <DialogDescription>Economic forecasts and scenario analysis for your nation</DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            {predictiveModels ? (
-              <>
-                <div className="flex justify-between items-center">
-                  <h4 className="text-sm font-semibold text-white/90">1-Year Economic Projections</h4>
-                  <div className="text-xs text-white/60">
-                    Methodology: {predictiveModels.methodology}
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  {predictiveModels.scenarios?.map((scenario: any, index: number) => (
-                    <div key={index} className="p-4 bg-indigo-900/20 rounded border border-indigo-700/30">
-                      <div className="flex justify-between items-center mb-2">
-                        <h5 className="text-sm font-semibold text-indigo-300 capitalize">{scenario.scenario}</h5>
-                        <Badge className="text-xs bg-indigo-900/30 text-indigo-300">
-                          {scenario.confidence}% confidence
-                        </Badge>
-                      </div>
-                      <div className="space-y-2 text-xs">
-                        <div>
-                          <span className="text-indigo-400">GDP:</span>
-                          <span className="font-semibold text-white ml-1">
-                            ${(scenario.projectedGdp / 1e12).toFixed(2)}T
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-indigo-400">Population:</span>
-                          <span className="font-semibold text-white ml-1">
-                            {(scenario.projectedPopulation / 1e6).toFixed(1)}M
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-indigo-400">GDP per Capita:</span>
-                          <span className="font-semibold text-white ml-1">
-                            ${Math.round(scenario.projectedGdpPerCapita).toLocaleString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="text-xs text-white/60">
-                  Last updated: {new Date(predictiveModels.lastUpdated).toLocaleString()}
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-8 text-white/60">Generating predictive models...</div>
-            )}
-          </div>
-          <DialogClose asChild>
-            <Button variant="outline">Close</Button>
-          </DialogClose>
-        </DialogContent>
-      </Dialog>
+      <StrategicPlanningModal
+        isOpen={openModal === 'planning'}
+        onClose={() => setOpenModal(null)}
+        countryId={profile?.countryId || ''}
+        countryName={countryData?.name || ''}
+      />
+      <AdvancedAnalyticsModal
+        isOpen={openModal === 'analytics'}
+        onClose={() => setOpenModal(null)}
+        countryId={profile?.countryId || ''}
+        countryName={countryData?.name || ''}
+      />
+      <AIAdvisorModal
+        isOpen={openModal === 'ai'}
+        onClose={() => setOpenModal(null)}
+        countryId={profile?.countryId || ''}
+        countryName={countryData?.name || ''}
+      />
+      <PredictiveModelsModal
+        isOpen={openModal === 'predictive'}
+        onClose={() => setOpenModal(null)}
+        countryId={profile?.countryId || ''}
+        countryName={countryData?.name || ''}
+      />
     </>
   );
 }

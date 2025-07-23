@@ -16,7 +16,7 @@ export function EnhancedButton({
   children,
   ...props 
 }: EnhancedButtonProps) {
-  const glassClasses = glass ? 'glass-button backdrop-blur-[var(--blur-subtle)]' : '';
+  const glassClasses = glass ? 'glass-button' : '';
   const nationClasses = nation ? 'bg-[var(--nation-primary)] hover:bg-[var(--nation-secondary)]' : '';
   const glowClasses = {
     true: 'shadow-[var(--glow-interactive)]',

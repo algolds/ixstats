@@ -33,7 +33,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
+  DropdownMenuGroupLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
@@ -264,15 +264,13 @@ export function ComparativeAnalysis({
         <div className="flex items-center gap-2">
           <Label className="text-sm">Regions:</Label>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Filter className="h-4 w-4 mr-2" />
-                {selectedRegions.length} Selected
-                <ChevronDown className="h-4 w-4 ml-2" />
-              </Button>
+            <DropdownMenuTrigger className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3">
+              <Filter className="h-4 w-4 mr-2" />
+              {selectedRegions.length} Selected
+              <ChevronDown className="h-4 w-4 ml-2" />
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuLabel>Select Regions</DropdownMenuLabel>
+              <DropdownMenuGroupLabel>Select Regions</DropdownMenuGroupLabel>
               <DropdownMenuSeparator />
               {regions.map(region => (
                 <DropdownMenuItem key={region} asChild>

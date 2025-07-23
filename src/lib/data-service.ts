@@ -26,7 +26,7 @@ export class IxStatsDataService {
 
   async parseRosterFile(fileBuffer: ArrayBuffer, fileName?: string): Promise<BaseCountryData[]> {
     // Only support Excel files
-    if (fileName && !fileName.toLowerCase().match(/\.(xlsx|xls)$/)) {
+    if (fileName && !(/\.(xlsx|xls)$/.exec(fileName.toLowerCase()))) {
       throw new Error('Only Excel files (.xlsx, .xls) are supported. CSV import has been removed.');
     }
     return parseRosterFileFromParser(fileBuffer, fileName);

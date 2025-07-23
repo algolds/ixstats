@@ -389,10 +389,11 @@ export function CountryEconomicDataSection({
           </TabsContent>
 
           <TabsContent value="labor" className="space-y-0">
+            {/* Labor Employment section with economic data */}
             <LaborEmployment
               laborData={economicData.laborEmployment}
               totalPopulation={economicData.coreIndicators.totalPopulation}
-              onLaborDataChange={(data: LaborEmploymentData) => handleDataChange('laborEmployment', data)}
+              onLaborDataChangeAction={(data: LaborEmploymentData) => handleDataChange('laborEmployment', data)}
               isReadOnly={!isEditMode}
               showComparison={false}
             />

@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Users,
   TrendingUp,
@@ -12,7 +13,7 @@ import {
   Flag as FlagIcon,
   ExternalLink,
 } from 'lucide-react';
-import { ixnayWiki } from '~/lib/mediawiki-service';
+import { flagService } from '~/lib/flag-service';
 import { formatPopulation, formatCurrency } from '~/lib/chart-utils';
 import { Button } from '~/components/ui/button';
 import { CardFooter } from '~/components/ui/card';
@@ -67,6 +68,7 @@ function useDominantColor(imageUrl: string | null | undefined) {
 }
 
 export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: propFlagLoading }: CountryListCardProps) {
+  const router = useRouter();
   // Use props if provided, otherwise fall back to individual loading
   const [localFlagUrl, setLocalFlagUrl] = useState<string | null>(null);
   const [localFlagState, setLocalFlagState] = useState<'loading'|'loaded'|'error'>('loading');
@@ -90,14 +92,20 @@ export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: pr
       }
       mounted && setLocalFlagState('loading');
       try {
-        const url = await ixnayWiki.getFlagUrl(country.name);
+        // Try cached flag first for immediate response
+        const cachedUrl = flagService.getCachedFlagUrl(country.name);
+        if (cachedUrl && mounted) {
+          setLocalFlagUrl(cachedUrl);
+          setLocalFlagState('loaded');
+          return;
+        }
+
+        // Fetch if not cached
+        const url = await flagService.getFlagUrl(country.name);
         if (mounted) {
-          if (typeof url === 'string') {
+          if (url) {
             setLocalFlagUrl(url);
             setLocalFlagState('loaded');
-          } else if (url && typeof url === 'object' && 'error' in url) {
-            // Handle error object (legacy case)
-            setLocalFlagState('error');
           } else {
             setLocalFlagState('error');
           }
@@ -118,7 +126,7 @@ export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: pr
   )}`;
 
   const goToDetail = () => {
-    window.location.href = `/countries/${country.id}`;
+    router.push(`/countries/${country.id}`);
   };
 
   return (

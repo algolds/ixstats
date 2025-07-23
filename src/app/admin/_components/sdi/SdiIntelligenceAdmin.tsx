@@ -10,6 +10,16 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '~/
 import { AnimatedNumber } from '~/components/ui/animated-number';
 import { api } from '~/trpc/react';
 
+interface IntelligenceItemForm {
+  title: string;
+  content: string;
+  category: 'economic' | 'crisis' | 'diplomatic' | 'security' | 'technology' | 'environment';
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  source: string;
+  region: string;
+  affectedCountries: string[];
+}
+
 export function SdiIntelligenceAdmin() {
   // Use correct input for getIntelligenceFeed (empty object for all)
   const { data, isLoading, error, refetch } = api.sdi.getIntelligenceFeed.useQuery({});
@@ -17,7 +27,7 @@ export function SdiIntelligenceAdmin() {
   const createMutation = api.sdi.createIntelligenceItem.useMutation({ onSuccess: () => { void refetch(); } });
 
   const [showDialog, setShowDialog] = useState(false);
-  const [form, setForm] = useState<any>({
+  const [form, setForm] = useState<IntelligenceItemForm>({
     title: '',
     content: '',
     category: 'economic',
@@ -93,13 +103,13 @@ export function SdiIntelligenceAdmin() {
             <DialogTitle>New Intelligence Alert</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <Input placeholder="Title" value={form.title} onChange={e => setForm((f: any) => ({ ...f, title: e.target.value }))} />
-            <Input placeholder="Content" value={form.content} onChange={e => setForm((f: any) => ({ ...f, content: e.target.value }))} />
-            <Input placeholder="Category" value={form.category} onChange={e => setForm((f: any) => ({ ...f, category: e.target.value }))} />
-            <Input placeholder="Priority" value={form.priority} onChange={e => setForm((f: any) => ({ ...f, priority: e.target.value }))} />
-            <Input placeholder="Source" value={form.source} onChange={e => setForm((f: any) => ({ ...f, source: e.target.value }))} />
-            <Input placeholder="Region" value={form.region} onChange={e => setForm((f: any) => ({ ...f, region: e.target.value }))} />
-            <Input placeholder="Affected Countries (comma separated)" value={form.affectedCountries.join(', ')} onChange={e => setForm((f: any) => ({ ...f, affectedCountries: e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean) }))} />
+            <Input placeholder="Title" value={form.title} onChange={e => setForm((f: IntelligenceItemForm) => ({ ...f, title: e.target.value }))} />
+            <Input placeholder="Content" value={form.content} onChange={e => setForm((f: IntelligenceItemForm) => ({ ...f, content: e.target.value }))} />
+            <Input placeholder="Category" value={form.category} onChange={e => setForm((f: IntelligenceItemForm) => ({ ...f, category: e.target.value as IntelligenceItemForm['category'] }))} />
+            <Input placeholder="Priority" value={form.priority} onChange={e => setForm((f: IntelligenceItemForm) => ({ ...f, priority: e.target.value as IntelligenceItemForm['priority'] }))} />
+            <Input placeholder="Source" value={form.source} onChange={e => setForm((f: IntelligenceItemForm) => ({ ...f, source: e.target.value }))} />
+            <Input placeholder="Region" value={form.region} onChange={e => setForm((f: IntelligenceItemForm) => ({ ...f, region: e.target.value }))} />
+            <Input placeholder="Affected Countries (comma separated)" value={form.affectedCountries.join(', ')} onChange={e => setForm((f: IntelligenceItemForm) => ({ ...f, affectedCountries: e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean) }))} />
           </div>
           <DialogFooter>
             <Button onClick={handleSave} disabled={createMutation.isPending}>Create</Button>

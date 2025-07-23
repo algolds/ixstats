@@ -1,7 +1,7 @@
 // src/app/economy/components/GovernmentSpending.tsx
 "use client";
 
-import { useState, type ElementType } from "react"; 
+import React, { useState, type ElementType } from "react"; 
 import {
   Building,
   Shield,
@@ -17,25 +17,7 @@ import {
   MoreHorizontal // Added MoreHorizontal as a fallback icon
 } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import type { CoreEconomicIndicatorsData } from "~/types/economics"; // Import if needed for props
-
-// Match the SpendingCategory type from src/types/economics.ts for data consistency
-interface SpendingCategory {
-  category: string;
-  amount: number;
-  percent: number;
-  icon?: string; // Icon is a string (name of Lucide icon or similar)
-  color?: string; 
-  description?: string;
-}
-
-interface GovernmentSpendingData {
-  totalSpending: number;
-  spendingGDPPercent: number;
-  spendingPerCapita: number;
-  spendingCategories: SpendingCategory[];
-  deficitSurplus: number;
-}
+import type { SpendingCategory, GovernmentSpendingData, CoreEconomicIndicatorsData } from '~/types/economics';
 
 interface GovernmentSpendingProps {
   spendingData: GovernmentSpendingData;
@@ -49,7 +31,7 @@ interface GovernmentSpendingProps {
 }
 
 // Mapping from icon string names to Lucide components
-const iconMap: { [key: string]: ElementType } = {
+const iconMap: Record<string, ElementType> = {
   Shield,
   GraduationCap,
   Heart,
@@ -187,9 +169,15 @@ export function GovernmentSpending({
     color: cat.color || '#CCCCCC'
   }));
 
-  const renderIcon = (iconName?: string) => {
-    const IconComponent = iconName ? iconMap[iconName] : null;
-    return IconComponent ? <IconComponent className="h-4 w-4 mr-2" /> : <MoreHorizontal className="h-4 w-4 mr-2 text-gray-400" />;
+  /**
+   * Renders an icon component based on the icon name with type safety
+   * @param iconName - Optional icon name to render
+   * @returns JSX element with the appropriate icon
+   */
+  const renderIcon = (iconName?: string): React.ReactElement => {
+    // Ensure type safety when accessing the icon map
+    const IconComponent: React.ElementType = (iconName && iconMap[iconName]) ? iconMap[iconName] as React.ElementType : MoreHorizontal;
+    return React.createElement(IconComponent, { className: "h-4 w-4 mr-2 text-gray-400" });
   };
 
   return (
@@ -271,7 +259,7 @@ export function GovernmentSpending({
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                    label={({ name, percent }) => `${name}: ${percent ? (percent * 100).toFixed(1) : '0'}%`}
                   >
                     {pieData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />

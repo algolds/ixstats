@@ -12,7 +12,7 @@ const mockCountryData = {
 
 describe('ExecutiveDashboard', () => {
   it('renders all metrics with real data', () => {
-    render(<ExecutiveDashboard countryData={mockCountryData as any} />);
+    render(<ExecutiveDashboard countryData={mockCountryData as any} userId="test-user-id" />);
     expect(screen.getByText(/Economic Growth/i)).toBeInTheDocument();
     expect(screen.getByText('7.2%')).toBeInTheDocument();
     expect(screen.getByText(/Population Growth/i)).toBeInTheDocument();
@@ -24,7 +24,7 @@ describe('ExecutiveDashboard', () => {
   });
 
   it('handles missing fields gracefully', () => {
-    render(<ExecutiveDashboard countryData={{} as any} />);
+    render(<ExecutiveDashboard countryData={{} as any} userId="test-user-id" />);
     expect(screen.getByText(/Economic Growth/i)).toBeInTheDocument();
     expect(screen.getByText('0.0%')).toBeInTheDocument();
   });

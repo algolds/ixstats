@@ -136,15 +136,19 @@
   --sidebar-ring: oklch(0.704 0.04 256.788);
 
   /* === GLASS MORPHISM SYSTEM === */
-  --glass-diplomatic: rgba(16, 24, 40, 0.1);
-  --glass-diplomatic-hover: rgba(16, 24, 40, 0.15);
-  --glass-diplomatic-active: rgba(16, 24, 40, 0.2);
-  --glass-economic: rgba(16, 40, 24, 0.1);
-  --glass-economic-hover: rgba(16, 40, 24, 0.15);
-  --glass-military: rgba(40, 16, 16, 0.1);
-  --glass-military-hover: rgba(40, 16, 16, 0.15);
-  --glass-cultural: rgba(24, 16, 40, 0.1);
-  --glass-cultural-hover: rgba(24, 16, 40, 0.15);
+  --glass-diplomatic: rgba(16, 24, 40, 0.15);
+  --glass-diplomatic-hover: rgba(16, 24, 40, 0.2);
+  --glass-diplomatic-active: rgba(16, 24, 40, 0.25);
+  --glass-economic: rgba(16, 40, 24, 0.15);
+  --glass-economic-hover: rgba(16, 40, 24, 0.2);
+  --glass-military: rgba(40, 16, 16, 0.15);
+  --glass-military-hover: rgba(40, 16, 16, 0.2);
+  --glass-cultural: rgba(24, 16, 40, 0.15);
+  --glass-cultural-hover: rgba(24, 16, 40, 0.2);
+  --glass-social: rgba(40, 24, 16, 0.15);
+  --glass-social-hover: rgba(40, 24, 16, 0.2);
+  --glass-security: rgba(16, 16, 40, 0.15);
+  --glass-security-hover: rgba(16, 16, 40, 0.2);
   /* Blur Levels */
   --blur-subtle: 4px;
   --blur-moderate: 8px;
@@ -166,6 +170,14 @@
   --nation-secondary: var(--color-brand-secondary);
   --nation-accent: var(--color-brand-primary);
   --nation-glass: var(--glass-diplomatic);
+  
+  /* Dynamic Country Flag Colors - Override these per country */
+  --country-primary: #6366f1;      /* Default indigo */
+  --country-secondary: #8b5cf6;    /* Default purple */
+  --country-accent: #06b6d4;       /* Default cyan */
+  --country-tertiary: #10b981;     /* Default emerald */
+  --country-text: #ffffff;         /* Default white text */
+  --country-text-muted: #e5e7eb;   /* Default light gray */
 }
 
 /* Light Theme Overrides */
@@ -1471,85 +1483,303 @@ body {
 /*   } */
 /* } */
 
-/* === GLASS MORPHISM COMPONENTS === */
+/* === ENHANCED SOLID CARD COMPONENTS WITH VISUAL EFFECTS === */
 .glass-card,
 .glass-card-diplomatic,
 .glass-card-economic,
 .glass-card-military,
-.glass-card-cultural {
+.glass-card-cultural,
+.glass-card-social,
+.glass-card-security {
+  position: relative;
   border-radius: 1.25rem;
-  border: none;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 1.5px 8px 0 rgba(0,0,0,0.10);
-  background-clip: padding-box;
-  backdrop-filter: blur(18px) saturate(1.2);
-  transition: box-shadow 0.2s, background 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, 
+    rgba(30, 41, 59, 1) 0%,
+    rgba(15, 23, 42, 1) 50%,
+    rgba(8, 16, 36, 1) 100%
+  );
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  isolation: isolate;
+  backdrop-filter: blur(12px);
 }
+
+.glass-card::before,
+.glass-card-diplomatic::before,
+.glass-card-economic::before,
+.glass-card-military::before,
+.glass-card-cultural::before,
+.glass-card-social::before,
+.glass-card-security::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.02) 50%,
+    rgba(255, 255, 255, 0.01) 100%
+  );
+  z-index: -1;
+  pointer-events: none;
+}
+
 .glass-card:hover,
 .glass-card-diplomatic:hover,
 .glass-card-economic:hover,
 .glass-card-military:hover,
-.glass-card-cultural:hover {
-  box-shadow: 0 12px 48px rgba(99,102,241,0.18), 0 2px 12px 0 rgba(0,0,0,0.12);
-  background: rgba(30, 41, 59, 0.18);
+.glass-card-cultural:hover,
+.glass-card-social:hover,
+.glass-card-security:hover {
+  box-shadow: 
+    0 16px 48px rgba(99, 102, 241, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 0 32px rgba(99, 102, 241, 0.1);
+  background: linear-gradient(135deg, 
+    rgba(45, 56, 79, 1) 0%,
+    rgba(30, 41, 59, 1) 50%,
+    rgba(15, 23, 42, 1) 100%
+  );
+  transform: translateY(-2px);
+  backdrop-filter: blur(14px);
 }
+
 .glass-card-diplomatic {
-  background: var(--glass-diplomatic);
-  backdrop-filter: blur(var(--blur-moderate));
-  border: 1px solid rgba(99, 102, 241, 0.2);
-  box-shadow: var(--shadow-glass-md);
+  background: linear-gradient(135deg, 
+    rgba(30, 35, 55, 1) 0%,
+    rgba(16, 24, 40, 1) 50%,
+    rgba(8, 12, 20, 1) 100%
+  );
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  box-shadow: 
+    0 8px 32px rgba(99, 102, 241, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(99, 102, 241, 0.2),
+    0 0 24px rgba(99, 102, 241, 0.1);
+  backdrop-filter: blur(12px);
 }
+.glass-card-diplomatic:hover {
+  background: linear-gradient(135deg, 
+    rgba(45, 50, 70, 1) 0%,
+    rgba(30, 35, 55, 1) 50%,
+    rgba(16, 24, 40, 1) 100%
+  );
+  border-color: rgba(99, 102, 241, 0.6);
+  box-shadow: 
+    0 16px 48px rgba(99, 102, 241, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(99, 102, 241, 0.25),
+    0 0 40px rgba(99, 102, 241, 0.15);
+  backdrop-filter: blur(14px);
+}
+
 .glass-card-economic {
-  background: var(--glass-economic);
-  backdrop-filter: blur(var(--blur-moderate));
-  border: 1px solid rgba(16, 185, 129, 0.2);
-  box-shadow: var(--shadow-glass-md);
+  background: linear-gradient(135deg, 
+    rgba(30, 55, 39, 1) 0%,
+    rgba(16, 40, 24, 1) 50%,
+    rgba(8, 20, 12, 1) 100%
+  );
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  box-shadow: 
+    0 8px 32px rgba(16, 185, 129, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(16, 185, 129, 0.2),
+    0 0 24px rgba(16, 185, 129, 0.1);
+  backdrop-filter: blur(12px);
 }
+.glass-card-economic:hover {
+  background: linear-gradient(135deg, 
+    rgba(45, 70, 54, 1) 0%,
+    rgba(30, 55, 39, 1) 50%,
+    rgba(16, 40, 24, 1) 100%
+  );
+  border-color: rgba(16, 185, 129, 0.6);
+  box-shadow: 
+    0 16px 48px rgba(16, 185, 129, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(16, 185, 129, 0.25),
+    0 0 40px rgba(16, 185, 129, 0.15);
+  backdrop-filter: blur(14px);
+}
+
 .glass-card-military {
-  background: var(--glass-military);
-  backdrop-filter: blur(var(--blur-moderate));
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  box-shadow: var(--shadow-glass-md);
+  background: linear-gradient(135deg, 
+    rgba(55, 30, 30, 1) 0%,
+    rgba(40, 16, 16, 1) 50%,
+    rgba(20, 8, 8, 1) 100%
+  );
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  box-shadow: 
+    0 8px 32px rgba(239, 68, 68, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(239, 68, 68, 0.2),
+    0 0 24px rgba(239, 68, 68, 0.1);
+  backdrop-filter: blur(12px);
 }
+.glass-card-military:hover {
+  background: linear-gradient(135deg, 
+    rgba(70, 45, 45, 1) 0%,
+    rgba(55, 30, 30, 1) 50%,
+    rgba(40, 16, 16, 1) 100%
+  );
+  border-color: rgba(239, 68, 68, 0.6);
+  box-shadow: 
+    0 16px 48px rgba(239, 68, 68, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(239, 68, 68, 0.25),
+    0 0 40px rgba(239, 68, 68, 0.15);
+  backdrop-filter: blur(14px);
+}
+
 .glass-card-cultural {
-  background: var(--glass-cultural);
-  backdrop-filter: blur(var(--blur-moderate));
-  border: 1px solid rgba(139, 92, 246, 0.2);
-  box-shadow: var(--shadow-glass-md);
+  background: linear-gradient(135deg, 
+    rgba(39, 30, 55, 1) 0%,
+    rgba(24, 16, 40, 1) 50%,
+    rgba(12, 8, 20, 1) 100%
+  );
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  box-shadow: 
+    0 8px 32px rgba(168, 85, 247, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(168, 85, 247, 0.2),
+    0 0 24px rgba(168, 85, 247, 0.1);
+  backdrop-filter: blur(12px);
 }
+.glass-card-cultural:hover {
+  background: linear-gradient(135deg, 
+    rgba(55, 39, 70, 1) 0%,
+    rgba(39, 30, 55, 1) 50%,
+    rgba(24, 16, 40, 1) 100%
+  );
+  border-color: rgba(168, 85, 247, 0.6);
+  box-shadow: 
+    0 16px 48px rgba(168, 85, 247, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(168, 85, 247, 0.25),
+    0 0 40px rgba(168, 85, 247, 0.15);
+  backdrop-filter: blur(14px);
+}
+
+.glass-card-social {
+  background: linear-gradient(135deg, 
+    rgba(30, 55, 55, 1) 0%,
+    rgba(16, 40, 40, 1) 50%,
+    rgba(8, 20, 20, 1) 100%
+  );
+  border: 1px solid rgba(20, 184, 166, 0.4);
+  box-shadow: 
+    0 8px 32px rgba(20, 184, 166, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(20, 184, 166, 0.2),
+    0 0 24px rgba(20, 184, 166, 0.1);
+  backdrop-filter: blur(12px);
+}
+.glass-card-social:hover {
+  background: linear-gradient(135deg, 
+    rgba(45, 70, 70, 1) 0%,
+    rgba(30, 55, 55, 1) 50%,
+    rgba(16, 40, 40, 1) 100%
+  );
+  border-color: rgba(20, 184, 166, 0.6);
+  box-shadow: 
+    0 16px 48px rgba(20, 184, 166, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(20, 184, 166, 0.25),
+    0 0 40px rgba(20, 184, 166, 0.15);
+  backdrop-filter: blur(14px);
+}
+
+.glass-card-security {
+  background: linear-gradient(135deg, 
+    rgba(55, 55, 30, 1) 0%,
+    rgba(40, 40, 16, 1) 50%,
+    rgba(20, 20, 8, 1) 100%
+  );
+  border: 1px solid rgba(250, 204, 21, 0.4);
+  box-shadow: 
+    0 8px 32px rgba(250, 204, 21, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(250, 204, 21, 0.2),
+    0 0 24px rgba(250, 204, 21, 0.1);
+  backdrop-filter: blur(12px);
+}
+.glass-card-security:hover {
+  background: linear-gradient(135deg, 
+    rgba(70, 70, 45, 1) 0%,
+    rgba(55, 55, 30, 1) 50%,
+    rgba(40, 40, 16, 1) 100%
+  );
+  border-color: rgba(250, 204, 21, 0.6);
+  box-shadow: 
+    0 16px 48px rgba(250, 204, 21, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(250, 204, 21, 0.25),
+    0 0 40px rgba(250, 204, 21, 0.15);
+  backdrop-filter: blur(14px);
+}
+
 .glass-panel {
-  background: var(--glass-diplomatic);
-  backdrop-filter: blur(var(--blur-prominent));
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: var(--shadow-glass-lg);
+  background: linear-gradient(135deg, 
+    rgba(30, 35, 55, 0.9) 0%,
+    rgba(16, 24, 40, 0.95) 50%,
+    rgba(8, 12, 20, 1) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    0 4px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
   border-radius: var(--radius);
 }
 .glass-button {
-  background: var(--glass-diplomatic);
-  backdrop-filter: blur(var(--blur-subtle));
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(135deg, 
+    rgba(30, 35, 55, 0.8) 0%,
+    rgba(16, 24, 40, 0.9) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.15);
   transition: all var(--transition-standard, 0.2s);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 .glass-button:hover {
-  background: rgba(16, 24, 40, 0.2);
+  background: linear-gradient(135deg, 
+    rgba(45, 50, 70, 0.85) 0%,
+    rgba(30, 35, 55, 0.95) 100%
+  );
   box-shadow: var(--glow-interactive);
 }
 .glass-button:active {
-  transform: translateY(0);
-  background: var(--glass-diplomatic-active);
+  transform: translateY(1px);
+  background: linear-gradient(135deg, 
+    rgba(16, 24, 40, 0.9) 0%,
+    rgba(8, 12, 20, 0.95) 100%
+  );
 }
 .glass-input {
-  background: var(--glass-diplomatic);
-  backdrop-filter: blur(var(--blur-subtle));
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, 
+    rgba(30, 35, 55, 0.8) 0%,
+    rgba(16, 24, 40, 0.9) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 .glass-input:focus {
   box-shadow: var(--glow-interactive);
   border-color: var(--color-brand-primary);
 }
 .glass-badge {
-  background: var(--glass-diplomatic);
-  backdrop-filter: blur(var(--blur-subtle));
+  background: linear-gradient(135deg, 
+    rgba(30, 35, 55, 0.8) 0%,
+    rgba(16, 24, 40, 0.9) 100%
+  );
   border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 .medallion-glow {
   filter: drop-shadow(0 0 8px var(--color-brand-primary, rgba(99, 102, 241, 0.3)));
@@ -1567,6 +1797,105 @@ body {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
+}
+
+/* === COUNTRY FLAG COLOR THEMING === */
+/* Apply to country pages to theme components based on flag colors */
+
+.country-themed .glass-card {
+  background: linear-gradient(135deg, 
+    color-mix(in srgb, var(--country-primary) 20%, rgba(30, 41, 59, 0.95)) 0%,
+    color-mix(in srgb, var(--country-primary) 15%, rgba(15, 23, 42, 0.98)) 50%,
+    color-mix(in srgb, var(--country-primary) 10%, rgba(8, 16, 36, 1)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--country-primary) 30%, rgba(255, 255, 255, 0.1));
+  box-shadow: 
+    0 8px 32px color-mix(in srgb, var(--country-primary) 15%, rgba(0, 0, 0, 0.3)),
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 color-mix(in srgb, var(--country-primary) 20%, rgba(255, 255, 255, 0.1)),
+    0 0 24px color-mix(in srgb, var(--country-primary) 8%, rgba(0, 0, 0, 0));
+}
+
+.country-themed .glass-card:hover {
+  background: linear-gradient(135deg, 
+    color-mix(in srgb, var(--country-primary) 25%, rgba(45, 56, 79, 0.95)) 0%,
+    color-mix(in srgb, var(--country-primary) 20%, rgba(30, 41, 59, 0.98)) 50%,
+    color-mix(in srgb, var(--country-primary) 15%, rgba(15, 23, 42, 1)) 100%
+  );
+  border-color: color-mix(in srgb, var(--country-primary) 50%, rgba(255, 255, 255, 0.15));
+  box-shadow: 
+    0 16px 48px color-mix(in srgb, var(--country-primary) 20%, rgba(0, 0, 0, 0.2)),
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 color-mix(in srgb, var(--country-primary) 25%, rgba(255, 255, 255, 0.15)),
+    0 0 40px color-mix(in srgb, var(--country-primary) 12%, rgba(0, 0, 0, 0));
+}
+
+.country-themed .glass-card-economic {
+  background: linear-gradient(135deg, 
+    color-mix(in srgb, var(--country-secondary) 20%, rgba(30, 55, 39, 0.95)) 0%,
+    color-mix(in srgb, var(--country-secondary) 15%, rgba(16, 40, 24, 0.98)) 50%,
+    color-mix(in srgb, var(--country-secondary) 10%, rgba(8, 20, 12, 1)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--country-secondary) 40%, rgba(255, 255, 255, 0.1));
+  box-shadow: 
+    0 8px 32px color-mix(in srgb, var(--country-secondary) 20%, rgba(0, 0, 0, 0.2)),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 color-mix(in srgb, var(--country-secondary) 20%, rgba(255, 255, 255, 0.1)),
+    0 0 24px color-mix(in srgb, var(--country-secondary) 10%, rgba(0, 0, 0, 0));
+}
+
+.country-themed .glass-card-diplomatic {
+  background: linear-gradient(135deg, 
+    color-mix(in srgb, var(--country-accent) 20%, rgba(30, 35, 55, 0.95)) 0%,
+    color-mix(in srgb, var(--country-accent) 15%, rgba(16, 24, 40, 0.98)) 50%,
+    color-mix(in srgb, var(--country-accent) 10%, rgba(8, 12, 20, 1)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--country-accent) 40%, rgba(255, 255, 255, 0.1));
+  box-shadow: 
+    0 8px 32px color-mix(in srgb, var(--country-accent) 20%, rgba(0, 0, 0, 0.2)),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 color-mix(in srgb, var(--country-accent) 20%, rgba(255, 255, 255, 0.1)),
+    0 0 24px color-mix(in srgb, var(--country-accent) 10%, rgba(0, 0, 0, 0));
+}
+
+.country-themed .glass-card-cultural {
+  background: linear-gradient(135deg, 
+    color-mix(in srgb, var(--country-tertiary) 20%, rgba(39, 30, 55, 0.95)) 0%,
+    color-mix(in srgb, var(--country-tertiary) 15%, rgba(24, 16, 40, 0.98)) 50%,
+    color-mix(in srgb, var(--country-tertiary) 10%, rgba(12, 8, 20, 1)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--country-tertiary) 40%, rgba(255, 255, 255, 0.1));
+  box-shadow: 
+    0 8px 32px color-mix(in srgb, var(--country-tertiary) 20%, rgba(0, 0, 0, 0.2)),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 color-mix(in srgb, var(--country-tertiary) 20%, rgba(255, 255, 255, 0.1)),
+    0 0 24px color-mix(in srgb, var(--country-tertiary) 10%, rgba(0, 0, 0, 0));
+}
+
+/* Country-themed text and accents */
+.country-themed .country-accent {
+  color: var(--country-primary);
+}
+
+.country-themed .country-border {
+  border-color: var(--country-primary);
+}
+
+.country-themed .country-bg {
+  background: color-mix(in srgb, var(--country-primary) 10%, transparent);
+}
+
+.country-themed .country-bg-secondary {
+  background: color-mix(in srgb, var(--country-secondary) 10%, transparent);
+}
+
+/* Chart theming for country pages */
+.country-themed [data-chart] {
+  --chart-1: var(--country-primary);
+  --chart-2: var(--country-secondary);
+  --chart-3: var(--country-accent);
+  --chart-4: var(--country-tertiary);
+  --chart-5: color-mix(in srgb, var(--country-primary) 70%, var(--country-secondary) 30%);
 }
 
 /* Diplomatic SDI Typography Utility Classes */
@@ -1633,3 +1962,19 @@ body {
   filter: drop-shadow(0 0 16px #6366f1cc);
 }
 /* End SDI/ECI & Glassmorphism Polish */
+
+/* Animated Flags Background Animation */
+@keyframes gentle-float {
+  0%, 100% { 
+    transform: translateY(0px) translateX(0px) rotate(var(--rotation, 0deg)); 
+  }
+  25% { 
+    transform: translateY(-3px) translateX(calc(var(--float-direction, 1) * 2px)) rotate(calc(var(--rotation, 0deg) + 1deg)); 
+  }
+  50% { 
+    transform: translateY(0px) translateX(calc(var(--float-direction, 1) * 4px)) rotate(var(--rotation, 0deg)); 
+  }
+  75% { 
+    transform: translateY(3px) translateX(calc(var(--float-direction, 1) * 2px)) rotate(calc(var(--rotation, 0deg) - 1deg)); 
+  }
+}

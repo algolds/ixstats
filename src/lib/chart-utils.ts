@@ -73,7 +73,7 @@ export function formatCurrency(value: number | null | undefined): string {
  */
 export function formatGrowthRateFromDecimal(
   value: number | null | undefined, 
-  decimals: number = 2
+  decimals = 2
 ): string {
   if (value == null || !isFinite(value) || isNaN(value)) {
     return "N/A";
@@ -111,7 +111,7 @@ export function formatPopulationGrowthRate(value: number | null | undefined): st
  */
 export function formatPercentage(
   value: number | null | undefined, 
-  decimals: number = 2
+  decimals = 2
 ): string {
   if (value == null || !isFinite(value) || isNaN(value)) {
     return "N/A";
@@ -171,7 +171,7 @@ export function parseExcelPercentage(value: any): number | null {
 /**
  * Format a density value (population or economic per km²)
  */
-export function formatDensity(value: number | null | undefined, unit: string = "/km²"): string {
+export function formatDensity(value: number | null | undefined, unit = "/km²"): string {
   if (value == null || !isFinite(value) || isNaN(value)) {
     return "N/A";
   }
@@ -204,7 +204,7 @@ export function formatDensity(value: number | null | undefined, unit: string = "
 /**
  * Format a raw number without currency or scale indicators
  */
-export function formatNumber(value: number | null | undefined, decimals: number = 0): string {
+export function formatNumber(value: number | null | undefined, decimals = 0): string {
   if (value == null || !isFinite(value) || isNaN(value)) {
     return "N/A";
   }
@@ -325,7 +325,7 @@ export function isValidDisplayNumber(value: any): value is number {
 /**
  * Safe number conversion with fallback
  */
-export function safeNumber(value: any, fallback: number = 0): number {
+export function safeNumber(value: any, fallback = 0): number {
   if (typeof value === 'number' && isValidDisplayNumber(value)) {
     return value;
   }
@@ -410,7 +410,7 @@ export function getGrowthColor(decimalValue: number | null | undefined): string 
   return "text-gray-500";
 }
 
-function smartNormalizeGrowthRate(value: number | null | undefined, fallback: number = 3.0): number {
+function smartNormalizeGrowthRate(value: number | null | undefined, fallback = 3.0): number {
   if (!value || !isFinite(value)) return fallback;
   
   // If the value is extremely large (> 100%), it's likely incorrectly stored

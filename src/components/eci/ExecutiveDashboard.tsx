@@ -1,24 +1,25 @@
 "use client";
-import { BentoGridItem } from "@/components/ui/bento-grid";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { NumberTicker } from "@/components/ui/number-ticker";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { BentoGridItem } from "~/components/ui/bento-grid";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { NumberTicker } from "~/components/ui/number-ticker";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Progress } from "~/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from "~/components/ui/dialog";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Textarea } from "~/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { useState, useEffect } from "react";
-import { ChartContainer } from "@/components/ui/chart";
+import { ChartContainer } from "~/components/ui/chart";
 import { Line, XAxis, YAxis, Tooltip, Legend, CartesianGrid, ResponsiveContainer, LineChart } from "recharts";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import HealthRing from "@/components/ui/health-ring";
-import { GlassCard } from "@/components/ui/enhanced-card";
-import { AnimatedNumber } from "@/components/ui/animated-number";
-import { api } from "@/trpc/react";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
+import HealthRing from "~/components/ui/health-ring";
+import { GlassCard } from "~/components/ui/enhanced-card";
+import { AnimatedNumber } from "~/components/ui/animated-number";
+import { api } from "~/trpc/react";
 import { toast } from "sonner";
+import type { HistoricalData, Projection } from '~/types/ixstats';
 
 interface CountryData {
   id: string;
@@ -27,13 +28,13 @@ interface CountryData {
   currentGdpPerCapita?: number;
   currentPopulation?: number;
   economicTier?: string;
-  populationTier?: number;
+  populationTier?: string;
   adjustedGdpGrowth?: number;
   populationGrowthRate?: number;
   actualGdpGrowth?: number;
-  historical?: any[]; // Added for historical data
-  projections?: any[]; // Added for projections data
-  analytics?: { // Added for risk analytics
+  historical?: HistoricalData[];
+  projections?: Projection[];
+  analytics?: {
     riskFlags: string[];
     vulnerabilities: string[];
     volatility: {
@@ -44,23 +45,64 @@ interface CountryData {
 }
 
 interface ExecutiveDashboardProps {
-  countryData?: CountryData;
-  userId?: string;
+  countryData: {
+    id: string;
+    name: string;
+    currentTotalGdp?: number;
+    currentGdpPerCapita?: number;
+    currentPopulation?: number;
+    economicTier?: string;
+    populationTier?: string;
+    adjustedGdpGrowth?: number;
+    populationGrowthRate?: number;
+    actualGdpGrowth?: number;
+    historical?: HistoricalData[];
+    projections?: Projection[];
+    analytics?: {
+      riskFlags: string[];
+      vulnerabilities: string[];
+      volatility: {
+        gdpVolatility: number | null;
+        popVolatility: number | null;
+      };
+    };
+  };
+  userId: string;
+}
+
+interface CabinetForm {
+  title: string;
+  description: string;
+  scheduledDate: string;
+  agenda: string[];
+  attendees: string[];
+}
+
+interface PolicyForm {
+  title: string;
+  description: string;
+  category: 'fiscal' | 'monetary' | 'trade' | 'investment' | 'labor' | 'infrastructure';
+  impact: {
+    gdpGrowthProjection: string;
+    unemploymentImpact: string;
+    inflationImpact: string;
+    budgetImpact: string;
+  };
 }
 
 export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardProps) {
   const [openModal, setOpenModal] = useState<null | 'cabinet' | 'policy' | 'security' | 'gdp' | 'gdppc' | 'pop' | 'tier'>(null);
-  const [cabinetForm, setCabinetForm] = useState({
+  const [cabinetForm, setCabinetForm] = useState<CabinetForm>({
     title: '',
     description: '',
     scheduledDate: '',
     agenda: [''],
     attendees: ['']
   });
-  const [policyForm, setPolicyForm] = useState({
+  const [policyForm, setPolicyForm] = useState<PolicyForm>({
     title: '',
     description: '',
-    category: 'fiscal' as const,
+    category: 'fiscal',
     impact: {
       gdpGrowthProjection: '',
       unemploymentImpact: '',
@@ -196,29 +238,28 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
   ];
 
   // Prepare historical data for charts
-  const historical = (countryData?.historical || []).map((point: any) => ({
-    date: point.formattedTime || point.ixTimeTimestamp || '',
-    gdp: point.totalGdp ?? 0,
-    population: point.population ?? 0,
-    gdpPerCapita: point.gdpPerCapita ?? 0,
+  const historical = (countryData?.historical || []).map((point) => ({
+    date: (point).year?.toString() || '',
+    gdp: (point).gdp ?? 0,
+    population: (point).population ?? 0,
+    gdpPerCapita: (point as any).gdpPerCapita ?? 0, // If not in HistoricalData, fallback
   }));
   // Prepare projections for future chart
-  const projections = (countryData?.projections || []).map((point: any) => ({
-    date: point.formattedTime || point.ixTime || '',
-    gdp: point.totalGdp ?? 0,
-    population: point.population ?? 0,
-    gdpPerCapita: point.gdpPerCapita ?? 0,
+  const projections = (countryData?.projections || []).map((point) => ({
+    date: (point).year?.toString() || '',
+    gdp: (point).gdp ?? 0,
+    population: (point).population ?? 0,
+    gdpPerCapita: (point as any).gdpPerCapita ?? 0, // If not in Projection, fallback
   }));
   // Risk analytics
   const riskFlags = Array.isArray(countryData?.analytics?.riskFlags) ? countryData.analytics.riskFlags : [];
   const vulnerabilities = Array.isArray(countryData?.analytics?.vulnerabilities) ? countryData.analytics.vulnerabilities : [];
-  const volatility: { gdpVolatility: number | null; popVolatility: number | null } =
-    typeof countryData?.analytics?.volatility === 'object' && countryData.analytics.volatility !== null
-      ? {
-          gdpVolatility: (countryData.analytics.volatility as any).gdpVolatility ?? null,
-          popVolatility: (countryData.analytics.volatility as any).popVolatility ?? null,
-        }
-      : { gdpVolatility: null, popVolatility: null };
+  const volatility = typeof countryData?.analytics?.volatility === 'object' && countryData.analytics.volatility !== null
+    ? {
+        gdpVolatility: countryData.analytics.volatility.gdpVolatility ?? null,
+        popVolatility: countryData.analytics.volatility.popVolatility ?? null,
+      }
+    : { gdpVolatility: null, popVolatility: null };
 
   if (!countryData) {
     return (
@@ -240,10 +281,8 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
     );
   }
 
-  // Fix NaN for populationTier
-  const safePopulationTier = typeof countryData?.populationTier === 'number' && !isNaN(countryData.populationTier)
-    ? countryData.populationTier
-    : (parseInt(countryData?.populationTier as any, 10) || 1);
+  // Ensure populationTier is properly formatted
+  const safePopulationTier = countryData?.populationTier ?? "1";
 
   // Helper functions for cabinet meeting form
   const addAgendaItem = () => {
@@ -441,8 +480,8 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
         </div>
         {/* Expandable Modal for Activity Rings */}
         <Dialog open={!!expandedRing} onOpenChange={v => setExpandedRing(v ? expandedRing : null)}>
-          <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-md w-full" style={{ background: 'rgba(20,20,40,0.7)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', borderRadius: 24, overflow: 'visible' }}>
-            <GlassCard variant="glass" blur="prominent" glow="hover" className="p-8 w-full" style={{ background: 'rgba(30,30,60,0.7)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', borderRadius: 24 }}>
+          <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-md w-full">
+            <GlassCard variant="economic" blur="moderate" glow="hover" className="p-8 w-full">
               {expandedRing && (
                 <>
                   <DialogHeader>
@@ -512,7 +551,7 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
               <span className="font-semibold text-orange-300">Risk Flags:</span>
               {riskFlags.length > 0 ? (
                 <ul className="list-disc ml-6 text-orange-200">
-                  {riskFlags.map((flag: string, i: number) => <li key={i}>{flag}</li>)}
+                  {riskFlags.map((flag: string, i: number) => <li key={`risk-${flag}-${i}`}>{flag}</li>)}
                 </ul>
               ) : <span className="text-gray-400 ml-2">None</span>}
             </div>
@@ -520,7 +559,7 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
               <span className="font-semibold text-orange-300">Vulnerabilities:</span>
               {vulnerabilities.length > 0 ? (
                 <ul className="list-disc ml-6 text-orange-200">
-                  {vulnerabilities.map((v: string, i: number) => <li key={i}>{v}</li>)}
+                  {vulnerabilities.map((v: string, i: number) => <li key={`vuln-${v}-${i}`}>{v}</li>)}
                 </ul>
               ) : <span className="text-gray-400 ml-2">None</span>}
             </div>
@@ -534,8 +573,8 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
 
       {/* Modals for actions and metrics */}
       <Dialog open={openModal === 'cabinet'} onOpenChange={v => setOpenModal(v ? 'cabinet' : null)}>
-        <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-2xl w-full" style={{ background: 'rgba(20,20,40,0.7)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', borderRadius: 24, overflow: 'visible' }}>
-          <GlassCard variant="glass" blur="prominent" glow="hover" className="p-8 w-full" style={{ background: 'rgba(30,30,60,0.7)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', borderRadius: 24 }}>
+        <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-2xl w-full">
+          <GlassCard variant="economic" blur="moderate" glow="hover" className="p-8 w-full">
             <DialogHeader>
               <DialogTitle>Cabinet Meeting Scheduler</DialogTitle>
               <DialogDescription>Schedule a new cabinet meeting or review upcoming meetings</DialogDescription>
@@ -662,8 +701,8 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
         </DialogContent>
       </Dialog>
       <Dialog open={openModal === 'policy'} onOpenChange={v => setOpenModal(v ? 'policy' : null)}>
-        <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-2xl w-full" style={{ background: 'rgba(20,20,40,0.7)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', borderRadius: 24, overflow: 'visible' }}>
-          <GlassCard variant="glass" blur="prominent" glow="hover" className="p-8 w-full" style={{ background: 'rgba(30,30,60,0.7)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', borderRadius: 24 }}>
+        <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-2xl w-full">
+          <GlassCard variant="economic" blur="moderate" glow="hover" className="p-8 w-full">
             <DialogHeader>
               <DialogTitle>Economic Policy Management</DialogTitle>
               <DialogDescription>Create new economic policies or review existing ones</DialogDescription>
@@ -817,8 +856,8 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
         </DialogContent>
       </Dialog>
       <Dialog open={openModal === 'security'} onOpenChange={v => setOpenModal(v ? 'security' : null)}>
-        <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-md w-full" style={{ background: 'rgba(20,20,40,0.7)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', borderRadius: 24, overflow: 'visible' }}>
-          <GlassCard variant="glass" blur="prominent" glow="hover" className="p-8 w-full" style={{ background: 'rgba(30,30,60,0.7)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', borderRadius: 24 }}>
+        <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-md w-full">
+          <GlassCard variant="economic" blur="moderate" glow="hover" className="p-8 w-full">
             <DialogHeader>
               <DialogTitle>National Security Dashboard</DialogTitle>
               <DialogDescription>Real-time security threat assessment and management</DialogDescription>
@@ -871,8 +910,8 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
         </DialogContent>
       </Dialog>
       <Dialog open={openModal === 'gdp'} onOpenChange={v => setOpenModal(v ? 'gdp' : null)}>
-        <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-md w-full" style={{ background: 'rgba(20,20,40,0.7)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', borderRadius: 24, overflow: 'visible' }}>
-          <GlassCard variant="glass" blur="prominent" glow="hover" className="p-8 w-full" style={{ background: 'rgba(30,30,60,0.7)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', borderRadius: 24 }}>
+        <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-md w-full">
+          <GlassCard variant="economic" blur="moderate" glow="hover" className="p-8 w-full">
             <DialogHeader>
               <DialogTitle>Total GDP Analysis</DialogTitle>
               <DialogDescription>Historical GDP data and economic projections</DialogDescription>
@@ -918,8 +957,8 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
         </DialogContent>
       </Dialog>
       <Dialog open={openModal === 'gdppc'} onOpenChange={v => setOpenModal(v ? 'gdppc' : null)}>
-        <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-md w-full" style={{ background: 'rgba(20,20,40,0.7)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', borderRadius: 24, overflow: 'visible' }}>
-          <GlassCard variant="glass" blur="prominent" glow="hover" className="p-8 w-full" style={{ background: 'rgba(30,30,60,0.7)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', borderRadius: 24 }}>
+        <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-md w-full">
+          <GlassCard variant="economic" blur="moderate" glow="hover" className="p-8 w-full">
             <DialogHeader>
               <DialogTitle>GDP per Capita Analysis</DialogTitle>
               <DialogDescription>Per capita income analysis and global comparison</DialogDescription>
@@ -972,8 +1011,8 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
         </DialogContent>
       </Dialog>
       <Dialog open={openModal === 'pop'} onOpenChange={v => setOpenModal(v ? 'pop' : null)}>
-        <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-md w-full" style={{ background: 'rgba(20,20,40,0.7)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', borderRadius: 24, overflow: 'visible' }}>
-          <GlassCard variant="glass" blur="prominent" glow="hover" className="p-8 w-full" style={{ background: 'rgba(30,30,60,0.7)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', borderRadius: 24 }}>
+        <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-md w-full">
+          <GlassCard variant="economic" blur="moderate" glow="hover" className="p-8 w-full">
             <DialogHeader>
               <DialogTitle>Population Analysis</DialogTitle>
               <DialogDescription>Population growth, demographics, and tier analysis</DialogDescription>
@@ -1003,7 +1042,7 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-sm">Current Tier:</span>
-                        <span className="text-sm font-medium text-purple-400">Tier {countryData.populationTier}</span>
+                        <span className="text-sm font-medium text-purple-400">Tier {countryData.populationTier ?? "1"}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm">Classification:</span>
@@ -1033,8 +1072,8 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
         </DialogContent>
       </Dialog>
       <Dialog open={openModal === 'tier'} onOpenChange={v => setOpenModal(v ? 'tier' : null)}>
-        <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-md w-full" style={{ background: 'rgba(20,20,40,0.7)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', borderRadius: 24, overflow: 'visible' }}>
-          <GlassCard variant="glass" blur="prominent" glow="hover" className="p-8 w-full" style={{ background: 'rgba(30,30,60,0.7)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', borderRadius: 24 }}>
+        <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-md w-full">
+          <GlassCard variant="economic" blur="moderate" glow="hover" className="p-8 w-full">
             <DialogHeader>
               <DialogTitle>Population Tier System</DialogTitle>
               <DialogDescription>Understanding population tiers and their impact on growth</DialogDescription>
@@ -1044,7 +1083,7 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
                 <>
                   <div className="text-center">
                     <div className="text-3xl font-bold text-yellow-400">
-                      Tier {countryData.populationTier}
+                      Tier {countryData.populationTier ?? "1"}
                     </div>
                     <div className="text-sm text-white/70">Current Population Tier</div>
                   </div>

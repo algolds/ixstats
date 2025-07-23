@@ -8,6 +8,7 @@ import { AnimatedNumber } from '../ui/animated-number';
 import { CardSpotlight } from '../ui/card-spotlight';
 import { BackgroundGradient } from '../ui/background-gradient';
 import { SparklesCore } from '../ui/sparkles';
+import { HealthRing } from '../ui/health-ring';
 import {
   Activity, TrendingUp, TrendingDown, Heart, Shield, Globe, Users, DollarSign, Eye, Target, CheckCircle
 } from 'lucide-react';
@@ -19,171 +20,6 @@ import { useBulkFlagCache } from '~/hooks/useBulkFlagCache';
 import { FastAverageColor } from 'fast-average-color';
 import { useRef } from 'react';
 
-// Enhanced Health Ring Component with Animated Gradient System
-// Convert hex to RGB for gradient
-const hexToRgb = (hexInput?: string) => {
-  let hex = hexInput || '#10b981';
-  hex = hex.replace(/^#/, "");
-  if (hex.length === 3) {
-    hex = hex.split('').map(x => x + x).join("");
-  }
-  const result = /^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (result && result.length >= 4) {
-    return {
-      r: parseInt(result[1] ?? '0', 16),
-      g: parseInt(result[2] ?? '0', 16),
-      b: parseInt(result[3] ?? '0', 16),
-    };
-  }
-  return { r: 16, g: 185, b: 129 }; // Default green
-};
-
-// Tooltip component
-const Tooltip = ({ children, text }: { children: React.ReactNode; text: string }) => {
-  const [show, setShow] = React.useState(false);
-  return (
-    <div
-      className="relative inline-block"
-      onMouseEnter={() => setShow(true)}
-      onMouseLeave={() => setShow(false)}
-      onFocus={() => setShow(true)}
-      onBlur={() => setShow(false)}
-      tabIndex={0}
-    >
-      {children}
-      {show && (
-        <div className="absolute left-1/2 -translate-x-1/2 -top-10 z-50 px-3 py-2 rounded-lg bg-black/80 text-xs text-white shadow-lg whitespace-nowrap animate-fade-in">
-          {text}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// HealthRing with glass blur border on hover and colored border
-const HealthRing = ({
-  metric,
-  size = 120,
-  strokeWidth = 8,
-  primaryColor = '#10b981', // Green as default
-  label = 'Health',
-  tooltip = '',
-}: {
-  metric: { current: number; target: number };
-  size?: number;
-  strokeWidth?: number;
-  primaryColor?: string;
-  label?: string;
-  tooltip?: string;
-}) => {
-  const radius = (size - strokeWidth * 2) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const progress = (metric.current / metric.target) * circumference;
-  const rgb = hexToRgb(primaryColor);
-  const [hovered, setHovered] = React.useState(false);
-
-  // Glassy border color
-  const borderColor = `rgba(${rgb.r},${rgb.g},${rgb.b},0.45)`;
-
-  return (
-    <Tooltip text={tooltip || label}>
-      <div
-        className={`relative flex items-center justify-center transition-all duration-300 group/healthring`}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        tabIndex={0}
-        onFocus={() => setHovered(true)}
-        onBlur={() => setHovered(false)}
-        style={{ cursor: 'pointer' }}
-      >
-        {/* Glass blur border always visible, colored */}
-        <div
-          className="absolute inset-0 rounded-full pointer-events-none z-10"
-          style={{
-            boxShadow: `0 0 0 6px ${borderColor}, 0 0 24px 8px ${borderColor}`,
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            opacity: hovered ? 1 : 0.7,
-            transition: 'opacity 0.3s',
-          }}
-        />
-        <svg width={size} height={size} className="transform -rotate-90 z-20">
-          {/* Background circle */}
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke="rgba(255,255,255,0.1)"
-            strokeWidth={strokeWidth}
-          />
-          {/* Animated gradient progress circle */}
-          <defs>
-            <linearGradient id={`gradient-${label}`} x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor={primaryColor} stopOpacity="0.8">
-                <animate
-                  attributeName="stop-opacity"
-                  values="0.8;1;0.8"
-                  dur="3s"
-                  repeatCount="indefinite"
-                />
-              </stop>
-              <stop offset="50%" stopColor={`rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.6)`}>
-                <animate
-                  attributeName="stop-opacity"
-                  values="0.6;0.9;0.6"
-                  dur="3s"
-                  repeatCount="indefinite"
-                />
-              </stop>
-              <stop offset="100%" stopColor={`rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.4)`}>
-                <animate
-                  attributeName="stop-opacity"
-                  values="0.4;0.7;0.4"
-                  dur="3s"
-                  repeatCount="indefinite"
-                />
-              </stop>
-            </linearGradient>
-          </defs>
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke={`url(#gradient-${label})`}
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={circumference - progress}
-            style={{
-              filter: hovered
-                ? `drop-shadow(0 0 16px ${primaryColor}) drop-shadow(0 0 32px rgba(${rgb.r},${rgb.g},${rgb.b},0.5))`
-                : `drop-shadow(0 0 8px ${primaryColor})`,
-              transition: 'stroke-dashoffset 1s ease-in-out, filter 0.3s',
-            }}
-          >
-            <animate
-              attributeName="stroke-dashoffset"
-              from={circumference}
-              to={circumference - progress}
-              dur="1.5s"
-              fill="freeze"
-            />
-          </circle>
-        </svg>
-        {/* Center content */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center z-30">
-          <span className="text-2xl font-bold text-white">
-            <AnimatedNumber value={metric.current} decimals={0} />
-          </span>
-          <span className="text-xs text-white/60">of {metric.target}</span>
-          <span className="text-xs text-white/40 mt-1">{label}</span>
-        </div>
-      </div>
-    </Tooltip>
-  );
-};
 
 // Metric Card with glassy colored border
 const MetricCard = ({
@@ -364,6 +200,15 @@ const FlipWordDropdown = ({
 // Dynamically import LiveTime as a client-only component
 const LiveTime = dynamic(() => import('../ui/LiveTime').then(mod => mod.LiveTime), { ssr: false });
 
+// Define or import the correct type for indicators
+interface GlobalIndicators {
+  globalGDP?: number;
+  globalGrowth?: number;
+  unemploymentRate?: number;
+  tradeVolume?: number;
+  // Add other fields as needed
+}
+
 export default function GlobalOverview() {
   const [currentTime, setCurrentTime] = useState(new Date());
   useEffect(() => {
@@ -422,7 +267,7 @@ export default function GlobalOverview() {
     ...(indicators && 'tradeVolume' in indicators ? [{
       icon: Globe,
       label: 'Trade Volume',
-      value: (indicators as any).tradeVolume / 1e12,
+      value: (indicators as GlobalIndicators).tradeVolume ? (indicators as GlobalIndicators).tradeVolume! / 1e12 : 0,
       change: '+30.1%',
       trend: 'up' as const,
       color: 'from-purple-500 to-pink-500',
@@ -465,20 +310,58 @@ export default function GlobalOverview() {
   function useDominantColor(imageUrl: string | null | undefined) {
     const [color, setColor] = useState<string | null>(null);
     const imgRef = useRef<HTMLImageElement | null>(null);
+    
     useEffect(() => {
-      if (!imageUrl) return;
-      const fac = new FastAverageColor();
-      const img = new window.Image();
-      img.crossOrigin = 'anonymous';
-      img.src = imageUrl;
-      img.onload = () => {
-        const result = fac.getColor(img);
-        setColor(result.hex);
+      if (!imageUrl) {
+        setColor(null);
+        return;
+      }
+      
+      let mounted = true;
+      
+      const extractColor = async () => {
+        try {
+          const fac = new FastAverageColor();
+          const img = new window.Image();
+          img.crossOrigin = 'anonymous';
+          img.src = imageUrl;
+          
+          img.onload = () => {
+            if (!mounted) return;
+            try {
+              const result = fac.getColor(img);
+              if (mounted && result && result.hex) {
+                setColor(result.hex);
+              }
+            } catch (err) {
+              console.warn('Failed to extract color from flag:', err);
+              if (mounted) setColor(null);
+            }
+          };
+          
+          img.onerror = () => {
+            if (mounted) setColor(null);
+          };
+          
+          imgRef.current = img;
+        } catch (err) {
+          console.warn('Error setting up color extraction:', err);
+          if (mounted) setColor(null);
+        }
       };
-      img.onerror = () => setColor(null);
-      imgRef.current = img;
-      return () => { imgRef.current = null; };
+      
+      void extractColor();
+      
+      return () => {
+        mounted = false;
+        if (imgRef.current) {
+          imgRef.current.onload = null;
+          imgRef.current.onerror = null;
+          imgRef.current = null;
+        }
+      };
     }, [imageUrl]);
+    
     return color;
   }
 
@@ -491,12 +374,17 @@ export default function GlobalOverview() {
   }) {
     const dominantColor = useDominantColor(flagUrl);
     const canViewECI = userCountryId && nation.id === userCountryId;
+    const isHighlighted = nation.id === highlightCountryId;
+    
     return (
       <div
-        className={`relative rounded-xl p-4 bg-blue-900/20 border-blue-700/30 text-white transition-all duration-200 overflow-hidden ${
-          nation.id === highlightCountryId ? 'ring-4 ring-orange-400 scale-105 relative' : ''
+        className={`relative rounded-xl p-4 bg-blue-900/20 border border-blue-700/30 text-white transition-all duration-200 overflow-hidden hover:scale-105 ${
+          isHighlighted ? 'ring-4 ring-orange-400 scale-105' : ''
         }`}
-        style={dominantColor ? { boxShadow: `0 0 0 3px ${dominantColor}55, 0 4px 24px ${dominantColor}33` } : undefined}
+        style={dominantColor ? { 
+          boxShadow: `0 0 0 2px ${dominantColor}55, 0 4px 20px ${dominantColor}33`,
+          borderColor: dominantColor + '66'
+        } : undefined}
       >
         {/* Flag as blurred background */}
         {flagUrl && (
@@ -506,31 +394,50 @@ export default function GlobalOverview() {
               backgroundImage: `url(${flagUrl})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
-              filter: 'blur(12px) brightness(0.7) saturate(1.2)',
-              opacity: 0.7,
+              filter: 'blur(12px) brightness(0.6) saturate(1.3)',
+              opacity: 0.8,
               pointerEvents: 'none',
             }}
           />
         )}
-        {/* Animated overlay using dominant color */}
-        {dominantColor && (
+        
+        {/* Fallback gradient background when no flag */}
+        {!flagUrl && (
           <div
-            className="absolute inset-0 z-10 pointer-events-none animate-pulse"
+            className="absolute inset-0 z-0"
             style={{
-              background: `radial-gradient(circle at 70% 30%, ${dominantColor}33 0%, transparent 70%)`,
-              mixBlendMode: 'lighten',
+              background: 'linear-gradient(135deg, rgba(59,130,246,0.3) 0%, rgba(37,99,235,0.2) 100%)',
+              pointerEvents: 'none',
             }}
           />
         )}
-        <div className="relative z-20">
-          <div className="text-lg font-bold mb-1">{nation.name}</div>
-          <div className="text-sm text-blue-300">GDP: ${((nation.currentTotalGdp || 0) / 1e12).toFixed(2)}T</div>
+        
+        {/* Animated overlay using dominant color */}
+        {dominantColor && (
+          <div
+            className="absolute inset-0 z-10 pointer-events-none"
+            style={{
+              background: `radial-gradient(circle at 70% 30%, ${dominantColor}25 0%, transparent 70%)`,
+              mixBlendMode: 'overlay',
+              animation: 'pulse 3s ease-in-out infinite',
+            }}
+          />
+        )}
+        
+        {/* Content */}
+        <div className="relative z-20 backdrop-blur-[1px]">
+          <div className="text-lg font-bold mb-1 drop-shadow-sm">{nation.name}</div>
+          <div className="text-sm text-blue-200 drop-shadow-sm">
+            GDP: ${((nation.currentTotalGdp || 0) / 1e12).toFixed(2)}T
+          </div>
         </div>
+        
         {/* Card footer for actions */}
         <div className="relative z-20 mt-4 flex justify-end">
           {canViewECI && (
             <Button
-              className="bg-orange-600/80 text-white border-orange-500/30 hover:bg-orange-600/90"
+              size="sm"
+              className="bg-orange-600/90 text-white border-orange-500/30 hover:bg-orange-600 transition-colors"
               onClick={() => router.push('/eci')}
             >
               🏛️ View in ECI
@@ -591,37 +498,45 @@ export default function GlobalOverview() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div className="text-center">
               <HealthRing 
-                metric={healthMetrics.economic} 
-                primaryColor="#10b981"
+                value={healthMetrics.economic.current}
+                target={healthMetrics.economic.target}
+                color="#10b981"
                 label="Economic" 
                 tooltip="Economic Health: Measures the overall stability and growth of the global economy."
+                size={120}
               />
               <p className="text-white/70 text-sm mt-2">Economic Health</p>
             </div>
             <div className="text-center">
               <HealthRing 
-                metric={healthMetrics.political} 
-                primaryColor="#3b82f6"
+                value={healthMetrics.political.current}
+                target={healthMetrics.political.target}
+                color="#3b82f6"
                 label="Political" 
                 tooltip="Political Stability: Indicates the level of political unrest and stability across nations."
+                size={120}
               />
               <p className="text-white/70 text-sm mt-2">Political Stability</p>
             </div>
             <div className="text-center">
               <HealthRing 
-                metric={healthMetrics.social} 
-                primaryColor="#8b5cf6"
+                value={healthMetrics.social.current}
+                target={healthMetrics.social.target}
+                color="#8b5cf6"
                 label="Social" 
                 tooltip="Social Harmony: Measures the level of social cohesion and conflict resolution."
+                size={120}
               />
               <p className="text-white/70 text-sm mt-2">Social Harmony</p>
             </div>
             <div className="text-center">
               <HealthRing 
-                metric={healthMetrics.security} 
-                primaryColor="#6366f1"
+                value={healthMetrics.security.current}
+                target={healthMetrics.security.target}
+                color="#6366f1"
                 label="Security" 
                 tooltip="Security Index: Evaluates the overall security and safety of global infrastructure."
+                size={120}
               />
               <p className="text-white/70 text-sm mt-2">Security Index</p>
             </div>
@@ -732,6 +647,7 @@ export default function GlobalOverview() {
         <h2 className="text-xl font-bold text-blue-100 mb-2">Nations Overview</h2>
         {loadingCountries && <div className="text-blue-300 text-center py-4">Loading nations...</div>}
         {errorCountries && <div className="text-red-400 text-center py-4">Error loading nations: {errorCountries.message}</div>}
+        {flagsLoading && <div className="text-blue-300 text-center py-2">Loading flag cache...</div>}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {countries.map(nation => (
             <NationCard

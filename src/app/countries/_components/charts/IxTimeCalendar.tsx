@@ -207,8 +207,8 @@ export function IxTimeCalendar({
             </Badge>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <div className="space-y-4 p-4">
+        <PopoverContent className="w-96 p-4" align="start">
+          <div className="space-y-4">
             {/* Quick Select Options */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Quick Select</label>

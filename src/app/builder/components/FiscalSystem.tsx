@@ -1,7 +1,7 @@
 // src/app/economy/components/FiscalSystem.tsx
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   DollarSign,
   PieChart,
@@ -132,7 +132,7 @@ export function FiscalSystemComponent({
   const budgetHealth = getBudgetHealth();
   const HealthIcon = budgetHealth.icon;
 
-  const spendingCategoryIcons: { [key: string]: React.ElementType } = {
+  const spendingCategoryIcons: Record<string, React.ElementType> = {
     Defense: Shield,
     Education: GraduationCap,
     Healthcare: Heart,
@@ -424,14 +424,17 @@ export function FiscalSystemComponent({
               Spending by Category
             </h4>
             
-            {fiscalData.governmentSpendingByCategory.map((category, index) => {
-              const Icon = spendingCategoryIcons[category.category] || MoreHorizontal;
+            {fiscalData.governmentSpendingByCategory.map((category: any, index: number) => {
+              // Get the appropriate icon component for this spending category
+              // Falls back to MoreHorizontal icon if no specific icon is found
+              const categoryName = String(category.category || 'Other');
+              const IconComponent: React.ElementType = spendingCategoryIcons[categoryName] || MoreHorizontal;
               return (
-                <div key={category.category} className="space-y-2">
+                <div key={categoryName} className="space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="text-sm font-medium text-[var(--color-text-primary)] flex items-center">
-                      <Icon className="h-4 w-4 mr-2" />
-                      {category.category}
+                      {React.createElement(IconComponent, { className: "h-4 w-4 mr-2" })}
+                      {categoryName}
                     </label>
                     <div className="text-sm font-semibold text-[var(--color-text-primary)]">
                       {category.percent.toFixed(1)}% ({formatNumber(category.amount)})

@@ -1,6 +1,7 @@
 // src/app/api/flag-cache/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { flagCacheManager } from '~/lib/flag-cache-manager';
+import { enhancedFlagCacheManager } from '~/lib/enhanced-flag-cache-manager';
+import { improvedFlagService } from '~/lib/improved-flag-service';
 import { api } from '~/trpc/server';
 import { ixnayWiki } from '~/lib/mediawiki-service';
 
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
     switch (action) {
       case 'stats':
         // Get cache statistics
-        const stats = flagCacheManager.getStats();
+        const stats = improvedFlagService.getStats();
         return NextResponse.json({
           success: true,
           stats,
@@ -21,12 +22,12 @@ export async function GET(request: NextRequest) {
 
       case 'status':
         // Get detailed status including MediaWiki service stats
-        const cacheStats = flagCacheManager.getStats();
+        const cacheStats = improvedFlagService.getStats();
         const mediaWikiStats = ixnayWiki.getCacheStats();
         
         return NextResponse.json({
           success: true,
-          flagCache: cacheStats,
+          flagService: cacheStats,
           mediaWiki: mediaWikiStats,
           timestamp: Date.now(),
         });
@@ -48,17 +49,12 @@ export async function GET(request: NextRequest) {
           countryNames.push(...names);
         }
         
-        const flagUrls: Record<string, string | null> = {};
-        
-        for (const countryName of countryNames) {
-          // Always fetch and cache the flag URL if not present
-          const flagUrl = await flagCacheManager.getFlagUrl(countryName);
-          flagUrls[countryName] = flagUrl;
-        }
+        const flagUrls = await improvedFlagService.batchGetFlags(countryNames);
         
         return NextResponse.json({
           success: true,
           flags: flagUrls,
+          totalCountries: countryNames.length,
           timestamp: Date.now(),
         });
 
@@ -94,32 +90,32 @@ export async function POST(request: NextRequest) {
           const names = allCountries.countries.map((c: any) => c.name);
           
           console.log(`[FlagCache API] Initializing with ${names.length} countries from database`);
-          await flagCacheManager.initialize(names);
+          await improvedFlagService.initialize(names);
         } else {
           console.log(`[FlagCache API] Updating flags for ${updateCountryNames.length} specified countries`);
-          await flagCacheManager.updateAllFlags();
+          await improvedFlagService.updateAllFlags();
         }
 
         return NextResponse.json({
           success: true,
-          message: 'Flag cache update started',
-          stats: flagCacheManager.getStats(),
+          message: 'Flag cache update started (includes local file downloads)',
+          stats: improvedFlagService.getStats(),
           timestamp: Date.now(),
         });
 
       case 'initialize':
-        // Initialize the cache manager with all countries
+        // Initialize the flag service with all countries
         const initAllCountries = await api.countries.getAll({ limit: 1000 });
         const initCountryNames = initAllCountries.countries.map((c: any) => c.name);
         
-        console.log(`[FlagCache API] Initializing flag cache manager with ${initCountryNames.length} countries`);
-        await flagCacheManager.initialize(initCountryNames);
+        console.log(`[FlagCache API] Initializing improved flag service with ${initCountryNames.length} countries`);
+        await improvedFlagService.initialize(initCountryNames);
 
         return NextResponse.json({
           success: true,
-          message: 'Flag cache manager initialized',
+          message: 'Improved flag service initialized',
           countryCount: initCountryNames.length,
-          stats: flagCacheManager.getStats(),
+          stats: improvedFlagService.getStats(),
           timestamp: Date.now(),
         });
 
@@ -145,12 +141,12 @@ export async function DELETE(request: NextRequest) {
 
     switch (action) {
       case 'clear':
-        // Clear the MediaWiki cache
-        ixnayWiki.clearCache();
+        // Clear all caches (including local files)
+        await improvedFlagService.clearCache();
         
         return NextResponse.json({
           success: true,
-          message: 'Flag cache cleared',
+          message: 'All flag caches cleared (including local files)',
           timestamp: Date.now(),
         });
 
@@ -167,4 +163,4 @@ export async function DELETE(request: NextRequest) {
       error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
-} 
+}

@@ -29,11 +29,11 @@ export const adminRouter = createTRPCRouter({
         });
 
         // Real queries for each stat
-        const activeDiplomats = await ctx.db.user.count({ where: { role: 'diplomat' } });
+        const activeDiplomats = await ctx.db.user.count(); // Count all users for now
         // For onlineUsers, you may need a real-time tracking system; fallback to 0 for now
         const onlineUsers = 0;
-        // For tradeVolume, sum trade records if available, else fallback to 0
-        const tradeVolume = await ctx.db.tradeRecord?.aggregate({ _sum: { volume: true } })._sum.volume || 0;
+        // For tradeVolume, fallback to 0 since tradeRecord table doesn't exist
+        const tradeVolume = 0;
         // For activeConflicts, count unresolved crisis events
         const activeConflicts = await ctx.db.crisisEvent.count({ where: { responseStatus: { not: 'resolved' } } });
 
@@ -291,12 +291,13 @@ export const adminRouter = createTRPCRouter({
   getCalculationLogs: publicProcedure
     .input(z.object({
       limit: z.number().optional().default(10),
-    }))
+    }).default({}))
     .query(async ({ ctx, input }) => {
+      const limit = input.limit;
       try {
         const logs = await ctx.db.calculationLog.findMany({
           orderBy: { timestamp: "desc" },
-          take: input.limit,
+          take: limit,
         });
 
         return logs.map(log => ({
@@ -310,7 +311,12 @@ export const adminRouter = createTRPCRouter({
         }));
       } catch (error) {
         console.error("Failed to get calculation logs:", error);
-        throw new Error("Failed to retrieve calculation logs");
+        console.error("Error details:", {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          name: error instanceof Error ? error.name : 'Unknown',
+        });
+        throw new Error(`Failed to retrieve calculation logs: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }),
 
@@ -336,11 +342,22 @@ export const adminRouter = createTRPCRouter({
           },
           select: { 
             name: true, 
+            continent: true,
+            region: true,
+            governmentType: true,
+            religion: true,
+            leader: true,
+            areaSqMi: true,
             baselinePopulation: true,
             baselineGdpPerCapita: true,
             maxGdpGrowthRate: true,
             adjustedGdpGrowth: true,
             populationGrowthRate: true,
+            landArea: true,
+            projected2040Population: true,
+            projected2040Gdp: true,
+            projected2040GdpPerCapita: true,
+            localGrowthFactor: true
           }
         });
 
@@ -403,10 +420,32 @@ export const adminRouter = createTRPCRouter({
               });
             }
             
+            // Transform existing data to match BaseCountryData interface
+            const existingBaseData: BaseCountryData = {
+              country: existing.name,
+              continent: existing.continent,
+              region: existing.region,
+              governmentType: existing.governmentType,
+              religion: existing.religion,
+              leader: existing.leader,
+              population: existing.baselinePopulation,
+              gdpPerCapita: existing.baselineGdpPerCapita,
+              landArea: existing.landArea,
+              areaSqMi: existing.areaSqMi,
+              maxGdpGrowthRate: existing.maxGdpGrowthRate,
+              adjustedGdpGrowth: existing.adjustedGdpGrowth,
+              populationGrowthRate: existing.populationGrowthRate,
+              actualGdpGrowth: existing.adjustedGdpGrowth, // Use adjusted as fallback
+              projected2040Population: existing.projected2040Population || 0,
+              projected2040Gdp: existing.projected2040Gdp || 0,
+              projected2040GdpPerCapita: existing.projected2040GdpPerCapita || 0,
+              localGrowthFactor: existing.localGrowthFactor || 1.0
+            };
+            
             return {
               type: 'update' as const,
               country,
-              existingData: existing,
+              existingData: existingBaseData,
               changes: fieldChanges,
             };
           }
@@ -458,7 +497,7 @@ export const adminRouter = createTRPCRouter({
         let created = 0;
         let updated = 0;
         let skipped = 0;
-        let errors: string[] = [];
+        const errors: string[] = [];
         for (const country of countries) {
           const existing = existingMap.get(country.country);
           try {

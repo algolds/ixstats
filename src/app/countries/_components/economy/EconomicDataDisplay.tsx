@@ -47,6 +47,29 @@ import type {
   DemographicsData 
 } from "~/types/economics";
 
+// Define types for fiscal, social, and demographic data
+interface FiscalData {
+  taxRates?: Record<string, number>;
+  spendingCategories?: Record<string, number>;
+}
+interface SocialData {
+  economicClasses?: Record<string, number>;
+}
+interface DemographicData {
+  ageDistribution?: Record<string, number>;
+}
+
+// Add type guards
+function isFiscalData(obj: unknown): obj is FiscalData {
+  return typeof obj === 'object' && obj !== null && ('taxRates' in obj || 'spendingCategories' in obj);
+}
+function isSocialData(obj: unknown): obj is SocialData {
+  return typeof obj === 'object' && obj !== null && 'economicClasses' in obj;
+}
+function isDemographicData(obj: unknown): obj is DemographicData {
+  return typeof obj === 'object' && obj !== null && 'ageDistribution' in obj;
+}
+
 // Helper function to convert DemographicsData to the format expected by Demographics component
 const convertDemographicsData = (data: DemographicsData) => {
   return {
@@ -111,12 +134,9 @@ export function EconomicDataDisplay({
 
   // Initialize state with fetched data when available
   useEffect(() => {
-    if (countryData?.economy) {
-      setEconomicData(countryData.economy);
-    } else if (countryData) {
-        // If countryData.economy is missing, try to construct it from top-level fields
-        // This provides a fallback if the 'economy' object isn't populated as expected
-        // but the individual fields are on the countryData object.
+    if (countryData) {
+        // Construct economy data from individual properties on the countryData object
+        // since the CountryWithEconomicData interface stores economic data as top-level fields
         const constructedEconomyData: EconomyData = {
             core: {
                 totalPopulation: countryData.baselinePopulation,
@@ -184,39 +204,45 @@ export function EconomicDataDisplay({
                 },
             },
             fiscal: {
-                taxRevenueGDPPercent: countryData.taxRevenueGDPPercent ?? 20,
-                governmentRevenueTotal: countryData.governmentRevenueTotal ?? ((countryData.nominalGDP ?? 0) * 0.20),
-                taxRevenuePerCapita: countryData.taxRevenuePerCapita ?? (((countryData.nominalGDP ?? 0) * 0.20) / countryData.baselinePopulation),
-                governmentBudgetGDPPercent: countryData.governmentBudgetGDPPercent ?? 22,
-                budgetDeficitSurplus: countryData.budgetDeficitSurplus ?? 0,
-                internalDebtGDPPercent: countryData.internalDebtGDPPercent ?? 30,
-                externalDebtGDPPercent: countryData.externalDebtGDPPercent ?? 20,
-                totalDebtGDPRatio: countryData.totalDebtGDPRatio ?? 50,
-                debtPerCapita: countryData.debtPerCapita ?? 0,
-                interestRates: countryData.interestRates ?? 0.03,
-                debtServiceCosts: countryData.debtServiceCosts ?? 0,
-                taxRates: (countryData.fiscalSystem as any)?.taxRates ?? { // Type assertion if fiscalSystem might be missing
-                    personalIncomeTaxRates: [], corporateTaxRates: [], salesTaxRate: 0, propertyTaxRate: 0, payrollTaxRate: 0, exciseTaxRates: [], wealthTaxRate: 0
+                taxRevenueGDPPercent: 20, // Default value since property doesn't exist
+                governmentRevenueTotal: (countryData.nominalGDP ?? 0) * 0.20,
+                taxRevenuePerCapita: ((countryData.nominalGDP ?? 0) * 0.20) / countryData.baselinePopulation,
+                governmentBudgetGDPPercent: 22, // Default value since property doesn't exist
+                budgetDeficitSurplus: 0, // Default value since property doesn't exist
+                internalDebtGDPPercent: 30, // Default value since property doesn't exist
+                externalDebtGDPPercent: 20, // Default value since property doesn't exist
+                totalDebtGDPRatio: 50, // Default value since property doesn't exist
+                debtPerCapita: 0, // Default value since property doesn't exist
+                interestRates: 0.03, // Default value since property doesn't exist
+                debtServiceCosts: 0, // Default value since property doesn't exist
+                taxRates: {
+                  personalIncomeTaxRates: [],
+                  corporateTaxRates: [],
+                  salesTaxRate: 0,
+                  propertyTaxRate: 0,
+                  payrollTaxRate: 0,
+                  exciseTaxRates: [],
+                  wealthTaxRate: 0
                 },
-                governmentSpendingByCategory: (countryData.governmentBudget as any)?.spendingCategories ?? [],
+                governmentSpendingByCategory: [],
             },
             income: {
-                economicClasses: (countryData.incomeDistribution as any)?.economicClasses ? JSON.parse((countryData.incomeDistribution as any).economicClasses as string) : [],
-                povertyRate: countryData.povertyRate ?? 15,
-                incomeInequalityGini: countryData.incomeInequalityGini ?? 0.35,
-                socialMobilityIndex: countryData.socialMobilityIndex ?? 50,
+                economicClasses: [],
+                povertyRate: 15, // Default value since property doesn't exist
+                incomeInequalityGini: 0.35, // Default value since property doesn't exist
+                socialMobilityIndex: 50, // Default value since property doesn't exist
             },
             spending: {
-              spendingGDPPercent: countryData.spendingGDPPercent ?? 22,
-              spendingPerCapita: countryData.spendingPerCapita ?? 0,
-              deficitSurplus: countryData.budgetDeficitSurplus ?? 0,
-              spendingCategories: (countryData.governmentBudget as any)?.spendingCategories ? JSON.parse((countryData.governmentBudget as any).spendingCategories as string) : [],
+              spendingGDPPercent: 22, // Default value since property doesn't exist
+              spendingPerCapita: 0, // Default value since property doesn't exist
+              deficitSurplus: 0, // Default value since property doesn't exist
+              spendingCategories: [],
               totalSpending: 0
             },
             demographics: {
-              lifeExpectancy: countryData.lifeExpectancy ?? 75,
-              literacyRate: countryData.literacyRate ?? 90,
-              ageDistribution: (countryData.demographics as any)?.ageDistribution ? JSON.parse((countryData.demographics as any).ageDistribution as string) : [],
+              lifeExpectancy: 75, // Default value since property doesn't exist
+              literacyRate: 90, // Default value since property doesn't exist
+              ageDistribution: [],
               urbanRuralSplit: {
                 urban: 0,
                 rural: 0
@@ -245,30 +271,30 @@ export function EconomicDataDisplay({
     },
   });
 
-  const handleDataChange = (section: keyof EconomyData, newData: any) => {
+  const handleDataChange = (section: keyof EconomyData, newData: unknown) => {
     setEconomicData(prev => {
-      if (!prev) return null; 
+      if (!prev) return null;
       const updatedData = {
         ...prev,
         [section]: {
-           ...(prev[section] as any), // Cast to any to allow spread of potentially different structures
-           ...newData
-        } as any // Cast the specific section to any
+          ...(typeof prev[section] === 'object' && prev[section] !== null ? { ...prev[section] } : {}),
+          ...(typeof newData === 'object' && newData !== null ? newData as Record<string, any> : {})
+        }
       };
       // Milestone logic: check for major changes in fiscal/government
       if (section === 'fiscal') {
-        const prevGdp = prev?.core?.nominalGDP || 0;
-        const newGdp = updatedData.core?.nominalGDP || 0;
+        const prevGdp = prev?.core?.nominalGDP ?? 0;
+        const newGdp = updatedData.core?.nominalGDP ?? 0;
         if (prevGdp < 1_000_000_000_000 && newGdp >= 1_000_000_000_000) {
           setMilestones(m => [...m, { type: 'milestone', message: 'GDP surpassed $1T', date: new Date() }]);
         }
         // Add more milestone checks as needed
       }
-      if (section === 'fiscal' && newData.budgetDeficitSurplus !== undefined) {
-        if (newData.budgetDeficitSurplus > 0 && (prev?.fiscal?.budgetDeficitSurplus ?? 0) <= 0) {
+      if (section === 'fiscal' && (newData as { budgetDeficitSurplus?: number }).budgetDeficitSurplus !== undefined) {
+        if ((newData as { budgetDeficitSurplus?: number }).budgetDeficitSurplus! > 0 && (prev?.fiscal?.budgetDeficitSurplus ?? 0) <= 0) {
           setMilestones(m => [...m, { type: 'milestone', message: 'Budget turned to surplus', date: new Date() }]);
         }
-        if (newData.budgetDeficitSurplus < 0 && (prev?.fiscal?.budgetDeficitSurplus ?? 0) >= 0) {
+        if ((newData as { budgetDeficitSurplus?: number }).budgetDeficitSurplus! < 0 && (prev?.fiscal?.budgetDeficitSurplus ?? 0) >= 0) {
           setMilestones(m => [...m, { type: 'milestone', message: 'Budget turned to deficit', date: new Date() }]);
         }
       }
@@ -567,19 +593,18 @@ export function EconomicDataDisplay({
                     />
                   )}
                   {section.id === 'income' && economicData.income && economicData.core?.totalPopulation !== undefined && economicData.core?.gdpPerCapita !== undefined && (
-                    <GlassCard variant="glass">
-                      <CardHeader>
-                        <CardTitle>Income & Wealth Distribution</CardTitle>
-                        <CardDescription>Economic classes and inequality metrics</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-muted-foreground">Income distribution component will be implemented.</p>
-                      </CardContent>
-                    </GlassCard>
+                    <IncomeWealthDistribution
+                      incomeData={economicData.income}
+                      onIncomeDataChangeAction={(newData: IncomeWealthDistributionData) => handleDataChange('income', newData)}
+                      totalPopulation={economicData.core.totalPopulation}
+                      gdpPerCapita={economicData.core.gdpPerCapita}
+                      isReadOnly={!isEditMode}
+                      showComparison={false}
+                    />
                   )}
                   {section.id === 'spending' && economicData.spending && economicData.core?.nominalGDP !== undefined && economicData.core?.totalPopulation !== undefined && (
                     <GovernmentSpending
-                      spendingData={economicData.spending}
+                      {...economicData.spending}
                       nominalGDP={economicData.core.nominalGDP}
                       totalPopulation={economicData.core.totalPopulation}
                       onSpendingDataChangeAction={(data) => { if (isEditMode) { handleDataChange('spending', data); } }}
@@ -587,15 +612,13 @@ export function EconomicDataDisplay({
                     />
                   )}
                   {section.id === 'demographics' && economicData.demographics && economicData.core?.totalPopulation !== undefined && (
-                    <GlassCard variant="glass">
-                      <CardHeader>
-                        <CardTitle>Demographics</CardTitle>
-                        <CardDescription>Population structure and education</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-muted-foreground">Demographics component will be implemented.</p>
-                      </CardContent>
-                    </GlassCard>
+                    <Demographics
+                      demographicData={economicData.demographics}
+                      onDemographicDataChangeAction={(newData: DemographicsData) => handleDataChange('demographics', newData)}
+                      totalPopulation={economicData.core.totalPopulation}
+                      isReadOnly={!isEditMode}
+                      showComparison={false}
+                    />
                   )}
                 </TabsContent>
               );
