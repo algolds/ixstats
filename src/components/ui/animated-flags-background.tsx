@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useMemo, useCallback, useState, useEffect } from "react";
-import { CountryFlag } from "~/app/_components/CountryFlag";
-import { flagService } from "~/lib/flag-service";
+import { motion } from "framer-motion";
+import { SimpleFlag } from "~/components/SimpleFlag";
+import { simpleFlagService } from "~/lib/simple-flag-service";
 
 interface AnimatedFlagsBackgroundProps {
   countries: Array<{ id: string; name: string }>;
@@ -143,14 +144,14 @@ function saveSessionFlagData(data: SessionFlagData): void {
   }
 }
 
-// Preload flags using flag service
+// Preload flags using simple flag service
 async function preloadFlagSet(countries: Array<{ id: string; name: string }>): Promise<void> {
   const countryNames = countries.map(c => c.name);
   
   try {
     // Preload flags individually
     await Promise.allSettled(
-      countryNames.map(name => flagService.getFlagUrl(name))
+      countryNames.map(name => simpleFlagService.getFlagUrl(name))
     );
   } catch (err) {
     console.warn(`Failed to preload flags:`, err);
@@ -208,41 +209,75 @@ export function AnimatedFlagsBackground({
         name: country.name,
         x: (seed1 / 233280) * 100,
         y: (seed2 / 233280) * 100,
-        size: 24 + ((seed3 / 233280) * 18), // 24-42px (1.5x increase)
-        opacity: 0.08 + ((seed1 / 233280) * 0.12), // 0.08-0.2 opacity
-        duration: 15 + ((seed2 / 233280) * 25), // 15-40s duration
-        delay: (seed3 / 233280) * 10, // 0-10s delay
+        size: 36 + ((seed3 / 233280) * 24), // 36-60px (larger flags)
+        opacity: 0.12 + ((seed1 / 233280) * 0.15), // 0.12-0.27 opacity (more visible)
+        duration: 20 + ((seed2 / 233280) * 30), // 20-50s duration (slower, gentler)
+        delay: (seed3 / 233280) * 15, // 0-15s delay (more staggered)
         direction: seed1 % 2 === 0 ? 1 : -1, // Alternate directions
       };
     });
   }, [currentCountries, sessionData.currentSetIndex]);
   
   // Memoize the individual flag component to prevent unnecessary re-renders
-  const FlagComponent = useCallback(({ flag, index, setKey }: { flag: FlagItem; index: number; setKey: string }) => (
-    <div
-      key={`${setKey}-${flag.id}-${index}`}
-      className="absolute pointer-events-none transition-opacity duration-1000"
-      style={{
-        left: `${flag.x}%`,
-        top: `${flag.y}%`,
-        width: `${flag.size}px`,
-        height: `${flag.size * 0.67}px`, // Maintain flag ratio
-        opacity: flag.opacity,
-        animation: `gentle-float ${flag.duration}s ease-in-out infinite`,
-        animationDelay: `${flag.delay}s`,
-        '--float-direction': flag.direction.toString(),
-        '--rotation': `${(index % 3) * 15 - 15}deg`,
-      } as React.CSSProperties & { '--float-direction': string; '--rotation': string }}
-    >
-      <div className="w-full h-full backdrop-blur-[1px] bg-white/5 rounded-sm border border-white/10 overflow-hidden hover:bg-white/10 transition-all duration-1000">
-        <CountryFlag 
-          countryName={flag.name}
-          className="w-full h-full object-cover filter blur-[0.5px]"
-          showPlaceholder={true} // Show placeholders temporarily for debugging
-        />
-      </div>
-    </div>
-  ), []);
+  const FlagComponent = useCallback(({ flag, index, setKey }: { flag: FlagItem; index: number; setKey: string }) => {
+    // Create unique motion values for each flag
+    const floatVariants = {
+      animate: {
+        y: [0, flag.direction > 0 ? -12 : 8, -2, flag.direction > 0 ? -8 : 12, 0],
+        x: [0, 3, -2, 1, 0],
+        rotate: [(index % 5) * 6 - 12, (index % 5) * 6 - 8, (index % 5) * 6 - 16, (index % 5) * 6 - 12],
+        transition: {
+          duration: flag.duration,
+          ease: "easeInOut",
+          repeat: Infinity,
+          delay: flag.delay,
+        }
+      }
+    };
+
+    const pulseVariants = {
+      animate: {
+        opacity: [flag.opacity * 0.8, flag.opacity * 1.2, flag.opacity * 0.9, flag.opacity],
+        scale: [1, 1.02, 0.98, 1],
+        transition: {
+          duration: flag.duration * 0.7,
+          ease: "easeInOut", 
+          repeat: Infinity,
+          delay: flag.delay + 1,
+        }
+      }
+    };
+    
+    return (
+      <motion.div
+        key={`${setKey}-${flag.id}-${index}`}
+        className="absolute pointer-events-none"
+        style={{
+          left: `${flag.x}%`,
+          top: `${flag.y}%`,
+          width: `${flag.size}px`,
+          height: `${flag.size * 0.67}px`, // Maintain flag ratio
+        }}
+        variants={floatVariants}
+        animate="animate"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: flag.opacity }}
+        viewport={{ once: false }}
+      >
+        <motion.div 
+          className="w-full h-full backdrop-blur-[1px] bg-white/5 rounded-sm border border-white/10 overflow-hidden hover:bg-white/10 transition-all duration-1000"
+          variants={pulseVariants}
+          animate="animate"
+        >
+          <SimpleFlag 
+            countryName={flag.name}
+            className="w-full h-full object-cover filter blur-[0.5px]"
+            showPlaceholder={true}
+          />
+        </motion.div>
+      </motion.div>
+    );
+  }, []);
 
   if (!flagItems.length) {
     return null;
@@ -260,13 +295,6 @@ export function AnimatedFlagsBackground({
         {/* Gradient overlay to fade edges */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/5 via-transparent to-black/5" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/5" />
-        
-        {/* Debug info (remove in production) */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="absolute top-2 left-2 text-xs text-white/50 bg-black/20 px-2 py-1 rounded">
-            Set {sessionData.currentSetIndex + 1}/4 | {flagItems.length} flags
-          </div>
-        )}
       </div>
   );
 }

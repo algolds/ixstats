@@ -8,6 +8,7 @@ import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { Skeleton } from "~/components/ui/skeleton";
 import { AlertTriangle } from "lucide-react";
+import { createUrl } from "~/lib/url-utils";
 import type { EconomicYearData, DMInputs } from "~/server/db/schema";
 import { getFlagColors, generateFlagThemeCSS } from "~/lib/flag-color-extractor";
 
@@ -60,7 +61,7 @@ export default function ModelingPage({ params }: ModelingPageProps) {
           style={flagThemeCSS}
         >
           <div className="mb-6">
-            <Link href={`/countries/${country.id}`} className="text-primary hover:underline">&larr; Back to {country.name}</Link>
+            <Link href={createUrl(`/countries/${country.id}`)} className="text-primary hover:underline">&larr; Back to {country.name}</Link>
           </div>
           <Card>
             <CardHeader>

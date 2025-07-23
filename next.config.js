@@ -8,7 +8,7 @@ import "./src/env.js";
 const config = {
   // Use basePath only in production
   basePath: process.env.NODE_ENV === "production" ? "/projects/ixstats" : "",
-  assetPrefix: process.env.NODE_ENV === "production" ? "/projects/ixstats" : "",
+  assetPrefix: process.env.NODE_ENV === "production" ? "" : "",
   trailingSlash: false,
   eslint: {
     ignoreDuringBuilds: true,

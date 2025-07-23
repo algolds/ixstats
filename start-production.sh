@@ -31,13 +31,13 @@ echo "   Database: $DATABASE_URL"
 echo "   Port: $PRODUCTION_PORT"
 echo "   MediaWiki URL: $NEXT_PUBLIC_MEDIAWIKI_URL"
 
-# Check if Clerk authentication is configured
-if [[ "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" =~ ^pk_live_ ]] && [[ "$CLERK_SECRET_KEY" =~ ^sk_live_ ]]; then
-    echo "   Authentication: ✅ Clerk (Production)"
-elif [[ "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" =~ ^pk_test_ ]] && [[ "$CLERK_SECRET_KEY" =~ ^sk_test_ ]]; then
-    echo "   Authentication: ⚠️  Clerk (Development keys in production)"
+# Validate Clerk configuration
+echo "🔐 Validating Clerk configuration..."
+if npm run auth:validate:prod --silent > /dev/null 2>&1; then
+    echo "   Authentication: ✅ Clerk (Production keys validated)"
 else
-    echo "   Authentication: ❌ Disabled (no valid keys)"
+    echo "   Authentication: ⚠️  Clerk keys need attention"
+    echo "   Run 'npm run auth:validate:prod' for details"
 fi
 
 echo ""

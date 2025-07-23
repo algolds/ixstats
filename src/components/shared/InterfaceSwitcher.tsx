@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
 import { getUserInterfacePreferences } from "~/lib/interface-routing";
+import { navigateTo } from "~/lib/url-utils";
 
 // Check if Clerk is configured
 const isClerkConfigured = Boolean(
@@ -28,12 +29,12 @@ function InterfaceSwitcherContent({ currentInterface, countryId }: { currentInte
   
   const switchToSDI = () => {
     if (countryId) {
-      router.push(`/sdi?countryId=${countryId}`);
+      navigateTo(router, `/sdi?countryId=${countryId}`);
     } else {
-      router.push('/sdi');
+      navigateTo(router, '/sdi');
     }
   };
-  const switchToECI = () => router.push('/eci');
+  const switchToECI = () => navigateTo(router, '/eci');
 
   return (
     <div className="flex gap-2">

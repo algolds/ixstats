@@ -18,6 +18,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import { ScrollArea } from "~/components/ui/scroll-area";
+import { createUrl } from "~/lib/url-utils";
 import { 
   Clock, 
   Globe, 
@@ -528,7 +529,7 @@ function GlobalStatsIslandContent() {
                     <div className="pt-3">
                       {setupStatus === 'complete' && userProfile?.country && (
                         <a
-                          href={`/countries/${userProfile.country.id}`}
+                          href={createUrl(`/countries/${userProfile.country.id}`)}
                           className="flex items-center gap-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors rounded"
                         >
                           <Crown className="h-4 w-4" />
@@ -537,7 +538,7 @@ function GlobalStatsIslandContent() {
                       )}
                       {setupStatus === 'needs-setup' && (
                         <a
-                          href="/setup"
+                          href={createUrl("/setup")}
                           className="flex items-center gap-3 py-2 text-sm text-amber-300 hover:text-amber-200 hover:bg-amber-500/10 transition-colors rounded"
                         >
                           <AlertCircle className="h-4 w-4" />
@@ -545,14 +546,14 @@ function GlobalStatsIslandContent() {
                         </a>
                       )}
                       <a
-                        href="/dashboard"
+                        href={createUrl("/dashboard")}
                         className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                       >
                         <Home className="h-4 w-4" />
                         Dashboard
                       </a>
                       <a
-                        href="/profile"
+                        href={createUrl("/profile")}
                         className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                       >
                         <User className="h-4 w-4" />

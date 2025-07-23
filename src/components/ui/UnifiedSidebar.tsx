@@ -11,6 +11,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { api } from "../../trpc/react";
 import { useUser } from "@clerk/nextjs";
 import { UserButton } from "@clerk/nextjs";
+import { createUrl } from "~/lib/url-utils";
 
 interface Notification {
   id: string;
@@ -236,7 +237,7 @@ export function UnifiedSidebar({
         </div>
         {/* User Menu: Profile/Settings/Logout */}
         <div className={cn("flex flex-col gap-2 w-full justify-center mt-2", isCollapsed && "items-center mt-1")}> 
-          <Link href="/profile" className="flex items-center gap-2 text-blue-500 dark:text-blue-300 text-sm hover:underline">
+          <Link href={createUrl("/profile")} className="flex items-center gap-2 text-blue-500 dark:text-blue-300 text-sm hover:underline">
             <Settings className="w-4 h-4" />
             {!isCollapsed && <span>Profile & Settings</span>}
           </Link>

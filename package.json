@@ -42,7 +42,9 @@
     "auth:check": "node scripts/check-auth-config.js",
     "auth:check:dev": "NODE_ENV=development node scripts/check-auth-config.js",
     "auth:check:prod": "NODE_ENV=production node scripts/check-auth-config.js",
+    "auth:validate:prod": "node scripts/validate-clerk-production.js",
     "clerk:setup": "node scripts/setup-clerk-dev.js",
+    "clerk:config": "echo 'See scripts/clerk-dashboard-config.md for Clerk dashboard configuration'",
     "validate:servers": "./scripts/validate-server-config.sh"
   },
   "dependencies": {

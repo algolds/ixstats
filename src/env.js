@@ -22,8 +22,10 @@ export const env = createEnv({
     DISCORD_BOT_TOKEN: z.string().optional(),
     DISCORD_CLIENT_ID: z.string().optional(),
     DISCORD_GUILD_ID: z.string().optional(),
-    // Clerk Authentication Configuration
-    CLERK_SECRET_KEY: z.string().optional(),
+    // Clerk Authentication Configuration - Required in production
+    CLERK_SECRET_KEY: process.env.NODE_ENV === "production" 
+      ? z.string().min(1, "CLERK_SECRET_KEY is required in production")
+      : z.string().optional(),
   },
 
   /**
@@ -45,8 +47,10 @@ export const env = createEnv({
       .url()
       .optional()
       .default("https://ixwiki.com/"),
-    // Clerk Authentication Configuration (Client-side)
-    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().optional(),
+    // Clerk Authentication Configuration (Client-side) - Required in production
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NODE_ENV === "production" 
+      ? z.string().min(1, "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is required in production")
+      : z.string().optional(),
   },
 
   /**

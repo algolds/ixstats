@@ -1,6 +1,9 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
+// Production base path
+const BASE_PATH = process.env.NODE_ENV === "production" ? "/projects/ixstats" : "";
+
 const isProtectedRoute = createRouteMatcher([
   '/admin(.*)',
   '/profile(.*)',
@@ -26,8 +29,10 @@ export default isClerkConfigured
       if (isProtectedRoute(req)) {
         const { userId } = await auth();
         if (!userId) {
-          // Explicitly redirect to the custom Clerk domain
-          return NextResponse.redirect('https://accounts.ixwiki.com/sign-in');
+          // Build the redirect URL with the return path
+          const returnUrl = encodeURIComponent(`${BASE_PATH}${req.nextUrl.pathname}${req.nextUrl.search}`);
+          const signInUrl = `https://accounts.ixwiki.com/sign-in?redirect_url=${returnUrl}`;
+          return NextResponse.redirect(signInUrl);
         }
       }
     })
