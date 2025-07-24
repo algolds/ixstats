@@ -275,7 +275,7 @@ export function ComparativeAnalysis({
                 <DropdownMenuGroupLabel>Select Regions</DropdownMenuGroupLabel>
                 <DropdownMenuSeparator />
               {regions.map(region => (
-                <DropdownMenuItem key={region} asChild>
+                <DropdownMenuItem key={region}>
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       checked={selectedRegions.includes(region)}

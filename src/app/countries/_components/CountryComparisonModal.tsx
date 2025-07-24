@@ -219,7 +219,7 @@ export function CountryComparisonModal({
           {/* Country Selection */}
           <div className="flex items-center gap-2 flex-wrap">
             <Popover open={countrySearchOpen} onOpenChange={setCountrySearchOpen}>
-              <PopoverTrigger asChild>
+              <PopoverTrigger>
                 <Button variant="outline" size="sm" disabled={selectedCountries.length >= 8}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Country ({selectedCountries.length}/8)

@@ -297,9 +297,9 @@ export const adminRouter = createTRPCRouter({
   getCalculationLogs: publicProcedure
     .input(z.object({
       limit: z.number().optional().default(10),
-    }).optional().default({}))
+    }).optional())
     .query(async ({ ctx, input }) => {
-      const limit = input.limit;
+      const limit = input?.limit ?? 10;
       try {
         const logs = await ctx.db.calculationLog.findMany({
           orderBy: { timestamp: "desc" },

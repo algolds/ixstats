@@ -659,8 +659,13 @@ function extractEconomicData(infobox: CountryInfoboxWithDynamicProps): Partial<P
 /**
  * Parse number from string, handling common formats
  */
-function parseNumber(str: string): number {
+function parseNumber(str: string | Record<string, string>): number {
   if (!str) return 0;
+  
+  // Handle object case
+  if (typeof str !== 'string') {
+    return 0;
+  }
   
   // Remove common formatting
   let cleaned = str

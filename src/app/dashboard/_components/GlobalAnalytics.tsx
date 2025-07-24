@@ -83,7 +83,7 @@ function TierDetailsPopover({ open, anchorEl, onClose, tier, countries }: TierDe
   if (!open || !anchorEl || !tier) return null;
   const tierCountries = countries.filter((c) => c.economicTier === tier);
   return (
-    <Popover open={open} anchorEl={anchorEl} onOpenChange={onClose}>
+    <Popover open={open} onOpenChange={onClose}>
       <PopoverContent className="sm:max-w-[625px] max-h-[80vh] flex flex-col">
         <div className="mb-4">
           <div className="text-lg font-bold">{tier} Countries ({tierCountries.length})</div>

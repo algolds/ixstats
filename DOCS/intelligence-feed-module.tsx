@@ -236,7 +236,7 @@ const IntelligenceFeed = () => {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Network Status */}
-          <GlassCard variant="security" gradient="from-blue-500/10 to-cyan-500/10">
+          <GlassCard variant="security">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white font-bold">Network Status</h3>
               <Eye className="w-5 h-5 text-blue-400" />
@@ -291,7 +291,7 @@ const IntelligenceFeed = () => {
           </GlassCard>
 
           {/* Quick Actions */}
-          <GlassCard variant="security" gradient="from-purple-500/10 to-pink-500/10">
+          <GlassCard variant="security">
             <h3 className="text-white font-bold mb-4">Quick Actions</h3>
             
             <div className="space-y-2">

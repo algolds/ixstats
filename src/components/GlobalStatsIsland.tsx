@@ -51,7 +51,7 @@ import {
   TrendingDown
 } from "lucide-react";
 import { useUser } from "~/context/auth-context";
-import { CountryFlag } from "~/app/_components/CountryFlag";
+import CountryFlag from "~/app/_components/CountryFlag";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 
 interface GlobalStatsIslandProps {
@@ -497,7 +497,7 @@ function GlobalStatsIslandContent() {
                   <button className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-white/10 transition-colors ml-2">
                     {/* Avatar: Use country flag if available, else initials */}
                     {setupStatus === 'complete' && userProfile?.country ? (
-                      <CountryFlag countryName={userProfile.country.name} size="md" className="w-7 h-7 rounded-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 object-cover" />
+                      <CountryFlag countryCode={userProfile.country.name} countryName={userProfile.country.name} className="w-7 h-7 rounded-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 object-cover" />
                     ) : (
                       <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
                         {user?.firstName?.[0] || (user as any)?.username?.[0] || 'U'}
@@ -514,7 +514,7 @@ function GlobalStatsIslandContent() {
                     <div className="pb-3 border-b border-white/10">
                       <div className="flex items-center gap-3">
                         {setupStatus === 'complete' && userProfile?.country ? (
-                          <CountryFlag countryName={userProfile.country.name} size="lg" className="w-10 h-10 rounded-full border border-white/20 object-cover" />
+                          <CountryFlag countryCode={userProfile.country.name} countryName={userProfile.country.name} className="w-10 h-10 rounded-full border border-white/20 object-cover" />
                         ) : (
                           <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium">
                             {user?.firstName?.[0] || (user as any)?.username?.[0] || 'U'}
@@ -836,7 +836,7 @@ function GlobalStatsIslandContent() {
 {setupStatus === 'complete' && userProfile?.country ? (
               <div className="space-y-4">
                 <div className="flex items-center gap-3 p-4 bg-white/10 rounded-xl">
-                  <CountryFlag countryName={userProfile.country.name} size="lg" className="w-12 h-12 rounded-lg border border-white/20" />
+                  <CountryFlag countryCode={userProfile.country.name} countryName={userProfile.country.name} className="w-12 h-12 rounded-lg border border-white/20" />
                   <div>
                     <div className="font-semibold text-white">{userProfile.country.name}</div>
                     <div className="text-sm text-white/60">Your Nation</div>

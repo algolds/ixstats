@@ -221,7 +221,7 @@ export function CabinetMeetingModal({
                     <Label>Date & Time *</Label>
                     <div className="flex gap-2">
                       <Popover>
-                        <PopoverTrigger asChild>
+                        <PopoverTrigger>
                           <Button
                             variant="outline"
                             className={cn(

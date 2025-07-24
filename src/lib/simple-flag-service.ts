@@ -116,6 +116,41 @@ class SimpleFlagService {
       failed: cached - successful
     };
   }
+
+  /**
+   * Batch get flags for multiple countries
+   */
+  async batchGetFlags(countryNames: string[]): Promise<Record<string, string | null>> {
+    const results: Record<string, string | null> = {};
+    
+    // Use Promise.allSettled to handle all requests concurrently
+    // This will run all requests in parallel for better performance
+    const promises = countryNames.map(async (countryName) => {
+      try {
+        const flagUrl = await this.getFlagUrl(countryName);
+        return { countryName, flagUrl };
+      } catch (error) {
+        console.warn(`[SimpleFlagService] Failed to get flag for ${countryName}:`, error);
+        return { countryName, flagUrl: null };
+      }
+    });
+
+    const settledResults = await Promise.allSettled(promises);
+    
+    // Process results
+    settledResults.forEach((result, index) => {
+      const countryName = countryNames[index];
+      if (!countryName) return; // Skip if countryName is undefined
+      
+      if (result.status === 'fulfilled' && result.value) {
+        results[result.value.countryName] = result.value.flagUrl;
+      } else {
+        results[countryName] = null;
+      }
+    });
+
+    return results;
+  }
 }
 
 // Export singleton instance

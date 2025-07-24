@@ -29,7 +29,6 @@ export function HeroSection({ systemStatus, globalStats }: HeroSectionProps) {
       <div className="relative z-10 container mx-auto px-4">
         <GlassCard 
           variant="diplomatic" 
-          blur="prominent"
           glow="hover"
           className="hero-card overflow-hidden"
         >
