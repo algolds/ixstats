@@ -12,6 +12,7 @@ import { api } from '~/trpc/react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import type { IntelligenceItem } from '~/types/sdi';
+import { createUrl } from '~/lib/url-utils';
 
 // Check if Clerk is configured
 const isClerkConfigured = Boolean(
@@ -184,7 +185,7 @@ function IntelligenceFeedContent() {
                     <div className="flex flex-wrap gap-2 mt-2">
                       {item.affectedCountries.map((countryId: string) => (
                         (userRole === 'admin' || userRole === 'dm' || userCountryId === countryId) && (
-                          <Button key={countryId} size="sm" className="bg-orange-600/80 text-white border-orange-500/30 hover:bg-orange-600/90" onClick={() => router.push('/eci')}>
+                          <Button key={countryId} size="sm" className="bg-orange-600/80 text-white border-orange-500/30 hover:bg-orange-600/90" onClick={() => router.push(createUrl('/eci'))}>
                             🏛️ View in ECI ({countryId})
                           </Button>
                         )
@@ -231,13 +232,13 @@ export default function IntelligenceFeed() {
         </p>
         <div className="flex gap-4 justify-center">
           <Button 
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push(createUrl("/dashboard"))}
             className="bg-blue-600 hover:bg-blue-700 text-white"
           >
             View Dashboard
           </Button>
           <Button 
-            onClick={() => router.push("/countries")}
+            onClick={() => router.push(createUrl("/countries"))}
             variant="outline"
             className="border-blue-500 text-blue-300 hover:bg-blue-800"
           >

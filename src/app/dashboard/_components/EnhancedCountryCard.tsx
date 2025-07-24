@@ -94,11 +94,11 @@ export function EnhancedCountryCard({
 
   const economicTierStyle = country.economicTier 
     ? getTierStyle(country.economicTier, 'economic')
-    : { backgroundColor: '#f3f4f6', color: '#374151' };
+    : { backgroundColor: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))' };
     
   const populationTierStyle = country.populationTier
     ? getTierStyle(country.populationTier, 'population') 
-    : { backgroundColor: '#f3f4f6', color: '#374151' };
+    : { backgroundColor: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))' };
 
   return (
     <Card className="h-full flex flex-col hover:shadow-md transition-shadow duration-200">
@@ -124,13 +124,13 @@ export function EnhancedCountryCard({
                 <div className="absolute -bottom-1 -right-1 flex gap-1">
                   {isLocal && (
                     <div 
-                      className="w-2 h-2 bg-green-500 rounded-full" 
+                      className="w-2 h-2 bg-green-600 dark:bg-green-400 rounded-full" 
                       title="Flag cached locally"
                     />
                   )}
                   {isPlaceholder && (
                     <div 
-                      className="w-2 h-2 bg-yellow-500 rounded-full" 
+                      className="w-2 h-2 bg-yellow-600 dark:bg-yellow-400 rounded-full" 
                       title="Using placeholder flag"
                     />
                   )}
@@ -142,7 +142,7 @@ export function EnhancedCountryCard({
               <CardTitle className="text-lg font-semibold truncate">
                 <Link 
                   href={createUrl(`/countries/${country.id}`)}
-                  className="hover:text-blue-600 transition-colors"
+                  className="hover:text-primary transition-colors"
                 >
                   {country.name.replace(/_/g, ' ')}
                 </Link>
@@ -184,7 +184,7 @@ export function EnhancedCountryCard({
 
         {/* Error Display */}
         {updateError && (
-          <div className="text-sm text-red-600 bg-red-50 p-2 rounded-md mt-2">
+          <div className="text-sm text-destructive bg-destructive/10 p-2 rounded-md mt-2">
             Update failed: {updateError}
           </div>
         )}
@@ -195,7 +195,7 @@ export function EnhancedCountryCard({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-green-600" />
+              <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
               <span className="text-sm font-medium">GDP per Capita</span>
             </div>
             <span className="text-sm font-semibold">
@@ -205,7 +205,7 @@ export function EnhancedCountryCard({
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-blue-600" />
+              <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               <span className="text-sm font-medium">Population</span>
             </div>
             <span className="text-sm font-semibold">
@@ -215,7 +215,7 @@ export function EnhancedCountryCard({
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Scaling className="h-4 w-4 text-purple-600" />
+              <Scaling className="h-4 w-4 text-purple-600 dark:text-purple-400" />
               <span className="text-sm font-medium">Total GDP</span>
             </div>
             <span className="text-sm font-semibold">
@@ -257,21 +257,21 @@ export function EnhancedCountryCard({
         {(country.landArea || country.populationDensity || country.gdpDensity) && (
           <div className="pt-2 border-t space-y-2">
             {country.landArea && (
-              <div className="flex justify-between text-xs text-gray-600">
+              <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Land Area</span>
                 <span>{country.landArea.toLocaleString()} km²</span>
               </div>
             )}
             
             {country.populationDensity && (
-              <div className="flex justify-between text-xs text-gray-600">
+              <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Population Density</span>
                 <span>{Math.round(country.populationDensity)} /km²</span>
               </div>
             )}
             
             {country.gdpDensity && (
-              <div className="flex justify-between text-xs text-gray-600">
+              <div className="flex justify-between text-xs text-muted-foreground">
                 <span>GDP Density</span>
                 <span>{formatCurrency(country.gdpDensity)} /km²</span>
               </div>
@@ -282,7 +282,7 @@ export function EnhancedCountryCard({
 
       <CardFooter className="pt-3 border-t">
         <div className="flex justify-between items-center w-full">
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-muted-foreground">
             Updated: {new Date(country.lastCalculated).toLocaleDateString()}
           </div>
           

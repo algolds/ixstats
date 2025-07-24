@@ -23,6 +23,7 @@ import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuGroupLabel,
   DropdownMenuSeparator,
   DropdownMenuItem
@@ -172,39 +173,41 @@ export function CountriesSearch({
                 }
               </span>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuGroupLabel>Sort By</DropdownMenuGroupLabel>
-              <DropdownMenuSeparator />
-              {sortOptions.map((opt) => (
+            <DropdownMenuContent align="end" className="backdrop-blur-md bg-background/90 border border-border/50">
+              <DropdownMenuGroup>
+                <DropdownMenuGroupLabel>Sort By</DropdownMenuGroupLabel>
+                <DropdownMenuSeparator />
+                {sortOptions.map((opt) => (
+                  <DropdownMenuItem
+                    key={opt.value}
+                    onClick={() =>
+                      onSortChangeAction(opt.value, sortDirection)
+                    }
+                  >
+                    {opt.label}
+                    {sortField === opt.value && (
+                      <CheckCircle className="ml-auto h-4 w-4 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  key={opt.value}
-                  onClick={() =>
-                    onSortChangeAction(opt.value, sortDirection)
-                  }
+                  onClick={() => onSortChangeAction(sortField, 'asc')}
                 >
-                  {opt.label}
-                  {sortField === opt.value && (
+                  Ascending
+                  {sortDirection === 'asc' && (
                     <CheckCircle className="ml-auto h-4 w-4 text-primary" />
                   )}
                 </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => onSortChangeAction(sortField, 'asc')}
-              >
-                Ascending
-                {sortDirection === 'asc' && (
-                  <CheckCircle className="ml-auto h-4 w-4 text-primary" />
-                )}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onSortChangeAction(sortField, 'desc')}
-              >
-                Descending
-                {sortDirection === 'desc' && (
-                  <CheckCircle className="ml-auto h-4 w-4 text-primary" />
-                )}
-              </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => onSortChangeAction(sortField, 'desc')}
+                >
+                  Descending
+                  {sortDirection === 'desc' && (
+                    <CheckCircle className="ml-auto h-4 w-4 text-primary" />
+                  )}
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -244,7 +247,7 @@ export function CountriesSearch({
                 <SelectTrigger id="tierFilter">
                   <SelectValue placeholder="Select tier" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="backdrop-blur-md bg-background/90 border border-border/50">
                   {tierOptions.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value}>
                       {opt.label}
@@ -268,7 +271,7 @@ export function CountriesSearch({
                 <SelectTrigger id="continentFilter">
                   <SelectValue placeholder="Select continent" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="backdrop-blur-md bg-background/90 border border-border/50">
                   <SelectItem value="all">All Continents</SelectItem>
                   {availableContinents.map((c) => (
                     <SelectItem key={c} value={c}>
@@ -297,7 +300,7 @@ export function CountriesSearch({
                 <SelectTrigger id="regionFilter">
                   <SelectValue placeholder="Select region" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="backdrop-blur-md bg-background/90 border border-border/50">
                   <SelectItem value="all">All Regions</SelectItem>
                   {availableRegions.map((r) => (
                     <SelectItem key={r} value={r}>

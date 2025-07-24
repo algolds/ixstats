@@ -19,6 +19,7 @@ import { useUser } from '@clerk/nextjs';
 import { useBulkFlagCache } from '~/hooks/useBulkFlagCache';
 import { FastAverageColor } from 'fast-average-color';
 import { useRef } from 'react';
+import { createUrl } from '~/lib/url-utils';
 
 
 // Metric Card with glassy colored border
@@ -438,7 +439,7 @@ export default function GlobalOverview() {
             <Button
               size="sm"
               className="bg-orange-600/90 text-white border-orange-500/30 hover:bg-orange-600 transition-colors"
-              onClick={() => router.push('/eci')}
+              onClick={() => router.push(createUrl('/eci'))}
             >
               🏛️ View in ECI
             </Button>

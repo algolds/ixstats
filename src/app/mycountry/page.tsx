@@ -168,7 +168,8 @@ function MyCountryContent() {
   // Redirect if not signed in
   useEffect(() => {
     if (isLoaded && !user) {
-      router.push('/sign-in?redirect=/mycountry');
+      const returnUrl = encodeURIComponent(createUrl('/mycountry'));
+      window.location.href = `https://accounts.ixwiki.com/sign-in?redirect_url=${returnUrl}`;
     }
   }, [isLoaded, user, router]);
 
@@ -236,7 +237,7 @@ function MyCountryContent() {
         <div className="flex items-center gap-4">
           <Crown className="h-8 w-8 text-yellow-500" />
           <div>
-            <h1 className="text-3xl font-bold">My Country: {country.name}</h1>
+            <h1 className="text-3xl font-bold">MyCountry: {country.name}</h1>
             <p className="text-muted-foreground">Executive Dashboard & Management Center</p>
           </div>
         </div>
@@ -612,6 +613,10 @@ function MyCountryContent() {
 }
 
 export default function MyCountryPage() {
+  useEffect(() => {
+    document.title = "My Country - IxStats";
+  }, []);
+
   // Show message when Clerk is not configured
   if (!isClerkConfigured) {
     return (

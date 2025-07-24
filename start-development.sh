@@ -13,15 +13,22 @@ PROJECT_DIR="/ixwiki/public/projects/ixstats"
 cd "$PROJECT_DIR"
 
 # Load development environment variables
-if [ -f ".env.local" ]; then
-    echo "📄 Loading development environment variables..."
+if [ -f ".env.local.dev" ]; then
+    echo "📄 Loading development environment variables from .env.local.dev..."
+    export NODE_ENV=development
+    # Load .env.local.dev variables without overriding existing environment
+    set -a
+    source .env.local.dev 2>/dev/null || true
+    set +a
+elif [ -f ".env.local" ]; then
+    echo "📄 Loading development environment variables from .env.local..."
     export NODE_ENV=development
     # Load .env.local variables without overriding existing environment
     set -a
     source .env.local 2>/dev/null || true
     set +a
 else
-    echo "⚠️  Warning: .env.local file not found, using defaults"
+    echo "⚠️  Warning: Neither .env.local.dev nor .env.local file found, using defaults"
     export NODE_ENV=development
 fi
 

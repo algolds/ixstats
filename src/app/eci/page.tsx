@@ -1,7 +1,7 @@
 "use client";
 export const dynamic = 'force-dynamic';
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Alert, AlertDescription } from "~/components/ui/alert";
+import { createUrl } from "~/lib/url-utils";
 
 function EciLoadingSkeleton() {
   return (
@@ -41,6 +42,10 @@ function EciLoadingSkeleton() {
 }
 
 export default function ExecutiveCommandInterface() {
+  useEffect(() => {
+    document.title = "Economic Intelligence Center - IxStats";
+  }, []);
+
   const { user, isLoaded } = useUser();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("overview");
@@ -85,7 +90,7 @@ export default function ExecutiveCommandInterface() {
 
   // Redirect to setup if no country
   if (isLoaded && user && !profileLoading && userProfile && !userProfile.countryId) {
-    router.push('/setup');
+    router.push(createUrl('/setup'));
     return null;
   }
 

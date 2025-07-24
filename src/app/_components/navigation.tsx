@@ -32,7 +32,6 @@ import {
   NavigationMenu,
   NavigationMenuList,
   NavigationMenuItem,
-  NavigationMenuLink,
   NavigationMenuTrigger,
   NavigationMenuContent
 } from "~/components/ui/navigation-menu";
@@ -153,16 +152,16 @@ export function Navigation() {
 
   return (
     <>
-      <nav className="relative bg-gradient-to-r from-slate-900/95 via-slate-800/95 to-slate-900/95 backdrop-blur-xl border-b border-white/10 shadow-2xl">
+      <nav className="relative z-[10005] bg-gradient-to-r from-slate-900/95 via-slate-800/95 to-slate-900/95 backdrop-blur-xl border-b border-white/10 shadow-2xl">
       {/* Curved bottom edge to match dynamic island */}
       <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-b from-transparent to-slate-900/20 rounded-b-3xl"></div>
       
       <div className="max-w-none mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-stretch h-16 relative">
           {/* Left: Logo */}
-          <div className="flex items-center flex-shrink-0 z-20">
+          <div className="flex items-center flex-shrink-0 z-[10005]">
             <Link
-              href={createUrl("/dashboard")}
+              href="/dashboard"
               className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent hover:from-blue-300 hover:to-purple-400 transition-all duration-300"
             >
               IxStats™
@@ -170,7 +169,7 @@ export function Navigation() {
           </div>
           
           {/* Left Navigation Items */}
-          <div className="flex items-center gap-2 z-10">
+          <div className="flex items-center gap-2 z-[10005]">
             <NavigationMenu>
               <NavigationMenuList>
                 {navigationItems.slice(0, Math.ceil(navigationItems.length / 2)).map((item) => {
@@ -183,14 +182,14 @@ export function Navigation() {
                   if (!showItem) return null;
                   return (
                     <NavigationMenuItem key={item.name}>
-                      <NavigationMenuLink
+                      <Link
                         href={item.href}
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 hover:bg-white/10 hover:backdrop-blur-sm ${current ? 'bg-white/15 text-white shadow-lg' : 'text-white/80'}`}
                         aria-current={current ? 'page' : undefined}
                       >
                         <Icon className="h-4 w-4" aria-hidden="true" />
                         <span className="hidden lg:block">{item.name}</span>
-                      </NavigationMenuLink>
+                      </Link>
                     </NavigationMenuItem>
                   );
                 })}
@@ -202,13 +201,13 @@ export function Navigation() {
           <div className="flex flex-grow justify-center items-center min-w-0 mx-6 relative">
             {/* Background glow effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-blue-500/5 rounded-full blur-2xl opacity-40"></div>
-            <div className="z-20 w-full flex justify-center">
+            <div className="z-[10005] w-full flex justify-center">
               <CommandPalette />
             </div>
           </div>
           
           {/* Right: Navigation Items + User Profile */}
-          <div className="flex items-center gap-4 z-10">
+          <div className="flex items-center gap-4 z-[10005]">
             {/* Right Navigation Items */}
             <NavigationMenu>
               <NavigationMenuList>
@@ -222,14 +221,14 @@ export function Navigation() {
                   if (!showItem) return null;
                   return (
                     <NavigationMenuItem key={item.name}>
-                      <NavigationMenuLink
+                      <Link
                         href={item.href}
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 hover:bg-white/10 hover:backdrop-blur-sm ${current ? 'bg-white/15 text-white shadow-lg' : 'text-white/80'}`}
                         aria-current={current ? 'page' : undefined}
                       >
                         <Icon className="h-4 w-4" aria-hidden="true" />
                         <span className="hidden lg:block">{item.name}</span>
-                      </NavigationMenuLink>
+                      </Link>
                     </NavigationMenuItem>
                   );
                 })}
@@ -285,7 +284,7 @@ export function Navigation() {
 
       {/* Sticky Navigation with Dynamic Island */}
       {isSticky && !hideSticky && (
-        <div className="fixed top-0 left-0 right-0 z-[100] flex justify-center pt-2">
+        <div className="fixed top-0 left-0 right-0 z-[10010] flex justify-center pt-2">
           <div className="relative">
             <CommandPalette isSticky={true} />
             {/* Hide/Show Toggle */}
@@ -325,11 +324,11 @@ function UserProfileMenu({ user, userProfile, setupStatus, userCountryFlag, flag
 
   if (!user) {
     return (
-      <SignInButton>
-        <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all duration-200">
+      <SignInButton className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all duration-200">
+        <div className="flex items-center gap-2">
           <User className="h-4 w-4" />
           <span className="hidden md:block text-sm">Sign In</span>
-        </button>
+        </div>
       </SignInButton>
     );
   }
@@ -391,7 +390,7 @@ function UserProfileMenu({ user, userProfile, setupStatus, userCountryFlag, flag
           <div className="py-1">
             {setupStatus === 'complete' && userProfile?.country && (
               <Link
-                href={createUrl(`/countries/${userProfile.country.id}`)}
+                href={`/countries/${userProfile.country.id}`}
                 className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
               >
                 <Crown className="h-4 w-4" />
@@ -400,7 +399,7 @@ function UserProfileMenu({ user, userProfile, setupStatus, userCountryFlag, flag
             )}
             {setupStatus === 'needs-setup' && (
               <Link
-                href={createUrl("/setup")}
+                href="/setup"
                 className="flex items-center gap-3 px-4 py-2 text-sm text-amber-300 hover:text-amber-200 hover:bg-amber-500/10 transition-colors"
               >
                 <AlertCircle className="h-4 w-4" />
@@ -408,19 +407,28 @@ function UserProfileMenu({ user, userProfile, setupStatus, userCountryFlag, flag
               </Link>
             )}
             <Link
-              href={createUrl("/dashboard")}
+              href="/dashboard"
               className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
             >
               <Home className="h-4 w-4" />
               Dashboard
             </Link>
             <Link
-              href={createUrl("/profile")}
+              href="/profile"
               className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
             >
               <User className="h-4 w-4" />
               Profile Settings
             </Link>
+            <a
+              href="https://accounts.ixwiki.com/user"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <Settings className="h-4 w-4" />
+              Account Management
+            </a>
           </div>
           
           {/* Divider */}

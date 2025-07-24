@@ -209,9 +209,11 @@ function GlobalStatsIslandContent() {
     const commands = [
       { name: "Dashboard", path: "/dashboard", icon: Target },
       { name: "Countries", path: "/countries", icon: Globe },
+      { name: "MyCountry®", path: "/mycountry", icon: Crown },
+      { name: "ECI", path: "/eci", icon: Target },
       { name: "Builder", path: "/builder", icon: Plus },
       { name: "Profile", path: "/profile", icon: Users },
-      { name: "Settings", path: "/settings", icon: Settings },
+      { name: "Admin", path: "/admin", icon: Settings },
     ];
 
     commands
@@ -368,7 +370,7 @@ function GlobalStatsIslandContent() {
                 <PopoverTrigger className="text-xs md:text-sm text-white/70 hover:text-white cursor-pointer hover:bg-white/5 px-2 py-1 rounded-md transition-colors truncate">
                   {currentTime.greeting}{user?.firstName ? `, ${user.firstName}` : ''}
                 </PopoverTrigger>
-                <PopoverContent side="bottom" className="w-96 p-4">
+                <PopoverContent side="bottom" className="w-96 p-4 z-[10002]">
                   {setupStatus === 'complete' && userProfile?.country ? (
                     <div className="space-y-4">
                       <div className="flex items-center gap-3 pb-3 border-b border-white/10">
@@ -506,7 +508,7 @@ function GlobalStatsIslandContent() {
                     </span>
                   </button>
                 </PopoverTrigger>
-                <PopoverContent align="end" className="w-64 p-4">
+                <PopoverContent align="end" className="w-64 p-4 z-[10002]">
                   <div>
                     {/* User Info */}
                     <div className="pb-3 border-b border-white/10">
@@ -910,7 +912,7 @@ function GlobalStatsIslandContent() {
 
 export function GlobalStatsIsland({ className }: GlobalStatsIslandProps) {
   return (
-    <div className={`w-fit flex items-center justify-center z-50 ${className || ''}`}>
+    <div className={`w-fit flex items-center justify-center z-[10000] ${className || ''}`}>
       <DynamicIslandProvider initialSize={SIZE_PRESETS.COMPACT}>
         <GlobalStatsIslandContent />
       </DynamicIslandProvider>

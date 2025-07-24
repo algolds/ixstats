@@ -1,18 +1,21 @@
 /**
  * URL utilities for handling base path in different environments
+ * 
+ * Note: Next.js automatically handles basePath from next.config.js,
+ * so we don't need to manually add it here. This function is kept
+ * for consistency and potential future use.
  */
-
-const BASE_PATH = process.env.NODE_ENV === "production" ? "/projects/ixstats" : "";
 
 /**
  * Creates a properly prefixed URL for the current environment
  * @param path - The path to prefix (should start with /)
- * @returns The full path with base path prefix in production
+ * @returns The path as-is (Next.js handles basePath automatically)
  */
 export function createUrl(path: string): string {
   // Ensure path starts with /
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  return `${BASE_PATH}${normalizedPath}`;
+  // Next.js automatically handles basePath from next.config.js
+  return normalizedPath;
 }
 
 /**

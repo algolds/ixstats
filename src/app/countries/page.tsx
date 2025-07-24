@@ -18,6 +18,7 @@ import CountriesFilterSidebar from './_components/CountriesFilterSidebar';
 import CountriesSortBar from './_components/CountriesSortBar';
 import { CountryComparisonModal } from './_components/CountryComparisonModal';
 import { useCountryComparison } from '~/hooks/useCountryComparison';
+import { createUrl } from '~/lib/url-utils';
 
 export type PageCountryData = {
   id: string;
@@ -36,6 +37,10 @@ export type PageCountryData = {
 };
 
 export default function CountriesPage() {
+  useEffect(() => {
+    document.title = "Countries - IxStats";
+  }, []);
+
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [tierFilter, setTierFilter] =
@@ -242,7 +247,7 @@ export default function CountriesPage() {
   // Handle country selection from comparison modal
   const handleCountrySelect = (countryId: string) => {
     // Navigate to country detail page
-    router.push(`/countries/${countryId}`);
+    router.push(createUrl(`/countries/${countryId}`));
   };
 
   return (

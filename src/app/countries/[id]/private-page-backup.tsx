@@ -326,7 +326,7 @@ export default function CountryDetailPage({ params }: CountryDetailPageProps) {
                         className="flex-1 px-5 whitespace-nowrap"
                         onClick={(e: React.MouseEvent) => {
                           e.preventDefault();
-                          router.push(`/countries/${country.id}/modeling`);
+                          router.push(createUrl(`/countries/${country.id}/modeling`));
                         }}
                       >
                         Advanced Modeling

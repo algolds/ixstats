@@ -33,6 +33,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuGroup,
   DropdownMenuGroupLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -269,9 +270,10 @@ export function ComparativeAnalysis({
               {selectedRegions.length} Selected
               <ChevronDown className="h-4 w-4 ml-2" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuGroupLabel>Select Regions</DropdownMenuGroupLabel>
-              <DropdownMenuSeparator />
+            <DropdownMenuContent className="backdrop-blur-md bg-background/90 border border-border/50">
+              <DropdownMenuGroup>
+                <DropdownMenuGroupLabel>Select Regions</DropdownMenuGroupLabel>
+                <DropdownMenuSeparator />
               {regions.map(region => (
                 <DropdownMenuItem key={region} asChild>
                   <div className="flex items-center space-x-2">
@@ -283,6 +285,7 @@ export function ComparativeAnalysis({
                   </div>
                 </DropdownMenuItem>
               ))}
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

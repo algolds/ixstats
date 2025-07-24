@@ -294,7 +294,7 @@ const useScheduledAnimations = (
 
 const DynamicIslandContainer = ({ children }: { children: ReactNode }) => {
   return (
-    <div className="z-10 flex h-full w-full items-end justify-center bg-transparent">
+    <div className="z-[10000] flex h-full w-full items-end justify-center bg-transparent">
       {children}
     </div>
   )
@@ -484,7 +484,7 @@ const DynamicIslandContent = ({
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-full"></div>
         
         {/* Content container */}
-        <div className="relative z-10 h-full w-full">
+        <div className="relative z-[10001] h-full w-full">
           <AnimatePresence>{children}</AnimatePresence>
         </div>
       </motion.div>

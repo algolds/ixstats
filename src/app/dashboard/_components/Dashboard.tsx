@@ -140,13 +140,13 @@ export default function Dashboard() {
       <div className="min-h-screen bg-background text-foreground">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <GlassCard variant="glass" className="text-center p-8">
-            <h2 className="text-2xl font-bold mb-4 text-red-600">Error Loading Dashboard</h2>
+            <h2 className="text-2xl font-bold mb-4 text-destructive">Error Loading Dashboard</h2>
             <p className="text-muted-foreground mb-6">
               {countriesError?.message || statsError?.message || 'Unknown error occurred'}
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-200"
+              className="px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-lg transition-all duration-200"
             >
               Reload Page
             </button>
@@ -179,14 +179,14 @@ export default function Dashboard() {
         {/* Loading states for various data */}
         {profileLoading && (
           <GlassCard variant="glass" className="text-center p-8 mb-6">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
             <p className="mt-4 text-muted-foreground">Loading profile...</p>
           </GlassCard>
         )}
 
         {(countriesLoading || statsLoading) && (
           <GlassCard variant="glass" className="text-center p-8 mb-6">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
             <p className="mt-4 text-muted-foreground">Loading dashboard data...</p>
           </GlassCard>
         )}
@@ -203,7 +203,7 @@ export default function Dashboard() {
                 actions={
                   <Link
                     href={createUrl("/mycountry")}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-medium rounded-lg transition-all duration-200"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-600 dark:bg-yellow-600 hover:bg-yellow-700 dark:hover:bg-yellow-700 text-white font-medium rounded-lg transition-all duration-200"
                   >
                     → Open
                   </Link>
@@ -277,7 +277,7 @@ export default function Dashboard() {
                       <HealthRing
                         value={countryData ? Math.min(100, (countryData.currentGdpPerCapita / 50000) * 100) : 0}
                         size={80}
-                        color="#22c55e"
+                        color="var(--color-success)"
                         label="Economic"
                         tooltip="Click to view detailed economic metrics"
                         isClickable={true}
@@ -295,7 +295,7 @@ export default function Dashboard() {
                       <HealthRing
                         value={countryData ? Math.min(100, Math.max(0, ((countryData.populationGrowthRate || 0) * 100 + 2) * 25)) : 0}
                         size={80}
-                        color="#3b82f6"
+                        color="var(--color-brand-primary)"
                         label="Growth"
                         tooltip="Click to view population dynamics"
                         isClickable={true}
@@ -318,7 +318,7 @@ export default function Dashboard() {
                                            countryData.economicTier === "Developed" ? 40 :
                                            countryData.economicTier === "Developing" ? 25 : 10) : 0}
                         size={80}
-                        color="#8b5cf6"
+                        color="var(--color-purple)"
                         label="Development"
                         tooltip="Click to view development index details"
                         isClickable={true}
@@ -338,7 +338,7 @@ export default function Dashboard() {
                       title={`Total GDP: ${formatCurrency(countryData?.currentTotalGdp || 0)} - Click for economic overview`}
                       onClick={() => setActivityPopoverOpen(null)}
                     >
-                      <div className="text-xl font-bold text-green-600">
+                      <div className="text-xl font-bold text-green-600 dark:text-green-400">
                         <AnimatedNumber value={((countryData?.currentTotalGdp || 0) / 1e12)} decimals={1} />T
                       </div>
                       <div className="text-xs text-muted-foreground">Total GDP</div>
@@ -348,7 +348,7 @@ export default function Dashboard() {
                       title={`Growth Rate: ${((countryData?.adjustedGdpGrowth || 0) * 100).toFixed(2)}% annually - Economic expansion rate`}
                       onClick={() => setActivityPopoverOpen(null)}
                     >
-                      <div className="text-xl font-bold text-blue-600">
+                      <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
                         <AnimatedNumber value={((countryData?.adjustedGdpGrowth || 0) * 100)} decimals={1} />%
                       </div>
                       <div className="text-xs text-muted-foreground">Growth Rate</div>
@@ -358,7 +358,7 @@ export default function Dashboard() {
                       title={`Population Density: ${(countryData?.populationDensity || 0).toFixed(1)} people per km² - Urban concentration metric`}
                       onClick={() => setActivityPopoverOpen(null)}
                     >
-                      <div className="text-xl font-bold text-purple-600">
+                      <div className="text-xl font-bold text-purple-600 dark:text-purple-400">
                         <AnimatedNumber value={countryData?.populationDensity || 0} decimals={0} />
                       </div>
                       <div className="text-xs text-muted-foreground">Pop/km²</div>
@@ -368,7 +368,7 @@ export default function Dashboard() {
                       title="Country Status: Active and operational - All systems functioning"
                       onClick={() => setActivityPopoverOpen(null)}
                     >
-                      <div className="text-xl font-bold text-green-500">Active</div>
+                      <div className="text-xl font-bold text-green-600 dark:text-green-400">Active</div>
                       <div className="text-xs text-muted-foreground">Status</div>
                     </div>
                   </div>
@@ -380,7 +380,7 @@ export default function Dashboard() {
             <div className="lg:col-span-4">
               <CollapsibleCard
                 title="Global Overview"
-                icon={<Globe className="h-5 w-5 text-blue-500" />}
+                icon={<Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />}
                 variant="economic"
                 actions={
                   <Link
@@ -430,10 +430,10 @@ export default function Dashboard() {
                             </div>
                             {powerGrouped.superpower.length > 0 && (
                               <div className="space-y-1">
-                                <div className="text-xs font-medium text-white/70">Examples:</div>
+                                <div className="text-xs font-medium text-gray-600 dark:text-white/70">Examples:</div>
                                 <div className="flex flex-wrap gap-1">
                                   {powerGrouped.superpower.slice(0, 3).map((country) => (
-                                    <span key={country.id} className="px-2 py-1 bg-yellow-500/20 text-yellow-200 text-xs rounded">
+                                    <span key={country.id} className="px-2 py-1 bg-yellow-500/20 dark:bg-yellow-500/20 text-yellow-800 dark:text-yellow-200 text-xs rounded">
                                       {country.name}
                                     </span>
                                   ))}
@@ -475,10 +475,10 @@ export default function Dashboard() {
                             </div>
                             {powerGrouped.major.length > 0 && (
                               <div className="space-y-1">
-                                <div className="text-xs font-medium text-white/70">Examples:</div>
+                                <div className="text-xs font-medium text-gray-600 dark:text-white/70">Examples:</div>
                                 <div className="flex flex-wrap gap-1">
                                   {powerGrouped.major.slice(0, 3).map((country) => (
-                                    <span key={country.id} className="px-2 py-1 bg-blue-500/20 text-blue-200 text-xs rounded">
+                                    <span key={country.id} className="px-2 py-1 bg-blue-500/20 dark:bg-blue-500/20 text-blue-800 dark:text-blue-200 text-xs rounded">
                                       {country.name}
                                     </span>
                                   ))}
@@ -520,10 +520,10 @@ export default function Dashboard() {
                             </div>
                             {powerGrouped.regional.length > 0 && (
                               <div className="space-y-1">
-                                <div className="text-xs font-medium text-white/70">Examples:</div>
+                                <div className="text-xs font-medium text-gray-600 dark:text-white/70">Examples:</div>
                                 <div className="flex flex-wrap gap-1">
                                   {powerGrouped.regional.slice(0, 3).map((country) => (
-                                    <span key={country.id} className="px-2 py-1 bg-green-500/20 text-green-200 text-xs rounded">
+                                    <span key={country.id} className="px-2 py-1 bg-green-500/20 dark:bg-green-500/20 text-green-800 dark:text-green-200 text-xs rounded">
                                       {country.name}
                                     </span>
                                   ))}

@@ -47,7 +47,7 @@ function PopoverContent({
       <PopoverPrimitive.Positioner
         data-slot="popover-positioner"
         sideOffset={sideOffset}
-        className="z-[9999] size-auto"
+        className="z-[9997] size-auto"
         {...props}
       >
         <PopoverPrimitive.Popup

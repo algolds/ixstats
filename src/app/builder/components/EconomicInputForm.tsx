@@ -13,7 +13,10 @@ import {
   Scale,
   Building2,
   Users,
+  HelpCircle,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import { Button } from "~/components/ui/button";
 import type { EconomicInputs, RealCountryData } from "../lib/economy-data-service";
 import { getEconomicTier, createDefaultEconomicInputs } from "../lib/economy-data-service";
 import { getTierStyle } from "~/lib/theme-utils";
@@ -150,12 +153,42 @@ export function EconomicInputForm({
   const tierStyle = getTierStyle(currentEconomicTier);
 
   const sections = [
-    { key: 'core', label: 'Core Indicators', icon: BarChart3 },
-    { key: 'labor', label: 'Labor & Employment', icon: Briefcase },
-    { key: 'fiscal', label: 'Fiscal System', icon: Building },
-    { key: 'income', label: 'Income & Wealth', icon: Scale },
-    { key: 'spending', label: 'Gov. Spending', icon: Building2 },
-    { key: 'demographics', label: 'Demographics', icon: Users }
+    { 
+      key: 'core', 
+      label: 'Core Indicators', 
+      icon: BarChart3,
+      description: 'Set basic economic metrics like GDP, population, growth rates, and inflation.'
+    },
+    { 
+      key: 'labor', 
+      label: 'Labor & Employment', 
+      icon: Briefcase,
+      description: 'Configure unemployment rates, labor force participation, wages, and employment by sector.'
+    },
+    { 
+      key: 'fiscal', 
+      label: 'Fiscal System', 
+      icon: Building,
+      description: 'Define tax structure, government revenue sources, debt levels, and fiscal balance.'
+    },
+    { 
+      key: 'income', 
+      label: 'Income & Wealth', 
+      icon: Scale,
+      description: 'Set income distribution, wealth inequality (Gini coefficient), and wealth concentration.'
+    },
+    { 
+      key: 'spending', 
+      label: 'Gov. Spending', 
+      icon: Building2,
+      description: 'Allocate government budget across sectors like healthcare, education, defense, and infrastructure.'
+    },
+    { 
+      key: 'demographics', 
+      label: 'Demographics', 
+      icon: Users,
+      description: 'Configure population structure, age distribution, birth/death rates, and migration patterns.'
+    }
   ] as const;
 
   const calculateTotalGDP = () => inputs.coreIndicators.nominalGDP / 1e9; // Billions
@@ -221,18 +254,29 @@ export function EconomicInputForm({
           const isActive = activeSection === section.key;
           
           return (
-            <button
-              key={section.key}
-              onClick={() => setActiveSection(section.key)}
-              className={`flex items-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                isActive
-                  ? 'border-[var(--color-brand-primary)] text-[var(--color-brand-primary)]'
-                  : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-secondary)]'
-              }`}
-            >
-              <Icon className="h-4 w-4 mr-2" />
-              {section.label}
-            </button>
+            <Popover key={section.key}>
+              <PopoverTrigger 
+                onClick={() => setActiveSection(section.key)}
+                className={`flex items-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  isActive
+                    ? 'border-[var(--color-brand-primary)] text-[var(--color-brand-primary)]'
+                    : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-secondary)]'
+                }`}
+              >
+                <Icon className="h-4 w-4 mr-2" />
+                {section.label}
+                <HelpCircle className="h-3 w-3 ml-1 opacity-60" />
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-3">
+                <div className="space-y-2">
+                  <h4 className="font-medium text-[var(--color-text-primary)] flex items-center">
+                    <Icon className="h-4 w-4 mr-2" />
+                    {section.label}
+                  </h4>
+                  <p className="text-sm text-[var(--color-text-muted)]">{section.description}</p>
+                </div>
+              </PopoverContent>
+            </Popover>
           );
         })}
       </div>

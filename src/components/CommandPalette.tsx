@@ -18,6 +18,7 @@ import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { useToast } from "~/components/ui/toast";
+import { createUrl } from "~/lib/url-utils";
 import { 
   Clock, 
   Globe, 
@@ -32,6 +33,15 @@ import {
   Plus,
   Zap,
   AlertTriangle,
+  Monitor,
+  Sun,
+  Moon,
+  Palette,
+  Volume2,
+  VolumeX,
+  Languages,
+  Layout,
+  Eye,
   CheckCircle,
   Info,
   Calendar,
@@ -51,6 +61,7 @@ import {
 } from "~/components/ui/tooltip";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { useUser } from "~/context/auth-context";
+import { useTheme } from "~/context/theme-context";
 
 interface CommandPaletteProps {
   className?: string;
@@ -103,20 +114,21 @@ function CommandPaletteContent({
     multiplier: 4.0,
   });
 
-  // Bot status
-  const [botStatus, setBotStatus] = useState<{
-    available: boolean;
-    message: string;
-  }>({
-    available: true,
-    message: "Connected",
-  });
 
   const { user, isLoaded } = useUser();
+  const { theme, effectiveTheme, setTheme } = useTheme();
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
     { userId: user?.id || '' },
     { enabled: !!user?.id }
   );
+  
+  // User preferences state
+  const [userPreferences, setUserPreferences] = useState({
+    soundEnabled: true,
+    language: 'en',
+    compactMode: false,
+    animations: true
+  });
 
   // API queries
   const {
@@ -228,9 +240,11 @@ function CommandPaletteContent({
     const commands = [
       { name: "Dashboard", path: "/dashboard", icon: Target },
       { name: "Countries", path: "/countries", icon: Globe },
+      { name: "MyCountry®", path: "/mycountry", icon: Crown },
+      { name: "ECI", path: "/eci", icon: Target },
       { name: "Builder", path: "/builder", icon: Plus },
       { name: "Profile", path: "/profile", icon: Users },
-      { name: "Settings", path: "/settings", icon: Settings },
+      { name: "Admin", path: "/admin", icon: Settings },
     ];
 
     commands
@@ -287,40 +301,14 @@ function CommandPaletteContent({
     return () => clearInterval(interval);
   }, []);
 
-  // Bot status check
-  useEffect(() => {
-    const checkBotStatus = async () => {
-      try {
-        const status = await IxTime.checkBotHealth();
-        setBotStatus(status);
-      } catch (error) {
-        setBotStatus({
-          available: false,
-          message: "Connection failed",
-        });
-      }
-    };
-
-    checkBotStatus();
-    const interval = setInterval(checkBotStatus, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   // Handle refresh
   const handleRefresh = useCallback(async () => {
     try {
-      await IxTime.syncWithBot();
-      const healthStatus = await IxTime.checkBotHealth();
-      setBotStatus(healthStatus);
       void refetchCountries();
       void refetchNotifications();
     } catch (error) {
       console.error('Refresh failed:', error);
-      setBotStatus({
-        available: false,
-        message: "Sync failed",
-      });
     }
   }, [refetchCountries, refetchNotifications]);
 
@@ -439,8 +427,7 @@ function CommandPaletteContent({
                 <PopoverContent 
                   side="bottom" 
                   align="start"
-                  className="w-80 p-4 bg-slate-800/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl"
-                  style={{ zIndex: 9999 }}
+                  className="w-80 p-4 bg-slate-800/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-[10002]"
                 >
                   <div className="space-y-3">
                     <div className="text-center">
@@ -465,9 +452,8 @@ function CommandPaletteContent({
                   </PopoverTrigger>
                   <PopoverContent 
                     side="bottom" 
-                    align="start"
-                    className="w-96 p-4 bg-slate-800/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl"
-                    style={{ zIndex: 9999 }}
+                  align="start"
+                    className="w-96 p-4 bg-slate-800/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-[10002]"
                   >
                     {setupStatus === 'complete' && userProfile?.country ? (
                       <div className="space-y-4">
@@ -613,14 +599,14 @@ function CommandPaletteContent({
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="text-xl font-bold text-white flex items-center gap-3">
-                <Command className="h-6 w-6 text-purple-400" />
+                <Command className="h-6 w-6 text-blue-400" />
                 Command Palette
               </div>
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={closeDropdown}
-                className="text-white/80 hover:text-white hover:bg-white/10 px-2 py-2"
+                className="text-white/60 hover:text-white hover:bg-white/10 px-2 py-2"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -632,11 +618,11 @@ function CommandPaletteContent({
                 placeholder="Search countries, commands, and features..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 pr-4 py-3 bg-white/10 border-white/20 text-white placeholder:text-white/60 rounded-xl text-base focus:bg-white/15 focus:border-white/30 transition-all"
+                className="pl-12 pr-4 py-3 bg-white/10 border-white/20 text-white placeholder:text-white/60 rounded-xl text-base focus:bg-white/15 focus:border-blue-400 transition-all"
                 autoFocus
               />
               <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-                <kbd className="hidden md:inline-flex px-2 py-1 text-xs bg-white/10 rounded border border-white/20 text-white/60">
+                <kbd className="hidden md:inline-flex px-2 py-1 text-xs bg-muted rounded border border-border text-muted-foreground">
                   ⌘K
                 </kbd>
               </div>
@@ -650,9 +636,9 @@ function CommandPaletteContent({
                       key={result.id}
                       variant="ghost"
                       onClick={result.action}
-                      className="w-full justify-start gap-4 text-white/80 hover:text-white hover:bg-white/15 p-4 rounded-xl transition-all group"
+                      className="w-full justify-start gap-4 text-white/80 hover:text-white hover:bg-white/10 p-4 rounded-xl transition-all group"
                     >
-                      <div className="p-2 bg-white/10 rounded-lg group-hover:bg-white/20 transition-colors">
+                      <div className="p-2 bg-white/10 rounded-lg group-hover:bg-white/15 transition-colors">
                         {result.icon && <result.icon className="h-5 w-5" />}
                       </div>
                       <div className="text-left flex-1 min-w-0">
@@ -664,11 +650,11 @@ function CommandPaletteContent({
                             {result.subtitle}
                           </div>
                         )}
-                        <div className="text-xs text-white/40 mt-1 capitalize">
+                        <div className="text-xs text-white/50 mt-1 capitalize">
                           {result.type}
                         </div>
                       </div>
-                      <div className="text-white/30 group-hover:text-white/60 transition-colors">
+                      <div className="text-muted-foreground/50 group-hover:text-muted-foreground transition-colors">
                         <ChevronDown className="h-4 w-4 rotate-[-90deg]" />
                       </div>
                     </Button>
@@ -676,33 +662,33 @@ function CommandPaletteContent({
                 </div>
               ) : searchQuery ? (
                 <div className="text-center py-8">
-                  <div className="p-4 bg-white/5 rounded-2xl max-w-md mx-auto">
-                    <Search className="h-12 w-12 mx-auto mb-4 text-white/30" />
-                    <div className="text-white/60 text-lg mb-2">No results found</div>
-                    <div className="text-white/40 text-sm break-words">
-                      No matches for <span className="font-mono bg-white/10 px-2 py-1 rounded">"{searchQuery}"</span>
+                  <div className="p-4 bg-muted/30 rounded-2xl max-w-md mx-auto">
+                    <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                    <div className="text-muted-foreground text-lg mb-2">No results found</div>
+                    <div className="text-muted-foreground/70 text-sm break-words">
+                      No matches for <span className="font-mono bg-muted px-2 py-1 rounded">"{searchQuery}"</span>
                     </div>
-                    <div className="text-white/30 text-xs mt-3">
+                    <div className="text-muted-foreground/50 text-xs mt-3">
                       Try searching for countries, commands, or features
                     </div>
                   </div>
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <div className="p-6 bg-gradient-to-b from-white/5 to-white/10 rounded-2xl max-w-md mx-auto">
-                    <Command className="h-16 w-16 mx-auto mb-4 text-white/30" />
-                    <div className="text-white/70 text-lg mb-3">
+                  <div className="p-6 bg-gradient-to-b from-muted/30 to-muted/50 rounded-2xl max-w-md mx-auto">
+                    <Command className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
+                    <div className="text-foreground text-lg mb-3">
                       Search Everything
                     </div>
-                    <div className="text-white/50 text-sm space-y-2">
+                    <div className="text-muted-foreground text-sm space-y-2">
                       <div>• Find countries and their data</div>
                       <div>• Navigate to any page</div>
                       <div>• Access commands quickly</div>
                     </div>
-                    <div className="flex items-center justify-center gap-2 mt-4 text-white/30 text-xs">
-                      <kbd className="px-2 py-1 bg-white/10 rounded border border-white/20">⌘</kbd>
+                    <div className="flex items-center justify-center gap-2 mt-4 text-muted-foreground/70 text-xs">
+                      <kbd className="px-2 py-1 bg-muted rounded border border-border">⌘</kbd>
                       <span>+</span>
-                      <kbd className="px-2 py-1 bg-white/10 rounded border border-white/20">K</kbd>
+                      <kbd className="px-2 py-1 bg-muted rounded border border-border">K</kbd>
                       <span>to open anywhere</span>
                     </div>
                   </div>
@@ -732,7 +718,7 @@ function CommandPaletteContent({
                     variant="ghost"
                     onClick={() => user?.id && markAllAsReadMutation.mutate({ userId: user.id })}
                     disabled={markAllAsReadMutation.isPending}
-                    className="text-white/80 hover:text-white hover:bg-white/10 px-3 py-2"
+                    className="text-white/60 hover:text-white hover:bg-white/10 px-3 py-2"
                   >
                     <CheckCircle className="h-4 w-4 mr-2" />
                     Mark all read
@@ -742,7 +728,7 @@ function CommandPaletteContent({
                   size="sm"
                   variant="ghost"
                   onClick={closeDropdown}
-                  className="text-white/80 hover:text-white hover:bg-white/10 px-2 py-2"
+                  className="text-white/60 hover:text-white hover:bg-white/10 px-2 py-2"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -763,10 +749,10 @@ function CommandPaletteContent({
                     return (
                       <div
                         key={notification.id}
-                        className={`p-4 rounded-xl border cursor-pointer transition-all hover:bg-white/15 ${
+                        className={`p-4 rounded-xl border cursor-pointer transition-all hover:bg-accent/50 ${
                           notification.read 
-                            ? 'bg-white/5 border-white/10' 
-                            : 'bg-white/10 border-white/20 shadow-lg'
+                            ? 'bg-muted/30 border-border' 
+                            : 'bg-muted/50 border-border shadow-lg'
                         }`}
                         onClick={() => {
                           if (!notification.read && user?.id) {
@@ -786,36 +772,36 @@ function CommandPaletteContent({
                             notification.type === "warning" ? "bg-yellow-500/20" :
                             notification.type === "success" ? "bg-green-500/20" :
                             notification.type === "error" ? "bg-red-500/20" :
-                            "bg-white/10"
+                            "bg-muted/50"
                           }`}>
                             <IconComponent className={`h-5 w-5 ${
-                              notification.type === "info" ? "text-blue-300" :
-                              notification.type === "warning" ? "text-yellow-300" :
-                              notification.type === "success" ? "text-green-300" :
-                              notification.type === "error" ? "text-red-300" :
-                              "text-white/70"
+                              notification.type === "info" ? "text-blue-600 dark:text-blue-400" :
+                              notification.type === "warning" ? "text-yellow-600 dark:text-yellow-400" :
+                              notification.type === "success" ? "text-green-600 dark:text-green-400" :
+                              notification.type === "error" ? "text-red-600 dark:text-red-400" :
+                              "text-muted-foreground"
                             }`} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2">
-                              <div className="text-base font-medium text-white break-words">
+                              <div className="text-base font-medium text-foreground break-words">
                                 {notification.title}
                               </div>
                               {!notification.read && (
-                                <div className="w-3 h-3 bg-blue-400 rounded-full flex-shrink-0 mt-1" />
+                                <div className="w-3 h-3 bg-primary rounded-full flex-shrink-0 mt-1" />
                               )}
                             </div>
                             {notification.description && (
-                              <div className="text-sm text-white/70 mt-2 break-words leading-relaxed">
+                              <div className="text-sm text-muted-foreground mt-2 break-words leading-relaxed">
                                 {notification.description}
                               </div>
                             )}
                             <div className="flex items-center justify-between mt-3">
-                              <div className="text-xs text-white/50">
+                              <div className="text-xs text-muted-foreground/70">
                                 {new Date(notification.createdAt).toLocaleString()}
                               </div>
                               {notification.href && (
-                                <div className="text-xs text-blue-300 flex items-center gap-1">
+                                <div className="text-xs text-primary flex items-center gap-1">
                                   <span>View details</span>
                                   <ChevronDown className="h-3 w-3 rotate-[-90deg]" />
                                 </div>
@@ -852,60 +838,149 @@ function CommandPaletteContent({
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="text-xl font-bold text-white flex items-center gap-3">
-                <Settings className="h-6 w-6 text-cyan-400" />
-                System Settings
+                <Settings className="h-6 w-6 text-blue-400" />
+                User Settings
               </div>
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={closeDropdown}
-                className="text-white/80 hover:text-white hover:bg-white/10 px-2 py-2"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent px-2 py-2"
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
-              <div className="flex items-center gap-4 p-4 bg-white/10 rounded-xl hover:bg-white/15 transition-all">
-                <div className="p-2 bg-yellow-500/20 rounded-lg flex-shrink-0">
-                  <Zap className="h-6 w-6 text-yellow-300" />
+            <div className="space-y-3">
+              {/* Theme Switcher */}
+              <div className="flex items-center gap-3 p-3 bg-slate-800 rounded-lg hover:bg-slate-700 transition-all border border-slate-600">
+                <div className="p-1.5 bg-primary/20 rounded flex-shrink-0">
+                  {effectiveTheme === 'dark' ? (
+                    <Moon className="h-4 w-4 text-primary" />
+                  ) : (
+                    <Sun className="h-4 w-4 text-primary" />
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-white/90 break-words">Discord Bot Status</div>
-                  <div className="text-lg font-bold text-white break-words">
-                    {botStatus.available ? "Connected" : "Disconnected"}
+                  <div className="text-sm font-medium text-white">Theme</div>
+                  <div className="text-xs text-white/70">
+                    {theme === 'system' ? 'System' : theme === 'dark' ? 'Dark' : 'Light'}
                   </div>
-                  <div className="text-xs text-yellow-300 break-words">{botStatus.message}</div>
                 </div>
-                <Badge className={`${botStatus.available ? "bg-green-500" : "bg-red-500"} text-white px-3 py-1 rounded-full`}>
-                  {botStatus.available ? "Online" : "Offline"}
-                </Badge>
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant={theme === 'light' ? 'default' : 'outline'}
+                    onClick={() => setTheme('light')}
+                    className="p-1.5 h-7 w-7"
+                  >
+                    <Sun className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={theme === 'dark' ? 'default' : 'outline'}
+                    onClick={() => setTheme('dark')}
+                    className="p-1.5 h-7 w-7"
+                  >
+                    <Moon className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={theme === 'system' ? 'default' : 'outline'}
+                    onClick={() => setTheme('system')}
+                    className="p-1.5 h-7 w-7"
+                  >
+                    <Monitor className="h-3 w-3" />
+                  </Button>
+                </div>
               </div>
 
-              <div className="flex items-center gap-4 p-4 bg-white/10 rounded-xl hover:bg-white/15 transition-all">
-                <div className="p-2 bg-blue-500/20 rounded-lg flex-shrink-0">
-                  <Clock className="h-6 w-6 text-blue-300" />
+              {/* Sound Settings */}
+              <div className="flex items-center gap-3 p-3 bg-slate-800 rounded-lg hover:bg-slate-700 transition-all border border-slate-600">
+                <div className="p-1.5 bg-green-500/20 rounded flex-shrink-0">
+                  {userPreferences.soundEnabled ? (
+                    <Volume2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  ) : (
+                    <VolumeX className="h-4 w-4 text-red-600 dark:text-red-400" />
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-white/90 break-words">Time Acceleration</div>
-                  <div className="text-lg font-bold text-white">
-                    {currentTime.multiplier}x Speed
+                  <div className="text-sm font-medium text-white">Sound Effects</div>
+                  <div className="text-xs text-white/70">
+                    {userPreferences.soundEnabled ? 'Enabled' : 'Disabled'}
                   </div>
-                  <div className="text-xs text-blue-300">Real-time multiplier</div>
                 </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setUserPreferences(prev => ({ ...prev, soundEnabled: !prev.soundEnabled }))}
+                  className="px-2 py-1 text-xs"
+                >
+                  {userPreferences.soundEnabled ? 'Disable' : 'Enable'}
+                </Button>
               </div>
 
-              <div className="lg:col-span-2 flex items-center gap-4 p-4 bg-white/10 rounded-xl hover:bg-white/15 transition-all">
-                <div className="p-2 bg-purple-500/20 rounded-lg flex-shrink-0">
-                  <Calendar className="h-6 w-6 text-purple-300" />
+              {/* Language Settings */}
+              <div className="flex items-center gap-3 p-3 bg-slate-800 rounded-lg hover:bg-slate-700 transition-all border border-slate-600">
+                <div className="p-1.5 bg-blue-500/20 rounded flex-shrink-0">
+                  <Languages className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-white/90">Current IxTime Date</div>
-                  <div className="text-lg font-bold text-white break-words">
-                    {currentTime.dateDisplay}
+                  <div className="text-sm font-medium text-white">Language</div>
+                  <div className="text-xs text-white/70">
+                    English
                   </div>
-                  <div className="text-xs text-purple-300 break-words">Game world timeline synchronized with Discord bot</div>
                 </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="px-3 py-1 cursor-not-allowed opacity-50"
+                  disabled
+                >
+                  Coming Soon
+                </Button>
+              </div>
+
+              {/* Layout Preferences */}
+              <div className="flex items-center gap-3 p-3 bg-slate-800 rounded-lg hover:bg-slate-700 transition-all border border-slate-600">
+                <div className="p-1.5 bg-purple-500/20 rounded flex-shrink-0">
+                  <Layout className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium text-white">Compact Mode</div>
+                  <div className="text-xs text-white/70">
+                    {userPreferences.compactMode ? 'Enabled' : 'Disabled'}
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setUserPreferences(prev => ({ ...prev, compactMode: !prev.compactMode }))}
+                  className="px-2 py-1 text-xs"
+                >
+                  {userPreferences.compactMode ? 'Disable' : 'Enable'}
+                </Button>
+              </div>
+
+              {/* Animation Settings */}
+              <div className="flex items-center gap-3 p-3 bg-slate-800 rounded-lg hover:bg-slate-700 transition-all border border-slate-600">
+                <div className="p-1.5 bg-orange-500/20 rounded flex-shrink-0">
+                  <Eye className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium text-white">Animations</div>
+                  <div className="text-xs text-white/70">
+                    {userPreferences.animations ? 'Enabled' : 'Reduced'}
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setUserPreferences(prev => ({ ...prev, animations: !prev.animations }))}
+                  className="px-2 py-1 text-xs"
+                >
+                  {userPreferences.animations ? 'Reduce' : 'Enable'}
+                </Button>
               </div>
 
               {/* Quick Action Buttons */}
@@ -914,19 +989,19 @@ function CommandPaletteContent({
                   size="sm"
                   variant="outline"
                   onClick={handleRefresh}
-                  className="flex items-center gap-2 text-white/80 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/10 transition-all"
+                  className="flex items-center gap-2"
                 >
                   <RefreshCw className="h-4 w-4" />
-                  <span>Sync Data</span>
+                  <span>Refresh Data</span>
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => window.location.href = "/admin"}
-                  className="flex items-center gap-2 text-white/80 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/10 transition-all"
+                  onClick={() => window.location.href = createUrl("/profile")}
+                  className="flex items-center gap-2"
                 >
-                  <Settings className="h-4 w-4" />
-                  <span>Full Settings</span>
+                  <User className="h-4 w-4" />
+                  <span>Profile Settings</span>
                 </Button>
               </div>
             </div>
@@ -945,8 +1020,8 @@ function CommandPaletteContent({
       </DynamicIsland>
       {/* Dropdown content - only on desktop */}
       {isExpanded && (
-        <div className="hidden lg:block absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-50">
-          <div className="bg-gradient-to-r from-slate-800/95 via-slate-700/95 to-slate-800/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden min-w-[500px] max-w-[800px]">
+        <div className="hidden lg:block absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-[10002]">
+          <div className="bg-slate-800/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[500px] max-w-[800px]">
             {renderExpandedContent()}
           </div>
         </div>
@@ -957,7 +1032,7 @@ function CommandPaletteContent({
 
 export function CommandPalette({ className, isSticky }: CommandPaletteProps) {
   return (
-    <div className={`w-full max-w-none flex items-center justify-center ${className || ''}`}>
+    <div className={`w-full max-w-none flex items-center justify-center z-[10000] ${className || ''}`}>
       <DynamicIslandProvider initialSize={SIZE_PRESETS.COMPACT_LONG}>
         <CommandPaletteWrapper isSticky={isSticky} />
       </DynamicIslandProvider>

@@ -84,27 +84,27 @@ export function CountryCard({
     if (score > 100) {
       return {
         rating: "Excellent",
-        color: "text-green-500",
+        color: "text-green-600 dark:text-green-400",
         description: "Exceptional output per land/pop density",
       };
     }
     if (score > 50) {
       return {
         rating: "Good",
-        color: "text-sky-500",
+        color: "text-sky-600 dark:text-sky-400",
         description: "Strong efficiency & resource use",
       };
     }
     if (score > 25) {
       return {
         rating: "Average",
-        color: "text-yellow-500",
+        color: "text-yellow-600 dark:text-yellow-400",
         description: "Moderate economic efficiency",
       };
     }
     return {
       rating: "Needs Impr.",
-      color: "text-orange-500",
+      color: "text-orange-600 dark:text-orange-400",
       description: "Low economic efficiency",
     };
   };
@@ -118,13 +118,13 @@ export function CountryCard({
       icon: Users,
       label: "Population",
       value: formatPopulation(country.currentPopulation),
-      color: "text-sky-500",
+      color: "text-sky-600 dark:text-sky-400",
     },
     {
       icon: TrendingUp,
       label: "GDP p.c.",
       value: formatCurrency(country.currentGdpPerCapita),
-      color: "text-green-500",
+      color: "text-green-600 dark:text-green-400",
     },
     {
       icon: MapPin,
@@ -133,7 +133,7 @@ export function CountryCard({
         country.landArea != null
           ? `${formatPopulation(country.landArea)} km²`
           : "N/A",
-      color: "text-orange-500",
+      color: "text-orange-600 dark:text-orange-400",
     },
     {
       icon: Scaling,
@@ -149,7 +149,7 @@ export function CountryCard({
   return (
     <Card className="flex flex-col h-full group transition-all hover:shadow-xl relative">
       {updateError && (
-        <div className="absolute inset-x-0 top-0 p-2 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 text-xs rounded-t-lg z-10 text-center">
+        <div className="absolute inset-x-0 top-0 p-2 bg-destructive/10 text-destructive text-xs rounded-t-lg z-10 text-center">
           Update failed: {updateError}
         </div>
       )}
@@ -247,11 +247,7 @@ export function CountryCard({
                 <TooltipTrigger asChild>
                   <Badge
                     variant="outline"
-                    className="text-xs"
-                    style={{
-                      color: efficiency.color,
-                      borderColor: `${efficiency.color}80`,
-                    }}
+                    className={`text-xs ${efficiency.color}`}
                   >
                     {efficiency.rating}
                   </Badge>
