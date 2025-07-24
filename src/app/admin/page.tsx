@@ -50,6 +50,10 @@ import { formatPopulation, formatCurrency } from '~/lib/chart-utils';
 
 export default function AdminPage() {
   // All hooks must be called unconditionally and at the top
+  useEffect(() => {
+    document.title = "Admin Panel - IxStats";
+  }, []);
+
   const { user, isLoaded } = useUser();
   const [config, setConfig] = useState({
     globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR as number,

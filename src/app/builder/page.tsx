@@ -12,10 +12,15 @@ import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
+import { createUrl } from "~/lib/url-utils";
 
 type BuilderPhase = 'select' | 'customize' | 'preview';
 
 export default function CreateCountryBuilder() {
+  useEffect(() => {
+    document.title = "Country Builder - IxStats";
+  }, []);
+
   const { user } = useUser();
   const router = useRouter();
   const [currentPhase, setCurrentPhase] = useState<BuilderPhase>('select');
@@ -34,6 +39,45 @@ export default function CreateCountryBuilder() {
       try {
         const countries = await parseEconomyData();
         setAllCountries(countries);
+        
+        // Check for imported data from wiki
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('import') === 'true') {
+          const importedDataStr = localStorage.getItem('builder_imported_data');
+          if (importedDataStr) {
+            try {
+              const importedData = JSON.parse(importedDataStr);
+              console.log('Found imported data:', importedData);
+              
+              // Create a synthetic country data from imported data
+              const syntheticCountry: RealCountryData = {
+                name: importedData.name,
+                countryCode: 'IMPORT',
+                population: importedData.population || 1000000,
+                gdpPerCapita: importedData.gdpPerCapita || 25000,
+                gdp: importedData.gdp || (importedData.population || 1000000) * (importedData.gdpPerCapita || 25000),
+                unemploymentRate: 5.0,
+                inflationRate: 2.0,
+                growthRate: 2.5,
+                taxRevenuePercent: 20.0,
+                governmentSpending: 18.0,
+                continent: 'Unknown',
+                region: 'Unknown'
+              };
+              
+              setSelectedCountry(syntheticCountry);
+              setCurrentPhase('customize');
+              
+              // Clear the imported data
+              localStorage.removeItem('builder_imported_data');
+              
+              // Update URL to remove import parameter
+              window.history.replaceState({}, '', window.location.pathname);
+            } catch (error) {
+              console.error('Failed to parse imported data:', error);
+            }
+          }
+        }
       } catch (error) {
         console.error('Failed to load country data:', error);
       } finally {
@@ -71,14 +115,10 @@ export default function CreateCountryBuilder() {
       const result = await createCountryMutation.mutateAsync({
         userId: user.id,
         countryName: economicInputs.countryName,
-        economicData: {
-          baselinePopulation: economicInputs.population,
-          baselineGdpPerCapita: economicInputs.gdpPerCapita,
-          populationGrowthRate: economicInputs.populationGrowthRate,
-          realGDPGrowthRate: economicInputs.gdpGrowthRate,
-          inflationRate: economicInputs.inflationRate,
-          unemploymentRate: economicInputs.unemploymentRate,
-          // Add any other economic data fields from economicInputs
+        initialData: {
+          baselinePopulation: economicInputs.coreIndicators.totalPopulation,
+          baselineGdpPerCapita: economicInputs.coreIndicators.gdpPerCapita,
+          // Add other fields as needed from the nested structure
         }
       });
 
@@ -86,7 +126,7 @@ export default function CreateCountryBuilder() {
       saveBaselineToStorage(economicInputs);
       
       // Redirect to the newly created country
-      router.push(`/mycountry`);
+      router.push(createUrl(`/mycountry`));
     } catch (error) {
       console.error('Failed to create country:', error);
       alert(`Failed to create ${economicInputs.countryName}. Please try again.`);

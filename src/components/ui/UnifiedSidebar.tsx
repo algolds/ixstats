@@ -138,7 +138,7 @@ export function UnifiedSidebar({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.18 }}
-                className="fixed left-0 right-0 mx-auto z-50 w-72 max-w-[90vw] bg-white dark:bg-neutral-900 rounded-xl shadow-lg border border-blue-200 dark:border-blue-800 p-3"
+                className="fixed left-0 right-0 mx-auto z-[10002] w-72 max-w-[90vw] bg-white dark:bg-neutral-900 rounded-xl shadow-lg border border-blue-200 dark:border-blue-800 p-3"
                 style={{ top: 70 }}
                 onClick={e => e.stopPropagation()}
               >
@@ -163,7 +163,7 @@ export function UnifiedSidebar({
                     {n.description && <div className="text-xs text-muted-foreground mt-0.5">{n.description}</div>}
                   </Link>
                 ))}
-                <div className="mt-2 text-xs text-blue-500 text-center cursor-pointer hover:underline" onClick={() => { setShowNotifications(false); router.push('/notifications'); }}>View all</div>
+                <div className="mt-2 text-xs text-blue-500 text-center cursor-pointer hover:underline" onClick={() => { setShowNotifications(false); router.push(createUrl('/notifications')); }}>View all</div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -250,7 +250,7 @@ export function UnifiedSidebar({
   return (
     <>
       {/* Mobile Hamburger Button */}
-      <div className="md:hidden fixed top-4 left-4 z-[60]">
+      <div className="md:hidden fixed top-4 left-4 z-[9999]">
         <Button
           variant="ghost"
           size="icon"
@@ -270,7 +270,7 @@ export function UnifiedSidebar({
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -320, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed inset-0 z-50 flex md:hidden"
+            className="fixed inset-0 z-[9998] flex md:hidden"
             style={{ background: "rgba(16,24,40,0.25)", backdropFilter: "blur(8px)" }}
             onClick={handleMobileClose}
           >

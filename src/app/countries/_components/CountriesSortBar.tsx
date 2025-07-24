@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuGroupLabel, DropdownMenuSeparator, DropdownMenuItem } from '~/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuGroup, DropdownMenuGroupLabel, DropdownMenuSeparator, DropdownMenuItem } from '~/components/ui/dropdown-menu';
 import { SortAsc, SortDesc, CheckCircle } from 'lucide-react';
 
 const sortOptions = [
@@ -37,22 +37,24 @@ export default function CountriesSortBar({
               {sortOptions.find(o => o.value === sortField)?.label || 'Sort'}
             </span>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuGroupLabel>Sort By</DropdownMenuGroupLabel>
-            <DropdownMenuSeparator />
-            {sortOptions.map(opt => (
-              <DropdownMenuItem key={opt.value} onClick={() => onSortChange(opt.value as any, sortDirection)}>
-                {opt.label}
-                {sortField === opt.value && <CheckCircle className="ml-auto h-4 w-4 text-primary" />}
+          <DropdownMenuContent align="start" className="backdrop-blur-md bg-background/90 border border-border/50">
+            <DropdownMenuGroup>
+              <DropdownMenuGroupLabel>Sort By</DropdownMenuGroupLabel>
+              <DropdownMenuSeparator />
+              {sortOptions.map(opt => (
+                <DropdownMenuItem key={opt.value} onClick={() => onSortChange(opt.value as any, sortDirection)}>
+                  {opt.label}
+                  {sortField === opt.value && <CheckCircle className="ml-auto h-4 w-4 text-primary" />}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onSortChange(sortField, 'asc')}>
+                Ascending {sortDirection === 'asc' && <CheckCircle className="ml-auto h-4 w-4 text-primary" />}
               </DropdownMenuItem>
-            ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => onSortChange(sortField, 'asc')}>
-              Ascending {sortDirection === 'asc' && <CheckCircle className="ml-auto h-4 w-4 text-primary" />}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onSortChange(sortField, 'desc')}>
-              Descending {sortDirection === 'desc' && <CheckCircle className="ml-auto h-4 w-4 text-primary" />}
-            </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onSortChange(sortField, 'desc')}>
+                Descending {sortDirection === 'desc' && <CheckCircle className="ml-auto h-4 w-4 text-primary" />}
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

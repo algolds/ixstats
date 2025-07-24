@@ -1,29 +1,42 @@
-"use client";
+'use client';
 
-// Simple CountryFlag component - now uses SimpleFlag
-export { SimpleFlag as CountryFlag } from "~/components/SimpleFlag";
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 
-// Example usage component
-export function CountryFlagExample() {
-  const countries = [
-    "United_States",
-    "Germany", 
-    "Japan",
-    "France",
-    "United_Kingdom"
-  ];
+const CountryFlag = ({
+  countryCode,
+  countryName,
+  className,
+}: {
+  countryCode: string;
+  countryName: string;
+  className?: string;
+}) => {
+  // Use a root-relative path. Next.js's Image component will automatically
+  // prepend the basePath. For example, this will become /projects/ixstats/flags/US.svg
+  const [imgSrc, setImgSrc] = useState(`/flags/${countryCode}.svg`);
+
+  useEffect(() => {
+    // Update the src when the countryCode changes, still using a root-relative path.
+    setImgSrc(`/flags/${countryCode}.svg`);
+  }, [countryCode]);
+
+  const handleError = () => {
+    // The placeholder should also use a root-relative path.
+    setImgSrc(`/placeholder-flag.svg`);
+  };
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Country Flags Example</h3>
-      <div className="flex flex-wrap gap-4">
-        {countries.map((country) => (
-          <div key={country} className="flex items-center gap-2">
-            <CountryFlag countryName={country} size="md" />
-            <span className="text-sm">{country.replace(/_/g, ' ')}</span>
-          </div>
-        ))}
-      </div>
-    </div>
+    <Image
+      src={imgSrc}
+      alt={`Flag of ${countryName}`}
+      width={32}
+      height={24}
+      className={`h-6 w-8 object-cover ${className ?? ''}`}
+      onError={handleError}
+      unoptimized // Useful for SVG images to prevent optimization issues
+    />
   );
-}
+};
+
+export default CountryFlag;

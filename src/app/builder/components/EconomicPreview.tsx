@@ -16,6 +16,7 @@ interface EconomicPreviewProps {
   allCountries: RealCountryData[];
   onBack: () => void;
   onConfirm: () => void;
+  isCreating?: boolean;
 }
 
 export function EconomicPreview({
@@ -23,7 +24,8 @@ export function EconomicPreview({
   referenceCountry,
   allCountries,
   onBack,
-  onConfirm
+  onConfirm,
+  isCreating = false
 }: EconomicPreviewProps) {
   const comparisons = useMemo(() => {
     return generateEconomicComparisons(inputs, allCountries.filter(c => c.name !== "World"));
@@ -193,8 +195,13 @@ export function EconomicPreview({
               This will finalize {inputs.countryName} and make it available for use in your campaigns.
             </p>
           </div>
-          <button onClick={onConfirm} className="btn-primary flex-shrink-0">
-            <CheckCircle className="h-5 w-5 mr-2" /> Create Country
+          <button 
+            onClick={onConfirm} 
+            disabled={isCreating}
+            className={`btn-primary flex-shrink-0 ${isCreating ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            <CheckCircle className="h-5 w-5 mr-2" /> 
+            {isCreating ? 'Creating...' : 'Create Country'}
           </button>
         </div>
       </div>

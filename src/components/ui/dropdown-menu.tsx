@@ -66,7 +66,7 @@ function DropdownMenuContent({
         <DropdownMenuPrimitive.Popup
           data-slot="dropdown-menu-content"
           className={cn(
-            "bg-popover text-popover-foreground max-h-[var(--available-height)] max-w-[var(--available-width)] min-w-[8rem] overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md transition-[transform,scale,opacity] duration-150 ease-out",
+            "backdrop-blur-md bg-popover/90 text-popover-foreground max-h-[var(--available-height)] max-w-[var(--available-width)] min-w-[8rem] overflow-x-hidden overflow-y-auto rounded-md border border-border/50 p-1 shadow-md transition-[transform,scale,opacity] duration-150 ease-out",
             "origin-[var(--transform-origin)] data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
             className
           )}

@@ -194,10 +194,10 @@ function ExecutiveSummaryImpl({
                         />
                       </div>
                       <div className="flex-1">
-                        <div className="font-medium text-[var(--color-text-primary)]">
+                        <div className="font-medium text-foreground">
                           {country.name}
                         </div>
-                        <div className="text-sm text-[var(--color-text-muted)]">
+                        <div className="text-sm text-muted-foreground">
                           ${(country.currentTotalGdp / 1e12).toFixed(1)}T GDP
                         </div>
                       </div>
@@ -249,15 +249,15 @@ function TrendItem({
   return (
     <div className="trend-item">
       <div className="flex items-center justify-between mb-1">
-        <span className="font-medium text-[var(--color-text-primary)]">
+        <span className="font-medium text-foreground">
           {label}
         </span>
-        <span className="font-bold text-[var(--color-text-primary)]">
+        <span className="font-bold text-foreground">
           {value > 0 ? '+' : ''}{value}{suffix}
         </span>
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-sm text-[var(--color-text-muted)]">
+        <span className="text-sm text-muted-foreground">
           {description}
         </span>
         {/* You can use TrendIndicator here if desired */}

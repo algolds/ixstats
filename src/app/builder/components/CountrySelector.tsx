@@ -2,12 +2,15 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, Globe, DollarSign, Users, TrendingUp, Filter as FilterIcon } from "lucide-react";
+import { Search, Globe, DollarSign, Users, TrendingUp, Filter as FilterIcon, Download, ExternalLink } from "lucide-react";
 import type { RealCountryData } from "../lib/economy-data-service";
 import { getEconomicTier } from "../lib/economy-data-service";
 import { getTierStyle } from "~/lib/theme-utils"; // Assuming you have this
+import { useRouter } from "next/navigation";
+import { createUrl } from "~/lib/url-utils";
 
 export function CountrySelector({ countries, onCountrySelect, selectedCountry }: CountrySelectorProps) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTierFilter, setSelectedTierFilter] = useState<string>("all");
 
@@ -51,23 +54,56 @@ export function CountrySelector({ countries, onCountrySelect, selectedCountry }:
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-[var(--color-text-primary)] mb-2 flex items-center">
-          <Globe className="h-5 w-5 mr-2 text-[var(--color-brand-primary)]" />
-          Choose a Foundation Country
-        </h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-xl font-semibold text-[var(--color-text-primary)] flex items-center">
+            <Globe className="h-5 w-5 mr-2 text-[var(--color-brand-primary)]" />
+            Choose a Foundation Country
+          </h2>
+          <button
+            onClick={() => router.push(createUrl('/builder/import'))}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+          >
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">Import from Wiki</span>
+            <span className="sm:hidden">Import</span>
+            <ExternalLink className="h-3 w-3 opacity-70" />
+          </button>
+        </div>
         <p className="text-[var(--color-text-muted)]">
           Select a real-world country to use as the economic foundation for your custom nation. All parameters can be customized in the next step.
         </p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        {/* All Countries Tab */}
+        <button
+          onClick={() => setSelectedTierFilter("all")}
+          className={`p-3 rounded-lg border transition-all duration-200 ${
+            selectedTierFilter === "all"
+              ? 'bg-[var(--color-brand-primary)] border-[var(--color-brand-primary)] text-white shadow-lg'
+              : 'border-[var(--color-border-primary)] hover:bg-[var(--color-bg-tertiary)]'
+          }`}
+        >
+          <div className="text-lg font-semibold">{countries.filter(c => c.name !== "World").length}</div>
+          <div className="text-sm">All Countries</div>
+        </button>
+        
         {Object.entries(tierStats).map(([tier, count]) => {
           const tierStyle = getTierStyle(tier);
+          const isSelected = selectedTierFilter === tier;
           return (
-            <div key={tier} className={`p-3 rounded-lg border ${tierStyle.className.replace('tier-badge ', '')} bg-opacity-10`}>
+            <button
+              key={tier}
+              onClick={() => setSelectedTierFilter(tier)}
+              className={`p-3 rounded-lg border transition-all duration-200 ${
+                isSelected
+                  ? `${tierStyle.className.replace('tier-badge ', '')} bg-opacity-20 border-current shadow-lg`
+                  : `${tierStyle.className.replace('tier-badge ', '')} bg-opacity-10 hover:bg-opacity-15`
+              }`}
+            >
               <div className="text-lg font-semibold" style={{color: tierStyle.color}}>{count}</div>
               <div className="text-sm" style={{color: tierStyle.color}}>{tier}</div>
-            </div>
+            </button>
           );
         })}
       </div>

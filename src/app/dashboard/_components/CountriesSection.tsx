@@ -13,6 +13,7 @@ import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { useBulkFlagCache } from "~/hooks/useBulkFlagCache";
 import { useMemo } from "react";
+import { createUrl } from "~/lib/url-utils";
 
 interface CountriesSectionProps {
   // Rename to end with Action so Next.js knows it's a client callback
@@ -20,7 +21,7 @@ interface CountriesSectionProps {
 }
 
 class CountriesErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
-  constructor(props: any) {
+  constructor(props: {children: React.ReactNode}) {
     super(props);
     this.state = { hasError: false };
   }
@@ -102,6 +103,10 @@ function CountriesSectionImpl({
   const rawCountries = listData?.countries ?? [];
   const transformedCountries: CountryStats[] = rawCountries.map(transformCountryData);
 
+  // Use bulk flag cache for all countries - moved before early return
+  const countryNames = useMemo(() => transformedCountries.map(c => c.name), [transformedCountries]);
+  const { flagUrls, isLoading: flagsLoading } = useBulkFlagCache(countryNames);
+
   const handleRefreshCountries = () => {
     // no countryId triggers bulk‐update path
     updateAllMutation.mutate({});
@@ -111,10 +116,6 @@ function CountriesSectionImpl({
     void refetchCountries();
     onGlobalRefreshAction();
   };
-
-  // Use bulk flag cache for all countries
-  const countryNames = useMemo(() => transformedCountries.map(c => c.name), [transformedCountries]);
-  const { flagUrls, isLoading: flagsLoading } = useBulkFlagCache(countryNames);
 
   // Loading skeleton
   if (countriesLoading && transformedCountries.length === 0) {
@@ -208,7 +209,7 @@ function CountriesSectionImpl({
             <Button
               variant="secondary"
               className="mt-6"
-              onClick={() => router.push("/admin")}
+              onClick={() => router.push(createUrl("/admin"))}
             >
               Go to Admin Panel
             </Button>

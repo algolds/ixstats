@@ -21,6 +21,7 @@ import { GlassCard } from '~/components/ui/enhanced-card';
 import { FastAverageColor } from 'fast-average-color';
 import { useRef } from 'react';
 import { cn } from '~/lib/utils';
+import { createUrl } from '~/lib/url-utils';
 
 export interface CountryData {
   id: string;
@@ -80,7 +81,7 @@ export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: pr
   )}`;
 
   const goToDetail = () => {
-    router.push(`/countries/${country.id}`);
+    router.push(createUrl(`/countries/${country.id}`));
   };
 
   return (

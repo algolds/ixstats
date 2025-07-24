@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { type RouterOutputs } from "~/trpc/react";
 import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
+import { createUrl } from "~/lib/url-utils";
 
 const DM_INPUT_TYPES = [
   { value: "population_adjustment", label: "Population Adjustment", icon: Users, color: "blue" },
@@ -593,13 +594,13 @@ export default function DmDashboard() {
           </p>
           <div className="flex gap-4 justify-center">
             <button 
-              onClick={() => router.push("/dashboard")}
+              onClick={() => router.push(createUrl("/dashboard"))}
               className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium"
             >
               View Dashboard
             </button>
             <button 
-              onClick={() => router.push("/countries")}
+              onClick={() => router.push(createUrl("/countries"))}
               className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md font-medium"
             >
               Browse Countries

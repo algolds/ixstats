@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
@@ -39,7 +39,7 @@ import {
 } from "lucide-react";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
-import { CountryFlag } from "~/app/_components/CountryFlag";
+import CountryFlag from "~/app/_components/CountryFlag";
 import { useTheme } from "~/context/theme-context";
 import { createUrl } from "~/lib/url-utils";
 
@@ -327,8 +327,8 @@ function ProfileContent() {
                                 />
                               ) : (
                                 <CountryFlag 
+                                  countryCode={userProfile.country.name.substring(0, 2).toUpperCase()} 
                                   countryName={userProfile.country.name} 
-                                  size="md" 
                                   className="rounded shadow-sm"
                                 />
                               )}
@@ -636,6 +636,10 @@ function ProfileContent() {
 }
 
 export default function ProfilePage() {
+  useEffect(() => {
+    document.title = "Profile - IxStats";
+  }, []);
+
   // Show message when Clerk is not configured
   if (!isClerkConfigured) {
     return (

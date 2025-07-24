@@ -84,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           imageUrl: clerkUser.user.imageUrl,
         } : null,
         isLoaded: clerkUser.isLoaded,
-        isSignedIn: clerkUser.isSignedIn,
+        isSignedIn: Boolean(clerkUser.isSignedIn),
         signOut: clerkAuth.signOut,
       }
     : fallbackAuth;
@@ -126,22 +126,45 @@ export function SignedOut({ children }: { children: React.ReactNode }) {
   return !isSignedIn ? <>{children}</> : null;
 }
 
-export function SignInButton({ children, mode, ...props }: { children?: React.ReactNode; mode?: string; [key: string]: any }) {
+export function SignInButton({ children, mode, asChild, ...props }: { children?: React.ReactNode; mode?: string; asChild?: boolean; [key: string]: any }) {
+  const [isMounted, setIsMounted] = useState(false);
+  
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   if (!isClerkConfigured) {
+    const handleClick = () => {
+      const envType = isDevEnvironment ? 'development' : 'production';
+      const keyType = isDevEnvironment ? 'pk_test_* and sk_test_*' : 'pk_live_* and sk_live_*';
+      const envFile = isDevEnvironment ? '.env.local' : '.env.production';
+      alert(`Authentication is not configured for ${envType}.\n\nTo enable authentication:\n1. Add ${keyType} Clerk keys to ${envFile}\n2. Restart the ${envType} server`);
+    };
+
+    // Use consistent props for both server and client to avoid hydration mismatch
+    const commonProps = {
+      onClick: handleClick,
+      title: "Authentication is not configured in this environment"
+    };
+
+    if (asChild && children && React.isValidElement(children)) {
+      // Clone the child element and add our click handler, but filter out asChild prop
+      return React.cloneElement(children, commonProps);
+    }
+
     // Return a placeholder button when Clerk is disabled
+    // Filter out props that shouldn't be passed to DOM elements
+    const { asChild: _, mode: __, ...domProps } = props;
     return (
       <button 
-        {...props}
-        onClick={() => {
-          const envType = isDevEnvironment ? 'development' : 'production';
-          const keyType = isDevEnvironment ? 'pk_test_* and sk_test_*' : 'pk_live_* and sk_live_*';
-          const envFile = isDevEnvironment ? '.env.local' : '.env.production';
-          alert(`Authentication is not configured for ${envType}.\n\nTo enable authentication:\n1. Add ${keyType} Clerk keys to ${envFile}\n2. Restart the ${envType} server`);
-        }}
-        className={props.className}
-        title="Authentication is not configured in this environment"
+        {...domProps}
+        {...commonProps}
       >
-        {children || `Sign In (${isDevEnvironment ? 'Dev' : 'Prod'} Mode)`}
+        {children || (
+          <div className="flex items-center gap-2">
+            <span>{`Sign In (${isDevEnvironment ? 'Dev' : 'Prod'} Mode)`}</span>
+          </div>
+        )}
       </button>
     );
   }
@@ -167,12 +190,40 @@ export function SignInButton({ children, mode, ...props }: { children?: React.Re
     console.log('✅ Development Clerk keys correctly configured');
   }
   
-  // Use actual Clerk SignInButton when configured
-  return (
-    <ClerkSignInButton mode={mode as any} {...props}>
-      {children}
-    </ClerkSignInButton>
-  );
+  // Only render Clerk SignInButton on the client to avoid hydration mismatch
+  if (!isMounted) {
+    // Return a placeholder that matches the final rendered output
+    if (asChild && children && React.isValidElement(children)) {
+      return React.cloneElement(children, { onClick: () => {} });
+    }
+    return (
+      <button className={props.className} onClick={() => {}}>
+        {children || (
+          <div className="flex items-center gap-2">
+            <span>Sign In</span>
+          </div>
+        )}
+      </button>
+    );
+  }
+
+  // Use actual Clerk SignInButton when configured and mounted
+  if (asChild && children && React.isValidElement(children)) {
+    // For asChild pattern, filter out asChild prop since ClerkSignInButton doesn't support it
+    const { asChild: _, ...clerkProps } = props;
+    return (
+      <ClerkSignInButton mode={mode as any} {...clerkProps}>
+        {children}
+      </ClerkSignInButton>
+    );
+  } else {
+    // For normal button pattern, pass through all props
+    return (
+      <ClerkSignInButton mode={mode as any} {...props}>
+        {children}
+      </ClerkSignInButton>
+    );
+  }
 }
 
 export function UserButton(props: any) {

@@ -15,6 +15,12 @@ import type {
   CalculationLog,
   EconomicConfig
 } from "~/types/ixstats";
+import { 
+  getEconomicTierFromGdpPerCapita, 
+  getPopulationTierFromPopulation, 
+  EconomicTier, 
+  PopulationTier 
+} from "~/types/ixstats";
 
 // Remove unused import - we use ctx.db instead
 
@@ -291,7 +297,7 @@ export const adminRouter = createTRPCRouter({
   getCalculationLogs: publicProcedure
     .input(z.object({
       limit: z.number().optional().default(10),
-    }).default({}))
+    }).optional().default({}))
     .query(async ({ ctx, input }) => {
       const limit = input.limit;
       try {
@@ -507,14 +513,9 @@ export const adminRouter = createTRPCRouter({
               const currentPopulation = country.population;
               const currentGdpPerCapita = country.gdpPerCapita;
               const currentTotalGdp = totalGdp;
-              // Import enums for economicTier and populationTier
-              const { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation, EconomicTier, PopulationTier } = require("~/types/ixstats");
-              const economicTier = getEconomicTierFromGdpPerCapita
-                ? getEconomicTierFromGdpPerCapita(country.gdpPerCapita)
-                : EconomicTier.DEVELOPING;
-              const populationTier = getPopulationTierFromPopulation
-                ? getPopulationTierFromPopulation(country.population)
-                : PopulationTier.TIER_1;
+              // Calculate tiers
+              const economicTier = getEconomicTierFromGdpPerCapita(country.gdpPerCapita);
+              const populationTier = getPopulationTierFromPopulation(country.population);
               await ctx.db.country.create({
                 data: {
                   name: country.country,
@@ -551,13 +552,9 @@ export const adminRouter = createTRPCRouter({
               const currentPopulation = country.population;
               const currentGdpPerCapita = country.gdpPerCapita;
               const currentTotalGdp = totalGdp;
-              const { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation, EconomicTier, PopulationTier } = require("~/types/ixstats");
-              const economicTier = getEconomicTierFromGdpPerCapita
-                ? getEconomicTierFromGdpPerCapita(country.gdpPerCapita)
-                : EconomicTier.DEVELOPING;
-              const populationTier = getPopulationTierFromPopulation
-                ? getPopulationTierFromPopulation(country.population)
-                : PopulationTier.TIER_1;
+              // Calculate tiers
+              const economicTier = getEconomicTierFromGdpPerCapita(country.gdpPerCapita);
+              const populationTier = getPopulationTierFromPopulation(country.population);
               await ctx.db.country.update({
                 where: { id: existing.id },
                 data: {

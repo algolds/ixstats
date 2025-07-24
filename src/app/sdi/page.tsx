@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
@@ -94,7 +94,7 @@ function SdiContent() {
 
   // Redirect to setup if no country
   if (isLoaded && user && !profileLoading && userProfile && !userProfile.countryId) {
-    router.push('/setup');
+    router.push(createUrl('/setup'));
     return null;
   }
 
@@ -419,6 +419,10 @@ function SdiContent() {
 }
 
 export default function SovereignDigitalInterface() {
+  useEffect(() => {
+    document.title = "Strategic Defense Initiative - IxStats";
+  }, []);
+
   // Show message when Clerk is not configured
   if (!isClerkConfigured) {
     return (

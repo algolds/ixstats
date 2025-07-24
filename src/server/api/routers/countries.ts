@@ -357,7 +357,7 @@ export const countriesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const where: Record<string, unknown> = {};
       if (input?.search) {
-        where.name = { contains: input.search, mode: "insensitive" };
+        where.name = { contains: input.search };
       }
       if (input?.continent) {
         where.continent = input.continent;
@@ -1881,6 +1881,39 @@ export const countriesRouter = createTRPCRouter({
       } catch (error) {
         console.error("Failed to get economic data:", error);
         throw new Error("Failed to retrieve economic data");
+      }
+    }),
+
+  // Search wiki for countries
+  searchWiki: publicProcedure
+    .input(z.object({
+      query: z.string(),
+      site: z.enum(['ixwiki', 'iiwiki']),
+      categoryFilter: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        const { searchWiki } = await import("~/lib/wiki-search-service");
+        return await searchWiki(input.query, input.site, input.categoryFilter);
+      } catch (error) {
+        console.error("Wiki search failed:", error);
+        throw new Error("Failed to search wiki");
+      }
+    }),
+
+  // Parse country infobox from wiki
+  parseInfobox: publicProcedure
+    .input(z.object({
+      pageName: z.string(),
+      site: z.enum(['ixwiki', 'iiwiki']),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        const { parseCountryInfobox } = await import("~/lib/wiki-search-service");
+        return await parseCountryInfobox(input.pageName, input.site);
+      } catch (error) {
+        console.error("Infobox parsing failed:", error);
+        throw new Error("Failed to parse country infobox");
       }
     }),
 });

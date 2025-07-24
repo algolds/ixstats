@@ -18,6 +18,7 @@ import CountriesFilterSidebar from '../countries/_components/CountriesFilterSide
 import CountriesSortBar from '../countries/_components/CountriesSortBar';
 import { CountryComparisonModal } from '../countries/_components/CountryComparisonModal';
 import { useCountryComparison } from '~/hooks/useCountryComparison';
+import { createUrl } from '~/lib/url-utils';
 
 import type { PageCountryData } from '../countries/_components/CountriesGrid';
 
@@ -257,7 +258,7 @@ export default function ExplorePage() {
   // Handle country selection from comparison modal
   const handleCountrySelect = (countryId: string) => {
     // Navigate to country detail page
-    router.push(`/countries/${countryId}`);
+    router.push(createUrl(`/countries/${countryId}`));
   };
 
   return (
