@@ -4,10 +4,11 @@ import { improvedFlagService } from '~/lib/improved-flag-service';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { country: string } }
+  { params }: { params: Promise<{ country: string }> }
 ) {
   try {
-    const country = decodeURIComponent(params.country);
+    const resolvedParams = await params;
+    const country = decodeURIComponent(resolvedParams.country);
     
     if (!country) {
       return NextResponse.json(
@@ -61,11 +62,12 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error(`[Flag API] Error getting flag for ${params.country}:`, error);
+    const resolvedParams = await params;
+    console.error(`[Flag API] Error getting flag for ${resolvedParams.country}:`, error);
     
     return NextResponse.json({
       error: 'Failed to fetch flag',
-      country: params.country,
+      country: resolvedParams.country,
       flagUrl: '/placeholder-flag.svg',
       cached: false,
       isLocal: false,

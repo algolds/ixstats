@@ -20,12 +20,16 @@ export default function CountriesSortBar({
   sortField,
   sortDirection,
   onSortChange,
-  onCompare
+  onCompare,
+  searchTerm,
+  onSearchChange
 }: {
   sortField: 'name' | 'population' | 'gdpPerCapita' | 'totalGdp' | 'economicTier' | 'continent' | 'region' | 'landArea' | 'populationDensity';
   sortDirection: 'asc' | 'desc';
   onSortChange: (field: 'name' | 'population' | 'gdpPerCapita' | 'totalGdp' | 'economicTier' | 'continent' | 'region' | 'landArea' | 'populationDensity', direction: 'asc' | 'desc') => void;
   onCompare?: () => void;
+  searchTerm?: string;
+  onSearchChange?: (value: string) => void;
 }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
@@ -57,6 +61,16 @@ export default function CountriesSortBar({
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
+        
+        {/* Search input (optional) */}
+        {onSearchChange && (
+          <Input
+            placeholder="Search countries..."
+            value={searchTerm || ''}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="w-64"
+          />
+        )}
       </div>
       <Button className="ml-auto" onClick={onCompare}>Compare Countries</Button>
     </div>

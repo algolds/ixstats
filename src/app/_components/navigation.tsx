@@ -161,7 +161,7 @@ export function Navigation() {
           {/* Left: Logo */}
           <div className="flex items-center flex-shrink-0 z-[10005]">
             <Link
-              href="/dashboard"
+              href="/"
               className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent hover:from-blue-300 hover:to-purple-400 transition-all duration-300"
             >
               IxStats™
@@ -241,7 +241,7 @@ export function Navigation() {
                 user={user} 
                 userProfile={userProfile} 
                 setupStatus={setupStatus}
-                userCountryFlag={userCountryFlag}
+                userCountryFlag={userCountryFlag ?? null}
                 flagsLoading={flagsLoading}
               />
             </div>

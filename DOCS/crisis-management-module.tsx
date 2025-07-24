@@ -157,7 +157,6 @@ const CrisisManagement = () => {
 
     return (
       <GlassCard variant="security" 
-        gradient={crisis.color}
         className={`cursor-pointer hover:scale-[1.02] transition-all duration-300 ${
           selectedCrisis?.id === crisis.id ? 'ring-2 ring-blue-400/50' : ''
         }`}
@@ -413,7 +412,7 @@ const CrisisManagement = () => {
           </GlassCard>
 
           {/* Quick Actions */}
-          <GlassCard variant="security" gradient="from-red-500/10 to-orange-500/10">
+          <GlassCard variant="security">
             <h3 className="text-white font-bold mb-4">Emergency Actions</h3>
             
             <div className="space-y-2">

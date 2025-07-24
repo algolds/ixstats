@@ -239,7 +239,6 @@ export function FocusCards({ countryData, selectedFocus, setSelectedFocus }: Foc
               key={area.id}
               variant="glass"
               glow="hover"
-              blur="prominent"
               hover="lift"
               className={`cursor-pointer transition-all duration-300 ${selectedFocus === area.id ? 'ring-2 ring-orange-500/50' : ''}`}
               onClick={() => setSelectedFocus(selectedFocus === area.id ? null : area.id)}

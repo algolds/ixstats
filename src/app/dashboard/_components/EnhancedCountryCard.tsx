@@ -72,7 +72,7 @@ export function EnhancedCountryCard({
   const flagLoading = propFlagLoading !== undefined ? propFlagLoading : individualLoading;
 
   // Update country stats mutation
-  const updateCountryStatsMutation = api.countries.updateCountryStats.useMutation({
+  const updateCountryStatsMutation = api.countries.updateStats.useMutation({
     onSuccess: () => {
       setUpdateError(null);
       onUpdateAction();
@@ -87,18 +87,16 @@ export function EnhancedCountryCard({
     if (updateCountryStatsMutation.isPending) return;
     
     setUpdateError(null);
-    updateCountryStatsMutation.mutate({
-      countryId: country.id,
-    });
+    updateCountryStatsMutation.mutate({ countryId: country.id });
   };
 
   const economicTierStyle = country.economicTier 
-    ? getTierStyle(country.economicTier, 'economic')
-    : { backgroundColor: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))' };
+    ? getTierStyle(country.economicTier)
+    : { className: 'tier-badge', color: 'hsl(var(--muted-foreground))' };
     
   const populationTierStyle = country.populationTier
-    ? getTierStyle(country.populationTier, 'population') 
-    : { backgroundColor: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))' };
+    ? getTierStyle(country.populationTier) 
+    : { className: 'tier-badge', color: 'hsl(var(--muted-foreground))' };
 
   return (
     <Card className="h-full flex flex-col hover:shadow-md transition-shadow duration-200">
@@ -230,10 +228,9 @@ export function EnhancedCountryCard({
             <Badge
               variant="secondary"
               style={{
-                backgroundColor: economicTierStyle.backgroundColor,
                 color: economicTierStyle.color,
               }}
-              className="text-xs font-medium"
+              className={cn("text-xs font-medium", economicTierStyle.className)}
             >
               Economic: {country.economicTier}
             </Badge>
@@ -243,10 +240,9 @@ export function EnhancedCountryCard({
             <Badge
               variant="secondary"
               style={{
-                backgroundColor: populationTierStyle.backgroundColor,
                 color: populationTierStyle.color,
               }}
-              className="text-xs font-medium"
+              className={cn("text-xs font-medium", populationTierStyle.className)}
             >
               Population: Tier {country.populationTier}
             </Badge>

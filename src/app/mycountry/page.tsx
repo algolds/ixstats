@@ -8,7 +8,7 @@ import { api } from "~/trpc/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -23,23 +23,16 @@ import {
   GovernmentSpending,
   IncomeWealthDistribution,
   Demographics,
-  EconomicSummaryWidget,
-  HistoricalEconomicTracker
+  EconomicSummaryWidget
 } from "~/app/countries/_components/economy";
+import { TrendRiskAnalytics } from "~/components/analytics/TrendRiskAnalytics";
+import { ComparativeAnalysis } from "~/app/countries/_components/economy/ComparativeAnalysis";
 import { generateCountryEconomicData, type CountryProfile } from "~/lib/economic-data-templates";
-import { AlertTriangle, Settings, Crown, Save, Edit, BarChart3, Users, DollarSign, Shield, Clock } from "lucide-react";
+import { AlertTriangle, Settings, Crown, Save, Edit, BarChart3, Users, DollarSign, Shield, Clock, TrendingUp, Activity } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import Link from "next/link";
 import { createUrl } from "~/lib/url-utils";
-import type { 
-  CoreEconomicIndicatorsData, 
-  LaborEmploymentData, 
-  FiscalSystemData, 
-  IncomeWealthDistributionData, 
-  GovernmentSpendingData, 
-  DemographicsData 
-} from "~/types/economics";
 
 // Smart normalization helper
 function smartNormalizeGrowthRate(value: number | null | undefined, fallback = 3.0): number {
@@ -106,6 +99,24 @@ function MyCountryContent() {
 
   const { data: systemStatus, isLoading: systemStatusLoading } = api.admin.getSystemStatus.useQuery();
   const currentIxTime = typeof systemStatus?.ixTime?.currentIxTime === 'number' ? systemStatus.ixTime.currentIxTime : 0;
+
+  // Additional data queries for detailed tab
+  const { data: historicalData, isLoading: historicalLoading } = api.countries.getHistoricalData.useQuery(
+    { countryId: country?.id || '' },
+    { enabled: !!country?.id }
+  );
+
+  // Removed duplicate declaration of activeTab/setActiveTab
+
+  const { data: allCountries, isLoading: allCountriesLoading } = api.countries.getAll.useQuery(
+    { limit: 200 }, // Get more countries for comparison
+    { enabled: activeTab === 'detailed' } // Only load when detailed tab is active
+  );
+
+  const { data: forecast, isLoading: forecastLoading } = api.countries.getForecast.useQuery(
+    { id: country?.id || '', years: 10 },
+    { enabled: !!country?.id && activeTab === 'detailed' }
+  );
 
   // Edit mode state
   const [editMode, setEditMode] = useState(false);
@@ -434,7 +445,7 @@ function MyCountryContent() {
       {/* Main Dashboard with Responsive Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="overflow-x-auto">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 min-w-fit">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-9 min-w-fit">
             <TabsTrigger value="overview" className="flex items-center gap-1 text-xs lg:text-sm">
               <BarChart3 className="h-3 w-3 lg:h-4 lg:w-4" />
               <span className="hidden sm:inline">Overview</span>
@@ -470,6 +481,11 @@ function MyCountryContent() {
               <span className="hidden sm:inline">Intelligence</span>
               <span className="sm:hidden">Intel</span>
             </TabsTrigger>
+            <TabsTrigger value="detailed" className="flex items-center gap-1 text-xs lg:text-sm">
+              <Activity className="h-3 w-3 lg:h-4 lg:w-4" />
+              <span className="hidden sm:inline">Detailed</span>
+              <span className="sm:hidden">Detail</span>
+            </TabsTrigger>
             <TabsTrigger value="modeling" className="flex items-center gap-1 text-xs lg:text-sm">
               <BarChart3 className="h-3 w-3 lg:h-4 lg:w-4" />
               <span className="hidden sm:inline">Modeling</span>
@@ -490,27 +506,6 @@ function MyCountryContent() {
             currentIxTime={currentIxTime} 
             isLoading={false} 
           />
-          
-          {/* Economic Summary */}
-          <EconomicSummaryWidget 
-            countryName={country.name} 
-            data={{
-              population: economyData?.core.totalPopulation ?? 0,
-              gdpPerCapita: economyData?.core.gdpPerCapita ?? 0,
-              totalGdp: economyData?.core.nominalGDP ?? 0,
-              economicTier: country.economicTier || "Developing",
-              populationGrowthRate: smartNormalizeGrowthRate(country.populationGrowthRate, 1.0),
-              gdpGrowthRate: smartNormalizeGrowthRate(country.realGDPGrowthRate || country.adjustedGdpGrowth, 3.0),
-              unemploymentRate: economyData?.labor.unemploymentRate ?? 0,
-              laborForceParticipationRate: economyData?.labor.laborForceParticipationRate ?? 0,
-              taxRevenueGDPPercent: economyData?.fiscal.taxRevenueGDPPercent ?? 0,
-              budgetBalance: economyData?.fiscal.budgetDeficitSurplus ?? 0,
-              debtToGDP: economyData?.fiscal.totalDebtGDPRatio ?? 0,
-              populationDensity: country.populationDensity,
-              gdpDensity: country.gdpDensity,
-              landArea: country.landArea,
-            }} 
-          />
         </TabsContent>
 
         <TabsContent value="executive">
@@ -518,15 +513,41 @@ function MyCountryContent() {
         </TabsContent>
 
         <TabsContent value="economy" className="space-y-6">
-          <CoreEconomicIndicators
-            indicators={editedEconomyData?.core ?? { 
-              totalPopulation: 0, nominalGDP: 0, gdpPerCapita: 0, 
-              realGDPGrowthRate: 0, inflationRate: 0, currencyExchangeRate: 0 
-            }}
-            onIndicatorsChangeAction={editMode ? (data) => handleSectionChange('core', data) : () => {}}
-            isReadOnly={!editMode}
-            showComparison={true}
-          />
+          {/* Animated Core Economic Indicators */}
+          <div className="animate-in slide-in-from-bottom-4 duration-700">
+            <CoreEconomicIndicators
+              indicators={editedEconomyData?.core ?? { 
+                totalPopulation: 0, nominalGDP: 0, gdpPerCapita: 0, 
+                realGDPGrowthRate: 0, inflationRate: 0, currencyExchangeRate: 0 
+              }}
+              onIndicatorsChangeAction={editMode ? (data) => handleSectionChange('core', data) : () => {}}
+              isReadOnly={!editMode}
+              showComparison={true}
+            />
+          </div>
+          
+          {/* Animated Economic Summary */}
+          <div className="animate-in slide-in-from-bottom-4 duration-700 delay-200">
+            <EconomicSummaryWidget 
+              countryName={country.name} 
+              data={{
+                population: economyData?.core.totalPopulation ?? 0,
+                gdpPerCapita: economyData?.core.gdpPerCapita ?? 0,
+                totalGdp: economyData?.core.nominalGDP ?? 0,
+                economicTier: country.economicTier || "Developing",
+                populationGrowthRate: smartNormalizeGrowthRate(country.populationGrowthRate, 1.0),
+                gdpGrowthRate: smartNormalizeGrowthRate(country.realGDPGrowthRate || country.adjustedGdpGrowth, 3.0),
+                unemploymentRate: economyData?.labor.unemploymentRate ?? 0,
+                laborForceParticipationRate: economyData?.labor.laborForceParticipationRate ?? 0,
+                taxRevenueGDPPercent: economyData?.fiscal.taxRevenueGDPPercent ?? 0,
+                budgetBalance: economyData?.fiscal.budgetDeficitSurplus ?? 0,
+                debtToGDP: economyData?.fiscal.totalDebtGDPRatio ?? 0,
+                populationDensity: country.populationDensity,
+                gdpDensity: country.gdpDensity,
+                landArea: country.landArea,
+              }} 
+            />
+          </div>
         </TabsContent>
 
         <TabsContent value="labor">
@@ -591,6 +612,250 @@ function MyCountryContent() {
 
         <TabsContent value="intelligence">
           <CountryIntelligenceSection countryId={country.id} />
+        </TabsContent>
+
+        <TabsContent value="detailed" className="space-y-6">
+          {/* Detailed Economic Charts & Analysis */}
+          <div className="space-y-6">
+            {/* Economic Trends & Projections */}
+            <div className="animate-in slide-in-from-bottom-4 duration-700">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Economic Trends & Projections
+                  </CardTitle>
+                  <CardDescription>
+                    Historical performance and future economic projections for {country.name}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {historicalLoading || forecastLoading ? (
+                    <div className="space-y-4">
+                      <div className="h-4 bg-muted animate-pulse rounded" />
+                      <div className="h-64 bg-muted animate-pulse rounded" />
+                      <div className="h-4 bg-muted animate-pulse rounded w-3/4" />
+                    </div>
+                  ) : historicalData && historicalData.length > 0 ? (
+                    <div className="space-y-6">
+                      {/* Historical GDP Chart */}
+                      <div>
+                        <h4 className="text-sm font-medium mb-3">GDP Growth Over Time</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                          <div className="text-center p-3 border rounded-lg">
+                            <div className="text-2xl font-bold text-blue-600">
+                              {historicalData.length}
+                            </div>
+                            <div className="text-sm text-muted-foreground">Data Points</div>
+                          </div>
+                          <div className="text-center p-3 border rounded-lg">
+                            <div className="text-2xl font-bold text-green-600">
+                              ${((historicalData[historicalData.length - 1]?.gdpPerCapita || 0) / 1000).toFixed(0)}k
+                            </div>
+                            <div className="text-sm text-muted-foreground">Latest GDP/Capita</div>
+                          </div>
+                          <div className="text-center p-3 border rounded-lg">
+                            <div className="text-2xl font-bold text-purple-600">
+                              {((historicalData[historicalData.length - 1]?.population || 0) / 1000000).toFixed(1)}M
+                            </div>
+                            <div className="text-sm text-muted-foreground">Latest Population</div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Forecast Data */}
+                      {forecast && (
+                        <div>
+                          <h4 className="text-sm font-medium mb-3">10-Year Projections</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="p-4 border rounded-lg">
+                              <div className="text-lg font-semibold text-blue-600">
+                                ${((forecast.projected2040GdpPerCapita || 0) / 1000).toFixed(0)}k
+                              </div>
+                              <div className="text-sm text-muted-foreground">Projected GDP/Capita (2040)</div>
+                            </div>
+                            <div className="p-4 border rounded-lg">
+                              <div className="text-lg font-semibold text-purple-600">
+                                {((forecast.projected2040Population || 0) / 1000000).toFixed(1)}M
+                              </div>
+                              <div className="text-sm text-muted-foreground">Projected Population (2040)</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p className="mb-2">No Historical Data Available</p>
+                      <p className="text-sm">Historical data will appear once the country has been calculated over time.</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Economic Health & Risk Analysis */}
+            <div className="animate-in slide-in-from-bottom-4 duration-700 delay-200">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Economic Health & Risk Analysis
+                  </CardTitle>
+                  <CardDescription>
+                    Comprehensive analysis of economic stability, trends, and risk factors
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <TrendRiskAnalytics 
+                    countryId={country.id}
+                    userId={user?.id}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Comparative Economic Analysis */}
+            <div className="animate-in slide-in-from-bottom-4 duration-700 delay-300">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    Comparative Analysis
+                  </CardTitle>
+                  <CardDescription>
+                    Compare {country.name} with similar countries and regional peers
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {allCountriesLoading ? (
+                    <div className="space-y-4">
+                      <div className="h-4 bg-muted animate-pulse rounded" />
+                      <div className="h-32 bg-muted animate-pulse rounded" />
+                      <div className="h-4 bg-muted animate-pulse rounded w-2/3" />
+                    </div>
+                  ) : allCountries && allCountries.countries ? (
+                    <ComparativeAnalysis 
+                      userCountry={{
+                        id: country.id,
+                        name: country.name,
+                        region: country.region || 'Unknown',
+                        tier: country.economicTier || 'Developing',
+                        gdp: country.currentTotalGdp || 0,
+                        gdpPerCapita: country.currentGdpPerCapita || 0,
+                        population: country.currentPopulation || 0,
+                        growthRate: country.realGDPGrowthRate || country.adjustedGdpGrowth || 0,
+                        unemployment: economyData?.labor.unemploymentRate || 0,
+                        inflation: economyData?.core.inflationRate || 0,
+                        taxRevenue: economyData?.fiscal.taxRevenueGDPPercent || 0,
+                        debtToGdp: economyData?.fiscal.totalDebtGDPRatio || 0,
+                        competitivenessIndex: 50,
+                        innovationIndex: 50,
+                        color: '#3B82F6'
+                      }}
+                      allCountries={allCountries.countries.map(c => ({
+                        id: c.id,
+                        name: c.name,
+                        region: c.region || 'Unknown',
+                        tier: c.economicTier || 'Developing',
+                        gdp: c.currentTotalGdp || 0,
+                        gdpPerCapita: c.currentGdpPerCapita || 0,
+                        population: c.currentPopulation || 0,
+                        growthRate: c.adjustedGdpGrowth || 0,
+                        unemployment: 5.0, // Default placeholder
+                        inflation: 2.5, // Default placeholder
+                        taxRevenue: 25.0, // Default placeholder
+                        debtToGdp: 60.0, // Default placeholder
+                        competitivenessIndex: 50,
+                        innovationIndex: 50,
+                        color: c.id === country.id ? '#FF6B6B' : '#8884d8'
+                      }))}
+                    />
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p className="mb-2">Comparative Analysis Unavailable</p>
+                      <p className="text-sm">Unable to load country comparison data at this time.</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Historical Economic Timeline */}
+            <div className="animate-in slide-in-from-bottom-4 duration-700 delay-500">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    Economic Timeline & Events
+                  </CardTitle>
+                  <CardDescription>
+                    Track significant economic events and their impact on {country.name}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {historicalLoading ? (
+                    <div className="space-y-4">
+                      <div className="h-4 bg-muted animate-pulse rounded" />
+                      <div className="h-20 bg-muted animate-pulse rounded" />
+                      <div className="h-4 bg-muted animate-pulse rounded w-1/2" />
+                    </div>
+                  ) : historicalData && historicalData.length > 0 ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 border rounded-lg">
+                          <div className="text-sm font-medium text-muted-foreground mb-2">First Recorded Data</div>
+                          <div className="text-base font-semibold">
+                            {new Date(historicalData[0]?.ixTimeTimestamp || 0).toLocaleDateString()}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            GDP/Capita: ${((historicalData[0]?.gdpPerCapita || 0) / 1000).toFixed(0)}k
+                          </div>
+                        </div>
+                        <div className="p-4 border rounded-lg">
+                          <div className="text-sm font-medium text-muted-foreground mb-2">Latest Data Point</div>
+                          <div className="text-base font-semibold">
+                            {new Date(historicalData[historicalData.length - 1]?.ixTimeTimestamp || 0).toLocaleDateString()}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            GDP/Capita: ${((historicalData[historicalData.length - 1]?.gdpPerCapita || 0) / 1000).toFixed(0)}k
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4">
+                        <h4 className="text-sm font-medium mb-3">Economic Milestones</h4>
+                        <div className="space-y-3">
+                          {historicalData.slice(0, 5).map((point, index) => (
+                            <div key={index} className="flex items-center gap-4 p-3 bg-muted/30 rounded-lg">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                              <div className="flex-1">
+                                <div className="text-sm font-medium">
+                                  {new Date(point.ixTimeTimestamp).toLocaleDateString()}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  Population: {(point.population / 1000000).toFixed(1)}M, 
+                                  GDP/Capita: ${(point.gdpPerCapita / 1000).toFixed(0)}k
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p className="mb-2">No Timeline Data</p>
+                      <p className="text-sm">Historical timeline will be populated as economic events are recorded.</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="modeling">

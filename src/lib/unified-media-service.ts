@@ -329,7 +329,7 @@ export class UnifiedMediaService {
   // CACHE MANAGEMENT
   // ============================================================================
 
-  getCacheStats(): CacheStats & { serviceStats: typeof this.stats } {
+  getCacheStats(): CacheStats & { serviceStats: typeof UnifiedMediaService.prototype.stats } {
     return {
       ...this.cache.getStats(),
       serviceStats: { ...this.stats },

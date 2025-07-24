@@ -64,7 +64,6 @@ const RootLayout = ({
           <ClerkProvider
             signInUrl="https://accounts.ixwiki.com/sign-in"
             signUpUrl="https://accounts.ixwiki.com/sign-up"
-            userProfileUrl="https://accounts.ixwiki.com/user"
             afterSignInUrl="/projects/ixstats/dashboard"
             afterSignUpUrl="/projects/ixstats/setup"
             redirectUrl="/projects/ixstats/dashboard"

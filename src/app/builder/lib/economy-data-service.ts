@@ -9,7 +9,12 @@ export interface RealCountryData {
   gdpPerCapita: number;
   taxRevenuePercent: number;
   unemploymentRate: number;
+  inflationRate?: number;
   population: number;
+  growthRate?: number;
+  governmentSpending?: number;
+  continent?: string;
+  region?: string;
   taxesLessSubsidies?: number;
   taxRevenueLcu?: string | number;
   womenBeatWifeDinnerPercent?: number | string;

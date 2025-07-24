@@ -462,7 +462,7 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
       />
 
       {/* Performance Metrics */}
-      <GlassCard variant="economic" blur="prominent" glow="hover" className="md:col-span-3 mb-8 overflow-visible px-8 py-10 flex flex-col items-center justify-center">
+      <GlassCard variant="economic" glow="hover" className="md:col-span-3 mb-8 overflow-visible px-8 py-10 flex flex-col items-center justify-center">
         <div className="flex items-center justify-between mb-6 w-full">
           <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-xl">
             📈
@@ -481,7 +481,7 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
         {/* Expandable Modal for Activity Rings */}
         <Dialog open={!!expandedRing} onOpenChange={v => setExpandedRing(v ? expandedRing : null)}>
           <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-md w-full">
-            <GlassCard variant="economic" blur="moderate" glow="hover" className="p-8 w-full">
+            <GlassCard variant="economic" glow="hover" className="p-8 w-full">
               {expandedRing && (
                 <>
                   <DialogHeader>
@@ -574,7 +574,7 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
       {/* Modals for actions and metrics */}
       <Dialog open={openModal === 'cabinet'} onOpenChange={v => setOpenModal(v ? 'cabinet' : null)}>
         <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-2xl w-full">
-          <GlassCard variant="economic" blur="moderate" glow="hover" className="p-8 w-full">
+          <GlassCard variant="economic" glow="hover" className="p-8 w-full">
             <DialogHeader>
               <DialogTitle>Cabinet Meeting Scheduler</DialogTitle>
               <DialogDescription>Schedule a new cabinet meeting or review upcoming meetings</DialogDescription>
@@ -702,7 +702,7 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
       </Dialog>
       <Dialog open={openModal === 'policy'} onOpenChange={v => setOpenModal(v ? 'policy' : null)}>
         <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-2xl w-full">
-          <GlassCard variant="economic" blur="moderate" glow="hover" className="p-8 w-full">
+          <GlassCard variant="economic" glow="hover" className="p-8 w-full">
             <DialogHeader>
               <DialogTitle>Economic Policy Management</DialogTitle>
               <DialogDescription>Create new economic policies or review existing ones</DialogDescription>
@@ -857,7 +857,7 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
       </Dialog>
       <Dialog open={openModal === 'security'} onOpenChange={v => setOpenModal(v ? 'security' : null)}>
         <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-md w-full">
-          <GlassCard variant="economic" blur="moderate" glow="hover" className="p-8 w-full">
+          <GlassCard variant="economic" glow="hover" className="p-8 w-full">
             <DialogHeader>
               <DialogTitle>National Security Dashboard</DialogTitle>
               <DialogDescription>Real-time security threat assessment and management</DialogDescription>
@@ -911,7 +911,7 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
       </Dialog>
       <Dialog open={openModal === 'gdp'} onOpenChange={v => setOpenModal(v ? 'gdp' : null)}>
         <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-md w-full">
-          <GlassCard variant="economic" blur="moderate" glow="hover" className="p-8 w-full">
+          <GlassCard variant="economic" glow="hover" className="p-8 w-full">
             <DialogHeader>
               <DialogTitle>Total GDP Analysis</DialogTitle>
               <DialogDescription>Historical GDP data and economic projections</DialogDescription>
@@ -958,7 +958,7 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
       </Dialog>
       <Dialog open={openModal === 'gdppc'} onOpenChange={v => setOpenModal(v ? 'gdppc' : null)}>
         <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-md w-full">
-          <GlassCard variant="economic" blur="moderate" glow="hover" className="p-8 w-full">
+          <GlassCard variant="economic" glow="hover" className="p-8 w-full">
             <DialogHeader>
               <DialogTitle>GDP per Capita Analysis</DialogTitle>
               <DialogDescription>Per capita income analysis and global comparison</DialogDescription>
@@ -1012,7 +1012,7 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
       </Dialog>
       <Dialog open={openModal === 'pop'} onOpenChange={v => setOpenModal(v ? 'pop' : null)}>
         <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-md w-full">
-          <GlassCard variant="economic" blur="moderate" glow="hover" className="p-8 w-full">
+          <GlassCard variant="economic" glow="hover" className="p-8 w-full">
             <DialogHeader>
               <DialogTitle>Population Analysis</DialogTitle>
               <DialogDescription>Population growth, demographics, and tier analysis</DialogDescription>
@@ -1073,7 +1073,7 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
       </Dialog>
       <Dialog open={openModal === 'tier'} onOpenChange={v => setOpenModal(v ? 'tier' : null)}>
         <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-md w-full">
-          <GlassCard variant="economic" blur="moderate" glow="hover" className="p-8 w-full">
+          <GlassCard variant="economic" glow="hover" className="p-8 w-full">
             <DialogHeader>
               <DialogTitle>Population Tier System</DialogTitle>
               <DialogDescription>Understanding population tiers and their impact on growth</DialogDescription>

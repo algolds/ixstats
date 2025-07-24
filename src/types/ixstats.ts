@@ -575,17 +575,22 @@ export interface FiscalSystem {
 
 export interface IncomeDistribution {
   quintiles: number[];
+  economicClasses?: string | any[];
   // Add more fields as needed
 }
 
 export interface GovernmentBudget {
   total: number;
   categories: Record<string, number>;
+  spendingCategories?: string | any[];
   // Add more fields as needed
 }
 
 export interface Demographics {
   ageDistribution: Record<string, number>;
+  regions?: string | any[];
+  educationLevels?: string | any[];
+  citizenshipStatuses?: string | any[];
   // Add more fields as needed
 }
 

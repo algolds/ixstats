@@ -108,16 +108,20 @@ export function useEconomyData(countryId: string) {
         interestRates: data.interestRates ?? 0.03,
         debtServiceCosts: data.debtServiceCosts ?? 0,
         taxRates: {
-          personalIncomeTaxRates: (data.fiscalSystem)?.taxRates?.personalIncomeTaxRates || [
-            { bracket: 50000, rate: 0.15 },
-            { bracket: 100000, rate: 0.25 },
-            { bracket: 200000, rate: 0.35 }
-          ],
-          corporateTaxRates: (data.fiscalSystem)?.taxRates?.corporateTaxRates || [
-            { size: 'Small', rate: 0.15 },
-            { size: 'Medium', rate: 0.25 },
-            { size: 'Large', rate: 0.30 }
-          ],
+          personalIncomeTaxRates: Array.isArray((data.fiscalSystem)?.taxRates?.personalIncomeTaxRates) 
+            ? (data.fiscalSystem)?.taxRates?.personalIncomeTaxRates
+            : [
+                { bracket: 50000, rate: 0.15 },
+                { bracket: 100000, rate: 0.25 },
+                { bracket: 200000, rate: 0.35 }
+              ],
+          corporateTaxRates: Array.isArray((data.fiscalSystem)?.taxRates?.corporateTaxRates) 
+            ? (data.fiscalSystem)?.taxRates?.corporateTaxRates
+            : [
+                { size: 'Small', rate: 0.15 },
+                { size: 'Medium', rate: 0.25 },
+                { size: 'Large', rate: 0.30 }
+              ],
           salesTaxRate: (data.fiscalSystem)?.taxRates?.salesTaxRate || 0.08,
           propertyTaxRate: (data.fiscalSystem)?.taxRates?.propertyTaxRate || 0.012,
           payrollTaxRate: (data.fiscalSystem)?.taxRates?.payrollTaxRate || 0.062,
@@ -143,7 +147,9 @@ export function useEconomyData(countryId: string) {
       },
       income: {
         economicClasses: (data.incomeDistribution && data.incomeDistribution.economicClasses)
-          ? JSON.parse(data.incomeDistribution.economicClasses)
+          ? (typeof data.incomeDistribution.economicClasses === 'string' 
+              ? JSON.parse(data.incomeDistribution.economicClasses)
+              : data.incomeDistribution.economicClasses)
           : [],
         povertyRate: 15, // Default value since property doesn't exist
         incomeInequalityGini: 0.35, // Default value since property doesn't exist
