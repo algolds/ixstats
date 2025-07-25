@@ -33,6 +33,10 @@ interface ParsedCountryData {
   government?: string;
   currency?: string;
   languages?: string;
+  flag?: string;
+  coatOfArms?: string;
+  flagUrl?: string;
+  coatOfArmsUrl?: string;
   infobox: CountryInfoboxWithDynamicProps;
 }
 
@@ -63,6 +67,8 @@ export default function ImportFromWikiPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [parsedData, setParsedData] = useState<ParsedCountryData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isAnimatingResults, setIsAnimatingResults] = useState(false);
+  const [selectedCountryFlag, setSelectedCountryFlag] = useState<string | null>(null);
 
   // API mutations
   const searchWikiMutation = api.countries.searchWiki.useMutation();
@@ -122,9 +128,15 @@ export default function ImportFromWikiPage() {
 
   const handleSelectResult = async (result: SearchResult) => {
     setSelectedResult(result);
+    setIsAnimatingResults(true);
     setIsLoading(true);
     setError(null);
     setParsedData(null);
+
+    // Short delay to start animation before hiding results
+    setTimeout(() => {
+      setSearchResults([]);
+    }, 200);
 
     try {
       console.log('Parsing infobox for:', {
@@ -138,6 +150,11 @@ export default function ImportFromWikiPage() {
       });
 
       console.log('Parsed data:', data);
+      
+      // Store flag URL for dynamic island
+      if (data?.flagUrl) {
+        setSelectedCountryFlag(data.flagUrl);
+      }
 
       if (data) {
         setParsedData(data);
@@ -149,6 +166,7 @@ export default function ImportFromWikiPage() {
       setError(`Failed to parse country data: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
+      setIsAnimatingResults(false);
     }
   };
 
@@ -255,36 +273,79 @@ export default function ImportFromWikiPage() {
           </div>
         </div>
 
+        {/* Dynamic Island - Selected Country */}
+        {selectedResult && !parsedData && (
+          <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-in slide-in-from-top-2 duration-500">
+            <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-full px-6 py-3 shadow-lg backdrop-blur-md bg-opacity-95">
+              <div className="flex items-center space-x-3">
+                {selectedCountryFlag && (
+                  <img 
+                    src={selectedCountryFlag} 
+                    alt={`Flag of ${selectedResult.title}`}
+                    className="w-6 h-4 object-cover rounded-sm border border-[var(--color-border)] animate-in zoom-in-95 duration-300"
+                  />
+                )}
+                <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                  Processing {selectedResult.title}...
+                </span>
+                {isLoading && (
+                  <Loader2 className="h-4 w-4 animate-spin text-[var(--color-brand-primary)]" />
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Search Status */}
         {isSearching && searchTerm.trim() && (
           <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 mb-6 text-center">
             <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-[var(--color-brand-primary)]" />
-            <p className="text-[var(--color-text-muted)]">Searching for "{searchTerm}" in Category:Countries on {selectedSite.displayName}...</p>
+            <p className="text-[var(--color-text-muted)]">
+              Searching for "{searchTerm}" in Category:Countries on {selectedSite.displayName}
+              {selectedSite.name === 'iiwiki' && <span className="block text-xs mt-1 opacity-75">Including subcategories for comprehensive results</span>}
+              ...
+            </p>
           </div>
         )}
 
         {/* Search Results */}
         {!isSearching && searchResults.length > 0 && (
-          <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 mb-6">
+          <div className={`bg-[var(--color-bg-secondary)] rounded-lg p-6 mb-6 transition-all duration-300 ${
+            isAnimatingResults ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
+          }`}>
             <h2 className="text-lg font-semibold text-[var(--color-text-primary)] mb-4">
               Search Results ({searchResults.length})
+              {selectedSite.name === 'iiwiki' && searchResults.some(r => r.snippet.includes('subcategory')) && (
+                <span className="block text-sm font-normal text-[var(--color-text-muted)] mt-1">
+                  Results include countries from subcategories
+                </span>
+              )}
             </h2>
             <div className="space-y-3">
               {searchResults.map((result, index) => (
                 <button
                   key={index}
                   onClick={() => handleSelectResult(result)}
-                  className={`w-full p-4 rounded-lg border text-left transition-all duration-200 ${
+                  className={`w-full p-4 rounded-lg border text-left transition-all duration-200 transform hover:scale-[1.02] ${
                     selectedResult?.title === result.title
-                      ? 'border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] bg-opacity-10'
-                      : 'border-[var(--color-border-primary)] hover:bg-[var(--color-bg-tertiary)]'
+                      ? 'border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] bg-opacity-10 scale-[1.02]'
+                      : 'border-[var(--color-border-primary)] hover:bg-[var(--color-bg-tertiary)] hover:border-[var(--color-brand-primary)] hover:border-opacity-50'
                   }`}
+                  style={{ 
+                    animationDelay: `${index * 50}ms`,
+                    animation: selectedResult?.title === result.title ? 'pulse 0.3s ease-in-out' : undefined
+                  }}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-medium text-[var(--color-text-primary)]">{result.title}</h3>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-6 h-4 bg-gradient-to-r from-[var(--color-border)] to-[var(--color-border-primary)] rounded-sm flex items-center justify-center">
+                        <Globe className="h-3 w-3 text-[var(--color-text-muted)]" />
+                      </div>
+                      <h3 className="font-medium text-[var(--color-text-primary)]">{result.title}</h3>
+                    </div>
                     <ExternalLink className="h-4 w-4 text-[var(--color-text-muted)]" />
                   </div>
-                  <p className="text-sm text-[var(--color-text-muted)]" dangerouslySetInnerHTML={{ __html: result.snippet }} />
+                  <p className="text-sm text-[var(--color-text-muted)] ml-9" dangerouslySetInnerHTML={{ __html: result.snippet }} />
                 </button>
               ))}
             </div>
@@ -358,9 +419,10 @@ export default function ImportFromWikiPage() {
                   <MapPin className="h-4 w-4 text-red-600" />
                   <span className="text-sm font-medium text-[var(--color-text-muted)]">Capital</span>
                 </div>
-                <p className="text-lg font-semibold text-[var(--color-text-primary)]">
-                  {parsedData.capital || 'Unknown'}
-                </p>
+                <div 
+                  className="text-lg font-semibold text-[var(--color-text-primary)] [&_a]:text-[var(--color-brand-primary)] [&_a]:hover:underline"
+                  dangerouslySetInnerHTML={{ __html: parsedData.capital || 'Unknown' }}
+                />
               </div>
 
               <div className="bg-[var(--color-bg-primary)] p-4 rounded-lg" title="Type of government system">
@@ -368,9 +430,10 @@ export default function ImportFromWikiPage() {
                   <Building className="h-4 w-4 text-purple-600" />
                   <span className="text-sm font-medium text-[var(--color-text-muted)]">Government</span>
                 </div>
-                <p className="text-lg font-semibold text-[var(--color-text-primary)]">
-                  {parsedData.government || 'Unknown'}
-                </p>
+                <div 
+                  className="text-lg font-semibold text-[var(--color-text-primary)] [&_a]:text-[var(--color-brand-primary)] [&_a]:hover:underline"
+                  dangerouslySetInnerHTML={{ __html: parsedData.government || 'Unknown' }}
+                />
               </div>
             </div>
 
@@ -381,13 +444,19 @@ export default function ImportFromWikiPage() {
                 {parsedData.currency && (
                   <div>
                     <span className="font-medium text-[var(--color-text-primary)]">Currency:</span>
-                    <span className="ml-2 text-[var(--color-text-muted)]">{parsedData.currency}</span>
+                    <span 
+                      className="ml-2 text-[var(--color-text-muted)] [&_a]:text-[var(--color-brand-primary)] [&_a]:hover:underline"
+                      dangerouslySetInnerHTML={{ __html: parsedData.currency }}
+                    />
                   </div>
                 )}
                 {parsedData.languages && (
                   <div>
                     <span className="font-medium text-[var(--color-text-primary)]">Languages:</span>
-                    <span className="ml-2 text-[var(--color-text-muted)]">{parsedData.languages}</span>
+                    <span 
+                      className="ml-2 text-[var(--color-text-muted)] [&_a]:text-[var(--color-brand-primary)] [&_a]:hover:underline"
+                      dangerouslySetInnerHTML={{ __html: parsedData.languages }}
+                    />
                   </div>
                 )}
                 {parsedData.area && (
@@ -397,6 +466,88 @@ export default function ImportFromWikiPage() {
                   </div>
                 )}
               </div>
+              
+              {/* Symbols Section - Flag and Coat of Arms */}
+              {((parsedData.flag || parsedData.flagUrl) || (parsedData.coatOfArms || parsedData.coatOfArmsUrl)) && (
+                <div className="mt-6 pt-6 border-t border-[var(--color-border-primary)]">
+                  <h3 className="text-md font-medium text-[var(--color-text-primary)] mb-4">National Symbols</h3>
+                  <div className="flex flex-wrap gap-6">
+                    {(parsedData.flag || parsedData.flagUrl) && (
+                      <div className="flex flex-col items-center">
+                        <div className="bg-[var(--color-bg-primary)] p-3 rounded-lg border border-[var(--color-border)] shadow-sm">
+                          {parsedData.flagUrl ? (
+                            <img 
+                              src={parsedData.flagUrl} 
+                              alt={`Flag of ${parsedData.name}`}
+                              className="w-24 h-16 object-cover rounded border border-[var(--color-border-primary)] shadow-sm"
+                              onError={(e) => {
+                                // Fallback to filename if image fails to load
+                                const target = e.target as HTMLImageElement;
+                                const container = target.parentElement;
+                                if (container) {
+                                  container.innerHTML = `<div class="w-24 h-16 bg-gradient-to-br from-[var(--color-bg-secondary)] to-[var(--color-bg-tertiary)] rounded border border-[var(--color-border-primary)] flex items-center justify-center"><span class="text-xs text-[var(--color-text-muted)] text-center px-2">${parsedData.flag}</span></div>`;
+                                }
+                              }}
+                            />
+                          ) : (
+                            <div className="w-24 h-16 bg-gradient-to-br from-[var(--color-bg-secondary)] to-[var(--color-bg-tertiary)] rounded border border-[var(--color-border-primary)] flex items-center justify-center">
+                              <span className="text-xs text-[var(--color-text-muted)] text-center px-2">{parsedData.flag}</span>
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-sm font-medium text-[var(--color-text-primary)] mt-2">Flag</span>
+                      </div>
+                    )}
+                    
+                    {(parsedData.coatOfArms || parsedData.coatOfArmsUrl) && (
+                      <div className="flex flex-col items-center">
+                        <div className="bg-[var(--color-bg-primary)] p-3 rounded-lg border border-[var(--color-border)] shadow-sm">
+                          {parsedData.coatOfArmsUrl ? (
+                            <img 
+                              src={parsedData.coatOfArmsUrl} 
+                              alt={`Coat of Arms of ${parsedData.name}`}
+                              className="w-16 h-16 object-contain rounded border border-[var(--color-border-primary)] shadow-sm"
+                              onError={(e) => {
+                                // Fallback to filename if image fails to load
+                                const target = e.target as HTMLImageElement;
+                                const container = target.parentElement;
+                                if (container) {
+                                  container.innerHTML = `<div class="w-16 h-16 bg-gradient-to-br from-[var(--color-bg-secondary)] to-[var(--color-bg-tertiary)] rounded border border-[var(--color-border-primary)] flex items-center justify-center"><span class="text-xs text-[var(--color-text-muted)] text-center px-1">${parsedData.coatOfArms}</span></div>`;
+                                }
+                              }}
+                            />
+                          ) : (
+                            <div className="w-16 h-16 bg-gradient-to-br from-[var(--color-bg-secondary)] to-[var(--color-bg-tertiary)] rounded border border-[var(--color-border-primary)] flex items-center justify-center">
+                              <span className="text-xs text-[var(--color-text-muted)] text-center px-1">{parsedData.coatOfArms}</span>
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-sm font-medium text-[var(--color-text-primary)] mt-2">Coat of Arms</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        {parsedData && (
+          <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6">
+            <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
+              <div className="text-center sm:text-left">
+                <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">Ready to Import</h3>
+                <p className="text-sm text-[var(--color-text-muted)]">
+                  This data will be used as the foundation for your custom country
+                </p>
+              </div>
+              <button
+                onClick={handleContinueWithData}
+                className="bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-secondary)] text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 min-w-[160px]"
+              >
+                Continue with Data
+              </button>
             </div>
           </div>
         )}

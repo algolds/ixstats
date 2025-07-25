@@ -65,6 +65,19 @@ export default function CreateCountryBuilder() {
                 region: 'Unknown'
               };
               
+              // Store additional imported data for country creation
+              const additionalImportedData = {
+                flag: importedData.flag,
+                coatOfArms: importedData.coatOfArms,
+                flagUrl: importedData.flagUrl,
+                coatOfArmsUrl: importedData.coatOfArmsUrl,
+                government: importedData.government,
+                currency: importedData.currency,
+                languages: importedData.languages,
+                capital: importedData.capital,
+              };
+              sessionStorage.setItem('imported_additional_data', JSON.stringify(additionalImportedData));
+              
               setSelectedCountry(syntheticCountry);
               setCurrentPhase('customize');
               
@@ -111,6 +124,18 @@ export default function CreateCountryBuilder() {
     
     setIsCreating(true);
     try {
+      // Get additional imported data if it exists
+      const additionalDataStr = sessionStorage.getItem('imported_additional_data');
+      let additionalData = {};
+      if (additionalDataStr) {
+        try {
+          additionalData = JSON.parse(additionalDataStr);
+          sessionStorage.removeItem('imported_additional_data'); // Clean up
+        } catch (e) {
+          console.warn('Failed to parse additional imported data:', e);
+        }
+      }
+
       // Create the country in the database with the built economic data
       const result = await createCountryMutation.mutateAsync({
         userId: user.id,
@@ -118,7 +143,8 @@ export default function CreateCountryBuilder() {
         initialData: {
           baselinePopulation: economicInputs.coreIndicators.totalPopulation,
           baselineGdpPerCapita: economicInputs.coreIndicators.gdpPerCapita,
-          // Add other fields as needed from the nested structure
+          // Include imported wiki data
+          ...additionalData,
         }
       });
 
@@ -155,10 +181,10 @@ export default function CreateCountryBuilder() {
               <div>
                 <div className="text-center py-8">
                   <h1 className="text-3xl font-bold text-[var(--color-text-primary)] mb-2">
-                    Create a Country
+                  MyCountry® Builder
                   </h1>
                   <p className="text-[var(--color-text-muted)] text-lg">
-                    Build a custom nation for your campaign using real-world economic data as a foundation
+                    Build a custom nation using real-world economic data as a foundation OR import your existing custom country
                   </p>
                 </div>
                 <CountrySelector

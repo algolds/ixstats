@@ -421,16 +421,16 @@ export default function Dashboard() {
                             <div className="flex items-center gap-2">
                               <span className="text-lg">👑</span>
                               <div>
-                                <div className="font-semibold text-white">Superpowers</div>
-                                <div className="text-xs text-white/60">{powerGrouped.superpower.length} countries</div>
+                                <div className="font-semibold text-foreground">Superpowers</div>
+                                <div className="text-xs text-muted-foreground">{powerGrouped.superpower.length} countries</div>
                               </div>
                             </div>
-                            <div className="text-sm text-white/80">
+                            <div className="text-sm text-muted-foreground">
                               Countries with exceptional economic and military influence. These nations have global reach and significant impact on world affairs.
                             </div>
                             {powerGrouped.superpower.length > 0 && (
                               <div className="space-y-1">
-                                <div className="text-xs font-medium text-gray-600 dark:text-white/70">Examples:</div>
+                                <div className="text-xs font-medium text-gray-600 dark:text-muted-foreground">Examples:</div>
                                 <div className="flex flex-wrap gap-1">
                                   {powerGrouped.superpower.slice(0, 3).map((country) => (
                                     <span key={country.id} className="px-2 py-1 bg-yellow-500/20 dark:bg-yellow-500/20 text-yellow-800 dark:text-yellow-200 text-xs rounded">
@@ -466,16 +466,16 @@ export default function Dashboard() {
                             <div className="flex items-center gap-2">
                               <span className="text-lg">⭐</span>
                               <div>
-                                <div className="font-semibold text-white">Major Powers</div>
-                                <div className="text-xs text-white/60">{powerGrouped.major.length} countries</div>
+                                <div className="font-semibold text-foreground">Major Powers</div>
+                                <div className="text-xs text-muted-foreground">{powerGrouped.major.length} countries</div>
                               </div>
                             </div>
-                            <div className="text-sm text-white/80">
+                            <div className="text-sm text-muted-foreground">
                               Influential countries with significant regional impact. These nations have substantial economies and military capabilities.
                             </div>
                             {powerGrouped.major.length > 0 && (
                               <div className="space-y-1">
-                                <div className="text-xs font-medium text-gray-600 dark:text-white/70">Examples:</div>
+                                <div className="text-xs font-medium text-gray-600 dark:text-muted-foreground">Examples:</div>
                                 <div className="flex flex-wrap gap-1">
                                   {powerGrouped.major.slice(0, 3).map((country) => (
                                     <span key={country.id} className="px-2 py-1 bg-blue-500/20 dark:bg-blue-500/20 text-blue-800 dark:text-blue-200 text-xs rounded">
@@ -511,16 +511,16 @@ export default function Dashboard() {
                             <div className="flex items-center gap-2">
                               <span className="text-lg">🌟</span>
                               <div>
-                                <div className="font-semibold text-white">Regional Powers</div>
-                                <div className="text-xs text-white/60">{powerGrouped.regional.length} countries</div>
+                                <div className="font-semibold text-foreground">Regional Powers</div>
+                                <div className="text-xs text-muted-foreground">{powerGrouped.regional.length} countries</div>
                               </div>
                             </div>
-                            <div className="text-sm text-white/80">
+                            <div className="text-sm text-muted-foreground">
                               Countries with substantial local influence and growing economies. These nations play important roles in their regions.
                             </div>
                             {powerGrouped.regional.length > 0 && (
                               <div className="space-y-1">
-                                <div className="text-xs font-medium text-gray-600 dark:text-white/70">Examples:</div>
+                                <div className="text-xs font-medium text-gray-600 dark:text-muted-foreground">Examples:</div>
                                 <div className="flex flex-wrap gap-1">
                                   {powerGrouped.regional.slice(0, 3).map((country) => (
                                     <span key={country.id} className="px-2 py-1 bg-green-500/20 dark:bg-green-500/20 text-green-800 dark:text-green-200 text-xs rounded">

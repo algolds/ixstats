@@ -76,9 +76,9 @@ export const HealthRing: React.FC<HealthRingProps> = ({
           background: `linear-gradient(135deg, rgba(${rgb.r},${rgb.g},${rgb.b},0.15), rgba(${rgb.r},${rgb.g},${rgb.b},0.05))`,
           boxShadow: `
             0 0 0 2px rgba(${rgb.r},${rgb.g},${rgb.b},0.6),
-            0 0 20px 4px rgba(${rgb.r},${rgb.g},${rgb.b},0.4),
-            0 0 40px 8px rgba(${rgb.r},${rgb.g},${rgb.b},0.2),
-            inset 0 1px 0 rgba(255,255,255,0.3)
+            0 0 20px 4px rgba(${rgb.r},${rgb.g},${rgb.b},0.3),
+            0 0 40px 8px rgba(${rgb.r},${rgb.g},${rgb.b},0.15),
+            inset 0 1px 0 hsl(var(--accent) / 0.6)
           `,
           backdropFilter: 'blur(12px) saturate(1.8)',
           WebkitBackdropFilter: 'blur(12px) saturate(1.8)',
@@ -103,7 +103,7 @@ export const HealthRing: React.FC<HealthRingProps> = ({
           cy={validSize / 2}
           r={radius}
           fill="none"
-          stroke="rgba(255,255,255,0.1)"
+          stroke="hsl(var(--muted-foreground) / 0.2)"
           strokeWidth={stroke}
         />
         {/* Animated gradient progress circle */}
@@ -148,11 +148,11 @@ export const HealthRing: React.FC<HealthRingProps> = ({
       </svg>
       {/* Center content */}
       <div className="absolute inset-0 flex flex-col items-center justify-center z-30">
-        <span className="text-2xl font-bold text-white">
+        <span className="text-2xl font-bold text-foreground">
           <AnimatedNumber value={progress} decimals={0} />
         </span>
-        {target !== 100 && <span className="text-xs text-white/60">of {target}</span>}
-        {label && <span className="text-xs text-white/40 mt-1">{label}</span>}
+        {target !== 100 && <span className="text-xs text-muted-foreground">of {target}</span>}
+        {label && <span className="text-xs text-muted-foreground mt-1">{label}</span>}
       </div>
     </div>
   );
@@ -164,8 +164,8 @@ export const HealthRing: React.FC<HealthRingProps> = ({
           {ringContent}
         </TooltipTrigger>
         <TooltipContent side="top" sideOffset={8}>
-          <div className="font-medium">{label}</div>
-          <div className="text-white/80 text-xs mt-1">{tooltip}</div>
+          <div className="font-medium text-foreground">{label}</div>
+          <div className="text-muted-foreground text-xs mt-1">{tooltip}</div>
         </TooltipContent>
       </Tooltip>
     );

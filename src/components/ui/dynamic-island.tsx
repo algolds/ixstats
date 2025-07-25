@@ -314,19 +314,24 @@ const DynamicIsland = ({
 
   useEffect(() => {
     setMounted(true)
+    
+    // Throttled resize handler for better performance
+    let resizeTimeout: NodeJS.Timeout
     const handleResize = () => {
-      if (window.innerWidth <= 640) {
-        setScreenSize("mobile")
-      } else if (window.innerWidth <= 1024) {
-        setScreenSize("tablet")
-      } else {
-        setScreenSize("desktop")
-      }
+      clearTimeout(resizeTimeout)
+      resizeTimeout = setTimeout(() => {
+        const width = window.innerWidth
+        const newSize = width <= 640 ? "mobile" : width <= 1024 ? "tablet" : "desktop"
+        setScreenSize(prevSize => prevSize !== newSize ? newSize : prevSize)
+      }, 100) // Throttle to 100ms
     }
 
     handleResize()
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
+    window.addEventListener("resize", handleResize, { passive: true })
+    return () => {
+      clearTimeout(resizeTimeout)
+      window.removeEventListener("resize", handleResize)
+    }
   }, [])
 
   if (!mounted) {

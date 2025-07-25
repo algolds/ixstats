@@ -10,6 +10,7 @@ import { ThemeProvider } from "~/context/theme-context";
 import { AuthProvider } from "~/context/auth-context";
 import { createUrl } from "~/lib/url-utils";
 import { Navigation } from "~/app/_components/navigation";
+import { GlobalActivityMarquee } from "~/app/_components/GlobalActivityMarquee";
 import { SetupRedirect } from "~/app/_components/SetupRedirect";
 import { WebGLErrorHandler } from "~/components/webgl-error-handler";
 import { ToastProvider } from "~/components/ui/toast";
@@ -46,6 +47,7 @@ const RootLayout = ({
             <WebGLErrorHandler />
             <div className="min-h-screen flex flex-col">
               <Navigation />
+              {/* <GlobalActivityMarquee /> */}
               <SetupRedirect />
               <main className="flex-1">
                 {children}

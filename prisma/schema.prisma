@@ -24,6 +24,8 @@ model Country {
   governmentType              String?
   religion                    String?
   leader                      String?
+  flag                        String?
+  coatOfArms                  String?
   landArea                    Float?
   areaSqMi                    Float?
   baselinePopulation          Float

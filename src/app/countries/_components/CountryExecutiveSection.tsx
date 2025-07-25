@@ -144,12 +144,12 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs">
                   <div className="space-y-2">
-                    <div className="font-semibold text-purple-300">Social Harmony Index</div>
-                    <div className="text-xs text-white/80">
+                    <div className="font-semibold text-foreground">Social Harmony Index</div>
+                    <div className="text-xs text-muted-foreground">
                       Measures citizen satisfaction, social cohesion, and quality of life indicators.
                       Includes factors like education access, healthcare quality, and social programs effectiveness.
                     </div>
-                    <div className="text-xs text-purple-200">
+                    <div className="text-xs text-muted-foreground">
                       Current Score: {realTimeMetrics.social || 0}/100
                       {(realTimeMetrics.social || 0) >= 80 && " (Excellent)"}
                       {(realTimeMetrics.social || 0) >= 60 && (realTimeMetrics.social || 0) < 80 && " (Good)"}
@@ -173,12 +173,12 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs">
                   <div className="space-y-2">
-                    <div className="font-semibold text-blue-300">National Security Index</div>
-                    <div className="text-xs text-white/80">
+                    <div className="font-semibold text-foreground">National Security Index</div>
+                    <div className="text-xs text-muted-foreground">
                       Evaluates national defense capabilities, internal security, and threat assessment.
                       Includes military readiness, intelligence operations, and border security.
                     </div>
-                    <div className="text-xs text-blue-200">
+                    <div className="text-xs text-muted-foreground">
                       Current Score: {realTimeMetrics.security || 0}/100
                       {(realTimeMetrics.security || 0) >= 80 && " (Very Secure)"}
                       {(realTimeMetrics.security || 0) >= 60 && (realTimeMetrics.security || 0) < 80 && " (Secure)"}
@@ -202,12 +202,12 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs">
                   <div className="space-y-2">
-                    <div className="font-semibold text-green-300">Political Stability Index</div>
-                    <div className="text-xs text-white/80">
+                    <div className="font-semibold text-foreground">Political Stability Index</div>
+                    <div className="text-xs text-muted-foreground">
                       Assesses government effectiveness, policy consistency, and institutional strength.
                       Includes democratic processes, corruption levels, and administrative efficiency.
                     </div>
-                    <div className="text-xs text-green-200">
+                    <div className="text-xs text-muted-foreground">
                       Current Score: {realTimeMetrics.political || 0}/100
                       {(realTimeMetrics.political || 0) >= 80 && " (Very Stable)"}
                       {(realTimeMetrics.political || 0) >= 60 && (realTimeMetrics.political || 0) < 80 && " (Stable)"}

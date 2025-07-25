@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { 
@@ -95,6 +95,7 @@ function CommandPaletteContent({
   const { setSize } = useDynamicIslandSize();
   const [mode, setMode] = useState<ViewMode>("compact");
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [mounted, setMounted] = useState(false);
   // const [cyclingIndex, setCyclingIndex] = useState(0);
   const [isUserInteracting, setIsUserInteracting] = useState(false);
@@ -116,35 +117,45 @@ function CommandPaletteContent({
 
 
   const { user, isLoaded } = useUser();
-  const { theme, effectiveTheme, setTheme } = useTheme();
+  const { theme, effectiveTheme, setTheme, compactMode, toggleCompactMode } = useTheme();
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
     { userId: user?.id || '' },
     { enabled: !!user?.id }
   );
   
-  // User preferences state
+  // User preferences state (excluding compactMode as it's now in theme context)
   const [userPreferences, setUserPreferences] = useState({
     soundEnabled: true,
     language: 'en',
-    compactMode: false,
     animations: true
   });
 
-  // API queries
+  // API queries - heavily optimized for performance
   const {
     data: countriesData,
     refetch: refetchCountries,
-  } = api.countries.getAll.useQuery();
+  } = api.countries.getAll.useQuery(undefined, {
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchInterval: false,
+  });
 
-  // Notifications
+  // Notifications - only fetch when absolutely necessary
+  const shouldFetchNotifications = !!user?.id && (mode === 'notifications' || expandedMode === 'notifications');
   const {
     data: notificationsData,
     refetch: refetchNotifications,
   } = api.notifications.getUserNotifications.useQuery({
-    limit: 10,
+    limit: 5, // Reduce from 10 to 5 for better performance
     unreadOnly: false,
     userId: user?.id,
-  }, { enabled: !!user?.id });
+  }, { 
+    enabled: shouldFetchNotifications,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
 
   const markAsReadMutation = api.notifications.markAsRead.useMutation({
     onSuccess: () => {
@@ -210,60 +221,69 @@ function CommandPaletteContent({
   const setupStatus = getSetupStatus();
 
 
-  // Search functionality
+  // Memoize commands to prevent recreation
+  const commands = useMemo(() => [
+    { name: "Dashboard", path: "/dashboard", icon: Target },
+    { name: "Countries", path: "/countries", icon: Globe },
+    { name: "MyCountry®", path: "/mycountry", icon: Crown },
+    { name: "ECI", path: "/eci", icon: Target },
+    { name: "Builder", path: "/builder", icon: Plus },
+    { name: "Profile", path: "/profile", icon: Users },
+    { name: "Admin", path: "/admin", icon: Settings },
+  ], []);
+
+  // Debounce search query for better performance
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  // Search functionality - uses debounced query
   const searchResults = useMemo(() => {
-    if (!searchQuery.trim()) return [];
+    if (!debouncedSearchQuery.trim()) return [];
+
+    const query = debouncedSearchQuery.toLowerCase();
 
     const results: SearchResult[] = [];
-    const query = searchQuery.toLowerCase();
 
-    // Add countries
+    // Add countries - only if data is available
     if (countriesData?.countries) {
-      countriesData.countries
+      const countryResults = countriesData.countries
         .filter(country => country.name.toLowerCase().includes(query))
         .slice(0, 5)
-        .forEach(country => {
-          results.push({
-            id: country.id,
-            type: "country",
-            title: country.name,
-            subtitle: `View ${country.name} details`,
-            icon: Globe,
-            action: () => {
-              window.location.href = `/countries/${country.id}`;
-            }
-          });
-        });
+        .map(country => ({
+          id: country.id,
+          type: "country" as const,
+          title: country.name,
+          subtitle: `View ${country.name} details`,
+          icon: Globe,
+          action: () => {
+            window.location.href = `/countries/${country.id}`;
+          }
+        }));
+      results.push(...countryResults);
     }
 
     // Add commands
-    const commands = [
-      { name: "Dashboard", path: "/dashboard", icon: Target },
-      { name: "Countries", path: "/countries", icon: Globe },
-      { name: "MyCountry®", path: "/mycountry", icon: Crown },
-      { name: "ECI", path: "/eci", icon: Target },
-      { name: "Builder", path: "/builder", icon: Plus },
-      { name: "Profile", path: "/profile", icon: Users },
-      { name: "Admin", path: "/admin", icon: Settings },
-    ];
-
-    commands
+    const commandResults = commands
       .filter(cmd => cmd.name.toLowerCase().includes(query))
-      .forEach(cmd => {
-        results.push({
-          id: cmd.path,
-          type: "command",
-          title: cmd.name,
-          subtitle: `Navigate to ${cmd.name}`,
-          icon: cmd.icon,
-          action: () => {
-            window.location.href = cmd.path;
-          }
-        });
-      });
+      .map(cmd => ({
+        id: cmd.path,
+        type: "command" as const,
+        title: cmd.name,
+        subtitle: `Navigate to ${cmd.name}`,
+        icon: cmd.icon,
+        action: () => {
+          window.location.href = cmd.path;
+        }
+      }));
+    results.push(...commandResults);
 
-    return results.slice(0, 8);
-  }, [searchQuery, countriesData]);
+    return results.slice(0, 6); // Reduced from 8 to 6 for better performance
+  }, [debouncedSearchQuery, countriesData, commands]);
 
   // Cycling between views (for future use)
   // const cyclingViews = ["notifications"];
@@ -278,8 +298,10 @@ function CommandPaletteContent({
     }
   }, [mode, isUserInteracting]);
 
-  // Time updates
+  // Time updates - much more performance optimized
   useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+    
     const updateTime = () => {
       const currentIxTime = IxTime.getCurrentIxTime();
       const greeting = getGreeting(currentIxTime);
@@ -287,38 +309,41 @@ function CommandPaletteContent({
       const timeDisplay = getTimeDisplay(currentIxTime);
       const multiplier = IxTime.getTimeMultiplier();
 
-      setCurrentTime({
-        greeting,
-        dateDisplay,
-        timeDisplay,
-        multiplier,
+      setCurrentTime(prev => {
+        // Only update if values actually changed
+        if (prev.timeDisplay !== timeDisplay || prev.dateDisplay !== dateDisplay) {
+          return { greeting, dateDisplay, timeDisplay, multiplier };
+        }
+        return prev;
       });
     };
 
     updateTime();
-    const interval = setInterval(updateTime, 1000);
-
-    return () => clearInterval(interval);
+    intervalId = setInterval(updateTime, 1000);
+    return () => clearInterval(intervalId);
   }, []);
 
 
-  // Handle refresh
+  // Handle refresh - debounced to prevent spam
   const handleRefresh = useCallback(async () => {
     try {
-      void refetchCountries();
-      void refetchNotifications();
+      const promises = [refetchCountries()];
+      if (user?.id) {
+        promises.push(refetchNotifications());
+      }
+      await Promise.allSettled(promises);
     } catch (error) {
       console.error('Refresh failed:', error);
     }
-  }, [refetchCountries, refetchNotifications]);
+  }, [refetchCountries, refetchNotifications, user?.id]);
 
-  // Mode switching with dropdown behavior
+  // Mode switching with dropdown behavior - debounced
   const switchMode = useCallback((newMode: ViewMode) => {
     setMode(newMode);
     setIsUserInteracting(true);
     
     // Reset user interaction after 30 seconds
-    setTimeout(() => setIsUserInteracting(false), 30000);
+    const timeout = setTimeout(() => setIsUserInteracting(false), 30000);
     
     if (newMode === "compact") {
       setSize(SIZE_PRESETS.COMPACT_LONG);
@@ -328,6 +353,8 @@ function CommandPaletteContent({
       setIsExpanded?.(true);
       setExpandedMode?.(newMode);
     }
+    
+    return () => clearTimeout(timeout);
   }, [setSize, setIsExpanded, setExpandedMode]);
 
   // Start cycling mode after 10 seconds of inactivity
@@ -341,7 +368,7 @@ function CommandPaletteContent({
     }
   }, [mode, isUserInteracting, switchMode]);
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts - optimized with passive listeners
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey) {
@@ -365,7 +392,7 @@ function CommandPaletteContent({
       }
     };
 
-    window.addEventListener('keydown', handleKeyPress);
+    window.addEventListener('keydown', handleKeyPress, { passive: false });
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [mode, switchMode]);
 
@@ -420,18 +447,18 @@ function CommandPaletteContent({
             <div className="flex items-center gap-2">
               <Popover>
                 <PopoverTrigger>
-                  <div className="hover:bg-white/10 p-1 rounded transition-colors cursor-pointer">
+                  <div className="hover:bg-accent/10 p-1 rounded transition-colors cursor-pointer">
                     <Clock className="h-4 w-4 text-blue-400" />
                   </div>
                 </PopoverTrigger>
                 <PopoverContent 
                   side="bottom" 
                   align="start"
-                  className="w-80 p-4 bg-slate-800/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-[10002]"
+                  className="w-80 p-4 bg-card/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl z-[10002]"
                 >
                   <div className="space-y-3">
                     <div className="text-center">
-                      <div className="text-lg font-semibold text-white mb-2">
+                      <div className="text-lg font-semibold text-foreground mb-2">
                         It is {currentTime.dateDisplay}
                       </div>
                       <div className="text-xl font-bold text-blue-400">
@@ -446,29 +473,29 @@ function CommandPaletteContent({
               {!isSticky && (
                 <Popover>
                   <PopoverTrigger>
-                    <div className="text-sm font-medium text-white cursor-pointer hover:bg-white/10 px-2 py-1 rounded transition-colors">
+                    <div className="text-sm font-medium text-foreground cursor-pointer hover:bg-accent/10 px-2 py-1 rounded transition-colors">
                       {currentTime.greeting}{user?.firstName ? `, ${user.firstName}` : ''}
                     </div>
                   </PopoverTrigger>
                   <PopoverContent 
                     side="bottom" 
                   align="start"
-                    className="w-96 p-4 bg-slate-800/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-[10002]"
+                    className="w-96 p-4 bg-card/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl z-[10002]"
                   >
                     {setupStatus === 'complete' && userProfile?.country ? (
                       <div className="space-y-4">
                         <div className="flex items-center gap-3 pb-3 border-b border-white/10">
                           <Crown className="h-6 w-6 text-amber-400" />
                           <div>
-                            <div className="font-semibold text-white">Executive Dashboard</div>
-                            <div className="text-sm text-white/60">{userProfile.country.name}</div>
+                            <div className="font-semibold text-foreground">Executive Dashboard</div>
+                            <div className="text-sm text-muted-foreground">{userProfile.country.name}</div>
                           </div>
                         </div>
                         
                         <div className="grid grid-cols-3 gap-3">
                           <div className="text-center p-3 bg-white/5 rounded-lg">
                             <BarChart3 className="h-6 w-6 text-blue-400 mx-auto mb-2" />
-                            <div className="text-xs text-white/60 mb-1">Economic</div>
+                            <div className="text-xs text-muted-foreground mb-1">Economic</div>
                             <div className="w-8 h-8 mx-auto bg-green-500/20 rounded-full flex items-center justify-center relative">
                               <div className="w-6 h-6 border-2 border-green-500/30 rounded-full absolute"></div>
                               <div className="w-4 h-4 bg-green-500 rounded-full"></div>
@@ -477,7 +504,7 @@ function CommandPaletteContent({
                           
                           <div className="text-center p-3 bg-white/5 rounded-lg">
                             <Users className="h-6 w-6 text-yellow-400 mx-auto mb-2" />
-                            <div className="text-xs text-white/60 mb-1">Social</div>
+                            <div className="text-xs text-muted-foreground mb-1">Social</div>
                             <div className="w-8 h-8 mx-auto bg-yellow-500/20 rounded-full flex items-center justify-center relative">
                               <div className="w-6 h-6 border-2 border-yellow-500/30 rounded-full absolute"></div>
                               <div className="w-5 h-5 bg-yellow-500 rounded-full"></div>
@@ -486,7 +513,7 @@ function CommandPaletteContent({
                           
                           <div className="text-center p-3 bg-white/5 rounded-lg">
                             <Activity className="h-6 w-6 text-purple-400 mx-auto mb-2" />
-                            <div className="text-xs text-white/60 mb-1">Security</div>
+                            <div className="text-xs text-muted-foreground mb-1">Security</div>
                             <div className="w-8 h-8 mx-auto bg-purple-500/20 rounded-full flex items-center justify-center relative">
                               <div className="w-6 h-6 border-2 border-purple-500/30 rounded-full absolute"></div>
                               <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
@@ -499,7 +526,7 @@ function CommandPaletteContent({
                             size="sm"
                             variant="outline"
                             onClick={() => userProfile?.country && (window.location.href = `/countries/${userProfile.country.id}`)}
-                            className="flex-1 text-white/80 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/10"
+                            className="flex-1 text-muted-foreground hover:text-foreground border-border hover:border-accent hover:bg-accent/10"
                           >
                             <Crown className="h-4 w-4 mr-2" />
                             My Country
@@ -508,7 +535,7 @@ function CommandPaletteContent({
                             size="sm"
                             variant="outline"
                             onClick={() => window.location.href = "/eci"}
-                            className="flex-1 text-white/80 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/10"
+                            className="flex-1 text-muted-foreground hover:text-foreground border-border hover:border-accent hover:bg-accent/10"
                           >
                             <Target className="h-4 w-4 mr-2" />
                             ECI
@@ -519,13 +546,13 @@ function CommandPaletteContent({
                       <div className="text-center py-6">
                         <div className="p-4 bg-white/5 rounded-xl">
                           <User className="h-12 w-12 mx-auto mb-3 text-blue-400" />
-                          <div className="text-white/70 mb-2">Welcome!</div>
-                          <div className="text-white/50 text-sm mb-4">Complete setup to access your executive dashboard</div>
+                          <div className="text-muted-foreground mb-2">Welcome!</div>
+                          <div className="text-muted-foreground text-sm mb-4">Complete setup to access your executive dashboard</div>
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => window.location.href = "/setup"}
-                            className="text-white/80 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/10"
+                            className="text-muted-foreground hover:text-foreground border-border hover:border-accent hover:bg-accent/10"
                           >
                             Complete Setup
                           </Button>
@@ -544,7 +571,7 @@ function CommandPaletteContent({
               size="sm"
               variant="ghost"
               onClick={() => switchMode("search")}
-              className={`text-white/80 hover:text-white hover:bg-white/10 flex items-center rounded-lg transition-all ${
+              className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center rounded-lg transition-all ${
                 isSticky && isCollapsed ? 'h-6 w-6 p-0' : 'h-7 px-2 gap-1'
               }`}
             >
@@ -555,14 +582,14 @@ function CommandPaletteContent({
               size="sm"
               variant="ghost"
               onClick={() => switchMode("notifications")}
-              className={`text-white/80 hover:text-white hover:bg-white/10 relative flex items-center rounded-lg transition-all ${
+              className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center rounded-lg transition-all ${
                 isSticky && isCollapsed ? 'h-6 w-6 p-0' : 'h-7 px-2 gap-1'
               }`}
             >
               <Bell className="h-3 w-3" />
               {(!isSticky || !isCollapsed) && <span className="text-xs">Alerts</span>}
               {unreadNotifications > 0 && (
-                <Badge className={`absolute bg-red-500 text-white flex items-center justify-center rounded-full text-[10px] ${
+                <Badge className={`absolute bg-red-500 text-foreground flex items-center justify-center rounded-full text-[10px] ${
                   isSticky && isCollapsed ? '-top-1 -right-1 h-3 w-3 p-0' : '-top-1 -right-1 h-3 w-3 p-0'
                 }`}>
                   {unreadNotifications > 9 ? '9+' : unreadNotifications}
@@ -573,7 +600,7 @@ function CommandPaletteContent({
               size="sm"
               variant="ghost"
               onClick={() => switchMode("settings")}
-              className={`text-white/80 hover:text-white hover:bg-white/10 flex items-center rounded-lg transition-all ${
+              className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center rounded-lg transition-all ${
                 isSticky && isCollapsed ? 'h-6 w-6 p-0' : 'h-7 px-2 gap-1'
               }`}
             >
@@ -598,7 +625,7 @@ function CommandPaletteContent({
         return (
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
-              <div className="text-xl font-bold text-white flex items-center gap-3">
+              <div className="text-xl font-bold text-foreground flex items-center gap-3">
                 <Command className="h-6 w-6 text-blue-400" />
                 Command Palette
               </div>
@@ -606,19 +633,19 @@ function CommandPaletteContent({
                 size="sm"
                 variant="ghost"
                 onClick={closeDropdown}
-                className="text-white/60 hover:text-white hover:bg-white/10 px-2 py-2"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/10 px-2 py-2"
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
 
             <div className="relative mb-6">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60" />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
                 placeholder="Search countries, commands, and features..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 pr-4 py-3 bg-white/10 border-white/20 text-white placeholder:text-white/60 rounded-xl text-base focus:bg-white/15 focus:border-blue-400 transition-all"
+                className="pl-12 pr-4 py-3 bg-accent/10 border-border text-foreground placeholder:text-muted-foreground rounded-xl text-base focus:bg-accent/15 focus:border-blue-400 transition-all"
                 autoFocus
               />
               <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
@@ -636,21 +663,21 @@ function CommandPaletteContent({
                       key={result.id}
                       variant="ghost"
                       onClick={result.action}
-                      className="w-full justify-start gap-4 text-white/80 hover:text-white hover:bg-white/10 p-4 rounded-xl transition-all group"
+                      className="w-full justify-start gap-4 text-muted-foreground hover:text-foreground hover:bg-accent/10 p-4 rounded-xl transition-all group"
                     >
-                      <div className="p-2 bg-white/10 rounded-lg group-hover:bg-white/15 transition-colors">
+                      <div className="p-2 bg-accent/10 rounded-lg group-hover:bg-accent/15 transition-colors">
                         {result.icon && <result.icon className="h-5 w-5" />}
                       </div>
                       <div className="text-left flex-1 min-w-0">
-                        <div className="font-medium text-base text-white break-words">
+                        <div className="font-medium text-base text-foreground break-words">
                           {result.title}
                         </div>
                         {result.subtitle && (
-                          <div className="text-sm text-white/60 mt-1 break-words">
+                          <div className="text-sm text-muted-foreground mt-1 break-words">
                             {result.subtitle}
                           </div>
                         )}
-                        <div className="text-xs text-white/50 mt-1 capitalize">
+                        <div className="text-xs text-muted-foreground mt-1 capitalize">
                           {result.type}
                         </div>
                       </div>
@@ -660,13 +687,13 @@ function CommandPaletteContent({
                     </Button>
                   ))}
                 </div>
-              ) : searchQuery ? (
+              ) : debouncedSearchQuery ? (
                 <div className="text-center py-8">
                   <div className="p-4 bg-muted/30 rounded-2xl max-w-md mx-auto">
                     <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                     <div className="text-muted-foreground text-lg mb-2">No results found</div>
                     <div className="text-muted-foreground/70 text-sm break-words">
-                      No matches for <span className="font-mono bg-muted px-2 py-1 rounded">"{searchQuery}"</span>
+                      No matches for <span className="font-mono bg-muted px-2 py-1 rounded">"{debouncedSearchQuery}"</span>
                     </div>
                     <div className="text-muted-foreground/50 text-xs mt-3">
                       Try searching for countries, commands, or features
@@ -702,11 +729,11 @@ function CommandPaletteContent({
         return (
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
-              <div className="text-xl font-bold text-white flex items-center gap-3">
+              <div className="text-xl font-bold text-foreground flex items-center gap-3">
                 <BellRing className="h-6 w-6 text-blue-400" />
                 Notification Center
                 {unreadNotifications > 0 && (
-                  <Badge className="bg-red-500 text-white text-sm px-2 py-1 rounded-full">
+                  <Badge className="bg-red-500 text-foreground text-sm px-2 py-1 rounded-full">
                     {unreadNotifications}
                   </Badge>
                 )}
@@ -718,7 +745,7 @@ function CommandPaletteContent({
                     variant="ghost"
                     onClick={() => user?.id && markAllAsReadMutation.mutate({ userId: user.id })}
                     disabled={markAllAsReadMutation.isPending}
-                    className="text-white/60 hover:text-white hover:bg-white/10 px-3 py-2"
+                    className="text-muted-foreground hover:text-foreground hover:bg-accent/10 px-3 py-2"
                   >
                     <CheckCircle className="h-4 w-4 mr-2" />
                     Mark all read
@@ -728,7 +755,7 @@ function CommandPaletteContent({
                   size="sm"
                   variant="ghost"
                   onClick={closeDropdown}
-                  className="text-white/60 hover:text-white hover:bg-white/10 px-2 py-2"
+                  className="text-muted-foreground hover:text-foreground hover:bg-accent/10 px-2 py-2"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -817,8 +844,8 @@ function CommandPaletteContent({
                 <div className="text-center py-8">
                   <div className="p-6 bg-gradient-to-b from-white/5 to-white/10 rounded-2xl max-w-sm mx-auto">
                     <Bell className="h-16 w-16 mx-auto mb-4 text-white/30" />
-                    <div className="text-white/70 text-lg mb-2">All caught up!</div>
-                    <div className="text-white/50 text-sm">
+                    <div className="text-muted-foreground text-lg mb-2">All caught up!</div>
+                    <div className="text-muted-foreground text-sm">
                       No notifications at this time. We'll notify you of important updates, 
                       economic changes, and system alerts.
                     </div>
@@ -837,7 +864,7 @@ function CommandPaletteContent({
         return (
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
-              <div className="text-xl font-bold text-white flex items-center gap-3">
+              <div className="text-xl font-bold text-foreground flex items-center gap-3">
                 <Settings className="h-6 w-6 text-blue-400" />
                 User Settings
               </div>
@@ -853,7 +880,7 @@ function CommandPaletteContent({
 
             <div className="space-y-3">
               {/* Theme Switcher */}
-              <div className="flex items-center gap-3 p-3 bg-slate-800 rounded-lg hover:bg-slate-700 transition-all border border-slate-600">
+              <div className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-accent/10 transition-all border border-border">
                 <div className="p-1.5 bg-primary/20 rounded flex-shrink-0">
                   {effectiveTheme === 'dark' ? (
                     <Moon className="h-4 w-4 text-primary" />
@@ -863,7 +890,7 @@ function CommandPaletteContent({
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-medium text-white">Theme</div>
-                  <div className="text-xs text-white/70">
+                  <div className="text-xs text-muted-foreground">
                     {theme === 'system' ? 'System' : theme === 'dark' ? 'Dark' : 'Light'}
                   </div>
                 </div>
@@ -896,7 +923,7 @@ function CommandPaletteContent({
               </div>
 
               {/* Sound Settings */}
-              <div className="flex items-center gap-3 p-3 bg-slate-800 rounded-lg hover:bg-slate-700 transition-all border border-slate-600">
+              <div className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-accent/10 transition-all border border-border">
                 <div className="p-1.5 bg-green-500/20 rounded flex-shrink-0">
                   {userPreferences.soundEnabled ? (
                     <Volume2 className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -905,8 +932,8 @@ function CommandPaletteContent({
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-white">Sound Effects</div>
-                  <div className="text-xs text-white/70">
+                  <div className="text-sm font-medium text-foreground">Sound Effects</div>
+                  <div className="text-xs text-muted-foreground">
                     {userPreferences.soundEnabled ? 'Enabled' : 'Disabled'}
                   </div>
                 </div>
@@ -921,13 +948,13 @@ function CommandPaletteContent({
               </div>
 
               {/* Language Settings */}
-              <div className="flex items-center gap-3 p-3 bg-slate-800 rounded-lg hover:bg-slate-700 transition-all border border-slate-600">
+              <div className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-accent/10 transition-all border border-border">
                 <div className="p-1.5 bg-blue-500/20 rounded flex-shrink-0">
                   <Languages className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-white">Language</div>
-                  <div className="text-xs text-white/70">
+                  <div className="text-sm font-medium text-foreground">Language</div>
+                  <div className="text-xs text-muted-foreground">
                     English
                   </div>
                 </div>
@@ -942,34 +969,34 @@ function CommandPaletteContent({
               </div>
 
               {/* Layout Preferences */}
-              <div className="flex items-center gap-3 p-3 bg-slate-800 rounded-lg hover:bg-slate-700 transition-all border border-slate-600">
+              <div className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-accent/10 transition-all border border-border">
                 <div className="p-1.5 bg-purple-500/20 rounded flex-shrink-0">
                   <Layout className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-white">Compact Mode</div>
-                  <div className="text-xs text-white/70">
-                    {userPreferences.compactMode ? 'Enabled' : 'Disabled'}
+                  <div className="text-sm font-medium text-foreground">Compact Mode</div>
+                  <div className="text-xs text-muted-foreground">
+                    {compactMode ? 'Enabled - Denser UI layout' : 'Disabled - Standard spacing'}
                   </div>
                 </div>
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setUserPreferences(prev => ({ ...prev, compactMode: !prev.compactMode }))}
+                  onClick={toggleCompactMode}
                   className="px-2 py-1 text-xs"
                 >
-                  {userPreferences.compactMode ? 'Disable' : 'Enable'}
+                  {compactMode ? 'Disable' : 'Enable'}
                 </Button>
               </div>
 
               {/* Animation Settings */}
-              <div className="flex items-center gap-3 p-3 bg-slate-800 rounded-lg hover:bg-slate-700 transition-all border border-slate-600">
+              <div className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-accent/10 transition-all border border-border">
                 <div className="p-1.5 bg-orange-500/20 rounded flex-shrink-0">
                   <Eye className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-white">Animations</div>
-                  <div className="text-xs text-white/70">
+                  <div className="text-sm font-medium text-foreground">Animations</div>
+                  <div className="text-xs text-muted-foreground">
                     {userPreferences.animations ? 'Enabled' : 'Reduced'}
                   </div>
                 </div>
@@ -1021,7 +1048,7 @@ function CommandPaletteContent({
       {/* Dropdown content - only on desktop */}
       {isExpanded && (
         <div className="hidden lg:block absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-[10002]">
-          <div className="bg-slate-800/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[500px] max-w-[800px]">
+          <div className="command-palette-dropdown bg-slate-800/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[500px] max-w-[800px]">
             {renderExpandedContent()}
           </div>
         </div>

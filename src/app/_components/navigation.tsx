@@ -152,9 +152,9 @@ export function Navigation() {
 
   return (
     <>
-      <nav className="relative z-[10005] bg-gradient-to-r from-slate-900/95 via-slate-800/95 to-slate-900/95 backdrop-blur-xl border-b border-white/10 shadow-2xl">
+      <nav className="navigation-bar relative z-[10005] bg-gradient-to-r from-background/95 via-secondary/95 to-background/95 backdrop-blur-xl border-b border-border shadow-2xl">
       {/* Curved bottom edge to match dynamic island */}
-      <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-b from-transparent to-slate-900/20 rounded-b-3xl"></div>
+      <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-b from-transparent to-background/20 rounded-b-3xl"></div>
       
       <div className="max-w-none mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-stretch h-16 relative">
@@ -184,7 +184,7 @@ export function Navigation() {
                     <NavigationMenuItem key={item.name}>
                       <Link
                         href={item.href}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 hover:bg-white/10 hover:backdrop-blur-sm ${current ? 'bg-white/15 text-white shadow-lg' : 'text-white/80'}`}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 hover:bg-accent/10 hover:backdrop-blur-sm ${current ? 'bg-accent/15 text-foreground shadow-lg' : 'text-muted-foreground'}`}
                         aria-current={current ? 'page' : undefined}
                       >
                         <Icon className="h-4 w-4" aria-hidden="true" />
@@ -223,7 +223,7 @@ export function Navigation() {
                     <NavigationMenuItem key={item.name}>
                       <Link
                         href={item.href}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 hover:bg-white/10 hover:backdrop-blur-sm ${current ? 'bg-white/15 text-white shadow-lg' : 'text-white/80'}`}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 hover:bg-accent/10 hover:backdrop-blur-sm ${current ? 'bg-accent/15 text-foreground shadow-lg' : 'text-muted-foreground'}`}
                         aria-current={current ? 'page' : undefined}
                       >
                         <Icon className="h-4 w-4" aria-hidden="true" />
@@ -251,7 +251,7 @@ export function Navigation() {
       
       {/* Mobile Navigation */}
       <div className="lg:hidden">
-        <div className="border-t border-white/10 bg-slate-900/90 backdrop-blur-xl">
+        <div className="border-t border-border bg-background/90 backdrop-blur-xl">
           <div className="flex items-center justify-around px-4 py-2">
             {navigationItems.filter(item => {
               let showItem = true;
@@ -268,8 +268,8 @@ export function Navigation() {
                   href={item.href}
                   className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 ${
                     current 
-                      ? 'text-white bg-white/15' 
-                      : 'text-white/60 hover:text-white hover:bg-white/10'
+                      ? 'text-foreground bg-accent/15' 
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/10'
                   }`}
                 >
                   <Icon className="h-5 w-5" />
@@ -290,7 +290,7 @@ export function Navigation() {
             {/* Hide/Show Toggle */}
             <button
               onClick={() => setHideSticky(!hideSticky)}
-              className="absolute -right-12 top-1/2 -translate-y-1/2 w-8 h-8 bg-slate-800/90 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-slate-700/90 transition-all"
+              className="absolute -right-12 top-1/2 -translate-y-1/2 w-8 h-8 bg-background/90 backdrop-blur-xl border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/90 transition-all"
             >
               <X className="h-4 w-4" />
             </button>
@@ -303,7 +303,7 @@ export function Navigation() {
         <div className="fixed top-2 right-4 z-[100]">
           <button
             onClick={() => setHideSticky(false)}
-            className="w-10 h-10 bg-slate-800/90 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-slate-700/90 transition-all"
+            className="w-10 h-10 bg-background/90 backdrop-blur-xl border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/90 transition-all"
           >
             <Bell className="h-4 w-4" />
           </button>
@@ -324,7 +324,7 @@ function UserProfileMenu({ user, userProfile, setupStatus, userCountryFlag, flag
 
   if (!user) {
     return (
-      <SignInButton className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all duration-200">
+      <SignInButton className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent/10 hover:bg-accent/20 text-foreground transition-all duration-200">
         <div className="flex items-center gap-2">
           <User className="h-4 w-4" />
           <span className="hidden md:block text-sm">Sign In</span>
@@ -340,24 +340,24 @@ function UserProfileMenu({ user, userProfile, setupStatus, userCountryFlag, flag
             <img
               src={userCountryFlag}
               alt={`Flag of ${userProfile.country.name}`}
-              className="w-8 h-8 rounded-full border border-white/20 object-cover"
+              className="w-8 h-8 rounded-full border border-border object-cover"
             />
           ) : (
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium border border-white/20">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium border border-border">
               {user?.firstName?.[0] || (user as any)?.username?.[0] || 'U'}
             </div>
           )}
           <div className="hidden md:block text-left">
-            <div className="text-white text-sm font-medium">
+            <div className="text-foreground text-sm font-medium">
               {user?.firstName || (user as any)?.username || 'User'}
             </div>
             {setupStatus === 'complete' && userProfile?.country && (
-              <div className="text-white/60 text-xs">
+              <div className="text-muted-foreground text-xs">
                 {userProfile.country.name}
               </div>
             )}
           </div>
-          <ChevronDown className="h-4 w-4 text-white/60" />
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
       </PopoverTrigger>
       <PopoverContent align="end" className="w-64 p-0">
         <div className="py-2">
@@ -368,18 +368,18 @@ function UserProfileMenu({ user, userProfile, setupStatus, userCountryFlag, flag
                 <img
                   src={userCountryFlag}
                   alt={`Flag of ${userProfile.country.name}`}
-                  className="w-12 h-12 rounded-full border border-white/20 object-cover"
+                  className="w-12 h-12 rounded-full border border-border object-cover"
                 />
               ) : (
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-lg border border-white/20">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-lg border border-border">
                   {user?.firstName?.[0] || (user as any)?.username?.[0] || 'U'}
                 </div>
               )}
               <div>
-                <div className="font-medium text-white">
+                <div className="font-medium text-foreground">
                   {user?.firstName} {user?.lastName}
                 </div>
-                <div className="text-sm text-white/70">
+                <div className="text-sm text-muted-foreground">
                   {setupStatus === 'complete' && userProfile?.country ? userProfile.country.name : 'Not linked to country'}
                 </div>
               </div>
@@ -391,7 +391,7 @@ function UserProfileMenu({ user, userProfile, setupStatus, userCountryFlag, flag
             {setupStatus === 'complete' && userProfile?.country && (
               <Link
                 href={`/countries/${userProfile.country.id}`}
-                className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                className="flex items-center gap-3 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-colors"
               >
                 <Crown className="h-4 w-4" />
                 My Country Dashboard
@@ -400,7 +400,7 @@ function UserProfileMenu({ user, userProfile, setupStatus, userCountryFlag, flag
             {setupStatus === 'needs-setup' && (
               <Link
                 href="/setup"
-                className="flex items-center gap-3 px-4 py-2 text-sm text-amber-300 hover:text-amber-200 hover:bg-amber-500/10 transition-colors"
+                className="flex items-center gap-3 px-4 py-2 text-sm text-amber-600 dark:text-amber-300 hover:text-amber-700 dark:hover:text-amber-200 hover:bg-amber-500/10 transition-colors"
               >
                 <AlertCircle className="h-4 w-4" />
                 Complete Setup
@@ -432,7 +432,7 @@ function UserProfileMenu({ user, userProfile, setupStatus, userCountryFlag, flag
           </div>
           
           {/* Divider */}
-          <div className="border-t border-white/10 my-1" />
+          <div className="border-t border-border my-1" />
           
           {/* Sign Out */}
           <div className="px-4 py-2">
@@ -442,7 +442,7 @@ function UserProfileMenu({ user, userProfile, setupStatus, userCountryFlag, flag
                   window.location.href = '/sign-out';
                 }
               }}
-              className="w-full flex items-center gap-3 px-0 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors"
+              className="w-full flex items-center gap-3 px-0 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/10 rounded-md transition-colors"
             >
               <LogOut className="h-4 w-4" />
               Sign Out

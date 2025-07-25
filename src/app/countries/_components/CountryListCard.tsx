@@ -125,13 +125,13 @@ export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: pr
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <div className="w-8 h-6 relative flex-shrink-0">
               {flagLoading && (
-                <div className="w-8 h-6 bg-[var(--color-bg-tertiary)] rounded border border-[var(--color-border-primary)] animate-pulse" />
+                <div className="w-8 h-6 bg-muted rounded border border-border animate-pulse" />
               )}
               {!flagLoading && flagUrl && (
                 <img
                   src={flagUrl}
                   alt={`Flag of ${country.name}`}
-                  className="w-8 h-6 object-cover rounded border border-[var(--color-border-primary)]"
+                  className="w-8 h-6 object-cover rounded border border-border"
                 />
               )}
               {!flagLoading && !flagUrl && (
@@ -142,14 +142,14 @@ export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: pr
             </div>
             <div className="min-w-0">
               <h3
-                className="text-base font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-brand-primary)] transition-colors truncate"
+                className="text-base font-semibold text-foreground group-hover:text-primary transition-colors truncate"
                 title={country.name}
               >
                 {country.name}
               </h3>
               {(country.continent || country.region) && (
-                <div className="flex items-center text-[10px] text-[var(--color-text-muted)] mt-0.5 truncate">
-                  <LocateFixed className="h-3 w-3 mr-1 text-[var(--color-brand-secondary)]" />
+                <div className="flex items-center text-[10px] text-muted-foreground mt-0.5 truncate">
+                  <LocateFixed className="h-3 w-3 mr-1 text-primary/70" />
                   <span className="truncate">
                     {country.continent || '—'}
                     {country.continent && country.region ? ' – ' : ''}
@@ -173,7 +173,7 @@ export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: pr
               <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
             </Button>
             <ArrowRight
-              className="h-4 w-4 text-muted-foreground group-hover:text-[var(--color-brand-primary)] transition-all group-hover:translate-x-0.5"
+              className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-all group-hover:translate-x-0.5"
             />
           </div>
         </div>
@@ -181,19 +181,19 @@ export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: pr
         {/* Compact stats row */}
         <div className="flex items-center justify-between gap-2 text-xs mb-2">
           <div className="flex items-center gap-1">
-            <Users className="h-3 w-3 text-[var(--color-info)]" />
+            <Users className="h-3 w-3 text-blue-500" />
             <span>{formatPopulation(country.currentPopulation)}</span>
           </div>
           <div className="flex items-center gap-1">
-            <TrendingUp className="h-3 w-3 text-[var(--color-success)]" />
+            <TrendingUp className="h-3 w-3 text-green-500" />
             <span>{formatCurrency(country.currentGdpPerCapita)}</span>
           </div>
           <div className="flex items-center gap-1">
-            <GlobeIcon className="h-3 w-3 text-[var(--color-chart-1)]" />
+            <GlobeIcon className="h-3 w-3 text-purple-500" />
             <span>{formatCurrency(country.currentTotalGdp)}</span>
           </div>
           <div className="flex items-center gap-1">
-            <Scaling className="h-3 w-3 text-[var(--color-warning)]" />
+            <Scaling className="h-3 w-3 text-orange-500" />
             <span>{country.populationDensity != null ? `${country.populationDensity.toFixed(1)}/km²` : 'N/A'}</span>
           </div>
         </div>
@@ -225,8 +225,31 @@ export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: pr
         }
         .glass-hover-animate:hover {
           box-shadow: 0 8px 32px 0 rgba(99,102,241,0.18), 0 1.5px 8px 0 rgba(0,0,0,0.10);
-          background: rgba(255,255,255,0.08);
+          background: hsl(var(--accent) / 0.8);
           filter: brightness(1.05) saturate(1.1);
+        }
+        
+        /* Light mode sparkle effect for flags */
+        @media (prefers-color-scheme: light) {
+          .flag-waving-bg::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 30%, rgba(255,255,255,0.6) 1px, transparent 1px),
+                        radial-gradient(circle at 80% 70%, rgba(255,255,255,0.4) 1px, transparent 1px),
+                        radial-gradient(circle at 60% 20%, rgba(255,255,255,0.5) 1px, transparent 1px);
+            background-size: 40px 40px, 60px 60px, 30px 30px;
+            animation: sparkle 3s ease-in-out infinite;
+            pointer-events: none;
+          }
+        }
+        
+        @keyframes sparkle {
+          0%, 100% { opacity: 0.6; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.1); }
         }
       `}</style>
     </GlassCard>

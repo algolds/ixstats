@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { formatCurrency, formatPopulation, formatGrowthRateFromDecimal } from "~/lib/chart-utils";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { createUrl } from "~/lib/url-utils";
+import { flagService } from "~/lib/flag-service";
 
 // Use a simplified interface for display purposes
 interface LeaderboardCountry {
@@ -98,8 +99,55 @@ const getRankIcon = (rank: number) => {
   }
 };
 
+const CountryFlag = ({ countryName, flagUrl, className = "w-6 h-4" }: { 
+  countryName: string; 
+  flagUrl: string | null; 
+  className?: string; 
+}) => {
+  if (!flagUrl) {
+    return (
+      <div className={`${className} bg-gray-200 dark:bg-gray-700 rounded-sm flex items-center justify-center`}>
+        <span className="text-xs text-gray-500">🏴</span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={flagUrl}
+      alt={`${countryName} flag`}
+      className={`${className} object-cover rounded-sm border border-gray-200 dark:border-gray-700`}
+      onError={(e) => {
+        // Hide the broken image and show placeholder
+        e.currentTarget.style.display = 'none';
+        const parent = e.currentTarget.parentElement;
+        if (parent) {
+          const placeholder = document.createElement('div');
+          placeholder.className = `${className} bg-gray-200 dark:bg-gray-700 rounded-sm flex items-center justify-center`;
+          placeholder.innerHTML = '<span class="text-xs text-gray-500">🏴</span>';
+          parent.appendChild(placeholder);
+        }
+      }}
+    />
+  );
+};
+
 export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectionProps) {
   const [activeTab, setActiveTab] = useState<LeaderboardType>("gdp");
+  const [flagUrls, setFlagUrls] = useState<Record<string, string | null>>({});
+
+  // Fetch flags for countries when they change
+  useEffect(() => {
+    if (countries.length === 0) return;
+
+    const fetchFlags = async () => {
+      const countryNames = countries.map(c => c.name);
+      const flags = await flagService.batchGetFlags(countryNames);
+      setFlagUrls(flags);
+    };
+
+    void fetchFlags();
+  }, [countries]);
 
   if (isLoading) {
     return (
@@ -157,6 +205,12 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
               <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted">
                 {getRankIcon(rank)}
               </div>
+              
+              <CountryFlag 
+                countryName={country.name} 
+                flagUrl={flagUrls[country.name] || null} 
+                className="w-8 h-6 flex-shrink-0"
+              />
               
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">

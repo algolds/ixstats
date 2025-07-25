@@ -274,10 +274,10 @@ function MyCountryContent() {
               <TooltipContent>
                 <div className="space-y-1">
                   <div className="font-medium">Current Population</div>
-                  <div className="text-xs text-white/80">
+                  <div className="text-xs text-muted-foreground">
                     Total population: {country.currentPopulation.toLocaleString()} citizens
                   </div>
-                  <div className="text-xs text-blue-200">
+                  <div className="text-xs text-muted-foreground">
                     Population Tier: {country.populationTier}
                   </div>
                 </div>
@@ -294,10 +294,10 @@ function MyCountryContent() {
               <TooltipContent>
                 <div className="space-y-1">
                   <div className="font-medium">GDP per Capita</div>
-                  <div className="text-xs text-white/80">
+                  <div className="text-xs text-muted-foreground">
                     ${country.currentGdpPerCapita.toLocaleString()} per person
                   </div>
-                  <div className="text-xs text-green-200">
+                  <div className="text-xs text-muted-foreground">
                     Economic strength indicator
                   </div>
                 </div>
@@ -314,10 +314,10 @@ function MyCountryContent() {
               <TooltipContent>
                 <div className="space-y-1">
                   <div className="font-medium">Economic Growth Rate</div>
-                  <div className="text-xs text-white/80">
+                  <div className="text-xs text-muted-foreground">
                     Adjusted GDP growth rate after global factors
                   </div>
-                  <div className="text-xs text-purple-200">
+                  <div className="text-xs text-muted-foreground">
                     {country.adjustedGdpGrowth > 0.05 ? "Strong growth" : 
                       country.adjustedGdpGrowth > 0.02 ? "Moderate growth" : 
                       country.adjustedGdpGrowth > 0 ? "Slow growth" : "Declining"}
@@ -336,10 +336,10 @@ function MyCountryContent() {
               <TooltipContent>
                 <div className="space-y-1">
                   <div className="font-medium">Economic Development Tier</div>
-                  <div className="text-xs text-white/80">
+                  <div className="text-xs text-muted-foreground">
                     Based on GDP per capita and economic indicators
                   </div>
-                  <div className="text-xs text-orange-200">
+                  <div className="text-xs text-muted-foreground">
                     Current classification: {country.economicTier}
                   </div>
                 </div>
@@ -356,10 +356,10 @@ function MyCountryContent() {
               <TooltipContent>
                 <div className="space-y-1">
                   <div className="font-medium">Population Tier</div>
-                  <div className="text-xs text-white/80">
+                  <div className="text-xs text-muted-foreground">
                     Classification based on total population size
                   </div>
-                  <div className="text-xs text-pink-200">
+                  <div className="text-xs text-muted-foreground">
                     Tier {country.populationTier} country
                   </div>
                 </div>
@@ -376,10 +376,10 @@ function MyCountryContent() {
               <TooltipContent>
                 <div className="space-y-1">
                   <div className="font-medium">Last Data Update</div>
-                  <div className="text-xs text-white/80">
+                  <div className="text-xs text-muted-foreground">
                     Most recent calculation: {new Date().toLocaleString()}
                   </div>
-                  <div className="text-xs text-cyan-200">
+                  <div className="text-xs text-muted-foreground">
                     Data refreshed automatically
                   </div>
                 </div>
