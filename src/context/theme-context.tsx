@@ -1,7 +1,7 @@
 // src/context/theme-context.tsx
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -10,6 +10,9 @@ interface ThemeContextType {
   effectiveTheme: 'light' | 'dark';
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
+  compactMode: boolean;
+  setCompactMode: (compact: boolean) => void;
+  toggleCompactMode: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -27,61 +30,84 @@ export function ThemeProvider({
 }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(defaultTheme);
   const [effectiveTheme, setEffectiveTheme] = useState<'light' | 'dark'>('dark');
+  const [compactMode, setCompactModeState] = useState<boolean>(false);
 
-  // Initialize theme from localStorage
+  // Initialize theme and compact mode from localStorage
   useEffect(() => {
     try {
       const storedTheme = localStorage.getItem(storageKey) as Theme | null;
       if (storedTheme && ['light', 'dark', 'system'].includes(storedTheme)) {
         setThemeState(storedTheme);
       }
+      
+      const storedCompactMode = localStorage.getItem('ixstats-compact-mode');
+      if (storedCompactMode !== null) {
+        setCompactModeState(storedCompactMode === 'true');
+      }
     } catch (error) {
-      console.warn('Failed to load theme from localStorage:', error);
+      console.warn('Failed to load theme settings from localStorage:', error);
     }
   }, [storageKey]);
 
-  // Update effective theme based on current theme and system preference
+  // Memoize system theme detection and update effective theme
+  const systemTheme = useMemo(() => {
+    if (typeof window === 'undefined') return 'dark';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }, []);
+
+  // Update effective theme with better performance
   useEffect(() => {
-    const updateEffectiveTheme = () => {
-      if (theme === 'system') {
-        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        setEffectiveTheme(systemTheme);
-      } else {
-        setEffectiveTheme(theme);
-      }
-    };
+    const newEffectiveTheme = theme === 'system' ? systemTheme : theme;
+    if (newEffectiveTheme !== effectiveTheme) {
+      setEffectiveTheme(newEffectiveTheme);
+    }
+  }, [theme, systemTheme, effectiveTheme]);
 
-    updateEffectiveTheme();
-
-    // Listen for system theme changes
+  // Listen for system theme changes - optimized
+  useEffect(() => {
+    if (theme !== 'system') return;
+    
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = () => {
-      if (theme === 'system') {
-        updateEffectiveTheme();
-      }
+    const handleChange = (e: MediaQueryListEvent) => {
+      setEffectiveTheme(e.matches ? 'dark' : 'light');
     };
 
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [theme]);
 
-  // Apply theme to document
+  // Apply theme and compact mode to document - debounced for performance
   useEffect(() => {
-    const root = document.documentElement;
-    root.classList.remove('light', 'dark');
-    root.classList.add(effectiveTheme);
-    
-    // Set data attribute for CSS
-    root.setAttribute('data-theme', effectiveTheme);
-    
-    // Update meta theme-color for mobile browsers
-    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-    if (metaThemeColor) {
-      metaThemeColor.setAttribute('content', effectiveTheme === 'dark' ? '#1f2937' : '#ffffff');
-    }
-  }, [effectiveTheme]);
+    const applyTheme = () => {
+      const root = document.documentElement;
+      root.classList.remove('light', 'dark');
+      root.classList.add(effectiveTheme);
+      
+      // Apply compact mode class
+      if (compactMode) {
+        root.classList.add('compact-mode');
+      } else {
+        root.classList.remove('compact-mode');
+      }
+      
+      // Set data attributes for CSS
+      root.setAttribute('data-theme', effectiveTheme);
+      root.setAttribute('data-compact', compactMode.toString());
+      
+      // Update meta theme-color for mobile browsers
+      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+      if (metaThemeColor) {
+        metaThemeColor.setAttribute('content', effectiveTheme === 'dark' ? '#1f2937' : '#ffffff');
+      }
+    };
 
-  const setTheme = (newTheme: Theme) => {
+    // Debounce theme application
+    const timeoutId = setTimeout(applyTheme, 0);
+    return () => clearTimeout(timeoutId);
+  }, [effectiveTheme, compactMode]);
+
+  // Memoize theme functions to prevent re-renders
+  const setTheme = useCallback((newTheme: Theme) => {
     try {
       localStorage.setItem(storageKey, newTheme);
       setThemeState(newTheme);
@@ -89,9 +115,9 @@ export function ThemeProvider({
       console.warn('Failed to save theme to localStorage:', error);
       setThemeState(newTheme);
     }
-  };
+  }, [storageKey]);
 
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     if (theme === 'light') {
       setTheme('dark');
     } else if (theme === 'dark') {
@@ -99,14 +125,33 @@ export function ThemeProvider({
     } else {
       setTheme('light');
     }
-  };
+  }, [theme, setTheme]);
 
-  const value: ThemeContextType = {
+  // Compact mode functions
+  const setCompactMode = useCallback((compact: boolean) => {
+    try {
+      localStorage.setItem('ixstats-compact-mode', compact.toString());
+      setCompactModeState(compact);
+    } catch (error) {
+      console.warn('Failed to save compact mode to localStorage:', error);
+      setCompactModeState(compact);
+    }
+  }, []);
+
+  const toggleCompactMode = useCallback(() => {
+    setCompactMode(!compactMode);
+  }, [compactMode, setCompactMode]);
+
+  // Memoize context value to prevent unnecessary re-renders
+  const value: ThemeContextType = useMemo(() => ({
     theme,
     effectiveTheme,
     setTheme,
     toggleTheme,
-  };
+    compactMode,
+    setCompactMode,
+    toggleCompactMode,
+  }), [theme, effectiveTheme, setTheme, toggleTheme, compactMode, setCompactMode, toggleCompactMode]);
 
   return (
     <ThemeContext.Provider value={value}>

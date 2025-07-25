@@ -37,6 +37,10 @@ interface ParsedCountryData {
   government?: string;
   currency?: string;
   languages?: string;
+  flag?: string;
+  coatOfArms?: string;
+  flagUrl?: string;
+  coatOfArmsUrl?: string;
   infobox: CountryInfoboxWithDynamicProps;
 }
 
@@ -54,25 +58,22 @@ export async function searchWiki(
   }
 
   try {
-    // For IIWiki, use a different approach since incategory doesn't work
-    if (site === 'iiwiki' && categoryFilter) {
-      return await searchIIWikiWithCategory(query, categoryFilter, config);
+    // Use comprehensive category search for both sites when category filter is provided
+    if (categoryFilter) {
+      console.log(`[WikiSearch] Using comprehensive category search for ${site} with category: ${categoryFilter}`);
+      return await searchWithCategoryFilter(query, categoryFilter, config, site);
     }
 
+    // Fallback to regular search when no category filter
     let searchParams = new URLSearchParams({
       action: 'query',
       format: 'json',
       list: 'search',
       srsearch: query,
       srprop: 'snippet',
-      srlimit: '20',
+      srlimit: '30', // Increased from 20 for better coverage
       srnamespace: config.searchNamespace?.join('|') || '0',
     });
-
-    // Add category filter for IxWiki
-    if (categoryFilter && site === 'ixwiki') {
-      searchParams.set('srsearch', `${query} incategory:"${categoryFilter}"`);
-    }
 
     const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${searchParams.toString()}`, {
       headers: {
@@ -93,13 +94,10 @@ export async function searchWiki(
     const results = data.query?.search || [];
     
     return results.map((result: any) => {
-      const wikiPath = site === 'iiwiki' ? '/mediawiki/index.php' : '/wiki';
-      const titleParam = site === 'iiwiki' ? `?title=${encodeURIComponent(result.title)}` : `/${encodeURIComponent(result.title.replace(/ /g, '_'))}`;
-      
       return {
         title: result.title,
         snippet: result.snippet || '',
-        url: `${config.baseUrl}${wikiPath}${titleParam}`,
+        url: createWikiUrl(result.title, config, site),
         namespace: result.ns,
       };
     });
@@ -111,104 +109,376 @@ export async function searchWiki(
 }
 
 /**
- * Search IIWiki with category filtering using a different approach
- * Since IIWiki doesn't support incategory: syntax, we'll get category members and then filter
+ * Search wiki with comprehensive category filtering
+ * This function works for both IxWiki and IIWiki by getting all category members first
  */
-async function searchIIWikiWithCategory(
+async function searchWithCategoryFilter(
   query: string,
   categoryFilter: string,
-  config: WikiConfig
+  config: WikiConfig,
+  site: 'ixwiki' | 'iiwiki'
 ): Promise<SearchResult[]> {
   try {
-    // First, get all pages in the category
-    const categoryParams = new URLSearchParams({
+    console.log(`[WikiSearch] Getting all members from Category:${categoryFilter} on ${site}`);
+    
+    // Get ALL pages in the category using pagination (including subcategories for iiwiki)
+    const allCategoryMembers = await getAllCategoryMembersWithSubcategories(categoryFilter, config, site);
+    
+    if (allCategoryMembers.length === 0) {
+      console.log(`[WikiSearch] No members found in Category:${categoryFilter}`);
+      return [];
+    }
+
+    console.log(`[WikiSearch] Found ${allCategoryMembers.length} total members in Category:${categoryFilter}`);
+
+    // Create a comprehensive search that matches various patterns
+    const searchTerms = query.toLowerCase().trim();
+    const queryWords = searchTerms.split(/\s+/).filter(word => word.length > 0);
+    
+    const filteredMembers = allCategoryMembers.filter((member: any) => {
+      const title = member.title.toLowerCase();
+      
+      // Exact match
+      if (title === searchTerms) return true;
+      
+      // Contains the full search term
+      if (title.includes(searchTerms)) return true;
+      
+      // All words are present (allows for different order)
+      if (queryWords.length > 1 && queryWords.every(word => title.includes(word))) return true;
+      
+      // Partial word matches for compound names (minimum 3 characters)
+      if (queryWords.some(word => word.length >= 3 && title.includes(word))) return true;
+      
+      // Handle common abbreviations and variations
+      const titleWords = title.split(/[\s\-_,()\.]+/).filter((w: string) => w.length > 0);
+      if (queryWords.some(queryWord => 
+        titleWords.some((titleWord: string) => {
+          // Direct match or prefix match for words 3+ characters
+          if (queryWord.length >= 3) {
+            return titleWord.startsWith(queryWord) || queryWord.startsWith(titleWord);
+          }
+          // Exact match for short words (like "US", "UK")
+          return titleWord === queryWord;
+        })
+      )) return true;
+      
+      // Handle initials/acronyms (e.g., "USA" matches "United States of America")
+      if (searchTerms.length >= 2 && searchTerms.length <= 5 && /^[a-z]+$/.test(searchTerms)) {
+        const titleInitials = titleWords
+          .filter((word: string) => word.length > 0)
+          .map((word: string) => word[0])
+          .join('');
+        if (titleInitials.includes(searchTerms) || searchTerms.includes(titleInitials)) {
+          return true;
+        }
+      }
+      
+      // Fuzzy matching for typos (Levenshtein-like for single character differences)
+      if (queryWords.some(queryWord => {
+        if (queryWord.length >= 4) {
+          return titleWords.some((titleWord: string) => {
+            if (Math.abs(titleWord.length - queryWord.length) <= 1) {
+              return calculateSimilarity(titleWord, queryWord) >= 0.8;
+            }
+            return false;
+          });
+        }
+        return false;
+      })) return true;
+      
+      return false;
+    });
+
+    console.log(`[WikiSearch] Filtered to ${filteredMembers.length} matching countries`);
+
+    // If we still have too many results, do a more targeted search
+    if (filteredMembers.length > 50) {
+      console.log(`[WikiSearch] Too many results (${filteredMembers.length}), doing targeted search`);
+      
+      const searchResults = await performTargetedSearch(
+        query, 
+        allCategoryMembers.map(m => m.title), 
+        config
+      );
+      
+      if (searchResults.length > 0) {
+        return searchResults.map(result => ({
+          ...result,
+          url: createWikiUrl(result.title, config, site)
+        }));
+      }
+    }
+
+    // Sort results by relevance
+    const sortedResults = filteredMembers.sort((a: any, b: any) => {
+      const aTitle = a.title.toLowerCase();
+      const bTitle = b.title.toLowerCase();
+      
+      // Exact matches first
+      if (aTitle === searchTerms && bTitle !== searchTerms) return -1;
+      if (bTitle === searchTerms && aTitle !== searchTerms) return 1;
+      
+      // Starts with search term
+      if (aTitle.startsWith(searchTerms) && !bTitle.startsWith(searchTerms)) return -1;
+      if (bTitle.startsWith(searchTerms) && !aTitle.startsWith(searchTerms)) return 1;
+      
+      // Shorter titles (more likely to be exact matches)
+      return aTitle.length - bTitle.length;
+    });
+
+    // Convert to search result format
+    return sortedResults.slice(0, 30).map((member: any) => {
+      let snippet = `Country in Category:${categoryFilter}`;
+      if (member.fromSubcategory) {
+        snippet = `Country in Category:${member.fromSubcategory} (subcategory of ${categoryFilter})`;
+      }
+      
+      return {
+        title: member.title,
+        snippet,
+        url: createWikiUrl(member.title, config, site),
+        namespace: member.ns || 0,
+      };
+    });
+
+  } catch (error) {
+    console.error(`Wiki category search failed for ${site}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Get all category members using pagination
+ */
+async function getAllCategoryMembers(categoryFilter: string, config: WikiConfig): Promise<any[]> {
+  const allMembers: any[] = [];
+  let cmcontinue: string | undefined;
+  let iterations = 0;
+  const maxIterations = 20; // Prevent infinite loops
+  
+  do {
+    const params = new URLSearchParams({
       action: 'query',
       format: 'json',
       list: 'categorymembers',
       cmtitle: `Category:${categoryFilter}`,
-      cmlimit: '500', // Get more members to search through
+      cmlimit: '500', // Maximum allowed
       cmnamespace: '0', // Main namespace only
     });
+    
+    if (cmcontinue) {
+      params.set('cmcontinue', cmcontinue);
+    }
 
-    const categoryResponse = await fetch(`${config.baseUrl}${config.apiEndpoint}?${categoryParams.toString()}`, {
+    const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${params.toString()}`, {
       headers: {
         'User-Agent': 'IxStats-Builder/1.0 (https://ixstats.com) MediaWiki-Search',
       },
     });
 
-    if (!categoryResponse.ok) {
-      throw new Error(`HTTP ${categoryResponse.status}: ${categoryResponse.statusText}`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const categoryData = await categoryResponse.json();
-    const categoryMembers = categoryData.query?.categorymembers || [];
+    const data = await response.json();
+    const members = data.query?.categorymembers || [];
+    allMembers.push(...members);
+    
+    cmcontinue = data.continue?.cmcontinue;
+    iterations++;
+    
+    console.log(`[WikiSearch] Retrieved ${members.length} members (total: ${allMembers.length}, continue: ${!!cmcontinue})`);
+    
+  } while (cmcontinue && iterations < maxIterations);
+  
+  return allMembers;
+}
 
-    if (categoryMembers.length === 0) {
+/**
+ * Get subcategories of a category
+ */
+async function getCategorySubcategories(categoryFilter: string, config: WikiConfig): Promise<string[]> {
+  const subcategories: string[] = [];
+  let cmcontinue: string | undefined;
+  let iterations = 0;
+  const maxIterations = 10;
+  
+  do {
+    const params = new URLSearchParams({
+      action: 'query',
+      format: 'json',
+      list: 'categorymembers',
+      cmtitle: `Category:${categoryFilter}`,
+      cmlimit: '500',
+      cmnamespace: '14', // Category namespace
+      cmtype: 'subcat'
+    });
+    
+    if (cmcontinue) {
+      params.set('cmcontinue', cmcontinue);
+    }
+
+    const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${params.toString()}`, {
+      headers: {
+        'User-Agent': 'IxStats-Builder/1.0 (https://ixstats.com) MediaWiki-Search',
+      },
+    });
+
+    if (!response.ok) {
+      console.warn(`Failed to get subcategories for ${categoryFilter}: ${response.status}`);
+      break;
+    }
+
+    const data = await response.json();
+    const members = data.query?.categorymembers || [];
+    
+    // Extract category names (remove "Category:" prefix)
+    const categoryNames = members
+      .map((member: any) => member.title?.replace(/^Category:/, ''))
+      .filter((name: string) => name && name !== categoryFilter); // Avoid circular references
+    
+    subcategories.push(...categoryNames);
+    
+    cmcontinue = data.continue?.cmcontinue;
+    iterations++;
+    
+    console.log(`[WikiSearch] Found ${categoryNames.length} subcategories in ${categoryFilter} (total: ${subcategories.length})`);
+    
+  } while (cmcontinue && iterations < maxIterations);
+  
+  return subcategories;
+}
+
+/**
+ * Get all category members including from subcategories (for iiwiki only)
+ */
+async function getAllCategoryMembersWithSubcategories(categoryFilter: string, config: WikiConfig, site: 'ixwiki' | 'iiwiki'): Promise<any[]> {
+  // Only search subcategories for iiwiki
+  if (site !== 'iiwiki') {
+    return getAllCategoryMembers(categoryFilter, config);
+  }
+  
+  console.log(`[WikiSearch] Searching ${categoryFilter} and its subcategories on ${site}`);
+  
+  // Get direct members of the main category
+  const directMembers = await getAllCategoryMembers(categoryFilter, config);
+  
+  // Get subcategories
+  const subcategories = await getCategorySubcategories(categoryFilter, config);
+  console.log(`[WikiSearch] Found ${subcategories.length} subcategories:`, subcategories.slice(0, 5));
+  
+  // Get members from each subcategory (limit to prevent overwhelming requests)
+  const maxSubcategories = 15;
+  const subcategoriesToSearch = subcategories.slice(0, maxSubcategories);
+  
+  const subcategoryMembers: any[] = [];
+  
+  for (const subcategory of subcategoriesToSearch) {
+    try {
+      console.log(`[WikiSearch] Searching subcategory: ${subcategory}`);
+      const members = await getAllCategoryMembers(subcategory, config);
+      
+      // Mark these as coming from a subcategory for potential different handling
+      const markedMembers = members.map(member => ({
+        ...member,
+        fromSubcategory: subcategory
+      }));
+      
+      subcategoryMembers.push(...markedMembers);
+      
+      // Small delay to be respectful to the API
+      await new Promise(resolve => setTimeout(resolve, 100));
+    } catch (error) {
+      console.warn(`[WikiSearch] Failed to get members from subcategory ${subcategory}:`, error);
+    }
+  }
+  
+  console.log(`[WikiSearch] Total members: ${directMembers.length} direct + ${subcategoryMembers.length} from subcategories`);
+  
+  return [...directMembers, ...subcategoryMembers];
+}
+
+/**
+ * Perform targeted search within a set of known titles
+ */
+async function performTargetedSearch(
+  query: string,
+  candidateTitles: string[],
+  config: WikiConfig
+): Promise<any[]> {
+  try {
+    // Use MediaWiki search API with title restrictions
+    const searchParams = new URLSearchParams({
+      action: 'query',
+      format: 'json',
+      list: 'search',
+      srsearch: query,
+      srprop: 'snippet',
+      srlimit: '20',
+      srnamespace: '0',
+    });
+
+    const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${searchParams.toString()}`, {
+      headers: {
+        'User-Agent': 'IxStats-Builder/1.0 (https://ixstats.com) MediaWiki-Search',
+      },
+    });
+
+    if (!response.ok) {
       return [];
     }
 
-    // Filter category members by the search query
-    const filteredMembers = categoryMembers.filter((member: any) => 
-      member.title.toLowerCase().includes(query.toLowerCase())
-    );
-
-    // If we have a lot of matches, do a regular search within the category
-    if (filteredMembers.length > 20) {
-      // Fall back to regular search but mention it's filtered
-      const searchParams = new URLSearchParams({
-        action: 'query',
-        format: 'json',
-        list: 'search',
-        srsearch: query,
-        srprop: 'snippet',
-        srlimit: '20',
-        srnamespace: '0',
-      });
-
-      const searchResponse = await fetch(`${config.baseUrl}${config.apiEndpoint}?${searchParams.toString()}`, {
-        headers: {
-          'User-Agent': 'IxStats-Builder/1.0 (https://ixstats.com) MediaWiki-Search',
-        },
-      });
-
-      if (searchResponse.ok) {
-        const searchData = await searchResponse.json();
-        const searchResults = searchData.query?.search || [];
-        
-        // Filter search results to only include category members
-        const categoryTitles = new Set(categoryMembers.map((m: any) => m.title));
-        const filteredSearchResults = searchResults.filter((result: any) => 
-          categoryTitles.has(result.title)
-        );
-
-        return filteredSearchResults.map((result: any) => {
-          const wikiPath = '/mediawiki/index.php';
-          const titleParam = `?title=${encodeURIComponent(result.title)}`;
-          
-          return {
-            title: result.title,
-            snippet: result.snippet || `Country in Category:${categoryFilter}`,
-            url: `${config.baseUrl}${wikiPath}${titleParam}`,
-            namespace: result.ns,
-          };
-        });
-      }
-    }
-
-    // Convert to search result format for direct matches
-    const wikiPath = '/mediawiki/index.php';
+    const data = await response.json();
+    const searchResults = data.query?.search || [];
     
-    return filteredMembers.slice(0, 20).map((member: any) => ({
-      title: member.title,
-      snippet: `Country in Category:${categoryFilter}`,
-      url: `${config.baseUrl}${wikiPath}?title=${encodeURIComponent(member.title)}`,
-      namespace: member.ns,
-    }));
-
+    // Filter to only include our candidate titles
+    const candidateSet = new Set(candidateTitles.map(t => t.toLowerCase()));
+    
+    return searchResults.filter((result: any) => 
+      candidateSet.has(result.title.toLowerCase())
+    );
+    
   } catch (error) {
-    console.error('IIWiki category search failed:', error);
-    throw error;
+    console.error('Targeted search failed:', error);
+    return [];
   }
+}
+
+/**
+ * Create appropriate wiki URL for the site
+ */
+function createWikiUrl(title: string, config: WikiConfig, site: 'ixwiki' | 'iiwiki'): string {
+  // Both sites now use /wiki/ structure
+  const wikiPath = '/wiki';
+  const titleParam = `/${encodeURIComponent(title.replace(/ /g, '_'))}`;
+  
+  return `${config.baseUrl}${wikiPath}${titleParam}`;
+}
+
+/**
+ * Calculate string similarity for fuzzy matching
+ * Returns a value between 0 and 1, where 1 is identical
+ */
+function calculateSimilarity(str1: string, str2: string): number {
+  if (str1 === str2) return 1;
+  if (str1.length === 0 || str2.length === 0) return 0;
+  
+  // Simple similarity based on common characters in order
+  let matches = 0;
+  const minLength = Math.min(str1.length, str2.length);
+  
+  for (let i = 0; i < minLength; i++) {
+    if (str1[i] === str2[i]) {
+      matches++;
+    }
+  }
+  
+  // Account for length difference
+  const lengthPenalty = Math.abs(str1.length - str2.length) / Math.max(str1.length, str2.length);
+  const similarity = (matches / Math.max(str1.length, str2.length)) * (1 - lengthPenalty);
+  
+  return similarity;
 }
 
 /**
@@ -236,11 +506,11 @@ export async function parseCountryInfobox(
       return null;
     }
 
-    const templateData = parseInfoboxParameters(infoboxTemplate);
-    const infobox = createInfoboxObject(pageName, templateData, infoboxTemplate);
+    const templateData = parseInfoboxParameters(infoboxTemplate, site);
+    const infobox = createInfoboxObject(pageName, templateData, infoboxTemplate, site);
     
     // Extract key economic data
-    const parsedData = extractEconomicData(infobox);
+    const parsedData = await extractEconomicData(infobox, site);
     
     return {
       name: pageName,
@@ -366,7 +636,7 @@ function extractInfoboxTemplate(wikitext: string): string | null {
 /**
  * Parse infobox template parameters
  */
-function parseInfoboxParameters(templateWikitext: string): Record<string, string> {
+function parseInfoboxParameters(templateWikitext: string, site: 'ixwiki' | 'iiwiki' = 'ixwiki'): Record<string, string> {
   const parameters: Record<string, string> = {};
   
   try {
@@ -382,15 +652,13 @@ function parseInfoboxParameters(templateWikitext: string): Record<string, string
     // Extract parameter values
     const parsedParams = extractParameterValues(content, parameterBoundaries);
     
-    // Clean and process each parameter
+    // Clean and process each parameter with comprehensive wikitext processing
     for (const [key, value] of Object.entries(parsedParams)) {
       if (key && value !== undefined) {
         let processedValue = value.trim();
         
-        // Basic cleaning for non-template values
-        if (!processedValue.includes('{{')) {
-          processedValue = cleanParameterValue(processedValue);
-        }
+        // Always process wikitext for proper template and markup handling
+        processedValue = processWikitext(processedValue, site);
         
         parameters[key] = processedValue;
       }
@@ -516,34 +784,190 @@ function extractParameterValues(
 }
 
 /**
- * Clean parameter value by removing wiki markup
+ * Process wikitext with comprehensive template and markup handling
  */
-function cleanParameterValue(value: string): string {
+function processWikitext(value: string, site: 'ixwiki' | 'iiwiki' = 'ixwiki'): string {
   if (!value) return '';
   
-  let cleaned = value.trim();
+  let processed = value.trim();
   
-  // Remove HTML comments
-  cleaned = cleaned.replace(/<!--[\s\S]*?-->/g, '');
+  // Remove HTML comments first
+  processed = processed.replace(/<!--[\s\S]*?-->/g, '');
   
-  // Handle wiki links - convert [[Page|Display]] to Display
-  cleaned = cleaned.replace(/\[\[([^\|\]]+)\|([^\]]+)\]\]/g, '$2');
-  cleaned = cleaned.replace(/\[\[([^\]]+)\]\]/g, '$1');
+  // Process templates iteratively to handle nested templates
+  let iterations = 0;
+  const maxIterations = 3;
   
-  // Remove file links
-  cleaned = cleaned.replace(/\[\[File:([^\|\]]+)(?:\|[^\]]+)?\]\]/g, '$1');
+  while (processed.includes('{{') && iterations < maxIterations) {
+    const beforeProcessing = processed;
+    iterations++;
+    
+    // Handle {{wp|target|display}} and {{wp|target}} templates (convert to proper links)
+    processed = processed.replace(/\{\{wp\|([^|}]+)\|([^}]+)\}\}/g, (_match: string, target: string, display: string) => {
+      return createWikiLink(target.trim(), display.trim(), site);
+    });
+    
+    processed = processed.replace(/\{\{wp\|([^}]+)\}\}/g, (_match: string, target: string) => {
+      const cleanTarget = target.trim();
+      return createWikiLink(cleanTarget, cleanTarget, site);
+    });
+    
+    // Handle similar link templates
+    processed = processed.replace(/\{\{link\|([^|}]+)\|([^}]+)\}\}/g, (_match: string, target: string, display: string) => {
+      return createWikiLink(target.trim(), display.trim(), site);
+    });
+    
+    processed = processed.replace(/\{\{link\|([^}]+)\}\}/g, (_match: string, target: string) => {
+      const cleanTarget = target.trim();
+      return createWikiLink(cleanTarget, cleanTarget, site);
+    });
+    
+    // Handle {{lang|code|text}} templates (language templates)
+    processed = processed.replace(/\{\{lang\|[^|]+\|([^}]+)\}\}/g, '$1');
+    
+    // Handle formatting templates
+    processed = processed.replace(/\{\{nowrap\|([^}]+)\}\}/g, '$1');
+    processed = processed.replace(/\{\{small\|([^}]+)\}\}/g, '$1');
+    processed = processed.replace(/\{\{big\|([^}]+)\}\}/g, '$1');
+    processed = processed.replace(/\{\{b\|([^}]+)\}\}/g, '<strong>$1</strong>');
+    processed = processed.replace(/\{\{i\|([^}]+)\}\}/g, '<em>$1</em>');
+    
+    // Handle {{abbr|abbreviation|full form}} templates
+    processed = processed.replace(/\{\{abbr\|([^|]+)\|([^}]+)\}\}/g, '<abbr title="$2">$1</abbr>');
+    
+    // Handle {{convert|number|unit|...}} templates
+    processed = processed.replace(/\{\{convert\|([^|]+)\|([^|]+)[\|][^}]*\}\}/g, (_match: string, num: string, unit: string) => `${num.trim()} ${unit.trim()}`);
+    processed = processed.replace(/\{\{convert\|([^|]+)\|([^}]+)\}\}/g, (_match: string, num: string, unit: string) => `${num.trim()} ${unit.trim()}`);
+    
+    // Handle {{currency|amount|code}} templates
+    processed = processed.replace(/\{\{currency\|([^|]+)\|([^}]+)\}\}/g, (_match: string, amount: string, code: string) => `${amount.trim()} ${code.trim()}`);
+    
+    // Handle {{flag|country}} templates - convert to links
+    processed = processed.replace(/\{\{flag\|([^}]+)\}\}/g, (_match: string, country: string) => {
+      const cleanCountry = country.trim();
+      return createWikiLink(cleanCountry, `🏴 ${cleanCountry}`, site);
+    });
+    
+    // Handle {{flagicon|country}} templates by converting to emoji
+    processed = processed.replace(/\{\{flagicon\|[^}]+\}\}/g, '🏴');
+    
+    // Handle {{color|color|text}} templates
+    processed = processed.replace(/\{\{color\|([^|]+)\|([^}]+)\}\}/g, (_match: string, color: string, text: string) => {
+      return `<span style="color: ${color.trim()}">${text.trim()}</span>`;
+    });
+    
+    // Handle utility templates
+    processed = processed.replace(/\{\{nbsp\}\}/g, ' ');
+    processed = processed.replace(/\{\{•\}\}/g, '•');
+    processed = processed.replace(/\{\{and\}\}/g, ' and ');
+    processed = processed.replace(/\{\{or\}\}/g, ' or ');
+    processed = processed.replace(/\{\{comma\}\}/g, ', ');
+    processed = processed.replace(/\{\{br\}\}/g, '<br>');
+    processed = processed.replace(/\{\{break\}\}/g, '<br>');
+    
+    // Handle mathematical notation
+    processed = processed.replace(/\{\{sup\|([^}]+)\}\}/g, '<sup>$1</sup>');
+    processed = processed.replace(/\{\{sub\|([^}]+)\}\}/g, '<sub>$1</sub>');
+    
+    // Handle date templates
+    processed = processed.replace(/\{\{date\|([^|}]+)[\|][^}]*\}\}/g, '$1');
+    processed = processed.replace(/\{\{date\|([^}]+)\}\}/g, '$1');
+    
+    // Remove complex templates that we can't easily parse
+    processed = processed.replace(/\{\{coord\|[^}]+\}\}/g, '');
+    processed = processed.replace(/\{\{age\|[^}]+\}\}/g, '');
+    
+    // If no change in this iteration, break to avoid infinite loop
+    if (beforeProcessing === processed) {
+      break;
+    }
+  }
   
-  // Remove wiki formatting
-  cleaned = cleaned
-    .replace(/'''([^']+)'''/g, '$1') // Bold
-    .replace(/''([^']+)''/g, '$1')   // Italic
-    .replace(/<br\s*\/?>/gi, ' ')    // Line breaks
-    .replace(/<small>(.*?)<\/small>/gi, '$1') // Small text
-    .replace(/<[^>]+>/g, '')         // Other HTML tags
-    .replace(/\s+/g, ' ')            // Multiple spaces
+  // Clean remaining simple templates
+  processed = cleanRemainingTemplates(processed);
+  
+  // Handle wiki links - convert to proper HTML links
+  processed = processed.replace(/\[\[([^\|\]]+)\|([^\]]+)\]\]/g, (_match: string, page: string, display: string) => {
+    return createWikiLink(page.trim(), display.trim(), site);
+  });
+  
+  processed = processed.replace(/\[\[([^\]]+)\]\]/g, (_match: string, page: string) => {
+    const cleanPage = page.trim();
+    return createWikiLink(cleanPage, cleanPage, site);
+  });
+  
+  // Handle file links specially - extract just the filename
+  processed = processed.replace(/\[\[File:([^\|\]]+)(?:\|[^\]]+)?\]\]/g, '$1');
+  
+  // Handle wiki formatting
+  processed = processed
+    .replace(/'''([^']+)'''/g, '<strong>$1</strong>') // Bold
+    .replace(/''([^']+)''/g, '<em>$1</em>')           // Italic
+    .replace(/<br\s*\/?>/gi, '<br>')                  // Normalize line breaks
+    .replace(/\s+/g, ' ')                             // Multiple spaces
     .trim();
   
-  return cleaned;
+  return processed;
+}
+
+/**
+ * Create a proper wiki link with correct site URL
+ */
+function createWikiLink(target: string, display: string, site: 'ixwiki' | 'iiwiki' = 'ixwiki'): string {
+  const config = wikiConfigs[site];
+  if (!config) {
+    // Fallback to basic text if config not found
+    return display;
+  }
+  
+  const normalizedTarget = target.replace(/ /g, '_').replace(/^_+|_+$/g, '');
+  const wikiUrl = createWikiUrl(normalizedTarget, config, site);
+  const safeDisplay = display.replace(/[&<>"']/g, (char: string) => {
+    const escapeMap: Record<string, string> = {
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    };
+    return escapeMap[char] ?? char;
+  });
+  return `<a href="${wikiUrl}" target="_blank" rel="noopener noreferrer" style="color: #429284; text-decoration: none;">${safeDisplay}</a>`;
+}
+
+/**
+ * Clean any remaining simple templates that weren't handled by specific processors
+ */
+function cleanRemainingTemplates(text: string): string {
+  let cleaned = text;
+  
+  // For any remaining simple templates with just one parameter, extract the parameter
+  // Pattern: {{template|content}} -> content
+  cleaned = cleaned.replace(/\{\{[^|{}]+\|([^}]+)\}\}/g, '$1');
+  
+  // For templates with no parameters, remove them entirely
+  // Pattern: {{template}} -> (empty)
+  cleaned = cleaned.replace(/\{\{[^|}]+\}\}/g, '');
+  
+  // For complex templates that still remain, try to extract any meaningful text
+  const complexTemplateRegex = /\{\{([^}]+)\}\}/;
+  const complexTemplateMatch = complexTemplateRegex.exec(cleaned);
+  if (complexTemplateMatch?.[1]) {
+    const templateContent = complexTemplateMatch[1];
+    // Try to find text that looks like readable content (not parameter names)
+    const readableText = templateContent.split('|').find(part => {
+      const trimmed = part.trim();
+      return trimmed.length > 3 && 
+             !trimmed.includes('=') && 
+             /^[A-Za-z]/.test(trimmed) &&
+             !complexTemplateRegex.exec(trimmed);
+    });
+    
+    if (readableText) {
+      cleaned = cleaned.replace(complexTemplateMatch[0], readableText.trim());
+    } else {
+      // Remove the template entirely if no readable content found
+      cleaned = cleaned.replace(complexTemplateMatch[0], '');
+    }
+  }
+  
+  return cleaned.trim();
 }
 
 /**
@@ -552,7 +976,8 @@ function cleanParameterValue(value: string): string {
 function createInfoboxObject(
   pageName: string, 
   templateData: Record<string, string>, 
-  rawWikitext: string
+  rawWikitext: string,
+  site: 'ixwiki' | 'iiwiki' = 'ixwiki'
 ): CountryInfoboxWithDynamicProps {
   const infobox: CountryInfoboxWithDynamicProps = {
     name: pageName,
@@ -560,10 +985,10 @@ function createInfoboxObject(
     parsedTemplateData: templateData,
   };
   
-  // Map template parameters to infobox properties
+  // Map template parameters to infobox properties with proper wikitext processing
   for (const [key, value] of Object.entries(templateData)) {
     if (key && value && value.trim()) {
-      (infobox as Record<string, string>)[key] = cleanParameterValue(value);
+      (infobox as Record<string, string>)[key] = processWikitext(value, site);
     }
   }
   
@@ -573,7 +998,7 @@ function createInfoboxObject(
 /**
  * Extract economic data from infobox
  */
-function extractEconomicData(infobox: CountryInfoboxWithDynamicProps): Partial<ParsedCountryData> {
+async function extractEconomicData(infobox: CountryInfoboxWithDynamicProps, site: 'ixwiki' | 'iiwiki'): Promise<Partial<ParsedCountryData>> {
   const data: Partial<ParsedCountryData> = {};
   
   // Extract population
@@ -653,7 +1078,107 @@ function extractEconomicData(infobox: CountryInfoboxWithDynamicProps): Partial<P
   data.currency = infobox.currency || infobox.currency_code;
   data.languages = infobox.official_languages || infobox.official_language || infobox.languages;
   
+  // Extract flag and coat of arms filenames
+  const flagValue = infobox.image_flag || infobox.flag;
+  const coaValue = infobox.image_coat || infobox.coat_of_arms || infobox.coa || infobox.coat_arms;
+  
+  data.flag = extractImageFile(typeof flagValue === 'string' ? flagValue : undefined);
+  data.coatOfArms = extractImageFile(typeof coaValue === 'string' ? coaValue : undefined);
+  
+  // Resolve image URLs
+  if (data.flag) {
+    data.flagUrl = await getImageUrl(data.flag, site) || undefined;
+  }
+  
+  if (data.coatOfArms) {
+    data.coatOfArmsUrl = await getImageUrl(data.coatOfArms, site) || undefined;
+  }
+  
   return data;
+}
+
+/**
+ * Extract image filename from various infobox formats
+ */
+function extractImageFile(value?: string): string | undefined {
+  if (!value || typeof value !== 'string') return undefined;
+  
+  let cleaned = value.trim();
+  
+  // Remove File: prefix if present
+  if (cleaned.toLowerCase().startsWith('file:')) {
+    cleaned = cleaned.substring(5).trim();
+  }
+  
+  // Extract from [[File:filename|...]] format
+  const fileMatch = cleaned.match(/\[\[File:([^\|\]]+)(?:\|[^\]]+)?\]\]/i);
+  if (fileMatch) {
+    return fileMatch[1]?.trim();
+  }
+  
+  // Extract from simple File:filename format
+  const simpleFileMatch = cleaned.match(/^File:(.+)$/i);
+  if (simpleFileMatch) {
+    return simpleFileMatch[1]?.trim();
+  }
+  
+  // If it looks like a filename (contains file extension), return as-is
+  if (/\.(png|jpg|jpeg|gif|svg|webp)$/i.test(cleaned)) {
+    return cleaned;
+  }
+  
+  // If it contains HTML links, try to extract filename
+  const htmlMatch = cleaned.match(/href=["'][^"']*\/([^/"']+\.(png|jpg|jpeg|gif|svg|webp))["']/i);
+  if (htmlMatch) {
+    return htmlMatch[1];
+  }
+  
+  return undefined;
+}
+
+/**
+ * Get full image URL from wiki filename
+ */
+async function getImageUrl(filename: string, site: 'ixwiki' | 'iiwiki'): Promise<string | null> {
+  if (!filename) return null;
+  
+  const config = wikiConfigs[site];
+  if (!config) return null;
+  
+  try {
+    const params = new URLSearchParams({
+      action: 'query',
+      format: 'json',
+      titles: `File:${filename}`,
+      prop: 'imageinfo',
+      iiprop: 'url',
+      iilimit: '1'
+    });
+
+    const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${params.toString()}`, {
+      headers: {
+        'User-Agent': 'IxStats-Builder/1.0 (https://ixstats.com) MediaWiki-Search',
+      },
+    });
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const pages = data.query?.pages;
+    
+    if (!pages || typeof pages !== 'object') return null;
+    
+    const pageIds = Object.keys(pages);
+    if (pageIds.length === 0) return null;
+    
+    const page = pages[pageIds[0]!];
+    if (!page || page.missing || !page.imageinfo?.[0]?.url) return null;
+    
+    return page.imageinfo[0].url;
+  } catch (error) {
+    console.error(`Failed to get image URL for ${filename} on ${site}:`, error);
+    return null;
+  }
 }
 
 /**

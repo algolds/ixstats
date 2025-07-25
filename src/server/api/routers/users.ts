@@ -124,6 +124,12 @@ export const usersRouter = createTRPCRouter({
           baselinePopulation: z.number().optional(),
           baselineGdpPerCapita: z.number().optional(),
           landArea: z.number().optional(),
+          flag: z.string().optional(),
+          coatOfArms: z.string().optional(),
+          government: z.string().optional(),
+          currency: z.string().optional(),
+          languages: z.string().optional(),
+          capital: z.string().optional(),
         }).optional(),
       })
     )
@@ -142,6 +148,9 @@ export const usersRouter = createTRPCRouter({
           baselinePopulation: input.initialData?.baselinePopulation || 1000000,
           baselineGdpPerCapita: input.initialData?.baselineGdpPerCapita || 50000,
           landArea: input.initialData?.landArea || 100000,
+          flag: input.initialData?.flag || undefined,
+          coatOfArms: input.initialData?.coatOfArms || undefined,
+          governmentType: input.initialData?.government || undefined,
           baselineDate: new Date(IxTime.getCurrentIxTime()),
           lastCalculated: new Date(IxTime.getCurrentIxTime()),
           localGrowthFactor: 1.0,
