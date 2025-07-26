@@ -704,10 +704,21 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
 
 
   return (
-    <Card className={cn("w-full", className)}>
+    <Card 
+      className={cn("w-full transition-all duration-300 hover:scale-[1.01] hover:shadow-xl group/card", className)}
+      style={{
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        boxShadow: `
+          0 4px 16px rgba(0, 0, 0, 0.1),
+          0 1px 4px rgba(0, 0, 0, 0.05),
+          0 0 0 1px rgba(59, 130, 246, 0.1)
+        `,
+      }}
+    >
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <BookOpen className="h-5 w-5" />
+          <BookOpen className="h-5 w-5 text-blue-500 group-hover/card:text-blue-400 transition-colors" />
           Featured Article
       
         </CardTitle>
@@ -739,7 +750,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleRefresh}
-                  className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                  className="p-1 text-muted-foreground hover:text-foreground transition-all duration-300 hover:scale-110 hover:rotate-180"
                   title="Refresh featured article"
                 >
                   <RefreshCw className="h-4 w-4" />
@@ -749,7 +760,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
                     href={articleData.articleUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline transition-all duration-300 hover:scale-105"
                   >
                     <ExternalLink className="h-3 w-3" />
                     View Article
@@ -769,7 +780,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
             </div>
             <button
               onClick={handleRefresh}
-              className="mt-4 inline-flex items-center gap-2 px-3 py-1 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
+              className="mt-4 inline-flex items-center gap-2 px-3 py-1 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-all duration-300 hover:scale-105 hover:shadow-lg"
             >
               <RefreshCw className="h-3 w-3" />
               Refresh

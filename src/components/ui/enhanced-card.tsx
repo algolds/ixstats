@@ -3,7 +3,7 @@ import { cn } from '../../lib/utils';
 import React from "react";
 
 interface EnhancedCardProps extends React.ComponentProps<typeof Card> {
-  variant?: 'default' | 'glass' | 'diplomatic' | 'economic' | 'military' | 'cultural' | 'social' | 'security';
+  variant?: 'default' | 'glass' | 'diplomatic' | 'economic' | 'military' | 'cultural' | 'social' | 'security' | 'mycountry';
   glow?: boolean | 'hover' | 'active';
   hover?: 'none' | 'lift' | 'glow' | 'scale';
 }
@@ -25,6 +25,7 @@ export function EnhancedCard({
     cultural: 'glass-card-cultural',
     social: 'glass-card-social',
     security: 'glass-card-security',
+    mycountry: 'glass-card-mycountry',
   };
   
   const hoverClasses = {

@@ -87,40 +87,38 @@ export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: pr
   return (
     <GlassCard
       variant="diplomatic"
-      hover="lift"
+      hover="none"
       className={cn(
-        "group hover:scale-[1.01] transition-all duration-200 flex flex-col h-full cursor-pointer min-h-0 overflow-hidden",
-        dominantColor && "border-2",
-        "glass-hover-animate"
+        "group glass-floating glass-refraction glass-interactive transition-all duration-200 flex flex-col h-full cursor-pointer overflow-hidden",
+        dominantColor && "border-l-2"
       )}
-      style={dominantColor ? { boxShadow: `0 0 0 3px ${dominantColor}55, 0 4px 24px ${dominantColor}33` } : undefined}
+      style={dominantColor ? { borderLeftColor: dominantColor } : undefined}
       onClick={goToDetail}
     >
-      {/* Flag as blurred glassy background with waving animation */}
+      {/* Flag as subtle background accent - constrained to top portion */}
       {flagUrl && (
         <div
-          className="absolute inset-0 z-0 flag-waving-bg"
+          className="absolute top-0 left-0 right-0 h-16 z-0 flag-background-accent"
           style={{
             backgroundImage: `url(${flagUrl})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            filter: 'blur(12px) brightness(0.7) saturate(1.2)',
-            opacity: 0.7,
+            filter: 'blur(8px) brightness(0.4) saturate(1.1)',
+            opacity: 0.3,
             pointerEvents: 'none',
           }}
         />
       )}
-      {/* Animated overlay using dominant color */}
+      {/* Subtle color accent overlay - constrained to top */}
       {dominantColor && (
         <div
-          className="absolute inset-0 z-10 pointer-events-none animate-pulse"
+          className="absolute top-0 left-0 right-0 h-16 z-10 pointer-events-none color-accent-overlay"
           style={{
-            background: `radial-gradient(circle at 70% 30%, ${dominantColor}33 0%, transparent 70%)`,
-            mixBlendMode: 'lighten',
+            background: `linear-gradient(180deg, ${dominantColor}20 0%, transparent 100%)`,
           }}
         />
       )}
-      <div className="relative z-20 p-3 flex-grow min-h-0">
+      <div className="relative z-20 p-3 flex-grow min-h-0 country-card-content">
         <div className="flex justify-between items-start mb-2 gap-2">
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <div className="w-8 h-6 relative flex-shrink-0">
@@ -199,57 +197,27 @@ export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: pr
         </div>
       </div>
 
-      <CardFooter className="relative z-20 px-3 pb-3 pt-0 flex justify-between items-center gap-2 min-h-0">
+      <CardFooter className="relative z-20 px-3 pb-3 pt-0 flex justify-between items-center gap-2 min-h-0 country-card-content">
         <Badge className="text-[10px] px-2 py-0.5">{country.economicTier ?? '—'}</Badge>
         <Badge variant="outline" className="text-[10px] px-2 py-0.5">
           {country.populationTier ?? '—'}
         </Badge>
       </CardFooter>
       <style jsx>{`
-        .flag-waving-bg {
-          animation: flag-wave 6s ease-in-out infinite;
-          will-change: transform;
-          mask-image: linear-gradient(to bottom, rgba(0,0,0,0.7) 80%, transparent 100%);
+        .flag-background-accent {
+          mask-image: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%);
+          transition: opacity 0.3s ease;
         }
-        @keyframes flag-wave {
-          0% { transform: skewY(0deg) scaleX(1) translateY(0); }
-          10% { transform: skewY(-2deg) scaleX(1.01) translateY(-1px); }
-          20% { transform: skewY(2deg) scaleX(0.99) translateY(1px); }
-          30% { transform: skewY(-1deg) scaleX(1.01) translateY(-2px); }
-          40% { transform: skewY(1deg) scaleX(0.99) translateY(2px); }
-          50% { transform: skewY(0deg) scaleX(1) translateY(0); }
-          100% { transform: skewY(0deg) scaleX(1) translateY(0); }
-        }
-        .glass-hover-animate {
-          transition: box-shadow 0.4s cubic-bezier(0.4,0.2,0.2,1), transform 0.3s cubic-bezier(0.4,0.2,0.2,1);
-        }
-        .glass-hover-animate:hover {
-          box-shadow: 0 8px 32px 0 rgba(99,102,241,0.18), 0 1.5px 8px 0 rgba(0,0,0,0.10);
-          background: hsl(var(--accent) / 0.8);
-          filter: brightness(1.05) saturate(1.1);
+        .color-accent-overlay {
+          transition: opacity 0.3s ease;
         }
         
-        /* Light mode sparkle effect for flags */
-        @media (prefers-color-scheme: light) {
-          .flag-waving-bg::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(circle at 20% 30%, rgba(255,255,255,0.6) 1px, transparent 1px),
-                        radial-gradient(circle at 80% 70%, rgba(255,255,255,0.4) 1px, transparent 1px),
-                        radial-gradient(circle at 60% 20%, rgba(255,255,255,0.5) 1px, transparent 1px);
-            background-size: 40px 40px, 60px 60px, 30px 30px;
-            animation: sparkle 3s ease-in-out infinite;
-            pointer-events: none;
-          }
+        /* Hover enhancements for flag and color overlays */
+        .glass-interactive:hover .flag-background-accent {
+          opacity: 0.5;
         }
-        
-        @keyframes sparkle {
-          0%, 100% { opacity: 0.6; transform: scale(1); }
-          50% { opacity: 1; transform: scale(1.1); }
+        .glass-interactive:hover .color-accent-overlay {
+          opacity: 0.7;
         }
       `}</style>
     </GlassCard>

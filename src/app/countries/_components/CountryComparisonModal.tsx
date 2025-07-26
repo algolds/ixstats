@@ -207,10 +207,10 @@ export function CountryComparisonModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden bg-background text-foreground backdrop-blur-md border border-border">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
+          <DialogTitle className="flex items-center gap-2 text-foreground">
+            <BarChart3 className="h-5 w-5 text-primary" />
             Compare Countries
           </DialogTitle>
         </DialogHeader>
@@ -225,20 +225,21 @@ export function CountryComparisonModal({
                   Add Country ({selectedCountries.length}/8)
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80" align="start">
-                <Command>
+              <PopoverContent className="w-80 bg-background text-foreground backdrop-blur-md border border-border" align="start">
+                <Command className="bg-transparent text-foreground">
                   <CommandInput 
                     placeholder="Search countries..." 
                     value={searchValue}
                     onValueChange={setSearchValue}
+                    className="bg-background text-foreground border-border focus:border-primary"
                   />
-                  <CommandEmpty>No countries found.</CommandEmpty>
+                  <CommandEmpty className="text-muted-foreground">No countries found.</CommandEmpty>
                   <CommandGroup className="max-h-60 overflow-auto">
                     {filteredCountries.map((country) => (
                       <CommandItem
                         key={country.id}
                         onSelect={() => void addCountry(country.id)}
-                        className="cursor-pointer"
+                        className="cursor-pointer text-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground transition-colors"
                         disabled={loadingCountries.has(country.id)}
                       >
                         <div className="flex items-center justify-between w-full">
@@ -279,7 +280,7 @@ export function CountryComparisonModal({
               {selectedCountries.map((country) => (
                 <div
                   key={country.id}
-                  className="flex items-center gap-2 bg-muted px-3 py-1 rounded-md"
+                  className="flex items-center gap-2 bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground px-3 py-1 rounded-md transition-colors border border-border"
                   style={{ borderLeft: `3px solid ${country.color}` }}
                 >
                   <span className="text-sm font-medium">{country.name}</span>
@@ -312,7 +313,7 @@ export function CountryComparisonModal({
 
           {/* Summary Statistics */}
           {selectedCountries.length > 0 && (
-            <div className="border-t pt-4">
+            <div className="border-t border-border pt-4">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
                 <div>
                   <p className="text-sm text-muted-foreground">Countries</p>
@@ -341,8 +342,8 @@ export function CountryComparisonModal({
           )}
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button variant="outline" onClick={onClose}>
+          <div className="flex justify-end gap-2 pt-4 border-t border-border">
+            <Button variant="outline" onClick={onClose} className="text-foreground border-border hover:bg-accent hover:text-accent-foreground">
               Close
             </Button>
             {selectedCountries.length === 1 && selectedCountries[0] && (
@@ -353,6 +354,7 @@ export function CountryComparisonModal({
                     handleCountrySelect(country.id);
                   }
                 }}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 View Details
               </Button>

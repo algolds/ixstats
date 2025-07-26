@@ -1,0 +1,864 @@
+/* ===================================
+   GLASS REFRACTION SYSTEM
+   =================================== */
+
+/* CSS Custom Properties for Dashboard Colors */
+:root {
+  --glass-mycountry: #ca8a04;      /* yellow-600 */
+  --glass-global: #2563eb;         /* blue-600 */
+  --glass-eci: #4f46e5;           /* indigo-600 */
+  --glass-sdi: #dc2626;           /* red-600 */
+  
+  /* Z-depth levels */
+  --z-background: -1;
+  --z-surface: 0;
+  --z-floating: 10;
+  --z-overlay: 100;
+  --z-modal: 1000;
+  --z-tooltip: 10000;
+  --z-command: 10001;
+  
+  /* Blur intensity levels */
+  --blur-subtle: 8px;
+  --blur-moderate: 16px;
+  --blur-prominent: 24px;
+  --blur-intense: 32px;
+  
+  /* Refraction intensity */
+  --refraction-light: 0.1;
+  --refraction-medium: 0.15;
+  --refraction-strong: 0.25;
+  --refraction-intense: 0.35;
+}
+
+/* ===================================
+   BASE GLASS CLASSES
+   =================================== */
+
+.glass-base {
+  position: relative;
+  backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, var(--refraction-light)) 0%, 
+    rgba(255, 255, 255, 0.05) 100%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-surface {
+  position: relative;
+  backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-surface);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, var(--refraction-light)) 0%, 
+    rgba(255, 255, 255, 0.03) 100%);
+}
+
+.glass-floating {
+  position: relative;
+  backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, var(--refraction-light)) 0%, 
+    rgba(255, 255, 255, 0.05) 100%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-floating);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    0 4px 16px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.glass-overlay {
+  position: relative;
+  backdrop-filter: blur(var(--blur-intense)) saturate(200%);
+  -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-overlay);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, var(--refraction-medium)) 0%, 
+    rgba(255, 255, 255, 0.08) 100%);
+  box-shadow: 
+    0 16px 64px rgba(0, 0, 0, 0.15),
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* ===================================
+   INTERACTIVE DEPTH LAYERS
+   =================================== */
+
+.glass-depth-1 {
+  position: relative;
+  backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-surface);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, var(--refraction-light)) 0%, 
+    rgba(255, 255, 255, 0.03) 100%);
+  transform: translateZ(0);
+}
+
+.glass-depth-2 {
+  position: relative;
+  backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, var(--refraction-light)) 0%, 
+    rgba(255, 255, 255, 0.05) 100%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-floating);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    0 4px 16px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transform: translateZ(10px);
+}
+
+.glass-depth-3 {
+  position: relative;
+  backdrop-filter: blur(var(--blur-intense)) saturate(200%);
+  -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-overlay);
+  box-shadow: 
+    0 16px 64px rgba(0, 0, 0, 0.15),
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transform: translateZ(20px);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, var(--refraction-strong)) 0%, 
+    rgba(255, 255, 255, 0.1) 100%);
+}
+
+.glass-depth-4 {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-modal);
+  transform: translateZ(30px);
+  backdrop-filter: blur(var(--blur-intense)) saturate(220%);
+  -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(220%);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, var(--refraction-intense)) 0%, 
+    rgba(255, 255, 255, 0.12) 100%);
+  box-shadow: 
+    0 24px 96px rgba(0, 0, 0, 0.2),
+    0 12px 48px rgba(0, 0, 0, 0.15),
+    inset 0 2px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* ===================================
+   COLOR-THEMED GLASS VARIANTS
+   =================================== */
+
+.glass-mycountry {
+  position: relative;
+  backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-floating);
+  border: 1px solid rgba(202, 138, 4, 0.3);
+  background: linear-gradient(135deg, 
+    rgba(202, 138, 4, var(--refraction-medium)) 0%, 
+    rgba(202, 138, 4, 0.05) 50%,
+    rgba(255, 255, 255, 0.05) 100%);
+  box-shadow: 
+    0 8px 32px rgba(202, 138, 4, 0.1),
+    0 4px 16px rgba(202, 138, 4, 0.05),
+    inset 0 1px 0 rgba(255, 215, 0, 0.3);
+}
+
+.glass-global {
+  position: relative;
+  backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-floating);
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  background: linear-gradient(135deg, 
+    rgba(37, 99, 235, var(--refraction-medium)) 0%, 
+    rgba(37, 99, 235, 0.05) 50%,
+    rgba(255, 255, 255, 0.05) 100%);
+  box-shadow: 
+    0 8px 32px rgba(37, 99, 235, 0.1),
+    0 4px 16px rgba(37, 99, 235, 0.05),
+    inset 0 1px 0 rgba(59, 130, 246, 0.3);
+}
+
+.glass-eci {
+  position: relative;
+  backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-floating);
+  border: 1px solid rgba(79, 70, 229, 0.3);
+  background: linear-gradient(135deg, 
+    rgba(79, 70, 229, var(--refraction-medium)) 0%, 
+    rgba(79, 70, 229, 0.05) 50%,
+    rgba(255, 255, 255, 0.05) 100%);
+  box-shadow: 
+    0 8px 32px rgba(79, 70, 229, 0.1),
+    0 4px 16px rgba(79, 70, 229, 0.05),
+    inset 0 1px 0 rgba(99, 102, 241, 0.3);
+}
+
+.glass-sdi {
+  position: relative;
+  backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-floating);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  background: linear-gradient(135deg, 
+    rgba(220, 38, 38, var(--refraction-medium)) 0%, 
+    rgba(220, 38, 38, 0.05) 50%,
+    rgba(255, 255, 255, 0.05) 100%);
+  box-shadow: 
+    0 8px 32px rgba(220, 38, 38, 0.1),
+    0 4px 16px rgba(220, 38, 38, 0.05),
+    inset 0 1px 0 rgba(239, 68, 68, 0.3);
+}
+
+/* ===================================
+   INTERACTIVE STATES
+   =================================== */
+
+.glass-interactive {
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-interactive:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 12px 48px rgba(0, 0, 0, 0.15),
+    0 6px 24px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(calc(var(--blur-moderate) + 4px)) saturate(200%);
+  -webkit-backdrop-filter: blur(calc(var(--blur-moderate) + 4px)) saturate(200%);
+}
+
+.glass-interactive:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Color-specific hover states */
+.glass-mycountry.glass-interactive:hover {
+  box-shadow: 
+    0 12px 48px rgba(202, 138, 4, 0.2),
+    0 6px 24px rgba(202, 138, 4, 0.1),
+    inset 0 1px 0 rgba(255, 215, 0, 0.4);
+  border-color: rgba(202, 138, 4, 0.5);
+}
+
+.glass-global.glass-interactive:hover {
+  box-shadow: 
+    0 12px 48px rgba(37, 99, 235, 0.2),
+    0 6px 24px rgba(37, 99, 235, 0.1),
+    inset 0 1px 0 rgba(59, 130, 246, 0.4);
+  border-color: rgba(37, 99, 235, 0.5);
+}
+
+.glass-eci.glass-interactive:hover {
+  box-shadow: 
+    0 12px 48px rgba(79, 70, 229, 0.2),
+    0 6px 24px rgba(79, 70, 229, 0.1),
+    inset 0 1px 0 rgba(99, 102, 241, 0.4);
+  border-color: rgba(79, 70, 229, 0.5);
+}
+
+.glass-sdi.glass-interactive:hover {
+  box-shadow: 
+    0 12px 48px rgba(220, 38, 38, 0.2),
+    0 6px 24px rgba(220, 38, 38, 0.1),
+    inset 0 1px 0 rgba(239, 68, 68, 0.4);
+  border-color: rgba(220, 38, 38, 0.5);
+}
+
+/* ===================================
+   REFRACTION EDGE EFFECTS
+   =================================== */
+
+.glass-refraction::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0.1) 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.1) 75%,
+    rgba(255, 255, 255, 0.2) 100%);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+.glass-refraction::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.6) 20%,
+    rgba(255, 255, 255, 0.8) 50%,
+    rgba(255, 255, 255, 0.6) 80%,
+    transparent 100%);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* ===================================
+   RESPONSIVE ADAPTATIONS
+   =================================== */
+
+@media (max-width: 768px) {
+  .glass-base {
+    backdrop-filter: blur(var(--blur-subtle)) saturate(150%);
+    -webkit-backdrop-filter: blur(var(--blur-subtle)) saturate(150%);
+  }
+  
+  .glass-floating {
+    backdrop-filter: blur(var(--blur-moderate)) saturate(160%);
+    -webkit-backdrop-filter: blur(var(--blur-moderate)) saturate(160%);
+  }
+  
+  .glass-overlay {
+    backdrop-filter: blur(var(--blur-prominent)) saturate(170%);
+    -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(170%);
+  }
+}
+
+/* ===================================
+   INTEGRATION WITH EXISTING CLASSES
+   =================================== */
+
+/* Enhanced card compatibility */
+.bg-card.glass-enhanced {
+  position: relative;
+  backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-surface);
+  background: linear-gradient(135deg, 
+    rgba(var(--background-rgb), 0.9) 0%, 
+    rgba(var(--background-rgb), 0.8) 100%) !important;
+}
+
+.bg-card.glass-enhanced::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0.1) 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.1) 75%,
+    rgba(255, 255, 255, 0.2) 100%);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+.bg-card.glass-enhanced::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.6) 20%,
+    rgba(255, 255, 255, 0.8) 50%,
+    rgba(255, 255, 255, 0.6) 80%,
+    transparent 100%);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* Navigation integration */
+.navigation-glass {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, var(--refraction-light)) 0%, 
+    rgba(255, 255, 255, 0.05) 100%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-floating);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    0 4px 16px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+}
+
+.navigation-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0.1) 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.1) 75%,
+    rgba(255, 255, 255, 0.2) 100%);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+.navigation-glass::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.6) 20%,
+    rgba(255, 255, 255, 0.8) 50%,
+    rgba(255, 255, 255, 0.6) 80%,
+    transparent 100%);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* Command palette integration */
+.command-palette-glass {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-overlay);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, var(--refraction-medium)) 0%, 
+    rgba(255, 255, 255, 0.08) 100%);
+  box-shadow: 
+    0 16px 64px rgba(0, 0, 0, 0.15),
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(var(--blur-intense)) saturate(200%);
+  -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(200%);
+}
+
+.command-palette-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0.1) 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.1) 75%,
+    rgba(255, 255, 255, 0.2) 100%);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+.command-palette-glass::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.6) 20%,
+    rgba(255, 255, 255, 0.8) 50%,
+    rgba(255, 255, 255, 0.6) 80%,
+    transparent 100%);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* Dynamic island integration */
+.dynamic-island-glass {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, var(--refraction-light)) 0%, 
+    rgba(255, 255, 255, 0.05) 100%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-floating);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    0 4px 16px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+}
+
+.dynamic-island-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0.1) 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.1) 75%,
+    rgba(255, 255, 255, 0.2) 100%);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+.dynamic-island-glass::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.6) 20%,
+    rgba(255, 255, 255, 0.8) 50%,
+    rgba(255, 255, 255, 0.6) 80%,
+    transparent 100%);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* ===================================
+   INTERACTION STATE ENHANCEMENTS
+   =================================== */
+
+.glass-interacting {
+  --refraction-multiplier: 1.3;
+  
+  backdrop-filter: blur(calc(var(--blur-moderate) * 1.2)) saturate(200%);
+  -webkit-backdrop-filter: blur(calc(var(--blur-moderate) * 1.2)) saturate(200%);
+  
+  box-shadow: 
+    0 16px 64px rgba(0, 0, 0, 0.12),
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    inset 0 2px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Dynamic depth transitions */
+.glass-depth-1 {
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.glass-depth-2 {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.glass-depth-3 {
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.glass-depth-4 {
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Background adaptation classes */
+.glass-adapt-light {
+  --refraction-light: 0.08;
+  --refraction-medium: 0.12;
+  --refraction-strong: 0.18;
+  --refraction-intense: 0.25;
+  
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.glass-adapt-dark {
+  --refraction-light: 0.15;
+  --refraction-medium: 0.22;
+  --refraction-strong: 0.32;
+  --refraction-intense: 0.45;
+  
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Grid integration effects */
+.glass-with-grid {
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-with-grid::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.glass-with-grid:hover::before {
+  opacity: 1;
+}
+
+.glass-with-grid > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* ===================================
+   LIGHT AND DARK MODE ADAPTATIONS
+   =================================== */
+
+/* Light mode defaults (already defined above) are optimized for light backgrounds */
+
+/* Dark mode specific adaptations */
+.dark .glass-base {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, calc(var(--refraction-light) * 0.6)) 0%, 
+    rgba(255, 255, 255, 0.015) 100%);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.dark .glass-surface {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, calc(var(--refraction-light) * 0.5)) 0%, 
+    rgba(255, 255, 255, 0.01) 100%);
+}
+
+.dark .glass-floating {
+  box-shadow: 
+    0 12px 48px rgba(0, 0, 0, 0.4),
+    0 6px 24px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass-overlay {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, calc(var(--refraction-medium) * 0.7)) 0%, 
+    rgba(255, 255, 255, 0.04) 100%);
+  box-shadow: 
+    0 20px 80px rgba(0, 0, 0, 0.5),
+    0 10px 40px rgba(0, 0, 0, 0.3),
+    inset 0 2px 0 rgba(255, 255, 255, 0.25);
+}
+
+/* Dark mode color variants */
+.dark .glass-mycountry {
+  border: 1px solid rgba(202, 138, 4, 0.25);
+  background: linear-gradient(135deg, 
+    rgba(202, 138, 4, calc(var(--refraction-medium) * 0.7)) 0%, 
+    rgba(202, 138, 4, 0.025) 50%,
+    rgba(255, 255, 255, 0.015) 100%);
+  box-shadow: 
+    0 8px 32px rgba(202, 138, 4, 0.15),
+    0 4px 16px rgba(202, 138, 4, 0.08),
+    inset 0 1px 0 rgba(255, 215, 0, 0.2);
+}
+
+.dark .glass-global {
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  background: linear-gradient(135deg, 
+    rgba(37, 99, 235, calc(var(--refraction-medium) * 0.7)) 0%, 
+    rgba(37, 99, 235, 0.025) 50%,
+    rgba(255, 255, 255, 0.015) 100%);
+  box-shadow: 
+    0 8px 32px rgba(37, 99, 235, 0.15),
+    0 4px 16px rgba(37, 99, 235, 0.08),
+    inset 0 1px 0 rgba(59, 130, 246, 0.2);
+}
+
+.dark .glass-eci {
+  border: 1px solid rgba(79, 70, 229, 0.25);
+  background: linear-gradient(135deg, 
+    rgba(79, 70, 229, calc(var(--refraction-medium) * 0.7)) 0%, 
+    rgba(79, 70, 229, 0.025) 50%,
+    rgba(255, 255, 255, 0.015) 100%);
+  box-shadow: 
+    0 8px 32px rgba(79, 70, 229, 0.15),
+    0 4px 16px rgba(79, 70, 229, 0.08),
+    inset 0 1px 0 rgba(99, 102, 241, 0.2);
+}
+
+.dark .glass-sdi {
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  background: linear-gradient(135deg, 
+    rgba(220, 38, 38, calc(var(--refraction-medium) * 0.7)) 0%, 
+    rgba(220, 38, 38, 0.025) 50%,
+    rgba(255, 255, 255, 0.015) 100%);
+  box-shadow: 
+    0 8px 32px rgba(220, 38, 38, 0.15),
+    0 4px 16px rgba(220, 38, 38, 0.08),
+    inset 0 1px 0 rgba(239, 68, 68, 0.2);
+}
+
+/* Dark mode interactive states */
+.dark .glass-interactive:hover {
+  box-shadow: 
+    0 16px 64px rgba(0, 0, 0, 0.4),
+    0 8px 32px rgba(0, 0, 0, 0.25),
+    inset 0 2px 0 rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(calc(var(--blur-moderate) + 6px)) saturate(220%);
+  -webkit-backdrop-filter: blur(calc(var(--blur-moderate) + 6px)) saturate(220%);
+}
+
+.dark .glass-mycountry.glass-interactive:hover {
+  box-shadow: 
+    0 16px 64px rgba(202, 138, 4, 0.25),
+    0 8px 32px rgba(202, 138, 4, 0.15),
+    inset 0 2px 0 rgba(255, 215, 0, 0.3);
+  border-color: rgba(202, 138, 4, 0.4);
+}
+
+.dark .glass-global.glass-interactive:hover {
+  box-shadow: 
+    0 16px 64px rgba(37, 99, 235, 0.25),
+    0 8px 32px rgba(37, 99, 235, 0.15),
+    inset 0 2px 0 rgba(59, 130, 246, 0.3);
+  border-color: rgba(37, 99, 235, 0.4);
+}
+
+.dark .glass-eci.glass-interactive:hover {
+  box-shadow: 
+    0 16px 64px rgba(79, 70, 229, 0.25),
+    0 8px 32px rgba(79, 70, 229, 0.15),
+    inset 0 2px 0 rgba(99, 102, 241, 0.3);
+  border-color: rgba(79, 70, 229, 0.4);
+}
+
+.dark .glass-sdi.glass-interactive:hover {
+  box-shadow: 
+    0 16px 64px rgba(220, 38, 38, 0.25),
+    0 8px 32px rgba(220, 38, 38, 0.15),
+    inset 0 2px 0 rgba(239, 68, 68, 0.3);
+  border-color: rgba(220, 38, 38, 0.4);
+}
+
+/* Dark mode refraction effects */
+.dark .glass-refraction::before {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.06) 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.06) 75%,
+    rgba(255, 255, 255, 0.15) 100%);
+}
+
+.dark .glass-refraction::after {
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.4) 20%,
+    rgba(255, 255, 255, 0.6) 50%,
+    rgba(255, 255, 255, 0.4) 80%,
+    transparent 100%);
+}
+
+/* Dark mode interaction states */
+.dark .glass-interacting {
+  backdrop-filter: blur(calc(var(--blur-moderate) * 1.4)) saturate(240%);
+  -webkit-backdrop-filter: blur(calc(var(--blur-moderate) * 1.4)) saturate(240%);
+  
+  box-shadow: 
+    0 20px 80px rgba(0, 0, 0, 0.4),
+    0 10px 40px rgba(0, 0, 0, 0.25),
+    inset 0 2px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* Dark mode grid integration */
+.dark .glass-with-grid::before {
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+}
+
+/* Dark mode background adaptation overrides */
+.dark .glass-adapt-light {
+  --refraction-light: 0.12;
+  --refraction-medium: 0.18;
+  --refraction-strong: 0.28;
+  --refraction-intense: 0.35;
+  
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .glass-adapt-dark {
+  --refraction-light: 0.18;
+  --refraction-medium: 0.28;
+  --refraction-strong: 0.38;
+  --refraction-intense: 0.5;
+  
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* ===================================
+   PERFORMANCE OPTIMIZATIONS
+   =================================== */
+
+.glass-base,
+.glass-interactive {
+  will-change: transform, backdrop-filter, box-shadow;
+  contain: layout style;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .glass-interactive {
+    transition: none;
+  }
+  
+  .glass-interactive:hover {
+    transform: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .glass-base {
+    border-width: 2px;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(var(--background-rgb), 0.95) !important;
+  }
+}

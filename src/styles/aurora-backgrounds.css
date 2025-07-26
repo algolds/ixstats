@@ -1,0 +1,46 @@
+/* ===================================
+   BASE STYLES - CLEAN BACKGROUNDS
+   =================================== */
+
+html {
+  background: var(--color-bg-primary) !important;
+  color: var(--color-text-primary);
+}
+
+/* Dark mode HTML */
+.dark html {
+  background: var(--color-bg-primary) !important;
+}
+
+/* Glassmorphic override for bg-background with subtle transparency */
+.glassmorphic .bg-background {
+  background: rgba(var(--background-rgb), 0.95) !important;
+  backdrop-filter: blur(var(--blur-subtle)) !important;
+  -webkit-backdrop-filter: blur(var(--blur-subtle)) !important;
+  border: 1px solid rgba(var(--border-rgb), 0.2) !important;
+}
+
+/* Dark mode glassmorphic enhancements */
+.dark .glassmorphic .bg-background {
+  background: rgba(var(--background-rgb), 0.9) !important;
+  backdrop-filter: blur(var(--blur-moderate)) !important;
+  -webkit-backdrop-filter: blur(var(--blur-moderate)) !important;
+  border: 1px solid rgba(var(--border-rgb), 0.3) !important;
+  box-shadow: var(--shadow-glass-md) !important;
+}
+
+/* Light mode glassmorphic adjustments */
+.light .glassmorphic .bg-background {
+  background: rgba(var(--background-rgb), 0.95) !important;
+  backdrop-filter: blur(var(--blur-subtle)) !important;
+  -webkit-backdrop-filter: blur(var(--blur-subtle)) !important;
+  border: 1px solid rgba(var(--border-rgb), 0.3) !important;
+  box-shadow: var(--shadow-glass-sm) !important;
+}
+
+/* Card backgrounds with grid pattern consideration */
+.glassmorphic .bg-card {
+  background: rgba(var(--background-rgb), 0.98) !important;
+  backdrop-filter: blur(var(--blur-subtle)) !important;
+  -webkit-backdrop-filter: blur(var(--blur-subtle)) !important;
+}

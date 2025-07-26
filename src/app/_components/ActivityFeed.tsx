@@ -241,10 +241,21 @@ export function ActivityFeed({ countries, isLoading }: ActivityFeedProps) {
   };
 
   return (
-    <Card>
+    <Card
+      className="transition-all duration-300 hover:scale-[1.01] hover:shadow-xl group/card"
+      style={{
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        boxShadow: `
+          0 4px 16px rgba(0, 0, 0, 0.1),
+          0 1px 4px rgba(0, 0, 0, 0.05),
+          0 0 0 1px rgba(34, 197, 94, 0.1)
+        `,
+      }}
+    >
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Activity className="h-5 w-5" />
+          <Activity className="h-5 w-5 text-green-500 group-hover/card:text-green-400 transition-colors" />
           Recent Activity
           <Badge variant="secondary" className="ml-auto">
             Live
@@ -261,8 +272,11 @@ export function ActivityFeed({ countries, isLoading }: ActivityFeedProps) {
             </div>
           ) : (
             activities.slice(0, 8).map((activity) => (
-              <div key={activity.id} className="flex items-start gap-3 group">
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted group-hover:bg-muted/80 transition-colors">
+              <div 
+                key={activity.id} 
+                className="flex items-start gap-3 group p-3 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-md"
+              >
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted group-hover:bg-muted/80 transition-all duration-300 group-hover:scale-110">
                   {getActivityIcon(activity)}
                 </div>
                 
@@ -304,7 +318,9 @@ export function ActivityFeed({ countries, isLoading }: ActivityFeedProps) {
 
         {activities.length > 8 && (
           <div className="mt-4 pt-4 border-t">
-            <button className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <button 
+              className="text-sm text-muted-foreground hover:text-foreground transition-all duration-300 hover:scale-105 hover:underline"
+            >
               View all activity →
             </button>
           </div>

@@ -108,15 +108,6 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Executive Command Center</h2>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => window.open('/eci', '_blank')}
-        >
-          <Activity className="h-4 w-4 mr-2" />
-          Open Full ECI
-          <ExternalLink className="h-4 w-4 ml-2" />
-        </Button>
       </div>
 
       {/* Real-time Metrics Overview */}
@@ -430,61 +421,52 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
               <CabinetMeetingModal>
                 <Button 
                   variant="outline" 
-                  className="w-full justify-start" 
+                  className="w-full justify-start text-left h-auto py-2 px-3 hover:scale-105 transition-all duration-200" 
                   size="sm"
                 >
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Schedule Cabinet Meeting
+                  <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">Schedule Meeting</span>
                 </Button>
               </CabinetMeetingModal>
               <EconomicPolicyModal>
                 <Button 
                   variant="outline" 
-                  className="w-full justify-start" 
+                  className="w-full justify-start text-left h-auto py-2 px-3 hover:scale-105 transition-all duration-200" 
                   size="sm"
                 >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Create Economic Policy
+                  <FileText className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">Create Policy</span>
                 </Button>
               </EconomicPolicyModal>
               <NationalSecurityModal>
                 <Button 
                   variant="outline" 
-                  className="w-full justify-start" 
+                  className="w-full justify-start text-left h-auto py-2 px-3 hover:scale-105 transition-all duration-200" 
                   size="sm"
                 >
-                  <Shield className="h-4 w-4 mr-2" />
-                  Security Dashboard
+                  <Shield className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">Security Status</span>
                 </Button>
               </NationalSecurityModal>
               <Button 
                 variant="outline" 
-                className="w-full justify-start" 
+                className="w-full justify-start text-left h-auto py-2 px-3 hover:scale-105 transition-all duration-200" 
                 size="sm"
                 onClick={() => window.open('/eci', '_blank')}
               >
-                <Target className="h-4 w-4 mr-2" />
-                New Strategic Plan
+                <Target className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span className="truncate">Strategic Plan</span>
               </Button>
               <TrendRiskAnalyticsModal countryId={countryId}>
                 <Button 
                   variant="outline" 
-                  className="w-full justify-start" 
+                  className="w-full justify-start text-left h-auto py-2 px-3 hover:scale-105 transition-all duration-200" 
                   size="sm"
                 >
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Analytics Dashboard
+                  <TrendingUp className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">Analytics</span>
                 </Button>
               </TrendRiskAnalyticsModal>
-              <Button 
-                variant="outline" 
-                className="w-full justify-start" 
-                size="sm"
-                onClick={() => window.open('/eci', '_blank')}
-              >
-                <Activity className="h-4 w-4 mr-2" />
-                View Full Dashboard
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -494,10 +476,7 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
       <Alert>
         <Activity className="h-4 w-4" />
         <AlertDescription>
-          This is your executive command summary. For comprehensive management tools, detailed analytics, and full functionality, visit the{" "}
-          <Button variant="link" className="p-0 h-auto" onClick={() => window.open('/eci', '_blank')}>
-            Executive Command Interface (ECI) →
-          </Button>
+          This is your executive command summary. Use the quick actions above or access the full ECI for comprehensive management tools.
         </AlertDescription>
       </Alert>
     </div>
