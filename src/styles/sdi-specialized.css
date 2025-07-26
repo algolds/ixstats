@@ -1,0 +1,95 @@
+/* === SDI & ECI SPECIFIC STYLES === */
+
+/* Aurora Effect for SDI - Legacy (keep for compatibility) */
+@keyframes aurora-flow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Diplomatic SDI Typography Utility Classes */
+.diplomatic-header {
+  font-family: 'Merriweather', serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 800;
+  font-size: 2.2rem;
+  color: #c7d2fe;
+  text-shadow: 0 2px 8px rgba(99,102,241,0.18);
+}
+
+.diplomatic-icon {
+  font-family: 'Merriweather', serif;
+  font-size: 2.8rem;
+  color: #a5b4fc;
+  text-shadow: 0 2px 8px rgba(99,102,241,0.18);
+}
+
+.diplomatic-value {
+  font-family: 'Fira Mono', 'Menlo', 'Monaco', 'monospace';
+  font-weight: 700;
+  font-size: 2.2rem;
+  color: #e0e7ff;
+  letter-spacing: 0.04em;
+}
+
+.diplomatic-label {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+  color: #c7d2fe;
+}
+
+/* SDI Sidebar */
+.sdi-sidebar {
+  background: linear-gradient(180deg, #1e293b 0%, #312e81 100%);
+  box-shadow: 0 8px 32px rgba(30,41,59,0.18);
+  border-right: 1.5px solid #334155;
+  border-radius: 0 1.5rem 1.5rem 0;
+}
+
+.sdi-sidebar button {
+  font-size: 1.1rem;
+  color: #c7d2fe;
+  background: transparent;
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  margin-bottom: 0.25rem;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+  outline: none;
+}
+
+.sdi-sidebar button:hover,
+.sdi-sidebar button:focus {
+  background: rgba(99,102,241,0.18);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(99,102,241,0.12);
+}
+
+.sdi-sidebar button.active {
+  background: rgba(99,102,241,0.28);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 4px 24px rgba(99,102,241,0.18);
+}
+
+.sdi-sidebar .medallion-glow {
+  filter: drop-shadow(0 0 16px #6366f1cc);
+}
+
+/* Animated Flags Background Animation */
+@keyframes gentle-float {
+  0%, 100% { 
+    transform: translateY(0px) translateX(0px) rotate(var(--rotation, 0deg)); 
+  }
+  25% { 
+    transform: translateY(-3px) translateX(calc(var(--float-direction, 1) * 2px)) rotate(calc(var(--rotation, 0deg) + 1deg)); 
+  }
+  50% { 
+    transform: translateY(0px) translateX(calc(var(--float-direction, 1) * 4px)) rotate(var(--rotation, 0deg)); 
+  }
+  75% { 
+    transform: translateY(3px) translateX(calc(var(--float-direction, 1) * 2px)) rotate(calc(var(--rotation, 0deg) - 1deg)); 
+  }
+}

@@ -1,14 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { 
   DynamicIsland,
   DynamicContainer,
-  DynamicTitle,
-  DynamicDescription,
-  DynamicDiv,
   useDynamicIslandSize,
   SIZE_PRESETS,
   DynamicIslandProvider
@@ -31,12 +28,10 @@ import {
   X,
   Settings,
   Plus,
-  Zap,
   AlertTriangle,
   Monitor,
   Sun,
   Moon,
-  Palette,
   Volume2,
   VolumeX,
   Languages,
@@ -44,7 +39,6 @@ import {
   Eye,
   CheckCircle,
   Info,
-  Calendar,
   BellRing,
   Users,
   AlertCircle,
@@ -62,6 +56,8 @@ import {
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { useUser } from "~/context/auth-context";
 import { useTheme } from "~/context/theme-context";
+import { SimpleFlag } from "~/components/SimpleFlag";
+import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 
 interface CommandPaletteProps {
   className?: string;
@@ -70,14 +66,17 @@ interface CommandPaletteProps {
 
 interface SearchResult {
   id: string;
-  type: "country" | "command" | "page";
+  type: "country" | "command" | "feature";
   title: string;
   subtitle?: string;
+  description?: string;
+  metadata?: Record<string, any>;
   icon?: React.ComponentType<{ className?: string }>;
   action: () => void;
 }
 
 type ViewMode = "compact" | "search" | "notifications" | "settings" | "cycling";
+type SearchFilter = "all" | "countries" | "commands" | "features";
 
 function CommandPaletteContent({ 
   isExpanded = false, 
@@ -96,6 +95,7 @@ function CommandPaletteContent({
   const [mode, setMode] = useState<ViewMode>("compact");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [searchFilter, setSearchFilter] = useState<SearchFilter>("all");
   const [mounted, setMounted] = useState(false);
   // const [cyclingIndex, setCyclingIndex] = useState(0);
   const [isUserInteracting, setIsUserInteracting] = useState(false);
@@ -223,13 +223,22 @@ function CommandPaletteContent({
 
   // Memoize commands to prevent recreation
   const commands = useMemo(() => [
-    { name: "Dashboard", path: "/dashboard", icon: Target },
-    { name: "Countries", path: "/countries", icon: Globe },
-    { name: "MyCountry®", path: "/mycountry", icon: Crown },
-    { name: "ECI", path: "/eci", icon: Target },
-    { name: "Builder", path: "/builder", icon: Plus },
-    { name: "Profile", path: "/profile", icon: Users },
-    { name: "Admin", path: "/admin", icon: Settings },
+    { name: "Dashboard", path: "/dashboard", icon: Target, description: "Main analytics dashboard" },
+    { name: "Countries", path: "/countries", icon: Globe, description: "Browse all countries" },
+    { name: "MyCountry®", path: "/mycountry", icon: Crown, description: "Manage your country" },
+    { name: "ECI", path: "/eci", icon: Target, description: "Executive Command Interface" },
+    { name: "Builder", path: "/builder", icon: Plus, description: "Country builder tool" },
+    { name: "Profile", path: "/profile", icon: Users, description: "User profile settings" },
+    { name: "Admin", path: "/admin", icon: Settings, description: "Admin panel" },
+  ], []);
+
+  const features = useMemo(() => [
+    { name: "Economic Analysis", path: "/dashboard", icon: BarChart3, description: "View detailed economic metrics and projections" },
+    { name: "Strategic Planning", path: "/eci", icon: Target, description: "Access strategic planning tools" },
+    { name: "Intelligence Reports", path: "/sdi", icon: Eye, description: "Strategic Defense Initiative reports" },
+    { name: "Population Analytics", path: "/dashboard", icon: Activity, description: "Demographic and population insights" },
+    { name: "Global Rankings", path: "/countries", icon: Crown, description: "Compare countries by various metrics" },
+    { name: "Time Controls", path: "/admin", icon: Clock, description: "IxTime system management" },
   ], []);
 
   // Debounce search query for better performance
@@ -241,49 +250,78 @@ function CommandPaletteContent({
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
-  // Search functionality - uses debounced query
+  // Enhanced search functionality with filtering
   const searchResults = useMemo(() => {
     if (!debouncedSearchQuery.trim()) return [];
 
     const query = debouncedSearchQuery.toLowerCase();
-
     const results: SearchResult[] = [];
 
-    // Add countries - only if data is available
-    if (countriesData?.countries) {
+    // Add countries - only if data is available and filter allows
+    if ((searchFilter === "all" || searchFilter === "countries") && countriesData?.countries) {
       const countryResults = countriesData.countries
         .filter(country => country.name.toLowerCase().includes(query))
-        .slice(0, 5)
+        .slice(0, searchFilter === "countries" ? 10 : 4)
         .map(country => ({
           id: country.id,
           type: "country" as const,
           title: country.name,
-          subtitle: `View ${country.name} details`,
-          icon: Globe,
+          subtitle: `${country.economicTier || 'Unknown'} • ${formatPopulation(country.currentPopulation || 0)}`,
+          description: `GDP: ${formatCurrency(country.currentGdpPerCapita || 0)} per capita`,
+          metadata: {
+            economicTier: country.economicTier,
+            population: country.currentPopulation,
+            gdpPerCapita: country.currentGdpPerCapita,
+            countryName: country.name
+          },
+          icon: Globe, // Will be replaced with flag in the UI
           action: () => {
-            window.location.href = `/countries/${country.id}`;
+            window.location.href = createUrl(`/countries/${country.id}`);
           }
         }));
       results.push(...countryResults);
     }
 
-    // Add commands
-    const commandResults = commands
-      .filter(cmd => cmd.name.toLowerCase().includes(query))
-      .map(cmd => ({
-        id: cmd.path,
-        type: "command" as const,
-        title: cmd.name,
-        subtitle: `Navigate to ${cmd.name}`,
-        icon: cmd.icon,
-        action: () => {
-          window.location.href = cmd.path;
-        }
-      }));
-    results.push(...commandResults);
+    // Add commands - only if filter allows
+    if ((searchFilter === "all" || searchFilter === "commands") && commands.length > 0) {
+      const commandResults = commands
+        .filter(cmd => cmd.name.toLowerCase().includes(query) || cmd.description?.toLowerCase().includes(query))
+        .slice(0, searchFilter === "commands" ? 10 : 3)
+        .map(cmd => ({
+          id: cmd.path,
+          type: "command" as const,
+          title: cmd.name,
+          subtitle: cmd.description || `Navigate to ${cmd.name}`,
+          description: `Page: ${cmd.path}`,
+          icon: cmd.icon,
+          action: () => {
+            window.location.href = createUrl(cmd.path);
+          }
+        }));
+      results.push(...commandResults);
+    }
 
-    return results.slice(0, 6); // Reduced from 8 to 6 for better performance
-  }, [debouncedSearchQuery, countriesData, commands]);
+    // Add features - only if filter allows
+    if ((searchFilter === "all" || searchFilter === "features") && features.length > 0) {
+      const featureResults = features
+        .filter(feature => feature.name.toLowerCase().includes(query) || feature.description?.toLowerCase().includes(query))
+        .slice(0, searchFilter === "features" ? 10 : 3)
+        .map(feature => ({
+          id: feature.path + feature.name,
+          type: "feature" as const,
+          title: feature.name,
+          subtitle: feature.description || `Access ${feature.name}`,
+          description: `Available in: ${feature.path}`,
+          icon: feature.icon,
+          action: () => {
+            window.location.href = createUrl(feature.path);
+          }
+        }));
+      results.push(...featureResults);
+    }
+
+    return results.slice(0, searchFilter === "all" ? 8 : 12);
+  }, [debouncedSearchQuery, searchFilter, countriesData, commands, features]);
 
   // Cycling between views (for future use)
   // const cyclingViews = ["notifications"];
@@ -327,7 +365,7 @@ function CommandPaletteContent({
   // Handle refresh - debounced to prevent spam
   const handleRefresh = useCallback(async () => {
     try {
-      const promises = [refetchCountries()];
+      const promises: Promise<any>[] = [refetchCountries()];
       if (user?.id) {
         promises.push(refetchNotifications());
       }
@@ -387,14 +425,32 @@ function CommandPaletteContent({
             break;
         }
       }
+      
+      // Tab cycling for filters when in search mode
+      if (e.key === 'Tab' && mode === 'search') {
+        e.preventDefault();
+        const filters: SearchFilter[] = ['all', 'countries', 'commands', 'features'];
+        const currentIndex = filters.indexOf(searchFilter);
+        const nextIndex = (currentIndex + 1) % filters.length;
+        const nextFilter = filters[nextIndex];
+        if (nextFilter) {
+          setSearchFilter(nextFilter);
+        }
+      }
+      
       if (e.key === 'Escape') {
-        switchMode("compact");
+        if (mode === 'search' && searchQuery) {
+          setSearchQuery('');
+          setSearchFilter('all');
+        } else {
+          switchMode("compact");
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyPress, { passive: false });
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [mode, switchMode]);
+  }, [mode, switchMode, searchFilter, searchQuery]);
 
   useEffect(() => {
     setMounted(true);
@@ -484,16 +540,16 @@ function CommandPaletteContent({
                   >
                     {setupStatus === 'complete' && userProfile?.country ? (
                       <div className="space-y-4">
-                        <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+                        <div className="flex items-center gap-3 pb-3 border-b border-border">
                           <Crown className="h-6 w-6 text-amber-400" />
                           <div>
-                            <div className="font-semibold text-foreground">Executive Dashboard</div>
-                            <div className="text-sm text-muted-foreground">{userProfile.country.name}</div>
+                            <div className="font-semibold text-gray-900 dark:text-white">Executive Dashboard</div>
+                            <div className="text-sm text-gray-700 dark:text-gray-300">{userProfile.country.name}</div>
                           </div>
                         </div>
                         
                         <div className="grid grid-cols-3 gap-3">
-                          <div className="text-center p-3 bg-white/5 rounded-lg">
+                          <div className="text-center p-3 bg-muted/30 rounded-lg">
                             <BarChart3 className="h-6 w-6 text-blue-400 mx-auto mb-2" />
                             <div className="text-xs text-muted-foreground mb-1">Economic</div>
                             <div className="w-8 h-8 mx-auto bg-green-500/20 rounded-full flex items-center justify-center relative">
@@ -502,7 +558,7 @@ function CommandPaletteContent({
                             </div>
                           </div>
                           
-                          <div className="text-center p-3 bg-white/5 rounded-lg">
+                          <div className="text-center p-3 bg-muted/30 rounded-lg">
                             <Users className="h-6 w-6 text-yellow-400 mx-auto mb-2" />
                             <div className="text-xs text-muted-foreground mb-1">Social</div>
                             <div className="w-8 h-8 mx-auto bg-yellow-500/20 rounded-full flex items-center justify-center relative">
@@ -511,7 +567,7 @@ function CommandPaletteContent({
                             </div>
                           </div>
                           
-                          <div className="text-center p-3 bg-white/5 rounded-lg">
+                          <div className="text-center p-3 bg-muted/30 rounded-lg">
                             <Activity className="h-6 w-6 text-purple-400 mx-auto mb-2" />
                             <div className="text-xs text-muted-foreground mb-1">Security</div>
                             <div className="w-8 h-8 mx-auto bg-purple-500/20 rounded-full flex items-center justify-center relative">
@@ -544,7 +600,7 @@ function CommandPaletteContent({
                       </div>
                     ) : (
                       <div className="text-center py-6">
-                        <div className="p-4 bg-white/5 rounded-xl">
+                        <div className="p-4 bg-muted/30 rounded-xl">
                           <User className="h-12 w-12 mx-auto mb-3 text-blue-400" />
                           <div className="text-muted-foreground mb-2">Welcome!</div>
                           <div className="text-muted-foreground text-sm mb-4">Complete setup to access your executive dashboard</div>
@@ -589,7 +645,7 @@ function CommandPaletteContent({
               <Bell className="h-3 w-3" />
               {(!isSticky || !isCollapsed) && <span className="text-xs">Alerts</span>}
               {unreadNotifications > 0 && (
-                <Badge className={`absolute bg-red-500 text-foreground flex items-center justify-center rounded-full text-[10px] ${
+                <Badge className={`absolute bg-destructive text-foreground flex items-center justify-center rounded-full text-[10px] ${
                   isSticky && isCollapsed ? '-top-1 -right-1 h-3 w-3 p-0' : '-top-1 -right-1 h-3 w-3 p-0'
                 }`}>
                   {unreadNotifications > 9 ? '9+' : unreadNotifications}
@@ -639,13 +695,38 @@ function CommandPaletteContent({
               </Button>
             </div>
 
+            {/* Search Filter Tabs */}
+            <div className="flex items-center gap-2 mb-4">
+              {(['all', 'countries', 'commands', 'features'] as SearchFilter[]).map((filter) => (
+                <Button
+                  key={filter}
+                  size="sm"
+                  variant={searchFilter === filter ? "default" : "ghost"}
+                  onClick={() => setSearchFilter(filter)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                    searchFilter === filter 
+                      ? 'bg-primary text-primary-foreground shadow-sm' 
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/10'
+                  }`}
+                >
+                  {filter === 'all' ? 'All' : filter.charAt(0).toUpperCase() + filter.slice(1)}
+                  {filter === 'countries' && countriesData?.countries && (
+                    <Badge variant="secondary" className="ml-1 px-1 py-0 text-[10px] h-4">
+                      {countriesData.countries.length}
+                    </Badge>
+                  )}
+                </Button>
+              ))}
+            
+            </div>
+
             <div className="relative mb-6">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
-                placeholder="Search countries, commands, and features..."
+                placeholder={`Search ${searchFilter === 'all' ? 'everything' : searchFilter}...`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 pr-4 py-3 bg-accent/10 border-border text-foreground placeholder:text-muted-foreground rounded-xl text-base focus:bg-accent/15 focus:border-blue-400 transition-all"
+                className="pl-12 pr-16 py-3 bg-accent/10 border-border text-foreground placeholder:text-muted-foreground rounded-xl text-base focus:bg-accent/15 focus:border-blue-400 transition-all"
                 autoFocus
               />
               <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
@@ -655,36 +736,85 @@ function CommandPaletteContent({
               </div>
             </div>
 
-            <ScrollArea className="max-h-64">
+            <ScrollArea className="max-h-96">
               {searchResults.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {searchResults.map((result) => (
-                    <Button
-                      key={result.id}
-                      variant="ghost"
-                      onClick={result.action}
-                      className="w-full justify-start gap-4 text-muted-foreground hover:text-foreground hover:bg-accent/10 p-4 rounded-xl transition-all group"
-                    >
-                      <div className="p-2 bg-accent/10 rounded-lg group-hover:bg-accent/15 transition-colors">
-                        {result.icon && <result.icon className="h-5 w-5" />}
-                      </div>
-                      <div className="text-left flex-1 min-w-0">
-                        <div className="font-medium text-base text-foreground break-words">
-                          {result.title}
-                        </div>
-                        {result.subtitle && (
-                          <div className="text-sm text-muted-foreground mt-1 break-words">
-                            {result.subtitle}
+                    <TooltipProvider key={result.id}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            onClick={result.action}
+                            className="w-full justify-start gap-4 text-muted-foreground hover:text-foreground hover:bg-accent/10 p-4 rounded-xl transition-all group h-auto"
+                          >
+                            <div className="flex items-center justify-center w-10 h-10 bg-accent/10 rounded-lg group-hover:bg-accent/15 transition-colors shrink-0">
+                              {result.type === 'country' && result.metadata?.countryName ? (
+                                <SimpleFlag 
+                                  countryName={result.metadata.countryName}
+                                  className="w-6 h-4 rounded object-cover"
+                                  showPlaceholder={true}
+                                />
+                              ) : (
+                                result.icon && <result.icon className="h-5 w-5" />
+                              )}
+                            </div>
+                            <div className="text-left flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <div className="font-medium text-base text-foreground break-words">
+                                  {result.title}
+                                </div>
+                                <Badge 
+                                  variant="secondary" 
+                                  className={`px-2 py-0.5 text-[10px] h-5 ${
+                                    result.type === 'country' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' :
+                                    result.type === 'command' ? 'bg-green-500/10 text-green-600 dark:text-green-400' :
+                                    'bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                                  }`}
+                                >
+                                  {result.type}
+                                </Badge>
+                              </div>
+                              {result.subtitle && (
+                                <div className="text-sm text-muted-foreground mb-1 break-words">
+                                  {result.subtitle}
+                                </div>
+                              )}
+                              {result.description && (
+                                <div className="text-xs text-muted-foreground/70 break-words">
+                                  {result.description}
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-muted-foreground/50 group-hover:text-muted-foreground transition-colors shrink-0">
+                              <ChevronDown className="h-4 w-4 rotate-[-90deg]" />
+                            </div>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-xs">
+                          <div className="space-y-2">
+                            <div className="font-medium">{result.title}</div>
+                            {result.type === 'country' && result.metadata && (
+                              <div className="text-sm space-y-1">
+                                <div>Economic Tier: <span className="font-medium">{result.metadata.economicTier || 'Unknown'}</span></div>
+                                <div>Population: <span className="font-medium">{formatPopulation(result.metadata.population || 0)}</span></div>
+                                <div>GDP per Capita: <span className="font-medium">{formatCurrency(result.metadata.gdpPerCapita || 0)}</span></div>
+                              </div>
+                            )}
+                            {result.type === 'command' && (
+                              <div className="text-sm">
+                                Navigate to the {result.title} page to access related features and tools.
+                              </div>
+                            )}
+                            {result.type === 'feature' && (
+                              <div className="text-sm">
+                                {result.subtitle} Click to access this feature.
+                              </div>
+                            )}
                           </div>
-                        )}
-                        <div className="text-xs text-muted-foreground mt-1 capitalize">
-                          {result.type}
-                        </div>
-                      </div>
-                      <div className="text-muted-foreground/50 group-hover:text-muted-foreground transition-colors">
-                        <ChevronDown className="h-4 w-4 rotate-[-90deg]" />
-                      </div>
-                    </Button>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   ))}
                 </div>
               ) : debouncedSearchQuery ? (
@@ -693,11 +823,30 @@ function CommandPaletteContent({
                     <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                     <div className="text-muted-foreground text-lg mb-2">No results found</div>
                     <div className="text-muted-foreground/70 text-sm break-words">
-                      No matches for <span className="font-mono bg-muted px-2 py-1 rounded">"{debouncedSearchQuery}"</span>
+                      No {searchFilter === 'all' ? 'matches' : searchFilter} found for{' '}
+                      <span className="font-mono bg-muted px-2 py-1 rounded">"{debouncedSearchQuery}"</span>
                     </div>
                     <div className="text-muted-foreground/50 text-xs mt-3">
-                      Try searching for countries, commands, or features
+                      {searchFilter === 'all' ? (
+                        'Try searching for countries, commands, or features'
+                      ) : searchFilter === 'countries' ? (
+                        `Try a different country name. We have ${countriesData?.countries?.length || 0} countries available.`
+                      ) : searchFilter === 'commands' ? (
+                        'Try "dashboard", "countries", "mycountry", or other page names'
+                      ) : (
+                        'Try "economic analysis", "strategic planning", or other feature names'
+                      )}
                     </div>
+                    {searchFilter !== 'all' && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setSearchFilter('all')}
+                        className="mt-2 text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        Search all categories instead
+                      </Button>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -705,18 +854,31 @@ function CommandPaletteContent({
                   <div className="p-6 bg-gradient-to-b from-muted/30 to-muted/50 rounded-2xl max-w-md mx-auto">
                     <Command className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
                     <div className="text-foreground text-lg mb-3">
-                      Search Everything
+                      Search {searchFilter === 'all' ? 'Everything' : searchFilter.charAt(0).toUpperCase() + searchFilter.slice(1)}
                     </div>
-                    <div className="text-muted-foreground text-sm space-y-2">
-                      <div>• Find countries and their data</div>
-                      <div>• Navigate to any page</div>
-                      <div>• Access commands quickly</div>
+                    <div className="text-muted-foreground/70 text-sm mb-4">
+                      {searchFilter === 'all' ? (
+                        'Find countries, navigate to pages, or discover features'
+                      ) : searchFilter === 'countries' ? (
+                        `Search through ${countriesData?.countries?.length || 0} countries by name`
+                      ) : searchFilter === 'commands' ? (
+                        'Navigate to different pages and sections'
+                      ) : (
+                        'Discover tools and features across the platform'
+                      )}
                     </div>
-                    <div className="flex items-center justify-center gap-2 mt-4 text-muted-foreground/70 text-xs">
-                      <kbd className="px-2 py-1 bg-muted rounded border border-border">⌘</kbd>
-                      <span>+</span>
-                      <kbd className="px-2 py-1 bg-muted rounded border border-border">K</kbd>
-                      <span>to open anywhere</span>
+                    <div className="flex flex-wrap gap-2 justify-center text-xs text-muted-foreground/50">
+                      <div className="flex items-center gap-1">
+                        <kbd className="px-2 py-1 bg-muted rounded border border-border">⌘</kbd>
+                        <span>+</span>
+                        <kbd className="px-2 py-1 bg-muted rounded border border-border">K</kbd>
+                        <span>to search</span>
+                      </div>
+                      <span>•</span>
+                      <div className="flex items-center gap-1">
+                        <kbd className="px-2 py-1 bg-muted rounded border border-border">Tab</kbd>
+                        <span>to cycle filters</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -733,7 +895,7 @@ function CommandPaletteContent({
                 <BellRing className="h-6 w-6 text-blue-400" />
                 Notification Center
                 {unreadNotifications > 0 && (
-                  <Badge className="bg-red-500 text-foreground text-sm px-2 py-1 rounded-full">
+                  <Badge className="bg-destructive text-foreground text-sm px-2 py-1 rounded-full">
                     {unreadNotifications}
                   </Badge>
                 )}
@@ -798,7 +960,7 @@ function CommandPaletteContent({
                             notification.type === "info" ? "bg-blue-500/20" :
                             notification.type === "warning" ? "bg-yellow-500/20" :
                             notification.type === "success" ? "bg-green-500/20" :
-                            notification.type === "error" ? "bg-red-500/20" :
+                            notification.type === "error" ? "bg-destructive/20" :
                             "bg-muted/50"
                           }`}>
                             <IconComponent className={`h-5 w-5 ${
@@ -889,8 +1051,8 @@ function CommandPaletteContent({
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-white">Theme</div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">Theme</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">
                     {theme === 'system' ? 'System' : theme === 'dark' ? 'Dark' : 'Light'}
                   </div>
                 </div>
@@ -932,8 +1094,8 @@ function CommandPaletteContent({
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-foreground">Sound Effects</div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">Sound Effects</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">
                     {userPreferences.soundEnabled ? 'Enabled' : 'Disabled'}
                   </div>
                 </div>
@@ -953,8 +1115,8 @@ function CommandPaletteContent({
                   <Languages className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-foreground">Language</div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">Language</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">
                     English
                   </div>
                 </div>
@@ -974,8 +1136,8 @@ function CommandPaletteContent({
                   <Layout className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-foreground">Compact Mode</div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">Compact Mode</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">
                     {compactMode ? 'Enabled - Denser UI layout' : 'Disabled - Standard spacing'}
                   </div>
                 </div>
@@ -995,8 +1157,8 @@ function CommandPaletteContent({
                   <Eye className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-foreground">Animations</div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">Animations</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">
                     {userPreferences.animations ? 'Enabled' : 'Reduced'}
                   </div>
                 </div>
@@ -1048,8 +1210,25 @@ function CommandPaletteContent({
       {/* Dropdown content - only on desktop */}
       {isExpanded && (
         <div className="hidden lg:block absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-[10002]">
-          <div className="command-palette-dropdown bg-slate-800/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[500px] max-w-[800px]">
-            {renderExpandedContent()}
+          <div 
+            className="command-palette-dropdown border border-white/20 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[500px] max-w-[800px] relative"
+            style={{
+              background: "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",
+              backdropFilter: "blur(20px) saturate(180%)",
+              WebkitBackdropFilter: "blur(20px) saturate(180%)",
+            }}
+          >
+            {/* Refraction border effects */}
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+              <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+              <div className="absolute top-0 left-0 w-px h-full bg-gradient-to-b from-transparent via-white/30 to-transparent" />
+              <div className="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+            </div>
+            
+            <div className="relative z-10">
+              {renderExpandedContent()}
+            </div>
           </div>
         </div>
       )}

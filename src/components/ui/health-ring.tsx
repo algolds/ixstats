@@ -106,20 +106,50 @@ export const HealthRing: React.FC<HealthRingProps> = ({
           stroke="hsl(var(--muted-foreground) / 0.2)"
           strokeWidth={stroke}
         />
-        {/* Animated gradient progress circle */}
+        {/* Animated liquid-like gradient progress circle */}
         <defs>
           <linearGradient id={`gradient-${label}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={color} stopOpacity="0.8">
-              <animate attributeName="stop-opacity" values="0.8;1;0.8" dur="3s" repeatCount="indefinite" />
+            <stop offset="0%" stopColor={color} stopOpacity="1">
+              <animate attributeName="stop-opacity" values="1;0.7;1" dur="2s" repeatCount="indefinite" />
+              <animate attributeName="offset" values="0%;15%;0%" dur="4s" repeatCount="indefinite" />
             </stop>
-            <stop offset="50%" stopColor={`rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.6)`}>
-              <animate attributeName="stop-opacity" values="0.6;0.9;0.6" dur="3s" repeatCount="indefinite" />
+            <stop offset="30%" stopColor={`rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.9)`} stopOpacity="0.9">
+              <animate attributeName="stop-opacity" values="0.9;0.6;0.9" dur="2.5s" repeatCount="indefinite" />
+              <animate attributeName="offset" values="30%;45%;30%" dur="4s" repeatCount="indefinite" />
             </stop>
-            <stop offset="100%" stopColor={`rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.4)`}>
-              <animate attributeName="stop-opacity" values="0.4;0.7;0.4" dur="3s" repeatCount="indefinite" />
+            <stop offset="70%" stopColor={`rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.7)`} stopOpacity="0.7">
+              <animate attributeName="stop-opacity" values="0.7;0.4;0.7" dur="3s" repeatCount="indefinite" />
+              <animate attributeName="offset" values="70%;85%;70%" dur="4s" repeatCount="indefinite" />
+            </stop>
+            <stop offset="100%" stopColor={`rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)`} stopOpacity="0.5">
+              <animate attributeName="stop-opacity" values="0.5;0.3;0.5" dur="3.5s" repeatCount="indefinite" />
+              <animate attributeName="offset" values="100%;85%;100%" dur="4s" repeatCount="indefinite" />
             </stop>
           </linearGradient>
+          
+          {/* Additional liquid wave effect */}
+          <radialGradient id={`wave-${label}`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor={`rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3)`}>
+              <animate attributeName="stop-opacity" values="0.3;0.6;0.3" dur="2s" repeatCount="indefinite" />
+            </stop>
+            <stop offset="100%" stopColor={`rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.1)`}>
+              <animate attributeName="stop-opacity" values="0.1;0.3;0.1" dur="2s" repeatCount="indefinite" />
+            </stop>
+          </radialGradient>
         </defs>
+        {/* Pulsing background circle for liquid effect */}
+        <circle
+          cx={validSize / 2}
+          cy={validSize / 2}
+          r={radius - 2}
+          fill={`url(#wave-${label})`}
+          opacity="0.4"
+        >
+          <animate attributeName="r" values={`${radius-2};${radius+1};${radius-2}`} dur="3s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.4;0.1;0.4" dur="3s" repeatCount="indefinite" />
+        </circle>
+        
+        {/* Main animated progress circle with liquid movement */}
         <circle
           cx={validSize / 2}
           cy={validSize / 2}
@@ -144,6 +174,29 @@ export const HealthRing: React.FC<HealthRingProps> = ({
             dur="1.5s"
             fill="freeze"
           />
+          <animate
+            attributeName="stroke-width"
+            values={`${stroke};${stroke + 1};${stroke}`}
+            dur="2s"
+            repeatCount="indefinite"
+          />
+        </circle>
+        
+        {/* Additional shimmer effect */}
+        <circle
+          cx={validSize / 2}
+          cy={validSize / 2}
+          r={radius}
+          fill="none"
+          stroke={`rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3)`}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          opacity="0"
+        >
+          <animate attributeName="opacity" values="0;0.7;0" dur="1.5s" begin="0.5s" repeatCount="indefinite" />
+          <animate attributeName="stroke-width" values="2;1;2" dur="1.5s" begin="0.5s" repeatCount="indefinite" />
         </circle>
       </svg>
       {/* Center content */}

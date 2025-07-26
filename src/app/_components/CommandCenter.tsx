@@ -6,10 +6,12 @@ import { LeaderboardsSection } from "./LeaderboardsSection";
 import { TierVisualization } from "./TierVisualization";
 import { ActivityFeed } from "./ActivityFeed";
 import { FeaturedArticle } from "./FeaturedArticle";
+import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
 // Types managed locally for component interface
 
 export function CommandCenter() {
-  // Fetch all necessary data
+
+  // Fetch all necessary data first
   const {
     data: allData,
     refetch: refetchCountries,
@@ -25,12 +27,7 @@ export function CommandCenter() {
   const countries = allData?.countries ?? [];
   const isLoading = countriesLoading || globalStatsLoading;
 
-  const handleRefresh = () => {
-    void refetchCountries();
-    void refetchGlobalStats();
-  };
-
-  // Process countries for leaderboards
+  // Process countries for leaderboards - after countries is defined
   const processedCountries = countries.map((country) => ({
     id: country.id,
     name: country.name,
@@ -45,6 +42,12 @@ export function CommandCenter() {
     adjustedGdpGrowth: country.adjustedGdpGrowth ?? 0,
     populationGrowthRate: country.populationGrowthRate ?? 0,
   }));
+
+
+  const handleRefresh = () => {
+    void refetchCountries();
+    void refetchGlobalStats();
+  };
 
   // Define interface for global stats data structure
   interface GlobalStatsApiResponse {
@@ -92,7 +95,14 @@ export function CommandCenter() {
     : undefined;
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="relative min-h-screen bg-background">
+      <InteractiveGridPattern
+        width={40}
+        height={40}
+        squares={[50, 40]}
+        className="opacity-30 dark:opacity-20"
+        squaresClassName="fill-slate-200/20 dark:fill-slate-700/20 stroke-slate-300/30 dark:stroke-slate-600/30 [&:nth-child(4n+1):hover]:fill-yellow-600/40 [&:nth-child(4n+1):hover]:stroke-yellow-600/60 [&:nth-child(4n+2):hover]:fill-blue-600/40 [&:nth-child(4n+2):hover]:stroke-blue-600/60 [&:nth-child(4n+3):hover]:fill-indigo-600/40 [&:nth-child(4n+3):hover]:stroke-indigo-600/60 [&:nth-child(4n+4):hover]:fill-red-600/40 [&:nth-child(4n+4):hover]:stroke-red-600/60 transition-all duration-200"
+      />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 mt-16">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content Area */}

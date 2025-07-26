@@ -205,7 +205,9 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
             <TooltipProvider key={tier}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="space-y-2 cursor-help">
+                  <div 
+                    className="space-y-2 cursor-help p-3 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-md"
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className={`w-3 h-3 rounded-full ${config.color}`} />
@@ -255,7 +257,9 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
             <TooltipProvider key={tier}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="space-y-2 cursor-help">
+                  <div 
+                    className="space-y-2 cursor-help p-3 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-md"
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-blue-500" />
@@ -291,10 +295,21 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
   };
 
   return (
-    <Card>
+    <Card
+      className="transition-all duration-300 hover:scale-[1.01] hover:shadow-xl group/card"
+      style={{
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        boxShadow: `
+          0 4px 16px rgba(0, 0, 0, 0.1),
+          0 1px 4px rgba(0, 0, 0, 0.05),
+          0 0 0 1px rgba(147, 51, 234, 0.1)
+        `,
+      }}
+    >
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5" />
+          <BarChart3 className="h-5 w-5 text-purple-500 group-hover/card:text-purple-400 transition-colors" />
           Tier Distribution
           <TooltipProvider>
             <Tooltip>
@@ -314,9 +329,9 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
         <div className="flex gap-2 mb-4">
           <button
             onClick={() => setActiveTab("economic")}
-            className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+            className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-300 hover:scale-105 ${
               activeTab === "economic"
-                ? "bg-primary text-primary-foreground"
+                ? "bg-primary text-primary-foreground shadow-lg"
                 : "bg-muted text-muted-foreground hover:bg-muted/80"
             }`}
           >
@@ -324,11 +339,19 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
           </button>
           <button
             onClick={() => setActiveTab("population")}
-            className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+            className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-300 hover:scale-105 ${
               activeTab === "population"
-                ? "bg-primary text-primary-foreground"
+                ? "bg-primary text-primary-foreground shadow-lg"
                 : "bg-muted text-muted-foreground hover:bg-muted/80"
             }`}
+            style={{
+              background: activeTab === "population" 
+                ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(96, 165, 250, 0.8))'
+                : 'rgba(255, 255, 255, 0.05)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+            }}
           >
             Population
           </button>

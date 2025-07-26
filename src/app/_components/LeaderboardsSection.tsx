@@ -200,7 +200,7 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
             <Link
               key={country.id}
               href={createUrl(`/countries/${country.id}`)}
-              className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors group"
+              className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg group"
             >
               <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted">
                 {getRankIcon(rank)}
@@ -247,10 +247,21 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
   };
 
   return (
-    <Card>
+    <Card
+      className="transition-all duration-300 hover:scale-[1.01] hover:shadow-xl group/card"
+      style={{
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        boxShadow: `
+          0 4px 16px rgba(0, 0, 0, 0.1),
+          0 1px 4px rgba(0, 0, 0, 0.05),
+          0 0 0 1px rgba(34, 211, 238, 0.1)
+        `,
+      }}
+    >
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Trophy className="h-5 w-5" />
+          <Trophy className="h-5 w-5 text-yellow-500 group-hover/card:text-yellow-400 transition-colors" />
           Global Leaderboards
           <Badge variant="secondary" className="ml-auto">
             Top 7

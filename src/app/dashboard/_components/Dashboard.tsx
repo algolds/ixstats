@@ -26,6 +26,8 @@ import { CountryExecutiveSection } from "~/app/countries/_components/CountryExec
 import { AnimatedFlagsBackground } from "~/components/ui/animated-flags-background";
 import { GlassCard } from "~/components/ui/enhanced-card";
 import { CollapsibleCard } from "~/components/ui/collapsible-card";
+import { SortableCard, SortableGrid } from "~/components/ui/sortable-card";
+import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
 import { HealthRing } from "~/components/ui/health-ring";
 import { AnimatedNumber } from "~/components/ui/animated-number";
 import { ActivityPopover } from "~/components/ui/activity-modal";
@@ -53,6 +55,22 @@ interface GlobalStats {
 export default function Dashboard() {
   const { user } = useUser();
   const [activityPopoverOpen, setActivityPopoverOpen] = React.useState<number | null>(null);
+  
+  // State for sortable cards
+  const [cardOrder, setCardOrder] = React.useState([
+    { id: "mycountry", order: 0, colSpan: 8 },
+    { id: "global", order: 1, colSpan: 4 },
+    { id: "eci", order: 2, colSpan: 6 },
+    { id: "sdi", order: 3, colSpan: 6 },
+  ]);
+
+  const handleReorder = (newOrder: any[]) => {
+    const updatedOrder = newOrder.map((item, index) => ({
+      ...item,
+      order: index
+    }));
+    setCardOrder(updatedOrder);
+  };
 
   // Check if user has completed setup (non-blocking)
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
@@ -157,8 +175,15 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="relative min-h-screen bg-background text-foreground">
+      <InteractiveGridPattern
+        width={40}
+        height={40}
+        squares={[50, 40]}
+        className="opacity-30 dark:opacity-20"
+        squaresClassName="fill-slate-200/20 dark:fill-slate-700/20 stroke-slate-300/30 dark:stroke-slate-600/30 [&:nth-child(4n+1):hover]:fill-yellow-600/40 [&:nth-child(4n+1):hover]:stroke-yellow-600/60 [&:nth-child(4n+2):hover]:fill-blue-600/40 [&:nth-child(4n+2):hover]:stroke-blue-600/60 [&:nth-child(4n+3):hover]:fill-indigo-600/40 [&:nth-child(4n+3):hover]:stroke-indigo-600/60 [&:nth-child(4n+4):hover]:fill-red-600/40 [&:nth-child(4n+4):hover]:stroke-red-600/60 transition-all duration-200"
+      />
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
 
         {/* Setup Required Banner (non-blocking) */}
         {userProfile && !userProfile.countryId && (
@@ -193,13 +218,15 @@ export default function Dashboard() {
 
         {/* Main Dashboard Grid - User's Country Modules (only when data is loaded) */}
         {userProfile?.countryId && !countriesLoading && !statsLoading && allData && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <SortableGrid onReorder={handleReorder} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* MyCountry® Overview - spans more columns, optimized spacing */}
             <div className="lg:col-span-8">
-              <CollapsibleCard
+              <SortableCard
+                id="mycountry"
+                order={0}
                 title="MyCountry® Overview"
                 icon={<Crown className="h-5 w-5 text-yellow-500" />}
-                variant="glass"
+                variant="mycountry"
                 actions={
                   <Link
                     href={createUrl("/mycountry")}
@@ -209,7 +236,7 @@ export default function Dashboard() {
                   </Link>
                 }
                 defaultOpen={true}
-                className="relative overflow-hidden"
+                className="relative overflow-hidden glass-mycountry glass-interactive glass-refraction glass-with-grid"
               >
                 {/* Country Flag Background */}
                 {countryData && (
@@ -267,7 +294,7 @@ export default function Dashboard() {
                   </div>
                 )}
                 <div className="space-y-6 relative z-10">
-                  <p className="text-muted-foreground">
+                  <p className="text-foreground/80">
                     Manage your country's economy, demographics, and policies.
                   </p>
                   
@@ -373,12 +400,14 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </div>
-              </CollapsibleCard>
+              </SortableCard>
             </div>
 
             {/* Global Countries Overview */}
             <div className="lg:col-span-4">
-              <CollapsibleCard
+              <SortableCard
+                id="global"
+                order={1}
                 title="Global Overview"
                 icon={<Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />}
                 variant="economic"
@@ -391,7 +420,7 @@ export default function Dashboard() {
                   </Link>
                 }
                 defaultOpen={true}
-                className="relative overflow-hidden"
+                className="relative overflow-hidden glass-global glass-interactive glass-refraction glass-with-grid"
               >
                 {/* Animated Flags Background */}
                 <AnimatedFlagsBackground 
@@ -430,7 +459,7 @@ export default function Dashboard() {
                             </div>
                             {powerGrouped.superpower.length > 0 && (
                               <div className="space-y-1">
-                                <div className="text-xs font-medium text-gray-600 dark:text-muted-foreground">Examples:</div>
+                                <div className="text-xs font-medium text-muted-foreground">Examples:</div>
                                 <div className="flex flex-wrap gap-1">
                                   {powerGrouped.superpower.slice(0, 3).map((country) => (
                                     <span key={country.id} className="px-2 py-1 bg-yellow-500/20 dark:bg-yellow-500/20 text-yellow-800 dark:text-yellow-200 text-xs rounded">
@@ -475,7 +504,7 @@ export default function Dashboard() {
                             </div>
                             {powerGrouped.major.length > 0 && (
                               <div className="space-y-1">
-                                <div className="text-xs font-medium text-gray-600 dark:text-muted-foreground">Examples:</div>
+                                <div className="text-xs font-medium text-muted-foreground">Examples:</div>
                                 <div className="flex flex-wrap gap-1">
                                   {powerGrouped.major.slice(0, 3).map((country) => (
                                     <span key={country.id} className="px-2 py-1 bg-blue-500/20 dark:bg-blue-500/20 text-blue-800 dark:text-blue-200 text-xs rounded">
@@ -520,7 +549,7 @@ export default function Dashboard() {
                             </div>
                             {powerGrouped.regional.length > 0 && (
                               <div className="space-y-1">
-                                <div className="text-xs font-medium text-gray-600 dark:text-muted-foreground">Examples:</div>
+                                <div className="text-xs font-medium text-muted-foreground">Examples:</div>
                                 <div className="flex flex-wrap gap-1">
                                   {powerGrouped.regional.slice(0, 3).map((country) => (
                                     <span key={country.id} className="px-2 py-1 bg-green-500/20 dark:bg-green-500/20 text-green-800 dark:text-green-200 text-xs rounded">
@@ -561,12 +590,14 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </div>
-              </CollapsibleCard>
+              </SortableCard>
             </div>
 
             {/* ECI Module - Improved Layout */}
             <div className="lg:col-span-6">
-              <CollapsibleCard
+              <SortableCard
+                id="eci"
+                order={2}
                 title="Executive Command Interface"
                 icon={<Building2 className="h-5 w-5 text-indigo-500" />}
                 variant="diplomatic"
@@ -579,21 +610,24 @@ export default function Dashboard() {
                   </Link>
                 }
                 defaultOpen={true}
+                className="glass-eci glass-interactive glass-refraction glass-with-grid"
               >
                 <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-foreground/80">
                     High-level executive tools for strategic governance and policy management.
                   </p>
                   <div className="border border-border/20 rounded-lg p-3">
                     <CountryExecutiveSection countryId={userProfile.countryId} userId={user?.id} />
                   </div>
                 </div>
-              </CollapsibleCard>
+              </SortableCard>
             </div>
 
             {/* SDI Module - Improved Layout */}
             <div className="lg:col-span-6">
-              <CollapsibleCard
+              <SortableCard
+                id="sdi"
+                order={3}
                 title="Sovereign Digital Interface"
                 icon={<Shield className="h-5 w-5 text-red-500" />}
                 variant="military"
@@ -606,18 +640,19 @@ export default function Dashboard() {
                   </Link>
                 }
                 defaultOpen={true}
+                className="glass-sdi glass-interactive glass-refraction glass-with-grid"
               >
                 <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-foreground/80">
                     Intelligence operations, diplomatic management, and security oversight.
                   </p>
                   <div className="border border-border/20 rounded-lg p-3">
                     <CountryIntelligenceSection countryId={userProfile.countryId} />
                   </div>
                 </div>
-              </CollapsibleCard>
+              </SortableCard>
             </div>
-          </div>
+          </SortableGrid>
         )}
       </div>
 

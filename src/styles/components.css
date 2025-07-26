@@ -1,0 +1,395 @@
+/* Buttons */
+.btn-primary {
+  background-color: var(--color-button-primary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-button-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-button-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background-color: var(--color-button-secondary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-button-secondary-hover);
+  border-color: var(--color-border-secondary);
+}
+
+/* Cards */
+.card {
+  background-color: var(--color-card-bg);
+  border: 1px solid var(--color-card-border);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-md);
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  background-color: var(--color-card-hover);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-1px);
+}
+
+.card-header {
+  padding: 1.5rem 1.5rem 1rem 1.5rem;
+  border-bottom: 1px solid var(--color-border-primary);
+}
+
+.card-content {
+  padding: 1.5rem;
+}
+
+.card-footer {
+  padding: 1rem 1.5rem;
+  background-color: var(--color-bg-tertiary);
+  border-top: 1px solid var(--color-border-primary);
+}
+
+.card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+}
+
+.card-icon {
+  height: 1.25rem;
+  width: 1.25rem;
+  margin-right: 0.5rem;
+  color: var(--color-brand-primary);
+}
+
+.card-body {
+  padding: 1rem;
+}
+
+/* WikiLink styles for MediaWiki content */
+.wikilink {
+  color: #429284 !important;
+  text-decoration: none;
+  transition: color 0.2s ease, text-decoration 0.2s ease;
+}
+
+.wikilink:hover {
+  text-decoration: underline;
+  color: #357063 !important;
+}
+
+/* Support for wikilinks in infobox content */
+.country-infobox-content a[href*="ixwiki.com"] {
+  color: #429284 !important;
+  text-decoration: none;
+  transition: color 0.2s ease, text-decoration 0.2s ease;
+}
+
+.country-infobox-content a[href*="ixwiki.com"]:hover {
+  text-decoration: underline;
+  color: #357063 !important;
+}
+
+/* Dark mode support for wikilinks */
+.dark .wikilink,
+.dark .country-infobox-content a[href*="ixwiki.com"] {
+  color: #52a694 !important;
+}
+
+.dark .wikilink:hover,
+.dark .country-infobox-content a[href*="ixwiki.com"]:hover {
+  color: #6bb8a6 !important;
+}
+
+/* Form Elements */
+.form-input {
+  background-color: var(--color-input-bg);
+  border: 1px solid var(--color-input-border);
+  color: var(--color-text-primary);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-input-focus);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.form-label {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+.form-select {
+  background-color: var(--color-input-bg);
+  border: 1px solid var(--color-input-border);
+  color: var(--color-text-primary);
+  padding: 0.5rem 2.5rem 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  appearance: none;
+  transition: all 0.2s ease;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: var(--color-input-focus);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Navigation */
+.nav-link {
+  color: var(--color-text-muted);
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+}
+
+.nav-link:hover {
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-tertiary);
+}
+
+.nav-link.active {
+  color: var(--color-brand-primary);
+  background-color: rgba(99, 102, 241, 0.1);
+}
+
+/* Tables */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 500;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-border-primary);
+}
+
+.table td {
+  padding: 1rem 0.75rem;
+  border-bottom: 1px solid var(--color-border-primary);
+  color: var(--color-text-primary);
+}
+
+.table tr:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
+/* Modal */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: var(--color-backdrop);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal-content {
+  background-color: var(--color-card-bg);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-xl);
+  max-width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  border: 1px solid var(--color-card-border);
+}
+
+/* Status Indicators and Tier Badges moved to shared-utilities.css */
+
+/* Statistics Display Components */
+.stat-block {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--color-bg-tertiary);
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border-primary);
+}
+
+.stat-icon {
+  height: 1.25rem;
+  width: 1.25rem;
+  margin-right: 0.5rem;
+  color: var(--color-brand-primary);
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  display: block;
+}
+
+.stat-value {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.stat-block-small {
+  background-color: var(--color-bg-tertiary);
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border-primary);
+  padding: 0.75rem;
+}
+
+.stat-label-small {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  display: block;
+}
+
+.stat-value-small {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border-primary);
+  padding-bottom: 0.5rem;
+}
+
+.stat-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+/* Loading States moved to shared-utilities.css */
+
+/* Country List Card Enhancements */
+.country-card {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.country-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px 0 rgba(99,102,241,0.15), 0 2px 8px 0 rgba(0,0,0,0.08);
+}
+
+.country-card .flag-background-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4rem;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(8px) brightness(0.4) saturate(1.1);
+  opacity: 0.3;
+  pointer-events: none;
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%);
+  transition: opacity 0.3s ease;
+}
+
+.country-card:hover .flag-background-accent {
+  opacity: 0.5;
+}
+
+.country-card .color-accent-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4rem;
+  z-index: 1;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.country-card:hover .color-accent-overlay {
+  opacity: 0.7;
+}
+
+.country-card-content {
+  position: relative;
+  z-index: 2;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .country-card {
+    transition: none;
+  }
+  .country-card:hover {
+    transform: none;
+  }
+}
+
+/* Focus Card Animations */
+.focus-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.focus-card:hover {
+  transform: translateY(-4px);
+}
+
+.focus-card.selected {
+  transform: scale(1.02);
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3);
+}
+
+/* Enhanced Medallion Glow */
+.medallion-glow {
+  filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.4));
+  transition: filter var(--transition-standard);
+}
+
+.medallion-glow:hover {
+  filter: drop-shadow(0 0 20px rgba(99, 102, 241, 0.6));
+}
+
+/* SDI Specific Styling */
+.sdi-interface {
+  background: radial-gradient(ellipse at top, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+}
+
+/* ECI Specific Styling */
+.eci-interface {
+  background: radial-gradient(ellipse at top, rgba(245, 158, 11, 0.1) 0%, transparent 50%);
+}

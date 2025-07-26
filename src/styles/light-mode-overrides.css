@@ -1,0 +1,312 @@
+/* ===================================================================
+   COMPREHENSIVE LIGHT MODE THEME OVERRIDES
+   =================================================================== */
+
+body {
+  background: transparent !important;
+  color: var(--color-text-primary);
+  transition: color 0.2s ease;
+}
+
+/* Global light mode color mappings for hardcoded slate/gray colors - Enhanced visibility */
+.light .bg-slate-800,
+.light .bg-slate-900,
+.light .bg-gray-800,
+.light .bg-gray-900,
+.light .bg-zinc-800,
+.light .bg-zinc-900 {
+  background-color: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(156, 163, 175, 0.4) !important;
+  backdrop-filter: blur(8px) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.light .bg-slate-700,
+.light .bg-gray-700,
+.light .bg-zinc-700 {
+  background-color: rgba(249, 250, 251, 0.95) !important;
+  backdrop-filter: blur(6px) !important;
+}
+
+.light .bg-slate-600,
+.light .bg-gray-600,
+.light .bg-zinc-600 {
+  background-color: rgba(243, 244, 246, 0.92) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+.light .text-slate-100,
+.light .text-slate-200,
+.light .text-gray-100,
+.light .text-gray-200,
+.light .text-zinc-100,
+.light .text-zinc-200 {
+  color: rgba(17, 24, 39, 0.9) !important;
+}
+
+.light .text-slate-300,
+.light .text-slate-400,
+.light .text-gray-300,
+.light .text-gray-400,
+.light .text-zinc-300,
+.light .text-zinc-400 {
+  color: rgba(75, 85, 99, 0.8) !important;
+}
+
+.light .border-slate-600,
+.light .border-slate-700,
+.light .border-gray-600,
+.light .border-gray-700,
+.light .border-zinc-600,
+.light .border-zinc-700 {
+  border-color: rgba(229, 231, 235, 0.4) !important;
+}
+
+/* Light mode gradient overrides - Enhanced visibility */
+.light [class*="from-slate-800"],
+.light [class*="from-gray-800"],
+.light [class*="from-zinc-800"] {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.98), 
+    rgba(249, 250, 251, 0.96)
+  ) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.light [class*="to-slate-800"],
+.light [class*="to-gray-800"], 
+.light [class*="to-zinc-800"] {
+  background: linear-gradient(135deg, 
+    rgba(249, 250, 251, 0.96), 
+    rgba(255, 255, 255, 0.98)
+  ) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.light [class*="via-slate-700"],
+.light [class*="via-gray-700"],
+.light [class*="via-zinc-700"] {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.98), 
+    rgba(249, 250, 251, 0.95), 
+    rgba(255, 255, 255, 0.98)
+  ) !important;
+  backdrop-filter: blur(6px) !important;
+}
+
+/* Light mode shadow overrides */
+.light [class*="shadow-slate"],
+.light [class*="shadow-gray"],
+.light [class*="shadow-zinc"] {
+  box-shadow: 0 10px 25px rgba(17, 24, 39, 0.1), 0 4px 10px rgba(17, 24, 39, 0.06) !important;
+}
+
+/* Light mode specific overrides for dark-themed components - Enhanced visibility */
+.light .dark\:bg-slate-800,
+.light .dark\:bg-gray-800,
+.light .dark\:bg-zinc-800 {
+  background-color: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: blur(8px) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.light .dark\:text-white,
+.light .dark\:text-slate-100,
+.light .dark\:text-gray-100 {
+  color: rgba(17, 24, 39, 0.95) !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8) !important;
+}
+
+.light .dark\:border-slate-700,
+.light .dark\:border-gray-700,
+.light .dark\:border-zinc-700 {
+  border-color: rgba(156, 163, 175, 0.5) !important;
+}
+
+/* Enhanced component theming for navigation, command palette, and dynamic island */
+.command-palette-dropdown {
+  background: hsl(var(--card) / 0.95);
+  border: 1px solid hsl(var(--border));
+  backdrop-filter: blur(12px);
+}
+
+/* Dark mode command palette enhancements - restore glassmorphic styling */
+.dark .command-palette-dropdown,
+.dark [class*="bg-card/95"] {
+  background: rgba(31, 41, 55, 0.95) !important;
+  border: 1px solid rgba(75, 85, 99, 0.4) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: 
+    0 10px 40px rgba(0, 0, 0, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Dark mode specific styling for dynamic island and dropdowns */
+.dark .bg-card\/95 {
+  background: rgba(31, 41, 55, 0.95) !important;
+  border-color: rgba(75, 85, 99, 0.4) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+/* Dark mode styling for muted backgrounds */
+.dark .bg-muted\/30,
+.dark .bg-muted\/50 {
+  background: rgba(55, 65, 81, 0.5) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border-color: rgba(75, 85, 99, 0.3) !important;
+}
+
+/* Dark mode styling for card backgrounds */
+.dark .bg-card {
+  background: rgba(31, 41, 55, 0.9) !important;
+  border-color: rgba(75, 85, 99, 0.4) !important;
+}
+
+/* Light mode command palette enhancements */
+.light .command-palette-dropdown,
+.light [class*="bg-card/95"] {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(229, 231, 235, 0.6) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: 
+    0 10px 25px rgba(17, 24, 39, 0.1),
+    0 4px 10px rgba(17, 24, 39, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Focus styles for accessibility */
+.focus\:ring-2:focus {
+  outline: none;
+  ring-width: 2px;
+  ring-color: var(--color-brand-primary);
+  ring-opacity: 0.5;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .light {
+    --color-text-primary: #000000;
+    --color-text-secondary: #1f2937;
+    --color-border-primary: #374151;
+    --color-bg-primary: #ffffff;
+  }
+  
+  .dark {
+    --color-text-primary: #ffffff;
+    --color-text-secondary: #f3f4f6;
+    --color-border-primary: #d1d5db;
+    --color-bg-primary: #000000;
+  }
+}
+
+/* Light theme glow */
+.light .glow {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+}
+
+/* Dashboard section branding - light mode overrides */
+.light .dashboard-section-mycountry {
+  border: 1px solid rgb(202, 138, 4, 0.4);
+  box-shadow: 0 0 15px rgba(202, 138, 4, 0.12), 0 4px 12px rgba(202, 138, 4, 0.08);
+  background: rgba(254, 240, 138, 0.03);
+}
+
+.light .dashboard-section-mycountry:hover {
+  box-shadow: 0 0 25px rgba(202, 138, 4, 0.2), 0 6px 20px rgba(202, 138, 4, 0.12);
+  background: rgba(254, 240, 138, 0.05);
+}
+
+.light .dashboard-section-global {
+  border: 1px solid rgb(37, 99, 235, 0.4);
+  box-shadow: 0 0 15px rgba(37, 99, 235, 0.12), 0 4px 12px rgba(37, 99, 235, 0.08);
+  background: rgba(191, 219, 254, 0.03);
+}
+
+.light .dashboard-section-global:hover {
+  box-shadow: 0 0 25px rgba(37, 99, 235, 0.2), 0 6px 20px rgba(37, 99, 235, 0.12);
+  background: rgba(191, 219, 254, 0.05);
+}
+
+.light .dashboard-section-eci {
+  border: 1px solid rgb(79, 70, 229, 0.4);
+  box-shadow: 0 0 15px rgba(79, 70, 229, 0.12), 0 4px 12px rgba(79, 70, 229, 0.08);
+  background: rgba(196, 181, 253, 0.03);
+}
+
+.light .dashboard-section-eci:hover {
+  box-shadow: 0 0 25px rgba(79, 70, 229, 0.2), 0 6px 20px rgba(79, 70, 229, 0.12);
+  background: rgba(196, 181, 253, 0.05);
+}
+
+.light .dashboard-section-sdi {
+  border: 1px solid rgb(220, 38, 38, 0.4);
+  box-shadow: 0 0 15px rgba(220, 38, 38, 0.12), 0 4px 12px rgba(220, 38, 38, 0.08);
+  background: rgba(254, 202, 202, 0.03);
+}
+
+.light .dashboard-section-sdi:hover {
+  box-shadow: 0 0 25px rgba(220, 38, 38, 0.2), 0 6px 20px rgba(220, 38, 38, 0.12);
+  background: rgba(254, 202, 202, 0.05);
+}
+
+/* Fix glass effect text in light mode */
+.light .glass-card,
+.light .glass-card-diplomatic,
+.light .glass-card-economic,
+.light .glass-card-military,
+.light .glass-card-mycountry {
+  color: var(--color-text-primary) !important;
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+.light .glass-card .text-gray-700 {
+  color: rgb(55, 65, 81) !important;
+}
+
+.light .glass-card .text-gray-300 {
+  color: rgb(107, 114, 128) !important;
+}
+
+.light .glass-card .text-gray-600 {
+  color: rgb(75, 85, 99) !important;
+}
+
+.light .glass-card .text-gray-400 {
+  color: rgb(156, 163, 175) !important;
+}
+
+/* Print styles */
+@media print {
+  .aurora-bg,
+  .animate-spin,
+  .animate-pulse {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .card {
+    border: 1px solid #000 !important;
+    box-shadow: none !important;
+  }
+  
+  .text-muted {
+    color: #666 !important;
+  }
+  
+  .btn {
+    border: 1px solid #000 !important;
+    background: white !important;
+    color: black !important;
+  }
+}

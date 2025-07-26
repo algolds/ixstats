@@ -1,0 +1,96 @@
+/* Navigation and Command Palette Performance Optimizations */
+.navigation-bar {
+  /* Force hardware acceleration */
+  transform: translateZ(0);
+  will-change: transform;
+  /* Improve backdrop blur performance */
+  backface-visibility: hidden;
+}
+
+.dynamic-island {
+  /* GPU acceleration for smooth animations */
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  /* Contain layout changes */
+  contain: layout style paint;
+}
+
+.command-palette-dropdown {
+  /* Optimize dropdown rendering */
+  will-change: transform, opacity;
+  contain: layout style paint;
+  /* Force GPU layer */
+  transform: translateZ(0);
+}
+
+/* Reduce paint and layout thrashing */
+.hover-optimized {
+  transition-property: background-color, border-color, opacity;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: background-color, border-color, opacity;
+}
+
+/* Performance optimizations for interactive elements */
+.performance-optimized {
+  /* Force GPU layer */
+  will-change: transform;
+  transform: translateZ(0);
+  /* Improve text rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Contain layout changes */
+  contain: layout style paint;
+}
+
+/* Optimized button interactions */
+.btn-optimized {
+  transition: background-color 0.15s ease-in-out, 
+              border-color 0.15s ease-in-out, 
+              opacity 0.15s ease-in-out;
+  will-change: background-color, border-color, opacity;
+}
+
+/* Optimize scroll performance */
+.scroll-optimized {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  contain: layout style paint;
+}
+
+/* Hide scrollbar */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Thin scrollbar */
+.thin-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.3);
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.5);
+}
+
+.dark .thin-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.5);
+}
+
+.dark .thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(75, 85, 99, 0.7);
+}

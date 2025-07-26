@@ -1,0 +1,214 @@
+/* Marquee animations - optimized for performance */
+@keyframes marquee {
+  from {
+    transform: translate3d(0%, 0, 0);
+  }
+  to {
+    transform: translate3d(-100%, 0, 0);
+  }
+}
+
+@keyframes marqueeY {
+  from {
+    transform: translate3d(0, 0%, 0);
+  }
+  to {
+    transform: translate3d(0, -100%, 0);
+  }
+}
+
+.pause-animation {
+  animation-play-state: paused !important;
+}
+
+/* Additional marquee utilities */
+.marquee-container {
+  overflow: hidden;
+  will-change: transform;
+  contain: layout style paint;
+  /* Force GPU acceleration */
+  transform: translateZ(0);
+  /* Improve text rendering during animation */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.marquee-content {
+  display: flex;
+  animation: marquee linear infinite;
+  will-change: transform;
+  backface-visibility: hidden;
+  perspective: 1000px;
+  /* Optimize for GPU */
+  transform: translateZ(0);
+}
+
+/* Performance optimizations for marquee items */
+.marquee-item {
+  will-change: transform;
+  transform: translateZ(0);
+  /* Prevent layout thrashing */
+  contain: layout style paint;
+  /* Optimize text rendering */
+  text-rendering: optimizeSpeed;
+}
+
+/* Reduce animation jank */
+.animate-optimized {
+  animation-fill-mode: both;
+  backface-visibility: hidden;
+  perspective: 1000px;
+  transform: translateZ(0);
+}
+
+/* Focus Card Animations */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.6);
+  }
+}
+
+/* Interface Transition */
+.interface-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Infinite horizontal scroll animation for SDI Intelligence Feed */
+@keyframes infinite-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.infinite-scroll {
+  animation: infinite-scroll 30s linear infinite;
+}
+
+/* Animated gradient glow for all overview sections */
+@keyframes animated-glow {
+  0%, 100% {
+    opacity: 0.8;
+    filter: brightness(1.1) saturate(1.2);
+  }
+  50% {
+    opacity: 1;
+    filter: brightness(1.3) saturate(1.4);
+  }
+}
+
+/* Light mode soft gradient animation */
+@keyframes soft-gradient-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.02);
+  }
+}
+
+/* Light mode shimmer effect for enhanced visual appeal */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Add subtle glow animation for light mode */
+@keyframes subtle-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+  }
+}
+
+/* Animated Flags Background Animation */
+@keyframes flag-float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0.3;
+  }
+  25% {
+    transform: translateY(-10px) rotate(1deg);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(-20px) rotate(-1deg);
+    opacity: 0.7;
+  }
+  75% {
+    transform: translateY(-10px) rotate(0.5deg);
+    opacity: 0.5;
+  }
+}
+
+@keyframes flag-drift-left {
+  0% {
+    transform: translateX(100vw) translateY(0) rotate(0deg);
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateX(-200px) translateY(-30px) rotate(5deg);
+    opacity: 0;
+  }
+}
+
+@keyframes flag-drift-right {
+  0% {
+    transform: translateX(-200px) translateY(0) rotate(0deg);
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateX(100vw) translateY(-30px) rotate(-5deg);
+    opacity: 0;
+  }
+}
+
+.animated-flag {
+  position: absolute;
+  pointer-events: none;
+  z-index: -1;
+  animation: flag-float 6s ease-in-out infinite;
+}
+
+.flag-drift-left {
+  animation: flag-drift-left 15s linear infinite;
+}
+
+.flag-drift-right {
+  animation: flag-drift-right 15s linear infinite;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .marquee-content,
+  .animate-optimized,
+  .infinite-scroll,
+  .animated-flag,
+  .flag-drift-left,
+  .flag-drift-right {
+    animation: none;
+  }
+  
+  .interface-transition {
+    transition: none;
+  }
+}

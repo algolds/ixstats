@@ -337,7 +337,7 @@ const DynamicIsland = ({
   if (!mounted) {
     return (
       <DynamicIslandContainer>
-        <div className="relative mx-auto items-center justify-center bg-gradient-to-r from-slate-800/90 via-slate-700/90 to-slate-800/90 backdrop-blur-xl border border-white/10 text-center rounded-full h-11 px-4">
+        <div className="relative mx-auto items-center justify-center bg-card/95 backdrop-blur-xl border border-border text-center rounded-full h-11 px-4">
           {children}
         </div>
       </DynamicIslandContainer>
@@ -424,9 +424,9 @@ const DynamicIslandContent = ({
 
   return (
     <div className="relative">
-      {/* Outer glow effect with animation */}
+      {/* Outer glow effect with animation and refraction */}
       <motion.div
-        className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-blue-500/20 blur-lg opacity-60"
+        className="absolute inset-0 opacity-60"
         animate={{
           width: dimensions.width,
           height: dimensions.height,
@@ -439,7 +439,12 @@ const DynamicIslandContent = ({
           },
         }}
         style={{ willChange }}
-      />
+      >
+        {/* Multi-layer glow for depth */}
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-blue-500/30 blur-xl" />
+        <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/20 via-indigo-500/20 to-purple-400/20 blur-lg" />
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-300/15 via-purple-300/15 to-blue-300/15 blur-md" />
+      </motion.div>
       
       {/* Extended glow for wide modes */}
       {(state.size === "extraWide" || state.size === "fullWidth") && (
@@ -463,7 +468,7 @@ const DynamicIslandContent = ({
       {/* Main dynamic island */}
       <motion.div
         id={id}
-        className="relative mx-auto items-center justify-center bg-gradient-to-r from-slate-800/90 via-slate-700/90 to-slate-800/90 backdrop-blur-xl border border-white/10 text-center transition duration-300 ease-in-out focus-within:bg-slate-700/95 hover:shadow-2xl hover:shadow-blue-500/20 overflow-hidden"
+        className="relative mx-auto items-center justify-center border border-white/20 dark:border-white/10 text-center transition duration-300 ease-in-out focus-within:bg-accent/80 hover:shadow-2xl hover:shadow-primary/20 overflow-hidden"
         initial={{
           width: dimensions.width,
           height: dimensions.height,
@@ -481,12 +486,24 @@ const DynamicIslandContent = ({
         }}
         style={{ 
           willChange,
-          minWidth: dimensions.width === "auto" ? "fit-content" : undefined
+          minWidth: dimensions.width === "auto" ? "fit-content" : undefined,
+          background: "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",
+          backdropFilter: "blur(20px) saturate(180%)",
+          WebkitBackdropFilter: "blur(20px) saturate(180%)",
         }}
         {...props}
       >
-        {/* Inner subtle glow */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-full"></div>
+        {/* Inner glass effects with refraction */}
+        <div className="absolute inset-0 pointer-events-none">
+          {/* Refraction edges */}
+          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+          <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+          <div className="absolute top-0 left-0 w-px h-full bg-gradient-to-b from-transparent via-white/30 to-transparent" />
+          <div className="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+          
+          {/* Inner shimmer */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent rounded-full animate-pulse" style={{ animationDuration: '3s' }} />
+        </div>
         
         {/* Content container */}
         <div className="relative z-[10001] h-full w-full">
