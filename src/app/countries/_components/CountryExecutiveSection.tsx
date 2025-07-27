@@ -112,7 +112,7 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
 
       {/* Real-time Metrics Overview */}
       {realTimeMetrics && (
-        <Card>
+        <Card className="glass-depth-1 glass-refraction">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-green-500" />
@@ -133,7 +133,7 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
                     <p className="text-sm font-medium group-hover:text-purple-600 transition-colors">Social Harmony</p>
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs">
+                <TooltipContent side="top" className="max-w-xs glass-contextual-popover glass-refraction glass-eci">
                   <div className="space-y-2">
                     <div className="font-semibold text-foreground">Social Harmony Index</div>
                     <div className="text-xs text-muted-foreground">
@@ -162,7 +162,7 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
                     <p className="text-sm font-medium group-hover:text-blue-600 transition-colors">Security Index</p>
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs">
+                <TooltipContent side="top" className="max-w-xs glass-contextual-popover glass-refraction glass-eci">
                   <div className="space-y-2">
                     <div className="font-semibold text-foreground">National Security Index</div>
                     <div className="text-xs text-muted-foreground">
@@ -191,7 +191,7 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
                     <p className="text-sm font-medium group-hover:text-green-600 transition-colors">Political Stability</p>
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs">
+                <TooltipContent side="top" className="max-w-xs glass-contextual-popover glass-refraction glass-eci">
                   <div className="space-y-2">
                     <div className="font-semibold text-foreground">Political Stability Index</div>
                     <div className="text-xs text-muted-foreground">
@@ -215,7 +215,7 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Upcoming Cabinet Meetings */}
-        <Card>
+        <Card className="glass-surface glass-refraction glass-interactive hover:glass-depth-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-blue-500" />
@@ -251,7 +251,7 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
         </Card>
 
         {/* Active Economic Policies */}
-        <Card>
+        <Card className="glass-surface glass-refraction glass-interactive hover:glass-depth-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-green-500" />
@@ -290,7 +290,7 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
         </Card>
 
         {/* Strategic Plans */}
-        <Card>
+        <Card className="glass-surface glass-refraction glass-interactive hover:glass-depth-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Target className="h-5 w-5 text-purple-500" />
@@ -333,7 +333,7 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
         </Card>
 
         {/* Security Threats */}
-        <Card>
+        <Card className="glass-surface glass-refraction glass-interactive hover:glass-depth-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-red-500" />
@@ -377,7 +377,7 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
         </Card>
 
         {/* AI Recommendations */}
-        <Card>
+        <Card className="glass-surface glass-refraction glass-interactive hover:glass-depth-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5 text-cyan-500" />
@@ -411,7 +411,7 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
         </Card>
 
         {/* Quick Actions */}
-        <Card>
+        <Card className="glass-surface glass-refraction glass-interactive hover:glass-depth-2">
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
             <CardDescription>Common executive tasks</CardDescription>

@@ -47,14 +47,16 @@ function PopoverContent({
       <PopoverPrimitive.Positioner
         data-slot="popover-positioner"
         sideOffset={sideOffset}
-        className="z-[9997] size-auto"
+        className="z-[var(--z-tooltip)] size-auto"
         {...props}
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"
           className={cn(
-            "group bg-slate-900 text-white max-h-[var(--available-height)] w-72 max-w-[var(--available-width)] overflow-x-hidden overflow-y-auto overscroll-contain rounded-xl border border-white/20 p-4 shadow-2xl transition-[transform,scale,opacity] duration-150 ease-out",
+            "group max-h-[var(--available-height)] w-72 max-w-[var(--available-width)] overflow-x-hidden overflow-y-auto overscroll-contain rounded-xl p-4 transition-[transform,scale,opacity] duration-150 ease-out",
             "origin-[var(--transform-origin)] data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
+            // Default glass styling with contextual depth detection
+            !className?.includes('glass-') && "glass-contextual-popover glass-refraction",
             className
           )}
         >
