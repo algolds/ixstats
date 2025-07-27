@@ -88,20 +88,20 @@ export function ActivityPopover({ open, anchorEl, onClose, countryData, selected
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[9990] flex items-center justify-center">
-      {/* Backdrop */}
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center">
+      {/* Backdrop with enhanced blur */}
       <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
+        className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-lg" 
         onClick={onClose}
       />
       
-      {/* Modal */}
-      <div className="relative bg-card border rounded-xl p-6 m-4 max-w-2xl max-h-[80vh] overflow-y-auto shadow-2xl"
+      {/* Modal with proper glass hierarchy */}
+      <div className="relative glass-modal glass-refraction glass-depth-3 rounded-xl p-6 m-4 max-w-2xl max-h-[80vh] overflow-y-auto shadow-2xl border border-white/20 dark:border-white/10"
            onClick={(e) => e.stopPropagation()}>
-        {/* Close button */}
+        {/* Close button with glass styling */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full bg-muted hover:bg-muted/80 transition-colors"
+          className="absolute top-4 right-4 p-2 rounded-full glass-surface glass-interactive hover:glass-depth-2 transition-all duration-200"
         >
           <span className="sr-only">Close</span>
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -136,7 +136,7 @@ export function ActivityPopover({ open, anchorEl, onClose, countryData, selected
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg border bg-card">
+                <div className="p-4 rounded-lg glass-depth-1 glass-refraction">
                   <div className="flex items-center gap-2 mb-2">
                     <selectedData.icon className="h-4 w-4" style={{ color: selectedData.color }} />
                     <span className="font-medium">Current Value</span>
@@ -146,7 +146,7 @@ export function ActivityPopover({ open, anchorEl, onClose, countryData, selected
                 </div>
 
                 {selectedData.trend !== undefined && (
-                  <div className="p-4 rounded-lg border bg-card">
+                  <div className="p-4 rounded-lg glass-depth-1 glass-refraction">
                     <div className="flex items-center gap-2 mb-2">
                       {selectedData.trend >= 0 ? (
                         <ArrowUp className="h-4 w-4 text-green-500" />
@@ -171,11 +171,11 @@ export function ActivityPopover({ open, anchorEl, onClose, countryData, selected
                     Economic Breakdown
                   </h4>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="p-3 rounded border bg-card">
+                    <div className="p-3 rounded glass-surface glass-refraction">
                       <span className="text-sm text-muted-foreground">Total GDP</span>
                       <p className="font-semibold">{formatCurrency(countryData.currentTotalGdp)}</p>
                     </div>
-                    <div className="p-3 rounded border bg-card">
+                    <div className="p-3 rounded glass-surface glass-refraction">
                       <span className="text-sm text-muted-foreground">Economic Tier</span>
                       <p className="font-semibold">{countryData.economicTier}</p>
                     </div>
@@ -190,12 +190,12 @@ export function ActivityPopover({ open, anchorEl, onClose, countryData, selected
                     Population Metrics
                   </h4>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="p-3 rounded border bg-card">
+                    <div className="p-3 rounded glass-surface glass-refraction">
                       <span className="text-sm text-muted-foreground">Population Tier</span>
                       <p className="font-semibold">Tier {countryData.populationTier}</p>
                     </div>
                     {countryData.populationDensity && (
-                      <div className="p-3 rounded border bg-card">
+                      <div className="p-3 rounded glass-surface glass-refraction">
                         <span className="text-sm text-muted-foreground">Density</span>
                         <p className="font-semibold">{countryData.populationDensity.toFixed(1)}/km²</p>
                       </div>
@@ -210,7 +210,7 @@ export function ActivityPopover({ open, anchorEl, onClose, countryData, selected
                     <Target className="h-4 w-4" />
                     Development Status
                   </h4>
-                  <div className="p-4 rounded border bg-card">
+                  <div className="p-4 rounded glass-depth-1 glass-refraction">
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-medium">Economic Classification</span>
                       <Badge variant="secondary">{countryData.economicTier}</Badge>
@@ -227,7 +227,7 @@ export function ActivityPopover({ open, anchorEl, onClose, countryData, selected
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {activityData.map((ring, index) => (
-                  <div key={`ring-${ring.label}-${index}`} className="flex flex-col items-center space-y-4 p-4 rounded-lg border bg-card">
+                  <div key={`ring-${ring.label}-${index}`} className="flex flex-col items-center space-y-4 p-4 rounded-lg glass-depth-2 glass-refraction glass-interactive hover:glass-depth-3">
                     <HealthRing
                       value={ring.value}
                       size={120}
@@ -258,7 +258,7 @@ export function ActivityPopover({ open, anchorEl, onClose, countryData, selected
                 ))}
               </div>
 
-              <div className="p-4 rounded-lg border bg-card">
+              <div className="p-4 rounded-lg glass-depth-1 glass-refraction">
                 <h4 className="font-semibold mb-3">Performance Summary</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
