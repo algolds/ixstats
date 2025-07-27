@@ -27,7 +27,6 @@ import { AnimatedFlagsBackground } from "~/components/ui/animated-flags-backgrou
 import { GlassCard } from "~/components/ui/enhanced-card";
 import { CollapsibleCard } from "~/components/ui/collapsible-card";
 import { SortableCard, SortableGrid } from "~/components/ui/sortable-card";
-import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
 import { HealthRing } from "~/components/ui/health-ring";
 import { AnimatedNumber } from "~/components/ui/animated-number";
 import { ActivityPopover } from "~/components/ui/activity-modal";
@@ -35,6 +34,7 @@ import { SimpleFlag } from "~/components/SimpleFlag";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { groupCountriesByPower, type CountryPowerData } from "~/lib/power-classification";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
+import { Badge } from "~/components/ui/badge";
 import { Crown, Building2, Globe, Shield } from "lucide-react";
 // Define a type for globalStats
 interface GlobalStats {
@@ -176,13 +176,6 @@ export default function Dashboard() {
 
   return (
     <div className="relative min-h-screen bg-background text-foreground">
-      <InteractiveGridPattern
-        width={40}
-        height={40}
-        squares={[50, 40]}
-        className="opacity-30 dark:opacity-20"
-        squaresClassName="fill-slate-200/20 dark:fill-slate-700/20 stroke-slate-300/30 dark:stroke-slate-600/30 [&:nth-child(4n+1):hover]:fill-yellow-600/40 [&:nth-child(4n+1):hover]:stroke-yellow-600/60 [&:nth-child(4n+2):hover]:fill-blue-600/40 [&:nth-child(4n+2):hover]:stroke-blue-600/60 [&:nth-child(4n+3):hover]:fill-indigo-600/40 [&:nth-child(4n+3):hover]:stroke-indigo-600/60 [&:nth-child(4n+4):hover]:fill-red-600/40 [&:nth-child(4n+4):hover]:stroke-red-600/60 transition-all duration-200"
-      />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
 
         {/* Setup Required Banner (non-blocking) */}
@@ -236,7 +229,7 @@ export default function Dashboard() {
                   </Link>
                 }
                 defaultOpen={true}
-                className="relative overflow-hidden glass-mycountry glass-interactive glass-refraction glass-with-grid"
+                className="relative overflow-hidden glass-mycountry glass-hierarchy-parent glass-refraction"
               >
                 {/* Country Flag Background */}
                 {countryData && (
@@ -244,15 +237,15 @@ export default function Dashboard() {
                     {/* Large background flag with glassmorphic effect */}
                     <div className="absolute -top-12 -right-12 w-72 h-48 opacity-15 transform rotate-12">
                       <div className="relative w-full h-full group">
-                        {/* Shimmer effect */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent 
+                        {/* Shimmer effect with gold/yellow theme */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-400/40 to-transparent 
                                       transform -skew-x-12 translate-x-full group-hover:translate-x-[-200%] 
                                       transition-transform duration-3000 ease-in-out animate-pulse" />
                         
-                        {/* Glassmorphic container with real flag */}
-                        <div className="w-full h-full backdrop-blur-[2px] bg-gradient-to-br from-white/20 via-white/10 to-white/5 
-                                      rounded-2xl border border-white/30 shadow-2xl overflow-hidden">
-                          <div className="w-full h-full bg-gradient-to-br from-white/10 to-transparent">
+                        {/* Glassmorphic container with real flag - gold/yellow theme */}
+                        <div className="w-full h-full backdrop-blur-[2px] bg-gradient-to-br from-yellow-100/20 via-yellow-50/10 to-white/5 
+                                      rounded-2xl border border-yellow-300/30 shadow-2xl overflow-hidden">
+                          <div className="w-full h-full bg-gradient-to-br from-yellow-100/10 to-transparent">
                             {/* Real flag image with Framer Motion ripple animation */}
                             <motion.div 
                               className="w-full h-full"
@@ -283,14 +276,14 @@ export default function Dashboard() {
                           </div>
                         </div>
                         
-                        {/* Additional glow effect */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 via-purple-400/10 to-yellow-400/20 
+                        {/* Additional glow effect - gold/yellow theme */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/20 via-yellow-300/10 to-yellow-500/20 
                                       rounded-2xl animate-pulse" style={{ animationDuration: '4s' }} />
                       </div>
                     </div>
                     
-                    {/* Subtle pattern overlay for texture */}
-                    <div className="absolute inset-0 opacity-10 bg-gradient-to-br from-transparent via-white/5 to-transparent" />
+                    {/* Subtle pattern overlay for texture - gold/yellow theme */}
+                    <div className="absolute inset-0 opacity-10 bg-gradient-to-br from-transparent via-yellow-100/5 to-transparent" />
                   </div>
                 )}
                 <div className="space-y-6 relative z-10">
@@ -299,7 +292,7 @@ export default function Dashboard() {
                   </p>
                   
                   {/* Compact Activity Rings */}
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-3 gap-4 glass-hierarchy-child">
                     <div className="flex flex-col items-center space-y-2">
                       <HealthRing
                         value={countryData ? Math.min(100, (countryData.currentGdpPerCapita / 50000) * 100) : 0}
@@ -359,9 +352,9 @@ export default function Dashboard() {
                   </div>
                   
                   {/* Key Metrics Grid */}
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 glass-hierarchy-child">
                     <div 
-                      className="p-4 text-center border rounded-lg bg-background hover:bg-accent/50 transition-all duration-300 hover:scale-105 cursor-pointer"
+                      className="p-4 text-center rounded-lg glass-hierarchy-interactive transition-all duration-300 hover:scale-105 cursor-pointer"
                       title={`Total GDP: ${formatCurrency(countryData?.currentTotalGdp || 0)} - Click for economic overview`}
                       onClick={() => setActivityPopoverOpen(null)}
                     >
@@ -371,7 +364,7 @@ export default function Dashboard() {
                       <div className="text-xs text-muted-foreground">Total GDP</div>
                     </div>
                     <div 
-                      className="p-4 text-center border rounded-lg bg-background hover:bg-accent/50 transition-all duration-300 hover:scale-105 cursor-pointer"
+                      className="p-4 text-center rounded-lg glass-hierarchy-interactive transition-all duration-300 hover:scale-105 cursor-pointer"
                       title={`Growth Rate: ${((countryData?.adjustedGdpGrowth || 0) * 100).toFixed(2)}% annually - Economic expansion rate`}
                       onClick={() => setActivityPopoverOpen(null)}
                     >
@@ -381,7 +374,7 @@ export default function Dashboard() {
                       <div className="text-xs text-muted-foreground">Growth Rate</div>
                     </div>
                     <div 
-                      className="p-4 text-center border rounded-lg bg-background hover:bg-accent/50 transition-all duration-300 hover:scale-105 cursor-pointer"
+                      className="p-4 text-center rounded-lg glass-hierarchy-interactive transition-all duration-300 hover:scale-105 cursor-pointer"
                       title={`Population Density: ${(countryData?.populationDensity || 0).toFixed(1)} people per km² - Urban concentration metric`}
                       onClick={() => setActivityPopoverOpen(null)}
                     >
@@ -391,7 +384,7 @@ export default function Dashboard() {
                       <div className="text-xs text-muted-foreground">Pop/km²</div>
                     </div>
                     <div 
-                      className="p-4 text-center border rounded-lg bg-background hover:bg-accent/50 transition-all duration-300 hover:scale-105 cursor-pointer"
+                      className="p-4 text-center rounded-lg glass-hierarchy-interactive transition-all duration-300 hover:scale-105 cursor-pointer"
                       title="Country Status: Active and operational - All systems functioning"
                       onClick={() => setActivityPopoverOpen(null)}
                     >
@@ -420,7 +413,7 @@ export default function Dashboard() {
                   </Link>
                 }
                 defaultOpen={true}
-                className="relative overflow-hidden glass-global glass-interactive glass-refraction glass-with-grid"
+                className="relative overflow-hidden glass-global glass-hierarchy-parent glass-refraction"
               >
                 {/* Animated Flags Background */}
                 <AnimatedFlagsBackground 
@@ -428,24 +421,27 @@ export default function Dashboard() {
                   maxFlags={6}
                   className="opacity-50"
                 />
-                <div className="space-y-4 relative z-10">
+                {/* Blue glow overlay for Global section theme */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 via-blue-300/5 to-blue-500/10 
+                              rounded-lg animate-pulse pointer-events-none" style={{ animationDuration: '5s' }} />
+                <div className="space-y-4 relative z-10 glass-hierarchy-child">
                   {/* Power Classification */}
                   <div className="space-y-2">
                     <div className="text-sm font-medium text-foreground mb-2">Power Classification</div>
                     <div className="space-y-2">
                       <Popover>
                         <PopoverTrigger>
-                          <div className="flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-accent/50 transition-all duration-300 hover:scale-105 cursor-pointer">
+                          <div className="flex items-center justify-between p-3 rounded-lg glass-hierarchy-interactive transition-all duration-300 hover:scale-105 cursor-pointer">
                             <div className="flex items-center gap-2">
                               <span className="text-sm">👑</span>
-                              <span className="text-xs font-medium">Superpowers</span>
+                              <span className="text-xs font-medium glass-text-light">Superpowers</span>
                             </div>
-                            <span className="text-sm font-bold">
+                            <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-800 dark:text-yellow-200 border-yellow-400/50">
                               {powerGrouped.superpower.length}
-                            </span>
+                            </Badge>
                           </div>
                         </PopoverTrigger>
-                        <PopoverContent side="right" className="w-80 p-4">
+                        <PopoverContent side="right" className="w-80 p-4 glass-contextual-popover glass-refraction glass-global">
                           <div className="space-y-3">
                             <div className="flex items-center gap-2">
                               <span className="text-lg">👑</span>
@@ -462,12 +458,12 @@ export default function Dashboard() {
                                 <div className="text-xs font-medium text-muted-foreground">Examples:</div>
                                 <div className="flex flex-wrap gap-1">
                                   {powerGrouped.superpower.slice(0, 3).map((country) => (
-                                    <span key={country.id} className="px-2 py-1 bg-yellow-500/20 dark:bg-yellow-500/20 text-yellow-800 dark:text-yellow-200 text-xs rounded">
+                                    <span key={country.id} className="px-2 py-1 bg-blue-500/20 dark:bg-blue-500/20 text-blue-800 dark:text-blue-200 text-xs rounded">
                                       {country.name}
                                     </span>
                                   ))}
                                   {powerGrouped.superpower.length > 3 && (
-                                    <span className="px-2 py-1 bg-yellow-500/10 text-yellow-300 text-xs rounded">
+                                    <span className="px-2 py-1 bg-blue-500/10 text-blue-300 text-xs rounded">
                                       +{powerGrouped.superpower.length - 3} more
                                     </span>
                                   )}
@@ -480,17 +476,17 @@ export default function Dashboard() {
                       
                       <Popover>
                         <PopoverTrigger>
-                          <div className="flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-accent/50 transition-all duration-300 hover:scale-105 cursor-pointer">
+                          <div className="flex items-center justify-between p-3 rounded-lg glass-hierarchy-interactive transition-all duration-300 hover:scale-105 cursor-pointer">
                             <div className="flex items-center gap-2">
                               <span className="text-sm">⭐</span>
-                              <span className="text-xs font-medium">Major Powers</span>
+                              <span className="text-xs font-medium glass-text-light">Major Powers</span>
                             </div>
-                            <span className="text-sm font-bold">
+                            <Badge variant="secondary" className="bg-blue-500/20 text-blue-800 dark:text-blue-200 border-blue-400/50">
                               {powerGrouped.major.length}
-                            </span>
+                            </Badge>
                           </div>
                         </PopoverTrigger>
-                        <PopoverContent side="right" className="w-80 p-4">
+                        <PopoverContent side="right" className="w-80 p-4 glass-contextual-popover glass-refraction glass-global">
                           <div className="space-y-3">
                             <div className="flex items-center gap-2">
                               <span className="text-lg">⭐</span>
@@ -525,17 +521,17 @@ export default function Dashboard() {
                       
                       <Popover>
                         <PopoverTrigger>
-                          <div className="flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-accent/50 transition-all duration-300 hover:scale-105 cursor-pointer">
+                          <div className="flex items-center justify-between p-3 rounded-lg glass-hierarchy-interactive transition-all duration-300 hover:scale-105 cursor-pointer">
                             <div className="flex items-center gap-2">
                               <span className="text-sm">🌟</span>
-                              <span className="text-xs font-medium">Regional Powers</span>
+                              <span className="text-xs font-medium glass-text-light">Regional Powers</span>
                             </div>
-                            <span className="text-sm font-bold">
+                            <Badge variant="secondary" className="bg-green-500/20 text-green-800 dark:text-green-200 border-green-400/50">
                               {powerGrouped.regional.length}
-                            </span>
+                            </Badge>
                           </div>
                         </PopoverTrigger>
-                        <PopoverContent side="right" className="w-80 p-4">
+                        <PopoverContent side="right" className="w-80 p-4 glass-contextual-popover glass-refraction glass-global">
                           <div className="space-y-3">
                             <div className="flex items-center gap-2">
                               <span className="text-lg">🌟</span>
@@ -552,12 +548,12 @@ export default function Dashboard() {
                                 <div className="text-xs font-medium text-muted-foreground">Examples:</div>
                                 <div className="flex flex-wrap gap-1">
                                   {powerGrouped.regional.slice(0, 3).map((country) => (
-                                    <span key={country.id} className="px-2 py-1 bg-green-500/20 dark:bg-green-500/20 text-green-800 dark:text-green-200 text-xs rounded">
+                                    <span key={country.id} className="px-2 py-1 bg-blue-400/20 dark:bg-blue-400/20 text-blue-700 dark:text-blue-300 text-xs rounded">
                                       {country.name}
                                     </span>
                                   ))}
                                   {powerGrouped.regional.length > 3 && (
-                                    <span className="px-2 py-1 bg-green-500/10 text-green-300 text-xs rounded">
+                                    <span className="px-2 py-1 bg-blue-400/10 text-blue-400 text-xs rounded">
                                       +{powerGrouped.regional.length - 3} more
                                     </span>
                                   )}
@@ -610,9 +606,12 @@ export default function Dashboard() {
                   </Link>
                 }
                 defaultOpen={true}
-                className="glass-eci glass-interactive glass-refraction glass-with-grid"
+                className="glass-eci glass-hierarchy-parent glass-refraction"
               >
-                <div className="space-y-4">
+                {/* Indigo glow overlay for ECI section theme */}
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-400/10 via-indigo-300/5 to-indigo-500/10 
+                              rounded-lg animate-pulse pointer-events-none" style={{ animationDuration: '6s' }} />
+                <div className="space-y-4 relative z-10 glass-hierarchy-child">
                   <p className="text-sm text-foreground/80">
                     High-level executive tools for strategic governance and policy management.
                   </p>
@@ -640,9 +639,12 @@ export default function Dashboard() {
                   </Link>
                 }
                 defaultOpen={true}
-                className="glass-sdi glass-interactive glass-refraction glass-with-grid"
+                className="glass-sdi glass-hierarchy-parent glass-refraction"
               >
-                <div className="space-y-4">
+                {/* Red glow overlay for SDI section theme */}
+                <div className="absolute inset-0 bg-gradient-to-br from-red-400/10 via-red-300/5 to-red-500/10 
+                              rounded-lg animate-pulse pointer-events-none" style={{ animationDuration: '7s' }} />
+                <div className="space-y-4 relative z-10 glass-hierarchy-child">
                   <p className="text-sm text-foreground/80">
                     Intelligence operations, diplomatic management, and security oversight.
                   </p>
