@@ -1,4 +1,7 @@
+"use client";
+
 import React, { useState } from "react";
+import { motion, useSpring, useTransform } from "framer-motion";
 import { AnimatedNumber } from "./animated-number";
 import { Tooltip, TooltipTrigger, TooltipContent } from "./tooltip";
 
@@ -51,15 +54,28 @@ export const HealthRing: React.FC<HealthRingProps> = ({
   const offset = circumference - (progress / target) * circumference;
   const rgb = hexToRgb(color);
   const [hovered, setHovered] = useState(false);
+  
+  // Framer Motion physics springs
+  const springProgress = useSpring(progress, { stiffness: 100, damping: 15 });
+  const springScale = useSpring(hovered ? 1.05 : 1, { stiffness: 400, damping: 25 });
+  const springGlow = useSpring(hovered ? 1 : 0.8, { stiffness: 300, damping: 20 });
+  
+  // Transform values for dynamic effects
+  const animatedOffset = useTransform(springProgress, [0, target], [circumference, circumference - (target / target) * circumference]);
+  
   // Glassy border color
   const borderColor = `rgba(${rgb.r},${rgb.g},${rgb.b},0.45)`;
 
   const ringContent = (
-    <div
-      className={`relative flex items-center justify-center transition-all duration-300 group/healthring ${
-        isClickable ? 'cursor-pointer hover:scale-105 active:scale-95' : ''
+    <motion.div
+      className={`relative flex items-center justify-center group/healthring ${
+        isClickable ? 'cursor-pointer' : ''
       } ${className}`}
-      style={{ width: validSize, height: validSize }}
+      style={{ 
+        width: validSize, 
+        height: validSize,
+        scale: springScale,
+      }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={onClick}
@@ -68,9 +84,12 @@ export const HealthRing: React.FC<HealthRingProps> = ({
       onBlur={() => setHovered(false)}
       role={isClickable ? "button" : undefined}
       aria-label={isClickable ? `View details for ${label}` : undefined}
+      whileHover={{ scale: isClickable ? 1.08 : 1.02 }}
+      whileTap={{ scale: isClickable ? 0.95 : 1 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
     >
-      {/* Enhanced glass border with multiple layers */}
-      <div
+      {/* Enhanced glass border with motion physics */}
+      <motion.div
         className="absolute inset-0 rounded-full pointer-events-none z-10"
         style={{
           background: `linear-gradient(135deg, rgba(${rgb.r},${rgb.g},${rgb.b},0.15), rgba(${rgb.r},${rgb.g},${rgb.b},0.05))`,
@@ -82,10 +101,18 @@ export const HealthRing: React.FC<HealthRingProps> = ({
           `,
           backdropFilter: 'blur(12px) saturate(1.8)',
           WebkitBackdropFilter: 'blur(12px) saturate(1.8)',
-          opacity: hovered ? 1 : 0.8,
-          transition: 'opacity 0.3s, transform 0.3s',
-          transform: hovered ? 'scale(1.05)' : 'scale(1)',
+          opacity: springGlow,
         }}
+        animate={{
+          boxShadow: hovered
+            ? `0 0 0 3px rgba(${rgb.r},${rgb.g},${rgb.b},0.8),
+               0 0 30px 6px rgba(${rgb.r},${rgb.g},${rgb.b},0.4),
+               0 0 60px 12px rgba(${rgb.r},${rgb.g},${rgb.b},0.2)`
+            : `0 0 0 2px rgba(${rgb.r},${rgb.g},${rgb.b},0.6),
+               0 0 20px 4px rgba(${rgb.r},${rgb.g},${rgb.b},0.3),
+               0 0 40px 8px rgba(${rgb.r},${rgb.g},${rgb.b},0.15)`
+        }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
       />
       {/* Inner glow layer */}
       <div
@@ -207,7 +234,7 @@ export const HealthRing: React.FC<HealthRingProps> = ({
         {target !== 100 && <span className="text-xs text-muted-foreground">of {target}</span>}
         {label && <span className="text-xs text-muted-foreground mt-1">{label}</span>}
       </div>
-    </div>
+    </motion.div>
   );
 
   if (tooltip) {
