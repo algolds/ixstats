@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "tw-animate-css";
 
 /* Import modular CSS files */
 @import "./shared-utilities.css";
@@ -13,12 +12,51 @@
 @import "./charts.css";
 @import "./light-mode-overrides.css";
 @import "./country-theming.css";
+@import "./mycountry-theming.css";
 @import "./sdi-specialized.css";
 @import "./glass-refraction.css";
 
+/* Glow text effects for popover numbers and percentages */
+.glow-text {
+  text-shadow: 0 0 8px currentColor, 0 0 16px currentColor, 0 0 24px currentColor;
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    text-shadow: 0 0 8px currentColor, 0 0 16px currentColor, 0 0 24px currentColor;
+    opacity: 1;
+  }
+  50% {
+    text-shadow: 0 0 12px currentColor, 0 0 24px currentColor, 0 0 36px currentColor;
+    opacity: 0.8;
+  }
+}
+
+/* Shimmer effect for important numbers */
+.shimmer-text {
+  background: linear-gradient(90deg, 
+    currentColor 0%, 
+    rgba(255, 255, 255, 0.8) 50%, 
+    currentColor 100%);
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
 /* Dashboard section branding - color-specific glows */
 .dashboard-section-mycountry {
-  border: 1px solid rgb(202, 138, 4, 0.3);
+  border: 1px solid rgba(202, 138, 4, 0.3);
   box-shadow: 0 0 20px rgba(202, 138, 4, 0.15), 0 4px 12px rgba(202, 138, 4, 0.1);
   transition: box-shadow 0.3s ease;
 }
@@ -28,7 +66,7 @@
 }
 
 .dashboard-section-global {
-  border: 1px solid rgb(37, 99, 235, 0.3);
+  border: 1px solid rgba(37, 99, 235, 0.3);
   box-shadow: 0 0 20px rgba(37, 99, 235, 0.15), 0 4px 12px rgba(37, 99, 235, 0.1);
   transition: box-shadow 0.3s ease;
 }
@@ -38,7 +76,7 @@
 }
 
 .dashboard-section-eci {
-  border: 1px solid rgb(79, 70, 229, 0.3);
+  border: 1px solid rgba(79, 70, 229, 0.3);
   box-shadow: 0 0 20px rgba(79, 70, 229, 0.15), 0 4px 12px rgba(79, 70, 229, 0.1);
   transition: box-shadow 0.3s ease;
 }
@@ -48,7 +86,7 @@
 }
 
 .dashboard-section-sdi {
-  border: 1px solid rgb(220, 38, 38, 0.3);
+  border: 1px solid rgba(220, 38, 38, 0.3);
   box-shadow: 0 0 20px rgba(220, 38, 38, 0.15), 0 4px 12px rgba(220, 38, 38, 0.1);
   transition: box-shadow 0.3s ease;
 }

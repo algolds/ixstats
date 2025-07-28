@@ -141,7 +141,7 @@ export function ActivityPopover({ open, anchorEl, onClose, countryData, selected
                     <selectedData.icon className="h-4 w-4" style={{ color: selectedData.color }} />
                     <span className="font-medium">Current Value</span>
                   </div>
-                  <p className="text-2xl font-bold">{selectedData.value.toFixed(1)}%</p>
+                  <p className="text-2xl font-bold glow-text">{selectedData.value.toFixed(1)}%</p>
                   <p className="text-sm text-muted-foreground">{selectedData.subtitle}</p>
                 </div>
 
@@ -155,7 +155,7 @@ export function ActivityPopover({ open, anchorEl, onClose, countryData, selected
                       )}
                       <span className="font-medium">Growth Trend</span>
                     </div>
-                    <p className={`text-2xl font-bold ${selectedData.trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <p className={`text-2xl font-bold glow-text ${selectedData.trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {selectedData.trend >= 0 ? '+' : ''}{selectedData.trend.toFixed(2)}%
                     </p>
                     <p className="text-sm text-muted-foreground">Annual rate</p>
@@ -173,7 +173,7 @@ export function ActivityPopover({ open, anchorEl, onClose, countryData, selected
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-3 rounded glass-surface glass-refraction">
                       <span className="text-sm text-muted-foreground">Total GDP</span>
-                      <p className="font-semibold">{formatCurrency(countryData.currentTotalGdp)}</p>
+                      <p className="font-semibold shimmer-text">{formatCurrency(countryData.currentTotalGdp)}</p>
                     </div>
                     <div className="p-3 rounded glass-surface glass-refraction">
                       <span className="text-sm text-muted-foreground">Economic Tier</span>
@@ -197,7 +197,7 @@ export function ActivityPopover({ open, anchorEl, onClose, countryData, selected
                     {countryData.populationDensity && (
                       <div className="p-3 rounded glass-surface glass-refraction">
                         <span className="text-sm text-muted-foreground">Density</span>
-                        <p className="font-semibold">{countryData.populationDensity.toFixed(1)}/km²</p>
+                        <p className="font-semibold glow-text">{countryData.populationDensity.toFixed(1)}/km²</p>
                       </div>
                     )}
                   </div>
@@ -263,7 +263,7 @@ export function ActivityPopover({ open, anchorEl, onClose, countryData, selected
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">Overall Score:</span>
-                    <span className="ml-2 font-semibold">
+                    <span className="ml-2 font-semibold glow-text">
                       {(activityData.reduce((sum, ring) => sum + ring.value, 0) / activityData.length).toFixed(1)}%
                     </span>
                   </div>

@@ -211,6 +211,40 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 }
 
 /* ===================================
+   REVERSE PHYSICS REFRACTION SYSTEM
+   =================================== */
+
+/* Background receives maximum refraction from lower depth elements */
+.reverse-refraction-background {
+  position: relative;
+  filter: blur(4px) saturate(120%) contrast(0.9);
+  backdrop-filter: blur(6px) contrast(0.85) brightness(0.95);
+  -webkit-backdrop-filter: blur(6px) contrast(0.85) brightness(0.95);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Lower depth elements cause more background distortion */
+.glass-hierarchy-parent:hover ~ .reverse-refraction-background {
+  filter: blur(8px) saturate(130%) contrast(0.85);
+  backdrop-filter: blur(12px) contrast(0.7) brightness(0.9);
+  -webkit-backdrop-filter: blur(12px) contrast(0.7) brightness(0.9);
+}
+
+.glass-hierarchy-child:hover ~ .reverse-refraction-background,
+.glass-hierarchy-parent .glass-hierarchy-child:hover ~ .reverse-refraction-background {
+  filter: blur(12px) saturate(140%) contrast(0.8);
+  backdrop-filter: blur(16px) contrast(0.6) brightness(0.85);
+  -webkit-backdrop-filter: blur(16px) contrast(0.6) brightness(0.85);
+}
+
+.glass-hierarchy-interactive:hover ~ .reverse-refraction-background,
+.glass-hierarchy-child .glass-hierarchy-interactive:hover ~ .reverse-refraction-background {
+  filter: blur(16px) saturate(150%) contrast(0.75);
+  backdrop-filter: blur(20px) contrast(0.5) brightness(0.8);
+  -webkit-backdrop-filter: blur(20px) contrast(0.5) brightness(0.8);
+}
+
+/* ===================================
    HIERARCHICAL GLASS PHYSICS SYSTEM
    =================================== */
 
@@ -219,27 +253,47 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   position: relative;
   backdrop-filter: blur(var(--blur-subtle)) saturate(120%);
   -webkit-backdrop-filter: blur(var(--blur-subtle)) saturate(120%);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.08) 0%, 
+    rgba(255, 255, 255, 0.03) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Child elements inherit and enhance parent blur effects */
 .glass-hierarchy-child {
   position: relative;
-  backdrop-filter: inherit blur(var(--blur-moderate)) saturate(150%);
-  -webkit-backdrop-filter: inherit blur(var(--blur-moderate)) saturate(150%);
+  backdrop-filter: blur(var(--blur-moderate)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--blur-moderate)) saturate(150%);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    rgba(255, 255, 255, 0.05) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
 }
 
 /* Interactive elements within hierarchy add depth */
 .glass-hierarchy-interactive {
   position: relative;
-  backdrop-filter: inherit blur(var(--blur-prominent)) saturate(180%);
-  -webkit-backdrop-filter: inherit blur(var(--blur-prominent)) saturate(180%);
+  backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.15) 0%, 
+    rgba(255, 255, 255, 0.08) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.5rem;
+  cursor: pointer;
 }
 
 .glass-hierarchy-interactive:hover {
-  backdrop-filter: inherit blur(var(--blur-intense)) saturate(200%);
-  -webkit-backdrop-filter: inherit blur(var(--blur-intense)) saturate(200%);
-  transform: translateZ(5px);
+  backdrop-filter: blur(var(--blur-intense)) saturate(200%);
+  -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(200%);
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.2) 0%, 
+    rgba(255, 255, 255, 0.12) 100%);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 /* Contextual depth detection for popovers */

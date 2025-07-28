@@ -1,0 +1,759 @@
+/* === MYCOUNTRY TAB THEMING SYSTEM === */
+/* Unified color scheme and styling for MyCountry executive dashboard */
+
+:root {
+  /* Base MyCountry Gold Theme */
+  --mycountry-gold: #FCD34D;
+  --mycountry-gold-light: #FDE68A;
+  --mycountry-gold-dark: #F59E0B;
+  --mycountry-gold-bg: rgba(252, 211, 77, 0.1);
+  --mycountry-gold-glow: rgba(252, 211, 77, 0.4);
+
+  /* Executive Tab - Authority & Leadership */
+  --tab-executive-primary: #B45309;
+  --tab-executive-secondary: #F59E0B;
+  --tab-executive-accent: #FBBF24;
+  --tab-executive-bg: rgba(180, 83, 9, 0.08);
+  --tab-executive-glow: rgba(180, 83, 9, 0.3);
+  --tab-executive-icon: #92400E;
+
+  /* Economy Tab - Prosperity & Growth */
+  --tab-economy-primary: #059669;
+  --tab-economy-secondary: #10B981;
+  --tab-economy-accent: #34D399;
+  --tab-economy-bg: rgba(5, 150, 105, 0.08);
+  --tab-economy-glow: rgba(5, 150, 105, 0.3);
+  --tab-economy-icon: #047857;
+
+  /* Labor Tab - Work & Industry */
+  --tab-labor-primary: #DC2626;
+  --tab-labor-secondary: #EF4444;
+  --tab-labor-accent: #F87171;
+  --tab-labor-bg: rgba(220, 38, 38, 0.08);
+  --tab-labor-glow: rgba(220, 38, 38, 0.3);
+  --tab-labor-icon: #B91C1C;
+
+  /* Government Tab - Governance & Authority */
+  --tab-government-primary: #7C3AED;
+  --tab-government-secondary: #8B5CF6;
+  --tab-government-accent: #A78BFA;
+  --tab-government-bg: rgba(124, 58, 237, 0.08);
+  --tab-government-glow: rgba(124, 58, 237, 0.3);
+  --tab-government-icon: #6D28D9;
+
+  /* Demographics Tab - Population & Society */
+  --tab-demographics-primary: #0891B2;
+  --tab-demographics-secondary: #06B6D4;
+  --tab-demographics-accent: #22D3EE;
+  --tab-demographics-bg: rgba(8, 145, 178, 0.08);
+  --tab-demographics-glow: rgba(8, 145, 178, 0.3);
+  --tab-demographics-icon: #0E7490;
+
+  /* Intelligence Tab - Security & Intelligence */
+  --tab-intelligence-primary: #1F2937;
+  --tab-intelligence-secondary: #374151;
+  --tab-intelligence-accent: #6B7280;
+  --tab-intelligence-bg: rgba(31, 41, 55, 0.08);
+  --tab-intelligence-glow: rgba(31, 41, 55, 0.3);
+  --tab-intelligence-icon: #111827;
+
+  /* Detailed Tab - Analysis & Insights */
+  --tab-detailed-primary: #BE185D;
+  --tab-detailed-secondary: #EC4899;
+  --tab-detailed-accent: #F472B6;
+  --tab-detailed-bg: rgba(190, 24, 93, 0.08);
+  --tab-detailed-glow: rgba(190, 24, 93, 0.3);
+  --tab-detailed-icon: #9D174D;
+
+  /* Modeling Tab - Prediction & Modeling */
+  --tab-modeling-primary: #1E40AF;
+  --tab-modeling-secondary: #3B82F6;
+  --tab-modeling-accent: #60A5FA;
+  --tab-modeling-bg: rgba(30, 64, 175, 0.08);
+  --tab-modeling-glow: rgba(30, 64, 175, 0.3);
+  --tab-modeling-icon: #1E3A8A;
+
+  /* Typography Scale */
+  --font-size-exec-title: 2.5rem;
+  --font-size-exec-subtitle: 1.5rem;
+  --font-size-tab-header: 1.25rem;
+  --font-size-tab-subheader: 1rem;
+  --font-size-metric-large: 2rem;
+  --font-size-metric-medium: 1.5rem;
+  --font-size-metric-small: 1.125rem;
+  --font-size-body: 0.875rem;
+  --font-size-caption: 0.75rem;
+
+  /* Font Weights */
+  --font-weight-exec: 700;
+  --font-weight-metric: 600;
+  --font-weight-tab: 500;
+  --font-weight-body: 400;
+
+  /* Spacing System */
+  --space-glass-xs: 0.5rem;
+  --space-glass-sm: 0.75rem;
+  --space-glass-md: 1rem;
+  --space-glass-lg: 1.5rem;
+  --space-glass-xl: 2rem;
+  --space-glass-2xl: 3rem;
+}
+
+/* === TAB CONTENT THEMING === */
+
+/* Executive Tab Styling */
+.tab-content-executive {
+  --current-tab-primary: var(--tab-executive-primary);
+  --current-tab-secondary: var(--tab-executive-secondary);
+  --current-tab-accent: var(--tab-executive-accent);
+  --current-tab-bg: var(--tab-executive-bg);
+  --current-tab-glow: var(--tab-executive-glow);
+  --current-tab-icon: var(--tab-executive-icon);
+}
+
+.tab-content-economy {
+  --current-tab-primary: var(--tab-economy-primary);
+  --current-tab-secondary: var(--tab-economy-secondary);
+  --current-tab-accent: var(--tab-economy-accent);
+  --current-tab-bg: var(--tab-economy-bg);
+  --current-tab-glow: var(--tab-economy-glow);
+  --current-tab-icon: var(--tab-economy-icon);
+}
+
+.tab-content-labor {
+  --current-tab-primary: var(--tab-labor-primary);
+  --current-tab-secondary: var(--tab-labor-secondary);
+  --current-tab-accent: var(--tab-labor-accent);
+  --current-tab-bg: var(--tab-labor-bg);
+  --current-tab-glow: var(--tab-labor-glow);
+  --current-tab-icon: var(--tab-labor-icon);
+}
+
+.tab-content-government {
+  --current-tab-primary: var(--tab-government-primary);
+  --current-tab-secondary: var(--tab-government-secondary);
+  --current-tab-accent: var(--tab-government-accent);
+  --current-tab-bg: var(--tab-government-bg);
+  --current-tab-glow: var(--tab-government-glow);
+  --current-tab-icon: var(--tab-government-icon);
+}
+
+.tab-content-demographics {
+  --current-tab-primary: var(--tab-demographics-primary);
+  --current-tab-secondary: var(--tab-demographics-secondary);
+  --current-tab-accent: var(--tab-demographics-accent);
+  --current-tab-bg: var(--tab-demographics-bg);
+  --current-tab-glow: var(--tab-demographics-glow);
+  --current-tab-icon: var(--tab-demographics-icon);
+}
+
+.tab-content-intelligence {
+  --current-tab-primary: var(--tab-intelligence-primary);
+  --current-tab-secondary: var(--tab-intelligence-secondary);
+  --current-tab-accent: var(--tab-intelligence-accent);
+  --current-tab-bg: var(--tab-intelligence-bg);
+  --current-tab-glow: var(--tab-intelligence-glow);
+  --current-tab-icon: var(--tab-intelligence-icon);
+}
+
+.tab-content-detailed {
+  --current-tab-primary: var(--tab-detailed-primary);
+  --current-tab-secondary: var(--tab-detailed-secondary);
+  --current-tab-accent: var(--tab-detailed-accent);
+  --current-tab-bg: var(--tab-detailed-bg);
+  --current-tab-glow: var(--tab-detailed-glow);
+  --current-tab-icon: var(--tab-detailed-icon);
+}
+
+.tab-content-modeling {
+  --current-tab-primary: var(--tab-modeling-primary);
+  --current-tab-secondary: var(--tab-modeling-secondary);
+  --current-tab-accent: var(--tab-modeling-accent);
+  --current-tab-bg: var(--tab-modeling-bg);
+  --current-tab-glow: var(--tab-modeling-glow);
+  --current-tab-icon: var(--tab-modeling-icon);
+}
+
+/* === THEMED GLASS COMPONENTS === */
+
+/* Tab-themed glass cards */
+.glass-card-themed {
+  background: linear-gradient(135deg, 
+    rgba(30, 41, 59, 0.95) 0%,
+    rgba(15, 23, 42, 0.98) 50%,
+    rgba(8, 16, 36, 1) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px) saturate(150%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card-themed:hover {
+  background: linear-gradient(135deg, 
+    rgba(45, 56, 79, 0.95) 0%,
+    rgba(30, 41, 59, 0.98) 50%,
+    rgba(15, 23, 42, 1) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 16px 48px var(--current-tab-glow),
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+  backdrop-filter: blur(16px) saturate(160%);
+}
+
+/* Tab-themed interactive elements */
+.tab-interactive {
+  color: var(--current-tab-primary);
+  border-color: var(--current-tab-accent);
+  background: var(--current-tab-bg);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(8px) saturate(120%);
+  border-radius: 0.5rem;
+}
+
+.tab-interactive:hover {
+  color: var(--current-tab-accent);
+  background: var(--current-tab-bg);
+  box-shadow: 
+    0 4px 24px var(--current-tab-glow),
+    0 0 0 1px var(--current-tab-accent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+  backdrop-filter: blur(12px) saturate(140%);
+}
+
+.tab-interactive:focus-visible {
+  outline: 2px solid var(--current-tab-primary);
+  outline-offset: 2px;
+}
+
+/* Tab icon styling */
+.tab-icon {
+  color: var(--current-tab-icon);
+  transition: color 0.3s ease;
+}
+
+.tab-icon:hover {
+  color: var(--current-tab-accent);
+}
+
+/* Tab metrics and data display */
+.tab-metric-primary {
+  color: var(--current-tab-primary);
+  font-weight: var(--font-weight-metric);
+  font-size: var(--font-size-metric-large);
+}
+
+.tab-metric-secondary {
+  color: var(--current-tab-secondary);
+  font-weight: var(--font-weight-metric);
+  font-size: var(--font-size-metric-medium);
+}
+
+.tab-metric-small {
+  color: var(--current-tab-accent);
+  font-weight: var(--font-weight-body);
+  font-size: var(--font-size-metric-small);
+}
+
+/* === ANIMATIONS === */
+
+/* Tab activation animation */
+@keyframes tab-activate {
+  0% {
+    opacity: 0.8;
+    transform: translateY(4px) scale(0.98);
+    filter: blur(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.tab-content-enter {
+  animation: tab-activate 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Tab-themed shimmer effect */
+@keyframes tab-shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.tab-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.tab-shimmer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--current-tab-glow),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: tab-shimmer 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Tab glow effect */
+.tab-glow {
+  position: relative;
+}
+
+.tab-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center,
+    var(--current-tab-glow) 0%,
+    transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.tab-glow:hover::after {
+  opacity: 1;
+}
+
+/* === RESPONSIVE ADAPTATIONS === */
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  :root {
+    /* Simplified color themes for mobile */
+    --tab-glow: color-mix(in srgb, var(--current-tab-primary) 20%, transparent);
+    
+    /* Reduced typography scale */
+    --font-size-metric-large: 1.5rem;
+    --font-size-exec-title: 2rem;
+    --font-size-tab-header: 1.125rem;
+    
+    /* Optimized spacing */
+    --space-glass-lg: 1rem;
+    --space-glass-xl: 1.5rem;
+  }
+  
+  .glass-card-themed {
+    /* Simplified glass effects for performance */
+    backdrop-filter: blur(8px) saturate(120%);
+    box-shadow: 
+      0 4px 16px color-mix(in srgb, var(--current-tab-primary) 8%, rgba(0, 0, 0, 0.2)),
+      0 1px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Touch-friendly interactions */
+  .tab-interactive {
+    min-height: 44px;
+    padding: var(--space-glass-md);
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .glass-card-themed {
+    backdrop-filter: blur(12px) saturate(140%);
+  }
+  
+  .tab-metric-primary {
+    font-size: var(--font-size-metric-medium);
+  }
+}
+
+/* Desktop enhancements */
+@media (min-width: 1025px) {
+  .glass-card-themed:hover {
+    backdrop-filter: blur(20px) saturate(160%);
+  }
+  
+  .tab-interactive:hover {
+    backdrop-filter: blur(16px) saturate(150%);
+  }
+}
+
+/* === DARK MODE ADAPTATIONS === */
+
+[data-theme="dark"] {
+  /* Enhanced glow effects for dark mode */
+  --tab-executive-glow: rgba(180, 83, 9, 0.5);
+  --tab-economy-glow: rgba(5, 150, 105, 0.5);
+  --tab-labor-glow: rgba(220, 38, 38, 0.5);
+  --tab-government-glow: rgba(124, 58, 237, 0.5);
+  --tab-demographics-glow: rgba(8, 145, 178, 0.5);
+  --tab-intelligence-glow: rgba(31, 41, 55, 0.5);
+  --tab-detailed-glow: rgba(190, 24, 93, 0.5);
+  --tab-modeling-glow: rgba(30, 64, 175, 0.5);
+  
+  /* Enhanced background opacity */
+  --tab-executive-bg: rgba(180, 83, 9, 0.15);
+  --tab-economy-bg: rgba(5, 150, 105, 0.15);
+  --tab-labor-bg: rgba(220, 38, 38, 0.15);
+  --tab-government-bg: rgba(124, 58, 237, 0.15);
+  --tab-demographics-bg: rgba(8, 145, 178, 0.15);
+  --tab-intelligence-bg: rgba(31, 41, 55, 0.15);
+  --tab-detailed-bg: rgba(190, 24, 93, 0.15);
+  --tab-modeling-bg: rgba(30, 64, 175, 0.15);
+}
+
+[data-theme="dark"] .glass-card-themed {
+  background: linear-gradient(135deg,
+    rgba(15, 23, 42, 0.95) 0%,
+    rgba(8, 16, 36, 0.98) 50%,
+    rgba(2, 6, 23, 1) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .tab-icon {
+  opacity: 0.9;
+}
+
+/* === LIGHT MODE ADAPTATIONS === */
+
+[data-theme="light"] {
+  /* Adjusted colors for light backgrounds */
+  --tab-executive-bg: rgba(180, 83, 9, 0.06);
+  --tab-economy-bg: rgba(5, 150, 105, 0.06);
+  --tab-labor-bg: rgba(220, 38, 38, 0.06);
+  --tab-government-bg: rgba(124, 58, 237, 0.06);
+  --tab-demographics-bg: rgba(8, 145, 178, 0.06);
+  --tab-intelligence-bg: rgba(31, 41, 55, 0.06);
+  --tab-detailed-bg: rgba(190, 24, 93, 0.06);
+  --tab-modeling-bg: rgba(30, 64, 175, 0.06);
+  
+  /* Reduced glow for light mode */
+  --tab-executive-glow: rgba(180, 83, 9, 0.25);
+  --tab-economy-glow: rgba(5, 150, 105, 0.25);
+  --tab-labor-glow: rgba(220, 38, 38, 0.25);
+  --tab-government-glow: rgba(124, 58, 237, 0.25);
+  --tab-demographics-glow: rgba(8, 145, 178, 0.25);
+  --tab-intelligence-glow: rgba(31, 41, 55, 0.25);
+  --tab-detailed-glow: rgba(190, 24, 93, 0.25);
+  --tab-modeling-glow: rgba(30, 64, 175, 0.25);
+}
+
+[data-theme="light"] .glass-card-themed {
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(248, 250, 252, 0.98) 50%,
+    rgba(241, 245, 249, 1) 100%
+  );
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    0 1px 4px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* === ACCESSIBILITY === */
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .tab-interactive,
+  .glass-card-themed,
+  .tab-shimmer::before {
+    transition: opacity 0.2s ease, background-color 0.2s ease;
+    animation: none;
+    transform: none;
+  }
+  
+  .tab-content-enter {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+/* High contrast support */
+@media (prefers-contrast: high) {
+  .tab-interactive {
+    border-width: 2px;
+  }
+  
+  .tab-interactive:focus-visible {
+    outline-width: 3px;
+    outline-offset: 3px;
+  }
+  
+  .glass-card-themed {
+    border-width: 2px;
+  }
+}
+
+/* === TAB TRIGGER THEMING === */
+
+/* Tab trigger hover effects with theme colors */
+.tab-trigger-executive:hover {
+  background: var(--tab-executive-bg);
+  color: var(--tab-executive-primary);
+}
+
+.tab-trigger-economy:hover {
+  background: var(--tab-economy-bg);
+  color: var(--tab-economy-primary);
+}
+
+.tab-trigger-labor:hover {
+  background: var(--tab-labor-bg);
+  color: var(--tab-labor-primary);
+}
+
+.tab-trigger-government:hover {
+  background: var(--tab-government-bg);
+  color: var(--tab-government-primary);
+}
+
+.tab-trigger-demographics:hover {
+  background: var(--tab-demographics-bg);
+  color: var(--tab-demographics-primary);
+}
+
+.tab-trigger-intelligence:hover {
+  background: var(--tab-intelligence-bg);
+  color: var(--tab-intelligence-primary);
+}
+
+.tab-trigger-detailed:hover {
+  background: var(--tab-detailed-bg);
+  color: var(--tab-detailed-primary);
+}
+
+.tab-trigger-modeling:hover {
+  background: var(--tab-modeling-bg);
+  color: var(--tab-modeling-primary);
+}
+
+/* Active tab trigger states */
+.tab-trigger-executive[data-state="active"] {
+  background: var(--tab-executive-bg);
+  color: var(--tab-executive-primary);
+  border-bottom: 2px solid var(--tab-executive-primary);
+}
+
+.tab-trigger-economy[data-state="active"] {
+  background: var(--tab-economy-bg);
+  color: var(--tab-economy-primary);
+  border-bottom: 2px solid var(--tab-economy-primary);
+}
+
+.tab-trigger-labor[data-state="active"] {
+  background: var(--tab-labor-bg);
+  color: var(--tab-labor-primary);
+  border-bottom: 2px solid var(--tab-labor-primary);
+}
+
+.tab-trigger-government[data-state="active"] {
+  background: var(--tab-government-bg);
+  color: var(--tab-government-primary);
+  border-bottom: 2px solid var(--tab-government-primary);
+}
+
+.tab-trigger-demographics[data-state="active"] {
+  background: var(--tab-demographics-bg);
+  color: var(--tab-demographics-primary);
+  border-bottom: 2px solid var(--tab-demographics-primary);
+}
+
+.tab-trigger-intelligence[data-state="active"] {
+  background: var(--tab-intelligence-bg);
+  color: var(--tab-intelligence-primary);
+  border-bottom: 2px solid var(--tab-intelligence-primary);
+}
+
+.tab-trigger-detailed[data-state="active"] {
+  background: var(--tab-detailed-bg);
+  color: var(--tab-detailed-primary);
+  border-bottom: 2px solid var(--tab-detailed-primary);
+}
+
+.tab-trigger-modeling[data-state="active"] {
+  background: var(--tab-modeling-bg);
+  color: var(--tab-modeling-primary);
+  border-bottom: 2px solid var(--tab-modeling-primary);
+}
+
+/* === ANIMATION UTILITIES === */
+
+.smooth-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift {
+  transition: transform 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+/* === UTILITY CLASSES === */
+
+.mycountry-executive {
+  --current-tab-primary: var(--tab-executive-primary);
+  --current-tab-secondary: var(--tab-executive-secondary);
+  --current-tab-accent: var(--tab-executive-accent);
+  --current-tab-bg: var(--tab-executive-bg);
+  --current-tab-glow: var(--tab-executive-glow);
+  --current-tab-icon: var(--tab-executive-icon);
+}
+
+.mycountry-economy {
+  --current-tab-primary: var(--tab-economy-primary);
+  --current-tab-secondary: var(--tab-economy-secondary);
+  --current-tab-accent: var(--tab-economy-accent);
+  --current-tab-bg: var(--tab-economy-bg);
+  --current-tab-glow: var(--tab-economy-glow);
+  --current-tab-icon: var(--tab-economy-icon);
+}
+
+.mycountry-labor {
+  --current-tab-primary: var(--tab-labor-primary);
+  --current-tab-secondary: var(--tab-labor-secondary);
+  --current-tab-accent: var(--tab-labor-accent);
+  --current-tab-bg: var(--tab-labor-bg);
+  --current-tab-glow: var(--tab-labor-glow);
+  --current-tab-icon: var(--tab-labor-icon);
+}
+
+.mycountry-government {
+  --current-tab-primary: var(--tab-government-primary);
+  --current-tab-secondary: var(--tab-government-secondary);
+  --current-tab-accent: var(--tab-government-accent);
+  --current-tab-bg: var(--tab-government-bg);
+  --current-tab-glow: var(--tab-government-glow);
+  --current-tab-icon: var(--tab-government-icon);
+}
+
+.mycountry-demographics {
+  --current-tab-primary: var(--tab-demographics-primary);
+  --current-tab-secondary: var(--tab-demographics-secondary);
+  --current-tab-accent: var(--tab-demographics-accent);
+  --current-tab-bg: var(--tab-demographics-bg);
+  --current-tab-glow: var(--tab-demographics-glow);
+  --current-tab-icon: var(--tab-demographics-icon);
+}
+
+.mycountry-intelligence {
+  --current-tab-primary: var(--tab-intelligence-primary);
+  --current-tab-secondary: var(--tab-intelligence-secondary);
+  --current-tab-accent: var(--tab-intelligence-accent);
+  --current-tab-bg: var(--tab-intelligence-bg);
+  --current-tab-glow: var(--tab-intelligence-glow);
+  --current-tab-icon: var(--tab-intelligence-icon);
+}
+
+.mycountry-detailed {
+  --current-tab-primary: var(--tab-detailed-primary);
+  --current-tab-secondary: var(--tab-detailed-secondary);
+  --current-tab-accent: var(--tab-detailed-accent);
+  --current-tab-bg: var(--tab-detailed-bg);
+  --current-tab-glow: var(--tab-detailed-glow);
+  --current-tab-icon: var(--tab-detailed-icon);
+}
+
+.mycountry-modeling {
+  --current-tab-primary: var(--tab-modeling-primary);
+  --current-tab-secondary: var(--tab-modeling-secondary);
+  --current-tab-accent: var(--tab-modeling-accent);
+  --current-tab-bg: var(--tab-modeling-bg);
+  --current-tab-glow: var(--tab-modeling-glow);
+  --current-tab-icon: var(--tab-modeling-icon);
+}
+
+/* Component shortcuts - Use proper inheritance */
+.themed-glass {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    rgba(255, 255, 255, 0.05) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px) saturate(150%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.themed-interactive {
+  color: var(--current-tab-primary);
+  border-color: var(--current-tab-accent);
+  background: var(--current-tab-bg);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(8px) saturate(120%);
+  border-radius: 0.5rem;
+}
+
+.themed-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.themed-glow {
+  position: relative;
+}
+
+/* MyCountry Card specific styling */
+.mycountry-card {
+  background: linear-gradient(135deg, 
+    var(--tab-executive-bg) 0%,
+    rgba(252, 211, 77, 0.05) 25%,
+    var(--tab-executive-bg) 50%,
+    rgba(252, 211, 77, 0.03) 75%,
+    var(--tab-executive-bg) 100%
+  );
+}
+
+.mycountry-card:hover {
+  background: linear-gradient(135deg, 
+    rgba(252, 211, 77, 0.12) 0%,
+    var(--tab-executive-bg) 25%,
+    rgba(252, 211, 77, 0.08) 50%,
+    var(--tab-executive-bg) 75%,
+    rgba(252, 211, 77, 0.12) 100%
+  );
+}
+
+/* Gold shimmer animation */
+.mycountry-gold-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.mycountry-gold-shimmer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(252, 211, 77, 0.4),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: mycountry-shimmer 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes mycountry-shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}

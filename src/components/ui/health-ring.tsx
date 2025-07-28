@@ -232,7 +232,6 @@ export const HealthRing: React.FC<HealthRingProps> = ({
           <AnimatedNumber value={progress} decimals={0} />
         </span>
         {target !== 100 && <span className="text-xs text-muted-foreground">of {target}</span>}
-        {label && <span className="text-xs text-muted-foreground mt-1">{label}</span>}
       </div>
     </motion.div>
   );
