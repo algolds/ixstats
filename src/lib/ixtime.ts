@@ -13,6 +13,10 @@ export class IxTime {
   private static readonly IN_GAME_EPOCH = new Date(2028, 0, 1, 0, 0, 0, 0).getTime();
   
   private static readonly BASE_TIME_MULTIPLIER = 4.0; // 4x faster than real time
+  private static readonly POST_2040_MULTIPLIER = 2.0; // 2x faster after 2040
+  private static readonly SPEED_CHANGE_DATE = new Date('2040-01-01T00:00:00.000Z');
+  private static readonly REFERENCE_REAL_TIME = new Date('2025-07-27T00:00:00.000Z'); // 7/27/25 midnight IRL
+  private static readonly REFERENCE_GAME_TIME = new Date('2040-01-01T00:00:00.000Z'); // Jan 1, 2040 game time
   private static readonly BOT_API_URL = typeof window !== 'undefined' 
     ? env.NEXT_PUBLIC_IXTIME_BOT_URL 
     : env.IXTIME_BOT_URL;
@@ -23,6 +27,15 @@ export class IxTime {
   private static lastKnownBotTime: number | null = null;
   private static lastSyncTime: number | null = null;
   private static botAvailable = true;
+
+  /**
+   * Get the natural/default time multiplier based on current time
+   */
+  static getDefaultMultiplier(ixTime?: number): number {
+    const currentTime = ixTime || this.getCurrentIxTime();
+    const gameDate = new Date(currentTime);
+    return gameDate >= this.SPEED_CHANGE_DATE ? this.POST_2040_MULTIPLIER : this.BASE_TIME_MULTIPLIER;
+  }
 
   /**
    * Get the in-game epoch timestamp (January 1, 2028)
@@ -67,16 +80,28 @@ export class IxTime {
       return this.timeOverride;
     }
     
-    // If we have recent bot data, extrapolate from it
-    if (this.lastKnownBotTime && this.lastSyncTime) {
-      const timeSinceSync = Date.now() - this.lastSyncTime;
-      if (timeSinceSync < 30000) { // Use bot data if less than 30 seconds old
-        return this.lastKnownBotTime + timeSinceSync * this.getTimeMultiplier();
-      }
+    // Calculate time with dynamic speed changes based on reference point
+    const now = Date.now();
+    
+    // If we have a multiplier override, use simple calculation with that override
+    if (this.multiplierOverride !== null) {
+      const realSecondsElapsed = (now - this.REAL_WORLD_EPOCH) / 1000;
+      const ixSecondsElapsed = realSecondsElapsed * this.multiplierOverride;
+      return this.REAL_WORLD_EPOCH + (ixSecondsElapsed * 1000);
     }
     
-    // Fall back to local calculation
-    return this.convertToIxTime(Date.now());
+    // Use dynamic calculation based on reference point and speed changes
+    if (now <= this.REFERENCE_REAL_TIME.getTime()) {
+      // Before speed change: use 4x multiplier from epoch
+      const realSecondsElapsed = (now - this.REAL_WORLD_EPOCH) / 1000;
+      const ixSecondsElapsed = realSecondsElapsed * this.BASE_TIME_MULTIPLIER;
+      return this.REAL_WORLD_EPOCH + (ixSecondsElapsed * 1000);
+    } else {
+      // After speed change: calculate from reference point with 2x multiplier
+      const realSecondsSinceSpeedChange = (now - this.REFERENCE_REAL_TIME.getTime()) / 1000;
+      const gameTimeSinceSpeedChange = realSecondsSinceSpeedChange * this.POST_2040_MULTIPLIER * 1000;
+      return this.REFERENCE_GAME_TIME.getTime() + gameTimeSinceSpeedChange;
+    }
   }
 
   private static getCurrentIxTimeInternal(): number {
@@ -375,11 +400,44 @@ export class IxTime {
   }
 
   static getTimeMultiplier(): number {
-    return this.multiplierOverride !== null ? this.multiplierOverride : this.BASE_TIME_MULTIPLIER;
+    if (this.multiplierOverride !== null) {
+      return this.multiplierOverride;
+    }
+    return this.getDefaultMultiplier();
   }
 
   static isPaused(): boolean {
     return this.getTimeMultiplier() === 0;
+  }
+
+  /**
+   * Set time multiplier naturally (clear override if it matches natural progression)
+   */
+  static setNaturalMultiplier(multiplier: number): { isNatural: boolean; message: string } {
+    const naturalMultiplier = this.getDefaultMultiplier();
+    
+    if (multiplier === naturalMultiplier) {
+      // Clear override to use natural progression
+      this.multiplierOverride = null;
+      return {
+        isNatural: true,
+        message: `Set to natural ${multiplier}x speed for current era`
+      };
+    } else {
+      // Set as override since it doesn't match natural progression
+      this.multiplierOverride = multiplier;
+      return {
+        isNatural: false,
+        message: `Set to ${multiplier}x speed (override)`
+      };
+    }
+  }
+
+  /**
+   * Check if current multiplier is natural (not overridden)
+   */
+  static isMultiplierNatural(): boolean {
+    return this.multiplierOverride === null;
   }
 
   static async getCurrentIxTimeFromBot(): Promise<number> {

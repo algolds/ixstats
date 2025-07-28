@@ -17,8 +17,11 @@ interface TimeControlPanelProps {
   onSetCustomTime: () => void;
   onResetToRealTime: () => void;
   onSyncEpoch?: (targetEpoch: number) => void;
+  onSyncFromBot?: () => void;
   setTimePending: boolean;
   syncEpochPending?: boolean;
+  autoSyncPending?: boolean;
+  lastBotSync?: Date | null;
 }
 
 export function TimeControlPanel({
@@ -33,8 +36,11 @@ export function TimeControlPanel({
   onSetCustomTime,
   onResetToRealTime,
   onSyncEpoch,
+  onSyncFromBot,
   setTimePending,
-  syncEpochPending = false
+  syncEpochPending = false,
+  autoSyncPending = false,
+  lastBotSync
 }: TimeControlPanelProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -59,7 +65,7 @@ export function TimeControlPanel({
             />
             <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
               <span>Paused</span>
-              <span>2x</span>
+              <span>2x (2040+)</span>
               <span>4x (Normal)</span>
               <span>10x</span>
             </div>
@@ -72,6 +78,13 @@ export function TimeControlPanel({
             >
               <Pause className="h-4 w-4 mr-1" />
               Pause
+            </button>
+            <button
+              onClick={() => onTimeMultiplierChange(2)}
+              className="flex items-center px-3 py-2 bg-blue-100 hover:bg-blue-200 dark:bg-blue-700 dark:hover:bg-blue-600 text-blue-700 dark:text-blue-100 rounded-md text-sm"
+            >
+              <Play className="h-4 w-4 mr-1" />
+              2x Speed
             </button>
             <button
               onClick={() => onTimeMultiplierChange(4)}
@@ -131,22 +144,41 @@ export function TimeControlPanel({
         </div>
       </div>
 
-      {/* Epoch Synchronization */}
+      {/* Bot Synchronization */}
       <div>
         <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-3">
-          Epoch Synchronization
+          Discord Bot Sync
         </h3>
         <div className="space-y-4">
           <div className="text-sm text-muted-foreground">
-            {/* You can add current epoch info here if needed */}
+            {lastBotSync && (
+              <div>Last sync: {lastBotSync.toLocaleTimeString()}</div>
+            )}
+            {botStatus?.botHealth?.available ? (
+              <div className="text-green-600 dark:text-green-400">Bot: Online</div>
+            ) : (
+              <div className="text-red-600 dark:text-red-400">Bot: Offline</div>
+            )}
+            {botStatus?.botStatus && (
+              <div>Bot Speed: {botStatus.botStatus.multiplier}x</div>
+            )}
           </div>
-          <button
-            onClick={() => onSyncEpoch && onSyncEpoch(Date.now())}
-            disabled={syncEpochPending}
-            className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 disabled:opacity-50 text-white rounded-md text-sm font-medium"
-          >
-            {syncEpochPending ? "Syncing..." : "Sync Epoch"}
-          </button>
+          <div className="space-y-2">
+            <button
+              onClick={onSyncFromBot}
+              disabled={autoSyncPending || !botStatus?.botHealth?.available}
+              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 disabled:opacity-50 text-white rounded-md text-sm font-medium"
+            >
+              {autoSyncPending ? "Syncing..." : "Sync from Discord Bot"}
+            </button>
+            <button
+              onClick={() => onSyncEpoch && onSyncEpoch(Date.now())}
+              disabled={syncEpochPending}
+              className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 disabled:opacity-50 text-white rounded-md text-sm font-medium"
+            >
+              {syncEpochPending ? "Syncing..." : "Sync Epoch"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

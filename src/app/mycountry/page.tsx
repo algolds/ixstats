@@ -24,7 +24,9 @@ import {
 import { TrendRiskAnalytics } from "~/components/analytics/TrendRiskAnalytics";
 import { ComparativeAnalysis } from "~/app/countries/_components/economy/ComparativeAnalysis";
 import { generateCountryEconomicData, type CountryProfile } from "~/lib/economic-data-templates";
-import { AlertTriangle, Settings, Crown, Save, Edit, BarChart3, Users, DollarSign, Shield, Clock, TrendingUp, Activity } from "lucide-react";
+import { AlertTriangle, Settings, Crown, Save, Edit, BarChart3, Users, DollarSign, Shield, Clock, TrendingUp, Activity, Briefcase, Building, PieChart, Eye, Search, Calculator } from "lucide-react";
+import { getTabIcon, type TabTheme } from '~/lib/mycountry-theme';
+import { ThemedTabContent } from '~/components/ui/themed-tab-content';
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import Link from "next/link";
@@ -443,43 +445,43 @@ function MyCountryContent() {
               <span className="hidden sm:inline">Overview</span>
               <span className="sm:hidden">Over</span>
             </TabsTrigger>
-            <TabsTrigger value="executive" className="flex items-center gap-1 text-xs lg:text-sm">
-              <Crown className="h-3 w-3 lg:h-4 lg:w-4" />
+            <TabsTrigger value="executive" className="flex items-center gap-1 text-xs lg:text-sm tab-trigger-executive">
+              <Crown className="h-3 w-3 lg:h-4 lg:w-4 tab-icon" />
               <span className="hidden sm:inline">Executive</span>
               <span className="sm:hidden">Exec</span>
             </TabsTrigger>
-            <TabsTrigger value="economy" className="flex items-center gap-1 text-xs lg:text-sm">
-              <DollarSign className="h-3 w-3 lg:h-4 lg:w-4" />
+            <TabsTrigger value="economy" className="flex items-center gap-1 text-xs lg:text-sm tab-trigger-economy">
+              <TrendingUp className="h-3 w-3 lg:h-4 lg:w-4 tab-icon" />
               <span className="hidden sm:inline">Economy</span>
               <span className="sm:hidden">Econ</span>
             </TabsTrigger>
-            <TabsTrigger value="labor" className="flex items-center gap-1 text-xs lg:text-sm">
-              <Users className="h-3 w-3 lg:h-4 lg:w-4" />
+            <TabsTrigger value="labor" className="flex items-center gap-1 text-xs lg:text-sm tab-trigger-labor">
+              <Briefcase className="h-3 w-3 lg:h-4 lg:w-4 tab-icon" />
               <span className="hidden sm:inline">Labor</span>
               <span className="sm:hidden">Lab</span>
             </TabsTrigger>
-            <TabsTrigger value="government" className="flex items-center gap-1 text-xs lg:text-sm">
-              <Settings className="h-3 w-3 lg:h-4 lg:w-4" />
+            <TabsTrigger value="government" className="flex items-center gap-1 text-xs lg:text-sm tab-trigger-government">
+              <Building className="h-3 w-3 lg:h-4 lg:w-4 tab-icon" />
               <span className="hidden sm:inline">Government</span>
               <span className="sm:hidden">Gov</span>
             </TabsTrigger>
-            <TabsTrigger value="demographics" className="flex items-center gap-1 text-xs lg:text-sm">
-              <Users className="h-3 w-3 lg:h-4 lg:w-4" />
+            <TabsTrigger value="demographics" className="flex items-center gap-1 text-xs lg:text-sm tab-trigger-demographics">
+              <PieChart className="h-3 w-3 lg:h-4 lg:w-4 tab-icon" />
               <span className="hidden sm:inline">Demographics</span>
               <span className="sm:hidden">Demo</span>
             </TabsTrigger>
-            <TabsTrigger value="intelligence" className="flex items-center gap-1 text-xs lg:text-sm">
-              <Shield className="h-3 w-3 lg:h-4 lg:w-4" />
+            <TabsTrigger value="intelligence" className="flex items-center gap-1 text-xs lg:text-sm tab-trigger-intelligence">
+              <Eye className="h-3 w-3 lg:h-4 lg:w-4 tab-icon" />
               <span className="hidden sm:inline">Intelligence</span>
               <span className="sm:hidden">Intel</span>
             </TabsTrigger>
-            <TabsTrigger value="detailed" className="flex items-center gap-1 text-xs lg:text-sm">
-              <Activity className="h-3 w-3 lg:h-4 lg:w-4" />
+            <TabsTrigger value="detailed" className="flex items-center gap-1 text-xs lg:text-sm tab-trigger-detailed">
+              <Search className="h-3 w-3 lg:h-4 lg:w-4 tab-icon" />
               <span className="hidden sm:inline">Detailed</span>
               <span className="sm:hidden">Detail</span>
             </TabsTrigger>
-            <TabsTrigger value="modeling" className="flex items-center gap-1 text-xs lg:text-sm">
-              <BarChart3 className="h-3 w-3 lg:h-4 lg:w-4" />
+            <TabsTrigger value="modeling" className="flex items-center gap-1 text-xs lg:text-sm tab-trigger-modeling">
+              <Calculator className="h-3 w-3 lg:h-4 lg:w-4 tab-icon" />
               <span className="hidden sm:inline">Modeling</span>
               <span className="sm:hidden">Model</span>
             </TabsTrigger>
@@ -501,10 +503,13 @@ function MyCountryContent() {
         </TabsContent>
 
         <TabsContent value="executive">
-          <CountryExecutiveSection countryId={country.id} userId={user?.id} />
+          <ThemedTabContent theme="executive" className="tab-content-enter">
+            <CountryExecutiveSection countryId={country.id} userId={user?.id} />
+          </ThemedTabContent>
         </TabsContent>
 
         <TabsContent value="economy" className="space-y-6">
+          <ThemedTabContent theme="economy" className="tab-content-enter space-y-6">
           <div className="animate-in slide-in-from-bottom-4 duration-700">
             <CoreEconomicIndicators
               indicators={editedEconomyData?.core ?? { 
@@ -538,9 +543,11 @@ function MyCountryContent() {
               }} 
             />
           </div>
+          </ThemedTabContent>
         </TabsContent>
 
         <TabsContent value="labor">
+          <ThemedTabContent theme="labor" className="tab-content-enter">
           <LaborEmployment
             laborData={editedEconomyData?.labor ?? { 
               laborForceParticipationRate: 0, employmentRate: 0, unemploymentRate: 0, 
@@ -557,9 +564,11 @@ function MyCountryContent() {
             isReadOnly={!editMode}
             showComparison={true}
           />
+          </ThemedTabContent>
         </TabsContent>
 
         <TabsContent value="government" className="space-y-6">
+          <ThemedTabContent theme="government" className="tab-content-enter space-y-6">
           <FiscalSystemComponent
             fiscalData={editedEconomyData?.fiscal ?? {
               taxRevenueGDPPercent: 0, governmentRevenueTotal: 0, taxRevenuePerCapita: 0,
@@ -587,9 +596,11 @@ function MyCountryContent() {
             onSpendingDataChangeAction={editMode ? (data) => handleSectionChange('spending', data) : () => {}}
             isReadOnly={!editMode}
           />
+          </ThemedTabContent>
         </TabsContent>
 
         <TabsContent value="demographics">
+          <ThemedTabContent theme="demographics" className="tab-content-enter">
           <Demographics
             demographicData={{
               ...editedEconomyData?.demographics,
@@ -598,13 +609,17 @@ function MyCountryContent() {
             totalPopulation={editedEconomyData?.core?.totalPopulation ?? 0}
             onDemographicDataChangeAction={editMode ? (data) => handleSectionChange('demographics', data) : () => {}}
           />
+          </ThemedTabContent>
         </TabsContent>
 
         <TabsContent value="intelligence">
+          <ThemedTabContent theme="intelligence" className="tab-content-enter">
           <CountryIntelligenceSection countryId={country.id} />
+          </ThemedTabContent>
         </TabsContent>
 
         <TabsContent value="detailed" className="space-y-6">
+          <ThemedTabContent theme="detailed" className="tab-content-enter space-y-6">
           <div className="space-y-6">
             <div className="animate-in slide-in-from-bottom-4 duration-700">
               <Card>
@@ -835,9 +850,11 @@ function MyCountryContent() {
               </Card>
             </div>
           </div>
+          </ThemedTabContent>
         </TabsContent>
 
         <TabsContent value="modeling">
+          <ThemedTabContent theme="modeling" className="tab-content-enter">
           <Card>
             <CardContent className="p-8 text-center">
               <BarChart3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -850,6 +867,7 @@ function MyCountryContent() {
               </Link>
             </CardContent>
           </Card>
+          </ThemedTabContent>
         </TabsContent>
       </Tabs>
     </div>

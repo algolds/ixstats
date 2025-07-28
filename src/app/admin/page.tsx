@@ -28,6 +28,7 @@ import { TrendIndicator } from "~/components/ui/trend-indicator";
 import { HealthRing } from "~/components/ui/health-ring";
 import { FlagCacheManager } from "~/components/FlagCacheManager";
 import { FlagTestComponent } from "~/components/FlagTestComponent";
+import { RealTimeClock } from "~/components/ui/real-time-clock";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { CONFIG_CONSTANTS } from "~/lib/config-service";
@@ -84,7 +85,9 @@ export default function AdminPage() {
     resumePending: false,
     clearPending: false,
     syncEpochPending: false,
+    autoSyncPending: false,
     lastUpdate: null as Date | null,
+    lastBotSync: null as Date | null,
   });
   const [selectedSection, setSelectedSection] = useState("overview");
   const sidebarLinks = [
@@ -153,6 +156,46 @@ export default function AdminPage() {
     }
   }, [configData]);
 
+  // Auto-sync with Discord bot when bot multiplier changes
+  useEffect(() => {
+    if (!config.botSyncEnabled || !botStatus || actionState.autoSyncPending) return;
+
+    const currentMultiplier = config.timeMultiplier;
+    // Check both the main bot data and the botStatus nested data
+    const botMultiplier = botStatus.timeData?.multiplier || botStatus.botStatus?.multiplier;
+    const ixStatsMultiplier = botStatus.multiplier;
+    
+    // If bot multiplier differs from what we expect, sync from bot
+    if (botMultiplier && botMultiplier !== ixStatsMultiplier) {
+      console.log(`Bot multiplier (${botMultiplier}) differs from IxStats (${ixStatsMultiplier}), syncing...`);
+      
+      setActionState(prev => ({ ...prev, autoSyncPending: true }));
+      
+      // Sync from bot to admin panel
+      fetch('/api/ixtime/sync-from-bot', { method: 'POST' })
+        .then(response => response.json())
+        .then(result => {
+          if (result.success) {
+            console.log('Successfully synced from Discord bot:', result.message);
+            // Update local config to match bot
+            setConfig(prev => ({ ...prev, timeMultiplier: botMultiplier }));
+            setActionState(prev => ({ ...prev, lastBotSync: new Date() }));
+            // Refresh status data
+            refetchStatus();
+            refetchBotStatus();
+          } else {
+            console.warn('Failed to sync from Discord bot:', result.error);
+          }
+        })
+        .catch(error => {
+          console.warn('Error syncing from Discord bot:', error);
+        })
+        .finally(() => {
+          setActionState(prev => ({ ...prev, autoSyncPending: false }));
+        });
+    }
+  }, [botStatus, config.timeMultiplier, config.botSyncEnabled, actionState.autoSyncPending, refetchStatus, refetchBotStatus]);
+
   // Handlers - all called unconditionally
   const handleSaveConfig = useCallback(async () => {
     setActionState(prev => ({ ...prev, savePending: true }));
@@ -220,6 +263,60 @@ export default function AdminPage() {
     }
   }, [setCustomTimeMutation, refetchStatus, refetchBotStatus]);
 
+  const handleTimeMultiplierChange = useCallback(async (value: number) => {
+    // Update local state immediately for UI responsiveness
+    setConfig(prev => ({ ...prev, timeMultiplier: value }));
+    
+    // Apply to bot with current time
+    setActionState(prev => ({ ...prev, setTimePending: true }));
+    try {
+      // Use natural time setting if available, fallback to custom time
+      try {
+        const naturalResponse = await fetch('/api/ixtime/set-natural', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ multiplier: value })
+        });
+        
+        if (naturalResponse.ok) {
+          const naturalResult = await naturalResponse.json();
+          console.log(`Time set naturally: ${naturalResult.message}`);
+        } else {
+          throw new Error('Natural time setting failed');
+        }
+      } catch (naturalError) {
+        console.warn('Natural time setting failed, using override:', naturalError);
+        
+        // Fallback to custom time override
+        await setCustomTimeMutation.mutateAsync({ 
+          ixTime: IxTime.getCurrentIxTime(),
+          multiplier: value 
+        });
+        
+        // Auto-sync with Discord bot
+        try {
+          const syncResponse = await fetch('/api/ixtime/sync-bot', { method: 'POST' });
+          if (syncResponse.ok) {
+            console.log('Discord bot automatically synced with new time settings');
+          } else {
+            console.warn('Failed to auto-sync with Discord bot');
+          }
+        } catch (syncError) {
+          console.warn('Discord bot sync failed:', syncError);
+        }
+      }
+      
+      await refetchStatus();
+      await refetchBotStatus();
+    } catch (error) {
+      console.error("Failed to set time multiplier:", error);
+      // Revert local state on error
+      setConfig(prev => ({ ...prev, timeMultiplier: 4.0 }));
+    } finally {
+      setActionState(prev => ({ ...prev, setTimePending: false }));
+    }
+  }, [setCustomTimeMutation, refetchStatus, refetchBotStatus]);
+
   const handleSyncEpoch = useCallback(async (targetEpoch: number) => {
     setActionState(prev => ({ ...prev, syncEpochPending: true }));
     try {
@@ -249,6 +346,31 @@ export default function AdminPage() {
       setActionState(prev => ({ ...prev, syncPending: false }));
     }
   }, [syncBotMutation, refetchBotStatus, refetchStatus]);
+
+  const handleSyncFromBot = useCallback(async () => {
+    setActionState(prev => ({ ...prev, autoSyncPending: true }));
+    try {
+      const response = await fetch('/api/ixtime/sync-from-bot', { method: 'POST' });
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('Successfully synced from Discord bot:', result.message);
+        // Update local config to match bot
+        if (result.currentState?.multiplier) {
+          setConfig(prev => ({ ...prev, timeMultiplier: result.currentState.multiplier }));
+        }
+        setActionState(prev => ({ ...prev, lastBotSync: new Date() }));
+        await refetchStatus();
+        await refetchBotStatus();
+      } else {
+        console.error('Failed to sync from Discord bot:', result.error);
+      }
+    } catch (error) {
+      console.error("Error syncing from Discord bot:", error);
+    } finally {
+      setActionState(prev => ({ ...prev, autoSyncPending: false }));
+    }
+  }, [refetchStatus, refetchBotStatus]);
 
   const handlePauseBot = useCallback(async () => {
     setActionState(prev => ({ ...prev, pausePending: true }));
@@ -455,6 +577,10 @@ export default function AdminPage() {
                         <p className="mt-2 text-base md:text-lg text-muted-foreground">
                           System status, time, bot, and cache controls for IxStats.
                         </p>
+                        {/* Real-time clock */}
+                        <div className="mt-3">
+                          <RealTimeClock className="bg-card/50 backdrop-blur-sm border border-border rounded-lg px-3 py-2" />
+                        </div>
                       </div>
                       {/* Right: Stat cards */}
                       <div className="flex flex-col sm:flex-row gap-3">
@@ -523,14 +649,17 @@ export default function AdminPage() {
                           customTime={timeState.customTime}
                           botSyncEnabled={config.botSyncEnabled}
                           botStatus={botStatus}
-                          onTimeMultiplierChange={(value) => setConfig(prev => ({ ...prev, timeMultiplier: value }))}
+                          onTimeMultiplierChange={handleTimeMultiplierChange}
                           onCustomDateChange={(value) => setTimeState(prev => ({ ...prev, customDate: value }))}
                           onCustomTimeChange={(value) => setTimeState(prev => ({ ...prev, customTime: value }))}
                           onSetCustomTime={handleSetCustomTime}
                           onResetToRealTime={handleResetToRealTime}
                           onSyncEpoch={handleSyncEpoch}
+                          onSyncFromBot={handleSyncFromBot}
                           setTimePending={actionState.setTimePending}
                           syncEpochPending={actionState.syncEpochPending}
+                          autoSyncPending={actionState.autoSyncPending}
+                          lastBotSync={actionState.lastBotSync}
                         />
                       </CardContent>
                     </Card>
@@ -590,14 +719,17 @@ export default function AdminPage() {
                     customTime={timeState.customTime}
                     botSyncEnabled={config.botSyncEnabled}
                     botStatus={botStatus}
-                    onTimeMultiplierChange={(value) => setConfig(prev => ({ ...prev, timeMultiplier: value }))}
+                    onTimeMultiplierChange={handleTimeMultiplierChange}
                     onCustomDateChange={(value) => setTimeState(prev => ({ ...prev, customDate: value }))}
                     onCustomTimeChange={(value) => setTimeState(prev => ({ ...prev, customTime: value }))}
                     onSetCustomTime={handleSetCustomTime}
                     onResetToRealTime={handleResetToRealTime}
                     onSyncEpoch={handleSyncEpoch}
+                    onSyncFromBot={handleSyncFromBot}
                     setTimePending={actionState.setTimePending}
                     syncEpochPending={actionState.syncEpochPending}
+                    autoSyncPending={actionState.autoSyncPending}
+                    lastBotSync={actionState.lastBotSync}
                   />
                 </EnhancedCard>
               )}
