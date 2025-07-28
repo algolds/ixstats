@@ -380,471 +380,376 @@ export default function DashboardRefactored() {
         >
           {/* Top Section Grid - MyCountry (8 span) + Global Intelligence (4 span) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* MyCountry Section - 8 columns (12 when global is slid away) */}
-            <motion.div
-              layout
-              className={cn(
-                isGlobalCardSlid ? "lg:col-span-12" : "lg:col-span-8"
-              )}
-            >
-            <AppleRippleEffect
-              isActive={isRippleActive}
-              direction="right"
-              className="rounded-xl"
-            >
-            <motion.div
-              className={cn(
-                "glass-hierarchy-parent relative overflow-hidden group",
-                "rounded-xl border border-neutral-200 dark:border-white/[0.2] p-6 transition-all duration-200",
-                "hover:shadow-xl hover:shadow-yellow-500/10 dark:hover:shadow-yellow-400/20 mycountry-card"
-              )}
-              whileHover={{ y: -2 }}
-              transition={{ type: "spring", stiffness: 400, damping: 40 }}
-              layout
-              data-theme="executive"
-            >
-            {/* Full Bento Flag Background with Realistic Ripple */}
-            {countryData && (
-              <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <motion.div 
-                  className="w-full h-full relative"
-                  style={{
-                    filter: "blur(8px)",
-                    opacity: 0.4
-                  }}
-                >
-                  <motion.div
-                    className="w-full h-full"
-                    animate={{
-                      x: [0, 2, -1, 1, 0],
-                      rotateY: [0, 1, -0.5, 0.5, 0],
-                      scaleX: [1, 1.01, 0.99, 1.005, 1]
-                    }}
-                    transition={{
-                      duration: 6,
-                      ease: "easeInOut",
-                      repeat: Infinity,
-                      times: [0, 0.25, 0.5, 0.75, 1]
-                    }}
-                  >
-                    <SimpleFlag 
-                      countryName={countryData.name}
-                      className="w-full h-full object-cover"
-                      showPlaceholder={true}
-                    />
-                  </motion.div>
-                </motion.div>
-                
-                {/* Overlay to ensure readability */}
-                <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/50 to-background/80" />
-              </div>
-            )}
-            
-            {/* MyCountry Themed Shimmer Background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/20 via-yellow-500/10 to-orange-400/20 mycountry-gold-shimmer" />
-            <div className="absolute inset-0 tab-shimmer" />
-            
-            {/* Content Layout */}
-            <div className="relative z-10 h-full flex flex-col justify-between">
-              {/* Top Section - Country Info */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-8 rounded border border-white/30 overflow-hidden shadow-lg">
-                    {countryData && <SimpleFlag countryName={countryData.name} className="w-full h-full object-cover" />}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <Crown className="h-5 w-5 text-yellow-400" />
-                      <h3 className="text-xl font-bold text-foreground drop-shadow-sm">MyCountry® Premium</h3>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-semibold text-foreground drop-shadow-sm">
-                        {countryData?.name || 'Configure Country'}
-                      </span>
-                      {countryData && (
-                        <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-800 dark:text-yellow-200 border-yellow-400/50">
-                          {countryData.economicTier}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
+          {/* MyCountry Section - 8 columns (12 when global is slid away) */}
+<motion.div
+  layout
+  className={cn(
+    isGlobalCardSlid ? "lg:col-span-12" : "lg:col-span-8"
+  )}
+>
+<AppleRippleEffect
+  isActive={isRippleActive}
+  direction="right"
+  className="rounded-xl"
+>
+<motion.div
+  className={cn(
+    "glass-hierarchy-parent relative overflow-hidden group",
+    "rounded-xl border border-neutral-200 dark:border-white/[0.2] p-6 transition-all duration-200",
+    "hover:shadow-xl hover:shadow-yellow-500/10 dark:hover:shadow-yellow-400/20 mycountry-card"
+  )}
+  whileHover={{ y: -2 }}
+  transition={{ type: "spring", stiffness: 400, damping: 40 }}
+  layout
+  data-theme="executive"
+>
+{/* Full Bento Flag Background with Realistic Ripple */}
+{countryData && (
+  <div className="absolute inset-0 pointer-events-none overflow-hidden">
+    <motion.div 
+      className="w-full h-full relative"
+      style={{
+        filter: "blur(8px)",
+        opacity: 0.4
+      }}
+    >
+      <motion.div
+        className="w-full h-full"
+        animate={{
+          x: [0, 2, -1, 1, 0],
+          rotateY: [0, 1, -0.5, 0.5, 0],
+          scaleX: [1, 1.01, 0.99, 1.005, 1]
+        }}
+        transition={{
+          duration: 6,
+          ease: "easeInOut",
+          repeat: Infinity,
+          times: [0, 0.25, 0.5, 0.75, 1]
+        }}
+      >
+        <SimpleFlag 
+          countryName={countryData.name}
+          className="w-full h-full object-cover"
+          showPlaceholder={true}
+        />
+      </motion.div>
+    </motion.div>
+    
+    {/* Overlay to ensure readability */}
+    <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/50 to-background/80" />
+  </div>
+)}
+
+{/* MyCountry Themed Shimmer Background */}
+<div className="absolute inset-0 bg-gradient-to-br from-yellow-400/20 via-yellow-500/10 to-orange-400/20 mycountry-gold-shimmer" />
+<div className="absolute inset-0 tab-shimmer" />
+
+{/* Content Layout */}
+<div className="relative z-10 h-full flex flex-col">
+  {/* Top Section - Country Info */}
+  <div className="flex items-center justify-between mb-6">
+    <div className="flex items-center gap-3">
+      <div className="w-12 h-8 rounded border border-white/30 overflow-hidden shadow-lg">
+        {countryData && <SimpleFlag countryName={countryData.name} className="w-full h-full object-cover" />}
+      </div>
+      <div>
+        <div className="flex items-center gap-2 mb-1">
+          <Crown className="h-5 w-5 text-yellow-400" />
+          <h3 className="text-xl font-bold text-foreground drop-shadow-sm">MyCountry® Premium</h3>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-lg font-semibold text-foreground drop-shadow-sm">
+            {countryData?.name || 'Configure Country'}
+          </span>
+          {countryData && (
+            <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-800 dark:text-yellow-200 border-yellow-400/50">
+              {countryData.economicTier}
+            </Badge>
+          )}
+        </div>
+      </div>
+    </div>
+    
+    {/* Dropdown Menu */}
+    <DropdownMenu>
+      <DropdownMenuTrigger>
+        <div className="p-3 rounded-full glass-hierarchy-interactive glass-refraction transition-all duration-200 relative z-10 hover:scale-105 cursor-pointer">
+          <Plus className="h-5 w-5 text-foreground" />
+        </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56 glass-modal border-yellow-400/30">
+        <DropdownMenuItem className="flex items-center gap-2 glass-hierarchy-interactive">
+          <Crown className="h-4 w-4 text-yellow-400" />
+          <span>MyCountry Profile</span>
+          <ExternalLink className="h-3 w-3 ml-auto" />
+        </DropdownMenuItem>
+        <DropdownMenuItem className="flex items-center gap-2 glass-hierarchy-interactive">
+          <TrendingUp className="h-4 w-4 text-green-400" />
+          <span>Economic Dashboard</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem className="flex items-center gap-2 glass-hierarchy-interactive">
+          <Settings className="h-4 w-4 text-blue-400" />
+          <span>Policy Management</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem className="flex items-center gap-2 glass-hierarchy-interactive">
+          <Users className="h-4 w-4 text-purple-400" />
+          <span>Demographics</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem className="flex items-center gap-2 glass-hierarchy-interactive">
+          <Brain className="h-4 w-4 text-indigo-400" />
+          <span>Intelligence Center</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  </div>
+
+  {/* Executive Activity Rings Section */}
+  {countryData && (
+    <ThemedTabContent theme="executive" className="tab-content-enter mb-6">
+      <ExecutiveActivityRings
+        countryData={{
+          name: countryData.name,
+          currentGdpPerCapita: countryData.currentGdpPerCapita,
+          currentTotalGdp: countryData.currentTotalGdp,
+          currentPopulation: countryData.currentPopulation,
+          populationGrowthRate: countryData.populationGrowthRate || 0,
+          adjustedGdpGrowth: countryData.adjustedGdpGrowth || 0,
+          economicTier: countryData.economicTier,
+          populationTier: countryData.populationTier ?? 'Medium',
+          populationDensity: countryData.populationDensity ?? 0
+        }}
+        onRingClick={(index) => setActivityPopoverOpen(index)}
+        compact={true}
+        className="mb-4"
+      />
+    </ThemedTabContent>
+  )}
+
+  {/* Key Metrics Grid - Always visible */}
+  {countryData && (
+    <div className="grid grid-cols-2 gap-3 mb-6">
+      <div className="glass-hierarchy-child p-3 rounded-lg text-center">
+        <div className="text-xs text-muted-foreground mb-1">Growth Rate</div>
+        <div className="text-sm font-bold text-green-400">
+          +{((countryData.currentGdpPerCapita / 50000) * 5).toFixed(1)}%
+        </div>
+      </div>
+      <div className="glass-hierarchy-child p-3 rounded-lg text-center">
+        <div className="text-xs text-muted-foreground mb-1">Economic Tier</div>
+        <div className="text-sm font-bold text-blue-400">
+          {countryData.economicTier}
+        </div>
+      </div>
+      <div className="glass-hierarchy-child p-3 rounded-lg text-center">
+        <div className="text-xs text-muted-foreground mb-1">Pop. Tier</div>
+        <div className="text-sm font-bold text-purple-400">
+          {countryData.populationTier || 'Medium'}
+        </div>
+      </div>
+      <div className="glass-hierarchy-child p-3 rounded-lg text-center">
+        <div className="text-xs text-muted-foreground mb-1">Health Score</div>
+        <div className="text-sm font-bold text-green-400">
+          {Math.min(100, Math.round((countryData.currentGdpPerCapita / 70000) * 100))}%
+        </div>
+      </div>
+    </div>
+  )}
+
+  {/* Expandable Content - Only shows when expanded */}
+  <AnimatePresence>
+    {expandedCards.has('mycountry') && countryData && (
+      <motion.div
+        initial={{ opacity: 0, height: 0 }}
+        animate={{ opacity: 1, height: "auto" }}
+        exit={{ opacity: 0, height: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="mb-6 overflow-hidden"
+      >
+        <div className="space-y-6">
+          {/* Country Overview Section */}
+          <div>
+            <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+              <Globe className="h-5 w-5 text-blue-400" />
+              Country Overview
+            </h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="glass-hierarchy-child p-3 rounded-lg">
+                <div className="text-xs text-muted-foreground mb-1">Population</div>
+                <div className="text-sm font-bold text-foreground">
+                  {formatPopulation(countryData.currentPopulation)}
                 </div>
-                
-                {/* Dropdown Menu */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger>
-                    <div className="p-3 rounded-full glass-hierarchy-interactive glass-refraction transition-all duration-200 relative z-10 hover:scale-105 cursor-pointer">
-                      <Plus className="h-5 w-5 text-foreground" />
-                    </div>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56 glass-modal border-yellow-400/30">
-                    <DropdownMenuItem className="flex items-center gap-2 glass-hierarchy-interactive">
-                      <Crown className="h-4 w-4 text-yellow-400" />
-                      <span>MyCountry Profile</span>
-                      <ExternalLink className="h-3 w-3 ml-auto" />
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="flex items-center gap-2 glass-hierarchy-interactive">
-                      <TrendingUp className="h-4 w-4 text-green-400" />
-                      <span>Economic Dashboard</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="flex items-center gap-2 glass-hierarchy-interactive">
-                      <Settings className="h-4 w-4 text-blue-400" />
-                      <span>Policy Management</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="flex items-center gap-2 glass-hierarchy-interactive">
-                      <Users className="h-4 w-4 text-purple-400" />
-                      <span>Demographics</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="flex items-center gap-2 glass-hierarchy-interactive">
-                      <Brain className="h-4 w-4 text-indigo-400" />
-                      <span>Intelligence Center</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </div>
-
-              {/* Executive Activity Rings Section - Default View */}
-              {countryData && (
-                <ThemedTabContent theme="executive" className="tab-content-enter mb-6">
-                  <ExecutiveActivityRings
-                    countryData={{
-                      name: countryData.name,
-                      currentGdpPerCapita: countryData.currentGdpPerCapita,
-                      currentTotalGdp: countryData.currentTotalGdp,
-                      currentPopulation: countryData.currentPopulation,
-                      populationGrowthRate: countryData.populationGrowthRate || 0,
-                      adjustedGdpGrowth: countryData.adjustedGdpGrowth || 0,
-                      economicTier: countryData.economicTier,
-                      populationTier: countryData.populationTier ?? 'Medium',
-                      populationDensity: countryData.populationDensity ?? 0
-                    }}
-                    onRingClick={(index) => setActivityPopoverOpen(index)}
-                    compact={true}
-                    className="mb-4"
-                  />
-                </ThemedTabContent>
-              )}
-              
-              {/* MyCountry Section Icons - Default Position */}
-              {countryData && (
-                <div className="mt-4 flex flex-wrap gap-2 justify-center">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                        <FileText className="h-4 w-4 text-blue-400" />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>Overview</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                        <Crown className="h-4 w-4 text-yellow-400" />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>Executive</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                        <TrendingUp className="h-4 w-4 text-green-400" />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>Economy</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                        <Briefcase className="h-4 w-4 text-orange-400" />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>Labor</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                        <Building2 className="h-4 w-4 text-purple-400" />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>Government</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                        <Users className="h-4 w-4 text-pink-400" />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>Demographics</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                        <Brain className="h-4 w-4 text-indigo-400" />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>Intelligence</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                        <Search className="h-4 w-4 text-teal-400" />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>Detailed Analysis</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                        <Calculator className="h-4 w-4 text-cyan-400" />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>Economic Modeling</TooltipContent>
-                  </Tooltip>
+              <div className="glass-hierarchy-child p-3 rounded-lg">
+                <div className="text-xs text-muted-foreground mb-1">GDP/Capita</div>
+                <div className="text-sm font-bold text-foreground">
+                  {formatCurrency(countryData.currentGdpPerCapita)}
                 </div>
-              )}
-
-              {/* Bottom Section with Progressive Blur */}
-              {countryData && (
-                <ProgressiveBlur
-                  className="glass-refraction"
-                  blurIntensity={4}
-                  gradientHeight={80}
-                  arrowPosition="center"
-                  revealContent={
-                    <div className="space-y-4">
-                      {/* Country Overview Section */}
-                      <div className="mb-6">
-                        <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-                          <Globe className="h-5 w-5 text-blue-400" />
-                          Country Overview
-                        </h4>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="glass-hierarchy-child p-3 rounded-lg">
-                            <div className="text-xs text-muted-foreground mb-1">Population</div>
-                            <div className="text-sm font-bold text-foreground">
-                              {formatPopulation(countryData.currentPopulation)}
-                            </div>
-                          </div>
-                          <div className="glass-hierarchy-child p-3 rounded-lg">
-                            <div className="text-xs text-muted-foreground mb-1">GDP/Capita</div>
-                            <div className="text-sm font-bold text-foreground">
-                              {formatCurrency(countryData.currentGdpPerCapita)}
-                            </div>
-                          </div>
-                          <div className="glass-hierarchy-child p-3 rounded-lg">
-                            <div className="text-xs text-muted-foreground mb-1">Density</div>
-                            <div className="text-sm font-bold text-foreground">
-                              {countryData.populationDensity ? `${Math.round(countryData.populationDensity)}/km²` : 'N/A'}
-                            </div>
-                          </div>
-                          <div className="glass-hierarchy-child p-3 rounded-lg">
-                            <div className="text-xs text-muted-foreground mb-1">Status</div>
-                            <div className="text-sm font-bold text-green-400">
-                              Active
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Economic Summary Section */}
-                      <div>
-                        <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-                          <TrendingUp className="h-5 w-5 text-green-400" />
-                          Economic Summary
-                        </h4>
-                        <div className="grid grid-cols-1 gap-3">
-                          <div className="glass-hierarchy-child p-3 rounded-lg">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-muted-foreground">Total GDP</span>
-                              <div className="text-sm font-bold text-green-400">
-                                {formatCurrency(countryData.currentTotalGdp || (countryData.currentPopulation * countryData.currentGdpPerCapita))}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="glass-hierarchy-child p-3 rounded-lg">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-muted-foreground">Economic Classification</span>
-                              <div className="text-sm font-bold text-blue-400">
-                                {countryData.economicTier} Economy
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  }
-                >
-                  {/* Key Metrics Grid */}
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div className="glass-hierarchy-child p-3 rounded-lg text-center">
-                      <div className="text-xs text-muted-foreground mb-1">Growth Rate</div>
-                      <div className="text-sm font-bold text-green-400">
-                        +{((countryData.currentGdpPerCapita / 50000) * 5).toFixed(1)}%
-                      </div>
-                    </div>
-                    <div className="glass-hierarchy-child p-3 rounded-lg text-center">
-                      <div className="text-xs text-muted-foreground mb-1">Economic Tier</div>
-                      <div className="text-sm font-bold text-blue-400">
-                        {countryData.economicTier}
-                      </div>
-                    </div>
-                    <div className="glass-hierarchy-child p-3 rounded-lg text-center">
-                      <div className="text-xs text-muted-foreground mb-1">Pop. Tier</div>
-                      <div className="text-sm font-bold text-purple-400">
-                        {countryData.populationTier || 'Medium'}
-                      </div>
-                    </div>
-                    <div className="glass-hierarchy-child p-3 rounded-lg text-center">
-                      <div className="text-xs text-muted-foreground mb-1">Health Score</div>
-                      <div className="text-sm font-bold text-green-400">
-                        {Math.min(100, Math.round((countryData.currentGdpPerCapita / 70000) * 100))}%
-                      </div>
-                    </div>
-                    
-                    
-                    {/* Country Overview Section */}
-                    <div className="space-y-3">
-                      <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                        <Globe className="h-4 w-4 text-blue-400" />
-                        Country Overview
-                      </h4>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="glass-hierarchy-child p-3 rounded-lg">
-                          <div className="text-xs text-muted-foreground mb-1">Population</div>
-                          <div className="text-sm font-bold text-foreground">
-                            {formatPopulation(countryData.currentPopulation)}
-                          </div>
-                        </div>
-                        <div className="glass-hierarchy-child p-3 rounded-lg">
-                          <div className="text-xs text-muted-foreground mb-1">GDP/Capita</div>
-                          <div className="text-sm font-bold text-foreground">
-                            {formatCurrency(countryData.currentGdpPerCapita)}
-                          </div>
-                        </div>
-                        <div className="glass-hierarchy-child p-3 rounded-lg">
-                          <div className="text-xs text-muted-foreground mb-1">Density</div>
-                          <div className="text-sm font-bold text-foreground">
-                            {countryData.populationDensity ? `${Math.round(countryData.populationDensity)}/km²` : 'N/A'}
-                          </div>
-                        </div>
-                        <div className="glass-hierarchy-child p-3 rounded-lg">
-                          <div className="text-xs text-muted-foreground mb-1">Status</div>
-                          <div className="text-sm font-bold text-green-400">
-                            Active
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Economic Summary Section */}
-                    <div className="space-y-3">
-                      <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-green-400" />
-                        Economic Summary
-                      </h4>
-                      <div className="grid grid-cols-1 gap-3">
-                        <div className="glass-hierarchy-child p-3 rounded-lg">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground">Total GDP</span>
-                            <div className="text-sm font-bold text-green-400">
-                              {formatCurrency(countryData.currentTotalGdp || (countryData.currentPopulation * countryData.currentGdpPerCapita))}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="glass-hierarchy-child p-3 rounded-lg">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground">Economic Classification</span>
-                            <div className="text-sm font-bold text-blue-400">
-                              {countryData.economicTier} Economy
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* MyCountry Submodule Icons - Always show */}
-                  <div className="mt-4 flex flex-wrap gap-2 justify-center">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                          <FileText className="h-4 w-4 text-blue-400" />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>Overview</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                          <Crown className="h-4 w-4 text-yellow-400" />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>Executive</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                          <TrendingUp className="h-4 w-4 text-green-400" />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>Economy</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                          <Briefcase className="h-4 w-4 text-orange-400" />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>Labor</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                          <Building2 className="h-4 w-4 text-purple-400" />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>Government</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                          <Users className="h-4 w-4 text-pink-400" />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>Demographics</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                          <Brain className="h-4 w-4 text-indigo-400" />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>Intelligence</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                          <Search className="h-4 w-4 text-teal-400" />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>Detailed Analysis</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                          <Calculator className="h-4 w-4 text-cyan-400" />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>Economic Modeling</TooltipContent>
-                    </Tooltip>
-                  </div>
-                </ProgressiveBlur>
-              )}
-
+              </div>
+              <div className="glass-hierarchy-child p-3 rounded-lg">
+                <div className="text-xs text-muted-foreground mb-1">Density</div>
+                <div className="text-sm font-bold text-foreground">
+                  {countryData.populationDensity ? `${Math.round(countryData.populationDensity)}/km²` : 'N/A'}
+                </div>
+              </div>
+              <div className="glass-hierarchy-child p-3 rounded-lg">
+                <div className="text-xs text-muted-foreground mb-1">Status</div>
+                <div className="text-sm font-bold text-green-400">
+                  Active
+                </div>
+              </div>
             </div>
-            </motion.div>
-            </AppleRippleEffect>
-            </motion.div>
+          </div>
+          
+          {/* Economic Summary Section */}
+          <div>
+            <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-green-400" />
+              Economic Summary
+            </h4>
+            <div className="grid grid-cols-1 gap-3">
+              <div className="glass-hierarchy-child p-3 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Total GDP</span>
+                  <div className="text-sm font-bold text-green-400">
+                    {formatCurrency(countryData.currentTotalGdp || (countryData.currentPopulation * countryData.currentGdpPerCapita))}
+                  </div>
+                </div>
+              </div>
+              <div className="glass-hierarchy-child p-3 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Economic Classification</span>
+                  <div className="text-sm font-bold text-blue-400">
+                    {countryData.economicTier} Economy
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+
+  {/* MyCountry Submodule Icons - Always at bottom */}
+  {countryData && (
+    <div className="mt-auto">
+      {/* Expand/Collapse Button */}
+      <div className="flex justify-center mb-4">
+        <button
+          onClick={() => {
+            const newExpanded = new Set(expandedCards);
+            if (newExpanded.has('mycountry')) {
+              newExpanded.delete('mycountry');
+            } else {
+              newExpanded.add('mycountry');
+            }
+            setExpandedCards(newExpanded);
+          }}
+          className="px-4 py-2 glass-hierarchy-interactive rounded-lg text-sm font-medium text-foreground hover:scale-105 transition-transform flex items-center gap-2"
+        >
+          {expandedCards.has('mycountry') ? (
+            <>
+              <ChevronUp className="h-4 w-4" />
+              Show Less
+            </>
+          ) : (
+            <>
+              <ChevronDown className="h-4 w-4" />
+              Show More
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Icons - Always visible at bottom */}
+      <div className="flex flex-wrap gap-2 justify-center">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+              <FileText className="h-4 w-4 text-blue-400" />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>Overview</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+              <Crown className="h-4 w-4 text-yellow-400" />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>Executive</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+              <TrendingUp className="h-4 w-4 text-green-400" />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>Economy</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+              <Briefcase className="h-4 w-4 text-orange-400" />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>Labor</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+              <Building2 className="h-4 w-4 text-purple-400" />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>Government</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+              <Users className="h-4 w-4 text-pink-400" />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>Demographics</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+              <Brain className="h-4 w-4 text-indigo-400" />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>Intelligence</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+              <Search className="h-4 w-4 text-teal-400" />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>Detailed Analysis</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+              <Calculator className="h-4 w-4 text-cyan-400" />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>Economic Modeling</TooltipContent>
+        </Tooltip>
+      </div>
+    </div>
+  )}
+
+  {/* No country data state */}
+  {!countryData && (
+    <div className="text-center py-8 text-muted-foreground">
+      <Crown className="h-12 w-12 mx-auto mb-4 opacity-50" />
+      <p className="text-sm">Configure your country profile to access MyCountry® Premium</p>
+    </div>
+  )}
+</div>
+</motion.div>
+</AppleRippleEffect>
+</motion.div>
 
             {/* Global Intelligence Section - 4 columns (hidden when slid away) */}
             <AnimatePresence>
