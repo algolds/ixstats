@@ -60,7 +60,7 @@ export default function AdminPage() {
     globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR as number,
     autoUpdate: true,
     botSyncEnabled: true,
-    timeMultiplier: 4.0,
+    timeMultiplier: 2.0,
   });
   const [timeState, setTimeState] = useState({
     customDate: new Date().toISOString().split('T')[0] || "",
@@ -151,7 +151,7 @@ export default function AdminPage() {
         globalGrowthFactor: configData.globalGrowthFactor || CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR,
         autoUpdate: configData.autoUpdate ?? true,
         botSyncEnabled: configData.botSyncEnabled ?? true,
-        timeMultiplier: configData.timeMultiplier || 4.0,
+        timeMultiplier: configData.timeMultiplier || 2.0,
       });
     }
   }, [configData]);
@@ -161,13 +161,13 @@ export default function AdminPage() {
     if (!config.botSyncEnabled || !botStatus || actionState.autoSyncPending) return;
 
     const currentMultiplier = config.timeMultiplier;
-    // Check both the main bot data and the botStatus nested data
-    const botMultiplier = botStatus.timeData?.multiplier || botStatus.botStatus?.multiplier;
-    const ixStatsMultiplier = botStatus.multiplier;
+    // Check if bot multiplier differs from dashboard config
+    const botMultiplier = botStatus.multiplier;
+    const dashboardMultiplier = currentMultiplier;
     
     // If bot multiplier differs from what we expect, sync from bot
-    if (botMultiplier && botMultiplier !== ixStatsMultiplier) {
-      console.log(`Bot multiplier (${botMultiplier}) differs from IxStats (${ixStatsMultiplier}), syncing...`);
+    if (botMultiplier && botMultiplier !== dashboardMultiplier) {
+      console.log(`Bot multiplier (${botMultiplier}) differs from dashboard (${dashboardMultiplier}), syncing...`);
       
       setActionState(prev => ({ ...prev, autoSyncPending: true }));
       
@@ -251,9 +251,9 @@ export default function AdminPage() {
     try {
       await setCustomTimeMutation.mutateAsync({ 
         ixTime: IxTime.getCurrentIxTime(),
-        multiplier: 4.0 
+        multiplier: 2.0 
       });
-      setConfig(prev => ({ ...prev, timeMultiplier: 4.0 }));
+      setConfig(prev => ({ ...prev, timeMultiplier: 2.0 }));
       await refetchStatus();
       await refetchBotStatus();
     } catch (error) {
@@ -311,7 +311,7 @@ export default function AdminPage() {
     } catch (error) {
       console.error("Failed to set time multiplier:", error);
       // Revert local state on error
-      setConfig(prev => ({ ...prev, timeMultiplier: 4.0 }));
+      setConfig(prev => ({ ...prev, timeMultiplier: 2.0 }));
     } finally {
       setActionState(prev => ({ ...prev, setTimePending: false }));
     }
@@ -579,7 +579,7 @@ export default function AdminPage() {
                         </p>
                         {/* Real-time clock */}
                         <div className="mt-3">
-                          <RealTimeClock className="bg-card/50 backdrop-blur-sm border border-border rounded-lg px-3 py-2" />
+                          <RealTimeClock className="bg-card/50 backdrop-blur-sm border-border rounded-lg px-3 py-2" />
                         </div>
                       </div>
                       {/* Right: Stat cards */}

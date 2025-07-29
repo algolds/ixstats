@@ -67,7 +67,7 @@ export const FocusedCardLayout: React.FC<FocusedCardLayoutProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header with Close Button */}
-            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/50 p-4 rounded-t-xl">
+            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border/50 p-4 rounded-t-xl">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-foreground">{title}</h2>
                 <button

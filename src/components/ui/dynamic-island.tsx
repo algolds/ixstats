@@ -337,7 +337,7 @@ const DynamicIsland = ({
   if (!mounted) {
     return (
       <DynamicIslandContainer>
-        <div className="relative mx-auto items-center justify-center bg-card/95 backdrop-blur-xl border border-border text-center rounded-full h-11 px-4">
+        <div className="relative mx-auto items-center justify-center bg-card/95 backdrop-blur-xl border-border text-center rounded-full h-11 px-4">
           {children}
         </div>
       </DynamicIslandContainer>

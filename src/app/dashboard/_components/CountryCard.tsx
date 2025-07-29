@@ -165,10 +165,10 @@ export function CountryCard({
                   <img
                     src={propFlagUrl}
                     alt={`Flag of ${country.name}`}
-                    className="h-full w-full object-cover rounded border border-border"
+                    className="h-full w-full object-cover rounded border-border"
                   />
                 ) : (
-                  <div className="h-full w-full bg-muted rounded border border-border flex items-center justify-center">
+                  <div className="h-full w-full bg-muted rounded border-border flex items-center justify-center">
                     <Flag className="h-4 w-4 text-muted-foreground" />
                   </div>
                 )}

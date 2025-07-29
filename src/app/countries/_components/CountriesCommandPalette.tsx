@@ -100,7 +100,7 @@ export const CountriesCommandPalette: React.FC<CountriesCommandPaletteProps> = (
                     placeholder="Search countries..."
                     value={searchInput}
                     onChange={(e) => onSearchChange(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 bg-accent/10 border border-border text-foreground placeholder:text-muted-foreground rounded-xl text-base focus:bg-accent/15 focus:border-blue-400 transition-all"
+                    className="w-full pl-12 pr-4 py-3 bg-accent/10 border-border text-foreground placeholder:text-muted-foreground rounded-xl text-base focus:bg-accent/15 focus:border-blue-400 transition-all"
                     autoFocus
                   />
                 </div>
@@ -111,7 +111,7 @@ export const CountriesCommandPalette: React.FC<CountriesCommandPaletteProps> = (
                   <select
                     value={sortBy}
                     onChange={(e) => onSortChange(e.target.value as SortOption)}
-                    className="w-full px-3 py-3 bg-accent/10 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-foreground"
+                    className="w-full px-3 py-3 bg-accent/10 border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-foreground"
                   >
                     <option value="random">Random</option>
                     <option value="name">Name</option>
@@ -128,7 +128,7 @@ export const CountriesCommandPalette: React.FC<CountriesCommandPaletteProps> = (
                   <select
                     value={filterBy}
                     onChange={(e) => onFilterChange(e.target.value as FilterOption)}
-                    className="w-full px-3 py-3 bg-accent/10 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-foreground"
+                    className="w-full px-3 py-3 bg-accent/10 border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-foreground"
                   >
                     <option value="all">All Countries</option>
                     <option value="developed">Developed</option>
@@ -141,11 +141,11 @@ export const CountriesCommandPalette: React.FC<CountriesCommandPaletteProps> = (
                 <div className="space-y-3">
                   <button
                     onClick={onReshuffle}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-accent/10 hover:bg-accent/20 border border-border rounded-xl transition-colors text-foreground"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-accent/10 hover:bg-accent/20 border-border rounded-xl transition-colors text-foreground"
                   >
                     <RiCommandLine className="h-4 w-4" />
                     <span>Reshuffle Order</span>
-                    <kbd className="px-2 py-1 bg-muted/50 rounded text-xs border border-border">R</kbd>
+                    <kbd className="px-2 py-1 bg-muted/50 rounded text-xs border-border">R</kbd>
                   </button>
                   
                   <RainbowButton
@@ -162,12 +162,12 @@ export const CountriesCommandPalette: React.FC<CountriesCommandPaletteProps> = (
                     size="lg"
                   >
                     <span className="relative z-10">🍀 I'm Feeling Lucky</span>
-                    <kbd className="relative z-10 px-2 py-1 bg-black/30 rounded text-xs border border-white/30">Ctrl+Tab</kbd>
+                    <kbd className="relative z-10 px-2 py-1 bg-black/30 rounded text-xs border-border border-white/30">Ctrl+Tab</kbd>
                   </RainbowButton>
                 </div>
 
                 {/* Results Preview */}
-                <div className="pt-4 border-t border-border">
+                <div className="pt-4 border-t border">
                   <p className="text-sm text-muted-foreground">
                     Showing {resultsCount} countries
                     {searchInput && ` matching "${searchInput}"`}
@@ -178,12 +178,12 @@ export const CountriesCommandPalette: React.FC<CountriesCommandPaletteProps> = (
                 {/* Help Text */}
                 <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground/50 pt-2">
                   <div className="flex items-center gap-1">
-                    <kbd className="px-2 py-1 bg-muted rounded border border-border">Tab</kbd>
+                    <kbd className="px-2 py-1 bg-muted rounded border-border">Tab</kbd>
                     <span>to toggle</span>
                   </div>
                   <span>•</span>
                   <div className="flex items-center gap-1">
-                    <kbd className="px-2 py-1 bg-muted rounded border border-border">Esc</kbd>
+                    <kbd className="px-2 py-1 bg-muted rounded border-border">Esc</kbd>
                     <span>to close</span>
                   </div>
                 </div>

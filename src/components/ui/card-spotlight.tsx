@@ -4,7 +4,7 @@ import { useMotionValue, motion, useMotionTemplate } from "framer-motion";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import React, { useState } from "react";
 import { CanvasRevealEffect } from "./canvas-reveal-effect";
-import { cn } from "../../lib/utils";
+import { cn } from "~/lib/utils";
 
 export const CardSpotlight = ({
   children,

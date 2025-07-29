@@ -1,6 +1,6 @@
-import IntelligenceFeed from '../../../components/sdi/IntelligenceFeed';
-import { InterfaceSwitcher } from '../../../components/shared/InterfaceSwitcher';
-import { Button } from '../../../components/ui/button';
+import IntelligenceFeed from "~/components/sdi/IntelligenceFeed";
+import { InterfaceSwitcher } from "~/components/shared/InterfaceSwitcher";
+import { Button } from "~/components/ui/button";
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { createUrl } from '~/lib/url-utils';

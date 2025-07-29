@@ -5,7 +5,7 @@ import { Reorder } from "framer-motion";
 import { ChevronDown, ChevronUp, GripVertical } from "lucide-react";
 import { GlassCard } from "./enhanced-card";
 import { Button } from "./button";
-import { cn } from "../../lib/utils";
+import { cn } from "~/lib/utils";
 
 interface SortableCardProps {
   id: string;
@@ -66,7 +66,7 @@ export function SortableCard({
         </div>
 
         <div className="relative z-10">
-          <div className="p-4 border-b border-border/20 backdrop-blur-sm">
+          <div className="p-4 border-b border/20 backdrop-blur-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-grab active:cursor-grabbing">

@@ -510,7 +510,7 @@ function CommandPaletteContent({
                 <PopoverContent 
                   side="bottom" 
                   align="start"
-                  className="w-80 p-4 bg-card/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl z-[10002]"
+                  className="w-80 p-4 bg-card/95 backdrop-blur-xl border-border rounded-xl shadow-2xl z-[10002]"
                 >
                   <div className="space-y-3">
                     <div className="text-center">
@@ -536,7 +536,7 @@ function CommandPaletteContent({
                   <PopoverContent 
                     side="bottom" 
                   align="start"
-                    className="w-96 p-4 bg-card/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl z-[10002]"
+                    className="w-96 p-4 bg-card/95 backdrop-blur-xl border-border rounded-xl shadow-2xl z-[10002]"
                   >
                     {setupStatus === 'complete' && userProfile?.country ? (
                       <div className="space-y-4">
@@ -582,7 +582,7 @@ function CommandPaletteContent({
                             size="sm"
                             variant="outline"
                             onClick={() => userProfile?.country && (window.location.href = `/countries/${userProfile.country.id}`)}
-                            className="flex-1 text-muted-foreground hover:text-foreground border-border hover:border-accent hover:bg-accent/10"
+                            className="flex-1 text-muted-foreground hover:text-foreground border hover:border-accent hover:bg-accent/10"
                           >
                             <Crown className="h-4 w-4 mr-2" />
                             My Country
@@ -591,7 +591,7 @@ function CommandPaletteContent({
                             size="sm"
                             variant="outline"
                             onClick={() => window.location.href = "/eci"}
-                            className="flex-1 text-muted-foreground hover:text-foreground border-border hover:border-accent hover:bg-accent/10"
+                            className="flex-1 text-muted-foreground hover:text-foreground border hover:border-accent hover:bg-accent/10"
                           >
                             <Target className="h-4 w-4 mr-2" />
                             ECI
@@ -726,11 +726,11 @@ function CommandPaletteContent({
                 placeholder={`Search ${searchFilter === 'all' ? 'everything' : searchFilter}...`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 pr-16 py-3 bg-accent/10 border-border text-foreground placeholder:text-muted-foreground rounded-xl text-base focus:bg-accent/15 focus:border-blue-400 transition-all"
+                className="pl-12 pr-16 py-3 bg-accent/10 border text-foreground placeholder:text-muted-foreground rounded-xl text-base focus:bg-accent/15 focus:border-blue-400 transition-all"
                 autoFocus
               />
               <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-                <kbd className="hidden md:inline-flex px-2 py-1 text-xs bg-muted rounded border border-border text-muted-foreground">
+                <kbd className="hidden md:inline-flex px-2 py-1 text-xs bg-muted rounded border-border text-muted-foreground">
                   ⌘K
                 </kbd>
               </div>
@@ -869,14 +869,14 @@ function CommandPaletteContent({
                     </div>
                     <div className="flex flex-wrap gap-2 justify-center text-xs text-muted-foreground/50">
                       <div className="flex items-center gap-1">
-                        <kbd className="px-2 py-1 bg-muted rounded border border-border">⌘</kbd>
+                        <kbd className="px-2 py-1 bg-muted rounded border-border">⌘</kbd>
                         <span>+</span>
-                        <kbd className="px-2 py-1 bg-muted rounded border border-border">K</kbd>
+                        <kbd className="px-2 py-1 bg-muted rounded border-border">K</kbd>
                         <span>to search</span>
                       </div>
                       <span>•</span>
                       <div className="flex items-center gap-1">
-                        <kbd className="px-2 py-1 bg-muted rounded border border-border">Tab</kbd>
+                        <kbd className="px-2 py-1 bg-muted rounded border-border">Tab</kbd>
                         <span>to cycle filters</span>
                       </div>
                     </div>
@@ -940,8 +940,8 @@ function CommandPaletteContent({
                         key={notification.id}
                         className={`p-4 rounded-xl border cursor-pointer transition-all hover:bg-accent/50 ${
                           notification.read 
-                            ? 'bg-muted/30 border-border' 
-                            : 'bg-muted/50 border-border shadow-lg'
+                            ? 'bg-muted/30 border' 
+                            : 'bg-muted/50 border shadow-lg'
                         }`}
                         onClick={() => {
                           if (!notification.read && user?.id) {
@@ -1042,7 +1042,7 @@ function CommandPaletteContent({
 
             <div className="space-y-3">
               {/* Theme Switcher */}
-              <div className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-accent/10 transition-all border border-border">
+              <div className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-accent/10 transition-all border-border">
                 <div className="p-1.5 bg-primary/20 rounded flex-shrink-0">
                   {effectiveTheme === 'dark' ? (
                     <Moon className="h-4 w-4 text-primary" />
@@ -1085,7 +1085,7 @@ function CommandPaletteContent({
               </div>
 
               {/* Sound Settings */}
-              <div className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-accent/10 transition-all border border-border">
+              <div className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-accent/10 transition-all border-border">
                 <div className="p-1.5 bg-green-500/20 rounded flex-shrink-0">
                   {userPreferences.soundEnabled ? (
                     <Volume2 className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -1110,7 +1110,7 @@ function CommandPaletteContent({
               </div>
 
               {/* Language Settings */}
-              <div className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-accent/10 transition-all border border-border">
+              <div className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-accent/10 transition-all border-border">
                 <div className="p-1.5 bg-blue-500/20 rounded flex-shrink-0">
                   <Languages className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 </div>
@@ -1131,7 +1131,7 @@ function CommandPaletteContent({
               </div>
 
               {/* Layout Preferences */}
-              <div className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-accent/10 transition-all border border-border">
+              <div className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-accent/10 transition-all border-border">
                 <div className="p-1.5 bg-purple-500/20 rounded flex-shrink-0">
                   <Layout className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                 </div>
@@ -1152,7 +1152,7 @@ function CommandPaletteContent({
               </div>
 
               {/* Animation Settings */}
-              <div className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-accent/10 transition-all border border-border">
+              <div className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-accent/10 transition-all border-border">
                 <div className="p-1.5 bg-orange-500/20 rounded flex-shrink-0">
                   <Eye className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                 </div>
@@ -1211,7 +1211,7 @@ function CommandPaletteContent({
       {isExpanded && (
         <div className="hidden lg:block absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-[10002]">
           <div 
-            className="command-palette-dropdown border border-white/20 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[500px] max-w-[800px] relative"
+            className="command-palette-dropdown border-border border-white/20 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[500px] max-w-[800px] relative"
             style={{
               background: "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",
               backdropFilter: "blur(20px) saturate(180%)",

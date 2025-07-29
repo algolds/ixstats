@@ -1,5 +1,5 @@
 import { Button } from "./button";
-import { cn } from "../../lib/utils";
+import { cn } from "~/lib/utils";
 import React from "react";
 
 interface EnhancedButtonProps extends React.ComponentProps<typeof Button> {
