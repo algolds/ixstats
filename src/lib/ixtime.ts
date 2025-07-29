@@ -21,17 +21,16 @@ export class IxTime {
   
   // Fallback values if bot is unavailable
   private static timeOverride: number | null = null;
+  private static timeOverrideSetAt: number | null = null; // When the override was set (real time)
   private static multiplierOverride: number | null = null;
   private static lastKnownBotTime: number | null = null;
   private static lastSyncTime: number | null = null;
   private static botAvailable = true;
 
   /**
-   * Get the natural/default time multiplier based on current time
+   * Get the natural/default time multiplier based on current real time
    */
-  static getDefaultMultiplier(ixTime?: number): number {
-    const currentTime = ixTime || this.getCurrentIxTime();
-    const gameDate = new Date(currentTime);
+  static getDefaultMultiplier(): number {
     // Speed change happened on 7/27/25 real time, so check against current real time
     const currentRealTime = new Date();
     return currentRealTime >= this.SPEED_CHANGE_DATE ? this.POST_SPEED_CHANGE_MULTIPLIER : this.BASE_TIME_MULTIPLIER;
@@ -76,35 +75,34 @@ export class IxTime {
    * Get current IxTime - this is the "present moment" in the game world
    */
   static getCurrentIxTime(): number {
-    if (this.timeOverride !== null) {
-      return this.timeOverride;
-    }
-    
-    // Calculate time with dynamic speed changes based on reference point
-    const now = Date.now();
-    
-    // If we have a multiplier override, use simple calculation with that override
-    if (this.multiplierOverride !== null) {
-      const realSecondsElapsed = (now - this.REAL_WORLD_EPOCH) / 1000;
-      const ixSecondsElapsed = realSecondsElapsed * this.multiplierOverride;
-      return this.REAL_WORLD_EPOCH + (ixSecondsElapsed * 1000);
-    }
-    
-    // Use dynamic calculation based on speed change point
-    if (now <= this.SPEED_CHANGE_DATE.getTime()) {
-      // Before speed change: use 4x multiplier from epoch
-      const realSecondsElapsed = (now - this.REAL_WORLD_EPOCH) / 1000;
-      const ixSecondsElapsed = realSecondsElapsed * this.BASE_TIME_MULTIPLIER;
-      return this.REAL_WORLD_EPOCH + (ixSecondsElapsed * 1000);
-    } else {
-      // After speed change: calculate from speed change point with 2x multiplier
-      const realSecondsToSpeedChange = (this.SPEED_CHANGE_DATE.getTime() - this.REAL_WORLD_EPOCH) / 1000;
-      const gameTimeAtSpeedChange = this.REAL_WORLD_EPOCH + (realSecondsToSpeedChange * this.BASE_TIME_MULTIPLIER * 1000);
+    // If there's a time override, calculate progressing time from that point
+    if (this.timeOverride !== null && this.timeOverrideSetAt !== null) {
+      const now = Date.now();
+      const realTimeElapsedSinceOverride = now - this.timeOverrideSetAt;
       
-      const realSecondsSinceSpeedChange = (now - this.SPEED_CHANGE_DATE.getTime()) / 1000;
-      const gameTimeSinceSpeedChange = realSecondsSinceSpeedChange * this.POST_SPEED_CHANGE_MULTIPLIER * 1000;
-      return gameTimeAtSpeedChange + gameTimeSinceSpeedChange;
+      // Get current multiplier
+      const currentMultiplier = this.multiplierOverride !== null ? this.multiplierOverride : this.getDefaultMultiplier();
+      
+      // If paused, return the static override time
+      if (currentMultiplier === 0) {
+        return this.timeOverride;
+      }
+      
+      // Calculate progressing time from override point
+      const ixTimeElapsed = realTimeElapsedSinceOverride * currentMultiplier;
+      return this.timeOverride + ixTimeElapsed;
     }
+    
+    // Calculate time with current multiplier from epoch
+    const now = Date.now();
+    const realSecondsElapsed = (now - this.REAL_WORLD_EPOCH) / 1000;
+    
+    // Use multiplier override if set, otherwise use natural progression
+    const currentMultiplier = this.multiplierOverride !== null ? this.multiplierOverride : this.getDefaultMultiplier();
+    
+    // Simple calculation: time flows at the current multiplier rate from epoch
+    const ixSecondsElapsed = realSecondsElapsed * currentMultiplier;
+    return this.REAL_WORLD_EPOCH + (ixSecondsElapsed * 1000);
   }
 
   private static getCurrentIxTimeInternal(): number {
@@ -386,16 +384,16 @@ export class IxTime {
   // Legacy fallback methods
   static setTimeOverride(ixTime: number): void {
     this.timeOverride = ixTime;
-    console.warn('[IxTime] Using local time override - consider using setBotTimeOverride instead');
+    this.timeOverrideSetAt = Date.now(); // Record when override was set
   }
 
   static clearTimeOverride(): void {
     this.timeOverride = null;
+    this.timeOverrideSetAt = null;
   }
 
   static setMultiplierOverride(multiplier: number): void {
     this.multiplierOverride = multiplier;
-    console.warn('[IxTime] Using local multiplier override - consider using bot methods instead');
   }
 
   static clearMultiplierOverride(): void {
@@ -449,7 +447,13 @@ export class IxTime {
   }
 
   static async getStatus() {
-    const botStatusData = await this.fetchStatusFromBot();
+    let botStatusData = null;
+    try {
+      botStatusData = await this.fetchStatusFromBot();
+    } catch (error) {
+      console.warn('[IxTime] Failed to fetch bot status in getStatus:', error);
+    }
+    
     const currentRealTime = Date.now();
     const currentIxTime = this.getCurrentIxTime();
     
@@ -485,10 +489,10 @@ export class IxTime {
         hasMultiplierOverride: botStatusData.hasMultiplierOverride,
         pausedAt: botStatusData.pausedAt,
         pauseTimestamp: botStatusData.pauseTimestamp,
-        botReady: botStatusData.botStatus.ready,
-        botUser: botStatusData.botStatus.user,
-        guilds: botStatusData.botStatus.guilds,
-        uptime: botStatusData.botStatus.uptime
+        botReady: botStatusData.botStatus?.ready || false,
+        botUser: botStatusData.botStatus?.user || null,
+        guilds: botStatusData.botStatus?.guilds || 0,
+        uptime: botStatusData.botStatus?.uptime || 0
       } : null
     };
   }
@@ -505,7 +509,7 @@ export class IxTime {
         this.botAvailable = true;
         return { 
           available: true, 
-          message: `Bot is ${data.botReady ? 'ready' : 'starting up'}${data.isPaused ? ' (PAUSED)' : ''}` 
+          message: `Bot is ${data.bot?.ready ? 'ready' : 'starting up'}${data.ixtime?.isPaused ? ' (PAUSED)' : ''}` 
         };
       } else {
         this.botAvailable = false;

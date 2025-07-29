@@ -2,9 +2,43 @@
 import { NextResponse } from 'next/server';
 import { IxTime } from '~/lib/ixtime';
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    // Fetch current state from Discord bot
+    let botData;
+    
+    // Try to parse request body first (for auto-sync)
+    try {
+      const body = await request.json();
+      if (body.ixTimeMs || body.multiplier !== undefined) {
+        // Direct sync from bot command
+        if (body.ixTimeMs) {
+          IxTime.setTimeOverride(body.ixTimeMs);
+        }
+        if (typeof body.multiplier === 'number') {
+          IxTime.setMultiplierOverride(body.multiplier);
+        }
+        
+        const currentState = {
+          ixTimeTimestamp: IxTime.getCurrentIxTime(),
+          ixTimeFormatted: IxTime.formatIxTime(IxTime.getCurrentIxTime(), true),
+          multiplier: IxTime.getTimeMultiplier(),
+          isPaused: IxTime.isPaused(),
+          gameYear: IxTime.getCurrentGameYear(),
+          isNaturalProgression: IxTime.isMultiplierNatural()
+        };
+        
+        return NextResponse.json({
+          success: true,
+          message: 'Successfully auto-synced from Discord bot',
+          currentState,
+          syncData: body
+        });
+      }
+    } catch {
+      // If parsing fails, fall back to fetching from bot
+    }
+    
+    // Fetch current state from Discord bot (manual sync)
     const BOT_URL = process.env.IXTIME_BOT_URL || process.env.NEXT_PUBLIC_IXTIME_BOT_URL || 'http://localhost:3001';
     
     const response = await fetch(`${BOT_URL}/ixtime/status`, {
@@ -17,23 +51,15 @@ export async function POST() {
       throw new Error(`Discord bot API returned ${response.status}`);
     }
     
-    const botData = await response.json();
+    botData = await response.json();
     
-    // Apply bot's time and multiplier to IxStats
-    if (botData.hasTimeOverride && botData.ixTimeTimestamp) {
-      // Bot has a time override, apply it to IxStats
+    // Apply bot's current time and multiplier to IxStats (always sync to match bot)
+    if (botData.ixTimeTimestamp) {
       IxTime.setTimeOverride(botData.ixTimeTimestamp);
-    } else {
-      // Bot is using natural time, clear IxStats override
-      IxTime.clearTimeOverride();
     }
     
-    if (botData.hasMultiplierOverride && botData.multiplier) {
-      // Bot has a multiplier override, apply it to IxStats
+    if (botData.multiplier) {
       IxTime.setMultiplierOverride(botData.multiplier);
-    } else {
-      // Bot is using natural multiplier, clear IxStats override
-      IxTime.clearMultiplierOverride();
     }
     
     // Get the current state after sync

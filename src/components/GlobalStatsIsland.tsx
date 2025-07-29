@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
+import { useIxTime } from "~/contexts/IxTimeContext";
 import { formatCurrency, formatPopulation, formatGrowthRateFromDecimal } from "~/lib/chart-utils";
 import { 
   DynamicIsland,
@@ -93,7 +94,7 @@ function GlobalStatsIslandContent() {
     greeting: "Good morning",
     dateDisplay: "",
     timeDisplay: "",
-    multiplier: 4.0,
+    multiplier: 2.0,
   });
 
 
@@ -265,28 +266,26 @@ function GlobalStatsIslandContent() {
     setNotifications(mockNotifications);
   }, []);
 
+  // Use centralized time context instead of direct IxTime calls
+  const { ixTimeTimestamp, multiplier: contextMultiplier } = useIxTime();
+  
   // Time updates
   useEffect(() => {
     const updateTime = () => {
-      const currentIxTime = IxTime.getCurrentIxTime();
-      const greeting = getGreeting(currentIxTime);
-      const dateDisplay = getDateDisplay(currentIxTime);
-      const timeDisplay = getTimeDisplay(currentIxTime);
-      const multiplier = IxTime.getTimeMultiplier();
+      const greeting = getGreeting(ixTimeTimestamp);
+      const dateDisplay = getDateDisplay(ixTimeTimestamp);
+      const timeDisplay = getTimeDisplay(ixTimeTimestamp);
 
       setCurrentTime({
         greeting,
         dateDisplay,
         timeDisplay,
-        multiplier,
+        multiplier: contextMultiplier,
       });
     };
 
     updateTime();
-    const interval = setInterval(updateTime, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
+  }, [ixTimeTimestamp, contextMultiplier]);
 
 
   // Mode switching with size changes

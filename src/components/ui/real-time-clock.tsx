@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Clock, Zap, Pause } from 'lucide-react';
 import { IxTime } from '~/lib/ixtime';
+import { useIxTime } from '~/contexts/IxTimeContext';
 
 interface RealTimeClockProps {
   className?: string;
@@ -17,6 +18,9 @@ export function RealTimeClock({
   showGameYear = true,
   updateInterval = 1000 
 }: RealTimeClockProps) {
+  // Use centralized time context
+  const { ixTimeTimestamp, ixTimeFormatted, multiplier, gameYear, isNaturalProgression } = useIxTime();
+  
   const [currentTime, setCurrentTime] = useState({
     ixTime: Date.now(),
     formatted: '',
@@ -26,34 +30,15 @@ export function RealTimeClock({
   });
 
   useEffect(() => {
-    const updateTime = () => {
-      try {
-        const ixTime = IxTime.getCurrentIxTime();
-        const formatted = IxTime.formatIxTime(ixTime, true);
-        const multiplier = IxTime.getTimeMultiplier();
-        const gameYear = IxTime.getCurrentGameYear();
-        const isNatural = IxTime.isMultiplierNatural();
-
-        setCurrentTime({
-          ixTime,
-          formatted,
-          multiplier,
-          gameYear,
-          isNatural
-        });
-      } catch (error) {
-        console.error('Error updating real-time clock:', error);
-      }
-    };
-
-    // Update immediately
-    updateTime();
-
-    // Set up interval
-    const interval = setInterval(updateTime, updateInterval);
-
-    return () => clearInterval(interval);
-  }, [updateInterval]);
+    // Update display when context changes
+    setCurrentTime({
+      ixTime: ixTimeTimestamp,
+      formatted: ixTimeFormatted,
+      multiplier,
+      gameYear,
+      isNatural: isNaturalProgression
+    });
+  }, [ixTimeTimestamp, ixTimeFormatted, multiplier, gameYear, isNaturalProgression]);
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>

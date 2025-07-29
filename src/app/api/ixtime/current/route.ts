@@ -4,6 +4,7 @@ import { IxTime } from '~/lib/ixtime';
 
 export async function GET() {
   try {
+    // Get the current calculated IxTime (which includes any time overrides and progression)
     const currentIxTime = IxTime.getCurrentIxTime();
     const multiplier = IxTime.getTimeMultiplier();
     const status = await IxTime.getStatus();
@@ -13,8 +14,8 @@ export async function GET() {
       ixTimeFormatted: IxTime.formatIxTime(currentIxTime, true),
       multiplier: multiplier,
       isPaused: IxTime.isPaused(),
-      gameYear: IxTime.getCurrentGameYear(),
-      gameTimeDescription: IxTime.getGameTimeDescription(),
+      gameYear: IxTime.getCurrentGameYear(currentIxTime),
+      gameTimeDescription: IxTime.getGameTimeDescription(currentIxTime),
       status: status
     });
   } catch (error) {
