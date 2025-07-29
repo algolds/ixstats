@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
+import { useIxTime } from "~/contexts/IxTimeContext";
 import { 
   DynamicIsland,
   DynamicContainer,
@@ -112,7 +113,7 @@ function CommandPaletteContent({
     greeting: "Good morning",
     dateDisplay: "",
     timeDisplay: "",
-    multiplier: 4.0,
+    multiplier: 2.0,
   });
 
 
@@ -336,30 +337,23 @@ function CommandPaletteContent({
     }
   }, [mode, isUserInteracting]);
 
-  // Time updates - much more performance optimized
+  // Use centralized time context instead of direct IxTime calls
+  const { ixTimeTimestamp, multiplier: contextMultiplier } = useIxTime();
+  
+  // Time updates - using centralized context
   useEffect(() => {
-    let intervalId: NodeJS.Timeout;
-    
-    const updateTime = () => {
-      const currentIxTime = IxTime.getCurrentIxTime();
-      const greeting = getGreeting(currentIxTime);
-      const dateDisplay = getDateDisplay(currentIxTime);
-      const timeDisplay = getTimeDisplay(currentIxTime);
-      const multiplier = IxTime.getTimeMultiplier();
+    const greeting = getGreeting(ixTimeTimestamp);
+    const dateDisplay = getDateDisplay(ixTimeTimestamp);
+    const timeDisplay = getTimeDisplay(ixTimeTimestamp);
 
-      setCurrentTime(prev => {
-        // Only update if values actually changed
-        if (prev.timeDisplay !== timeDisplay || prev.dateDisplay !== dateDisplay) {
-          return { greeting, dateDisplay, timeDisplay, multiplier };
-        }
-        return prev;
-      });
-    };
-
-    updateTime();
-    intervalId = setInterval(updateTime, 1000);
-    return () => clearInterval(intervalId);
-  }, []);
+    setCurrentTime(prev => {
+      // Only update if values actually changed
+      if (prev.timeDisplay !== timeDisplay || prev.dateDisplay !== dateDisplay) {
+        return { greeting, dateDisplay, timeDisplay, multiplier: contextMultiplier };
+      }
+      return prev;
+    });
+  }, [ixTimeTimestamp, contextMultiplier]);
 
 
   // Handle refresh - debounced to prevent spam

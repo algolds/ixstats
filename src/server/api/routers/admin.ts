@@ -162,7 +162,7 @@ export const adminRouter = createTRPCRouter({
           globalGrowthFactor: parseFloat(configMap.globalGrowthFactor || CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR.toString()),
           autoUpdate: configMap.autoUpdate === 'true',
           botSyncEnabled: configMap.botSyncEnabled === 'true',
-          timeMultiplier: parseFloat(configMap.timeMultiplier || '4.0'),
+          timeMultiplier: parseFloat(configMap.timeMultiplier || '2.0'),
         };
       } catch (error) {
         console.error("Failed to get config:", error);
@@ -171,7 +171,7 @@ export const adminRouter = createTRPCRouter({
           globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR,
           autoUpdate: true,
           botSyncEnabled: true,
-          timeMultiplier: 4.0,
+          timeMultiplier: 2.0,
         };
       }
     }),

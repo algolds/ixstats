@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     // Set natural multiplier
     const result = IxTime.setNaturalMultiplier(multiplier);
     
-    // Sync with Discord bot using the new natural endpoint
+    // Auto-sync with Discord bot
     try {
       const BOT_URL = process.env.IXTIME_BOT_URL || process.env.NEXT_PUBLIC_IXTIME_BOT_URL || 'http://localhost:3001';
       const syncResponse = await fetch(`${BOT_URL}/ixtime/set-natural`, {
@@ -27,11 +27,13 @@ export async function POST(request: Request) {
         signal: AbortSignal.timeout(5000)
       });
       
-      if (!syncResponse.ok) {
-        console.warn('Failed to sync with Discord bot');
+      if (syncResponse.ok) {
+        console.log('Successfully auto-synced multiplier change to Discord bot');
+      } else {
+        console.warn('Failed to auto-sync with Discord bot');
       }
     } catch (syncError) {
-      console.warn('Discord bot sync failed:', syncError);
+      console.warn('Discord bot auto-sync failed:', syncError);
     }
     
     return NextResponse.json({

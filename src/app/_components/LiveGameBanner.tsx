@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { IxTime } from "~/lib/ixtime";
+import { useIxTime } from "~/contexts/IxTimeContext";
 import { formatCurrency, formatPopulation, formatGrowthRateFromDecimal } from "~/lib/chart-utils";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -18,6 +19,9 @@ interface LiveGameBannerProps {
 }
 
 export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBannerProps) {
+  // Use centralized time context
+  const { ixTimeTimestamp, multiplier, ixTimeFormatted, refreshTime } = useIxTime();
+  
   const [currentTime, setCurrentTime] = useState<{
     greeting: string;
     dateDisplay: string;
@@ -27,7 +31,7 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
     greeting: "Good morning",
     dateDisplay: "",
     timeDisplay: "",
-    multiplier: 4.0,
+    multiplier: 2.0,
   });
 
   const [botStatus, setBotStatus] = useState<{
@@ -85,8 +89,8 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
   // Comprehensive refresh function that syncs all data
   const handleRefresh = async () => {
     try {
-      // Sync with bot first
-      await IxTime.syncWithBot();
+      // Refresh time context first
+      await refreshTime();
       
       // Check bot health
       const healthStatus = await IxTime.checkBotHealth();
@@ -104,27 +108,20 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
   };
 
   useEffect(() => {
-    const updateTime = () => {
-      const now = Date.now();
-      const currentIxTime = IxTime.getCurrentIxTime();
-      const greeting = getGreeting(currentIxTime);
-      const dateDisplay = getDateDisplay(currentIxTime);
-      const timeDisplay = getTimeDisplay(currentIxTime);
-      const multiplier = IxTime.getTimeMultiplier();
+    // Update time display when context changes
+    const greeting = getGreeting(ixTimeTimestamp);
+    const dateDisplay = getDateDisplay(ixTimeTimestamp);
+    const timeDisplay = getTimeDisplay(ixTimeTimestamp);
 
-      setCurrentTime({
-        greeting,
-        dateDisplay,
-        timeDisplay,
-        multiplier,
-      });
-    };
+    setCurrentTime({
+      greeting,
+      dateDisplay,
+      timeDisplay,
+      multiplier,
+    });
+  }, [ixTimeTimestamp, multiplier]);
 
-    // Update immediately
-    updateTime();
-
-    // Update every second
-    const interval = setInterval(updateTime, 1000);
+  useEffect(() => {
 
     // Check bot status
     const checkBotStatus = async () => {

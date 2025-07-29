@@ -65,37 +65,37 @@ export function TimeControlPanel({
             />
             <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
               <span>Paused</span>
-              <span>2x (2040+)</span>
-              <span>4x (Normal)</span>
+              <span>2x (Current Default)</span>
+              <span>4x</span>
               <span>10x</span>
             </div>
           </div>
 
-          <div className="flex space-x-2">
+          <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => onTimeMultiplierChange(0)}
-              className="flex items-center px-3 py-2 bg-red-100 hover:bg-red-200 dark:bg-red-700 dark:hover:bg-red-600 text-red-700 dark:text-red-100 rounded-md text-sm"
+              className="flex items-center justify-center px-3 py-2 bg-red-100 hover:bg-red-200 dark:bg-red-700 dark:hover:bg-red-600 text-red-700 dark:text-red-100 rounded-md text-sm font-medium"
             >
               <Pause className="h-4 w-4 mr-1" />
               Pause
             </button>
             <button
               onClick={() => onTimeMultiplierChange(2)}
-              className="flex items-center px-3 py-2 bg-blue-100 hover:bg-blue-200 dark:bg-blue-700 dark:hover:bg-blue-600 text-blue-700 dark:text-blue-100 rounded-md text-sm"
+              className="flex items-center justify-center px-3 py-2 bg-blue-100 hover:bg-blue-200 dark:bg-blue-700 dark:hover:bg-blue-600 text-blue-700 dark:text-blue-100 rounded-md text-sm font-medium"
             >
               <Play className="h-4 w-4 mr-1" />
-              2x Speed
+              2x (Standard)
             </button>
             <button
               onClick={() => onTimeMultiplierChange(4)}
-              className="flex items-center px-3 py-2 bg-green-100 hover:bg-green-200 dark:bg-green-700 dark:hover:bg-green-600 text-green-700 dark:text-green-100 rounded-md text-sm"
+              className="flex items-center justify-center px-3 py-2 bg-green-100 hover:bg-green-200 dark:bg-green-700 dark:hover:bg-green-600 text-green-700 dark:text-green-100 rounded-md text-sm font-medium"
             >
               <Play className="h-4 w-4 mr-1" />
-              Normal (4x)
+              4x Speed
             </button>
             <button
               onClick={onResetToRealTime}
-              className="flex items-center px-3 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md text-sm"
+              className="flex items-center justify-center px-3 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md text-sm font-medium"
             >
               <RotateCcw className="h-4 w-4 mr-1" />
               Reset Time
