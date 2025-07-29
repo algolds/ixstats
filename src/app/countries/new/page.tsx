@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { api } from '~/trpc/react';
-import { CountriesFocusGrid } from '~/components/countries/CountriesFocusGrid';
+import { CountriesPageModular } from '../_components/CountriesPageModular';
 import type { CountryCardData } from '~/components/countries/CountryFocusCard';
 import { useBulkFlagCache } from '~/hooks/useBulkFlagCache';
 
@@ -72,7 +72,7 @@ export default function NewCountriesPage() {
   }
 
   return (
-    <CountriesFocusGrid
+    <CountriesPageModular
       countries={processedCountries}
       isLoading={isLoading || flagsLoading}
       searchQuery={searchQuery}
