@@ -21,12 +21,11 @@ import { RubiksCubeFlags } from "~/components/ui/rubiks-cube-flags";
 import { ThemedTabContent } from "~/components/ui/themed-tab-content";
 import { CountryExecutiveSection } from "~/app/countries/_components/CountryExecutiveSection";
 import { CountryIntelligenceSection } from "~/app/countries/_components/CountryIntelligenceSection";
-import { ProgressiveBlur } from "~/components/ui/progressive-blur";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "~/components/ui/dropdown-menu";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { AppleRippleEffect } from "~/components/ui/apple-ripple-effect";
 import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
-
+import { GlassActivityMarquee } from "./GlassActivityMarquee";
 // Icons
 import { 
   Crown, Building2, Globe, Shield, Settings, TrendingUp, 
@@ -54,6 +53,13 @@ interface ProcessedCountryData {
   landArea: number | null;
   populationDensity: number | null;
   gdpDensity: number | null;
+  adjustedGdpGrowth: number;
+  populationGrowthRate: number;
+  continent?: string | null;
+  region?: string | null;
+  governmentType?: string | null;
+  religion?: string | null;
+  leader?: string | null;
 }
 
 
@@ -163,10 +169,7 @@ export default function DashboardRefactored() {
     { enabled: !!user?.id }
   );
 
-  const { data: allData, error: countriesError } = api.countries.getAll.useQuery(undefined, {
-    retry: 1,
-    retryDelay: 1000
-  });
+
 
   const { data: globalStatsData, error: statsError } = api.countries.getGlobalStats.useQuery(undefined, {
     retry: 1,
@@ -178,22 +181,48 @@ export default function DashboardRefactored() {
     { enabled: !!userProfile?.countryId, retry: 1, retryDelay: 1000 }
   );
 
-  // Process data
-  const processedCountries: ProcessedCountryData[] = useMemo(() => {
-    const countriesRaw = allData?.countries ?? [];
-    return countriesRaw.map((country) => ({
-      id: country.id,
-      name: country.name,
-      currentPopulation: country.currentPopulation ?? 0,
-      currentGdpPerCapita: country.currentGdpPerCapita ?? 0,
-      currentTotalGdp: country.currentTotalGdp ?? 0,
-      economicTier: country.economicTier ?? "Unknown",
-      populationTier: country.populationTier ?? "Unknown",
-      landArea: country.landArea ?? null,
-      populationDensity: country.populationDensity ?? null,
-      gdpDensity: country.gdpDensity ?? null,
-    }));
-  }, [allData]);
+  // SDI data for Global Intelligence section
+  const { data: activeCrises } = api.sdi.getActiveCrises.useQuery(
+    undefined,
+    { enabled: !!user?.id && !!userProfile?.countryId }
+  );
+
+  const { data: intelligenceFeed } = api.sdi.getIntelligenceFeed.useQuery(
+    { limit: 10 },
+    { enabled: !!user?.id && !!userProfile?.countryId }
+  );
+
+  const { data: economicIndicators } = api.sdi.getEconomicIndicators.useQuery(
+    undefined,
+    { enabled: !!user?.id && !!userProfile?.countryId }
+  );
+const { data: allData, error: countriesError, isLoading: countriesLoading } = api.countries.getAll.useQuery(undefined, {
+  retry: 1,
+  retryDelay: 1000
+});
+// Process data
+const processedCountries: ProcessedCountryData[] = useMemo(() => {
+  const countriesRaw = allData?.countries ?? [];
+  return countriesRaw.map((country) => ({
+    id: country.id,
+    name: country.name,
+    currentPopulation: country.currentPopulation ?? 0,
+    currentGdpPerCapita: country.currentGdpPerCapita ?? 0,
+    currentTotalGdp: country.currentTotalGdp ?? 0,
+    economicTier: country.economicTier ?? "Unknown",
+    populationTier: country.populationTier ?? "Unknown",
+    landArea: country.landArea ?? null,
+    populationDensity: country.populationDensity ?? null,
+    gdpDensity: country.gdpDensity ?? null,
+    adjustedGdpGrowth: country.adjustedGdpGrowth ?? 0,
+    populationGrowthRate: country.populationGrowthRate ?? 0,
+    continent: country.continent ?? null,
+    region: country.region ?? null,
+    governmentType: country.governmentType ?? null,
+    religion: country.religion ?? null,
+    leader: country.leader ?? null,
+  }));
+}, [allData]);
 
   const powerGrouped = useMemo(() => 
     groupCountriesByPower(processedCountries as CountryPowerData[]), 
@@ -287,12 +316,12 @@ export default function DashboardRefactored() {
       <div className="relative min-h-screen bg-background">
       {/* Interactive Grid Background - Enhanced Saturation */}
       <InteractiveGridPattern
-        width={40}
-        height={40}
-        squares={[50, 40]}
-        className="opacity-40 dark:opacity-30"
-        squaresClassName="fill-slate-200/25 dark:fill-slate-700/25 stroke-slate-300/40 dark:stroke-slate-600/40 [&:nth-child(4n+1):hover]:fill-yellow-500/60 [&:nth-child(4n+1):hover]:stroke-yellow-500/80 [&:nth-child(4n+2):hover]:fill-blue-500/60 [&:nth-child(4n+2):hover]:stroke-blue-500/80 [&:nth-child(4n+3):hover]:fill-indigo-500/60 [&:nth-child(4n+3):hover]:stroke-indigo-500/80 [&:nth-child(4n+4):hover]:fill-red-500/60 [&:nth-child(4n+4):hover]:stroke-red-500/80 transition-all duration-300 hover:scale-[1.02]" 
-      />
+  width={40}
+  height={40}
+  squares={[50, 40]}
+  className="opacity-40 dark:opacity-30"
+  squaresClassName="fill-slate-200/25 dark:fill-slate-800/25 stroke-slate-300/40 dark:stroke-slate-500/40 [&:nth-child(4n+1):hover]:fill-yellow-500/60 [&:nth-child(4n+1):hover]:stroke-yellow-500/80 dark:[&:nth-child(4n+1):hover]:fill-yellow-400/70 dark:[&:nth-child(4n+1):hover]:stroke-yellow-400/90 [&:nth-child(4n+2):hover]:fill-blue-500/60 [&:nth-child(4n+2):hover]:stroke-blue-500/80 dark:[&:nth-child(4n+2):hover]:fill-blue-400/70 dark:[&:nth-child(4n+2):hover]:stroke-blue-400/90 [&:nth-child(4n+3):hover]:fill-indigo-500/60 [&:nth-child(4n+3):hover]:stroke-indigo-500/80 dark:[&:nth-child(4n+3):hover]:fill-indigo-400/70 dark:[&:nth-child(4n+3):hover]:stroke-indigo-400/90 [&:nth-child(4n+4):hover]:fill-red-500/60 [&:nth-child(4n+4):hover]:stroke-red-500/80 dark:[&:nth-child(4n+4):hover]:fill-red-400/70 dark:[&:nth-child(4n+4):hover]:stroke-red-400/90 transition-all duration-300 hover:scale-[1.02]" 
+/>
       {/* Header Section */}
       <div className="relative z-50 container mx-auto px-4 py-8">
         {/* Welcome Header */}
@@ -378,6 +407,22 @@ export default function DashboardRefactored() {
           transition={{ duration: 0.4, delay: 0.1 }}
           className="max-w-7xl mx-auto space-y-6"
         >
+          {/* Live Activity Marquee - Prominent placement at top */}
+          <GlassActivityMarquee
+            countries={processedCountries}
+            userCountry={countryData ? {
+              id: countryData.id,
+              name: countryData.name,
+              currentPopulation: countryData.currentPopulation,
+              currentGdpPerCapita: countryData.currentGdpPerCapita,
+              currentTotalGdp: countryData.currentTotalGdp || (countryData.currentPopulation * countryData.currentGdpPerCapita),
+              economicTier: countryData.economicTier,
+              populationTier: countryData.populationTier || 'Medium',
+              adjustedGdpGrowth: countryData.adjustedGdpGrowth || 0,
+              populationGrowthRate: countryData.populationGrowthRate || 0
+            } : undefined}
+            isLoading={countriesLoading}
+          />
           {/* Top Section Grid - MyCountry (8 span) + Global Intelligence (4 span) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* MyCountry Section - 8 columns (12 when global is slid away) */}
@@ -503,25 +548,89 @@ export default function DashboardRefactored() {
     </DropdownMenu>
   </div>
 
-  {/* Executive Activity Rings Section */}
+  {/* National Performance Metrics Section */}
   {countryData && (
     <ThemedTabContent theme="executive" className="tab-content-enter mb-6">
-      <ExecutiveActivityRings
-        countryData={{
-          name: countryData.name,
-          currentGdpPerCapita: countryData.currentGdpPerCapita,
-          currentTotalGdp: countryData.currentTotalGdp,
-          currentPopulation: countryData.currentPopulation,
-          populationGrowthRate: countryData.populationGrowthRate || 0,
-          adjustedGdpGrowth: countryData.adjustedGdpGrowth || 0,
-          economicTier: countryData.economicTier,
-          populationTier: countryData.populationTier ?? 'Medium',
-          populationDensity: countryData.populationDensity ?? 0
-        }}
-        onRingClick={(index) => setActivityPopoverOpen(index)}
-        compact={true}
-        className="mb-4"
-      />
+      <div className="space-y-4">
+        <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+          <BarChart3 className="h-5 w-5 text-green-400" />
+          National Performance Metrics
+        </h4>
+        
+        <div className="grid grid-cols-3 gap-3">
+          {/* Economic Performance */}
+          <div className="glass-hierarchy-child p-4 rounded-lg text-center cursor-pointer hover:scale-105 transition-transform"
+               onClick={() => setActivityPopoverOpen(0)}>
+            <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-green-400/20 flex items-center justify-center">
+              <TrendingUp className="h-6 w-6 text-green-400" />
+            </div>
+            <div className="text-lg font-bold text-green-400 mb-1">
+              {Math.min(100, Math.round((countryData.currentGdpPerCapita / 70000) * 100))}%
+            </div>
+            <div className="text-xs text-muted-foreground">Economic Index</div>
+          </div>
+          
+          {/* Social Performance */}
+          <div className="glass-hierarchy-child p-4 rounded-lg text-center cursor-pointer hover:scale-105 transition-transform"
+               onClick={() => setActivityPopoverOpen(1)}>
+            <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-blue-400/20 flex items-center justify-center">
+              <Users className="h-6 w-6 text-blue-400" />
+            </div>
+            <div className="text-lg font-bold text-blue-400 mb-1">
+              {Math.min(100, Math.round(85 + (countryData.populationGrowthRate * 1000)))}%
+            </div>
+            <div className="text-xs text-muted-foreground">Social Index</div>
+          </div>
+          
+          {/* Governance Performance */}
+          <div className="glass-hierarchy-child p-4 rounded-lg text-center cursor-pointer hover:scale-105 transition-transform"
+               onClick={() => setActivityPopoverOpen(2)}>
+            <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-purple-400/20 flex items-center justify-center">
+              <Crown className="h-6 w-6 text-purple-400" />
+            </div>
+            <div className="text-lg font-bold text-purple-400 mb-1">
+              {countryData.economicTier === 'Extravagant' ? '95' : 
+               countryData.economicTier === 'Very Strong' ? '88' : 
+               countryData.economicTier === 'Strong' ? '82' : '75'}%
+            </div>
+            <div className="text-xs text-muted-foreground">Governance Index</div>
+          </div>
+        </div>
+        
+        {/* Performance Summary */}
+        <div className="glass-hierarchy-child p-3 rounded-lg">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Overall Performance:</span>
+            <div className="flex items-center gap-2">
+              <div className="text-sm font-bold text-green-400">
+                {Math.round((
+                  Math.min(100, Math.round((countryData.currentGdpPerCapita / 70000) * 100)) +
+                  Math.min(100, Math.round(85 + (countryData.populationGrowthRate * 1000))) +
+                  (countryData.economicTier === 'Extravagant' ? 95 : 
+                   countryData.economicTier === 'Very Strong' ? 88 : 
+                   countryData.economicTier === 'Strong' ? 82 : 75)
+                ) / 3)}%
+              </div>
+              <Badge variant="secondary" className="text-xs">
+                {Math.round((
+                  Math.min(100, Math.round((countryData.currentGdpPerCapita / 70000) * 100)) +
+                  Math.min(100, Math.round(85 + (countryData.populationGrowthRate * 1000))) +
+                  (countryData.economicTier === 'Extravagant' ? 95 : 
+                   countryData.economicTier === 'Very Strong' ? 88 : 
+                   countryData.economicTier === 'Strong' ? 82 : 75)
+                ) / 3) >= 85 ? 'Excellent' : 
+                Math.round((
+                  Math.min(100, Math.round((countryData.currentGdpPerCapita / 70000) * 100)) +
+                  Math.min(100, Math.round(85 + (countryData.populationGrowthRate * 1000))) +
+                  (countryData.economicTier === 'Extravagant' ? 95 : 
+                   countryData.economicTier === 'Very Strong' ? 88 : 
+                   countryData.economicTier === 'Strong' ? 82 : 75)
+                ) / 3) >= 75 ? 'Good' : 'Needs Improvement'}
+              </Badge>
+            </div>
+          </div>
+        </div>
+      </div>
     </ThemedTabContent>
   )}
 
@@ -529,25 +638,25 @@ export default function DashboardRefactored() {
   {countryData && (
     <div className="grid grid-cols-2 gap-3 mb-6">
       <div className="glass-hierarchy-child p-3 rounded-lg text-center">
-        <div className="text-xs text-muted-foreground mb-1">Growth Rate</div>
-        <div className="text-sm font-bold text-green-400">
-          +{((countryData.currentGdpPerCapita / 50000) * 5).toFixed(1)}%
-        </div>
-      </div>
-      <div className="glass-hierarchy-child p-3 rounded-lg text-center">
-        <div className="text-xs text-muted-foreground mb-1">Economic Tier</div>
+        <div className="text-xs text-muted-foreground mb-1">Population</div>
         <div className="text-sm font-bold text-blue-400">
-          {countryData.economicTier}
+          {(countryData.currentPopulation / 1000000).toFixed(1)}M
         </div>
       </div>
       <div className="glass-hierarchy-child p-3 rounded-lg text-center">
-        <div className="text-xs text-muted-foreground mb-1">Pop. Tier</div>
+        <div className="text-xs text-muted-foreground mb-1">GDP per Capita</div>
+        <div className="text-sm font-bold text-green-400">
+          ${(countryData.currentGdpPerCapita / 1000).toFixed(0)}k
+        </div>
+      </div>
+      <div className="glass-hierarchy-child p-3 rounded-lg text-center">
+        <div className="text-xs text-muted-foreground mb-1">Employment</div>
         <div className="text-sm font-bold text-purple-400">
-          {countryData.populationTier || 'Medium'}
+          {(96.5 - (countryData.adjustedGdpGrowth < 0 ? 2 : 0)).toFixed(1)}%
         </div>
       </div>
       <div className="glass-hierarchy-child p-3 rounded-lg text-center">
-        <div className="text-xs text-muted-foreground mb-1">Health Score</div>
+        <div className="text-xs text-muted-foreground mb-1">Economic Health</div>
         <div className="text-sm font-bold text-green-400">
           {Math.min(100, Math.round((countryData.currentGdpPerCapita / 70000) * 100))}%
         </div>
@@ -566,61 +675,119 @@ export default function DashboardRefactored() {
         className="mb-6 overflow-hidden"
       >
         <div className="space-y-6">
-          {/* Country Overview Section */}
+          {/* Location/Government/Leader/Religion Section */}
           <div>
             <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
               <Globe className="h-5 w-5 text-blue-400" />
-              Country Overview
+              Country Profile
             </h4>
             <div className="grid grid-cols-2 gap-3">
+              {/* Location */}
               <div className="glass-hierarchy-child p-3 rounded-lg">
-                <div className="text-xs text-muted-foreground mb-1">Population</div>
-                <div className="text-sm font-bold text-foreground">
-                  {formatPopulation(countryData.currentPopulation)}
+                <div className="flex items-center gap-2 mb-2">
+                  <Globe className="h-4 w-4 text-blue-400" />
+                  <div className="text-xs text-muted-foreground">Location</div>
+                </div>
+                <div className="text-sm font-medium text-foreground">
+                  {countryData.region ? `${countryData.region}, ${countryData.continent || 'Unknown'}` : (countryData.continent || 'Unknown Region')}
                 </div>
               </div>
+              
+              {/* Government Type */}
               <div className="glass-hierarchy-child p-3 rounded-lg">
-                <div className="text-xs text-muted-foreground mb-1">GDP/Capita</div>
-                <div className="text-sm font-bold text-foreground">
-                  {formatCurrency(countryData.currentGdpPerCapita)}
+                <div className="flex items-center gap-2 mb-2">
+                  <Building2 className="h-4 w-4 text-purple-400" />
+                  <div className="text-xs text-muted-foreground">Government</div>
+                </div>
+                <div className="text-sm font-medium text-foreground">
+                  {countryData.governmentType || 'Constitutional Democracy'}
                 </div>
               </div>
+              
+              {/* Leader */}
               <div className="glass-hierarchy-child p-3 rounded-lg">
-                <div className="text-xs text-muted-foreground mb-1">Density</div>
-                <div className="text-sm font-bold text-foreground">
-                  {countryData.populationDensity ? `${Math.round(countryData.populationDensity)}/km²` : 'N/A'}
+                <div className="flex items-center gap-2 mb-2">
+                  <Crown className="h-4 w-4 text-yellow-400" />
+                  <div className="text-xs text-muted-foreground">Leader</div>
+                </div>
+                <div className="text-sm font-medium text-foreground">
+                  {countryData.leader || 'Prime Minister'}
                 </div>
               </div>
+              
+              {/* Religion */}
               <div className="glass-hierarchy-child p-3 rounded-lg">
-                <div className="text-xs text-muted-foreground mb-1">Status</div>
-                <div className="text-sm font-bold text-green-400">
-                  Active
+                <div className="flex items-center gap-2 mb-2">
+                  <Star className="h-4 w-4 text-indigo-400" />
+                  <div className="text-xs text-muted-foreground">Religion</div>
+                </div>
+                <div className="text-sm font-medium text-foreground">
+                  {countryData.religion || 'Secular Pluralism'}
                 </div>
               </div>
             </div>
           </div>
           
-          {/* Economic Summary Section */}
+          {/* Economic Health Indicators Section */}
           <div>
             <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-green-400" />
-              Economic Summary
+              <BarChart3 className="h-5 w-5 text-green-400" />
+              Economic Health Indicators
             </h4>
-            <div className="grid grid-cols-1 gap-3">
+            <div className="space-y-3">
+              {/* Unemployment Rate */}
               <div className="glass-hierarchy-child p-3 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Total GDP</span>
-                  <div className="text-sm font-bold text-green-400">
-                    {formatCurrency(countryData.currentTotalGdp || (countryData.currentPopulation * countryData.currentGdpPerCapita))}
-                  </div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-muted-foreground">Unemployment Rate</span>
+                  <span className="text-xs text-muted-foreground">{(3.5 + (countryData.adjustedGdpGrowth < 0 ? 2 : 0)).toFixed(1)}%</span>
+                </div>
+                <Progress value={((3.5 + (countryData.adjustedGdpGrowth < 0 ? 2 : 0)) / 25) * 100} className="h-2" />
+                <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                  <span>0%</span>
+                  <span className="text-green-600">Optimal: 3-7%</span>
+                  <span>25%</span>
                 </div>
               </div>
+              
+              {/* Labor Force Participation */}
               <div className="glass-hierarchy-child p-3 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Economic Classification</span>
-                  <div className="text-sm font-bold text-blue-400">
-                    {countryData.economicTier} Economy
-                  </div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-muted-foreground">Labor Force Participation</span>
+                  <span className="text-xs text-muted-foreground">{(68.5 + (countryData.currentGdpPerCapita / 100000) * 5).toFixed(1)}%</span>
+                </div>
+                <Progress value={68.5 + (countryData.currentGdpPerCapita / 100000) * 5} className="h-2" />
+                <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                  <span>0%</span>
+                  <span className="text-green-600">Optimal: 60-80%</span>
+                  <span>100%</span>
+                </div>
+              </div>
+              
+              {/* Economic Growth Health */}
+              <div className="glass-hierarchy-child p-3 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-muted-foreground">Economic Growth Health</span>
+                  <span className="text-xs text-muted-foreground">{((countryData.adjustedGdpGrowth || 0) * 100).toFixed(1)}%</span>
+                </div>
+                <Progress value={Math.max(0, Math.min(100, ((countryData.adjustedGdpGrowth || 0) * 100 + 5) * 10))} className="h-2" />
+                <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                  <span>-5%</span>
+                  <span className="text-green-600">Optimal: 2-5%</span>
+                  <span>10%</span>
+                </div>
+              </div>
+              
+              {/* Economic Stability Index */}
+              <div className="glass-hierarchy-child p-3 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-muted-foreground">Economic Stability Index</span>
+                  <span className="text-xs text-muted-foreground">{Math.min(100, Math.round((countryData.currentGdpPerCapita / 70000) * 100))}%</span>
+                </div>
+                <Progress value={Math.min(100, Math.round((countryData.currentGdpPerCapita / 70000) * 100))} className="h-2" />
+                <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                  <span>0%</span>
+                  <span className="text-green-600">Target: 85%+</span>
+                  <span>100%</span>
                 </div>
               </div>
             </div>
@@ -899,118 +1066,64 @@ export default function DashboardRefactored() {
                   )}
                 </div>
 
-                {/* Middle Section - Key Stats - Horizontal when MyCountry expanded */}
-                {adaptedGlobalStats && (
-                  <div className="mb-4 grid grid-cols-2 gap-3">
+                {/* Global Activity Rings */}
+                <div className="mb-4 flex justify-center">
+                  <ExecutiveActivityRings
+                    countryData={{
+                      name: "Global Economy",
+                      currentGdpPerCapita: adaptedGlobalStats?.averageGdpPerCapita || 0,
+                      currentTotalGdp: adaptedGlobalStats?.totalGdp || 0,
+                      currentPopulation: adaptedGlobalStats?.totalPopulation || 0,
+                      populationGrowthRate: 0.01,
+                      adjustedGdpGrowth: adaptedGlobalStats?.globalGrowthRate || 0,
+                      economicTier: "Global",
+                      populationTier: "Global",
+                      populationDensity: adaptedGlobalStats?.averagePopulationDensity || 0
+                    }}
+                    onRingClick={() => {}}
+                    compact={true}
+                    className="mb-4"
+                  />
+                </div>
+                
+                {/* SDI Overview */}
+                <div className="space-y-3">
+                  {/* Active Crises and Intel Items */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="glass-hierarchy-child p-3 rounded text-center">
+                      <div className="text-lg font-bold text-red-400">
+                        {activeCrises?.length || 0}
+                      </div>
+                      <div className="text-xs text-muted-foreground">Active Crises</div>
+                    </div>
                     <div className="glass-hierarchy-child p-3 rounded text-center">
                       <div className="text-lg font-bold text-blue-400">
-                        {formatCurrency(adaptedGlobalStats.totalGdp)}
+                        {intelligenceFeed?.total || 0}
                       </div>
-                      <div className="text-xs text-muted-foreground">World GDP</div>
+                      <div className="text-xs text-muted-foreground">Intel Items</div>
                     </div>
-                    <div className="glass-hierarchy-child p-3 rounded text-center">
-                      <div className="text-lg font-bold text-green-400">
-                        +{(adaptedGlobalStats.globalGrowthRate * 100).toFixed(1)}%
+                  </div>
+
+                  {/* Economic Intelligence */}
+                  {economicIndicators && (
+                    <div className="glass-hierarchy-child p-3 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <TrendingUp className="h-4 w-4 text-green-400" />
+                        <span className="text-sm font-medium text-foreground">Economic Intelligence</span>
                       </div>
-                      <div className="text-xs text-muted-foreground">Growth</div>
+                      <div className="space-y-1 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Global Growth:</span>
+                          <span className="text-green-400">+{(economicIndicators.globalGrowth || 0).toFixed(3)}%</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Inflation Rate:</span>
+                          <span className="text-yellow-400">{(economicIndicators.inflationRate || 0).toFixed(3)}%</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
-                
-                {/* Bottom Section - Power Classification */}
-                {(
-                  <div className="glass-hierarchy-child p-3 rounded-lg">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Crown className="h-4 w-4 text-purple-400" />
-                      <span className="text-sm font-medium text-foreground">Power Classification</span>
-                    </div>
-                  <div className="space-y-2">
-                    <Popover>
-                      <PopoverTrigger>
-                        <div className="flex justify-between items-center w-full p-2 rounded glass-hierarchy-interactive hover:scale-[1.02] transition-transform cursor-pointer">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs">👑</span>
-                            <span className="text-xs text-muted-foreground">Superpowers</span>
-                          </div>
-                          <Badge variant="outline" className="text-xs bg-yellow-100 dark:bg-yellow-500/20 text-foreground border-yellow-400/70 dark:border-yellow-400/50 px-2 py-1 ml-2">
-                            {powerGrouped.superpower?.length || 0}
-                          </Badge>
-                        </div>
-                      </PopoverTrigger>
-                      <PopoverContent side="right" className="w-80 p-4 glass-modal">
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg">👑</span>
-                            <div>
-                              <div className="font-semibold text-foreground">Superpowers</div>
-                              <div className="text-xs text-muted-foreground">{powerGrouped.superpower?.length || 0} countries</div>
-                            </div>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Countries with exceptional economic and military influence. These nations have global reach and significant impact on world affairs.
-                          </div>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-
-                    <Popover>
-                      <PopoverTrigger>
-                        <div className="flex justify-between items-center w-full p-2 rounded glass-hierarchy-interactive hover:scale-[1.02] transition-transform cursor-pointer">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs">⭐</span>
-                            <span className="text-xs text-muted-foreground">Major Powers</span>
-                          </div>
-                          <Badge variant="outline" className="text-xs bg-blue-100 dark:bg-blue-500/20 text-foreground border-blue-400/70 dark:border-blue-400/50 px-2 py-1 ml-2">
-                            {powerGrouped.major?.length || 0}
-                          </Badge>
-                        </div>
-                      </PopoverTrigger>
-                      <PopoverContent side="right" className="w-80 p-4 glass-modal">
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg">⭐</span>
-                            <div>
-                              <div className="font-semibold text-foreground">Major Powers</div>
-                              <div className="text-xs text-muted-foreground">{powerGrouped.major?.length || 0} countries</div>
-                            </div>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Influential countries with significant regional impact. These nations have substantial economies and military capabilities.
-                          </div>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-
-                    <Popover>
-                      <PopoverTrigger>
-                        <div className="flex justify-between items-center w-full p-2 rounded glass-hierarchy-interactive hover:scale-[1.02] transition-transform cursor-pointer">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs">🌍</span>
-                            <span className="text-xs text-muted-foreground">Regional Powers</span>
-                          </div>
-                          <Badge variant="outline" className="text-xs bg-green-100 dark:bg-green-500/20 text-foreground border-green-400/70 dark:border-green-400/50 px-2 py-1 ml-2">
-                            {powerGrouped.regional?.length || 0}
-                          </Badge>
-                        </div>
-                      </PopoverTrigger>
-                      <PopoverContent side="right" className="w-80 p-4 glass-modal">
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg">🌍</span>
-                            <div>
-                              <div className="font-semibold text-foreground">Regional Powers</div>
-                              <div className="text-xs text-muted-foreground">{powerGrouped.regional?.length || 0} countries</div>
-                            </div>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Countries with notable influence within their geographic regions. These nations play important roles in regional politics and economics.
-                          </div>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  </div>
-                )}
+                  )}
+                </div>
                 
                 {/* Expandable Content */}
                 <AnimatePresence>
@@ -1089,6 +1202,7 @@ export default function DashboardRefactored() {
               )}
             </AnimatePresence>
           </div>
+
 
           {/* Section Separator */}
           <div className="relative my-8">
@@ -1454,6 +1568,7 @@ export default function DashboardRefactored() {
             </div>
           </motion.div>
           </div>
+
 
           {/* Section Separator */}
           <div className="relative my-8">
