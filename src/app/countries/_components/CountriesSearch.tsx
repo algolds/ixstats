@@ -134,7 +134,7 @@ export function CountriesSearch({
     sortDirection !== 'asc';
 
   return (
-    <div className="mb-8 p-4 sm:p-6 bg-card text-card-foreground border border-border rounded-lg shadow-sm">
+    <div className="mb-8 p-4 sm:p-6 bg-card text-card-foreground border-border rounded-lg shadow-sm">
       <div className="flex flex-col sm:flex-row gap-3 items-center">
         <div className="relative flex-grow w-full sm:w-auto">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -143,7 +143,7 @@ export function CountriesSearch({
             placeholder="Search by country name..."
             value={searchTerm}
             onChange={(e) => onSearchChangeAction(e.target.value)}
-            className="pl-10 pr-10 w-full bg-background text-foreground border-border hover:border-border/80 hover:bg-accent/20 focus:bg-background focus:border-primary transition-all duration-200 placeholder:text-muted-foreground"
+            className="pl-10 pr-10 w-full bg-background text-foreground border hover:border/80 hover:bg-accent/20 focus:bg-background focus:border-primary transition-all duration-200 placeholder:text-muted-foreground"
           />
           {searchTerm && (
             <Button
@@ -160,7 +160,7 @@ export function CountriesSearch({
 
         <div className="flex gap-2 w-full sm:w-auto justify-between sm:justify-start">
           <DropdownMenu>
-            <DropdownMenuTrigger className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium text-foreground ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+            <DropdownMenuTrigger className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium text-foreground ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border-border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
               {sortDirection === 'asc' ? (
                 <SortAsc className="h-4 w-4" />
               ) : (
@@ -173,7 +173,7 @@ export function CountriesSearch({
                 }
               </span>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="backdrop-blur-md bg-background border border-border">
+            <DropdownMenuContent align="end" className="backdrop-blur-md bg-background border-border">
               <DropdownMenuGroup>
                 <DropdownMenuGroupLabel className="text-muted-foreground">Sort By</DropdownMenuGroupLabel>
                 <DropdownMenuSeparator className="bg-border" />
@@ -229,7 +229,7 @@ export function CountriesSearch({
       </div>
 
       {showAdvanced && (
-        <div className="mt-4 pt-4 border-t border-border animate-fade-in bg-card/50 rounded-md p-4">
+        <div className="mt-4 pt-4 border-t border animate-fade-in bg-card/50 rounded-md p-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <label
@@ -247,7 +247,7 @@ export function CountriesSearch({
                 <SelectTrigger id="tierFilter">
                   <SelectValue placeholder="Select tier" />
                 </SelectTrigger>
-                <SelectContent className="backdrop-blur-md bg-background border border-border">
+                <SelectContent className="backdrop-blur-md bg-background border-border">
                   {tierOptions.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value} className="text-foreground hover:bg-accent hover:text-accent-foreground">
                       {opt.label}
@@ -271,7 +271,7 @@ export function CountriesSearch({
                 <SelectTrigger id="continentFilter">
                   <SelectValue placeholder="Select continent" />
                 </SelectTrigger>
-                <SelectContent className="backdrop-blur-md bg-background border border-border">
+                <SelectContent className="backdrop-blur-md bg-background border-border">
                   <SelectItem value="all" className="text-foreground hover:bg-accent hover:text-accent-foreground">All Continents</SelectItem>
                   {availableContinents.map((c) => (
                     <SelectItem key={c} value={c} className="text-foreground hover:bg-accent hover:text-accent-foreground">
@@ -300,7 +300,7 @@ export function CountriesSearch({
                 <SelectTrigger id="regionFilter">
                   <SelectValue placeholder="Select region" />
                 </SelectTrigger>
-                <SelectContent className="backdrop-blur-md bg-background border border-border">
+                <SelectContent className="backdrop-blur-md bg-background border-border">
                   <SelectItem value="all" className="text-foreground hover:bg-accent hover:text-accent-foreground">All Regions</SelectItem>
                   {availableRegions.map((r) => (
                     <SelectItem key={r} value={r} className="text-foreground hover:bg-accent hover:text-accent-foreground">
@@ -328,7 +328,7 @@ export function CountriesSearch({
                       max: populationRange.max
                     })
                   }
-                  className="flex-1 bg-background text-foreground border-border hover:border-border/80 hover:bg-accent/20 focus:bg-background focus:border-primary transition-all duration-200 placeholder:text-muted-foreground"
+                  className="flex-1 bg-background text-foreground border hover:border/80 hover:bg-accent/20 focus:bg-background focus:border-primary transition-all duration-200 placeholder:text-muted-foreground"
                 />
                 <Input
                   type="number"
@@ -342,7 +342,7 @@ export function CountriesSearch({
                         : undefined
                     })
                   }
-                  className="flex-1 bg-background text-foreground border-border hover:border-border/80 hover:bg-accent/20 focus:bg-background focus:border-primary transition-all duration-200 placeholder:text-muted-foreground"
+                  className="flex-1 bg-background text-foreground border hover:border/80 hover:bg-accent/20 focus:bg-background focus:border-primary transition-all duration-200 placeholder:text-muted-foreground"
                 />
               </div>
             </div>

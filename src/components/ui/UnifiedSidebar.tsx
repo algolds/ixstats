@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { GlassCard } from "./enhanced-card";
-import { cn } from "../../lib/utils";
+import { cn } from "~/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { Globe, Shield, User, LogOut, Settings, Menu, ChevronLeft, ChevronRight, Bell } from "lucide-react";
 import { InterfaceSwitcher } from "../shared/InterfaceSwitcher";

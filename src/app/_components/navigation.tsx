@@ -290,7 +290,7 @@ export function Navigation() {
             {/* Hide/Show Toggle */}
             <button
               onClick={() => setHideSticky(!hideSticky)}
-              className="absolute -right-12 top-1/2 -translate-y-1/2 w-8 h-8 bg-background/90 backdrop-blur-xl border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/90 transition-all"
+              className="absolute -right-12 top-1/2 -translate-y-1/2 w-8 h-8 bg-background/90 backdrop-blur-xl border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/90 transition-all"
             >
               <X className="h-4 w-4" />
             </button>
@@ -303,7 +303,7 @@ export function Navigation() {
         <div className="fixed top-2 right-4 z-[100]">
           <button
             onClick={() => setHideSticky(false)}
-            className="w-10 h-10 bg-background/90 backdrop-blur-xl border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/90 transition-all"
+            className="w-10 h-10 bg-background/90 backdrop-blur-xl border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/90 transition-all"
           >
             <Bell className="h-4 w-4" />
           </button>
@@ -340,10 +340,10 @@ function UserProfileMenu({ user, userProfile, setupStatus, userCountryFlag, flag
             <img
               src={userCountryFlag}
               alt={`Flag of ${userProfile.country.name}`}
-              className="w-8 h-8 rounded-full border border-border object-cover"
+              className="w-8 h-8 rounded-full border-border object-cover"
             />
           ) : (
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium border border-border">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium border-border">
               {user?.firstName?.[0] || (user as any)?.username?.[0] || 'U'}
             </div>
           )}
@@ -362,16 +362,16 @@ function UserProfileMenu({ user, userProfile, setupStatus, userCountryFlag, flag
       <PopoverContent align="end" className="w-64 p-0">
         <div className="py-2">
           {/* User Info */}
-          <div className="px-4 py-3 border-b border-white/10">
+          <div className="px-4 py-3 border-b border-border-white/10">
             <div className="flex items-center gap-3">
               {setupStatus === 'complete' && userProfile?.country && userCountryFlag ? (
                 <img
                   src={userCountryFlag}
                   alt={`Flag of ${userProfile.country.name}`}
-                  className="w-12 h-12 rounded-full border border-border object-cover"
+                  className="w-12 h-12 rounded-full border-border object-cover"
                 />
               ) : (
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-lg border border-border">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-lg border-border">
                   {user?.firstName?.[0] || (user as any)?.username?.[0] || 'U'}
                 </div>
               )}

@@ -207,7 +207,7 @@ export function CountryComparisonModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden bg-background text-foreground backdrop-blur-md border border-border">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden bg-background text-foreground backdrop-blur-md border-border">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-foreground">
             <BarChart3 className="h-5 w-5 text-primary" />
@@ -225,13 +225,13 @@ export function CountryComparisonModal({
                   Add Country ({selectedCountries.length}/8)
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80 bg-background text-foreground backdrop-blur-md border border-border" align="start">
+              <PopoverContent className="w-80 bg-background text-foreground backdrop-blur-md border-border" align="start">
                 <Command className="bg-transparent text-foreground">
                   <CommandInput 
                     placeholder="Search countries..." 
                     value={searchValue}
                     onValueChange={setSearchValue}
-                    className="bg-background text-foreground border-border focus:border-primary"
+                    className="bg-background text-foreground border-border focus:border-border-primary"
                   />
                   <CommandEmpty className="text-muted-foreground">No countries found.</CommandEmpty>
                   <CommandGroup className="max-h-60 overflow-auto">
@@ -249,7 +249,7 @@ export function CountryComparisonModal({
                               {country.economicTier}
                             </Badge>
                             {loadingCountries.has(country.id) && (
-                              <div className="animate-spin h-3 w-3 border border-current border-t-transparent rounded-full" />
+                              <div className="animate-spin h-3 w-3 border-border-current border-t-transparent rounded-full" />
                             )}
                           </div>
                         </div>
@@ -280,7 +280,7 @@ export function CountryComparisonModal({
               {selectedCountries.map((country) => (
                 <div
                   key={country.id}
-                  className="flex items-center gap-2 bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground px-3 py-1 rounded-md transition-colors border border-border"
+                  className="flex items-center gap-2 bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground px-3 py-1 rounded-md transition-colors border-border"
                   style={{ borderLeft: `3px solid ${country.color}` }}
                 >
                   <span className="text-sm font-medium">{country.name}</span>

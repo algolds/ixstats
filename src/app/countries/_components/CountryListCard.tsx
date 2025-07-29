@@ -123,17 +123,17 @@ export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: pr
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <div className="w-8 h-6 relative flex-shrink-0">
               {flagLoading && (
-                <div className="w-8 h-6 bg-muted rounded border border-border animate-pulse" />
+                <div className="w-8 h-6 bg-muted rounded border-border animate-pulse" />
               )}
               {!flagLoading && flagUrl && (
                 <img
                   src={flagUrl}
                   alt={`Flag of ${country.name}`}
-                  className="w-8 h-6 object-cover rounded border border-border"
+                  className="w-8 h-6 object-cover rounded border-border"
                 />
               )}
               {!flagLoading && !flagUrl && (
-                <div className="w-8 h-6 bg-muted rounded border-border flex items-center justify-center">
+                <div className="w-8 h-6 bg-muted rounded border flex items-center justify-center">
                   <FlagIcon className="h-4 w-4 text-muted-foreground" />
                 </div>
               )}

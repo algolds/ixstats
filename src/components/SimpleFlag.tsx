@@ -26,11 +26,11 @@ export function SimpleFlag({
 }: SimpleFlagProps) {
   const { flagUrl, isLoading, error } = useSimpleFlag(countryName);
 
-  const baseClasses = `${sizeClasses[size]} ${className} object-cover rounded border border-border`;
+  const baseClasses = `${sizeClasses[size]} ${className} object-cover rounded border-border`;
 
   if (isLoading) {
     return (
-      <div className={`${sizeClasses[size]} ${className} animate-pulse bg-muted rounded border border-border`} />
+      <div className={`${sizeClasses[size]} ${className} animate-pulse bg-muted rounded border-border`} />
     );
   }
 
@@ -40,7 +40,7 @@ export function SimpleFlag({
     }
     
     return (
-      <div className={`${sizeClasses[size]} ${className} bg-muted rounded border border-border flex items-center justify-center`}>
+      <div className={`${sizeClasses[size]} ${className} bg-muted rounded border-border flex items-center justify-center`}>
         <Flag className="h-3 w-3 text-muted-foreground" />
       </div>
     );

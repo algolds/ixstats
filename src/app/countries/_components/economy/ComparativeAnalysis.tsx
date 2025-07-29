@@ -265,12 +265,12 @@ export function ComparativeAnalysis({
         <div className="flex items-center gap-2">
           <Label className="text-sm">Regions:</Label>
           <DropdownMenu>
-            <DropdownMenuTrigger className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3">
+            <DropdownMenuTrigger className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border-border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3">
               <Filter className="h-4 w-4 mr-2" />
               {selectedRegions.length} Selected
               <ChevronDown className="h-4 w-4 ml-2" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="backdrop-blur-md bg-background/90 border border-border/50">
+            <DropdownMenuContent className="backdrop-blur-md bg-background/90 border-border/50">
               <DropdownMenuGroup>
                 <DropdownMenuGroupLabel>Select Regions</DropdownMenuGroupLabel>
                 <DropdownMenuSeparator />
@@ -461,7 +461,7 @@ export function ComparativeAnalysis({
                             key={country.id}
                             className={`flex items-center justify-between p-2 rounded ${
                               country.id === userCountry.id 
-                                ? 'bg-primary/10 border border-primary/20' 
+                                ? 'bg-primary/10 border-border-primary/20' 
                                 : 'bg-muted/50'
                             }`}
                           >

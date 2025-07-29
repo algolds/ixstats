@@ -28,7 +28,7 @@ export function CollapsibleCard({
 
   return (
     <GlassCard variant={variant} className={`${className}`}>
-      <div className="p-4 border-b border-border/10">
+      <div className="p-4 border-b border/10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {icon}

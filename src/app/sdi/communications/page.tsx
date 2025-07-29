@@ -1,6 +1,6 @@
-import SecureComms from '../../../components/sdi/SecureComms';
-import { InterfaceSwitcher } from '../../../components/shared/InterfaceSwitcher';
-import { Button } from '../../../components/ui/button';
+import SecureComms from "~/components/sdi/SecureComms";
+import { InterfaceSwitcher } from "~/components/shared/InterfaceSwitcher";
+import { Button } from "~/components/ui/button";
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { createUrl } from '~/lib/url-utils';

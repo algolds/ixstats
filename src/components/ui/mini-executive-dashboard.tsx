@@ -226,7 +226,7 @@ export const MiniExecutiveDashboard: React.FC<MiniExecutiveDashboardProps> = ({
           ))}
         </div>
 
-        <div className="border-t border-border/50 my-4" />
+        <div className="border-t border/50 my-4" />
 
         {/* Quick Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
@@ -293,7 +293,7 @@ export const MiniExecutiveDashboard: React.FC<MiniExecutiveDashboardProps> = ({
       </div>
 
       {/* Quick Access Footer */}
-      <div className="flex items-center justify-between pt-4 border-t border-border/50">
+      <div className="flex items-center justify-between pt-4 border-t border/50">
         <div className="text-xs text-muted-foreground">
           Last updated: {new Date().toLocaleString()}
         </div>

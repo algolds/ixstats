@@ -12,16 +12,16 @@ import {
   CardTitle,
   CardContent,
   CardFooter,
-} from "../../../components/ui/card";
-import { Skeleton } from "../../../components/ui/skeleton";
-import { Separator } from "../../../components/ui/separator";
+} from "~/components/ui/card";
+import { Skeleton } from "~/components/ui/skeleton";
+import { Separator } from "~/components/ui/separator";
 import { 
   formatPopulation, 
   formatCurrency, 
   formatPercentage 
 } from "~/lib/chart-utils";
-import { GlassCard } from "../../../components/ui/enhanced-card";
-import { Badge } from "../../../components/ui/badge";
+import { GlassCard } from "~/components/ui/enhanced-card";
+import { Badge } from "~/components/ui/badge";
 import { TierVisualization } from "../../_components/TierVisualization";
 // Import TierVisualization's Country interface to avoid conflicts
 interface TierVisualizationCountry {

@@ -63,7 +63,7 @@ export function getDefaultIxStatsConfig(): IxStatsConfig {
     
     timeSettings: {
       baselineYear: 2028,                // In-game epoch year
-      currentIxTimeMultiplier: 4.0,      // 4x real-time speed
+      currentIxTimeMultiplier: 2.0,      // 2x real-time speed (standard after 7/27/25)
       updateIntervalSeconds: 60,         // Auto-update every minute
     },
     
@@ -289,7 +289,7 @@ export function logConfigSummary(config: EconomicConfig, context = ""): void {
  */
 export const CONFIG_CONSTANTS = {
   // Time multipliers
-  IXTIME_MULTIPLIER: 4.0,
+  IXTIME_MULTIPLIER: 2.0,
   
   // FIXED: Global growth factor (3.21% annually)
   GLOBAL_GROWTH_FACTOR: 1.0321,

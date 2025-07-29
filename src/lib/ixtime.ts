@@ -12,11 +12,9 @@ export class IxTime {
   // This is the "in-game year zero" baseline
   private static readonly IN_GAME_EPOCH = new Date(2028, 0, 1, 0, 0, 0, 0).getTime();
   
-  private static readonly BASE_TIME_MULTIPLIER = 4.0; // 4x faster than real time
-  private static readonly POST_2040_MULTIPLIER = 2.0; // 2x faster after 2040
-  private static readonly SPEED_CHANGE_DATE = new Date('2040-01-01T00:00:00.000Z');
-  private static readonly REFERENCE_REAL_TIME = new Date('2025-07-27T00:00:00.000Z'); // 7/27/25 midnight IRL
-  private static readonly REFERENCE_GAME_TIME = new Date('2040-01-01T00:00:00.000Z'); // Jan 1, 2040 game time
+  private static readonly BASE_TIME_MULTIPLIER = 4.0; // 4x faster than real time (before speed change)
+  private static readonly POST_SPEED_CHANGE_MULTIPLIER = 2.0; // 2x faster after 7/27/25
+  private static readonly SPEED_CHANGE_DATE = new Date('2025-07-27T00:00:00.000Z'); // Speed change on 7/27/25 midnight
   private static readonly BOT_API_URL = typeof window !== 'undefined' 
     ? env.NEXT_PUBLIC_IXTIME_BOT_URL 
     : env.IXTIME_BOT_URL;
@@ -34,7 +32,9 @@ export class IxTime {
   static getDefaultMultiplier(ixTime?: number): number {
     const currentTime = ixTime || this.getCurrentIxTime();
     const gameDate = new Date(currentTime);
-    return gameDate >= this.SPEED_CHANGE_DATE ? this.POST_2040_MULTIPLIER : this.BASE_TIME_MULTIPLIER;
+    // Speed change happened on 7/27/25 real time, so check against current real time
+    const currentRealTime = new Date();
+    return currentRealTime >= this.SPEED_CHANGE_DATE ? this.POST_SPEED_CHANGE_MULTIPLIER : this.BASE_TIME_MULTIPLIER;
   }
 
   /**
@@ -90,17 +90,20 @@ export class IxTime {
       return this.REAL_WORLD_EPOCH + (ixSecondsElapsed * 1000);
     }
     
-    // Use dynamic calculation based on reference point and speed changes
-    if (now <= this.REFERENCE_REAL_TIME.getTime()) {
+    // Use dynamic calculation based on speed change point
+    if (now <= this.SPEED_CHANGE_DATE.getTime()) {
       // Before speed change: use 4x multiplier from epoch
       const realSecondsElapsed = (now - this.REAL_WORLD_EPOCH) / 1000;
       const ixSecondsElapsed = realSecondsElapsed * this.BASE_TIME_MULTIPLIER;
       return this.REAL_WORLD_EPOCH + (ixSecondsElapsed * 1000);
     } else {
-      // After speed change: calculate from reference point with 2x multiplier
-      const realSecondsSinceSpeedChange = (now - this.REFERENCE_REAL_TIME.getTime()) / 1000;
-      const gameTimeSinceSpeedChange = realSecondsSinceSpeedChange * this.POST_2040_MULTIPLIER * 1000;
-      return this.REFERENCE_GAME_TIME.getTime() + gameTimeSinceSpeedChange;
+      // After speed change: calculate from speed change point with 2x multiplier
+      const realSecondsToSpeedChange = (this.SPEED_CHANGE_DATE.getTime() - this.REAL_WORLD_EPOCH) / 1000;
+      const gameTimeAtSpeedChange = this.REAL_WORLD_EPOCH + (realSecondsToSpeedChange * this.BASE_TIME_MULTIPLIER * 1000);
+      
+      const realSecondsSinceSpeedChange = (now - this.SPEED_CHANGE_DATE.getTime()) / 1000;
+      const gameTimeSinceSpeedChange = realSecondsSinceSpeedChange * this.POST_SPEED_CHANGE_MULTIPLIER * 1000;
+      return gameTimeAtSpeedChange + gameTimeSinceSpeedChange;
     }
   }
 

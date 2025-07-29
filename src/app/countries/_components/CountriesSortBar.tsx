@@ -35,13 +35,13 @@ export default function CountriesSortBar({
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
       <div className="flex items-center gap-2 flex-wrap">
         <DropdownMenu>
-          <DropdownMenuTrigger className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+          <DropdownMenuTrigger className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border-border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
             {sortDirection === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
             <span className="ml-2">
               {sortOptions.find(o => o.value === sortField)?.label || 'Sort'}
             </span>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="backdrop-blur-md bg-background/90 border border-border/50">
+          <DropdownMenuContent align="start" className="backdrop-blur-md bg-background/90 border-border/50">
             <DropdownMenuGroup>
               <DropdownMenuGroupLabel>Sort By</DropdownMenuGroupLabel>
               <DropdownMenuSeparator />
