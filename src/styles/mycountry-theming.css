@@ -1,6 +1,9 @@
 /* === MYCOUNTRY TAB THEMING SYSTEM === */
 /* Unified color scheme and styling for MyCountry executive dashboard */
 
+/* === ENHANCED GLASS HIERARCHY SYSTEM === */
+/* Immersive executive dashboard glass effects */
+
 :root {
   /* Base MyCountry Gold Theme */
   --mycountry-gold: #FCD34D;
@@ -756,4 +759,340 @@
   100% {
     background-position: 200% center;
   }
+}
+
+/* === UNIFIED LAYOUT THEME EXTENSIONS === */
+
+/* Glass hierarchy system matching dashboard patterns */
+.glass-mycountry {
+  --primary-color: var(--tab-executive-primary);
+  --secondary-color: var(--tab-executive-secondary);
+  --accent-color: var(--tab-executive-accent);
+  --bg-color: var(--tab-executive-bg);
+  --glow-color: var(--tab-executive-glow);
+}
+
+.glass-eci {
+  --primary-color: var(--tab-government-primary);
+  --secondary-color: var(--tab-government-secondary);
+  --accent-color: var(--tab-government-accent);
+  --bg-color: var(--tab-government-bg);
+  --glow-color: var(--tab-government-glow);
+}
+
+.glass-sdi {
+  --primary-color: var(--tab-intelligence-primary);
+  --secondary-color: var(--tab-intelligence-secondary);
+  --accent-color: var(--tab-intelligence-accent);
+  --bg-color: var(--tab-intelligence-bg);
+  --glow-color: var(--tab-intelligence-glow);
+}
+
+.glass-global {
+  --primary-color: var(--tab-modeling-primary);
+  --secondary-color: var(--tab-modeling-secondary);
+  --accent-color: var(--tab-modeling-accent);
+  --bg-color: var(--tab-modeling-bg);
+  --glow-color: var(--tab-modeling-glow);
+}
+
+/* Unified collapsible section styling */
+.unified-section {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.03) 50%,
+    rgba(255, 255, 255, 0.08) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px) saturate(150%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.unified-section:hover {
+  background: linear-gradient(135deg, 
+    var(--bg-color) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    var(--bg-color) 100%
+  );
+  border-color: var(--accent-color);
+  box-shadow: 
+    0 8px 32px var(--glow-color),
+    0 2px 8px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Section header styling */
+.section-header {
+  transition: all 0.2s ease;
+}
+
+.section-header:hover {
+  background: rgba(var(--primary-color), 0.05);
+}
+
+/* Icon theming for sections */
+.section-icon {
+  color: var(--primary-color);
+  background: var(--bg-color);
+  border: 1px solid var(--accent-color);
+  transition: all 0.3s ease;
+}
+
+.section-icon:hover {
+  color: var(--accent-color);
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 16px var(--glow-color);
+}
+
+/* Unified grid system matching dashboard */
+.unified-grid-main {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .unified-grid-main {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+/* Metric styling consistency */
+.unified-metric {
+  color: var(--primary-color);
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.unified-metric-small {
+  color: var(--secondary-color);
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+/* Badge theming */
+.unified-badge {
+  background: var(--bg-color);
+  color: var(--primary-color);
+  border: 1px solid var(--accent-color);
+}
+
+/* Interactive elements */
+.unified-interactive {
+  background: var(--bg-color);
+  border: 1px solid var(--accent-color);
+  color: var(--primary-color);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.unified-interactive:hover {
+  background: var(--primary-color);
+  color: white;
+  box-shadow: 0 4px 16px var(--glow-color);
+  transform: translateY(-1px);
+}
+
+/* Command palette integration */
+.command-button {
+  background: var(--bg-color);
+  border: 1px solid var(--accent-color);
+  color: var(--primary-color);
+  backdrop-filter: blur(8px) saturate(120%);
+}
+
+.command-button:hover {
+  background: var(--glow-color);
+  border-color: var(--primary-color);
+  color: var(--accent-color);
+  box-shadow: 0 4px 16px var(--glow-color);
+}
+
+/* Mode toggle styling */
+.mode-toggle {
+  background: var(--bg-color);
+  border: 1px solid var(--accent-color);
+  color: var(--primary-color);
+  backdrop-filter: blur(8px) saturate(120%);
+  transition: all 0.3s ease;
+}
+
+.mode-toggle:hover {
+  background: var(--primary-color);
+  color: white;
+  box-shadow: 0 4px 16px var(--glow-color);
+}
+
+/* === IMMERSIVE EXECUTIVE DASHBOARD ENHANCEMENTS === */
+/* Enhanced glass effects and cinematic styling for executive mode */
+
+.executive-immersive {
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(180, 83, 9, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 40% 80%, rgba(252, 211, 77, 0.05) 0%, transparent 50%);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.executive-immersive::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    linear-gradient(135deg, 
+      rgba(180, 83, 9, 0.03) 0%, 
+      transparent 30%, 
+      rgba(124, 58, 237, 0.02) 70%, 
+      rgba(252, 211, 77, 0.03) 100%
+    );
+  pointer-events: none;
+  z-index: -1;
+}
+
+.glass-eci {
+  background: rgba(180, 83, 9, 0.08);
+  border: 1px solid rgba(180, 83, 9, 0.2);
+  backdrop-filter: blur(12px) saturate(120%);
+  box-shadow: 
+    0 8px 32px rgba(180, 83, 9, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.glass-eci:hover {
+  background: rgba(180, 83, 9, 0.12);
+  border-color: rgba(180, 83, 9, 0.3);
+  box-shadow: 
+    0 12px 48px rgba(180, 83, 9, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.glass-sdi {
+  background: rgba(8, 145, 178, 0.08);
+  border: 1px solid rgba(8, 145, 178, 0.2);
+  backdrop-filter: blur(12px) saturate(120%);
+  box-shadow: 
+    0 8px 32px rgba(8, 145, 178, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.glass-sdi:hover {
+  background: rgba(8, 145, 178, 0.12);
+  border-color: rgba(8, 145, 178, 0.3);
+  box-shadow: 
+    0 12px 48px rgba(8, 145, 178, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.glass-global {
+  background: rgba(71, 85, 105, 0.08);
+  border: 1px solid rgba(71, 85, 105, 0.2);
+  backdrop-filter: blur(12px) saturate(120%);
+  box-shadow: 
+    0 8px 32px rgba(71, 85, 105, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.glass-global:hover {
+  background: rgba(71, 85, 105, 0.12);
+  border-color: rgba(71, 85, 105, 0.3);
+  box-shadow: 
+    0 12px 48px rgba(71, 85, 105, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.glass-mycountry {
+  background: rgba(252, 211, 77, 0.08);
+  border: 1px solid rgba(252, 211, 77, 0.2);
+  backdrop-filter: blur(12px) saturate(120%);
+  box-shadow: 
+    0 8px 32px rgba(252, 211, 77, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.glass-mycountry:hover {
+  background: rgba(252, 211, 77, 0.12);
+  border-color: rgba(252, 211, 77, 0.3);
+  box-shadow: 
+    0 12px 48px rgba(252, 211, 77, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+/* Cinematic transitions for executive mode */
+.executive-enter {
+  animation: executive-enter 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes executive-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+    filter: blur(8px);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.98) translateY(10px);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* Enhanced command interface styling */
+.command-interface {
+  background: 
+    linear-gradient(135deg, 
+      rgba(180, 83, 9, 0.1) 0%, 
+      rgba(124, 58, 237, 0.05) 50%, 
+      rgba(252, 211, 77, 0.08) 100%
+    );
+  border: 1px solid rgba(180, 83, 9, 0.2);
+  backdrop-filter: blur(16px) saturate(140%);
+  box-shadow: 
+    0 16px 64px rgba(180, 83, 9, 0.15),
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.command-interface::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    linear-gradient(
+      45deg,
+      transparent 30%,
+      rgba(180, 83, 9, 0.05) 40%,
+      rgba(124, 58, 237, 0.03) 50%,
+      rgba(252, 211, 77, 0.05) 60%,
+      transparent 70%
+    );
+  background-size: 300% 300%;
+  animation: prismatic-flow 15s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes prismatic-flow {
+  0% { background-position: 0% 0%; }
+  25% { background-position: 100% 100%; }
+  50% { background-position: 0% 100%; }
+  75% { background-position: 100% 0%; }
+  100% { background-position: 0% 0%; }
 }

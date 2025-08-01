@@ -16,6 +16,7 @@ import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { useToast } from "~/components/ui/toast";
+import { useUnifiedNotifications } from "~/hooks/useUnifiedNotifications";
 import { createUrl } from "~/lib/url-utils";
 import { 
   Clock, 
@@ -46,7 +47,8 @@ import {
   Crown,
   BarChart3,
   Activity,
-  User
+  User,
+  TrendingUp
 } from "lucide-react";
 import {
   Tooltip,
@@ -59,6 +61,7 @@ import { useUser } from "~/context/auth-context";
 import { useTheme } from "~/context/theme-context";
 import { SimpleFlag } from "~/components/SimpleFlag";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
+import { useExecutiveNotifications } from "~/contexts/ExecutiveNotificationContext";
 
 interface CommandPaletteProps {
   className?: string;
@@ -102,6 +105,16 @@ function CommandPaletteContent({
   const [isUserInteracting, setIsUserInteracting] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { toast } = useToast();
+  
+  // Unified notification system
+  const {
+    notifications: unifiedNotifications,
+    unreadCount: unifiedUnreadCount,
+    currentIslandNotification,
+    dismissIslandNotification,
+    markAsRead: markUnifiedAsRead,
+    currentContext,
+  } = useUnifiedNotifications();
   
   // Current time state
   const [currentTime, setCurrentTime] = useState<{
@@ -458,7 +471,24 @@ function CommandPaletteContent({
     }
   }, [isSticky, isUserInteracting]);
 
+  // Get executive notifications context
+  const { 
+    notifications: executiveNotifications, 
+    unreadCount: executiveUnreadCount, 
+    isExecutiveMode,
+    markAsRead: markExecutiveAsRead,
+    markAllAsRead: markAllExecutiveAsRead
+  } = useExecutiveNotifications();
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('[CommandPalette] Executive mode:', isExecutiveMode);
+    console.log('[CommandPalette] Executive notifications:', executiveNotifications);
+    console.log('[CommandPalette] Executive unread count:', executiveUnreadCount);
+  }, [isExecutiveMode, executiveNotifications, executiveUnreadCount]);
+
   const unreadNotifications = notificationsData?.unreadCount || 0;
+  const totalUnreadCount = unreadNotifications + (isExecutiveMode ? executiveUnreadCount : 0);
 
   // Get current cycling view (for potential future use)
   // const getCurrentCyclingMode = () => {
@@ -638,11 +668,11 @@ function CommandPaletteContent({
             >
               <Bell className="h-3 w-3" />
               {(!isSticky || !isCollapsed) && <span className="text-xs">Alerts</span>}
-              {unreadNotifications > 0 && (
+              {totalUnreadCount > 0 && (
                 <Badge className={`absolute bg-destructive text-foreground flex items-center justify-center rounded-full text-[10px] ${
                   isSticky && isCollapsed ? '-top-1 -right-1 h-3 w-3 p-0' : '-top-1 -right-1 h-3 w-3 p-0'
                 }`}>
-                  {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                  {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
                 </Badge>
               )}
             </Button>
@@ -887,19 +917,26 @@ function CommandPaletteContent({
             <div className="flex items-center justify-between mb-6">
               <div className="text-xl font-bold text-foreground flex items-center gap-3">
                 <BellRing className="h-6 w-6 text-blue-400" />
-                Notification Center
-                {unreadNotifications > 0 && (
+                {isExecutiveMode ? 'Intelligence Center' : 'Notification Center'}
+                {totalUnreadCount > 0 && (
                   <Badge className="bg-destructive text-foreground text-sm px-2 py-1 rounded-full">
-                    {unreadNotifications}
+                    {totalUnreadCount}
                   </Badge>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                {unreadNotifications > 0 && (
+                {totalUnreadCount > 0 && (
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => user?.id && markAllAsReadMutation.mutate({ userId: user.id })}
+                    onClick={() => {
+                      if (user?.id && unreadNotifications > 0) {
+                        markAllAsReadMutation.mutate({ userId: user.id });
+                      }
+                      if (isExecutiveMode && executiveUnreadCount > 0) {
+                        markAllExecutiveAsRead();
+                      }
+                    }}
                     disabled={markAllAsReadMutation.isPending}
                     className="text-muted-foreground hover:text-foreground hover:bg-accent/10 px-3 py-2"
                   >
@@ -919,50 +956,89 @@ function CommandPaletteContent({
             </div>
 
             <ScrollArea className="max-h-72">
-              {notificationsData?.notifications && notificationsData.notifications.length > 0 ? (
+              {/* Combine standard notifications and executive notifications */}
+              {(() => {
+                const standardNotifications = notificationsData?.notifications || [];
+                const validExecutiveNotifications = (executiveNotifications || []).filter(n => n && n.id);
+                
+                // Deduplicate notifications by ID to prevent React key conflicts
+                const allNotifications = isExecutiveMode 
+                  ? [...validExecutiveNotifications, ...standardNotifications].reduce((acc, notification, index) => {
+                      const existingIndex = acc.findIndex(n => n.id === notification.id);
+                      if (existingIndex === -1) {
+                        acc.push(notification);
+                      }
+                      return acc;
+                    }, [] as any[])
+                  : standardNotifications;
+                
+                return allNotifications.length > 0 ? (
                 <div className="space-y-3">
-                  {notificationsData.notifications.map((notification) => {
-                    const IconComponent = 
-                      notification.type === "info" ? Info :
-                      notification.type === "warning" ? AlertTriangle :
-                      notification.type === "success" ? CheckCircle : 
-                      notification.type === "error" ? AlertCircle :
-                      Bell;
+                  {allNotifications.map((notification, index) => {
+                    // Handle both executive notifications and standard notifications
+                    const isExecutiveNotification = 'severity' in notification && 'category' in notification;
+                    
+                    const IconComponent = isExecutiveNotification
+                      ? ((notification as any).category === 'economic' ? TrendingUp :
+                         (notification as any).category === 'diplomatic' ? Globe :
+                         (notification as any).category === 'social' ? Users :
+                         (notification as any).category === 'security' ? AlertTriangle :
+                         (notification as any).category === 'governance' ? Building2 :
+                         Bell)
+                      : ((notification as any).type === "info" ? Info :
+                         (notification as any).type === "warning" ? AlertTriangle :
+                         (notification as any).type === "success" ? CheckCircle : 
+                         (notification as any).type === "error" ? AlertCircle :
+                         Bell);
 
                     return (
                       <div
-                        key={notification.id}
+                        key={notification.id ? `${isExecutiveNotification ? 'exec' : 'std'}-${notification.id}` : `${isExecutiveNotification ? 'exec' : 'std'}-fallback-${index}`}
                         className={`p-4 rounded-xl border cursor-pointer transition-all hover:bg-accent/50 ${
                           notification.read 
                             ? 'bg-muted/30 border' 
                             : 'bg-muted/50 border shadow-lg'
                         }`}
                         onClick={() => {
-                          if (!notification.read && user?.id) {
-                            markAsReadMutation.mutate({ 
-                              notificationId: notification.id,
-                              userId: user.id
-                            });
+                          if (!notification.read) {
+                            if (isExecutiveNotification) {
+                              markExecutiveAsRead(notification.id);
+                            } else if (user?.id) {
+                              markAsReadMutation.mutate({ 
+                                notificationId: notification.id,
+                                userId: user.id
+                              });
+                            }
                           }
-                          if (notification.href) {
+                          if ('href' in notification && notification.href) {
                             window.location.href = notification.href;
                           }
                         }}
                       >
                         <div className="flex items-start gap-4">
                           <div className={`p-2 rounded-lg flex-shrink-0 ${
-                            notification.type === "info" ? "bg-blue-500/20" :
-                            notification.type === "warning" ? "bg-yellow-500/20" :
-                            notification.type === "success" ? "bg-green-500/20" :
-                            notification.type === "error" ? "bg-destructive/20" :
-                            "bg-muted/50"
+                            isExecutiveNotification
+                              ? ((notification as any).severity === 'critical' ? 'bg-red-500/20' :
+                                 (notification as any).severity === 'high' ? 'bg-orange-500/20' :
+                                 (notification as any).severity === 'medium' ? 'bg-yellow-500/20' :
+                                 'bg-blue-500/20')
+                              : ((notification as any).type === "info" ? "bg-blue-500/20" :
+                                 (notification as any).type === "warning" ? "bg-yellow-500/20" :
+                                 (notification as any).type === "success" ? "bg-green-500/20" :
+                                 (notification as any).type === "error" ? "bg-destructive/20" :
+                                 "bg-muted/50")
                           }`}>
                             <IconComponent className={`h-5 w-5 ${
-                              notification.type === "info" ? "text-blue-600 dark:text-blue-400" :
-                              notification.type === "warning" ? "text-yellow-600 dark:text-yellow-400" :
-                              notification.type === "success" ? "text-green-600 dark:text-green-400" :
-                              notification.type === "error" ? "text-red-600 dark:text-red-400" :
-                              "text-muted-foreground"
+                              isExecutiveNotification
+                                ? ((notification as any).severity === 'critical' ? 'text-red-600 dark:text-red-400' :
+                                   (notification as any).severity === 'high' ? 'text-orange-600 dark:text-orange-400' :
+                                   (notification as any).severity === 'medium' ? 'text-yellow-600 dark:text-yellow-400' :
+                                   'text-blue-600 dark:text-blue-400')
+                                : ((notification as any).type === "info" ? "text-blue-600 dark:text-blue-400" :
+                                   (notification as any).type === "warning" ? "text-yellow-600 dark:text-yellow-400" :
+                                   (notification as any).type === "success" ? "text-green-600 dark:text-green-400" :
+                                   (notification as any).type === "error" ? "text-red-600 dark:text-red-400" :
+                                   "text-muted-foreground")
                             }`} />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -981,14 +1057,31 @@ function CommandPaletteContent({
                             )}
                             <div className="flex items-center justify-between mt-3">
                               <div className="text-xs text-muted-foreground/70">
-                                {new Date(notification.createdAt).toLocaleString()}
+                                {isExecutiveNotification 
+                                  ? `${new Date((notification as any).timestamp).toLocaleString()} • ${(notification as any).source}`
+                                  : new Date((notification as any).createdAt).toLocaleString()}
                               </div>
-                              {notification.href && (
-                                <div className="text-xs text-primary flex items-center gap-1">
-                                  <span>View details</span>
-                                  <ChevronDown className="h-3 w-3 rotate-[-90deg]" />
-                                </div>
-                              )}
+                              <div className="flex items-center gap-2">
+                                {isExecutiveNotification && (
+                                  <Badge 
+                                    variant="secondary" 
+                                    className={`text-xs px-2 py-0 ${
+                                      (notification as any).severity === 'critical' ? 'bg-red-500/10 text-red-600 dark:text-red-400' :
+                                      (notification as any).severity === 'high' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' :
+                                      (notification as any).severity === 'medium' ? 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400' :
+                                      'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                                    }`}
+                                  >
+                                    {(notification as any).severity}
+                                  </Badge>
+                                )}
+                                {notification.href && (
+                                  <div className="text-xs text-primary flex items-center gap-1">
+                                    <span>View details</span>
+                                    <ChevronDown className="h-3 w-3 rotate-[-90deg]" />
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1000,18 +1093,23 @@ function CommandPaletteContent({
                 <div className="text-center py-8">
                   <div className="p-6 bg-gradient-to-b from-white/5 to-white/10 rounded-2xl max-w-sm mx-auto">
                     <Bell className="h-16 w-16 mx-auto mb-4 text-white/30" />
-                    <div className="text-muted-foreground text-lg mb-2">All caught up!</div>
+                    <div className="text-muted-foreground text-lg mb-2">
+                      {isExecutiveMode ? 'Intelligence Center Clear' : 'All caught up!'}
+                    </div>
                     <div className="text-muted-foreground text-sm">
-                      No notifications at this time. We'll notify you of important updates, 
-                      economic changes, and system alerts.
+                      {isExecutiveMode 
+                        ? 'No intelligence reports available. The situation is stable.'
+                        : 'No notifications at this time. We\'ll notify you of important updates, economic changes, and system alerts.'
+                      }
                     </div>
                     <div className="mt-4 flex items-center justify-center gap-2 text-white/30 text-xs">
                       <CheckCircle className="h-4 w-4" />
-                      <span>Stay tuned for updates</span>
+                      <span>{isExecutiveMode ? 'Situation stable' : 'Stay tuned for updates'}</span>
                     </div>
                   </div>
                 </div>
-              )}
+              );
+              })()}
             </ScrollArea>
           </div>
         );

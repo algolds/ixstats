@@ -93,16 +93,23 @@ export class IxTime {
       return this.timeOverride + ixTimeElapsed;
     }
     
-    // Calculate time with current multiplier from epoch
+    // CORRECTED CALCULATION: July 27, 2025 00:00:00 UTC = January 1, 2040 IxTime
+    const PIVOT_POINT_REAL = new Date('2025-07-27T00:00:00.000Z').getTime();
+    const PIVOT_POINT_IXTIME = new Date('2040-01-01T00:00:00.000Z').getTime();
     const now = Date.now();
-    const realSecondsElapsed = (now - this.REAL_WORLD_EPOCH) / 1000;
     
-    // Use multiplier override if set, otherwise use natural progression
-    const currentMultiplier = this.multiplierOverride !== null ? this.multiplierOverride : this.getDefaultMultiplier();
-    
-    // Simple calculation: time flows at the current multiplier rate from epoch
-    const ixSecondsElapsed = realSecondsElapsed * currentMultiplier;
-    return this.REAL_WORLD_EPOCH + (ixSecondsElapsed * 1000);
+    if (now >= PIVOT_POINT_REAL) {
+      // After July 27, 2025: Use 2x multiplier from the pivot point
+      const realTimeElapsed = (now - PIVOT_POINT_REAL) / 1000;
+      const currentMultiplier = this.multiplierOverride !== null ? this.multiplierOverride : this.POST_SPEED_CHANGE_MULTIPLIER;
+      const ixTimeElapsed = realTimeElapsed * currentMultiplier * 1000;
+      return PIVOT_POINT_IXTIME + ixTimeElapsed;
+    } else {
+      // Before July 27, 2025: Use 4x multiplier to reach the pivot point 
+      const realTimeElapsed = (now - this.REAL_WORLD_EPOCH) / 1000;
+      const ixTimeElapsed = realTimeElapsed * this.BASE_TIME_MULTIPLIER * 1000;
+      return this.REAL_WORLD_EPOCH + ixTimeElapsed;
+    }
   }
 
   private static getCurrentIxTimeInternal(): number {

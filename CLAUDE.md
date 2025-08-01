@@ -9,3 +9,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Styling Guidelines
 - Ensure all tailwind styling and code is for tailwind v4
+
+## Workflow & Codebase
+- Assume the simpliest and most straightforward path within overall compliance, especially with complex tasks. 
+
+- ensure typesafety and consistent variables

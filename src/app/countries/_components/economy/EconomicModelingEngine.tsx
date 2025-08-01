@@ -892,7 +892,7 @@ export function EconomicModelingEngine({
               </CardHeader>
               <CardContent className="space-y-4">
                 {policyEffects.map((policy, index) => (
-                  <Card key={policy.id || index} className="p-4">
+                  <Card key={policy.id ? `policy-${policy.id}` : `policy-fallback-${index}`} className="p-4">
                     <div className="flex items-center justify-between mb-4">
                       <Input
                         value={policy.name}
