@@ -197,6 +197,53 @@
   animation: flag-drift-right 15s linear infinite;
 }
 
+/* 3D Flip Animation for HolographicNationCard */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Holographic Card Flip Animation */
+@keyframes card-flip {
+  0% {
+    transform: rotateY(0deg);
+  }
+  100% {
+    transform: rotateY(180deg);
+  }
+}
+
+.flip-card {
+  animation: card-flip 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced holographic shimmer */
+@keyframes holographic-shimmer {
+  0% {
+    background-position: -200% -200%;
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    background-position: 200% 200%;
+    opacity: 0.3;
+  }
+}
+
+.holographic-shimmer {
+  animation: holographic-shimmer 2s linear infinite;
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   .marquee-content,
@@ -204,11 +251,17 @@
   .infinite-scroll,
   .animated-flag,
   .flag-drift-left,
-  .flag-drift-right {
+  .flag-drift-right,
+  .flip-card,
+  .holographic-shimmer {
     animation: none;
   }
   
   .interface-transition {
     transition: none;
+  }
+  
+  .preserve-3d {
+    transform-style: flat;
   }
 }

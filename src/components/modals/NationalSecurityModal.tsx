@@ -292,7 +292,7 @@ export function NationalSecurityModal({
                       {securityDashboard?.recentThreats && securityDashboard.recentThreats.length > 0 ? (
                         <div className="space-y-3">
                           {securityDashboard.recentThreats.map((threat: any) => (
-                            <div key={threat.id || Math.random()} className="p-3 border rounded-lg">
+                            <div key={threat.id ? `threat-${threat.id}` : `threat-fallback-${Math.random()}`} className="p-3 border rounded-lg">
                               <div className="flex justify-between items-start mb-2">
                                 <div className="flex items-center gap-2">
                                   {getThreatIcon(threat.category)}

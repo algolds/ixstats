@@ -15,6 +15,8 @@ import { SetupRedirect } from "~/app/_components/SetupRedirect";
 import { WebGLErrorHandler } from "~/components/webgl-error-handler";
 import { ToastProvider } from "~/components/ui/toast";
 import { IxTimeProvider } from "~/contexts/IxTimeContext";
+import { ExecutiveNotificationProvider } from "~/contexts/ExecutiveNotificationContext";
+import { UnifiedNotificationProvider } from "~/hooks/useUnifiedNotifications";
 
 export const dynamic = 'force-dynamic';
 
@@ -45,7 +47,9 @@ const RootLayout = ({
       <ThemeProvider>
         <AuthProvider>
           <IxTimeProvider>
-            <ToastProvider>
+            <ExecutiveNotificationProvider>
+              <UnifiedNotificationProvider>
+                <ToastProvider>
               <WebGLErrorHandler />
               <div className="min-h-screen flex flex-col">
                 <Navigation />
@@ -56,6 +60,8 @@ const RootLayout = ({
                 </main>
               </div>
             </ToastProvider>
+              </UnifiedNotificationProvider>
+            </ExecutiveNotificationProvider>
           </IxTimeProvider>
         </AuthProvider>
       </ThemeProvider>

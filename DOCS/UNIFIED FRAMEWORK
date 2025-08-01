@@ -3,7 +3,7 @@
 
 ## 🌟 Executive Summary
 
-**IxStats** is a comprehensive, automated statistics system for the Ixnay worldbuilding community, built on the foundation of **atomic components**, **temporal automation**, and **emergent complexity**. The system transforms static player roster data into a living, breathing economic simulation that evolves in real-time using the 4x accelerated **IxTime** system.
+**IxStats** is a comprehensive, automated statistics system for the Ixnay worldbuilding community, built on the foundation of **atomic components**, **temporal automation**, and **emergent complexity**. The system transforms static player roster data into a living, breathing economic simulation that evolves in real-time using the accelerated **IxTime** system.
 
 ### Core Philosophy
 > *"Complex systems emerge from simple rules - our job is to design the atoms, not the molecules."*
@@ -25,7 +25,7 @@ const timeElapsed = IxTime.getYearsElapsed(lastCalculation, currentGameTime);
 **Key Temporal Anchors:**
 - **Real-World Epoch**: October 4, 2020 (when IxTime started)
 - **In-Game Epoch**: January 1, 2028 (roster baseline date)
-- **Current IxTime**: Automatically calculated 4x real-time progression
+- **Current IxTime**: Automatically calculated real-time progression
 - **Game Year**: 2028 + years elapsed since epoch
 
 ### 2. **Data Flow Architecture**

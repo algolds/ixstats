@@ -91,7 +91,7 @@ export function SdiEconomicAdmin() {
       {errorIndicators && <div className="text-red-400 py-4">Error: {errorIndicators.message}</div>}
       <Accordion type="single" collapsible className="mb-4">
         {indicatorsArr.map((indicator: any) => (
-          <AccordionItem key={indicator.id || indicator.name} value={indicator.id || indicator.name}>
+          <AccordionItem key={indicator.id || indicator.name || `indicator-${Math.random()}`} value={indicator.id || indicator.name || `indicator-${Math.random()}`}>
             <AccordionTrigger>
               <div className="flex items-center gap-2">
                 <Badge variant="secondary">{indicator.globalGDP}</Badge>
