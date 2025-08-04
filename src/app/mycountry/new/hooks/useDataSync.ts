@@ -5,6 +5,21 @@ import { api } from "~/trpc/react";
 import { IxTime } from '~/lib/ixtime';
 import { useGlobalNotifications, DataNotificationGenerators } from '../components/GlobalNotificationSystem';
 
+/**
+ * Custom hook for unified data synchronization with real-time notifications
+ * 
+ * This hook provides:
+ * - Real-time country data synchronization
+ * - Intelligent change detection with configurable thresholds
+ * - Unified notification system integration
+ * - Error handling with exponential backoff
+ * - Performance optimization to prevent infinite loops
+ * 
+ * @param countryId - The country ID to sync data for
+ * @param options - Configuration options for sync behavior
+ * @returns Data sync state and control functions
+ */
+
 export interface DataSyncState {
   isConnected: boolean;
   lastUpdate: number;
@@ -28,8 +43,8 @@ export function useDataSync(countryId: string, options: DataSyncOptions = {}) {
   const {
     enabled = true,
     pollInterval = 60000, // 1 minute default
-    retryAttempts = 3,
-    retryDelay = 5000,
+    // retryAttempts = 3, // Disabled for simplified error handling
+    // retryDelay = 5000,   // TRPC handles retries automatically
     notificationsEnabled = true,
     onDataChange,
     onError,
@@ -37,6 +52,20 @@ export function useDataSync(countryId: string, options: DataSyncOptions = {}) {
   } = options;
 
   const { addNotification } = useGlobalNotifications();
+  
+  // Data notification helpers for creating standardized notifications
+  const useDataNotifications = () => ({
+    createEconomicAlert: async (data: { metric: string; value: number; change: number; threshold?: number }) => {
+      const notification = DataNotificationGenerators.economicAlert(data);
+      return addNotification(notification);
+    },
+    createAchievementNotification: async (data: { title: string; description: string; rarity: string }) => {
+      const notification = DataNotificationGenerators.achievementUnlocked(data);
+      return addNotification(notification);
+    },
+  });
+  
+  // const { createEconomicAlert, createAchievementNotification } = useDataNotifications(); // Available if needed
   
   // State management
   const [syncState, setSyncState] = useState<DataSyncState>({
@@ -51,20 +80,20 @@ export function useDataSync(countryId: string, options: DataSyncOptions = {}) {
   const previousDataRef = useRef<any>(null);
   const retryCountRef = useRef(0);
   const pollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastIxTimeRef = useRef<number>(0);
+  // const lastIxTimeRef = useRef<number>(0); // Not currently used, available for future temporal tracking
   const processDataUpdateRef = useRef<(data: any) => void>();
 
   // Stable timestamp to prevent infinite re-renders
   const [stableTimestamp] = useState(() => IxTime.getCurrentIxTime());
 
-  // TRPC queries and mutations
+  // TRPC queries and mutations - using MyCountry API for enhanced data
   const { 
     data: countryData, 
     refetch: refetchCountry,
     isLoading,
     error: queryError 
-  } = api.countries.getByIdWithEconomicData.useQuery(
-    { id: countryId, timestamp: stableTimestamp },
+  } = api.mycountry.getCountryDashboard.useQuery(
+    { countryId: countryId, includeHistory: false },
     { 
       enabled: enabled && !!countryId,
       refetchOnWindowFocus: false,
@@ -74,16 +103,16 @@ export function useDataSync(countryId: string, options: DataSyncOptions = {}) {
 
   const updateStatsMutation = api.countries.updateStats.useMutation();
 
-  // Update sync state helper
-  const updateSyncState = useCallback((partial: Partial<DataSyncState>) => {
-    setSyncState(prev => {
-      const newState = { ...prev, ...partial };
-      if (partial.status && partial.status !== prev.status) {
-        onStatusChange?.(partial.status);
-      }
-      return newState;
-    });
-  }, [onStatusChange]);
+  // Update sync state helper - currently unused but available for advanced sync control
+  // const updateSyncState = useCallback((partial: Partial<DataSyncState>) => {
+  //   setSyncState(prev => {
+  //     const newState = { ...prev, ...partial };
+  //     if (partial.status && partial.status !== prev.status) {
+  //       onStatusChange?.(partial.status);
+  //     }
+  //     return newState;
+  //   });
+  // }, [onStatusChange]);
 
   // Detect data changes
   const detectChanges = useCallback((current: any, previous: any): string[] => {
@@ -344,44 +373,12 @@ export function useDataSync(countryId: string, options: DataSyncOptions = {}) {
     }
   }, [updateStatsMutation, countryId, forceRefresh, notificationsEnabled, addNotification, handleError]);
 
-  // Auto-polling setup
-  const startPolling = useCallback(() => {
-    if (pollTimeoutRef.current) {
-      clearTimeout(pollTimeoutRef.current);
-    }
-
-    const poll = async () => {
-      if (!enabled) return;
-
-      try {
-        // Check if IxTime has significantly changed
-        const currentIxTime = IxTime.getCurrentIxTime();
-        const timeDifference = Math.abs(currentIxTime - lastIxTimeRef.current);
-        const shouldRefresh = timeDifference > 300000; // 5 minutes in IxTime
-        
-        if (shouldRefresh || !previousDataRef.current) {
-          await refetchCountry();
-          lastIxTimeRef.current = currentIxTime;
-        }
-      } catch (error) {
-        handleError(error);
-        
-        // Implement exponential backoff for retries
-        retryCountRef.current++;
-        if (retryCountRef.current < retryAttempts) {
-          const backoffDelay = retryDelay * Math.pow(2, retryCountRef.current - 1);
-          pollTimeoutRef.current = setTimeout(poll, backoffDelay);
-          return;
-        }
-      }
-
-      // Schedule next poll
-      pollTimeoutRef.current = setTimeout(poll, pollInterval);
-    };
-
-    // Start polling
-    poll();
-  }, [enabled, refetchCountry, handleError, retryAttempts, retryDelay, pollInterval]);
+  // Auto-polling setup - disabled to prevent infinite loops, using TRPC's built-in refetching instead
+  // const startPolling = useCallback(() => {
+  //   // DISABLED: Custom polling to prevent infinite loops
+  //   // TRPC handles refetching automatically based on query configuration
+  //   console.log('[useDataSync] Auto-polling disabled - using TRPC refetch strategy');
+  // }, [enabled, refetchCountry, handleError, retryAttempts, retryDelay, pollInterval]);
 
   const stopPolling = useCallback(() => {
     if (pollTimeoutRef.current) {

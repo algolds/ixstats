@@ -256,7 +256,6 @@ export function DataMonitoringCenter({
     
     return (
       <motion.div
-        key={`${trend.metric}-${trend.timestamp}`}
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 10 }}
@@ -402,8 +401,8 @@ export function DataMonitoringCenter({
                   <AnimatePresence>
                     {metricTrends.length > 0 ? (
                       metricTrends.slice(0, 5).map((trend, index) => (
-                        <div key={`trend-${trend.name}-${index}`}>
-                          {renderTrendIndicator(trend, index)}
+                        <div key={`trend-${trend.metric || 'unknown'}-${trend.timestamp || index}`}>
+                          {renderTrendIndicator(trend)}
                         </div>
                       ))
                     ) : (

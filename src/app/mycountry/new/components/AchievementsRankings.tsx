@@ -179,7 +179,7 @@ export function AchievementsRankings({
                       const Icon = getAchievementIcon(achievement.category);
                       return (
                         <motion.div
-                          key={achievement?.id ? `achievement-${achievement.id}` : `achievement-fallback-${index}`}
+                          key={achievement?.id && achievement.id.trim() ? `achievement-${achievement.id}` : `achievement-fallback-${index}`}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.1 }}
@@ -259,7 +259,7 @@ export function AchievementsRankings({
                       
                       return (
                         <motion.div
-                          key={ranking?.global?.category ? `ranking-${ranking.global.category}-${index}` : `ranking-fallback-${index}`}
+                          key={ranking?.global?.category && ranking.global.category.trim() ? `ranking-${ranking.global.category}-${index}` : `ranking-fallback-${index}`}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.1 }}

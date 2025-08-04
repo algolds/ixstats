@@ -107,10 +107,11 @@ export function Navigation() {
     },
     {
       name: "MyCountry®",
-      href: "/mycountry",
+      href: "/mycountry/new",
       icon: Crown,
       requiresAuth: true,
       requiresCountry: true,
+      description: "Your national dashboard and executive command center",
     },
     {
       name: "ECI",
