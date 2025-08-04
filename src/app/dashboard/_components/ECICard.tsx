@@ -26,7 +26,7 @@ interface CountryData {
 
 interface ECICardProps {
   countryData?: CountryData;
-  userProfile?: { countryId: string };
+  userProfile?: { countryId: string | null };
   userId?: string;
   isEciExpanded: boolean;
   toggleEciExpansion: () => void;
@@ -223,7 +223,9 @@ export function ECICard({
               className="mt-6 overflow-hidden"
             >
               <div className="glass-hierarchy-child p-6 rounded-lg">
-                <CountryExecutiveSection countryId={userProfile.countryId} userId={userId || ''} />
+                {userProfile.countryId && (
+                  <CountryExecutiveSection countryId={userProfile.countryId} userId={userId || ''} />
+                )}
               </div>
             </motion.div>
           )}

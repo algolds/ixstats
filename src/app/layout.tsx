@@ -73,11 +73,17 @@ const RootLayout = ({
       <body className="min-h-screen transition-colors duration-200">
         {isClerkConfigured ? (
           <ClerkProvider
-            signInUrl="https://accounts.ixwiki.com/sign-in"
-            signUpUrl="https://accounts.ixwiki.com/sign-up"
-            afterSignInUrl="/projects/ixstats/dashboard"
-            afterSignUpUrl="/projects/ixstats/setup"
-            redirectUrl="/projects/ixstats/dashboard"
+            {...(process.env.NODE_ENV === "production" ? {
+              signInUrl: "https://accounts.ixwiki.com/sign-in",
+              signUpUrl: "https://accounts.ixwiki.com/sign-up",
+              afterSignInUrl: "/projects/ixstats/dashboard",
+              afterSignUpUrl: "/projects/ixstats/setup",
+              redirectUrl: "/projects/ixstats/dashboard"
+            } : {
+              afterSignInUrl: "/dashboard",
+              afterSignUpUrl: "/setup",
+              redirectUrl: "/dashboard"
+            })}
           >
             <AppContent />
           </ClerkProvider>

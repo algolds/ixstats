@@ -300,6 +300,12 @@ export const SectionIcons = {
   // Recent additions
   'excellence-recognition': IconCategories.STATUS.achievement,
   'recent-activity': IconCategories.STATUS.notifications,
+  
+  // Missing icons for UnifiedLayout components
+  'activity-rings': IconCategories.INTELLIGENCE.monitoring,
+  'focus-cards': IconCategories.TEMPORAL.objectives,
+  'achievements': IconCategories.STATUS.achievement,
+  'milestones': IconCategories.STATUS.recognition,
 } as const;
 
 // Export commonly used icon sets for quick access

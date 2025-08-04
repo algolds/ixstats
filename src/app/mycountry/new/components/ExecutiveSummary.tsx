@@ -234,7 +234,7 @@ export function ExecutiveSummary({
               <div className="space-y-2">
                 {nationalHealth.criticalAlerts.slice(0, 3).map((alert, index) => (
                   <div
-                    key={alert.id && alert.id.trim() ? `alert-${alert.id}` : `alert-fallback-${index}`}
+                    key={alert.id && alert.id.trim() ? `alert-${alert.id.trim()}` : `alert-fallback-${index}`}
                     className={`glass-hierarchy-child p-3 rounded-lg border-l-4 ${
                       alert.type === 'critical' ? 'border-l-red-500 bg-red-50/50 dark:bg-red-950/20' :
                       alert.type === 'warning' ? 'border-l-yellow-500 bg-yellow-50/50 dark:bg-yellow-950/20' :
@@ -272,7 +272,7 @@ export function ExecutiveSummary({
                 const Icon = metric.icon;
                 return (
                   <motion.div
-                    key={metric.id && metric.id.trim() ? `metric-${metric.id}` : `metric-fallback-${index}`}
+                    key={metric.id && metric.id.trim() ? `metric-${metric.id.trim()}` : `metric-fallback-${index}`}
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
@@ -352,7 +352,7 @@ export function ExecutiveSummary({
               <div className="space-y-2">
                 {nationalHealth.keyOpportunities.slice(0, 3).map((opportunity, index) => (
                   <div
-                    key={opportunity.id && opportunity.id.trim() ? `opportunity-${opportunity.id}` : `opportunity-fallback-${index}`}
+                    key={opportunity.id && opportunity.id.trim() ? `opportunity-${opportunity.id.trim()}` : `opportunity-fallback-${index}`}
                     className="glass-hierarchy-child p-3 rounded-lg hover:scale-102 transition-transform cursor-pointer"
                   >
                     <div className="flex items-start gap-3">
@@ -388,7 +388,7 @@ export function ExecutiveSummary({
               <div className="space-y-2">
                 {temporalContext.recentChanges.slice(0, 3).map((change, index) => (
                   <div
-                    key={change.id && change.id.trim() ? `change-${change.id}` : `change-fallback-${index}`}
+                    key={change.id && change.id.trim() ? `change-${change.id.trim()}` : `change-fallback-${index}`}
                     className="flex items-center gap-3 text-sm p-2 rounded bg-muted/30"
                   >
                     <div className="w-2 h-2 bg-amber-600 rounded-full" />

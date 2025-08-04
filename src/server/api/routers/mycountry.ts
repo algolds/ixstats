@@ -622,7 +622,7 @@ export const myCountryRouter = createTRPCRouter({
     .input(z.object({
       countryId: z.string().min(1),
       actionId: z.string().min(1).max(50),
-      parameters: z.record(z.any()).optional(),
+      parameters: z.record(z.string(), z.any()).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       // Additional security: Verify the requested country matches user's country

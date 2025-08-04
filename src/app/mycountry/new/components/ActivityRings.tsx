@@ -303,7 +303,7 @@ export function ActivityRings({
     <div className={`flex flex-wrap gap-6 justify-center ${className}`}>
       {rings.map((ring, index) => (
         <ActivityRingComponent
-          key={ring.id && ring.id.trim() ? `ring-${ring.id}` : `ring-fallback-${index}`}
+          key={ring.id && ring.id.trim() && ring.id.trim().length > 0 ? `ring-${ring.id.trim()}` : `ring-fallback-${index}`}
           ring={ring}
           config={config}
           index={index}

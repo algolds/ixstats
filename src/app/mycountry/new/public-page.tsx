@@ -16,7 +16,8 @@ import {
   Sparkles,
   Crown,
   Shield,
-  Star
+  Star,
+  Target
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
@@ -26,6 +27,7 @@ import { ActivityRings, createDefaultActivityRings } from './components/Activity
 import { ExecutiveSummary } from './components/ExecutiveSummary';
 import { HolographicNationCard } from './components/HolographicNationCard';
 import { AchievementsRankings } from './components/AchievementsRankings';
+import { FocusCards, createDefaultFocusCards } from './components/FocusCards';
 import { useFlag } from '~/hooks/useFlag';
 
 interface Achievement {
@@ -191,20 +193,52 @@ export function PublicMyCountryPage({
     },
   });
 
+  // Create focus cards data
+  const focusCardsData = createDefaultFocusCards({
+    economic: {
+      healthScore: country.economicVitality,
+      gdpPerCapita: country.currentGdpPerCapita,
+      growthRate: country.realGDPGrowthRate * 100,
+      economicTier: country.economicTier,
+      alerts: [],
+    },
+    population: {
+      healthScore: country.populationWellbeing,
+      population: country.currentPopulation,
+      growthRate: country.populationGrowthRate * 100,
+      populationTier: country.populationTier,
+      alerts: [],
+    },
+    diplomatic: {
+      healthScore: country.diplomaticStanding,
+      allies: 12,
+      reputation: 'Rising',
+      treaties: 8,
+      alerts: [],
+    },
+    government: {
+      healthScore: country.governmentalEfficiency,
+      approval: 72,
+      efficiency: 'High',
+      stability: 'Stable',
+      alerts: [],
+    },
+  });
+
   return (
-    <div className={`space-y-8 ${className}`}>
-      {/* Holographic Nation Card Header */}
+    <div className={`w-full ${className}`}>
+      {/* Hero Section - Nation Card */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
+        className="mb-12"
       >
         <HolographicNationCard
           country={country}
           flagUrl={flagUrl}
           flagColors={['#3B82F6', '#10B981', '#F59E0B']} // Default colors, can be extracted from flag
           isOwner={isOwner}
-          className="mb-8"
         />
 
         {isOwner && (
@@ -220,75 +254,150 @@ export function PublicMyCountryPage({
         )}
       </motion.div>
 
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-8 mb-12">
+        
+        {/* Left Column - Core Metrics */}
+        <div className="xl:col-span-3 space-y-8">
+          
+          {/* Vitality Overview */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
+            <Card className="glass-hierarchy-child">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-blue-600" />
+                  National Vitality Overview
+                </CardTitle>
+                <p className="text-muted-foreground">
+                  Real-time assessment of your nation's core performance metrics
+                </p>
+              </CardHeader>
+              <CardContent>
+                <ActivityRings
+                  rings={activityRingsData}
+                  size="md"
+                  interactive={true}
+                  className="justify-center"
+                />
+              </CardContent>
+            </Card>
+          </motion.div>
 
+          {/* Strategic Focus Areas */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <Card className="glass-hierarchy-child">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-purple-600" />
+                  Strategic Focus Areas
+                </CardTitle>
+                <p className="text-muted-foreground">
+                  Key areas of national development and governance
+                </p>
+              </CardHeader>
+              <CardContent>
+                <FocusCards
+                  cards={focusCardsData}
+                  layout="grid"
+                  expandable={false}
+                  interactive={true}
+                />
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
 
-      {/* Combined Achievements & Rankings Section */}
-      <AchievementsRankings 
-        achievements={achievements}
-        rankings={rankings}
-      />
+        {/* Right Column - Achievements & Timeline */}
+        <div className="space-y-8">
+          
+          {/* Achievements & Rankings */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
+            <AchievementsRankings 
+              achievements={achievements}
+              rankings={rankings}
+            />
+          </motion.div>
 
-      {/* Timeline Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-      >
-        <Card className="glass-hierarchy-child">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-green-600" />
-              National Timeline
-            </CardTitle>
-            <p className="text-muted-foreground">
-              Key milestones in {country.name}'s development
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {milestones.slice(0, 5).map((milestone, index) => {
-                const Icon = getMilestoneIcon(milestone.category);
-                return (
-                  <div key={milestone.id ? `milestone-${milestone.id}` : `milestone-fallback-${index}`} className="flex items-start gap-4">
-                    <div className="flex flex-col items-center">
-                      <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-950/20 flex items-center justify-center">
-                        <Icon className="h-4 w-4 text-green-600" />
+          {/* National Timeline */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            <Card className="glass-hierarchy-child">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-green-600" />
+                  Recent Milestones
+                </CardTitle>
+                <p className="text-muted-foreground">
+                  Latest developments in {country.name}
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {milestones.slice(0, 4).map((milestone, index) => {
+                    const Icon = getMilestoneIcon(milestone.category);
+                    return (
+                      <div key={milestone.id ? `milestone-${milestone.id}` : `milestone-fallback-${index}`} className="flex items-start gap-3">
+                        <div className="flex flex-col items-center">
+                          <div className="w-6 h-6 rounded-full bg-green-100 dark:bg-green-950/20 flex items-center justify-center">
+                            <Icon className="h-3 w-3 text-green-600" />
+                          </div>
+                          {index < Math.min(milestones.length, 4) - 1 && (
+                            <div className="w-px h-6 bg-border mt-2" />
+                          )}
+                        </div>
+                        <div className="flex-1 pb-2">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium text-xs">{milestone.title}</h4>
+                            <Badge variant="outline" className="text-xs capitalize px-1">
+                              {milestone.category}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-1 line-clamp-2">
+                            {milestone.description}
+                          </p>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(milestone.achievedAt).toLocaleDateString()}
+                          </div>
+                        </div>
                       </div>
-                      {index < milestones.length - 1 && (
-                        <div className="w-px h-8 bg-border mt-2" />
-                      )}
-                    </div>
-                    <div className="flex-1 pb-4">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-medium text-sm">{milestone.title}</h4>
-                        <Badge variant="outline" className="text-xs capitalize">
-                          {milestone.category}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {milestone.description}
-                      </p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span>{new Date(milestone.achievedAt).toLocaleDateString()}</span>
-                        <span>•</span>
-                        <span className="text-green-600">{milestone.impact}</span>
-                      </div>
-                    </div>
+                    );
+                  })}
+                </div>
+                
+                {milestones.length > 4 && (
+                  <div className="text-center pt-4 border-t border-border mt-4">
+                    <Button variant="outline" size="sm" className="text-xs">
+                      View All Milestones ({milestones.length})
+                    </Button>
                   </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </div>
 
       {/* Call to Action for Visitors */}
       {!isOwner && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
           className="text-center"
         >
           <Card className="glass-hierarchy-parent bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20">
