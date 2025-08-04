@@ -294,7 +294,7 @@ export function DynamicIslandNotifications({
                     <div className="space-y-1 p-2">
                       {filteredNotifications.map((notification, index) => (
                         <motion.div
-                          key={notification.id && notification.id.trim() ? `notification-${notification.id}` : `notification-fallback-${index}`}
+                          key={notification.id && notification.id.trim() ? `notification-${notification.id.trim()}` : `notification-fallback-${index}`}
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: index * 0.05 }}

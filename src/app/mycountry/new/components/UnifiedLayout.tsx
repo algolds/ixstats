@@ -22,7 +22,11 @@ import {
   WifiOff,
   RefreshCw,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Menu,
+  X,
+  Smartphone,
+  Monitor
 } from 'lucide-react';
 import { SectionIcons, IconThemes, StandardIcon } from './IconSystem';
 import { 
@@ -36,11 +40,8 @@ import { TabThemeProvider, getTabTheme, applyTabTheme } from './TabColorSystem';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
-import { HolographicNationCard } from './HolographicNationCard';
-import { ActivityRings } from './ActivityRings';
-import { AchievementsRankings } from './AchievementsRankings';
-import { FocusCards } from './FocusCards';
-import { ExecutiveSummary } from './ExecutiveSummary';
+// Component imports removed - content is now handled by children
+import { MobileOptimized, useTouchGestures, useMobilePerformance } from './MobileOptimizations';
 
 interface DataSyncState {
   isConnected: boolean;
@@ -48,6 +49,137 @@ interface DataSyncState {
   updateCount: number;
   errors: string[];
   status: 'idle' | 'syncing' | 'error' | 'disconnected';
+}
+
+interface MobileLayoutState {
+  isMobileView: boolean;
+  isSidebarOpen: boolean;
+  activeTab: string | null;
+  expandedSections: Set<string>;
+  touchInteractionEnabled: boolean;
+}
+
+// Custom hook for mobile detection and management
+function useMobileLayout() {
+  const [mobileState, setMobileState] = useState<MobileLayoutState>({
+    isMobileView: false,
+    isSidebarOpen: false,
+    activeTab: null,
+    expandedSections: new Set(),
+    touchInteractionEnabled: false
+  });
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const isMobile = window.innerWidth < 768;
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      
+      setMobileState(prev => ({
+        ...prev,
+        isMobileView: isMobile,
+        touchInteractionEnabled: isTouchDevice,
+        // Auto-close sidebar on resize to desktop
+        isSidebarOpen: isMobile ? prev.isSidebarOpen : false
+      }));
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const toggleSidebar = () => {
+    setMobileState(prev => ({
+      ...prev,
+      isSidebarOpen: !prev.isSidebarOpen
+    }));
+  };
+
+  const setActiveTab = (tab: string | null) => {
+    setMobileState(prev => ({
+      ...prev,
+      activeTab: tab,
+      isSidebarOpen: false // Close sidebar when selecting tab on mobile
+    }));
+  };
+
+  const toggleSection = (sectionId: string) => {
+    setMobileState(prev => {
+      const newExpanded = new Set(prev.expandedSections);
+      if (newExpanded.has(sectionId)) {
+        newExpanded.delete(sectionId);
+      } else {
+        newExpanded.add(sectionId);
+      }
+      return {
+        ...prev,
+        expandedSections: newExpanded
+      };
+    });
+  };
+
+  return {
+    mobileState,
+    toggleSidebar,
+    setActiveTab,
+    toggleSection
+  };
+}
+
+// Mobile Section Navigator Component
+interface MobileSectionNavigatorProps {
+  sections: ContentSection[];
+  onSectionSelect: (sectionId: string) => void;
+  expandedSections: Set<string>;
+  onToggleSection: (sectionId: string) => void;
+}
+
+function MobileSectionNavigator({ 
+  sections, 
+  onSectionSelect, 
+  expandedSections, 
+  onToggleSection 
+}: MobileSectionNavigatorProps) {
+  return (
+    <div className="p-4 space-y-2">
+      <div className="text-sm font-medium text-foreground/60 mb-4">
+        Navigation
+      </div>
+      
+      {sections.map((section) => {
+        const Icon = SectionIcons[section.id] || Activity;
+        const isExpanded = expandedSections.has(section.id);
+        
+        return (
+          <div key={section.id || `section-fallback-${sections.indexOf(section)}`} className="space-y-1">
+            <Button
+              onClick={() => onSectionSelect(section.id)}
+              variant="ghost"
+              className="w-full justify-start p-3 h-auto"
+            >
+              <Icon className="h-4 w-4 mr-3 flex-shrink-0" />
+              <div className="flex-1 text-left">
+                <div className="text-sm font-medium">{section.title}</div>
+                <div className="text-xs text-foreground/60">{section.description}</div>
+              </div>
+              {section.priority === 'critical' && (
+                <Badge variant="destructive" className="ml-2 text-xs">
+                  Critical
+                </Badge>
+              )}
+            </Button>
+          </div>
+        );
+      })}
+      
+      <div className="pt-4 border-t border-border mt-6">
+        <div className="text-xs text-foreground/50 px-3">
+          Touch-optimized interface
+        </div>
+      </div>
+    </div>
+  );
 }
 
 interface UnifiedLayoutProps {
@@ -97,6 +229,15 @@ function CollapsibleSection({
   disableHeaderClick = false
 }: CollapsibleSectionProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Mobile detection
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Load expanded state from localStorage, respecting content hierarchy defaults
   useEffect(() => {
@@ -136,11 +277,12 @@ function CollapsibleSection({
       whileHover={{ scale: 1.01 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
     >
-      {/* Section Header */}
+      {/* Section Header - Mobile Enhanced */}
       <motion.div
-        className={`glass-hierarchy-child p-4 ${!disableHeaderClick ? 'cursor-pointer' : ''}`}
+        className={`glass-hierarchy-child ${isMobile ? 'p-3' : 'p-4'} ${!disableHeaderClick ? 'cursor-pointer' : ''} ${isMobile ? 'touch-manipulation' : ''}`}
         onClick={!disableHeaderClick ? toggleExpanded : undefined}
         whileHover={!disableHeaderClick ? { backgroundColor: "rgba(255, 255, 255, 0.05)" } : undefined}
+        whileTap={isMobile && !disableHeaderClick ? { scale: 0.98 } : undefined}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -173,49 +315,35 @@ function CollapsibleSection({
                   </Badge>
                 )}
                 {purpose && (
-                  <span className="text-xs text-muted-foreground" title={purpose}>
-                    {purpose.slice(0, 50)}...
+                  <span className="text-xs text-muted-foreground">
+                    {purpose}
                   </span>
                 )}
               </div>
             </div>
           </div>
-          {disableHeaderClick ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleExpanded}
-              className="h-8 w-8 p-0"
-            >
-              <motion.div
-                animate={{ rotate: isExpanded ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              </motion.div>
-            </Button>
-          ) : (
+          <div className="flex items-center gap-2">
             <motion.div
               animate={{ rotate: isExpanded ? 180 : 0 }}
               transition={{ duration: 0.2 }}
             >
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
             </motion.div>
-          )}
+          </div>
         </div>
       </motion.div>
 
-      {/* Expandable Content */}
-      <AnimatePresence>
+      {/* Section Content */}
+      <AnimatePresence initial={false}>
         {isExpanded && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="p-4 pt-0">
+            <div className="glass-hierarchy-child p-4 pt-0">
               {children}
             </div>
           </motion.div>
@@ -244,351 +372,212 @@ export function UnifiedLayout({
   onForceUpdateStats
 }: UnifiedLayoutProps) {
   const isExecutiveMode = viewMode === 'executive';
+  const { mobileState, toggleSidebar, setActiveTab, toggleSection } = useMobileLayout();
+  const { isMobileView, isSidebarOpen, touchInteractionEnabled } = mobileState;
 
   return (
     <TabThemeProvider defaultTheme={isExecutiveMode ? 'executive' : 'mycountry'}>
-      <div 
-        className={`relative min-h-screen bg-background ${isExecutiveMode ? 'executive-immersive' : ''} ${className}`}
-        style={applyTabTheme(isExecutiveMode ? 'executive' : 'mycountry')}
-      >
-      {/* Global Command Palette now handles executive notifications through the main navigation */}
-
-      {/* Mode Toggle Button */}
-      {isOwner && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-          className="fixed top-4 left-4 z-40"
+      <MobileOptimized enableTouchGestures={isMobileView}>
+        <div 
+          className={`relative min-h-screen bg-background ${isExecutiveMode ? 'executive-immersive' : ''} ${className}`}
+          style={applyTabTheme(isExecutiveMode ? 'executive' : 'mycountry')}
         >
-          <Button
-            onClick={() => onModeToggle(isExecutiveMode ? 'public' : 'executive')}
-            variant="outline"
-            size="sm"
-            className="glass-hierarchy-interactive"
-          >
-            {isExecutiveMode ? (
-              <>
-                <Globe className="h-4 w-4 mr-2" />
-                Public View
-              </>
-            ) : (
-              <>
-                <Crown className="h-4 w-4 mr-2" />
-                Executive
-              </>
-            )}
-          </Button>
-        </motion.div>
-      )}
-
-      {/* IxTime Display - Hidden/Toggleable */}
-      <AnimatePresence>
-        {!isExecutiveMode && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
-            className="fixed top-16 right-4 z-30"
-          >
-            <div className="glass-hierarchy-child px-3 py-2 rounded-lg">
-              <div className="text-xs text-muted-foreground">
-                IxTime: {new Date(currentIxTime * 1000).toLocaleDateString()} 
-                <span className="ml-1 text-amber-500">×{timeAcceleration}</span>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Data Sync Status Indicator - Hidden/Toggleable */}
-      <AnimatePresence>
-        {syncState && !isExecutiveMode && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-            className="fixed top-28 right-4 z-30"
-          >
-            <div 
-              className={`glass-hierarchy-child px-3 py-2 rounded-lg cursor-pointer hover:scale-105 transition-transform ${
-                syncState.status === 'error' ? 'ring-1 ring-red-500/30' : 
-                syncState.status === 'syncing' ? 'ring-1 ring-blue-500/30' : 
-                'ring-1 ring-green-500/30'
-              }`}
-              onClick={() => {
-                if (syncState.status === 'error' && onForceRefresh) {
-                  onForceRefresh();
-                }
-              }}
-              title={`Last update: ${syncState.lastUpdate ? new Date(syncState.lastUpdate).toLocaleTimeString() : 'Never'}`}
+      
+          {/* Mobile Header Bar */}
+          {isMobileView && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-b border-border"
             >
-              <div className="flex items-center gap-2 text-xs">
-                {syncState.status === 'syncing' ? (
-                  <RefreshCw className="h-3 w-3 animate-spin text-blue-500" />
-                ) : syncState.status === 'error' ? (
-                  <AlertCircle className="h-3 w-3 text-red-500" />
-                ) : syncState.isConnected ? (
-                  <CheckCircle className="h-3 w-3 text-green-500" />
-                ) : (
-                  <WifiOff className="h-3 w-3 text-gray-500" />
-                )}
-                <span className={`${
-                  syncState.status === 'error' ? 'text-red-400' :
-                  syncState.status === 'syncing' ? 'text-blue-400' :
-                  syncState.isConnected ? 'text-green-400' : 'text-gray-400'
-                }`}>
-                  {syncState.status === 'syncing' ? 'Syncing...' :
-                   syncState.status === 'error' ? 'Sync Error' :
-                   syncState.isConnected ? 'Real-time' : 'Offline'}
-                </span>
-                {syncState.updateCount > 0 && (
-                  <span className="text-muted-foreground ml-1">
-                    ({syncState.updateCount})
-                  </span>
+              <div className="flex items-center justify-between px-4 h-14">
+                <Button
+                  onClick={toggleSidebar}
+                  variant="ghost"
+                  size="sm"
+                  className="p-2"
+                >
+                  {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                </Button>
+                
+                <div className="flex items-center gap-2">
+                  <div className="text-sm font-medium text-foreground/80">
+                    {country?.name || 'My Country'}
+                  </div>
+                  {touchInteractionEnabled && (
+                    <Smartphone className="h-4 w-4 text-foreground/60" />
+                  )}
+                </div>
+                
+                {isOwner && (
+                  <Button
+                    onClick={() => onModeToggle(isExecutiveMode ? 'public' : 'executive')}
+                    variant="ghost"
+                    size="sm"
+                    className="p-2"
+                  >
+                    {isExecutiveMode ? (
+                      <Globe className="h-4 w-4" />
+                    ) : (
+                      <Crown className="h-4 w-4" />
+                    )}
+                  </Button>
                 )}
               </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
 
-      <div className={`${isExecutiveMode ? 'w-full' : 'container mx-auto'} px-4 py-8 pt-24`}>
-        <div className={`${isExecutiveMode ? 'w-full' : 'max-w-[1400px]'} mx-auto space-y-6`}>
-          
-          {/* Main Content Grid */}
-          <div className={`grid grid-cols-1 ${isExecutiveMode ? 'lg:grid-cols-16' : 'lg:grid-cols-12'} gap-6`}>
-            
-            {/* Primary Content Column */}
-            <div className={`${isExecutiveMode ? 'lg:col-span-16' : 'lg:col-span-9'} space-y-6`}>
-              
-              {/* National Portfolio Section - Replaces duplicate country card */}
-              <CollapsibleSection
-                id="national-portfolio"
-                title="National Portfolio"
-                icon={SectionIcons['national-profile']}
-                badge="Core Identity"
-                colorTheme="mycountry"
-                priority="critical"
-                purpose="Core country identification, demographics, and national presence"
-                defaultExpanded={false}
-                disableHeaderClick={true} // Disable header click because HolographicNationCard has interactive elements
-              >
-                <HolographicNationCard
-                  country={country}
-                  flagUrl={flagUrl}
-                  isOwner={isOwner}
-                  showInteractionControls={true}
+          {/* Mobile Sidebar Overlay */}
+          <AnimatePresence>
+            {isMobileView && isSidebarOpen && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-40 bg-black/50"
+                  onClick={toggleSidebar}
                 />
-              </CollapsibleSection>
-
-              {/* Executive Command Interface - Full width for executive mode */}
-              {isExecutiveMode ? (
-                <motion.div 
-                  className="space-y-6 executive-enter"
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
+                <motion.div
+                  initial={{ x: -300 }}
+                  animate={{ x: 0 }}
+                  exit={{ x: -300 }}
+                  transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                  className="fixed left-0 top-14 bottom-0 z-50 w-80 bg-background border-r border-border overflow-y-auto"
                 >
-                  <div className="command-interface p-6">
-                    {children}
-                  </div>
+                  <MobileSectionNavigator
+                    sections={CONTENT_HIERARCHY.sections}
+                    onSectionSelect={setActiveTab}
+                    expandedSections={mobileState.expandedSections}
+                    onToggleSection={toggleSection}
+                  />
                 </motion.div>
-              ) : (
-                <>
-                  {/* Excellence & Recognition */}
-                  <CollapsibleSection
-                    id="excellence-recognition"
-                    title="Excellence & Recognition"
-                    icon={SectionIcons['achievements-rankings']}
-                    badge="Achievements"
-                    colorTheme="analytics"
-                    priority="high"
-                    purpose="National achievements, international rankings, and recognition earned through development"
-                    defaultExpanded={true}
-                  >
-                    <AchievementsRankings 
-                      achievements={achievements}
-                      rankings={rankings}
-                    />
-                  </CollapsibleSection>
-
-                  {/* National Timeline */}
-                  <CollapsibleSection
-                    id="national-timeline"
-                    title="National Development Timeline"
-                    icon={SectionIcons['national-timeline']}
-                    badge="Historical Progress"
-                    colorTheme="intelligence"
-                    priority="medium"
-                    purpose="Historical progression, major milestones, and national development narrative"
-                    defaultExpanded={false}
-                  >
-                    <div className="space-y-4">
-                      {milestones.slice(0, 8).map((milestone, index) => (
-                        <motion.div
-                          key={milestone?.id && milestone.id.trim() ? `milestone-${milestone.id}` : `milestone-fallback-${index}`}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                          className="flex items-start gap-4 p-4 rounded-lg glass-hierarchy-child"
-                        >
-                          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center mt-1 flex-shrink-0">
-                            <Building2 className="h-5 w-5 text-primary" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-sm mb-1">{milestone.title}</h4>
-                            <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{milestone.description}</p>
-                            <div className="flex items-center gap-3 text-xs">
-                              <span className="text-muted-foreground">
-                                {new Date(milestone.achievedAt).toLocaleDateString()}
-                              </span>
-                              <span className="text-muted-foreground">•</span>
-                              <span className="text-green-600 font-medium">{milestone.impact}</span>
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </CollapsibleSection>
-
-                  {/* Recent Activity */}
-                  <CollapsibleSection
-                    id="recent-activity"
-                    title="Recent Activity"
-                    icon={SectionIcons['recent-activity']}
-                    badge="Live Updates"
-                    colorTheme="global"
-                    priority="medium"
-                    purpose="Latest national developments, policy changes, and significant events"
-                    defaultExpanded={false}
-                  >
-                    <div className="space-y-3">
-                      {intelligenceFeed.slice(0, 6).map((item, index) => (
-                        <motion.div
-                          key={item?.id && item.id.trim() ? `activity-${item.id}` : `activity-fallback-${index}`}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                          className="flex items-start gap-3 p-3 rounded-lg glass-hierarchy-child hover:bg-accent/5 transition-colors"
-                        >
-                          <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
-                            item.severity === 'critical' ? 'bg-red-500' :
-                            item.severity === 'high' ? 'bg-orange-500' :
-                            item.severity === 'medium' ? 'bg-yellow-500' :
-                            'bg-blue-500'
-                          }`} />
-                          <div className="flex-1 min-w-0">
-                            <h5 className="font-medium text-sm mb-1 line-clamp-1">{item.title}</h5>
-                            <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{item.description}</p>
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground">
-                                {new Date(item.timestamp).toLocaleDateString()}
-                              </span>
-                              <Badge variant="outline" className="text-xs px-2 py-0">
-                                {item.category}
-                              </Badge>
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </CollapsibleSection>
-                </>
-              )}
-            </div>
-
-            {/* Secondary Sidebar - Only show in non-executive mode and make narrower */}
-            {!isExecutiveMode && (
-              <div className="lg:col-span-3 space-y-6">
-
-                {/* Vital National Statistics - Compact sidebar version */}
-                <CollapsibleSection
-                  id="vital-stats-sidebar"
-                  title="Vital Statistics"
-                  icon={SectionIcons['key-metrics']}
-                  badge="Live Data"
-                  colorTheme="analytics"
-                  priority="critical"
-                  purpose="Core performance metrics snapshot"
-                  defaultExpanded={true}
-                >
-                  <div className="space-y-3">
-                    <div className="text-center p-2 rounded-lg glass-hierarchy-child">
-                      <StandardIcon icon={TrendingUp} size="sm" theme="analytics" className="mx-auto mb-1" />
-                      <div className="text-sm font-bold">
-                        ${(country.currentGdpPerCapita / 1000).toFixed(0)}k
-                      </div>
-                      <div className="text-xs text-muted-foreground">GDP/Capita</div>
-                    </div>
-                    <div className="text-center p-2 rounded-lg glass-hierarchy-child">
-                      <StandardIcon icon={Users} size="sm" theme="global" className="mx-auto mb-1" />
-                      <div className="text-sm font-bold">
-                        {(country.currentPopulation / 1000000).toFixed(1)}M
-                      </div>
-                      <div className="text-xs text-muted-foreground">Population</div>
-                    </div>
-                    
-                    {/* Compact Growth Indicators */}
-                    <div className="space-y-1 text-xs">
-                      <div className="flex justify-between items-center">
-                        <span>Economic</span>
-                        <span className="text-green-600">
-                          {country.adjustedGdpGrowth > 0 ? '+' : ''}{(country.adjustedGdpGrowth * 100).toFixed(1)}%
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span>Population</span>
-                        <span className="text-blue-600">
-                          {country.populationGrowthRate > 0 ? '+' : ''}{(country.populationGrowthRate * 100).toFixed(1)}%
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span>Tier</span>
-                        <span className="text-purple-600 font-medium">{country.economicTier}</span>
-                      </div>
-                    </div>
-                  </div>
-                </CollapsibleSection>
-
-                {/* System Integration - Deeper in sidebar */}
-                <CollapsibleSection
-                  id="system-integration-sidebar"
-                  title="System Status"
-                  icon={SectionIcons['system-status']}
-                  badge="IxStats"
-                  colorTheme="intelligence"
-                  priority="low"
-                  purpose="System status and technical information"
-                  defaultExpanded={false}
-                >
-                  <div className="space-y-2 text-xs">
-                    <div className="flex justify-between">
-                      <span>Updated</span>
-                      <span className="text-muted-foreground">
-                        {new Date(country.lastCalculated * 1000).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Baseline</span>
-                      <span className="text-muted-foreground">
-                        {new Date(country.baselineDate * 1000).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>IxTime</span>
-                      <span className="text-amber-500">×{timeAcceleration}</span>
-                    </div>
-                  </div>
-                </CollapsibleSection>
-              </div>
+              </>
             )}
+          </AnimatePresence>
+
+          {/* Mode Toggle Button */}
+          {isOwner && !isMobileView && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="fixed top-4 left-4 z-40"
+            >
+              <Button
+                onClick={() => onModeToggle(isExecutiveMode ? 'public' : 'executive')}
+                variant="outline"
+                size="sm"
+                className="glass-hierarchy-interactive"
+              >
+                {isExecutiveMode ? (
+                  <>
+                    <Globe className="h-4 w-4 mr-2" />
+                    Public View
+                  </>
+                ) : (
+                  <>
+                    <Crown className="h-4 w-4 mr-2" />
+                    Executive
+                  </>
+                )}
+              </Button>
+            </motion.div>
+          )}
+
+          {/* IxTime Display - Hidden/Toggleable */}
+          <AnimatePresence>
+            {!isExecutiveMode && !isMobileView && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+                className="fixed top-4 right-4 z-40"
+              >
+                <div className="glass-hierarchy-child px-3 py-2 rounded-lg">
+                  <div className="text-xs text-muted-foreground">
+                    IxTime: {new Date(currentIxTime * 1000).toLocaleDateString()} 
+                    <span className="ml-1 text-amber-500">×{timeAcceleration}</span>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Data Sync Status Indicator */}
+          {syncState && syncState.status !== 'idle' && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className={`fixed top-4 ${isOwner ? 'left-1/2 transform -translate-x-1/2' : 'left-4'} z-40`}
+            >
+              <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs glass-hierarchy-child ${
+                syncState.status === 'syncing' ? 'text-blue-400' :
+                syncState.status === 'error' ? 'text-red-400' :
+                syncState.status === 'disconnected' ? 'text-amber-400' : ''
+              }`}>
+                {syncState.status === 'syncing' && <RefreshCw className="h-3 w-3 animate-spin" />}
+                {syncState.status === 'error' && <AlertCircle className="h-3 w-3" />}
+                {syncState.status === 'disconnected' && <WifiOff className="h-3 w-3" />}
+                <span>
+                  {syncState.status === 'syncing' && 'Syncing...'}
+                  {syncState.status === 'error' && 'Sync Error'}
+                  {syncState.status === 'disconnected' && 'Disconnected'}
+                </span>
+              </div>
+            </motion.div>
+          )}
+
+          <div className={`w-full px-6 py-8 ${isMobileView ? 'pt-20' : 'pt-24'}`}>
+            <div className="w-full mx-auto space-y-6">
+              
+              {/* Full Width Content */}
+              <div className="w-full">
+                {/* All content is now handled by children (PublicMyCountryPage or ExecutiveDashboard) */}
+                {children}
+              </div>
+
+          {/* Time & Status Panel - Bottom right for executive mode */}
+          {isExecutiveMode && (
+            <div className="fixed bottom-4 right-4 z-30">
+              <CollapsibleSection
+                id="time-status"
+                title="Time & Status"
+                icon={Activity}
+                badge="System Status"
+                colorTheme="executive"
+                priority="low"
+                purpose="Current time and system status information"
+                defaultExpanded={false}
+                className="min-w-[280px]"
+              >
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between">
+                    <span>Last Updated</span>
+                    <span className="text-muted-foreground">
+                      {new Date(country.lastCalculated * 1000).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Baseline</span>
+                    <span className="text-muted-foreground">
+                      {new Date(country.baselineDate * 1000).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>IxTime</span>
+                    <span className="text-amber-500">×{timeAcceleration}</span>
+                  </div>
+                </div>
+              </CollapsibleSection>
+            </div>
+          )}
+            </div>
           </div>
         </div>
-      </div>
-      </div>
+      </MobileOptimized>
     </TabThemeProvider>
   );
 }

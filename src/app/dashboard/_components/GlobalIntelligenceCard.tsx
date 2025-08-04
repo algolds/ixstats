@@ -32,7 +32,7 @@ interface AdaptedGlobalStats {
 }
 
 interface SDIData {
-  activeCrises?: Array<{ id: string; title: string; severity: string; status: string; timestamp: string }>;
+  activeCrises?: Array<{ id: string; title: string; severity: string; status: string; timestamp: Date }>;
   intelligenceFeed?: { total: number; data: Array<any> };
   economicIndicators?: { globalGrowth: number; inflationRate: number; [key: string]: any };
 }

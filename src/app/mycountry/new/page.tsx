@@ -123,9 +123,12 @@ function MyCountryNewContent() {
   const { data: intelligenceFeed = [] } = api.mycountry.getIntelligenceFeed.useQuery(
     { countryId: userProfile?.countryId || '', limit: 20 },
     { 
-      enabled: !!userProfile?.countryId && isOwner && isSignedIn && !!user?.id,
+      enabled: !!userProfile?.countryId && isOwner && isSignedIn && !!user?.id && viewMode === 'executive',
       retry: false, // Don't retry auth failures
-      refetchOnWindowFocus: false
+      refetchOnWindowFocus: false,
+      onError: (error) => {
+        console.warn('Intelligence feed not available:', error.message);
+      }
     }
   );
   

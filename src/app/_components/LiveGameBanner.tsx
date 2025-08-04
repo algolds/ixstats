@@ -140,7 +140,6 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
     const botInterval = setInterval(checkBotStatus, 30000); // Check every 30 seconds
 
     return () => {
-      clearInterval(interval);
       clearInterval(botInterval);
     };
   }, []);

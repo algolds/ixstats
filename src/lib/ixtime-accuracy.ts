@@ -520,11 +520,11 @@ export class IxTimeAccuracyVerifier {
       }
       
       if (result.passed) {
-        categoryResults[test.category].passed++;
+        categoryResults[test.category]!.passed++;
       } else {
-        categoryResults[test.category].failed++;
+        categoryResults[test.category]!.failed++;
       }
-      categoryResults[test.category].accuracy += result.accuracy;
+      categoryResults[test.category]!.accuracy += result.accuracy;
     }
     
     // Calculate averages
@@ -534,8 +534,8 @@ export class IxTimeAccuracyVerifier {
     
     // Finalize category results
     for (const category in categoryResults) {
-      const categoryTotal = categoryResults[category].passed + categoryResults[category].failed;
-      categoryResults[category].accuracy = categoryResults[category].accuracy / categoryTotal;
+      const categoryTotal = categoryResults[category]!.passed + categoryResults[category]!.failed;
+      categoryResults[category]!.accuracy = categoryResults[category]!.accuracy / categoryTotal;
     }
     
     return {

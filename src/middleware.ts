@@ -31,7 +31,10 @@ export default isClerkConfigured
         if (!userId) {
           // Build the redirect URL with the return path
           const returnUrl = encodeURIComponent(`${BASE_PATH}${req.nextUrl.pathname}${req.nextUrl.search}`);
-          const signInUrl = `https://accounts.ixwiki.com/sign-in?redirect_url=${returnUrl}`;
+          // Use environment-specific sign-in URL
+          const signInUrl = process.env.NODE_ENV === "production" 
+            ? `https://accounts.ixwiki.com/sign-in?redirect_url=${returnUrl}`
+            : `/sign-in?redirect_url=${returnUrl}`;
           return NextResponse.redirect(signInUrl);
         }
       }

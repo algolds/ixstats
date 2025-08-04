@@ -13,7 +13,7 @@ import { createUrl } from "~/lib/url-utils";
 import { cn } from "~/lib/utils";
 
 interface SDICardProps {
-  userProfile?: { countryId: string };
+  userProfile?: { countryId: string | null };
   isSdiExpanded: boolean;
   toggleSdiExpansion: () => void;
   focusedCard: string | null;
@@ -169,7 +169,9 @@ export function SDICard({
               className="mt-6 overflow-hidden"
             >
               <div className="glass-hierarchy-child p-6 rounded-lg">
-                <CountryIntelligenceSection countryId={userProfile.countryId} />
+                {userProfile.countryId && (
+                  <CountryIntelligenceSection countryId={userProfile.countryId} />
+                )}
               </div>
             </motion.div>
           )}

@@ -114,7 +114,9 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
     if (processedCountries.length > 0) {
       const randomIndex = Math.floor(Math.random() * processedCountries.length);
       const randomCountry = processedCountries[randomIndex];
-      handleCountryClick(randomCountry.id);
+      if (randomCountry) {
+        handleCountryClick(randomCountry.id);
+      }
     }
   };
 
