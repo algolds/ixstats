@@ -239,7 +239,7 @@ function CommandPaletteContent({
   const commands = useMemo(() => [
     { name: "Dashboard", path: "/dashboard", icon: Target, description: "Main analytics dashboard" },
     { name: "Countries", path: "/countries", icon: Globe, description: "Browse all countries" },
-    { name: "MyCountry®", path: "/mycountry", icon: Crown, description: "Manage your country" },
+    { name: "MyCountry®", path: "/mycountry/new", icon: Crown, description: "Your national dashboard and executive command center" },
     { name: "ECI", path: "/eci", icon: Target, description: "Executive Command Interface" },
     { name: "Builder", path: "/builder", icon: Plus, description: "Country builder tool" },
     { name: "Profile", path: "/profile", icon: Users, description: "User profile settings" },

@@ -1,5 +1,21 @@
 "use client";
 
+/**
+ * MyCountryDataWrapper - Central data orchestration component for MyCountry system
+ * 
+ * This component serves as the main data coordination layer, integrating:
+ * - Real-time data synchronization
+ * - Unified notification management 
+ * - Executive vs public mode switching
+ * - Cross-system state management
+ * 
+ * Key responsibilities:
+ * - Coordinate between useDataSync hook and RealTimeDataService
+ * - Route notifications to appropriate systems (executive/global)
+ * - Manage view mode transitions and data filtering
+ * - Provide unified data interface to child components
+ */
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
@@ -10,61 +26,14 @@ import {
 } from 'lucide-react';
 import { RealTimeDataService } from './RealTimeDataService';
 import { useDataSync } from '../hooks/useDataSync';
-import { useUnifiedNotifications, useDataNotifications } from '~/hooks/useUnifiedNotifications';
+import { useUnifiedNotifications } from '~/hooks/useUnifiedNotifications';
 import { UnifiedLayout } from './UnifiedLayout';
 import { useExecutiveNotifications } from '~/contexts/ExecutiveNotificationContext';
 import { PublicMyCountryPage } from '../public-page';
 import { ExecutiveDashboard } from '../executive-dashboard';
+import { api } from "~/trpc/react";
 
-// Mock data generator (moved from main page)
-function generateMockQuickActions() {
-  return [
-    {
-      id: 'tax-policy',
-      title: 'Adjust Corporate Tax Rate',
-      description: 'Review and potentially modify corporate taxation to stimulate investment',
-      icon: TrendingUp,
-      category: 'policy' as const,
-      urgency: 'high' as const,
-      estimatedTime: '2 hours',
-      impact: '+2% GDP growth',
-      enabled: true,
-    },
-    {
-      id: 'diplomatic-mission',
-      title: 'Approve Diplomatic Mission',
-      description: 'Authorize new embassy establishment in strategic trade partner nation',
-      icon: Globe,
-      category: 'diplomatic' as const,
-      urgency: 'medium' as const,
-      estimatedTime: '30 minutes',
-      impact: 'Enhanced relations',
-      enabled: true,
-    },
-    {
-      id: 'emergency-response',
-      title: 'Emergency Response Protocol',
-      description: 'Activate disaster response measures for recent natural events',
-      icon: Shield,
-      category: 'emergency' as const,
-      urgency: 'critical' as const,
-      estimatedTime: '15 minutes',
-      impact: 'Immediate relief',
-      enabled: true,
-    },
-    {
-      id: 'budget-allocation',
-      title: 'Healthcare Budget Reallocation',
-      description: 'Approve additional funding for rural healthcare expansion',
-      icon: Users,
-      category: 'budget' as const,
-      urgency: 'medium' as const,
-      estimatedTime: '1 hour',
-      impact: '+10% healthcare access',
-      enabled: true,
-    },
-  ];
-}
+// Executive actions now come from real API - no mock data needed
 
 interface MyCountryDataWrapperProps {
   user: any;
@@ -109,9 +78,60 @@ export function MyCountryDataWrapper({
   // Executive notifications integration
   const { setNotifications, setExecutiveMode } = useExecutiveNotifications();
   
-  // Unified notification system
-  const { createNotification } = useUnifiedNotifications();
-  const { createEconomicAlert, createAchievementNotification } = useDataNotifications();
+  // Unified notification system - using global notifications
+  const { addNotification } = useUnifiedNotifications();
+  
+  // Real API call for executive actions
+  const { data: executiveActions = [] } = api.mycountry.getExecutiveActions.useQuery(
+    { countryId: userProfile?.countryId || '' },
+    { enabled: !!userProfile?.countryId && isOwner && viewMode === 'executive' }
+  );
+  
+  // Executive action execution mutation
+  const executeActionMutation = api.mycountry.executeAction.useMutation({
+    onSuccess: (result) => {
+      console.log('[Executive Action] Success:', result.message);
+      // Add success notification
+      addNotification({
+        type: 'success',
+        category: 'governance',
+        title: 'Action Executed',
+        message: result.message,
+        source: 'Executive Command',
+        actionable: false,
+        priority: 'medium',
+      });
+    },
+    onError: (error) => {
+      console.error('[Executive Action] Error:', error.message);
+      // Add error notification
+      addNotification({
+        type: 'alert',
+        category: 'system',
+        title: 'Action Failed',
+        message: error.message,
+        source: 'Executive Command',
+        actionable: false,
+        priority: 'high',
+      });
+    }
+  });
+  
+  // Data notification helpers
+  const createEconomicAlert = async (data: { metric: string; value: number; change: number; threshold?: number }) => {
+    const notification = {
+      type: 'alert' as const,
+      category: 'economic' as const,
+      title: `Economic Alert: ${data.metric}`,
+      message: `${data.metric} has changed by ${data.change > 0 ? '+' : ''}${data.change.toFixed(2)}% to ${data.value.toLocaleString()}`,
+      source: 'Economic Intelligence',
+      actionable: true,
+      priority: Math.abs(data.change) > 5 ? 'high' as const : 'medium' as const,
+    };
+    return addNotification(notification);
+  };
+  
+  const createNotification = addNotification;
   
   // Set executive mode and notifications based on view mode
   React.useEffect(() => {
@@ -266,10 +286,19 @@ export function MyCountryDataWrapper({
             <ExecutiveDashboard
               country={enhancedCountryData}
               intelligenceFeed={intelligenceFeed}
-              quickActions={generateMockQuickActions()}
+              quickActions={executiveActions}
               currentIxTime={currentIxTime}
               timeAcceleration={timeAcceleration}
-              onActionClick={onActionClick}
+              onActionClick={(actionId: string) => {
+                // Execute the action via API
+                executeActionMutation.mutate({
+                  countryId: userProfile?.countryId || '',
+                  actionId: actionId,
+                  parameters: {}
+                });
+                // Also call the original handler for any additional logic
+                onActionClick(actionId);
+              }}
               onFocusAreaClick={onFocusAreaClick}
               onSettingsClick={onSettingsClick}
             />

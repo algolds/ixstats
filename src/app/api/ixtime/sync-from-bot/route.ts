@@ -41,7 +41,39 @@ export async function POST(request: Request) {
     // Fetch current state from Discord bot (manual sync)
     const BOT_URL = process.env.IXTIME_BOT_URL || process.env.NEXT_PUBLIC_IXTIME_BOT_URL || 'http://localhost:3001';
     
-    const response = await fetch(`${BOT_URL}/ixtime/status`, {
+    // Check if bot is available first
+    let response;
+    try {
+      response = await fetch(`${BOT_URL}/health`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(2000)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Discord bot health check failed: ${response.status}`);
+      }
+    } catch (healthError) {
+      // Bot is not available, return graceful fallback
+      console.warn('Discord bot is not available, using local time state');
+      const currentState = {
+        ixTimeTimestamp: IxTime.getCurrentIxTime(),
+        ixTimeFormatted: IxTime.formatIxTime(IxTime.getCurrentIxTime(), true),
+        multiplier: IxTime.getTimeMultiplier(),
+        isPaused: IxTime.isPaused(),
+        gameYear: IxTime.getCurrentGameYear(),
+        isNaturalProgression: IxTime.isMultiplierNatural()
+      };
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Discord bot unavailable, using local time state',
+        currentState,
+        warning: 'Discord bot is not responding - using local IxTime state'
+      });
+    }
+    
+    // Bot is available, fetch time status
+    response = await fetch(`${BOT_URL}/ixtime/status`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
       signal: AbortSignal.timeout(5000)

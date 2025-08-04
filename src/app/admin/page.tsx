@@ -21,6 +21,7 @@ import {
   NotificationsAdmin,
   UserManagement,
 } from "./_components";
+import { IxTimeVisualizer } from "./_components/IxTimeVisualizer";
 import { GlassCard, EnhancedCard } from "~/components/ui/enhanced-card";
 import { BentoGrid } from "~/components/ui/bento-grid";
 import { AnimatedNumber } from "~/components/ui/animated-number";
@@ -93,6 +94,7 @@ export default function AdminPage() {
   const sidebarLinks = [
     { label: "Overview", value: "overview", icon: <Settings /> },
     { label: "Time Controls", value: "time", icon: <Clock /> },
+    { label: "IxTime Visualizer", value: "ixtime-visualizer", icon: <BarChart3 /> },
     { label: "Economic Controls", value: "economic", icon: <TrendingUp /> },
     { label: "Bot Controls", value: "bot", icon: <Bot /> },
     { label: "Data Import", value: "import", icon: <Upload /> },
@@ -732,6 +734,11 @@ export default function AdminPage() {
                     lastBotSync={actionState.lastBotSync}
                   />
                 </EnhancedCard>
+              )}
+              {selectedSection === "ixtime-visualizer" && (
+                <div className="mb-8">
+                  <IxTimeVisualizer />
+                </div>
               )}
               {selectedSection === "economic" && (
                 <>

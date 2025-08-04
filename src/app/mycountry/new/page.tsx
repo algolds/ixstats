@@ -21,6 +21,7 @@ import { createUrl } from "~/lib/url-utils";
 import { useFlag } from '~/hooks/useFlag';
 import { GlobalNotificationProvider } from './components/GlobalNotificationSystem';
 import { MyCountryDataWrapper } from './components/MyCountryDataWrapper';
+import { MyCountryErrorBoundary } from './components/ErrorBoundary';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -62,163 +63,32 @@ interface CountryData {
   baselineDate: number;
 }
 
-// Mock data generators for development
-function generateMockIntelligenceFeed() {
-  return [
-    {
-      id: '1',
-      type: 'alert' as const,
-      severity: 'critical' as const,
-      title: 'Economic Growth Slowdown Detected',
-      description: 'GDP growth rate has decreased by 0.3% this quarter, requiring immediate policy attention.',
-      category: 'economic' as const,
-      timestamp: Date.now() - 3600000,
-      actionable: true,
-      source: 'Economic Intelligence Unit',
-    },
-    {
-      id: '2',
-      type: 'opportunity' as const,
-      severity: 'high' as const,
-      title: 'New Trade Agreement Opportunity',
-      description: 'Regional bloc is seeking new trade partners for agricultural exports.',
-      category: 'diplomatic' as const,
-      timestamp: Date.now() - 7200000,
-      actionable: true,
-      source: 'Diplomatic Intelligence',
-    },
-    {
-      id: '3',
-      type: 'update' as const,
-      severity: 'medium' as const,
-      title: 'Population Growth Milestone Reached',
-      description: 'National population has crossed the 50 million threshold.',
-      category: 'social' as const,
-      timestamp: Date.now() - 86400000,
-      actionable: false,
-      source: 'Demographics Bureau',
-    },
-    {
-      id: '4',
-      type: 'update' as const,
-      severity: 'low' as const,
-      title: 'Projected Infrastructure Needs',
-      description: 'Analysis suggests 15% increase in transportation infrastructure by 2030.',
-      category: 'governance' as const,
-      timestamp: Date.now() - 172800000,
-      actionable: false,
-      source: 'Strategic Planning Division',
-    },
-  ];
-}
+/**
+ * Real-time data integration with MyCountry API
+ * All mock data generators have been replaced with live tRPC API calls
+ */
 
-
-function generateMockAchievements() {
-  return [
-    {
-      id: '1',
-      title: 'Economic Powerhouse',
-      description: 'Achieved top 10% global GDP per capita ranking',
-      icon: TrendingUp,
-      category: 'economic' as const,
-      rarity: 'epic' as const,
-      achievedAt: Date.now() - 2592000000, // 30 days ago
-    },
-    {
-      id: '2',
-      title: 'Diplomatic Excellence',
-      description: 'Established 25+ international trade agreements',
-      icon: Globe,
-      category: 'diplomatic' as const,
-      rarity: 'rare' as const,
-      achievedAt: Date.now() - 5184000000, // 60 days ago
-    },
-    {
-      id: '3',
-      title: 'Population Milestone',
-      description: 'Successfully managed 50M+ population growth',
-      icon: Users,
-      category: 'social' as const,
-      rarity: 'rare' as const,
-      achievedAt: Date.now() - 7776000000, // 90 days ago
-    },
-  ];
-}
-
-function generateMockMilestones() {
-  return [
-    {
-      id: '1',
-      title: 'Economic Tier Advancement',
-      description: 'Successfully transitioned from Developing to Emerging economy status',
-      achievedAt: Date.now() - 7776000000,
-      impact: '+25% international investment',
-      category: 'economic' as const,
-    },
-    {
-      id: '2',
-      title: 'Population Growth Management',
-      description: 'Implemented sustainable population policies while maintaining growth',
-      achievedAt: Date.now() - 15552000000,
-      impact: 'Optimal demographic balance',
-      category: 'population' as const,
-    },
-  ];
-}
-
-function generateMockRankings() {
-  return [
-    {
-      global: { position: 23, total: 195, category: 'GDP' as const },
-      regional: { position: 3, total: 15, region: 'Southeast Asia' },
-      tier: { position: 5, total: 45, tier: 'Emerging Economy' },
-    },
-    {
-      global: { position: 15, total: 195, category: 'Quality of Life' as const },
-      regional: { position: 2, total: 15, region: 'Southeast Asia' },
-      tier: { position: 3, total: 45, tier: 'Emerging Economy' },
-    },
-  ];
-}
-
-function calculateVitalityScores(country: any) {
-  // Calculate vitality scores based on country data
-  const economicVitality = Math.min(100, Math.max(0, 
-    (country.adjustedGdpGrowth * 100 * 10) + 
-    (country.currentGdpPerCapita / 1000) + 
-    30
-  ));
-  
-  const populationWellbeing = Math.min(100, Math.max(0,
-    (country.populationGrowthRate * 100 * 20) + 
-    Math.min(80, country.populationTier * 10) + 
-    20
-  ));
-  
-  const diplomaticStanding = Math.min(100, Math.max(40, 60 + Math.random() * 30));
-  const governmentalEfficiency = Math.min(100, Math.max(50, 65 + Math.random() * 25));
-  
-  return {
-    economicVitality: Math.round(economicVitality),
-    populationWellbeing: Math.round(populationWellbeing),
-    diplomaticStanding: Math.round(diplomaticStanding),
-    governmentalEfficiency: Math.round(governmentalEfficiency),
-  };
-}
+/**
+ * MyCountry component with full API integration
+ * Vitality scores and all data now come from dedicated MyCountry API endpoints
+ */
 
 function MyCountryNewContent() {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded, isSignedIn } = useUser();
   const router = useRouter();
   const [viewMode, setViewMode] = useState<'public' | 'executive'>('public');
   
-  // User profile and country data
+  // User profile and country data - using real MyCountry API endpoints
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
     { userId: user?.id || '' },
     { enabled: !!user?.id }
   );
 
-  const { data: country, isLoading: countryLoading } = api.countries.getByIdWithEconomicData.useQuery(
-    { id: userProfile?.countryId || '' },
+  const { data: country, isLoading: countryLoading } = api.mycountry.getCountryDashboard.useQuery(
+    { 
+      countryId: userProfile?.countryId || '',
+      includeHistory: false 
+    },
     { enabled: !!userProfile?.countryId }
   );
 
@@ -232,7 +102,7 @@ function MyCountryNewContent() {
   // Get flag data
   const { flagUrl } = useFlag(country?.name || '');
 
-  // Enhanced country data with vitality scores
+  // Enhanced country data - vitality scores now come from API
   const enhancedCountryData: CountryData | null = country ? {
     ...country,
     region: country.region || '',
@@ -240,21 +110,39 @@ function MyCountryNewContent() {
     governmentType: country.governmentType || undefined,
     landArea: country.landArea || undefined,
     populationDensity: country.populationDensity || undefined,
-    lastCalculated: typeof country.lastCalculated === 'number' ? country.lastCalculated : 
-                    (country.lastCalculated instanceof Date ? country.lastCalculated.getTime() : Date.now()),
-    baselineDate: typeof country.baselineDate === 'number' ? country.baselineDate : 
-                  (country.baselineDate instanceof Date ? country.baselineDate.getTime() : Date.now()),
-    ...calculateVitalityScores(country),
+    // API already returns timestamps as numbers and includes vitality scores
+    lastCalculated: country.lastCalculated,
+    baselineDate: country.baselineDate,
+    economicVitality: country.economicVitality,
+    populationWellbeing: country.populationWellbeing,
+    diplomaticStanding: country.diplomaticStanding,
+    governmentalEfficiency: country.governmentalEfficiency,
   } : null;
 
-  // Mock data for development - memoized to prevent infinite re-renders
-  const intelligenceFeed = useMemo(() => 
-    enhancedCountryData ? generateMockIntelligenceFeed() : [], 
-    [enhancedCountryData?.id]
+  // Real API data for MyCountry system - Intelligence feed only for authenticated country owners
+  const { data: intelligenceFeed = [] } = api.mycountry.getIntelligenceFeed.useQuery(
+    { countryId: userProfile?.countryId || '', limit: 20 },
+    { 
+      enabled: !!userProfile?.countryId && isOwner && isSignedIn && !!user?.id,
+      retry: false, // Don't retry auth failures
+      refetchOnWindowFocus: false
+    }
   );
-  const achievements = useMemo(() => generateMockAchievements(), []);
-  const milestones = useMemo(() => generateMockMilestones(), []);
-  const rankings = useMemo(() => generateMockRankings(), []);
+  
+  const { data: achievements = [] } = api.mycountry.getAchievements.useQuery(
+    { countryId: userProfile?.countryId || '' },
+    { enabled: !!userProfile?.countryId }
+  );
+  
+  const { data: milestones = [] } = api.mycountry.getMilestones.useQuery(
+    { countryId: userProfile?.countryId || '' },
+    { enabled: !!userProfile?.countryId }
+  );
+  
+  const { data: rankings = [] } = api.mycountry.getRankings.useQuery(
+    { countryId: userProfile?.countryId || '' },
+    { enabled: !!userProfile?.countryId }
+  );
 
   // Handle authentication redirect
   useEffect(() => {
@@ -372,8 +260,9 @@ function MyCountryNewContent() {
   }
 
   return (
-    <GlobalNotificationProvider>
-      <MyCountryDataWrapper
+    <MyCountryErrorBoundary>
+      <GlobalNotificationProvider>
+        <MyCountryDataWrapper
         user={user}
         userProfile={userProfile}
         country={enhancedCountryData}
@@ -392,7 +281,8 @@ function MyCountryNewContent() {
         onSettingsClick={handleSettingsClick}
         onPrivateAccess={handlePrivateAccess}
         />
-    </GlobalNotificationProvider>
+      </GlobalNotificationProvider>
+    </MyCountryErrorBoundary>
   );
 }
 

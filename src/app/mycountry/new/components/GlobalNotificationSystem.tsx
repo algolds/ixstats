@@ -250,7 +250,7 @@ export function NotificationCard({
             <div className="flex gap-2 mt-3">
               {notification.actions.map((action, actionIndex) => (
                 <button
-                  key={action.id ? `action-${action.id}` : `action-fallback-${actionIndex}`}
+                  key={action.id && action.id.trim() ? `action-${action.id}` : `action-fallback-${actionIndex}`}
                   onClick={() => {
                     action.onClick();
                     onAction?.(action.id);

@@ -32,8 +32,8 @@ else
     export NODE_ENV=development
 fi
 
-# Force development port to 3003 (3000 is used by time bot, 3001 by bot API, 3002 by maps.ixwiki.com)
-DEVELOPMENT_PORT=3003
+# Use development port 3000 (3001 is used by Discord bot API, 3002 by IxMaps production, 3003 by IxMaps dev)
+DEVELOPMENT_PORT=3000
 
 echo "🔍 Development Environment Summary:"
 echo "   NODE_ENV: $NODE_ENV"

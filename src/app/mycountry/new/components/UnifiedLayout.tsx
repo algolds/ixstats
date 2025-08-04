@@ -429,7 +429,7 @@ export function UnifiedLayout({
                     <div className="space-y-4">
                       {milestones.slice(0, 8).map((milestone, index) => (
                         <motion.div
-                          key={milestone?.id ? `milestone-${milestone.id}` : `milestone-fallback-${index}`}
+                          key={milestone?.id && milestone.id.trim() ? `milestone-${milestone.id}` : `milestone-fallback-${index}`}
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: index * 0.1 }}
@@ -468,7 +468,7 @@ export function UnifiedLayout({
                     <div className="space-y-3">
                       {intelligenceFeed.slice(0, 6).map((item, index) => (
                         <motion.div
-                          key={item?.id ? `activity-${item.id}` : `activity-fallback-${index}`}
+                          key={item?.id && item.id.trim() ? `activity-${item.id}` : `activity-fallback-${index}`}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.05 }}
