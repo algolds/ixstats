@@ -1,0 +1,505 @@
+/**
+ * Unified Notification Center
+ * Main notification hub integrating with enhanced notification system
+ */
+
+'use client';
+
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Bell, 
+  X, 
+  Settings, 
+  Filter, 
+  CheckCircle, 
+  AlertTriangle,
+  Info,
+  Zap,
+  Clock,
+  Eye,
+  ChevronDown,
+  ChevronUp
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
+import { Button } from '~/components/ui/button';
+import { Badge } from '~/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '~/components/ui/dropdown-menu';
+import type {
+  UnifiedNotification,
+  NotificationCategory,
+  NotificationPriority,
+  NotificationStatus,
+  UserNotificationPreferences,
+} from '~/types/unified-notifications';
+import { generateSafeKey } from '~/app/mycountry/new/utils/keyValidation';
+
+// Notification center configuration
+interface NotificationCenterConfig {
+  maxVisible: number;
+  autoHide: boolean;
+  groupByCategory: boolean;
+  showPreviews: boolean;
+  enableFiltering: boolean;
+  refreshInterval: number; // milliseconds
+}
+
+// Notification display props
+interface NotificationDisplayProps {
+  notification: UnifiedNotification;
+  onAction: (action: string) => void;
+  onDismiss: () => void;
+  compact?: boolean;
+}
+
+// Filter options
+interface NotificationFilters {
+  categories: NotificationCategory[];
+  priorities: NotificationPriority[];
+  status: NotificationStatus[];
+  timeRange: 'hour' | 'day' | 'week' | 'month' | 'all';
+}
+
+// Notification stats
+interface NotificationStats {
+  total: number;
+  unread: number;
+  byCategory: Record<NotificationCategory, number>;
+  byPriority: Record<NotificationPriority, number>;
+}
+
+export interface UnifiedNotificationCenterProps {
+  config?: Partial<NotificationCenterConfig>;
+  userPreferences?: UserNotificationPreferences;
+  onNotificationAction?: (notification: UnifiedNotification, action: string) => void;
+  onPreferencesChange?: (preferences: Partial<UserNotificationPreferences>) => void;
+  className?: string;
+}
+
+const defaultConfig: NotificationCenterConfig = {
+  maxVisible: 50,
+  autoHide: false,
+  groupByCategory: true,
+  showPreviews: true,
+  enableFiltering: true,
+  refreshInterval: 30000, // 30 seconds
+};
+
+const priorityConfig = {
+  critical: {
+    color: 'text-red-600 bg-red-50 border-red-200',
+    icon: AlertTriangle,
+    badge: 'bg-red-500 text-white'
+  },
+  high: {
+    color: 'text-orange-600 bg-orange-50 border-orange-200',
+    icon: Zap,
+    badge: 'bg-orange-500 text-white'
+  },
+  medium: {
+    color: 'text-blue-600 bg-blue-50 border-blue-200',
+    icon: Info,
+    badge: 'bg-blue-500 text-white'
+  },
+  low: {
+    color: 'text-gray-600 bg-gray-50 border-gray-200',
+    icon: Clock,
+    badge: 'bg-gray-500 text-white'
+  }
+};
+
+const categoryConfig = {
+  economic: { icon: '💰', color: 'text-green-600' },
+  diplomatic: { icon: '🌍', color: 'text-blue-600' },
+  governance: { icon: '🏛️', color: 'text-purple-600' },
+  social: { icon: '👥', color: 'text-cyan-600' },
+  security: { icon: '🛡️', color: 'text-red-600' },
+  system: { icon: '⚙️', color: 'text-gray-600' },
+  achievement: { icon: '🏆', color: 'text-yellow-600' },
+  crisis: { icon: '🚨', color: 'text-red-700' },
+  opportunity: { icon: '✨', color: 'text-green-700' }
+};
+
+function NotificationDisplay({ 
+  notification, 
+  onAction, 
+  onDismiss, 
+  compact = false 
+}: NotificationDisplayProps) {
+  const [expanded, setExpanded] = useState(false);
+  const priorityConf = priorityConfig[notification.priority];
+  const categoryConf = categoryConfig[notification.category];
+  const PriorityIcon = priorityConf.icon;
+
+  const formatTimestamp = (timestamp: number) => {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / (60 * 1000));
+    const hours = Math.floor(diff / (60 * 60 * 1000));
+    const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+      className={`
+        relative p-4 rounded-lg border transition-all duration-200 hover:shadow-sm
+        ${priorityConf.color}
+        ${notification.status === 'read' ? 'opacity-75' : ''}
+        ${compact ? 'p-3' : 'p-4'}
+      `}
+    >
+      {/* Priority indicator */}
+      <div className="absolute top-2 right-2 flex items-center gap-2">
+        <Badge className={priorityConf.badge}>
+          <PriorityIcon className="w-3 h-3 mr-1" />
+          {notification.priority}
+        </Badge>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onDismiss}
+          className="w-6 h-6 p-0 hover:bg-red-100"
+        >
+          <X className="w-3 h-3" />
+        </Button>
+      </div>
+
+      {/* Header */}
+      <div className="pr-20 mb-2">
+        <div className="flex items-start gap-3">
+          <span className="text-lg">{categoryConf.icon}</span>
+          <div className="flex-1">
+            <h4 className="font-medium text-sm line-clamp-1">{notification.title}</h4>
+            <p className="text-xs text-muted-foreground">
+              {categoryConf.color} • {formatTimestamp(notification.timestamp)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="ml-8">
+        <p className={`text-sm text-gray-700 ${compact ? 'line-clamp-2' : expanded ? '' : 'line-clamp-3'}`}>
+          {notification.message}
+        </p>
+        
+        {notification.message.length > 150 && !compact && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setExpanded(!expanded)}
+            className="mt-1 h-auto p-0 text-xs"
+          >
+            {expanded ? (
+              <>Show less <ChevronUp className="w-3 h-3 ml-1" /></>
+            ) : (
+              <>Show more <ChevronDown className="w-3 h-3 ml-1" /></>
+            )}
+          </Button>
+        )}
+      </div>
+
+      {/* Actions */}
+      {notification.actions && notification.actions.length > 0 && (
+        <div className="ml-8 mt-3 flex gap-2">
+          {notification.actions.slice(0, 2).map((action, index) => (
+            <Button
+              key={generateSafeKey(action.id, 'action', index)}
+              variant="outline"
+              size="sm"
+              onClick={() => onAction(action.id)}
+              className="text-xs h-7"
+            >
+              {action.label}
+            </Button>
+          ))}
+        </div>
+      )}
+
+      {/* Metadata */}
+      {notification.metadata && Object.keys(notification.metadata).length > 0 && expanded && (
+        <div className="ml-8 mt-3 p-2 bg-gray-50 rounded text-xs">
+          <div className="font-medium mb-1">Additional Info:</div>
+          {Object.entries(notification.metadata).slice(0, 3).map(([key, value]) => (
+            <div key={key} className="text-gray-600">
+              {key}: {String(value)}
+            </div>
+          ))}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+export function UnifiedNotificationCenter({
+  config: userConfig = {},
+  userPreferences,
+  onNotificationAction,
+  onPreferencesChange,
+  className = ''
+}: UnifiedNotificationCenterProps) {
+  const config = { ...defaultConfig, ...userConfig };
+  
+  // State management
+  const [notifications, setNotifications] = useState<UnifiedNotification[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'priority'>('all');
+  const [filters, setFilters] = useState<NotificationFilters>({
+    categories: [],
+    priorities: [],
+    status: [],
+    timeRange: 'day'
+  });
+
+  // Mock notifications for demonstration
+  useEffect(() => {
+    // In real implementation, this would fetch from the notification store
+    const mockNotifications: UnifiedNotification[] = [
+      {
+        id: 'notif-1',
+        source: 'intelligence',
+        timestamp: Date.now() - 300000, // 5 minutes ago
+        title: 'Economic Growth Alert',
+        message: 'GDP growth has exceeded expectations by 15% this quarter, suggesting strong economic momentum.',
+        category: 'economic',
+        type: 'alert',
+        priority: 'high',
+        severity: 'important',
+        context: {} as any,
+        triggers: [],
+        relevanceScore: 85,
+        deliveryMethod: 'dynamic-island',
+        status: 'delivered',
+        actionable: true,
+        actions: [
+          { id: 'view-details', label: 'View Details', type: 'primary' },
+          { id: 'acknowledge', label: 'Acknowledge', type: 'secondary' }
+        ]
+      },
+      {
+        id: 'notif-2',
+        source: 'system',
+        timestamp: Date.now() - 900000, // 15 minutes ago
+        title: 'Diplomatic Relations Update',
+        message: 'New trade agreement signed with neighboring countries, improving diplomatic standing.',
+        category: 'diplomatic',
+        type: 'update',
+        priority: 'medium',
+        severity: 'informational',
+        context: {} as any,
+        triggers: [],
+        relevanceScore: 70,
+        deliveryMethod: 'toast',
+        status: 'read',
+        actionable: false,
+      },
+      {
+        id: 'notif-3',
+        source: 'realtime',
+        timestamp: Date.now() - 1800000, // 30 minutes ago
+        title: 'Population Milestone Achieved',
+        message: 'National population has reached 50 million, marking a significant demographic milestone.',
+        category: 'achievement',
+        type: 'success',
+        priority: 'medium',
+        severity: 'informational',
+        context: {} as any,
+        triggers: [],
+        relevanceScore: 60,
+        deliveryMethod: 'toast',
+        status: 'delivered',
+        actionable: true,
+        actions: [
+          { id: 'celebrate', label: 'Share Achievement', type: 'primary' }
+        ]
+      }
+    ];
+
+    setNotifications(mockNotifications);
+  }, []);
+
+  // Calculate stats
+  const stats = useMemo((): NotificationStats => {
+    const total = notifications.length;
+    const unread = notifications.filter(n => n.status !== 'read').length;
+    
+    const byCategory = notifications.reduce((acc, n) => {
+      acc[n.category] = (acc[n.category] || 0) + 1;
+      return acc;
+    }, {} as Record<NotificationCategory, number>);
+    
+    const byPriority = notifications.reduce((acc, n) => {
+      acc[n.priority] = (acc[n.priority] || 0) + 1;
+      return acc;
+    }, {} as Record<NotificationPriority, number>);
+
+    return { total, unread, byCategory, byPriority };
+  }, [notifications]);
+
+  // Filter notifications
+  const filteredNotifications = useMemo(() => {
+    let filtered = [...notifications];
+
+    // Filter by tab
+    if (activeTab === 'unread') {
+      filtered = filtered.filter(n => n.status !== 'read');
+    } else if (activeTab === 'priority') {
+      filtered = filtered.filter(n => ['critical', 'high'].includes(n.priority));
+    }
+
+    // Apply additional filters
+    if (filters.categories.length > 0) {
+      filtered = filtered.filter(n => filters.categories.includes(n.category));
+    }
+
+    if (filters.priorities.length > 0) {
+      filtered = filtered.filter(n => filters.priorities.includes(n.priority));
+    }
+
+    // Sort by timestamp (newest first) and priority
+    return filtered.sort((a, b) => {
+      const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+      const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
+      return priorityDiff !== 0 ? priorityDiff : b.timestamp - a.timestamp;
+    });
+  }, [notifications, activeTab, filters]);
+
+  // Handlers
+  const handleNotificationAction = useCallback((notification: UnifiedNotification, action: string) => {
+    // Mark as read if action taken
+    setNotifications(prev => 
+      prev.map(n => 
+        n.id === notification.id 
+          ? { ...n, status: 'read' as const }
+          : n
+      )
+    );
+
+    onNotificationAction?.(notification, action);
+  }, [onNotificationAction]);
+
+  const handleDismiss = useCallback((notificationId: string) => {
+    setNotifications(prev => 
+      prev.map(n => 
+        n.id === notificationId 
+          ? { ...n, status: 'dismissed' as const }
+          : n
+      )
+    );
+  }, []);
+
+  const markAllAsRead = useCallback(() => {
+    setNotifications(prev => 
+      prev.map(n => ({ ...n, status: 'read' as const }))
+    );
+  }, []);
+
+  return (
+    <div className={`w-full max-w-2xl ${className}`}>
+      <Card className="shadow-lg">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="w-5 h-5" />
+              Notifications
+              {stats.unread > 0 && (
+                <Badge variant="destructive" className="ml-2">
+                  {stats.unread}
+                </Badge>
+              )}
+            </CardTitle>
+            
+            <div className="flex items-center gap-2">
+              {config.enableFiltering && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Filter className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={markAllAsRead}>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Mark All Read
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Settings className="w-4 h-4 mr-2" />
+                      Preferences
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="flex gap-4 text-sm text-muted-foreground">
+            <span>{stats.total} total</span>
+            <span>{stats.unread} unread</span>
+            <span>{Object.keys(stats.byPriority).length} categories</span>
+          </div>
+        </CardHeader>
+
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="all">All ({stats.total})</TabsTrigger>
+              <TabsTrigger value="unread">
+                Unread ({stats.unread})
+              </TabsTrigger>
+              <TabsTrigger value="priority">
+                Priority ({(stats.byPriority.critical || 0) + (stats.byPriority.high || 0)})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value={activeTab} className="mt-4">
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                <AnimatePresence mode="popLayout">
+                  {filteredNotifications.length > 0 ? (
+                    filteredNotifications.slice(0, config.maxVisible).map((notification) => (
+                      <NotificationDisplay
+                        key={generateSafeKey(notification.id, 'notification', 0)}
+                        notification={notification}
+                        onAction={(action) => handleNotificationAction(notification, action)}
+                        onDismiss={() => handleDismiss(notification.id)}
+                        compact={false}
+                      />
+                    ))
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-center py-8 text-muted-foreground"
+                    >
+                      <Eye className="w-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No notifications to display</p>
+                      <p className="text-xs mt-1">
+                        {activeTab === 'unread' ? 'All caught up!' : 'Check back later for updates'}
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default UnifiedNotificationCenter;
