@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, Users, Globe, Building2 } from 'lucide-react';
+import { TrendingUp, Users, Globe, Building2, type LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip';
 
 interface ActivityRing {
@@ -12,7 +12,7 @@ interface ActivityRing {
   value: number; // 0-100 percentage
   max: number;
   color: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   metrics: {
     primary: string;
     secondary: string;

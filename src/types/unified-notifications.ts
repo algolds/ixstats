@@ -100,6 +100,7 @@ export type DeliveryMethod =
 export type NotificationStatus = 
   | 'pending'         // Awaiting delivery
   | 'delivered'       // Successfully delivered
+  | 'deferred'        // Delivery deferred by optimization
   | 'read'            // User acknowledged
   | 'dismissed'       // User dismissed
   | 'expired'         // TTL expired
@@ -348,3 +349,64 @@ export const DEFAULT_USER_PREFERENCES: UserNotificationPreferences = {
   allowMLPersonalization: true,
   trackEngagement: true,
 };
+
+// Additional types for notification store
+export interface NotificationBatch {
+  id: string;
+  notifications: UnifiedNotification[];
+  priority: NotificationPriority;
+  estimatedDeliveryTime: number;
+  batchingReason: string;
+  createdAt: number;
+}
+
+export interface NotificationStats {
+  total: number;
+  unread: number;
+  byCategory: Record<NotificationCategory, number>;
+  byPriority: Record<NotificationPriority, number>;
+  delivered: number;
+  dismissed: number;
+  engaged: number;
+}
+
+export interface DeliveryContext {
+  isUserActive: boolean;
+  currentPage: string;
+  deviceType: 'mobile' | 'tablet' | 'desktop';
+  batteryLevel: number;
+  networkCondition: 'poor' | 'good' | 'excellent';
+  timeOfDay: number;
+  userAttentionScore: number;
+  recentInteractions: string[];
+  contextualFactors: Record<string, any>;
+  lastUserActivity: number;
+}
+
+export interface NotificationHistory {
+  id: string;
+  notificationId: string;
+  action: string;
+  timestamp: number;
+  context: Record<string, any>;
+  userAgent: string;
+  metadata: Record<string, any>;
+}
+
+// Grouping preferences for notification batching
+export interface GroupingPreferences {
+  enableGrouping: boolean;
+  maxGroupSize: number;
+  timeWindow: number;
+  groupByCategory: boolean;
+  groupBySeverity: boolean;
+}
+
+// Notification group for batching
+export interface NotificationGroup {
+  id: string;
+  notifications: UnifiedNotification[];
+  groupingCriteria: string[];
+  priority: NotificationPriority;
+  createdAt: number;
+}

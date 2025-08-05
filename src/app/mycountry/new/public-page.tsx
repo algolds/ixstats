@@ -5,29 +5,20 @@ import { motion } from 'framer-motion';
 import { 
   Eye,
   Calendar,
-  Trophy,
   TrendingUp,
   Users,
   Globe,
-  Building2,
-  MapPin,
-  Flag,
-  BarChart3,
-  Sparkles,
-  Crown,
-  Shield,
-  Star,
-  Target
+  Building2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
-import { Separator } from '~/components/ui/separator';
-import { ActivityRings, createDefaultActivityRings } from './components/ActivityRings';
-import { ExecutiveSummary } from './components/ExecutiveSummary';
-import { HolographicNationCard } from './components/HolographicNationCard';
 import { AchievementsRankings } from './components/AchievementsRankings';
-import { FocusCards, createDefaultFocusCards } from './components/FocusCards';
+import { ExecutiveCommandCenter } from './components/ExecutiveCommandCenter';
+import { NationalPerformanceCommandCenter } from './components/NationalPerformanceCommandCenter';
+import { IntelligenceBriefings } from './components/IntelligenceBriefings';
+import { ForwardLookingIntelligence } from './components/ForwardLookingIntelligence';
+import { transformToExecutiveIntelligence, createMockHistoricalData } from './utils/dataTransformers';
 import { useFlag } from '~/hooks/useFlag';
 
 interface Achievement {
@@ -76,6 +67,7 @@ interface CountryStats {
   capital?: string;
   founded?: string;
   governmentType?: string;
+  leader?: string;
   flag?: string;
   
   // Core metrics
@@ -115,31 +107,6 @@ interface PublicMyCountryPageProps {
   className?: string;
 }
 
-function getAchievementRarityColor(rarity: Achievement['rarity']) {
-  switch (rarity) {
-    case 'legendary':
-      return 'bg-gradient-to-r from-purple-600 to-pink-600 text-white';
-    case 'epic':
-      return 'bg-gradient-to-r from-blue-600 to-purple-600 text-white';
-    case 'rare':
-      return 'bg-gradient-to-r from-green-600 to-blue-600 text-white';
-    case 'common':
-      return 'bg-gradient-to-r from-gray-600 to-gray-700 text-white';
-  }
-}
-
-function getAchievementIcon(category: Achievement['category']) {
-  switch (category) {
-    case 'economic':
-      return TrendingUp;
-    case 'diplomatic':
-      return Globe;
-    case 'social':
-      return Users;
-    case 'governance':
-      return Building2;
-  }
-}
 
 function getMilestoneIcon(category: Milestone['category']) {
   switch (category) {
@@ -164,159 +131,100 @@ export function PublicMyCountryPage({
   className = '',
 }: PublicMyCountryPageProps) {
   // Load country flag
-  const { flagUrl, isLoading: flagLoading } = useFlag(country.name);
-  // Create activity rings data
-  const activityRingsData = createDefaultActivityRings({
-    economicVitality: country.economicVitality,
-    populationWellbeing: country.populationWellbeing,
-    diplomaticStanding: country.diplomaticStanding,
-    governmentalEfficiency: country.governmentalEfficiency,
-    economicMetrics: {
-      gdpPerCapita: `$${(country.currentGdpPerCapita / 1000).toFixed(0)}k`,
-      growthRate: `${(country.realGDPGrowthRate * 100).toFixed(1)}%`,
-      tier: country.economicTier,
-    },
-    populationMetrics: {
-      population: `${(country.currentPopulation / 1000000).toFixed(1)}M`,
-      growthRate: `${(country.populationGrowthRate * 100).toFixed(1)}%`,
-      tier: country.populationTier,
-    },
-    diplomaticMetrics: {
-      allies: '12',
-      reputation: 'Rising',
-      treaties: '8',
-    },
-    governmentMetrics: {
-      approval: '72%',
-      efficiency: 'High',
-      stability: 'Stable',
-    },
+  const { flagUrl } = useFlag(country.name);
+  // Transform existing data to new intelligence format
+  const countryWithRequiredFields = { 
+    ...country, 
+    leader: country.leader || 'Unknown Leader',
+    flag: country.flag || flagUrl || '/placeholder-flag.png'
+  };
+  const previousCountryData = createMockHistoricalData(countryWithRequiredFields); // In real app, this would come from database
+  const executiveIntelligence = transformToExecutiveIntelligence(countryWithRequiredFields, previousCountryData);
+  const vitalityIntelligence = executiveIntelligence.vitalityIntelligence;
+  
+  // Debug log to check data structure
+  console.log('Executive Intelligence:', {
+    alertsCount: executiveIntelligence.criticalAlerts.length,
+    insightsCount: executiveIntelligence.trendingInsights.length,
+    actionsCount: executiveIntelligence.urgentActions.length,
+    vitalityAreas: vitalityIntelligence.map(v => ({
+      area: v.area,
+      recommendationsCount: v.recommendations.length,
+      alertsCount: v.criticalAlerts.length
+    }))
   });
 
-  // Create focus cards data
-  const focusCardsData = createDefaultFocusCards({
-    economic: {
-      healthScore: country.economicVitality,
-      gdpPerCapita: country.currentGdpPerCapita,
-      growthRate: country.realGDPGrowthRate * 100,
-      economicTier: country.economicTier,
-      alerts: [],
-    },
-    population: {
-      healthScore: country.populationWellbeing,
-      population: country.currentPopulation,
-      growthRate: country.populationGrowthRate * 100,
-      populationTier: country.populationTier,
-      alerts: [],
-    },
-    diplomatic: {
-      healthScore: country.diplomaticStanding,
-      allies: 12,
-      reputation: 'Rising',
-      treaties: 8,
-      alerts: [],
-    },
-    government: {
-      healthScore: country.governmentalEfficiency,
-      approval: 72,
-      efficiency: 'High',
-      stability: 'Stable',
-      alerts: [],
-    },
-  });
 
   return (
     <div className={`w-full ${className}`}>
-      {/* Hero Section - Nation Card */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+      {/* Executive Command Center - Enhanced Nation Overview */}
+      <ExecutiveCommandCenter
+        intelligence={executiveIntelligence}
+        country={{
+          name: country.name,
+          flag: flagUrl || '/placeholder-flag.png',
+          leader: countryWithRequiredFields.leader
+        }}
+        isOwner={isOwner}
+        onPrivateAccess={onPrivateAccess}
+        onActionClick={(action) => {
+          console.log('Action clicked:', action.title);
+          // Handle action clicks - could open modal, navigate, etc.
+        }}
+        onAlertClick={(alert) => {
+          console.log('Alert clicked:', alert.title);
+          // Handle alert clicks - could show details, navigate, etc.
+        }}
         className="mb-12"
-      >
-        <HolographicNationCard
-          country={country}
-          flagUrl={flagUrl}
-          flagColors={['#3B82F6', '#10B981', '#F59E0B']} // Default colors, can be extracted from flag
-          isOwner={isOwner}
-        />
-
-        {isOwner && (
-          <div className="flex justify-center mt-6">
-            <Button 
-              onClick={onPrivateAccess}
-              className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white glass-hierarchy-interactive"
-            >
-              <Crown className="h-4 w-4 mr-2" />
-              Access Executive Dashboard
-            </Button>
-          </div>
-        )}
-      </motion.div>
+      />
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-8 mb-12">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-12">
         
-        {/* Left Column - Core Metrics */}
-        <div className="xl:col-span-3 space-y-8">
+        {/* Left Column - Core Performance Metrics */}
+        <div className="xl:col-span-2 space-y-8">
           
-          {/* Vitality Overview */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-          >
-            <Card className="glass-hierarchy-child">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-blue-600" />
-                  National Vitality Overview
-                </CardTitle>
-                <p className="text-muted-foreground">
-                  Real-time assessment of your nation's core performance metrics
-                </p>
-              </CardHeader>
-              <CardContent>
-                <ActivityRings
-                  rings={activityRingsData}
-                  size="md"
-                  interactive={true}
-                  className="justify-center"
-                />
-              </CardContent>
-            </Card>
-          </motion.div>
+          {/* National Performance Command Center - Enhanced Activity Analysis */}
+          <NationalPerformanceCommandCenter
+            vitalityData={vitalityIntelligence}
+            onActionClick={(action) => {
+              console.log('Performance action clicked:', action.title);
+              // Handle performance action clicks
+            }}
+            onMetricClick={(metric, area) => {
+              console.log('Metric clicked:', metric.label, 'in', area);
+              // Handle metric drill-down
+            }}
+            compact={false}
+          />
 
-          {/* Strategic Focus Areas */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            <Card className="glass-hierarchy-child">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5 text-purple-600" />
-                  Strategic Focus Areas
-                </CardTitle>
-                <p className="text-muted-foreground">
-                  Key areas of national development and governance
-                </p>
-              </CardHeader>
-              <CardContent>
-                <FocusCards
-                  cards={focusCardsData}
-                  layout="grid"
-                  expandable={false}
-                  interactive={true}
-                />
-              </CardContent>
-            </Card>
-          </motion.div>
+          {/* Intelligence Briefings - Enhanced Strategic Focus */}
+          <IntelligenceBriefings
+            vitalityData={vitalityIntelligence}
+            onBriefingAction={(briefing) => {
+              console.log('Briefing action clicked:', briefing.title);
+              // Handle briefing actions
+            }}
+            compact={false}
+          />
         </div>
 
-        {/* Right Column - Achievements & Timeline */}
+        {/* Right Column - Intelligence & Timeline */}
         <div className="space-y-8">
+          
+          {/* Forward-Looking Intelligence */}
+          <ForwardLookingIntelligence
+            vitalityData={vitalityIntelligence}
+            onInsightAction={(insight) => {
+              console.log('Insight action clicked:', insight.title);
+              // Handle predictive insight actions
+            }}
+            onMilestoneUpdate={(milestone) => {
+              console.log('Milestone updated:', milestone.title);
+              // Handle milestone updates
+            }}
+            compact={true}
+          />
           
           {/* Achievements & Rankings */}
           <motion.div
