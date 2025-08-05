@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { api } from "~/trpc/react";
-import { IxTime } from "~/lib/ixtime";
 import { useIxTime } from "~/contexts/IxTimeContext";
 import { 
   DynamicIsland,
@@ -16,7 +15,7 @@ import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { useToast } from "~/components/ui/toast";
-import { useUnifiedNotifications } from "~/hooks/useUnifiedNotifications";
+import { useNotificationStore } from "~/stores/notificationStore";
 import { createUrl } from "~/lib/url-utils";
 import { 
   Clock, 
@@ -48,7 +47,8 @@ import {
   BarChart3,
   Activity,
   User,
-  TrendingUp
+  TrendingUp,
+  Building2
 } from "lucide-react";
 import {
   Tooltip,
@@ -106,15 +106,14 @@ function CommandPaletteContent({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { toast } = useToast();
   
-  // Unified notification system
-  const {
-    notifications: unifiedNotifications,
-    unreadCount: unifiedUnreadCount,
-    currentIslandNotification,
-    dismissIslandNotification,
-    markAsRead: markUnifiedAsRead,
-    currentContext,
-  } = useUnifiedNotifications();
+  // Enhanced notification system integration
+  const enhancedNotifications = useNotificationStore(state => state.notifications);
+  const enhancedStats = useNotificationStore(state => state.stats);
+  const markEnhancedAsRead = useNotificationStore(state => state.markAsRead);
+  const markAllEnhancedAsRead = useNotificationStore(state => state.markAllAsRead);
+  const recordEngagement = useNotificationStore(state => state.recordEngagement);
+  const initialize = useNotificationStore(state => state.initialize);
+
   
   // Current time state
   const [currentTime, setCurrentTime] = useState<{
@@ -387,6 +386,10 @@ function CommandPaletteContent({
     setMode(newMode);
     setIsUserInteracting(true);
     
+    // Delivery context updates handled by notification system
+    
+    // Notification visibility handled by local state
+    
     // Reset user interaction after 30 seconds
     const timeout = setTimeout(() => setIsUserInteracting(false), 30000);
     
@@ -463,6 +466,11 @@ function CommandPaletteContent({
     setMounted(true);
   }, []);
 
+  // Initialize notification store
+  useEffect(() => {
+    initialize().catch(console.error);
+  }, [initialize]);
+
   // Auto-collapse when sticky and not interacting
   useEffect(() => {
     if (isSticky && !isUserInteracting) {
@@ -488,7 +496,8 @@ function CommandPaletteContent({
   }, [isExecutiveMode, executiveNotifications, executiveUnreadCount]);
 
   const unreadNotifications = notificationsData?.unreadCount || 0;
-  const totalUnreadCount = unreadNotifications + (isExecutiveMode ? executiveUnreadCount : 0);
+  const enhancedUnreadCount = enhancedStats.unread || 0;
+  const totalUnreadCount = unreadNotifications + (isExecutiveMode ? executiveUnreadCount : 0) + enhancedUnreadCount;
 
   // Get current cycling view (for potential future use)
   // const getCurrentCyclingMode = () => {
@@ -936,6 +945,9 @@ function CommandPaletteContent({
                       if (isExecutiveMode && executiveUnreadCount > 0) {
                         markAllExecutiveAsRead();
                       }
+                      if (enhancedUnreadCount > 0) {
+                        markAllEnhancedAsRead();
+                      }
                     }}
                     disabled={markAllAsReadMutation.isPending}
                     className="text-muted-foreground hover:text-foreground hover:bg-accent/10 px-3 py-2"
@@ -956,52 +968,77 @@ function CommandPaletteContent({
             </div>
 
             <ScrollArea className="max-h-72">
-              {/* Combine standard notifications and executive notifications */}
+              {/* Enhanced notification system */}
               {(() => {
                 const standardNotifications = notificationsData?.notifications || [];
-                const validExecutiveNotifications = (executiveNotifications || []).filter(n => n && n.id);
+                const validExecutiveNotifications = (executiveNotifications || []).filter((n: any) => n && n.id);
+                const validEnhancedNotifications = enhancedNotifications.filter((n: any) => n && n.id);
                 
-                // Deduplicate notifications by ID to prevent React key conflicts
-                const allNotifications = isExecutiveMode 
-                  ? [...validExecutiveNotifications, ...standardNotifications].reduce((acc, notification, index) => {
-                      const existingIndex = acc.findIndex(n => n.id === notification.id);
-                      if (existingIndex === -1) {
-                        acc.push(notification);
-                      }
-                      return acc;
-                    }, [] as any[])
-                  : standardNotifications;
+                // Combine all notification sources and deduplicate by ID
+                const allNotifications = [
+                  ...validEnhancedNotifications.map(n => ({ ...n, source: 'enhanced' })),
+                  ...(isExecutiveMode ? validExecutiveNotifications.map(n => ({ ...n, source: 'executive' })) : []),
+                  ...standardNotifications.map(n => ({ ...n, source: 'standard' }))
+                ].reduce((acc, notification) => {
+                  const existingIndex = acc.findIndex(n => n.id === notification.id);
+                  if (existingIndex === -1) {
+                    acc.push(notification);
+                  }
+                  return acc;
+                }, [] as any[])
+                .sort((a: any, b: any) => {
+                  // Sort by timestamp, newest first
+                  const aTime = a.timestamp || a.createdAt || 0;
+                  const bTime = b.timestamp || b.createdAt || 0;
+                  return bTime - aTime;
+                });
                 
                 return allNotifications.length > 0 ? (
                 <div className="space-y-3">
-                  {allNotifications.map((notification, index) => {
-                    // Handle both executive notifications and standard notifications
-                    const isExecutiveNotification = 'severity' in notification && 'category' in notification;
+                  {allNotifications.map((notification: any, index: number) => {
+                    // Determine notification type and appropriate handling
+                    const isEnhancedNotification = notification.source === 'enhanced';
+                    const isExecutiveNotification = notification.source === 'executive';
                     
-                    const IconComponent = isExecutiveNotification
+                    const IconComponent = isEnhancedNotification
                       ? ((notification as any).category === 'economic' ? TrendingUp :
                          (notification as any).category === 'diplomatic' ? Globe :
                          (notification as any).category === 'social' ? Users :
                          (notification as any).category === 'security' ? AlertTriangle :
                          (notification as any).category === 'governance' ? Building2 :
+                         (notification as any).category === 'achievement' ? CheckCircle :
+                         (notification as any).category === 'crisis' ? AlertCircle :
+                         (notification as any).category === 'opportunity' ? TrendingUp :
                          Bell)
-                      : ((notification as any).type === "info" ? Info :
-                         (notification as any).type === "warning" ? AlertTriangle :
-                         (notification as any).type === "success" ? CheckCircle : 
-                         (notification as any).type === "error" ? AlertCircle :
-                         Bell);
+                      : isExecutiveNotification
+                        ? ((notification as any).category === 'economic' ? TrendingUp :
+                           (notification as any).category === 'diplomatic' ? Globe :
+                           (notification as any).category === 'social' ? Users :
+                           (notification as any).category === 'security' ? AlertTriangle :
+                           (notification as any).category === 'governance' ? Building2 :
+                           Bell)
+                        : ((notification as any).type === "info" ? Info :
+                           (notification as any).type === "warning" ? AlertTriangle :
+                           (notification as any).type === "success" ? CheckCircle : 
+                           (notification as any).type === "error" ? AlertCircle :
+                           Bell);
 
                     return (
                       <div
-                        key={notification.id ? `${isExecutiveNotification ? 'exec' : 'std'}-${notification.id}` : `${isExecutiveNotification ? 'exec' : 'std'}-fallback-${index}`}
+                        key={notification.id ? `${notification.source}-${notification.id}` : `${notification.source}-fallback-${index}`}
                         className={`p-4 rounded-xl border cursor-pointer transition-all hover:bg-accent/50 ${
-                          notification.read 
+                          (notification.status === 'read' || notification.read)
                             ? 'bg-muted/30 border' 
                             : 'bg-muted/50 border shadow-lg'
                         }`}
                         onClick={() => {
-                          if (!notification.read) {
-                            if (isExecutiveNotification) {
+                          const isRead = notification.status === 'read' || notification.read;
+                          
+                          if (!isRead) {
+                            if (isEnhancedNotification) {
+                              markEnhancedAsRead(notification.id);
+                              recordEngagement(notification.id, 'read');
+                            } else if (isExecutiveNotification) {
                               markExecutiveAsRead(notification.id);
                             } else if (user?.id) {
                               markAsReadMutation.mutate({ 
@@ -1010,35 +1047,50 @@ function CommandPaletteContent({
                               });
                             }
                           }
+                          
                           if ('href' in notification && notification.href) {
                             window.location.href = notification.href;
+                          }
+                          
+                          if (isEnhancedNotification) {
+                            recordEngagement(notification.id, 'click');
                           }
                         }}
                       >
                         <div className="flex items-start gap-4">
                           <div className={`p-2 rounded-lg flex-shrink-0 ${
-                            isExecutiveNotification
-                              ? ((notification as any).severity === 'critical' ? 'bg-red-500/20' :
-                                 (notification as any).severity === 'high' ? 'bg-orange-500/20' :
-                                 (notification as any).severity === 'medium' ? 'bg-yellow-500/20' :
+                            isEnhancedNotification
+                              ? ((notification as any).priority === 'critical' ? 'bg-red-500/20' :
+                                 (notification as any).priority === 'high' ? 'bg-orange-500/20' :
+                                 (notification as any).priority === 'medium' ? 'bg-yellow-500/20' :
                                  'bg-blue-500/20')
-                              : ((notification as any).type === "info" ? "bg-blue-500/20" :
-                                 (notification as any).type === "warning" ? "bg-yellow-500/20" :
-                                 (notification as any).type === "success" ? "bg-green-500/20" :
-                                 (notification as any).type === "error" ? "bg-destructive/20" :
-                                 "bg-muted/50")
+                              : isExecutiveNotification
+                                ? ((notification as any).severity === 'critical' ? 'bg-red-500/20' :
+                                   (notification as any).severity === 'high' ? 'bg-orange-500/20' :
+                                   (notification as any).severity === 'medium' ? 'bg-yellow-500/20' :
+                                   'bg-blue-500/20')
+                                : ((notification as any).type === "info" ? "bg-blue-500/20" :
+                                   (notification as any).type === "warning" ? "bg-yellow-500/20" :
+                                   (notification as any).type === "success" ? "bg-green-500/20" :
+                                   (notification as any).type === "error" ? "bg-destructive/20" :
+                                   "bg-muted/50")
                           }`}>
                             <IconComponent className={`h-5 w-5 ${
-                              isExecutiveNotification
-                                ? ((notification as any).severity === 'critical' ? 'text-red-600 dark:text-red-400' :
-                                   (notification as any).severity === 'high' ? 'text-orange-600 dark:text-orange-400' :
-                                   (notification as any).severity === 'medium' ? 'text-yellow-600 dark:text-yellow-400' :
+                              isEnhancedNotification
+                                ? ((notification as any).priority === 'critical' ? 'text-red-600 dark:text-red-400' :
+                                   (notification as any).priority === 'high' ? 'text-orange-600 dark:text-orange-400' :
+                                   (notification as any).priority === 'medium' ? 'text-yellow-600 dark:text-yellow-400' :
                                    'text-blue-600 dark:text-blue-400')
-                                : ((notification as any).type === "info" ? "text-blue-600 dark:text-blue-400" :
-                                   (notification as any).type === "warning" ? "text-yellow-600 dark:text-yellow-400" :
-                                   (notification as any).type === "success" ? "text-green-600 dark:text-green-400" :
-                                   (notification as any).type === "error" ? "text-red-600 dark:text-red-400" :
-                                   "text-muted-foreground")
+                                : isExecutiveNotification
+                                  ? ((notification as any).severity === 'critical' ? 'text-red-600 dark:text-red-400' :
+                                     (notification as any).severity === 'high' ? 'text-orange-600 dark:text-orange-400' :
+                                     (notification as any).severity === 'medium' ? 'text-yellow-600 dark:text-yellow-400' :
+                                     'text-blue-600 dark:text-blue-400')
+                                  : ((notification as any).type === "info" ? "text-blue-600 dark:text-blue-400" :
+                                     (notification as any).type === "warning" ? "text-yellow-600 dark:text-yellow-400" :
+                                     (notification as any).type === "success" ? "text-green-600 dark:text-green-400" :
+                                     (notification as any).type === "error" ? "text-red-600 dark:text-red-400" :
+                                     "text-muted-foreground")
                             }`} />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -1046,33 +1098,40 @@ function CommandPaletteContent({
                               <div className="text-base font-medium text-foreground break-words">
                                 {notification.title}
                               </div>
-                              {!notification.read && (
+                              {!(notification.status === 'read' || notification.read) && (
                                 <div className="w-3 h-3 bg-primary rounded-full flex-shrink-0 mt-1" />
                               )}
                             </div>
-                            {notification.description && (
+                            {(notification.description || notification.message) && (
                               <div className="text-sm text-muted-foreground mt-2 break-words leading-relaxed">
-                                {notification.description}
+                                {notification.description || notification.message}
                               </div>
                             )}
                             <div className="flex items-center justify-between mt-3">
                               <div className="text-xs text-muted-foreground/70">
-                                {isExecutiveNotification 
-                                  ? `${new Date((notification as any).timestamp).toLocaleString()} • ${(notification as any).source}`
-                                  : new Date((notification as any).createdAt).toLocaleString()}
+                                {isEnhancedNotification
+                                  ? `${new Date((notification as any).timestamp).toLocaleString()} • Smart Alert`
+                                  : isExecutiveNotification 
+                                    ? `${new Date((notification as any).timestamp).toLocaleString()} • ${(notification as any).source}`
+                                    : new Date((notification as any).createdAt).toLocaleString()}
                               </div>
                               <div className="flex items-center gap-2">
-                                {isExecutiveNotification && (
+                                {(isEnhancedNotification || isExecutiveNotification) && (
                                   <Badge 
                                     variant="secondary" 
                                     className={`text-xs px-2 py-0 ${
-                                      (notification as any).severity === 'critical' ? 'bg-red-500/10 text-red-600 dark:text-red-400' :
-                                      (notification as any).severity === 'high' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' :
-                                      (notification as any).severity === 'medium' ? 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400' :
-                                      'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                                      isEnhancedNotification
+                                        ? ((notification as any).priority === 'critical' ? 'bg-red-500/10 text-red-600 dark:text-red-400' :
+                                           (notification as any).priority === 'high' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' :
+                                           (notification as any).priority === 'medium' ? 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400' :
+                                           'bg-blue-500/10 text-blue-600 dark:text-blue-400')
+                                        : ((notification as any).severity === 'critical' ? 'bg-red-500/10 text-red-600 dark:text-red-400' :
+                                           (notification as any).severity === 'high' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' :
+                                           (notification as any).severity === 'medium' ? 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400' :
+                                           'bg-blue-500/10 text-blue-600 dark:text-blue-400')
                                     }`}
                                   >
-                                    {(notification as any).severity}
+                                    {isEnhancedNotification ? (notification as any).priority : (notification as any).severity}
                                   </Badge>
                                 )}
                                 {notification.href && (
@@ -1303,7 +1362,7 @@ function CommandPaletteContent({
       {isExpanded && (
         <div className="hidden lg:block absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-[10002]">
           <div 
-            className="command-palette-dropdown border-border border-white/20 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[500px] max-w-[800px] relative"
+            className="command-palette-dropdown border-border dark:border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[500px] max-w-[800px] relative"
             style={{
               background: "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",
               backdropFilter: "blur(20px) saturate(180%)",
