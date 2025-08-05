@@ -260,18 +260,30 @@ export function StandardIcon({
 
 // Context-aware icon selection helper
 export function getContextIcon(context: string, category: keyof typeof IconCategories) {
-  const icons = IconCategories[category];
+  const icons = IconCategories[category] as Record<string, LucideIcon>;
   
   // Smart icon selection based on context
   switch (context) {
     case 'mycountry':
-      return category === 'NAVIGATION' ? icons.mycountry || icons.public : Object.values(icons)[0];
+      if (category === 'NAVIGATION') {
+        return icons.mycountry || icons.public || Object.values(icons)[0];
+      }
+      return Object.values(icons)[0];
     case 'executive':
-      return category === 'GOVERNANCE' ? icons.administration || icons.security : Object.values(icons)[0];
+      if (category === 'GOVERNANCE') {
+        return icons.administration || icons.security || Object.values(icons)[0];
+      }
+      return Object.values(icons)[0];
     case 'intelligence':
-      return category === 'INTELLIGENCE' ? icons.analysis || icons.surveillance : Object.values(icons)[0];
+      if (category === 'INTELLIGENCE') {
+        return icons.analysis || icons.surveillance || Object.values(icons)[0];
+      }
+      return Object.values(icons)[0];
     case 'analytics':
-      return category === 'ECONOMIC' ? icons.analytics || icons.trends : Object.values(icons)[0];
+      if (category === 'ECONOMIC') {
+        return icons.analytics || icons.trends || Object.values(icons)[0];
+      }
+      return Object.values(icons)[0];
     default:
       return Object.values(icons)[0];
   }
