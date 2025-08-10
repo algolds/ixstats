@@ -98,7 +98,8 @@ export function CountryAtGlance({
     };
 
     // FIXED: Badge variant per economic tier (updated tiers)
-    const getTierBadgeVariant = (tier: string) => {
+    const getTierBadgeVariant = (tier: string | null | undefined) => {
+      if (!tier) return "destructive";
       switch (tier.toLowerCase()) {
         case "extravagant":
         case "very strong":

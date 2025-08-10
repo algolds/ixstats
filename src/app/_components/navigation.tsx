@@ -107,7 +107,7 @@ export function Navigation() {
     },
     {
       name: "MyCountry®",
-      href: "/mycountry/new",
+      href: "/mycountry",
       icon: Crown,
       requiresAuth: true,
       requiresCountry: true,

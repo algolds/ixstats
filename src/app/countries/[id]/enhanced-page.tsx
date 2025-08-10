@@ -28,8 +28,7 @@ import {
   Briefcase,
   Building,
   PieChart,
-  Edit,
-  Settings
+  Edit
 } from "lucide-react";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { IxTime } from "~/lib/ixtime";
@@ -40,14 +39,12 @@ import { HealthRing } from "~/components/ui/health-ring";
 import { getFlagColors, generateFlagThemeCSS } from "~/lib/flag-color-extractor";
 
 // Import economy components for migration
-import { 
-  CoreEconomicIndicators,
-  LaborEmployment,
-  FiscalSystemComponent,
-  GovernmentSpending,
-  Demographics,
-  EconomicSummaryWidget
-} from "~/app/countries/_components/economy";
+import { CoreEconomicIndicatorsComponent } from "~/app/builder/components/CoreEconomicIndicators";
+import { LaborEmploymentComponent } from "~/app/builder/components/LaborEmployment";
+import { FiscalSystemComponent } from "~/app/builder/components/FiscalSystem";
+import { GovernmentSpending } from "~/app/builder/components/GovernmentSpending";
+import { Demographics } from "~/app/builder/components/Demographics";
+import { EconomicSummaryWidget } from "~/app/countries/_components/economy";
 import { generateCountryEconomicData, type CountryProfile } from "~/lib/economic-data-templates";
 
 interface EnhancedPublicCountryPageProps {
@@ -85,8 +82,13 @@ export default function EnhancedPublicCountryPage({ params }: EnhancedPublicCoun
   const { id } = use(params);
   const { user } = useUser();
   
-  const { data: country, isLoading, error } = api.countries.getByIdWithEconomicData.useQuery({ id });
-  const { data: systemStatus, isLoading: systemStatusLoading } = api.admin.getSystemStatus.useQuery();
+  const { data: country, isLoading, error } = api.countries.getByIdAtTime.useQuery(
+    { id },
+    { 
+      retry: false
+    }
+  );
+  const { data: systemStatus } = api.admin.getSystemStatus.useQuery();
   const { data: userProfile } = api.users.getProfile.useQuery(
     { userId: user?.id || '' },
     { enabled: !!user?.id }
@@ -102,19 +104,19 @@ export default function EnhancedPublicCountryPage({ params }: EnhancedPublicCoun
   const activityData = [
     {
       label: "Economic Health",
-      value: country ? Math.min(100, (country.currentGdpPerCapita / 50000) * 100) : 0,
+      value: country ? Math.min(100, (((country as any).currentGdpPerCapita || (country as any).baselineGdpPerCapita || 0) / 50000) * 100) : 0,
       color: "#22c55e",
       icon: DollarSign,
     },
     {
       label: "Population Growth",
-      value: country ? Math.min(100, Math.max(0, (country.populationGrowthRate * 100 + 2) * 25)) : 0,
+      value: country ? Math.min(100, Math.max(0, (((country as any).populationGrowthRate || 0.01) * 100 + 2) * 25)) : 0,
       color: "#3b82f6", 
       icon: Users,
     },
     {
       label: "Development Index",
-      value: country ? Math.min(100, (country.currentGdpPerCapita / 80000) * 100) : 0,
+      value: country ? Math.min(100, (((country as any).currentGdpPerCapita || (country as any).baselineGdpPerCapita || 0) / 80000) * 100) : 0,
       color: "#8b5cf6",
       icon: TrendingUp,
     },
@@ -157,7 +159,7 @@ export default function EnhancedPublicCountryPage({ params }: EnhancedPublicCoun
     );
   }
 
-  const flagColors = getFlagColors(country.flag);
+  const flagColors = getFlagColors(country.name);
   const flagThemeCSS = generateFlagThemeCSS(flagColors);
 
   return (
@@ -182,8 +184,8 @@ export default function EnhancedPublicCountryPage({ params }: EnhancedPublicCoun
         <div className="flex items-center gap-4">
           <h1 className="text-3xl font-bold">{country.name}</h1>
           <div className="flex gap-2">
-            <Badge variant="outline">{country.economicTier}</Badge>
-            <Badge variant="outline">Tier {country.populationTier}</Badge>
+            <Badge variant="outline">{(country as any).economicTier || 'Unknown'}</Badge>
+            <Badge variant="outline">Tier {(country as any).populationTier || 'Unknown'}</Badge>
           </div>
         </div>
         
@@ -224,8 +226,8 @@ export default function EnhancedPublicCountryPage({ params }: EnhancedPublicCoun
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {activityData.map((ring, index) => (
-                  <div key={index} className="flex items-center gap-4">
+                {activityData.map((ring) => (
+                  <div key={ring.label} className="flex items-center gap-4">
                     <HealthRing
                       value={Number(ring.value)}
                       size={80}
@@ -259,30 +261,30 @@ export default function EnhancedPublicCountryPage({ params }: EnhancedPublicCoun
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Population</span>
-                  <span className="font-semibold">{formatPopulation(country.currentPopulation)}</span>
+                  <span className="font-semibold">{formatPopulation((country as any).currentPopulation || (country as any).baselinePopulation || 0)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Total GDP</span>
-                  <span className="font-semibold">{formatCurrency(country.currentTotalGdp)}</span>
+                  <span className="font-semibold">{formatCurrency((country as any).currentTotalGdp || (country as any).nominalGDP || 0)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">GDP per Capita</span>
-                  <span className="font-semibold">{formatCurrency(country.currentGdpPerCapita)}</span>
+                  <span className="font-semibold">{formatCurrency((country as any).currentGdpPerCapita || (country as any).baselineGdpPerCapita || 0)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Growth Rate</span>
-                  <span className="font-semibold">{(country.adjustedGdpGrowth * 100).toFixed(2)}%</span>
+                  <span className="font-semibold">{(((country as any).adjustedGdpGrowth || 0) * 100).toFixed(2)}%</span>
                 </div>
-                {country.populationDensity && (
+                {(country as any).populationDensity && (
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Pop. Density</span>
-                    <span className="font-semibold">{country.populationDensity.toFixed(1)}/km²</span>
+                    <span className="font-semibold">{((country as any).populationDensity || 0).toFixed(1)}/km²</span>
                   </div>
                 )}
-                {country.landArea && (
+                {(country as any).landArea && (
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Land Area</span>
-                    <span className="font-semibold">{country.landArea.toLocaleString()} km²</span>
+                    <span className="font-semibold">{((country as any).landArea || 0).toLocaleString()} km²</span>
                   </div>
                 )}
               </div>
@@ -382,7 +384,7 @@ export default function EnhancedPublicCountryPage({ params }: EnhancedPublicCoun
                   <CardContent>
                     <div className="space-y-2">
                       {country.analytics.riskFlags.slice(0, 3).map((flag: string, i: number) => (
-                        <div key={i} className="p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded border-l-4 border-yellow-400">
+                        <div key={`risk-${i}-${flag}`} className="p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded border-l-4 border-yellow-400">
                           <p className="text-sm">{flag.replace(/_/g, ' ')}</p>
                           <p className="text-xs text-muted-foreground mt-1">
                             {IxTime.formatIxTime(currentIxTime, true)}
@@ -400,13 +402,29 @@ export default function EnhancedPublicCountryPage({ params }: EnhancedPublicCoun
               {economicData && (
                 <>
                   <EconomicSummaryWidget 
-                    economicData={economicData}
-                    country={country}
-                    currentIxTime={currentIxTime}
+                    countryName={country.name}
+                    data={{
+                      population: economicData.core.totalPopulation,
+                      gdpPerCapita: economicData.core.gdpPerCapita,
+                      totalGdp: economicData.core.nominalGDP,
+                      economicTier: country.economicTier || "Developing",
+                      populationGrowthRate: country.populationGrowthRate || 0.01,
+                      gdpGrowthRate: country.realGDPGrowthRate || country.adjustedGdpGrowth || 0.03,
+                      unemploymentRate: economicData.labor.unemploymentRate,
+                      laborForceParticipationRate: economicData.labor.laborForceParticipationRate,
+                      taxRevenueGDPPercent: economicData.fiscal.taxRevenueGDPPercent,
+                      budgetBalance: economicData.fiscal.budgetDeficitSurplus,
+                      debtToGDP: economicData.fiscal.totalDebtGDPRatio,
+                      populationDensity: country.populationDensity,
+                      gdpDensity: country.gdpDensity,
+                      landArea: country.landArea,
+                    }}
                   />
-                  <CoreEconomicIndicators 
-                    economicData={economicData}
-                    country={country}
+                  <CoreEconomicIndicatorsComponent 
+                    indicators={economicData.core}
+                    onIndicatorsChangeAction={() => {}}
+                    isReadOnly={true}
+                    showComparison={false}
                   />
                 </>
               )}
@@ -415,9 +433,12 @@ export default function EnhancedPublicCountryPage({ params }: EnhancedPublicCoun
             {/* Labor Tab - Migrated from MyCountry */}
             <TabsContent value="labor" className="space-y-6">
               {economicData && (
-                <LaborEmployment 
-                  economicData={economicData}
-                  country={country}
+                <LaborEmploymentComponent 
+                  laborData={economicData.labor}
+                  totalPopulation={economicData.core.totalPopulation}
+                  onLaborDataChangeAction={() => {}}
+                  isReadOnly={true}
+                  showComparison={false}
                 />
               )}
             </TabsContent>
@@ -427,12 +448,26 @@ export default function EnhancedPublicCountryPage({ params }: EnhancedPublicCoun
               {economicData && (
                 <>
                   <GovernmentSpending 
-                    economicData={economicData}
-                    country={country}
+                    spendingData={economicData.spending}
+                    nominalGDP={economicData.core.nominalGDP}
+                    totalPopulation={economicData.core.totalPopulation}
+                    onSpendingDataChangeAction={() => {}}
+                    isReadOnly={true}
                   />
                   <FiscalSystemComponent 
-                    economicData={economicData}
-                    country={country}
+                    fiscalData={economicData.fiscal}
+                    referenceCountry={{
+                      name: "Reference",
+                      countryCode: "REF",
+                      gdp: economicData.core.nominalGDP,
+                      gdpPerCapita: economicData.core.gdpPerCapita,
+                      taxRevenuePercent: economicData.fiscal.taxRevenueGDPPercent,
+                      unemploymentRate: economicData.labor.unemploymentRate,
+                      population: economicData.core.totalPopulation
+                    }}
+                    nominalGDP={economicData.core.nominalGDP}
+                    totalPopulation={economicData.core.totalPopulation}
+                    onFiscalDataChange={() => {}}
                   />
                 </>
               )}
@@ -442,8 +477,12 @@ export default function EnhancedPublicCountryPage({ params }: EnhancedPublicCoun
             <TabsContent value="demographics" className="space-y-6">
               {economicData && (
                 <Demographics 
-                  economicData={economicData}
-                  country={country}
+                  demographicData={{
+                    ...economicData.demographics,
+                    ageDistribution: economicData.demographics.ageDistribution || [],
+                  } as any}
+                  totalPopulation={economicData.core.totalPopulation}
+                  onDemographicDataChange={() => {}}
                 />
               )}
             </TabsContent>

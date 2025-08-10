@@ -51,7 +51,7 @@ export function RealTimeDataService({
     data: countryData, 
     refetch: refetchCountry,
     isLoading 
-  } = api.countries.getByIdWithEconomicData.useQuery(
+  } = api.countries.getByIdAtTime.useQuery(
     { id: countryId, timestamp: stableTimestamp.current },
     { 
       enabled: isActive && !!countryId,

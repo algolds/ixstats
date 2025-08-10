@@ -150,7 +150,7 @@ export default function DashboardRefactoredModular() {
     retryDelay: 1000
   });
 
-  const { data: countryData } = api.countries.getByIdWithEconomicData.useQuery(
+  const { data: countryData } = api.countries.getByIdAtTime.useQuery(
     { id: userProfile?.countryId || '' },
     { enabled: !!userProfile?.countryId, retry: 1, retryDelay: 1000 }
   );

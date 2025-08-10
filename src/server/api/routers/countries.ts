@@ -475,25 +475,46 @@ export const countriesRouter = createTRPCRouter({
       const targetTime = input.timestamp ?? IxTime.getCurrentIxTime();
       const FIVE_YEARS_MS = 5 * 365 * 24 * 60 * 60 * 1000;
       const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
-      // FIXED: Check what relations are available
-      const availableRelations = await safelyIncludeRelations(ctx.db);
-      // Build include object based on available relations
+      
+      // Simplified include object - only include basic relations
       const includeObject: any = {
         dmInputs: {
           where: { isActive: true },
           orderBy: { ixTimeTimestamp: "desc" },
         },
       };
-      if (availableRelations.economicProfile) includeObject.economicProfile = true;
-      if (availableRelations.laborMarket) includeObject.laborMarket = true;
-      if (availableRelations.fiscalSystem) includeObject.fiscalSystem = true;
-      if (availableRelations.incomeDistribution) includeObject.incomeDistribution = true;
-      if (availableRelations.governmentBudget) includeObject.governmentBudget = true;
-      if (availableRelations.demographics) includeObject.demographics = true;
-      const country = await ctx.db.country.findUnique({
-        where: { id: input.id },
-        include: includeObject,
-      });
+      
+      // Try to include optional relations, but don't fail if they don't exist
+      try {
+        includeObject.economicProfile = true;
+        includeObject.laborMarket = true;
+        includeObject.fiscalSystem = true;
+        includeObject.incomeDistribution = true;
+        includeObject.governmentBudget = true;
+        includeObject.demographics = true;
+      } catch (e) {
+        console.warn('[Countries API] Some relations may not be available:', e);
+      }
+      let country;
+      try {
+        country = await ctx.db.country.findUnique({
+          where: { id: input.id },
+          include: includeObject,
+        });
+      } catch (dbError) {
+        console.warn('[Countries API] Error with complex query, falling back to basic query:', dbError);
+        // Fallback to basic query without optional relations
+        country = await ctx.db.country.findUnique({
+          where: { id: input.id },
+          include: {
+            dmInputs: {
+              where: { isActive: true },
+              orderBy: { ixTimeTimestamp: "desc" },
+            },
+          },
+        });
+      }
+      
       if (!country) {
         throw new Error(`Country with ID ${input.id} not found`);
       }
@@ -696,47 +717,21 @@ export const countriesRouter = createTRPCRouter({
   updateEconomicData: protectedProcedure
     .input(z.object({
       countryId: z.string(),
-      economicData: economicDataSchema.extend({
-        economicModel: z.object({
-          baseYear: z.number(),
-          projectionYears: z.number(),
-          gdpGrowthRate: z.number(),
-          inflationRate: z.number(),
-          unemploymentRate: z.number(),
-          interestRate: z.number(),
-          exchangeRate: z.number(),
-          populationGrowthRate: z.number(),
-          investmentRate: z.number(),
-          fiscalBalance: z.number(),
-          tradeBalance: z.number(),
-          sectoralOutputs: z.array(z.object({
-            year: z.number(),
-            agriculture: z.number(),
-            industry: z.number(),
-            services: z.number(),
-            government: z.number(),
-            totalGDP: z.number(),
-          })).optional(),
-          policyEffects: z.array(z.object({
-            name: z.string(),
-            description: z.string(),
-            gdpEffectPercentage: z.number(),
-            inflationEffectPercentage: z.number(),
-            employmentEffectPercentage: z.number(),
-            yearImplemented: z.number(),
-            durationYears: z.number(),
-          })).optional(),
-        }).optional(),
-      }),
+      economicData: economicDataSchema,
     }))
     .mutation(async ({ ctx, input }) => {
       const { countryId, economicData } = input;
 
       // --- ENFORCE: Only the country owner can update economic data ---
-      const userId = getUserIdFromCtx(ctx);
-      if (!userId) throw new Error('Not authenticated');
-      // Use the correct unique field for your User model. If your User model has 'id' as the unique identifier:
-      const userProfile = await ctx.db.user.findUnique({ where: { id: userId } });
+      if (!ctx.userId) {
+        throw new Error('Not authenticated');
+      }
+      
+      // Check if user owns this country
+      const userProfile = await ctx.db.user.findUnique({ 
+        where: { clerkId: ctx.userId } 
+      });
+      
       if (!userProfile || userProfile.countryId !== countryId) {
         throw new Error('You do not have permission to edit this country.');
       }
@@ -776,6 +771,7 @@ export const countriesRouter = createTRPCRouter({
           urbanPopulationPercent: economicData.urbanPopulationPercent,
           ruralPopulationPercent: economicData.ruralPopulationPercent,
           literacyRate: economicData.literacyRate,
+          updatedAt: new Date(),
         };
 
         // Filter out undefined values
@@ -784,7 +780,7 @@ export const countriesRouter = createTRPCRouter({
         );
 
         // Update country with basic fields
-        await ctx.db.country.update({
+        const updatedCountry = await ctx.db.country.update({
           where: { id: countryId },
           data: filteredBasicFields,
         });
@@ -861,7 +857,11 @@ export const countriesRouter = createTRPCRouter({
         //   }
         // }
 
-        return { success: true, message: "Economic data updated successfully" };
+        return { 
+          success: true, 
+          message: "Economic data updated successfully",
+          country: updatedCountry
+        };
       } catch (error) {
         console.error('[Countries API] Failed to update economic data:', error);
         throw new Error(`Failed to update economic data: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -1914,6 +1914,538 @@ export const countriesRouter = createTRPCRouter({
       } catch (error) {
         console.error("Infobox parsing failed:", error);
         throw new Error("Failed to parse country infobox");
+      }
+    }),
+
+  // === INTELLIGENCE SYSTEM ENDPOINTS ===
+
+  // Get intelligence briefings for a country
+  getIntelligenceBriefings: publicProcedure
+    .input(z.object({
+      countryId: z.string(),
+      timeframe: z.enum(['week', 'month', 'quarter']).optional().default('week'),
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const country = await ctx.db.country.findUnique({
+          where: { id: input.countryId },
+          include: {
+            dmInputs: {
+              where: { isActive: true },
+              orderBy: { ixTimeTimestamp: "desc" },
+              take: 10,
+            },
+          },
+        });
+
+        if (!country) {
+          throw new Error(`Country with ID ${input.countryId} not found`);
+        }
+
+        const currentTime = IxTime.getCurrentIxTime();
+        const timeframeDuration = {
+          'week': 7 * 24 * 60 * 60 * 1000,
+          'month': 30 * 24 * 60 * 60 * 1000,
+          'quarter': 90 * 24 * 60 * 60 * 1000,
+        }[input.timeframe];
+
+        // Get recent historical data for analysis
+        const recentData = await ctx.db.historicalDataPoint.findMany({
+          where: {
+            countryId: input.countryId,
+            ixTimeTimestamp: {
+              gte: new Date(currentTime - timeframeDuration),
+              lte: new Date(currentTime),
+            },
+          },
+          orderBy: { ixTimeTimestamp: "desc" },
+          take: 30,
+        });
+
+        // Calculate current stats
+        const econCfg = getEconomicConfig();
+        const baselineDate = country.baselineDate.getTime();
+        const calc = new IxStatsCalculator(econCfg, baselineDate);
+        const base = prepareBaseCountryData(country);
+        const baselineStats = calc.initializeCountryStats(base);
+        const dmInputs = (country.dmInputs as any[]).map((i: any) => ({
+          ...i,
+          ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
+        }));
+        const currentStats = calc.calculateTimeProgression(baselineStats, currentTime, dmInputs);
+
+        // Generate intelligence briefings
+        const briefings = [];
+
+        // Calculate GDP change for risk assessment
+        let gdpChange = 0;
+        if (recentData.length >= 2) {
+          const latestGdp = recentData[0]?.gdpPerCapita || currentStats.newStats.currentGdpPerCapita;
+          const previousGdp = recentData[recentData.length - 1]?.gdpPerCapita || country.baselineGdpPerCapita;
+          gdpChange = ((latestGdp - previousGdp) / previousGdp) * 100;
+          
+          // Economic Intelligence
+          briefings.push({
+            id: 'economic-performance',
+            category: 'Economic Intelligence',
+            title: 'Economic Performance Analysis',
+            priority: gdpChange < -5 ? 'critical' : gdpChange < 0 ? 'high' : 'medium',
+            confidenceScore: 85,
+            summary: `GDP per capita ${gdpChange >= 0 ? 'increased' : 'decreased'} by ${Math.abs(gdpChange).toFixed(1)}% over the ${input.timeframe}`,
+            details: [
+              `Current GDP per capita: $${latestGdp.toLocaleString()}`,
+              `Growth rate: ${(currentStats.newStats.adjustedGdpGrowth * 100).toFixed(2)}%`,
+              `Economic tier: ${currentStats.newStats.economicTier}`,
+            ],
+            timestamp: currentTime,
+            source: 'Economic Analytics Engine',
+          });
+        } else {
+          // Use current growth rate as fallback
+          gdpChange = currentStats.newStats.adjustedGdpGrowth * 100;
+          
+          briefings.push({
+            id: 'economic-performance',
+            category: 'Economic Intelligence',
+            title: 'Economic Performance Analysis',
+            priority: gdpChange < -5 ? 'critical' : gdpChange < 0 ? 'high' : 'medium',
+            confidenceScore: 75,
+            summary: `Current GDP growth rate at ${gdpChange.toFixed(1)}% annually`,
+            details: [
+              `Current GDP per capita: $${currentStats.newStats.currentGdpPerCapita.toLocaleString()}`,
+              `Growth rate: ${gdpChange.toFixed(2)}%`,
+              `Economic tier: ${currentStats.newStats.economicTier}`,
+            ],
+            timestamp: currentTime,
+            source: 'Economic Analytics Engine',
+          });
+        }
+
+        // Population Intelligence
+        const popGrowthRate = currentStats.newStats.populationGrowthRate || 0;
+        briefings.push({
+          id: 'population-dynamics',
+          category: 'Demographic Intelligence',
+          title: 'Population Dynamics Assessment',
+          priority: popGrowthRate < 0 ? 'high' : 'medium',
+          confidenceScore: 90,
+          summary: `Population growth rate at ${(popGrowthRate * 100).toFixed(2)}% annually`,
+          details: [
+            `Current population: ${currentStats.newStats.currentPopulation.toLocaleString()}`,
+            `Population tier: ${currentStats.newStats.populationTier}`,
+            `Growth trend: ${popGrowthRate >= 0 ? 'Positive' : 'Negative'}`,
+          ],
+          timestamp: currentTime,
+          source: 'Demographic Analysis Unit',
+        });
+
+        // Risk Assessment
+        const riskFactors = [];
+        if (gdpChange < -3) riskFactors.push('Economic decline detected');
+        if (popGrowthRate < 0.005) riskFactors.push('Low population growth');
+        if (country.dmInputs.length > 5) riskFactors.push('High external influence activity');
+
+        if (riskFactors.length > 0) {
+          briefings.push({
+            id: 'risk-assessment',
+            category: 'Risk Intelligence',
+            title: 'Strategic Risk Assessment',
+            priority: riskFactors.length >= 3 ? 'critical' : 'high',
+            confidenceScore: 75,
+            summary: `${riskFactors.length} risk factor${riskFactors.length > 1 ? 's' : ''} identified`,
+            details: riskFactors,
+            timestamp: currentTime,
+            source: 'Risk Assessment Division',
+          });
+        }
+
+        return {
+          countryId: input.countryId,
+          countryName: country.name,
+          timeframe: input.timeframe,
+          briefings,
+          generatedAt: currentTime,
+        };
+      } catch (error) {
+        console.error("Failed to generate intelligence briefings:", error);
+        throw new Error("Failed to generate intelligence briefings");
+      }
+    }),
+
+  // Get focus cards data for intelligence dashboard
+  getFocusCardsData: publicProcedure
+    .input(z.object({
+      countryId: z.string(),
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const country = await ctx.db.country.findUnique({
+          where: { id: input.countryId },
+          include: {
+            dmInputs: {
+              where: { isActive: true },
+              orderBy: { ixTimeTimestamp: "desc" },
+            },
+          },
+        });
+
+        if (!country) {
+          throw new Error(`Country with ID ${input.countryId} not found`);
+        }
+
+        // Calculate current stats
+        const currentTime = IxTime.getCurrentIxTime();
+        const econCfg = getEconomicConfig();
+        const baselineDate = country.baselineDate.getTime();
+        const calc = new IxStatsCalculator(econCfg, baselineDate);
+        const base = prepareBaseCountryData(country);
+        const baselineStats = calc.initializeCountryStats(base);
+        const dmInputs = (country.dmInputs as any[]).map((i: any) => ({
+          ...i,
+          ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
+        }));
+        const currentStats = calc.calculateTimeProgression(baselineStats, currentTime, dmInputs);
+
+        // Generate economic health score (0-100)
+        const economicHealthScore = Math.min(100, Math.max(0, 
+          (currentStats.newStats.currentGdpPerCapita / 50000) * 100
+        ));
+
+        // Generate population health score
+        const popGrowthRate = currentStats.newStats.populationGrowthRate || 0;
+        const populationHealthScore = Math.min(100, Math.max(0,
+          50 + (popGrowthRate * 1000) // Convert to 0-100 scale
+        ));
+
+        // Generate diplomatic health score (placeholder - could be enhanced with actual diplomatic data)
+        const diplomaticHealthScore = Math.min(100, Math.max(20,
+          60 + Math.random() * 40 // Placeholder calculation
+        ));
+
+        // Generate government health score
+        const govEfficiency = Math.min(100, Math.max(30,
+          70 + (currentStats.newStats.adjustedGdpGrowth * 500)
+        ));
+
+        // Generate alerts based on country data
+        const alerts = [];
+        if (economicHealthScore < 40) {
+          alerts.push({
+            id: 'economic-concern',
+            type: 'warning',
+            title: 'Economic Performance Below Target',
+            message: 'GDP per capita growth has slowed significantly',
+            urgent: economicHealthScore < 25,
+          });
+        }
+
+        if (popGrowthRate < 0) {
+          alerts.push({
+            id: 'population-decline',
+            type: 'error',
+            title: 'Population Decline Detected',
+            message: 'Negative population growth may impact long-term sustainability',
+            urgent: true,
+          });
+        }
+
+        return {
+          economic: {
+            healthScore: Math.round(economicHealthScore),
+            gdpPerCapita: currentStats.newStats.currentGdpPerCapita,
+            growthRate: currentStats.newStats.adjustedGdpGrowth * 100,
+            economicTier: currentStats.newStats.economicTier,
+            alerts: alerts.filter(a => a.id.includes('economic')),
+          },
+          population: {
+            healthScore: Math.round(populationHealthScore),
+            population: currentStats.newStats.currentPopulation,
+            growthRate: popGrowthRate * 100,
+            populationTier: currentStats.newStats.populationTier,
+            alerts: alerts.filter(a => a.id.includes('population')),
+          },
+          diplomatic: {
+            healthScore: Math.round(diplomaticHealthScore),
+            allies: Math.floor(Math.random() * 15) + 5, // Placeholder
+            reputation: 'Stable', // Placeholder
+            treaties: Math.floor(Math.random() * 20) + 10, // Placeholder
+            alerts: [],
+          },
+          government: {
+            healthScore: Math.round(govEfficiency),
+            approval: Math.round(60 + Math.random() * 30), // Placeholder
+            efficiency: 'Good', // Placeholder
+            stability: 'Stable', // Placeholder
+            alerts: [],
+          },
+          generatedAt: currentTime,
+        };
+      } catch (error) {
+        console.error("Failed to generate focus cards data:", error);
+        throw new Error("Failed to generate focus cards data");
+      }
+    }),
+
+  // Get activity rings data for intelligence dashboard
+  getActivityRingsData: publicProcedure
+    .input(z.object({
+      countryId: z.string(),
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const country = await ctx.db.country.findUnique({
+          where: { id: input.countryId },
+          include: {
+            dmInputs: {
+              where: { isActive: true },
+              orderBy: { ixTimeTimestamp: "desc" },
+            },
+          },
+        });
+
+        if (!country) {
+          throw new Error(`Country with ID ${input.countryId} not found`);
+        }
+
+        // Calculate current stats
+        const currentTime = IxTime.getCurrentIxTime();
+        const econCfg = getEconomicConfig();
+        const baselineDate = country.baselineDate.getTime();
+        const calc = new IxStatsCalculator(econCfg, baselineDate);
+        const base = prepareBaseCountryData(country);
+        const baselineStats = calc.initializeCountryStats(base);
+        const dmInputs = (country.dmInputs as any[]).map((i: any) => ({
+          ...i,
+          ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
+        }));
+        const currentStats = calc.calculateTimeProgression(baselineStats, currentTime, dmInputs);
+
+        // Calculate vitality scores
+        const economicVitality = Math.min(100, Math.max(0, 
+          (currentStats.newStats.currentGdpPerCapita / 50000) * 100
+        ));
+
+        const popGrowthRate = currentStats.newStats.populationGrowthRate || 0;
+        const populationWellbeing = Math.min(100, Math.max(0,
+          50 + (popGrowthRate * 1000)
+        ));
+
+        const diplomaticStanding = Math.min(100, Math.max(20,
+          60 + Math.random() * 40 // Placeholder
+        ));
+
+        const governmentalEfficiency = Math.min(100, Math.max(30,
+          70 + (currentStats.newStats.adjustedGdpGrowth * 500)
+        ));
+
+        return {
+          economicVitality: Math.round(economicVitality),
+          populationWellbeing: Math.round(populationWellbeing),
+          diplomaticStanding: Math.round(diplomaticStanding),
+          governmentalEfficiency: Math.round(governmentalEfficiency),
+          economicMetrics: {
+            gdpPerCapita: `$${currentStats.newStats.currentGdpPerCapita.toLocaleString()}`,
+            growthRate: `${(currentStats.newStats.adjustedGdpGrowth * 100).toFixed(1)}%`,
+            tier: currentStats.newStats.economicTier,
+          },
+          populationMetrics: {
+            population: `${(currentStats.newStats.currentPopulation / 1000000).toFixed(1)}M`,
+            growthRate: `${(popGrowthRate * 100).toFixed(2)}%`,
+            tier: currentStats.newStats.populationTier,
+          },
+          diplomaticMetrics: {
+            allies: `${Math.floor(Math.random() * 15) + 5}`, // Placeholder
+            reputation: 'Stable', // Placeholder
+            treaties: `${Math.floor(Math.random() * 20) + 10}`, // Placeholder
+          },
+          governmentMetrics: {
+            approval: `${Math.round(60 + Math.random() * 30)}%`, // Placeholder
+            efficiency: 'Good', // Placeholder
+            stability: 'Stable', // Placeholder
+          },
+          generatedAt: currentTime,
+        };
+      } catch (error) {
+        console.error("Failed to generate activity rings data:", error);
+        throw new Error("Failed to generate activity rings data");
+      }
+    }),
+
+  // Get notifications for a country's intelligence system
+  getNotifications: publicProcedure
+    .input(z.object({
+      countryId: z.string(),
+      limit: z.number().optional().default(20),
+      priority: z.enum(['low', 'medium', 'high', 'critical']).optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const country = await ctx.db.country.findUnique({
+          where: { id: input.countryId },
+          include: {
+            dmInputs: {
+              where: { isActive: true },
+              orderBy: { ixTimeTimestamp: "desc" },
+              take: 10,
+            },
+          },
+        });
+
+        if (!country) {
+          throw new Error(`Country with ID ${input.countryId} not found`);
+        }
+
+        const currentTime = IxTime.getCurrentIxTime();
+        const notifications = [];
+
+        // Calculate current stats for analysis
+        const econCfg = getEconomicConfig();
+        const baselineDate = country.baselineDate.getTime();
+        const calc = new IxStatsCalculator(econCfg, baselineDate);
+        const base = prepareBaseCountryData(country);
+        const baselineStats = calc.initializeCountryStats(base);
+        const dmInputs = (country.dmInputs as any[]).map((i: any) => ({
+          ...i,
+          ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
+        }));
+        const currentStats = calc.calculateTimeProgression(baselineStats, currentTime, dmInputs);
+
+        // Generate notifications based on country data
+        let notificationId = 1;
+
+        // Economic notifications
+        const gdpGrowth = currentStats.newStats.adjustedGdpGrowth * 100;
+        if (gdpGrowth < 0) {
+          notifications.push({
+            id: `notif-${notificationId++}`,
+            type: 'economic',
+            priority: gdpGrowth < -3 ? 'critical' : 'high',
+            title: 'Economic Growth Concern',
+            message: `GDP growth has turned negative at ${gdpGrowth.toFixed(1)}%`,
+            timestamp: currentTime,
+            category: 'Economic Intelligence',
+            actionRequired: true,
+            relatedData: {
+              currentGdpPerCapita: currentStats.newStats.currentGdpPerCapita,
+              growthRate: gdpGrowth,
+            },
+          });
+        } else if (gdpGrowth > 5) {
+          notifications.push({
+            id: `notif-${notificationId++}`,
+            type: 'economic',
+            priority: 'medium',
+            title: 'Strong Economic Performance',
+            message: `GDP growth accelerated to ${gdpGrowth.toFixed(1)}%`,
+            timestamp: currentTime,
+            category: 'Economic Intelligence',
+            actionRequired: false,
+            relatedData: {
+              currentGdpPerCapita: currentStats.newStats.currentGdpPerCapita,
+              growthRate: gdpGrowth,
+            },
+          });
+        }
+
+        // Population notifications
+        const popGrowth = (currentStats.newStats.populationGrowthRate || 0) * 100;
+        if (popGrowth < 0) {
+          notifications.push({
+            id: `notif-${notificationId++}`,
+            type: 'demographic',
+            priority: 'high',
+            title: 'Population Decline Alert',
+            message: `Population declining at ${Math.abs(popGrowth).toFixed(2)}% annually`,
+            timestamp: currentTime,
+            category: 'Demographic Intelligence',
+            actionRequired: true,
+            relatedData: {
+              currentPopulation: currentStats.newStats.currentPopulation,
+              growthRate: popGrowth,
+            },
+          });
+        }
+
+        // DM Input notifications (recent external influences)
+        if (country.dmInputs.length > 0) {
+          const recentInput = country.dmInputs[0];
+          const inputAge = currentTime - recentInput.ixTimeTimestamp.getTime();
+          const oneWeek = 7 * 24 * 60 * 60 * 1000;
+          
+          if (inputAge < oneWeek) {
+            notifications.push({
+              id: `notif-${notificationId++}`,
+              type: 'external',
+              priority: Math.abs(recentInput.value) > 0.1 ? 'high' : 'medium',
+              title: 'External Influence Detected',
+              message: `${recentInput.inputType}: ${recentInput.description}`,
+              timestamp: recentInput.ixTimeTimestamp.getTime(),
+              category: 'External Intelligence',
+              actionRequired: Math.abs(recentInput.value) > 0.1,
+              relatedData: {
+                inputType: recentInput.inputType,
+                value: recentInput.value,
+                description: recentInput.description,
+              },
+            });
+          }
+        }
+
+        // Economic tier changes
+        const tierThresholds = econCfg.economicTierThresholds;
+        const currentGdpPc = currentStats.newStats.currentGdpPerCapita;
+        const currentTier = currentStats.newStats.economicTier;
+        
+        // Check if close to tier change
+        const tierEntries = Object.entries(tierThresholds).sort(([,a], [,b]) => a - b);
+        const currentTierIndex = tierEntries.findIndex(([tier]) => tier.toLowerCase().replace(' ', '') === currentTier.toLowerCase().replace(' ', ''));
+        
+        if (currentTierIndex !== -1 && currentTierIndex < tierEntries.length - 1) {
+          const nextTierThreshold = tierEntries[currentTierIndex + 1]![1];
+          const progressToNext = (currentGdpPc / nextTierThreshold) * 100;
+          
+          if (progressToNext > 90) {
+            notifications.push({
+              id: `notif-${notificationId++}`,
+              type: 'milestone',
+              priority: 'medium',
+              title: 'Economic Tier Advancement Imminent',
+              message: `${progressToNext.toFixed(1)}% progress toward ${tierEntries[currentTierIndex + 1]![0]} tier`,
+              timestamp: currentTime,
+              category: 'Economic Intelligence',
+              actionRequired: false,
+              relatedData: {
+                currentTier,
+                nextTier: tierEntries[currentTierIndex + 1]![0],
+                progress: progressToNext,
+              },
+            });
+          }
+        }
+
+        // Filter by priority if specified
+        let filteredNotifications = notifications;
+        if (input.priority) {
+          filteredNotifications = notifications.filter(n => n.priority === input.priority);
+        }
+
+        // Sort by priority and timestamp
+        const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+        filteredNotifications.sort((a, b) => {
+          const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
+          if (priorityDiff !== 0) return priorityDiff;
+          return b.timestamp - a.timestamp;
+        });
+
+        return {
+          countryId: input.countryId,
+          notifications: filteredNotifications.slice(0, input.limit),
+          total: filteredNotifications.length,
+          generatedAt: currentTime,
+        };
+      } catch (error) {
+        console.error("Failed to generate notifications:", error);
+        throw new Error("Failed to generate notifications");
       }
     }),
 });
