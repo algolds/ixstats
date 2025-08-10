@@ -12,7 +12,6 @@ import { TextAnimate } from "~/components/magicui/text-animate";
 import { Badge } from "~/components/ui/badge";
 import { ActivityPopover } from "~/components/ui/activity-modal";
 import { AppleRippleEffect } from "~/components/ui/apple-ripple-effect";
-import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
 
 // Dashboard Components
 import { LiveActivityMarquee } from "./LiveActivityMarquee";
@@ -52,7 +51,7 @@ interface ProcessedCountryData {
   leader?: string | null;
 }
 
-export default function DashboardRefactoredModular() {
+const DashboardRefactoredModular = React.memo(function DashboardRefactoredModular() {
   const { user } = useUser();
   const [commandOpen, setCommandOpen] = useState(false);
   const [activityPopoverOpen, setActivityPopoverOpen] = useState<number | null>(null);
@@ -85,12 +84,16 @@ export default function DashboardRefactoredModular() {
     }
   }, []);
 
-  // Save expanded cards to cookie whenever it changes
+  // Save expanded cards to cookie whenever it changes (debounced for performance)
   useEffect(() => {
-    const expandedArray = Array.from(expandedCards);
-    const expires = new Date();
-    expires.setFullYear(expires.getFullYear() + 1); // 1 year expiry
-    document.cookie = `dashboardExpanded=${encodeURIComponent(JSON.stringify(expandedArray))}; expires=${expires.toUTCString()}; path=/`;
+    const timeoutId = setTimeout(() => {
+      const expandedArray = Array.from(expandedCards);
+      const expires = new Date();
+      expires.setFullYear(expires.getFullYear() + 1); // 1 year expiry
+      document.cookie = `dashboardExpanded=${encodeURIComponent(JSON.stringify(expandedArray))}; expires=${expires.toUTCString()}; path=/`;
+    }, 500); // 500ms debounce
+    
+    return () => clearTimeout(timeoutId);
   }, [expandedCards]);
 
   // Helper functions to toggle individual card expansions
@@ -102,24 +105,22 @@ export default function DashboardRefactoredModular() {
     setIsSdiExpanded(prev => !prev);
   };
 
-  // Apple Intelligence-style collapse animation
+  // Apple-style fast collapse animation - everything happens in parallel
   const collapseGlobalCard = () => {
-    // Start ripple effect on MyCountry card
+    // Start all animations simultaneously for snappy Apple-like feel
     setIsRippleActive(true);
-    
-    // Phase 1: Begin visual collapse
     setIsGlobalCollapsing(true);
     
-    // Phase 2: Complete merge after ripple
+    // Quick parallel execution - completed in 400ms total
     setTimeout(() => {
       setIsGlobalCardSlid(true);
+    }, 200); // Start slide immediately after collapse begins
+    
+    // Fast cleanup for responsive feel
+    setTimeout(() => {
       setIsRippleActive(false);
-      
-      // Phase 3: Cleanup
-      setTimeout(() => {
-        setIsGlobalCollapsing(false);
-      }, 600);
-    }, 1200); // Align with new ripple timing
+      setIsGlobalCollapsing(false);
+    }, 400); // Complete everything in 400ms total
   };
 
   // Command palette keyboard shortcut
@@ -247,14 +248,19 @@ export default function DashboardRefactoredModular() {
   return (
     <React.Fragment>
       <div className="relative min-h-screen bg-background">
-        {/* Interactive Grid Background - Enhanced Saturation */}
-        <InteractiveGridPattern
-          width={40}
-          height={40}
-          squares={[50, 40]}
-          className="opacity-40 dark:opacity-30"
-          squaresClassName="fill-slate-200/25 dark:fill-slate-800/25 stroke-slate-300/40 dark:stroke-slate-500/40 [&:nth-child(4n+1):hover]:fill-yellow-500/60 [&:nth-child(4n+1):hover]:stroke-yellow-500/80 dark:[&:nth-child(4n+1):hover]:fill-yellow-400/70 dark:[&:nth-child(4n+1):hover]:stroke-yellow-400/90 [&:nth-child(4n+2):hover]:fill-blue-500/60 [&:nth-child(4n+2):hover]:stroke-blue-500/80 dark:[&:nth-child(4n+2):hover]:fill-blue-400/70 dark:[&:nth-child(4n+2):hover]:stroke-blue-400/90 [&:nth-child(4n+3):hover]:fill-indigo-500/60 [&:nth-child(4n+3):hover]:stroke-indigo-500/80 dark:[&:nth-child(4n+3):hover]:fill-indigo-400/70 dark:[&:nth-child(4n+3):hover]:stroke-indigo-400/90 [&:nth-child(4n+4):hover]:fill-red-500/60 [&:nth-child(4n+4):hover]:stroke-red-500/80 dark:[&:nth-child(4n+4):hover]:fill-red-400/70 dark:[&:nth-child(4n+4):hover]:stroke-red-400/90 transition-all duration-300 hover:scale-[1.02]" 
-        />
+        {/* Simplified Static Background Grid - Better Performance */}
+        <div className="absolute inset-0 opacity-20 dark:opacity-15">
+          <div 
+            className="w-full h-full"
+            style={{
+              backgroundImage: `
+                linear-gradient(rgba(148, 163, 184, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px)
+              `,
+              backgroundSize: '40px 40px'
+            }}
+          />
+        </div>
         
         {/* Header Section */}
         <div className="relative z-50 container mx-auto px-4 py-8">
@@ -389,14 +395,12 @@ export default function DashboardRefactoredModular() {
 
               {/* Global Intelligence Section */}
               <GlobalIntelligenceCard
-                processedCountries={processedCountries}
                 adaptedGlobalStats={adaptedGlobalStats}
                 sdiData={{
                   activeCrises,
                   intelligenceFeed,
                   economicIndicators
                 }}
-                isGlobalCardHovered={isGlobalCardHovered}
                 setIsGlobalCardHovered={setIsGlobalCardHovered}
                 collapseGlobalCard={collapseGlobalCard}
                 isGlobalCollapsing={isGlobalCollapsing}
@@ -527,4 +531,6 @@ export default function DashboardRefactoredModular() {
       </div>
     </React.Fragment>
   );
-}
+});
+
+export default DashboardRefactoredModular;

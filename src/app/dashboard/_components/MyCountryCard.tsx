@@ -66,10 +66,20 @@ export function MyCountryCard({
 }: MyCountryCardProps) {
   return (
     <motion.div
-      layout
       className={cn(
         isGlobalCardSlid ? "lg:col-span-12" : "lg:col-span-8"
       )}
+      style={{ 
+        willChange: isRippleActive || isGlobalCardSlid ? 'transform' : 'auto'
+      }}
+      initial={false}
+      animate={{
+        scale: isGlobalCardSlid ? [1, 1.02, 1] : 1
+      }}
+      transition={{ 
+        duration: 0.4, 
+        ease: [0.25, 0.1, 0.25, 1] 
+      }}
     >
       <AppleRippleEffect
         isActive={isRippleActive}
@@ -83,9 +93,9 @@ export function MyCountryCard({
             "hover:shadow-xl hover:shadow-yellow-500/10 dark:hover:shadow-yellow-400/20 mycountry-card"
           )}
           whileHover={{ y: -2 }}
-          transition={{ type: "spring", stiffness: 400, damping: 40 }}
-          layout
+          transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
           data-theme="executive"
+          style={{ willChange: 'transform' }}
         >
           {/* Full Bento Flag Background with Realistic Ripple */}
           {countryData && (

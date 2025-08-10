@@ -27,15 +27,15 @@ export const AppleRippleEffect: React.FC<AppleRippleEffectProps> = ({
       const rippleIds = [Date.now(), Date.now() + 1, Date.now() + 2];
       setRipples(rippleIds.map(id => ({ id })));
 
-      // Complete callback
+      // Complete callback - much faster for Apple-like responsiveness
       if (onComplete) {
-        setTimeout(onComplete, 1200);
+        setTimeout(onComplete, 400);
       }
 
-      // Cleanup ripples
+      // Cleanup ripples - faster cleanup
       setTimeout(() => {
         setRipples([]);
-      }, 2000);
+      }, 600);
     }
   }, [isActive, onComplete]);
 
@@ -69,15 +69,15 @@ export const AppleRippleEffect: React.FC<AppleRippleEffectProps> = ({
               opacity: 0.6
             }}
             animate={{ 
-              scale: [0, 4, 8],
-              opacity: [0.6, 0.3, 0]
+              scale: [0, 2.5, 4],
+              opacity: [0.8, 0.4, 0]
             }}
             exit={{ opacity: 0 }}
             transition={{
-              duration: 1.2,
-              ease: [0.25, 0.46, 0.45, 0.94],
-              delay: index * 0.15,
-              times: [0, 0.5, 1]
+              duration: 0.4,
+              ease: [0.25, 0.1, 0.25, 1],
+              delay: index * 0.05,
+              times: [0, 0.6, 1]
             }}
           >
             {/* Ripple Ring */}
@@ -100,9 +100,9 @@ export const AppleRippleEffect: React.FC<AppleRippleEffectProps> = ({
           <motion.div
             className="absolute inset-0 pointer-events-none"
             initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 0.3, 0] }}
+            animate={{ opacity: [0, 0.4, 0] }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 1.2, ease: "easeInOut" }}
+            transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
           >
             <motion.div
               className="absolute inset-0"
@@ -122,8 +122,8 @@ export const AppleRippleEffect: React.FC<AppleRippleEffectProps> = ({
                 scale: [0.8, 1.2, 0.8]
               }}
               transition={{ 
-                duration: 1.2, 
-                ease: [0.25, 0.46, 0.45, 0.94] 
+                duration: 0.4, 
+                ease: [0.25, 0.1, 0.25, 1] 
               }}
             />
           </motion.div>
