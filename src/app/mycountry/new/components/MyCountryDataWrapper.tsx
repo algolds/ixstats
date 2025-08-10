@@ -29,6 +29,7 @@ import { useDataSync } from '../hooks/useDataSync';
 import { useUnifiedNotifications } from '~/hooks/useUnifiedNotifications';
 import { UnifiedLayout } from './UnifiedLayout';
 import { useExecutiveNotifications } from '~/contexts/ExecutiveNotificationContext';
+import { useIntelligenceWebSocket } from '~/hooks/useIntelligenceWebSocket';
 import { PublicMyCountryPage } from '../public-page';
 import { ExecutiveDashboard } from '../executive-dashboard';
 import { api } from "~/trpc/react";
@@ -80,6 +81,82 @@ export function MyCountryDataWrapper({
   
   // Unified notification system - using global notifications
   const { addNotification } = useUnifiedNotifications();
+  
+  // Real-time intelligence WebSocket integration
+  const {
+    connected: wsConnected,
+    authenticated: wsAuthenticated,
+    latestUpdate,
+    latestAlert,
+    updateCount,
+    alertCount
+  } = useIntelligenceWebSocket({
+    countryId: country?.id,
+    subscribeToGlobal: viewMode === 'executive',
+    subscribeToAlerts: true,
+    onUpdate: (update) => {
+      console.log('Real-time intelligence update:', update);
+      // Handle real-time intelligence updates
+      if (update.severity === 'critical' || update.priority === 'urgent') {
+        addNotification({
+          id: `rt_${update.id}`,
+          title: update.title,
+          message: update.description || '',
+          type: update.severity === 'critical' ? 'error' : 'warning',
+          duration: 8000,
+          actions: []
+        });
+      }
+    },
+    onAlert: (alert) => {
+      console.log('Real-time intelligence alert:', alert);
+      // Handle critical alerts
+      addNotification({
+        id: `alert_${alert.id}`,
+        title: `🚨 ${alert.title}`,
+        message: alert.description || '',
+        type: 'error',
+        duration: 12000,
+        actions: [
+          { label: 'View Details', action: () => console.log('View alert details:', alert.id) }
+        ]
+      });
+      
+      // Update executive notifications for alerts
+      if (viewMode === 'executive') {
+        setNotifications(prev => [{
+          id: alert.id,
+          title: alert.title,
+          message: alert.description || '',
+          type: alert.severity === 'critical' ? 'critical' : 'warning',
+          timestamp: alert.timestamp,
+          read: false
+        }, ...prev.slice(0, 9)]); // Keep max 10 notifications
+      }
+    },
+    onConnect: () => {
+      console.log('Intelligence WebSocket connected');
+      addNotification({
+        id: 'ws_connected',
+        title: '🔗 Real-time Intelligence Connected',
+        message: 'Live intelligence updates are now active',
+        type: 'success',
+        duration: 3000,
+        actions: []
+      });
+    },
+    onDisconnect: () => {
+      console.log('Intelligence WebSocket disconnected');
+      addNotification({
+        id: 'ws_disconnected',
+        title: '⚠️ Real-time Intelligence Disconnected',
+        message: 'Attempting to reconnect...',
+        type: 'warning',
+        duration: 5000,
+        actions: []
+      });
+    }
+  });
   
   // Real API call for executive actions
   const { data: executiveActions = [] } = api.mycountry.getExecutiveActions.useQuery(
