@@ -308,6 +308,7 @@ export function MyCountryDataWrapper({
               achievements={achievements}
               milestones={milestones}
               rankings={rankings}
+              intelligenceFeed={intelligenceFeed}
               isOwner={isOwner}
               onPrivateAccess={onPrivateAccess}
             />

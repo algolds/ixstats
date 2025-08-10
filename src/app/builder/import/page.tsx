@@ -58,7 +58,7 @@ const wikiSites: WikiSite[] = [
 ];
 
 export default function ImportFromWikiPage() {
-  const router = useRouter();
+  const router = useRouter(); 
   const [selectedSite, setSelectedSite] = useState<WikiSite>(wikiSites[0]!);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);

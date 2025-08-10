@@ -13,7 +13,7 @@ export function useCountryComparison() {
   const [comparisonCountries, setComparisonCountries] = useState<ComparisonCountry[]>([]);
 
   // Fetch detailed data for a specific country
-  const { data: countryData, isLoading: isLoadingCountry } = api.countries.getByIdWithEconomicData.useQuery(
+  const { data: countryData, isLoading: isLoadingCountry } = api.countries.getByIdAtTime.useQuery(
     { id: selectedCountryIds[0] || '' },
     { enabled: selectedCountryIds.length === 1 }
   );
@@ -30,7 +30,7 @@ export function useCountryComparison() {
 
     try {
       // Fetch detailed country data
-      const response = await fetch(`/api/trpc/countries.getByIdWithEconomicData?batch=1&input=${encodeURIComponent(JSON.stringify({ id: countryId }))}`);
+      const response = await fetch(`/api/trpc/countries.getByIdAtTime?batch=1&input=${encodeURIComponent(JSON.stringify({ id: countryId }))}`);
       const data = await response.json();
       
       if (data[0]?.result?.data?.json) {

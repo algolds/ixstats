@@ -14,7 +14,7 @@ import type {
 
 export function useEconomyData(countryId: string) {
   const { data, isLoading, error, refetch } =
-    api.countries.getByIdWithEconomicData.useQuery(
+    api.countries.getByIdAtTime.useQuery(
       { id: countryId },
       { staleTime: 60_000 }
     )

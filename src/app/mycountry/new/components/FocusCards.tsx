@@ -248,7 +248,7 @@ function FocusCardComponent({
             <div className="mt-3 space-y-2">
               {card.alerts.slice(0, expanded ? undefined : 2).map((alert, alertIndex) => (
                 <div
-                  key={alert.id && alert.id.trim() ? `alert-${alert.id.trim()}` : `alert-fallback-${alertIndex}`}
+                  key={`alert-${alert.id || 'fallback'}-${alertIndex}`}
                   className={`flex items-center gap-2 p-2 rounded-md text-sm ${
                     alert.type === 'error' ? 'bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-300' :
                     alert.type === 'warning' ? 'bg-yellow-50 text-yellow-700 dark:bg-yellow-950/50 dark:text-yellow-300' :
@@ -274,7 +274,7 @@ function FocusCardComponent({
           {/* Key Metrics */}
           <div className="grid grid-cols-2 gap-3 mb-4">
             {card.metrics.slice(0, expanded ? undefined : 4).map((metric, i) => (
-              <div key={card.id && card.id.trim() ? `metric-${card.id.trim()}-${i}` : `metric-fallback-${i}`} className="space-y-1">
+              <div key={`metric-${card.id || 'fallback'}-${i}`} className="space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-muted-foreground">
                     {metric.label}
@@ -313,7 +313,7 @@ function FocusCardComponent({
               <div className="space-y-2">
                 {card.actions.slice(0, 4).map((action, actionIndex) => (
                   <Button
-                    key={action.id && action.id.trim() ? `action-${action.id.trim()}` : `action-fallback-${actionIndex}`}
+                    key={`action-${action.id || 'fallback'}-${actionIndex}`}
                     variant="outline"
                     size="sm"
                     className="w-full justify-start text-left"

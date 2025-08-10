@@ -18,7 +18,7 @@ import { ExecutiveCommandCenter } from './components/ExecutiveCommandCenter';
 import { NationalPerformanceCommandCenter } from './components/NationalPerformanceCommandCenter';
 import { IntelligenceBriefings } from './components/IntelligenceBriefings';
 import { ForwardLookingIntelligence } from './components/ForwardLookingIntelligence';
-import { transformToExecutiveIntelligence, createMockHistoricalData } from './utils/dataTransformers';
+import { transformApiDataToExecutiveIntelligence } from './utils/liveDataTransformers';
 import { useFlag } from '~/hooks/useFlag';
 
 interface Achievement {
@@ -102,6 +102,7 @@ interface PublicMyCountryPageProps {
   achievements: Achievement[];
   milestones: Milestone[];
   rankings: RankingData[];
+  intelligenceFeed?: any[]; // Real intelligence items from API
   isOwner?: boolean;
   onPrivateAccess?: () => void;
   className?: string;
@@ -126,6 +127,7 @@ export function PublicMyCountryPage({
   achievements,
   milestones,
   rankings,
+  intelligenceFeed = [],
   isOwner = false,
   onPrivateAccess,
   className = '',
@@ -138,8 +140,12 @@ export function PublicMyCountryPage({
     leader: country.leader || 'Unknown Leader',
     flag: country.flag || flagUrl || '/placeholder-flag.png'
   };
-  const previousCountryData = createMockHistoricalData(countryWithRequiredFields); // In real app, this would come from database
-  const executiveIntelligence = transformToExecutiveIntelligence(countryWithRequiredFields, previousCountryData);
+  // Transform real API data to intelligence format (no more mock data!)
+  const executiveIntelligence = transformApiDataToExecutiveIntelligence(
+    countryWithRequiredFields, 
+    intelligenceFeed || [], // Use real intelligence feed from API
+    undefined // TODO: Add previous country data from historical API
+  );
   const vitalityIntelligence = executiveIntelligence.vitalityIntelligence;
   
   // Debug log to check data structure
