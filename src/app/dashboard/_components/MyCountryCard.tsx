@@ -38,8 +38,16 @@ interface CountryData {
   leader?: string | null;
 }
 
+interface ActivityRingsData {
+  economicVitality: number;
+  populationWellbeing: number;
+  diplomaticStanding: number;
+  governmentalEfficiency: number;
+}
+
 interface MyCountryCardProps {
   countryData?: CountryData;
+  activityRingsData?: ActivityRingsData;
   expandedCards: Set<string>;
   setExpandedCards: (cards: Set<string>) => void;
   setActivityPopoverOpen: (index: number | null) => void;
@@ -49,6 +57,7 @@ interface MyCountryCardProps {
 
 export function MyCountryCard({ 
   countryData, 
+  activityRingsData,
   expandedCards, 
   setExpandedCards, 
   setActivityPopoverOpen,
@@ -195,7 +204,7 @@ export function MyCountryCard({
                         <TrendingUp className="h-6 w-6 text-green-400" />
                       </div>
                       <div className="text-lg font-bold text-green-400 mb-1">
-                        {Math.min(100, Math.round((countryData.currentGdpPerCapita / 70000) * 100))}%
+                        {activityRingsData?.economicVitality || 0}%
                       </div>
                       <div className="text-xs text-muted-foreground">Economic Index</div>
                     </div>
@@ -207,7 +216,7 @@ export function MyCountryCard({
                         <Users className="h-6 w-6 text-blue-400" />
                       </div>
                       <div className="text-lg font-bold text-blue-400 mb-1">
-                        {Math.min(100, Math.round(85 + (countryData.populationGrowthRate * 1000)))}%
+                        {activityRingsData?.populationWellbeing || 0}%
                       </div>
                       <div className="text-xs text-muted-foreground">Social Index</div>
                     </div>
@@ -219,9 +228,7 @@ export function MyCountryCard({
                         <Crown className="h-6 w-6 text-purple-400" />
                       </div>
                       <div className="text-lg font-bold text-purple-400 mb-1">
-                        {countryData.economicTier === 'Extravagant' ? '95' : 
-                         countryData.economicTier === 'Very Strong' ? '88' : 
-                         countryData.economicTier === 'Strong' ? '82' : '75'}%
+                        {activityRingsData?.governmentalEfficiency || 0}%
                       </div>
                       <div className="text-xs text-muted-foreground">Governance Index</div>
                     </div>
@@ -234,28 +241,21 @@ export function MyCountryCard({
                       <div className="flex items-center gap-2">
                         <div className="text-sm font-bold text-green-400">
                           {Math.round((
-                            Math.min(100, Math.round((countryData.currentGdpPerCapita / 70000) * 100)) +
-                            Math.min(100, Math.round(85 + (countryData.populationGrowthRate * 1000))) +
-                            (countryData.economicTier === 'Extravagant' ? 95 : 
-                             countryData.economicTier === 'Very Strong' ? 88 : 
-                             countryData.economicTier === 'Strong' ? 82 : 75)
+                            (activityRingsData?.economicVitality || 0) +
+                            (activityRingsData?.populationWellbeing || 0) +
+                            (activityRingsData?.governmentalEfficiency || 0)
                           ) / 3)}%
                         </div>
                         <Badge variant="secondary" className="text-xs">
-                          {Math.round((
-                            Math.min(100, Math.round((countryData.currentGdpPerCapita / 70000) * 100)) +
-                            Math.min(100, Math.round(85 + (countryData.populationGrowthRate * 1000))) +
-                            (countryData.economicTier === 'Extravagant' ? 95 : 
-                             countryData.economicTier === 'Very Strong' ? 88 : 
-                             countryData.economicTier === 'Strong' ? 82 : 75)
-                          ) / 3) >= 85 ? 'Excellent' : 
-                          Math.round((
-                            Math.min(100, Math.round((countryData.currentGdpPerCapita / 70000) * 100)) +
-                            Math.min(100, Math.round(85 + (countryData.populationGrowthRate * 1000))) +
-                            (countryData.economicTier === 'Extravagant' ? 95 : 
-                             countryData.economicTier === 'Very Strong' ? 88 : 
-                             countryData.economicTier === 'Strong' ? 82 : 75)
-                          ) / 3) >= 75 ? 'Good' : 'Needs Improvement'}
+                          {(() => {
+                            const overallPerformance = Math.round((
+                              (activityRingsData?.economicVitality || 0) +
+                              (activityRingsData?.populationWellbeing || 0) +
+                              (activityRingsData?.governmentalEfficiency || 0)
+                            ) / 3);
+                            return overallPerformance >= 85 ? 'Excellent' : 
+                                   overallPerformance >= 75 ? 'Good' : 'Needs Improvement';
+                          })()}
                         </Badge>
                       </div>
                     </div>
@@ -270,25 +270,25 @@ export function MyCountryCard({
                 <div className="glass-hierarchy-child p-3 rounded-lg text-center">
                   <div className="text-xs text-muted-foreground mb-1">Population</div>
                   <div className="text-sm font-bold text-blue-400">
-                    {(countryData.currentPopulation / 1000000).toFixed(1)}M
+                    {((countryData.currentPopulation || 0) / 1000000).toFixed(1)}M
                   </div>
                 </div>
                 <div className="glass-hierarchy-child p-3 rounded-lg text-center">
                   <div className="text-xs text-muted-foreground mb-1">GDP per Capita</div>
                   <div className="text-sm font-bold text-green-400">
-                    ${(countryData.currentGdpPerCapita / 1000).toFixed(0)}k
+                    ${((countryData.currentGdpPerCapita || 0) / 1000).toFixed(0)}k
                   </div>
                 </div>
                 <div className="glass-hierarchy-child p-3 rounded-lg text-center">
                   <div className="text-xs text-muted-foreground mb-1">Employment</div>
                   <div className="text-sm font-bold text-purple-400">
-                    {(96.5 - (countryData.adjustedGdpGrowth < 0 ? 2 : 0)).toFixed(1)}%
+                    {(96.5 - ((countryData.adjustedGdpGrowth || 0) < 0 ? 2 : 0)).toFixed(1)}%
                   </div>
                 </div>
                 <div className="glass-hierarchy-child p-3 rounded-lg text-center">
                   <div className="text-xs text-muted-foreground mb-1">Economic Health</div>
                   <div className="text-sm font-bold text-green-400">
-                    {Math.min(100, Math.round((countryData.currentGdpPerCapita / 70000) * 100))}%
+                    {activityRingsData?.economicVitality || 0}%
                   </div>
                 </div>
               </div>
@@ -369,9 +369,9 @@ export function MyCountryCard({
                         <div className="glass-hierarchy-child p-3 rounded-lg">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs text-muted-foreground">Unemployment Rate</span>
-                            <span className="text-xs text-muted-foreground">{(3.5 + (countryData.adjustedGdpGrowth < 0 ? 2 : 0)).toFixed(1)}%</span>
+                            <span className="text-xs text-muted-foreground">{(3.5 + ((countryData.adjustedGdpGrowth || 0) < 0 ? 2 : 0)).toFixed(1)}%</span>
                           </div>
-                          <Progress value={((3.5 + (countryData.adjustedGdpGrowth < 0 ? 2 : 0)) / 25) * 100} className="h-2" />
+                          <Progress value={((3.5 + ((countryData.adjustedGdpGrowth || 0) < 0 ? 2 : 0)) / 25) * 100} className="h-2" />
                           <div className="flex justify-between text-xs text-muted-foreground mt-1">
                             <span>0%</span>
                             <span className="text-green-600">Optimal: 3-7%</span>
@@ -383,9 +383,9 @@ export function MyCountryCard({
                         <div className="glass-hierarchy-child p-3 rounded-lg">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs text-muted-foreground">Labor Force Participation</span>
-                            <span className="text-xs text-muted-foreground">{(68.5 + (countryData.currentGdpPerCapita / 100000) * 5).toFixed(1)}%</span>
+                            <span className="text-xs text-muted-foreground">{(68.5 + ((countryData.currentGdpPerCapita || 0) / 100000) * 5).toFixed(1)}%</span>
                           </div>
-                          <Progress value={68.5 + (countryData.currentGdpPerCapita / 100000) * 5} className="h-2" />
+                          <Progress value={68.5 + ((countryData.currentGdpPerCapita || 0) / 100000) * 5} className="h-2" />
                           <div className="flex justify-between text-xs text-muted-foreground mt-1">
                             <span>0%</span>
                             <span className="text-green-600">Optimal: 60-80%</span>
@@ -411,9 +411,9 @@ export function MyCountryCard({
                         <div className="glass-hierarchy-child p-3 rounded-lg">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs text-muted-foreground">Economic Stability Index</span>
-                            <span className="text-xs text-muted-foreground">{Math.min(100, Math.round((countryData.currentGdpPerCapita / 70000) * 100))}%</span>
+                            <span className="text-xs text-muted-foreground">{activityRingsData?.economicVitality || 0}%</span>
                           </div>
-                          <Progress value={Math.min(100, Math.round((countryData.currentGdpPerCapita / 70000) * 100))} className="h-2" />
+                          <Progress value={activityRingsData?.economicVitality || 0} className="h-2" />
                           <div className="flex justify-between text-xs text-muted-foreground mt-1">
                             <span>0%</span>
                             <span className="text-green-600">Target: 85%+</span>

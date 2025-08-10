@@ -155,6 +155,12 @@ export default function DashboardRefactoredModular() {
     { enabled: !!userProfile?.countryId, retry: 1, retryDelay: 1000 }
   );
 
+  // Get activity rings data using the centralized API (same as MyCountry page)
+  const { data: activityRingsData } = api.countries.getActivityRingsData.useQuery(
+    { countryId: userProfile?.countryId || '' },
+    { enabled: !!userProfile?.countryId, retry: 1, retryDelay: 1000 }
+  );
+
   // SDI data for Global Intelligence section
   const { data: activeCrises } = api.sdi.getActiveCrises.useQuery(
     undefined,
@@ -341,13 +347,13 @@ export default function DashboardRefactoredModular() {
               userCountry={countryData ? {
                 id: countryData.id,
                 name: countryData.name,
-                currentPopulation: countryData.currentPopulation,
-                currentGdpPerCapita: countryData.currentGdpPerCapita,
-                currentTotalGdp: countryData.currentTotalGdp || (countryData.currentPopulation * countryData.currentGdpPerCapita),
-                economicTier: countryData.economicTier,
-                populationTier: countryData.populationTier || 'Medium',
-                adjustedGdpGrowth: countryData.adjustedGdpGrowth || 0,
-                populationGrowthRate: countryData.populationGrowthRate || 0
+                currentPopulation: countryData.calculatedStats?.currentPopulation || 0,
+                currentGdpPerCapita: countryData.calculatedStats?.currentGdpPerCapita || 0,
+                currentTotalGdp: countryData.calculatedStats?.currentTotalGdp || 0,
+                economicTier: countryData.calculatedStats?.economicTier || 'Unknown',
+                populationTier: countryData.calculatedStats?.populationTier || 'Medium',
+                adjustedGdpGrowth: countryData.calculatedStats?.adjustedGdpGrowth || 0,
+                populationGrowthRate: countryData.calculatedStats?.populationGrowthRate || 0
               } : undefined}
               isLoading={countriesLoading}
             />
@@ -359,20 +365,21 @@ export default function DashboardRefactoredModular() {
                 countryData={countryData ? {
                   id: countryData.id,
                   name: countryData.name,
-                  currentPopulation: countryData.currentPopulation,
-                  currentGdpPerCapita: countryData.currentGdpPerCapita,
-                  currentTotalGdp: countryData.currentTotalGdp || (countryData.currentPopulation * countryData.currentGdpPerCapita),
-                  economicTier: countryData.economicTier,
-                  populationTier: countryData.populationTier || 'Medium',
-                  adjustedGdpGrowth: countryData.adjustedGdpGrowth || 0,
-                  populationGrowthRate: countryData.populationGrowthRate || 0,
-                  populationDensity: countryData.populationDensity,
+                  currentPopulation: countryData.calculatedStats?.currentPopulation || 0,
+                  currentGdpPerCapita: countryData.calculatedStats?.currentGdpPerCapita || 0,
+                  currentTotalGdp: countryData.calculatedStats?.currentTotalGdp || 0,
+                  economicTier: countryData.calculatedStats?.economicTier || 'Unknown',
+                  populationTier: countryData.calculatedStats?.populationTier || 'Medium',
+                  adjustedGdpGrowth: countryData.calculatedStats?.adjustedGdpGrowth || 0,
+                  populationGrowthRate: countryData.calculatedStats?.populationGrowthRate || 0,
+                  populationDensity: countryData.calculatedStats?.populationDensity,
                   continent: countryData.continent,
                   region: countryData.region,
                   governmentType: countryData.governmentType,
                   religion: countryData.religion,
                   leader: countryData.leader
                 } : undefined}
+                activityRingsData={activityRingsData}
                 expandedCards={expandedCards}
                 setExpandedCards={setExpandedCards}
                 setActivityPopoverOpen={setActivityPopoverOpen}
@@ -414,12 +421,13 @@ export default function DashboardRefactoredModular() {
                 countryData={countryData ? {
                   id: countryData.id,
                   name: countryData.name,
-                  currentPopulation: countryData.currentPopulation,
-                  currentGdpPerCapita: countryData.currentGdpPerCapita,
-                  currentTotalGdp: countryData.currentTotalGdp || (countryData.currentPopulation * countryData.currentGdpPerCapita),
-                  economicTier: countryData.economicTier,
-                  populationTier: countryData.populationTier || 'Medium',
-                  populationDensity: countryData.populationDensity
+                  currentPopulation: countryData.calculatedStats?.currentPopulation || 0,
+                  currentGdpPerCapita: countryData.calculatedStats?.currentGdpPerCapita || 0,
+                  currentTotalGdp: countryData.calculatedStats?.currentTotalGdp || 0,
+                  economicTier: countryData.calculatedStats?.economicTier || 'Unknown',
+                  populationTier: countryData.calculatedStats?.populationTier || 'Medium',
+                  populationDensity: countryData.calculatedStats?.populationDensity,
+                  landArea: countryData.landArea
                 } : undefined}
                 userProfile={userProfile}
                 userId={user?.id}

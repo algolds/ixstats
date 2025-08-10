@@ -22,6 +22,7 @@ interface CountryData {
   economicTier: string;
   populationTier: string;
   populationDensity?: number | null;
+  landArea?: number | null;
 }
 
 interface ECICardProps {
@@ -109,31 +110,35 @@ export function ECICard({
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center p-4 glass-hierarchy-child rounded-lg">
               <div className="text-2xl font-bold text-green-400 mb-2">
-                {formatCurrency(countryData.currentGdpPerCapita)}
+                {formatCurrency(countryData.currentGdpPerCapita || 0)}
               </div>
               <div className="text-sm text-muted-foreground">GDP per Capita</div>
               <Progress 
-                value={Math.min((countryData.currentGdpPerCapita / 100000) * 100, 100)} 
+                value={Math.min(((countryData.currentGdpPerCapita || 0) / 100000) * 100, 100)} 
                 className="mt-2 h-2" 
               />
             </div>
             <div className="text-center p-4 glass-hierarchy-child rounded-lg">
               <div className="text-2xl font-bold text-blue-400 mb-2">
-                {formatPopulation(countryData.currentPopulation)}
+                {formatPopulation(countryData.currentPopulation || 0)}
               </div>
               <div className="text-sm text-muted-foreground">Population</div>
               <Progress 
-                value={Math.min((countryData.currentPopulation / 1000000000) * 100, 100)} 
+                value={Math.min(((countryData.currentPopulation || 0) / 1000000000) * 100, 100)} 
                 className="mt-2 h-2" 
               />
             </div>
             <div className="text-center p-4 glass-hierarchy-child rounded-lg">
               <div className="text-2xl font-bold text-purple-400 mb-2">
-                {countryData.populationDensity ? `${Math.round(countryData.populationDensity)}` : 'N/A'}
+                {countryData.populationDensity !== null && countryData.populationDensity !== undefined ? 
+                  `${Math.round(countryData.populationDensity)}` : 
+                  `${Math.round((countryData.currentPopulation || 0) / (countryData.landArea || 1000000))}`}
               </div>
               <div className="text-sm text-muted-foreground">Density/km²</div>
               <Progress 
-                value={countryData.populationDensity ? Math.min((countryData.populationDensity / 1000) * 100, 100) : 0} 
+                value={countryData.populationDensity !== null && countryData.populationDensity !== undefined ? 
+                  Math.min((countryData.populationDensity / 1000) * 100, 100) : 
+                  Math.min(((countryData.currentPopulation || 0) / (countryData.landArea || 1000000) / 1000) * 100, 100)} 
                 className="mt-2 h-2" 
               />
             </div>
