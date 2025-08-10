@@ -4,7 +4,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { improvedFlagService } from '~/lib/improved-flag-service';
+import { simpleFlagService } from '~/lib/simple-flag-service';
 
 // Single flag hook result
 export interface UseFlagResult {
@@ -59,7 +59,7 @@ export function useFlag(countryName?: string): UseFlagResult {
         setError(false);
 
         // Try cached first for immediate response
-        const cachedUrl = improvedFlagService.getCachedFlagUrl(countryName);
+        const cachedUrl = simpleFlagService.getCachedFlagUrl(countryName);
         if (cachedUrl && mounted) {
           setFlagUrl(cachedUrl);
           setIsLoading(false);
@@ -67,7 +67,7 @@ export function useFlag(countryName?: string): UseFlagResult {
         }
 
         // Fetch if not cached
-        const url = await improvedFlagService.getFlagUrl(countryName);
+        const url = await simpleFlagService.getFlagUrl(countryName);
         
         if (mounted) {
           setFlagUrl(url);
@@ -90,8 +90,8 @@ export function useFlag(countryName?: string): UseFlagResult {
     };
   }, [countryName]);
 
-  const isLocal = flagUrl ? improvedFlagService.hasLocalFlag(countryName || '') : false;
-  const isPlaceholder = flagUrl ? improvedFlagService.isPlaceholderFlag(flagUrl) : false;
+  const isLocal = flagUrl ? simpleFlagService.hasLocalFlag(countryName || '') : false;
+  const isPlaceholder = flagUrl ? simpleFlagService.isPlaceholderFlag(flagUrl) : false;
 
   return {
     flagUrl,
@@ -140,7 +140,7 @@ export function useBulkFlags(countryNames: string[]): UseBulkFlagsResult {
       
       if (!forceRefetch) {
         for (const countryName of memoizedCountryNames) {
-          const cachedFlag = improvedFlagService.getCachedFlagUrl(countryName);
+          const cachedFlag = simpleFlagService.getCachedFlagUrl(countryName);
           if (cachedFlag) {
             cachedFlags[countryName] = cachedFlag;
           } else {
@@ -159,7 +159,7 @@ export function useBulkFlags(countryNames: string[]): UseBulkFlagsResult {
       if (uncachedCountries.length > 0) {
         console.log(`[useBulkFlags] Batch loading ${uncachedCountries.length} uncached flags`);
         
-        const fetchedFlags = await improvedFlagService.batchGetFlags(uncachedCountries);
+        const fetchedFlags = await simpleFlagService.batchGetFlags(uncachedCountries);
         
         // Merge cached and fetched flags
         const finalFlags = { ...cachedFlags, ...fetchedFlags };
@@ -195,13 +195,13 @@ export function useBulkFlags(countryNames: string[]): UseBulkFlagsResult {
   // Calculate statistics
   const localCount = useMemo(() => {
     return Object.values(flagUrls).filter(url => 
-      url && improvedFlagService.hasLocalFlag(url.replace('/flags/', '').split('.')[0] || '')
+      url && simpleFlagService.hasLocalFlag(url.replace('/flags/', '').split('.')[0] || '')
     ).length;
   }, [flagUrls]);
 
   const placeholderCount = useMemo(() => {
     return Object.values(flagUrls).filter(url => 
-      url && improvedFlagService.isPlaceholderFlag(url)
+      url && simpleFlagService.isPlaceholderFlag(url)
     ).length;
   }, [flagUrls]);
 
@@ -236,7 +236,7 @@ export function useFlagPreloader(): UseFlagPreloaderResult {
       console.log(`[useFlagPreloader] Preloading ${countryNames.length} flags`);
       
       // Initialize the flag service with these countries (will trigger background downloading)
-      await improvedFlagService.initialize(countryNames);
+      await simpleFlagService.initialize(countryNames);
       
       setPreloadedCount(countryNames.length);
       console.log(`[useFlagPreloader] Preloading completed for ${countryNames.length} countries`);
@@ -258,7 +258,7 @@ export function useFlagPreloader(): UseFlagPreloaderResult {
  * Hook for getting flag service statistics
  */
 export function useFlagServiceStats() {
-  const [stats, setStats] = useState(() => improvedFlagService.getStats());
+  const [stats, setStats] = useState(() => simpleFlagService.getStats());
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const refresh = useCallback(async () => {
@@ -266,7 +266,7 @@ export function useFlagServiceStats() {
     try {
       // Small delay to allow for any pending operations
       await new Promise(resolve => setTimeout(resolve, 100));
-      setStats(improvedFlagService.getStats());
+      setStats(simpleFlagService.getStats());
     } finally {
       setIsRefreshing(false);
     }

@@ -66,11 +66,11 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Auto-refresh every 30 seconds
+  // Auto-refresh every 2 minutes (reduced frequency for better performance)
   useEffect(() => {
     const interval = setInterval(() => {
       setLastUpdate(new Date());
-    }, 30000);
+    }, 120000); // 2 minutes instead of 30 seconds
 
     return () => clearInterval(interval);
   }, []);
@@ -102,7 +102,7 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
           id: `growth-${country.id}`,
           type: "economic",
           title: "Economic Surge",
-          description: `${country.name} +${(country.adjustedGdpGrowth * 100).toFixed(1)}%`,
+          description: `${country.name} +${((country.adjustedGdpGrowth || 0) * 100).toFixed(1)}%`,
           country: country.name,
           value: formatCurrency(country.currentGdpPerCapita),
           timestamp: new Date(now.getTime() - (index + 1) * 1800000), // 30 min intervals
@@ -153,7 +153,7 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
           id: `domestic-growth-${userCountry.id}`,
           type: "economic",
           title: "Your Nation",
-          description: `${userCountry.name} Growth +${(userCountry.adjustedGdpGrowth * 100).toFixed(1)}%`,
+          description: `${userCountry.name} Growth +${((userCountry.adjustedGdpGrowth || 0) * 100).toFixed(1)}%`,
           country: userCountry.name,
           value: formatCurrency(userCountry.currentGdpPerCapita),
           timestamp: new Date(now.getTime() - 600000), // 10 min ago
@@ -308,11 +308,7 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
         <div className="flex items-center gap-2">
           <div className="relative">
             <Activity className="h-5 w-5 text-blue-400" />
-            <motion.div
-              className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full"
-              animate={{ scale: [1, 1.2, 1], opacity: [1, 0.7, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
+            <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse" />
           </div>
           <h3 className="text-sm font-semibold text-foreground">Live Activity Stream</h3>
           <Badge variant="outline" className="text-xs bg-green-500/10 text-green-400 border-green-400/30">
@@ -361,9 +357,9 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
       {/* Marquee container */}
       <div className="relative overflow-hidden rounded-lg">
         <Marquee 
-          speed={40}
+          speed={30}
           pauseOnHover={true}
-          className="py-2 bg-transparent will-change-transform"
+          className="py-2 bg-transparent"
           gap="1.5rem"
           autoFill={true}
           fade={true}
@@ -380,7 +376,7 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
                 <div className={cn(
                   "p-2 rounded-full transition-all duration-200",
                   activity.bgColor,
-                  "group-hover:scale-110"
+                  "group-hover:scale-105"
                 )}>
                   <IconComponent className={cn("h-4 w-4", activity.color)} />
                 </div>
@@ -439,13 +435,9 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
         </span>
         <div className="flex items-center gap-2">
           <span>
-            Live updates every 30s
+            Updates every 2min
           </span>
-          <motion.div
-            className="w-1 h-1 bg-green-400 rounded-full"
-            animate={{ opacity: [1, 0.3, 1] }}
-            transition={{ duration: 1, repeat: Infinity }}
-          />
+          <div className="w-1 h-1 bg-green-400 rounded-full animate-pulse" />
         </div>
       </div>
     </motion.div>

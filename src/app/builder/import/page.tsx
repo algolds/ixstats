@@ -45,21 +45,20 @@ const wikiSites: WikiSite[] = [
     name: "ixwiki",
     displayName: "IxWiki",
     baseUrl: "https://ixwiki.com",
-    description: "The bespoke two-decades old geopolitical worldbuilding community & fictional encyclopedia",
-    categoryFilter: "Countries"
+    description: "The bespoke two-decades old geopolitical worldbuilding community & fictional encyclopedia"
   },
   {
     name: "iiwiki", 
     displayName: "IIWiki",
     baseUrl: "https://iiwiki.com",
-    description: "SimFic and Alt-History Encyclopedia",
-    categoryFilter: "Countries"
+    description: "SimFic and Alt-History Encyclopedia"
   }
 ];
 
 export default function ImportFromWikiPage() {
   const router = useRouter(); 
   const [selectedSite, setSelectedSite] = useState<WikiSite>(wikiSites[0]!);
+  const [categoryFilter, setCategoryFilter] = useState("Countries");
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -103,13 +102,13 @@ export default function ImportFromWikiPage() {
         console.log('Searching with:', {
           query: currentSearchTerm,
           site: currentSite.name,
-          categoryFilter: currentSite.categoryFilter
+          categoryFilter: categoryFilter
         });
         
         const results = await searchWikiMutation.mutateAsync({
           query: currentSearchTerm,
           site: currentSite.name as "ixwiki" | "iiwiki",
-          categoryFilter: currentSite.categoryFilter
+          categoryFilter: categoryFilter
         });
         
         console.log('Search results:', results);
@@ -124,7 +123,7 @@ export default function ImportFromWikiPage() {
     }, 500); // 500ms debounce
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, selectedSite.name]);
+  }, [searchTerm, selectedSite.name, categoryFilter]);
 
   const handleSelectResult = async (result: SearchResult) => {
     setSelectedResult(result);
@@ -159,11 +158,11 @@ export default function ImportFromWikiPage() {
       if (data) {
         setParsedData(data);
       } else {
-        setError('Could not parse country data from this page.');
+        setError('Could not parse data from this page.');
       }
     } catch (error) {
       console.error('Parse failed:', error);
-      setError(`Failed to parse country data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setError(`Failed to parse data: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
       setIsAnimatingResults(false);
@@ -202,7 +201,7 @@ export default function ImportFromWikiPage() {
           <div className="h-6 w-px bg-[var(--color-border-primary)]" />
           <div>
             <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">Import from Wiki</h1>
-            <p className="text-[var(--color-text-muted)]">Search and import country data from wiki sources</p>
+            <p className="text-[var(--color-text-muted)]">Search and import data from wiki sources</p>
           </div>
         </div>
 
@@ -229,20 +228,54 @@ export default function ImportFromWikiPage() {
                     <ExternalLink className="h-4 w-4 text-[var(--color-text-muted)]" />
                   </div>
                   <p className="text-sm text-[var(--color-text-muted)]">{site.description}</p>
-                  <p className="text-xs text-[var(--color-brand-primary)] mt-1">
-                    Filtered to Category: {site.categoryFilter}
-                  </p>
                 </button>
               </div>
             ))}
           </div>
         </div>
 
+        {/* Category Filter */}
+        <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 mb-6">
+          <h2 className="text-lg font-semibold text-[var(--color-text-primary)] mb-4 flex items-center">
+            <Users className="h-5 w-5 mr-2" />
+            Category to Search
+          </h2>
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="e.g., Countries, Nations, Cities, People, Organizations..."
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="w-full px-4 py-3 bg-[var(--color-bg-primary)] border border-[var(--color-border-primary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)] focus:border-transparent"
+            />
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className="text-sm text-[var(--color-text-muted)]">Popular categories:</span>
+            {["Countries", "Nations", "Cities", "People", "Organizations", "Companies", "Political parties"].map((category) => (
+              <button
+                key={category}
+                onClick={() => setCategoryFilter(category)}
+                className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                  categoryFilter === category
+                    ? 'bg-[var(--color-brand-primary)] text-white'
+                    : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)] hover:bg-[var(--color-brand-primary)] hover:text-white'
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-[var(--color-text-muted)] mt-3">
+            Searching in <strong>Category:{categoryFilter}</strong> on {selectedSite.displayName}
+            {selectedSite.name === 'iiwiki' && <span> (including subcategories)</span>}
+          </p>
+        </div>
+
         {/* Search */}
         <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 mb-6">
           <h2 className="text-lg font-semibold text-[var(--color-text-primary)] mb-4 flex items-center">
             <Search className="h-5 w-5 mr-2" />
-            Search for Country
+            Search for Pages
           </h2>
           <div className="relative">
             <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center">
@@ -254,7 +287,7 @@ export default function ImportFromWikiPage() {
             </div>
             <input
               type="text"
-              placeholder={`Type to search countries on ${selectedSite.displayName}...`}
+              placeholder={`Type to search ${categoryFilter} on ${selectedSite.displayName}...`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-3 bg-[var(--color-bg-primary)] border border-[var(--color-border-primary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)] focus:border-transparent"
@@ -301,7 +334,7 @@ export default function ImportFromWikiPage() {
           <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 mb-6 text-center">
             <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-[var(--color-brand-primary)]" />
             <p className="text-[var(--color-text-muted)]">
-              Searching for "{searchTerm}" in Category:Countries on {selectedSite.displayName}
+              Searching for "{searchTerm}" in Category:{categoryFilter} on {selectedSite.displayName}
               {selectedSite.name === 'iiwiki' && <span className="block text-xs mt-1 opacity-75">Including subcategories for comprehensive results</span>}
               ...
             </p>
@@ -317,7 +350,7 @@ export default function ImportFromWikiPage() {
               Search Results ({searchResults.length})
               {selectedSite.name === 'iiwiki' && searchResults.some(r => r.snippet.includes('subcategory')) && (
                 <span className="block text-sm font-normal text-[var(--color-text-muted)] mt-1">
-                  Results include countries from subcategories
+                  Results include pages from subcategories
                 </span>
               )}
             </h2>
@@ -356,7 +389,7 @@ export default function ImportFromWikiPage() {
         {!isSearching && searchTerm.trim() && searchResults.length === 0 && (
           <div className="bg-[var(--color-bg-secondary)] rounded-lg p-6 mb-6 text-center">
             <AlertCircle className="h-6 w-6 mx-auto mb-2 text-[var(--color-text-muted)]" />
-            <p className="text-[var(--color-text-muted)]">No countries found for "{searchTerm}" in Category:Countries on {selectedSite.displayName}</p>
+            <p className="text-[var(--color-text-muted)]">No pages found for "{searchTerm}" in Category:{categoryFilter} on {selectedSite.displayName}</p>
             <p className="text-sm text-[var(--color-text-muted)] mt-1">Try a different search term or check the other wiki source.</p>
           </div>
         )}
@@ -365,7 +398,7 @@ export default function ImportFromWikiPage() {
         {isLoading && (
           <div className="bg-[var(--color-bg-secondary)] rounded-lg p-8 text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-[var(--color-brand-primary)]" />
-            <p className="text-[var(--color-text-muted)]">Parsing country data from {selectedResult?.title}...</p>
+            <p className="text-[var(--color-text-muted)]">Parsing page data from {selectedResult?.title}...</p>
           </div>
         )}
 
@@ -539,7 +572,7 @@ export default function ImportFromWikiPage() {
               <div className="text-center sm:text-left">
                 <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">Ready to Import</h3>
                 <p className="text-sm text-[var(--color-text-muted)]">
-                  This data will be used as the foundation for your custom country
+                  This data will be used as the foundation for your custom entity
                 </p>
               </div>
               <button

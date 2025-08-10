@@ -24,6 +24,7 @@ import {
 import { TrendRiskAnalytics } from "~/components/analytics/TrendRiskAnalytics";
 import { ComparativeAnalysis } from "~/app/countries/_components/economy/ComparativeAnalysis";
 import { generateCountryEconomicData, type CountryProfile } from "~/lib/economic-data-templates";
+import { HealthRing } from "~/components/ui/health-ring";
 import { 
   AlertTriangle, 
   Crown, 
@@ -117,7 +118,7 @@ function MyCountryExecutiveContent() {
     { enabled: !!user?.id }
   );
 
-  const { data: country, isLoading: countryLoading, refetch: refetchCountry } = api.countries.getByIdAtTime.useQuery(
+  const { data: country, isLoading: countryLoading, refetch: refetchCountry } = api.countries.getByIdWithEconomicData.useQuery(
     { id: userProfile?.countryId || '' },
     { enabled: !!userProfile?.countryId }
   );
@@ -145,11 +146,17 @@ function MyCountryExecutiveContent() {
     { enabled: !!country?.id && activeTab === 'analytics' }
   );
 
+  // Get activity rings data for National Vitality
+  const { data: activityRingsData } = api.countries.getActivityRingsData.useQuery(
+    { countryId: country?.id || '' },
+    { enabled: !!country?.id }
+  );
+
   const economyData = country ? generateEconomicDataForCountry(country) : undefined;
 
   useEffect(() => {
     if (isLoaded && !user) {
-      const returnUrl = encodeURIComponent(createUrl('/mycountry/executive'));
+      const returnUrl = encodeURIComponent(createUrl('/mycountry/premium'));
       window.location.href = `https://accounts.ixwiki.com/sign-in?redirect_url=${returnUrl}`;
     }
   }, [isLoaded, user, router]);
@@ -218,7 +225,7 @@ function MyCountryExecutiveContent() {
           </div>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold">MyCountry Executive: {country.name}</h1>
+              <h1 className="text-3xl font-bold">MyCountry: {country?.name || "Loading..."}</h1>
               <Badge className="bg-gradient-to-r from-purple-500 to-blue-500 text-white">
                 <Sparkles className="h-3 w-3 mr-1" />
                 PREMIUM
@@ -229,7 +236,7 @@ function MyCountryExecutiveContent() {
         </div>
         
         <div className="flex items-center gap-3">
-          <Link href={createUrl(`/countries/${country.id}`)}>
+          <Link href={createUrl(`/countries/${country?.id || ''}`)}>
             <Button variant="outline" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Public View
@@ -241,8 +248,8 @@ function MyCountryExecutiveContent() {
               Edit Data
             </Button>
           </Link>
-          <Badge variant="outline">{country.economicTier}</Badge>
-          <Badge variant="outline">Tier {country.populationTier}</Badge>
+          <Badge variant="outline">{country?.economicTier || "Unknown"}</Badge>
+          <Badge variant="outline">Tier {country?.populationTier || "?"}</Badge>
         </div>
       </div>
 
@@ -253,7 +260,7 @@ function MyCountryExecutiveContent() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="text-center p-4 border rounded-lg bg-blue-50 dark:bg-blue-950/50 transition-all duration-300 hover:scale-105 cursor-pointer">
-                  <div className="text-lg font-bold text-blue-600">{(country.currentPopulation / 1000000).toFixed(1)}M</div>
+                  <div className="text-lg font-bold text-blue-600">{((country?.currentPopulation || 0) / 1000000).toFixed(1)}M</div>
                   <div className="text-xs text-muted-foreground">Population</div>
                 </div>
               </TooltipTrigger>
@@ -261,10 +268,10 @@ function MyCountryExecutiveContent() {
                 <div className="space-y-1">
                   <div className="font-medium">Current Population</div>
                   <div className="text-xs text-muted-foreground">
-                    Total: {(country.currentPopulation || 0).toLocaleString()} citizens
+                    Total: {(country?.currentPopulation || 0).toLocaleString()} citizens
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Population Tier: {country.populationTier}
+                    Population Tier: {country?.populationTier || "Unknown"}
                   </div>
                 </div>
               </TooltipContent>
@@ -273,7 +280,7 @@ function MyCountryExecutiveContent() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="text-center p-4 border rounded-lg bg-green-50 dark:bg-green-950/50 transition-all duration-300 hover:scale-105 cursor-pointer">
-                  <div className="text-lg font-bold text-green-600">${(country.currentGdpPerCapita / 1000).toFixed(0)}k</div>
+                  <div className="text-lg font-bold text-green-600">${((country?.currentGdpPerCapita || 0) / 1000).toFixed(0)}k</div>
                   <div className="text-xs text-muted-foreground">GDP/Capita</div>
                 </div>
               </TooltipTrigger>
@@ -281,7 +288,7 @@ function MyCountryExecutiveContent() {
                 <div className="space-y-1">
                   <div className="font-medium">GDP per Capita</div>
                   <div className="text-xs text-muted-foreground">
-                    ${(country.currentGdpPerCapita || 0).toLocaleString()} per person
+                    ${(country?.currentGdpPerCapita || 0).toLocaleString()} per person
                   </div>
                   <div className="text-xs text-muted-foreground">
                     Economic strength indicator
@@ -293,7 +300,7 @@ function MyCountryExecutiveContent() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="text-center p-4 border rounded-lg bg-purple-50 dark:bg-purple-950/50 transition-all duration-300 hover:scale-105 cursor-pointer">
-                  <div className="text-lg font-bold text-purple-600">{(country.adjustedGdpGrowth * 100).toFixed(2)}%</div>
+                  <div className="text-lg font-bold text-purple-600">{((country?.adjustedGdpGrowth || 0) * 100).toFixed(2)}%</div>
                   <div className="text-xs text-muted-foreground">Growth</div>
                 </div>
               </TooltipTrigger>
@@ -304,9 +311,9 @@ function MyCountryExecutiveContent() {
                     Adjusted GDP growth rate after global factors
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {country.adjustedGdpGrowth > 0.05 ? "Strong growth" : 
-                      country.adjustedGdpGrowth > 0.02 ? "Moderate growth" : 
-                      country.adjustedGdpGrowth > 0 ? "Slow growth" : "Declining"}
+                    {(country?.adjustedGdpGrowth || 0) > 0.05 ? "Strong growth" : 
+                      (country?.adjustedGdpGrowth || 0) > 0.02 ? "Moderate growth" : 
+                      (country?.adjustedGdpGrowth || 0) > 0 ? "Slow growth" : "Declining"}
                   </div>
                 </div>
               </TooltipContent>
@@ -315,7 +322,7 @@ function MyCountryExecutiveContent() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="text-center p-4 border rounded-lg bg-orange-50 dark:bg-orange-950/50 transition-all duration-300 hover:scale-105 cursor-pointer">
-                  <div className="text-lg font-bold text-orange-600">{country.economicTier}</div>
+                  <div className="text-lg font-bold text-orange-600">{country?.economicTier || "Unknown"}</div>
                   <div className="text-xs text-muted-foreground">Economic Tier</div>
                 </div>
               </TooltipTrigger>
@@ -326,7 +333,7 @@ function MyCountryExecutiveContent() {
                     Based on GDP per capita and economic indicators
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Current classification: {country.economicTier}
+                    Current classification: {country?.economicTier || "Unknown"}
                   </div>
                 </div>
               </TooltipContent>
@@ -335,7 +342,7 @@ function MyCountryExecutiveContent() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="text-center p-4 border rounded-lg bg-pink-50 dark:bg-pink-950/50 transition-all duration-300 hover:scale-105 cursor-pointer">
-                  <div className="text-lg font-bold text-pink-600">T{country.populationTier}</div>
+                  <div className="text-lg font-bold text-pink-600">T{country?.populationTier || "?"}</div>
                   <div className="text-xs text-muted-foreground">Pop Tier</div>
                 </div>
               </TooltipTrigger>
@@ -346,7 +353,7 @@ function MyCountryExecutiveContent() {
                     Classification based on total population size
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Tier {country.populationTier} country
+                    Tier {country?.populationTier || "Unknown"} country
                   </div>
                 </div>
               </TooltipContent>
@@ -376,7 +383,7 @@ function MyCountryExecutiveContent() {
       </Card>
 
       {/* Crisis Status Banner */}
-      <CrisisStatusBanner countryId={country.id} />
+      <CrisisStatusBanner countryId={country?.id || ''} />
 
       {/* Executive Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -428,14 +435,14 @@ function MyCountryExecutiveContent() {
         {/* Executive Command Center Tab */}
         <TabsContent value="executive">
           <ThemedTabContent theme="executive" className="tab-content-enter">
-            <CountryExecutiveSection countryId={country.id} userId={user?.id} />
+            <CountryExecutiveSection countryId={country?.id || ''} userId={user?.id} />
           </ThemedTabContent>
         </TabsContent>
 
         {/* Intelligence Tab */}
         <TabsContent value="intelligence">
           <ThemedTabContent theme="intelligence" className="tab-content-enter">
-            <LiveIntelligenceSection countryId={country.id} />
+            <LiveIntelligenceSection countryId={country?.id || ''} />
           </ThemedTabContent>
         </TabsContent>
 
@@ -452,6 +459,70 @@ function MyCountryExecutiveContent() {
             currentIxTime={currentIxTime} 
             isLoading={false} 
           />
+
+          {/* National Vitality Section */}
+          {activityRingsData && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Activity className="h-5 w-5 text-blue-500" />
+                    <CardTitle>National Vitality</CardTitle>
+                  </div>
+                  <Badge variant="outline" className="text-xs">LIVE DATA</Badge>
+                </div>
+                <CardDescription>Real-time assessment of key national performance indicators</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {[
+                    {
+                      label: "Economic Health",
+                      value: activityRingsData.economicVitality || 0,
+                      color: "#22c55e",
+                      icon: DollarSign,
+                    },
+                    {
+                      label: "Population Wellbeing",
+                      value: activityRingsData.populationWellbeing || 0,
+                      color: "#3b82f6", 
+                      icon: Users,
+                    },
+                    {
+                      label: "Diplomatic Standing",
+                      value: activityRingsData.diplomaticStanding || 0,
+                      color: "#a855f7",
+                      icon: Shield,
+                    },
+                    {
+                      label: "Government Efficiency",
+                      value: activityRingsData.governmentalEfficiency || 0,
+                      color: "#f97316",
+                      icon: Building,
+                    },
+                  ].map((ring, index) => (
+                    <div key={index} className="flex items-center gap-4">
+                      <HealthRing
+                        value={Number(ring.value)}
+                        size={80}
+                        color={ring.color}
+                        className="flex-shrink-0"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <ring.icon className="h-4 w-4" style={{ color: ring.color }} />
+                          <span className="font-medium">{ring.label}</span>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {ring.value.toFixed(1)}% performance
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* Economy Tab */}
@@ -459,7 +530,7 @@ function MyCountryExecutiveContent() {
           <ThemedTabContent theme="economy" className="tab-content-enter space-y-6">
             <div className="animate-in slide-in-from-bottom-4 duration-700">
               <EconomicSummaryWidget 
-                countryName={country.name} 
+                countryName={country?.name || 'Loading...'} 
                 data={{
                   population: economyData?.core.totalPopulation ?? 0,
                   gdpPerCapita: economyData?.core.gdpPerCapita ?? 0,
@@ -736,7 +807,7 @@ function MyCountryExecutiveContent() {
 
 export default function MyCountryExecutivePage() {
   useEffect(() => {
-    document.title = "MyCountry Executive - IxStats";
+    document.title = "MyCountry Premium - IxStats";
   }, []);
 
   if (!isClerkConfigured) {

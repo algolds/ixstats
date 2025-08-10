@@ -118,6 +118,28 @@ class SimpleFlagService {
   }
 
   /**
+   * Check if a flag is stored locally (always false for this simple service)
+   */
+  hasLocalFlag(countryName: string): boolean {
+    return false;
+  }
+
+  /**
+   * Initialize the service (compatibility method)
+   */
+  async initialize(countryNames?: string[]): Promise<void> {
+    // Simple service doesn't need initialization
+    return Promise.resolve();
+  }
+
+  /**
+   * Get service stats (compatibility method)
+   */
+  getStats() {
+    return this.getCacheStats();
+  }
+
+  /**
    * Batch get flags for multiple countries
    */
   async batchGetFlags(countryNames: string[]): Promise<Record<string, string | null>> {

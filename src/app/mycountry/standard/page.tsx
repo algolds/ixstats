@@ -20,7 +20,7 @@ import {
   EconomicSummaryWidget
 } from "~/app/countries/_components/economy";
 import { generateCountryEconomicData, type CountryProfile } from "~/lib/economic-data-templates";
-import { ActivityRings, createDefaultActivityRings } from "~/app/mycountry/new/components/ActivityRings";
+import { HealthRing } from "~/components/ui/health-ring";
 import { 
   AlertTriangle, 
   Crown, 
@@ -33,7 +33,10 @@ import {
   Edit,
   ArrowUp,
   Lock,
-  Sparkles
+  Sparkles,
+  DollarSign,
+  Users,
+  Shield
 } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { Alert, AlertDescription } from "~/components/ui/alert";
@@ -87,22 +90,18 @@ function MyCountryStandardContent() {
     { enabled: !!user?.id }
   );
 
-  const { data: country, isLoading: countryLoading } = api.countries.getByIdAtTime.useQuery(
+  const { data: systemStatus, isLoading: systemStatusLoading } = api.admin.getSystemStatus.useQuery();
+  const currentIxTime = typeof systemStatus?.ixTime?.currentIxTime === 'number' ? systemStatus.ixTime.currentIxTime : 0;
+
+  // Get country data with economic information
+  const { data: country, isLoading: countryLoading } = api.countries.getByIdWithEconomicData.useQuery(
     { id: userProfile?.countryId || '' },
     { enabled: !!userProfile?.countryId }
   );
 
-  const { data: systemStatus, isLoading: systemStatusLoading } = api.admin.getSystemStatus.useQuery();
-  const currentIxTime = typeof systemStatus?.ixTime?.currentIxTime === 'number' ? systemStatus.ixTime.currentIxTime : 0;
-
-  // Get live intelligence data for preview
+  // Get activity rings data using live country data
   const { data: activityRingsData } = api.countries.getActivityRingsData.useQuery(
     { countryId: country?.id || '' },
-    { enabled: !!country?.id }
-  );
-
-  const { data: briefingsPreview } = api.countries.getIntelligenceBriefings.useQuery(
-    { countryId: country?.id || '', timeframe: 'week' },
     { enabled: !!country?.id }
   );
 
@@ -206,7 +205,7 @@ function MyCountryStandardContent() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="text-center p-4 border rounded-lg bg-blue-50 dark:bg-blue-950/50 transition-all duration-300 hover:scale-105 cursor-pointer">
-                  <div className="text-xl font-bold text-blue-600">{((country.currentPopulation || 0) / 1000000).toFixed(1)}M</div>
+                  <div className="text-xl font-bold text-blue-600">{((country?.currentPopulation || 0) / 1000000).toFixed(1)}M</div>
                   <div className="text-sm text-muted-foreground">Population</div>
                 </div>
               </TooltipTrigger>
@@ -214,7 +213,7 @@ function MyCountryStandardContent() {
                 <div className="space-y-1">
                   <div className="font-medium">Current Population</div>
                   <div className="text-xs text-muted-foreground">
-                    Total: {(country.currentPopulation || 0).toLocaleString()} citizens
+                    Total: {(country?.currentPopulation || 0).toLocaleString()} citizens
                   </div>
                 </div>
               </TooltipContent>
@@ -223,7 +222,7 @@ function MyCountryStandardContent() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="text-center p-4 border rounded-lg bg-green-50 dark:bg-green-950/50 transition-all duration-300 hover:scale-105 cursor-pointer">
-                  <div className="text-xl font-bold text-green-600">${((country.currentGdpPerCapita || 0) / 1000).toFixed(0)}k</div>
+                  <div className="text-xl font-bold text-green-600">${((country?.currentGdpPerCapita || 0) / 1000).toFixed(0)}k</div>
                   <div className="text-sm text-muted-foreground">GDP/Capita</div>
                 </div>
               </TooltipTrigger>
@@ -231,7 +230,7 @@ function MyCountryStandardContent() {
                 <div className="space-y-1">
                   <div className="font-medium">GDP per Capita</div>
                   <div className="text-xs text-muted-foreground">
-                    ${(country.currentGdpPerCapita || 0).toLocaleString()} per person
+                    ${(country?.currentGdpPerCapita || 0).toLocaleString()} per person
                   </div>
                 </div>
               </TooltipContent>
@@ -240,7 +239,7 @@ function MyCountryStandardContent() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="text-center p-4 border rounded-lg bg-purple-50 dark:bg-purple-950/50 transition-all duration-300 hover:scale-105 cursor-pointer">
-                  <div className="text-xl font-bold text-purple-600">{((country.adjustedGdpGrowth || 0) * 100).toFixed(2)}%</div>
+                  <div className="text-xl font-bold text-purple-600">{((country?.adjustedGdpGrowth || 0) * 100).toFixed(2)}%</div>
                   <div className="text-sm text-muted-foreground">Growth</div>
                 </div>
               </TooltipTrigger>
@@ -274,6 +273,78 @@ function MyCountryStandardContent() {
         </CardContent>
       </Card>
 
+      {/* National Vitality Section */}
+      {activityRingsData && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Activity className="h-5 w-5 text-blue-500" />
+                <CardTitle>National Vitality</CardTitle>
+              </div>
+              <Badge variant="outline" className="text-xs">LIVE DATA</Badge>
+            </div>
+            <CardDescription>Real-time assessment of key national performance indicators</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                {
+                  label: "Economic Health",
+                  value: activityRingsData.economicVitality || 0,
+                  color: "#22c55e",
+                  icon: DollarSign,
+                },
+                {
+                  label: "Population Wellbeing",
+                  value: activityRingsData.populationWellbeing || 0,
+                  color: "#3b82f6", 
+                  icon: Users,
+                },
+                {
+                  label: "Diplomatic Standing",
+                  value: activityRingsData.diplomaticStanding || 0,
+                  color: "#a855f7",
+                  icon: Shield,
+                },
+                {
+                  label: "Government Efficiency",
+                  value: activityRingsData.governmentalEfficiency || 0,
+                  color: "#f97316",
+                  icon: Building,
+                },
+              ].map((ring, index) => (
+                <div key={index} className="flex flex-col items-center text-center gap-3">
+                  <HealthRing
+                    value={Number(ring.value)}
+                    size={80}
+                    color={ring.color}
+                    className="flex-shrink-0"
+                  />
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-center gap-2">
+                      <ring.icon className="h-4 w-4" style={{ color: ring.color }} />
+                      <span className="font-medium text-sm">{ring.label}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {ring.value.toFixed(1)}% performance
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 text-center">
+              <Link href={createUrl("/mycountry/premium")}>
+                <Button variant="outline" className="bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100">
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Upgrade for Advanced Intelligence
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Crisis Status Banner */}
       <CrisisStatusBanner countryId={country.id} />
 
@@ -288,14 +359,14 @@ function MyCountryStandardContent() {
               <div>
                 <h3 className="text-lg font-semibold">Unlock Premium Features</h3>
                 <p className="text-muted-foreground">
-                  Access Executive Command Center, Advanced Intelligence, and Predictive Analytics
+                  Access Premium Command Center, Advanced Intelligence, and Predictive Analytics
                 </p>
               </div>
             </div>
-            <Link href={createUrl("/mycountry/executive")}>
+            <Link href={createUrl("/mycountry/premium")}>
               <Button className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600">
                 <ArrowUp className="h-4 w-4 mr-2" />
-                Upgrade to Executive
+                Upgrade to Premium
               </Button>
             </Link>
           </div>
@@ -341,37 +412,6 @@ function MyCountryStandardContent() {
             isLoading={false} 
           />
 
-          {/* National Vitality Preview */}
-          {activityRingsData && (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Activity className="h-5 w-5 text-blue-500" />
-                    <CardTitle>National Vitality</CardTitle>
-                  </div>
-                  <Badge variant="outline" className="text-xs">LIVE DATA</Badge>
-                </div>
-                <CardDescription>Real-time assessment of key national performance indicators</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ActivityRings 
-                  rings={createDefaultActivityRings(activityRingsData)}
-                  size="md"
-                  interactive={false}
-                  className="justify-center"
-                />
-                <div className="mt-4 text-center">
-                  <Link href={createUrl("/mycountry/executive")}>
-                    <Button variant="outline" className="bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100">
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      Upgrade for Advanced Intelligence
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </TabsContent>
 
         {/* Economy Tab */}
@@ -489,7 +529,7 @@ function MyCountryStandardContent() {
               <Crown className="h-8 w-8 text-purple-500" />
               <Lock className="h-4 w-4 text-muted-foreground" />
             </div>
-            <CardTitle>Executive Command Center</CardTitle>
+            <CardTitle>Premium Command Center</CardTitle>
             <CardDescription>
               Advanced country management with real-time decision support
             </CardDescription>
@@ -498,9 +538,9 @@ function MyCountryStandardContent() {
             <div className="space-y-2 text-sm text-muted-foreground">
               <div>• Real-time crisis monitoring</div>
               <div>• Strategic decision recommendations</div>
-              <div>• Executive briefings & alerts</div>
+              <div>• Premium briefings & alerts</div>
             </div>
-            <Link href={createUrl("/mycountry/executive")} className="block mt-4">
+            <Link href={createUrl("/mycountry/premium")} className="block mt-4">
               <Button variant="outline" className="w-full">
                 <ArrowUp className="h-4 w-4 mr-2" />
                 Upgrade to Access
@@ -525,43 +565,12 @@ function MyCountryStandardContent() {
             </CardDescription>
           </CardHeader>
           <CardContent className="relative">
-            {briefingsPreview?.briefings && briefingsPreview.briefings.length > 0 ? (
-              <div className="space-y-3 mb-4">
-                {briefingsPreview.briefings.slice(0, 2).map((briefing: any) => (
-                  <div key={briefing.id} className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800 relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/80 to-white/40 dark:from-gray-900/80 dark:to-gray-900/40 rounded-lg" />
-                    <div className="relative">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-blue-900 dark:text-blue-300 text-sm">{briefing.title}</h4>
-                        <Badge 
-                          className={
-                            briefing.priority === 'critical' ? 'bg-red-500' :
-                            briefing.priority === 'high' ? 'bg-orange-500' :
-                            briefing.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
-                          }
-                        >
-                          {briefing.priority}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-blue-800 dark:text-blue-400 mb-2 line-clamp-2">{briefing.summary}</p>
-                      <div className="text-xs text-blue-600 dark:text-blue-500">
-                        Category: {briefing.category} • Confidence: {briefing.confidenceScore}%
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <div className="text-center text-xs text-muted-foreground">
-                  {briefingsPreview.briefings.length > 2 && `+${briefingsPreview.briefings.length - 2} more briefings available`}
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2 text-sm text-muted-foreground mb-4">
-                <div>• National performance analysis</div>
-                <div>• Forward-looking intelligence</div>
-                <div>• Risk assessment & mitigation</div>
-              </div>
-            )}
-            <Link href={createUrl("/mycountry/executive")} className="block">
+            <div className="space-y-2 text-sm text-muted-foreground mb-4">
+              <div>• National performance analysis</div>
+              <div>• Forward-looking intelligence</div>
+              <div>• Risk assessment & mitigation</div>
+            </div>
+            <Link href={createUrl("/mycountry/premium")} className="block">
               <Button variant="outline" className="w-full">
                 <ArrowUp className="h-4 w-4 mr-2" />
                 Upgrade for Full Access
@@ -588,7 +597,7 @@ function MyCountryStandardContent() {
               <div>• Policy impact simulation</div>
               <div>• Comparative benchmarking</div>
             </div>
-            <Link href={createUrl("/mycountry/executive")} className="block mt-4">
+            <Link href={createUrl("/mycountry/premium")} className="block mt-4">
               <Button variant="outline" className="w-full">
                 <ArrowUp className="h-4 w-4 mr-2" />
                 Upgrade to Access

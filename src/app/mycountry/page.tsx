@@ -38,7 +38,7 @@ const isClerkConfigured = Boolean(
 function MyCountryContent() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
-  const [selectedTier, setSelectedTier] = useState<'standard' | 'executive' | null>(null);
+  const [selectedTier, setSelectedTier] = useState<'standard' | 'premium' | null>(null);
 
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
     { userId: user?.id || '' },
@@ -60,17 +60,17 @@ function MyCountryContent() {
   // Auto-redirect logic - check for saved preference
   useEffect(() => {
     if (country && user && !selectedTier) {
-      const savedTier = localStorage.getItem(`mycountry-tier-${user.id}`) as 'standard' | 'executive';
+      const savedTier = localStorage.getItem(`mycountry-tier-${user.id}`) as 'standard' | 'premium';
       if (savedTier === 'standard') {
         router.push(createUrl('/mycountry/standard'));
-      } else if (savedTier === 'executive') {
-        router.push(createUrl('/mycountry/executive'));
+      } else if (savedTier === 'premium') {
+        router.push(createUrl('/mycountry/premium'));
       }
       // If no saved preference, show tier selection
     }
   }, [country, user, selectedTier, router]);
 
-  const handleTierSelect = (tier: 'standard' | 'executive') => {
+  const handleTierSelect = (tier: 'standard' | 'premium') => {
     if (user) {
       localStorage.setItem(`mycountry-tier-${user.id}`, tier);
     }
@@ -146,7 +146,7 @@ function MyCountryContent() {
         </div>
         <p className="text-muted-foreground max-w-2xl mx-auto">
           Select between our Standard dashboard with essential country management tools, 
-          or upgrade to Executive for advanced intelligence and command center features.
+          or upgrade to Premium for advanced intelligence and command center features.
         </p>
       </div>
 
@@ -211,9 +211,9 @@ function MyCountryContent() {
           </CardContent>
         </Card>
 
-        {/* Executive Tier */}
+        {/* Premium Tier */}
         <Card className="relative overflow-hidden border-2 border-gradient-to-r from-purple-300 to-blue-300 hover:shadow-xl transition-all duration-300 cursor-pointer group bg-gradient-to-br from-purple-50/20 to-blue-50/20"
-              onClick={() => handleTierSelect('executive')}>
+              onClick={() => handleTierSelect('premium')}>
           <div className="absolute inset-0 bg-gradient-to-br from-purple-100/30 via-blue-100/20 to-transparent group-hover:from-purple-200/50 group-hover:via-blue-200/30" />
           <CardHeader className="relative pb-4">
             <div className="flex items-center justify-between mb-4">
@@ -222,11 +222,11 @@ function MyCountryContent() {
               </div>
               <Badge className="bg-gradient-to-r from-purple-500 to-blue-500 text-white">
                 <Sparkles className="h-3 w-3 mr-1" />
-                EXECUTIVE
+                PREMIUM
               </Badge>
             </div>
             <CardTitle className="text-2xl bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              MyCountry Executive
+              MyCountry Premium
             </CardTitle>
             <CardDescription className="text-base">
               Advanced command center with AI-powered intelligence and decision support
@@ -237,7 +237,7 @@ function MyCountryContent() {
               <div className="flex items-start gap-3">
                 <Crown className="h-5 w-5 text-purple-500 mt-0.5 flex-shrink-0" />
                 <div>
-                  <div className="font-medium">Executive Command Center</div>
+                  <div className="font-medium">Premium Command Center</div>
                   <div className="text-sm text-muted-foreground">Real-time crisis monitoring and strategic decision support</div>
                 </div>
               </div>
@@ -273,9 +273,9 @@ function MyCountryContent() {
             
             <div className="pt-4 border-t">
               <Button className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white" 
-                     onClick={() => handleTierSelect('executive')}>
+                     onClick={() => handleTierSelect('premium')}>
                 <Crown className="h-4 w-4 mr-2" />
-                Enter Executive Suite
+                Enter Premium Suite
               </Button>
             </div>
           </CardContent>

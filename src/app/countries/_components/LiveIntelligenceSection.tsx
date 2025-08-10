@@ -18,6 +18,7 @@ import {
   DollarSign,
   Globe,
   Building2,
+  Building,
   TrendingUp,
   AlertTriangle,
   CheckCircle,
@@ -29,7 +30,7 @@ import {
 } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { FocusCards, createDefaultFocusCards } from "~/app/mycountry/new/components/FocusCards";
-import { ActivityRings, createDefaultActivityRings } from "~/app/mycountry/new/components/ActivityRings";
+import { HealthRing } from "~/components/ui/health-ring";
 
 interface LiveIntelligenceSectionProps {
   countryId: string;
@@ -144,7 +145,33 @@ export function LiveIntelligenceSection({ countryId }: LiveIntelligenceSectionPr
       alerts: focusCardsData.government.alerts.map(convertApiAlert),
     },
   }) : [];
-  const activityRings = activityRingsData ? createDefaultActivityRings(activityRingsData) : [];
+  // Create activity data matching the countries/[id] page format
+  const activityData = activityRingsData ? [
+    {
+      label: "Economic Health",
+      value: activityRingsData.economicVitality || 0,
+      color: "#22c55e",
+      icon: DollarSign,
+    },
+    {
+      label: "Population Wellbeing",
+      value: activityRingsData.populationWellbeing || 0,
+      color: "#3b82f6", 
+      icon: Users,
+    },
+    {
+      label: "Diplomatic Standing",
+      value: activityRingsData.diplomaticStanding || 0,
+      color: "#a855f7",
+      icon: Shield,
+    },
+    {
+      label: "Government Efficiency",
+      value: activityRingsData.governmentalEfficiency || 0,
+      color: "#f97316",
+      icon: Building,
+    },
+  ] : [];
 
   const highPriorityNotifications = notifications?.notifications?.filter(
     (notif: Notification) => notif.priority === 'high' || notif.priority === 'critical'
@@ -193,13 +220,26 @@ export function LiveIntelligenceSection({ countryId }: LiveIntelligenceSectionPr
               <CardDescription>Real-time assessment of key national performance indicators</CardDescription>
             </CardHeader>
             <CardContent>
-              {activityRings.length > 0 ? (
-                <ActivityRings 
-                  rings={activityRings}
-                  size="lg"
-                  interactive={true}
-                  className="justify-center"
-                />
+              {activityData.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  {activityData.map((ring, index) => (
+                    <div key={index} className="flex flex-col items-center text-center">
+                      <HealthRing
+                        value={Number(ring.value)}
+                        size={80}
+                        color={ring.color}
+                        className="mb-3"
+                      />
+                      <div className="flex items-center gap-1 mb-1">
+                        <ring.icon className="h-4 w-4" style={{ color: ring.color }} />
+                        <span className="font-medium text-sm">{ring.label}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {ring.value.toFixed(1)}% performance
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -209,50 +249,6 @@ export function LiveIntelligenceSection({ countryId }: LiveIntelligenceSectionPr
             </CardContent>
           </Card>
 
-          {/* Quick Stats Grid */}
-          {activityRingsData && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800">
-                <CardContent className="p-4 text-center">
-                  <DollarSign className="h-8 w-8 mx-auto mb-2 text-green-600" />
-                  <div className="text-2xl font-bold text-green-700 dark:text-green-300">
-                    {activityRingsData.economicVitality}%
-                  </div>
-                  <div className="text-sm text-green-600 dark:text-green-400">Economic Health</div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
-                <CardContent className="p-4 text-center">
-                  <Users className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                  <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
-                    {activityRingsData.populationWellbeing}%
-                  </div>
-                  <div className="text-sm text-blue-600 dark:text-blue-400">Population Wellbeing</div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800">
-                <CardContent className="p-4 text-center">
-                  <Globe className="h-8 w-8 mx-auto mb-2 text-purple-600" />
-                  <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">
-                    {activityRingsData.diplomaticStanding}%
-                  </div>
-                  <div className="text-sm text-purple-600 dark:text-purple-400">Diplomatic Standing</div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 border-orange-200 dark:border-orange-800">
-                <CardContent className="p-4 text-center">
-                  <Building2 className="h-8 w-8 mx-auto mb-2 text-orange-600" />
-                  <div className="text-2xl font-bold text-orange-700 dark:text-orange-300">
-                    {activityRingsData.governmentalEfficiency}%
-                  </div>
-                  <div className="text-sm text-orange-600 dark:text-orange-400">Government Efficiency</div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
         </TabsContent>
 
         {/* Focus Areas Tab - Focus Cards */}
@@ -292,7 +288,7 @@ export function LiveIntelligenceSection({ countryId }: LiveIntelligenceSectionPr
                 Intelligence Briefings
               </CardTitle>
               <CardDescription>
-                AI-generated intelligence analysis for the past {briefings?.timeframe || 'week'}
+                 Real-time intelligence analysis for the past {briefings?.timeframe || 'week'}
               </CardDescription>
             </CardHeader>
             <CardContent>
