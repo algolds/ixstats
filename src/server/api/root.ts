@@ -10,6 +10,7 @@ import { intelligenceRouter } from "./routers/intelligence";
 import { eciRouter } from "./routers/eci";
 import { notificationsRouter } from "./routers/notifications";
 import { myCountryRouter } from "./routers/mycountry";
+import { diplomaticIntelligenceRouter } from "./routers/diplomatic-intelligence";
 
 /**
  * This is the primary router for your server.
@@ -25,6 +26,7 @@ export const appRouter = createTRPCRouter({
   eci: eciRouter, // ECI router for Executive Command Interface
   notifications: notificationsRouter, // Notifications router
   mycountry: myCountryRouter, // MyCountry specialized endpoints
+  diplomaticIntelligence: diplomaticIntelligenceRouter, // Diplomatic Intelligence system
   system: adminRouter, // Alias for global stats
 });
 
