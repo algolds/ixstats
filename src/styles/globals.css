@@ -42,6 +42,7 @@
 @import "./mycountry-theming.css";
 @import "./sdi-specialized.css";
 @import "./glass-refraction.css";
+@import "./diplomatic-intelligence.css";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));

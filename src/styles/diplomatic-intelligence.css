@@ -1,0 +1,361 @@
+/* Diplomatic Intelligence Profile Styles */
+/* CIA-Style Intelligence Presentation with Glass Physics Integration */
+
+.diplomatic-intelligence-profile {
+  /* Intelligence Authority Color Palette */
+  --intel-navy: #0F172A;          /* Deep authority blue */
+  --intel-gold: #D4AF37;          /* Diplomatic gold */
+  --intel-silver: #94A3B8;        /* Classified silver */
+  --intel-amber: #F59E0B;         /* Alert amber */
+  
+  /* Glass Effects with Intelligence Depth */
+  --intel-glass-blur: blur(16px);
+  --intel-classification-overlay: rgba(15, 23, 42, 0.85);
+  --intel-security-border: 1px solid rgba(212, 175, 55, 0.3);
+  --intel-restricted-glow: 0 0 20px rgba(239, 68, 68, 0.3);
+  --intel-confidential-glow: 0 0 20px rgba(239, 68, 68, 0.5);
+}
+
+/* Classification Badge System */
+.classification-badge {
+  background: linear-gradient(135deg, 
+    var(--intel-navy) 0%, 
+    rgba(212, 175, 55, 0.1) 100%);
+  border: var(--intel-security-border);
+  backdrop-filter: var(--intel-glass-blur);
+  box-shadow: 
+    0 4px 16px rgba(15, 23, 42, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.classification-badge.restricted {
+  box-shadow: 
+    0 4px 16px rgba(15, 23, 42, 0.3),
+    0 0 0 1px rgba(245, 158, 11, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.classification-badge.confidential {
+  box-shadow: 
+    0 4px 16px rgba(15, 23, 42, 0.3),
+    var(--intel-confidential-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Intelligence Command Header Styling */
+.intel-command-header {
+  background: linear-gradient(135deg,
+    var(--intel-navy) 0%,
+    rgba(15, 23, 42, 0.95) 100%);
+  border-bottom: 2px solid var(--intel-gold);
+  backdrop-filter: blur(20px) saturate(150%);
+}
+
+/* Intelligence Grid Pattern */
+.intel-grid-pattern {
+  background-image: 
+    linear-gradient(rgba(212, 175, 55, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 175, 55, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 0.1;
+}
+
+/* Intelligence Glyph Icons */
+.intelligence-glyph {
+  color: var(--intel-gold);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  transition: all 0.3s ease;
+}
+
+.intelligence-glyph:hover {
+  color: #F4E58C; /* Lighter gold */
+  filter: drop-shadow(0 4px 8px rgba(212, 175, 55, 0.4));
+  transform: scale(1.1);
+}
+
+/* Intelligence Section Navigation */
+.intel-nav-section {
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.04) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  backdrop-filter: blur(12px) saturate(150%);
+}
+
+.intel-nav-section button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.intel-nav-section button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(2px);
+}
+
+.intel-nav-section button.active {
+  background: linear-gradient(135deg,
+    rgba(212, 175, 55, 0.2) 0%,
+    rgba(212, 175, 55, 0.1) 100%);
+  color: var(--intel-gold);
+  border-left: 3px solid var(--intel-gold);
+}
+
+.intel-nav-section button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Intelligence Content Sections */
+.intel-content-section {
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.04) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  backdrop-filter: blur(16px) saturate(150%);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Intelligence Briefing Cards */
+.intel-briefing-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-left: 4px solid var(--intel-gold);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+}
+
+.intel-briefing-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(212, 175, 55, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(212, 175, 55, 0.2);
+}
+
+/* Diplomatic Network Cards */
+.diplomatic-network-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+}
+
+.diplomatic-network-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Activity Intelligence Timeline */
+.activity-intel-item {
+  background: rgba(255, 255, 255, 0.05);
+  border-left: 4px solid var(--intel-amber);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+}
+
+.activity-intel-item.high-priority {
+  border-left-color: #EF4444;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.2);
+}
+
+.activity-intel-item.medium-priority {
+  border-left-color: var(--intel-amber);
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.2);
+}
+
+.activity-intel-item.low-priority {
+  border-left-color: #22C55E;
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.2);
+}
+
+/* Intelligence Metrics Rings */
+.intel-metrics-container {
+  background: rgba(15, 23, 42, 0.3);
+  backdrop-filter: blur(20px);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+/* Threat Assessment Indicators */
+.threat-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  backdrop-filter: blur(8px);
+}
+
+.threat-indicator.stable {
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #22C55E;
+}
+
+.threat-indicator.monitoring {
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #3B82F6;
+}
+
+.threat-indicator.alert {
+  border-color: rgba(245, 158, 11, 0.3);
+  color: var(--intel-amber);
+}
+
+/* Clearance Restriction Display */
+.clearance-restriction {
+  background: linear-gradient(135deg,
+    rgba(239, 68, 68, 0.1) 0%,
+    rgba(239, 68, 68, 0.05) 100%);
+  border: 2px dashed rgba(239, 68, 68, 0.3);
+  backdrop-filter: blur(16px);
+}
+
+/* Quick Actions Panel */
+.intel-quick-actions {
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.04) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  backdrop-filter: blur(12px) saturate(150%);
+}
+
+.intel-action-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+}
+
+.intel-action-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.intel-action-button.primary {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: rgba(212, 175, 55, 0.3);
+  color: var(--intel-gold);
+}
+
+.intel-action-button.primary:hover {
+  background: rgba(212, 175, 55, 0.3);
+  box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3);
+}
+
+/* Diplomatic Actions Modal */
+.diplomatic-actions-modal {
+  background: var(--intel-classification-overlay);
+  border: var(--intel-security-border);
+  backdrop-filter: var(--intel-glass-blur);
+  box-shadow: 
+    0 20px 64px rgba(0, 0, 0, 0.4),
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.diplomatic-action-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+}
+
+.diplomatic-action-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .diplomatic-intelligence-profile {
+    /* Simplified glass effects for mobile */
+    --intel-glass-blur: blur(8px);
+  }
+  
+  .intel-content-section {
+    backdrop-filter: blur(8px) saturate(120%);
+  }
+  
+  .intel-nav-section {
+    backdrop-filter: blur(8px) saturate(120%);
+  }
+  
+  /* Reduced motion for performance */
+  .intel-briefing-card:hover,
+  .diplomatic-network-card:hover,
+  .intel-action-button:hover {
+    transform: none;
+  }
+}
+
+/* Dark Mode Enhancements */
+[data-theme="dark"] .diplomatic-intelligence-profile {
+  /* Enhanced contrast for dark backgrounds */
+  --intel-classification-overlay: rgba(15, 23, 42, 0.9);
+  --intel-security-border: 1px solid rgba(212, 175, 55, 0.4);
+}
+
+[data-theme="dark"] .intel-content-section {
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0.03) 100%);
+}
+
+[data-theme="dark"] .classification-badge {
+  background: linear-gradient(135deg,
+    rgba(15, 23, 42, 0.8) 0%,
+    rgba(212, 175, 55, 0.15) 100%);
+}
+
+/* Light Mode Adjustments */
+[data-theme="light"] .diplomatic-intelligence-profile {
+  --intel-classification-overlay: rgba(15, 23, 42, 0.7);
+  --intel-navy: #1E293B;
+}
+
+[data-theme="light"] .intel-content-section {
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.7) 100%);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .classification-badge {
+  background: linear-gradient(135deg,
+    rgba(15, 23, 42, 0.9) 0%,
+    rgba(212, 175, 55, 0.2) 100%);
+}
+
+/* Animation Performance Optimizations */
+.intelligence-glyph,
+.intel-action-button,
+.intel-briefing-card,
+.diplomatic-network-card {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .intelligence-glyph:hover,
+  .intel-action-button:hover,
+  .intel-briefing-card:hover,
+  .diplomatic-network-card:hover {
+    transform: none;
+    transition: opacity 0.2s ease;
+  }
+  
+  .activity-intel-item,
+  .diplomatic-action-item {
+    transition: opacity 0.2s ease;
+  }
+}
