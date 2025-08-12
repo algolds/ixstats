@@ -29,7 +29,7 @@ interface DiplomaticIntelligenceEngine {
 interface IntelligenceData {
   classification: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL' | 'SECRET';
   source: IntelligenceSource;
-  reliability: ReliabilityAssessment;
+  reliability: ReliabilityAssessment;/
   temporalContext: IxTimeContext;
   geopoliticalRelevance: RelevanceScoring;
   distributionList: string[];
