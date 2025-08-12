@@ -433,9 +433,14 @@ export const ACHIEVEMENT_TEMPLATES: Partial<DiplomaticAchievement>[] = [
 // Utility functions for achievements
 export const calculatePrestigeScore = (achievements: DiplomaticAchievement[]): number => {
   return achievements.reduce((total, achievement) => {
-    const tierConfig = ACHIEVEMENT_TIER_CONFIG[achievement.tier];
-    const rarityConfig = ACHIEVEMENT_RARITY_CONFIG[achievement.rarity];
+    const tierConfig = ACHIEVEMENT_TIER_CONFIG[achievement.tier || 'bronze'];
+    const rarityConfig = ACHIEVEMENT_RARITY_CONFIG[achievement.rarity || 'common'];
     const baseScore = 100;
+    
+    if (!tierConfig || !rarityConfig) {
+      console.warn('Missing tier or rarity config for achievement:', achievement);
+      return total + baseScore; // fallback to base score
+    }
     
     return total + (baseScore * tierConfig.prestigeMultiplier * (2 - rarityConfig.probability));
   }, 0);
