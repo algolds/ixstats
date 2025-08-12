@@ -106,7 +106,12 @@ const AchievementConstellationComponent: React.FC<AchievementConstellationProps>
       filtered = filtered.filter(achievement => !achievement.hidden || achievement.achievedAt);
     }
 
-    return filtered;
+    // Deduplicate achievements by ID to prevent duplicate React keys
+    const uniqueAchievements = Array.from(
+      new Map(filtered.map(achievement => [achievement.id, achievement])).values()
+    );
+
+    return uniqueAchievements;
   }, [constellation.achievements, controls]);
 
   // Handle zoom
@@ -179,7 +184,7 @@ const AchievementConstellationComponent: React.FC<AchievementConstellationProps>
     const isHovered = hoveredAchievement?.id === achievement.id;
 
     return (
-      <g key={achievement.id} className="achievement-star">
+      <g key={`achievement-${achievement.id}`} className="achievement-star">
         {/* Achievement glow effect */}
         {isUnlocked && (
           <circle
@@ -245,6 +250,7 @@ const AchievementConstellationComponent: React.FC<AchievementConstellationProps>
     if (!showConnections) return null;
 
     const connections: JSX.Element[] = [];
+    const processedConnections = new Set<string>(); // Track processed connections to prevent duplicates
 
     filteredAchievements.forEach(achievement => {
       const position = layout.customPositions?.[achievement.id];
@@ -257,11 +263,18 @@ const AchievementConstellationComponent: React.FC<AchievementConstellationProps>
         if (!connectedAchievement || !connectedPosition) return;
         if (!filteredAchievements.some(a => a.id === connectionId)) return;
 
+        // Create a normalized connection key to prevent duplicates
+        // Sort the IDs to ensure consistent key regardless of direction
+        const connectionKey = [achievement.id, connectionId].sort().join('-');
+        
+        if (processedConnections.has(connectionKey)) return;
+        processedConnections.add(connectionKey);
+
         const isUnlocked = Boolean(achievement.achievedAt && connectedAchievement.achievedAt);
         
         connections.push(
           <line
-            key={`${achievement.id}-${connectionId}`}
+            key={`connection-${connectionKey}`}
             x1={position.x || 0}
             y1={position.y || 0}
             x2={connectedPosition.x || 0}
