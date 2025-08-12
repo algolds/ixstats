@@ -133,7 +133,7 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
     filteredRelations.forEach((relation, index) => {
       // Calculate position based on relation type and strength
       const typeConfig = RELATION_TYPES[relation.relationType] || { priority: 0 };
-      const radius = baseRadius + (relation.strength / 100) * 40; // Stronger relations further out
+      const radius = baseRadius + ((relation.strength || 0) / 100) * 40; // Stronger relations further out
       const angleStep = filteredRelations.length > 0 ? (Math.PI * 2) / filteredRelations.length : 0;
       const angle = angleStep * index - Math.PI / 2; // Start from top
       
@@ -258,8 +258,8 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
                       y1="200"
                       x2={isNaN(x) ? 200 : x}
                       y2={isNaN(y) ? 200 : y}
-                      stroke={`rgba(212, 175, 55, ${0.2 + (relation.strength / 100) * 0.3})`}
-                      strokeWidth={1 + (relation.strength / 100) * 2}
+                      stroke={`rgba(212, 175, 55, ${0.2 + ((relation.strength || 0) / 100) * 0.3})`}
+                      strokeWidth={1 + ((relation.strength || 0) / 100) * 2}
                       strokeDasharray={relation.relationType === 'tension' ? '5,5' : 'none'}
                       className="transition-all duration-300"
                     />
@@ -298,7 +298,7 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
                         <circle
                           cx={isNaN(x) ? 200 : x}
                           cy={isNaN(y) ? 200 : y}
-                          r={isSelected ? 25 : 15 + (relation.strength / 100) * 5}
+                          r={isSelected ? 25 : 15 + ((relation.strength || 0) / 100) * 5}
                           fill={(typeConfig.bgColor || 'bg-white/20').replace('bg-', 'rgba(').replace('/20', ', 0.2)')}
                           stroke={(typeConfig.color || 'text-white').replace('text-', 'rgba(').replace('400', '400, 1)')}
                           strokeWidth={isSelected ? 3 : 2}
@@ -370,7 +370,7 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
                               {typeConfig.label || relation.relationType}
                             </span>
                             <span>•</span>
-                            <span>Strength: {relation.strength}%</span>
+                            <span>Strength: {relation.strength || 0}%</span>
                             {relation.economicTier && (
                               <>
                                 <span>•</span>

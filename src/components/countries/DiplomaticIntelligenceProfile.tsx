@@ -42,6 +42,13 @@ import { SecureDiplomaticChannels } from "~/components/diplomatic/SecureDiplomat
 import { CulturalExchangeProgram } from "~/components/diplomatic/CulturalExchangeProgram";
 import { AchievementConstellation } from "~/components/achievements/AchievementConstellation";
 import { AchievementUnlockModal } from "~/components/achievements/AchievementUnlockModal";
+import { LiveDiplomaticFeed } from "~/components/diplomatic/LiveDiplomaticFeed";
+import { DiplomaticLeaderboards } from "~/components/diplomatic/DiplomaticLeaderboards";
+import { SocialActivityFeed } from "~/components/diplomatic/SocialActivityFeed";
+import { AdvancedSearchDiscovery } from "~/components/diplomatic/AdvancedSearchDiscovery";
+import { RealTimeAchievementNotifications } from "~/components/achievements/RealTimeAchievementNotifications";
+import { EnhancedIntelligenceBriefing } from "~/components/countries/EnhancedIntelligenceBriefing";
+import { WikiIntelligenceTab } from "~/components/countries/WikiIntelligenceTab";
 import type { AchievementConstellation as AchievementConstellationType, DiplomaticAchievement } from "~/types/achievement-constellation";
 import { ACHIEVEMENT_TEMPLATES, calculatePrestigeScore } from "~/types/achievement-constellation";
 
@@ -76,7 +83,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
   viewerClearanceLevel = 'PUBLIC',
   onSocialAction
 }) => {
-  const [activeIntelSection, setActiveIntelSection] = useState<'briefing' | 'network' | 'channels' | 'cultural' | 'achievements' | 'activity' | 'assessment'>('briefing');
+  const [activeIntelSection, setActiveIntelSection] = useState<'command-center' | 'intelligence-dossier' | 'diplomatic-operations'>('command-center');
   const [showDiplomaticActions, setShowDiplomaticActions] = useState(false);
   const [selectedAchievement, setSelectedAchievement] = useState<DiplomaticAchievement | null>(null);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
@@ -339,13 +346,9 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
               Intelligence Sections
             </h3>
             {[
-              { id: 'briefing', label: 'Executive Briefing', icon: RiFileTextLine, clearance: 'PUBLIC' },
-              { id: 'network', label: 'Diplomatic Network', icon: RiShakeHandsLine, clearance: 'PUBLIC' },
-              { id: 'channels', label: 'Secure Channels', icon: RiLockLine, clearance: 'RESTRICTED' },
-              { id: 'cultural', label: 'Cultural Exchange', icon: RiGlobalLine, clearance: 'PUBLIC' },
-              { id: 'achievements', label: 'Achievement Constellation', icon: RiStarLine, clearance: 'PUBLIC' },
-              { id: 'activity', label: 'Activity Intelligence', icon: RiNotification3Line, clearance: 'RESTRICTED' },
-              { id: 'assessment', label: 'Strategic Assessment', icon: RiSettings3Line, clearance: 'CONFIDENTIAL' }
+              { id: 'command-center', label: 'Executive Command Center', icon: RiShieldLine, clearance: 'PUBLIC' },
+              { id: 'intelligence-dossier', label: 'Intelligence Dossier', icon: RiFileTextLine, clearance: 'PUBLIC' },
+              { id: 'diplomatic-operations', label: 'Diplomatic Operations', icon: RiShakeHandsLine, clearance: 'PUBLIC' }
             ].map(section => {
               const isRestricted = viewerClearanceLevel === 'PUBLIC' && section.clearance !== 'PUBLIC';
               const isActive = activeIntelSection === section.id;
@@ -408,7 +411,123 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
         <div className="lg:col-span-3">
           <div className="glass-hierarchy-child rounded-lg p-6">
             <AnimatePresence mode="wait">
-              {activeIntelSection === 'briefing' && (
+              {activeIntelSection === 'command-center' && (
+                <motion.div
+                  key="enhanced-briefing"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-6"
+                >
+                  {/* Enhanced Intelligence Briefing with Live Intelligence Integration */}
+                  <EnhancedIntelligenceBriefing
+                    country={{
+                      id: country.id,
+                      name: country.name,
+                      continent: country.continent,
+                      region: country.region,
+                      governmentType: country.governmentType,
+                      leader: country.leader,
+                      religion: country.religion,
+                      capital: country.capital,
+                      currentPopulation: country.currentPopulation,
+                      currentGdpPerCapita: country.currentGdpPerCapita,
+                      currentTotalGdp: country.currentTotalGdp,
+                      economicTier: country.economicTier,
+                      populationTier: country.populationTier,
+                      populationGrowthRate: country.populationGrowthRate || 0.01,
+                      adjustedGdpGrowth: country.adjustedGdpGrowth || 0.02,
+                      populationDensity: country.populationDensity,
+                      landArea: country.landArea,
+                      lastCalculated: country.lastCalculated || Date.now(),
+                      baselineDate: country.baselineDate || Date.now()
+                    }}
+                    currentIxTime={IxTime.getCurrentIxTime()}
+                    viewerClearanceLevel={viewerClearanceLevel}
+                    isOwnCountry={viewerCountryId === country.id}
+                    flagColors={{
+                      primary: '#d4af37',
+                      secondary: '#b8860b', 
+                      accent: '#ffd700'
+                    }}
+                  />
+                  
+                  {/* Live Intelligence Feed Integration */}
+                  <div className="mt-8 space-y-6">
+                    <h3 className="text-lg font-semibold text-[--intel-gold] flex items-center gap-3">
+                      <RiWifiLine className="h-5 w-5" />
+                      Live Intelligence Feed
+                    </h3>
+                    <LiveDiplomaticFeed
+                      countryId={country.id}
+                      countryName={country.name}
+                      flagColors={{
+                        primary: '#d4af37',
+                        secondary: '#b8860b', 
+                        accent: '#ffd700'
+                      }}
+                    />
+                  </div>
+
+                  {/* Social Activity Intelligence */}
+                  <div className="mt-8 space-y-6">
+                    <h3 className="text-lg font-semibold text-[--intel-gold] flex items-center gap-3">
+                      <RiNotification3Line className="h-5 w-5" />
+                      Social Activity Intelligence
+                    </h3>
+                    <SocialActivityFeed
+                      countryId={country.id}
+                      feedType="country"
+                      flagColors={{
+                        primary: '#d4af37',
+                        secondary: '#b8860b', 
+                        accent: '#ffd700'
+                      }}
+                    />
+                  </div>
+
+                  {/* Real-time Achievement Notifications */}
+                  <RealTimeAchievementNotifications
+                    countryId={country.id}
+                    achievements={[]}
+                    onAchievementClick={setSelectedAchievement}
+                  />
+                </motion.div>
+              )}
+
+              {activeIntelSection === 'intelligence-dossier' && (
+                <motion.div
+                  key="wiki"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-6"
+                >
+                  <WikiIntelligenceTab
+                    countryName={country.name}
+                    countryData={{
+                      currentPopulation: country.currentPopulation,
+                      currentGdpPerCapita: country.currentGdpPerCapita,
+                      currentTotalGdp: country.currentTotalGdp,
+                      economicTier: country.economicTier,
+                      continent: country.continent,
+                      region: country.region,
+                      governmentType: country.governmentType,
+                      leader: country.leader,
+                      capital: country.capital,
+                      religion: country.religion
+                    }}
+                    viewerClearanceLevel={viewerClearanceLevel}
+                    flagColors={{
+                      primary: '#d4af37',
+                      secondary: '#b8860b', 
+                      accent: '#ffd700'
+                    }}
+                  />
+                </motion.div>
+              )}
+
+              {/* Removed Classic Briefing - redundant with Enhanced Intelligence */ false && (
                 <motion.div
                   key="briefing"
                   initial={{ opacity: 0, x: 20 }}
@@ -517,7 +636,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                 </motion.div>
               )}
 
-              {activeIntelSection === 'network' && (
+              {activeIntelSection === 'diplomatic-operations' && (
                 <motion.div
                   key="network"
                   initial={{ opacity: 0, x: 20 }}
@@ -552,10 +671,118 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                     }}
                     viewerClearanceLevel={viewerClearanceLevel}
                   />
+                  
+                  {/* Secure Diplomatic Channels */}
+                  {viewerClearanceLevel !== 'PUBLIC' && (
+                    <div className="mt-8 space-y-6">
+                      <h3 className="text-lg font-semibold text-[--intel-gold] flex items-center gap-3">
+                        <RiLockLine className="h-5 w-5" />
+                        Secure Diplomatic Channels
+                      </h3>
+                      <SecureDiplomaticChannels
+                        currentCountryId={country.id}
+                        currentCountryName={country.name}
+                        channels={[
+                          {
+                            id: 'bilateral-001',
+                            name: `${country.name} Embassy Channel`,
+                            type: 'BILATERAL' as const,
+                            status: 'ACTIVE' as const,
+                            classification: 'RESTRICTED' as const,
+                            participants: [country.id],
+                            lastActivity: new Date().toISOString(),
+                            unreadCount: 0
+                          }
+                        ]}
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Cultural Exchange Program */}
+                  <div className="mt-8 space-y-6">
+                    <h3 className="text-lg font-semibold text-[--intel-gold] flex items-center gap-3">
+                      <RiGlobalLine className="h-5 w-5" />
+                      Cultural Exchange Programs
+                    </h3>
+                    <CulturalExchangeProgram
+                      primaryCountry={{
+                        id: country.id,
+                        name: country.name,
+                        flagUrl: country.flagUrl,
+                        economicTier: country.economicTier
+                      }}
+                      exchanges={[]}
+                    />
+                  </div>
+                  
+                  {/* Achievement Constellation */}
+                  <div className="mt-8 space-y-6">
+                    <h3 className="text-lg font-semibold text-[--intel-gold] flex items-center gap-3">
+                      <RiStarLine className="h-5 w-5" />
+                      Achievement Constellation
+                    </h3>
+                    <AchievementConstellation
+                      constellation={{
+                        id: `constellation-${country.id}`,
+                        countryId: country.id,
+                        constellationName: `${country.name} Diplomatic Legacy`,
+                        totalAchievements: ACHIEVEMENT_TEMPLATES.length,
+                        prestigeScore: calculatePrestigeScore(
+                          ACHIEVEMENT_TEMPLATES.map((template, index) => ({
+                            ...template,
+                            id: template.id || `achievement-${index}`,
+                            templateId: template.id || `template-${index}`,
+                            countryId: country.id,
+                            unlockedAt: new Date(),
+                            progress: 100,
+                            isUnlocked: true,
+                            metadata: {},
+                            tier: template.tier || 'bronze',
+                            rarity: template.rarity || 'common',
+                            title: template.title || 'Unknown Achievement',
+                            description: template.description || 'Achievement description',
+                            category: template.category || 'diplomatic'
+                          } as DiplomaticAchievement))
+                        ),
+                        achievements: ACHIEVEMENT_TEMPLATES.map((template, index) => ({
+                          ...template,
+                          id: template.id || `achievement-${index}`,
+                          templateId: template.id || `template-${index}`,
+                          countryId: country.id,
+                          unlockedAt: new Date(),
+                          progress: 100,
+                          isUnlocked: true,
+                          metadata: {},
+                          tier: template.tier || 'bronze',
+                          rarity: template.rarity || 'common',
+                          title: template.title || 'Unknown Achievement',
+                          description: template.description || 'Achievement description',
+                          category: template.category || 'diplomatic'
+                        } as DiplomaticAchievement)),
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                      }}
+                      onAchievementClick={setSelectedAchievement}
+                      viewerClearanceLevel={viewerClearanceLevel}
+                    />
+                  </div>
+                  
+                  {/* Diplomatic Leaderboards */}
+                  <div className="mt-8 space-y-6">
+                    <h3 className="text-lg font-semibold text-[--intel-gold] flex items-center gap-3">
+                      <RiBarChartLine className="h-5 w-5" />
+                      Diplomatic Rankings
+                    </h3>
+                    <DiplomaticLeaderboards
+                      viewerCountryId={country.id}
+                      viewerClearanceLevel={viewerClearanceLevel}
+                      compact={false}
+                    />
+                  </div>
                 </motion.div>
               )}
 
-              {activeIntelSection === 'channels' && viewerClearanceLevel !== 'PUBLIC' && (
+              {/* Moved to diplomatic-operations */ false && (
                 <motion.div
                   key="channels"
                   initial={{ opacity: 0, x: 20 }}
@@ -600,7 +827,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                 </motion.div>
               )}
 
-              {activeIntelSection === 'cultural' && (
+              {/* Moved to diplomatic-operations */ false && (
                 <motion.div
                   key="cultural"
                   initial={{ opacity: 0, x: 20 }}
@@ -680,7 +907,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                 </motion.div>
               )}
 
-              {activeIntelSection === 'achievements' && (
+              {/* Moved to diplomatic-operations */ false && (
                 <motion.div
                   key="achievements"
                   initial={{ opacity: 0, x: 20 }}
@@ -762,7 +989,80 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                 </motion.div>
               )}
 
-              {activeIntelSection === 'activity' && viewerClearanceLevel !== 'PUBLIC' && (
+              {/* Merged into command-center */ false && (
+                <motion.div
+                  key="live"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-6"
+                >
+                  <LiveDiplomaticFeed
+                    countryId={country.id}
+                    countryName={country.name}
+                    clearanceLevel={viewerClearanceLevel}
+                    maxEvents={25}
+                    autoRefresh={true}
+                    showConnectionStatus={true}
+                    compact={false}
+                  />
+                </motion.div>
+              )}
+
+              {/* Moved to diplomatic-operations */ false && (
+                <motion.div
+                  key="leaderboards"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-6"
+                >
+                  <DiplomaticLeaderboards
+                    viewerCountryId={country.id}
+                    viewerClearanceLevel={viewerClearanceLevel}
+                    compact={false}
+                  />
+                </motion.div>
+              )}
+
+              {/* Merged into command-center */ false && (
+                <motion.div
+                  key="social"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-6"
+                >
+                  <SocialActivityFeed
+                    countryId={country.id}
+                    feedType="country"
+                    compact={false}
+                    maxItems={25}
+                    showInteractions={true}
+                  />
+                </motion.div>
+              )}
+
+              {/* Integrated into command palette */ false && (
+                <motion.div
+                  key="search"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-6"
+                >
+                  <AdvancedSearchDiscovery
+                    viewerCountryId={country.id}
+                    viewerClearanceLevel={viewerClearanceLevel}
+                    onResultSelect={(result) => {
+                      console.log('Selected search result:', result);
+                      // Could navigate to result or show details
+                    }}
+                  />
+                </motion.div>
+              )}
+
+              {/* Merged into command-center */ false && (
                 <motion.div
                   key="activity"
                   initial={{ opacity: 0, x: 20 }}
@@ -818,7 +1118,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                 </motion.div>
               )}
 
-              {activeIntelSection === 'assessment' && viewerClearanceLevel === 'CONFIDENTIAL' && (
+              {/* Merged into intelligence-dossier */ false && (
                 <motion.div
                   key="assessment"
                   initial={{ opacity: 0, x: 20 }}
@@ -974,6 +1274,17 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
           // Could navigate to achievement progress page
         }}
         autoCloseDelay={6000}
+      />
+
+      {/* Real-Time Achievement Notifications */}
+      <RealTimeAchievementNotifications
+        countryId={country.id}
+        countryName={country.name}
+        position="top-right"
+        maxNotifications={3}
+        autoHideDuration={6000}
+        showParticleEffects={true}
+        playSound={true}
       />
     </motion.div>
   );
