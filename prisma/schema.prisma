@@ -91,6 +91,8 @@ model Country {
   incomeDistribution          IncomeDistribution?
   laborMarket                 LaborMarket?
   user                        User?
+  thinkpagesAccounts          ThinkpagesAccount[]
+  moodMetrics                 CountryMoodMetric[]
 
   @@index([name])
   @@index([economicTier])
@@ -420,4 +422,155 @@ model UserPreferences {
   updatedAt            DateTime @updatedAt
   
   @@index([userId])
+}
+
+// Thinkpages Social Platform Models
+model ThinkpagesAccount {
+  id                  String   @id @default(cuid())
+  countryId           String
+  accountType         String   // 'government' | 'media' | 'citizen'
+  username            String   @unique // @handle
+  displayName         String
+  firstName           String
+  lastName            String
+  bio                 String?
+  profileImageUrl     String?
+  verified            Boolean  @default(false)
+  followerCount       Int      @default(0)
+  followingCount      Int      @default(0)
+  postCount           Int      @default(0)
+  postingFrequency    String   @default("moderate") // 'active' | 'moderate' | 'low'
+  politicalLean       String   @default("center") // 'left' | 'center' | 'right'
+  personality         String   @default("serious") // 'serious' | 'casual' | 'satirical'
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  // Relations
+  country             Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  posts               ThinkpagesPost[]
+  reactions           PostReaction[]
+  mentions            PostMention[]
+  
+  @@index([countryId])
+  @@index([accountType])
+  @@index([username])
+  @@index([verified])
+}
+
+model ThinkpagesPost {
+  id                String   @id @default(cuid())
+  accountId         String
+  content           String   // 280 character limit enforced in frontend
+  hashtags          String?  // JSON array of hashtag strings
+  postType          String   @default("original") // 'original' | 'repost' | 'reply'
+  parentPostId      String?  // For replies
+  repostOfId        String?  // For reposts
+  likeCount         Int      @default(0)
+  repostCount       Int      @default(0)
+  replyCount        Int      @default(0)
+  impressions       Int      @default(0)
+  reactionCounts    String?  // JSON object of reaction counts
+  trending          Boolean  @default(false)
+  pinned            Boolean  @default(false)
+  visibility        String   @default("public") // 'public' | 'followers' | 'mentioned'
+  ixTimeTimestamp   DateTime
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  account           ThinkpagesAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  parentPost        ThinkpagesPost?   @relation("PostReplies", fields: [parentPostId], references: [id])
+  replies           ThinkpagesPost[]  @relation("PostReplies")
+  repostOf          ThinkpagesPost?   @relation("PostReposts", fields: [repostOfId], references: [id])
+  reposts           ThinkpagesPost[]  @relation("PostReposts")
+  reactions         PostReaction[]
+  mentions          PostMention[]
+  mediaAttachments  MediaAttachment[]
+  
+  @@index([accountId])
+  @@index([ixTimeTimestamp])
+  @@index([trending])
+  @@index([visibility])
+  @@index([postType])
+  @@index([parentPostId])
+}
+
+model PostReaction {
+  id           String   @id @default(cuid())
+  postId       String
+  accountId    String
+  reactionType String   // 'like' | 'laugh' | 'angry' | 'sad' | 'fire' | 'thumbsup' | 'thumbsdown'
+  timestamp    DateTime @default(now())
+  
+  // Relations
+  post         ThinkpagesPost    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  account      ThinkpagesAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  
+  @@unique([postId, accountId]) // One reaction per account per post
+  @@index([postId])
+  @@index([accountId])
+  @@index([reactionType])
+}
+
+model PostMention {
+  id              String   @id @default(cuid())
+  postId          String
+  mentionedAccountId String
+  position        Int      // Character position in the post content
+  
+  // Relations
+  post            ThinkpagesPost    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  mentionedAccount ThinkpagesAccount @relation(fields: [mentionedAccountId], references: [id], onDelete: Cascade)
+  
+  @@index([postId])
+  @@index([mentionedAccountId])
+}
+
+model MediaAttachment {
+  id        String   @id @default(cuid())
+  postId    String
+  type      String   // 'image' | 'video' | 'document'
+  url       String
+  filename  String?
+  fileSize  Int?
+  mimeType  String?
+  createdAt DateTime @default(now())
+  
+  // Relations
+  post      ThinkpagesPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  @@index([postId])
+  @@index([type])
+}
+
+model TrendingTopic {
+  id            String   @id @default(cuid())
+  hashtag       String   @unique
+  postCount     Int      @default(0)
+  engagement    Int      @default(0) // Combined likes, reposts, replies
+  region        String?  // Optional geographic filter
+  peakTimestamp DateTime
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([hashtag])
+  @@index([postCount])
+  @@index([engagement])
+  @@index([isActive])
+}
+
+model CountryMoodMetric {
+  id            String   @id @default(cuid())
+  countryId     String
+  timestamp     DateTime // Daily or weekly timestamp
+  sentimentScore Float    // -1.0 to 1.0
+  postCount     Int      @default(0)
+  
+  country       Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@unique([countryId, timestamp])
+  @@index([countryId])
+  @@index([timestamp])
 }

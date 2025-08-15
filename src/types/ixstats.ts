@@ -531,6 +531,8 @@ export interface CalculatedStats {
   gdpGrowth: number;
   populationGrowth: number;
   inflation: number;
+  economicTier?: string;
+  populationTier?: string;
   // Add more fields as needed
 }
 
@@ -661,6 +663,11 @@ export interface CountryWithEconomicData {
   debtPerCapita?: number;
   interestRates?: number;
   debtServiceCosts?: number;
+  
+  // Income distribution
+  povertyRate?: number;
+  incomeInequalityGini?: number;
+  socialMobilityIndex?: number;
   
   // Government spending
   totalGovernmentSpending?: number;

@@ -10,7 +10,7 @@ import { CountryProfileInfoBox } from "~/components/countries/CountryProfileInfo
 import { Spotlight } from "~/components/ui/spotlight-new";
 import { ProgressiveBlur } from "~/components/magicui/progressive-blur";
 import { useFlag } from "~/hooks/useUnifiedFlags";
-import { unsplashService } from "~/lib/unsplash-service";
+import { unsplashService, type UnsplashImageData } from "~/lib/unsplash-service";
 import type { 
   EnhancedCountryProfileData, 
   SocialActionType,
@@ -49,21 +49,26 @@ export default function SocialCountryProfilePage({ params }: SocialCountryProfil
   const [socialActionLoading, setSocialActionLoading] = useState<SocialActionType | null>(null);
 
   // Fetch country data
-  const { data: country, isLoading, error } = api.countries.getById.useQuery({ id: countryId });
+  const { data: country, isLoading, error } = api.countries.getByIdWithEconomicData.useQuery({ id: countryId });
 
   // Get flag data
   const { flagUrl } = useFlag(country?.name);
 
   // Get dynamic background image
-  const [unsplashImage, setUnsplashImage] = useState<string | undefined>();
+  const [unsplashImage, setUnsplashImage] = useState<UnsplashImageData | undefined>();
 
   useEffect(() => {
-    if (country?.economicTier && country?.populationTier) {
-      unsplashService.getCountryImage(country.economicTier, country.populationTier)
+    if (country?.economicTier && country?.populationTier && country?.name) {
+      unsplashService.getCountryHeaderImage(
+        country.economicTier, 
+        country.populationTier, 
+        country.name, 
+        country.continent || undefined
+      )
         .then(setUnsplashImage)
         .catch(() => setUnsplashImage(undefined));
     }
-  }, [country?.economicTier, country?.populationTier]);
+  }, [country?.economicTier, country?.populationTier, country?.name, country?.continent]);
 
   // Mock social data generation (in real app, this would come from the API)
   const enhancedCountryData: EnhancedCountryProfileData | null = useMemo(() => {
@@ -419,13 +424,11 @@ export default function SocialCountryProfilePage({ params }: SocialCountryProfil
                 {/* Dynamic Header */}
                 <DynamicCountryHeader 
                   country={enhancedCountryData}
-                  onAction={(action) => console.log('Header action:', action)}
                 />
 
                 {/* Vitality Rings */}
                 <PublicVitalityRings 
                   country={enhancedCountryData}
-                  showComparisons={true}
                 />
               </div>
 

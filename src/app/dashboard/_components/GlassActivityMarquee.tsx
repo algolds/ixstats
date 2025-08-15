@@ -276,7 +276,7 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="glass-hierarchy-parent glass-refraction rounded-xl border border-neutral-200 dark:border-white/[0.2] p-3 mb-6 relative overflow-hidden cursor-pointer"
+        className="glass-hierarchy-parent glass-refraction rounded-lg border border-neutral-200 dark:border-white/[0.2] p-2 mb-4 relative overflow-hidden cursor-pointer"
         onClick={() => setIsCollapsed(false)}
       >
         <div className="flex items-center justify-between">
@@ -298,7 +298,7 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="glass-hierarchy-parent glass-refraction rounded-xl border border-neutral-200 dark:border-white/[0.2] p-4 mb-6 relative overflow-hidden"
+      className="glass-hierarchy-parent glass-refraction rounded-lg border border-neutral-200 dark:border-white/[0.2] p-3 mb-4 relative overflow-hidden"
     >
       {/* Glass shimmer background */}
       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/10 to-transparent transform skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-3000 ease-in-out" />
@@ -369,7 +369,7 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
             return (
               <motion.div
                 key={activity.id}
-                className="flex items-center gap-3 px-4 py-2 mx-2 glass-hierarchy-child rounded-lg hover:scale-[1.02] transition-transform cursor-pointer group min-w-0 whitespace-nowrap"
+                className="flex items-center gap-2 px-3 py-1.5 mx-1 glass-hierarchy-child rounded-md hover:scale-[1.02] transition-transform cursor-pointer group min-w-0 whitespace-nowrap"
                 whileHover={{ y: -1 }}
               >
                 {/* Icon with colored background */}

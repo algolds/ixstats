@@ -69,7 +69,19 @@ interface Notification {
 }
 
 // Helper function to convert API alerts to component Alert type
-function convertApiAlert(apiAlert: ApiAlert): Alert {
+interface AlertData {
+  id: string;
+  type: string;
+  priority: string;
+  title: string;
+  message: string;
+  timestamp: number;
+  category: string;
+  actionRequired: boolean;
+  relatedData?: any;
+}
+
+function convertApiAlert(apiAlert: ApiAlert): AlertData {
   return {
     id: apiAlert.id,
     type: apiAlert.type === 'error' ? 'error' : 

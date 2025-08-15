@@ -43,6 +43,7 @@ interface GlobalIntelligenceCardProps {
   collapseGlobalCard: () => void;
   isGlobalCollapsing: boolean;
   isGlobalCardSlid: boolean;
+  className?: string;
 }
 
 export function GlobalIntelligenceCard({
@@ -51,7 +52,8 @@ export function GlobalIntelligenceCard({
   setIsGlobalCardHovered,
   collapseGlobalCard,
   isGlobalCollapsing,
-  isGlobalCardSlid
+  isGlobalCardSlid,
+  className
 }: GlobalIntelligenceCardProps) {
   const { activeCrises, intelligenceFeed, economicIndicators } = sdiData;
 
@@ -60,7 +62,7 @@ export function GlobalIntelligenceCard({
       {!isGlobalCardSlid && (
         <motion.div
           layout
-          className="lg:col-span-4"
+          className={cn(className)}
           initial={{ x: 0, opacity: 1 }}
           exit={{ 
             x: 200, 

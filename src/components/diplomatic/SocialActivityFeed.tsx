@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "~/lib/utils";
+import { api } from "~/trpc/react";
 import {
   RiTimeLine,
   RiShakeHandsLine,
@@ -221,9 +222,103 @@ const SocialActivityFeedComponent: React.FC<SocialActivityFeedProps> = ({
   const [sortBy, setSortBy] = useState<'recent' | 'popular' | 'impact'>('recent');
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
+  // Fetch live intelligence data
+  const { data: intelligenceData, isLoading: loadingIntelligence } = api.intelligence.getFeed.useQuery();
+  
+  // Fetch diplomatic activity data if countryId is available
+  const { data: activityData, isLoading: loadingActivity } = api.diplomaticIntelligence.getActivityIntelligence.useQuery(
+    { 
+      countryId: countryId || '', 
+      clearanceLevel: 'RESTRICTED', // Default to RESTRICTED for more data
+      limit: Math.min(maxItems, 50) 
+    },
+    { 
+      enabled: !!countryId && feedType === 'country',
+      refetchInterval: 30000 // Refetch every 30 seconds for live updates
+    }
+  );
+
+  // Transform API data to ActivityItem format
+  const transformedActivities = useMemo(() => {
+    const activities: ActivityItem[] = [];
+
+    // Transform intelligence feed data
+    if (intelligenceData) {
+      intelligenceData.forEach(item => {
+        activities.push({
+          id: item.id,
+          type: 'intelligence_briefing',
+          timestamp: item.timestamp,
+          primaryCountry: {
+            id: 'system',
+            name: item.source || 'Intelligence Division',
+            code: 'INT'
+          },
+          title: item.title,
+          description: item.content,
+          details: item.description,
+          metrics: {
+            impact: item.priority === 'critical' ? 90 : 
+                   item.priority === 'high' ? 70 : 
+                   item.priority === 'medium' ? 50 : 30,
+            significance: item.priority as 'low' | 'medium' | 'high' | 'critical',
+            visibility: 'public'
+          },
+          interactions: {
+            likes: Math.floor(Math.random() * 50) + 10,
+            comments: Math.floor(Math.random() * 20),
+            shares: Math.floor(Math.random() * 15),
+            bookmarks: Math.floor(Math.random() * 10)
+          },
+          tags: [item.type || 'intelligence', item.region || 'global'].filter(Boolean),
+          trend: item.priority === 'critical' ? 'breaking' : item.priority === 'high' ? 'trending' : undefined
+        });
+      });
+    }
+
+    // Transform activity data
+    if (activityData) {
+      activityData.forEach(activity => {
+        const activityType = activity.activityType === 'diplomatic' ? 'embassy_established' :
+                           activity.activityType === 'economic' ? 'trade_agreement' :
+                           activity.activityType === 'cultural' ? 'cultural_exchange' :
+                           'intelligence_briefing';
+
+        activities.push({
+          id: activity.id,
+          type: activityType,
+          timestamp: activity.timestamp,
+          primaryCountry: {
+            id: activity.countryId,
+            name: 'Country',  // Would need to fetch country name separately
+            code: 'CTR'
+          },
+          title: `${activity.activityType} activity`,
+          description: activity.description,
+          metrics: {
+            impact: activity.importance === 'high' ? 80 : 
+                   activity.importance === 'medium' ? 60 : 40,
+            significance: activity.importance as 'low' | 'medium' | 'high',
+            visibility: activity.classification.toLowerCase() as 'public' | 'restricted' | 'confidential'
+          },
+          interactions: {
+            likes: Math.floor(Math.random() * 30) + 5,
+            comments: Math.floor(Math.random() * 15),
+            shares: Math.floor(Math.random() * 10),
+            bookmarks: Math.floor(Math.random() * 8)
+          },
+          tags: [activity.activityType, activity.classification.toLowerCase()],
+          relatedAchievements: activity.relatedCountries && activity.relatedCountries.length > 0 ? ['diplomatic_action'] : undefined
+        });
+      });
+    }
+
+    return activities;
+  }, [intelligenceData, activityData]);
+
   // Filter and sort activities
   const filteredActivities = useMemo(() => {
-    let filtered = MOCK_ACTIVITIES;
+    let filtered = transformedActivities.length > 0 ? transformedActivities : MOCK_ACTIVITIES;
 
     // Apply type filter
     if (filter !== 'all') {
@@ -525,28 +620,48 @@ const SocialActivityFeedComponent: React.FC<SocialActivityFeedProps> = ({
         </div>
       )}
 
-      {/* Activity list */}
-      <div className="space-y-3">
-        <AnimatePresence mode="popLayout">
-          {filteredActivities.map(renderActivityItem)}
-        </AnimatePresence>
-      </div>
-
-      {/* Load more */}
-      {filteredActivities.length === maxItems && (
-        <div className="text-center pt-4">
-          <button className="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-[--intel-silver] hover:text-white hover:bg-white/20 transition-colors">
-            Load More Activities
-          </button>
+      {/* Loading State */}
+      {(loadingIntelligence || loadingActivity) ? (
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div key={index} className="p-4 bg-white/5 rounded-lg border border-white/10 animate-pulse">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-white/20 rounded-full"></div>
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-white/20 rounded w-3/4"></div>
+                  <div className="h-3 bg-white/10 rounded w-1/2"></div>
+                  <div className="h-3 bg-white/10 rounded w-2/3"></div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-      )}
+      ) : (
+        <>
+          {/* Activity list */}
+          <div className="space-y-3">
+            <AnimatePresence mode="popLayout">
+              {filteredActivities.map(renderActivityItem)}
+            </AnimatePresence>
+          </div>
 
-      {/* No activities */}
-      {filteredActivities.length === 0 && (
-        <div className="text-center py-8 text-[--intel-silver]">
-          <RiTimeLine className="w-8 h-8 mx-auto mb-3 opacity-50" />
-          <p>No activities found.</p>
-        </div>
+          {/* Load more */}
+          {filteredActivities.length === maxItems && (
+            <div className="text-center pt-4">
+              <button className="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-[--intel-silver] hover:text-white hover:bg-white/20 transition-colors">
+                Load More Activities
+              </button>
+            </div>
+          )}
+
+          {/* No activities */}
+          {filteredActivities.length === 0 && (
+            <div className="text-center py-8 text-[--intel-silver]">
+              <RiTimeLine className="w-8 h-8 mx-auto mb-3 opacity-50" />
+              <p>No activities found. {countryId && feedType === 'country' ? 'Country-specific intelligence may require higher clearance.' : 'Loading intelligence feed...'}</p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

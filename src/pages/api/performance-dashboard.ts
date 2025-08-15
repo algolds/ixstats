@@ -113,7 +113,7 @@ async function generatePerformanceDashboard(): Promise<PerformanceDashboardRespo
         totalQueries: queryStats.queries.totalQueries,
         averageDuration: Math.round(queryStats.queries.averageDuration),
         errorRate: Math.round(queryStats.queries.errorRate * 10000) / 100, // Percentage with 2 decimals
-        slowQueries: queryStats.queries.slowQueries.slice(0, 5).map(q => ({
+        slowQueries: queryStats.queries.slowQueries.slice(0, 5).map((q: any) => ({
           queryKey: q.queryKey,
           duration: Math.round(q.duration),
           timestamp: q.timestamp,

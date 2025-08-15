@@ -25,7 +25,7 @@ export function SetupRedirect() {
   ];
   
   const shouldSkipSetup = skipSetupPaths.some(path => 
-    pathname.startsWith(path)
+    pathname?.startsWith(path) ?? false
   );
 
   // Query user profile to check if setup is needed

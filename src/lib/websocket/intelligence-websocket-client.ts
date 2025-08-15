@@ -1,7 +1,8 @@
 // WebSocket Client for Real-time Intelligence Updates
 // Frontend client for live intelligence data with automatic reconnection
 
-import { io, Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
 import type { 
   IntelligenceUpdate, 
   WebSocketClientState, 
@@ -76,7 +77,7 @@ export class IntelligenceWebSocketClient {
       });
 
       // Connection error
-      this.socket.on('connect_error', (error) => {
+      this.socket.on('connect_error', (error: any) => {
         console.error('Intelligence WebSocket connection error:', error);
         this.state.connected = false;
         this.options.onError(error);
@@ -89,7 +90,7 @@ export class IntelligenceWebSocketClient {
       });
 
       // Disconnection
-      this.socket.on('disconnect', (reason) => {
+      this.socket.on('disconnect', (reason: any) => {
         console.log('Intelligence WebSocket disconnected:', reason);
         this.state.connected = false;
         this.state.authenticated = false;
@@ -129,7 +130,7 @@ export class IntelligenceWebSocketClient {
 
       this.socket.emit('authenticate', { userId, countryId });
 
-      this.socket.once('authenticated', (response) => {
+      this.socket.once('authenticated', (response: any) => {
         if (response.success) {
           this.state.authenticated = true;
           this.state.userId = userId;
@@ -187,12 +188,12 @@ export class IntelligenceWebSocketClient {
     });
 
     // Heartbeat acknowledgment
-    this.socket.on('heartbeat_ack', (data) => {
+    this.socket.on('heartbeat_ack', (data: any) => {
       this.state.lastHeartbeat = data.timestamp;
     });
 
     // Server shutdown notification
-    this.socket.on('server:shutdown', (data) => {
+    this.socket.on('server:shutdown', (data: any) => {
       console.warn('Server shutting down:', data.message);
       this.disconnect();
     });

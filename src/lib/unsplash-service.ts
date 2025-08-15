@@ -176,7 +176,7 @@ class UnsplashService {
       images.length - 1
     );
 
-    return images[imageIndex] || images[0];
+    return images[imageIndex] || images[0] || { id: '', url: '', downloadUrl: '', photographer: '', photographerUrl: '', description: null };
   }
 
   /**
@@ -194,6 +194,13 @@ class UnsplashService {
     } catch (error) {
       console.error('Failed to track Unsplash download:', error);
     }
+  }
+
+  /**
+   * Search images from Unsplash API for general use.
+   */
+  public async searchImages(params: UnsplashSearchParams): Promise<UnsplashImageData[]> {
+    return this.fetchImages(params);
   }
 }
 

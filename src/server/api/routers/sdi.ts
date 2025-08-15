@@ -4,6 +4,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "../trpc";
 import type { IntelligenceItem, CrisisEvent, DiplomaticRelation, Treaty, EconomicIndicator } from "~/types/sdi";
+import { generateAndPostCrisisEvent } from "~/lib/auto-post-service";
 
 export const sdiRouter = createTRPCRouter({
   // Intelligence Feed
@@ -361,6 +362,94 @@ export const sdiRouter = createTRPCRouter({
     }));
   }),
 
+  getDiplomaticIntelligence: publicProcedure
+    .input(z.object({
+      countryId: z.string().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      // Get diplomatic intelligence for a specific country or global
+      const whereClause = input.countryId 
+        ? {
+            affectedCountries: {
+              contains: input.countryId
+            }
+          }
+        : {};
+
+      const [relations, treaties, crises, intelligence] = await Promise.all([
+        ctx.db.diplomaticRelation.findMany({
+          where: input.countryId ? {
+            OR: [
+              { country1: input.countryId },
+              { country2: input.countryId }
+            ]
+          } : {},
+          orderBy: { lastContact: 'desc' },
+          take: 10
+        }),
+        ctx.db.treaty.findMany({
+          where: input.countryId ? {
+            parties: {
+              contains: input.countryId
+            }
+          } : {},
+          orderBy: { signedDate: 'desc' },
+          take: 10
+        }),
+        ctx.db.crisisEvent.findMany({
+          where: {
+            ...whereClause,
+            type: 'political_crisis'
+          },
+          orderBy: { timestamp: 'desc' },
+          take: 5
+        }),
+        ctx.db.intelligenceItem.findMany({
+          where: {
+            ...whereClause,
+            category: 'diplomatic'
+          },
+          orderBy: { timestamp: 'desc' },
+          take: 10
+        })
+      ]);
+
+      return {
+        relations: relations.map(relation => ({
+          id: relation.id,
+          country1: relation.country1,
+          country2: relation.country2,
+          relationship: relation.relationship,
+          strength: relation.strength,
+          status: relation.status,
+          lastContact: relation.lastContact
+        })),
+        treaties: treaties.map(treaty => ({
+          id: treaty.id,
+          name: treaty.name,
+          type: treaty.type,
+          status: treaty.status,
+          signedDate: treaty.signedDate,
+          parties: treaty.parties ? JSON.parse(treaty.parties) : []
+        })),
+        recentCrises: crises.map(crisis => ({
+          id: crisis.id,
+          title: crisis.title,
+          severity: crisis.severity,
+          timestamp: crisis.timestamp,
+          affectedCountries: crisis.affectedCountries ? JSON.parse(crisis.affectedCountries) : []
+        })),
+        intelligenceItems: intelligence.map(item => ({
+          id: item.id,
+          title: item.title,
+          content: item.content,
+          priority: item.priority,
+          timestamp: item.timestamp,
+          source: item.source
+        }))
+      };
+    }),
+
   // System Status
   getSystemStatus: publicProcedure.query(async ({ ctx }) => {
     // Calculate real system metrics
@@ -511,6 +600,15 @@ export const sdiRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       await ctx.db.crisisEvent.delete({ where: { id: input.id } });
       return { success: true };
+    }),
+
+  // Trigger auto-post for a crisis event
+  triggerCrisisAutoPost: protectedProcedure
+    .input(z.object({ crisisEventId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const { generateAndPostCrisisEvent } = await import("~/lib/auto-post-service");
+      const newPost = await generateAndPostCrisisEvent(input.crisisEventId);
+      return { success: true, newPost };
     }),
 
   // Create Economic Indicator

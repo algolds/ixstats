@@ -12,6 +12,7 @@ import { TextAnimate } from "~/components/magicui/text-animate";
 import { Badge } from "~/components/ui/badge";
 import { ActivityPopover } from "~/components/ui/activity-modal";
 import { AppleRippleEffect } from "~/components/ui/apple-ripple-effect";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "~/components/ui/dropdown-menu";
 
 // Dashboard Components
 import { LiveActivityMarquee } from "./LiveActivityMarquee";
@@ -20,10 +21,16 @@ import { GlobalIntelligenceCard } from "./GlobalIntelligenceCard";
 import { ECICard } from "./ECICard";
 import { SDICard } from "./SDICard";
 import { CommandPalette } from "./CommandPalette";
+import { TrendingTopicsCard } from "./TrendingTopicsCard";
+import { ThinkPagesHubCard } from "./ThinkPagesHubCard";
+import { ThinkPagesStatusCard } from "./ThinkPagesStatusCard";
+import { StrategicOperationsSuite } from "./StrategicOperationsSuite";
+import { DiplomaticOperationsCard } from "./DiplomaticOperationsCard";
+import { StrategicCommunicationsCard } from "./StrategicCommunicationsCard";
 
 // Icons
 import { 
-  Crown, AlertTriangle, Star, Target, Command
+  Crown, AlertTriangle, Star, Target, Command, ChevronLeft, ChevronRight, Settings, Eye, EyeOff
 } from "lucide-react";
 
 // Utils
@@ -66,6 +73,10 @@ const DashboardRefactoredModular = React.memo(function DashboardRefactoredModula
   const [isGlobalCardHovered, setIsGlobalCardHovered] = useState(false);
   const [isGlobalCollapsing, setIsGlobalCollapsing] = useState(false);
   const [isRippleActive, setIsRippleActive] = useState(false);
+  
+  // Sidebar collapse states
+  const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
+  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
 
   // Load expanded cards from cookie on mount
   useEffect(() => {
@@ -263,7 +274,7 @@ const DashboardRefactoredModular = React.memo(function DashboardRefactoredModula
         </div>
         
         {/* Header Section */}
-        <div className="relative z-50 container mx-auto px-4 py-8">
+        <div className="relative z-50 w-full px-2 py-4">
           {/* Welcome Header */}
           <AnimatePresence>
             {headerVisible && (
@@ -300,12 +311,12 @@ const DashboardRefactoredModular = React.memo(function DashboardRefactoredModula
             )}
           </AnimatePresence>
 
-          {/* Persistent Command Palette Button */}
+          {/* Persistent Command Palette and Settings */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="fixed top-4 right-4 z-40"
+            className="fixed top-4 left-4 z-50 flex gap-2"
           >
             <div className="glass-hierarchy-interactive px-3 py-2 rounded-lg cursor-pointer hover:scale-[1.02] transition-transform"
                  onClick={() => setCommandOpen(true)}>
@@ -314,6 +325,44 @@ const DashboardRefactoredModular = React.memo(function DashboardRefactoredModula
                 <span className="text-xs">⌘K</span>
               </div>
             </div>
+            
+            {/* Settings Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="glass-hierarchy-interactive px-3 py-2 rounded-lg cursor-pointer hover:scale-[1.02] transition-transform">
+                <div className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+                  <Settings className="h-4 w-4" />
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuItem 
+                  onClick={() => setIsLeftSidebarCollapsed(false)}
+                  disabled={!isLeftSidebarCollapsed}
+                  className="flex items-center gap-2"
+                >
+                  <Eye className="h-4 w-4" />
+                  Show Global Intelligence
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setIsRightSidebarCollapsed(false)}
+                  disabled={!isRightSidebarCollapsed}
+                  className="flex items-center gap-2"
+                >
+                  <Eye className="h-4 w-4" />
+                  Show ThinkPages Hub
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => {
+                    setIsLeftSidebarCollapsed(false);
+                    setIsRightSidebarCollapsed(false);
+                  }}
+                  disabled={!isLeftSidebarCollapsed && !isRightSidebarCollapsed}
+                  className="flex items-center gap-2"
+                >
+                  <Eye className="h-4 w-4" />
+                  Show All Sidebars
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </motion.div>
 
           {/* Setup Required Banner */}
@@ -328,7 +377,7 @@ const DashboardRefactoredModular = React.memo(function DashboardRefactoredModula
                 <h3 className="text-xl font-semibold">Complete Your Command Setup</h3>
               </div>
               <p className="text-muted-foreground mb-4">
-                Configure your country profile to unlock MyCountry®, ECI, and SDI intelligence modules.
+                Configure your country profile to unlock MyCountry® and other intelligence modules.
               </p>
               <Link
                 href={createUrl("/setup")}
@@ -340,33 +389,75 @@ const DashboardRefactoredModular = React.memo(function DashboardRefactoredModula
             </motion.div>
           )}
 
-          {/* Dynamic Bento Grid Layout */}
+          {/* New 3-Column Layout */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.1 }}
-            className="max-w-7xl mx-auto space-y-6"
+            className={cn(
+              "grid grid-cols-1 gap-4 md:gap-6 lg:gap-12 max-w-none mx-2 transition-all duration-500 ease-in-out",
+              isLeftSidebarCollapsed && isRightSidebarCollapsed 
+                ? "lg:grid-cols-1" 
+                : isLeftSidebarCollapsed || isRightSidebarCollapsed 
+                  ? "lg:grid-cols-4" 
+                  : "lg:grid-cols-5"
+            )}
           >
-            {/* Live Activity Marquee - Prominent placement at top */}
-            <LiveActivityMarquee
-              countries={processedCountries}
-              userCountry={countryData ? {
-                id: countryData.id,
-                name: countryData.name,
-                currentPopulation: countryData.calculatedStats?.currentPopulation || 0,
-                currentGdpPerCapita: countryData.calculatedStats?.currentGdpPerCapita || 0,
-                currentTotalGdp: countryData.calculatedStats?.currentTotalGdp || 0,
-                economicTier: countryData.calculatedStats?.economicTier || 'Unknown',
-                populationTier: countryData.calculatedStats?.populationTier || 'Medium',
-                adjustedGdpGrowth: countryData.calculatedStats?.adjustedGdpGrowth || 0,
-                populationGrowthRate: countryData.calculatedStats?.populationGrowthRate || 0
-              } : undefined}
-              isLoading={countriesLoading}
-            />
+            {/* Left Sidebar */}
+            <AnimatePresence>
+              {!isLeftSidebarCollapsed && (
+                <motion.div 
+                  className="lg:col-span-1 sticky top-8 self-start hidden lg:block"
+                  initial={{ opacity: 1 }}
+                  exit={{ 
+                    opacity: 0,
+                    transition: { duration: 0.2 }
+                  }}
+                  transition={{ duration: 0.2 }}
+                >
+                  
+                  <GlobalIntelligenceCard
+                    adaptedGlobalStats={adaptedGlobalStats}
+                    sdiData={{
+                      activeCrises,
+                      intelligenceFeed,
+                      economicIndicators
+                    }}
+                    setIsGlobalCardHovered={setIsGlobalCardHovered}
+                    collapseGlobalCard={() => setIsLeftSidebarCollapsed(true)}
+                    isGlobalCollapsing={isGlobalCollapsing}
+                    isGlobalCardSlid={isGlobalCardSlid}
+                    className="h-full"
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            {/* Top Section Grid - MyCountry (8 span) + Global Intelligence (4 span) */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* MyCountry Section */}
+            {/* Main Content */}
+            <div className={cn(
+              "space-y-12 transition-all duration-500 ease-in-out",
+              isLeftSidebarCollapsed && isRightSidebarCollapsed 
+                ? "lg:col-span-1" 
+                : isLeftSidebarCollapsed || isRightSidebarCollapsed 
+                  ? "lg:col-span-3" 
+                  : "lg:col-span-3"
+            )}>
+              <LiveActivityMarquee
+                countries={processedCountries}
+                userCountry={countryData ? {
+                  id: countryData.id,
+                  name: countryData.name,
+                  currentPopulation: countryData.calculatedStats?.currentPopulation || 0,
+                  currentGdpPerCapita: countryData.calculatedStats?.currentGdpPerCapita || 0,
+                  currentTotalGdp: countryData.calculatedStats?.currentTotalGdp || 0,
+                  economicTier: countryData.calculatedStats?.economicTier || 'Unknown',
+                  populationTier: countryData.calculatedStats?.populationTier || 'Medium',
+                  adjustedGdpGrowth: countryData.calculatedStats?.adjustedGdpGrowth || 0,
+                  populationGrowthRate: countryData.calculatedStats?.populationGrowthRate || 0
+                } : undefined}
+                isLoading={countriesLoading}
+              />
+
               <MyCountryCard
                 countryData={countryData ? {
                   id: countryData.id,
@@ -393,73 +484,135 @@ const DashboardRefactoredModular = React.memo(function DashboardRefactoredModula
                 isGlobalCardSlid={isGlobalCardSlid}
               />
 
-              {/* Global Intelligence Section */}
-              <GlobalIntelligenceCard
-                adaptedGlobalStats={adaptedGlobalStats}
-                sdiData={{
-                  activeCrises,
-                  intelligenceFeed,
-                  economicIndicators
-                }}
-                setIsGlobalCardHovered={setIsGlobalCardHovered}
-                collapseGlobalCard={collapseGlobalCard}
-                isGlobalCollapsing={isGlobalCollapsing}
-                isGlobalCardSlid={isGlobalCardSlid}
-              />
-            </div>
+              <StrategicOperationsSuite userProfile={userProfile} />
 
-            {/* Section Separator */}
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-neutral-200 dark:border-white/[0.2]" />
+              {/* Section Separator */}
+              <div className="relative my-8">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-neutral-200 dark:border-white/[0.2]" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="glass-hierarchy-parent px-4 py-2 rounded-full text-muted-foreground">MyCountry® Premium Suite</span>
+                </div>
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="glass-hierarchy-parent px-4 py-2 rounded-full text-muted-foreground">MyCountry® Premium Suite</span>
+
+              {/* Bottom Section Grid - ECI (6 span) + SDI (6 span) */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <ECICard
+                  countryData={countryData ? {
+                    id: countryData.id,
+                    name: countryData.name,
+                    currentPopulation: countryData.calculatedStats?.currentPopulation || 0,
+                    currentGdpPerCapita: countryData.calculatedStats?.currentGdpPerCapita || 0,
+                    currentTotalGdp: countryData.calculatedStats?.currentTotalGdp || 0,
+                    economicTier: countryData.calculatedStats?.economicTier || 'Unknown',
+                    populationTier: countryData.calculatedStats?.populationTier || 'Medium',
+                    populationDensity: countryData.calculatedStats?.populationDensity,
+                    landArea: countryData.landArea
+                  } : undefined}
+                  userProfile={userProfile}
+                  userId={user?.id}
+                  isEciExpanded={isEciExpanded}
+                  toggleEciExpansion={toggleEciExpansion}
+                  focusedCard={focusedCard}
+                  setFocusedCard={setFocusedCard}
+                />
+
+                <SDICard
+                  userProfile={userProfile}
+                  isSdiExpanded={isSdiExpanded}
+                  toggleSdiExpansion={toggleSdiExpansion}
+                  focusedCard={focusedCard}
+                  setFocusedCard={setFocusedCard}
+                />
               </div>
-            </div>
 
-            {/* Middle Section Grid - ECI (6 span) + SDI (6 span) */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* ECI Executive Command Center */}
-              <ECICard
-                countryData={countryData ? {
-                  id: countryData.id,
-                  name: countryData.name,
-                  currentPopulation: countryData.calculatedStats?.currentPopulation || 0,
-                  currentGdpPerCapita: countryData.calculatedStats?.currentGdpPerCapita || 0,
-                  currentTotalGdp: countryData.calculatedStats?.currentTotalGdp || 0,
-                  economicTier: countryData.calculatedStats?.economicTier || 'Unknown',
-                  populationTier: countryData.calculatedStats?.populationTier || 'Medium',
-                  populationDensity: countryData.calculatedStats?.populationDensity,
-                  landArea: countryData.landArea
-                } : undefined}
-                userProfile={userProfile}
-                userId={user?.id}
-                isEciExpanded={isEciExpanded}
-                toggleEciExpansion={toggleEciExpansion}
-                focusedCard={focusedCard}
-                setFocusedCard={setFocusedCard}
-              />
-
-              {/* SDI Strategic Intelligence */}
-              <SDICard
-                userProfile={userProfile}
-                isSdiExpanded={isSdiExpanded}
-                toggleSdiExpansion={toggleSdiExpansion}
-                focusedCard={focusedCard}
-                setFocusedCard={setFocusedCard}
-              />
-            </div>
-
-            {/* Section Separator */}
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-neutral-200 dark:border-white/[0.2]" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="glass-hierarchy-parent px-4 py-2 rounded-full text-muted-foreground">Additional Modules</span>
+              {/* Section Separator */}
+              <div className="relative my-8">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-neutral-200 dark:border-white/[0.2]" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="glass-hierarchy-parent px-4 py-2 rounded-full text-muted-foreground">Additional Modules</span>
+                </div>
               </div>
             </div>
+
+            {/* Right Sidebar */}
+            <AnimatePresence>
+              {!isRightSidebarCollapsed && (
+                <motion.div 
+                  className="lg:col-span-1 sticky top-8 self-start hidden lg:block"
+                  initial={{ opacity: 1 }}
+                  exit={{ 
+                    opacity: 0,
+                    transition: { duration: 0.2 }
+                  }}
+                  transition={{ duration: 0.2 }}
+                >
+                  
+                  <ThinkPagesStatusCard 
+                    userProfile={userProfile} 
+                    className="h-full"
+                    onCollapse={() => setIsRightSidebarCollapsed(true)}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+
+          {/* Collapsed Sidebar Expand Buttons */}
+          <AnimatePresence>
+            {isLeftSidebarCollapsed && (
+              <motion.button
+                className="fixed left-2 top-1/2 -translate-y-1/2 z-40 glass-hierarchy-interactive w-8 h-12 rounded-r-lg flex items-center justify-center transition-transform"
+                onClick={() => setIsLeftSidebarCollapsed(false)}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+              >
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </motion.button>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {isRightSidebarCollapsed && (
+              <motion.button
+                className="fixed right-2 top-1/2 -translate-y-1/2 z-40 glass-hierarchy-interactive w-8 h-12 rounded-l-lg flex items-center justify-center transition-transform"
+                onClick={() => setIsRightSidebarCollapsed(false)}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+              >
+                <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+              </motion.button>
+            )}
+          </AnimatePresence>
+
+          {/* Mobile Sidebar Content */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+            className="lg:hidden space-y-6 max-w-none mx-2"
+          >
+            <GlobalIntelligenceCard
+              adaptedGlobalStats={adaptedGlobalStats}
+              sdiData={{
+                activeCrises,
+                intelligenceFeed,
+                economicIndicators
+              }}
+              setIsGlobalCardHovered={setIsGlobalCardHovered}
+              collapseGlobalCard={collapseGlobalCard}
+              isGlobalCollapsing={isGlobalCollapsing}
+              isGlobalCardSlid={isGlobalCardSlid}
+              className="w-full"
+            />
+            <ThinkPagesStatusCard userProfile={userProfile} className="w-full" />
           </motion.div>
 
           {/* Activity Popovers */}
@@ -471,14 +624,14 @@ const DashboardRefactoredModular = React.memo(function DashboardRefactoredModula
                 onClose={() => setActivityPopoverOpen(null)}
                 countryData={{
                   name: countryData.name,
-                  currentGdpPerCapita: countryData.currentGdpPerCapita,
-                  currentTotalGdp: countryData.currentTotalGdp,
-                  currentPopulation: countryData.currentPopulation,
+                  currentGdpPerCapita: countryData.calculatedStats?.currentGdpPerCapita ?? 0,
+                  currentTotalGdp: countryData.calculatedStats?.currentTotalGdp ?? 0,
+                  currentPopulation: countryData.calculatedStats?.currentPopulation ?? 0,
                   populationGrowthRate: countryData.populationGrowthRate || 0,
                   adjustedGdpGrowth: countryData.adjustedGdpGrowth || 0,
-                  economicTier: countryData.economicTier,
-                  populationTier: countryData.populationTier || "Unknown",
-                  populationDensity: countryData.populationDensity || 0
+                  economicTier: countryData.calculatedStats?.economicTier ?? "Unknown",
+                  populationTier: countryData.calculatedStats?.populationTier || "Unknown",
+                  populationDensity: countryData.calculatedStats?.populationDensity || 0
                 }}
                 selectedRing={0}
               />
@@ -489,14 +642,14 @@ const DashboardRefactoredModular = React.memo(function DashboardRefactoredModula
                 onClose={() => setActivityPopoverOpen(null)}
                 countryData={{
                   name: countryData.name,
-                  currentGdpPerCapita: countryData.currentGdpPerCapita,
-                  currentTotalGdp: countryData.currentTotalGdp,
-                  currentPopulation: countryData.currentPopulation,
+                  currentGdpPerCapita: countryData.calculatedStats?.currentGdpPerCapita ?? 0,
+                  currentTotalGdp: countryData.calculatedStats?.currentTotalGdp ?? 0,
+                  currentPopulation: countryData.calculatedStats?.currentPopulation ?? 0,
                   populationGrowthRate: countryData.populationGrowthRate || 0,
                   adjustedGdpGrowth: countryData.adjustedGdpGrowth || 0,
-                  economicTier: countryData.economicTier,
-                  populationTier: countryData.populationTier || "Unknown",
-                  populationDensity: countryData.populationDensity || 0
+                  economicTier: countryData.calculatedStats?.economicTier ?? "Unknown",
+                  populationTier: countryData.calculatedStats?.populationTier || "Unknown",
+                  populationDensity: countryData.calculatedStats?.populationDensity || 0
                 }}
                 selectedRing={1}
               />
@@ -507,14 +660,14 @@ const DashboardRefactoredModular = React.memo(function DashboardRefactoredModula
                 onClose={() => setActivityPopoverOpen(null)}
                 countryData={{
                   name: countryData.name,
-                  currentGdpPerCapita: countryData.currentGdpPerCapita,
-                  currentTotalGdp: countryData.currentTotalGdp,
-                  currentPopulation: countryData.currentPopulation,
+                  currentGdpPerCapita: countryData.calculatedStats?.currentGdpPerCapita ?? 0,
+                  currentTotalGdp: countryData.calculatedStats?.currentTotalGdp ?? 0,
+                  currentPopulation: countryData.calculatedStats?.currentPopulation ?? 0,
                   populationGrowthRate: countryData.populationGrowthRate || 0,
                   adjustedGdpGrowth: countryData.adjustedGdpGrowth || 0,
-                  economicTier: countryData.economicTier,
-                  populationTier: countryData.populationTier || "Unknown",
-                  populationDensity: countryData.populationDensity || 0
+                  economicTier: countryData.calculatedStats?.economicTier ?? "Unknown",
+                  populationTier: countryData.calculatedStats?.populationTier || "Unknown",
+                  populationDensity: countryData.calculatedStats?.populationDensity || 0
                 }}
                 selectedRing={2}
               />

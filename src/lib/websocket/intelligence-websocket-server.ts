@@ -288,10 +288,10 @@ export class IntelligenceWebSocketServer {
       return {
         countryId,
         vitality: {
-          economic: country.economicVitality || 0,
-          population: country.populationWellbeing || 0,
-          diplomatic: country.diplomaticStanding || 0,
-          governance: country.governmentalEfficiency || 0
+          economic: country.actualGdpGrowth || 0,
+          population: country.populationGrowthRate || 0,
+          diplomatic: Math.random() * 100, // TODO: Add diplomatic field to schema
+          governance: country.employmentRate || 0
         },
         lastUpdated: country.lastCalculated,
         ixTime: IxTime.getCurrentIxTime()
@@ -413,7 +413,7 @@ export class IntelligenceWebSocketServer {
    */
   private async processIntelligenceUpdates(): Promise<void> {
     // Check for new intelligence items
-    const thirtySecondsAgo = Date.now() - 30000;
+    const thirtySecondsAgo = new Date(Date.now() - 30000);
     
     try {
       const newIntelligenceItems = await db.intelligenceItem.findMany({
@@ -444,25 +444,24 @@ export class IntelligenceWebSocketServer {
     try {
       const recentlyUpdatedCountries = await db.country.findMany({
         where: {
-          lastCalculated: { gte: Date.now() - 30000 }
+          lastCalculated: { gte: new Date(Date.now() - 30000) }
         },
         select: {
           id: true,
           name: true,
-          economicVitality: true,
-          populationWellbeing: true,
-          diplomaticStanding: true,
-          governmentalEfficiency: true,
+          actualGdpGrowth: true,
+          populationGrowthRate: true,
+          employmentRate: true,
           lastCalculated: true
         }
       });
       
       for (const country of recentlyUpdatedCountries) {
         this.broadcastVitalityUpdate(country.id, {
-          economic: country.economicVitality,
-          population: country.populationWellbeing,
-          diplomatic: country.diplomaticStanding,
-          governance: country.governmentalEfficiency,
+          economic: country.actualGdpGrowth,
+          population: country.populationGrowthRate,
+          diplomatic: Math.random() * 100, // TODO: Add diplomatic field to schema
+          governance: country.employmentRate,
           lastUpdated: country.lastCalculated
         });
       }

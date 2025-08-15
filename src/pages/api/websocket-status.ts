@@ -1,7 +1,7 @@
 // WebSocket Status API Route
 // Provides status and management for WebSocket services
 
-import { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { getWebSocketServer, getBroadcastService } from '~/server/websocket-server';
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {

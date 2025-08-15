@@ -78,9 +78,11 @@ export interface DiplomaticRelation {
   countryId: string;
   countryName: string;
   flagUrl?: string;
-  relationType: 'alliance' | 'trade' | 'defense_pact' | 'neutral' | 'tension' | 'rivalry';
+  relationType: 'alliance' | 'trade' | 'neutral' | 'tension';
   relationshipStrength: number; // 0-100
+  strength?: number; // Alternative property name for compatibility
   establishedDate: string; // IxTime
+  establishedAt?: string; // Alternative property name for compatibility
   lastInteraction: string;
   recentActivity?: DiplomaticActivity[];
   treatiesActive: Treaty[];
@@ -277,6 +279,14 @@ export interface EnhancedCountryProfileData {
   name: string;
   flagUrl?: string;
   unsplashImageUrl?: string; // Dynamic tier-based image
+  continent?: string;
+  region?: string;
+  governmentType?: string;
+  leader?: string;
+  religion?: string;
+  capital?: string;
+  lastCalculated?: string;
+  baselineDate?: string;
   
   // Economic data
   currentPopulation: number;

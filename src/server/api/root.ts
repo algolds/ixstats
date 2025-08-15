@@ -11,6 +11,7 @@ import { eciRouter } from "./routers/eci";
 import { notificationsRouter } from "./routers/notifications";
 import { myCountryRouter } from "./routers/mycountry";
 import { diplomaticIntelligenceRouter } from "./routers/diplomatic-intelligence";
+import { thinkpagesRouter } from "./routers/thinkpages";
 
 /**
  * This is the primary router for your server.
@@ -27,6 +28,7 @@ export const appRouter = createTRPCRouter({
   notifications: notificationsRouter, // Notifications router
   mycountry: myCountryRouter, // MyCountry specialized endpoints
   diplomaticIntelligence: diplomaticIntelligenceRouter, // Diplomatic Intelligence system
+  thinkpages: thinkpagesRouter, // Thinkpages social platform
   system: adminRouter, // Alias for global stats
 });
 

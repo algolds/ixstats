@@ -415,7 +415,7 @@ export const PerformanceUtils = {
   withPerformanceTracking: <P extends object>(
     WrappedComponent: React.ComponentType<P>,
     componentName?: string
-  ) => {
+  ): React.FC<P> => {
     const TrackedComponent: React.FC<P> = (props) => {
       const name = componentName || WrappedComponent.displayName || WrappedComponent.name || 'Component';
       const startTime = performance.now();
