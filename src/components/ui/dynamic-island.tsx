@@ -12,10 +12,15 @@ import React, {
 } from "react"
 import { AnimatePresence, motion, useWillChange } from "motion/react"
 
-const stiffness = 400
-const damping = 30
+// Optimized animation constants for instant responsiveness
+const stiffness = 400  // Increased for snappier response
+const damping = 30     // Balanced for quick settling
 const MAX_HEIGHT_MOBILE_ULTRA = 400
 const MAX_HEIGHT_MOBILE_MASSIVE = 700
+
+// Performance optimization constants
+const RESIZE_DEBOUNCE_MS = 100  // Reduced for faster response
+const ANIMATION_DURATION_MS = 300  // Shorter for instant feel
 
 export type SizePresets =
   | "reset"
@@ -315,15 +320,17 @@ const DynamicIsland = ({
   useEffect(() => {
     setMounted(true)
     
-    // Throttled resize handler for better performance
+    // Ultra-fast resize handler with minimal debouncing
     let resizeTimeout: NodeJS.Timeout
     const handleResize = () => {
       clearTimeout(resizeTimeout)
       resizeTimeout = setTimeout(() => {
         const width = window.innerWidth
         const newSize = width <= 640 ? "mobile" : width <= 1024 ? "tablet" : "desktop"
-        setScreenSize(prevSize => prevSize !== newSize ? newSize : prevSize)
-      }, 100) // Throttle to 100ms
+        if (screenSize !== newSize) {
+          setScreenSize(newSize)
+        }
+      }, RESIZE_DEBOUNCE_MS)
     }
 
     handleResize()
@@ -337,7 +344,7 @@ const DynamicIsland = ({
   if (!mounted) {
     return (
       <DynamicIslandContainer>
-        <div className="relative mx-auto items-center justify-center bg-card/95 backdrop-blur-xl border-border text-center rounded-full h-11 px-4">
+        <div className="relative mx-auto items-center justify-center bg-card/95 backdrop-blur-xl border-border text-center rounded-full h-11 px-4 will-change-transform">
           {children}
         </div>
       </DynamicIslandContainer>
@@ -435,7 +442,7 @@ const DynamicIslandContent = ({
             type: "spring",
             stiffness: stiffness * 0.8,
             damping: damping * 0.9,
-            duration: 0.6,
+            duration: ANIMATION_DURATION_MS / 1000,
           },
         }}
         style={{ willChange }}
@@ -468,7 +475,7 @@ const DynamicIslandContent = ({
       {/* Main dynamic island */}
       <motion.div
         id={id}
-        className="relative mx-auto items-center justify-center border border-white/20 dark:border-white/10 text-center transition duration-300 ease-in-out focus-within:bg-accent/80 hover:shadow-2xl hover:shadow-primary/20 overflow-hidden"
+        className="relative mx-auto items-center justify-center border border-white/20 dark:border-white/10 text-center transition-colors duration-200 will-change-auto focus-within:bg-accent/80 hover:shadow-2xl hover:shadow-primary/20 overflow-hidden"
         initial={{
           width: dimensions.width,
           height: dimensions.height,
@@ -482,14 +489,18 @@ const DynamicIslandContent = ({
             type: "spring",
             stiffness,
             damping,
+            duration: ANIMATION_DURATION_MS / 1000,
           },
         }}
         style={{ 
-          willChange,
+          willChange: willChange || 'transform',
           minWidth: dimensions.width === "auto" ? "fit-content" : undefined,
           background: "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",
           backdropFilter: "blur(20px) saturate(180%)",
           WebkitBackdropFilter: "blur(20px) saturate(180%)",
+          // Performance optimization
+          transform: 'translateZ(0)',
+          isolation: 'isolate',
         }}
         {...props}
       >
@@ -501,8 +512,8 @@ const DynamicIslandContent = ({
           <div className="absolute top-0 left-0 w-px h-full bg-gradient-to-b from-transparent via-white/30 to-transparent" />
           <div className="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-transparent via-white/20 to-transparent" />
           
-          {/* Inner shimmer */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent rounded-full animate-pulse" style={{ animationDuration: '3s' }} />
+          {/* Inner shimmer - optimized animation */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent rounded-full animate-pulse will-change-transform" style={{ animationDuration: '3s', animationTimingFunction: 'ease-in-out' }} />
         </div>
         
         {/* Content container */}
@@ -540,7 +551,7 @@ const DynamicContainer = ({ className, children }: DynamicContainerProps) => {
       type: "spring" as const,
       stiffness,
       damping,
-      duration: isSizeChanged ? 0.5 : 0.8,
+      duration: isSizeChanged ? ANIMATION_DURATION_MS / 1000 : (ANIMATION_DURATION_MS * 1.2) / 1000,
     },
   }
 

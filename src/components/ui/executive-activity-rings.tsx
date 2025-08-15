@@ -58,7 +58,7 @@ export const ExecutiveActivityRings: React.FC<ExecutiveActivityRingsProps> = ({
   const rings = [
     {
       id: 'economic',
-      label: 'Economic Power',
+      label: 'Eco. Power',
       icon: <DollarSign className="h-5 w-5" />,
       value: economicHealth,
       color: '#10b981', // Emerald-500
@@ -82,7 +82,7 @@ export const ExecutiveActivityRings: React.FC<ExecutiveActivityRingsProps> = ({
     },
     {
       id: 'development',
-      label: 'Development Index',
+      label: 'Dev. Index',
       icon: <TrendingUp className="h-5 w-5" />,
       value: developmentIndex,
       color: '#8b5cf6', // Purple-500

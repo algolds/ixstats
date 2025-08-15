@@ -48,7 +48,8 @@ import {
   Activity,
   User,
   TrendingUp,
-  Building2
+  Building2,
+  Calendar
 } from "lucide-react";
 import {
   Tooltip,
@@ -82,10 +83,10 @@ interface SearchResult {
 type ViewMode = "compact" | "search" | "notifications" | "settings" | "cycling";
 type SearchFilter = "all" | "countries" | "commands" | "features";
 
-function CommandPaletteContent({ 
-  isExpanded = false, 
-  setIsExpanded, 
-  expandedMode, 
+function CommandPaletteContent({
+  isExpanded = false,
+  setIsExpanded,
+  expandedMode,
   setExpandedMode,
   isSticky = false
 }: {
@@ -104,6 +105,7 @@ function CommandPaletteContent({
   // const [cyclingIndex, setCyclingIndex] = useState(0);
   const [isUserInteracting, setIsUserInteracting] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [timeDisplayMode, setTimeDisplayMode] = useState<'time' | 'date' | 'clock'>('time');
   const { toast } = useToast();
   
   // Enhanced notification system integration
@@ -116,12 +118,7 @@ function CommandPaletteContent({
 
   
   // Current time state
-  const [currentTime, setCurrentTime] = useState<{
-    greeting: string;
-    dateDisplay: string;
-    timeDisplay: string;
-    multiplier: number;
-  }>({
+  const [currentTime, setCurrentTime] = useState({
     greeting: "Good morning",
     dateDisplay: "",
     timeDisplay: "",
@@ -219,10 +216,9 @@ function CommandPaletteContent({
     const date = new Date(ixTime);
     const hours = date.getUTCHours();
     const minutes = date.getUTCMinutes().toString().padStart(2, '0');
-    const seconds = date.getUTCSeconds().toString().padStart(2, '0');
     const ampm = hours >= 12 ? 'PM' : 'AM';
     const displayHours = hours % 12 || 12;
-    return `${displayHours}:${minutes}:${seconds} ${ampm} ILT`;
+    return `${displayHours}:${minutes} ${ampm}`;
   };
 
   const getSetupStatus = () => {
@@ -524,45 +520,120 @@ function CommandPaletteContent({
         }}
       >
         <DynamicContainer 
-          className={`flex items-center justify-center transition-all duration-500 ${
+          className={`flex items-center justify-center transition-all duration-500 ${ 
             isSticky && isCollapsed ? 'px-3 py-2' : 'px-6 py-3'
-          } w-full`}
+          } w-full gap-8`}
         >
-        <div className={`flex items-center transition-all duration-500 ${
-          isSticky && isCollapsed ? 'gap-1' : 'gap-4'
-        }`}>
-          {/* Time - only show when not collapsed or not sticky */}
+          {/* IX Logo - Home Button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => window.location.href = '/'}
+                className={`relative group flex items-center justify-center rounded-md transition-all duration-200 hover:scale-105 active:scale-95 hover:bg-white/10 ${ 
+                  isSticky && isCollapsed ? 'w-10 h-10' : 'w-12 h-12'
+                }`}
+              >
+                <img 
+                  src="/ix-logo.svg" 
+                  alt="IX Logo"
+                  className={`${isSticky && isCollapsed ? 'w-6 h-6' : 'w-8 h-8'} transition-all duration-200 group-hover:scale-110 filter brightness-0 invert opacity-70 group-hover:opacity-100`}
+                />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Home</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          {/* Time Display - cycles through modes */}
           {(!isSticky || !isCollapsed) && (
-            <div className="flex items-center gap-2">
-              <Popover>
-                <PopoverTrigger>
-                  <div className="hover:bg-accent/10 p-1 rounded transition-colors cursor-pointer">
-                    <Clock className="h-4 w-4 text-blue-400" />
-                  </div>
-                </PopoverTrigger>
-                <PopoverContent 
-                  side="bottom" 
-                  align="start"
-                  className="w-80 p-4 bg-card/95 backdrop-blur-xl border-border rounded-xl shadow-2xl z-[10002]"
-                >
-                  <div className="space-y-3">
-                    <div className="text-center">
-                      <div className="text-lg font-semibold text-foreground mb-2">
-                        It is {currentTime.dateDisplay}
-                      </div>
-                      <div className="text-xl font-bold text-blue-400">
-                        The time is {currentTime.timeDisplay.replace(' ILT', '')}
-                      </div>
+            <button
+              onClick={() => {
+                setTimeDisplayMode(prev => 
+                  prev === 'time' ? 'date' : 
+                  prev === 'date' ? 'clock' : 'time'
+                );
+              }}
+              className="flex items-center gap-1.5 hover:bg-white/10 px-2 py-1 rounded-md transition-colors cursor-pointer"
+            >
+              {timeDisplayMode === 'time' && (
+                <>
+                  <Clock className="h-3 w-3 text-blue-400 opacity-70" />
+                  <span className="text-xs font-medium text-foreground/80 leading-none">
+                    {currentTime.timeDisplay}
+                  </span>
+                </>
+              )}
+              {timeDisplayMode === 'date' && (
+                <>
+                  <Calendar className="h-3 w-3 text-blue-400 opacity-70" />
+                  <span className="text-xs font-medium text-foreground/80 leading-none">
+                    {new Date(ixTimeTimestamp).toLocaleDateString('en-US', { 
+                      month: 'short', 
+                      day: 'numeric' 
+                    })}
+                  </span>
+                </>
+              )}
+              {timeDisplayMode === 'clock' && (
+                <div className="flex items-center gap-1.5">
+                  <div className="relative w-4 h-4">
+                    {/* Analog Clock */}
+                    <div className="absolute inset-0 border border-blue-400/40 rounded-full">
+                      {/* Hour markers */}
+                      {[...Array(12)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="absolute w-0.5 h-1 bg-blue-400/30"
+                          style={{
+                            top: '1px',
+                            left: '50%',
+                            transformOrigin: '50% 7px',
+                            transform: `translateX(-50%) rotate(${i * 30}deg)`,
+                          }}
+                        />
+                      ))}
+                      
+                      {/* Hour hand */}
+                      <div
+                        className="absolute w-0.5 h-2 bg-blue-400 rounded-full"
+                        style={{
+                          top: '2px',
+                          left: '50%',
+                          transformOrigin: '50% 6px',
+                          transform: `translateX(-50%) rotate(${(new Date(ixTimeTimestamp).getUTCHours() % 12) * 30 + (new Date(ixTimeTimestamp).getUTCMinutes() * 0.5)}deg)`,
+                        }}
+                      />
+                      
+                      {/* Minute hand */}
+                      <div
+                        className="absolute w-0.5 h-2.5 bg-blue-300 rounded-full"
+                        style={{
+                          top: '1.5px',
+                          left: '50%',
+                          transformOrigin: '50% 6.5px',
+                          transform: `translateX(-50%) rotate(${new Date(ixTimeTimestamp).getUTCMinutes() * 6}deg)`,
+                        }}
+                      />
+                      
+                      {/* Center dot */}
+                      <div className="absolute top-1/2 left-1/2 w-0.5 h-0.5 bg-blue-400 rounded-full transform -translate-x-1/2 -translate-y-1/2" />
                     </div>
                   </div>
-                </PopoverContent>
-              </Popover>
-              
-              {/* Greeting - only show when not sticky */}
-              {!isSticky && (
-                <Popover>
+                  <span className="text-xs font-medium text-foreground/80 leading-none">
+                    {currentTime.timeDisplay}
+                  </span>
+                </div>
+              )}
+            </button>
+          )}
+          
+          {/* Greeting - only show when not sticky */}
+          {!isSticky && (
+            <div className="flex items-center gap-2">
+              <Popover>
                   <PopoverTrigger>
-                    <div className="text-sm font-medium text-foreground cursor-pointer hover:bg-accent/10 px-2 py-1 rounded transition-colors">
+                    <div className="text-sm font-medium text-foreground cursor-pointer hover:bg-accent/10 px-2 py-1 rounded transition-colors text-center">
                       {currentTime.greeting}{user?.firstName ? `, ${user.firstName}` : ''}
                     </div>
                   </PopoverTrigger>
@@ -650,7 +721,6 @@ function CommandPaletteContent({
                     )}
                   </PopoverContent>
                 </Popover>
-              )}
             </div>
           )}
           
@@ -660,25 +730,25 @@ function CommandPaletteContent({
               size="sm"
               variant="ghost"
               onClick={() => switchMode("search")}
-              className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center rounded-lg transition-all ${
+              className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center rounded-lg transition-all ${ 
                 isSticky && isCollapsed ? 'h-6 w-6 p-0' : 'h-7 px-2 gap-1'
               }`}
             >
               <Search className="h-3 w-3" />
-              {(!isSticky || !isCollapsed) && <span className="text-xs">Search</span>}
+              {(!isSticky || !isCollapsed) && <span className="text-xs leading-none">Search</span>}
             </Button>
             <Button
               size="sm"
               variant="ghost"
               onClick={() => switchMode("notifications")}
-              className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center rounded-lg transition-all ${
+              className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center rounded-lg transition-all ${ 
                 isSticky && isCollapsed ? 'h-6 w-6 p-0' : 'h-7 px-2 gap-1'
               }`}
             >
               <Bell className="h-3 w-3" />
-              {(!isSticky || !isCollapsed) && <span className="text-xs">Alerts</span>}
+              {(!isSticky || !isCollapsed) && <span className="text-xs leading-none">Alerts</span>}
               {totalUnreadCount > 0 && (
-                <Badge className={`absolute bg-destructive text-foreground flex items-center justify-center rounded-full text-[10px] ${
+                <Badge className={`absolute bg-destructive text-foreground flex items-center justify-center rounded-full text-[10px] ${ 
                   isSticky && isCollapsed ? '-top-1 -right-1 h-3 w-3 p-0' : '-top-1 -right-1 h-3 w-3 p-0'
                 }`}>
                   {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
@@ -689,15 +759,14 @@ function CommandPaletteContent({
               size="sm"
               variant="ghost"
               onClick={() => switchMode("settings")}
-              className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center rounded-lg transition-all ${
+              className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center rounded-lg transition-all ${ 
                 isSticky && isCollapsed ? 'h-6 w-6 p-0' : 'h-7 px-2 gap-1'
               }`}
             >
               <Settings className="h-3 w-3" />
-              {(!isSticky || !isCollapsed) && <span className="text-xs">Settings</span>}
+              {(!isSticky || !isCollapsed) && <span className="text-xs leading-none">Settings</span>}
             </Button>
           </div>
-        </div>
         </DynamicContainer>
       </div>
     );
@@ -736,7 +805,7 @@ function CommandPaletteContent({
                   size="sm"
                   variant={searchFilter === filter ? "default" : "ghost"}
                   onClick={() => setSearchFilter(filter)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${ 
                     searchFilter === filter 
                       ? 'bg-primary text-primary-foreground shadow-sm' 
                       : 'text-muted-foreground hover:text-foreground hover:bg-accent/10'
@@ -799,7 +868,7 @@ function CommandPaletteContent({
                                 </div>
                                 <Badge 
                                   variant="secondary" 
-                                  className={`px-2 py-0.5 text-[10px] h-5 ${
+                                  className={`px-2 py-0.5 text-[10px] h-5 ${ 
                                     result.type === 'country' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' :
                                     result.type === 'command' ? 'bg-green-500/10 text-green-600 dark:text-green-400' :
                                     'bg-purple-500/10 text-purple-600 dark:text-purple-400'
@@ -1026,7 +1095,7 @@ function CommandPaletteContent({
                     return (
                       <div
                         key={notification.id ? `${notification.source}-${notification.id}` : `${notification.source}-fallback-${index}`}
-                        className={`p-4 rounded-xl border cursor-pointer transition-all hover:bg-accent/50 ${
+                        className={`p-4 rounded-xl border cursor-pointer transition-all hover:bg-accent/50 ${ 
                           (notification.status === 'read' || notification.read)
                             ? 'bg-muted/30 border' 
                             : 'bg-muted/50 border shadow-lg'
@@ -1041,7 +1110,7 @@ function CommandPaletteContent({
                             } else if (isExecutiveNotification) {
                               markExecutiveAsRead(notification.id);
                             } else if (user?.id) {
-                              markAsReadMutation.mutate({ 
+                              markAsReadMutation.mutate({
                                 notificationId: notification.id,
                                 userId: user.id
                               });
@@ -1058,7 +1127,7 @@ function CommandPaletteContent({
                         }}
                       >
                         <div className="flex items-start gap-4">
-                          <div className={`p-2 rounded-lg flex-shrink-0 ${
+                          <div className={`p-2 rounded-lg flex-shrink-0 ${ 
                             isEnhancedNotification
                               ? ((notification as any).priority === 'critical' ? 'bg-red-500/20' :
                                  (notification as any).priority === 'high' ? 'bg-orange-500/20' :
@@ -1069,13 +1138,13 @@ function CommandPaletteContent({
                                    (notification as any).severity === 'high' ? 'bg-orange-500/20' :
                                    (notification as any).severity === 'medium' ? 'bg-yellow-500/20' :
                                    'bg-blue-500/20')
-                                : ((notification as any).type === "info" ? "bg-blue-500/20" :
-                                   (notification as any).type === "warning" ? "bg-yellow-500/20" :
-                                   (notification as any).type === "success" ? "bg-green-500/20" :
-                                   (notification as any).type === "error" ? "bg-destructive/20" :
-                                   "bg-muted/50")
+                              : ((notification as any).type === "info" ? "bg-blue-500/20" :
+                                 (notification as any).type === "warning" ? "bg-yellow-500/20" :
+                                 (notification as any).type === "success" ? "bg-green-500/20" :
+                                 (notification as any).type === "error" ? "bg-destructive/20" :
+                                 "bg-muted/50")
                           }`}>
-                            <IconComponent className={`h-5 w-5 ${
+                            <IconComponent className={`h-5 w-5 ${ 
                               isEnhancedNotification
                                 ? ((notification as any).priority === 'critical' ? 'text-red-600 dark:text-red-400' :
                                    (notification as any).priority === 'high' ? 'text-orange-600 dark:text-orange-400' :
@@ -1119,7 +1188,7 @@ function CommandPaletteContent({
                                 {(isEnhancedNotification || isExecutiveNotification) && (
                                   <Badge 
                                     variant="secondary" 
-                                    className={`text-xs px-2 py-0 ${
+                                    className={`text-xs px-2 py-0 ${ 
                                       isEnhancedNotification
                                         ? ((notification as any).priority === 'critical' ? 'bg-red-500/10 text-red-600 dark:text-red-400' :
                                            (notification as any).priority === 'high' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' :

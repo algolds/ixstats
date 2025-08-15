@@ -70,7 +70,7 @@ const LiveDiplomaticFeedComponent: React.FC<LiveDiplomaticFeedProps> = ({
   compact = false,
   className
 }) => {
-  const [state, actions] = useCountryDiplomaticUpdates(countryId, clearanceLevel);
+  const [state, actions] = useCountryDiplomaticUpdates(countryId, clearanceLevel, autoRefresh);
   const [showFilters, setShowFilters] = useState(false);
   const [eventTypeFilter, setEventTypeFilter] = useState<DiplomaticEvent['type'] | 'all'>('all');
   const [priorityFilter, setPriorityFilter] = useState<DiplomaticEvent['priority'] | 'all'>('all');

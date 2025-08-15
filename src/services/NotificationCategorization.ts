@@ -667,15 +667,40 @@ const categorizationInstance = new NotificationCategorization();
 // Export convenience functions
 export const categorizeNotification = (
   notification: UnifiedNotification
-): { category: NotificationCategory; severity: NotificationSeverity; confidence: number } => {
-  return categorizationInstance.categorizeNotification(notification);
+): Promise<ClassificationResult> => {
+  // Create basic context if not provided
+  const defaultContext: NotificationContext = {
+    userId: '',
+    isExecutiveMode: false,
+    currentRoute: '',
+    ixTime: Date.now(),
+    deviceInfo: { type: 'desktop', platform: 'unknown', screenSize: 'large' },
+    networkStatus: { online: true, connectionType: 'unknown' },
+    batteryStatus: { level: 100, charging: true },
+    userActivity: { isActive: true, lastActivity: Date.now(), interactionHistory: [] },
+    locationInfo: { timezone: 'UTC', locale: 'en-US' },
+    preferences: { quietHours: null, categories: {} },
+    socialContext: { connections: [], recentActivity: [] },
+    economicProfile: { tier: 'unknown', interests: [] },
+    performanceMetrics: { cpuUsage: 0, memoryUsage: 0, renderTime: 0 },
+    environmentalFactors: { lightLevel: 'normal', noiseLevel: 'low', weatherConditions: 'unknown' }
+  };
+  return categorizationInstance.categorizeNotification(notification, defaultContext);
 };
 
 export const calculateDynamicUrgency = (
   notification: UnifiedNotification,
   context: NotificationContext
 ): number => {
-  return categorizationInstance.calculateDynamicUrgency(notification, context);
+  // Add default category - will be determined during actual categorization
+  const defaultCategory: EnhancedCategory = {
+    primary: 'system',
+    secondary: null,
+    confidence: 0.5,
+    reasoning: 'Default category assignment',
+    contextualFactors: []
+  };
+  return categorizationInstance.calculateDynamicUrgency(notification, context, defaultCategory);
 };
 
 export default NotificationCategorization;

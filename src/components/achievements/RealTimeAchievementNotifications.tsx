@@ -18,6 +18,7 @@ import {
   RiCheckLine,
   RiCloseLine
 } from "react-icons/ri";
+import { useToast } from "~/components/ui/toast";
 
 interface AchievementNotificationProps {
   countryId: string;
@@ -96,6 +97,17 @@ const RealTimeAchievementNotificationsComponent: React.FC<AchievementNotificatio
 }) => {
   const { isConnected, recentEvents, actions } = useAchievementUpdates(countryId);
   const [notifications, setNotifications] = useState<NotificationState[]>([]);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (!isConnected) {
+      toast({
+        title: "Offline Mode",
+        description: "Achievement notifications require WebSocket connection",
+        variant: "destructive",
+      });
+    }
+  }, [isConnected, toast]);
 
   // Process new achievement events
   useEffect(() => {
@@ -362,25 +374,6 @@ const RealTimeAchievementNotificationsComponent: React.FC<AchievementNotificatio
           {notifications.map(renderNotification)}
         </AnimatePresence>
       </div>
-
-      {/* Connection Status */}
-      {!isConnected && notifications.length === 0 && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="w-80 p-3 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-400 text-sm"
-        >
-          <div className="flex items-start gap-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2" />
-            <div>
-              <div className="font-medium">Offline Mode</div>
-              <div className="text-xs opacity-80 mt-1">
-                Achievement notifications require WebSocket connection
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
     </div>
   );
 };

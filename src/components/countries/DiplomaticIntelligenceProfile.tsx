@@ -33,7 +33,15 @@ import {
   RiSearchLine,
   RiScanLine,
   RiWifiLine, // Replace RiSatelliteLine
-  RiSettings3Line
+  RiSettings3Line,
+  // Economic & Demographic Icons
+  RiMoneyDollarCircleLine,
+  RiSubtractLine,
+  RiArrowUpLine,
+  RiArrowDownLine,
+  RiMapLine,
+  RiInformationLine,
+  RiMapPinLine
 } from "react-icons/ri";
 
 import type { EnhancedCountryProfileData, SocialActionType } from "~/types/social-profile";
@@ -49,6 +57,8 @@ import { AdvancedSearchDiscovery } from "~/components/diplomatic/AdvancedSearchD
 import { RealTimeAchievementNotifications } from "~/components/achievements/RealTimeAchievementNotifications";
 import { EnhancedIntelligenceBriefing } from "~/components/countries/EnhancedIntelligenceBriefing";
 import { WikiIntelligenceTab } from "~/components/countries/WikiIntelligenceTab";
+import { ThinkpagesSocialPlatform } from "~/components/thinkpages/ThinkpagesSocialPlatform";
+import { DynamicIsland, DynamicContainer, DynamicTitle, DynamicDiv, DynamicIslandProvider, SIZE_PRESETS } from "~/components/ui/dynamic-island";
 import type { AchievementConstellation as AchievementConstellationType, DiplomaticAchievement } from "~/types/achievement-constellation";
 import { ACHIEVEMENT_TEMPLATES, calculatePrestigeScore } from "~/types/achievement-constellation";
 
@@ -83,10 +93,12 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
   viewerClearanceLevel = 'PUBLIC',
   onSocialAction
 }) => {
-  const [activeIntelSection, setActiveIntelSection] = useState<'command-center' | 'intelligence-dossier' | 'diplomatic-operations'>('command-center');
+  const [activeIntelSection, setActiveIntelSection] = useState<'command-center' | 'intelligence-dossier' | 'diplomatic-operations' | 'stratcomm-intel' | 'thinkpages-social'>('command-center');
+  const [activeDiplomaticTab, setActiveDiplomaticTab] = useState<'networks' | 'channels' | 'cultural' | 'objectives'>('networks');
   const [showDiplomaticActions, setShowDiplomaticActions] = useState(false);
   const [selectedAchievement, setSelectedAchievement] = useState<DiplomaticAchievement | null>(null);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
   // Calculate intelligence metrics with clearance-based access
   const intelligenceMetrics = useMemo(() => {
@@ -123,6 +135,92 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
   const handleSocialAction = useCallback((action: SocialActionType) => {
     onSocialAction?.(action, country.id);
   }, [onSocialAction, country.id]);
+
+  // Toggle card expansion
+  const toggleCard = useCallback((cardId: string) => {
+    setExpandedCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(cardId)) {
+        newSet.delete(cardId);
+      } else {
+        newSet.add(cardId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  // Calculate derived economic metrics
+  const economicMetrics = useMemo(() => {
+    const economicHealth = Math.min(100, (country.currentGdpPerCapita / 50000) * 100);
+    const growthRate = country.adjustedGdpGrowth || 0;
+    const unemploymentRate = Math.max(2, Math.min(15, 8 - (growthRate * 100))); // Inverse correlation
+    
+    return {
+      economicHealth,
+      growthRate,
+      unemploymentRate,
+      gdpPerCapita: country.currentGdpPerCapita,
+      totalGdp: country.currentTotalGdp,
+      economicTier: country.economicTier,
+      growthTrend: (growthRate > 0.02 ? 'up' : growthRate < -0.01 ? 'down' : 'stable') as 'up' | 'down' | 'stable'
+    };
+  }, [country]);
+
+  // Calculate demographic metrics
+  const demographicMetrics = useMemo(() => {
+    const popGrowthRate = country.populationGrowthRate || 0;
+    const populationGrowth = Math.min(100, Math.max(0, (popGrowthRate * 100 + 2) * 25));
+    const literacyRate = Math.min(99, 70 + (country.currentGdpPerCapita / 1000));
+    const lifeExpectancy = Math.min(85, 65 + (country.currentGdpPerCapita / 2000));
+    
+    return {
+      populationGrowth,
+      literacyRate,
+      lifeExpectancy,
+      population: country.currentPopulation,
+      populationTier: country.populationTier,
+      populationDensity: country.populationDensity,
+      landArea: country.landArea,
+      growthTrend: (popGrowthRate > 0.01 ? 'up' : popGrowthRate < 0 ? 'down' : 'stable') as 'up' | 'down' | 'stable'
+    };
+  }, [country]);
+
+  // Calculate development metrics
+  const developmentMetrics = useMemo(() => {
+    const tierScores: Record<string, number> = {
+      "Extravagant": 100, "Very Strong": 85, "Strong": 70,
+      "Healthy": 55, "Developed": 40, "Developing": 25
+    };
+    const developmentIndex = tierScores[country.economicTier] || 10;
+    const stabilityRating = Math.min(100, 75 + (country.growthStreak * 2));
+    
+    return {
+      developmentIndex,
+      stabilityRating,
+      economicTier: country.economicTier,
+      growthStreak: country.growthStreak || 0,
+      continent: country.continent,
+      region: country.region
+    };
+  }, [country]);
+
+  // Helper function for trend icons
+  const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
+    switch (trend) {
+      case 'up': return RiArrowUpLine;
+      case 'down': return RiArrowDownLine;
+      default: return RiSubtractLine;
+    }
+  };
+
+  // Helper function for trend colors
+  const getTrendColor = (trend: 'up' | 'down' | 'stable') => {
+    switch (trend) {
+      case 'up': return 'text-green-400';
+      case 'down': return 'text-red-400';
+      default: return 'text-gray-400';
+    }
+  };
 
   // Classification Badge Component
   const ClassificationBadge: React.FC<{ level: keyof typeof CLASSIFICATION_LEVELS }> = ({ level }) => {
@@ -165,17 +263,28 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
       {/* Intelligence Command Header */}
       <div className="glass-hierarchy-parent rounded-xl overflow-hidden mb-6">
         {/* Classification Header */}
-        <div className="bg-[--intel-navy] border-b border-[--intel-gold]/20 px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="relative bg-[--intel-navy] border-b border-[--intel-gold]/20 px-6 py-4 overflow-hidden">
+          {/* Flag Background */}
+          {country.flagUrl && (
+            <div className="absolute inset-0 opacity-10">
+              <img 
+                src={country.flagUrl} 
+                alt={`${country.name} flag`}
+                className="w-full h-full object-cover object-center scale-110 blur-[1px]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-[--intel-navy]/90 via-[--intel-navy]/70 to-[--intel-navy]/90" />
+            </div>
+          )}
+          <div className="relative flex items-center justify-between z-10">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
                 <IntelligenceGlyph type="intelligence" size={6} />
                 <div>
-                  <h1 className="text-xl font-bold text-[--intel-gold]">
-                    DIPLOMATIC INTELLIGENCE PROFILE
+                  <h1 className="text-2xl font-bold text-[--intel-gold]">
+                    {country.name}
                   </h1>
                   <p className="text-[--intel-silver] text-sm">
-                    Subject: {country.name} • Generated: {IxTime.formatIxTime(currentIxTime, true)}
+                     Generated: {IxTime.formatIxTime(currentIxTime, true)}
                   </p>
                 </div>
               </div>
@@ -233,16 +342,29 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
             <div className="flex items-end justify-between">
               <div className="space-y-3">
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <IntelligenceGlyph type="diplomatic" />
-                    <span className="text-[--intel-silver] text-sm font-medium">NATION</span>
+                  <div className="flex items-center gap-3">
+                    {/* Country Flag */}
+                    {country.flagUrl && (
+                      <div className="relative">
+                        <img
+                          src={country.flagUrl}
+                          alt={`${country.name} flag`}
+                          className="w-12 h-8 object-cover rounded border-2 border-[--intel-gold]/30 shadow-lg"
+                        />
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-[--intel-gold]/50 to-transparent rounded blur-sm -z-10" />
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <IntelligenceGlyph type="diplomatic" />
+                      <span className="text-[--intel-silver] text-sm font-medium">NATION</span>
+                    </div>
                   </div>
                   <TextReveal className="text-3xl font-bold text-white">
                     {country.name}
                   </TextReveal>
                 </div>
                 
-                <div className="flex items-center gap-6 text-[--intel-gold]">
+                <div className="flex items-center gap-6 text-amber-700 dark:text-amber-300">
                   <div className="flex items-center gap-2">
                     <IntelligenceGlyph type="economic" size={4} />
                     <span className="font-medium">{country.economicTier}</span>
@@ -265,31 +387,32 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
 
                 {/* Threat Assessment Indicators */}
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 text-green-400 text-sm">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                  <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm">
+                    <div className="w-2 h-2 bg-green-600 dark:bg-green-400 rounded-full animate-pulse" />
                     <span>Stable</span>
                   </div>
-                  <div className="flex items-center gap-2 text-blue-400 text-sm">
+                  <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-sm">
                     <IntelligenceGlyph type="surveillance" size={3} />
                     <span>Active Monitoring</span>
                   </div>
                   {country.growthStreak > 0 && (
-                    <div className="flex items-center gap-2 text-[--intel-amber] text-sm">
-                      <div className="w-2 h-2 bg-[--intel-amber] rounded-full" />
+                    <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-sm">
+                      <div className="w-2 h-2 bg-amber-600 dark:bg-amber-400 rounded-full" />
                       <span>{country.growthStreak}Q Growth Trend</span>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Intelligence Metrics Rings */}
+              {/* Live Vitality Metrics Rings */}
               <div className="flex gap-4">
                 <div className="text-center">
                   <HealthRing
-                    value={intelligenceMetrics.economicStrength}
+                    value={Math.min(100, (country.currentGdpPerCapita / 50000) * 100)}
                     size={70}
                     color="rgba(212, 175, 55, 0.8)"
-                    label=""
+                    label="Economic Power"
+                    tooltip={`GDP per capita and economic strength: ${formatCurrency(country.currentGdpPerCapita)}`}
                   />
                   <div className="text-[--intel-gold] text-xs mt-2 font-medium">
                     Economic
@@ -297,39 +420,45 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                 </div>
                 <div className="text-center">
                   <HealthRing
-                    value={intelligenceMetrics.diplomaticReach}
+                    value={Math.min(100, Math.max(0, (((country.populationGrowthRate ?? 0) * 100) + 2) * 25))}
                     size={70}
                     color="rgba(59, 130, 246, 0.8)"
-                    label=""
+                    label="Demographics"
+                    tooltip={`Population growth and demographic trends: ${formatPopulation(country.currentPopulation)} total`}
                   />
                   <div className="text-blue-400 text-xs mt-2 font-medium">
-                    Diplomatic
+                    Demographics
                   </div>
                 </div>
                 <div className="text-center">
                   <HealthRing
-                    value={intelligenceMetrics.stabilityRating}
+                    value={country.economicTier === "Extravagant" ? 100 : 
+                           country.economicTier === "Very Strong" ? 85 :
+                           country.economicTier === "Strong" ? 70 :
+                           country.economicTier === "Healthy" ? 55 :
+                           country.economicTier === "Developed" ? 40 :
+                           country.economicTier === "Developing" ? 25 : 10}
                     size={70}
                     color="rgba(34, 197, 94, 0.8)"
-                    label=""
+                    label="Development"
+                    tooltip={`Overall development and infrastructure quality: ${country.economicTier} tier`}
                   />
                   <div className="text-green-400 text-xs mt-2 font-medium">
-                    Stability
+                    Development
                   </div>
                 </div>
-                {intelligenceMetrics.securityIndex && (
-                  <div className="text-center">
-                    <HealthRing
-                      value={intelligenceMetrics.securityIndex}
-                      size={70}
-                      color="rgba(239, 68, 68, 0.8)"
-                      label=""
-                    />
-                    <div className="text-red-400 text-xs mt-2 font-medium">
-                      Security
-                    </div>
+                <div className="text-center">
+                  <HealthRing
+                    value={Math.min(100, Math.max(0, ((country.adjustedGdpGrowth ?? 0) * 100 + 3) * 20))}
+                    size={70}
+                    color="rgba(168, 85, 247, 0.8)"
+                    label="Growth Rate"
+                    tooltip={`Economic expansion and growth momentum: ${((country.adjustedGdpGrowth ?? 0) * 100).toFixed(2)}% annual growth`}
+                  />
+                  <div className="text-purple-400 text-xs mt-2 font-medium">
+                    Growth
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
@@ -340,39 +469,337 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Intelligence Navigation */}
         <div className="lg:col-span-1">
-          <div className="glass-hierarchy-child rounded-lg p-4 space-y-2">
-            <h3 className="text-sm font-semibold text-[--intel-gold] mb-4 flex items-center gap-2">
-              <IntelligenceGlyph type="analysis" size={4} />
-              Intelligence Sections
-            </h3>
-            {[
-              { id: 'command-center', label: 'Executive Command Center', icon: RiShieldLine, clearance: 'PUBLIC' },
-              { id: 'intelligence-dossier', label: 'Intelligence Dossier', icon: RiFileTextLine, clearance: 'PUBLIC' },
-              { id: 'diplomatic-operations', label: 'Diplomatic Operations', icon: RiShakeHandsLine, clearance: 'PUBLIC' }
-            ].map(section => {
-              const isRestricted = viewerClearanceLevel === 'PUBLIC' && section.clearance !== 'PUBLIC';
-              const isActive = activeIntelSection === section.id;
-              
-              return (
+          <div className="glass-hierarchy-child rounded-lg p-4 space-y-4">
+            <div className="mb-4">
+              <div className="flex items-center gap-3 mb-2">
+                {country.flagUrl && (
+                  <img
+                    src={country.flagUrl}
+                    alt={`${country.name} flag`}
+                    className="w-8 h-5 object-cover rounded border border-[--intel-gold]/20"
+                  />
+                )}
+                <h3 className="text-sm font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-2">
+                  {country.name} 
+                </h3>
+              </div>
+              <div className="text-xs text-muted-foreground pl-2">
+               
+              </div>
+            </div>
+
+            {/* Enhanced Intelligence Cards */}
+            <div className="space-y-3">
+              {/* Economic Intelligence Card */}
+              <div className="border border-amber-500/20 dark:border-amber-400/20 rounded-lg overflow-hidden bg-gradient-to-br from-amber-500/5 dark:from-amber-400/5 to-transparent">
                 <button
-                  key={section.id}
-                  onClick={() => !isRestricted && setActiveIntelSection(section.id as any)}
-                  disabled={isRestricted}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all text-left",
-                    isActive && !isRestricted && "bg-[--intel-gold]/20 text-[--intel-gold]",
-                    !isActive && !isRestricted && "text-[--intel-silver] hover:text-white hover:bg-white/5",
-                    isRestricted && "text-[--intel-silver]/40 cursor-not-allowed"
-                  )}
+                  onClick={() => toggleCard('economic')}
+                  className="w-full p-3 text-left hover:bg-amber-500/10 dark:hover:bg-amber-400/10 transition-colors"
                 >
-                  <section.icon className="h-4 w-4 flex-shrink-0" />
-                  <span className="flex-1">{section.label}</span>
-                  {isRestricted && (
-                    <RiLockLine className="h-3 w-3 text-red-400" />
-                  )}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <RiMoneyDollarCircleLine className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      <span className="text-sm font-medium text-amber-700 dark:text-amber-300">Economic Intel</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-xs text-muted-foreground">
+                        {economicMetrics.economicHealth.toFixed(0)}%
+                      </div>
+                      <motion.div
+                        animate={{ rotate: expandedCards.has('economic') ? 180 : 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <RiArrowDownLine className="h-3 w-3 text-muted-foreground" />
+                      </motion.div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="text-xs text-muted-foreground">
+                      {formatCurrency(economicMetrics.gdpPerCapita)}
+                    </div>
+                    {(() => {
+                      const TrendIcon = getTrendIcon(economicMetrics.growthTrend);
+                      return (
+                        <TrendIcon className={cn("h-3 w-3", getTrendColor(economicMetrics.growthTrend))} />
+                      );
+                    })()}
+                  </div>
                 </button>
-              );
-            })}
+                
+                <AnimatePresence>
+                  {expandedCards.has('economic') && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="border-t border-amber-500/20 dark:border-amber-400/20 bg-amber-500/5 dark:bg-amber-400/5"
+                    >
+                      <div className="p-3 space-y-3">
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div className="bg-muted/50 rounded p-2">
+                            <div className="text-muted-foreground">Total GDP</div>
+                            <div className="font-medium text-foreground">{formatCurrency(economicMetrics.totalGdp)}</div>
+                          </div>
+                          <div className="bg-muted/50 rounded p-2">
+                            <div className="text-muted-foreground">Growth Rate</div>
+                            <div className="font-medium text-foreground">{(economicMetrics.growthRate * 100).toFixed(1)}%</div>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Economic Tier:</span>
+                            <span className="text-amber-600 dark:text-amber-400 font-medium">{economicMetrics.economicTier}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Unemployment Est:</span>
+                            <span className="text-foreground">{economicMetrics.unemploymentRate.toFixed(1)}%</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Economic Health:</span>
+                            <span className="text-green-600 dark:text-green-400">{economicMetrics.economicHealth.toFixed(0)}%</span>
+                          </div>
+                        </div>
+                        
+                        <div className="pt-2 border-t border-amber-500/20 dark:border-amber-400/20">
+                          <div className="text-xs text-muted-foreground mb-2">Quick Analysis</div>
+                          <div className="text-xs leading-relaxed text-muted-foreground">
+                            {economicMetrics.economicHealth > 70 
+                              ? "Strong economic fundamentals with healthy GDP per capita and growth trajectory."
+                              : economicMetrics.economicHealth > 40
+                              ? "Moderate economic performance. Growth opportunities exist with strategic development."
+                              : "Developing economy with significant potential for expansion and improvement."
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Demographic Intelligence Card */}
+              <div className="border border-blue-500/20 dark:border-blue-400/20 rounded-lg overflow-hidden bg-gradient-to-br from-blue-500/5 dark:from-blue-400/5 to-transparent">
+                <button
+                  onClick={() => toggleCard('demographic')}
+                  className="w-full p-3 text-left hover:bg-blue-500/10 dark:hover:bg-blue-400/10 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <RiTeamLine className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Population Intel</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-xs text-muted-foreground">
+                        Tier {demographicMetrics.populationTier}
+                      </div>
+                      <motion.div
+                        animate={{ rotate: expandedCards.has('demographic') ? 180 : 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <RiArrowDownLine className="h-3 w-3 text-muted-foreground" />
+                      </motion.div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="text-xs text-muted-foreground">
+                      {formatPopulation(demographicMetrics.population)}
+                    </div>
+                    {(() => {
+                      const TrendIcon = getTrendIcon(demographicMetrics.growthTrend);
+                      return (
+                        <TrendIcon className={cn("h-3 w-3", getTrendColor(demographicMetrics.growthTrend))} />
+                      );
+                    })()}
+                  </div>
+                </button>
+                
+                <AnimatePresence>
+                  {expandedCards.has('demographic') && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="border-t border-blue-500/20 dark:border-blue-400/20 bg-blue-500/5 dark:bg-blue-400/5"
+                    >
+                      <div className="p-3 space-y-3">
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div className="bg-muted/50 rounded p-2">
+                            <div className="text-muted-foreground">Growth Rate</div>
+                            <div className="font-medium text-foreground">{((country.populationGrowthRate || 0) * 100).toFixed(2)}%</div>
+                          </div>
+                          <div className="bg-muted/50 rounded p-2">
+                            <div className="text-muted-foreground">Life Expect.</div>
+                            <div className="font-medium text-foreground">{demographicMetrics.lifeExpectancy.toFixed(0)} yrs</div>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Literacy Rate:</span>
+                            <span className="text-blue-600 dark:text-blue-400">{demographicMetrics.literacyRate.toFixed(1)}%</span>
+                          </div>
+                          {demographicMetrics.populationDensity && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Density:</span>
+                              <span className="text-foreground">{demographicMetrics.populationDensity.toFixed(1)}/km²</span>
+                            </div>
+                          )}
+                          {demographicMetrics.landArea && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Land Area:</span>
+                              <span className="text-foreground">{demographicMetrics.landArea.toLocaleString()} km²</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="pt-2 border-t border-blue-500/20 dark:border-blue-400/20">
+                          <div className="text-xs text-muted-foreground mb-2">Demographic Profile</div>
+                          <div className="text-xs leading-relaxed text-muted-foreground">
+                            {demographicMetrics.populationGrowth > 70
+                              ? "Robust population growth indicating strong social stability and economic opportunities."
+                              : demographicMetrics.populationGrowth > 40
+                              ? "Moderate demographic trends with balanced population dynamics."
+                              : "Stable or declining population growth, typical of developed nations."
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Development Intelligence Card */}
+              <div className="border border-purple-500/20 dark:border-purple-400/20 rounded-lg overflow-hidden bg-gradient-to-br from-purple-500/5 dark:from-purple-400/5 to-transparent">
+                <button
+                  onClick={() => toggleCard('development')}
+                  className="w-full p-3 text-left hover:bg-purple-500/10 dark:hover:bg-purple-400/10 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <RiBarChartLine className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                      <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Development Intel</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-xs text-muted-foreground">
+                        {developmentMetrics.developmentIndex}%
+                      </div>
+                      <motion.div
+                        animate={{ rotate: expandedCards.has('development') ? 180 : 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <RiArrowDownLine className="h-3 w-3 text-muted-foreground" />
+                      </motion.div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="text-xs text-muted-foreground">
+                      {developmentMetrics.economicTier}
+                    </div>
+                    <div className="text-xs text-green-600 dark:text-green-400">
+                      {developmentMetrics.growthStreak}Q Streak
+                    </div>
+                  </div>
+                </button>
+                
+                <AnimatePresence>
+                  {expandedCards.has('development') && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="border-t border-purple-500/20 dark:border-purple-400/20 bg-purple-500/5 dark:bg-purple-400/5"
+                    >
+                      <div className="p-3 space-y-3">
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div className="bg-muted/50 rounded p-2">
+                            <div className="text-muted-foreground">Dev. Index</div>
+                            <div className="font-medium text-foreground">{developmentMetrics.developmentIndex}%</div>
+                          </div>
+                          <div className="bg-muted/50 rounded p-2">
+                            <div className="text-muted-foreground">Stability</div>
+                            <div className="font-medium text-foreground">{developmentMetrics.stabilityRating.toFixed(0)}%</div>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Economic Tier:</span>
+                            <span className="text-purple-600 dark:text-purple-400 font-medium">{developmentMetrics.economicTier}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Growth Streak:</span>
+                            <span className="text-green-600 dark:text-green-400">{developmentMetrics.growthStreak} Quarters</span>
+                          </div>
+                          {developmentMetrics.continent && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Region:</span>
+                              <span className="text-foreground">{developmentMetrics.region || developmentMetrics.continent}</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="pt-2 border-t border-purple-500/20 dark:border-purple-400/20">
+                          <div className="text-xs text-muted-foreground mb-2">Development Assessment</div>
+                          <div className="text-xs leading-relaxed text-muted-foreground">
+                            {developmentMetrics.developmentIndex > 80
+                              ? "Highly developed nation with advanced infrastructure and strong institutional frameworks."
+                              : developmentMetrics.developmentIndex > 50
+                              ? "Well-developed country with solid economic foundations and growing capabilities."
+                              : "Developing nation with significant potential for growth and modernization."
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* Section Navigation */}
+            <div className="pt-4 border-t border-amber-500/20 dark:border-amber-400/20">
+              <div className="text-xs text-muted-foreground mb-3 font-medium">INTELLIGENCE SECTIONS</div>
+              <div className="space-y-1">
+                {[
+                  { id: 'command-center', label: 'Strategic Assessment', icon: RiShieldLine, clearance: 'PUBLIC' },
+                  { id: 'intelligence-dossier', label: 'Intelligence Dossier', icon: RiFileTextLine, clearance: 'PUBLIC' },
+                  { id: 'diplomatic-operations', label: 'Diplomatic Operations', icon: RiShakeHandsLine, clearance: 'PUBLIC' },
+                  { id: 'stratcomm-intel', label: 'StratComm Intelligence', icon: RiWifiLine, clearance: 'PUBLIC' },
+                  { id: 'thinkpages-social', label: 'Thinkpages Social', icon: RiTeamLine, clearance: 'PUBLIC' }
+                ].map(section => {
+                  const isRestricted = viewerClearanceLevel === 'PUBLIC' && section.clearance !== 'PUBLIC';
+                  const isActive = activeIntelSection === section.id;
+                  
+                  return (
+                    <button
+                      key={section.id}
+                      onClick={() => !isRestricted && setActiveIntelSection(section.id as any)}
+                      disabled={isRestricted}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all text-left",
+                        isActive && !isRestricted && "bg-amber-500/20 dark:bg-amber-400/20 text-amber-700 dark:text-amber-300",
+                        !isActive && !isRestricted && "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                        isRestricted && "text-muted-foreground/40 cursor-not-allowed"
+                      )}
+                    >
+                      <section.icon className="h-4 w-4 flex-shrink-0" />
+                      <span className="flex-1">{section.label}</span>
+                      {isRestricted && (
+                        <RiLockLine className="h-3 w-3 text-red-500 dark:text-red-400" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           {/* Quick Actions */}
@@ -394,14 +821,21 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg transition-colors"
               >
                 <RiChat3Line className="h-4 w-4" />
-                Diplomatic Message
+                Secure Message
+              </button>
+              <button
+                onClick={() => window.location.href = `/countries/${country.id}`}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm bg-[--intel-gold]/20 hover:bg-[--intel-gold]/30 text-[--intel-gold] rounded-lg transition-colors"
+              >
+                <RiMapPinLine className="h-4 w-4" />
+                Open IxMaps
               </button>
               <button
                 onClick={() => window.location.href = `/countries/${country.id}`}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm bg-[--intel-gold]/20 hover:bg-[--intel-gold]/30 text-[--intel-gold] rounded-lg transition-colors"
               >
                 <RiExternalLinkLine className="h-4 w-4" />
-                Full Country Profile
+                Read Wiki
               </button>
             </div>
           </div>
@@ -439,8 +873,8 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                       adjustedGdpGrowth: country.adjustedGdpGrowth || 0.02,
                       populationDensity: country.populationDensity,
                       landArea: country.landArea,
-                      lastCalculated: country.lastCalculated || Date.now(),
-                      baselineDate: country.baselineDate || Date.now()
+                      lastCalculated: typeof country.lastCalculated === 'string' ? new Date(country.lastCalculated).getTime() : (country.lastCalculated || Date.now()),
+                      baselineDate: typeof country.baselineDate === 'string' ? new Date(country.baselineDate).getTime() : (country.baselineDate || Date.now())
                     }}
                     currentIxTime={IxTime.getCurrentIxTime()}
                     viewerClearanceLevel={viewerClearanceLevel}
@@ -452,45 +886,11 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                     }}
                   />
                   
-                  {/* Live Intelligence Feed Integration */}
-                  <div className="mt-8 space-y-6">
-                    <h3 className="text-lg font-semibold text-[--intel-gold] flex items-center gap-3">
-                      <RiWifiLine className="h-5 w-5" />
-                      Live Intelligence Feed
-                    </h3>
-                    <LiveDiplomaticFeed
-                      countryId={country.id}
-                      countryName={country.name}
-                      flagColors={{
-                        primary: '#d4af37',
-                        secondary: '#b8860b', 
-                        accent: '#ffd700'
-                      }}
-                    />
-                  </div>
-
-                  {/* Social Activity Intelligence */}
-                  <div className="mt-8 space-y-6">
-                    <h3 className="text-lg font-semibold text-[--intel-gold] flex items-center gap-3">
-                      <RiNotification3Line className="h-5 w-5" />
-                      Social Activity Intelligence
-                    </h3>
-                    <SocialActivityFeed
-                      countryId={country.id}
-                      feedType="country"
-                      flagColors={{
-                        primary: '#d4af37',
-                        secondary: '#b8860b', 
-                        accent: '#ffd700'
-                      }}
-                    />
-                  </div>
 
                   {/* Real-time Achievement Notifications */}
                   <RealTimeAchievementNotifications
                     countryId={country.id}
-                    achievements={[]}
-                    onAchievementClick={setSelectedAchievement}
+                    countryName={country.name}
                   />
                 </motion.div>
               )}
@@ -560,11 +960,11 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                             {formatCurrency(country.currentTotalGdp)}
                           </span>
                         </div>
-                        {country.adjustedGdpGrowth && (
+                        {country.adjustedGdpGrowth !== undefined && country.adjustedGdpGrowth !== null && (
                           <div className="flex justify-between">
                             <span className="text-[--intel-silver]">Growth Trajectory</span>
                             <span className="font-semibold text-green-400">
-                              {(country.adjustedGdpGrowth * 100).toFixed(1)}%
+                              {(country.adjustedGdpGrowth! * 100).toFixed(1)}%
                             </span>
                           </div>
                         )}
@@ -620,7 +1020,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                             <p className="text-[--intel-silver] text-sm">Achieved {achievement.achievedAt}</p>
                           </div>
                           <div className="text-[--intel-gold] text-sm font-medium">
-                            +{achievement.socialReactions} recognition
+                            +{achievement.socialReactions?.length || 0} recognition
                           </div>
                         </div>
                       ))}
@@ -638,536 +1038,423 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
 
               {activeIntelSection === 'diplomatic-operations' && (
                 <motion.div
-                  key="network"
+                  key="diplomatic-operations"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   className="space-y-6"
                 >
-                  <EmbassyNetworkVisualization
-                    primaryCountry={{
-                      id: country.id,
-                      name: country.name,
-                      flagUrl: country.flagUrl,
-                      economicTier: country.economicTier
-                    }}
-                    diplomaticRelations={country.diplomaticRelations?.map(relation => ({
-                      id: relation.id,
-                      countryId: relation.countryId || relation.id,
-                      countryName: relation.countryName,
-                      relationType: relation.relationType,
-                      strength: relation.strength,
-                      recentActivity: relation.recentActivity,
-                      establishedAt: relation.establishedAt || new Date().toISOString(),
-                      economicTier: 'Unknown' // Could be enhanced with actual data
-                    })) || []}
-                    onRelationClick={(relation) => {
-                      // Navigate to country profile or show more details
-                      console.log('Viewing relation:', relation);
-                    }}
-                    onEstablishEmbassy={(targetCountryId) => {
-                      // Handle embassy establishment
-                      console.log('Establishing embassy with:', targetCountryId);
-                    }}
-                    viewerClearanceLevel={viewerClearanceLevel}
-                  />
-                  
-                  {/* Secure Diplomatic Channels */}
-                  {viewerClearanceLevel !== 'PUBLIC' && (
-                    <div className="mt-8 space-y-6">
-                      <h3 className="text-lg font-semibold text-[--intel-gold] flex items-center gap-3">
-                        <RiLockLine className="h-5 w-5" />
-                        Secure Diplomatic Channels
-                      </h3>
-                      <SecureDiplomaticChannels
-                        currentCountryId={country.id}
-                        currentCountryName={country.name}
-                        channels={[
-                          {
-                            id: 'bilateral-001',
-                            name: `${country.name} Embassy Channel`,
-                            type: 'BILATERAL' as const,
-                            status: 'ACTIVE' as const,
-                            classification: 'RESTRICTED' as const,
-                            participants: [country.id],
-                            lastActivity: new Date().toISOString(),
-                            unreadCount: 0
-                          }
-                        ]}
-                      />
+                  {/* Diplomatic Operations Header */}
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-bold text-[--intel-gold] flex items-center gap-3">
+                      <RiShakeHandsLine className="h-5 w-5" />
+                      Diplomatic Operations Center
+                    </h2>
+                    <div className="flex items-center gap-2 text-[--intel-silver] text-sm">
+                      <IntelligenceGlyph type="diplomatic" size={4} />
+                      <span>Active Operations: {country.diplomaticRelations?.length || 0}</span>
                     </div>
-                  )}
-                  
-                  {/* Cultural Exchange Program */}
-                  <div className="mt-8 space-y-6">
-                    <h3 className="text-lg font-semibold text-[--intel-gold] flex items-center gap-3">
-                      <RiGlobalLine className="h-5 w-5" />
-                      Cultural Exchange Programs
-                    </h3>
-                    <CulturalExchangeProgram
-                      primaryCountry={{
-                        id: country.id,
-                        name: country.name,
-                        flagUrl: country.flagUrl,
-                        economicTier: country.economicTier
-                      }}
-                      exchanges={[]}
-                    />
                   </div>
-                  
-                  {/* Achievement Constellation */}
-                  <div className="mt-8 space-y-6">
-                    <h3 className="text-lg font-semibold text-[--intel-gold] flex items-center gap-3">
-                      <RiStarLine className="h-5 w-5" />
-                      Achievement Constellation
-                    </h3>
-                    <AchievementConstellation
-                      constellation={{
-                        id: `constellation-${country.id}`,
-                        countryId: country.id,
-                        constellationName: `${country.name} Diplomatic Legacy`,
-                        totalAchievements: ACHIEVEMENT_TEMPLATES.length,
-                        prestigeScore: calculatePrestigeScore(
-                          ACHIEVEMENT_TEMPLATES.map((template, index) => ({
-                            ...template,
-                            id: template.id || `achievement-${index}`,
-                            templateId: template.id || `template-${index}`,
-                            countryId: country.id,
-                            unlockedAt: new Date(),
-                            progress: 100,
-                            isUnlocked: true,
-                            metadata: {},
-                            tier: template.tier || 'bronze',
-                            rarity: template.rarity || 'common',
-                            title: template.title || 'Unknown Achievement',
-                            description: template.description || 'Achievement description',
-                            category: template.category || 'diplomatic'
-                          } as DiplomaticAchievement))
-                        ),
-                        achievements: ACHIEVEMENT_TEMPLATES.map((template, index) => ({
-                          ...template,
-                          id: template.id || `achievement-${index}`,
-                          templateId: template.id || `template-${index}`,
-                          countryId: country.id,
-                          unlockedAt: new Date(),
-                          progress: 100,
-                          isUnlocked: true,
-                          metadata: {},
-                          tier: template.tier || 'bronze',
-                          rarity: template.rarity || 'common',
-                          title: template.title || 'Unknown Achievement',
-                          description: template.description || 'Achievement description',
-                          category: template.category || 'diplomatic'
-                        } as DiplomaticAchievement)),
-                        createdAt: new Date(),
-                        updatedAt: new Date()
-                      }}
-                      onAchievementClick={setSelectedAchievement}
-                      viewerClearanceLevel={viewerClearanceLevel}
-                    />
+
+                  {/* Diplomatic Operations Tabs */}
+                  <div className="bg-white/5 rounded-lg border border-white/10">
+                    <div className="flex border-b border-white/10">
+                      <button
+                        onClick={() => setActiveDiplomaticTab('networks')}
+                        className={cn(
+                          "flex-1 py-3 px-4 text-sm font-medium transition-colors",
+                          activeDiplomaticTab === 'networks'
+                            ? "text-[--intel-gold] bg-[--intel-gold]/10 border-b-2 border-[--intel-gold]"
+                            : "text-[--intel-silver] hover:text-white hover:bg-white/5"
+                        )}
+                      >
+                        <div className="flex items-center gap-2 justify-center">
+                          <RiGlobalLine className="h-4 w-4" />
+                          Embassy Network
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => setActiveDiplomaticTab('channels')}
+                        className={cn(
+                          "flex-1 py-3 px-4 text-sm font-medium transition-colors",
+                          activeDiplomaticTab === 'channels'
+                            ? "text-[--intel-gold] bg-[--intel-gold]/10 border-b-2 border-[--intel-gold]"
+                            : "text-[--intel-silver] hover:text-white hover:bg-white/5"
+                        )}
+                      >
+                        <div className="flex items-center gap-2 justify-center">
+                          <RiLockLine className="h-4 w-4" />
+                          Secure Channels
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => setActiveDiplomaticTab('cultural')}
+                        className={cn(
+                          "flex-1 py-3 px-4 text-sm font-medium transition-colors",
+                          activeDiplomaticTab === 'cultural'
+                            ? "text-[--intel-gold] bg-[--intel-gold]/10 border-b-2 border-[--intel-gold]"
+                            : "text-[--intel-silver] hover:text-white hover:bg-white/5"
+                        )}
+                      >
+                        <div className="flex items-center gap-2 justify-center">
+                          <RiGlobalLine className="h-4 w-4" />
+                          Cultural Programs
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => setActiveDiplomaticTab('objectives')}
+                        className={cn(
+                          "flex-1 py-3 px-4 text-sm font-medium transition-colors",
+                          activeDiplomaticTab === 'objectives'
+                            ? "text-[--intel-gold] bg-[--intel-gold]/10 border-b-2 border-[--intel-gold]"
+                            : "text-[--intel-silver] hover:text-white hover:bg-white/5"
+                        )}
+                      >
+                        <div className="flex items-center gap-2 justify-center">
+                          <RiStarLine className="h-4 w-4" />
+                          Strategic Objectives
+                        </div>
+                      </button>
+                    </div>
+
+                    {/* Tab Content */}
+                    <div className="p-6">
+                      <AnimatePresence mode="wait">
+                        {activeDiplomaticTab === 'networks' && (
+                          <motion.div
+                            key="networks"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <EmbassyNetworkVisualization
+                              primaryCountry={{
+                                id: country.id,
+                                name: country.name,
+                                flagUrl: country.flagUrl,
+                                economicTier: country.economicTier
+                              }}
+                              diplomaticRelations={country.diplomaticRelations?.map(relation => ({
+                                id: relation.id,
+                                countryId: relation.countryId || relation.id,
+                                countryName: relation.countryName,
+                                relationType: relation.relationType,
+                                strength: relation.strength || relation.relationshipStrength,
+                                recentActivity: relation.recentActivity?.[0]?.title || 'No recent activity',
+                                establishedAt: relation.establishedAt || relation.establishedDate,
+                                economicTier: 'Unknown' // Could be enhanced with actual data
+                              })) || []}
+                              onRelationClick={(relation) => {
+                                // Navigate to country profile or show more details
+                                console.log('Viewing relation:', relation);
+                              }}
+                              onEstablishEmbassy={(targetCountryId) => {
+                                // Handle embassy establishment
+                                console.log('Establishing embassy with:', targetCountryId);
+                              }}
+                              viewerClearanceLevel={viewerClearanceLevel}
+                            />
+                          </motion.div>
+                        )}
+
+                        {activeDiplomaticTab === 'channels' && (
+                          <motion.div
+                            key="channels"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            {viewerClearanceLevel !== 'PUBLIC' ? (
+                              <SecureDiplomaticChannels
+                                currentCountryId={country.id}
+                                currentCountryName={country.name}
+                                channels={[
+                                  {
+                                    id: 'bilateral-001',
+                                    name: `${country.name} Embassy Channel`,
+                                    type: 'BILATERAL' as const,
+                                    classification: 'RESTRICTED' as const,
+                                    encrypted: true,
+                                    participants: [{
+                                      countryId: country.id,
+                                      countryName: country.name,
+                                      flagUrl: country.flagUrl,
+                                      role: 'MEMBER' as const
+                                    }],
+                                    lastActivity: new Date().toISOString(),
+                                    unreadCount: 0
+                                  }
+                                ]}
+                                messages={[]}
+                              />
+                            ) : (
+                              <div className="text-center py-12">
+                                <RiLockLine className="h-16 w-16 text-red-400 mx-auto mb-4" />
+                                <h3 className="text-xl font-semibold text-red-400 mb-2">
+                                  Restricted Access
+                                </h3>
+                                <p className="text-[--intel-silver]">
+                                  RESTRICTED clearance required to access secure diplomatic channels.
+                                </p>
+                              </div>
+                            )}
+                          </motion.div>
+                        )}
+
+                        {activeDiplomaticTab === 'cultural' && (
+                          <motion.div
+                            key="cultural"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <CulturalExchangeProgram
+                              primaryCountry={{
+                                id: country.id,
+                                name: country.name,
+                                flagUrl: country.flagUrl,
+                                economicTier: country.economicTier
+                              }}
+                              exchanges={[]}
+                            />
+                          </motion.div>
+                        )}
+
+                        {activeDiplomaticTab === 'objectives' && (
+                          <motion.div
+                            key="objectives"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                            className="space-y-8"
+                          >
+                            {/* Achievement Constellation */}
+                            <div>
+                              <h4 className="text-lg font-semibold text-[--intel-gold] flex items-center gap-3 mb-4">
+                                <RiStarLine className="h-5 w-5" />
+                                Achievement Constellation
+                              </h4>
+                              <AchievementConstellation
+                                constellation={{
+                                  id: `constellation-${country.id}`,
+                                  countryId: country.id,
+                                  constellationName: `${country.name} Diplomatic Legacy`,
+                                  totalAchievements: ACHIEVEMENT_TEMPLATES.length,
+                                  prestigeScore: calculatePrestigeScore(
+                                    ACHIEVEMENT_TEMPLATES.map((template, index) => ({
+                                      ...template,
+                                      id: template.id || `achievement-${index}`,
+                                      achievedAt: new Date().toISOString(),
+                                      ixTimeContext: Date.now(),
+                                      requirements: template.requirements || [],
+                                      rewards: template.rewards || [],
+                                      socialReactions: Math.floor(Math.random() * 50),
+                                      constellationPosition: {
+                                        x: 400 + Math.cos(index * 0.5) * 150,
+                                        y: 300 + Math.sin(index * 0.5) * 150,
+                                        brightness: 0.8,
+                                        size: 16,
+                                        layer: 1
+                                      },
+                                      progress: { percentage: 100, currentStep: 1, totalSteps: 1 },
+                                      tier: template.tier || 'bronze',
+                                      rarity: template.rarity || 'common',
+                                      title: template.title || 'Unknown Achievement',
+                                      description: template.description || 'Achievement description',
+                                      category: template.category || 'diplomatic'
+                                    } as DiplomaticAchievement))
+                                  ),
+                                  achievements: ACHIEVEMENT_TEMPLATES.map((template, index) => ({
+                                    ...template,
+                                    id: template.id || `achievement-${index}`,
+                                    achievedAt: new Date().toISOString(),
+                                    ixTimeContext: Date.now(),
+                                    requirements: template.requirements || [],
+                                    rewards: template.rewards || [],
+                                    socialReactions: Math.floor(Math.random() * 50),
+                                    constellationPosition: {
+                                      x: 400 + Math.cos(index * 0.5) * 150,
+                                      y: 300 + Math.sin(index * 0.5) * 150,
+                                      brightness: 0.8,
+                                      size: 16,
+                                      layer: 1
+                                    },
+                                    progress: { percentage: 100, currentStep: 1, totalSteps: 1 },
+                                    tier: template.tier || 'bronze',
+                                    rarity: template.rarity || 'common',
+                                    title: template.title || 'Unknown Achievement',
+                                    description: template.description || 'Achievement description',
+                                    category: template.category || 'diplomatic'
+                                  } as DiplomaticAchievement)),
+                                  visualLayout: {
+                                    centerX: 400,
+                                    centerY: 300,
+                                    radius: 200,
+                                    rotation: 0,
+                                    theme: 'classic_gold' as const
+                                  },
+                                  socialMetrics: {
+                                    totalViews: 1250,
+                                    socialShares: 45,
+                                    admirers: 23,
+                                    influenceScore: 850,
+                                    trendingAchievements: []
+                                  },
+                                  lastUpdated: new Date().toISOString(),
+                                  ixTimeContext: Date.now()
+                                }}
+                                onAchievementClick={setSelectedAchievement}
+                              />
+                            </div>
+                            
+                            {/* Diplomatic Leaderboards */}
+                            <div>
+                              <h4 className="text-lg font-semibold text-[--intel-gold] flex items-center gap-3 mb-4">
+                                <RiBarChartLine className="h-5 w-5" />
+                                Diplomatic Rankings
+                              </h4>
+                              <DiplomaticLeaderboards
+                                viewerCountryId={country.id}
+                                viewerClearanceLevel={viewerClearanceLevel}
+                                compact={false}
+                              />
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
-                  
-                  {/* Diplomatic Leaderboards */}
-                  <div className="mt-8 space-y-6">
-                    <h3 className="text-lg font-semibold text-[--intel-gold] flex items-center gap-3">
-                      <RiBarChartLine className="h-5 w-5" />
-                      Diplomatic Rankings
-                    </h3>
-                    <DiplomaticLeaderboards
-                      viewerCountryId={country.id}
-                      viewerClearanceLevel={viewerClearanceLevel}
-                      compact={false}
-                    />
+                </motion.div>
+              )}
+
+
+              {activeIntelSection === 'stratcomm-intel' && (
+                <motion.div
+                  key="stratcomm-intel"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-6"
+                >
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-bold text-[--intel-gold] flex items-center gap-3">
+                      <RiWifiLine className="h-5 w-5" />
+                      StratComm Intelligence
+                      <span className="text-xs bg-[--intel-gold]/20 text-[--intel-gold] px-2 py-1 rounded-full">
+                        LIVE
+                      </span>
+                    </h2>
+                    <div className="text-sm text-[--intel-silver]">
+                      Professional Intelligence System
+                    </div>
+                  </div>
+
+                  {/* Intelligence Feed Controls */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <RiWifiLine className="h-4 w-4 text-blue-400" />
+                        <span className="text-sm font-medium text-blue-400">Diplomatic Events</span>
+                      </div>
+                      <div className="text-lg font-bold text-white mb-1">24</div>
+                      <div className="text-xs text-[--intel-silver]">Active this week</div>
+                    </div>
+                    <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <RiNotification3Line className="h-4 w-4 text-purple-400" />
+                        <span className="text-sm font-medium text-purple-400">Social Activities</span>
+                      </div>
+                      <div className="text-lg font-bold text-white mb-1">12</div>
+                      <div className="text-xs text-[--intel-silver]">Recent interactions</div>
+                    </div>
+                    <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <RiStarLine className="h-4 w-4 text-green-400" />
+                        <span className="text-sm font-medium text-green-400">Achievements</span>
+                      </div>
+                      <div className="text-lg font-bold text-white mb-1">3</div>
+                      <div className="text-xs text-[--intel-silver]">Recent unlocks</div>
+                    </div>
+                  </div>
+
+                  {/* Professional Intelligence Interface */}
+                  <div className="bg-white/5 rounded-lg border border-white/10">
+                    <div className="flex border-b border-white/10">
+                      <button className="flex-1 py-3 px-4 text-sm font-medium text-[--intel-gold] bg-[--intel-gold]/10 border-b-2 border-[--intel-gold]">
+                        All Events
+                      </button>
+                      <button className="flex-1 py-3 px-4 text-sm font-medium text-[--intel-silver] hover:text-white">
+                        Diplomatic
+                      </button>
+                      <button className="flex-1 py-3 px-4 text-sm font-medium text-[--intel-silver] hover:text-white">
+                        Security
+                      </button>
+                      <button className="flex-1 py-3 px-4 text-sm font-medium text-[--intel-silver] hover:text-white">
+                        Economic
+                      </button>
+                    </div>
+                    
+                    <div className="p-6 space-y-6">
+                      {/* Live Diplomatic Feed */}
+                      <div>
+                        <h4 className="text-sm font-semibold text-[--intel-gold] mb-4 flex items-center gap-2">
+                          <RiWifiLine className="h-4 w-4" />
+                          Diplomatic Intelligence
+                        </h4>
+                        <LiveDiplomaticFeed
+                          countryId={country.id}
+                          countryName={country.name}
+                          clearanceLevel={viewerClearanceLevel}
+                          maxEvents={25}
+                          autoRefresh={true}
+                          showConnectionStatus={true}
+                          compact={false}
+                        />
+                      </div>
+                      
+                      {/* Social Activity Feed */}
+                      <div>
+                        <h4 className="text-sm font-semibold text-[--intel-gold] mb-4 flex items-center gap-2">
+                          <RiNotification3Line className="h-4 w-4" />
+                          Social Activity Intelligence
+                        </h4>
+                        <SocialActivityFeed
+                          countryId={country.id}
+                          feedType="country"
+                          compact={false}
+                          maxItems={25}
+                          showInteractions={true}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               )}
 
-              {/* Moved to diplomatic-operations */ false && (
+              {activeIntelSection === 'thinkpages-social' && (
                 <motion.div
-                  key="channels"
+                  key="thinkpages-social"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   className="space-y-6"
                 >
-                  <SecureDiplomaticChannels
-                    currentCountryId={country.id}
-                    currentCountryName={country.name}
-                    channels={[
-                      {
-                        id: 'bilateral-001',
-                        name: `${country.name} Embassy Channel`,
-                        type: 'BILATERAL' as const,
-                        participants: [
-                          {
-                            countryId: country.id,
-                            countryName: country.name,
-                            flagUrl: country.flagUrl,
-                            role: 'MEMBER' as const
-                          }
-                        ],
-                        classification: 'RESTRICTED' as const,
-                        encrypted: true,
-                        lastActivity: new Date().toISOString(),
-                        unreadCount: 0
-                      }
-                    ]}
-                    messages={[]}
-                    viewerClearanceLevel={viewerClearanceLevel}
-                    onSendMessage={(channelId, message) => {
-                      console.log('Sending diplomatic message:', { channelId, message });
-                    }}
-                    onCreateChannel={(channelData) => {
-                      console.log('Creating diplomatic channel:', channelData);
-                    }}
-                    onJoinChannel={(channelId) => {
-                      console.log('Joining diplomatic channel:', channelId);
-                    }}
-                  />
-                </motion.div>
-              )}
-
-              {/* Moved to diplomatic-operations */ false && (
-                <motion.div
-                  key="cultural"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-6"
-                >
-                  <CulturalExchangeProgram
-                    primaryCountry={{
-                      id: country.id,
-                      name: country.name,
-                      flagUrl: country.flagUrl,
-                      economicTier: country.economicTier
-                    }}
-                    exchanges={[
-                      {
-                        id: 'exchange-001',
-                        title: `${country.name} Cultural Festival 2024`,
-                        type: 'festival' as const,
-                        description: `Annual celebration showcasing ${country.name}'s rich cultural heritage, traditions, and contemporary arts.`,
-                        hostCountry: {
-                          id: country.id,
-                          name: country.name,
-                          flagUrl: country.flagUrl
-                        },
-                        participatingCountries: [
-                          {
-                            id: 'demo-001',
-                            name: 'Demo Partner Nation',
-                            role: 'participant' as const
-                          }
-                        ],
-                        status: 'active' as const,
-                        startDate: new Date().toISOString(),
-                        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-                        ixTimeContext: IxTime.getCurrentIxTime(),
-                        metrics: {
-                          participants: 150,
-                          culturalImpact: 78,
-                          diplomaticValue: 65,
-                          socialEngagement: 92
-                        },
-                        achievements: [
-                          'First successful multicultural festival',
-                          'Record international participation'
-                        ],
-                        culturalArtifacts: [
-                          {
-                            id: 'artifact-001',
-                            type: 'photo' as const,
-                            title: 'Festival Opening Ceremony',
-                            contributor: country.name,
-                            countryId: country.id
-                          }
-                        ],
-                        diplomaticOutcomes: {
-                          newPartnerships: 3,
-                          tradeAgreements: 1,
-                          futureCollaborations: [
-                            'Annual cultural exchange program',
-                            'Student exchange initiative'
-                          ]
-                        }
-                      }
-                    ]}
-                    onCreateExchange={(exchangeData) => {
-                      console.log('Creating cultural exchange:', exchangeData);
-                    }}
-                    onJoinExchange={(exchangeId, role) => {
-                      console.log('Joining cultural exchange:', { exchangeId, role });
-                    }}
-                    onViewArtifact={(artifactId) => {
-                      console.log('Viewing cultural artifact:', artifactId);
-                    }}
-                    viewerClearanceLevel={viewerClearanceLevel}
-                  />
-                </motion.div>
-              )}
-
-              {/* Moved to diplomatic-operations */ false && (
-                <motion.div
-                  key="achievements"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-6"
-                >
-                  <AchievementConstellation
-                    constellation={{
-                      id: `constellation-${country.id}`,
-                      countryId: country.id,
-                      constellationName: `${country.name} Diplomatic Legacy`,
-                      totalAchievements: ACHIEVEMENT_TEMPLATES.length,
-                      prestigeScore: calculatePrestigeScore(
-                        ACHIEVEMENT_TEMPLATES.map((template, index) => ({
-                          ...template,
-                          id: template.id || `achievement-${index}`,
-                          title: template.title || 'Unknown Achievement',
-                          description: template.description || 'Achievement description',
-                          category: template.category || 'diplomatic',
-                          tier: template.tier || 'bronze',
-                          rarity: template.rarity || 'common',
-                          achievedAt: index < 3 ? new Date().toISOString() : '', // First 3 achievements unlocked
-                          ixTimeContext: IxTime.getCurrentIxTime(),
-                          requirements: template.requirements || [],
-                          rewards: template.rewards || [],
-                          socialReactions: Math.floor(Math.random() * 50),
-                          constellationPosition: { x: 0, y: 0, brightness: 0.8, size: 16, layer: 1 },
-                          progress: undefined
-                        })) as DiplomaticAchievement[]
-                      ),
-                      visualLayout: {
-                        centerX: 400,
-                        centerY: 300,
-                        radius: 200,
-                        rotation: 0,
-                        theme: 'classic_gold'
-                      },
-                      achievements: ACHIEVEMENT_TEMPLATES.map((template, index) => ({
-                        ...template,
-                        id: template.id || `achievement-${index}`,
-                        title: template.title || 'Unknown Achievement',
-                        description: template.description || 'Achievement description',
-                        category: template.category || 'diplomatic',
-                        tier: template.tier || 'bronze',
-                        rarity: template.rarity || 'common',
-                        achievedAt: index < 3 ? new Date().toISOString() : '', // First 3 achievements unlocked
-                        ixTimeContext: IxTime.getCurrentIxTime(),
-                        requirements: template.requirements || [],
-                        rewards: template.rewards || [],
-                        socialReactions: Math.floor(Math.random() * 50),
-                        constellationPosition: { x: 0, y: 0, brightness: 0.8, size: 16, layer: 1 },
-                        progress: undefined
-                      })) as DiplomaticAchievement[],
-                      socialMetrics: {
-                        totalViews: Math.floor(Math.random() * 1000) + 500,
-                        socialShares: Math.floor(Math.random() * 100) + 50,
-                        admirers: Math.floor(Math.random() * 200) + 100,
-                        influenceScore: Math.floor(Math.random() * 100),
-                        trendingAchievements: ['first_contact', 'trade_pioneer']
-                      },
-                      lastUpdated: new Date().toISOString(),
-                      ixTimeContext: IxTime.getCurrentIxTime()
-                    }}
-                    onAchievementClick={(achievement) => {
-                      setSelectedAchievement(achievement);
-                      if (achievement.achievedAt) {
-                        setShowUnlockModal(true);
-                      }
-                    }}
-                    onAchievementHover={(achievement) => {
-                      // Optional: could show preview tooltip
-                    }}
-                    viewMode="full"
-                    interactive={true}
-                    showConnections={true}
-                    theme="classic_gold"
-                  />
-                </motion.div>
-              )}
-
-              {/* Merged into command-center */ false && (
-                <motion.div
-                  key="live"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-6"
-                >
-                  <LiveDiplomaticFeed
+                  <ThinkpagesSocialPlatform
                     countryId={country.id}
                     countryName={country.name}
-                    clearanceLevel={viewerClearanceLevel}
-                    maxEvents={25}
-                    autoRefresh={true}
-                    showConnectionStatus={true}
-                    compact={false}
+                    isOwner={viewerCountryId === country.id}
                   />
-                </motion.div>
-              )}
-
-              {/* Moved to diplomatic-operations */ false && (
-                <motion.div
-                  key="leaderboards"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-6"
-                >
-                  <DiplomaticLeaderboards
-                    viewerCountryId={country.id}
-                    viewerClearanceLevel={viewerClearanceLevel}
-                    compact={false}
-                  />
-                </motion.div>
-              )}
-
-              {/* Merged into command-center */ false && (
-                <motion.div
-                  key="social"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-6"
-                >
-                  <SocialActivityFeed
-                    countryId={country.id}
-                    feedType="country"
-                    compact={false}
-                    maxItems={25}
-                    showInteractions={true}
-                  />
-                </motion.div>
-              )}
-
-              {/* Integrated into command palette */ false && (
-                <motion.div
-                  key="search"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-6"
-                >
-                  <AdvancedSearchDiscovery
-                    viewerCountryId={country.id}
-                    viewerClearanceLevel={viewerClearanceLevel}
-                    onResultSelect={(result) => {
-                      console.log('Selected search result:', result);
-                      // Could navigate to result or show details
-                    }}
-                  />
-                </motion.div>
-              )}
-
-              {/* Merged into command-center */ false && (
-                <motion.div
-                  key="activity"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-6"
-                >
-                  <h2 className="text-xl font-bold text-[--intel-gold] flex items-center gap-3">
-                    <IntelligenceGlyph type="surveillance" />
-                    Activity Intelligence
-                    <ClassificationBadge level="RESTRICTED" />
-                  </h2>
-
-                  <div className="space-y-4">
-                    {country.recentActivities?.map((activity, index) => (
-                      <motion.div
-                        key={activity.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        className="flex items-start gap-4 p-4 bg-white/5 rounded-lg border-l-4 border-[--intel-amber]"
-                      >
-                        <div className={cn(
-                          "w-3 h-3 rounded-full mt-2",
-                          activity.importance === 'high' && "bg-red-400",
-                          activity.importance === 'medium' && "bg-[--intel-amber]",
-                          activity.importance === 'low' && "bg-green-400"
-                        )} />
-                        <div className="flex-1">
-                          <p className="text-white">{activity.description}</p>
-                          <div className="flex items-center gap-4 mt-2 text-sm text-[--intel-silver]">
-                            <span>{activity.timestamp}</span>
-                            {activity.relatedCountry && (
-                              <>
-                                <span>•</span>
-                                <span>Related: {activity.relatedCountry}</span>
-                              </>
-                            )}
-                            <span>•</span>
-                            <span className={cn(
-                              "capitalize",
-                              activity.importance === 'high' && "text-red-400",
-                              activity.importance === 'medium' && "text-[--intel-amber]",
-                              activity.importance === 'low' && "text-green-400"
-                            )}>
-                              {activity.importance} Priority
-                            </span>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Merged into intelligence-dossier */ false && (
-                <motion.div
-                  key="assessment"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-6"
-                >
-                  <h2 className="text-xl font-bold text-[--intel-gold] flex items-center gap-3">
-                    <IntelligenceGlyph type="analysis" />
-                    Strategic Assessment
-                    <ClassificationBadge level="CONFIDENTIAL" />
-                  </h2>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-white">Threat Analysis</h3>
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3 text-green-400">
-                          <div className="w-3 h-3 bg-green-400 rounded-full" />
-                          <span>Economic Stability: LOW RISK</span>
-                        </div>
-                        <div className="flex items-center gap-3 text-[--intel-amber]">
-                          <div className="w-3 h-3 bg-[--intel-amber] rounded-full" />
-                          <span>Diplomatic Tensions: MODERATE</span>
-                        </div>
-                        <div className="flex items-center gap-3 text-blue-400">
-                          <div className="w-3 h-3 bg-blue-400 rounded-full" />
-                          <span>Regional Influence: EXPANDING</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-white">Recommendations</h3>
-                      <div className="space-y-2 text-[--intel-silver]">
-                        <p>• Maintain diplomatic monitoring</p>
-                        <p>• Consider economic cooperation opportunities</p>
-                        <p>• Monitor regional alliance activities</p>
-                        <p>• Assess cultural influence expansion</p>
-                      </div>
-                    </div>
-                  </div>
                 </motion.div>
               )}
 
               {/* Clearance Restriction Display */}
-              {((activeIntelSection === 'channels' && viewerClearanceLevel === 'PUBLIC') ||
-                (activeIntelSection === 'activity' && viewerClearanceLevel === 'PUBLIC') ||
-                (activeIntelSection === 'assessment' && viewerClearanceLevel !== 'CONFIDENTIAL')) && (
+              {((activeIntelSection === 'diplomatic-operations' && viewerClearanceLevel === 'PUBLIC') ||
+                (activeIntelSection === 'command-center' && viewerClearanceLevel === 'PUBLIC') ||
+                (activeIntelSection === 'intelligence-dossier' && viewerClearanceLevel !== 'CONFIDENTIAL')) && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -1178,7 +1465,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                     Insufficient Clearance Level
                   </h3>
                   <p className="text-[--intel-silver] mb-4">
-                    {activeIntelSection === 'activity' || activeIntelSection === 'channels' ? 'RESTRICTED' : 'CONFIDENTIAL'} clearance required to access this intelligence section.
+                    {activeIntelSection === 'command-center' || activeIntelSection === 'diplomatic-operations' ? 'RESTRICTED' : 'CONFIDENTIAL'} clearance required to access this intelligence section.
                   </p>
                   <ClassificationBadge level={viewerClearanceLevel} />
                 </motion.div>
@@ -1188,72 +1475,62 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
         </div>
       </div>
 
-      {/* Diplomatic Actions Modal */}
+      {/* Diplomatic Actions Dynamic Island */}
       <AnimatePresence>
         {showDiplomaticActions && (
-          <>
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowDiplomaticActions(false)}
-              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[10001]"
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             />
             
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 z-[10002] glass-modal rounded-xl p-6"
-              style={{
-                background: 'var(--intel-classification-overlay)',
-                border: 'var(--intel-security-border)',
-                backdropFilter: 'var(--intel-glass-blur)'
-              }}
-            >
-              <div className="space-y-4">
-                <div className="flex items-center justify-between border-b border-[--intel-gold]/20 pb-4">
-                  <h3 className="text-xl font-bold text-[--intel-gold] flex items-center gap-3">
+            <DynamicIslandProvider initialSize={SIZE_PRESETS.ULTRA}>
+              <DynamicIsland id="diplomatic-actions">
+                <DynamicContainer className="p-4 w-full h-full flex flex-col">
+                  <DynamicTitle className="text-lg font-bold text-[--intel-gold] flex items-center gap-3 mb-3 flex-shrink-0">
                     <IntelligenceGlyph type="diplomatic" />
                     Diplomatic Actions
-                  </h3>
+                  </DynamicTitle>
+                  
+                  <DynamicDiv className="flex-1 overflow-y-auto space-y-2">
+                    {[
+                      { action: 'follow', icon: RiUserAddLine, label: 'Follow Nation', desc: 'Monitor developments', color: 'text-blue-400' },
+                      { action: 'message', icon: RiChat3Line, label: 'Diplomatic Message', desc: 'Secure correspondence', color: 'text-purple-400' },
+                      { action: 'propose', icon: RiShakeHandsLine, label: 'Alliance Proposal', desc: 'Formal proposal', color: 'text-green-400' },
+                      { action: 'congratulate', icon: RiStarLine, label: 'Congratulate', desc: 'Recognize achievements', color: 'text-[--intel-gold]' }
+                    ].map(actionItem => (
+                      <button
+                        key={actionItem.action}
+                        onClick={() => {
+                          handleSocialAction(actionItem.action as SocialActionType);
+                          setShowDiplomaticActions(false);
+                        }}
+                        className="w-full flex items-center gap-3 p-3 bg-white/5 hover:bg-white/15 rounded-lg transition-colors text-left border border-white/10"
+                      >
+                        <actionItem.icon className={cn("h-4 w-4", actionItem.color)} />
+                        <div className="flex-1">
+                          <div className="font-medium text-white text-sm">{actionItem.label}</div>
+                          <div className="text-xs text-[--intel-silver]">{actionItem.desc}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </DynamicDiv>
+                  
                   <button
                     onClick={() => setShowDiplomaticActions(false)}
-                    className="text-[--intel-silver] hover:text-white hover:bg-white/10 p-2 rounded-lg transition-colors"
+                    className="absolute top-2 right-2 text-[--intel-silver] hover:text-white hover:bg-white/10 p-1 rounded-lg transition-colors"
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
-                </div>
-
-                <div className="space-y-3">
-                  {[
-                    { action: 'follow', icon: RiUserAddLine, label: 'Follow Nation', desc: 'Monitor diplomatic developments and achievements', color: 'text-blue-400' },
-                    { action: 'message', icon: RiChat3Line, label: 'Diplomatic Message', desc: 'Secure diplomatic correspondence', color: 'text-purple-400' },
-                    { action: 'propose', icon: RiShakeHandsLine, label: 'Alliance Proposal', desc: 'Formal diplomatic alliance proposal', color: 'text-green-400' },
-                    { action: 'congratulate', icon: RiStarLine, label: 'Congratulate', desc: 'Recognize recent achievements', color: 'text-[--intel-gold]' }
-                  ].map(actionItem => (
-                    <button
-                      key={actionItem.action}
-                      onClick={() => {
-                        handleSocialAction(actionItem.action as SocialActionType);
-                        setShowDiplomaticActions(false);
-                      }}
-                      className="w-full flex items-center gap-3 p-4 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-left border border-white/10"
-                    >
-                      <actionItem.icon className={cn("h-5 w-5", actionItem.color)} />
-                      <div>
-                        <div className="font-medium text-white">{actionItem.label}</div>
-                        <div className="text-sm text-[--intel-silver]">{actionItem.desc}</div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          </>
+                </DynamicContainer>
+              </DynamicIsland>
+            </DynamicIslandProvider>
+          </div>
         )}
       </AnimatePresence>
 

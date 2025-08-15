@@ -1,0 +1,344 @@
+
+● Thinkpages: Social Intelligence Platform PRD
+
+  1. Product Overview
+
+  Vision
+
+  Transform IxStats intelligence analysis into an immersive social media simulation where players create
+  authentic accounts across government, media, and citizen layers, enabling rich narrative-driven gameplay
+  through Thinkpages - the in-universe Twitter-like platform.
+
+  Core Concept
+
+  Thinkpages replaces the current "Unified Intelligence Feed" with a two-tab meta-social system:
+  - 🕵️ StratComm Intelligence (Renamed intelligence briefings)
+  - 🌐 Thinkpages Social Platform (New social media layer)
+
+  ---
+  2. Feature Specification
+
+  2.1 Thinkpages Social Platform
+
+  Account Creation System
+
+  - Account Limit: 25 total accounts per player across all layers
+  - Three Account Types:
+    - 🏛️ Government (3-5 accounts): Presidential, ministerial, diplomatic corps
+    - 📺 Media (5-10 accounts): News organizations, journalists, bloggers
+    - 👥 Citizens (10-17 accounts): Activists, influencers, common people
+
+  Account Builder Interface
+
+  ┌─ Create Thinkpages Account ──────────────────┐
+  │ Account Type: [Gov] [Media] [Citizens]       │
+  │                                              │
+  │ Personal Info:                               │
+  │ First Name: [___________] Last: [___________] │
+  │ Username: @[___________] ✓ Available         │
+  │ [ ] Verified Account (Blue checkmark)        │
+  │                                              │
+  │ Profile Picture: [Upload] [Generate]         │
+  │ Bio: [________________________]             │
+  │                                              │
+  │ Account Settings:                            │
+  │ Posting Frequency: [Active] [Moderate] [Low] │
+  │ Political Lean: [Left] [Center] [Right]      │
+  │ Personality: [Serious] [Casual] [Satirical]  │
+  │                                              │
+  │ [Create Account]                             │
+  └──────────────────────────────────────────────┘
+
+  Core Social Mechanics (Pre-Elon Twitter Style)
+
+  - Posts: 280 character limit with media attachments
+  - Interactions:
+    - 💭 Reply/Comment threads
+    - 🔄 Repost/Retweet
+    - ❤️ Like + Discord-style emoji reactions (👍👎😂😭🔥) (including reactions from the ixnay discord server; use the discord bot)
+    - 📌 Pin posts
+    - 🔖 Bookmark posts
+  - @Mentions: Tag other accounts with autocomplete
+  - Hashtags: #trending topics with analytics
+  - Verification: Blue checkmarks for official accounts
+
+  2.2 StratComm Intelligence Tab
+
+  Renamed professional intelligence system maintaining current functionality:
+  - Diplomatic Briefings: Embassy networks, secure channels
+  - Intelligence Reports: Economic analysis, threat assessments
+  - Clearance Levels: PUBLIC → RESTRICTED → CONFIDENTIAL
+  - Live Intelligence Feed: Real diplomatic events
+
+  ---
+  3. Data Integration & Technical Architecture
+
+  3.1 Existing Data Utilization
+
+  Leverage Current Systems:
+  - SocialMetrics → Thinkpages engagement analytics
+  - DiplomaticRelation → Government account diplomatic posts
+  - NationalMilestone → Citizen celebrations and reactions
+  - EnhancedCountryProfileData → Account profile context
+  - Current LiveDiplomaticFeed → StratComm intelligence events
+
+  3.2 New Database Schema
+
+  // Extend existing schema
+  interface ThinkpagesAccount {
+    id: string;
+    countryId: string; // Links to existing country
+    accountType: 'government' | 'media' | 'citizen';
+    username: string; // @handle
+    displayName: string;
+    firstName: string;
+    lastName: string;
+    bio: string;
+    profileImageUrl?: string;
+    verified: boolean;
+    followerCount: number;
+    followingCount: number;
+    postCount: number;
+    accountSettings: {
+      postingFrequency: 'active' | 'moderate' | 'low';
+      politicalLean: 'left' | 'center' | 'right';
+      personality: 'serious' | 'casual' | 'satirical';
+    };
+    createdAt: string;
+    isActive: boolean;
+  }
+
+  interface ThinkpagesPost {
+    id: string;
+    accountId: string;
+    content: string;
+    mediaAttachments?: MediaAttachment[];
+    hashtags: string[];
+    mentions: string[]; // @username references
+    postType: 'original' | 'repost' | 'reply';
+    parentPostId?: string; // For replies
+    repostOfId?: string; // For reposts
+    reactions: PostReaction[];
+    likeCount: number;
+    repostCount: number;
+    replyCount: number;
+    impressions: number;
+    timestamp: string; // IxTime
+    trending?: boolean;
+    pinned?: boolean;
+    visibility: 'public' | 'followers' | 'mentioned';
+  }
+
+  interface PostReaction {
+    id: string;
+    postId: string;
+    accountId: string;
+    reactionType: 'like' | 'laugh' | 'angry' | 'sad' | 'fire' | 'thumbsup' | 'thumbsdown';
+    timestamp: string;
+  }
+
+  3.3 AI Content Generation
+
+  Smart Auto-Posting System:
+  - Government accounts react to economic milestones with official statements [settings feature to choose which accounts]
+  - Media accounts generate news reports from NationalMilestone events
+  - Citizen accounts create trending discussions around player actions
+  - Use existing EconomicYearData to trigger relevant economic posts
+
+  ---
+  4. User Experience Design
+
+  4.1 UI Layout (Glass Physics Integration)
+
+  ┌─ Thinkpages ─────────────────────────────────┐
+  │ [StratComm Intel] [Social Platform]          │
+  │                                              │
+  │ Social Platform Tab:                         │
+  │ ┌─Account Manager─┐ ┌─Main Feed──────────────┐│
+  │ │🏛️ Government (3)│ │ Trending: #EconGrowth ││
+  │ │📺 Media (7)     │ │ ┌─@PresOffice────────┐ ││
+  │ │👥 Citizens (12) │ │ │ Economic progress  │ ││
+  │ │                 │ │ │ exceeds targets... │ ││
+  │ │ [+] Add Account │ │ │ 🔄32 💭12 ❤️89   │ ││
+  │ └─────────────────┘ │ └────────────────────┘ ││
+  │                     │ ┌─@CitizenDaily──────┐ ││
+  │                     │ │ Gov claims success  │ ││
+  │                     │ │ but prices rising   │ ││
+  │                     │ │ 💭45 ❤️23 😭8       │ ││
+  │                     │ └────────────────────┘ ││
+  │                     └─────────────────────────┘│
+  └──────────────────────────────────────────────┘
+
+  4.2 Glass Physics Theme Integration
+
+  - Government: Gold accent (--intel-gold) with official glass depth
+  - Media: Blue accent (--intel-blue) with news glass styling
+  - Citizens: Purple accent (--social-purple) with community glass feel
+  - Interactions: Subtle glass button animations for likes/replies
+  - Posts: Glass cards with hierarchical depth based on engagement
+
+  ---
+  5. Game Mechanics & Features
+
+  5.1 Trending & Influence System
+
+  Zeitgeist Metrics:
+  - Real-time trending topics from account interactions
+  - National mood indicators based on citizen post sentiment
+  - Cross-border viral events affecting diplomatic relations
+  - Media bias analysis showing information flow distortion
+
+  5.2 Narrative Weaving
+
+  Developing Stories:
+  1. Economic milestone triggers government announcement
+  2. Media accounts provide analysis/commentary
+  3. Citizen accounts debate and react
+  4. Creates cohesive story threads players can follow
+
+  5.3 Strategic Gameplay
+
+  Information Warfare:
+  - Sponsored posts to influence public opinion
+  - Media manipulation through account relationships
+  - Diplomatic messaging via official government accounts
+  - Counter-narrative campaigns against rival nations
+
+  ---
+  6. Implementation Roadmap
+
+  Phase 1: Core Infrastructure (2 weeks)
+
+  - Database schema implementation
+  - Account creation UI components
+  - Basic post/reply system
+  - Tab integration replacing current Unified Feed
+
+  Phase 2: Social Mechanics (2 weeks)
+
+  - Emoji reactions system
+  - @mention and hashtag functionality
+  - Feed algorithms and trending topics
+  - Account verification and settings
+
+  Phase 3: AI & Automation (1.5 weeks)
+
+  - Auto-posting from existing game events
+  - Narrative weaving system
+  - Cross-account interaction patterns
+  - Sentiment analysis for mood metrics
+
+  Phase 4: Advanced Features (1 week)
+
+  - Media attachments and rich content
+  - Influence metrics and analytics
+  - Cross-border viral mechanics
+  - Information warfare tools
+
+  ---
+  7. Technical Integration Points
+
+  7.1 Existing API Reuse
+
+  - Leverage current tRPC country data APIs
+  - Extend SocialMetrics calculations for Thinkpages engagement
+  - Use existing IxTime system for post timestamps
+  - Integrate with current achievement/milestone system
+
+  7.2 New API Requirements
+
+  // New tRPC procedures needed
+  thinkpages: {
+    createAccount: procedure.input(CreateAccountInput).mutation(),
+    createPost: procedure.input(CreatePostInput).mutation(),
+    getAccountFeed: procedure.input(GetFeedInput).query(),
+    addReaction: procedure.input(ReactionInput).mutation(),
+    getTrendingTopics: procedure.query(),
+    getAccountsByCountry: procedure.input({countryId: string}).query()
+  }
+
+● Update Todos
+  ⎿  ☒ Create comprehensive PRD for Thinkpages feature with account creation, social mechanics, and          
+       integration
+     ☒ Review existing components and data structures for reuse
+     ☒ Define database schema and API requirements
+
+● 8. Success Metrics
+
+  Engagement Metrics
+
+  - Account creation rate: Target 15+ accounts per active player
+  - Daily post volume: 50+ posts per active country
+  - Cross-account interactions: 200+ reactions/replies daily
+  - Narrative coherence: 80%+ of posts relate to game events
+
+  Strategic Impact
+
+  - Information warfare usage: 60%+ of players use strategic posting
+  - Diplomatic influence: 40%+ of diplomatic events referenced in posts
+  - Economic narrative connection: 70%+ of economic milestones generate social discussion
+
+  ---
+  This PRD creates a streamlined, immersive social media layer that enhances rather than replaces the
+  strategic intelligence aspects, using existing data structures while adding rich social gameplay mechanics
+  that feel authentic to the Thinkpages in-universe platform.
+
+
+  ----- THINKPAGES LORE ------
+  {{WIP}}
+
+{{Infobox website
+| name = Thinkpages
+| logo = [[File:Logo da Tegi.png|150px]]
+| screenshot = 
+| caption = 
+| collapsible = no
+| type = {{wp|Social networking service}}<br />{{wp|Publisher}}
+| language = 
+| language_count = 94
+| language_footnote = 
+| founded = July 19, 2002 in Lacivitas, [[Hollona and Diorisia]]
+| area_served = Worldwide, except blocking countries
+| founder = Marcos Perle
+| CEO = Marcos Perle
+| url = {{URL|https://thinkpages.com}}
+| registration = Required (to do any activity)
+| users = {{increase}} 4.22&nbsp;billion monthly active users as of 2028
+| launch_date = July 19, 2002
+| current_status = Active
+| programming_language = {{wp|C++}}
+| footnotes = 
+|parent=[[Valtari]]|company_type=Subsidiary}}
+
+'''Thinkpages''' is an online {{wp|social media}} and {{wp|social networking service}} owned by Caphirian-based technology company [[Valtari]]. Created in [[Hollona and Diorisia]] in 2002 by military engineer Marcos Perle as a blog with social characteristics, the platform gradually transitioned from blog services to full social media interactivity. Until its IPO in 2011, membership was exclusively limited to the [[Levantine Union]].  However, after Thinkpages went public the company quickly expanded to over 50 countries and became a dominant social media platform, with over 700 million registered users by 2020. In 2022, Thinkpages was acquired by [[Valtari]], for $37.2 billion. As of 2030, Thinkpages claimed 4.22 billion monthly users. 
+
+Thinkpages can be accessed from devices with internet connectivity, such as personal computers, tablets and smartphones. After registering, users can create a profile revealing information about themselves. They can post text, photos and multimedia which are shared with any other users who have agreed to be their "friend" or, with different privacy settings, publicly. Users can also communicate directly with each other with Thinkshare messenger, join common-interest groups, and receive notifications on the activities of their Thinkpages friends and the pages they follow.
+
+Thinkpages has been ran by founder Marcos Perle since its inception, and since the acquisition he has had the title Executive of Thinkpages. 
+
+==History==
+Thinkpages was conceived of by Marcos Perle, an engineer attached to [[Levantine Union]] defense forces on the [[Vandarch]], in early 2002. Perle envisioned the space primarily as a blog for general thoughts mainly targeted at individuals on military bases throughout the Levantine Union, and with the blog features he included a primitive social networking component in order for military personnel to meet each other online, allowing the posting of photos, life events, and real names. Launched in July 2002, the service was successful in Vandarch area military postings, and began to spread throughout northern [[Dericania]] by early 2003 as personnel using the service were deployed to other regional bases. Civilian use of the platform is believed to have begun around this time, as users of the platform would return home following the end of a military tour. A military email was originally required to create an account, but it was opened to all residents of the Deric States by early 2004. The platform quickly expanded to [[Urcea]] in 2005.
+
+Thinkpages became available to the entire [[Levantine Union]] on July 1, 2006. The platform added support for users to upload videos in 2009. On January 1, 2011, Thinkpages launched worldwide, launching initially with language access for 25 different languages. From its worldwide launch in 2011, Thinkpages witnessed exponential growth in its user base. Its unique origin as a military-focused blog platform lent it a sense of camaraderie and genuine connectivity that other platforms lacked. The mostly-depreciated blog feature was eventually removed in [[2013]].
+
+===Feed===
+Thinkpages central communicative area is the "feed", an area where messages of up to 240 characters (known as "thinks"), photos, or videos may be posted by a user. Thinks, photos, and videos may be directly shared by users on their feed by pressing the "rethink" button.
+
+Beginning in the late 2010s, the short form repeatable video format became compatible on the feed.
+===Profile===
+User profiles on Thinkpages display all feed content generated by that user as well as photo albums, groups that user is a member of, and other related information such as location, relationship status with other users, and workplace. Users may tag other users in photographs on their profile, such as group or social setting photos.
+
+===Groups===
+Users on Thinkpages may join specific groups and make group-specific thinks that are only viewable by members of that group. Groups on Thinkpages quickly supplanted {{wp|message boards}} as the most popular way to form discussion, fan, and creative groups throughout much of the [[Occident]].
+===Thinkshare===
+Thinkshare is the built in messenger on the Thinkpages platform, allowing users to directly communicate with each other as well as share content and thinks posted by themselves and other users.
+
+==Reception==
+==Criticisms and controversies==
+==Impact==
+
+[[Category:IXWB]]
+[[Category:Hollona and Diorisia]]
+[[Category:Companies]]
+[[Category:Companies in Caphiria]]
+[[Category:Internet]]

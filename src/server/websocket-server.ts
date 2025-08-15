@@ -2,7 +2,7 @@
 // Integrates WebSocket server with Next.js application
 
 import { Server as HTTPServer } from 'http';
-import { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { IntelligenceWebSocketServer } from '~/lib/websocket/intelligence-websocket-server';
 import { IntelligenceBroadcastService } from '~/lib/intelligence-broadcast-service';
 

@@ -42,6 +42,7 @@ import Link from "next/link";
 import CountryFlag from "~/app/_components/CountryFlag";
 import { useTheme } from "~/context/theme-context";
 import { createUrl } from "~/lib/url-utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 
 function ProfileContent() {
   const { user, isLoaded } = useUser();
@@ -54,14 +55,34 @@ function ProfileContent() {
   const [flagUploadMode, setFlagUploadMode] = useState(false);
   const [uploadedFlagUrl, setUploadedFlagUrl] = useState<string | null>(null);
 
+  const [isEditingThinkpages, setIsEditingThinkpages] = useState(false);
+  const [thinkpagesPostingFrequency, setThinkpagesPostingFrequency] = useState('');
+  const [thinkpagesPoliticalLean, setThinkpagesPoliticalLean] = useState('');
+  const [thinkpagesPersonality, setThinkpagesPersonality] = useState('');
+
   // Get user profile
   const { data: userProfile, isLoading: profileLoading, refetch: refetchProfile } = api.users.getProfile.useQuery(
     { userId: user?.id || '' },
     { enabled: !!user?.id }
   );
 
+  // Get Thinkpages account
+  const { data: thinkpagesAccount, isLoading: thinkpagesAccountLoading, refetch: refetchThinkpagesAccount } = api.thinkpages.getThinkpagesAccountByUserId.useQuery(
+    { clerkUserId: user?.id || '' },
+    { enabled: !!user?.id }
+  );
+
+  useEffect(() => {
+    if (thinkpagesAccount) {
+      setThinkpagesPostingFrequency(thinkpagesAccount.postingFrequency);
+      setThinkpagesPoliticalLean(thinkpagesAccount.politicalLean);
+      setThinkpagesPersonality(thinkpagesAccount.personality);
+    }
+  }, [thinkpagesAccount]);
+
   // Mutations
   const updateCountryNameMutation = api.countries.updateCountryName.useMutation();
+  const updateThinkpagesAccountMutation = api.thinkpages.updateAccount.useMutation();
 
   const handleUpdateCountryName = async () => {
     if (!userProfile?.countryId || !newCountryName.trim()) return;
@@ -525,6 +546,130 @@ function ProfileContent() {
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                           Choose your preferred theme. System will follow your operating system's theme setting.
                         </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Thinkpages Account Settings */}
+                {thinkpagesAccount && (
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center">
+                        <User className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-2" />
+                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          Thinkpages Account Settings
+                        </h2>
+                      </div>
+                      <div>
+                        {isEditingThinkpages ? (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await updateThinkpagesAccountMutation.mutateAsync({
+                                    accountId: thinkpagesAccount.id,
+                                    postingFrequency: thinkpagesPostingFrequency as 'active' | 'moderate' | 'low',
+                                    politicalLean: thinkpagesPoliticalLean as 'left' | 'center' | 'right',
+                                    personality: thinkpagesPersonality as 'serious' | 'casual' | 'satirical',
+                                  });
+                                  toast.success('Thinkpages settings updated!');
+                                  setIsEditingThinkpages(false);
+                                  refetchThinkpagesAccount();
+                                } catch (error: any) {
+                                  toast.error(error.message || 'Failed to update Thinkpages settings');
+                                }
+                              }}
+                              disabled={updateThinkpagesAccountMutation.isLoading}
+                              className="px-3 py-1 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white rounded-md text-sm disabled:opacity-50"
+                            >
+                              <Save className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setIsEditingThinkpages(false);
+                                // Reset to original values if cancelled
+                                if (thinkpagesAccount) {
+                                  setThinkpagesPostingFrequency(thinkpagesAccount.postingFrequency);
+                                  setThinkpagesPoliticalLean(thinkpagesAccount.politicalLean);
+                                  setThinkpagesPersonality(thinkpagesAccount.personality);
+                                }
+                              }}
+                              className="px-3 py-1 bg-gray-600 hover:bg-gray-700 dark:bg-gray-500 dark:hover:bg-gray-600 text-white rounded-md text-sm"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setIsEditingThinkpages(true)}
+                            className="px-3 py-1 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300"
+                          >
+                            <Edit3 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Posting Frequency
+                        </label>
+                        {isEditingThinkpages ? (
+                          <Select value={thinkpagesPostingFrequency} onValueChange={setThinkpagesPostingFrequency}>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select frequency" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="active">Active</SelectItem>
+                              <SelectItem value="moderate">Moderate</SelectItem>
+                              <SelectItem value="low">Low</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <p className="text-gray-900 dark:text-white capitalize">{thinkpagesPostingFrequency}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Political Lean
+                        </label>
+                        {isEditingThinkpages ? (
+                          <Select value={thinkpagesPoliticalLean} onValueChange={setThinkpagesPoliticalLean}>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select lean" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="left">Left</SelectItem>
+                              <SelectItem value="center">Center</SelectItem>
+                              <SelectItem value="right">Right</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <p className="text-gray-900 dark:text-white capitalize">{thinkpagesPoliticalLean}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Personality
+                        </label>
+                        {isEditingThinkpages ? (
+                          <Select value={thinkpagesPersonality} onValueChange={setThinkpagesPersonality}>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select personality" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="serious">Serious</SelectItem>
+                              <SelectItem value="casual">Casual</SelectItem>
+                              <SelectItem value="satirical">Satirical</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <p className="text-gray-900 dark:text-white capitalize">{thinkpagesPersonality}</p>
+                        )}
                       </div>
                     </div>
                   </div>

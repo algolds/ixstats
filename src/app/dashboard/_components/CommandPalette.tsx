@@ -9,7 +9,7 @@ import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, C
 import { createUrl } from "~/lib/url-utils";
 
 interface UserProfile {
-  countryId?: string;
+  countryId: string | null;
 }
 
 interface CommandPaletteProps {

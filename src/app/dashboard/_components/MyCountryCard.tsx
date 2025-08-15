@@ -53,6 +53,7 @@ interface MyCountryCardProps {
   setActivityPopoverOpen: (index: number | null) => void;
   isRippleActive: boolean;
   isGlobalCardSlid: boolean;
+  className?: string;
 }
 
 export function MyCountryCard({ 
@@ -62,13 +63,12 @@ export function MyCountryCard({
   setExpandedCards, 
   setActivityPopoverOpen,
   isRippleActive,
-  isGlobalCardSlid 
+  isGlobalCardSlid,
+  className 
 }: MyCountryCardProps) {
   return (
     <motion.div
-      className={cn(
-        isGlobalCardSlid ? "lg:col-span-12" : "lg:col-span-8"
-      )}
+      className={cn(className)}
       style={{ 
         willChange: isRippleActive || isGlobalCardSlid ? 'transform' : 'auto'
       }}
@@ -89,7 +89,7 @@ export function MyCountryCard({
         <motion.div
           className={cn(
             "glass-hierarchy-parent relative overflow-hidden group",
-            "rounded-xl border border-neutral-200 dark:border-white/[0.2] p-6 transition-all duration-200",
+            "rounded-xl border border-neutral-200 dark:border-white/[0.2] p-5 transition-all duration-200",
             "hover:shadow-xl hover:shadow-yellow-500/10 dark:hover:shadow-yellow-400/20 mycountry-card"
           )}
           whileHover={{ y: -2 }}
@@ -141,7 +141,7 @@ export function MyCountryCard({
           {/* Content Layout */}
           <div className="relative z-10 h-full flex flex-col">
             {/* Top Section - Country Info */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-8 rounded border border-white/30 overflow-hidden shadow-lg">
                   {countryData && <SimpleFlag countryName={countryData.name} className="w-full h-full object-cover" />}
@@ -199,7 +199,7 @@ export function MyCountryCard({
 
             {/* National Performance Metrics Section */}
             {countryData && (
-              <ThemedTabContent theme="executive" className="tab-content-enter mb-6">
+              <ThemedTabContent theme="executive" className="tab-content-enter mb-5">
                 <div className="space-y-4">
                   <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
                     <BarChart3 className="h-5 w-5 text-green-400" />
@@ -208,7 +208,7 @@ export function MyCountryCard({
                   
                   <div className="grid grid-cols-3 gap-3">
                     {/* Economic Performance */}
-                    <div className="glass-hierarchy-child p-4 rounded-lg text-center cursor-pointer hover:scale-105 transition-transform"
+                    <div className="glass-hierarchy-child p-3 rounded-lg text-center cursor-pointer hover:scale-105 transition-transform"
                          onClick={() => setActivityPopoverOpen(0)}>
                       <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-green-400/20 flex items-center justify-center">
                         <TrendingUp className="h-6 w-6 text-green-400" />
@@ -220,7 +220,7 @@ export function MyCountryCard({
                     </div>
                     
                     {/* Social Performance */}
-                    <div className="glass-hierarchy-child p-4 rounded-lg text-center cursor-pointer hover:scale-105 transition-transform"
+                    <div className="glass-hierarchy-child p-3 rounded-lg text-center cursor-pointer hover:scale-105 transition-transform"
                          onClick={() => setActivityPopoverOpen(1)}>
                       <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-blue-400/20 flex items-center justify-center">
                         <Users className="h-6 w-6 text-blue-400" />
@@ -232,7 +232,7 @@ export function MyCountryCard({
                     </div>
                     
                     {/* Governance Performance */}
-                    <div className="glass-hierarchy-child p-4 rounded-lg text-center cursor-pointer hover:scale-105 transition-transform"
+                    <div className="glass-hierarchy-child p-3 rounded-lg text-center cursor-pointer hover:scale-105 transition-transform"
                          onClick={() => setActivityPopoverOpen(2)}>
                       <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-purple-400/20 flex items-center justify-center">
                         <Crown className="h-6 w-6 text-purple-400" />
@@ -245,7 +245,7 @@ export function MyCountryCard({
                   </div>
                   
                   {/* Performance Summary */}
-                  <div className="glass-hierarchy-child p-3 rounded-lg">
+                  <div className="glass-hierarchy-child p-2.5 rounded-lg">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Overall Performance:</span>
                       <div className="flex items-center gap-2">
@@ -277,25 +277,25 @@ export function MyCountryCard({
             {/* Key Metrics Grid - Always visible */}
             {countryData && (
               <div className="grid grid-cols-2 gap-3 mb-6">
-                <div className="glass-hierarchy-child p-3 rounded-lg text-center">
+                <div className="glass-hierarchy-child p-2.5 rounded-lg text-center">
                   <div className="text-xs text-muted-foreground mb-1">Population</div>
                   <div className="text-sm font-bold text-blue-400">
                     {((countryData.currentPopulation || 0) / 1000000).toFixed(1)}M
                   </div>
                 </div>
-                <div className="glass-hierarchy-child p-3 rounded-lg text-center">
+                <div className="glass-hierarchy-child p-2.5 rounded-lg text-center">
                   <div className="text-xs text-muted-foreground mb-1">GDP per Capita</div>
                   <div className="text-sm font-bold text-green-400">
                     ${((countryData.currentGdpPerCapita || 0) / 1000).toFixed(0)}k
                   </div>
                 </div>
-                <div className="glass-hierarchy-child p-3 rounded-lg text-center">
+                <div className="glass-hierarchy-child p-2.5 rounded-lg text-center">
                   <div className="text-xs text-muted-foreground mb-1">Employment</div>
                   <div className="text-sm font-bold text-purple-400">
                     {(96.5 - ((countryData.adjustedGdpGrowth || 0) < 0 ? 2 : 0)).toFixed(1)}%
                   </div>
                 </div>
-                <div className="glass-hierarchy-child p-3 rounded-lg text-center">
+                <div className="glass-hierarchy-child p-2.5 rounded-lg text-center">
                   <div className="text-xs text-muted-foreground mb-1">Economic Health</div>
                   <div className="text-sm font-bold text-green-400">
                     {activityRingsData?.economicVitality || 0}%
@@ -323,7 +323,7 @@ export function MyCountryCard({
                       </h4>
                       <div className="grid grid-cols-2 gap-3">
                         {/* Location */}
-                        <div className="glass-hierarchy-child p-3 rounded-lg">
+                        <div className="glass-hierarchy-child p-2.5 rounded-lg">
                           <div className="flex items-center gap-2 mb-2">
                             <Globe className="h-4 w-4 text-blue-400" />
                             <div className="text-xs text-muted-foreground">Location</div>
@@ -334,7 +334,7 @@ export function MyCountryCard({
                         </div>
                         
                         {/* Government Type */}
-                        <div className="glass-hierarchy-child p-3 rounded-lg">
+                        <div className="glass-hierarchy-child p-2.5 rounded-lg">
                           <div className="flex items-center gap-2 mb-2">
                             <Building2 className="h-4 w-4 text-purple-400" />
                             <div className="text-xs text-muted-foreground">Government</div>
@@ -345,7 +345,7 @@ export function MyCountryCard({
                         </div>
                         
                         {/* Leader */}
-                        <div className="glass-hierarchy-child p-3 rounded-lg">
+                        <div className="glass-hierarchy-child p-2.5 rounded-lg">
                           <div className="flex items-center gap-2 mb-2">
                             <Crown className="h-4 w-4 text-yellow-400" />
                             <div className="text-xs text-muted-foreground">Leader</div>
@@ -356,7 +356,7 @@ export function MyCountryCard({
                         </div>
                         
                         {/* Religion */}
-                        <div className="glass-hierarchy-child p-3 rounded-lg">
+                        <div className="glass-hierarchy-child p-2.5 rounded-lg">
                           <div className="flex items-center gap-2 mb-2">
                             <Star className="h-4 w-4 text-indigo-400" />
                             <div className="text-xs text-muted-foreground">Religion</div>
@@ -376,7 +376,7 @@ export function MyCountryCard({
                       </h4>
                       <div className="space-y-3">
                         {/* Unemployment Rate */}
-                        <div className="glass-hierarchy-child p-3 rounded-lg">
+                        <div className="glass-hierarchy-child p-2.5 rounded-lg">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs text-muted-foreground">Unemployment Rate</span>
                             <span className="text-xs text-muted-foreground">{(3.5 + ((countryData.adjustedGdpGrowth || 0) < 0 ? 2 : 0)).toFixed(1)}%</span>
@@ -390,7 +390,7 @@ export function MyCountryCard({
                         </div>
                         
                         {/* Labor Force Participation */}
-                        <div className="glass-hierarchy-child p-3 rounded-lg">
+                        <div className="glass-hierarchy-child p-2.5 rounded-lg">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs text-muted-foreground">Labor Force Participation</span>
                             <span className="text-xs text-muted-foreground">{(68.5 + ((countryData.currentGdpPerCapita || 0) / 100000) * 5).toFixed(1)}%</span>
@@ -404,7 +404,7 @@ export function MyCountryCard({
                         </div>
                         
                         {/* Economic Growth Health */}
-                        <div className="glass-hierarchy-child p-3 rounded-lg">
+                        <div className="glass-hierarchy-child p-2.5 rounded-lg">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs text-muted-foreground">Economic Growth Health</span>
                             <span className="text-xs text-muted-foreground">{((countryData.adjustedGdpGrowth || 0) * 100).toFixed(1)}%</span>
@@ -418,7 +418,7 @@ export function MyCountryCard({
                         </div>
                         
                         {/* Economic Stability Index */}
-                        <div className="glass-hierarchy-child p-3 rounded-lg">
+                        <div className="glass-hierarchy-child p-2.5 rounded-lg">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs text-muted-foreground">Economic Stability Index</span>
                             <span className="text-xs text-muted-foreground">{activityRingsData?.economicVitality || 0}%</span>
