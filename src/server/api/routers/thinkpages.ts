@@ -417,7 +417,7 @@ export const thinkpagesRouter = createTRPCRouter({
           parentPostId: input.parentPostId,
           repostOfId: input.repostOfId,
           visibility: input.visibility,
-          ixTimeTimestamp: new Date(IxTime.getCurrentIxTime())
+          ixTimeTimestamp: new Date() // Store real-world time for social media timestamps
         },
         include: {
           account: true,
@@ -640,7 +640,7 @@ export const thinkpagesRouter = createTRPCRouter({
         },
         orderBy: [
           { pinned: 'desc' },
-          { ixTimeTimestamp: 'desc' }
+          { createdAt: 'desc' }
         ],
         take: input.limit,
         cursor: input.cursor ? { id: input.cursor } : undefined,
@@ -655,7 +655,7 @@ export const thinkpagesRouter = createTRPCRouter({
           acc[reaction.reactionType] = (acc[reaction.reactionType] || 0) + 1;
           return acc;
         }, {} as Record<string, number>),
-        timestamp: post.ixTimeTimestamp.toISOString()
+        timestamp: post.createdAt.toISOString()
       }));
       
       return {
@@ -773,7 +773,7 @@ export const thinkpagesRouter = createTRPCRouter({
       return {
         ...post,
         hashtags: post.hashtags ? JSON.parse(post.hashtags) : [],
-        timestamp: post.ixTimeTimestamp.toISOString()
+        timestamp: post.createdAt.toISOString()
       };
     }),
 
@@ -1205,7 +1205,7 @@ export const thinkpagesRouter = createTRPCRouter({
           replyToId: input.replyToId,
           mentions: input.mentions ? JSON.stringify(input.mentions) : null,
           attachments: input.attachments ? JSON.stringify(input.attachments) : null,
-          ixTimeTimestamp: new Date(IxTime.getCurrentIxTime())
+          ixTimeTimestamp: new Date() // Store real-world time for social media timestamps // Keep IxTime for reference
         },
         include: {
           account: true,
@@ -1218,33 +1218,283 @@ export const thinkpagesRouter = createTRPCRouter({
       return message;
     }),
 
+  // Update a ThinkTank group
+  updateThinktank: publicProcedure
+    .input(z.object({
+      groupId: z.string(),
+      name: z.string().min(1).max(100).optional(),
+      description: z.string().max(500).optional(),
+      avatar: z.string().url().optional(),
+      type: z.enum(['public', 'private', 'invite_only']).optional(),
+      category: z.string().optional(),
+      tags: z.array(z.string()).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+      const { groupId, ...updateData } = input;
+
+      const group = await db.thinktankGroup.update({
+        where: { id: groupId },
+        data: {
+          ...updateData,
+          tags: updateData.tags ? JSON.stringify(updateData.tags) : undefined,
+        },
+      });
+
+      return group;
+    }),
+
+  deleteThinktank: publicProcedure
+    .input(z.object({ groupId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+      // Add logic to check if user is owner/admin
+      await db.thinktankGroup.delete({
+        where: { id: input.groupId },
+      });
+      return { success: true };
+    }),
+
+  updateMemberRole: publicProcedure
+    .input(z.object({
+      groupId: z.string(),
+      accountId: z.string(),
+      role: z.enum(['admin', 'member']),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+      await db.thinktankMember.update({
+        where: {
+          groupId_accountId: {
+            groupId: input.groupId,
+            accountId: input.accountId,
+          },
+        },
+        data: { role: input.role },
+      });
+      return { success: true };
+    }),
+
+  removeMemberFromThinktank: publicProcedure
+    .input(z.object({
+      groupId: z.string(),
+      accountId: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+      await db.thinktankMember.delete({
+        where: {
+          groupId_accountId: {
+            groupId: input.groupId,
+            accountId: input.accountId,
+          },
+        },
+      });
+      // Decrement member count
+      await db.thinktankGroup.update({
+        where: { id: input.groupId },
+        data: { memberCount: { decrement: 1 } },
+      });
+      return { success: true };
+    }),
+
+  // Invite users to a ThinkTank group
+  inviteToThinktank: publicProcedure
+    .input(z.object({
+      groupId: z.string(),
+      accountIds: z.array(z.string()),
+      invitedBy: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      const invites = await db.thinktankInvite.createMany({
+        data: input.accountIds.map(accountId => ({
+          groupId: input.groupId,
+          invitedUser: accountId,
+          invitedBy: input.invitedBy,
+        })),
+        skipDuplicates: true,
+      });
+
+      return invites;
+    }),
+
+  // Get collaborative documents for a ThinkTank
+  getThinktankDocuments: publicProcedure
+    .input(z.object({ groupId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { db } = ctx;
+      const documents = await db.collaborativeDoc.findMany({
+        where: { groupId: input.groupId },
+        include: { creator: true, lastEditor: true },
+        orderBy: { updatedAt: 'desc' },
+      });
+      return documents;
+    }),
+
+  // Create a collaborative document
+  createThinktankDocument: publicProcedure
+    .input(z.object({
+      groupId: z.string(),
+      title: z.string().min(1),
+      createdBy: z.string(), // accountId
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+      const document = await db.collaborativeDoc.create({
+        data: {
+          groupId: input.groupId,
+          title: input.title,
+          createdBy: input.createdBy,
+          lastEditBy: input.createdBy,
+        },
+      });
+      return document;
+    }),
+
+  // Add reaction to a Thinkshare message
+  addReactionToMessage: publicProcedure
+    .input(z.object({
+      messageId: z.string(),
+      accountId: z.string(),
+      reaction: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+      const { messageId, accountId, reaction } = input;
+
+      const message = await db.thinkshareMessage.findUnique({
+        where: { id: messageId },
+        select: { reactions: true },
+      });
+
+      if (!message) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Message not found' });
+      }
+
+      const reactions = message.reactions ? JSON.parse(message.reactions as string) : {};
+      reactions[reaction] = (reactions[reaction] || 0) + 1;
+
+      await db.thinkshareMessage.update({
+        where: { id: messageId },
+        data: { reactions: JSON.stringify(reactions) },
+      });
+
+      return { success: true };
+    }),
+
+  // Remove reaction from a Thinkshare message
+  removeReactionFromMessage: publicProcedure
+    .input(z.object({
+      messageId: z.string(),
+      reaction: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+      const { messageId, reaction } = input;
+
+      const message = await db.thinkshareMessage.findUnique({
+        where: { id: messageId },
+        select: { reactions: true },
+      });
+
+      if (!message) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Message not found' });
+      }
+
+      const reactions = message.reactions ? JSON.parse(message.reactions as string) : {};
+      if (reactions[reaction]) {
+        reactions[reaction]--;
+        if (reactions[reaction] === 0) {
+          delete reactions[reaction];
+        }
+      }
+
+      await db.thinkshareMessage.update({
+        where: { id: messageId },
+        data: { reactions: JSON.stringify(reactions) },
+      });
+
+      return { success: true };
+    }),
+
+  // Edit a Thinkshare message
+  editMessage: publicProcedure
+    .input(z.object({
+      messageId: z.string(),
+      content: z.string().min(1),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+      const { messageId, content } = input;
+
+      await db.thinkshareMessage.update({
+        where: { id: messageId },
+        data: { content, editedAt: new Date() },
+      });
+
+      return { success: true };
+    }),
+
+  // Delete a Thinkshare message
+  deleteMessage: publicProcedure
+    .input(z.object({ messageId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+      const { messageId } = input;
+
+      await db.thinkshareMessage.update({
+        where: { id: messageId },
+        data: { deletedAt: new Date(), content: '[deleted]' },
+      });
+
+      return { success: true };
+    }),
+
   // ===== THINKSHARE (MESSAGING) ENDPOINTS =====
 
   // Create a new conversation
   createConversation: publicProcedure
     .input(z.object({
       type: z.enum(['direct', 'group']).default('direct'),
-      participantIds: z.array(z.string()),
+      participantIds: z.array(z.string()).min(1, 'At least one participant is required'),
       name: z.string().optional(),
       avatar: z.string().url().optional()
     }))
     .mutation(async ({ ctx, input }) => {
+      console.log('createConversation API called with input:', input);
       const { db } = ctx;
 
-      // For direct conversations, ensure only 2 participants
-      if (input.type === 'direct' && input.participantIds.length !== 2) {
+      // Validate participantIds are not empty strings
+      const validParticipantIds = input.participantIds.filter(id => id && id.trim().length > 0);
+      if (validParticipantIds.length === 0) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'Direct conversations must have exactly 2 participants'
+          message: 'Valid participant IDs are required'
         });
       }
 
-      // Check if all participants exist
+      // For direct conversations, ensure 1-2 participants (allow self-messaging)
+      if (input.type === 'direct' && (validParticipantIds.length < 1 || validParticipantIds.length > 2)) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Direct conversations must have 1-2 participants'
+        });
+      }
+
+      // If only one participant (self-message), duplicate the ID
+      if (input.type === 'direct' && validParticipantIds.length === 1) {
+        validParticipantIds.push(validParticipantIds[0]!);
+      }
+
+      // Check if all unique participants exist
+      const uniqueParticipantIds = [...new Set(validParticipantIds)];
       const accounts = await db.thinkpagesAccount.findMany({
-        where: { id: { in: input.participantIds } }
+        where: { id: { in: uniqueParticipantIds } }
       });
 
-      if (accounts.length !== input.participantIds.length) {
+      if (accounts.length !== uniqueParticipantIds.length) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'One or more participants not found'
@@ -1253,12 +1503,13 @@ export const thinkpagesRouter = createTRPCRouter({
 
       // For direct conversations, check if conversation already exists
       if (input.type === 'direct') {
-        const existingConversation = await db.thinkshareConversation.findFirst({
+        // Simplified logic: find conversations with same participants
+        const allConversations = await db.thinkshareConversation.findMany({
           where: {
             type: 'direct',
             participants: {
-              every: {
-                accountId: { in: input.participantIds }
+              some: {
+                accountId: { in: uniqueParticipantIds }
               }
             }
           },
@@ -1267,8 +1518,14 @@ export const thinkpagesRouter = createTRPCRouter({
           }
         });
 
-        if (existingConversation && existingConversation.participants.length === 2) {
-          return existingConversation;
+        // Check each conversation to see if it matches our participant set
+        for (const conv of allConversations) {
+          const convParticipantIds = conv.participants.map(p => p.accountId).sort();
+          const inputParticipantIds = validParticipantIds.sort();
+          
+          if (JSON.stringify(convParticipantIds) === JSON.stringify(inputParticipantIds)) {
+            return conv;
+          }
         }
       }
 
@@ -1283,10 +1540,10 @@ export const thinkpagesRouter = createTRPCRouter({
 
       // Add participants
       await db.conversationParticipant.createMany({
-        data: input.participantIds.map(accountId => ({
+        data: validParticipantIds.map(accountId => ({
           conversationId: conversation.id,
           accountId,
-          role: input.type === 'group' && accountId === input.participantIds[0] ? 'admin' : 'participant'
+          role: input.type === 'group' && accountId === validParticipantIds[0] ? 'admin' : 'participant'
         }))
       });
 
@@ -1493,7 +1750,7 @@ export const thinkpagesRouter = createTRPCRouter({
           replyToId: input.replyToId,
           mentions: input.mentions ? JSON.stringify(input.mentions) : null,
           attachments: input.attachments ? JSON.stringify(input.attachments) : null,
-          ixTimeTimestamp: new Date(IxTime.getCurrentIxTime())
+          ixTimeTimestamp: new Date() // Store real-world time for social media timestamps // Keep IxTime for reference
         },
         include: {
           account: true,
@@ -1596,5 +1853,252 @@ export const thinkpagesRouter = createTRPCRouter({
       });
 
       return presence;
+    }),
+
+  // Get Discord server emojis
+  getDiscordEmojis: publicProcedure
+    .input(z.object({
+      guildId: z.string().optional()
+    }))
+    .query(async ({ input }) => {
+      try {
+        const botUrl = process.env.IXTIME_BOT_URL || 'http://localhost:3001';
+        const url = input.guildId 
+          ? `${botUrl}/emojis?guild=${input.guildId}`
+          : `${botUrl}/emojis`;
+        
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          signal: AbortSignal.timeout(5000) // 5 second timeout
+        });
+
+        if (!response.ok) {
+          throw new Error(`Discord bot responded with status ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to fetch Discord emojis');
+        }
+
+        return {
+          success: true,
+          emojis: data.emojis.map((emoji: any) => ({
+            id: emoji.id,
+            name: emoji.name,
+            url: emoji.url,
+            animated: emoji.animated,
+            guild: emoji.guild
+          })),
+          count: data.count
+        };
+      } catch (error) {
+        console.error('Error fetching Discord emojis:', error);
+        return {
+          success: false,
+          emojis: [],
+          count: 0,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        };
+      }
+    }),
+
+  // Update a post
+  updatePost: publicProcedure
+    .input(z.object({
+      postId: z.string(),
+      content: z.string().min(1).max(1000),
+      accountId: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+      
+      // Verify ownership
+      const post = await db.thinkpagesPost.findUnique({
+        where: { id: input.postId },
+        select: { accountId: true }
+      });
+      
+      if (!post) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Post not found'
+        });
+      }
+      
+      if (post.accountId !== input.accountId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You can only edit your own posts'
+        });
+      }
+      
+      const updatedPost = await db.thinkpagesPost.update({
+        where: { id: input.postId },
+        data: { 
+          content: input.content,
+          updatedAt: new Date()
+        },
+        include: {
+          account: true,
+          reactions: true
+        }
+      });
+      
+      return updatedPost;
+    }),
+
+  // Delete a post
+  deletePost: publicProcedure
+    .input(z.object({
+      postId: z.string(),
+      accountId: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+      
+      // Verify ownership
+      const post = await db.thinkpagesPost.findUnique({
+        where: { id: input.postId },
+        select: { accountId: true }
+      });
+      
+      if (!post) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Post not found'
+        });
+      }
+      
+      if (post.accountId !== input.accountId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You can only delete your own posts'
+        });
+      }
+      
+      await db.thinkpagesPost.delete({
+        where: { id: input.postId }
+      });
+      
+      return { success: true };
+    }),
+
+  // Pin/unpin a post
+  pinPost: publicProcedure
+    .input(z.object({
+      postId: z.string(),
+      accountId: z.string(),
+      pinned: z.boolean(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+      
+      // Verify ownership
+      const post = await db.thinkpagesPost.findUnique({
+        where: { id: input.postId },
+        select: { accountId: true }
+      });
+      
+      if (!post) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Post not found'
+        });
+      }
+      
+      if (post.accountId !== input.accountId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You can only pin your own posts'
+        });
+      }
+      
+      const updatedPost = await db.thinkpagesPost.update({
+        where: { id: input.postId },
+        data: { pinned: input.pinned }
+      });
+      
+      return updatedPost;
+    }),
+
+  // Bookmark/unbookmark a post
+  bookmarkPost: publicProcedure
+    .input(z.object({
+      postId: z.string(),
+      accountId: z.string(),
+      bookmarked: z.boolean(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+      
+      if (input.bookmarked) {
+        // Add bookmark
+        await db.postBookmark.upsert({
+          where: {
+            postId_accountId: {
+              postId: input.postId,
+              accountId: input.accountId
+            }
+          },
+          update: {},
+          create: {
+            postId: input.postId,
+            accountId: input.accountId
+          }
+        });
+      } else {
+        // Remove bookmark
+        await db.postBookmark.deleteMany({
+          where: {
+            postId: input.postId,
+            accountId: input.accountId
+          }
+        });
+      }
+      
+      return { success: true };
+    }),
+
+  // Flag a post
+  flagPost: publicProcedure
+    .input(z.object({
+      postId: z.string(),
+      accountId: z.string(),
+      reason: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+      
+      // Check if already flagged by this user
+      const existingFlag = await db.postFlag.findUnique({
+        where: {
+          postId_accountId: {
+            postId: input.postId,
+            accountId: input.accountId
+          }
+        }
+      });
+      
+      if (existingFlag) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'You have already flagged this post'
+        });
+      }
+      
+      await db.postFlag.create({
+        data: {
+          postId: input.postId,
+          accountId: input.accountId,
+          reason: input.reason
+        }
+      });
+      
+      return { success: true };
     })
 });

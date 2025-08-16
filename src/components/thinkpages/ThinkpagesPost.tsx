@@ -1,14 +1,10 @@
 "use client";
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '~/lib/utils';
-import { formatDistanceToNow } from 'date-fns';
+import { useRelativeTime } from '~/hooks/useRelativeTime';
 import { 
-  Heart, 
-  MessageCircle, 
-  Repeat2, 
-  Share, 
   MoreHorizontal, 
   Pin, 
   Bookmark, 
@@ -19,18 +15,23 @@ import {
   ThumbsUp, 
   ThumbsDown, 
   Flame, 
-  Crown, 
-  Newspaper, 
-  Users,
-  Loader2
+  Heart,
+  Edit,
+  Trash2,
+  Crown,
+  Newspaper,
+  Users
 } from 'lucide-react';
-import { Button } from '~/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
 import { Badge } from '~/components/ui/badge';
-import { ReactionPopup } from './ReactionPopup';
+import { Button } from '~/components/ui/button';
+import { Textarea } from '~/components/ui/textarea';
+import { PostActions } from './primitives/PostActions';
+import { AccountIndicator } from './primitives/AccountIndicator';
 import { api } from '~/trpc/react';
 import { toast } from 'sonner';
-import Linkify from 'linkify-react';
+// Removed Linkify as we now use formatContentEnhanced
+// import Linkify from 'linkify-react';
 import LinkifyIt from 'linkify-it';
 
 const linkifyIt = new LinkifyIt();
@@ -46,7 +47,11 @@ linkifyIt.add('@', {
       if (pos > 0 && text[pos - 1] === '@') {
         return false;
       }
-      return tail.match(self.re.mention)[0].length;
+      const matchResult = tail.match(self.re.mention);
+      if (matchResult) {
+        return matchResult[0].length;
+      }
+      return 0;
     }
     return 0;
   },
@@ -66,7 +71,8 @@ linkifyIt.add('#', {
       if (pos > 0 && text[pos - 1] === '#') {
         return false;
       }
-      return tail.match(self.re.hashtag)[0].length;
+      const matchResult = tail.match(self.re.hashtag);
+      return matchResult ? matchResult[0].length : 0;
     }
     return 0;
   },
@@ -86,6 +92,22 @@ interface ThinkpagesPostProps {
   onAccountClick?: (accountId: string) => void;
   compact?: boolean;
   showThread?: boolean;
+}
+
+function RelativeTimestamp({ timestamp }: { timestamp: Date | string | number }) {
+  const relativeTime = useRelativeTime(timestamp);
+  const date = new Date(timestamp);
+  const now = new Date();
+  const hoursDiff = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+  
+  return (
+    <span 
+      className="text-muted-foreground text-sm cursor-help"
+      title={`IxTime: ${date.toLocaleString()}`}
+    >
+      {hoursDiff > 24 ? date.toLocaleDateString() : relativeTime}
+    </span>
+  );
 }
 
 const ACCOUNT_TYPE_ICONS = {
@@ -114,80 +136,205 @@ export function ThinkpagesPost({
   currentUserAccountId = '',
   onLike,
   onRepost,
-  onReply,
-  onShare,
   onReaction,
   onAccountClick,
   compact = false,
   showThread = false
 }: ThinkpagesPostProps) {
-  const [showReactions, setShowReactions] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
-  const [isReposted, setIsReposted] = useState(false);
   const [showReplies, setShowReplies] = useState(false);
-  const [showReactionPopup, setShowReactionPopup] = useState(false);
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
+  const [showReplyComposer, setShowReplyComposer] = useState(false);
+  const [replyText, setReplyText] = useState('');
+
+  // Close more options when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showMoreOptions) {
+        setShowMoreOptions(false);
+      }
+    };
+
+    if (showMoreOptions) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showMoreOptions]);
 
   const addReactionMutation = api.thinkpages.addReaction.useMutation();
   const removeReactionMutation = api.thinkpages.removeReaction.useMutation();
+  const createPostMutation = api.thinkpages.createPost.useMutation();
+  const updatePostMutation = api.thinkpages.updatePost.useMutation();
+  const deletePostMutation = api.thinkpages.deletePost.useMutation();
+  const pinPostMutation = api.thinkpages.pinPost.useMutation();
+  const bookmarkPostMutation = api.thinkpages.bookmarkPost.useMutation();
+  const flagPostMutation = api.thinkpages.flagPost.useMutation();
 
-  const AccountTypeIcon = ACCOUNT_TYPE_ICONS[post.account.accountType as keyof typeof ACCOUNT_TYPE_ICONS];
-  const accountTypeColor = ACCOUNT_TYPE_COLORS[post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS];
 
-  const handleLike = useCallback(() => {
-    setIsLiked(!isLiked);
-    onLike?.(post.id);
-  }, [isLiked, onLike, post.id]);
-
-  const handleRepost = useCallback(() => {
-    setIsReposted(!isReposted);
-    onRepost?.(post.id);
-  }, [isReposted, onRepost, post.id]);
-
-  const handleReaction = useCallback(async (reactionType: string) => {
-    if (!currentUserAccountId) {
-      console.warn("currentUserAccountId is not defined. Cannot perform reaction.");
-      return;
-    }
-    const existingReaction = post.reactions.find((r: any) => r.accountId === currentUserAccountId);
-
+  const handlePin = useCallback(async () => {
+    if (!currentUserAccountId) return;
     try {
-      if (existingReaction && existingReaction.reactionType === reactionType) {
-        await removeReactionMutation.mutateAsync({ 
-          postId: post.id, 
-          accountId: currentUserAccountId 
-        });
-      } else {
-        await addReactionMutation.mutateAsync({ 
-          postId: post.id, 
-          accountId: currentUserAccountId,
-          reactionType 
-        });
-      }
-      onReaction?.(post.id, reactionType);
-      setShowReactions(false);
+      await pinPostMutation.mutateAsync({
+        postId: post.id,
+        accountId: currentUserAccountId,
+        pinned: !post.pinned
+      });
+      toast.success(post.pinned ? 'Post unpinned' : 'Post pinned');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update reaction');
+      toast.error(error.message || 'Failed to pin post');
     }
-  }, [addReactionMutation, removeReactionMutation, onReaction, post.id, post.reactions, currentUserAccountId]);
+  }, [pinPostMutation, post.id, post.pinned, currentUserAccountId]);
 
-  const formatContent = (content: string) => {
-    return (
-      <Linkify options={{ 
-        validate: linkifyIt.pretest.bind(linkifyIt),
-        find: linkifyIt.test.bind(linkifyIt),
-        normalize: linkifyIt.normalize.bind(linkifyIt),
-        tagName: 'a',
-        attributes: (href, type) => ({
-          className: type === 'mention' ? 'text-purple-500 hover:underline' : 'text-blue-500 hover:underline',
-        })
-      }}>
-        {content}
-      </Linkify>
-    );
+  const handleBookmark = useCallback(async () => {
+    if (!currentUserAccountId) return;
+    try {
+      await bookmarkPostMutation.mutateAsync({
+        postId: post.id,
+        accountId: currentUserAccountId,
+        bookmarked: true
+      });
+      toast.success('Post bookmarked');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to bookmark post');
+    }
+  }, [bookmarkPostMutation, post.id, currentUserAccountId]);
+
+  const handleFlag = useCallback(async () => {
+    if (!currentUserAccountId) return;
+    const reason = prompt('Why are you flagging this post?');
+    if (!reason) return;
+    
+    try {
+      await flagPostMutation.mutateAsync({
+        postId: post.id,
+        accountId: currentUserAccountId,
+        reason
+      });
+      toast.success('Post flagged');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to flag post');
+    }
+  }, [flagPostMutation, post.id, currentUserAccountId]);
+
+  const handleEdit = useCallback(async () => {
+    if (!currentUserAccountId || post.account.id !== currentUserAccountId) return;
+    const newContent = prompt('Edit your post:', post.content);
+    if (!newContent || newContent === post.content) return;
+    
+    try {
+      await updatePostMutation.mutateAsync({
+        postId: post.id,
+        accountId: currentUserAccountId,
+        content: newContent
+      });
+      toast.success('Post updated');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update post');
+    }
+  }, [updatePostMutation, post.id, post.content, post.account.id, currentUserAccountId]);
+
+  const handleDelete = useCallback(async () => {
+    if (!currentUserAccountId || post.account.id !== currentUserAccountId) return;
+    if (!confirm('Are you sure you want to delete this post?')) return;
+    
+    try {
+      await deletePostMutation.mutateAsync({
+        postId: post.id,
+        accountId: currentUserAccountId
+      });
+      toast.success('Post deleted');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete post');
+    }
+  }, [deletePostMutation, post.id, post.account.id, currentUserAccountId]);
+
+  const handleReply = useCallback(() => {
+    setShowReplyComposer(!showReplyComposer);
+    if (!showReplyComposer) {
+      // Enhanced @ mention with proper formatting
+      const mentionText = `@${post.account.username} `;
+      setReplyText(mentionText);
+      // Auto-focus the reply input after a short delay
+      setTimeout(() => {
+        const replyInput = document.querySelector('[data-reply-input]') as HTMLTextAreaElement;
+        if (replyInput) {
+          replyInput.focus();
+          replyInput.setSelectionRange(mentionText.length, mentionText.length);
+        }
+      }, 100);
+    }
+  }, [showReplyComposer, post.account.username]);
+
+  const handleSubmitReply = useCallback(async () => {
+    if (!replyText.trim() || !currentUserAccountId) return;
+    
+    try {
+      // Enhanced reply with hashtag and mention extraction
+      await createPostMutation.mutateAsync({
+        accountId: currentUserAccountId,
+        content: replyText,
+        parentPostId: post.id,
+        visibility: 'public',
+        hashtags: extractHashtags(replyText),
+        mentions: extractMentions(replyText)
+      });
+      toast.success('Reply posted!');
+      setReplyText('');
+      setShowReplyComposer(false);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to post reply');
+    }
+  }, [createPostMutation, replyText, currentUserAccountId, post.id]);
+
+  // Legacy format function - replaced by formatContentEnhanced
+  // const formatContent = (content: string) => {
+  //   return (
+  //     <Linkify options={{ 
+  //       validate: linkifyIt.pretest.bind(linkifyIt),
+  //       find: linkifyIt.test.bind(linkifyIt),
+  //       normalize: linkifyIt.normalize.bind(linkifyIt),
+  //       tagName: 'a',
+  //       attributes: (_, type) => ({
+  //         className: type === 'mention' ? 'text-purple-500 hover:underline' : 'text-blue-500 hover:underline',
+  //       })
+  //     }}>
+  //       {content}
+  //     </Linkify>
+  //   );
+  // };
+
+
+  // Enhanced hashtag and mention extraction functions
+  const extractHashtags = (text: string): string[] => {
+    const hashtagRegex = /#([a-zA-Z0-9_]+)/g;
+    const matches = text.match(hashtagRegex);
+    return matches ? matches.map(tag => tag.slice(1)) : [];
   };
 
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  const extractMentions = (text: string): string[] => {
+    const mentionRegex = /@([a-zA-Z0-9_]+)/g;
+    const matches = text.match(mentionRegex);
+    return matches ? matches.map(mention => mention.slice(1)) : [];
+  };
+
+  // Enhanced text formatting with better mention and hashtag styling
+  const formatContentEnhanced = (content: string) => {
+    // Replace hashtags
+    let formattedContent = content.replace(/#([a-zA-Z0-9_]+)/g, 
+      '<span class="text-blue-500 hover:underline cursor-pointer font-medium">#$1</span>'
+    );
+    
+    // Replace mentions
+    formattedContent = formattedContent.replace(/@([a-zA-Z0-9_]+)/g, 
+      '<span class="text-purple-500 hover:underline cursor-pointer font-medium">@$1</span>'
+    );
+    
+    // Replace URLs
+    formattedContent = formattedContent.replace(
+      /(https?:\/\/[^\s]+)/g,
+      '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">$1</a>'
+    );
+    
+    return formattedContent;
   };
 
   return (
@@ -228,8 +375,8 @@ export function ThinkpagesPost({
         >
           <Avatar className={compact ? "h-8 w-8" : "h-10 w-10"}>
             <AvatarImage src={post.account.profileImageUrl} />
-            <AvatarFallback className={accountTypeColor}>
-              {getInitials(post.account.displayName)}
+            <AvatarFallback className={`font-semibold ${ACCOUNT_TYPE_COLORS[post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || 'text-gray-500 bg-gray-500/20'}`}>
+              {post.account.displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
             </AvatarFallback>
           </Avatar>
         </button>
@@ -247,8 +394,8 @@ export function ThinkpagesPost({
               <Verified className="h-4 w-4 text-blue-500 fill-current" />
             )}
             
-            <div className={cn("p-1 rounded", accountTypeColor)}>
-              <AccountTypeIcon className="h-3 w-3" />
+            <div className={`p-1 rounded ${ACCOUNT_TYPE_COLORS[post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || 'text-gray-500 bg-gray-500/20'}`}>
+              {React.createElement(ACCOUNT_TYPE_ICONS[post.account.accountType as keyof typeof ACCOUNT_TYPE_ICONS] || Users, { className: "h-3 w-3" })}
             </div>
             
             <span className="text-muted-foreground text-sm">
@@ -257,9 +404,7 @@ export function ThinkpagesPost({
             
             <span className="text-muted-foreground text-sm">·</span>
             
-            <span className="text-muted-foreground text-sm">
-              {formatDistanceToNow(new Date(post.timestamp), { addSuffix: true })}
-            </span>
+            <RelativeTimestamp timestamp={post.timestamp} />
 
             {post.trending && (
               <Badge variant="secondary" className="text-xs bg-orange-500/20 text-orange-400">
@@ -274,14 +419,10 @@ export function ThinkpagesPost({
                 <div className="text-muted-foreground text-sm mb-1">
                   @{post.repostOf.account.username} · @{post.repostOf.account.displayName}
                 </div>
-                <div >
-                  {formatContent(post.repostOf.content)}
-                </div>
+                <div dangerouslySetInnerHTML={{ __html: formatContentEnhanced(post.repostOf.content) }} />
               </div>
             ) : (
-              <div>
-                {formatContent(post.content)}
-              </div>
+              <div dangerouslySetInnerHTML={{ __html: formatContentEnhanced(post.content) }} />
             )}
           </div>
 
@@ -298,76 +439,68 @@ export function ThinkpagesPost({
             </div>
           )}
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => onReply?.(post.id)}
-                className="flex items-center gap-1 text-muted-foreground hover:text-blue-500 transition-colors group"
+          <PostActions
+            postId={post.id}
+            currentUserAccountId={currentUserAccountId}
+            isLiked={post.reactions?.some((r: any) => r.accountId === currentUserAccountId && r.reactionType === 'like')}
+            isReposted={false} // TODO: Track repost status
+            likeCount={post.likeCount}
+            repostCount={post.repostCount}
+            replyCount={post.replyCount}
+            reactions={post.reactions || []}
+            reactionCounts={post.reactionCounts || {}}
+            onLike={onLike}
+            onRepost={onRepost}
+            onReply={() => handleReply()}
+            onShare={() => {
+              const postUrl = `${window.location.origin}/thinkpages/post/${post.id}`;
+              navigator.clipboard.writeText(postUrl);
+              toast.success('Post URL copied to clipboard!');
+              onShare?.(post.id);
+            }}
+            onReaction={onReaction}
+            showCounts={true}
+            size="md"
+          />
+
+          <div className="flex items-center justify-end">
+            <div className="relative">
+              <button 
+                onClick={() => setShowMoreOptions(!showMoreOptions)}
+                className="p-2 text-muted-foreground hover:text-foreground hover:bg-white/10 rounded-full transition-colors"
               >
-                <div className="p-2 rounded-full group-hover:bg-blue-500/20 transition-colors">
-                  <MessageCircle className="h-4 w-4" />
-                </div>
-                {post.replyCount > 0 && (
-                  <span className="text-sm">{post.replyCount}</span>
-                )}
+                <MoreHorizontal className="h-4 w-4" />
               </button>
-
-              <button
-                onClick={handleRepost}
-                className={cn(
-                  "flex items-center gap-1 transition-colors group",
-                  isReposted ? "text-green-500" : "text-muted-foreground hover:text-green-500"
-                )}
-              >
-                <div className="p-2 rounded-full group-hover:bg-green-500/20 transition-colors">
-                  <Repeat2 className="h-4 w-4" />
+              {showMoreOptions && (
+                <div className="absolute right-0 mt-2 w-48 bg-background border border-border rounded-lg shadow-lg z-50">
+                  {currentUserAccountId === post.account.id && (
+                    <>
+                      <button onClick={handlePin} className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-muted"> 
+                        <Pin className="h-4 w-4" /> 
+                        {post.pinned ? 'Unpin' : 'Pin'}
+                      </button>
+                      <button onClick={handleEdit} className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-muted"> 
+                        <Edit className="h-4 w-4" /> 
+                        Edit 
+                      </button>
+                      <button onClick={handleDelete} className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-muted text-destructive"> 
+                        <Trash2 className="h-4 w-4" /> 
+                        Delete 
+                      </button>
+                      <div className="border-t border-border my-1"></div>
+                    </>
+                  )}
+                  <button onClick={handleBookmark} className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-muted"> 
+                    <Bookmark className="h-4 w-4" /> 
+                    Bookmark 
+                  </button>
+                  <button onClick={handleFlag} className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-muted"> 
+                    <Flag className="h-4 w-4" /> 
+                    Flag 
+                  </button>
                 </div>
-                {post.repostCount > 0 && (
-                  <span className="text-sm">{post.repostCount}</span>
-                )}
-              </button>
-
-              <div className="relative">
-                <button
-                  onClick={handleLike}
-                  onMouseEnter={() => setShowReactionPopup(true)}
-                  onMouseLeave={() => setShowReactionPopup(false)}
-                  className={cn(
-                    "flex items-center gap-1 transition-colors group",
-                    isLiked ? "text-red-500" : "text-muted-foreground hover:text-red-500"
-                  )}
-                >
-                  <div className="p-2 rounded-full group-hover:bg-red-500/20 transition-colors">
-                    <Heart className={cn("h-4 w-4", isLiked && "fill-current")} />
-                  </div>
-                  {post.likeCount > 0 && (
-                    <span className="text-sm">{post.likeCount}</span>
-                  )}
-                </button>
-
-                <AnimatePresence>
-                  {showReactionPopup && (
-                    <ReactionPopup
-                      reactions={post.reactions}
-                      onSelectReaction={handleReaction}
-                    />
-                  )}
-                </AnimatePresence>
-              </div>
-
-              <button
-                onClick={() => onShare?.(post.id)}
-                className="flex items-center gap-1 text-muted-foreground hover:text-blue-500 transition-colors group"
-              >
-                <div className="p-2 rounded-full group-hover:bg-blue-500/20 transition-colors">
-                  <Share className="h-4 w-4" />
-                </div>
-              </button>
+              )}
             </div>
-
-            <button className="p-2 text-muted-foreground hover:text-foreground hover:bg-white/10 rounded-full transition-colors">
-              <MoreHorizontal className="h-4 w-4" />
-            </button>
           </div>
 
           {post.reactionCounts && Object.keys(post.reactionCounts).length > 0 && (
@@ -377,13 +510,62 @@ export function ThinkpagesPost({
                 if (!Icon || (count as number) === 0) return null;
                 return (
                   <div key={type} className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <Icon className="h-4 w-4" />
-                    <span>{count as any}</span>
+                    {React.createElement(Icon, { className: "h-4 w-4" })}
+                    <span>{typeof count === 'number' ? count : 0}</span>
                   </div>
                 );
               })}
             </div>
           )}
+
+          {/* Reply Composer */}
+          <AnimatePresence>
+            {showReplyComposer && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mt-3 p-3 border border-border rounded-lg bg-muted/30"
+              >
+                <div className="flex gap-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>You</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 space-y-2">
+                    <Textarea
+                      data-reply-input
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      placeholder={`Reply to @${post.account.username}`}
+                      className="min-h-[60px] resize-none"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                          e.preventDefault();
+                          handleSubmitReply();
+                        }
+                      }}
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowReplyComposer(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={handleSubmitReply}
+                        disabled={!replyText.trim() || createPostMutation.isPending}
+                      >
+                        {createPostMutation.isPending ? 'Replying...' : 'Reply'}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {showThread && post.replyCount > 0 && (
             <button
