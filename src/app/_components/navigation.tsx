@@ -1,4 +1,3 @@
-// src/app/_components/navigation.tsx
 "use client";
 
 import Link from "next/link";
@@ -8,14 +7,7 @@ import {
   BarChart3, 
   Globe, 
   Settings, 
-  Database, 
-  Building,
-  User,
   Crown,
-  Home,
-  ChevronDown,
-  LogOut,
-  AlertCircle,
   Bell,
   X
 } from "lucide-react";
@@ -25,12 +17,10 @@ import {
   NavigationMenuList,
   NavigationMenuItem
 } from "~/components/ui/navigation-menu";
-import { useTheme } from "~/context/theme-context";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
-import { useBulkFlagCache } from "~/hooks/useBulkFlagCache";
-import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { ThinkPagesIcon } from "~/components/icons/ThinkPagesIcon";
+
 
 interface NavigationItem {
   name: string;
@@ -45,7 +35,6 @@ interface NavigationItem {
 export function Navigation() {
   const pathname = usePathname();
   const { user, isLoaded } = useUser();
-  const [showUserMenu, setShowUserMenu] = useState(false);
   const [isSticky, setIsSticky] = useState(false);
   const [hideSticky, setHideSticky] = useState(false);
 
@@ -55,20 +44,6 @@ export function Navigation() {
     { enabled: !!user?.id }
   );
 
-  // Get flag for user's country
-  const { flagUrls, isLoading: flagsLoading } = useBulkFlagCache(
-    userProfile?.country?.name ? [userProfile.country.name] : []
-  );
-  const userCountryFlag = userProfile?.country?.name ? flagUrls[userProfile.country.name] : null;
-
-  // Close user menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = () => setShowUserMenu(false);
-    if (showUserMenu) {
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
-    }
-  }, [showUserMenu]);
 
   // Sticky navigation scroll detection
   useEffect(() => {
@@ -81,7 +56,7 @@ export function Navigation() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navigationItems = [
+  const navigationItems: NavigationItem[] = [
     {
       name: "Dashboard",
       href: "/dashboard",
@@ -173,13 +148,7 @@ export function Navigation() {
           <div className="relative z-[10010]">
             {/* Enhanced background glow for focal point */}
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/15 to-blue-500/10 rounded-full blur-3xl opacity-60 scale-150 pointer-events-none"></div>
-            <CommandPalette 
-              user={user} 
-              userProfile={userProfile} 
-              setupStatus={setupStatus}
-              userCountryFlag={userCountryFlag}
-              flagsLoading={flagsLoading}
-            />
+            <CommandPalette />
           </div>
           
           {/* Right Side Navigation - Directly to the right of dynamic island */}
@@ -250,14 +219,7 @@ export function Navigation() {
       {isSticky && !hideSticky && (
         <div className="fixed top-0 left-0 right-0 z-[10010] flex justify-center pt-2">
           <div className="relative">
-            <CommandPalette 
-              isSticky={true}
-              user={user} 
-              userProfile={userProfile} 
-              setupStatus={setupStatus}
-              userCountryFlag={userCountryFlag}
-              flagsLoading={flagsLoading}
-            />
+            <CommandPalette isSticky={true} />
             {/* Hide/Show Toggle */}
             <button
               onClick={() => setHideSticky(!hideSticky)}
@@ -283,4 +245,3 @@ export function Navigation() {
     </>
   );
 }
-

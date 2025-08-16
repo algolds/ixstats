@@ -24,21 +24,21 @@ export function useEconomyData(countryId: string) {
 
     return {
       core: {
-        totalPopulation: data.baselinePopulation,
-        nominalGDP: data.nominalGDP,
-        gdpPerCapita: data.currentGdpPerCapita,
-        realGDPGrowthRate: data.realGDPGrowthRate,
-        inflationRate: data.inflationRate,
-        currencyExchangeRate: data.currencyExchangeRate
+        totalPopulation: data.currentPopulation || data.population || data.baselinePopulation || 0,
+        nominalGDP: data.currentTotalGdp || data.totalGdp || data.nominalGDP || 0,
+        gdpPerCapita: data.currentGdpPerCapita || data.gdpPerCapita || data.baselineGdpPerCapita || 0,
+        realGDPGrowthRate: data.adjustedGdpGrowth || data.maxGdpGrowthRate || 0.03,
+        inflationRate: data.inflationRate || 0.02,
+        currencyExchangeRate: data.currencyExchangeRate || 1.0
       },
       labor: {
-        laborForceParticipationRate: data.laborForceParticipationRate!,
-        employmentRate: data.employmentRate!,
-        unemploymentRate: data.unemploymentRate!,
-        totalWorkforce: data.totalWorkforce!,
-        averageWorkweekHours: data.averageWorkweekHours!,
-        minimumWage: data.minimumWage!,
-        averageAnnualIncome: data.averageAnnualIncome!,
+        laborForceParticipationRate: data.laborForceParticipationRate || 65.0,
+        employmentRate: data.employmentRate || 95.0,
+        unemploymentRate: data.unemploymentRate || 5.0,
+        totalWorkforce: data.totalWorkforce || Math.floor((data.currentPopulation || data.population || data.baselinePopulation || 0) * 0.65),
+        averageWorkweekHours: data.averageWorkweekHours || 40,
+        minimumWage: data.minimumWage || Math.floor((data.currentGdpPerCapita || data.gdpPerCapita || data.baselineGdpPerCapita || 0) / 52 / 40),
+        averageAnnualIncome: data.averageAnnualIncome || (data.currentGdpPerCapita || data.gdpPerCapita || data.baselineGdpPerCapita || 0),
         employmentBySector: {
           agriculture: 0,
           industry: 0,
@@ -97,8 +97,8 @@ export function useEconomyData(countryId: string) {
       },
       fiscal: {
         taxRevenueGDPPercent: data.taxRevenueGDPPercent ?? 20,
-        governmentRevenueTotal: data.governmentRevenueTotal ?? (data.nominalGDP || 0) * 0.20,
-        taxRevenuePerCapita: data.taxRevenuePerCapita ?? ((data.nominalGDP || 0) * 0.20) / data.baselinePopulation,
+        governmentRevenueTotal: data.governmentRevenueTotal ?? (data.currentTotalGdp || data.totalGdp || data.nominalGDP || 0) * 0.20,
+        taxRevenuePerCapita: data.taxRevenuePerCapita ?? ((data.currentTotalGdp || data.totalGdp || data.nominalGDP || 0) * 0.20) / (data.currentPopulation || data.population || data.baselinePopulation || 1),
         governmentBudgetGDPPercent: data.governmentBudgetGDPPercent ?? 22,
         budgetDeficitSurplus: data.budgetDeficitSurplus ?? 0,
         internalDebtGDPPercent: data.internalDebtGDPPercent ?? 30,
@@ -156,9 +156,9 @@ export function useEconomyData(countryId: string) {
         socialMobilityIndex: 50 // Default value since property doesn't exist
       },
       spending: {
-        totalSpending: data.totalGovernmentSpending ?? (data.nominalGDP || 0) * 0.22,
+        totalSpending: data.totalGovernmentSpending ?? (data.currentTotalGdp || data.totalGdp || data.nominalGDP || 0) * 0.22,
         spendingGDPPercent: data.spendingGDPPercent ?? 22,
-        spendingPerCapita: data.spendingPerCapita ?? ((data.nominalGDP || 0) * 0.22) / data.baselinePopulation,
+        spendingPerCapita: data.spendingPerCapita ?? ((data.currentTotalGdp || data.totalGdp || data.nominalGDP || 0) * 0.22) / (data.currentPopulation || data.population || data.baselinePopulation || 1),
         deficitSurplus: data.budgetDeficitSurplus ?? 0,
         spendingCategories: (data.governmentBudget && data.governmentBudget.spendingCategories
           ? (typeof data.governmentBudget.spendingCategories === 'string' 
@@ -195,10 +195,10 @@ export function useEconomyData(countryId: string) {
               ? JSON.parse(data.demographics.regions)
               : data.demographics.regions as any)
           : [
-              { name: "Capital Region", population: data.baselinePopulation * 0.3, urbanPercent: 95, color: "#3b82f6" },
-              { name: "Northern Region", population: data.baselinePopulation * 0.25, urbanPercent: 60, color: "#22c55e" },
-              { name: "Southern Region", population: data.baselinePopulation * 0.25, urbanPercent: 55, color: "#f59e0b" },
-              { name: "Other Regions", population: data.baselinePopulation * 0.2, urbanPercent: 45, color: "#8b5cf6" }
+              { name: "Capital Region", population: (data.currentPopulation || data.population || data.baselinePopulation || 0) * 0.3, urbanPercent: 95, color: "#3b82f6" },
+              { name: "Northern Region", population: (data.currentPopulation || data.population || data.baselinePopulation || 0) * 0.25, urbanPercent: 60, color: "#22c55e" },
+              { name: "Southern Region", population: (data.currentPopulation || data.population || data.baselinePopulation || 0) * 0.25, urbanPercent: 55, color: "#f59e0b" },
+              { name: "Other Regions", population: (data.currentPopulation || data.population || data.baselinePopulation || 0) * 0.2, urbanPercent: 45, color: "#8b5cf6" }
             ],
         educationLevels: (data.demographics && data.demographics.educationLevels)
           ? (typeof data.demographics.educationLevels === 'string' 

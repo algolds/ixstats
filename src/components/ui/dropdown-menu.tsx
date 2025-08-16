@@ -59,8 +59,8 @@ function DropdownMenuContent({
       <DropdownMenuBackdrop />
       <DropdownMenuPrimitive.Positioner
         data-slot="dropdown-menu-positioner"
-        sideOffset={sideOffset}
-        className="z-[70] size-auto"
+                sideOffset={sideOffset}
+        className="z-[10011] size-auto"
         {...props}
       >
         <DropdownMenuPrimitive.Popup

@@ -22,6 +22,10 @@ import { AccountSettingsModal } from './AccountSettingsModal';
 import { AccountCreationModal } from './AccountCreationModal';
 import { PostComposer } from './PostComposer';
 import { ThinkpagesPost } from './ThinkpagesPost';
+import { EnhancedAccountManager } from './EnhancedAccountManager';
+import { GlassCanvasComposer } from './GlassCanvasComposer';
+import { LiveEventsFeed } from './LiveEventsFeed';
+import { ThinkPagesGuide } from './ThinkPagesGuide';
 import { api } from '~/trpc/react';
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
@@ -89,143 +93,33 @@ export function ThinkpagesSocialPlatform({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <h2 className="text-2xl font-bold text-blue-400 flex items-center gap-3 cursor-help">
-                  <div className="p-2 bg-blue-500/20 rounded-lg">
-                    <Users className="h-6 w-6" />
-                  </div>
-                  Thinkpages Social Platform
-                </h2>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-md p-4 bg-gray-100/80 text-gray-900 rounded-lg shadow-lg border border-gray-300 dark:bg-neutral-900/80 dark:text-white dark:border-neutral-700 backdrop-blur-sm">
-                <p className="text-sm">
-                  Thinkpages: An online social media and networking service, originally conceived in 2002 by military engineer Marcos Perle as a blog for Levantine Union forces. It evolved into a global platform, acquired by Valtari in 2022, now connecting billions worldwide. Share 'thinks,' photos, and videos, engage in groups, and communicate via Thinkshare.
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <p className="text-muted-foreground">
-            {countryName} • Where Minds Meet
-          </p>
-        </div>
 
-        {isOwner && (
-          <Button
-            onClick={() => setShowAccountCreation(true)}
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Add Account
-          </Button>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-1 space-y-4">
-          <Card className="glass-hierarchy-child">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Account Manager</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                {accounts?.length || 0}/25 accounts created
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {isLoadingAccounts ? <Loader2 className="animate-spin"/> : <div className="space-y-3">
-                <div className={cn("flex items-center justify-between p-3 rounded-lg border", getAccountTypeColor('government'))}>
-                  <div className="flex items-center gap-2">
-                    <Crown className="h-4 w-4" />
-                    <span className="font-medium">Government</span>
-                  </div>
-                  <Badge variant="outline">{getAccountTypeCount('government')}</Badge>
-                </div>
-
-                <div className={cn("flex items-center justify-between p-3 rounded-lg border", getAccountTypeColor('media'))}>
-                  <div className="flex items-center gap-2">
-                    <Newspaper className="h-4 w-4" />
-                    <span className="font-medium">Media</span>
-                  </div>
-                  <Badge variant="outline">{getAccountTypeCount('media')}</Badge>
-                </div>
-
-                <div className={cn("flex items-center justify-between p-3 rounded-lg border", getAccountTypeColor('citizen'))}>
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    <span className="font-medium">Citizens</span>
-                  </div>
-                  <Badge variant="outline">{getAccountTypeCount('citizen')}</Badge>
-                </div>
-              </div>}
-
-              {isOwner && (
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-sm">Your Accounts</h4>
-                  {accounts?.map(account => (
-                    <div
-                      key={account.id}
-                      className={cn(
-                        "w-full flex items-center gap-2 p-2 rounded-lg transition-colors",
-                        selectedAccount?.id === account.id 
-                          ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" 
-                          : "hover:bg-white/10"
-                      )}
-                    >
-                      <button
-                        onClick={() => setSelectedAccount(account)}
-                        className="flex items-center gap-2 flex-1 text-left"
-                      >
-                        <div className={cn("p-1 rounded", getAccountTypeColor(account.accountType))}>
-                          {account.accountType === 'government' && <Crown className="h-3 w-3" />}
-                          {account.accountType === 'media' && <Newspaper className="h-3 w-3" />}
-                          {account.accountType === 'citizen' && <Users className="h-3 w-3" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm truncate">{account.displayName}</div>
-                          <div className="text-xs text-muted-foreground">@{account.username}</div>
-                        </div>
-                      </button>
-                      <Button variant="ghost" size="icon" onClick={() => { setSelectedAccountForSettings(account); setShowAccountSettings(true); }}>
-                        <Settings className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="glass-hierarchy-child">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-orange-500" />
-                Trending Topics
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {isLoadingTrending ? <Loader2 className="animate-spin"/> : trendingTopics?.map((topic, index) => (
-                <button
-                  key={topic.hashtag}
-                  className="w-full flex items-center justify-between p-2 hover:bg-white/10 rounded-lg transition-colors text-left"
-                >
-                  <div>
-                    <div className="font-medium text-sm">#{topic.hashtag}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {topic.postCount} posts
-                    </div>
-                  </div>
-                  <Badge variant="outline" className="text-xs">
-                    #{index + 1}
-                  </Badge>
-                </button>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Sidebar - Account Manager */}
         <div className="lg:col-span-3 space-y-4">
+          {isLoadingAccounts ? (
+            <Card className="glass-hierarchy-child">
+              <CardContent className="p-8 text-center">
+                <Loader2 className="animate-spin h-8 w-8 mx-auto" />
+              </CardContent>
+            </Card>
+          ) : (
+            <EnhancedAccountManager
+              countryId={countryId}
+              accounts={accounts || []}
+              selectedAccount={selectedAccount}
+              onAccountSelect={setSelectedAccount}
+              onAccountSettings={(account) => { setSelectedAccountForSettings(account); setShowAccountSettings(true); }}
+              onCreateAccount={() => setShowAccountCreation(true)}
+              isOwner={isOwner}
+            />
+          )}
+        </div>
+
+        {/* Main Content Area */}
+        <div className="lg:col-span-6 space-y-4">
+          {/* Thinkpages Header with Canonical Design */}
+          
           <Card className="glass-hierarchy-child">
             <CardContent className="p-4">
               <div className="flex items-center gap-4">
@@ -274,10 +168,11 @@ export function ThinkpagesSocialPlatform({
           </Card>
 
           {isOwner && selectedAccount && (
-            <PostComposer
+            <GlassCanvasComposer
               account={selectedAccount}
               onPost={handlePost}
-              placeholder="What's happening in your nation?"
+              placeholder="What's happening in your nation? Share with live economic data..."
+              countryId={countryId}
             />
           )}
 
@@ -287,7 +182,7 @@ export function ThinkpagesSocialPlatform({
                 <ThinkpagesPost
                   key={post.id}
                   post={post}
-                  currentUserAccountId={selectedAccount?.id}
+                  currentUserAccountId={selectedAccount?.id || ''}
                   onLike={(postId) => console.log('Like:', postId)}
                   onRepost={(postId) => console.log('Repost:', postId)}
                   onReply={(postId) => console.log('Reply:', postId)}
@@ -314,6 +209,63 @@ export function ThinkpagesSocialPlatform({
               </Card>
             )}
           </div>
+        </div>
+
+        {/* Right Sidebar - Trending & Live Events */}
+        <div className="lg:col-span-3 space-y-4">
+          {/* Trending Topics */}
+          <Card className="glass-hierarchy-child">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-orange-500" />
+                Trending Topics
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                What's happening across the network
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {isLoadingTrending ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="animate-spin h-6 w-6"/>
+                </div>
+              ) : (
+                trendingTopics?.map((topic, index) => (
+                  <button
+                    key={topic.hashtag}
+                    className="w-full flex items-center justify-between p-3 hover:bg-accent/50 rounded-lg transition-colors text-left border border-transparent hover:border-border"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-6 h-6 rounded bg-[#fcc309]/20 text-[#800000] text-xs font-bold">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <div className="font-medium text-sm">#{topic.hashtag}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {topic.postCount} thinks
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <TrendingUp className="h-3 w-3 text-green-500" />
+                      <span className="text-xs text-green-600 font-medium">
+                        +{Math.floor(Math.random() * 50 + 10)}%
+                      </span>
+                    </div>
+                  </button>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Live Events Feed */}
+          <LiveEventsFeed 
+            countryId={countryId}
+            onEventClick={(eventId) => console.log('Event clicked:', eventId)}
+          />
+
+          {/* ThinkPages Guide */}
+          <ThinkPagesGuide />
         </div>
       </div>
 

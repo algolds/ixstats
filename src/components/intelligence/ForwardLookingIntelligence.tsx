@@ -8,8 +8,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, TrendingDown, AlertTriangle, Target, Brain, Clock, Zap, BarChart3 } from 'lucide-react';
 import { predictiveAnalyticsEngine } from '~/lib/predictive-analytics-engine';
 import { useOptimizedIntelligenceData } from '~/hooks/useOptimizedIntelligenceData';
-import { PerformanceUtils } from '~/lib/performance-monitor';
-import type { ForwardIntelligence } from '~/lib/predictive-analytics-engine';
+// PerformanceUtils import removed - doesn't exist in performance-monitor
+// ForwardIntelligence type - using local definition since it's not exported
+interface ForwardIntelligence {
+  generated: number;
+  countryId: string;
+  dataQuality: 'excellent' | 'good' | 'fair' | 'limited';
+  economicProjections: any[];
+  riskAssessment: any;
+  competitiveIntelligence: any;
+  milestoneForecasts: any;
+  actionableInsights: any[];
+  modelMetadata: any;
+}
 
 interface ForwardLookingIntelligenceProps {
   countryId: string;

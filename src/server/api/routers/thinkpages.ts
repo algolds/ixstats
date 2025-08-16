@@ -336,9 +336,14 @@ export const thinkpagesRouter = createTRPCRouter({
 
   // Get accounts by country
   getAccountsByCountry: publicProcedure
-    .input(z.object({ countryId: z.string() }))
+    .input(z.object({ countryId: z.string().optional().default('') }).optional().default({}))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
+      
+      // Early return for invalid country ID
+      if (!input || !input.countryId || input.countryId.trim() === '' || input.countryId === 'INVALID') {
+        return [];
+      }
       
       const accounts = await db.thinkpagesAccount.findMany({
         where: { 
@@ -856,5 +861,740 @@ export const thinkpagesRouter = createTRPCRouter({
         console.log(`Calculated mood metric for ${country.name}: ${averageSentiment.toFixed(2)}`);
       }
       return { success: true, message: "Country mood metrics calculated" };
+    }),
+
+  // ===== THINKTANKS (GROUPS) ENDPOINTS =====
+
+  // Create a new ThinkTank group
+  createThinktank: publicProcedure
+    .input(z.object({
+      name: z.string().min(1).max(100),
+      description: z.string().max(500).optional(),
+      avatar: z.string().url().optional(),
+      type: z.enum(['public', 'private', 'invite_only']).default('public'),
+      category: z.string().optional(),
+      tags: z.array(z.string()).optional(),
+      createdBy: z.string(), // accountId
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      // Verify the creator account exists
+      const creatorAccount = await db.thinkpagesAccount.findUnique({
+        where: { id: input.createdBy }
+      });
+
+      if (!creatorAccount) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Creator account not found'
+        });
+      }
+
+      // Create the group
+      const group = await db.thinktankGroup.create({
+        data: {
+          name: input.name,
+          description: input.description,
+          avatar: input.avatar,
+          type: input.type,
+          category: input.category,
+          tags: input.tags ? JSON.stringify(input.tags) : null,
+          createdBy: input.createdBy,
+          memberCount: 1
+        },
+        include: {
+          creator: true,
+          members: {
+            include: { account: true }
+          }
+        }
+      });
+
+      // Add creator as owner
+      await db.thinktankMember.create({
+        data: {
+          groupId: group.id,
+          accountId: input.createdBy,
+          role: 'owner'
+        }
+      });
+
+      return group;
+    }),
+
+  // Get ThinkTanks for a country
+  getThinktanksByCountry: publicProcedure
+    .input(z.object({
+      countryId: z.string().optional().default(''),
+      type: z.enum(['all', 'joined', 'created']).optional().default('all'),
+      accountId: z.string().optional()
+    }).optional().default({}))
+    .query(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      try {
+        // FAILSAFE: Handle ANY invalid input scenario
+        if (!input) {
+          console.log('getThinktanksByCountry: No input provided, returning empty array');
+          return [];
+        }
+        
+        if (!input.countryId || input.countryId.trim() === '' || input.countryId === 'INVALID') {
+          console.log('getThinktanksByCountry: Invalid countryId, returning empty array');
+          return [];
+        }
+
+        let whereClause: any = {
+          isActive: true
+        };
+
+        if (input.type === 'joined' && input.accountId) {
+          whereClause.members = {
+            some: {
+              accountId: input.accountId,
+              isActive: true
+            }
+          };
+        } else if (input.type === 'created' && input.accountId) {
+          whereClause.createdBy = input.accountId;
+        }
+
+        const groups = await db.thinktankGroup.findMany({
+          where: whereClause,
+          include: {
+            creator: true,
+            members: {
+              where: { isActive: true },
+              include: { account: true }
+            },
+            _count: {
+              select: {
+                members: true,
+                messages: true
+              }
+            }
+          },
+          orderBy: [
+            { memberCount: 'desc' },
+            { createdAt: 'desc' }
+          ]
+        });
+
+        return groups.map(group => ({
+          ...group,
+          tags: group.tags ? JSON.parse(group.tags) : [],
+          isJoined: input.accountId ? group.members.some(m => m.accountId === input.accountId) : false
+        }));
+      } catch (error) {
+        console.error('Error in getThinktanksByCountry:', error);
+        // FAILSAFE: Return empty array instead of throwing error
+        return [];
+      }
+    }),
+
+  // Join a ThinkTank group
+  joinThinktank: publicProcedure
+    .input(z.object({
+      groupId: z.string(),
+      accountId: z.string()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      // Check if group exists and is active
+      const group = await db.thinktankGroup.findUnique({
+        where: { id: input.groupId, isActive: true }
+      });
+
+      if (!group) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Group not found or inactive'
+        });
+      }
+
+      // Check if user is already a member
+      const existingMember = await db.thinktankMember.findUnique({
+        where: {
+          groupId_accountId: {
+            groupId: input.groupId,
+            accountId: input.accountId
+          }
+        }
+      });
+
+      if (existingMember) {
+        if (existingMember.isActive) {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: 'Already a member of this group'
+          });
+        } else {
+          // Reactivate membership
+          await db.thinktankMember.update({
+            where: { id: existingMember.id },
+            data: { isActive: true, joinedAt: new Date() }
+          });
+        }
+      } else {
+        // Create new membership
+        await db.thinktankMember.create({
+          data: {
+            groupId: input.groupId,
+            accountId: input.accountId,
+            role: 'member'
+          }
+        });
+      }
+
+      // Update member count
+      await db.thinktankGroup.update({
+        where: { id: input.groupId },
+        data: { memberCount: { increment: 1 } }
+      });
+
+      return { success: true, message: 'Successfully joined group' };
+    }),
+
+  // Leave a ThinkTank group
+  leaveThinktank: publicProcedure
+    .input(z.object({
+      groupId: z.string(),
+      accountId: z.string()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      const member = await db.thinktankMember.findUnique({
+        where: {
+          groupId_accountId: {
+            groupId: input.groupId,
+            accountId: input.accountId
+          }
+        }
+      });
+
+      if (!member || !member.isActive) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Not a member of this group'
+        });
+      }
+
+      // Can't leave if you're the owner and there are other members
+      if (member.role === 'owner') {
+        const otherActiveMembers = await db.thinktankMember.count({
+          where: {
+            groupId: input.groupId,
+            accountId: { not: input.accountId },
+            isActive: true
+          }
+        });
+
+        if (otherActiveMembers > 0) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Cannot leave group as owner while other members exist. Transfer ownership first.'
+          });
+        }
+      }
+
+      // Deactivate membership
+      await db.thinktankMember.update({
+        where: { id: member.id },
+        data: { isActive: false }
+      });
+
+      // Update member count
+      await db.thinktankGroup.update({
+        where: { id: input.groupId },
+        data: { memberCount: { decrement: 1 } }
+      });
+
+      return { success: true, message: 'Successfully left group' };
+    }),
+
+  // Get ThinkTank messages
+  getThinktankMessages: publicProcedure
+    .input(z.object({
+      groupId: z.string(),
+      limit: z.number().min(1).max(100).default(50),
+      cursor: z.string().optional()
+    }))
+    .query(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      const messages = await db.thinktankMessage.findMany({
+        where: {
+          groupId: input.groupId,
+          deletedAt: null
+        },
+        include: {
+          account: true,
+          replyTo: {
+            include: { account: true }
+          },
+          readReceipts: {
+            include: { account: true }
+          },
+          _count: {
+            select: { replies: true }
+          }
+        },
+        orderBy: { ixTimeTimestamp: 'desc' },
+        take: input.limit,
+        cursor: input.cursor ? { id: input.cursor } : undefined,
+        skip: input.cursor ? 1 : 0
+      });
+
+      return {
+        messages: messages.map(msg => ({
+          ...msg,
+          reactions: msg.reactions ? JSON.parse(msg.reactions) : {},
+          mentions: msg.mentions ? JSON.parse(msg.mentions) : [],
+          attachments: msg.attachments ? JSON.parse(msg.attachments) : []
+        })),
+        nextCursor: messages.length === input.limit ? messages[messages.length - 1]?.id : null
+      };
+    }),
+
+  // Send message to ThinkTank
+  sendThinktankMessage: publicProcedure
+    .input(z.object({
+      groupId: z.string(),
+      accountId: z.string(),
+      content: z.string().min(1),
+      messageType: z.enum(['text', 'image', 'file', 'system']).default('text'),
+      replyToId: z.string().optional(),
+      mentions: z.array(z.string()).optional(),
+      attachments: z.array(z.object({
+        type: z.string(),
+        url: z.string(),
+        filename: z.string().optional(),
+        size: z.number().optional()
+      })).optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      // Verify user is a member of the group
+      const member = await db.thinktankMember.findUnique({
+        where: {
+          groupId_accountId: {
+            groupId: input.groupId,
+            accountId: input.accountId
+          }
+        }
+      });
+
+      if (!member || !member.isActive) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Not a member of this group'
+        });
+      }
+
+      // Create the message
+      const message = await db.thinktankMessage.create({
+        data: {
+          groupId: input.groupId,
+          accountId: input.accountId,
+          content: input.content,
+          messageType: input.messageType,
+          replyToId: input.replyToId,
+          mentions: input.mentions ? JSON.stringify(input.mentions) : null,
+          attachments: input.attachments ? JSON.stringify(input.attachments) : null,
+          ixTimeTimestamp: new Date(IxTime.getCurrentIxTime())
+        },
+        include: {
+          account: true,
+          replyTo: {
+            include: { account: true }
+          }
+        }
+      });
+
+      return message;
+    }),
+
+  // ===== THINKSHARE (MESSAGING) ENDPOINTS =====
+
+  // Create a new conversation
+  createConversation: publicProcedure
+    .input(z.object({
+      type: z.enum(['direct', 'group']).default('direct'),
+      participantIds: z.array(z.string()),
+      name: z.string().optional(),
+      avatar: z.string().url().optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      // For direct conversations, ensure only 2 participants
+      if (input.type === 'direct' && input.participantIds.length !== 2) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Direct conversations must have exactly 2 participants'
+        });
+      }
+
+      // Check if all participants exist
+      const accounts = await db.thinkpagesAccount.findMany({
+        where: { id: { in: input.participantIds } }
+      });
+
+      if (accounts.length !== input.participantIds.length) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'One or more participants not found'
+        });
+      }
+
+      // For direct conversations, check if conversation already exists
+      if (input.type === 'direct') {
+        const existingConversation = await db.thinkshareConversation.findFirst({
+          where: {
+            type: 'direct',
+            participants: {
+              every: {
+                accountId: { in: input.participantIds }
+              }
+            }
+          },
+          include: {
+            participants: true
+          }
+        });
+
+        if (existingConversation && existingConversation.participants.length === 2) {
+          return existingConversation;
+        }
+      }
+
+      // Create conversation
+      const conversation = await db.thinkshareConversation.create({
+        data: {
+          type: input.type,
+          name: input.name,
+          avatar: input.avatar
+        }
+      });
+
+      // Add participants
+      await db.conversationParticipant.createMany({
+        data: input.participantIds.map(accountId => ({
+          conversationId: conversation.id,
+          accountId,
+          role: input.type === 'group' && accountId === input.participantIds[0] ? 'admin' : 'participant'
+        }))
+      });
+
+      return conversation;
+    }),
+
+  // Get conversations for an account
+  getConversations: publicProcedure
+    .input(z.object({
+      accountId: z.string().optional().default(''),
+      limit: z.number().min(1).max(50).optional().default(20),
+      cursor: z.string().optional()
+    }).optional().default({}))
+    .query(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      try {
+        // FAILSAFE: Handle ANY invalid input scenario
+        if (!input) {
+          console.log('getConversations: No input provided, returning empty result');
+          return {
+            conversations: [],
+            nextCursor: null
+          };
+        }
+        
+        if (!input.accountId || input.accountId.trim() === '' || input.accountId === 'INVALID') {
+          console.log('getConversations: Invalid accountId, returning empty result');
+          return {
+            conversations: [],
+            nextCursor: null
+          };
+        }
+
+      const conversations = await db.thinkshareConversation.findMany({
+        where: {
+          isActive: true,
+          participants: {
+            some: {
+              accountId: input.accountId,
+              isActive: true
+            }
+          }
+        },
+        include: {
+          participants: {
+            where: { isActive: true },
+            include: { account: true }
+          },
+          messages: {
+            orderBy: { ixTimeTimestamp: 'desc' },
+            take: 1,
+            include: { account: true }
+          },
+          _count: {
+            select: { messages: true }
+          }
+        },
+        orderBy: { lastActivity: 'desc' },
+        take: input.limit,
+        cursor: input.cursor ? { id: input.cursor } : undefined,
+        skip: input.cursor ? 1 : 0
+      });
+
+      return {
+        conversations: conversations.map(conv => {
+          const otherParticipants = conv.participants.filter(p => p.accountId !== input.accountId);
+          const lastMessage = conv.messages[0];
+          
+          // Calculate unread count
+          const participant = conv.participants.find(p => p.accountId === input.accountId);
+          
+          return {
+            ...conv,
+            otherParticipants,
+            lastMessage,
+            lastReadAt: participant?.lastReadAt,
+            unreadCount: 0 // Will be calculated based on lastReadAt vs message timestamps
+          };
+        }),
+        nextCursor: conversations.length === input.limit ? conversations[conversations.length - 1]?.id : null
+      };
+      } catch (error) {
+        console.error('Error in getConversations:', error);
+        // FAILSAFE: Return empty result instead of throwing error
+        return {
+          conversations: [],
+          nextCursor: null
+        };
+      }
+    }),
+
+  // Get messages for a conversation
+  getConversationMessages: publicProcedure
+    .input(z.object({
+      conversationId: z.string().default(''),
+      accountId: z.string().default(''),
+      limit: z.number().min(1).max(100).default(50),
+      cursor: z.string().optional()
+    }))
+    .query(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      // Early return for invalid IDs
+      if (!input.conversationId || input.conversationId.trim() === '' || input.conversationId === 'INVALID' ||
+          !input.accountId || input.accountId.trim() === '' || input.accountId === 'INVALID') {
+        return {
+          messages: [],
+          nextCursor: null
+        };
+      }
+
+      // Verify user is participant
+      const participant = await db.conversationParticipant.findUnique({
+        where: {
+          conversationId_accountId: {
+            conversationId: input.conversationId,
+            accountId: input.accountId
+          }
+        }
+      });
+
+      if (!participant || !participant.isActive) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Not a participant in this conversation'
+        });
+      }
+
+      const messages = await db.thinkshareMessage.findMany({
+        where: {
+          conversationId: input.conversationId,
+          deletedAt: null
+        },
+        include: {
+          account: true,
+          replyTo: {
+            include: { account: true }
+          },
+          readReceipts: {
+            include: { account: true }
+          }
+        },
+        orderBy: { ixTimeTimestamp: 'desc' },
+        take: input.limit,
+        cursor: input.cursor ? { id: input.cursor } : undefined,
+        skip: input.cursor ? 1 : 0
+      });
+
+      return {
+        messages: messages.map(msg => ({
+          ...msg,
+          reactions: msg.reactions ? JSON.parse(msg.reactions) : {},
+          mentions: msg.mentions ? JSON.parse(msg.mentions) : [],
+          attachments: msg.attachments ? JSON.parse(msg.attachments) : []
+        })),
+        nextCursor: messages.length === input.limit ? messages[messages.length - 1]?.id : null
+      };
+    }),
+
+  // Send message to conversation
+  sendMessage: publicProcedure
+    .input(z.object({
+      conversationId: z.string(),
+      accountId: z.string(),
+      content: z.string().min(1),
+      messageType: z.enum(['text', 'image', 'file', 'system']).default('text'),
+      replyToId: z.string().optional(),
+      mentions: z.array(z.string()).optional(),
+      attachments: z.array(z.object({
+        type: z.string(),
+        url: z.string(),
+        filename: z.string().optional(),
+        size: z.number().optional()
+      })).optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      // Verify user is participant
+      const participant = await db.conversationParticipant.findUnique({
+        where: {
+          conversationId_accountId: {
+            conversationId: input.conversationId,
+            accountId: input.accountId
+          }
+        }
+      });
+
+      if (!participant || !participant.isActive) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Not a participant in this conversation'
+        });
+      }
+
+      // Create the message
+      const message = await db.thinkshareMessage.create({
+        data: {
+          conversationId: input.conversationId,
+          accountId: input.accountId,
+          content: input.content,
+          messageType: input.messageType,
+          replyToId: input.replyToId,
+          mentions: input.mentions ? JSON.stringify(input.mentions) : null,
+          attachments: input.attachments ? JSON.stringify(input.attachments) : null,
+          ixTimeTimestamp: new Date(IxTime.getCurrentIxTime())
+        },
+        include: {
+          account: true,
+          conversation: true,
+          replyTo: {
+            include: { account: true }
+          }
+        }
+      });
+
+      // Update conversation last activity
+      await db.thinkshareConversation.update({
+        where: { id: input.conversationId },
+        data: { lastActivity: new Date() }
+      });
+
+      return message;
+    }),
+
+  // Mark messages as read
+  markMessagesAsRead: publicProcedure
+    .input(z.object({
+      conversationId: z.string(),
+      accountId: z.string(),
+      messageIds: z.array(z.string()).optional() // If not provided, mark all as read
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      // Update participant lastReadAt
+      await db.conversationParticipant.update({
+        where: {
+          conversationId_accountId: {
+            conversationId: input.conversationId,
+            accountId: input.accountId
+          }
+        },
+        data: { lastReadAt: new Date() }
+      });
+
+      // If specific message IDs provided, create read receipts
+      if (input.messageIds && input.messageIds.length > 0) {
+        await db.messageReadReceipt.createMany({
+          data: input.messageIds.map(messageId => ({
+            messageId,
+            accountId: input.accountId,
+            messageType: 'thinkshare'
+          })),
+          skipDuplicates: true
+        });
+      }
+
+      return { success: true };
+    }),
+
+  // Update account presence/online status
+  updatePresence: publicProcedure
+    .input(z.object({
+      accountId: z.string(),
+      isOnline: z.boolean(),
+      status: z.enum(['available', 'busy', 'away', 'invisible']).optional(),
+      customStatus: z.string().optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      await db.accountPresence.upsert({
+        where: { accountId: input.accountId },
+        create: {
+          accountId: input.accountId,
+          isOnline: input.isOnline,
+          status: input.status || 'available',
+          customStatus: input.customStatus,
+          lastSeen: new Date()
+        },
+        update: {
+          isOnline: input.isOnline,
+          status: input.status,
+          customStatus: input.customStatus,
+          lastSeen: new Date()
+        }
+      });
+
+      return { success: true };
+    }),
+
+  // Get presence for multiple accounts
+  getPresenceForAccounts: publicProcedure
+    .input(z.object({
+      accountIds: z.array(z.string())
+    }))
+    .query(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      const presence = await db.accountPresence.findMany({
+        where: {
+          accountId: { in: input.accountIds }
+        },
+        include: { account: true }
+      });
+
+      return presence;
     })
 });

@@ -363,6 +363,12 @@ export default function EnhancedPublicCountryPage({ params }: EnhancedPublicCoun
               <CountryAtGlance 
                 country={{
                   ...country,
+                  // Map API response to CountryAtGlanceData interface
+                  currentPopulation: country.currentPopulation || country.population || 0,
+                  currentGdpPerCapita: country.currentGdpPerCapita || country.gdpPerCapita || 0,
+                  currentTotalGdp: country.currentTotalGdp || country.totalGdp || 0,
+                  economicTier: country.economicTier || "Developing",
+                  populationTier: country.populationTier || "Small",
                   lastCalculated: typeof country.lastCalculated === 'number' ? country.lastCalculated : 
                                   (country.lastCalculated instanceof Date ? country.lastCalculated.getTime() : 0),
                   baselineDate: typeof country.baselineDate === 'number' ? country.baselineDate : 
@@ -372,8 +378,8 @@ export default function EnhancedPublicCountryPage({ params }: EnhancedPublicCoun
                 isLoading={isLoading} 
               />
 
-              {/* Recent Activity/Updates */}
-              {country.analytics && country.analytics.riskFlags?.length > 0 && (
+              {/* Recent Activity/Updates - Analytics property doesn't exist on API response */}
+              {false && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -409,14 +415,14 @@ export default function EnhancedPublicCountryPage({ params }: EnhancedPublicCoun
                       totalGdp: economicData.core.nominalGDP,
                       economicTier: country.economicTier || "Developing",
                       populationGrowthRate: country.populationGrowthRate || 0.01,
-                      gdpGrowthRate: country.realGDPGrowthRate || country.adjustedGdpGrowth || 0.03,
+                      gdpGrowthRate: country.adjustedGdpGrowth || country.maxGdpGrowthRate || 0.03,
                       unemploymentRate: economicData.labor.unemploymentRate,
                       laborForceParticipationRate: economicData.labor.laborForceParticipationRate,
                       taxRevenueGDPPercent: economicData.fiscal.taxRevenueGDPPercent,
                       budgetBalance: economicData.fiscal.budgetDeficitSurplus,
                       debtToGDP: economicData.fiscal.totalDebtGDPRatio,
-                      populationDensity: country.populationDensity,
-                      gdpDensity: country.gdpDensity,
+                      populationDensity: country.populationDensity || null,
+                      gdpDensity: country.gdpDensity || null,
                       landArea: country.landArea,
                     }}
                   />

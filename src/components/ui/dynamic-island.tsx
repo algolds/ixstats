@@ -39,6 +39,7 @@ export type SizePresets =
   | "massive"
   | "extraWide"
   | "fullWidth"
+  | "compactTall"
 
 const SIZE_PRESETS = {
   RESET: "reset",
@@ -57,6 +58,7 @@ const SIZE_PRESETS = {
   MASSIVE: "massive",
   EXTRA_WIDE: "extraWide",
   FULL_WIDTH: "fullWidth",
+  COMPACT_TALL: "compactTall",
 } as const
 
 type Preset = {
@@ -99,7 +101,7 @@ const DynamicIslandSizePresets: Record<SizePresets, Preset> = {
   },
   [SIZE_PRESETS.COMPACT_LONG]: {
     width: 300,
-    aspectRatio: 44 / 235,
+    aspectRatio: 60 / 300,
     borderRadius: 46,
   },
   [SIZE_PRESETS.COMPACT_MEDIUM]: {
@@ -147,6 +149,11 @@ const DynamicIslandSizePresets: Record<SizePresets, Preset> = {
     width: 1400,
     aspectRatio: 80 / 1400,
     borderRadius: 28,
+  },
+  [SIZE_PRESETS.COMPACT_TALL]: {
+    width: 350,
+    aspectRatio: 80 / 350,
+    borderRadius: 46,
   },
 }
 
@@ -369,7 +376,7 @@ const calculateDimensions = (
   size: SizePresets,
   screenSize: string,
   currentSize: Preset
-): { width: string; height: number } => {
+): { width: string; height: number | string } => {
   const isMassiveOnMobile = size === "massive" && screenSize === "mobile"
   const isUltraOnMobile = size === "ultra" && screenSize === "mobile"
   const isWideOnMobile = (size === "extraWide" || size === "fullWidth") && screenSize === "mobile"
@@ -402,9 +409,9 @@ const calculateDimensions = (
     return { width: "min(1400px, 85vw)", height: 80 }
   }
 
-  // For compact and other modes, use auto width based on content
-  if (size === "compact" || size === "compactLong" || size === "compactMedium") {
-    return { width: "auto", height: currentSize.aspectRatio * currentSize.width }
+  // For compact and other modes, use auto width and fit-content height
+  if (size === "compact" || size === "compactLong" || size === "compactMedium" || size === "compactTall") {
+    return { width: "auto", height: "auto" }
   }
 
   // For other preset sizes, use the preset width directly without MIN_WIDTH restriction
@@ -436,7 +443,7 @@ const DynamicIslandContent = ({
         className="absolute inset-0 opacity-60"
         animate={{
           width: dimensions.width,
-          height: dimensions.height,
+          height: dimensions.height === "auto" ? "auto" : dimensions.height,
           borderRadius: currentSize.borderRadius,
           transition: {
             type: "spring",
@@ -478,12 +485,12 @@ const DynamicIslandContent = ({
         className="relative mx-auto items-center justify-center border border-white/20 dark:border-white/10 text-center transition-colors duration-200 will-change-auto focus-within:bg-accent/80 hover:shadow-2xl hover:shadow-primary/20 overflow-hidden"
         initial={{
           width: dimensions.width,
-          height: dimensions.height,
+          height: dimensions.height === "auto" ? "auto" : dimensions.height,
           borderRadius: currentSize.borderRadius,
         }}
         animate={{
           width: dimensions.width,
-          height: dimensions.height,
+          height: dimensions.height === "auto" ? "auto" : dimensions.height,
           borderRadius: currentSize.borderRadius,
           transition: {
             type: "spring",
