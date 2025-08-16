@@ -26,8 +26,10 @@ import {
 } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
+import { Badge } from '~/components/ui/badge';
 import { ReactionPopup } from './ReactionPopup';
 import { api } from '~/trpc/react';
+import { toast } from 'sonner';
 import Linkify from 'linkify-react';
 import LinkifyIt from 'linkify-it';
 
@@ -109,6 +111,7 @@ const REACTION_ICONS: { [key: string]: React.ElementType } = {
 
 export function ThinkpagesPost({
   post,
+  currentUserAccountId = '',
   onLike,
   onRepost,
   onReply,
@@ -141,6 +144,10 @@ export function ThinkpagesPost({
   }, [isReposted, onRepost, post.id]);
 
   const handleReaction = useCallback(async (reactionType: string) => {
+    if (!currentUserAccountId) {
+      console.warn("currentUserAccountId is not defined. Cannot perform reaction.");
+      return;
+    }
     const existingReaction = post.reactions.find((r: any) => r.accountId === currentUserAccountId);
 
     try {

@@ -4,10 +4,12 @@ import { useParams } from 'next/navigation';
 import { api } from '~/trpc/react';
 import { ThinkpagesPost } from '~/components/thinkpages/ThinkpagesPost';
 import { Loader2 } from 'lucide-react';
+import { useUser } from "@clerk/nextjs";
 
 export default function HashtagPage() {
   const params = useParams();
   const tag = params.tag as string;
+  const { user } = useUser();
 
   const { data: feed, isLoading: isLoadingFeed } = api.thinkpages.getFeed.useQuery({ hashtag: tag });
 
@@ -24,7 +26,7 @@ export default function HashtagPage() {
             <ThinkpagesPost
               key={post.id}
               post={post}
-              currentUserAccountId="" // This should be the current user's account ID
+              currentUserAccountId={user?.id || ''}
             />
           ))
         )}

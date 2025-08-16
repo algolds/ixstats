@@ -2188,6 +2188,88 @@ const countriesRouter = createTRPCRouter({
         culturalExchange: undefined
       }));
     }),
+
+  // Get economic milestones for a country
+  getEconomicMilestones: publicProcedure
+    .input(z.object({
+      countryId: z.string(),
+      limit: z.number().optional().default(10)
+    }))
+    .query(async ({ ctx, input }) => {
+      // For now, return mock milestones based on country's economic performance
+      const country = await ctx.db.country.findUnique({
+        where: { id: input.countryId }
+      });
+
+      if (!country) return [];
+
+      // Generate realistic milestones based on economic data
+      const milestones = [];
+      
+      if (country.adjustedGdpGrowth > 0.03) {
+        milestones.push({
+          id: `milestone_${country.id}_gdp_growth`,
+          title: "Strong Economic Growth",
+          description: `GDP growth of ${(country.adjustedGdpGrowth * 100).toFixed(1)}% achieved`,
+          value: country.adjustedGdpGrowth,
+          category: "economic_growth",
+          achievedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString()
+        });
+      }
+
+      if (country.currentPopulation > country.baselinePopulation * 1.05) {
+        milestones.push({
+          id: `milestone_${country.id}_population`,
+          title: "Population Growth",
+          description: "Significant population increase recorded",
+          value: (country.currentPopulation - country.baselinePopulation) / country.baselinePopulation,
+          category: "population",
+          achievedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString()
+        });
+      }
+
+      return milestones.slice(0, input.limit);
+    }),
+
+  // Get crisis events for a country
+  getCrisisEvents: publicProcedure
+    .input(z.object({
+      countryId: z.string(),
+      limit: z.number().optional().default(5)
+    }))
+    .query(async ({ ctx, input }) => {
+      const crises = await ctx.db.crisisEvent.findMany({
+        where: {
+          affectedCountries: {
+            contains: input.countryId
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        take: input.limit
+      });
+
+      return crises;
+    }),
+
+  // Get trade data for a country
+  getTradeData: publicProcedure
+    .input(z.object({
+      countryId: z.string()
+    }))
+    .query(async ({ ctx, input }) => {
+      // Mock trade data for now
+      return {
+        totalVolume: Math.random() * 10000000000, // Random trade volume
+        exports: Math.random() * 5000000000,
+        imports: Math.random() * 5000000000,
+        tradeBalance: Math.random() * 1000000000 - 500000000,
+        topPartners: [
+          { country: "Trade Partner 1", volume: Math.random() * 1000000000 },
+          { country: "Trade Partner 2", volume: Math.random() * 800000000 },
+          { country: "Trade Partner 3", volume: Math.random() * 600000000 }
+        ]
+      };
+    }),
 });
 
 export { countriesRouter };

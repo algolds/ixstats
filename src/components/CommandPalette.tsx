@@ -33,11 +33,8 @@ import {
   Monitor,
   Sun,
   Moon,
-  Volume2,
-  VolumeX,
   Languages,
   Layout,
-  Eye,
   CheckCircle,
   Info,
   BellRing,
@@ -49,7 +46,10 @@ import {
   User,
   TrendingUp,
   Building2,
-  Calendar
+  Calendar,
+  LogOut,
+  CreditCard,
+  Eye
 } from "lucide-react";
 import {
   Tooltip,
@@ -58,7 +58,7 @@ import {
   TooltipProvider
 } from "~/components/ui/tooltip";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import { useUser } from "~/context/auth-context";
+import { useUser, SignOutButton } from "@clerk/nextjs";
 import { useTheme } from "~/context/theme-context";
 import { SimpleFlag } from "~/components/SimpleFlag";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
@@ -105,7 +105,14 @@ function CommandPaletteContent({
   // const [cyclingIndex, setCyclingIndex] = useState(0);
   const [isUserInteracting, setIsUserInteracting] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [timeDisplayMode, setTimeDisplayMode] = useState<'time' | 'date' | 'clock'>('time');
+  const [timeDisplayMode, setTimeDisplayMode] = useState<'time' | 'date' | 'both'>('time');
+  
+  // Use a taller size preset for vertical content
+  useEffect(() => {
+    if (mode === "compact") {
+      setSize(SIZE_PRESETS.COMPACT_TALL); // Use custom tall size for enough height
+    }
+  }, [mode, setSize]);
   const { toast } = useToast();
   
   // Enhanced notification system integration
@@ -133,12 +140,6 @@ function CommandPaletteContent({
     { enabled: !!user?.id }
   );
   
-  // User preferences state (excluding compactMode as it's now in theme context)
-  const [userPreferences, setUserPreferences] = useState({
-    soundEnabled: true,
-    language: 'en',
-    animations: true
-  });
 
   // API queries - heavily optimized for performance
   const {
@@ -412,28 +413,69 @@ function CommandPaletteContent({
     }
   }, [mode, isUserInteracting, switchMode]);
 
-  // Keyboard shortcuts - optimized with passive listeners
+  // Enhanced keyboard shortcuts with debouncing to prevent duplicates
+  const [isProcessingShortcut, setIsProcessingShortcut] = useState(false);
+  const shortcutTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
+      // Prevent duplicate processing
+      if (isProcessingShortcut) {
+        e.preventDefault();
+        return;
+      }
+
+      // Only handle if focused on body or the command palette
+      const activeElement = document.activeElement;
+      const isInputFocused = activeElement?.tagName === 'INPUT' || activeElement?.tagName === 'TEXTAREA';
+      
+      // Allow keyboard shortcuts when not typing in inputs (except for our search input)
+      const isOurSearchInput = activeElement?.closest('[data-command-palette-search]');
+      if (isInputFocused && !isOurSearchInput && e.key !== 'Escape') {
+        return;
+      }
+
       if (e.metaKey || e.ctrlKey) {
         switch (e.key) {
           case 'k':
             e.preventDefault();
+            e.stopPropagation();
+            setIsProcessingShortcut(true);
             switchMode(mode === "search" ? "compact" : "search");
+            
+            // Clear processing flag after animation
+            if (shortcutTimeoutRef.current) clearTimeout(shortcutTimeoutRef.current);
+            shortcutTimeoutRef.current = setTimeout(() => {
+              setIsProcessingShortcut(false);
+            }, 500);
             break;
           case 'n':
             e.preventDefault();
+            e.stopPropagation();
+            setIsProcessingShortcut(true);
             switchMode(mode === "notifications" ? "compact" : "notifications");
+            
+            if (shortcutTimeoutRef.current) clearTimeout(shortcutTimeoutRef.current);
+            shortcutTimeoutRef.current = setTimeout(() => {
+              setIsProcessingShortcut(false);
+            }, 500);
             break;
           case ',':
             e.preventDefault();
+            e.stopPropagation();
+            setIsProcessingShortcut(true);
             switchMode(mode === "settings" ? "compact" : "settings");
+            
+            if (shortcutTimeoutRef.current) clearTimeout(shortcutTimeoutRef.current);
+            shortcutTimeoutRef.current = setTimeout(() => {
+              setIsProcessingShortcut(false);
+            }, 500);
             break;
         }
       }
       
       // Tab cycling for filters when in search mode
-      if (e.key === 'Tab' && mode === 'search') {
+      if (e.key === 'Tab' && mode === 'search' && !isProcessingShortcut) {
         e.preventDefault();
         const filters: SearchFilter[] = ['all', 'countries', 'commands', 'features'];
         const currentIndex = filters.indexOf(searchFilter);
@@ -444,19 +486,32 @@ function CommandPaletteContent({
         }
       }
       
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && !isProcessingShortcut) {
+        e.preventDefault();
         if (mode === 'search' && searchQuery) {
           setSearchQuery('');
           setSearchFilter('all');
         } else {
+          setIsProcessingShortcut(true);
           switchMode("compact");
+          
+          if (shortcutTimeoutRef.current) clearTimeout(shortcutTimeoutRef.current);
+          shortcutTimeoutRef.current = setTimeout(() => {
+            setIsProcessingShortcut(false);
+          }, 500);
         }
       }
     };
 
-    window.addEventListener('keydown', handleKeyPress, { passive: false });
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [mode, switchMode, searchFilter, searchQuery]);
+    // Use capture phase to catch events before they bubble
+    window.addEventListener('keydown', handleKeyPress, { capture: true, passive: false });
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress, { capture: true });
+      if (shortcutTimeoutRef.current) {
+        clearTimeout(shortcutTimeoutRef.current);
+      }
+    };
+  }, [mode, switchMode, searchFilter, searchQuery, isProcessingShortcut]);
 
   useEffect(() => {
     setMounted(true);
@@ -520,23 +575,27 @@ function CommandPaletteContent({
         }}
       >
         <DynamicContainer 
-          className={`flex items-center justify-center transition-all duration-500 ${ 
-            isSticky && isCollapsed ? 'px-3 py-2' : 'px-6 py-3'
-          } w-full gap-8`}
+          className={`flex items-center justify-center transition-all duration-500 text-center ${ 
+            isSticky && isCollapsed ? 'px-3 py-2' : 'px-6 py-6'
+          } w-full gap-4 min-h-fit h-auto`}
         >
           {/* IX Logo - Home Button */}
           <Tooltip>
             <TooltipTrigger asChild>
               <button
                 onClick={() => window.location.href = '/'}
-                className={`relative group flex items-center justify-center rounded-md transition-all duration-200 hover:scale-105 active:scale-95 hover:bg-white/10 ${ 
+                className={`relative group flex items-center justify-center rounded-xl transition-all duration-300 hover:scale-110 active:scale-95 ${ 
                   isSticky && isCollapsed ? 'w-10 h-10' : 'w-12 h-12'
                 }`}
               >
+                {/* Gradient glow animation - only on hover */}
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/20 via-purple-500/30 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-400/10 via-indigo-500/20 to-purple-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm" />
+                
                 <img 
                   src="/ix-logo.svg" 
                   alt="IX Logo"
-                  className={`${isSticky && isCollapsed ? 'w-6 h-6' : 'w-8 h-8'} transition-all duration-200 group-hover:scale-110 filter brightness-0 invert opacity-70 group-hover:opacity-100`}
+                  className={`relative z-10 ${isSticky && isCollapsed ? 'w-6 h-6' : 'w-7 h-7'} transition-all duration-300 group-hover:scale-110 filter dark:brightness-0 dark:invert brightness-100 opacity-80 group-hover:opacity-100 group-hover:drop-shadow-lg`}
                 />
               </button>
             </TooltipTrigger>
@@ -545,160 +604,183 @@ function CommandPaletteContent({
             </TooltipContent>
           </Tooltip>
           
-          {/* Time Display - cycles through modes */}
-          {(!isSticky || !isCollapsed) && (
-            <button
-              onClick={() => {
-                setTimeDisplayMode(prev => 
-                  prev === 'time' ? 'date' : 
-                  prev === 'date' ? 'clock' : 'time'
-                );
-              }}
-              className="flex items-center gap-1.5 hover:bg-white/10 px-2 py-1 rounded-md transition-colors cursor-pointer"
-            >
-              {timeDisplayMode === 'time' && (
-                <>
-                  <Clock className="h-3 w-3 text-blue-400 opacity-70" />
-                  <span className="text-xs font-medium text-foreground/80 leading-none">
-                    {currentTime.timeDisplay}
-                  </span>
-                </>
-              )}
-              {timeDisplayMode === 'date' && (
-                <>
-                  <Calendar className="h-3 w-3 text-blue-400 opacity-70" />
-                  <span className="text-xs font-medium text-foreground/80 leading-none">
-                    {new Date(ixTimeTimestamp).toLocaleDateString('en-US', { 
-                      month: 'short', 
-                      day: 'numeric' 
-                    })}
-                  </span>
-                </>
-              )}
-              {timeDisplayMode === 'clock' && (
-                <div className="flex items-center gap-1.5">
-                  <div className="relative w-4 h-4">
-                    {/* Analog Clock */}
-                    <div className="absolute inset-0 border border-blue-400/40 rounded-full">
-                      {/* Hour markers */}
-                      {[...Array(12)].map((_, i) => (
-                        <div
-                          key={i}
-                          className="absolute w-0.5 h-1 bg-blue-400/30"
-                          style={{
-                            top: '1px',
-                            left: '50%',
-                            transformOrigin: '50% 7px',
-                            transform: `translateX(-50%) rotate(${i * 30}deg)`,
-                          }}
-                        />
-                      ))}
-                      
-                      {/* Hour hand */}
-                      <div
-                        className="absolute w-0.5 h-2 bg-blue-400 rounded-full"
-                        style={{
-                          top: '2px',
-                          left: '50%',
-                          transformOrigin: '50% 6px',
-                          transform: `translateX(-50%) rotate(${(new Date(ixTimeTimestamp).getUTCHours() % 12) * 30 + (new Date(ixTimeTimestamp).getUTCMinutes() * 0.5)}deg)`,
-                        }}
-                      />
-                      
-                      {/* Minute hand */}
-                      <div
-                        className="absolute w-0.5 h-2.5 bg-blue-300 rounded-full"
-                        style={{
-                          top: '1.5px',
-                          left: '50%',
-                          transformOrigin: '50% 6.5px',
-                          transform: `translateX(-50%) rotate(${new Date(ixTimeTimestamp).getUTCMinutes() * 6}deg)`,
-                        }}
-                      />
-                      
-                      {/* Center dot */}
-                      <div className="absolute top-1/2 left-1/2 w-0.5 h-0.5 bg-blue-400 rounded-full transform -translate-x-1/2 -translate-y-1/2" />
+          {/* Time Display and Greeting - combined section */}
+          {!isSticky && (
+            <div className="flex flex-col items-center gap-2 py-1">
+              {/* Time Display - cycles through modes */}
+              <button
+                onClick={() => {
+                  setTimeDisplayMode(prev => 
+                    prev === 'time' ? 'date' : 
+                    prev === 'date' ? 'both' : 'time'
+                  );
+                }}
+                className="flex items-center gap-1.5 hover:bg-white/10 px-2 py-1 rounded-md transition-colors cursor-pointer"
+              >
+                {timeDisplayMode === 'time' && (
+                  <>
+                    <Clock className="h-3 w-3 text-blue-400 opacity-70" />
+                    <span className="text-xs font-medium text-foreground/80 leading-none">
+                      {currentTime.timeDisplay}
+                    </span>
+                  </>
+                )}
+                {timeDisplayMode === 'date' && (
+                  <>
+                    <Calendar className="h-3 w-3 text-blue-400 opacity-70" />
+                    <span className="text-xs font-medium text-foreground/80 leading-none">
+                      {new Date(ixTimeTimestamp).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric' 
+                      })}
+                    </span>
+                  </>
+                )}
+                {timeDisplayMode === 'both' && (
+                  <div className="flex flex-col items-center gap-0.5">
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3 text-blue-400 opacity-70" />
+                      <span className="text-xs font-semibold text-foreground/90 leading-none">
+                        {currentTime.timeDisplay}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-2.5 w-2.5 text-blue-400 opacity-60" />
+                      <span className="text-[10px] text-foreground/70 leading-none">
+                        {new Date(ixTimeTimestamp).toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })}
+                      </span>
                     </div>
                   </div>
-                  <span className="text-xs font-medium text-foreground/80 leading-none">
-                    {currentTime.timeDisplay}
-                  </span>
-                </div>
-              )}
-            </button>
-          )}
-          
-          {/* Greeting - only show when not sticky */}
-          {!isSticky && (
-            <div className="flex items-center gap-2">
+                )}
+              </button>
+              
+              {/* Greeting */}
               <Popover>
-                  <PopoverTrigger>
-                    <div className="text-sm font-medium text-foreground cursor-pointer hover:bg-accent/10 px-2 py-1 rounded transition-colors text-center">
+                <PopoverTrigger>
+                  <div className="relative group text-sm font-medium text-foreground cursor-pointer hover:bg-accent/10 px-2 py-1 rounded transition-colors text-center">
+                    {/* Country flag background blur effect */}
+                    {setupStatus === 'complete' && userProfile?.country && (
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-300 rounded overflow-hidden">
+                        <SimpleFlag 
+                          countryName={userProfile.country.name}
+                          className="absolute inset-0 w-full h-full object-cover rounded opacity-30 blur-md scale-110"
+                          showPlaceholder={false}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-background/60 via-transparent to-background/60 rounded" />
+                      </div>
+                    )}
+                    <span className="relative z-10">
                       {currentTime.greeting}{user?.firstName ? `, ${user.firstName}` : ''}
-                    </div>
-                  </PopoverTrigger>
+                    </span>
+                  </div>
+                </PopoverTrigger>
                   <PopoverContent 
                     side="bottom" 
-                  align="start"
-                    className="w-96 p-4 bg-card/95 backdrop-blur-xl border-border rounded-xl shadow-2xl z-[10002]"
+                    align="center"
+                    className="w-96 p-4 bg-card/95 backdrop-blur-xl border-border rounded-xl shadow-2xl z-[10002] mt-2"
+                    sideOffset={8}
                   >
                     {setupStatus === 'complete' && userProfile?.country ? (
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-3 pb-3 border-b border-border">
-                          <Crown className="h-6 w-6 text-amber-400" />
-                          <div>
-                            <div className="font-semibold text-gray-900 dark:text-white">Executive Dashboard</div>
-                            <div className="text-sm text-gray-700 dark:text-gray-300">{userProfile.country.name}</div>
+                      <div className="space-y-6">
+                        {/* Header with flag and country info */}
+                        <div className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-amber-500/20 via-orange-500/10 to-yellow-500/15 dark:from-amber-500/10 dark:via-orange-500/5 dark:to-yellow-500/10 border border-amber-300/40 dark:border-amber-200/20">
+                          <div className="absolute inset-0 opacity-40 dark:opacity-30">
+                            <SimpleFlag 
+                              countryName={userProfile.country.name}
+                              className="w-full h-full object-cover blur-sm scale-110"
+                              showPlaceholder={false}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-black/50 dark:from-black/40 dark:via-transparent dark:to-black/40" />
                           </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-3 gap-3">
-                          <div className="text-center p-3 bg-muted/30 rounded-lg">
-                            <BarChart3 className="h-6 w-6 text-blue-400 mx-auto mb-2" />
-                            <div className="text-xs text-muted-foreground mb-1">Economic</div>
-                            <div className="w-8 h-8 mx-auto bg-green-500/20 rounded-full flex items-center justify-center relative">
-                              <div className="w-6 h-6 border-2 border-green-500/30 rounded-full absolute"></div>
-                              <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+                          <div className="relative z-10 flex items-center gap-3">
+                            <div className="p-2 bg-amber-500/30 dark:bg-amber-500/20 rounded-xl backdrop-blur-sm border border-amber-400/50 dark:border-amber-300/30">
+                              <Crown className="h-6 w-6 text-amber-600 dark:text-amber-400" />
                             </div>
-                          </div>
-                          
-                          <div className="text-center p-3 bg-muted/30 rounded-lg">
-                            <Users className="h-6 w-6 text-yellow-400 mx-auto mb-2" />
-                            <div className="text-xs text-muted-foreground mb-1">Social</div>
-                            <div className="w-8 h-8 mx-auto bg-yellow-500/20 rounded-full flex items-center justify-center relative">
-                              <div className="w-6 h-6 border-2 border-yellow-500/30 rounded-full absolute"></div>
-                              <div className="w-5 h-5 bg-yellow-500 rounded-full"></div>
+                            <div>
+                              <div className="font-bold text-white drop-shadow-lg">Executive Command</div>
+                              <div className="text-amber-200 dark:text-amber-100 text-sm font-medium">{userProfile.country.name}</div>
                             </div>
-                          </div>
-                          
-                          <div className="text-center p-3 bg-muted/30 rounded-lg">
-                            <Activity className="h-6 w-6 text-purple-400 mx-auto mb-2" />
-                            <div className="text-xs text-muted-foreground mb-1">Security</div>
-                            <div className="w-8 h-8 mx-auto bg-purple-500/20 rounded-full flex items-center justify-center relative">
-                              <div className="w-6 h-6 border-2 border-purple-500/30 rounded-full absolute"></div>
-                              <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                            <div className="ml-auto">
+                              <div className="text-xs text-amber-300 dark:text-amber-200 opacity-90 dark:opacity-80">GDP/Capita</div>
+                              <div className="font-bold text-amber-200 dark:text-amber-100">{formatCurrency(userProfile.country.currentGdpPerCapita || 0)}</div>
                             </div>
                           </div>
                         </div>
                         
-                        <div className="flex gap-2 pt-2">
+                        {/* Live metrics with Apple-style indicators */}
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="group cursor-pointer text-center p-4 bg-gradient-to-br from-green-500/20 to-emerald-500/10 dark:from-green-500/10 dark:to-emerald-500/5 rounded-2xl border border-green-300/40 dark:border-green-200/20 hover:border-green-400/60 dark:hover:border-green-300/40 transition-all duration-300 hover:scale-105 hover:shadow-lg">
+                            <BarChart3 className="h-7 w-7 text-green-600 dark:text-green-400 mx-auto mb-3 group-hover:scale-110 transition-transform duration-300" />
+                            <div className="text-xs text-green-700 dark:text-green-300 mb-2 font-medium">Economic Health</div>
+                            <div className="relative w-10 h-10 mx-auto">
+                              {/* Animated progress ring */}
+                              <div className="absolute inset-0">
+                                <svg className="w-10 h-10 transform -rotate-90" viewBox="0 0 36 36">
+                                  <path className="text-green-200/40 dark:text-green-900/20" strokeWidth="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                  <path className="text-green-600 dark:text-green-400" strokeWidth="3" strokeDasharray="85, 100" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                </svg>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <span className="text-xs font-bold text-green-700 dark:text-green-400">85%</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="group cursor-pointer text-center p-4 bg-gradient-to-br from-blue-500/20 to-cyan-500/10 dark:from-blue-500/10 dark:to-cyan-500/5 rounded-2xl border border-blue-300/40 dark:border-blue-200/20 hover:border-blue-400/60 dark:hover:border-blue-300/40 transition-all duration-300 hover:scale-105 hover:shadow-lg">
+                            <Users className="h-7 w-7 text-blue-600 dark:text-blue-400 mx-auto mb-3 group-hover:scale-110 transition-transform duration-300" />
+                            <div className="text-xs text-blue-700 dark:text-blue-300 mb-2 font-medium">Social Stability</div>
+                            <div className="relative w-10 h-10 mx-auto">
+                              <div className="absolute inset-0">
+                                <svg className="w-10 h-10 transform -rotate-90" viewBox="0 0 36 36">
+                                  <path className="text-blue-200/40 dark:text-blue-900/20" strokeWidth="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                  <path className="text-blue-600 dark:text-blue-400" strokeWidth="3" strokeDasharray="72, 100" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                </svg>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <span className="text-xs font-bold text-blue-700 dark:text-blue-400">72%</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="group cursor-pointer text-center p-4 bg-gradient-to-br from-purple-500/20 to-indigo-500/10 dark:from-purple-500/10 dark:to-indigo-500/5 rounded-2xl border border-purple-300/40 dark:border-purple-200/20 hover:border-purple-400/60 dark:hover:border-purple-300/40 transition-all duration-300 hover:scale-105 hover:shadow-lg">
+                            <Activity className="h-7 w-7 text-purple-600 dark:text-purple-400 mx-auto mb-3 group-hover:scale-110 transition-transform duration-300" />
+                            <div className="text-xs text-purple-700 dark:text-purple-300 mb-2 font-medium">Defense Status</div>
+                            <div className="relative w-10 h-10 mx-auto">
+                              <div className="absolute inset-0">
+                                <svg className="w-10 h-10 transform -rotate-90" viewBox="0 0 36 36">
+                                  <path className="text-purple-200/40 dark:text-purple-900/20" strokeWidth="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                  <path className="text-purple-600 dark:text-purple-400" strokeWidth="3" strokeDasharray="91, 100" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                </svg>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <span className="text-xs font-bold text-purple-700 dark:text-purple-400">91%</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Action buttons with Apple motion */}
+                        <div className="grid grid-cols-2 gap-3">
                           <Button
                             size="sm"
-                            variant="outline"
                             onClick={() => userProfile?.country && (window.location.href = `/countries/${userProfile.country.id}`)}
-                            className="flex-1 text-muted-foreground hover:text-foreground border hover:border-accent hover:bg-accent/10"
+                            className="group relative overflow-hidden bg-gradient-to-r from-amber-500/30 to-orange-500/25 dark:from-amber-500/20 dark:to-orange-500/20 hover:from-amber-500/40 hover:to-orange-500/35 dark:hover:from-amber-500/30 dark:hover:to-orange-500/30 border border-amber-400/50 dark:border-amber-300/30 hover:border-amber-500/70 dark:hover:border-amber-300/50 text-amber-800 dark:text-amber-200 hover:text-amber-900 dark:hover:text-amber-100 transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm"
                           >
-                            <Crown className="h-4 w-4 mr-2" />
-                            My Country
+                            <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/20 dark:via-amber-400/10 to-amber-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out" />
+                            <Crown className="h-4 w-4 mr-2 relative z-10" />
+                            <span className="relative z-10 font-medium">My Country</span>
                           </Button>
                           <Button
                             size="sm"
-                            variant="outline"
                             onClick={() => window.location.href = "/eci"}
-                            className="flex-1 text-muted-foreground hover:text-foreground border hover:border-accent hover:bg-accent/10"
+                            className="group relative overflow-hidden bg-gradient-to-r from-blue-500/30 to-cyan-500/25 dark:from-blue-500/20 dark:to-cyan-500/20 hover:from-blue-500/40 hover:to-cyan-500/35 dark:hover:from-blue-500/30 dark:hover:to-cyan-500/30 border border-blue-400/50 dark:border-blue-300/30 hover:border-blue-500/70 dark:hover:border-blue-300/50 text-blue-800 dark:text-blue-200 hover:text-blue-900 dark:hover:text-blue-100 transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm"
                           >
-                            <Target className="h-4 w-4 mr-2" />
-                            ECI
+                            <div className="absolute inset-0 bg-gradient-to-r from-blue-400/0 via-blue-400/20 dark:via-blue-400/10 to-blue-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out" />
+                            <Target className="h-4 w-4 mr-2 relative z-10" />
+                            <span className="relative z-10 font-medium">Command</span>
                           </Button>
                         </div>
                       </div>
@@ -724,29 +806,33 @@ function CommandPaletteContent({
             </div>
           )}
           
-          {/* Action buttons - icons only when sticky and collapsed */}
+          {/* Action buttons - icons only with hover tooltips */}
           <div className="flex items-center gap-1">
             <Button
               size="sm"
               variant="ghost"
               onClick={() => switchMode("search")}
-              className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center rounded-lg transition-all ${ 
-                isSticky && isCollapsed ? 'h-6 w-6 p-0' : 'h-7 px-2 gap-1'
+              className={`group text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all relative ${ 
+                isSticky && isCollapsed ? 'h-6 w-6 p-0' : 'h-7 w-7 p-0'
               }`}
             >
-              <Search className="h-3 w-3" />
-              {(!isSticky || !isCollapsed) && <span className="text-xs leading-none">Search</span>}
+              <Search className="h-3 w-3 transition-transform group-hover:scale-110" />
+              <span className="absolute left-full ml-2 px-2 py-1 bg-black/90 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                Search
+              </span>
             </Button>
             <Button
               size="sm"
               variant="ghost"
               onClick={() => switchMode("notifications")}
-              className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center rounded-lg transition-all ${ 
-                isSticky && isCollapsed ? 'h-6 w-6 p-0' : 'h-7 px-2 gap-1'
+              className={`group text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center justify-center rounded-lg transition-all ${ 
+                isSticky && isCollapsed ? 'h-6 w-6 p-0' : 'h-7 w-7 p-0'
               }`}
             >
-              <Bell className="h-3 w-3" />
-              {(!isSticky || !isCollapsed) && <span className="text-xs leading-none">Alerts</span>}
+              <Bell className="h-3 w-3 transition-transform group-hover:scale-110" />
+              <span className="absolute left-full ml-2 px-2 py-1 bg-black/90 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                Alerts
+              </span>
               {totalUnreadCount > 0 && (
                 <Badge className={`absolute bg-destructive text-foreground flex items-center justify-center rounded-full text-[10px] ${ 
                   isSticky && isCollapsed ? '-top-1 -right-1 h-3 w-3 p-0' : '-top-1 -right-1 h-3 w-3 p-0'
@@ -759,12 +845,14 @@ function CommandPaletteContent({
               size="sm"
               variant="ghost"
               onClick={() => switchMode("settings")}
-              className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center rounded-lg transition-all ${ 
-                isSticky && isCollapsed ? 'h-6 w-6 p-0' : 'h-7 px-2 gap-1'
+              className={`group text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all relative ${ 
+                isSticky && isCollapsed ? 'h-6 w-6 p-0' : 'h-7 w-7 p-0'
               }`}
             >
-              <Settings className="h-3 w-3" />
-              {(!isSticky || !isCollapsed) && <span className="text-xs leading-none">Settings</span>}
+              <Settings className="h-3 w-3 transition-transform group-hover:scale-110" />
+              <span className="absolute left-full ml-2 px-2 py-1 bg-black/90 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                Settings
+              </span>
             </Button>
           </div>
         </DynamicContainer>
@@ -783,15 +871,15 @@ function CommandPaletteContent({
         return (
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
-              <div className="text-xl font-bold text-foreground flex items-center gap-3">
+              <div className="text-xl font-bold text-foreground flex items-center gap-3 w-full justify-center">
                 <Command className="h-6 w-6 text-blue-400" />
-                Command Palette
+                <span>Command Palette</span>
               </div>
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={closeDropdown}
-                className="text-muted-foreground hover:text-foreground hover:bg-accent/10 px-2 py-2"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/10 px-2 py-2 absolute right-6 top-6"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -829,6 +917,7 @@ function CommandPaletteContent({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-12 pr-16 py-3 bg-accent/10 border text-foreground placeholder:text-muted-foreground rounded-xl text-base focus:bg-accent/15 focus:border-blue-400 transition-all"
+                data-command-palette-search="true"
                 autoFocus
               />
               <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
@@ -993,9 +1082,9 @@ function CommandPaletteContent({
         return (
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
-              <div className="text-xl font-bold text-foreground flex items-center gap-3">
+              <div className="text-xl font-bold text-foreground flex items-center gap-3 w-full justify-center">
                 <BellRing className="h-6 w-6 text-blue-400" />
-                {isExecutiveMode ? 'Intelligence Center' : 'Notification Center'}
+                <span>{isExecutiveMode ? 'Intelligence Center' : 'Notification Center'}</span>
                 {totalUnreadCount > 0 && (
                   <Badge className="bg-destructive text-foreground text-sm px-2 py-1 rounded-full">
                     {totalUnreadCount}
@@ -1029,7 +1118,7 @@ function CommandPaletteContent({
                   size="sm"
                   variant="ghost"
                   onClick={closeDropdown}
-                  className="text-muted-foreground hover:text-foreground hover:bg-accent/10 px-2 py-2"
+                  className="text-muted-foreground hover:text-foreground hover:bg-accent/10 px-2 py-2 absolute right-6 top-6"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -1246,15 +1335,15 @@ function CommandPaletteContent({
         return (
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
-              <div className="text-xl font-bold text-foreground flex items-center gap-3">
+              <div className="text-xl font-bold text-foreground flex items-center gap-3 w-full justify-center">
                 <Settings className="h-6 w-6 text-blue-400" />
-                User Settings
+                <span>User Settings</span>
               </div>
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={closeDropdown}
-                className="text-muted-foreground hover:text-foreground hover:bg-accent px-2 py-2"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent px-2 py-2 absolute right-6 top-6"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -1304,51 +1393,24 @@ function CommandPaletteContent({
                 </div>
               </div>
 
-              {/* Sound Settings */}
-              <div className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-accent/10 transition-all border-border">
-                <div className="p-1.5 bg-green-500/20 rounded flex-shrink-0">
-                  {userPreferences.soundEnabled ? (
-                    <Volume2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  ) : (
-                    <VolumeX className="h-4 w-4 text-red-600 dark:text-red-400" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">Sound Effects</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">
-                    {userPreferences.soundEnabled ? 'Enabled' : 'Disabled'}
-                  </div>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setUserPreferences(prev => ({ ...prev, soundEnabled: !prev.soundEnabled }))}
-                  className="px-2 py-1 text-xs"
-                >
-                  {userPreferences.soundEnabled ? 'Disable' : 'Enable'}
-                </Button>
-              </div>
-
-              {/* Language Settings */}
-              <div className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-accent/10 transition-all border-border">
+              {/* Profile Settings */}
+              <Button
+                size="sm"
+               
+                onClick={() => window.location.href = createUrl("/profile")}
+                className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-accent/10 transition-all border-border w-full justify-start"
+              >
                 <div className="p-1.5 bg-blue-500/20 rounded flex-shrink-0">
-                  <Languages className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">Language</div>
+                <div className="min-w-0 flex-1 text-left">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">Profile & Settings</div>
                   <div className="text-xs text-gray-600 dark:text-gray-400">
-                    English
+                    Manage your account, billing, and preferences
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="px-3 py-1 cursor-not-allowed opacity-50"
-                  disabled
-                >
-                  Coming Soon
-                </Button>
-              </div>
+                <ChevronDown className="h-4 w-4 rotate-[-90deg] text-muted-foreground" />
+              </Button>
 
               {/* Layout Preferences */}
               <div className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-accent/10 transition-all border-border">
@@ -1370,30 +1432,30 @@ function CommandPaletteContent({
                   {compactMode ? 'Disable' : 'Enable'}
                 </Button>
               </div>
-
-              {/* Animation Settings */}
-              <div className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-accent/10 transition-all border-border">
-                <div className="p-1.5 bg-orange-500/20 rounded flex-shrink-0">
-                  <Eye className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+   {/* Language Settings */}
+   <div className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-accent/10 transition-all border-border">
+                <div className="p-1.5 bg-blue-500/20 rounded flex-shrink-0">
+                  <Languages className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">Animations</div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">Language</div>
                   <div className="text-xs text-gray-600 dark:text-gray-400">
-                    {userPreferences.animations ? 'Enabled' : 'Reduced'}
+                    English
                   </div>
                 </div>
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setUserPreferences(prev => ({ ...prev, animations: !prev.animations }))}
-                  className="px-2 py-1 text-xs"
+                  className="px-3 py-1 cursor-not-allowed opacity-50"
+                  disabled
                 >
-                  {userPreferences.animations ? 'Reduce' : 'Enable'}
+                  Coming Soon
                 </Button>
               </div>
+            
 
               {/* Quick Action Buttons */}
-              <div className="lg:col-span-2 grid grid-cols-2 gap-3 pt-2">
+              <div className="lg:col-span-2 grid grid-cols-1 gap-3 pt-2">
                 <Button
                   size="sm"
                   variant="outline"
@@ -1403,15 +1465,26 @@ function CommandPaletteContent({
                   <RefreshCw className="h-4 w-4" />
                   <span>Refresh Data</span>
                 </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => window.location.href = createUrl("/profile")}
-                  className="flex items-center gap-2"
-                >
-                  <User className="h-4 w-4" />
-                  <span>Profile Settings</span>
-                </Button>
+              </div>
+              
+              {/* Logout */}
+              <div className="border-t border-border pt-3 mt-3">
+                <SignOutButton>
+                  <Button
+                    size="sm"
+                    className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 transition-all border-border w-full justify-start text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:border-red-200 dark:hover:border-red-800"
+                  >
+                    <div className="p-1.5 bg-red-500/20 rounded flex-shrink-0">
+                      <LogOut className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1 text-left">
+                      <div className="text-sm font-medium">Sign Out</div>
+                      <div className="text-xs opacity-70">
+                        Sign out of your account
+                      </div>
+                    </div>
+                  </Button>
+                </SignOutButton>
               </div>
             </div>
           </div>
@@ -1458,8 +1531,10 @@ function CommandPaletteContent({
 
 export function CommandPalette({ className, isSticky }: CommandPaletteProps) {
   return (
-    <div className={`w-full max-w-none flex items-center justify-center z-[10000] ${className || ''}`}>
-      <DynamicIslandProvider initialSize={SIZE_PRESETS.COMPACT_LONG}>
+    <div 
+      className={`w-full max-w-none flex items-center justify-center z-[10000] ${className || ''}`}
+    >
+      <DynamicIslandProvider initialSize={SIZE_PRESETS.COMPACT_TALL}>
         <CommandPaletteWrapper isSticky={isSticky} />
       </DynamicIslandProvider>
     </div>
@@ -1470,6 +1545,19 @@ function CommandPaletteWrapper({ isSticky }: { isSticky?: boolean }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [expandedMode, setExpandedMode] = useState<ViewMode>("search");
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Prevent multiple instances by checking if we're already initialized
+  useEffect(() => {
+    if (!isInitialized) {
+      setIsInitialized(true);
+    }
+    
+    return () => {
+      setIsInitialized(false);
+      setIsExpanded(false);
+    };
+  }, []);
   
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -1479,11 +1567,16 @@ function CommandPaletteWrapper({ isSticky }: { isSticky?: boolean }) {
       }
     };
 
-    if (isExpanded) {
-      document.addEventListener('mousedown', handleClickOutside);
+    if (isExpanded && isInitialized) {
+      document.addEventListener('mousedown', handleClickOutside, { passive: true });
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-  }, [isExpanded]);
+  }, [isExpanded, isInitialized]);
+  
+  // Don't render until properly initialized
+  if (!isInitialized) {
+    return null;
+  }
   
   return (
     <div ref={wrapperRef} className="relative w-full">

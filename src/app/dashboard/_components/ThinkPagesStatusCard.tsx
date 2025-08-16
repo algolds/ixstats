@@ -42,11 +42,11 @@ export function ThinkPagesStatusCard({ userProfile, className = "", onCollapse }
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-lg font-semibold">
               <Brain className="h-5 w-5 text-blue-500" />
-              ThinkPages Hub
+              ThinkPages
             </CardTitle>
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="text-xs">
-                Beta
+                Preview
               </Badge>
               {onCollapse && (
                 <button 

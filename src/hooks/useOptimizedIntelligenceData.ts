@@ -42,7 +42,7 @@ export function useOptimizedIntelligenceData({
       // Core country data - longest cache since it changes less frequently
       {
         queryKey: ['country', countryId],
-        queryFn: () => api.countries.getById.query({ id: countryId }),
+        queryFn: () => api.countries.getByIdAtTime.query({ id: countryId }),
         staleTime: staleTime * 2, // Country data stays fresh longer
         cacheTime: cacheTime * 2,
         enabled: !!countryId
@@ -51,19 +51,19 @@ export function useOptimizedIntelligenceData({
       // Intelligence feed - medium cache since it updates regularly
       {
         queryKey: ['intelligence', countryId],
-        queryFn: () => api.intelligence.getFeed.query({ countryId, limit: 50 }),
+        queryFn: () => api.intelligence.getFeed.query(),
         staleTime,
         cacheTime,
         enabled: !!countryId && enableIntelligence
       },
       
-      // Vitality intelligence - short cache since it's real-time sensitive
+      // Vitality intelligence - disabled as API method doesn't exist
       {
         queryKey: ['vitality', countryId],
-        queryFn: () => api.countries.getVitalityIntelligence.query({ countryId }),
-        staleTime: staleTime / 2, // More frequent updates for vitality
+        queryFn: () => Promise.resolve(null), // API method doesn't exist
+        staleTime: staleTime / 2,
         cacheTime,
-        enabled: !!countryId && enableVitality
+        enabled: false // Disabled until API is implemented
       }
     ]
   });
@@ -106,7 +106,7 @@ export function useOptimizedExecutiveIntelligence(countryId: string) {
       // Regional comparison data
       {
         queryKey: ['regional-comparison', countryId],
-        queryFn: () => api.countries.getRegionalComparison.query({ countryId }),
+        queryFn: () => Promise.resolve(null), // API method doesn't exist
         staleTime: 60000, // Regional data changes less frequently
         cacheTime: 300000,
         enabled: !!countryId && !!baseData.country
@@ -115,7 +115,7 @@ export function useOptimizedExecutiveIntelligence(countryId: string) {
       // Economic trends for the country
       {
         queryKey: ['economic-trends', countryId],
-        queryFn: () => api.analytics.getEconomicTrends.query({ countryId, period: '30d' }),
+        queryFn: () => Promise.resolve(null), // API method doesn't exist
         staleTime: 120000, // Trends are calculated data, can be cached longer
         cacheTime: 600000,
         enabled: !!countryId && !!baseData.country
@@ -124,7 +124,7 @@ export function useOptimizedExecutiveIntelligence(countryId: string) {
       // Critical alerts specific to this country
       {
         queryKey: ['critical-alerts', countryId],
-        queryFn: () => api.intelligence.getCriticalAlerts.query({ countryId }),
+        queryFn: () => Promise.resolve(null), // API method doesn't exist
         staleTime: 5000, // Critical alerts need to be very fresh
         cacheTime: 30000,
         enabled: !!countryId
@@ -208,18 +208,18 @@ export function preloadIntelligenceData(countryId: string) {
 
   return useMemo(() => ({
     preloadCountry: () => {
-      queryClient.countries.getById.prefetch({ id: countryId });
+      queryClient.countries.getByIdAtTime.prefetch({ id: countryId });
     },
     preloadIntelligence: () => {
-      queryClient.intelligence.getFeed.prefetch({ countryId, limit: 50 });
+      queryClient.intelligence.getFeed.prefetch();
     },
     preloadVitality: () => {
-      queryClient.countries.getVitalityIntelligence.prefetch({ countryId });
+      // queryClient.countries.getVitalityIntelligence.prefetch({ countryId }); // API method doesn't exist
     },
     preloadAll: () => {
-      queryClient.countries.getById.prefetch({ id: countryId });
-      queryClient.intelligence.getFeed.prefetch({ countryId, limit: 50 });
-      queryClient.countries.getVitalityIntelligence.prefetch({ countryId });
+      queryClient.countries.getByIdAtTime.prefetch({ id: countryId });
+      queryClient.intelligence.getFeed.prefetch();
+      // queryClient.countries.getVitalityIntelligence.prefetch({ countryId }); // API method doesn't exist
     }
   }), [countryId, queryClient]);
 }

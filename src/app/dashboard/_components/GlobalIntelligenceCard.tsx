@@ -128,7 +128,7 @@ export function GlobalIntelligenceCard({
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Brain className="h-6 w-6 text-blue-400 drop-shadow-sm" />
-                  <h3 className="text-lg font-bold text-foreground drop-shadow-sm">Global Intelligence</h3>
+                  <h3 className="text-lg font-bold text-foreground drop-shadow-sm">Global Activity</h3>
                 </div>
                 
                 {/* Collapse Arrow */}
