@@ -46,6 +46,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useThinkPagesWebSocket } from '~/hooks/useThinkPagesWebSocket';
 import { Label } from '~/components/ui/label';
 import RichTextEditor, { type RichTextEditorRef } from '~/components/thinkpages/RichTextEditor';
+import { CollaborativeDocument } from './primitives/CollaborativeDocument';
 import { Textarea } from '~/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
 
@@ -350,24 +351,79 @@ export function ThinktankGroups({ countryId, countryName, userAccounts }: Thinkt
                   variant="ghost"
                   size="sm"
                   onClick={() => setView('collaboration')}
+                  title="Collaborative Documents"
                 >
                   <File className="h-4 w-4" />
                 </Button>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      title="Group Settings"
+                    >
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Group Settings</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Group Name</Label>
+                        <Input defaultValue={selectedGroup.name} />
+                      </div>
+                      <div>
+                        <Label>Description</Label>
+                        <Textarea defaultValue={selectedGroup.description || ''} />
+                      </div>
+                      <div>
+                        <Label>Privacy</Label>
+                        <Select defaultValue="public">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="public">Public</SelectItem>
+                            <SelectItem value="private">Private</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button>Save Changes</Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      title="Invite Members"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Invite Members</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Search Users</Label>
+                        <Input placeholder="Search by username..." />
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Invite functionality coming soon...
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
                 <Button
                   variant="ghost"
                   size="sm"
-                >
-                  <Phone className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                >
-                  <Video className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
+                  title="More Options"
                 >
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
@@ -412,13 +468,13 @@ export function ThinktankGroups({ countryId, countryName, userAccounts }: Thinkt
                         <div
                           className={`p-3 rounded-2xl ${
                             message.accountId === currentAccount?.id
-                              ? 'bg-primary text-primary-foreground ml-4'
-                              : 'bg-muted mr-4'
+                              ? 'bg-gradient-to-r from-orange-600 to-yellow-600 text-white ml-4'
+                              : 'bg-background/50 border border-orange-200/30 mr-4'
                           }`}
                         >
                           {message.messageType === 'rich_text' ? (
                             <div 
-                              className="text-sm prose prose-sm max-w-none prose-invert" 
+                              className="text-sm [&_img]:inline-block [&_img]:h-5 [&_img]:w-5 [&_img]:mx-1 [&_img]:align-middle" 
                               dangerouslySetInnerHTML={{ __html: message.content }}
                             />
                           ) : (
@@ -562,20 +618,15 @@ export function ThinktankGroups({ countryId, countryName, userAccounts }: Thinkt
           </CardContent>
         </Card>
 
-        {/* Collaboration Space */}
-        <Card className="glass-hierarchy-child h-[600px]">
-          <CardContent className="p-8 text-center">
-            <File className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Collaborative Documents</h3>
-            <p className="text-muted-foreground mb-6">
-              Create and edit shared documents for lore writing, planning, and strategy.
-            </p>
-            <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Create First Document
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Collaborative Document */}
+        <CollaborativeDocument
+          groupId={selectedGroup.id}
+          groupName={selectedGroup.name}
+          currentUserAccount={currentAccount}
+          userAccounts={userAccounts}
+          isOwner={selectedGroup.createdBy === currentAccount?.id}
+          members={selectedGroup.members}
+        />
       </div>
     );
   }

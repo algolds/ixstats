@@ -28,6 +28,7 @@ import { LiveEventsFeed } from './LiveEventsFeed';
 import { ThinkPagesGuide } from './ThinkPagesGuide';
 import { api } from '~/trpc/react';
 import { toast } from 'sonner';
+import { BlurFade } from '~/components/magicui/blur-fade';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 
 interface ThinkpagesSocialPlatformProps {
@@ -178,19 +179,35 @@ export function ThinkpagesSocialPlatform({
 
           <div className="space-y-4">
             <AnimatePresence>
-              {isLoadingFeed ? <div className="flex justify-center items-center p-8"><Loader2 className="animate-spin h-8 w-8"/></div> : filteredPosts?.map(post => (
-                <ThinkpagesPost
-                  key={post.id}
-                  post={post}
-                  currentUserAccountId={selectedAccount?.id || ''}
-                  onLike={(postId) => console.log('Like:', postId)}
-                  onRepost={(postId) => console.log('Repost:', postId)}
-                  onReply={(postId) => console.log('Reply:', postId)}
-                  onShare={(postId) => console.log('Share:', postId)}
-                  onReaction={(postId, reaction) => console.log('Reaction:', postId, reaction)}
-                  onAccountClick={(accountId) => console.log('Account:', accountId)}
-                  showThread={true}
-                />
+              {isLoadingFeed ? <div className="flex justify-center items-center p-8"><Loader2 className="animate-spin h-8 w-8"/></div> : filteredPosts?.map((post, index) => (
+                <BlurFade key={post.id} delay={0.05 * index} inView={true}>
+                  <ThinkpagesPost
+                    post={post}
+                    currentUserAccountId={selectedAccount?.id || ''}
+                    onLike={(postId) => {
+                      refetchFeed();
+                    }}
+                    onRepost={(postId) => {
+                      refetchFeed();
+                    }}
+                    onReply={(postId) => {
+                      // Open reply composer
+                      console.log('Reply to:', postId);
+                      refetchFeed();
+                    }}
+                    onShare={(postId) => {
+                      console.log('Shared post:', postId);
+                    }}
+                    onReaction={(postId, reactionType) => {
+                      console.log('Reaction:', reactionType, 'on post:', postId);
+                      refetchFeed();
+                    }}
+                    onAccountClick={(accountId) => {
+                      console.log('View account:', accountId);
+                    }}
+                    showThread={true}
+                  />
+                </BlurFade>
               ))}
             </AnimatePresence>
 
@@ -231,28 +248,29 @@ export function ThinkpagesSocialPlatform({
                 </div>
               ) : (
                 trendingTopics?.map((topic, index) => (
-                  <button
-                    key={topic.hashtag}
-                    className="w-full flex items-center justify-between p-3 hover:bg-accent/50 rounded-lg transition-colors text-left border border-transparent hover:border-border"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center w-6 h-6 rounded bg-[#fcc309]/20 text-[#800000] text-xs font-bold">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <div className="font-medium text-sm">#{topic.hashtag}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {topic.postCount} thinks
+                  <BlurFade key={topic.hashtag} delay={0.1 + 0.03 * index}>
+                    <button
+                      className="w-full flex items-center justify-between p-3 hover:bg-accent/50 rounded-lg transition-colors text-left border border-transparent hover:border-border"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-6 h-6 rounded bg-[#fcc309]/20 text-[#800000] text-xs font-bold">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <div className="font-medium text-sm">#{topic.hashtag}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {topic.postCount} thinks
+                          </div>
                         </div>
                       </div>
-                    </div>
                     <div className="flex items-center gap-1">
                       <TrendingUp className="h-3 w-3 text-green-500" />
                       <span className="text-xs text-green-600 font-medium">
                         +{Math.floor(Math.random() * 50 + 10)}%
                       </span>
                     </div>
-                  </button>
+                    </button>
+                  </BlurFade>
                 ))
               )}
             </CardContent>

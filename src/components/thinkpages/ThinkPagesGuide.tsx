@@ -28,19 +28,19 @@ export function ThinkPagesGuide() {
       id: 'about',
       icon: BookOpen,
       title: 'About ThinkPages',
-      color: 'text-blue-400',
+      color: 'text-blue-500 dark:text-blue-400',
       content: (
         <div className="space-y-3 text-xs">
-          <p className="text-neutral-300 leading-relaxed">
+          <p className="text-muted-foreground leading-relaxed">
           Thinkpages empowers billions to connect, collaborate, and create through the open exchange of thought.
           We believe every mind has value, and our platform turns individual ideas into collective progress.
           </p>
-          <div className="bg-neutral-800/50 border border-neutral-700 rounded-lg p-3">
-            <p className="text-amber-300 text-xs font-medium mb-1">🌟 Stats for Nerds</p>
+          <div className="bg-muted/50 border border-border rounded-lg p-3">
+            <p className="text-yellow-600 dark:text-amber-300 text-xs font-medium mb-1">🌟 Stats for Nerds</p>
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <span className="text-neutral-400">Active Networks: <span className="text-white">2.47M</span></span>
-              <span className="text-neutral-400">Daily Thoughts: <span className="text-white">2.1B</span></span>
-              <span className="text-neutral-400">ThinkTanks: <span className="text-white">185.7K</span></span>
+              <span className="text-muted-foreground">Active Networks: <span className="text-foreground">2.47M</span></span>
+              <span className="text-muted-foreground">Daily Thoughts: <span className="text-foreground">2.1B</span></span>
+              <span className="text-muted-foreground">ThinkTanks: <span className="text-foreground">185.7K</span></span>
             </div>
           </div>
         </div>
@@ -50,28 +50,28 @@ export function ThinkPagesGuide() {
       id: 'features',
       icon: Sparkles,
       title: 'Key Features',
-      color: 'text-purple-400',
+      color: 'text-purple-500 dark:text-purple-400',
       content: (
         <div className="space-y-2 text-xs">
           <div className="flex items-start gap-2">
-            <Users className="h-3 w-3 text-orange-400 mt-0.5 flex-shrink-0" />
+            <Users className="h-3 w-3 text-orange-500 dark:text-orange-400 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-white font-medium">ThinkTanks</p>
-              <p className="text-neutral-400">Join discussion groups and collaboration spaces</p>
+              <p className="text-foreground font-medium">ThinkTanks</p>
+              <p className="text-muted-foreground">Join discussion groups and collaboration spaces</p>
             </div>
           </div>
           <div className="flex items-start gap-2">
-            <MessageCircle className="h-3 w-3 text-green-400 mt-0.5 flex-shrink-0" />
+            <MessageCircle className="h-3 w-3 text-green-500 dark:text-green-400 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-white font-medium">ThinkShare</p>
-              <p className="text-neutral-400">Private messaging with rich text and real-time features</p>
+              <p className="text-foreground font-medium">ThinkShare</p>
+              <p className="text-muted-foreground">Private messaging with rich text and real-time features</p>
             </div>
           </div>
           <div className="flex items-start gap-2">
-            <Zap className="h-3 w-3 text-yellow-400 mt-0.5 flex-shrink-0" />
+            <Zap className="h-3 w-3 text-yellow-500 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-white font-medium">Live Intelligence</p>
-              <p className="text-neutral-400">Real-time economic data integration in posts</p>
+              <p className="text-foreground font-medium">Live Intelligence</p>
+              <p className="text-muted-foreground">Real-time economic data integration in posts</p>
             </div>
           </div>
         </div>
@@ -81,24 +81,24 @@ export function ThinkPagesGuide() {
       id: 'tips',
       icon: Lightbulb,
       title: 'Pro Tips',
-      color: 'text-yellow-400',
+      color: 'text-yellow-500 dark:text-yellow-400',
       content: (
         <div className="space-y-2 text-xs">
           <div className="flex items-start gap-2">
-            <Crown className="h-3 w-3 text-amber-400 mt-0.5 flex-shrink-0" />
-            <p className="text-neutral-300">Government accounts are auto-verified and carry diplomatic weight</p>
+            <Crown className="h-3 w-3 text-amber-500 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+            <p className="text-muted-foreground">Government accounts are auto-verified and carry diplomatic weight</p>
           </div>
           <div className="flex items-start gap-2">
-            <Newspaper className="h-3 w-3 text-blue-400 mt-0.5 flex-shrink-0" />
-            <p className="text-neutral-300">Media accounts can break news and influence public opinion</p>
+            <Newspaper className="h-3 w-3 text-blue-500 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+            <p className="text-muted-foreground">Media accounts can break news and influence public opinion</p>
           </div>
           <div className="flex items-start gap-2">
-            <Heart className="h-3 w-3 text-red-400 mt-0.5 flex-shrink-0" />
-            <p className="text-neutral-300">Use reactions and hashtags to amplify your message's reach</p>
+            <Heart className="h-3 w-3 text-red-500 dark:text-red-400 mt-0.5 flex-shrink-0" />
+            <p className="text-muted-foreground">Use reactions and hashtags to amplify your message's reach</p>
           </div>
           <div className="flex items-start gap-2">
-            <Shield className="h-3 w-3 text-green-400 mt-0.5 flex-shrink-0" />
-            <p className="text-neutral-300">Private ThinkTanks require approval; public ones are open to all</p>
+            <Shield className="h-3 w-3 text-green-500 dark:text-green-400 mt-0.5 flex-shrink-0" />
+            <p className="text-muted-foreground">Private ThinkTanks require approval; public ones are open to all</p>
           </div>
         </div>
       )
@@ -110,14 +110,14 @@ export function ThinkPagesGuide() {
       <CardHeader className="pb-2">
         <div className="flex items-center gap-3">
           <motion.div 
-            className="h-8 w-8 bg-[#0050a1] rounded-lg flex items-center justify-center shadow-lg"
+            className="h-8 w-8 bg-blue-600 dark:bg-[#0050a1] rounded-lg flex items-center justify-center shadow-lg"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
           >
             <span className="text-white font-bold text-sm">T</span>
           </motion.div>
           <div>
-            <CardTitle className="text-sm font-bold text-[#0050a1]">ThinkPages Guide</CardTitle>
+            <CardTitle className="text-sm font-bold text-blue-600 dark:text-[#0050a1]">ThinkPages Guide</CardTitle>
             <p className="text-xs text-muted-foreground">Master the art of digital discourse</p>
           </div>
         </div>
@@ -129,22 +129,21 @@ export function ThinkPagesGuide() {
           const isActive = activeSection === section.id;
           
           return (
-            <motion.div key={section.id} layout className="border border-neutral-800 rounded-lg overflow-hidden">
+            <motion.div key={section.id} layout className="border border-border rounded-lg overflow-hidden">
               <motion.button
                 onClick={() => setActiveSection(isActive ? null : section.id)}
-                className="w-full flex items-center justify-between p-3 hover:bg-neutral-800/50 transition-colors"
-                whileHover={{ backgroundColor: "rgba(38, 38, 38, 0.5)" }}
+                className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors"
                 whileTap={{ scale: 0.98 }}
               >
                 <div className="flex items-center gap-2">
                   <Icon className={`h-4 w-4 ${section.color}`} />
-                  <span className="text-sm font-medium text-white">{section.title}</span>
+                  <span className="text-sm font-medium text-foreground">{section.title}</span>
                 </div>
                 <motion.div
                   animate={{ rotate: isActive ? 90 : 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <ChevronRight className="h-3 w-3 text-neutral-400" />
+                  <ChevronRight className="h-3 w-3 text-muted-foreground" />
                 </motion.div>
               </motion.button>
               
@@ -155,9 +154,9 @@ export function ThinkPagesGuide() {
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="border-t border-neutral-800"
+                    className="border-t border-border"
                   >
-                    <div className="p-3 bg-neutral-900/30">
+                    <div className="p-3 bg-muted/30">
                       {section.content}
                     </div>
                   </motion.div>
