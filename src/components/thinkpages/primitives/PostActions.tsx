@@ -92,6 +92,11 @@ export function PostActions({
       return;
     }
 
+    if (!postId) {
+      toast.error('Invalid post ID');
+      return;
+    }
+
     const existingReaction = reactions.find((r: any) => 
       r.accountId === currentUserAccountId && r.reactionType === 'like'
     );
@@ -111,7 +116,7 @@ export function PostActions({
       }
       onLike?.(postId);
     } catch (error) {
-      // Error handled in mutation
+      console.error('Error handling like:', error);
     }
   }, [postId, currentUserAccountId, reactions, addReactionMutation, removeReactionMutation, onLike]);
 
@@ -142,6 +147,18 @@ export function PostActions({
       return;
     }
 
+    if (!postId) {
+      toast.error('Invalid post ID');
+      return;
+    }
+
+    // Validate reaction type
+    const validReactionTypes = ['like', 'laugh', 'angry', 'sad', 'fire', 'thumbsup', 'thumbsdown'];
+    if (!validReactionTypes.includes(reactionType)) {
+      toast.error('Invalid reaction type');
+      return;
+    }
+
     const existingReaction = reactions.find((r: any) => r.accountId === currentUserAccountId);
 
     try {
@@ -154,13 +171,13 @@ export function PostActions({
         await addReactionMutation.mutateAsync({ 
           postId, 
           accountId: currentUserAccountId,
-          reactionType: reactionType as "like" | "laugh" | "angry" | "love" | "sad"
+          reactionType: reactionType as "like" | "laugh" | "angry" | "sad" | "fire" | "thumbsup" | "thumbsdown"
         });
       }
       onReaction?.(postId, reactionType);
       setShowReactionPopup(false);
     } catch (error) {
-      // Error handled in mutation
+      console.error('Error handling reaction:', error);
     }
   }, [postId, currentUserAccountId, reactions, addReactionMutation, removeReactionMutation, onReaction, setShowReactionPopup]);
 

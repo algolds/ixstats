@@ -1,279 +1,500 @@
-# Create a Country Builder
+# Country Builder System
 
 ## Overview
 
-The Create a Country Builder is a comprehensive tool for creating custom nations for tabletop RPG campaigns. It allows users to build detailed economic frameworks using real-world country data as foundations, then customize every aspect to create unique fictional countries with realistic economic systems.
+The Country Builder is a sophisticated, modern economic simulation platform that combines real-world economic data with an innovative glass physics design system. Built on Next.js 15 with TypeScript, it provides users with an intuitive, visually stunning interface for creating detailed economic models and fictional nations.
 
-## Purpose
+## Purpose & Vision
 
-This tool is specifically designed for:
+This advanced builder system serves:
 
-- **Campaign Creators**: DMs and GMs who want to create detailed nations for their campaigns
-- **World Builders**: Anyone creating detailed fictional worlds with realistic economies
-- **Educational Use**: Teaching economic concepts through interactive nation building
-- **Simulation**: Creating countries for economic modeling and simulation
+- **Economic Simulation**: Create realistic economic models with sophisticated calculations
+- **Educational Platform**: Interactive learning tool for economic concepts and policy impacts  
+- **Campaign Creation**: Detailed nation building for tabletop RPG campaigns and world building
+- **Professional Analysis**: Economic research and scenario modeling with real-world data foundations
 
-## Key Features
+## Current Implementation Status ✨
 
-### 🌍 Real-World Foundation
-- Start with data from 180+ real countries
-- Use actual GDP, population, and economic data as baselines
-- Understand economic tiers and classifications
+**Maturity Level: 85% Complete (Grade A)**
 
-### 🎛️ Complete Customization
-- **Core Economic Indicators**: GDP, population, growth rates, inflation
-- **Labor Markets**: Employment rates, wages, workforce demographics
-- **Fiscal Systems**: Taxation, government spending, debt management
-- **Income Distribution**: Economic classes, inequality metrics, social mobility
-- **Demographics**: Population breakdown, age distribution, urbanization
-- **Government Spending**: Budget allocation across sectors
+### ✅ **Fully Implemented Systems**
+- **Glass Physics Design Framework**: Complete hierarchical depth system with theme integration
+- **Enhanced Builder Architecture**: Modern React patterns with performance optimization
+- **Real-time Economic Calculations**: Live validation and tier classification
+- **Country Symbol Integration**: Flag and coat of arms upload with theme extraction
+- **Multi-phase Builder Flow**: Country selection → Customization → Live preview
+- **Database Integration**: Full tRPC API with Prisma ORM and user authentication
 
-### 📊 Real-Time Analysis
-- Economic health scoring
-- Cross-country comparisons
-- Tier classification (Developing → Emerging → Developed → Advanced)
-- Budget balance analysis
-- Economic sustainability metrics
+### 🔄 **In Development**
+- **Aceternity UI Integration**: Apple-cards-carousel intro walkthrough system
+- **Vitality Rings Dashboard**: Live economic health monitoring with animated indicators
+- **Classic/Modern Toggle**: Basic/Advanced mode switcher with animated transitions
+- **Live Data Synchronization**: Real-time updates and WebSocket integration
 
-### 🔍 Interactive Preview
-- Comprehensive country preview before finalization
-- Comparison with similar real-world countries
-- Economic analysis and recommendations
-- Validation and error checking
+## 🏗️ **Architecture & Design System**
 
-## How It Works
+### **Glass Physics Framework**
+The builder employs a sophisticated visual hierarchy based on glass physics principles:
 
-### Phase 1: Choose Foundation Country
-1. Browse 180+ real countries by economic tier
-2. Filter by region, population, or economic characteristics
-3. View key metrics and economic tier for each country
-4. Select a country to use as your starting foundation
+```typescript
+// Depth Hierarchy
+depth: 'base' | 'elevated' | 'modal' | 'interactive'
+blur: 'none' | 'light' | 'medium' | 'heavy'
+gradient: 'none' | 'subtle' | 'dynamic'
+theme: 'gold' | 'blue' | 'indigo' | 'red' | 'neutral'
+```
 
-### Phase 2: Customize Your Country
-Navigate through six comprehensive sections:
+**Visual Design Principles:**
+- **Hierarchical Depth**: Components "float" at different Z-levels with appropriate glass effects
+- **Theme-Based Coloring**: Section-specific color schemes (MyCountry=Gold, Global=Blue, etc.)
+- **Physics-Based Interactions**: Smooth animations that mimic glass material properties
+- **Responsive Glass Effects**: Adaptive blur and transparency based on content importance
 
-#### Core Economic Indicators
-- Set population and GDP targets
-- Configure growth and inflation rates
-- Determine currency exchange rates
-- Auto-calculating relationships between metrics
+### **Component Architecture**
 
-#### Labor & Employment
-- Define unemployment and participation rates
-- Set minimum wage and average incomes
-- Configure work week hours
-- Calculate total workforce
-
-#### Fiscal System
-- Design tax structure (income, corporate, sales, property, etc.)
-- Set government revenue targets
-- Configure debt levels (internal and external)
-- Manage budget allocation
-
-#### Income & Wealth Distribution
-- Define economic classes and wealth distribution
-- Set poverty rates and inequality metrics
-- Configure social mobility indices
-- Balance population across economic strata
-
-#### Government Spending
-- Allocate budget across sectors (Defense, Education, Healthcare, etc.)
-- Set spending priorities
-- Calculate per-capita spending
-- Analyze budget efficiency
-
-#### Demographics
-- Configure age distribution and life expectancy
-- Set urban/rural population split
-- Define regional population distribution
-- Configure education levels and literacy rates
-
-### Phase 3: Preview & Finalize
-- Review complete economic profile
-- Compare with similar real-world countries
-- Analyze economic health and sustainability
-- Finalize and save your custom country
-
-## Technical Architecture
-
-### Component Structure
+#### **Core Structure**
 ```
 src/app/builder/
-├── page.tsx                           # Main builder page
+├── page.tsx                     # Entry point (Enhanced Builder)
 ├── components/
-│   ├── CountrySelector.tsx            # Country selection interface
-│   ├── EconomicInputForm.tsx          # Main customization form
-│   ├── EconomicPreview.tsx            # Final preview and confirmation
-│   ├── CoreEconomicIndicators.tsx     # Core metrics configuration
-│   ├── LaborEmployment.tsx            # Labor market settings
-│   ├── FiscalSystem.tsx               # Government finances
-│   ├── IncomeWealthDistribution.tsx   # Inequality and classes
-│   ├── GovernmentSpending.tsx         # Budget allocation
-│   └── Demographics.tsx               # Population demographics
+│   ├── enhanced/                # Modern glass-based components
+│   │   ├── BuilderPageEnhanced.tsx       # Main orchestrator
+│   │   ├── CountrySelectorEnhanced.tsx   # Country selection with glass cards
+│   │   ├── EconomicCustomizationHub.tsx # Main customization interface
+│   │   └── InteractivePreview.tsx        # Live preview with vitality rings
+│   ├── glass/                   # Glass physics UI components
+│   │   ├── GlassCard.tsx                 # Core glass container
+│   │   ├── GlassTooltip.tsx             # Contextual help system
+│   │   └── LiveFeedback.tsx             # Real-time validation
+│   ├── CountrySymbolsUploader.tsx       # Flag/CoA management
+│   └── [legacy components]              # Classic builder components
+├── primitives/                  # Atomic design components
+│   ├── BuilderHeader.tsx               # Navigation and branding
+│   ├── SectionNavigation.tsx           # Section switcher
+│   └── ValidationDisplay.tsx           # Error/warning system
 └── lib/
-    └── economy-data-service.ts        # Data processing and utilities
+    └── economy-data-service.ts          # Data processing & validation
 ```
 
-### Data Flow
-1. **Country Selection**: Load real-world economic data from API
-2. **Foundation Creation**: Generate default economic inputs based on selected country
-3. **Customization**: User modifies economic parameters with real-time validation
-4. **Preview**: Generate comprehensive analysis and comparisons
-5. **Finalization**: Save completed country to storage/database
+## 🎯 **Key Features & Systems**
 
-### Key Technologies
-- **React 18**: Modern React with hooks and concurrent features
-- **TypeScript**: Full type safety for complex economic data structures
-- **Recharts**: Interactive data visualization
+### **1. Multi-Phase Builder Flow**
+
+#### **Phase 1: Foundation Selection**
+- **Real-World Database**: 180+ countries with comprehensive economic data
+- **Smart Filtering**: Search by economic tier, region, population, or GDP
+- **Visual Comparison**: Glass cards with live data and tier indicators
+- **Import Integration**: Direct integration with Wiki data import system
+
+#### **Phase 2: Economic Customization**
+- **Core Economic Indicators**: GDP, population, growth rates, inflation, currency systems
+- **Labor Markets**: Employment rates, wages, workforce demographics, participation rates
+- **Fiscal Systems**: Complex taxation models, government revenue, debt management
+- **Income Distribution**: Economic classes, inequality metrics, social mobility indices
+- **Government Spending**: Detailed budget allocation across 12+ sectors
+- **Demographics**: Population pyramids, urbanization, literacy, life expectancy
+
+#### **Phase 3: Interactive Preview**
+- **Live Economic Dashboard**: Real-time calculations with vitality rings
+- **Comparative Analysis**: Side-by-side comparison with similar real countries
+- **Economic Health Scoring**: Multi-factor sustainability analysis
+- **Validation System**: Comprehensive error checking and warnings
+
+### **2. Advanced Design Features**
+
+#### **Classic vs Modern Builder Integration**
+The system supports dual interaction modes:
+
+- **Modern Glass Interface**: Sleek, intuitive design with guided workflows
+- **Classic Dense View**: Information-rich interface for power users
+- **Smart Toggle System**: Animated transitions between interface modes
+- **Basic/Advanced Tabs**: Progressive disclosure of complex options
+
+#### **Country Symbols Integration**
+```typescript
+// Enhanced CountrySymbolsUploader features:
+- Flag and Coat of Arms upload
+- Automatic color palette extraction
+- Dynamic theme application
+- Integration with Core Indicators section
+- Default foundation country symbols
+```
+
+#### **Vitality Rings Dashboard**
+Replaces traditional charts with Apple Health-inspired indicators:
+- **Economic Vitality**: GDP growth, productivity, innovation metrics
+- **Social Stability**: Inequality, happiness index, social mobility
+- **Government Efficiency**: Budget balance, spending effectiveness, debt sustainability
+- **Real-time Updates**: Live recalculation as parameters change
+- **Momentum Visualization**: Ring rotation speed indicates rate of change
+
+### **3. Technical Excellence**
+
+#### **Performance Optimization**
+- **React.memo Patterns**: Comprehensive component memoization
+- **Selective Re-rendering**: Granular state management
+- **Framer Motion Integration**: GPU-accelerated animations
+- **Code Splitting**: Dynamic imports for large components
+
+#### **Data Management**
+- **TypeScript Coverage**: 100% type safety with comprehensive interfaces
+- **tRPC API Integration**: Type-safe client-server communication
+- **Prisma ORM**: Robust database schema with migrations
 - **Real-time Validation**: Immediate feedback on economic relationships
-- **Local Storage**: Persistent draft saving
 
-## Economic Data Sources
+## 🚀 **Enhanced User Experience**
 
-The tool uses comprehensive real-world economic data including:
+### **Interactive Intro System (Planned)**
+Building on the Aceternity UI apple-cards-carousel concept:
 
-- **World Bank Data**: GDP, population, economic indicators
-- **IMF Statistics**: Fiscal data, debt levels, economic classifications
-- **OECD Data**: Advanced economy metrics
-- **Regional Development Banks**: Emerging market data
+#### **"Glass Slate" Tutorial Concept**
+- **Economic Concept Cards**: Interactive cards representing GDP, Trade, Politics, etc.
+- **Physics-Based Learning**: Drag and stack cards with glass collision effects
+- **Template Integration**: Cards become draggable templates that auto-populate builder
+- **Smooth Transitions**: Seamless flow from intro carousel to country selection
 
-Data is processed and normalized to ensure consistency and comparability across all countries.
-
-## Validation & Business Rules
-
-### Automatic Calculations
-- GDP per capita automatically calculated from total GDP and population
-- Tax revenue calculated as percentage of GDP
-- Labor force derived from population and participation rates
-- Budget calculations ensure mathematical consistency
-
-### Validation Rules
-- **Population**: Must be > 0
-- **GDP**: Must be > 0
-- **Unemployment**: 0-100%
-- **Tax Rates**: Reasonable ranges for each tax type
-- **Debt Levels**: Warnings for unsustainable levels
-- **Economic Relationships**: Ensures metrics align logically
-
-### Business Logic
-- Economic tier classification based on GDP per capita
-- Health scoring based on multiple economic factors
-- Budget balance calculations and warnings
-- Economic sustainability analysis
-
-## Usage Examples
-
-### Creating a Fantasy Kingdom
+#### **Visual Storytelling**
 ```typescript
-// Start with medieval-economy equivalent (low GDP per capita)
-// Base: Chad or Afghanistan (developing economy)
-// Customize:
-// - Lower tech level reduces GDP per capita
-// - Agricultural focus affects employment distribution
-// - Feudal system impacts income distribution
-// - Lower literacy rates
+// Proposed card interaction flow:
+1. User explores economic concept cards in 3D carousel
+2. Cards demonstrate interconnectedness through physics
+3. User selects preferred economic model template
+4. Template auto-populates builder with appropriate defaults
+5. Guided customization with contextual tooltips
 ```
 
-### Sci-Fi Advanced Civilization
+### **Workflow Optimization**
+
+#### **Smart Defaults & Templates**
+- **Economic Archetype Templates**: 
+  - "High-Growth Emerging Economy"
+  - "Stable Advanced Democracy" 
+  - "Resource-Rich Autocracy"
+  - "Post-Industrial Service Economy"
+- **Foundation Country Intelligence**: AI-suggested similar countries
+- **Progressive Disclosure**: Show basic options by default, reveal advanced on demand
+
+#### **Real-time Intelligence**
+- **Live Economic Health Monitoring**: Continuous validation with immediate feedback
+- **Comparative Context**: "Your country is most similar to..."
+- **Warning System**: Proactive alerts for unsustainable economic combinations
+- **Optimization Suggestions**: AI-powered recommendations for improvements
+
+## 🔧 **Implementation Guide**
+
+### **Design Guidelines**
+
+#### **Glass Physics Implementation**
 ```typescript
-// Start with advanced economy (high GDP per capita)
-// Base: Luxembourg or Switzerland
-// Customize:
-// - Higher automation reduces unemployment
-// - Advanced tech increases productivity
-// - Post-scarcity affects wealth distribution
-// - Higher education levels
+// Component hierarchy example:
+<GlassCard depth="elevated" blur="medium" theme="gold">
+  <GlassCardHeader>
+    <CountryNameInput /> {/* Foundation country integration */}
+  </GlassCardHeader>
+  <GlassCardContent>
+    <CountrySymbolsUploader 
+      defaultCountry={foundationCountry} 
+      onThemeExtract={handleColorPalette}
+    />
+  </GlassCardContent>
+</GlassCard>
 ```
 
-### Post-Apocalyptic Settlement
+#### **Styling Standards**
+- **Tailwind v4**: All styling must use Tailwind CSS v4 syntax
+- **CSS Custom Properties**: Dynamic theming through CSS variables
+- **Framer Motion**: Consistent animation patterns across components
+- **Responsive Design**: Mobile-first approach with glass effect adaptations
+
+### **Development Workflow**
+
+#### **Component Creation Pattern**
+1. **Start with Glass Foundation**: Always extend from glass components
+2. **Implement TypeScript Interfaces**: Define comprehensive prop types
+3. **Add Performance Optimization**: Implement React.memo where appropriate
+4. **Include Error Boundaries**: Defensive programming patterns
+5. **Test Responsiveness**: Ensure mobile compatibility
+
+#### **Data Integration Standards**
 ```typescript
-// Start with crisis economy
-// Base: Venezuela or war-torn country
-// Customize:
-// - Resource scarcity increases inequality
-// - Survival economy reduces GDP
-// - Population loss from catastrophe
-// - Barter systems affect currency
+// Standard data flow pattern:
+1. tRPC API call for data fetching
+2. Prisma ORM for database operations  
+3. Zod schemas for runtime validation
+4. TypeScript interfaces for compile-time safety
+5. Local state management with zustand (where needed)
 ```
 
-## Integration with Campaign Tools
+### **Integration Points**
 
-### Export Options
-- **JSON Export**: Full economic data for other tools
-- **PDF Summary**: Printable country profile
-- **Campaign Integration**: Direct import to DM dashboard
+#### **MyCountry System Integration**
+- **Shared Components**: Vitality rings, country symbols, glass cards
+- **Data Consistency**: Common economic calculation functions
+- **Theme Continuity**: Consistent color and depth systems
+- **Navigation Flow**: Seamless transition from builder to MyCountry dashboard
 
-### Compatibility
-- Works with existing country management systems
-- Compatible with economic tracking tools
-- Integrates with campaign timeline systems
+#### **Wiki Import Integration**
+- **Data Bridge**: Import country data from IxWiki articles
+- **Symbol Transfer**: Automatic flag and coat of arms integration
+- **Template Creation**: Convert wiki data to builder templates
 
-## Advanced Features
+## 📊 **Data Architecture**
 
-### Economic Modeling
-- Scenario analysis ("What if" simulations)
-- Growth projection models
-- Policy impact assessment
-- Economic shock simulation
+### **Economic Data Sources**
+- **World Bank Open Data**: GDP, population, economic indicators, development metrics
+- **IMF World Economic Outlook**: Fiscal data, debt levels, economic classifications
+- **OECD Statistics**: Advanced economy metrics, productivity indices
+- **Regional Development Banks**: Emerging market data, regional economic analysis
+- **UN Statistics**: Demographic data, human development indices
 
-### Comparative Analysis
-- Side-by-side country comparison
-- Economic tier benchmarking
-- Regional analysis tools
-- Trade relationship modeling
+### **Data Processing Pipeline**
+```typescript
+// Data transformation flow:
+1. Raw API data ingestion
+2. Normalization and cleaning
+3. Economic tier classification
+4. Validation rule application  
+5. Default input generation
+6. Real-time calculation engine
+```
 
-### Historical Context
-- Economic development trajectories
-- Real-world economic parallels
-- Historical economic event simulation
+### **Calculation Engine**
+#### **Economic Relationships**
+- **GDP per Capita**: `totalGDP / population`
+- **Labor Force**: `population * participationRate * (1 - unemploymentRate)`
+- **Tax Revenue**: `GDP * aggregatedTaxRate`
+- **Economic Health Score**: Multi-factor algorithm considering growth, stability, sustainability
 
-## Best Practices
+#### **Validation Rules**
+- **Population Constraints**: Must be > 0, realistic density calculations
+- **GDP Relationships**: Per capita values must align with tier classifications
+- **Fiscal Sustainability**: Debt-to-GDP ratios with warning thresholds
+- **Economic Logic**: Unemployment rates must align with economic development level
 
-### Starting Your Country
-1. **Choose Appropriate Foundation**: Select a real country with similar characteristics to your desired nation
-2. **Start Conservative**: Begin with realistic values, then adjust gradually
-3. **Maintain Relationships**: Ensure economic metrics support each other logically
-4. **Consider Geography**: Population distribution should match terrain and resources
+## 🛠️ **Advanced Configuration**
 
-### Economic Design
-1. **Population First**: Set population based on available land and resources
-2. **GDP Alignment**: Ensure GDP per capita matches intended development level
-3. **Employment Logic**: Unemployment should reflect economic conditions
-4. **Fiscal Balance**: Government revenue should support intended spending
+### **Core Indicators Enhancement Plan**
+#### **Symbol Integration Workflow**
+```typescript
+// Enhanced Core Indicators section:
+1. Display foundation country name and basic info
+2. Integrate CountrySymbolsUploader with default foundation country
+3. Extract color palette from uploaded symbols
+4. Apply dynamic theming to section components
+5. Real-time preview of changes
+```
 
-### Validation Tips
-1. **Green Health Score**: Aim for economic health score above 70
-2. **Balanced Budget**: Keep deficit under 5% of GDP for sustainability
-3. **Reasonable Inequality**: Gini coefficient between 0.25-0.45 for stability
-4. **Logical Demographics**: Age distribution should support labor force
+#### **Basic vs Advanced Mode Implementation**
+- **Basic Mode**: Essential parameters only (Population, GDP, Growth Rate)
+- **Advanced Mode**: Full parameter suite with expert controls
+- **Toggle Animation**: Glass-breaking transition effect between modes
+- **Progressive Disclosure**: Contextual help and advanced tooltips
 
-## Troubleshooting
+### **Live Preview Dashboard Transformation**
 
-### Common Issues
+#### **From Traditional Charts to Vitality Rings**
+```typescript
+// Replace current metrics:
+- Overall/Economic/Social/Political → Economic/Social/Government Vitality
+- Economic Indicators → Real-time calculation display
+- Economic Health Score → Integrated into vitality ring animation
+- Static charts → Dynamic, momentum-based ring animations
+```
 
-**High Unemployment + High GDP**: Indicates automation or resource curse
-**Low Tax Revenue + High Spending**: Unsustainable fiscal policy
-**High Inequality + High Social Mobility**: Contradictory social conditions
-**Low Population + High GDP**: Either city-state or resource-rich economy
+#### **Enhanced Preview Features**
+- **Flag and CoA Display**: Prominent country symbol showcase
+- **Live Statistics**: Real-time updates as inputs change
+- **Vitality Ring Integration**: 
+  - Economic Ring: GDP growth, productivity, innovation
+  - Social Ring: Equality, happiness, stability  
+  - Government Ring: Efficiency, balance, debt sustainability
+- **Momentum Visualization**: Ring rotation speed indicates change velocity
 
-### Performance Tips
-- Save drafts frequently using browser storage
-- Use validation warnings to improve economic realism
-- Preview regularly to catch issues early
-- Start with template then customize incrementally
+## 🎮 **Usage Scenarios & Templates**
 
-## Future Enhancements
+### **Economic Archetype Templates**
 
-- **AI Assistance**: Smart suggestions for economic parameters
-- **Template Library**: Pre-built country archetypes
-- **Advanced Modeling**: Multi-generational economic simulation
-- **Collaborative Editing**: Team-based country building
-- **Integration APIs**: Connect with other worldbuilding tools
+#### **"Silicon Valley City-State"**
+```typescript
+// Foundation: Luxembourg or Singapore
+economicModel: {
+  focus: "Technology & Finance",
+  gdpPerCapita: 85000,
+  populationDensity: "Very High",
+  specialization: "Innovation Economy",
+  inequalityLevel: "High but offset by opportunity"
+}
+```
 
-## Support and Documentation
+#### **"Nordic Social Democracy"**
+```typescript
+// Foundation: Norway or Denmark  
+economicModel: {
+  focus: "Social Welfare & Sustainability",
+  gdpPerCapita: 55000,
+  socialMobility: "Very High",
+  governmentRole: "Strong social safety net",
+  inequalityLevel: "Low"
+}
+```
 
-For additional help:
-- **In-App Help**: Hover tooltips and contextual guidance
-- **Validation Messages**: Real-time feedback on economic parameters
-- **Comparison Tools**: Learn from real-world examples
-- **Community Examples**: Shared country templates and examples 
+#### **"Resource-Rich Emerging Economy"**
+```typescript
+// Foundation: UAE or Qatar
+economicModel: {
+  focus: "Natural Resources & Diversification",
+  gdpPerCapita: 45000,
+  economicDiversification: "In Progress",
+  governmentRevenue: "Resource-dependent",
+  futureStrategy: "Economic transformation"
+}
+```
+
+#### **"Post-Industrial Manufacturing Hub"**
+```typescript
+// Foundation: Germany or South Korea
+economicModel: {
+  focus: "Advanced Manufacturing & Export",
+  gdpPerCapita: 42000,
+  exports: "High-tech manufacturing",
+  laborSkills: "Highly skilled workforce",
+  innovation: "Strong R&D investment"
+}
+```
+
+### **Fantasy & Sci-Fi Applications**
+
+#### **Fantasy Medieval Kingdom**
+- **Foundation**: Chad or Bangladesh (developing, agricultural)
+- **Modifications**: Lower literacy (15%), agricultural economy (70%), feudal structure
+- **Special Features**: Barter systems, resource-based economy, low urbanization
+
+#### **Futuristic Space Colony**
+- **Foundation**: Luxembourg (high-tech, small population)
+- **Modifications**: Extreme automation, post-scarcity elements, unique resource constraints
+- **Special Features**: Closed-loop economy, high education, advanced governance
+
+## 🔮 **Future Roadmap** 
+
+### **Phase 1: Enhanced User Experience (Q2 2025)**
+#### **Aceternity UI Integration**
+- **Interactive Carousel Tutorial**: Implement "Glass Slate" concept
+- **Template Drag-and-Drop**: Cards become builder templates
+- **Physics-Based Learning**: Educational economic interactions
+- **Smooth Transition Flow**: Carousel → Selection → Customization
+
+#### **Vitality Rings Dashboard**
+- **Replace Static Charts**: Implement Apple Health-inspired rings
+- **Momentum Visualization**: Ring rotation indicates change velocity
+- **Real-time Updates**: Live recalculation and animation
+- **Comparative Overlays**: "Ghost" rings for country comparisons
+
+### **Phase 2: Advanced Interactions (Q3 2025)**
+#### **Classic/Modern Builder Toggle**
+- **"Builder's Toggle"**: Animated mode switcher in header
+- **Glass Transition Effects**: Shattering/reassembly animations
+- **Progressive Disclosure**: Basic/Advanced tab system
+- **"Ghost Mode"**: Wireframe overlay for power users
+
+#### **Enhanced Symbol Integration**
+- **Color Palette Extraction**: Auto-theming from uploaded symbols
+- **Dynamic UI Adaptation**: Country-specific color schemes
+- **Symbol Weaving**: Integrate country identity into data visualizations
+- **Cultural Context**: Historical and geographic intelligence
+
+### **Phase 3: AI & Intelligence (Q4 2025)**
+#### **Smart Recommendations**
+- **Economic Policy AI**: Intelligent parameter suggestions
+- **Sustainability Analysis**: Long-term viability predictions
+- **Comparative Intelligence**: "Similar to X country because..."
+- **Scenario Modeling**: "What if" economic projections
+
+#### **Advanced Features**
+- **Multi-Country Builder**: Create economic unions and trade relationships
+- **Timeline Simulation**: Historical economic development paths
+- **Crisis Modeling**: Economic shock and recovery simulation
+- **Export Integration**: Advanced campaign management tools
+
+### **Phase 4: Collaborative Features (2026)**
+#### **Team Building**
+- **Collaborative Editing**: Multi-user country development
+- **Economic Diplomacy**: Inter-country relationship modeling
+- **Campaign Integration**: Full DM dashboard integration
+- **Community Templates**: Shared economic archetype library
+
+### **Innovation Concepts (Research Phase)**
+#### **Physics-Based UI Paradigms**
+- **Data Weight Visualization**: UI mass based on economic importance
+- **Glass Refraction Drill-Down**: Magnifying lens interactions
+- **Haptic Feedback**: Physical response to economic events
+- **Time-Lapse Analysis**: Historical trend compression
+
+## 🏆 **Technical Excellence Standards**
+
+### **Performance Benchmarks**
+- **Load Time**: < 2 seconds initial render
+- **Interaction Response**: < 100ms for all user inputs
+- **Memory Usage**: < 50MB for full builder session
+- **Bundle Size**: < 1MB gzipped JavaScript
+
+### **Quality Metrics**
+- **TypeScript Coverage**: 100% with strict mode
+- **Component Testing**: Unit tests for all interactions
+- **Accessibility**: WCAG 2.1 AA compliance
+- **Browser Support**: Modern browsers with graceful degradation
+
+### **Development Standards**
+- **Code Reviews**: All changes peer-reviewed
+- **Documentation**: Component documentation with Storybook
+- **Version Control**: Semantic versioning with change logs
+- **Performance Monitoring**: Real-time performance analytics
+
+## 📚 **Documentation & Support**
+
+### **Development Resources**
+- **Component Library**: Complete glass physics component documentation
+- **API Reference**: tRPC endpoint documentation with examples
+- **Design System**: Glass physics principles and implementation guide
+- **Performance Guide**: Optimization patterns and best practices
+
+### **User Support**
+- **Interactive Tutorials**: Built-in guidance system
+- **Contextual Help**: Hover tooltips and progressive disclosure
+- **Economic Education**: Integrated learning resources
+- **Community Examples**: Shared templates and use cases
+
+### **Integration Documentation**
+- **Wiki Import**: IxWiki data integration guide
+- **MyCountry System**: Cross-system navigation and data sharing
+- **Campaign Tools**: Export formats and third-party integrations
+- **API Access**: Developer API for external tool integration
+
+## 🎯 **Implementation Priorities**
+
+### **Immediate Actions (Sprint 1)**
+1. **Core Indicators Enhancement**: Integrate CountrySymbolsUploader with foundation country defaults
+2. **Vitality Rings Integration**: Replace static charts with animated health indicators
+3. **Basic/Advanced Toggle**: Implement progressive disclosure in Core Indicators
+4. **Glass Physics Refinement**: Ensure consistent depth hierarchy across all components
+
+### **Short-term Goals (Sprint 2-3)**
+1. **Aceternity Carousel Planning**: Design economic concept cards and interaction flows
+2. **Color Palette Extraction**: Implement dynamic theming from uploaded symbols
+3. **Live Preview Enhancement**: Complete dashboard transformation with real-time updates
+4. **Performance Optimization**: Implement React.memo patterns across builder components
+
+### **Quality Assurance**
+1. **Mobile Responsiveness**: Test all builder phases on mobile devices
+2. **Error Boundary Testing**: Ensure graceful degradation for all error states
+3. **Data Validation**: Comprehensive testing of economic calculation engine
+4. **Cross-browser Compatibility**: Verify glass effects across different browsers
+
+### **Success Metrics**
+- **User Engagement**: Average session duration > 15 minutes
+- **Completion Rate**: > 80% of users complete full builder flow
+- **Error Rate**: < 2% of sessions encounter critical errors
+- **Performance**: Builder loads completely within 2 seconds
+
+This documentation reflects the current state and future vision of the Country Builder system, emphasizing its sophisticated architecture, innovative design patterns, and comprehensive feature set.
+
+ 

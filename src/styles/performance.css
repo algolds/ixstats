@@ -57,14 +57,24 @@
   contain: layout style paint;
 }
 
-/* Hide scrollbar */
+/* Hide scrollbar - Cross-browser compatibility */
 .hide-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
 .hide-scrollbar::-webkit-scrollbar {
-  display: none;
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Tailwind-compatible scrollbar utilities */
+.scrollbar-none {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 /* Thin scrollbar */

@@ -50,6 +50,7 @@ interface CountryFocusCardProps {
   expanded: number | null;
   setExpanded: React.Dispatch<React.SetStateAction<number | null>>;
   onCountryClick?: (countryId: string) => void;
+  size?: 'default' | 'small';
 }
 
 export const CountryFocusCard = React.memo<CountryFocusCardProps>(({

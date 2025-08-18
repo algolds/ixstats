@@ -1,7 +1,14 @@
 // src/app/builder/components/CoreEconomicIndicators.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { cn } from '~/lib/utils';
+import { Input } from '~/components/ui/input';
+import { Button } from '~/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
+import { api } from '~/trpc/react';
+import { toast } from 'sonner';
 import {
   DollarSign,
   Users,
@@ -11,11 +18,16 @@ import {
   Coins,
   Info,
   AlertCircle,
+  Search,
+  Loader2,
+  Check,
 } from "lucide-react";
 import type { CoreEconomicIndicators, RealCountryData } from "../lib/economy-data-service";
 // Import the original getEconomicTier with an alias if needed, or ensure the local one is distinct
-import { getEconomicTier as getEconomicTierFromService } from "../lib/economy-data-service"; 
+import { getEconomicTier as getEconomicTierFromService } from "../lib/economy-data-service";
 import { getTierStyle } from "~/lib/theme-utils";
+
+
 
 interface CoreEconomicIndicatorsProps {
   indicators: CoreEconomicIndicators;
@@ -51,8 +63,6 @@ export function CoreEconomicIndicatorsComponent({ // Renamed component to avoid 
   isReadOnly = false,
   showComparison = true,
 }: CoreEconomicIndicatorsProps) {
-  const [selectedView, setSelectedView] = useState<'overview' | 'detailed'>('overview');
-
   const handleInputChange = (field: keyof CoreEconomicIndicators, value: number) => {
     const newIndicators = { ...indicators, [field]: value };
     
@@ -111,6 +121,9 @@ export function CoreEconomicIndicatorsComponent({ // Renamed component to avoid 
 
   const healthIndicator = computeHealth(indicators.realGDPGrowthRate, indicators.inflationRate);
 
+  
+
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -118,31 +131,9 @@ export function CoreEconomicIndicatorsComponent({ // Renamed component to avoid 
           <BarChart3 className="h-5 w-5 mr-2 text-[var(--color-brand-primary)]" />
           Core Economic Indicators
         </h3>
-        <div className="flex bg-[var(--color-bg-tertiary)] rounded-lg p-1">
-          <button
-            onClick={() => setSelectedView('overview')}
-            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-              selectedView === 'overview'
-                ? 'bg-[var(--color-brand-primary)] text-white'
-                : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
-            }`}
-          >
-            Overview
-          </button>
-          <button
-            onClick={() => setSelectedView('detailed')}
-            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-              selectedView === 'detailed'
-                ? 'bg-[var(--color-brand-primary)] text-white'
-                : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'
-            }`}
-          >
-            Detailed
-          </button>
-        </div>
       </div>
 
-      {selectedView === 'overview' && showComparison && referenceCountry && (
+      {showComparison && referenceCountry && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {comparisonData.map((item) => {
             const Icon = item.icon;
@@ -174,7 +165,6 @@ export function CoreEconomicIndicatorsComponent({ // Renamed component to avoid 
         </div>
       )}
 
-      {selectedView === 'detailed' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div>
@@ -222,7 +212,7 @@ export function CoreEconomicIndicatorsComponent({ // Renamed component to avoid 
               </div>
               {showComparison && referenceCountry && (
                 <div className="text-xs text-[var(--color-text-muted)]">
-                  Ref: ${referenceCountry.gdpPerCapita.toLocaleString() || 'N/A'}
+                  Ref: {formatNumber(referenceCountry.gdpPerCapita || 0, 2)}
                 </div>
               )}
             </div>
@@ -326,7 +316,6 @@ export function CoreEconomicIndicatorsComponent({ // Renamed component to avoid 
             </div>
           </div>
         </div>
-      )}
 
 
       <div className="p-4 bg-[var(--color-bg-tertiary)] rounded-lg border border-[var(--color-border-primary)]">
@@ -343,6 +332,8 @@ export function CoreEconomicIndicatorsComponent({ // Renamed component to avoid 
           </div>
         </div>
       </div>
+
+      
     </div>
   );
 }

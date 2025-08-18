@@ -9,14 +9,14 @@ interface WikiConfig {
 
 const wikiConfigs: Record<string, WikiConfig> = {
   ixwiki: {
-    baseUrl: "https://ixwiki.com",
-    apiEndpoint: "/api.php",
-    searchNamespace: [0], // Main namespace
+    baseUrl: "/api/ixwiki-proxy/api.php",
+    apiEndpoint: "", 
+    searchNamespace: [0, 6], // Main and Media namespaces
   },
   iiwiki: {
-    baseUrl: "https://iiwiki.com",
-    apiEndpoint: "/mediawiki/api.php", 
-    searchNamespace: [0], // Main namespace
+    baseUrl: "/api/iiwiki-proxy/mediawiki/api.php",
+    apiEndpoint: "", 
+    searchNamespace: [0, 6], // Main and Media namespaces
   }
 };
 
@@ -1102,37 +1102,36 @@ async function extractEconomicData(infobox: CountryInfoboxWithDynamicProps, site
  */
 function extractImageFile(value?: string): string | undefined {
   if (!value || typeof value !== 'string') return undefined;
-  
+
   let cleaned = value.trim();
-  
+  let filename: string | undefined;
+
+  // Try to extract filename from various formats
   // Remove File: prefix if present
   if (cleaned.toLowerCase().startsWith('file:')) {
-    cleaned = cleaned.substring(5).trim();
+    filename = cleaned.substring(5).trim();
+  } else {
+    // Extract from [[File:filename|...]] format
+    const fileMatch = cleaned.match(/\[\[File:([^\|\]]+)(?:\|[^\]]+)?\]\]/i);
+    if (fileMatch) {
+      filename = fileMatch[1]?.trim();
+    } else {
+      // If it contains HTML links, try to extract filename
+      const htmlMatch = cleaned.match(/href=["'][^"']*\/([^/"']+\.(png|jpg|jpeg|gif|svg|webp))["']/i);
+      if (htmlMatch) {
+        filename = htmlMatch[1];
+      } else {
+        // Assume it's a direct filename if no other pattern matches
+        filename = cleaned;
+      }
+    }
   }
-  
-  // Extract from [[File:filename|...]] format
-  const fileMatch = cleaned.match(/\[\[File:([^\|\]]+)(?:\|[^\]]+)?\]\]/i);
-  if (fileMatch) {
-    return fileMatch[1]?.trim();
+
+  // Now, strictly validate the extracted filename against common image extensions
+  if (filename && /\.(png|jpg|jpeg|gif|svg|webp)$/i.test(filename)) {
+    return filename;
   }
-  
-  // Extract from simple File:filename format
-  const simpleFileMatch = cleaned.match(/^File:(.+)$/i);
-  if (simpleFileMatch) {
-    return simpleFileMatch[1]?.trim();
-  }
-  
-  // If it looks like a filename (contains file extension), return as-is
-  if (/\.(png|jpg|jpeg|gif|svg|webp)$/i.test(cleaned)) {
-    return cleaned;
-  }
-  
-  // If it contains HTML links, try to extract filename
-  const htmlMatch = cleaned.match(/href=["'][^"']*\/([^/"']+\.(png|jpg|jpeg|gif|svg|webp))["']/i);
-  if (htmlMatch) {
-    return htmlMatch[1];
-  }
-  
+
   return undefined;
 }
 
@@ -1178,6 +1177,79 @@ async function getImageUrl(filename: string, site: 'ixwiki' | 'iiwiki'): Promise
   } catch (error) {
     console.error(`Failed to get image URL for ${filename} on ${site}:`, error);
     return null;
+  }
+}
+
+/**
+ * Search for images only in the File namespace
+ */
+export async function searchWikiImages(
+  query: string,
+  site: 'ixwiki' | 'iiwiki'
+): Promise<Array<{ name: string; path: string; url?: string; description?: string; }>> {
+  const config = wikiConfigs[site];
+  if (!config) {
+    throw new Error(`Unsupported wiki site: ${site}`);
+  }
+
+  try {
+    // Search only in File namespace (namespace 6)
+    const searchParams = new URLSearchParams({
+      action: 'query',
+      format: 'json',
+      list: 'search',
+      srsearch: query,
+      srprop: 'snippet',
+      srlimit: '20',
+      srnamespace: '6', // File namespace only
+    });
+
+    const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${searchParams.toString()}`, {
+      headers: {
+        'User-Agent': 'IxStats-Builder/1.0 (https://ixstats.com) MediaWiki-Search',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.error) {
+      throw new Error(`Wiki API Error: ${data.error.info || data.error.code}`);
+    }
+
+    const searchResults = data.query?.search || [];
+    
+    // Filter for actual image files and get their URLs
+    const imageResults = [];
+    
+    for (const result of searchResults) {
+      // Check if it's an actual image file
+      if (result.title && result.title.startsWith('File:') && 
+          /\.(png|jpg|jpeg|gif|svg|webp)$/i.test(result.title)) {
+        
+        // Get the image URL
+        const filename = result.title.replace('File:', '');
+        const imageUrl = await getImageUrl(filename, site);
+        
+        if (imageUrl) {
+          imageResults.push({
+            name: result.title,
+            path: imageUrl,
+            url: imageUrl,
+            description: result.snippet || '',
+          });
+        }
+      }
+    }
+    
+    return imageResults;
+
+  } catch (error) {
+    console.error(`Wiki image search failed for ${site}:`, error);
+    throw new Error(`Failed to search ${site} images: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 

@@ -5,6 +5,7 @@ import { IxTime } from "~/lib/ixtime";
 import { generateAndPostCitizenReaction } from "~/lib/auto-post-service";
 import { analyzePostSentiment } from "~/lib/sentiment-analysis";
 import { unsplashService } from "~/lib/unsplash-service";
+import { searchWiki as wikiSearchService } from "~/lib/wiki-search-service"; // Import the wiki search service
 import fs from "fs/promises";
 import path from "path";
 
@@ -43,7 +44,7 @@ const CreatePostSchema = z.object({
 const AddReactionSchema = z.object({
   postId: z.string(),
   accountId: z.string(),
-  reactionType: z.enum(['like', 'love', 'laugh', 'angry', 'sad']),
+  reactionType: z.enum(['like', 'laugh', 'angry', 'sad', 'fire', 'thumbsup', 'thumbsdown']),
 });
 
 const GetFeedSchema = z.object({
@@ -54,20 +55,44 @@ const GetFeedSchema = z.object({
   cursor: z.string().optional(),
 });
 
-async function searchFiles(dir: string, query: string): Promise<{ path: string; name: string; }[]> {
-  let results: { path: string; name: string; }[] = [];
-  const list = await fs.readdir(dir, { withFileTypes: true });
 
-  for (const dirent of list) {
-    const fullPath = path.join(dir, dirent.name);
-    if (dirent.isDirectory()) {
-      results = results.concat(await searchFiles(fullPath, query));
-    } else if (dirent.name.includes(query)) {
-      results.push({ path: fullPath, name: dirent.name });
-    }
+
+async function getWikiCommonsImageInfo(title: string): Promise<{ url: string; description: string; photographer: string } | null> {
+  const params = new URLSearchParams({
+    action: 'query',
+    titles: title,
+    prop: 'imageinfo',
+    iiprop: 'url|extmetadata',
+    format: 'json',
+    formatversion: '2',
+  });
+
+  const response = await fetch(`https://commons.wikimedia.org/w/api.php?${params.toString()}`, {
+    headers: {
+      'User-Agent': 'IxStats-Builder/1.0 (https://ixstats.com) Wikimedia-Commons-Search',
+    },
+  });
+
+  if (!response.ok) {
+    console.error(`Failed to fetch image info for ${title}: ${response.statusText}`);
+    return null;
   }
 
-  return results;
+  const data = await response.json();
+  const page = data.query?.pages?.[0];
+
+  if (!page || page.missing || !page.imageinfo?.[0]) {
+    return null;
+  }
+
+  const imageInfo = page.imageinfo[0];
+  const extMetadata = imageInfo.extmetadata;
+
+  return {
+    url: imageInfo.url,
+    description: extMetadata?.ImageDescription?.value || page.title,
+    photographer: extMetadata?.Artist?.value || "Unknown",
+  };
 }
 
 export const thinkpagesRouter = createTRPCRouter({
@@ -92,22 +117,80 @@ export const thinkpagesRouter = createTRPCRouter({
       }
     }),
 
+  // Search Wiki Commons images
+  searchWikiCommonsImages: publicProcedure
+    .input(z.object({
+      query: z.string().min(1),
+      page: z.number().min(1).default(1),
+      per_page: z.number().min(1).max(30).default(10),
+    }))
+    .query(async ({ input }) => {
+      try {
+        const offset = (input.page - 1) * input.per_page;
+        const searchParams = new URLSearchParams({
+          action: 'query',
+          list: 'search',
+          srsearch: input.query,
+          srprop: 'titlesnippet', // Get title snippet for description
+          srlimit: input.per_page.toString(),
+          sroffset: offset.toString(),
+          format: 'json',
+          formatversion: '2',
+          srwhat: 'text',
+          srnamespace: '6', // File namespace
+        });
+
+        const response = await fetch(`https://commons.wikimedia.org/w/api.php?${searchParams.toString()}`, {
+          headers: {
+            'User-Agent': 'IxStats-Builder/1.0 (https://ixstats.com) Wikimedia-Commons-Search',
+          },
+        });
+
+        if (!response.ok) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: `Wikimedia Commons API responded with status ${response.status}`,
+          });
+        }
+
+        const data = await response.json();
+        const searchResults = data.query?.search || [];
+
+        const images = await Promise.all(searchResults.map(async (result: any) => {
+          const imageInfo = await getWikiCommonsImageInfo(result.title);
+          if (imageInfo) {
+            return {
+              id: result.pageid.toString(),
+              url: imageInfo.url,
+              description: imageInfo.description,
+              photographer: imageInfo.photographer,
+            };
+          }
+          return null;
+        }));
+
+        return images.filter(Boolean); // Filter out nulls
+      } catch (error) {
+        console.error("Failed to search Wiki Commons images:", error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Failed to search Wiki Commons images: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        });
+      }
+    }),
+
   searchWiki: publicProcedure
     .input(z.object({ query: z.string(), wiki: z.enum(['iiwiki', 'ixwiki']) }))
     .mutation(async ({ input }) => {
       const { query, wiki } = input;
-      // For now, we only search in the current project (ixwiki)
-      // The 'iiwiki' option is a placeholder for future functionality
-      const searchRoot = process.cwd(); // The root of the project
-
       try {
-        const results = await searchFiles(path.join(searchRoot, 'public'), query);
-        return results.map(file => ({ ...file, path: file.path.replace(searchRoot, '') }));
+        const results = await wikiSearchService(query, wiki);
+        return results;
       } catch (error) {
-        console.error(`Failed to search files for query "${query}" in ${wiki}:`, error);
+        console.error(`Failed to search wiki images for query "${query}" in ${wiki}:`, error);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to search files.',
+          message: `Failed to search ${wiki} images: ${error instanceof Error ? error.message : 'Unknown error'}`,
         });
       }
     }),
@@ -1457,17 +1540,26 @@ export const thinkpagesRouter = createTRPCRouter({
   // Create a new conversation
   createConversation: publicProcedure
     .input(z.object({
-      type: z.enum(['direct', 'group']).default('direct'),
-      participantIds: z.array(z.string()).min(1, 'At least one participant is required'),
-      name: z.string().optional(),
-      avatar: z.string().url().optional()
+      participantIds: z.array(z.string())
     }))
     .mutation(async ({ ctx, input }) => {
-      console.log('createConversation API called with input:', input);
+      console.log('✅ createConversation mutation called successfully');
+      console.log('📥 Raw input received:', input);
+      console.log('🔍 Input keys:', Object.keys(input || {}));
+      console.log('📋 Participant IDs:', input.participantIds);
+      
       const { db } = ctx;
 
-      // Validate participantIds are not empty strings
+      // Simple validation
+      if (!input.participantIds || input.participantIds.length === 0) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'participantIds is required'
+        });
+      }
+
       const validParticipantIds = input.participantIds.filter(id => id && id.trim().length > 0);
+      
       if (validParticipantIds.length === 0) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
@@ -1476,19 +1568,14 @@ export const thinkpagesRouter = createTRPCRouter({
       }
 
       // For direct conversations, ensure 1-2 participants (allow self-messaging)
-      if (input.type === 'direct' && (validParticipantIds.length < 1 || validParticipantIds.length > 2)) {
+      if (validParticipantIds.length > 2) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'Direct conversations must have 1-2 participants'
         });
       }
 
-      // If only one participant (self-message), duplicate the ID
-      if (input.type === 'direct' && validParticipantIds.length === 1) {
-        validParticipantIds.push(validParticipantIds[0]!);
-      }
-
-      // Check if all unique participants exist
+      // Check if all unique participants exist (don't duplicate for self-messaging)
       const uniqueParticipantIds = [...new Set(validParticipantIds)];
       const accounts = await db.thinkpagesAccount.findMany({
         where: { id: { in: uniqueParticipantIds } }
@@ -1501,51 +1588,50 @@ export const thinkpagesRouter = createTRPCRouter({
         });
       }
 
-      // For direct conversations, check if conversation already exists
-      if (input.type === 'direct') {
-        // Simplified logic: find conversations with same participants
-        const allConversations = await db.thinkshareConversation.findMany({
-          where: {
-            type: 'direct',
-            participants: {
-              some: {
-                accountId: { in: uniqueParticipantIds }
-              }
+      // Check if conversation already exists (for direct conversations)
+      const allConversations = await db.thinkshareConversation.findMany({
+        where: {
+          type: 'direct',
+          participants: {
+            some: {
+              accountId: { in: uniqueParticipantIds }
             }
-          },
-          include: {
-            participants: true
           }
-        });
+        },
+        include: {
+          participants: true
+        }
+      });
 
-        // Check each conversation to see if it matches our participant set
-        for (const conv of allConversations) {
-          const convParticipantIds = conv.participants.map(p => p.accountId).sort();
-          const inputParticipantIds = validParticipantIds.sort();
-          
-          if (JSON.stringify(convParticipantIds) === JSON.stringify(inputParticipantIds)) {
-            return conv;
-          }
+      // Check each conversation to see if it matches our participant set
+      for (const conv of allConversations) {
+        const convParticipantIds = conv.participants.map(p => p.accountId).sort();
+        const inputParticipantIds = uniqueParticipantIds.sort();
+        
+        if (JSON.stringify(convParticipantIds) === JSON.stringify(inputParticipantIds)) {
+          console.log('🔄 Found existing conversation:', conv.id);
+          return conv;
         }
       }
 
       // Create conversation
+      console.log('🆕 Creating new conversation');
       const conversation = await db.thinkshareConversation.create({
         data: {
-          type: input.type,
-          name: input.name,
-          avatar: input.avatar
+          type: 'direct'
         }
       });
 
-      // Add participants
+      // Add participants (using unique IDs to avoid constraint violations)
       await db.conversationParticipant.createMany({
-        data: validParticipantIds.map(accountId => ({
+        data: uniqueParticipantIds.map(accountId => ({
           conversationId: conversation.id,
           accountId,
-          role: input.type === 'group' && accountId === validParticipantIds[0] ? 'admin' : 'participant'
+          role: 'participant'
         }))
       });
+
+      console.log('✅ Conversation created successfully:', conversation.id);
 
       return conversation;
     }),

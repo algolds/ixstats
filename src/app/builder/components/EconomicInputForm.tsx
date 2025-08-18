@@ -3,22 +3,17 @@
 
 import { useState, useEffect } from "react";
 import {
-  ArrowLeft,
   Eye,
   CheckCircle,
-  AlertCircle,
   BarChart3,
   Briefcase,
-  Building,
   Scale,
   Building2,
   Users,
-  HelpCircle,
 } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Button } from "~/components/ui/button";
 import type { EconomicInputs, RealCountryData } from "../lib/economy-data-service";
-import { getEconomicTier, createDefaultEconomicInputs } from "../lib/economy-data-service";
+import { getEconomicTier } from "../lib/economy-data-service";
 import { getTierStyle } from "~/lib/theme-utils";
 import { CoreEconomicIndicatorsComponent } from "./CoreEconomicIndicators";
 import { LaborEmploymentComponent } from "./LaborEmployment";
@@ -26,8 +21,19 @@ import { FiscalSystemComponent } from "./FiscalSystem";
 import { IncomeWealthDistribution } from "./IncomeWealthDistribution";
 import { GovernmentSpending } from "./GovernmentSpending";
 import { Demographics } from "./Demographics";
+import { CountrySymbolsUploader } from "./CountrySymbolsUploader";
 import type { DemographicsData } from "~/types/economics";
 import type { GovernmentSpendingData } from '~/types/economics';
+import {
+  BuilderHeader,
+  CountryNameInput,
+  EconomicOverview,
+  SectionNavigation,
+  SectionContent,
+  ValidationDisplay,
+  type Section,
+  type ValidationError,
+} from "../primitives";
 
 interface EconomicInputFormProps {
   inputs: EconomicInputs;
@@ -35,12 +41,6 @@ interface EconomicInputFormProps {
   onInputsChange: (inputs: EconomicInputs) => void;
   onPreview: () => void;
   onBack: () => void;
-}
-
-interface ValidationError {
-  field: string;
-  message: string;
-  severity: 'error' | 'warning' | 'info';
 }
 
 export function EconomicInputForm({
@@ -122,6 +122,10 @@ export function EconomicInputForm({
     onInputsChange({ ...inputs, countryName: name });
   };
 
+  const handleSymbolsChange = (flagUrl: string, coatOfArmsUrl: string) => {
+    onInputsChange({ ...inputs, flagUrl, coatOfArmsUrl });
+  };
+
   const handleCoreIndicatorsChange = (coreIndicators: typeof inputs.coreIndicators) => {
     onInputsChange({ ...inputs, coreIndicators });
   };
@@ -152,7 +156,7 @@ export function EconomicInputForm({
   const currentEconomicTier = getEconomicTier(inputs.coreIndicators.gdpPerCapita);
   const tierStyle = getTierStyle(currentEconomicTier);
 
-  const sections = [
+  const sections: Section[] = [
     { 
       key: 'core', 
       label: 'Core Indicators', 
@@ -168,13 +172,13 @@ export function EconomicInputForm({
     { 
       key: 'fiscal', 
       label: 'Fiscal System', 
-      icon: Building,
+      icon: Scale,
       description: 'Define tax structure, government revenue sources, debt levels, and fiscal balance.'
     },
     { 
       key: 'income', 
       label: 'Income & Wealth', 
-      icon: Scale,
+      icon: Building2,
       description: 'Set income distribution, wealth inequality (Gini coefficient), and wealth concentration.'
     },
     { 
@@ -189,7 +193,7 @@ export function EconomicInputForm({
       icon: Users,
       description: 'Configure population structure, age distribution, birth/death rates, and migration patterns.'
     }
-  ] as const;
+  ];
 
   const calculateTotalGDP = () => inputs.coreIndicators.nominalGDP / 1e9; // Billions
   const calculateTaxRevenue = () => inputs.fiscalSystem.governmentRevenueTotal / 1e9; // Billions
@@ -201,88 +205,43 @@ export function EconomicInputForm({
     return `$${num.toFixed(0)}`;
   };
 
+  const economicMetrics = [
+    {label: "Total GDP", value: formatNumber(inputs.coreIndicators.nominalGDP)},
+    {label: "GDP per Capita", value: formatNumber(inputs.coreIndicators.gdpPerCapita)},
+    {label: "Population", value: (inputs.coreIndicators.totalPopulation / 1e6).toFixed(1) + "M"},
+    {label: "Tax Revenue", value: formatNumber(inputs.fiscalSystem.governmentRevenueTotal)},
+    {label: "Economic Tier", value: <span className={`tier-badge ${tierStyle.className}`}>{currentEconomicTier}</span> },
+  ];
+
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-xl font-semibold text-[var(--color-text-primary)] mb-1">Customize Your Country</h2>
-          <p className="text-[var(--color-text-muted)]">Fine-tune the economic parameters for {inputs.countryName || 'your custom nation'}</p>
-        </div>
-        <button onClick={onBack} className="btn-secondary text-sm py-1.5 px-3">
-          <ArrowLeft className="h-4 w-4 mr-1.5" /> Back
-        </button>
-      </div>
+      <BuilderHeader
+        title="Customize Your Country"
+        subtitle={`Fine-tune the economic parameters for ${inputs.countryName || 'your custom nation'}`}
+        onBack={onBack}
+      />
 
-      {/* Country Name Input */}
-      <div className="mb-6">
-        <label className="form-label">
-          <Building className="h-4 w-4 mr-2 text-[var(--color-brand-primary)]" />
-          Country Name
-        </label>
-        <input
-          type="text"
-          value={inputs.countryName}
-          onChange={(e) => handleCountryNameChange(e.target.value)}
-          className="form-input"
-          placeholder={`New ${referenceCountry.name}`}
-        />
-      </div>
+      <CountryNameInput
+        value={inputs.countryName}
+        onChange={handleCountryNameChange}
+        placeholder={`New ${referenceCountry.name}`}
+      />
 
-      {/* Economic Summary */}
-      <div className="bg-[var(--color-bg-tertiary)] rounded-lg p-4 mb-6 border border-[var(--color-border-primary)]">
-        <h3 className="text-sm font-medium text-[var(--color-text-secondary)] mb-3">Country Economic Overview</h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-          {[
-            {label: "Total GDP", value: formatNumber(inputs.coreIndicators.nominalGDP)},
-            {label: "GDP per Capita", value: formatNumber(inputs.coreIndicators.gdpPerCapita)},
-            {label: "Population", value: (inputs.coreIndicators.totalPopulation / 1e6).toFixed(1) + "M"},
-            {label: "Tax Revenue", value: formatNumber(inputs.fiscalSystem.governmentRevenueTotal)},
-            {label: "Economic Tier", value: <span className={`tier-badge ${tierStyle.className}`}>{currentEconomicTier}</span> },
-          ].map(item => (
-            <div key={item.label}>
-              <span className="text-[var(--color-text-muted)]">{item.label}:</span>
-              <div className="font-semibold text-[var(--color-text-primary)]">{item.value}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <CountrySymbolsUploader
+        flagUrl={inputs.flagUrl || ""}
+        coatOfArmsUrl={inputs.coatOfArmsUrl || ""}
+        onUrlsChange={handleSymbolsChange}
+      />
 
-      {/* Section Navigation */}
-      <div className="flex flex-wrap border-b border-[var(--color-border-primary)] mb-6">
-        {sections.map((section) => {
-          const Icon = section.icon;
-          const isActive = activeSection === section.key;
-          
-          return (
-            <Popover key={section.key}>
-              <PopoverTrigger 
-                onClick={() => setActiveSection(section.key)}
-                className={`flex items-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  isActive
-                    ? 'border-[var(--color-brand-primary)] text-[var(--color-brand-primary)]'
-                    : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-secondary)]'
-                }`}
-              >
-                <Icon className="h-4 w-4 mr-2" />
-                {section.label}
-                <HelpCircle className="h-3 w-3 ml-1 opacity-60" />
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-3">
-                <div className="space-y-2">
-                  <h4 className="font-medium text-[var(--color-text-primary)] flex items-center">
-                    <Icon className="h-4 w-4 mr-2" />
-                    {section.label}
-                  </h4>
-                  <p className="text-sm text-[var(--color-text-muted)]">{section.description}</p>
-                </div>
-              </PopoverContent>
-            </Popover>
-          );
-        })}
-      </div>
+      <EconomicOverview metrics={economicMetrics} />
 
-      {/* Section Content */}
-      <div className="min-h-[600px]">
+      <SectionNavigation
+        sections={sections}
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
+      />
+
+      <SectionContent>
         {activeSection === 'core' && (
           <CoreEconomicIndicatorsComponent
             indicators={inputs.coreIndicators}
@@ -335,29 +294,9 @@ export function EconomicInputForm({
             onDemographicDataChange={(demographicData: DemographicsData) => handleDemographicsChange(demographicData as typeof inputs.demographics)}
           />
         )}
-      </div>
+      </SectionContent>
 
-      {/* Validation Errors */}
-      {errors.length > 0 && (
-        <div className="mb-6 space-y-2">
-          {errors.slice(0, 3).map((error, index) => (
-            <div key={index} className={`flex items-center text-sm p-2 rounded ${
-              error.severity === 'error' ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400' :
-              error.severity === 'warning' ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400' :
-              'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-            }`}>
-              {error.severity === 'error' ? <AlertCircle className="h-4 w-4 mr-2" /> : 
-               <AlertCircle className="h-4 w-4 mr-2" />}
-              {error.message}
-            </div>
-          ))}
-          {errors.length > 3 && (
-            <div className="text-xs text-[var(--color-text-muted)]">
-              +{errors.length - 3} more validation {errors.length - 3 === 1 ? 'issue' : 'issues'}
-            </div>
-          )}
-        </div>
-      )}
+      <ValidationDisplay errors={errors} className="mb-6" />
 
       {/* Action Bar */}
       <div className="flex justify-between items-center pt-6 mt-6 border-t border-[var(--color-border-primary)]">

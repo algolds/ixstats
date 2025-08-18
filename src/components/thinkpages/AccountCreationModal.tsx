@@ -18,7 +18,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Button } from '~/components/ui/button';
 import { api } from '~/trpc/react';
 import { toast } from 'sonner';
-import { UnsplashImageSearchModal } from './UnsplashImageSearchModal';
+import { MediaSearchModal } from './MediaSearchModal';
 import { WikiSearch } from './WikiSearch';
 
 interface AccountCreationModalProps {
@@ -358,7 +358,7 @@ export function AccountCreationModal({
                           </div>
                           <div className="flex flex-col gap-2 relative">
                             <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
+                              <DropdownMenuTrigger>
                                 <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-9 px-4 py-2">
                                   Change Source
                                 </button>
@@ -451,7 +451,7 @@ export function AccountCreationModal({
             </div>
           </motion.div>
 
-          <UnsplashImageSearchModal 
+          <MediaSearchModal 
             isOpen={showUnsplashSearch}
             onClose={() => setShowUnsplashSearch(false)}
             onImageSelect={handleImageSelected}
