@@ -20,7 +20,9 @@ import {
   Trash2,
   Crown,
   Newspaper,
-  Users
+  Users,
+  Repeat2,
+  MessageCircle
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
 import { Badge } from '~/components/ui/badge';
@@ -145,6 +147,11 @@ export function ThinkpagesPost({
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [showReplyComposer, setShowReplyComposer] = useState(false);
   const [replyText, setReplyText] = useState('');
+  const [showEditComposer, setShowEditComposer] = useState(false);
+  const [editText, setEditText] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showFlagDialog, setShowFlagDialog] = useState(false);
+  const [flagReason, setFlagReason] = useState('');
 
   // Close more options when clicking outside
   useEffect(() => {
@@ -198,54 +205,73 @@ export function ThinkpagesPost({
     }
   }, [bookmarkPostMutation, post.id, currentUserAccountId]);
 
-  const handleFlag = useCallback(async () => {
+  const handleFlag = useCallback(() => {
     if (!currentUserAccountId) return;
-    const reason = prompt('Why are you flagging this post?');
-    if (!reason) return;
+    setShowFlagDialog(true);
+    setShowMoreOptions(false);
+  }, [currentUserAccountId]);
+
+  const handleSubmitFlag = useCallback(async () => {
+    if (!flagReason.trim()) return;
     
     try {
       await flagPostMutation.mutateAsync({
         postId: post.id,
         accountId: currentUserAccountId,
-        reason
+        reason: flagReason
       });
       toast.success('Post flagged');
+      setShowFlagDialog(false);
+      setFlagReason('');
     } catch (error: any) {
       toast.error(error.message || 'Failed to flag post');
     }
-  }, [flagPostMutation, post.id, currentUserAccountId]);
+  }, [flagPostMutation, post.id, currentUserAccountId, flagReason]);
 
-  const handleEdit = useCallback(async () => {
+  const handleEdit = useCallback(() => {
     if (!currentUserAccountId || post.account.id !== currentUserAccountId) return;
-    const newContent = prompt('Edit your post:', post.content);
-    if (!newContent || newContent === post.content) return;
+    setEditText(post.content);
+    setShowEditComposer(true);
+    setShowMoreOptions(false);
+  }, [post.content, post.account.id, currentUserAccountId]);
+
+  const handleSubmitEdit = useCallback(async () => {
+    if (!editText.trim() || editText === post.content) {
+      setShowEditComposer(false);
+      return;
+    }
     
     try {
       await updatePostMutation.mutateAsync({
         postId: post.id,
         accountId: currentUserAccountId,
-        content: newContent
+        content: editText
       });
       toast.success('Post updated');
+      setShowEditComposer(false);
     } catch (error: any) {
       toast.error(error.message || 'Failed to update post');
     }
-  }, [updatePostMutation, post.id, post.content, post.account.id, currentUserAccountId]);
+  }, [updatePostMutation, post.id, editText, post.content, currentUserAccountId]);
 
-  const handleDelete = useCallback(async () => {
+  const handleDelete = useCallback(() => {
     if (!currentUserAccountId || post.account.id !== currentUserAccountId) return;
-    if (!confirm('Are you sure you want to delete this post?')) return;
-    
+    setShowDeleteConfirm(true);
+    setShowMoreOptions(false);
+  }, [post.account.id, currentUserAccountId]);
+
+  const handleConfirmDelete = useCallback(async () => {
     try {
       await deletePostMutation.mutateAsync({
         postId: post.id,
         accountId: currentUserAccountId
       });
       toast.success('Post deleted');
+      setShowDeleteConfirm(false);
     } catch (error: any) {
       toast.error(error.message || 'Failed to delete post');
     }
-  }, [deletePostMutation, post.id, post.account.id, currentUserAccountId]);
+  }, [deletePostMutation, post.id, currentUserAccountId]);
 
   const handleReply = useCallback(() => {
     setShowReplyComposer(!showReplyComposer);
@@ -471,35 +497,43 @@ export function ThinkpagesPost({
               >
                 <MoreHorizontal className="h-4 w-4" />
               </button>
-              {showMoreOptions && (
-                <div className="absolute right-0 mt-2 w-48 bg-background border border-border rounded-lg shadow-lg z-50">
-                  {currentUserAccountId === post.account.id && (
-                    <>
-                      <button onClick={handlePin} className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-muted"> 
-                        <Pin className="h-4 w-4" /> 
-                        {post.pinned ? 'Unpin' : 'Pin'}
-                      </button>
-                      <button onClick={handleEdit} className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-muted"> 
-                        <Edit className="h-4 w-4" /> 
-                        Edit 
-                      </button>
-                      <button onClick={handleDelete} className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-muted text-destructive"> 
-                        <Trash2 className="h-4 w-4" /> 
-                        Delete 
-                      </button>
-                      <div className="border-t border-border my-1"></div>
-                    </>
-                  )}
-                  <button onClick={handleBookmark} className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-muted"> 
-                    <Bookmark className="h-4 w-4" /> 
-                    Bookmark 
-                  </button>
-                  <button onClick={handleFlag} className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-muted"> 
-                    <Flag className="h-4 w-4" /> 
-                    Flag 
-                  </button>
-                </div>
-              )}
+              <AnimatePresence>
+                {showMoreOptions && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9, y: -10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                    className="absolute right-0 mt-2 w-48 bg-background border border-border rounded-lg shadow-lg z-[60] backdrop-blur-sm"
+                    style={{ zIndex: 60 }}
+                  >
+                    {currentUserAccountId === post.account.id && (
+                      <>
+                        <button onClick={handlePin} className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-muted"> 
+                          <Pin className="h-4 w-4" /> 
+                          {post.pinned ? 'Unpin' : 'Pin'}
+                        </button>
+                        <button onClick={handleEdit} className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-muted"> 
+                          <Edit className="h-4 w-4" /> 
+                          Edit 
+                        </button>
+                        <button onClick={handleDelete} className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-muted text-destructive"> 
+                          <Trash2 className="h-4 w-4" /> 
+                          Delete 
+                        </button>
+                        <div className="border-t border-border my-1"></div>
+                      </>
+                    )}
+                    <button onClick={handleBookmark} className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-muted"> 
+                      <Bookmark className="h-4 w-4" /> 
+                      Bookmark 
+                    </button>
+                    <button onClick={handleFlag} className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-muted"> 
+                      <Flag className="h-4 w-4" /> 
+                      Flag 
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
@@ -517,6 +551,66 @@ export function ThinkpagesPost({
               })}
             </div>
           )}
+
+          {/* Edit Composer */}
+          <AnimatePresence>
+            {showEditComposer && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mt-3 p-3 border border-amber-500/50 rounded-lg bg-amber-500/5"
+              >
+                <div className="flex gap-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={post.account.profileImageUrl} />
+                    <AvatarFallback className={`font-semibold ${ACCOUNT_TYPE_COLORS[post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || 'text-gray-500 bg-gray-500/20'}`}>
+                      {post.account.displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2 mb-2 text-amber-600">
+                      <Edit className="h-4 w-4" />
+                      <span className="text-sm font-medium">Editing post</span>
+                    </div>
+                    <Textarea
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                      placeholder="Edit your post..."
+                      className="min-h-[80px] resize-none"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                          e.preventDefault();
+                          handleSubmitEdit();
+                        }
+                        if (e.key === 'Escape') {
+                          setShowEditComposer(false);
+                        }
+                      }}
+                      autoFocus
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowEditComposer(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={handleSubmitEdit}
+                        disabled={!editText.trim() || editText === post.content || updatePostMutation.isPending}
+                        className="bg-amber-600 hover:bg-amber-700"
+                      >
+                        {updatePostMutation.isPending ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Reply Composer */}
           <AnimatePresence>
@@ -575,6 +669,112 @@ export function ThinkpagesPost({
               {showReplies ? 'Hide' : 'Show'} {post.replyCount} {post.replyCount === 1 ? 'reply' : 'replies'}
             </button>
           )}
+
+          {/* Delete Confirmation Dialog */}
+          <AnimatePresence>
+            {showDeleteConfirm && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70] flex items-center justify-center"
+                onClick={() => setShowDeleteConfirm(false)}
+              >
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  className="bg-background border border-border rounded-lg p-6 max-w-md mx-4"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-red-500/20 rounded-full">
+                      <Trash2 className="h-5 w-5 text-red-500" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Delete Post</h3>
+                      <p className="text-sm text-muted-foreground">This action cannot be undone.</p>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowDeleteConfirm(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleConfirmDelete}
+                      disabled={deletePostMutation.isPending}
+                    >
+                      {deletePostMutation.isPending ? 'Deleting...' : 'Delete'}
+                    </Button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Flag Dialog */}
+          <AnimatePresence>
+            {showFlagDialog && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70] flex items-center justify-center"
+                onClick={() => setShowFlagDialog(false)}
+              >
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  className="bg-background border border-border rounded-lg p-6 max-w-md mx-4"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-orange-500/20 rounded-full">
+                      <Flag className="h-5 w-5 text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Flag Post</h3>
+                      <p className="text-sm text-muted-foreground">Help us understand what's wrong.</p>
+                    </div>
+                  </div>
+                  <Textarea
+                    value={flagReason}
+                    onChange={(e) => setFlagReason(e.target.value)}
+                    placeholder="Why are you flagging this post?"
+                    className="mb-4"
+                    autoFocus
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setShowFlagDialog(false);
+                        setFlagReason('');
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleSubmitFlag}
+                      disabled={!flagReason.trim() || flagPostMutation.isPending}
+                      className="bg-orange-600 hover:bg-orange-700"
+                    >
+                      {flagPostMutation.isPending ? 'Flagging...' : 'Flag Post'}
+                    </Button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </motion.div>

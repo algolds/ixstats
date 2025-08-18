@@ -99,6 +99,84 @@ interface ThinktankGroup {
 
 const categories = ['All', 'Environment', 'Technology', 'Business', 'Healthcare', 'Culture', 'Education', 'Sports'];
 
+// Enhanced text formatting with better mention and hashtag styling
+const formatContentEnhanced = (content: string) => {
+  if (!content) return '';
+  
+  let formattedContent = content;
+  
+  // Handle broken emoji format: "text https://cdn.discordapp.com/emojis/123.png" alt=":emoji:" class="..." title="..." />"
+  // This happens when the opening <img src=" is missing
+  formattedContent = formattedContent.replace(
+    /\s(https:\/\/cdn\.discordapp\.com\/emojis\/\d+\.(?:png|gif|webp))"\s+alt="([^"]*?)"\s+class="([^"]*?)"\s+title="([^"]*?)"\s*\/?>/gi,
+    ' <img src="$1" alt="$2" class="inline-block h-5 w-5" title="$4" />'
+  );
+  
+  // Handle HTML entity decoding progressively - some content is multiply encoded
+  // First pass - handle double-encoded entities
+  formattedContent = formattedContent.replace(/&amp;amp;/g, '&amp;');
+  formattedContent = formattedContent.replace(/&amp;lt;/g, '&lt;');
+  formattedContent = formattedContent.replace(/&amp;gt;/g, '&gt;');
+  formattedContent = formattedContent.replace(/&amp;nbsp;/g, '&nbsp;');
+  formattedContent = formattedContent.replace(/&amp;quot;/g, '&quot;');
+  
+  // Second pass - handle single-encoded entities
+  formattedContent = formattedContent.replace(/&lt;/g, '<');
+  formattedContent = formattedContent.replace(/&gt;/g, '>');
+  formattedContent = formattedContent.replace(/&nbsp;/g, ' ');
+  formattedContent = formattedContent.replace(/&quot;/g, '"');
+  formattedContent = formattedContent.replace(/&amp;/g, '&');
+  
+  // Handle Discord emoji patterns - multiple variations
+  // Pattern 1: Standard img tag
+  formattedContent = formattedContent.replace(
+    /<img\s+src="([^"]+)"\s+alt="([^"]*?)"\s+class="([^"]*?)"\s+title="([^"]*?)"\s*\/?>/gi,
+    '<img src="$1" alt="$2" class="inline-block h-5 w-5" title="$4" />'
+  );
+  
+  // Pattern 2: Img tag with different attribute order
+  formattedContent = formattedContent.replace(
+    /<img\s+alt="([^"]*?)"\s+src="([^"]+)"\s+class="([^"]*?)"\s+title="([^"]*?)"\s*\/?>/gi,
+    '<img src="$2" alt="$1" class="inline-block h-5 w-5" title="$4" />'
+  );
+  
+  // Pattern 3: Handle any remaining broken img tags
+  formattedContent = formattedContent.replace(
+    /<img([^>]*?)>/gi,
+    (match, attributes) => {
+      const srcMatch = attributes.match(/src="([^"]+)"/);
+      const altMatch = attributes.match(/alt="([^"]*)"/);
+      const titleMatch = attributes.match(/title="([^"]*)"/);
+      
+      if (srcMatch) {
+        const src = srcMatch[1];
+        const alt = altMatch ? altMatch[1] : '';
+        const title = titleMatch ? titleMatch[1] : alt;
+        return `<img src="${src}" alt="${alt}" class="inline-block h-5 w-5" title="${title}" />`;
+      }
+      return match;
+    }
+  );
+  
+  // Replace hashtags
+  formattedContent = formattedContent.replace(/#([a-zA-Z0-9_]+)/g, 
+    '<span class="text-blue-500 hover:underline cursor-pointer font-medium">#$1</span>'
+  );
+  
+  // Replace mentions
+  formattedContent = formattedContent.replace(/@([a-zA-Z0-9_]+)/g, 
+    '<span class="text-purple-500 hover:underline cursor-pointer font-medium">@$1</span>'
+  );
+  
+  // Replace URLs (but avoid URLs that are part of img src)
+  formattedContent = formattedContent.replace(
+    /(?<!src=")(?<!src=')(https?:\/\/(?!cdn\.discordapp\.com\/emojis\/)[^\s<>"]+)/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">$1</a>'
+  );
+  
+  return formattedContent;
+};
+
 export function ThinktankGroups({ countryId, countryName, userAccounts }: ThinktankGroupsProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -475,10 +553,13 @@ export function ThinktankGroups({ countryId, countryName, userAccounts }: Thinkt
                           {message.messageType === 'rich_text' ? (
                             <div 
                               className="text-sm [&_img]:inline-block [&_img]:h-5 [&_img]:w-5 [&_img]:mx-1 [&_img]:align-middle" 
-                              dangerouslySetInnerHTML={{ __html: message.content }}
+                              dangerouslySetInnerHTML={{ __html: formatContentEnhanced(message.content) }}
                             />
                           ) : (
-                            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                            <div 
+                              className="text-sm whitespace-pre-wrap"
+                              dangerouslySetInnerHTML={{ __html: formatContentEnhanced(message.content) }}
+                            />
                           )}
                         </div>
                         
@@ -995,152 +1076,125 @@ function CreateGroupModal({
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center hs-overlay-backdrop-open:bg-black/50">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-          />
-          
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-lg mx-4 max-h-[90vh] flex flex-col"
-          >
-            <div className="bg-neutral-900/50 border border-white/10 rounded-xl shadow-lg backdrop-blur-xl flex flex-col">
-              {/* Header */}
-              <div className="py-4 px-6 flex justify-between items-center border-b border-white/10">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-orange-500/20 rounded-lg">
-                    <Users className="h-6 w-6 text-orange-400" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-white text-lg">Create New ThinkTank</h3>
-                    <p className="text-sm text-neutral-400">
-                      Start a discussion group
-                    </p>
-                  </div>
-                </div>
-                <button type="button" onClick={onClose} className="p-2 rounded-full text-neutral-400 hover:bg-white/10 transition-colors">
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Body */}
-              <div className="p-6 overflow-y-auto overflow-x-visible">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2 text-neutral-300">Group Name</label>
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Enter group name..."
-                      className="py-3 px-4 block w-full bg-neutral-800/50 border-neutral-700 rounded-lg text-sm text-white focus:border-orange-500 focus:ring-orange-500"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2 text-neutral-300">Description</label>
-                    <textarea
-                      value={formData.description}
-                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Describe your group's purpose..."
-                      rows={3}
-                      className="py-3 px-4 block w-full bg-neutral-800/50 border-neutral-700 rounded-lg text-sm text-white focus:border-orange-500 focus:ring-orange-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2 text-neutral-300">Privacy</label>
-                    <select
-                      value={formData.type}
-                      onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
-                      className="py-3 px-4 block w-full bg-neutral-800/50 border-neutral-700 rounded-lg text-sm text-white focus:border-orange-500 focus:ring-orange-500"
-                    >
-                      <option value="public">Public - Anyone can join</option>
-                      <option value="private">Private - Approval required</option>
-                      <option value="invite_only">Invite Only - Invitation required</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2 text-neutral-300">Category</label>
-                    <select
-                      value={formData.category}
-                      onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                      className="py-3 px-4 block w-full bg-neutral-800/50 border-neutral-700 rounded-lg text-sm text-white focus:border-orange-500 focus:ring-orange-500"
-                    >
-                      <option value="">Select category</option>
-                      {categories.filter(c => c !== 'All').map(category => (
-                        <option key={category} value={category}>{category}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2 text-neutral-300">Tags</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={tagInput}
-                        onChange={(e) => setTagInput(e.target.value)}
-                        placeholder="Add a tag..."
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                        className="flex-1 py-2 px-3 bg-neutral-800/50 border-neutral-700 rounded-lg text-sm text-white focus:border-orange-500 focus:ring-orange-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={addTag}
-                        className="py-2 px-3 bg-neutral-700 hover:bg-neutral-600 rounded-lg text-white"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </button>
-                    </div>
-                    {formData.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {formData.tags.map(tag => (
-                          <span
-                            key={tag}
-                            onClick={() => removeTag(tag)}
-                            className="cursor-pointer inline-flex items-center gap-1 py-1 px-2 bg-orange-500/20 text-orange-400 rounded-full text-xs"
-                          >
-                            {tag}
-                            <X className="h-3 w-3" />
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Footer */}
-                  <div className="flex justify-end gap-2 pt-4">
-                    <button
-                      type="button"
-                      onClick={onClose}
-                      className="py-2 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-neutral-700 text-white hover:bg-neutral-600"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="py-2 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-gradient-to-r from-orange-600 to-yellow-600 text-white hover:from-orange-700 hover:to-yellow-700"
-                    >
-                      Create Group
-                    </button>
-                  </div>
-                </form>
-              </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-orange-500/20 rounded-lg">
+              <Users className="h-6 w-6 text-orange-400" />
             </div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+            <div>
+              <DialogTitle className="text-lg">Create New ThinkTank</DialogTitle>
+              <p className="text-sm text-muted-foreground">
+                Start a discussion group
+              </p>
+            </div>
+          </div>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="group-name">Group Name</Label>
+            <Input
+              id="group-name"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Enter group name..."
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="group-description">Description</Label>
+            <Textarea
+              id="group-description"
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Describe your group's purpose..."
+              rows={3}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="group-privacy">Privacy</Label>
+            <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="public">Public - Anyone can join</SelectItem>
+                <SelectItem value="private">Private - Approval required</SelectItem>
+                <SelectItem value="invite_only">Invite Only - Invitation required</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="group-category">Category</Label>
+            <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.filter(c => c !== 'All').map(category => (
+                  <SelectItem key={category} value={category}>{category}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="group-tags">Tags</Label>
+            <div className="flex gap-2">
+              <Input
+                id="group-tags"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                placeholder="Add a tag..."
+                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                onClick={addTag}
+                variant="outline"
+                size="sm"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            {formData.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {formData.tags.map(tag => (
+                  <span
+                    key={tag}
+                    onClick={() => removeTag(tag)}
+                    className="cursor-pointer inline-flex items-center gap-1 py-1 px-2 bg-orange-500/20 text-orange-400 rounded-full text-xs hover:bg-orange-500/30 transition-colors"
+                  >
+                    {tag}
+                    <X className="h-3 w-3" />
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              type="button"
+              onClick={onClose}
+              variant="outline"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="bg-gradient-to-r from-orange-600 to-yellow-600 hover:from-orange-700 hover:to-yellow-700"
+            >
+              Create Group
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

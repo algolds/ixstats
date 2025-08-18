@@ -34,6 +34,19 @@ const config = {
   images: {
     domains: ['localhost', 'lh3.googleusercontent.com', 'upload.wikimedia.org'],
   },
+
+  async rewrites() {
+    return [
+      {
+        source: '/api/ixwiki-proxy/api.php/:path*',
+        destination: 'https://ixwiki.com/api.php/:path*',
+      },
+      {
+        source: '/api/iiwiki-proxy/mediawiki/api.php/:path*',
+        destination: 'https://iiwiki.com/mediawiki/api.php/:path*',
+      },
+    ];
+  },
 };
 
 export default config;

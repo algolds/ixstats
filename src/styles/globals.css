@@ -198,9 +198,27 @@
     transform: translateY(calc(-100% - var(--gap)));
     }
   }
+  --animate-shiny-text: shiny-text 8s infinite
+;
+  @keyframes shiny-text {
+  0%, 90%, 100% {
+    background-position: calc(-100% - var(--shiny-width)) 0;
+    }
+  30%, 60% {
+    background-position: calc(100% + var(--shiny-width)) 0;
+    }
+  }}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 
 @layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
   body {
     @apply bg-background text-foreground;
   }

@@ -26,6 +26,8 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
   const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
   const typingTimeout = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const retryCount = useRef(0);
+  const maxRetries = 3; // Limit connection attempts
 
   const connect = useCallback(() => {
     if (ws.current?.readyState === WebSocket.OPEN) {
@@ -37,15 +39,25 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
       return;
     }
 
+    // Stop retrying after max attempts
+    if (retryCount.current >= maxRetries) {
+      console.warn('WebSocket: Max retry attempts reached, disabling real-time features');
+      return;
+    }
+
+    // Check if WebSocket server is available before attempting connection
+    const wsPort = process.env.NEXT_PUBLIC_WS_PORT || 3001;
+    
     try {
       const wsUrl = process.env.NODE_ENV === 'production' 
         ? `wss://${window.location.host}/ws/thinkpages`
-        : `ws://localhost:${process.env.NEXT_PUBLIC_WS_PORT || 3001}/thinkpages`;
+        : `ws://localhost:${wsPort}/thinkpages`;
       
       ws.current = new WebSocket(wsUrl);
 
       ws.current.onopen = () => {
         console.log('ThinkPages WebSocket connected');
+        retryCount.current = 0; // Reset retry count on successful connection
         
         setClientState(prev => ({ ...prev, connected: true }));
         
@@ -152,11 +164,15 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
 
         options.onDisconnect?.();
         
-        // Auto-reconnect
-        if (options.autoReconnect !== false) {
+        // Auto-reconnect with exponential backoff
+        if (options.autoReconnect !== false && retryCount.current < maxRetries) {
+          retryCount.current++;
+          const backoffDelay = Math.min(1000 * Math.pow(2, retryCount.current), 30000);
+          console.log(`WebSocket: Retrying connection in ${backoffDelay}ms (attempt ${retryCount.current}/${maxRetries})`);
+          
           reconnectTimeout.current = setTimeout(() => {
             connect();
-          }, 5000);
+          }, backoffDelay);
         }
       };
 

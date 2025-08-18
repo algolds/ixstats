@@ -39,7 +39,7 @@ const ThinktankGroups = dynamic(
 );
 
 const ThinkshareMessages = dynamic(
-  () => import("~/components/thinkpages/ThinkshareMessages").then((mod) => ({ default: mod.ThinkshareMessages })),
+  () => import("~/components/thinkshare/ThinkshareMessages").then((mod) => ({ default: mod.ThinkshareMessages })),
   { 
     loading: () => (
       <div className="space-y-6">

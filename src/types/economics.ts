@@ -130,6 +130,7 @@ export interface CoreEconomicIndicatorsData {
   
   // Government spending
   export interface GovernmentSpendingData {
+    education: number
     totalSpending: number
     spendingGDPPercent: number
     spendingPerCapita: number
@@ -142,6 +143,10 @@ export interface CoreEconomicIndicatorsData {
       color?: string
       description?: string
     }>
+  performanceBasedBudgeting: boolean;
+  universalBasicServices: boolean;
+  greenInvestmentPriority: boolean;
+  digitalGovernmentInitiative: boolean;
   }
   
   // Demographics

@@ -37,7 +37,7 @@ const DEFAULT_CONFIG: FlagCacheConfig = {
   retryAttempts: 2,
   retryDelay: 3000, // 3 seconds
   localFlagsPath: path.join(process.cwd(), 'public', 'flags'),
-  enableLocalStorage: true,
+  enableLocalStorage: false,
 };
 
 interface LocalFlagMetadata {
