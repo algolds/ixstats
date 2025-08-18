@@ -18,6 +18,7 @@ export interface RealCountryData {
   taxesLessSubsidies?: number;
   taxRevenueLcu?: string | number;
   womenBeatWifeDinnerPercent?: number | string;
+  foundationCountryName?: string; // Original foundation country name for Wiki Commons API calls
 }
 
 export interface CoreEconomicIndicators {

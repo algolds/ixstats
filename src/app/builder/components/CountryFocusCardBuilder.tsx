@@ -36,7 +36,7 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(({
       layout
       className={cn(
         "relative cursor-pointer country-focus-card",
-        isHovered && "transition-all duration-300 shadow-2xl"
+        isHovered && "transition-all duration-100 shadow-2xl"
       )}
       onMouseEnter={() => {
         setIsHovered(true);
@@ -51,7 +51,7 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(({
       }}
       animate={isHovered ? { // Apply hover animation when hovered
         scale: 1.08, // Increased scale
-        y: -5, // Lift effect
+        y: -10, // Lift effect
         rotateZ: 0.5, // Subtle Z-axis rotation
         rotateY: 0.5, // Subtle Y-axis rotation
       } : { // Revert to default state when not hovered
@@ -62,10 +62,10 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(({
       }}
       transition={isHovered ? { // Apply hover transition when hovered
         type: "spring",
-        stiffness: 350, // Adjusted stiffness
+        stiffness: 150, // Adjusted stiffness
         damping: 20 // Adjusted damping
       } : { // Revert to default state with a simple transition
-        duration: 0.3,
+        duration: 0.1,
         ease: "easeInOut"
       }}
     >

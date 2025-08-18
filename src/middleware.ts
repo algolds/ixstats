@@ -20,7 +20,7 @@ const isClerkConfigured = Boolean(
 );
 
 // If Clerk is not configured, use a simple middleware that doesn't handle auth
-function simpleMiddleware(req: NextRequest) {
+function simpleMiddleware(_req: NextRequest) {
   return NextResponse.next();
 }
 

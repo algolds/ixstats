@@ -1,12 +1,12 @@
 "use client";
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, type Easing } from 'framer-motion';
 import { Crown, Globe } from 'lucide-react';
 import { cn } from '~/lib/utils';
 
 interface MyCountryLogoProps {
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'xxl' ;
   variant?: 'full' | 'icon-only' | 'text-only';
   animated?: boolean;
   className?: string;
@@ -40,6 +40,13 @@ const sizeConfig = {
     crown: 'h-8 w-8',
     text: 'text-3xl',
     spacing: 'gap-4'
+  },
+  xxl: {
+    container: 'h-20',
+    globe: 'h-24 w-24',
+    crown: 'h-20 w-20',
+    text: 'text-4xl',
+    spacing: 'gap-6'
   }
 };
 
@@ -58,11 +65,11 @@ export function MyCountryLogo({
       rotate: [0, -2, 2, 0],
       transition: { 
         duration: 0.6, 
-        ease: "easeInOut",
+        ease: "easeInOut" as Easing,
         rotate: {
           repeat: Infinity,
           duration: 2,
-          ease: "easeInOut"
+          ease: "easeInOut" as Easing
         }
       }
     }
@@ -75,7 +82,7 @@ export function MyCountryLogo({
       scale: 1.1,
       transition: { 
         duration: 0.3, 
-        ease: "easeOut" 
+        ease: "easeOut" as Easing
       }
     }
   };

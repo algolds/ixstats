@@ -1,7 +1,7 @@
 "use client";
 export const dynamic = 'force-dynamic';
 
-// Enhanced Country Builder with Glass Physics Design System
+// Enhanced Country Builder System
 import { BuilderPageEnhanced } from "./components/enhanced";
 
 export default function CreateCountryBuilder() {

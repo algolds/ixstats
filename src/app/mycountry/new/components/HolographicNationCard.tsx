@@ -304,7 +304,7 @@ export function HolographicNationCard({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 w-8 p-0 glass-hierarchy-interactive hover:scale-105 transition-transform"
+                        className="h-8 w-8 p-0 glass-hierarchy-interactive hover:scale-105 transition"
                       >
                         <Share2 className="h-4 w-4" />
                       </Button>
@@ -312,14 +312,14 @@ export function HolographicNationCard({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 w-8 p-0 glass-hierarchy-interactive hover:scale-105 transition-transform"
+                        className="h-8 w-8 p-0 glass-hierarchy-interactive hover:scale-105 transition"
                       >
                         <ExternalLink className="h-4 w-4" />
                       </Button>
                       
                       {/* More Actions Dropdown */}
                       <DropdownMenu>
-                        <DropdownMenuTrigger className="h-8 w-8 p-0 glass-hierarchy-interactive hover:scale-105 transition-transform inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground rounded-md">
+                        <DropdownMenuTrigger className="h-8 w-8 p-0 glass-hierarchy-interactive hover:scale-105 transition inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground rounded-md">
                           <MoreHorizontal className="h-4 w-4" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-56">

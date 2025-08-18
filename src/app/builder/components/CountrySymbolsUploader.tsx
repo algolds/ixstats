@@ -62,6 +62,13 @@ export function CountrySymbolsUploader({
     extractColorsFromImages();
   }, [extractColorsFromImages]);
 
+  // Auto-expand when foundation country has preview images
+  useEffect(() => {
+    if (foundationCountry && (foundationCountry.flagUrl || foundationCountry.coatOfArmsUrl)) {
+      setIsOpen(true);
+    }
+  }, [foundationCountry?.flagUrl, foundationCountry?.coatOfArmsUrl]);
+
   // Set default images from foundation country
   useEffect(() => {
     if (foundationCountry && !flagUrl && foundationCountry.flagUrl) {
