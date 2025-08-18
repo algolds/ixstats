@@ -134,9 +134,10 @@ export function GlassCardHeader({
 export const GlassCardContent = React.forwardRef<HTMLDivElement, {
   children: React.ReactNode; 
   className?: string;
-}>(({ children, className }, ref) => {
+  style?: React.CSSProperties;
+}>(({ children, className, style }, ref) => {
   return (
-    <div ref={ref} className={cn('p-6', className)}>
+    <div ref={ref} className={cn('p-6', className)} style={style}>
       {children}
     </div>
   );

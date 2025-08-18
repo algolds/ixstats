@@ -1,4 +1,4 @@
-// API endpoint for individual country flag retrieval with enhanced caching
+// API endpoint for individual country flag retrieval using Wiki Commons API ONLY
 import { NextRequest, NextResponse } from 'next/server';
 import { improvedFlagService } from '~/lib/improved-flag-service';
 
@@ -17,47 +17,45 @@ export async function GET(
       );
     }
 
-    // Check if cached first (fast response - includes local files)
+    // Check if cached first (fast response - Wiki Commons API cache only)
     const cachedUrl = improvedFlagService.getCachedFlagUrl(country);
     if (cachedUrl) {
-      const isLocal = improvedFlagService.hasLocalFlag(country);
       const isPlaceholder = improvedFlagService.isPlaceholderFlag(cachedUrl);
       
       return NextResponse.json({
         country,
         flagUrl: cachedUrl,
         cached: true,
-        isLocal,
+        isLocal: false, // NO LOCAL FILES EVER
         isPlaceholder,
         timestamp: Date.now(),
       });
     }
 
-    // If not cached, fetch it (may take longer and download locally)
-    console.log(`[Flag API] Fetching flag for: ${country}`);
+    // If not cached, fetch it from Wiki Commons API
+    console.log(`[Flag API] Fetching flag for: ${country} (Wiki Commons API only)`);
     const flagUrl = await improvedFlagService.getFlagUrl(country);
 
     if (flagUrl) {
-      const isLocal = improvedFlagService.hasLocalFlag(country);
       const isPlaceholder = improvedFlagService.isPlaceholderFlag(flagUrl);
       
       return NextResponse.json({
         country,
         flagUrl,
         cached: false,
-        isLocal,
+        isLocal: false, // NO LOCAL FILES EVER
         isPlaceholder,
         timestamp: Date.now(),
       });
     }
 
-    // Return a default placeholder if no flag found
+    // Return null if no flag found - let client handle fallback
     return NextResponse.json({
       country,
-      flagUrl: '/placeholder-flag.svg',
+      flagUrl: null,
       cached: false,
-      isLocal: false,
-      placeholder: true,
+      isLocal: false, // NO LOCAL FILES EVER
+      placeholder: false,
       timestamp: Date.now(),
     });
 
@@ -68,10 +66,10 @@ export async function GET(
     return NextResponse.json({
       error: 'Failed to fetch flag',
       country: resolvedParams.country,
-      flagUrl: '/placeholder-flag.svg',
+      flagUrl: null, // NO PLACEHOLDER FILES
       cached: false,
-      isLocal: false,
-      placeholder: true,
+      isLocal: false, // NO LOCAL FILES EVER
+      placeholder: false,
       timestamp: Date.now(),
     }, { status: 500 });
   }

@@ -1,7 +1,7 @@
-// Improved Flag Service - Uses enhanced cache manager with local file storage
+// Improved Flag Service - Uses ONLY Wiki Commons API (NO local files)
 // This replaces the existing flag-service.ts
 
-import { enhancedFlagCacheManager } from './enhanced-flag-cache-manager';
+import { wikiCommonsFlagService } from './wiki-commons-flag-service';
 import { ixnayWiki } from './mediawiki-service';
 
 export interface FlagServiceStats {
@@ -24,150 +24,90 @@ class ImprovedFlagService {
    * Initialize the flag service with a list of countries
    */
   async initialize(countryNames: string[]): Promise<void> {
-    console.log(`[ImprovedFlagService] Initializing with ${countryNames.length} countries`);
-    await enhancedFlagCacheManager.initialize(countryNames);
+    console.log(`[ImprovedFlagService] Initializing with ${countryNames.length} countries (Wiki Commons API only)`);
+    // Just preload flags from Wiki Commons API - no local storage
+    await wikiCommonsFlagService.batchGetFlags(countryNames);
   }
 
   /**
-   * Get flag URL for a country - local file first, then cached URL, then fetch
+   * Get flag URL for a country using ONLY Wiki Commons API
    */
   async getFlagUrl(countryName: string): Promise<string | null> {
     try {
-      console.log(`[ImprovedFlagService] Getting flag URL for ${countryName}`);
-
-      // Priority 1: Check if we have a local file
-      const localUrl = enhancedFlagCacheManager.getLocalFlagUrl(countryName);
-      if (localUrl) {
-        console.log(`[ImprovedFlagService] Using local file for ${countryName}: ${localUrl}`);
-        return localUrl;
-      }
-
-      // Priority 2: Check MediaWiki cache (fast)
-      const cachedUrl = ixnayWiki.getCachedFlagUrl(countryName);
-      if (cachedUrl && !cachedUrl.includes('placeholder')) {
-        console.log(`[ImprovedFlagService] Using cached URL for ${countryName}: ${cachedUrl}`);
-        return cachedUrl;
-      }
-
-      // Priority 3: Fetch and cache from enhanced cache manager (which will download locally)
-      console.log(`[ImprovedFlagService] Fetching and caching flag for ${countryName}`);
-      const fetchedUrl = await enhancedFlagCacheManager.fetchAndCacheFlag(countryName);
-      if (fetchedUrl) {
-        console.log(`[ImprovedFlagService] Successfully fetched and cached flag for ${countryName}: ${fetchedUrl}`);
-        return fetchedUrl;
-      }
-
-      // Priority 4: Fallback to placeholder
-      console.log(`[ImprovedFlagService] Using placeholder for ${countryName}`);
-      return '/placeholder-flag.svg';
+      console.log(`[ImprovedFlagService] Getting flag URL for ${countryName} (Wiki Commons API only)`);
+      return await wikiCommonsFlagService.getFlagUrl(countryName);
     } catch (error) {
       console.error(`[ImprovedFlagService] Error getting flag for ${countryName}:`, error);
-      return '/placeholder-flag.svg';
+      return null;
     }
   }
 
   /**
    * Get cached flag URL (synchronous, no network requests)
-   * Checks local files first, then memory cache
+   * Uses ONLY Wiki Commons API cache, NO local files
    */
   getCachedFlagUrl(countryName: string): string | null {
-    // First check if we have a local file
-    const localUrl = enhancedFlagCacheManager.getLocalFlagUrl(countryName);
-    if (localUrl) {
-      return localUrl;
-    }
-
-    // Then check MediaWiki service cache
-    const cachedUrl = ixnayWiki.getCachedFlagUrl(countryName);
-    if (cachedUrl && !cachedUrl.includes('placeholder')) {
-      return cachedUrl;
-    }
-
-    return null;
+    return wikiCommonsFlagService.getCachedFlagUrl(countryName);
   }
 
   /**
    * Check if a flag URL is a placeholder
    */
   isPlaceholderFlag(url: string): boolean {
-    return url.includes('placeholder') || url.includes('default') || url.endsWith('placeholder-flag.svg');
+    return wikiCommonsFlagService.isPlaceholderFlag(url);
   }
 
   /**
-   * Batch get flag URLs for multiple countries
+   * Batch get flag URLs for multiple countries using ONLY Wiki Commons API
    */
   async batchGetFlags(countryNames: string[]): Promise<Record<string, string | null>> {
-    const results: Record<string, string | null> = {};
-    
-    // Process in smaller batches to avoid overwhelming the system
-    const BATCH_SIZE = 5;
-    for (let i = 0; i < countryNames.length; i += BATCH_SIZE) {
-      const batch = countryNames.slice(i, i + BATCH_SIZE);
-      
-      const batchPromises = batch.map(async (countryName) => {
-        try {
-          const url = await this.getFlagUrl(countryName);
-          results[countryName] = url;
-        } catch (error) {
-          console.error(`[ImprovedFlagService] Batch error for ${countryName}:`, error);
-          results[countryName] = '/placeholder-flag.svg';
-        }
-      });
-
-      await Promise.allSettled(batchPromises);
-      
-      // Small delay between batches
-      if (i + BATCH_SIZE < countryNames.length) {
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
-    }
-
-    return results;
+    return await wikiCommonsFlagService.batchGetFlags(countryNames);
   }
 
   /**
-   * Preload flags for multiple countries (prioritizes local caching)
+   * Preload flags for multiple countries using ONLY Wiki Commons API
    */
   async preloadFlags(countryNames: string[]): Promise<void> {
-    console.log(`[ImprovedFlagService] Preloading ${countryNames.length} flags`);
-    
-    // Use the enhanced cache manager to handle preloading
-    await enhancedFlagCacheManager.initialize(countryNames);
+    console.log(`[ImprovedFlagService] Preloading ${countryNames.length} flags (Wiki Commons API only)`);
+    await wikiCommonsFlagService.batchGetFlags(countryNames);
   }
 
   /**
    * Get comprehensive service statistics
    */
   getStats(): FlagServiceStats {
-    const cacheStats = enhancedFlagCacheManager.getStats();
+    const wikiStats = wikiCommonsFlagService.getStats();
     
     return {
-      totalCountries: cacheStats.totalCountries,
-      cachedFlags: cacheStats.cachedFlags,
-      localFiles: cacheStats.localFiles,
-      failedFlags: cacheStats.failedFlags,
-      lastUpdateTime: cacheStats.lastUpdateTime,
-      nextUpdateTime: cacheStats.nextUpdateTime,
-      isUpdating: cacheStats.isUpdating,
-      updateProgress: cacheStats.updateProgress,
+      totalCountries: wikiStats.totalRequested,
+      cachedFlags: wikiStats.cachedFlags,
+      localFiles: 0, // No local files anymore
+      failedFlags: wikiStats.failedFlags,
+      lastUpdateTime: null,
+      nextUpdateTime: null,
+      isUpdating: false,
+      updateProgress: {
+        current: 0,
+        total: 0,
+        percentage: 0
+      },
     };
   }
 
   /**
-   * Force update all flags (re-download and cache locally)
+   * Force update all flags (clear cache and re-fetch from Wiki Commons)
    */
   async updateAllFlags(): Promise<void> {
-    console.log(`[ImprovedFlagService] Starting manual flag update`);
-    await enhancedFlagCacheManager.updateAllFlags();
+    console.log(`[ImprovedFlagService] Starting manual flag update (Wiki Commons API only)`);
+    wikiCommonsFlagService.clearCache();
   }
 
   /**
-   * Clear all flag caches (both memory and local files)
+   * Clear all flag caches (Wiki Commons API cache only)
    */
   async clearCache(): Promise<void> {
-    console.log(`[ImprovedFlagService] Clearing all caches`);
-    ixnayWiki.clearCache();
-    await enhancedFlagCacheManager.clearLocalCache();
+    console.log(`[ImprovedFlagService] Clearing all caches (Wiki Commons API only)`);
+    wikiCommonsFlagService.clearCache();
   }
 
   /**
@@ -175,23 +115,23 @@ class ImprovedFlagService {
    */
   async clearCountryCache(countryName: string): Promise<void> {
     console.log(`[ImprovedFlagService] Clearing cache for ${countryName}`);
-    ixnayWiki.clearCountryCache(countryName);
-    // Note: Enhanced cache manager doesn't have per-country clearing yet,
-    // but could be added if needed
+    wikiCommonsFlagService.clearCountryCache(countryName);
   }
 
   /**
-   * Get local flag URL only (returns null if not cached locally)
+   * Get local flag URL only (always returns null - no local files)
    */
   getLocalFlagUrl(countryName: string): string | null {
-    return enhancedFlagCacheManager.getLocalFlagUrl(countryName);
+    console.log(`[ImprovedFlagService] getLocalFlagUrl called for ${countryName} - NO LOCAL FILES, returning null`);
+    return null; // NO LOCAL FILES EVER
   }
 
   /**
-   * Check if flag is available locally
+   * Check if flag is available locally (always returns false - no local files)
    */
   hasLocalFlag(countryName: string): boolean {
-    return enhancedFlagCacheManager.getLocalFlagUrl(countryName) !== null;
+    console.log(`[ImprovedFlagService] hasLocalFlag called for ${countryName} - NO LOCAL FILES, returning false`);
+    return false; // NO LOCAL FILES EVER
   }
 }
 

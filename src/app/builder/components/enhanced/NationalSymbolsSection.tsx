@@ -8,46 +8,91 @@ import { MediaSearchModal } from '~/components/thinkpages/MediaSearchModal';
 import { CountrySymbolsUploader } from '../CountrySymbolsUploader';
 import type { EconomicInputs, RealCountryData } from '~/app/builder/lib/economy-data-service';
 import { useBuilderTheming } from '~/hooks/useBuilderTheming';
-import { IxnayWikiService } from '~/lib/mediawiki-service';
+import { wikiCommonsFlagService } from '~/lib/wiki-commons-flag-service';
 
 interface NationalSymbolsSectionProps {
   inputs: EconomicInputs;
   onInputsChange: (inputs: EconomicInputs) => void;
   referenceCountry: RealCountryData;
-  onFoundationFlagUrlChange: (url: string | undefined) => void;
 }
 
-const ixnayWikiService = new IxnayWikiService(); // Create an instance of the service
+// Get the original foundation country name for Wiki Commons API calls
+function getFoundationCountryName(referenceCountry: RealCountryData): string {
+  // First priority: use the preserved foundationCountryName if available
+  if (referenceCountry.foundationCountryName) {
+    return referenceCountry.foundationCountryName;
+  }
+  
+  // Fallback: extract from "New [Country]" format for backwards compatibility
+  const name = referenceCountry.name;
+  if (name.startsWith('New ')) {
+    return name.substring(4); // Remove "New " prefix
+  }
+  
+  // Last resort: use the name as-is
+  return name;
+}
 
 export function NationalSymbolsSection({
   inputs,
   onInputsChange,
   referenceCountry,
-  onFoundationFlagUrlChange,
 }: NationalSymbolsSectionProps) {
   const [showFlagImageModal, setShowFlagImageModal] = useState(false);
   const [showCoatOfArmsImageModal, setShowCoatOfArmsImageModal] = useState(false);
   const [foundationFlagUrl, setFoundationFlagUrl] = useState<string | undefined>(undefined); // State for fetched flag URL
+  const [foundationCoatOfArmsUrl, setFoundationCoatOfArmsUrl] = useState<string | undefined>(undefined); // State for fetched coat of arms URL
 
-  // Fetch foundation flag URL using IxnayWikiService
+  // Fetch foundation flag and coat of arms URLs using Wiki Commons API
   useEffect(() => {
-    const fetchFlag = async () => {
-      if (referenceCountry.name) {
-        const url = await ixnayWikiService.getFlagUrl(referenceCountry.name);
-        if (typeof url === 'string') {
-          setFoundationFlagUrl(url);
-          onFoundationFlagUrlChange(url);
-        } else {
-          setFoundationFlagUrl(undefined); // Explicitly set to undefined if WikiService fails
-          onFoundationFlagUrlChange(undefined);
+    const fetchSymbols = async () => {
+      // Get the stable foundation country name
+      const foundationCountryName = getFoundationCountryName(referenceCountry);
+      
+      if (foundationCountryName) {
+        console.log(`[NationalSymbolsSection] DEBUG - Reference Country:`, referenceCountry);
+        console.log(`[NationalSymbolsSection] DEBUG - Inputs countryName: ${inputs.countryName}`);
+        console.log(`[NationalSymbolsSection] DEBUG - Corrupted referenceCountry.name: ${referenceCountry.name}`);
+        console.log(`[NationalSymbolsSection] DEBUG - Preserved foundationCountryName: ${referenceCountry.foundationCountryName || 'not available'}`);
+        console.log(`[NationalSymbolsSection] DEBUG - Final foundation country name: ${foundationCountryName}`);
+        console.log(`[NationalSymbolsSection] Fetching symbols for foundation country: ${foundationCountryName}`);
+        
+        try {
+          // Fetch both flag and coat of arms in parallel using the original foundation country name
+          const symbols = await wikiCommonsFlagService.getCountrySymbols(foundationCountryName);
+          
+          if (symbols.flagUrl) {
+            setFoundationFlagUrl(symbols.flagUrl);
+            console.log(`[NationalSymbolsSection] Found foundation flag: ${symbols.flagUrl}`);
+          } else {
+            setFoundationFlagUrl(undefined);
+            console.log(`[NationalSymbolsSection] No foundation flag found for ${foundationCountryName}`);
+          }
+
+          if (symbols.coatOfArmsUrl) {
+            setFoundationCoatOfArmsUrl(symbols.coatOfArmsUrl);
+            console.log(`[NationalSymbolsSection] Found foundation coat of arms: ${symbols.coatOfArmsUrl}`);
+          } else {
+            setFoundationCoatOfArmsUrl(undefined);
+            console.log(`[NationalSymbolsSection] No foundation coat of arms found for ${foundationCountryName}`);
+          }
+
+          if (symbols.error) {
+            console.error(`[NationalSymbolsSection] Error fetching symbols for ${foundationCountryName}:`, symbols.error);
+          }
+        } catch (error) {
+          console.error(`[NationalSymbolsSection] Exception fetching symbols for ${foundationCountryName}:`, error);
+          setFoundationFlagUrl(undefined);
+          setFoundationCoatOfArmsUrl(undefined);
         }
       }
     };
-    fetchFlag();
-  }, [referenceCountry.name, referenceCountry.countryCode, onFoundationFlagUrlChange]);
+    fetchSymbols();
+  }, [referenceCountry.name, referenceCountry.countryCode]);
 
-  // Enhanced theming for this section
-  const { handleColorsExtracted } = useBuilderTheming(referenceCountry.name);
+  // Enhanced theming for this section (use original foundation country name)
+  const foundationCountryName = getFoundationCountryName(referenceCountry);
+  const { handleColorsExtracted } = useBuilderTheming(foundationCountryName);
 
   const handleSymbolsChange = (flagUrl: string, coatOfArmsUrl: string) => {
     onInputsChange({
@@ -79,9 +124,9 @@ export function NationalSymbolsSection({
             flagUrl={inputs.flagUrl ?? ''}
             coatOfArmsUrl={inputs.coatOfArmsUrl ?? ''}
             foundationCountry={{
-              name: referenceCountry.name,
+              name: foundationCountryName, // Use the original foundation country name
               flagUrl: foundationFlagUrl,
-              coatOfArmsUrl: undefined // No direct mapping in RealCountryData for COA
+              coatOfArmsUrl: foundationCoatOfArmsUrl // Now dynamically fetched from Wiki Commons
             }}
             onSelectFlag={() => setShowFlagImageModal(true)}
             onSelectCoatOfArms={() => setShowCoatOfArmsImageModal(true)}

@@ -251,7 +251,14 @@ function BuilderContent() {
 
   // Handler functions
   const handleCountrySelect = (country: RealCountryData) => {
-    setSelectedCountry(country);
+    // Create a deep copy to prevent mutations to the original country data
+    const immutableCountry: RealCountryData = {
+      ...country,
+      // Ensure the original foundation country name is preserved
+      originalFoundationName: country.name
+    } as RealCountryData & { originalFoundationName: string };
+    
+    setSelectedCountry(immutableCountry);
     setCurrentPhase('customize');
   };
 

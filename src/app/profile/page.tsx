@@ -41,6 +41,7 @@ import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import CountryFlag from "~/app/_components/CountryFlag";
 import { useTheme } from "~/context/theme-context";
+import { AnimatedThemeToggler } from "~/components/magicui/animated-theme-toggler";
 import { createUrl } from "~/lib/url-utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 
@@ -508,43 +509,48 @@ function ProfileContent() {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                           Theme
                         </label>
-                        <div className="grid grid-cols-3 gap-3">
-                          <button
-                            onClick={() => setTheme('light')}
-                            className={`flex items-center justify-center px-4 py-3 rounded-lg border transition-colors ${
-                              theme === 'light'
-                                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300'
-                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300'
-                            }`}
-                          >
-                            <Sun className="h-4 w-4 mr-2" />
-                            Light
-                          </button>
-                          <button
-                            onClick={() => setTheme('dark')}
-                            className={`flex items-center justify-center px-4 py-3 rounded-lg border transition-colors ${
-                              theme === 'dark'
-                                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300'
-                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300'
-                            }`}
-                          >
-                            <Moon className="h-4 w-4 mr-2" />
-                            Dark
-                          </button>
-                          <button
-                            onClick={() => setTheme('system')}
-                            className={`flex items-center justify-center px-4 py-3 rounded-lg border transition-colors ${
-                              theme === 'system'
-                                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300'
-                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300'
-                            }`}
-                          >
-                            <Monitor className="h-4 w-4 mr-2" />
-                            System
-                          </button>
+                        <div className="flex items-center justify-between">
+                          <div className="grid grid-cols-3 gap-3 flex-1">
+                            <button
+                              onClick={() => setTheme('light')}
+                              className={`flex items-center justify-center px-4 py-3 rounded-lg border transition-colors ${
+                                theme === 'light'
+                                  ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300'
+                                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300'
+                              }`}
+                            >
+                              <Sun className="h-4 w-4 mr-2" />
+                              Light
+                            </button>
+                            <button
+                              onClick={() => setTheme('dark')}
+                              className={`flex items-center justify-center px-4 py-3 rounded-lg border transition-colors ${
+                                theme === 'dark'
+                                  ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300'
+                                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300'
+                              }`}
+                            >
+                              <Moon className="h-4 w-4 mr-2" />
+                              Dark
+                            </button>
+                            <button
+                              onClick={() => setTheme('system')}
+                              className={`flex items-center justify-center px-4 py-3 rounded-lg border transition-colors ${
+                                theme === 'system'
+                                  ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300'
+                                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300'
+                              }`}
+                            >
+                              <Monitor className="h-4 w-4 mr-2" />
+                              System
+                            </button>
+                          </div>
+                          <div className="ml-4">
+                            <AnimatedThemeToggler className="border border-gray-200 dark:border-gray-700" />
+                          </div>
                         </div>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                          Choose your preferred theme. System will follow your operating system's theme setting.
+                          Choose your preferred theme or use the animated toggle. System will follow your operating system's theme setting.
                         </p>
                       </div>
                     </div>

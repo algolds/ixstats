@@ -45,7 +45,7 @@ console.log('═'.repeat(60));
 // Determine which env file to check
 let envFile;
 if (environment === 'development') {
-  envFile = '.env.local';
+  envFile = '.env.local.dev';
 } else if (environment === 'production') {
   envFile = '.env.production';
 } else {
