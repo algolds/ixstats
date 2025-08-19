@@ -23,6 +23,7 @@ import {
 import { createUrl } from "~/lib/url-utils";
 import { api } from "~/trpc/react";
 import type { CountryInfoboxWithDynamicProps } from "~/lib/mediawiki-service";
+import { unifiedFlagService } from "~/lib/unified-flag-service";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 import { ImportPageHeader } from "./_components/ImportPageHeader";
 import { WikiSourceSelector } from "./_components/WikiSourceSelector";
@@ -109,9 +110,8 @@ const popularCategories = [
   "Countries", "Nations", "Cities", "Regions", "Organizations"
 ];
 
-// Simple cache for search results and flags
+// Simple cache for search results
 const searchCache = new Map<string, SearchResult[]>();
-const flagCache = new Map<string, string>();
 
 export default function ImportFromWikiPage() {
   const router = useRouter(); 
@@ -191,37 +191,48 @@ export default function ImportFromWikiPage() {
         // Cache the search results
         searchCache.set(cacheKey, results);
         
-        // For countries, try to fetch flags and additional data in the background
+        // For countries, try to fetch flags using the unified flag service
         if (categoryFilter.toLowerCase() === 'countries' || categoryFilter.toLowerCase() === 'nations') {
-          const resultsWithData = await Promise.all(
+          const resultsWithFlags = await Promise.all(
             results.map(async (result) => {
               try {
-                // Parse full country data to get flag and basic info
-                const countryData = await parseInfoboxMutation.mutateAsync({
-                  pageName: result.title,
-                  // Fix: site must be one of the allowed string literals
-                  site: currentSite.name as "ixwiki" | "iiwiki" | "althistory"
-                });
+                // Get flag from unified flag service
+                const flagUrl = await unifiedFlagService.getFlagUrl(result.title);
+                
+                // Parse additional country data in background (optional)
+                let additionalData = {};
+                try {
+                  const countryData = await parseInfoboxMutation.mutateAsync({
+                    pageName: result.title,
+                    site: currentSite.name as "ixwiki" | "iiwiki" | "althistory"
+                  });
+                  
+                  additionalData = {
+                    population: countryData?.population,
+                    gdpPerCapita: countryData?.gdpPerCapita,
+                    capital: countryData?.capital,
+                    government: countryData?.government
+                  };
+                } catch (parseError) {
+                  console.warn(`Failed to parse additional data for ${result.title}:`, parseError);
+                }
                 
                 return { 
                   ...result, 
-                  flagUrl: countryData?.flagUrl || null,
-                  population: countryData?.population,
-                  gdpPerCapita: countryData?.gdpPerCapita,
-                  capital: countryData?.capital,
-                  government: countryData?.government
+                  flagUrl,
+                  ...additionalData
                 };
               } catch (error) {
-                console.error(`Failed to parse data for ${result.title}:`, error);
+                console.error(`Failed to get flag for ${result.title}:`, error);
                 return { ...result, flagUrl: null };
               }
             })
           );
           
           // Update cache with enhanced data
-          searchCache.set(cacheKey, resultsWithData);
-          setSearchResults(resultsWithData);
-          setDisplayedResults(resultsWithData.slice(0, resultsPerPage));
+          searchCache.set(cacheKey, resultsWithFlags);
+          setSearchResults(resultsWithFlags);
+          setDisplayedResults(resultsWithFlags.slice(0, resultsPerPage));
           setCurrentPage(1);
         } else {
           setSearchResults(results);

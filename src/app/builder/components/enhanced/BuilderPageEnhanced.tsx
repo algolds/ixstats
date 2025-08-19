@@ -71,8 +71,8 @@ class BuilderErrorBoundary extends React.Component<
             <GlassCardContent>
               <div className="text-center space-y-4">
                 <AlertTriangle className="h-12 w-12 text-red-400 mx-auto" />
-                <h2 className="text-xl font-bold text-white">Something went wrong</h2>
-                <p className="text-white/70">
+                <h2 className="text-xl font-bold text-[var(--color-text-primary)]">Something went wrong</h2>
+                <p className="text-[var(--color-text-secondary)]">
                   The Country Builder encountered an unexpected error. Please try refreshing.
                 </p>
                 <motion.button

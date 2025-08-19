@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="1200" height="800" viewBox="0 0 60 40" xmlns:xlink="http://www.w3.org/1999/xlink">
+<rect fill="#fff" width="60" height="40"/>
+<rect fill="#0038B8" width="60" height="32"/>
+<rect fill="#FFD706" width="60" height="24"/>
+<rect fill="#D2162D" width="60" height="16"/>
+<rect fill="#00804A" width="60" height="8"/>
+<rect fill="#fff" width="9" height="40"/>
+<g id="3" transform="translate(4.5 2) scale(1.5)">
+<g id="2">
+<polygon id="1" fill="#f7c600" points="0,0 0,1 .5,1" transform="translate(0 -1) rotate(18)"/>
+<use xlink:href="#1" transform="scale(-1 1)"/>
+</g>
+<use xlink:href="#2" transform="rotate(72)"/>
+<use xlink:href="#2" transform="rotate(-72)"/>
+<use xlink:href="#2" transform="rotate(144)"/>
+<use xlink:href="#2" transform="rotate(-144)"/>
+</g>
+<g id="5">
+<g id="4">
+<use transform="translate(0 3)" xlink:href="#3"/>
+<use transform="translate(0 6)" xlink:href="#3"/>
+<use transform="translate(0 9)" xlink:href="#3"/>
+</g>
+<use transform="translate(0 9)" xlink:href="#4"/>
+</g>
+<use transform="translate(0 18)" xlink:href="#5"/>
+</svg>

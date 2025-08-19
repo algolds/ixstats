@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { InteractiveGridPattern } from '~/components/magicui/interactive-grid-pattern';
-import { useCountryFlags, useCountryFlag } from '~/hooks/useCountryFlags';
+import { useBulkFlags } from '~/hooks/useUnifiedFlags';
 import { CountrySelectorHeader } from '../../primitives/CountrySelectorHeader';
 import { FoundationArchetypeSelector } from '../../primitives/FoundationArchetypeSelector';
 import { SearchFilter } from '../../primitives/SearchFilter';
@@ -44,10 +44,7 @@ export function CountrySelectorEnhanced({
 
   // Preload flags for all countries
   const countryNames = useMemo(() => countries.map(c => c.name), [countries]);
-  useCountryFlags({
-    countries: countryNames,
-    preload: true
-  });
+  const { flagUrls } = useBulkFlags(countryNames);
   const filteredCountries = useMemo(() => {
     return filterCountries(countries, searchTerm, selectedArchetype, archetypes);
   }, [countries, searchTerm, selectedArchetype]);
@@ -109,6 +106,7 @@ export function CountrySelectorEnhanced({
     };
   }, []);
 
+
   const handleCountrySelect = (country: RealCountryData, customName: string) => {
     const finalCountry = { 
       ...country, 
@@ -129,7 +127,7 @@ export function CountrySelectorEnhanced({
 
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-[var(--color-bg-primary)] via-[var(--color-bg-secondary)] to-[var(--color-bg-primary)] p-6">
+    <div className="relative min-h-screen bg-gradient-to-br from-[var(--color-bg-primary)] via-[var(--color-bg-secondary)] to-[var(--color-bg-primary)]">
       {/* Interactive Background */}
       <InteractiveGridPattern
         width={60}
@@ -139,65 +137,72 @@ export function CountrySelectorEnhanced({
         squaresClassName="fill-[var(--color-brand-primary)]/10 stroke-[var(--color-brand-primary)]/20 [&:nth-child(4n+1):hover]:fill-amber-500/30 [&:nth-child(4n+1):hover]:stroke-amber-500/50 [&:nth-child(4n+2):hover]:fill-blue-500/30 [&:nth-child(4n+2):hover]:stroke-blue-500/50 [&:nth-child(4n+3):hover]:fill-emerald-500/30 [&:nth-child(4n+3):hover]:stroke-emerald-500/50 [&:nth-child(4n+4):hover]:fill-purple-500/30 [&:nth-child(4n+4):hover]:stroke-purple-500/50 transition-all duration-300"
       />
       
-      <div className="relative max-w-7xl mx-auto z-10">
-        {/* Header */}
+      {/* Left Sidebar - Foundation Archetypes */}
+      <FoundationArchetypeSelector
+        countries={countries}
+        selectedArchetype={selectedArchetype}
+        onArchetypeSelect={setSelectedArchetype}
+        onArchetypeComposer={() => {
+          // TODO: Implement archetype composer functionality
+          console.log('Archetype Composer clicked');
+        }}
+      />
+      
+      {/* Header - Full Width Centered */}
+      <div className="relative z-10 p-6">
         <CountrySelectorHeader softSelectedCountry={softSelectedCountry} onBackToIntro={onBackToIntro} />
-
-      
-        {/* Main Content: Search/Filter/Countries + Live Preview */}
-        <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-8 z-20" ref={gridContainerRef}>
-          {/* Main Selection Panel */}
-          
-            {/* Foundation Archetypes */}
-            <FoundationArchetypeSelector
-          countries={countries}
-          selectedArchetype={selectedArchetype}
-          onArchetypeSelect={setSelectedArchetype}
-        />
-
-          <div className="lg:col-span-2 space-y-6">
-            {/* Search and Filters */}
-            <SearchFilter
-              ref={searchCardRef}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              onClearAll={handleClearAll}
-            />
-
-            {/* Countries Grid */}
-            <CountryGrid
-              countries={countries}
-              filteredCountries={filteredCountries}
-              searchTerm={searchTerm}
-              selectedArchetype={selectedArchetype}
-              onCountryHover={setHoveredCountry}
-              onCountryClick={(country) => {
-                setSoftSelectedCountry(country);
-                setHoveredCountry(null);
-              }}
-              onClearFilters={handleClearAll}
-              softSelectedCountryId={softSelectedCountry?.countryCode || null}
-              onMouseEnter={() => setIsMouseOverGrid(true)}
-              onMouseLeave={() => setIsMouseOverGrid(false)}
-              scrollPosition={scrollPosition}
-              onScroll={setScrollPosition}
-            />
-          </div>
-
-          {/* Live Preview Panel */}
-          <LivePreview
-            softSelectedCountry={softSelectedCountry}
-            hoveredCountry={hoveredCountry}
-            isVisible={isLivePreviewVisible}
-            onCountrySelect={handleCountrySelect}
-            onCancel={handleCancel}
-            style={{ paddingTop: livePreviewTop }}
-          />
-          
-        </div>
-        
       </div>
-      
+
+      {/* Main Content Area - Center 60% + Right Sidebar */}
+      <div className="pl-96 pr-6">
+        <div className="relative max-w-7xl mx-auto z-10 p-6 pt-0">
+          {/* Main Content: Center Panel (Search/Countries) + Right Preview */}
+          <div className="relative flex gap-8 z-20" ref={gridContainerRef}>
+            {/* Center Panel - 60% of remaining space */}
+            <div className="flex-1 space-y-6" style={{ flexBasis: '60%' }}>
+              {/* Search and Filters */}
+              <SearchFilter
+                ref={searchCardRef}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                onClearAll={handleClearAll}
+              />
+
+              {/* Countries Grid */}
+              <CountryGrid
+                countries={countries}
+                filteredCountries={filteredCountries}
+                searchTerm={searchTerm}
+                selectedArchetype={selectedArchetype}
+                onCountryHover={setHoveredCountry}
+                onCountryClick={(country) => {
+                  setSoftSelectedCountry(country);
+                  setHoveredCountry(null);
+                }}
+                onClearFilters={handleClearAll}
+                softSelectedCountryId={softSelectedCountry?.countryCode || null}
+                onMouseEnter={() => setIsMouseOverGrid(true)}
+                onMouseLeave={() => setIsMouseOverGrid(false)}
+                scrollPosition={scrollPosition}
+                onScroll={setScrollPosition}
+                flagUrls={flagUrls}
+              />
+            </div>
+
+            {/* Right Sidebar - Live Preview Panel - 40% of remaining space */}
+            <div className="w-80 flex-shrink-0">
+              <LivePreview
+                softSelectedCountry={softSelectedCountry}
+                hoveredCountry={hoveredCountry}
+                isVisible={isLivePreviewVisible}
+                onCountrySelect={handleCountrySelect}
+                onCancel={handleCancel}
+                style={{ paddingTop: livePreviewTop }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     
   );

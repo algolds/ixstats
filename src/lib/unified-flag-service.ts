@@ -56,9 +56,9 @@ class UnifiedFlagService {
   // Wiki sources in priority order (highest priority first)
   private readonly wikiSources: WikiSource[] = [
     { name: 'IxWiki', baseUrl: 'https://ixwiki.com', priority: 1 },
-    { name: 'IiWiki', baseUrl: 'https://iiwiki.org', priority: 2 },
+    { name: 'IiWiki', baseUrl: 'https://iiwiki.com', priority: 2 }, // Fixed domain
     { name: 'AlthistoryWiki', baseUrl: 'https://althistory.fandom.com', priority: 3 },
-    { name: 'WikiCommons', baseUrl: 'https://commons.wikimedia.org', priority: 4 },
+    // Removed WikiCommons due to CORS issues
   ];
 
   private sourceStats: Record<string, { found: number; failed: number; cached: number }> = {};
@@ -76,10 +76,10 @@ class UnifiedFlagService {
       this.sourceStats[source.name] = { found: 0, failed: 0, cached: 0 };
     });
 
-    // Auto-initialize in browser environment only
-    if (typeof window !== 'undefined') {
-      this.loadLocalMetadata();
-    }
+    // Auto-initialize in both browser and server environment
+    this.loadLocalMetadata().catch(error => {
+      console.warn('[UnifiedFlagService] Failed to load metadata:', error);
+    });
   }
 
 
@@ -105,7 +105,7 @@ class UnifiedFlagService {
     if (cachedFlag && this.isCacheValid(cachedFlag)) {
       this.stats.cacheHits++;
       this.updateAccessTime(cacheKey);
-      if (cachedFlag.source && this.sourceStats?.[cachedFlag.source.name]) {
+      if (cachedFlag.source?.name && this.sourceStats[cachedFlag.source.name]) {
         this.sourceStats[cachedFlag.source.name]!.cached++;
       }
       return cachedFlag.url;
@@ -193,7 +193,7 @@ class UnifiedFlagService {
         if (result.status === 'fulfilled') {
           results[result.value.countryName] = result.value.flagUrl;
         } else {
-          results[countryName] = null;
+          results[countryName!] = null;
         }
       });
 
@@ -235,16 +235,27 @@ class UnifiedFlagService {
           };
           
           this.memoryCache[cacheKey] = cachedFlag;
-          this.sourceStats[source.name].found++;
+          if (source.name && this.sourceStats[source.name]) {
+            this.sourceStats[source.name]!.found++;
+          }
+          
+          // Try to download and store the flag file locally (non-blocking)
+          this.downloadFlagToLocal(countryName, flagUrl, source).catch(error => {
+            console.warn(`[UnifiedFlagService] Failed to download flag for ${countryName}:`, error);
+          });
           
           console.log(`[UnifiedFlagService] Found flag for ${countryName} from ${source.name}: ${flagUrl}`);
           return flagUrl;
         } else {
-          this.sourceStats[source.name].failed++;
+          if (source.name && this.sourceStats[source.name]) {
+            this.sourceStats[source.name]!.failed++;
+          }
         }
       } catch (error) {
         console.warn(`[UnifiedFlagService] Error fetching from ${source.name} for ${countryName}:`, error);
-        this.sourceStats[source.name].failed++;
+        if (source.name && this.sourceStats[source.name]) {
+          this.sourceStats[source.name]!.failed++;
+        }
       }
     }
     
@@ -264,7 +275,7 @@ class UnifiedFlagService {
       
       const response = await fetch(apiUrl, {
         headers: { 'User-Agent': 'IxStats/1.0' },
-        timeout: 8000,
+        signal: AbortSignal.timeout(8000),
       });
 
       if (!response.ok) return null;
@@ -297,7 +308,7 @@ class UnifiedFlagService {
               const fileInfoUrl = `${source.baseUrl}/api.php?action=query&format=json&formatversion=2&origin=*&titles=File:${encodeURIComponent(flagFilename)}&prop=imageinfo&iiprop=url`;
               const fileResponse = await fetch(fileInfoUrl, {
                 headers: { 'User-Agent': 'IxStats/1.0' },
-                timeout: 8000,
+                signal: AbortSignal.timeout(8000),
               });
               
               if (fileResponse.ok) {
@@ -339,7 +350,7 @@ class UnifiedFlagService {
           
           const response = await fetch(fileInfoUrl, {
             headers: { 'User-Agent': 'IxStats/1.0' },
-            timeout: 8000,
+            signal: AbortSignal.timeout(8000),
           });
           
           if (response.ok) {
@@ -514,7 +525,7 @@ class UnifiedFlagService {
 
   // Utility methods
   private async loadLocalMetadata(): Promise<void> {
-    // Try to load from localStorage in browser
+    // In browser environment, try localStorage first
     if (typeof window !== 'undefined') {
       try {
         const stored = localStorage.getItem('flag-service-metadata');
@@ -546,9 +557,44 @@ class UnifiedFlagService {
           console.log(`[UnifiedFlagService] Loaded from localStorage: ${localCount} local flags, ${cacheCount} cached flags`);
         }
       } catch (error) {
-        console.log('[UnifiedFlagService] No existing localStorage metadata found, starting fresh');
-        this.localMetadata = {};
+        console.log('[UnifiedFlagService] No existing localStorage metadata found');
       }
+    }
+
+    // Always try to load server metadata file (both client and server)
+    try {
+      let metadataPath;
+      if (typeof window !== 'undefined') {
+        // Client-side: fetch from public URL
+        metadataPath = '/flags/metadata.json';
+        const metadataResponse = await fetch(metadataPath);
+        if (metadataResponse.ok) {
+          const serverMetadata = await metadataResponse.json();
+          if (serverMetadata.flags) {
+            // Merge server metadata with any existing local metadata
+            Object.assign(this.localMetadata, serverMetadata.flags);
+            console.log(`[UnifiedFlagService] Loaded server metadata: ${Object.keys(serverMetadata.flags).length} server flags`);
+          }
+        }
+      } else {
+        // Server-side: read file directly
+        const fs = await import('fs/promises');
+        const path = await import('path');
+        metadataPath = path.join(process.cwd(), 'public', 'flags', 'metadata.json');
+        
+        try {
+          const metadataContent = await fs.readFile(metadataPath, 'utf-8');
+          const serverMetadata = JSON.parse(metadataContent);
+          if (serverMetadata.flags) {
+            this.localMetadata = serverMetadata.flags;
+            console.log(`[UnifiedFlagService] Loaded server metadata: ${Object.keys(serverMetadata.flags).length} flags`);
+          }
+        } catch (fsError) {
+          console.log('[UnifiedFlagService] Server metadata file not found, starting fresh');
+        }
+      }
+    } catch (error) {
+      console.warn('[UnifiedFlagService] Failed to load server metadata:', error);
     }
   }
 
@@ -564,6 +610,22 @@ class UnifiedFlagService {
           version: '2.0', // Version for future compatibility
         };
         localStorage.setItem('flag-service-metadata', JSON.stringify(metadata));
+        
+        // Also save to server if possible
+        try {
+          await fetch('/api/flags/save-metadata', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              flags: this.localMetadata,
+              lastUpdateTime: this.lastUpdateTime
+            })
+          });
+          console.log('[UnifiedFlagService] Metadata saved to server');
+        } catch (serverError) {
+          // Server save failed, but localStorage succeeded
+          console.warn('[UnifiedFlagService] Failed to save metadata to server, but localStorage succeeded');
+        }
       } catch (error) {
         console.warn('[UnifiedFlagService] Failed to save metadata to localStorage:', error);
       }
@@ -572,6 +634,74 @@ class UnifiedFlagService {
 
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Download flag image to local storage
+   */
+  private async downloadFlagToLocal(countryName: string, flagUrl: string, source: WikiSource): Promise<void> {
+    try {
+      const cacheKey = countryName.toLowerCase();
+      
+      // Skip if already downloaded
+      if (this.localMetadata[cacheKey]) {
+        return;
+      }
+      
+      // Extract file extension from URL
+      const urlParts = flagUrl.split('.');
+      const extension = urlParts[urlParts.length - 1]?.toLowerCase() || 'png';
+      const safeExtension = ['png', 'jpg', 'jpeg', 'svg', 'gif'].includes(extension) ? extension : 'png';
+      
+      // Generate safe filename
+      const safeCountryName = countryName.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '_').toLowerCase();
+      const fileName = `${safeCountryName}.${safeExtension}`;
+      
+      // Download the image via our API endpoint
+      const downloadResponse = await fetch('/api/flags/download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          countryName,
+          flagUrl,
+          fileName,
+          source: source.name
+        })
+      });
+      
+      if (downloadResponse.ok) {
+        const result = await downloadResponse.json();
+        if (result.success) {
+          // Update local metadata
+          this.localMetadata[cacheKey] = {
+            fileName: result.fileName,
+            originalUrl: flagUrl,
+            downloadedAt: Date.now(),
+            fileSize: result.fileSize || 0,
+            source: source
+          };
+          
+          console.log(`[UnifiedFlagService] Downloaded flag for ${countryName} to ${result.fileName}`);
+          
+          // Save metadata after successful download
+          await this.saveLocalMetadata();
+        }
+      }
+    } catch (error) {
+      console.warn(`[UnifiedFlagService] Failed to download flag for ${countryName}:`, error);
+    }
+  }
+
+  /**
+   * Get download progress for admin interface
+   */
+  getDownloadProgress(): { completed: number; total: number; inProgress: boolean } {
+    const stats = this.getStats();
+    return {
+      completed: stats.localFiles,
+      total: stats.cachedFlags,
+      inProgress: this.isUpdating
+    };
   }
 }
 
