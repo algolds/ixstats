@@ -1614,11 +1614,19 @@ const countriesRouter = createTRPCRouter({
     }))
     .mutation(async ({ input }) => {
       try {
+        console.log("[searchWiki] Starting search with input:", input);
         const { searchWiki } = await import("~/lib/wiki-search-service");
-        return await searchWiki(input.query, input.site, input.categoryFilter);
+        console.log("[searchWiki] Successfully imported searchWiki function");
+        const result = await searchWiki(input.query, input.site, input.categoryFilter);
+        console.log("[searchWiki] Search completed, results:", result?.length || 0, "items");
+        return result;
       } catch (error) {
-        console.error("Wiki search failed:", error);
-        throw new Error("Failed to search wiki");
+        console.error("[searchWiki] ERROR:", error);
+        if (error instanceof Error) {
+          console.error("[searchWiki] Error message:", error.message);
+          console.error("[searchWiki] Error stack:", error.stack);
+        }
+        throw new Error(`Failed to search wiki: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }),
 

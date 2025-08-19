@@ -17,11 +17,13 @@ interface CountrySelectorEnhancedProps {
   countries: RealCountryData[];
   onCountrySelect: (country: RealCountryData) => void;
   onCardHoverChange: (countryId: string | null) => void;
+  onBackToIntro?: () => void;
 }
 
 export function CountrySelectorEnhanced({
   countries,
-  onCountrySelect
+  onCountrySelect,
+  onBackToIntro
 }: CountrySelectorEnhancedProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedArchetype, setSelectedArchetype] = useState<string>("all");
@@ -139,7 +141,7 @@ export function CountrySelectorEnhanced({
       
       <div className="relative max-w-7xl mx-auto z-10">
         {/* Header */}
-        <CountrySelectorHeader softSelectedCountry={softSelectedCountry} />
+        <CountrySelectorHeader softSelectedCountry={softSelectedCountry} onBackToIntro={onBackToIntro} />
 
         {/* Foundation Archetypes */}
         <FoundationArchetypeSelector
@@ -151,6 +153,7 @@ export function CountrySelectorEnhanced({
         {/* Main Content: Search/Filter/Countries + Live Preview */}
         <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-8 z-20" ref={gridContainerRef}>
           {/* Main Selection Panel */}
+          
           <div className="lg:col-span-2 space-y-6">
             {/* Search and Filters */}
             <SearchFilter

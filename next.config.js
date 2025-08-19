@@ -32,7 +32,7 @@ const config = {
 
   // It's good practice to keep your image domains defined.
   images: {
-    domains: ['localhost', 'lh3.googleusercontent.com', 'upload.wikimedia.org'],
+    domains: ['localhost', 'lh3.googleusercontent.com', 'upload.wikimedia.org', 'images.unsplash.com'],
   },
 
   async rewrites() {

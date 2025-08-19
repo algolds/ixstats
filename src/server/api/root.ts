@@ -13,6 +13,7 @@ import { myCountryRouter } from "./routers/mycountry";
 import { diplomaticIntelligenceRouter } from "./routers/diplomatic-intelligence";
 import { diplomaticRouter } from "./routers/diplomatic";
 import { thinkpagesRouter } from "./routers/thinkpages";
+import { archetypesRouter } from "./routers/archetypes";
 
 /**
  * This is the primary router for your server.
@@ -31,6 +32,7 @@ export const appRouter = createTRPCRouter({
   diplomaticIntelligence: diplomaticIntelligenceRouter, // Diplomatic Intelligence system
   diplomatic: diplomaticRouter, // Diplomatic relations management
   thinkpages: thinkpagesRouter, // Thinkpages social platform
+  archetypes: archetypesRouter, // Enhanced archetype system for country filtering
   system: adminRouter, // Alias for global stats
 });
 

@@ -1,7 +1,7 @@
 import React from "react";
 import { GlassCard } from "~/components/ui/enhanced-card";
 import { Badge } from "~/components/ui/badge";
-import { AnimatedNumber } from "~/components/ui/animated-number";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { TrendIndicator } from "~/components/ui/trend-indicator";
 
 interface HeroSectionProps {
@@ -131,11 +131,11 @@ function StatDisplay({
     <div className="stat-display text-center">
       <div className="text-2xl mb-1">{icon}</div>
       <div className="text-lg lg:text-xl font-bold text-[var(--color-text-primary)]">
-        <AnimatedNumber 
+        <NumberFlowDisplay 
           value={value}
           prefix={prefix}
           suffix={suffix}
-          decimals={decimals}
+          decimalPlaces={decimals}
           duration={1500}
         />
       </div>

@@ -4,7 +4,7 @@ import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { HealthRing } from "~/components/ui/health-ring";
-import { AnimatedNumber } from "~/components/ui/animated-number";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { TextReveal, FadeIn, CountUp } from "~/components/ui/text-reveal";
 import { Spotlight } from "~/components/ui/spotlight-new";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
@@ -199,9 +199,11 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(({
                       <UsersIcon ref={usersIconRef} size={16} className="text-blue-400" />
                       <span className="font-medium [text-shadow:0_0_8px_rgba(0,0,0,0.8)] antialiased">Population</span>
                     </div>
-                    <span className="font-semibold [text-shadow:0_0_8px_rgba(0,0,0,0.8)] antialiased">
-                      {formatPopulation(country.currentPopulation)}
-                    </span>
+                    <NumberFlowDisplay 
+                      value={country.currentPopulation}
+                      format="population"
+                      className="font-semibold [text-shadow:0_0_8px_rgba(0,0,0,0.8)] antialiased"
+                    />
                   </FadeIn>
                   
                   <FadeIn direction="left" delay={0.2} className="flex items-center justify-between text-white/90 text-sm">
@@ -209,9 +211,11 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(({
                       <RiMoneyDollarCircleLine className="h-4 w-4 text-green-400 drop-shadow-sm" />
                       <span className="font-medium [text-shadow:0_0_8px_rgba(0,0,0,0.8)] antialiased">GDP per Capita</span>
                     </div>
-                    <span className="font-semibold [text-shadow:0_0_8px_rgba(0,0,0,0.8)] antialiased">
-                      {formatCurrency(country.currentGdpPerCapita)}
-                    </span>
+                    <NumberFlowDisplay 
+                      value={country.currentGdpPerCapita}
+                      format="currency"
+                      className="font-semibold [text-shadow:0_0_8px_rgba(0,0,0,0.8)] antialiased"
+                    />
                   </FadeIn>
                   
                   <FadeIn direction="left" delay={0.3} className="flex items-center justify-between text-white/90 text-sm">
@@ -219,14 +223,12 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(({
                       <RiGlobalLine className="h-4 w-4 text-purple-400 drop-shadow-sm" />
                       <span className="font-medium [text-shadow:0_0_8px_rgba(0,0,0,0.8)] antialiased">Total GDP</span>
                     </div>
-                    <span className="font-semibold [text-shadow:0_0_8px_rgba(0,0,0,0.8)] antialiased">
-                      {country.currentTotalGdp >= 1e12 
-                        ? `$${(country.currentTotalGdp / 1e12).toFixed(1)}T`
-                        : country.currentTotalGdp >= 1e9
-                        ? `$${(country.currentTotalGdp / 1e9).toFixed(1)}B`
-                        : `$${(country.currentTotalGdp / 1e6).toFixed(1)}M`
-                      }
-                    </span>
+                    <NumberFlowDisplay 
+                      value={country.currentTotalGdp}
+                      format="currency"
+                      decimalPlaces={1}
+                      className="font-semibold [text-shadow:0_0_8px_rgba(0,0,0,0.8)] antialiased"
+                    />
                   </FadeIn>
                   
                   {country.adjustedGdpGrowth && (
@@ -235,9 +237,13 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(({
                         <TrendingUpIcon ref={trendingIconRef} size={16} className="text-emerald-400" />
                         <span className="font-medium [text-shadow:0_0_8px_rgba(0,0,0,0.8)] antialiased">Growth Rate</span>
                       </div>
-                      <span className="font-semibold text-emerald-400 [text-shadow:0_0_8px_rgba(0,0,0,0.8)] antialiased">
-                        {(country.adjustedGdpGrowth * 100).toFixed(1)}%
-                      </span>
+                      <NumberFlowDisplay 
+                        value={country.adjustedGdpGrowth * 100}
+                        format="percentage"
+                        decimalPlaces={1}
+                        trend="up"
+                        className="font-semibold text-emerald-400 [text-shadow:0_0_8px_rgba(0,0,0,0.8)] antialiased"
+                      />
                     </FadeIn>
                   )}
                 </motion.div>
@@ -344,7 +350,12 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(({
                         Economic Health
                       </div>
                       <div className="text-white/70 text-xs [text-shadow:0_0_8px_rgba(0,0,0,0.8)] antialiased">
-                        {economicScore.toFixed(0)}%
+                        <NumberFlowDisplay 
+                          value={economicScore}
+                          format="percentage"
+                          decimalPlaces={0}
+                          className=""
+                        />
                       </div>
                     </FadeIn>
                     
@@ -364,7 +375,14 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(({
                         Growth Rate
                       </div>
                       <div className="text-white/70 text-xs [text-shadow:0_0_8px_rgba(0,0,0,0.8)] antialiased">
-                        {country.adjustedGdpGrowth ? `${(country.adjustedGdpGrowth * 100).toFixed(1)}%` : 'N/A'}
+                        {country.adjustedGdpGrowth ? (
+                          <NumberFlowDisplay 
+                            value={country.adjustedGdpGrowth * 100}
+                            format="percentage"
+                            decimalPlaces={1}
+                            className=""
+                          />
+                        ) : 'N/A'}
                       </div>
                     </FadeIn>
                     
@@ -384,7 +402,12 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(({
                         Development Index
                       </div>
                       <div className="text-white/70 text-xs [text-shadow:0_0_8px_rgba(0,0,0,0.8)] antialiased">
-                        {developmentScore.toFixed(0)}%
+                        <NumberFlowDisplay 
+                          value={developmentScore}
+                          format="percentage"
+                          decimalPlaces={0}
+                          className=""
+                        />
                       </div>
                     </FadeIn>
                   </div>
@@ -401,7 +424,11 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(({
                           <div className="flex justify-between text-white/85 text-sm">
                             <span className="[text-shadow:0_0_8px_rgba(0,0,0,0.8)] antialiased">Land Area</span>
                             <span className="font-medium [text-shadow:0_0_8px_rgba(0,0,0,0.8)] antialiased">
-                              {country.landArea.toLocaleString()} km²
+                              <NumberFlowDisplay 
+                                value={country.landArea}
+                                suffix=" km²"
+                                className=""
+                              />
                             </span>
                           </div>
                         )}
@@ -409,7 +436,11 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(({
                           <div className="flex justify-between text-white/85 text-sm">
                             <span className="[text-shadow:0_0_8px_rgba(0,0,0,0.8)] antialiased">Population Density</span>
                             <span className="font-medium [text-shadow:0_0_8px_rgba(0,0,0,0.8)] antialiased">
-                              {Math.round(country.populationDensity)}/km²
+                              <NumberFlowDisplay 
+                                value={Math.round(country.populationDensity)}
+                                suffix="/km²"
+                                className=""
+                              />
                             </span>
                           </div>
                         )}
@@ -435,7 +466,13 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(({
                           <div className="flex justify-between text-white/85 text-sm">
                             <span className="[text-shadow:0_0_8px_rgba(0,0,0,0.8)] antialiased">GDP Density</span>
                             <span className="font-medium [text-shadow:0_0_8px_rgba(0,0,0,0.8)] antialiased">
-                              ${(country.gdpDensity / 1e6).toFixed(1)}M/km²
+                              <NumberFlowDisplay 
+                                value={country.gdpDensity / 1e6}
+                                prefix="$"
+                                suffix="M/km²"
+                                decimalPlaces={1}
+                                className=""
+                              />
                             </span>
                           </div>
                         )}

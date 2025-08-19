@@ -9,7 +9,8 @@ import {
   Settings, 
   Crown,
   Bell,
-  X
+  X,
+  Rss
 } from "lucide-react";
 import { CommandPalette } from "~/components/CommandPalette";
 import {
@@ -80,7 +81,7 @@ export function Navigation() {
     {
       name: "ThinkPages",
       href: "/thinkpages",
-      icon: ThinkPagesIcon,
+      icon: Rss,
       requiresAuth: false,
       description: "Knowledge management and collaborative thinking",
     },

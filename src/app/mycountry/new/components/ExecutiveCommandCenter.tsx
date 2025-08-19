@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
 import { Progress } from '~/components/ui/progress';
+import { NumberFlowDisplay } from '~/components/ui/number-flow';
 import type { 
   ExecutiveIntelligence, 
   CriticalAlert, 
@@ -448,7 +449,12 @@ export function ExecutiveCommandCenter({
                             vitality.trend === 'up' ? 'text-green-600' :
                             vitality.trend === 'down' ? 'text-red-600' : 'text-gray-600'
                           }`}>
-                            {(vitality.change?.value ?? 0) > 0 ? '+' : ''}{(vitality.change?.value ?? 0).toFixed(1)}
+                            {(vitality.change?.value ?? 0) > 0 ? '+' : ''}
+                            <NumberFlowDisplay 
+                              value={vitality.change?.value ?? 0}
+                              decimalPlaces={1}
+                              className=""
+                            />
                           </div>
                         </div>
                       </div>

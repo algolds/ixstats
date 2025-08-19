@@ -6,7 +6,7 @@
 
 // Use ts-node to handle TypeScript imports
 require('ts-node/register');
-const { IxTimeAccuracyVerifier } = require('./src/lib/ixtime-accuracy.ts');
+const { IxTimeAccuracyVerifier } = require('../src/lib/ixtime-accuracy.ts');
 
 async function testAccuracy() {
   console.log('🧪 Testing IxTime Accuracy System');
