@@ -17,7 +17,7 @@ import {
   Users,
   Activity
 } from "lucide-react";
-import { Tooltip } from "@chakra-ui/tooltip";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "../ui/tooltip";
 import { Popover, PopoverTrigger, PopoverContent } from "../ui/popover";
 import { SimpleFlag } from "../SimpleFlag";
 import { formatCurrency } from "~/lib/chart-utils";
@@ -135,32 +135,35 @@ export function CompactView({
   if (!mounted) return null;
 
   return (
-    <div
-      onMouseEnter={() => {
-        if (isSticky) {
-          setIsCollapsed(false);
-          setIsUserInteracting(true);
-        }
-      }}
-      onMouseLeave={() => {
-        if (isSticky) {
-          setIsUserInteracting(false);
-        }
-      }}
-    >
+    <TooltipProvider>
+      <div
+        onMouseEnter={() => {
+          if (isSticky) {
+            setIsCollapsed(false);
+            setIsUserInteracting(true);
+          }
+        }}
+        onMouseLeave={() => {
+          if (isSticky) {
+            setIsUserInteracting(false);
+          }
+        }}
+      >
       <DynamicContainer 
-        className={`flex items-center justify-center transition-all duration-300 text-center ${ 
-          isSticky && isCollapsed ? 'px-2 py-2' : 'px-6 py-6'
-        } w-full ${isSticky && isCollapsed ? 'gap-2' : 'gap-4'} min-h-fit h-auto`}
+        className={`flex items-center justify-between transition-all duration-300 text-center ${ 
+          isSticky && isCollapsed ? 'px-3 py-2' : 'px-6 py-6'
+        } w-full min-h-fit h-auto`}
       >
         {/* IX Logo - Home Button */}
-        <Tooltip label="Home" placement="bottom" hasArrow bg="gray.900" color="white" borderRadius="md" fontSize="sm" zIndex={50000}>
-          <button
-            onClick={() => window.location.href = '/'}
-            className={`relative group flex items-center justify-center rounded-xl transition-all duration-300 hover:scale-110 active:scale-95 ${ 
-              isSticky && isCollapsed ? 'w-8 h-8' : 'w-10 h-10'
-            }`}
-          >
+        <div className="flex items-center justify-center">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => window.location.href = '/'}
+                className={`relative group flex items-center justify-center rounded-xl transition-all duration-300 hover:scale-110 active:scale-95 ${ 
+                  isSticky && isCollapsed ? 'w-8 h-8' : 'w-10 h-10'
+                }`}
+              >
             {/* Gradient glow animation - only on hover */}
             <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/20 via-purple-500/30 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-400/10 via-indigo-500/20 to-purple-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm" />
@@ -170,12 +173,18 @@ export function CompactView({
               alt="IxLogo"
               className={`relative z-10 ${isSticky && isCollapsed ? 'w-8 h-8' : 'w-10 h-10'} transition-all duration-300 group-hover:scale-110 filter dark:brightness-0 dark:invert brightness-100 opacity-80 group-hover:opacity-100 group-hover:drop-shadow-lg`}
             />
-          </button>
-        </Tooltip>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              Home
+            </TooltipContent>
+          </Tooltip>
+        </div>
         
         {/* Time Display and Greeting - combined section */}
-        {!(isSticky && isCollapsed) && (
-          <div className="flex flex-col items-center justify-center">
+        <div className="flex-1 flex items-center justify-center">
+          {!(isSticky && isCollapsed) && (
+            <div className="flex flex-col items-center justify-center space-y-2">
             {/* Time Display - cycles through modes */}
             <button
               onClick={() => {
@@ -369,58 +378,75 @@ export function CompactView({
                 </PopoverContent>
               </Popover>
             )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
         
         {/* Action buttons - icons only with hover tooltips */}
-        <div className={`flex items-center justify-center ${isSticky && isCollapsed ? 'gap-1' : 'gap-2'}`}>
-          <Tooltip label="Search" placement="bottom" hasArrow bg="gray.900" color="white" borderRadius="md" fontSize="sm" zIndex={50000}>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => onSwitchMode("search")}
-              className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all ${ 
-                isSticky && isCollapsed ? 'h-8 w-8 p-0' : 'h-8 w-8 p-0'
-              }`}
-            >
-              <Search className={`transition-transform hover:scale-110 ${isSticky && isCollapsed ? 'h-3 w-3' : 'h-4 w-4'}`} />
-            </Button>
+        <div className={`flex items-center justify-center ${isSticky && isCollapsed ? 'gap-1' : 'gap-2'} ${isSticky && isCollapsed ? 'h-8' : 'h-10'}`}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onSwitchMode("search")}
+                className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all ${ 
+                  isSticky && isCollapsed ? 'h-8 w-8 p-0' : 'h-8 w-8 p-0'
+                }`}
+              >
+                <Search className={`transition-transform hover:scale-110 ${isSticky && isCollapsed ? 'h-3 w-3' : 'h-4 w-4'}`} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              Search
+            </TooltipContent>
           </Tooltip>
           
-          <Tooltip label="Alerts" placement="bottom" hasArrow bg="gray.900" color="white" borderRadius="md" fontSize="sm" zIndex={50000}>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => onSwitchMode("notifications")}
-              className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center justify-center rounded-lg transition-all ${ 
-                isSticky && isCollapsed ? 'h-8 w-8 p-0' : 'h-8 w-8 p-0'
-              }`}
-            >
-              <Bell className={`transition-transform hover:scale-110 ${isSticky && isCollapsed ? 'h-3 w-3' : 'h-4 w-4'}`} />
-              {totalUnreadCount > 0 && (
-                <Badge className={`absolute bg-destructive text-foreground flex items-center justify-center rounded-full text-[10px] ${ 
-                  isSticky && isCollapsed ? '-top-0.5 -right-0.5 h-2.5 w-2.5 p-0' : '-top-1 -right-1 h-3 w-3 p-0'
-                }`}>
-                  {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
-                </Badge>
-              )}
-            </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onSwitchMode("notifications")}
+                className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center justify-center rounded-lg transition-all ${ 
+                  isSticky && isCollapsed ? 'h-8 w-8 p-0' : 'h-8 w-8 p-0'
+                }`}
+              >
+                <Bell className={`transition-transform hover:scale-110 ${isSticky && isCollapsed ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                {totalUnreadCount > 0 && (
+                  <Badge className={`absolute bg-destructive text-foreground flex items-center justify-center rounded-full text-[10px] ${ 
+                    isSticky && isCollapsed ? '-top-0.5 -right-0.5 h-2.5 w-2.5 p-0' : '-top-1 -right-1 h-3 w-3 p-0'
+                  }`}>
+                    {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
+                  </Badge>
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              Alerts
+            </TooltipContent>
           </Tooltip>
           
-          <Tooltip label="Settings" placement="bottom" hasArrow bg="gray.900" color="white" borderRadius="md" fontSize="sm" zIndex={50000}>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => onSwitchMode("settings")}
-              className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all ${ 
-                isSticky && isCollapsed ? 'h-8 w-8 p-0' : 'h-8 w-8 p-0'
-              }`}
-            >
-              <Settings className={`transition-transform hover:scale-110 ${isSticky && isCollapsed ? 'h-3 w-3' : 'h-4 w-4'}`} />
-            </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onSwitchMode("settings")}
+                className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all ${ 
+                  isSticky && isCollapsed ? 'h-8 w-8 p-0' : 'h-8 w-8 p-0'
+                }`}
+              >
+                <Settings className={`transition-transform hover:scale-110 ${isSticky && isCollapsed ? 'h-3 w-3' : 'h-4 w-4'}`} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              Settings
+            </TooltipContent>
           </Tooltip>
         </div>
       </DynamicContainer>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }

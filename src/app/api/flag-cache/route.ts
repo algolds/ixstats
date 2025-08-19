@@ -1,9 +1,7 @@
 // src/app/api/flag-cache/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { enhancedFlagCacheManager } from '~/lib/enhanced-flag-cache-manager';
-import { improvedFlagService } from '~/lib/improved-flag-service';
+import { unifiedFlagService } from '~/lib/unified-flag-service';
 import { api } from '~/trpc/server';
-import { ixnayWiki } from '~/lib/mediawiki-service';
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +11,7 @@ export async function GET(request: NextRequest) {
     switch (action) {
       case 'stats':
         // Get cache statistics
-        const stats = improvedFlagService.getStats();
+        const stats = unifiedFlagService.getStats();
         return NextResponse.json({
           success: true,
           stats,
@@ -21,14 +19,46 @@ export async function GET(request: NextRequest) {
         });
 
       case 'status':
-        // Get detailed status including MediaWiki service stats
-        const cacheStats = improvedFlagService.getStats();
-        const mediaWikiStats = ixnayWiki.getCacheStats();
+        // Get detailed status from unified service
+        const cacheStats = unifiedFlagService.getStats();
         
         return NextResponse.json({
           success: true,
-          flagService: cacheStats,
-          mediaWiki: mediaWikiStats,
+          flagCache: {
+            totalCountries: cacheStats.totalCountries,
+            cachedFlags: cacheStats.cachedFlags,
+            failedFlags: cacheStats.failedFlags,
+            lastUpdateTime: cacheStats.lastUpdateTime,
+            nextUpdateTime: null,
+            isUpdating: cacheStats.isUpdating,
+            updateProgress: {
+              current: 0,
+              total: 0,
+              percentage: 0
+            }
+          },
+          serverFlagCache: {
+            totalCountries: cacheStats.totalCountries,
+            cachedFlags: cacheStats.localFiles,
+            failedFlags: cacheStats.failedFlags,
+            lastUpdateTime: cacheStats.lastUpdateTime,
+            isUpdating: cacheStats.isUpdating,
+            updateProgress: {
+              current: 0,
+              total: 0,
+              percentage: 0
+            },
+            diskUsage: {
+              totalFiles: cacheStats.localFiles,
+              totalSizeBytes: cacheStats.localFiles * 10000, // Estimate
+              totalSizeMB: Math.round((cacheStats.localFiles * 10000) / 1024 / 1024)
+            }
+          },
+          mediaWiki: {
+            cacheSize: cacheStats.cachedFlags,
+            hitRate: cacheStats.hitRate,
+            lastCleared: null
+          },
           timestamp: Date.now(),
         });
 
@@ -49,7 +79,7 @@ export async function GET(request: NextRequest) {
           countryNames.push(...names);
         }
         
-        const flagUrls = await improvedFlagService.batchGetFlags(countryNames);
+        const flagUrls = await unifiedFlagService.batchGetFlags(countryNames);
         
         return NextResponse.json({
           success: true,
@@ -89,17 +119,17 @@ export async function POST(request: NextRequest) {
           const allCountries = await api.countries.getAll({ limit: 1000 });
           const names = allCountries.countries.map((c: any) => c.name);
           
-          console.log(`[FlagCache API] Initializing with ${names.length} countries from database`);
-          await improvedFlagService.initialize(names);
+          console.log(`[FlagCache API] Starting prefetch for ${names.length} countries from database`);
+          unifiedFlagService.prefetchFlags(names);
         } else {
-          console.log(`[FlagCache API] Updating flags for ${updateCountryNames.length} specified countries`);
-          await improvedFlagService.updateAllFlags();
+          console.log(`[FlagCache API] Starting prefetch for ${updateCountryNames.length} specified countries`);
+          unifiedFlagService.prefetchFlags(updateCountryNames);
         }
 
         return NextResponse.json({
           success: true,
-          message: 'Flag cache update started (includes local file downloads)',
-          stats: improvedFlagService.getStats(),
+          message: 'Flag cache prefetch started (background download)',
+          stats: unifiedFlagService.getStats(),
           timestamp: Date.now(),
         });
 
@@ -108,14 +138,14 @@ export async function POST(request: NextRequest) {
         const initAllCountries = await api.countries.getAll({ limit: 1000 });
         const initCountryNames = initAllCountries.countries.map((c: any) => c.name);
         
-        console.log(`[FlagCache API] Initializing improved flag service with ${initCountryNames.length} countries`);
-        await improvedFlagService.initialize(initCountryNames);
+        console.log(`[FlagCache API] Initializing unified flag service with ${initCountryNames.length} countries`);
+        unifiedFlagService.prefetchFlags(initCountryNames);
 
         return NextResponse.json({
           success: true,
-          message: 'Improved flag service initialized',
+          message: 'Unified flag service initialized',
           countryCount: initCountryNames.length,
-          stats: improvedFlagService.getStats(),
+          stats: unifiedFlagService.getStats(),
           timestamp: Date.now(),
         });
 
@@ -142,7 +172,7 @@ export async function DELETE(request: NextRequest) {
     switch (action) {
       case 'clear':
         // Clear all caches (including local files)
-        await improvedFlagService.clearCache();
+        await unifiedFlagService.clearCache();
         
         return NextResponse.json({
           success: true,

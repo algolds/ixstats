@@ -86,13 +86,21 @@ export function useDynamicIslandState() {
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
+  // Timeout cleanup refs
+  const interactionTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  
   // Mode switching with dropdown behavior
   const switchMode = useCallback((newMode: ViewMode) => {
     setMode(newMode);
     setIsUserInteracting(true);
     
+    // Clear existing timeout before setting new one
+    if (interactionTimeoutRef.current) {
+      clearTimeout(interactionTimeoutRef.current);
+    }
+    
     // Reset user interaction after 30 seconds
-    const timeout = setTimeout(() => setIsUserInteracting(false), 30000);
+    interactionTimeoutRef.current = setTimeout(() => setIsUserInteracting(false), 30000);
     
     if (newMode === "compact") {
       setIsExpanded(false);
@@ -100,19 +108,29 @@ export function useDynamicIslandState() {
       setIsExpanded(true);
       setExpandedMode(newMode);
     }
-    
-    return () => clearTimeout(timeout);
   }, []);
 
+  // Cycling timeout ref
+  const cyclingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  
   // Start cycling mode after 10 seconds of inactivity
   useEffect(() => {
+    // Clear existing cycling timeout
+    if (cyclingTimeoutRef.current) {
+      clearTimeout(cyclingTimeoutRef.current);
+    }
+    
     if (mode === "compact" && !isUserInteracting) {
-      const timeout = setTimeout(() => {
+      cyclingTimeoutRef.current = setTimeout(() => {
         switchMode("cycling");
       }, 10000);
-      
-      return () => clearTimeout(timeout);
     }
+    
+    return () => {
+      if (cyclingTimeoutRef.current) {
+        clearTimeout(cyclingTimeoutRef.current);
+      }
+    };
   }, [mode, isUserInteracting, switchMode]);
 
   // Enhanced keyboard shortcuts
@@ -211,6 +229,21 @@ export function useDynamicIslandState() {
       }
     };
   }, [mode, switchMode, searchFilter, searchQuery, isProcessingShortcut]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (interactionTimeoutRef.current) {
+        clearTimeout(interactionTimeoutRef.current);
+      }
+      if (cyclingTimeoutRef.current) {
+        clearTimeout(cyclingTimeoutRef.current);
+      }
+      if (shortcutTimeoutRef.current) {
+        clearTimeout(shortcutTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     // State

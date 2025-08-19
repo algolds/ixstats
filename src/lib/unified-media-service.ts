@@ -364,7 +364,7 @@ export class UnifiedMediaService {
       });
       
       if (response.ok) {
-        return `/api/flags/${encodeURIComponent(countryName)}.webp`;
+        return `/api/public/flags/${encodeURIComponent(countryName)}.webp`;
       }
     } catch (error) {
       // Server cache not available, continue to MediaWiki

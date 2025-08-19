@@ -3,7 +3,7 @@
 import React, { useMemo, useCallback, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { SimpleFlag } from "~/components/SimpleFlag";
-import { simpleFlagService } from "~/lib/simple-flag-service";
+import { unifiedFlagService } from "~/lib/unified-flag-service";
 
 interface AnimatedFlagsBackgroundProps {
   countries: Array<{ id: string; name: string }>;
@@ -151,7 +151,7 @@ async function preloadFlagSet(countries: Array<{ id: string; name: string }>): P
   try {
     // Preload flags individually
     await Promise.allSettled(
-      countryNames.map(name => simpleFlagService.getFlagUrl(name))
+      countryNames.map(name => unifiedFlagService.getFlagUrl(name))
     );
   } catch (err) {
     console.warn(`Failed to preload flags:`, err);

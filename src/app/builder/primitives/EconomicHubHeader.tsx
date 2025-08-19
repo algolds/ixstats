@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '~/components/ui/button';
-import { wikiCommonsFlagService } from '~/lib/wiki-commons-flag-service';
+import { unifiedFlagService } from '~/lib/unified-flag-service';
 import type { RealCountryData, EconomicInputs } from '../lib/economy-data-service';
 
 // Get the original foundation country name for flag display
@@ -41,7 +41,16 @@ export function EconomicHubHeader({
       if (!foundationCountryName) return;
       
       try {
-        const url = await wikiCommonsFlagService.getFlagUrl(foundationCountryName);
+        // Check cache first
+        const cachedUrl = unifiedFlagService.getCachedFlagUrl(foundationCountryName);
+        if (cachedUrl) {
+          setFlagUrl(cachedUrl);
+          console.log(`[EconomicHubHeader] Flag loaded from cache for ${foundationCountryName}:`, cachedUrl);
+          return;
+        }
+        
+        // Fetch if not cached
+        const url = await unifiedFlagService.getFlagUrl(foundationCountryName);
         setFlagUrl(url);
         console.log(`[EconomicHubHeader] Flag loaded for ${foundationCountryName}:`, url);
       } catch (error) {

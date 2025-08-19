@@ -8,6 +8,7 @@ import { MediaSearchModal } from '~/components/thinkpages/MediaSearchModal';
 import { CountrySymbolsUploader } from '../CountrySymbolsUploader';
 import type { EconomicInputs, RealCountryData } from '~/app/builder/lib/economy-data-service';
 import { useBuilderTheming } from '~/hooks/useBuilderTheming';
+import { unifiedFlagService } from '~/lib/unified-flag-service';
 import { wikiCommonsFlagService } from '~/lib/wiki-commons-flag-service';
 
 interface NationalSymbolsSectionProps {
@@ -58,28 +59,28 @@ export function NationalSymbolsSection({
         console.log(`[NationalSymbolsSection] Fetching symbols for foundation country: ${foundationCountryName}`);
         
         try {
-          // Fetch both flag and coat of arms in parallel using the original foundation country name
-          const symbols = await wikiCommonsFlagService.getCountrySymbols(foundationCountryName);
+          // Fetch flag from unified service (cache-first) and coat of arms from wiki commons
+          const [flagUrl, coatOfArmsResult] = await Promise.all([
+            unifiedFlagService.getFlagUrl(foundationCountryName),
+            wikiCommonsFlagService.getCoatOfArmsUrl(foundationCountryName)
+          ]);
           
-          if (symbols.flagUrl) {
-            setFoundationFlagUrl(symbols.flagUrl);
-            console.log(`[NationalSymbolsSection] Found foundation flag: ${symbols.flagUrl}`);
+          if (flagUrl) {
+            setFoundationFlagUrl(flagUrl);
+            console.log(`[NationalSymbolsSection] Found foundation flag: ${flagUrl}`);
           } else {
             setFoundationFlagUrl(undefined);
             console.log(`[NationalSymbolsSection] No foundation flag found for ${foundationCountryName}`);
           }
 
-          if (symbols.coatOfArmsUrl) {
-            setFoundationCoatOfArmsUrl(symbols.coatOfArmsUrl);
-            console.log(`[NationalSymbolsSection] Found foundation coat of arms: ${symbols.coatOfArmsUrl}`);
+          if (coatOfArmsResult) {
+            setFoundationCoatOfArmsUrl(coatOfArmsResult);
+            console.log(`[NationalSymbolsSection] Found foundation coat of arms: ${coatOfArmsResult}`);
           } else {
             setFoundationCoatOfArmsUrl(undefined);
             console.log(`[NationalSymbolsSection] No foundation coat of arms found for ${foundationCountryName}`);
           }
 
-          if (symbols.error) {
-            console.error(`[NationalSymbolsSection] Error fetching symbols for ${foundationCountryName}:`, symbols.error);
-          }
         } catch (error) {
           console.error(`[NationalSymbolsSection] Exception fetching symbols for ${foundationCountryName}:`, error);
           setFoundationFlagUrl(undefined);

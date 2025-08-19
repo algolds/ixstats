@@ -567,7 +567,7 @@ export default function BuilderPageEnhanced({ onBackToIntro }: BuilderPageEnhanc
                     </motion.button>
                   </SignInButton>
                   <p className="text-white/50 text-sm">
-                    Free account • No credit card required
+                    Free account • No membership required
                   </p>
                 </div>
               </div>

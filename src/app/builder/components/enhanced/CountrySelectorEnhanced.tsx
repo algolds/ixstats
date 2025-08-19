@@ -143,17 +143,18 @@ export function CountrySelectorEnhanced({
         {/* Header */}
         <CountrySelectorHeader softSelectedCountry={softSelectedCountry} onBackToIntro={onBackToIntro} />
 
-        {/* Foundation Archetypes */}
-        <FoundationArchetypeSelector
+      
+        {/* Main Content: Search/Filter/Countries + Live Preview */}
+        <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-8 z-20" ref={gridContainerRef}>
+          {/* Main Selection Panel */}
+          
+            {/* Foundation Archetypes */}
+            <FoundationArchetypeSelector
           countries={countries}
           selectedArchetype={selectedArchetype}
           onArchetypeSelect={setSelectedArchetype}
         />
 
-        {/* Main Content: Search/Filter/Countries + Live Preview */}
-        <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-8 z-20" ref={gridContainerRef}>
-          {/* Main Selection Panel */}
-          
           <div className="lg:col-span-2 space-y-6">
             {/* Search and Filters */}
             <SearchFilter
@@ -192,8 +193,12 @@ export function CountrySelectorEnhanced({
             onCancel={handleCancel}
             style={{ paddingTop: livePreviewTop }}
           />
+          
         </div>
+        
       </div>
+      
     </div>
+    
   );
 }

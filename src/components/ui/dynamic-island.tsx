@@ -327,15 +327,35 @@ const DynamicIsland = ({
   useEffect(() => {
     setMounted(true)
     
-    // Ultra-fast resize handler with minimal debouncing
+    // Ultra-fast resize handler with RAF optimization
     let resizeTimeout: NodeJS.Timeout
+    let rafId: number | undefined
+    let isResizing = false
+    
     const handleResize = () => {
       clearTimeout(resizeTimeout)
+      
+      if (!isResizing) {
+        isResizing = true
+        rafId = requestAnimationFrame(() => {
+          const width = window.innerWidth
+          const newSize = width <= 640 ? "mobile" : width <= 1024 ? "tablet" : "desktop"
+          if (screenSize !== newSize) {
+            setScreenSize(newSize)
+          }
+          isResizing = false
+        })
+      }
+      
+      // Fallback timeout for edge cases
       resizeTimeout = setTimeout(() => {
-        const width = window.innerWidth
-        const newSize = width <= 640 ? "mobile" : width <= 1024 ? "tablet" : "desktop"
-        if (screenSize !== newSize) {
-          setScreenSize(newSize)
+        if (isResizing) {
+          const width = window.innerWidth
+          const newSize = width <= 640 ? "mobile" : width <= 1024 ? "tablet" : "desktop"
+          if (screenSize !== newSize) {
+            setScreenSize(newSize)
+          }
+          isResizing = false
         }
       }, RESIZE_DEBOUNCE_MS)
     }
@@ -344,6 +364,9 @@ const DynamicIsland = ({
     window.addEventListener("resize", handleResize, { passive: true })
     return () => {
       clearTimeout(resizeTimeout)
+      if (rafId) {
+        cancelAnimationFrame(rafId)
+      }
       window.removeEventListener("resize", handleResize)
     }
   }, [])

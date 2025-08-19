@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { createUrl } from "~/lib/url-utils";
-import { flagService } from "~/lib/flag-service";
+import { unifiedFlagService } from "~/lib/unified-flag-service";
 
 // Use a simplified interface for display purposes
 interface LeaderboardCountry {
@@ -142,7 +142,7 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
 
     const fetchFlags = async () => {
       const countryNames = countries.map(c => c.name);
-      const flags = await flagService.batchGetFlags(countryNames);
+      const flags = await unifiedFlagService.batchGetFlags(countryNames);
       setFlagUrls(flags);
     };
 

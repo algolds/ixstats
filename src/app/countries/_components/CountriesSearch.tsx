@@ -160,7 +160,7 @@ export function CountriesSearch({
 
         <div className="flex gap-2 w-full sm:w-auto justify-between sm:justify-start">
           <DropdownMenu>
-            <DropdownMenuTrigger className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium text-foreground ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border-border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+            <DropdownMenuTrigger className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium text-foreground ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border-border bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
               {sortDirection === 'asc' ? (
                 <SortAsc className="h-4 w-4" />
               ) : (

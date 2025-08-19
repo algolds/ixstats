@@ -1,5 +1,6 @@
 // Wiki search service supporting both ixwiki.com and iiwiki.com
 import type { CountryInfoboxWithDynamicProps } from "./mediawiki-service";
+import { unifiedFlagService } from "./unified-flag-service";
 
 interface WikiConfig {
   baseUrl: string;
@@ -1120,9 +1121,18 @@ async function extractEconomicData(infobox: CountryInfoboxWithDynamicProps, site
   data.flag = extractImageFile(typeof flagValue === 'string' ? flagValue : undefined);
   data.coatOfArms = extractImageFile(typeof coaValue === 'string' ? coaValue : undefined);
   
-  // Resolve image URLs
+  // Resolve image URLs using unified flag service for flags, fallback to original method for coat of arms
   if (data.flag) {
-    data.flagUrl = await getImageUrl(data.flag, site) || undefined;
+    try {
+      // Use unified flag service for cache-first flag retrieval using the infobox name
+      const countryName = infobox.name || '';
+      const flagUrl = await unifiedFlagService.getFlagUrl(countryName);
+      data.flagUrl = flagUrl || undefined;
+    } catch (error) {
+      console.warn(`Failed to get flag from unified service for ${infobox.name}, falling back to direct image URL`, error);
+      // Fallback to direct image URL resolution
+      data.flagUrl = await getImageUrl(data.flag, site) || undefined;
+    }
   }
   
   if (data.coatOfArms) {

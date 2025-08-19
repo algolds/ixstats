@@ -1,4 +1,4 @@
-// Simple bulk flag cache - replaces complex system
+// Unified flag cache - uses the new unified system
 "use client";
 
-export { useSimpleFlags as useBulkFlagCache } from './useSimpleFlag';
+export { useBulkFlags as useBulkFlagCache } from './useUnifiedFlags';

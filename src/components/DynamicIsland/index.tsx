@@ -69,14 +69,26 @@ function CommandPaletteContent({ isSticky = false }: { isSticky?: boolean }) {
   }, [initialize]);
 
   // Auto-collapse when sticky and not interacting - optimized with proper cleanup
+  const collapseTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  
   useEffect(() => {
-    if (isSticky && !isUserInteracting) {
-      const timer = setTimeout(() => setIsCollapsed(true), 1200); // Faster collapse
-      return () => clearTimeout(timer);
+    // Clear existing timeout
+    if (collapseTimeoutRef.current) {
+      clearTimeout(collapseTimeoutRef.current);
+    }
+    
+    if (isSticky && !isUserInteracting && !isCollapsed) {
+      collapseTimeoutRef.current = setTimeout(() => setIsCollapsed(true), 1200);
     } else if (!isSticky && isCollapsed) {
-      // Only expand if currently collapsed to prevent unnecessary re-renders
+      // Immediately expand when not sticky
       setIsCollapsed(false);
     }
+    
+    return () => {
+      if (collapseTimeoutRef.current) {
+        clearTimeout(collapseTimeoutRef.current);
+      }
+    };
   }, [isSticky, isUserInteracting, isCollapsed]);
 
   if (!mounted) return null;
@@ -121,7 +133,7 @@ export function CommandPalette({ className, isSticky }: CommandPaletteProps) {
 function CommandPaletteWrapper({ isSticky }: { isSticky?: boolean }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const { isExpanded, switchMode } = useDynamicIslandState();
   
   // Initialize once on mount
   useEffect(() => {
@@ -129,15 +141,14 @@ function CommandPaletteWrapper({ isSticky }: { isSticky?: boolean }) {
     
     return () => {
       setIsInitialized(false);
-      setIsExpanded(false);
     };
-  }, []); // Empty dependency array - only run once on mount
+  }, []);
   
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside - use shared state
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-        setIsExpanded(false);
+        switchMode("compact");
       }
     };
 
@@ -145,7 +156,7 @@ function CommandPaletteWrapper({ isSticky }: { isSticky?: boolean }) {
       document.addEventListener('mousedown', handleClickOutside, { passive: true });
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-  }, [isExpanded, isInitialized]);
+  }, [isExpanded, isInitialized, switchMode]);
   
   // Don't render until properly initialized
   if (!isInitialized) {
