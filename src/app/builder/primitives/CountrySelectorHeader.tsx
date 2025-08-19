@@ -6,6 +6,7 @@ import { Download, ExternalLink, ArrowLeft, Check } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createUrl } from '~/lib/url-utils';
 import { EnhancedCountryFlag } from '~/components/ui/enhanced-country-flag';
+import { useCountryFlag } from '~/hooks/useCountryFlags';
 import { MyCountryLogo } from '~/components/ui/mycountry-logo';
 import { SectionHeader, EmphasisText } from '~/components/ui/text-hierarchy';
 import { ImportButton } from '~/components/ui/glass-button';
@@ -21,6 +22,7 @@ interface CountrySelectorHeaderProps {
 
 export function CountrySelectorHeader({ softSelectedCountry, onBackToIntro }: CountrySelectorHeaderProps) {
   const router = useRouter();
+  const { flag } = useCountryFlag(softSelectedCountry?.foundationCountryName || softSelectedCountry?.name || '');
 
   return (
     <motion.div
@@ -28,33 +30,37 @@ export function CountrySelectorHeader({ softSelectedCountry, onBackToIntro }: Co
       animate={{ opacity: 1, y: 0 }}
       className="mb-8 relative overflow-hidden rounded-lg p-6"
       style={
-        softSelectedCountry
+        softSelectedCountry && flag?.flagUrl
           ? {
+              backgroundImage: `url('${flag.flagUrl}')`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }
           : undefined
       }
     >
-      {softSelectedCountry && (
-        <div className="absolute inset-0 backdrop-filter backdrop-blur-md bg-black/50 z-0"></div>
+      {softSelectedCountry && flag?.flagUrl && (
+        <div className="absolute inset-0 backdrop-filter backdrop-blur-lg bg-black/40 z-0"></div>
+      )}
+      {softSelectedCountry && !flag?.flagUrl && (
+        <div className="absolute inset-0 bg-gradient-to-br from-[var(--mycountry-primary)]/20 to-[var(--mycountry-secondary)]/20 z-0"></div>
       )}
       <div className="relative z-10">
         {/* Back Button and Process Indicator */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-center mb-6 relative">
           {onBackToIntro && (
             <Button
               onClick={onBackToIntro}
               variant="outline"
               size="sm"
-              className="flex items-center gap-2 bg-[var(--color-bg-secondary)]/80 border-[var(--color-border-primary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)]/80"
+              className="absolute left-0 flex items-center gap-2 bg-[var(--color-bg-secondary)]/80 border-[var(--color-border-primary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)]/80"
             >
               <ArrowLeft className="h-4 w-4" />
             Start over
             </Button>
           )}
           
-          {/* Process Indicator */}
+          {/* Process Indicator - Centered */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 px-3 py-1 bg-[var(--mycountry-primary)]/20 border border-[var(--mycountry-primary)]/30 rounded-full">
               <Check className="h-4 w-4 text-[var(--mycountry-primary)]" />

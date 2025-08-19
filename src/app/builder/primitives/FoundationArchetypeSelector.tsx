@@ -1,11 +1,11 @@
 "use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Globe, Sparkles } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Globe, Sparkles, ChevronDown, ChevronRight, Check, Palette } from 'lucide-react';
 import { cn } from '~/lib/utils';
 import { EnhancedTooltip, InfoIcon } from '~/components/ui/enhanced-tooltip';
-import { GlassCard, GlassCardContent, GlassCardHeader } from '../components/glass/GlassCard';
+import { GlassCard as EnhancedGlassCard } from '~/components/ui/enhanced-card';
 import { archetypes, archetypeCategories, type CategorizedCountryArchetype } from '../utils/country-archetypes';
 import type { RealCountryData } from '../lib/economy-data-service';
 
@@ -13,103 +13,265 @@ interface FoundationArchetypeSelectorProps {
   countries: RealCountryData[];
   selectedArchetype: string;
   onArchetypeSelect: (archetypeId: string) => void;
+  onArchetypeComposer?: () => void;
 }
 
 export function FoundationArchetypeSelector({
   countries,
   selectedArchetype,
-  onArchetypeSelect
+  onArchetypeSelect,
+  onArchetypeComposer
 }: FoundationArchetypeSelectorProps) {
-  if (!countries) {
-    return <div>Loading countries...</div>; // Or some other placeholder
-  }
+  const filteredCountries = countries.filter(c => c.name !== "World");
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(
+    new Set(archetypeCategories.map(category => category.id))
+  );
 
-  const filteredCountries = countries ? countries.filter(c => c.name !== "World") : [];
+  // Group archetypes by category
+  const archetypesByCategory = useMemo(() => {
+    const grouped = new Map<string, CategorizedCountryArchetype[]>();
+    
+    archetypeCategories.forEach(category => {
+      grouped.set(category.id, []);
+    });
+
+    archetypes.forEach(archetype => {
+      const categoryArchetypes = grouped.get(archetype.categoryId) || [];
+      categoryArchetypes.push(archetype);
+      grouped.set(archetype.categoryId, categoryArchetypes);
+    });
+
+    // Sort within each category by priority
+    grouped.forEach((categoryArchetypes) => {
+      categoryArchetypes.sort((a, b) => a.priority - b.priority);
+    });
+
+    return grouped;
+  }, []);
+
+  // Auto-collapse category when an archetype is selected
+  useEffect(() => {
+    if (selectedArchetype && selectedArchetype !== "all") {
+      const selectedArchetypeObj = archetypes.find(a => a.id === selectedArchetype);
+      if (selectedArchetypeObj) {
+        setCollapsedCategories(prev => new Set([...prev, selectedArchetypeObj.categoryId]));
+      }
+    }
+  }, [selectedArchetype]);
+
+  const toggleCategory = (categoryId: string) => {
+    setCollapsedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId);
+      } else {
+        newSet.add(categoryId);
+      }
+      return newSet;
+    });
+  };
+
+  // Check if category has selected archetype
+  const categoryHasSelection = (categoryId: string) => {
+    if (selectedArchetype === "all") return false;
+    const selectedArchetypeObj = archetypes.find(a => a.id === selectedArchetype);
+    return selectedArchetypeObj?.categoryId === categoryId;
+  };
 
   return (
-    <div className="relative z-20 mb-8">
-      <GlassCard depth="elevated" motionPreset="slide" className="sticky top-0 z-30">
-        <GlassCardHeader>
-          <div className="flex items-center gap-2">
+    <div className="fixed left-6 top-6 bottom-6 w-80 z-30">
+      <EnhancedGlassCard 
+        variant="glass" 
+        glow="hover" 
+        hover="glow"
+        className="h-full flex flex-col"
+      >
+        <div className="flex-shrink-0 p-6 border-b border-[var(--color-border-primary)]/50">
+          <div className="flex items-center gap-2 justify-center">
             <Sparkles className="h-5 w-5 text-amber-300" />
             <h3 className="font-semibold text-[var(--color-text-primary)]">Foundation Archetypes</h3>
-            <EnhancedTooltip className="text-[var(--color-text-primary)]"
-              content="Archetypes are pre-defined categories to help you find countries that match your vision"
+            <EnhancedTooltip
+              content="Pre-defined categories to help you find countries that match your vision"
+              position="top"
             >
-              <InfoIcon className="text-[var(--color-text-primary)]" />
+              <InfoIcon />
             </EnhancedTooltip>
           </div>
-        </GlassCardHeader>
-        <GlassCardContent>
+        </div>
         
+        <div className="flex-1 overflow-hidden p-6">
+          <div className="h-full overflow-y-auto pr-2" style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'var(--color-border-secondary) transparent'
+          }}>
+            <div className="space-y-6">
+              {/* Action Cards Grid */}
+              <div className="grid grid-cols-1 gap-3">
+                {/* All Countries */}
+                <EnhancedTooltip content="View all available countries" position="right">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => onArchetypeSelect("all")}
+                    className={cn(
+                      'w-full p-4 rounded-lg border transition-all duration-300',
+                      'bg-gradient-to-br from-[var(--color-bg-secondary)]/20 to-[var(--color-bg-tertiary)]/20',
+                      'hover:shadow-lg hover:shadow-blue-500/20 hover:backdrop-blur-md',
+                      selectedArchetype === "all"
+                        ? 'border-blue-400/50 bg-blue-500/20 shadow-lg shadow-blue-500/30'
+                        : 'border-[var(--color-border-primary)] hover:border-[var(--color-border-secondary)]'
+                    )}
+                  >
+                    <Globe className="h-8 w-8 text-blue-400 mx-auto mb-3" />
+                    <div className="text-2xl font-bold text-[var(--color-text-primary)] mb-1">
+                      {filteredCountries.length}
+                    </div>
+                    <div className="text-sm text-[var(--color-text-secondary)]">All Countries</div>
+                  </motion.button>
+                </EnhancedTooltip>
 
-          {archetypeCategories.sort((a, b) => a.priority - b.priority).map(category => (
-            <div key={category.id} className="mb-6">
-              <h4 className={cn("text-lg font-semibold mb-3", category.color)}>{category.name}</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-2 gap-2">
-                {archetypes
-                  .filter(archetype => archetype.categoryId === category.id)
-                  .sort((a, b) => a.priority - b.priority) // Assuming archetypes can have priority
-                  .map((archetype: CategorizedCountryArchetype) => {
-                    const Icon = archetype.icon;
-                    const count = filteredCountries.filter(archetype.filter).length;
-                    const isSelected = selectedArchetype === archetype.id;
+                {/* Archetype Composer */}
+                <EnhancedTooltip 
+                  content={
+                    <div className="space-y-2">
+                      <div className="font-medium">Archetype Composer</div>
+                      <div className="text-sm text-[var(--color-text-secondary)]">
+                        Create custom combinations of multiple archetypes to find countries that match specific criteria
+                      </div>
+                    </div>
+                  } 
+                  position="right"
+                >
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => onArchetypeComposer?.()}
+                    className={cn(
+                      'w-full p-4 rounded-lg border transition-all duration-300',
+                      'bg-gradient-to-br from-purple-500/20 to-pink-500/10',
+                      'hover:shadow-lg hover:shadow-purple-500/20 hover:backdrop-blur-md',
+                      'border-[var(--color-border-primary)] hover:border-purple-400/50'
+                    )}
+                  >
+                    <Palette className="h-8 w-8 text-purple-400 mx-auto mb-3" />
+                    <div className="text-lg font-bold text-purple-400 mb-1">
+                      Compose
+                    </div>
+                    <div className="text-sm text-[var(--color-text-secondary)]">Archetype Composer</div>
+                  </motion.button>
+                </EnhancedTooltip>
+              </div>
 
-                    return (
-                      <motion.button
-                        key={archetype.id}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => onArchetypeSelect(archetype.id)}
+              {/* Categories */}
+              {archetypeCategories
+                .filter(category => category.isActive)
+                .sort((a, b) => a.priority - b.priority)
+                .map((category) => {
+                  const categoryArchetypes = archetypesByCategory.get(category.id) || [];
+                  const isCollapsed = collapsedCategories.has(category.id);
+                  const hasSelection = categoryHasSelection(category.id);
+                  
+                  return (
+                    <div key={category.id} className="space-y-2">
+                      {/* Category Header */}
+                      <button
+                        onClick={() => toggleCategory(category.id)}
                         className={cn(
-                          'p-4 rounded-lg border transition-all duration-300 text-left',
-                          `bg-gradient-to-br ${archetype.gradient}`,
-                          isSelected
-                            ? 'border-current shadow-lg bg-opacity-30'
-                            : 'border-[var(--color-border-primary)] hover:border-[var(--color-border-secondary)]'
+                          "w-full flex items-center gap-2 p-2 rounded-lg transition-all duration-200",
+                          "hover:bg-[var(--color-bg-secondary)]/20 hover:backdrop-blur-sm",
+                          hasSelection && "bg-[var(--color-bg-secondary)]/10"
                         )}
                       >
-                        <div className="flex items-center mb-2">
-                          <Icon className={cn('h-6 w-6 mr-2', archetype.color)} />
-                          <div className={cn('text-lg font-semibold', archetype.color)}>
-                            {count}
-                          </div>
-                        </div>
-                        <div className="text-sm text-[var(--color-text-secondary)] leading-tight">
-                          {archetype.name}
-                        </div>
-                        <div className="text-xs text-[var(--color-text-tertiary)] mt-1">
-                          {archetype.description}
-                        </div>
-                        
-                      </motion.button>
-                    );
-                  })}
-              </div>
+                        {isCollapsed ? (
+                          <ChevronRight className="h-4 w-4 text-[var(--color-text-muted)]" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 text-[var(--color-text-muted)]" />
+                        )}
+                        <span className={cn("text-sm font-medium", category.color)}>
+                          {category.name}
+                        </span>
+                        {hasSelection && (
+                          <Check className="h-4 w-4 text-green-400 ml-1" />
+                        )}
+                        <span className="text-xs text-[var(--color-text-muted)] ml-auto">
+                          {categoryArchetypes.length}
+                        </span>
+                      </button>
+
+                      {/* Category Archetypes */}
+                      <AnimatePresence>
+                        {!isCollapsed && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="space-y-2 pl-6"
+                          >
+                            {categoryArchetypes.map((archetype) => {
+                              const Icon = archetype.icon;
+                              const count = filteredCountries.filter(archetype.filter).length;
+                              const isSelected = selectedArchetype === archetype.id;
+
+                              return (
+                                <EnhancedTooltip
+                                  key={archetype.id}
+                                  content={
+                                    <div className="space-y-2">
+                                      <div className="font-medium">{archetype.name}</div>
+                                      <div className="text-sm text-[var(--color-text-secondary)]">
+                                        {archetype.description}
+                                      </div>
+                                      <div className="text-xs text-[var(--color-text-muted)]">
+                                        {count} countries match
+                                      </div>
+                                    </div>
+                                  }
+                                  position="right"
+                                >
+                                  <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => onArchetypeSelect(archetype.id)}
+                                    className={cn(
+                                      'w-full p-3 rounded-lg border transition-all duration-300 text-left',
+                                      `bg-gradient-to-br ${archetype.gradient}`,
+                                      'hover:shadow-lg hover:backdrop-blur-md',
+                                      isSelected
+                                        ? 'border-current shadow-lg bg-opacity-30 ring-2 ring-current/20 shadow-current/30'
+                                        : 'border-[var(--color-border-primary)] hover:border-[var(--color-border-secondary)] hover:shadow-[var(--color-border-secondary)]/20'
+                                    )}
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <Icon className={cn('h-5 w-5 flex-shrink-0', archetype.color)} />
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                          <span className={cn('font-medium text-sm', archetype.color)}>
+                                            {count}
+                                          </span>
+                                          <span className="text-xs text-[var(--color-text-secondary)] truncate">
+                                            {archetype.name}
+                                          </span>
+                                          {isSelected && (
+                                            <Check className="h-3 w-3 text-green-400 ml-auto" />
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </motion.button>
+                                </EnhancedTooltip>
+                              );
+                            })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
             </div>
-          ))}
-           <div className="mb-8">
-            {/* All Countries */}
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => onArchetypeSelect("all")}
-              className={cn(
-                'w-full p-4 rounded-lg border transition-all duration-300 flex items-center justify-center gap-2',
-                'bg-gradient-to-br from-[var(--color-bg-secondary)]/20 to-[var(--color-bg-tertiary)]/20',
-                selectedArchetype === "all"
-                  ? 'border-blue-400/50 bg-blue-500/20 shadow-lg'
-                  : 'border-[var(--color-border-primary)] hover:border-[var(--color-border-secondary)]'
-              )}
-            >
-              <Globe className="h-6 w-6 text-blue-400" />
-              <div className="text-lg font-semibold text-[var(--color-text-primary)]">
-                {filteredCountries.length} All Countries
-              </div>
-            </motion.button>
           </div>
-        </GlassCardContent>
-      </GlassCard>
+        </div>
+      </EnhancedGlassCard>
     </div>
   );
 }

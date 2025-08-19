@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://web.resource.org/cc/"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   id="svg1890"
+   sodipodi:version="0.32"
+   inkscape:version="0.44"
+   width="1200"
+   height="600"
+   version="1.0"
+   sodipodi:docbase="C:\flags"
+   sodipodi:docname="Tatar Nationalist Flag.svg">
+  <metadata
+     id="metadata1895">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs1893" />
+  <sodipodi:namedview
+     inkscape:window-height="881"
+     inkscape:window-width="1113"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     guidetolerance="10.0"
+     gridtolerance="10.0"
+     objecttolerance="10.0"
+     borderopacity="1.0"
+     bordercolor="#666666"
+     pagecolor="#ffffff"
+     id="base"
+     width="1200px"
+     height="600px"
+     inkscape:zoom="0.85666667"
+     inkscape:cx="600"
+     inkscape:cy="300"
+     inkscape:window-x="34"
+     inkscape:window-y="-11"
+     inkscape:current-layer="svg1890" />
+  <g
+     id="g2813"
+     transform="matrix(2.777778,0,0,2.777778,0,-4.8e-5)">
+    <rect
+       ry="0"
+       y="0"
+       x="0"
+       height="216"
+       width="432"
+       id="rect2807"
+       style="opacity:1;fill:red;fill-opacity:1;stroke:none;stroke-width:32.5719986;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    <path
+       sodipodi:nodetypes="cccc"
+       id="rect2809"
+       d="M 1.0118561e-006,0 L 432,0 L 432,216 L 1.0118561e-006,0 z "
+       style="fill:#090;fill-opacity:1;stroke:none;stroke-width:32.5719986;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1" />
+    <path
+       id="path2798"
+       d="M 183.03125,56.46875 C 166.68804,67.032059 155.84375,85.387049 155.84375,106.28125 C 155.84375,139.0147 182.39155,165.59376 215.125,165.59375 C 247.85845,165.59375 274.43751,139.0147 274.4375,106.28125 C 274.4375,102.59586 274.0819,98.999922 273.4375,95.5 C 270.28241,120.78661 248.73062,140.375 222.59375,140.375 C 194.28801,140.375 171.3125,117.39949 171.3125,89.09375 C 171.3125,76.70999 175.71415,65.333824 183.03125,56.46875 z "
+       style="opacity:1;fill:white;fill-opacity:1;stroke:none;stroke-width:32.5719986;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    <path
+       d="M 240.06366,79.639258 L 232.50549,65.949708 L 217.13101,68.805467 L 227.81494,57.38691 L 220.34798,43.647394 L 234.50919,50.279887 L 245.26883,38.93264 L 243.33701,54.450304 L 257.45379,61.176836 L 242.09865,64.134786 L 240.06366,79.639258 z "
+       inkscape:randomized="0"
+       inkscape:rounded="0"
+       inkscape:flatsided="false"
+       sodipodi:arg2="2.0121356"
+       sodipodi:arg1="1.3838171"
+       sodipodi:r2="8.3051891"
+       sodipodi:r1="21.574986"
+       sodipodi:cy="58.440319"
+       sodipodi:cx="236.05305"
+       sodipodi:sides="5"
+       id="path2794"
+       style="opacity:1;fill:white;fill-opacity:1;stroke:none;stroke-width:32.5719986;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       sodipodi:type="star" />
+  </g>
+</svg>

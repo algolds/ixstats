@@ -10,6 +10,11 @@ import {
   Banknote, // For economic tiers
   Church, // For religion
   MapPin, // For region
+  Scale, // For legal systems
+  Shield, // For military/security
+  Vote, // For democratic systems
+  Gavel, // For judicial systems
+  BookOpen, // For legal codes
 } from 'lucide-react';
 import type { CountryArchetype } from './country-selector-utils';
 import type { RealCountryData } from '../lib/economy-data-service';
@@ -44,16 +49,16 @@ export const archetypeCategories: ArchetypeCategory[] = [
   {
     id: 'economic-classifications',
     name: 'Economic Classifications',
-    description: 'Archetypes based on economic indicators.',
+    description: 'Archetypes based on economic development and performance indicators.',
     color: 'text-blue-500',
-    maxSelectable: 1,
+    maxSelectable: 2,
     priority: 10,
     isActive: true,
   },
   {
     id: 'population-demographics',
     name: 'Population Demographics',
-    description: 'Archetypes based on population size and density.',
+    description: 'Archetypes based on population size and demographics.',
     color: 'text-green-500',
     maxSelectable: 1,
     priority: 20,
@@ -64,24 +69,24 @@ export const archetypeCategories: ArchetypeCategory[] = [
     name: 'Geographical Regions',
     description: 'Archetypes based on continental and regional location.',
     color: 'text-purple-500',
-    maxSelectable: 2,
+    maxSelectable: 1,
     priority: 30,
     isActive: true,
   },
   {
-    id: 'government-types',
-    name: 'Government Types',
-    description: 'Archetypes based on the form of government.',
+    id: 'political-systems',
+    name: 'Political Systems',
+    description: 'Archetypes based on government type and political structure.',
     color: 'text-red-500',
     maxSelectable: 1,
     priority: 40,
     isActive: true,
   },
   {
-    id: 'cultural-religious',
-    name: 'Cultural & Religious',
-    description: 'Archetypes based on predominant cultural or religious characteristics.',
-    color: 'text-yellow-500',
+    id: 'legal-systems',
+    name: 'Legal Systems',
+    description: 'Archetypes based on legal framework and judicial systems.',
+    color: 'text-amber-500',
     maxSelectable: 1,
     priority: 50,
     isActive: true,
@@ -137,248 +142,393 @@ export const archetypes: CategorizedCountryArchetype[] = [
     priority: 4,
   },
 
-  // New Archetypes based on Prisma schema
-  // Geographical Regions (Continents)
+  // Economic Tier Classifications (working with actual data)
   {
-    id: 'continent-africa',
-    name: 'African Nation',
-    description: 'Country located in Africa.',
-    icon: Globe,
-    color: 'text-orange-500',
-    filter: (country: RealCountryData) => country.continent === 'Africa',
-    gradient: 'from-orange-500/20 to-yellow-500/10',
-    categoryId: 'geographical-regions',
+    id: 'tier-advanced',
+    name: 'Advanced Economy',
+    description: 'Countries with very high GDP per capita (>$50,000).',
+    icon: Banknote,
+    color: 'text-emerald-600',
+    filter: (country: RealCountryData) => getEconomicTier(country.gdpPerCapita) === 'Advanced',
+    gradient: 'from-emerald-600/20 to-green-600/10',
+    categoryId: 'economic-classifications',
     priority: 5,
   },
   {
-    id: 'continent-asia',
-    name: 'Asian Nation',
-    description: 'Country located in Asia.',
-    icon: Globe,
-    color: 'text-red-500',
-    filter: (country: RealCountryData) => country.continent === 'Asia',
-    gradient: 'from-red-500/20 to-pink-500/10',
-    categoryId: 'geographical-regions',
-    priority: 6,
-  },
-  {
-    id: 'continent-europe',
-    name: 'European Nation',
-    description: 'Country located in Europe.',
-    icon: Globe,
-    color: 'text-blue-500',
-    filter: (country: RealCountryData) => country.continent === 'Europe',
-    gradient: 'from-blue-500/20 to-cyan-500/10',
-    categoryId: 'geographical-regions',
-    priority: 7,
-  },
-  {
-    id: 'continent-north-america',
-    name: 'North American Nation',
-    description: 'Country located in North America.',
-    icon: Globe,
-    color: 'text-green-500',
-    filter: (country: RealCountryData) => country.continent === 'North America',
-    gradient: 'from-green-500/20 to-lime-500/10',
-    categoryId: 'geographical-regions',
-    priority: 8,
-  },
-  {
-    id: 'continent-south-america',
-    name: 'South American Nation',
-    description: 'Country located in South America.',
-    icon: Globe,
-    color: 'text-purple-500',
-    filter: (country: RealCountryData) => country.continent === 'South America',
-    gradient: 'from-purple-500/20 to-fuchsia-500/10',
-    categoryId: 'geographical-regions',
-    priority: 9,
-  },
-  {
-    id: 'continent-oceania',
-    name: 'Oceanic Nation',
-    description: 'Country located in Oceania.',
-    icon: Globe,
-    color: 'text-teal-500',
-    filter: (country: RealCountryData) => country.continent === 'Oceania',
-    gradient: 'from-teal-500/20 to-emerald-500/10',
-    categoryId: 'geographical-regions',
-    priority: 10,
-  },
-
-  // Government Types
-  {
-    id: 'gov-democracy',
-    name: 'Democracy',
-    description: 'Country with a democratic government system.',
-    icon: Building,
-    color: 'text-indigo-500',
-    filter: (country: RealCountryData) => country.governmentType === 'Democracy',
-    gradient: 'from-indigo-500/20 to-purple-500/10',
-    categoryId: 'government-types',
-    priority: 11,
-  },
-  {
-    id: 'gov-monarchy',
-    name: 'Monarchy',
-    description: 'Country ruled by a monarch.',
-    icon: Crown,
-    color: 'text-yellow-600',
-    filter: (country: RealCountryData) => country.governmentType === 'Monarchy',
-    gradient: 'from-yellow-600/20 to-amber-600/10',
-    categoryId: 'government-types',
-    priority: 12,
-  },
-  {
-    id: 'gov-republic',
-    name: 'Republic',
-    description: 'Country with a republican form of government.',
-    icon: Building,
-    color: 'text-cyan-500',
-    filter: (country: RealCountryData) => country.governmentType === 'Republic',
-    gradient: 'from-cyan-500/20 to-blue-500/10',
-    categoryId: 'government-types',
-    priority: 13,
-  },
-  {
-    id: 'gov-dictatorship',
-    name: 'Dictatorship',
-    description: 'Country ruled by a single dictator or small group.',
-    icon: Building,
-    color: 'text-gray-700',
-    filter: (country: RealCountryData) => country.governmentType === 'Dictatorship',
-    gradient: 'from-gray-700/20 to-gray-900/10',
-    categoryId: 'government-types',
-    priority: 14,
-  },
-
-  // Economic Tiers
-  {
     id: 'tier-developed',
     name: 'Developed Economy',
-    description: 'Country classified as a developed economy.',
+    description: 'Countries with high GDP per capita ($25,000-$50,000).',
     icon: Banknote,
     color: 'text-lime-600',
     filter: (country: RealCountryData) => getEconomicTier(country.gdpPerCapita) === 'Developed',
     gradient: 'from-lime-600/20 to-green-600/10',
     categoryId: 'economic-classifications',
-    priority: 15,
-  },
-  {
-    id: 'tier-developing',
-    name: 'Developing Economy',
-    description: 'Country classified as a developing economy.',
-    icon: Banknote,
-    color: 'text-orange-600',
-    filter: (country: RealCountryData) => getEconomicTier(country.gdpPerCapita) === 'Developing',
-    gradient: 'from-orange-600/20 to-red-600/10',
-    categoryId: 'economic-classifications',
-    priority: 16,
+    priority: 6,
   },
   {
     id: 'tier-emerging',
     name: 'Emerging Economy',
-    description: 'Country classified as an emerging economy.',
+    description: 'Countries with moderate GDP per capita ($10,000-$25,000).',
     icon: Banknote,
     color: 'text-purple-600',
     filter: (country: RealCountryData) => getEconomicTier(country.gdpPerCapita) === 'Emerging',
     gradient: 'from-purple-600/20 to-pink-600/10',
     categoryId: 'economic-classifications',
-    priority: 17,
+    priority: 7,
+  },
+  {
+    id: 'tier-developing',
+    name: 'Developing Economy',
+    description: 'Countries with lower GDP per capita (<$10,000).',
+    icon: Banknote,
+    color: 'text-orange-600',
+    filter: (country: RealCountryData) => getEconomicTier(country.gdpPerCapita) === 'Developing',
+    gradient: 'from-orange-600/20 to-red-600/10',
+    categoryId: 'economic-classifications',
+    priority: 8,
   },
 
-  // Population Tiers
+  // Population Tiers (working with actual data)
   {
-    id: 'pop-high',
-    name: 'High Population',
-    description: 'Country with a large population.',
+    id: 'pop-mega',
+    name: 'Mega Population',
+    description: 'Countries with extremely large populations (>100M people).',
     icon: Users,
     color: 'text-red-700',
-    filter: (country: RealCountryData) => {
-      const tier = getPopulationTier(country.population);
-      return tier === 'Very Large' || tier === 'Large';
-    },
+    filter: (country: RealCountryData) => getPopulationTier(country.population) === 'Very Large',
     gradient: 'from-red-700/20 to-rose-700/10',
     categoryId: 'population-demographics',
-    priority: 18,
+    priority: 9,
+  },
+  {
+    id: 'pop-large',
+    name: 'Large Population',
+    description: 'Countries with large populations (25M-100M people).',
+    icon: Users,
+    color: 'text-orange-700',
+    filter: (country: RealCountryData) => getPopulationTier(country.population) === 'Large',
+    gradient: 'from-orange-700/20 to-red-700/10',
+    categoryId: 'population-demographics',
+    priority: 10,
   },
   {
     id: 'pop-medium',
     name: 'Medium Population',
-    description: 'Country with a moderate population.',
+    description: 'Countries with moderate populations (5M-25M people).',
     icon: Users,
     color: 'text-amber-700',
     filter: (country: RealCountryData) => getPopulationTier(country.population) === 'Medium',
     gradient: 'from-amber-700/20 to-yellow-700/10',
     categoryId: 'population-demographics',
-    priority: 19,
+    priority: 11,
   },
   {
-    id: 'pop-low',
-    name: 'Low Population',
-    description: 'Country with a small population.',
+    id: 'pop-small',
+    name: 'Small Population',
+    description: 'Countries with smaller populations (<5M people).',
     icon: Users,
     color: 'text-green-700',
     filter: (country: RealCountryData) => getPopulationTier(country.population) === 'Small',
     gradient: 'from-green-700/20 to-emerald-700/10',
     categoryId: 'population-demographics',
-    priority: 20,
+    priority: 12,
   },
 
-  // Cultural/Religious (Religion)
+  // Economic Performance Indicators (using available data)
   {
-    id: 'religion-christianity',
-    name: 'Predominantly Christian',
-    description: 'Country with a majority Christian population.',
-    icon: Church,
-    color: 'text-sky-500',
-    filter: (country: RealCountryData) => country.region === 'Christianity',
-    gradient: 'from-sky-500/20 to-blue-500/10',
-    categoryId: 'cultural-religious',
+    id: 'tax-efficient',
+    name: 'Tax Efficient',
+    description: 'Countries with moderate tax revenue rates (indicating efficient collection).',
+    icon: DollarSign,
+    color: 'text-blue-600',
+    filter: (country: RealCountryData) => country.taxRevenuePercent > 15 && country.taxRevenuePercent < 30,
+    gradient: 'from-blue-600/20 to-cyan-600/10',
+    categoryId: 'economic-classifications',
+    priority: 13,
+  },
+  {
+    id: 'low-unemployment',
+    name: 'Low Unemployment',
+    description: 'Countries with healthy employment rates (<5% unemployment).',
+    icon: TrendingUp,
+    color: 'text-emerald-600',
+    filter: (country: RealCountryData) => country.unemploymentRate < 5,
+    gradient: 'from-emerald-600/20 to-green-600/10',
+    categoryId: 'economic-classifications',
+    priority: 14,
+  },
+  {
+    id: 'high-unemployment',
+    name: 'High Unemployment',
+    description: 'Countries facing employment challenges (>10% unemployment).',
+    icon: BarChart3,
+    color: 'text-red-600',
+    filter: (country: RealCountryData) => country.unemploymentRate > 10,
+    gradient: 'from-red-600/20 to-rose-600/10',
+    categoryId: 'economic-classifications',
+    priority: 15,
+  },
+
+  // Geographic Clusters (based on country name patterns - simple heuristic)
+  {
+    id: 'region-africa',
+    name: 'African Nations',
+    description: 'Countries from the African continent.',
+    icon: Globe,
+    color: 'text-orange-500',
+    filter: (country: RealCountryData) => {
+      const africanCountries = [
+        'Algeria', 'Angola', 'Benin', 'Botswana', 'Burkina Faso', 'Burundi', 'Cameroon', 'Cape Verde',
+        'Central African Republic', 'Chad', 'Comoros', 'Congo', 'Democratic Republic of Congo', 'Djibouti',
+        'Egypt', 'Equatorial Guinea', 'Eritrea', 'Ethiopia', 'Gabon', 'Gambia', 'Ghana', 'Guinea',
+        'Guinea-Bissau', 'Ivory Coast', 'Kenya', 'Lesotho', 'Liberia', 'Libya', 'Madagascar', 'Malawi',
+        'Mali', 'Mauritania', 'Mauritius', 'Morocco', 'Mozambique', 'Namibia', 'Niger', 'Nigeria',
+        'Rwanda', 'Sao Tome and Principe', 'Senegal', 'Seychelles', 'Sierra Leone', 'Somalia',
+        'South Africa', 'South Sudan', 'Sudan', 'Swaziland', 'Tanzania', 'Togo', 'Tunisia', 'Uganda',
+        'Zambia', 'Zimbabwe'
+      ];
+      return africanCountries.includes(country.name);
+    },
+    gradient: 'from-orange-500/20 to-yellow-500/10',
+    categoryId: 'geographical-regions',
+    priority: 16,
+  },
+  {
+    id: 'region-europe',
+    name: 'European Nations',
+    description: 'Countries from the European continent.',
+    icon: Globe,
+    color: 'text-blue-500',
+    filter: (country: RealCountryData) => {
+      const europeanCountries = [
+        'Albania', 'Andorra', 'Austria', 'Belarus', 'Belgium', 'Bosnia and Herzegovina', 'Bulgaria',
+        'Croatia', 'Cyprus', 'Czech Republic', 'Denmark', 'Estonia', 'Finland', 'France', 'Germany',
+        'Greece', 'Hungary', 'Iceland', 'Ireland', 'Italy', 'Latvia', 'Liechtenstein', 'Lithuania',
+        'Luxembourg', 'Malta', 'Moldova', 'Monaco', 'Montenegro', 'Netherlands', 'North Macedonia',
+        'Norway', 'Poland', 'Portugal', 'Romania', 'San Marino', 'Serbia', 'Slovakia', 'Slovenia',
+        'Spain', 'Sweden', 'Switzerland', 'Ukraine', 'United Kingdom', 'Vatican City'
+      ];
+      return europeanCountries.includes(country.name);
+    },
+    gradient: 'from-blue-500/20 to-cyan-500/10',
+    categoryId: 'geographical-regions',
+    priority: 17,
+  },
+  {
+    id: 'region-asia',
+    name: 'Asian Nations',
+    description: 'Countries from the Asian continent.',
+    icon: Globe,
+    color: 'text-red-500',
+    filter: (country: RealCountryData) => {
+      const asianCountries = [
+        'Afghanistan', 'Armenia', 'Azerbaijan', 'Bahrain', 'Bangladesh', 'Bhutan', 'Brunei', 'Cambodia',
+        'China', 'Georgia', 'India', 'Indonesia', 'Iran', 'Iraq', 'Israel', 'Japan', 'Jordan',
+        'Kazakhstan', 'Kuwait', 'Kyrgyzstan', 'Laos', 'Lebanon', 'Malaysia', 'Maldives', 'Mongolia',
+        'Myanmar', 'Nepal', 'North Korea', 'Oman', 'Pakistan', 'Palestine', 'Philippines', 'Qatar',
+        'Russia', 'Saudi Arabia', 'Singapore', 'South Korea', 'Sri Lanka', 'Syria', 'Taiwan',
+        'Tajikistan', 'Thailand', 'Timor-Leste', 'Turkey', 'Turkmenistan', 'United Arab Emirates',
+        'Uzbekistan', 'Vietnam', 'Yemen'
+      ];
+      return asianCountries.includes(country.name);
+    },
+    gradient: 'from-red-500/20 to-pink-500/10',
+    categoryId: 'geographical-regions',
+    priority: 18,
+  },
+  {
+    id: 'region-americas',
+    name: 'American Nations',
+    description: 'Countries from North and South America.',
+    icon: Globe,
+    color: 'text-green-500',
+    filter: (country: RealCountryData) => {
+      const americanCountries = [
+        'Antigua and Barbuda', 'Argentina', 'Bahamas', 'Barbados', 'Belize', 'Bolivia', 'Brazil',
+        'Canada', 'Chile', 'Colombia', 'Costa Rica', 'Cuba', 'Dominica', 'Dominican Republic',
+        'Ecuador', 'El Salvador', 'Grenada', 'Guatemala', 'Guyana', 'Haiti', 'Honduras', 'Jamaica',
+        'Mexico', 'Nicaragua', 'Panama', 'Paraguay', 'Peru', 'Saint Kitts and Nevis', 'Saint Lucia',
+        'Saint Vincent and the Grenadines', 'Suriname', 'Trinidad and Tobago', 'United States',
+        'Uruguay', 'Venezuela'
+      ];
+      return americanCountries.includes(country.name);
+    },
+    gradient: 'from-green-500/20 to-lime-500/10',
+    categoryId: 'geographical-regions',
+    priority: 19,
+  },
+
+  // Political Systems (based on CIA World Factbook common government types)
+  {
+    id: 'gov-democracy',
+    name: 'Democratic Republic',
+    description: 'Countries with democratic systems and elected representatives.',
+    icon: Vote,
+    color: 'text-blue-600',
+    filter: (country: RealCountryData) => {
+      const democraticCountries = [
+        'United States', 'Canada', 'United Kingdom', 'Germany', 'France', 'Italy', 'Spain',
+        'Australia', 'New Zealand', 'Japan', 'South Korea', 'India', 'Brazil', 'Argentina',
+        'South Africa', 'Netherlands', 'Belgium', 'Sweden', 'Norway', 'Denmark', 'Finland',
+        'Poland', 'Czech Republic', 'Slovakia', 'Hungary', 'Estonia', 'Latvia', 'Lithuania',
+        'Slovenia', 'Croatia', 'Romania', 'Bulgaria', 'Greece', 'Portugal', 'Ireland',
+        'Austria', 'Switzerland', 'Iceland', 'Luxembourg', 'Malta', 'Cyprus'
+      ];
+      return democraticCountries.includes(country.name);
+    },
+    gradient: 'from-blue-600/20 to-indigo-600/10',
+    categoryId: 'political-systems',
+    priority: 20,
+  },
+  {
+    id: 'gov-constitutional-monarchy',
+    name: 'Constitutional Monarchy',
+    description: 'Countries with monarchs but constitutional democratic systems.',
+    icon: Crown,
+    color: 'text-purple-600',
+    filter: (country: RealCountryData) => {
+      const constitutionalMonarchies = [
+        'United Kingdom', 'Canada', 'Australia', 'New Zealand', 'Sweden', 'Norway',
+        'Denmark', 'Netherlands', 'Belgium', 'Spain', 'Japan', 'Thailand', 'Malaysia',
+        'Morocco', 'Jordan', 'Luxembourg', 'Monaco', 'Liechtenstein', 'Andorra'
+      ];
+      return constitutionalMonarchies.includes(country.name);
+    },
+    gradient: 'from-purple-600/20 to-pink-600/10',
+    categoryId: 'political-systems',
     priority: 21,
   },
   {
-    id: 'religion-islam',
-    name: 'Predominantly Islamic',
-    description: 'Country with a majority Islamic population.',
-    icon: Church,
-    color: 'text-emerald-500',
-    filter: (country: RealCountryData) => country.religion === 'Islam',
-    gradient: 'from-emerald-500/20 to-teal-500/10',
-    categoryId: 'cultural-religious',
+    id: 'gov-federal-republic',
+    name: 'Federal Republic',
+    description: 'Countries with federal systems and state/provincial autonomy.',
+    icon: Building,
+    color: 'text-emerald-600',
+    filter: (country: RealCountryData) => {
+      const federalRepublics = [
+        'United States', 'Germany', 'Brazil', 'India', 'Canada', 'Australia',
+        'Argentina', 'Mexico', 'Russia', 'Nigeria', 'Pakistan', 'Malaysia',
+        'Switzerland', 'Austria', 'Belgium', 'United Arab Emirates'
+      ];
+      return federalRepublics.includes(country.name);
+    },
+    gradient: 'from-emerald-600/20 to-green-600/10',
+    categoryId: 'political-systems',
     priority: 22,
   },
   {
-    id: 'religion-buddhism',
-    name: 'Predominantly Buddhist',
-    description: 'Country with a majority Buddhist population.',
-    icon: Church,
-    color: 'text-orange-500',
-    filter: (country: RealCountryData) => country.religion === 'Buddhism',
-    gradient: 'from-orange-500/20 to-amber-500/10',
-    categoryId: 'cultural-religious',
+    id: 'gov-authoritarian',
+    name: 'Authoritarian System',
+    description: 'Countries with limited political freedoms and centralized power.',
+    icon: Shield,
+    color: 'text-red-600',
+    filter: (country: RealCountryData) => {
+      const authoritarianCountries = [
+        'China', 'Russia', 'Iran', 'North Korea', 'Belarus', 'Myanmar', 'Cuba',
+        'Venezuela', 'Syria', 'Eritrea', 'Turkmenistan', 'Uzbekistan', 'Azerbaijan',
+        'Kazakhstan', 'Tajikistan', 'Laos', 'Vietnam', 'Cambodia'
+      ];
+      return authoritarianCountries.includes(country.name);
+    },
+    gradient: 'from-red-600/20 to-rose-600/10',
+    categoryId: 'political-systems',
     priority: 23,
   },
   {
-    id: 'religion-hinduism',
-    name: 'Predominantly Hindu',
-    description: 'Country with a majority Hindu population.',
-    icon: Church,
-    color: 'text-rose-500',
-    filter: (country: RealCountryData) => country.religion === 'Hinduism',
-    gradient: 'from-rose-500/20 to-pink-500/10',
-    categoryId: 'cultural-religious',
+    id: 'gov-absolute-monarchy',
+    name: 'Absolute Monarchy',
+    description: 'Countries ruled by monarchs with absolute or near-absolute power.',
+    icon: Crown,
+    color: 'text-yellow-600',
+    filter: (country: RealCountryData) => {
+      const absoluteMonarchies = [
+        'Saudi Arabia', 'Brunei', 'Oman', 'Qatar', 'United Arab Emirates',
+        'Kuwait', 'Bahrain', 'Eswatini', 'Vatican City'
+      ];
+      return absoluteMonarchies.includes(country.name);
+    },
+    gradient: 'from-yellow-600/20 to-amber-600/10',
+    categoryId: 'political-systems',
     priority: 24,
   },
+
+  // Legal Systems (based on CIA World Factbook legal system classifications)
   {
-    id: 'religion-none',
-    name: 'Secular/Non-Religious',
-    description: 'Country with a significant non-religious or secular population.',
-    icon: Church, // Or a different icon for secularism
-    color: 'text-gray-500',
-    filter: (country: RealCountryData) => country.religion === 'None' || country.religion === 'Secular',
-    gradient: 'from-gray-500/20 to-slate-500/10',
-    categoryId: 'cultural-religious',
+    id: 'legal-common-law',
+    name: 'Common Law System',
+    description: 'Countries using English common law tradition and judicial precedent.',
+    icon: Gavel,
+    color: 'text-indigo-600',
+    filter: (country: RealCountryData) => {
+      const commonLawCountries = [
+        'United States', 'United Kingdom', 'Canada', 'Australia', 'New Zealand',
+        'India', 'Ireland', 'Nigeria', 'South Africa', 'Kenya', 'Uganda', 'Tanzania',
+        'Ghana', 'Zimbabwe', 'Zambia', 'Malawi', 'Botswana', 'Cyprus', 'Malta',
+        'Belize', 'Jamaica', 'Trinidad and Tobago', 'Barbados', 'Bahamas'
+      ];
+      return commonLawCountries.includes(country.name);
+    },
+    gradient: 'from-indigo-600/20 to-blue-600/10',
+    categoryId: 'legal-systems',
     priority: 25,
+  },
+  {
+    id: 'legal-civil-law',
+    name: 'Civil Law System',
+    description: 'Countries using continental European civil law tradition with written codes.',
+    icon: BookOpen,
+    color: 'text-emerald-600',
+    filter: (country: RealCountryData) => {
+      const civilLawCountries = [
+        'Germany', 'France', 'Italy', 'Spain', 'Netherlands', 'Belgium', 'Switzerland',
+        'Austria', 'Portugal', 'Poland', 'Czech Republic', 'Slovakia', 'Hungary',
+        'Romania', 'Bulgaria', 'Slovenia', 'Croatia', 'Estonia', 'Latvia', 'Lithuania',
+        'Finland', 'Luxembourg', 'Greece', 'Japan', 'South Korea', 'Brazil', 'Argentina',
+        'Chile', 'Colombia', 'Peru', 'Mexico', 'Turkey', 'Russia', 'China'
+      ];
+      return civilLawCountries.includes(country.name);
+    },
+    gradient: 'from-emerald-600/20 to-teal-600/10',
+    categoryId: 'legal-systems',
+    priority: 26,
+  },
+  {
+    id: 'legal-islamic-law',
+    name: 'Islamic Law System',
+    description: 'Countries incorporating Islamic law (Sharia) in their legal framework.',
+    icon: Scale,
+    color: 'text-teal-600',
+    filter: (country: RealCountryData) => {
+      const islamicLawCountries = [
+        'Saudi Arabia', 'Iran', 'Afghanistan', 'Pakistan', 'Sudan', 'Mauritania',
+        'Yemen', 'Somalia', 'Brunei', 'Maldives', 'United Arab Emirates', 'Qatar',
+        'Kuwait', 'Bahrain', 'Oman', 'Iraq', 'Syria', 'Jordan', 'Egypt', 'Libya',
+        'Algeria', 'Morocco', 'Tunisia', 'Malaysia', 'Indonesia', 'Bangladesh'
+      ];
+      return islamicLawCountries.includes(country.name);
+    },
+    gradient: 'from-teal-600/20 to-cyan-600/10',
+    categoryId: 'legal-systems',
+    priority: 27,
+  },
+  {
+    id: 'legal-mixed-system',
+    name: 'Mixed Legal System',
+    description: 'Countries combining multiple legal traditions (common law, civil law, religious law).',
+    icon: Scale,
+    color: 'text-purple-600',
+    filter: (country: RealCountryData) => {
+      const mixedSystemCountries = [
+        'Israel', 'Lebanon', 'Philippines', 'Thailand', 'Sri Lanka', 'Singapore',
+        'Hong Kong', 'Scotland', 'Louisiana', 'Quebec', 'Mauritius', 'Seychelles',
+        'Madagascar', 'Cameroon', 'Democratic Republic of Congo', 'Central African Republic',
+        'Chad', 'Gabon', 'Republic of Congo', 'Ivory Coast', 'Burkina Faso', 'Mali',
+        'Niger', 'Senegal', 'Guinea', 'Benin', 'Togo'
+      ];
+      return mixedSystemCountries.includes(country.name);
+    },
+    gradient: 'from-purple-600/20 to-fuchsia-600/10',
+    categoryId: 'legal-systems',
+    priority: 28,
   },
 ];

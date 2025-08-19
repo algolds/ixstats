@@ -43,8 +43,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               <Search className="h-5 w-5" style={{ color: 'var(--color-text-secondary)' }} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-text-primary">
-                Search for Pages
+              <h2 className="text-lg font-semibold text-text-primary-center">
+                Country Browser
               </h2>
               <p className="text-sm text-text-muted">
                 Find countries and entities to import

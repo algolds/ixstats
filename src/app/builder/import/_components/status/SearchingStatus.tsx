@@ -23,7 +23,10 @@ export const SearchingStatus: React.FC<SearchingStatusProps> = ({
         <Loader2 className="h-8 w-8 text-text-secondary" />
       </motion.div>
       <p className="text-text-muted">
-        Searching for "{searchTerm}" in Category: {categoryFilter} on {selectedSiteDisplayName}...
+        Searching for "{searchTerm}" on {selectedSiteDisplayName}...
+      </p>
+      <p className="text-text-muted">
+        Results may take several seconds to load.
       </p>
     </>
   );

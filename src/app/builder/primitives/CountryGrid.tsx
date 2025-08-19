@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useRef, useEffect, useCallback, useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { Globe, ChevronUp, ChevronDown } from 'lucide-react';
+import { ScrollVelocityContainer } from '~/components/magicui/scroll-based-velocity';
 import { GlassCard, GlassCardContent } from '../components/glass/GlassCard';
 import { CountriesFocusGridModularBuilder } from '../components/CountriesFocusGridModularBuilder';
 import type { RealCountryData } from '../lib/economy-data-service';
@@ -20,6 +22,7 @@ interface CountryGridProps {
   onMouseLeave: () => void;
   scrollPosition: number;
   onScroll: (position: number) => void;
+  flagUrls?: Record<string, string | null>;
 }
 
 export function CountryGrid({
@@ -34,7 +37,8 @@ export function CountryGrid({
   onMouseEnter,
   onMouseLeave,
   scrollPosition,
-  onScroll
+  onScroll,
+  flagUrls = {}
 }: CountryGridProps) {
   const INITIAL_LOAD_COUNT = 20;
   const BATCH_SIZE = 10;
@@ -344,67 +348,76 @@ export function CountryGrid({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      {/* Enhanced Recessed Container with Better Depth */}
-      <div className="relative">
-        {/* Outer shadow ring for embedding effect */}
-        <div className="absolute -inset-2 bg-gradient-to-br from-black/20 via-black/10 to-black/5 rounded-2xl blur-xl" />
+      {/* Main Countries Grid Container - Matching Main Grid Styling */}
+      <div 
+        ref={scrollContainerRef}
+        className="relative max-h-[80vh] overflow-y-auto scrollbar-none"
+        onScroll={handleScroll}
+      >
+        {/* Subtle gradient fades for infinite scroll */}
+        <div className="absolute top-0 left-0 right-0 h-6 pointer-events-none z-20 bg-gradient-to-b from-[var(--color-bg-primary)]/60 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-8 pointer-events-none z-20 bg-gradient-to-t from-[var(--color-bg-primary)]/80 via-[var(--color-bg-primary)]/20 to-transparent" />
         
-        {/* Inner shadow for recessed appearance */}
-        <div className="absolute -inset-1 bg-gradient-to-br from-black/15 via-transparent to-white/5 rounded-xl" />
-        
-        <GlassCard depth="modal" ref={countriesListRef} className="relative overflow-hidden">
-          {/* No blur overlay - removed as requested */}
+        {/* Background Effects - Matching Main Grid */}
+        {isAutoScrolling && filteredCountries.length > 0 && (
+          <div className="absolute inset-0 pointer-events-none">
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5"
+              animate={{
+                backgroundPosition: ["0% 0%", "100% 100%", "0% 0%"],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+          </div>
+        )}
 
-          <GlassCardContent 
-            ref={scrollContainerRef} 
-            className="relative max-h-[80vh] overflow-y-auto scrollbar-none"
-          >
-            <div className="space-y-1 relative">
-              {/* Subtle gradient fades for infinite scroll */}
-              <div className="absolute top-0 left-0 right-0 h-6 pointer-events-none z-20 bg-gradient-to-b from-[var(--color-bg-primary)]/60 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 h-8 pointer-events-none z-20 bg-gradient-to-t from-[var(--color-bg-primary)]/80 via-[var(--color-bg-primary)]/20 to-transparent" />
-              
-              {/* Content - No animations for performance */}
-              {filteredCountries.length === 0 ? (
-                <div className="text-center py-12">
-                  <Globe className="h-12 w-12 text-[var(--color-text-muted)]/50 mx-auto mb-4" />
-                  <p className="text-[var(--color-text-muted)]">No countries match your criteria</p>
-                </div>
-              ) : (
-                <CountriesFocusGridModularBuilder
-                  countries={filteredCountries.map(mapToCountryCardData)}
-                  visibleCount={visibleCount}
-                  onCardHoverChange={(countryId: string | null) => {
-                    handleUserInteraction(); // Detect interaction
-                    if (countryId) {
-                      const hovered = countries.find(c => c.countryCode === countryId);
-                      onCountryHover(hovered || null);
-                    } else {
-                      onCountryHover(null);
-                    }
-                  }}
-                  onCountryClick={(countryId: string) => {
-                    handleUserInteraction(); // Detect interaction
-                    const selected = filteredCountries.find(c => c.countryCode === countryId);
-                    if (selected) {
-                      onCountryClick(selected);
-                    }
-                  }}
-                  isLoading={false}
-                  hasMore={visibleCount < filteredCountries.length}
-                  onLoadMore={() => setVisibleCount(prevCount => Math.min(prevCount + BATCH_SIZE, filteredCountries.length))}
-                  searchInput={searchTerm}
-                  filterBy={selectedArchetype}
-                  onClearFilters={onClearFilters}
-                  cardSize="small"
-                  scrollPosition={scrollPosition}
-                  softSelectedCountryId={softSelectedCountryId}
-                  parallaxOffsets={parallaxOffsets}
-                />
-              )}
+        {/* Content */}
+        {filteredCountries.length === 0 ? (
+          <div className="text-center py-12 glass-surface shadow-xl rounded-lg p-4 backdrop-blur-sm">
+            <Globe className="h-12 w-12 text-[var(--color-text-muted)]/50 mx-auto mb-4" />
+            <p className="text-[var(--color-text-muted)]">No countries match your criteria</p>
+          </div>
+        ) : (
+          <ScrollVelocityContainer>
+            <div ref={countriesListRef}>
+              <CountriesFocusGridModularBuilder
+                countries={filteredCountries.map(mapToCountryCardData)}
+                visibleCount={visibleCount}
+                onCardHoverChange={(countryId: string | null) => {
+                  handleUserInteraction(); // Detect interaction
+                  if (countryId) {
+                    const hovered = countries.find(c => c.countryCode === countryId);
+                    onCountryHover(hovered || null);
+                  } else {
+                    onCountryHover(null);
+                  }
+                }}
+                onCountryClick={(countryId: string) => {
+                  handleUserInteraction(); // Detect interaction
+                  const selected = filteredCountries.find(c => c.countryCode === countryId);
+                  if (selected) {
+                    onCountryClick(selected);
+                  }
+                }}
+                isLoading={false}
+                hasMore={visibleCount < filteredCountries.length}
+                onLoadMore={() => setVisibleCount(prevCount => Math.min(prevCount + BATCH_SIZE, filteredCountries.length))}
+                searchInput={searchTerm}
+                filterBy={selectedArchetype}
+                onClearFilters={onClearFilters}
+                cardSize="small"
+                scrollPosition={scrollPosition}
+                softSelectedCountryId={softSelectedCountryId}
+                parallaxOffsets={parallaxOffsets}
+                isAutoScrolling={isAutoScrolling}
+              />
             </div>
-          </GlassCardContent>
-        </GlassCard>
+          </ScrollVelocityContainer>
+        )}
       </div>
 
       {/* Refined Scroll Navigation - Apple-like */}
