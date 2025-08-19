@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
+import { unifiedFlagService } from '~/lib/unified-flag-service';
 
 const CountryFlag = ({
   countryCode,
@@ -12,29 +12,56 @@ const CountryFlag = ({
   countryName: string;
   className?: string;
 }) => {
-  // Use a root-relative path. Next.js's Image component will automatically
-  // prepend the basePath. For example, this will become /projects/ixstats/flags/US.svg
-  const [imgSrc, setImgSrc] = useState(`/flags/${countryCode}.svg`);
+  const [flagUrl, setFlagUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
-    // Update the src when the countryCode changes, still using a root-relative path.
-    setImgSrc(`/flags/${countryCode}.svg`);
-  }, [countryCode]);
+    const loadFlag = async () => {
+      setIsLoading(true);
+      setHasError(false);
+      
+      try {
+        // Use countryName for flag lookup, fallback to countryCode if needed
+        const url = await unifiedFlagService.getFlagUrl(countryName || countryCode);
+        setFlagUrl(url);
+      } catch (error) {
+        console.warn(`Failed to load flag for ${countryName}:`, error);
+        setHasError(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (countryName || countryCode) {
+      void loadFlag();
+    }
+  }, [countryCode, countryName]);
 
   const handleError = () => {
-    // The placeholder should also use a root-relative path.
-    setImgSrc(`/placeholder-flag.svg`);
+    setHasError(true);
   };
 
+  if (isLoading) {
+    return (
+      <div className={`h-6 w-8 bg-gray-200 dark:bg-gray-700 rounded-sm animate-pulse ${className ?? ''}`} />
+    );
+  }
+
+  if (hasError || !flagUrl) {
+    return (
+      <div className={`h-6 w-8 bg-gray-200 dark:bg-gray-700 rounded-sm flex items-center justify-center ${className ?? ''}`}>
+        <span className="text-xs text-gray-500">🏴</span>
+      </div>
+    );
+  }
+
   return (
-    <Image
-      src={imgSrc}
+    <img
+      src={flagUrl}
       alt={`Flag of ${countryName}`}
-      width={32}
-      height={24}
-      className={`h-6 w-8 object-cover ${className ?? ''}`}
+      className={`h-6 w-8 object-cover rounded-sm border border-gray-200 dark:border-gray-700 ${className ?? ''}`}
       onError={handleError}
-      unoptimized // Useful for SVG images to prevent optimization issues
     />
   );
 };

@@ -1,6 +1,6 @@
-// API endpoint for individual country flag retrieval using Wiki Commons API ONLY
+// API endpoint for individual country flag retrieval using unified flag service
 import { NextRequest, NextResponse } from 'next/server';
-import { improvedFlagService } from '~/lib/improved-flag-service';
+import { unifiedFlagService } from '~/lib/unified-flag-service';
 
 export async function GET(
   request: NextRequest,
@@ -17,10 +17,10 @@ export async function GET(
       );
     }
 
-    // Check if cached first (fast response - Wiki Commons API cache only)
-    const cachedUrl = improvedFlagService.getCachedFlagUrl(country);
+    // Check if cached first (fast response)
+    const cachedUrl = unifiedFlagService.getCachedFlagUrl(country);
     if (cachedUrl) {
-      const isPlaceholder = improvedFlagService.isPlaceholderFlag(cachedUrl);
+      const isPlaceholder = unifiedFlagService.isPlaceholderFlag(cachedUrl);
       
       return NextResponse.json({
         country,
@@ -32,12 +32,12 @@ export async function GET(
       });
     }
 
-    // If not cached, fetch it from Wiki Commons API
-    console.log(`[Flag API] Fetching flag for: ${country} (Wiki Commons API only)`);
-    const flagUrl = await improvedFlagService.getFlagUrl(country);
+    // If not cached, fetch it from unified service
+    console.log(`[Flag API] Fetching flag for: ${country}`);
+    const flagUrl = await unifiedFlagService.getFlagUrl(country);
 
     if (flagUrl) {
-      const isPlaceholder = improvedFlagService.isPlaceholderFlag(flagUrl);
+      const isPlaceholder = unifiedFlagService.isPlaceholderFlag(flagUrl);
       
       return NextResponse.json({
         country,

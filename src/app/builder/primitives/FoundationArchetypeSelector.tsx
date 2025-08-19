@@ -46,7 +46,7 @@ export function FoundationArchetypeSelector({
           {archetypeCategories.sort((a, b) => a.priority - b.priority).map(category => (
             <div key={category.id} className="mb-6">
               <h4 className={cn("text-lg font-semibold mb-3", category.color)}>{category.name}</h4>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-2 gap-2">
                 {archetypes
                   .filter(archetype => archetype.categoryId === category.id)
                   .sort((a, b) => a.priority - b.priority) // Assuming archetypes can have priority

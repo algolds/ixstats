@@ -58,13 +58,13 @@ export function CountriesPageHeader({
     .sort((a, b) => (b.currentTotalGdp ?? 0) - (a.currentTotalGdp ?? 0))
     .slice(0, 3), [filteredCountries]);
 
-  // Use a prominent flag for the background (e.g., United States or a world flag)
-  const flagUrl = '/flags/United_States.png';
+  // Use a placeholder for the background - the FlagWaveBackground component should handle flag loading
+  const flagUrl = null; // Let FlagWaveBackground handle flag loading from cache
 
   return (
     <div className="mb-8 relative">
       {/* Realistic waving flag background using react-wavify */}
-      <FlagWaveBackground flagUrl={flagUrl} />
+      <FlagWaveBackground flagUrl={flagUrl ?? ""} />
       <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         {/* Left side: Title and description */}
         <div>

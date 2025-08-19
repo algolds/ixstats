@@ -3,6 +3,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { ixnayWiki } from "~/lib/mediawiki-service";
+import { unifiedFlagService } from "~/lib/unified-flag-service";
 
 interface PreloaderStats {
   flags: number;
@@ -143,11 +144,19 @@ export function useFlagPreloader(countryName?: string) {
     setError(null);
 
     try {
-      const url = await ixnayWiki.getFlagUrl(name);
-      if (typeof url === 'string') {
+      // First check cache
+      const cachedUrl = unifiedFlagService.getCachedFlagUrl(name);
+      if (cachedUrl) {
+        setFlagUrl(cachedUrl);
+        return;
+      }
+      
+      // Fetch if not cached (will automatically cache)
+      const url = await unifiedFlagService.getFlagUrl(name);
+      if (url) {
         setFlagUrl(url);
       } else {
-        setError(url.error);
+        setError('Flag not found');
         setFlagUrl(null);
       }
     } catch (err) {
@@ -199,13 +208,13 @@ export function useFlagUrl(countryName: string) {
     const loadFlag = async () => {
       try {
         // The service will check cache first, so this is efficient
-        const url = await ixnayWiki.getFlagUrl(countryName);
+        const url = await unifiedFlagService.getFlagUrl(countryName);
         if (isMounted) {
-          if (typeof url === 'string') {
+          if (url) {
             setFlagUrl(url);
             setError(null);
           } else {
-            setError(url.error);
+            setError('Flag not found');
             setFlagUrl(null);
           }
           setIsLoading(false);

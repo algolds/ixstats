@@ -47,8 +47,8 @@ function TooltipContent({
         sideOffset={sideOffset}
         className={cn(
           "animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-          // Enhanced z-index and glass styling for better depth - higher z-index for Dynamic Island compatibility
-          "z-[10001] w-fit max-w-sm origin-(--radix-tooltip-content-transform-origin) rounded-xl px-4 py-3 text-sm text-balance",
+          // Enhanced z-index and glass styling for better depth - highest z-index for tooltip visibility
+          "z-[999999] w-fit max-w-sm origin-(--radix-tooltip-content-transform-origin) rounded-xl px-4 py-3 text-sm text-balance",
           // Advanced glass styling with proper theme compliance
           !className?.includes('glass-') && [
             "glass-modal backdrop-blur-xl",
@@ -62,7 +62,7 @@ function TooltipContent({
         {...props}
       >
         {children}
-        <TooltipPrimitive.Arrow className="z-[10001] size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px] fill-white/95 dark:fill-gray-900/95 drop-shadow-lg" />
+        <TooltipPrimitive.Arrow className="z-[999999] size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px] fill-white/95 dark:fill-gray-900/95 drop-shadow-lg" />
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>
   )

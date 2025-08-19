@@ -35,6 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 
 interface CountryInfoboxProps {
   countryName: string;
+  flagUrl?: string | null; // Pre-cached flag URL from parent
   onToggle?: (isExpanded: boolean) => void;
   initialExpanded?: boolean; // Allow parent to control initial state
 }
@@ -53,7 +54,7 @@ interface LoadingState {
   retryCount: number;
 }
 
-export function CountryInfobox({ countryName, onToggle, initialExpanded = false }: CountryInfoboxProps) {
+export function CountryInfobox({ countryName, flagUrl: preCachedFlagUrl, onToggle, initialExpanded = false }: CountryInfoboxProps) {
   const [infobox, setInfobox] = useState<CountryInfoboxType | null>(null);
   const [flagUrl, setFlagUrl] = useState<string | null>(null);
   const [coatOfArmsUrl, setCoatOfArmsUrl] = useState<string | null>(null);
@@ -104,28 +105,37 @@ export function CountryInfobox({ countryName, onToggle, initialExpanded = false 
       
       setInfobox(data);
       
-      // Load flag using the new cached flag service
-      try {
-        // Try cached flag first
-        const cachedFlag = flagService.getCachedFlagUrl(countryName);
-        if (cachedFlag) {
-          setFlagUrl(cachedFlag);
-        } else {
-          // Fetch if not cached
-          const flag = await flagService.getFlagUrl(countryName);
-          if (flag) {
-            let processedFlagUrl = flag;
-            if (processedFlagUrl.includes('localhost') || processedFlagUrl.includes('127.0.0.1')) {
-              processedFlagUrl = processedFlagUrl.replace(/https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, 'https://ixwiki.com');
-            }
-            setFlagUrl(processedFlagUrl);
-          } else {
-            setFlagUrl(null);
-          }
+      // Use pre-cached flag URL from parent component, fallback to individual fetch if needed
+      if (preCachedFlagUrl) {
+        // Use the pre-cached flag URL from the countries page bulk load
+        let processedFlagUrl = preCachedFlagUrl;
+        if (processedFlagUrl.includes('localhost') || processedFlagUrl.includes('127.0.0.1')) {
+          processedFlagUrl = processedFlagUrl.replace(/https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, 'https://ixwiki.com');
         }
-      } catch (flagError) {
-        console.warn(`[CountryInfobox] Failed to load flag for ${countryName}:`, flagError);
-        setFlagUrl(null);
+        setFlagUrl(processedFlagUrl);
+      } else {
+        // Fallback: check cache or fetch individually (should be rare now)
+        try {
+          const cachedFlag = flagService.getCachedFlagUrl(countryName);
+          if (cachedFlag) {
+            setFlagUrl(cachedFlag);
+          } else {
+            console.log(`[CountryInfobox] Fallback: fetching flag individually for ${countryName}`);
+            const flag = await flagService.getFlagUrl(countryName);
+            if (flag) {
+              let processedFlagUrl = flag;
+              if (processedFlagUrl.includes('localhost') || processedFlagUrl.includes('127.0.0.1')) {
+                processedFlagUrl = processedFlagUrl.replace(/https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, 'https://ixwiki.com');
+              }
+              setFlagUrl(processedFlagUrl);
+            } else {
+              setFlagUrl(null);
+            }
+          }
+        } catch (flagError) {
+          console.warn(`[CountryInfobox] Failed to load flag for ${countryName}:`, flagError);
+          setFlagUrl(null);
+        }
       }
       
       // If this country has parsed HTML, default to HTML tab

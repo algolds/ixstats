@@ -86,9 +86,9 @@ class WikiCommonsFlagService {
         ];
 
         for (const field of coatOfArmsFields) {
-          if (field?.trim()) {
+          if (typeof field === 'string' && field.trim()) {
             let cleanFileName = field.trim();
-            
+
             // Remove File: prefix if present
             if (cleanFileName.toLowerCase().startsWith('file:')) {
               cleanFileName = cleanFileName.substring(5).trim();

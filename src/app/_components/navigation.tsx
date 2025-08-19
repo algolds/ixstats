@@ -38,6 +38,7 @@ export function Navigation() {
   const { user, isLoaded } = useUser();
   const [isSticky, setIsSticky] = useState(false);
   const [hideSticky, setHideSticky] = useState(false);
+  const [scrollDirection, setScrollDirection] = useState<'up' | 'down' | 'none'>('none');
 
   // Get user profile to show linked country
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
@@ -46,16 +47,47 @@ export function Navigation() {
   );
 
 
-  // Sticky navigation scroll detection
+  // Sticky navigation scroll detection with RAF optimization and direction tracking
   useEffect(() => {
+    let rafId: number | undefined;
+    let isScrolling = false;
+    let lastScrollY = window.scrollY;
+    
     const handleScroll = () => {
-      const scrollY = window.scrollY;
-      setIsSticky(scrollY > 100);
+      if (!isScrolling) {
+        isScrolling = true;
+        rafId = requestAnimationFrame(() => {
+          const scrollY = window.scrollY;
+          const newStickyState = scrollY > 100;
+          
+          // Determine scroll direction
+          const direction = scrollY > lastScrollY ? 'down' : scrollY < lastScrollY ? 'up' : 'none';
+          
+          // Only update states if they actually changed
+          setIsSticky(prev => prev !== newStickyState ? newStickyState : prev);
+          setScrollDirection(prev => prev !== direction ? direction : prev);
+          
+          // Auto-hide sticky on rapid downward scroll
+          if (direction === 'down' && scrollY > 200) {
+            setHideSticky(true);
+          } else if (direction === 'up' && hideSticky) {
+            setHideSticky(false);
+          }
+          
+          lastScrollY = scrollY;
+          isScrolling = false;
+        });
+      }
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
+    };
+  }, [hideSticky]);
 
   const navigationItems: NavigationItem[] = [
     {
@@ -216,15 +248,22 @@ export function Navigation() {
       </div>
       </nav>
 
-      {/* Sticky Navigation with Dynamic Island */}
+      {/* Sticky Navigation with Dynamic Island - Enhanced contextual positioning */}
       {isSticky && !hideSticky && (
-        <div className="fixed top-0 left-0 right-0 z-[10010] flex justify-center pt-2">
+        <div 
+          className={`fixed top-0 left-0 right-0 z-[10010] flex justify-center transition-transform duration-300 ease-out ${
+            scrollDirection === 'down' ? 'translate-y-[-10px]' : 'translate-y-0'
+          }`}
+          style={{ paddingTop: scrollDirection === 'up' ? '8px' : '4px' }}
+        >
           <div className="relative">
             <CommandPalette isSticky={isSticky} />
-            {/* Hide/Show Toggle */}
+            {/* Hide/Show Toggle - Position based on scroll direction */}
             <button
               onClick={() => setHideSticky(!hideSticky)}
-              className="absolute -right-12 top-1/2 -translate-y-1/2 w-8 h-8 bg-background/90 backdrop-blur-xl border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/90 transition-colors duration-200 will-change-auto"
+              className={`absolute top-1/2 -translate-y-1/2 w-8 h-8 bg-background/90 backdrop-blur-xl border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/90 transition-all duration-200 will-change-auto ${
+                scrollDirection === 'down' ? '-right-10 opacity-70' : '-right-12 opacity-100'
+              }`}
             >
               <X className="h-4 w-4" />
             </button>

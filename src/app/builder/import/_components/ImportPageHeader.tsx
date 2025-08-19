@@ -63,13 +63,7 @@ export const ImportPageHeader: React.FC<ImportPageHeaderProps> = ({ onBackClick 
             className="mt-1"
             style={{ color: 'var(--color-text-muted)' }}
           >
-            Import country data from multiple wiki sources
-          </p>
-          <p
-            className="mt-1"
-            style={{ color: 'var(--color-text-muted)' }}
-          >
-            automatic flag & Coat of Arms
+            Automagically import your country data from multiple wiki sources
           </p>
         </div>
       </div>

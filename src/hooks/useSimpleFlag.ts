@@ -1,8 +1,8 @@
-// Simple flag hook - no complex caching
+// Simple flag hook - uses unified flag service
 "use client";
 
 import { useState, useEffect } from 'react';
-import { simpleFlagService } from '~/lib/simple-flag-service';
+import { unifiedFlagService } from '~/lib/unified-flag-service';
 
 export function useSimpleFlag(countryName?: string) {
   const [flagUrl, setFlagUrl] = useState<string | null>(null);
@@ -18,7 +18,7 @@ export function useSimpleFlag(countryName?: string) {
     }
 
     // Check cache first for instant response
-    const cached = simpleFlagService.getCachedFlagUrl(countryName);
+    const cached = unifiedFlagService.getCachedFlagUrl(countryName);
     if (cached !== null) {
       setFlagUrl(cached);
       setIsLoading(false);
@@ -33,7 +33,7 @@ export function useSimpleFlag(countryName?: string) {
         setIsLoading(true);
         setError(false);
 
-        const url = await simpleFlagService.getFlagUrl(countryName);
+        const url = await unifiedFlagService.getFlagUrl(countryName);
         
         if (mounted) {
           setFlagUrl(url);
@@ -60,7 +60,7 @@ export function useSimpleFlag(countryName?: string) {
     flagUrl,
     isLoading,
     error,
-    isPlaceholder: flagUrl ? simpleFlagService.isPlaceholderFlag(flagUrl) : false
+    isPlaceholder: flagUrl ? unifiedFlagService.isPlaceholderFlag(flagUrl) : false
   };
 }
 
@@ -88,7 +88,7 @@ export function useSimpleFlags(countryNames: string[]) {
         if (!mounted) break;
         
         try {
-          const url = await simpleFlagService.getFlagUrl(countryName);
+          const url = await unifiedFlagService.getFlagUrl(countryName);
           urls[countryName] = url;
         } catch (error) {
           console.warn(`[useSimpleFlags] Failed to load flag for ${countryName}:`, error);
@@ -111,11 +111,11 @@ export function useSimpleFlags(countryNames: string[]) {
 
   const refetch = async () => {
     // Simple refetch - clear cache and reload
-    simpleFlagService.clearCache();
+    unifiedFlagService.clearCache();
     const urls: Record<string, string | null> = {};
     for (const countryName of countryNames) {
       try {
-        const url = await simpleFlagService.getFlagUrl(countryName);
+        const url = await unifiedFlagService.getFlagUrl(countryName);
         urls[countryName] = url;
       } catch (error) {
         urls[countryName] = null;

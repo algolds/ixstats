@@ -297,7 +297,7 @@ export function InteractivePreview({
           )}
           style={{
             backgroundImage: referenceCountry
-              ? `url(/flags/${referenceCountry.name.toLowerCase().replace(/ /g, '-')}.svg)`
+              ? `url(/public/flags/${referenceCountry.name.toLowerCase().replace(/ /g, '-')}.svg)`
               : 'none',
             backgroundSize: 'cover',
             backgroundPosition: 'center',

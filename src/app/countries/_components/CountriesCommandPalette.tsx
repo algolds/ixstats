@@ -162,7 +162,7 @@ export const CountriesCommandPalette: React.FC<CountriesCommandPaletteProps> = (
                     size="lg"
                   >
                     <span className="relative z-10">🍀 I'm Feeling Lucky</span>
-                    <kbd className="relative z-10 px-2 py-1 bg-black/30 rounded text-xs border-border border-white/30">Ctrl+Tab</kbd>
+                    <kbd className="relative z-10 px-2 py-1 bg-black/30 rounded text-xs border-border">Ctrl+Tab</kbd>
                   </RainbowButton>
                 </div>
 
