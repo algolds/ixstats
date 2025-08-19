@@ -31,6 +31,11 @@ function getWikiConfigs(): Record<string, WikiConfig> {
       baseUrl: `${baseUrl}/api/iiwiki-proxy/mediawiki/api.php`,
       apiEndpoint: "", 
       searchNamespace: [0, 6], // Main and Media namespaces
+    },
+    althistory: {
+      baseUrl: `${baseUrl}/api/althistory-wiki-proxy/api.php`,
+      apiEndpoint: "",
+      searchNamespace: [0, 6], // Main and Media namespaces
     }
   };
 }
@@ -64,7 +69,7 @@ interface ParsedCountryData {
  */
 export async function searchWiki(
   query: string, 
-  site: 'ixwiki' | 'iiwiki', 
+  site: 'ixwiki' | 'iiwiki' | 'althistory', 
   categoryFilter?: string
 ): Promise<SearchResult[]> {
   const wikiConfigs = getWikiConfigs();
@@ -132,7 +137,7 @@ async function searchWithCategoryFilter(
   query: string,
   categoryFilter: string,
   config: WikiConfig,
-  site: 'ixwiki' | 'iiwiki'
+  site: 'ixwiki' | 'iiwiki' | 'althistory'
 ): Promise<SearchResult[]> {
   try {
     console.log(`[WikiSearch] Getting all members from Category:${categoryFilter} on ${site}`);
@@ -369,7 +374,7 @@ async function getCategorySubcategories(categoryFilter: string, config: WikiConf
 /**
  * Get all category members including from subcategories (for iiwiki only)
  */
-async function getAllCategoryMembersWithSubcategories(categoryFilter: string, config: WikiConfig, site: 'ixwiki' | 'iiwiki'): Promise<any[]> {
+async function getAllCategoryMembersWithSubcategories(categoryFilter: string, config: WikiConfig, site: 'ixwiki' | 'iiwiki' | 'althistory'): Promise<any[]> {
   // Only search subcategories for iiwiki
   if (site !== 'iiwiki') {
     return getAllCategoryMembers(categoryFilter, config);
@@ -464,11 +469,12 @@ async function performTargetedSearch(
 /**
  * Create appropriate wiki URL for the site
  */
-function createWikiUrl(title: string, _config: WikiConfig, site: 'ixwiki' | 'iiwiki'): string {
+function createWikiUrl(title: string, _config: WikiConfig, site: 'ixwiki' | 'iiwiki' | 'althistory'): string {
   // Generate actual external wiki URLs, not API proxy URLs
-  const siteUrls = {
+  const siteUrls: Record<string, string> = {
     ixwiki: 'https://ixwiki.com',
-    iiwiki: 'https://iiwiki.com'
+    iiwiki: 'https://iiwiki.com',
+    althistory: 'https://althistory.fandom.com'
   };
   
   const baseUrl = siteUrls[site];
@@ -508,7 +514,7 @@ function calculateSimilarity(str1: string, str2: string): number {
  */
 export async function parseCountryInfobox(
   pageName: string, 
-  site: 'ixwiki' | 'iiwiki'
+  site: 'ixwiki' | 'iiwiki' | 'althistory'
 ): Promise<ParsedCountryData | null> {
   const wikiConfigs = getWikiConfigs();
   const config = wikiConfigs[site];
@@ -659,7 +665,7 @@ function extractInfoboxTemplate(wikitext: string): string | null {
 /**
  * Parse infobox template parameters
  */
-function parseInfoboxParameters(templateWikitext: string, site: 'ixwiki' | 'iiwiki' = 'ixwiki'): Record<string, string> {
+function parseInfoboxParameters(templateWikitext: string, site: 'ixwiki' | 'iiwiki' | 'althistory' = 'ixwiki'): Record<string, string> {
   const parameters: Record<string, string> = {};
   
   try {
@@ -809,7 +815,7 @@ function extractParameterValues(
 /**
  * Process wikitext with comprehensive template and markup handling
  */
-function processWikitext(value: string, site: 'ixwiki' | 'iiwiki' = 'ixwiki'): string {
+function processWikitext(value: string, site: 'ixwiki' | 'iiwiki' | 'althistory' = 'ixwiki'): string {
   if (!value) return '';
   
   let processed = value.trim();
@@ -936,13 +942,14 @@ function processWikitext(value: string, site: 'ixwiki' | 'iiwiki' = 'ixwiki'): s
 /**
  * Create a proper wiki link with correct site URL
  */
-function createWikiLink(target: string, display: string, site: 'ixwiki' | 'iiwiki' = 'ixwiki'): string {
+function createWikiLink(target: string, display: string, site: 'ixwiki' | 'iiwiki' | 'althistory' = 'ixwiki'): string {
   const normalizedTarget = target.replace(/ /g, '_').replace(/^_+|_+$/g, '');
   
   // Use the same URL generation logic as createWikiUrl
   const siteUrls = {
     ixwiki: 'https://ixwiki.com',
-    iiwiki: 'https://iiwiki.com'
+    iiwiki: 'https://iiwiki.com',
+    althistory: 'https://althistory.fandom.com'
   };
   
   const baseUrl = siteUrls[site];
@@ -1005,7 +1012,7 @@ function createInfoboxObject(
   pageName: string, 
   templateData: Record<string, string>, 
   rawWikitext: string,
-  site: 'ixwiki' | 'iiwiki' = 'ixwiki'
+  site: 'ixwiki' | 'iiwiki' | 'althistory' = 'ixwiki'
 ): CountryInfoboxWithDynamicProps {
   const infobox: CountryInfoboxWithDynamicProps = {
     name: pageName,
@@ -1026,7 +1033,7 @@ function createInfoboxObject(
 /**
  * Extract economic data from infobox
  */
-async function extractEconomicData(infobox: CountryInfoboxWithDynamicProps, site: 'ixwiki' | 'iiwiki'): Promise<Partial<ParsedCountryData>> {
+async function extractEconomicData(infobox: CountryInfoboxWithDynamicProps, site: 'ixwiki' | 'iiwiki' | 'althistory'): Promise<Partial<ParsedCountryData>> {
   const data: Partial<ParsedCountryData> = {};
   
   // Extract population
@@ -1166,7 +1173,7 @@ function extractImageFile(value?: string): string | undefined {
 /**
  * Get full image URL from wiki filename
  */
-async function getImageUrl(filename: string, site: 'ixwiki' | 'iiwiki'): Promise<string | null> {
+async function getImageUrl(filename: string, site: 'ixwiki' | 'iiwiki' | 'althistory'): Promise<string | null> {
   if (!filename) return null;
   
   const wikiConfigs = getWikiConfigs();
@@ -1214,7 +1221,7 @@ async function getImageUrl(filename: string, site: 'ixwiki' | 'iiwiki'): Promise
  */
 export async function searchWikiImages(
   query: string,
-  site: 'ixwiki' | 'iiwiki'
+  site: 'ixwiki' | 'iiwiki' | 'althistory'
 ): Promise<Array<{ name: string; path: string; url?: string; description?: string; }>> {
   const wikiConfigs = getWikiConfigs();
   const config = wikiConfigs[site];

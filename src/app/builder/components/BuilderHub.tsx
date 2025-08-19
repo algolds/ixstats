@@ -62,7 +62,7 @@ export function BuilderHub({ inputs, onInputsChange, onPreview, onBack, selected
         <GovernmentSpending spendingData={inputs.governmentSpending} nominalGDP={inputs.coreIndicators.nominalGDP} totalPopulation={inputs.coreIndicators.totalPopulation} onSpendingDataChangeAction={handleGovernmentSpendingChange} />
         <LaborEmployment laborData={inputs.laborEmployment} totalPopulation={inputs.coreIndicators.totalPopulation} onLaborDataChangeAction={handleLaborDataChange} referenceCountry={selectedCountry ?? undefined} />
         <IncomeWealthDistribution incomeData={inputs.incomeWealth} totalPopulation={inputs.coreIndicators.totalPopulation} gdpPerCapita={inputs.coreIndicators.gdpPerCapita} onIncomeDataChange={handleIncomeWealthChange} />
-        <CountrySymbolsUploader flagUrl={inputs.flagUrl ?? ""} coatOfArmsUrl={inputs.coatOfArmsUrl ?? ""} onUrlsChange={handleSymbolsChange} />
+        <CountrySymbolsUploader flagUrl={inputs.flagUrl ?? ""} coatOfArmsUrl={inputs.coatOfArmsUrl ?? ""} onSelectFlag={() => console.log("Select Flag clicked")} onSelectCoatOfArms={() => console.log("Select Coat of Arms clicked")} />
         <div className="flex justify-between mt-8">
           <button onClick={onBack} className="btn-secondary">Back</button>
           <button onClick={onPreview} className="btn-primary">Preview</button>

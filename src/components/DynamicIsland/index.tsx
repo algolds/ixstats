@@ -1,0 +1,160 @@
+import React, { useState, useEffect, useRef } from "react";
+import { 
+  DynamicIsland,
+  useDynamicIslandSize,
+  SIZE_PRESETS,
+  DynamicIslandProvider
+} from "../ui/dynamic-island";
+import { CompactView } from "./CompactView";
+import { ExpandedView } from "./ExpandedView";
+import { useDynamicIslandState } from "./hooks";
+import { useNotificationStore } from "~/stores/notificationStore";
+
+// Re-export original dynamic island components for backward compatibility
+export { 
+  DynamicIsland,
+  DynamicContainer,
+  useDynamicIslandSize,
+  SIZE_PRESETS,
+  DynamicIslandProvider
+} from "../ui/dynamic-island";
+
+interface CommandPaletteProps {
+  className?: string;
+  isSticky?: boolean;
+}
+
+function CommandPaletteContent({ isSticky = false }: { isSticky?: boolean }) {
+  const { setSize } = useDynamicIslandSize();
+  const [mounted, setMounted] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  
+  // Use shared state management
+  const {
+    mode,
+    isExpanded,
+    expandedMode,
+    searchQuery,
+    debouncedSearchQuery,
+    searchFilter,
+    isUserInteracting,
+    timeDisplayMode,
+    setMode,
+    setIsExpanded,
+    setExpandedMode,
+    setSearchQuery,
+    setSearchFilter,
+    setIsUserInteracting,
+    setTimeDisplayMode,
+    switchMode,
+  } = useDynamicIslandState();
+  
+  // Dynamic size based on sticky/collapsed state - optimized for performance
+  useEffect(() => {
+    const newSize = isSticky && isCollapsed 
+      ? SIZE_PRESETS.COMPACT 
+      : (mode === "compact" || !isSticky) 
+        ? SIZE_PRESETS.COMPACT_TALL 
+        : SIZE_PRESETS.DEFAULT;
+    
+    setSize(newSize);
+  }, [mode, setSize, isSticky, isCollapsed]);
+  
+  // Initialize notification store
+  const initialize = useNotificationStore(state => state.initialize);
+  
+  useEffect(() => {
+    setMounted(true);
+    initialize().catch(console.error);
+  }, [initialize]);
+
+  // Auto-collapse when sticky and not interacting - optimized with proper cleanup
+  useEffect(() => {
+    if (isSticky && !isUserInteracting) {
+      const timer = setTimeout(() => setIsCollapsed(true), 1200); // Faster collapse
+      return () => clearTimeout(timer);
+    } else if (!isSticky && isCollapsed) {
+      // Only expand if currently collapsed to prevent unnecessary re-renders
+      setIsCollapsed(false);
+    }
+  }, [isSticky, isUserInteracting, isCollapsed]);
+
+  if (!mounted) return null;
+
+  return (
+    <>
+      <DynamicIsland id="command-palette">
+        <CompactView
+          isSticky={isSticky}
+          isCollapsed={isCollapsed}
+          setIsCollapsed={setIsCollapsed}
+          setIsUserInteracting={setIsUserInteracting}
+          timeDisplayMode={timeDisplayMode}
+          setTimeDisplayMode={setTimeDisplayMode}
+          onSwitchMode={switchMode}
+        />
+      </DynamicIsland>
+      
+      {/* Expanded dropdown content - only on desktop */}
+      {isExpanded && (
+        <ExpandedView
+          mode={expandedMode}
+          onClose={() => switchMode("compact")}
+        />
+      )}
+    </>
+  );
+}
+
+export function CommandPalette({ className, isSticky }: CommandPaletteProps) {
+  return (
+    <div 
+      className={`w-full max-w-none flex items-center justify-center z-[10000] ${className || ''}`}
+    >
+      <DynamicIslandProvider initialSize={SIZE_PRESETS.COMPACT_TALL}>
+        <CommandPaletteWrapper isSticky={isSticky} />
+      </DynamicIslandProvider>
+    </div>
+  );
+}
+
+function CommandPaletteWrapper({ isSticky }: { isSticky?: boolean }) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Initialize once on mount
+  useEffect(() => {
+    setIsInitialized(true);
+    
+    return () => {
+      setIsInitialized(false);
+      setIsExpanded(false);
+    };
+  }, []); // Empty dependency array - only run once on mount
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setIsExpanded(false);
+      }
+    };
+
+    if (isExpanded && isInitialized) {
+      document.addEventListener('mousedown', handleClickOutside, { passive: true });
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isExpanded, isInitialized]);
+  
+  // Don't render until properly initialized
+  if (!isInitialized) {
+    return null;
+  }
+  
+  return (
+    <div ref={wrapperRef} className="relative w-full">
+      <CommandPaletteContent isSticky={isSticky} />
+    </div>
+  );
+}

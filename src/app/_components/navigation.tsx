@@ -12,7 +12,7 @@ import {
   X,
   Rss
 } from "lucide-react";
-import { CommandPalette } from "~/components/CommandPalette";
+import { CommandPalette } from "~/components/DynamicIsland";
 import {
   NavigationMenu,
   NavigationMenuList,
@@ -149,7 +149,7 @@ export function Navigation() {
           <div className="relative z-[10010]">
             {/* Enhanced background glow for focal point */}
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/15 to-blue-500/10 rounded-full blur-3xl opacity-60 scale-150 pointer-events-none"></div>
-            <CommandPalette />
+            <CommandPalette isSticky={isSticky} />
           </div>
           
           {/* Right Side Navigation - Directly to the right of dynamic island */}
@@ -220,7 +220,7 @@ export function Navigation() {
       {isSticky && !hideSticky && (
         <div className="fixed top-0 left-0 right-0 z-[10010] flex justify-center pt-2">
           <div className="relative">
-            <CommandPalette isSticky={true} />
+            <CommandPalette isSticky={isSticky} />
             {/* Hide/Show Toggle */}
             <button
               onClick={() => setHideSticky(!hideSticky)}

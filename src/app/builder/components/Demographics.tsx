@@ -14,12 +14,12 @@ import {
   Info,
 } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LineChart, Line } from 'recharts';
-import type { DemographicsData } from "~/types/economics";
+import type { DemographicData } from "../lib/economy-data-service";
 
 interface DemographicsProps {
-  demographicData: DemographicsData;
+  demographicData: DemographicData;
   totalPopulation: number;
-  onDemographicDataChange: (demographicData: DemographicsData) => void;
+  onDemographicDataChange: (demographicData: DemographicData) => void;
 }
 
 export function Demographics({

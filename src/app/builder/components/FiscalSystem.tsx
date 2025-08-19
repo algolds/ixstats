@@ -23,7 +23,7 @@ import type { FiscalSystemData, RealCountryData } from "../lib/economy-data-serv
 
 interface FiscalSystemProps {
   fiscalData: FiscalSystemData;
-  referenceCountry: RealCountryData;
+  referenceCountry: RealCountryData | undefined;
   nominalGDP: number;
   totalPopulation: number;
   onFiscalDataChange: (fiscalData: FiscalSystemData) => void;

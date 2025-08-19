@@ -46,8 +46,8 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
 
   // Calculate health scores from economic inputs
   const economicHealth = Math.min(100, (economicInputs.coreIndicators.gdpPerCapita / 50000) * 100);
-  const socialHealth = Math.min(100, Math.max(0, (((economicInputs.coreIndicators.populationGrowthRate) + 2) * 25)));
-  const governmentHealth = Math.min(100, (economicInputs.fiscalSystem.taxRevenuePercent / 30) * 100);
+  const socialHealth = Math.min(100, Math.max(0, (((economicInputs.demographics.populationGrowthRate) + 2) * 25)));
+  const governmentHealth = Math.min(100, (economicInputs.fiscalSystem.taxRevenueGDPPercent / 30) * 100);
 
   // Calculate momentum (rate of change)
   useEffect(() => {
@@ -110,7 +110,7 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
       icon: <Shield className="h-5 w-5" />,
       value: governmentHealth,
       color: colors.accent,
-      metric: `${economicInputs.fiscalSystem.taxRevenuePercent.toFixed(1)}%`,
+      metric: `${economicInputs.fiscalSystem.taxRevenueGDPPercent.toFixed(1)}%`,
       subtitle: 'Tax Revenue',
       description: 'Government efficiency and fiscal health',
       momentum: momentum.government,

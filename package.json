@@ -51,6 +51,7 @@
     "@base-ui-components/react": "^1.0.0-beta.1",
     "@chakra-ui/charts": "^3.24.2",
     "@chakra-ui/react": "^3.24.2",
+    "@chakra-ui/tooltip": "^2.3.1",
     "@clerk/clerk-react": "^5.35.3",
     "@clerk/nextjs": "^6.25.4",
     "@emotion/react": "^11.14.0",
