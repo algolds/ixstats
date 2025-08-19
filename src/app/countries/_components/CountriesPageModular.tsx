@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { CountriesHeader } from "./CountriesHeader";
-import { CountriesCommandPalette } from "./CountriesCommandPalette";
+import { CommandPalette } from "~/components/DynamicIsland";
 import { CountriesFocusGridModular } from "./CountriesFocusGridModular";
 import { CountriesStats } from "./CountriesStats";
 import { type CountryCardData } from "~/components/countries/CountryFocusCard";
@@ -34,7 +34,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
   const [visibleCount, setVisibleCount] = useState(12);
   const [searchInput, setSearchInput] = useState(searchQuery);
-  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showDynamicIsland, setShowDynamicIsland] = useState(false);
   const [randomSeed, setRandomSeed] = useState(Date.now());
 
   // Debounced search
@@ -125,18 +125,18 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Tab' && !e.ctrlKey) {
         e.preventDefault();
-        setShowCommandPalette(prev => !prev);
+        setShowDynamicIsland(prev => !prev);
       }
       if (e.key === 'Tab' && e.ctrlKey) {
         e.preventDefault();
         handleImFeelingLucky();
       }
-      if (e.key === 'r' && showCommandPalette) {
+      if (e.key === 'r' && showDynamicIsland) {
         e.preventDefault();
         handleReshuffle();
       }
       if (e.key === 'Escape') {
-        setShowCommandPalette(false);
+        setShowDynamicIsland(false);
         setExpanded(null);
       }
     };
@@ -155,7 +155,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
       window.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('click', handleClickAway);
     };
-  }, [expanded, showCommandPalette, processedCountries]);
+  }, [expanded, showDynamicIsland, processedCountries]);
 
   // Infinite scroll
   const loadMore = useCallback(() => {
@@ -194,7 +194,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
     <div className="relative min-h-screen bg-background">
       <div className="relative z-50 container mx-auto px-4 py-8">
         {/* Header */}
-        <CountriesHeader onOpenCommandPalette={() => setShowCommandPalette(true)} />
+        <CountriesHeader onOpenCommandPalette={() => setShowDynamicIsland(true)} />
         
         {/* Stats */}
         <CountriesStats 
@@ -221,19 +221,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
         />
 
         {/* Command Palette */}
-        <CountriesCommandPalette
-          isOpen={showCommandPalette}
-          onClose={() => setShowCommandPalette(false)}
-          searchInput={searchInput}
-          onSearchChange={setSearchInput}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-          filterBy={filterBy}
-          onFilterChange={setFilterBy}
-          onReshuffle={handleReshuffle}
-          onImFeelingLucky={handleImFeelingLucky}
-          resultsCount={processedCountries.length}
-        />
+        <CommandPalette />
       </div>
     </div>
   );

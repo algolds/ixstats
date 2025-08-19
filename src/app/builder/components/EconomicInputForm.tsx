@@ -10,6 +10,7 @@ import {
   Scale,
   Building2,
   Users,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import type { EconomicInputs, RealCountryData } from "../lib/economy-data-service";
@@ -230,7 +231,8 @@ export function EconomicInputForm({
       <CountrySymbolsUploader
         flagUrl={inputs.flagUrl || ""}
         coatOfArmsUrl={inputs.coatOfArmsUrl || ""}
-        onUrlsChange={handleSymbolsChange}
+        onSelectFlag={() => console.log("Select Flag clicked from EconomicInputForm")}
+        onSelectCoatOfArms={() => console.log("Select Coat of Arms clicked from EconomicInputForm")}
       />
 
       <EconomicOverview metrics={economicMetrics} />

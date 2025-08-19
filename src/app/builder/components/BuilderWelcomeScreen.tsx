@@ -68,7 +68,7 @@ export const BuilderWelcomeScreen = ({ onStartBuilding }: BuilderWelcomeScreenPr
         <p className="mt-4 text-lg text-neutral-600 dark:text-neutral-300 max-w-2xl mx-auto">
           The ultimate sandbox for crafting nations. Forge economies, define cultures, and shape the world.
         </p>
-        <MyCountryLogo size="xl" animated />
+        
       </motion.div>
 
       <Carousel items={cards} />

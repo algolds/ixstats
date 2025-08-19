@@ -45,7 +45,7 @@ export const CountriesFocusGrid: React.FC<CountriesFocusGridProps> = ({
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
   const [visibleCount, setVisibleCount] = useState(12);
   const [searchInput, setSearchInput] = useState(searchQuery);
-  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showDynamicIsland, setShowDynamicIsland] = useState(false);
   const [randomSeed, setRandomSeed] = useState(Date.now());
 
   // Debounced search
@@ -77,18 +77,18 @@ export const CountriesFocusGrid: React.FC<CountriesFocusGridProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Tab' && !e.ctrlKey) {
         e.preventDefault();
-        setShowCommandPalette(prev => !prev);
+        setShowDynamicIsland(prev => !prev);
       }
       if (e.key === 'Tab' && e.ctrlKey) {
         e.preventDefault();
         handleImFeelingLucky();
       }
-      if (e.key === 'r' && showCommandPalette) {
+      if (e.key === 'r' && showDynamicIsland) {
         e.preventDefault();
         handleReshuffle();
       }
       if (e.key === 'Escape') {
-        setShowCommandPalette(false);
+        setShowDynamicIsland(false);
         setExpanded(null);
       }
     };
@@ -229,18 +229,13 @@ export const CountriesFocusGrid: React.FC<CountriesFocusGridProps> = ({
             explore the countries of the world
           </TextAnimate>
           
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.6, duration: 0.6 }}
-            className="inline-flex items-center gap-2 px-4 py-2 glass-surface glass-interactive bg-background/50 text-muted-foreground rounded-lg cursor-pointer hover:text-foreground transition-colors"
-            onClick={() => setShowCommandPalette(true)}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <RiCommandLine className="h-4 w-4" />
-            <span className="text-sm">Press Tab to search & filter</span>
-          </motion.div>
+          <div className="glass-hierarchy-interactive px-4 py-2 rounded-lg cursor-pointer hover:scale-[1.02] transition-transform"
+                       onClick={() => setShowDynamicIsland(true)}>
+                    <div className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+                      <Command className="h-4 w-4" />
+                      <span className="text-sm">Press ⌘K to open command palette</span>
+                    </div>
+                  </div>
         </div>
 
         {/* Countries Grid */}
@@ -341,14 +336,14 @@ export const CountriesFocusGrid: React.FC<CountriesFocusGridProps> = ({
 
         {/* Command Palette */}
         <AnimatePresence>
-          {showCommandPalette && (
+          {showDynamicIsland && (
             <>
               {/* Backdrop */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                onClick={() => setShowCommandPalette(false)}
+                onClick={() => setShowDynamicIsland(false)}
                 className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[10001]"
               />
               
@@ -384,7 +379,7 @@ export const CountriesFocusGrid: React.FC<CountriesFocusGridProps> = ({
                         Countries Filter
                       </div>
                       <button
-                        onClick={() => setShowCommandPalette(false)}
+                        onClick={() => setShowDynamicIsland(false)}
                         className="text-muted-foreground hover:text-foreground hover:bg-accent/10 p-2 rounded-lg transition-colors"
                       >
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -125,6 +125,7 @@ export interface DemographicData {
   literacyRate: number;
   citizenshipStatuses: CitizenshipStatus[];
   education: number;
+  populationGrowthRate: number;
 }
 
 export interface EconomicInputs {
@@ -282,7 +283,8 @@ export function createDefaultEconomicInputs(referenceCountry?: RealCountryData):
         { status: "Permanent Residents", percent: 5, color: "#48BB78" },
         { status: "Temporary Residents", percent: 2, color: "#ECC94B" },
         { status: "Other", percent: 1, color: "#F56565" }
-      ]
+      ],
+      populationGrowthRate: 0.5,
     }
   };
 }

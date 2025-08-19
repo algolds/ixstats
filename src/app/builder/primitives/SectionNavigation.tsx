@@ -10,8 +10,8 @@ export interface Section {
 
 interface SectionNavigationProps {
   sections: Section[];
-  activeSection: string;
-  onSectionChange: (section: string) => void;
+  activeSection: "demographics" | "fiscal" | "labor" | "spending" | "income" | "core";
+  onSectionChange: (section: "demographics" | "fiscal" | "labor" | "spending" | "income" | "core") => void;
 }
 
 export function SectionNavigation({ sections, activeSection, onSectionChange }: SectionNavigationProps) {

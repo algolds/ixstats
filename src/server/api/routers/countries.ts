@@ -1609,7 +1609,7 @@ const countriesRouter = createTRPCRouter({
   searchWiki: publicProcedure
     .input(z.object({
       query: z.string(),
-      site: z.enum(['ixwiki', 'iiwiki']),
+      site: z.enum(['ixwiki', 'iiwiki', 'althistory']),
       categoryFilter: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
@@ -1633,7 +1633,7 @@ const countriesRouter = createTRPCRouter({
   parseInfobox: publicProcedure
     .input(z.object({
       pageName: z.string(),
-      site: z.enum(['ixwiki', 'iiwiki']),
+      site: z.enum(['ixwiki', 'iiwiki', 'althistory']),
     }))
     .mutation(async ({ input }) => {
       try {
