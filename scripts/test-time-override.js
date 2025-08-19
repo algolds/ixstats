@@ -1,5 +1,5 @@
 // Quick test to directly set time override
-const { IxTime } = require('./src/lib/ixtime.ts');
+const { IxTime } = require('../src/lib/ixtime.ts');
 
 // Set the override directly
 const correctTime = 2209440080000; // January 6, 2040

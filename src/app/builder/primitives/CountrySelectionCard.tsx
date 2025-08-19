@@ -33,7 +33,7 @@ export function CountrySelectionCard({
       {/* Name Input and Buttons */}
       <div className="space-y-4">
         <label htmlFor="countryName" className="block text-sm font-medium text-[var(--color-text-secondary)]">
-          Choose a name for your nation:
+          Choose a name for your country:
         </label>
         <input
           id="countryName"

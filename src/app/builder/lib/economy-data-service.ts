@@ -15,6 +15,8 @@ export interface RealCountryData {
   governmentSpending?: number;
   continent?: string;
   region?: string;
+  governmentType?: string; // Added governmentType
+  religion?: string; // Added religion
   taxesLessSubsidies?: number;
   taxRevenueLcu?: string | number;
   womenBeatWifeDinnerPercent?: number | string;

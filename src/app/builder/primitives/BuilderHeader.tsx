@@ -6,6 +6,7 @@ import { ArrowLeft, Crown, Settings, Sparkles, Grid3X3, Zap } from 'lucide-react
 import { cn } from '~/lib/utils';
 import { GlassCard, GlassCardContent } from '../components/glass/GlassCard';
 import type { BuilderStyle, BuilderMode } from '../components/glass/BuilderStyleToggle';
+import { Globe } from '~/components/magicui/globe';
 
 interface BuilderHeaderProps {
   title: string;
@@ -74,6 +75,8 @@ export function BuilderHeader({
                 </motion.button>
               )}
               
+
+
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <Crown className="h-8 w-8 text-amber-400" />
@@ -99,6 +102,7 @@ export function BuilderHeader({
                     <p className="text-white/70 text-sm">{subtitle}</p>
                   )}
                 </div>
+                <Globe className="h-12 w-12" />
               </div>
             </div>
 

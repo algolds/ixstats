@@ -93,6 +93,7 @@ model Country {
   user                        User?
   thinkpagesAccounts          ThinkpagesAccount[]
   moodMetrics                 CountryMoodMetric[]
+  archetypeMatches            CountryArchetypeMatch[] @relation("CountryArchetypes")
 
   @@index([name])
   @@index([economicTier])
@@ -268,6 +269,7 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   country     Country? @relation(fields: [countryId], references: [id])
+  archetypeSelections UserArchetypeSelection[] @relation("UserArchetypes")
 
   @@index([clerkUserId])
   @@index([countryId])
@@ -808,4 +810,82 @@ model AccountPresence {
   
   @@index([isOnline])
   @@index([lastSeen])
+}
+
+// Enhanced Archetype System
+model ArchetypeCategory {
+  id            String      @id @default(cuid())
+  name          String      @unique
+  description   String
+  color         String
+  maxSelectable Int         @default(2)
+  priority      Int         @default(0)
+  isActive      Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  // Relations
+  archetypes    Archetype[]
+  
+  @@index([priority])
+  @@index([isActive])
+}
+
+model Archetype {
+  id           String            @id @default(cuid())
+  name         String            @unique
+  description  String
+  categoryId   String
+  iconName     String
+  color        String
+  gradient     String
+  priority     Int               @default(0)
+  isSelectable Boolean           @default(true)
+  isActive     Boolean           @default(true)
+  tags         String[]          // JSON array of tags
+  filterRules  String            // JSON object with filter rules
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  
+  // Relations
+  category     ArchetypeCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  userSelections UserArchetypeSelection[]
+  countryMatches CountryArchetypeMatch[]
+  
+  @@index([categoryId])
+  @@index([priority])
+  @@index([isSelectable])
+  @@index([isActive])
+}
+
+model UserArchetypeSelection {
+  id          String    @id @default(cuid())
+  userId      String
+  archetypeId String
+  selectedAt  DateTime  @default(now())
+  
+  // Relations
+  user        User      @relation("UserArchetypes", fields: [userId], references: [id], onDelete: Cascade)
+  archetype   Archetype @relation(fields: [archetypeId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, archetypeId])
+  @@index([userId])
+  @@index([archetypeId])
+}
+
+model CountryArchetypeMatch {
+  id          String    @id @default(cuid())
+  countryId   String
+  archetypeId String
+  matchScore  Float     @default(1.0) // 0.0 to 1.0 confidence score
+  lastChecked DateTime  @default(now())
+  
+  // Relations
+  country     Country   @relation("CountryArchetypes", fields: [countryId], references: [id], onDelete: Cascade)
+  archetype   Archetype @relation(fields: [archetypeId], references: [id], onDelete: Cascade)
+  
+  @@unique([countryId, archetypeId])
+  @@index([countryId])
+  @@index([archetypeId])
+  @@index([matchScore])
 }

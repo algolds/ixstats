@@ -12,12 +12,12 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { cn } from "~/lib/utils";
-import { AnimatePresence, motion } from "framer-motion";
-import Image, { type ImageProps } from "next/image";
-import { useOutsideClick } from "../../hooks/use-outside-click";
+import { AnimatePresence, motion } from "motion/react";
+import Image, { ImageProps } from "next/image";
+import { useOutsideClick } from "~/hooks/use-outside-click";
 
 interface CarouselProps {
-  items: React.ReactElement[];
+  items: JSX.Element[];
   initialScroll?: number;
 }
 
@@ -98,7 +98,7 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
         >
           <div
             className={cn(
-              "absolute right-0 z-[9980] h-auto w-[5%] overflow-hidden bg-gradient-to-l",
+              "absolute right-0 z-[1000] h-auto w-[5%] overflow-hidden bg-gradient-to-l",
             )}
           ></div>
 
@@ -121,6 +121,7 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
                     duration: 0.5,
                     delay: 0.2 * index,
                     ease: "easeOut",
+                    once: true,
                   },
                 }}
                 key={"card" + index}
@@ -276,14 +277,14 @@ export const BlurImage = ({
 }: ImageProps) => {
   const [isLoading, setLoading] = useState(true);
   return (
-    <img
+    <Image
       className={cn(
         "h-full w-full transition duration-300",
         isLoading ? "blur-sm" : "blur-0",
         className,
       )}
       onLoad={() => setLoading(false)}
-      src={src as string}
+      src={src}
       width={width}
       height={height}
       loading="lazy"

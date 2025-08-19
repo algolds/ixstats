@@ -18,7 +18,7 @@ import { cn } from '~/lib/utils';
 import { api } from "~/trpc/react";
 import { createUrl } from "~/lib/url-utils";
 import { CountrySelectorEnhanced } from './CountrySelectorEnhanced';
-import { EconomicCustomizationHub } from './EconomicCustomizationHub';
+import { BuilderHub } from '../BuilderHub';
 import { InteractivePreview } from './InteractivePreview';
 import { GlassCard, GlassCardContent } from '../glass/GlassCard';
 import type { RealCountryData, EconomicInputs } from '../../lib/economy-data-service';
@@ -28,6 +28,8 @@ import {
   saveBaselineToStorage
 } from '../../lib/economy-data-service';
 import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
+import { IntroDisclosure } from '~/components/ui/intro-disclosure';
+import { builderTutorialSteps, quickStartSteps } from '../../data/onboarding-tutorial';
 
 type BuilderPhase = 'select' | 'customize' | 'preview';
 
@@ -158,7 +160,12 @@ function BuilderContent() {
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hoveredCountryId, setHoveredCountryId] = useState<string | null>(null);
+  const [selectedArchetype, setSelectedArchetype] = useState<string>('all');
   
+  // Tutorial state
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [showQuickStart, setShowQuickStart] = useState(false);
+  const [tutorialMode, setTutorialMode] = useState<string | null>(null);
 
   // TRPC mutations
   const createCountryMutation = api.users.createCountry.useMutation();
@@ -239,6 +246,24 @@ function BuilderContent() {
     };
 
     loadData();
+  }, []);
+
+  // Check for tutorial mode on mount
+  useEffect(() => {
+    const tutorialMode = localStorage.getItem('builder_tutorial_mode');
+    if (tutorialMode) {
+      setTutorialMode(tutorialMode);
+      // Show tutorial after a brief delay to ensure page is loaded
+      setTimeout(() => {
+        if (tutorialMode === 'full') {
+          setShowTutorial(true);
+        } else if (tutorialMode === 'quick') {
+          setShowQuickStart(true);
+        }
+        // Clear the flag so it doesn't show again
+        localStorage.removeItem('builder_tutorial_mode');
+      }, 1000);
+    }
   }, []);
 
   // Update economic inputs when country changes
@@ -323,6 +348,34 @@ function BuilderContent() {
     setError(null);
   };
 
+  // Tutorial handlers
+  const handleCompleteTutorial = () => {
+    setShowTutorial(false);
+    setTutorialMode(null);
+  };
+
+  const handleCompleteQuickStart = () => {
+    setShowQuickStart(false);
+    setTutorialMode(null);
+  };
+
+  // Enhanced tutorial steps with completion handlers
+  const enhancedTutorialSteps = builderTutorialSteps.map((step, index) => ({
+    ...step,
+    action: step.action ? {
+      ...step.action,
+      onClick: index === builderTutorialSteps.length - 1 ? handleCompleteTutorial : step.action.onClick
+    } : undefined
+  }));
+
+  const enhancedQuickStartSteps = quickStartSteps.map((step, index) => ({
+    ...step,
+    action: step.action ? {
+      ...step.action,
+      onClick: index === quickStartSteps.length - 1 ? handleCompleteQuickStart : step.action.onClick
+    } : undefined
+  }));
+
   // Loading state
   if (isLoading) {
     return <BuilderLoading />;
@@ -389,14 +442,16 @@ function BuilderContent() {
             exit={{ opacity: 0, x: 100 }}
             transition={{ duration: 0.5, ease: "easeInOut" }}
           >
-            <EconomicCustomizationHub
-                inputs={economicInputs}
-                referenceCountry={selectedCountry}
-                onInputsChange={handleInputsChange}
-                onPreview={handlePreview}
-                onBack={handleBack} onFoundationFlagUrlChange={function (url: string | undefined): void {
-                  throw new Error('Function not implemented.');
-                } }            />
+            <BuilderHub
+              inputs={economicInputs}
+              onInputsChange={handleInputsChange}
+              onPreview={handlePreview}
+              onBack={handleBack}
+              selectedCountry={selectedCountry}
+              countries={allCountries}
+              selectedArchetype={selectedArchetype}
+              onArchetypeSelect={setSelectedArchetype}
+            />
           </motion.div>
         )}
 
@@ -421,12 +476,37 @@ function BuilderContent() {
         )}
       </AnimatePresence>
       </div>
+
+      {/* Tutorial Modals - Now appear on builder page */}
+      <IntroDisclosure
+        steps={enhancedTutorialSteps}
+        featureId="builder-tutorial"
+        open={showTutorial}
+        setOpen={setShowTutorial}
+        onComplete={handleCompleteTutorial}
+        onSkip={handleCompleteTutorial}
+        showProgressBar={true}
+      />
+
+      <IntroDisclosure
+        steps={enhancedQuickStartSteps}
+        featureId="builder-quick-start"
+        open={showQuickStart}
+        setOpen={setShowQuickStart}
+        onComplete={handleCompleteQuickStart}
+        onSkip={handleCompleteQuickStart}
+        showProgressBar={true}
+      />
     </BuilderErrorBoundary>
   );
 }
 
+interface BuilderPageEnhancedProps {
+  onBackToIntro?: () => void;
+}
+
 // Main Export Component
-export default function BuilderPageEnhanced() {
+export default function BuilderPageEnhanced({ onBackToIntro }: BuilderPageEnhancedProps = {}) {
   useEffect(() => {
     // Set page title
     document.title = "Country Builder - IxStats";

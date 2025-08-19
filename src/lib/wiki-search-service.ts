@@ -7,18 +7,33 @@ interface WikiConfig {
   searchNamespace?: number[];
 }
 
-const wikiConfigs: Record<string, WikiConfig> = {
-  ixwiki: {
-    baseUrl: "/api/ixwiki-proxy/api.php",
-    apiEndpoint: "", 
-    searchNamespace: [0, 6], // Main and Media namespaces
-  },
-  iiwiki: {
-    baseUrl: "/api/iiwiki-proxy/mediawiki/api.php",
-    apiEndpoint: "", 
-    searchNamespace: [0, 6], // Main and Media namespaces
+// Helper function to get the base URL for API requests
+function getApiBaseUrl(): string {
+  // In server-side context (Node.js), we need absolute URLs
+  if (typeof window === 'undefined') {
+    // Server-side: use environment variable or default to localhost
+    return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   }
-};
+  // Client-side: use relative URLs
+  return '';
+}
+
+// Function to get wiki configs with proper URLs
+function getWikiConfigs(): Record<string, WikiConfig> {
+  const baseUrl = getApiBaseUrl();
+  return {
+    ixwiki: {
+      baseUrl: `${baseUrl}/api/ixwiki-proxy/api.php`,
+      apiEndpoint: "", 
+      searchNamespace: [0, 6], // Main and Media namespaces
+    },
+    iiwiki: {
+      baseUrl: `${baseUrl}/api/iiwiki-proxy/mediawiki/api.php`,
+      apiEndpoint: "", 
+      searchNamespace: [0, 6], // Main and Media namespaces
+    }
+  };
+}
 
 interface SearchResult {
   title: string;
@@ -52,6 +67,7 @@ export async function searchWiki(
   site: 'ixwiki' | 'iiwiki', 
   categoryFilter?: string
 ): Promise<SearchResult[]> {
+  const wikiConfigs = getWikiConfigs();
   const config = wikiConfigs[site];
   if (!config) {
     throw new Error(`Unsupported wiki site: ${site}`);
@@ -448,12 +464,18 @@ async function performTargetedSearch(
 /**
  * Create appropriate wiki URL for the site
  */
-function createWikiUrl(title: string, config: WikiConfig, site: 'ixwiki' | 'iiwiki'): string {
-  // Both sites now use /wiki/ structure
+function createWikiUrl(title: string, _config: WikiConfig, site: 'ixwiki' | 'iiwiki'): string {
+  // Generate actual external wiki URLs, not API proxy URLs
+  const siteUrls = {
+    ixwiki: 'https://ixwiki.com',
+    iiwiki: 'https://iiwiki.com'
+  };
+  
+  const baseUrl = siteUrls[site];
   const wikiPath = '/wiki';
   const titleParam = `/${encodeURIComponent(title.replace(/ /g, '_'))}`;
   
-  return `${config.baseUrl}${wikiPath}${titleParam}`;
+  return `${baseUrl}${wikiPath}${titleParam}`;
 }
 
 /**
@@ -488,6 +510,7 @@ export async function parseCountryInfobox(
   pageName: string, 
   site: 'ixwiki' | 'iiwiki'
 ): Promise<ParsedCountryData | null> {
+  const wikiConfigs = getWikiConfigs();
   const config = wikiConfigs[site];
   if (!config) {
     throw new Error(`Unsupported wiki site: ${site}`);
@@ -914,14 +937,19 @@ function processWikitext(value: string, site: 'ixwiki' | 'iiwiki' = 'ixwiki'): s
  * Create a proper wiki link with correct site URL
  */
 function createWikiLink(target: string, display: string, site: 'ixwiki' | 'iiwiki' = 'ixwiki'): string {
-  const config = wikiConfigs[site];
-  if (!config) {
-    // Fallback to basic text if config not found
-    return display;
-  }
-  
   const normalizedTarget = target.replace(/ /g, '_').replace(/^_+|_+$/g, '');
-  const wikiUrl = createWikiUrl(normalizedTarget, config, site);
+  
+  // Use the same URL generation logic as createWikiUrl
+  const siteUrls = {
+    ixwiki: 'https://ixwiki.com',
+    iiwiki: 'https://iiwiki.com'
+  };
+  
+  const baseUrl = siteUrls[site];
+  const wikiPath = '/wiki';
+  const titleParam = `/${encodeURIComponent(normalizedTarget)}`;
+  const wikiUrl = `${baseUrl}${wikiPath}${titleParam}`;
+  
   const safeDisplay = display.replace(/[&<>"']/g, (char: string) => {
     const escapeMap: Record<string, string> = {
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -1141,6 +1169,7 @@ function extractImageFile(value?: string): string | undefined {
 async function getImageUrl(filename: string, site: 'ixwiki' | 'iiwiki'): Promise<string | null> {
   if (!filename) return null;
   
+  const wikiConfigs = getWikiConfigs();
   const config = wikiConfigs[site];
   if (!config) return null;
   
@@ -1187,6 +1216,7 @@ export async function searchWikiImages(
   query: string,
   site: 'ixwiki' | 'iiwiki'
 ): Promise<Array<{ name: string; path: string; url?: string; description?: string; }>> {
+  const wikiConfigs = getWikiConfigs();
   const config = wikiConfigs[site];
   if (!config) {
     throw new Error(`Unsupported wiki site: ${site}`);
