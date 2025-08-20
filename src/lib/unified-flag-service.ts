@@ -56,7 +56,7 @@ class UnifiedFlagService {
   // Wiki sources in priority order (highest priority first)
   private readonly wikiSources: WikiSource[] = [
     { name: 'IxWiki', baseUrl: 'https://ixwiki.com', priority: 1 },
-    { name: 'IiWiki', baseUrl: 'https://iiwiki.com', priority: 2 }, // Fixed domain
+    { name: 'IiWiki', baseUrl: 'https://iiwiki.com/mediawiki', priority: 2 },
     { name: 'AlthistoryWiki', baseUrl: 'https://althistory.fandom.com', priority: 3 },
     // Removed WikiCommons due to CORS issues
   ];
@@ -274,7 +274,6 @@ class UnifiedFlagService {
       const apiUrl = `${source.baseUrl}/api.php?action=query&format=json&formatversion=2&origin=*&titles=${encodeURIComponent(countryName)}&prop=revisions&rvprop=content&rvslots=main&rvsection=0`;
       
       const response = await fetch(apiUrl, {
-        headers: { 'User-Agent': 'IxStats/1.0' },
         signal: AbortSignal.timeout(8000),
       });
 
@@ -307,7 +306,6 @@ class UnifiedFlagService {
               // Get actual image URL
               const fileInfoUrl = `${source.baseUrl}/api.php?action=query&format=json&formatversion=2&origin=*&titles=File:${encodeURIComponent(flagFilename)}&prop=imageinfo&iiprop=url`;
               const fileResponse = await fetch(fileInfoUrl, {
-                headers: { 'User-Agent': 'IxStats/1.0' },
                 signal: AbortSignal.timeout(8000),
               });
               
@@ -349,7 +347,6 @@ class UnifiedFlagService {
           const fileInfoUrl = `https://commons.wikimedia.org/api.php?action=query&format=json&formatversion=2&origin=*&titles=File:${encodeURIComponent(filename)}&prop=imageinfo&iiprop=url`;
           
           const response = await fetch(fileInfoUrl, {
-            headers: { 'User-Agent': 'IxStats/1.0' },
             signal: AbortSignal.timeout(8000),
           });
           

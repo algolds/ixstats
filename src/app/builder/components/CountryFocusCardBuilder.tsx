@@ -9,6 +9,7 @@ import { Globe } from "lucide-react"; // Import Globe icon for fallback
 export interface CountryCardData {
   id: string;
   name: string;
+  originalId?: string; // Optional original ID for infinite scroll duplicates
 }
 
 interface CountryFocusCardProps {

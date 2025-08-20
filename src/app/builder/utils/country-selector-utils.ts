@@ -42,7 +42,7 @@ export const generateCountryPreview = (country: RealCountryData): CountryPreview
 export const filterCountries = (
   countries: RealCountryData[],
   searchTerm: string,
-  selectedArchetype: string,
+  selectedArchetypes: string[], // Changed to array
   archetypes: CountryArchetype[]
 ): RealCountryData[] => {
   let filtered = countries.filter(country => country.name !== "World");
@@ -55,11 +55,22 @@ export const filterCountries = (
     );
   }
 
-  if (selectedArchetype !== "all") {
-    const archetype = archetypes.find(a => a.id === selectedArchetype);
-    if (archetype) {
-      filtered = filtered.filter(archetype.filter);
-    }
+  if (selectedArchetypes.length > 0) {
+    // Union of all selected archetypes (OR logic)
+    const matchingCountries = new Set<string>();
+    
+    selectedArchetypes.forEach(archetypeId => {
+      const archetype = archetypes.find(a => a.id === archetypeId);
+      if (archetype) {
+        filtered.forEach(country => {
+          if (archetype.filter(country)) {
+            matchingCountries.add(country.countryCode);
+          }
+        });
+      }
+    });
+    
+    filtered = filtered.filter(country => matchingCountries.has(country.countryCode));
   }
 
   // Ensure unique country codes
@@ -74,7 +85,7 @@ export const filterCountries = (
 
   // Deterministic shuffle based on search term and archetype
   const shuffled = [...uniqueFiltered];
-  const seed = (searchTerm + selectedArchetype).split('').reduce((a, b) => {
+  const seed = (searchTerm + selectedArchetypes.join('')).split('').reduce((a, b) => {
     a = ((a << 5) - a) + b.charCodeAt(0);
     return a & a;
   }, 0);

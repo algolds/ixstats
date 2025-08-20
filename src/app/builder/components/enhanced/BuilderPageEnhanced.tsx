@@ -160,7 +160,7 @@ function BuilderContent() {
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hoveredCountryId, setHoveredCountryId] = useState<string | null>(null);
-  const [selectedArchetype, setSelectedArchetype] = useState<string>('all');
+  const [selectedArchetypes, setSelectedArchetypes] = useState<string[]>([]);
   
   // Tutorial state
   const [showTutorial, setShowTutorial] = useState(false);
@@ -449,8 +449,8 @@ function BuilderContent() {
               onBack={handleBack}
               selectedCountry={selectedCountry}
               countries={allCountries}
-              selectedArchetype={selectedArchetype}
-              onArchetypeSelect={setSelectedArchetype}
+              selectedArchetypes={selectedArchetypes}
+              onArchetypeSelect={setSelectedArchetypes}
             />
           </motion.div>
         )}

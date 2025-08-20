@@ -19,11 +19,11 @@ interface BuilderHubProps {
   onBack: () => void;
   selectedCountry: RealCountryData | null;
   countries: RealCountryData[];
-  selectedArchetype: string;
-  onArchetypeSelect: (archetypeId: string) => void;
+  selectedArchetypes: string[]; // Changed to array
+  onArchetypeSelect: (archetypeIds: string[]) => void; // Changed to handle array
 }
 
-export function BuilderHub({ inputs, onInputsChange, onPreview, onBack, selectedCountry, countries, selectedArchetype, onArchetypeSelect }: BuilderHubProps) {
+export function BuilderHub({ inputs, onInputsChange, onPreview, onBack, selectedCountry, countries, selectedArchetypes, onArchetypeSelect }: BuilderHubProps) {
   const handleCoreIndicatorsChange = (coreIndicators: typeof inputs.coreIndicators) => {
     onInputsChange({ ...inputs, coreIndicators });
   };
@@ -55,7 +55,7 @@ export function BuilderHub({ inputs, onInputsChange, onPreview, onBack, selected
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-2 space-y-8">
-        <FoundationArchetypeSelector countries={countries} selectedArchetype={selectedArchetype} onArchetypeSelect={onArchetypeSelect} />
+        <FoundationArchetypeSelector countries={countries} selectedArchetypes={selectedArchetypes} onArchetypeSelect={onArchetypeSelect} />
         <CoreEconomicIndicators indicators={inputs.coreIndicators} onIndicatorsChangeAction={handleCoreIndicatorsChange} referenceCountry={selectedCountry ?? undefined} />
         <Demographics demographicData={inputs.demographics} totalPopulation={inputs.coreIndicators.totalPopulation} onDemographicDataChange={handleDemographicsChange} />
         <FiscalSystem fiscalData={inputs.fiscalSystem} nominalGDP={inputs.coreIndicators.nominalGDP} totalPopulation={inputs.coreIndicators.totalPopulation} onFiscalDataChange={handleFiscalDataChange} referenceCountry={selectedCountry ?? undefined} />

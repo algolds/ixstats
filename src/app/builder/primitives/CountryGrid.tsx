@@ -43,8 +43,8 @@ export function CountryGrid({
   const INITIAL_LOAD_COUNT = 20;
   const BATCH_SIZE = 10;
   const SCROLL_STEP = 120;
-  const AUTO_SCROLL_SPEED = 0.5; // Pixels per frame for smooth auto-scroll
-  const INTERACTION_TIMEOUT = 2000; // ms before resuming auto-scroll after interaction
+  const AUTO_SCROLL_SPEED = 0.8; // Pixels per frame for smooth auto-scroll
+  const INTERACTION_TIMEOUT = 3000; // ms before resuming auto-scroll after interaction
   
   // Core state
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD_COUNT);
@@ -54,7 +54,6 @@ export function CountryGrid({
   // Auto-scroll state
   const [isAutoScrolling, setIsAutoScrolling] = useState(true);
   const [isInteracting, setIsInteracting] = useState(false);
-  const [autoScrollDirection, setAutoScrollDirection] = useState<'down' | 'up'>('down');
   
   // Refs
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -72,7 +71,30 @@ export function CountryGrid({
     };
   }, []);
 
-  // Interaction detection - mark user interaction
+  // Create infinite loop data - duplicate countries for seamless scrolling with unique keys
+  const infiniteCountries = useMemo(() => {
+    if (filteredCountries.length === 0) return [];
+    
+    // Use a smaller subset for better performance (limit to reasonable number)
+    const maxCountries = Math.min(16, filteredCountries.length); // Max 16 countries for performance
+    const baseCountries = filteredCountries.slice(0, maxCountries);
+    const duplicatedSet: CountryCardData[] = [];
+    
+    // Create only 2 sets for better performance
+    for (let setIndex = 0; setIndex < 2; setIndex++) {
+      baseCountries.forEach((country, countryIndex) => {
+        duplicatedSet.push({
+          id: `${country.countryCode}-set${setIndex}-${countryIndex}`, // Unique key for each duplicate
+          name: country.name,
+          originalId: country.countryCode, // Keep original ID for lookups
+        });
+      });
+    }
+    
+    return duplicatedSet;
+  }, [filteredCountries]);
+
+  // Interaction detection - mark user interaction and pause auto-scroll
   const handleUserInteraction = useCallback(() => {
     lastUserInteraction.current = performance.now();
     
@@ -88,8 +110,8 @@ export function CountryGrid({
     
     interactionTimeoutRef.current = setTimeout(() => {
       setIsInteracting(false);
-      // Resume auto-scroll after interaction timeout
-      setTimeout(() => setIsAutoScrolling(true), 300);
+      // Resume auto-scroll after interaction timeout with smooth transition
+      setTimeout(() => setIsAutoScrolling(true), 500);
     }, INTERACTION_TIMEOUT);
   }, [isInteracting]);
 
@@ -110,52 +132,45 @@ export function CountryGrid({
   const [parallaxOffsets, setParallaxOffsets] = useState<number[]>([]);
   const parallaxFactors = [1, 0.85, 1.15, 0.9, 1.1]; // Different speeds for each column
 
-  // Auto-scroll with parallax column effects
+  // Infinite auto-scroll with seamless looping
   const runAutoScroll = useCallback(() => {
     const container = scrollContainerRef.current;
-    if (!container || !isAutoScrolling || isInteracting) return;
+    if (!container || !isAutoScrolling || isInteracting || infiniteCountries.length === 0) return;
 
     const { scrollTop, scrollHeight, clientHeight } = container;
     const maxScroll = scrollHeight - clientHeight;
     
     if (maxScroll <= 0) return; // Not enough content to scroll
 
-    // Calculate next scroll position with optimized logic
-    let nextScrollTop = scrollTop;
+    // Calculate section size (one copy of the content)
+    const sectionHeight = scrollHeight / 2; // Since we have 2 copies
     
-    if (autoScrollDirection === 'down') {
-      nextScrollTop = Math.min(scrollTop + AUTO_SCROLL_SPEED, maxScroll - 50);
-      
-      // Reverse direction at bottom
-      if (nextScrollTop >= maxScroll - 50) {
-        setAutoScrollDirection('up');
-        
-        // Batch load more content for smoother experience
-        if (visibleCount < filteredCountries.length) {
-          setVisibleCount(prevCount => Math.min(prevCount + BATCH_SIZE, filteredCountries.length));
-        }
-      }
-    } else {
-      nextScrollTop = Math.max(scrollTop - AUTO_SCROLL_SPEED, 0);
-      
-      // Reverse direction at top
-      if (nextScrollTop <= 0) {
-        setAutoScrollDirection('down');
-      }
+    // Continuous downward scrolling
+    let nextScrollTop = scrollTop + AUTO_SCROLL_SPEED;
+    
+    // Check if we need to reset for infinite loop
+    if (nextScrollTop >= sectionHeight) {
+      // Reset to beginning seamlessly
+      nextScrollTop = 0;
+    }
+    
+    // Ensure we don't exceed scroll bounds
+    if (nextScrollTop > maxScroll) {
+      nextScrollTop = 0;
     }
 
-    // Update parallax offsets for each column
-    const newOffsets = parallaxFactors.map((factor, index) => {
+    // Update parallax offsets for each column  
+    const newOffsets = parallaxFactors.map((factor) => {
       return nextScrollTop * factor * 0.1; // Subtle parallax effect
     });
     setParallaxOffsets(newOffsets);
 
-    // Use direct property assignment for better performance than scrollTo
+    // Use direct property assignment for better performance
     container.scrollTop = nextScrollTop;
     
-    // Schedule next frame with optimized callback
+    // Schedule next frame
     autoScrollAnimationRef.current = requestAnimationFrame(runAutoScroll);
-  }, [isAutoScrolling, isInteracting, autoScrollDirection, visibleCount, filteredCountries.length, parallaxFactors]);
+  }, [isAutoScrolling, isInteracting, infiniteCountries.length, parallaxFactors]);
 
   // Optimized scroll state updates with reduced DOM reads
   const updateScrollState = useCallback((container: HTMLDivElement) => {
@@ -202,6 +217,18 @@ export function CountryGrid({
   const handleGlobalWheel = useCallback((e: WheelEvent) => {
     const { current } = scrollContainerRef;
     if (current && filteredCountries.length > 0) {
+      // Check if wheel event is over archetype selector or other scrollable UI elements
+      const target = e.target as Element;
+      const isOverArchetypeSelector = target?.closest('.fixed.left-6.top-6.bottom-6.w-80'); // Specific archetype selector
+      const isOverScrollableElement = target?.closest('[data-scrollable="true"]');
+      const isOverCountryGrid = target?.closest('[data-country-grid="true"]');
+      
+      // If scrolling over archetype selector or other marked scrollable elements, let them handle it
+      // But still allow country grid to handle its own scrolling
+      if ((isOverArchetypeSelector || isOverScrollableElement) && !isOverCountryGrid) {
+        return; // Let the element handle its own scrolling
+      }
+      
       // Always mark as user interaction on wheel
       handleUserInteraction();
       
@@ -284,16 +311,25 @@ export function CountryGrid({
     if (current) {
       current.addEventListener('scroll', handleScroll, { passive: true });
       
-      // Add interaction detection for mouse/touch events
+      // Add comprehensive interaction detection
       const handleMouseEnter = () => handleUserInteraction();
       const handleMouseMove = () => handleUserInteraction();
+      const handleMouseDown = () => handleUserInteraction();
       const handleTouchStart = () => handleUserInteraction();
       const handleTouchMove = () => handleUserInteraction();
+      const handleFocus = () => handleUserInteraction();
+      const handleKeyDown = () => handleUserInteraction();
       
+      // Mouse and touch events
       current.addEventListener('mouseenter', handleMouseEnter);
       current.addEventListener('mousemove', handleMouseMove);
+      current.addEventListener('mousedown', handleMouseDown);
       current.addEventListener('touchstart', handleTouchStart, { passive: true });
       current.addEventListener('touchmove', handleTouchMove, { passive: true });
+      
+      // Focus and keyboard events
+      current.addEventListener('focusin', handleFocus);
+      current.addEventListener('keydown', handleKeyDown);
       
       // Initialize scroll state
       updateScrollState(current);
@@ -302,8 +338,11 @@ export function CountryGrid({
         current.removeEventListener('scroll', handleScroll);
         current.removeEventListener('mouseenter', handleMouseEnter);
         current.removeEventListener('mousemove', handleMouseMove);
+        current.removeEventListener('mousedown', handleMouseDown);
         current.removeEventListener('touchstart', handleTouchStart);
         current.removeEventListener('touchmove', handleTouchMove);
+        current.removeEventListener('focusin', handleFocus);
+        current.removeEventListener('keydown', handleKeyDown);
       };
     }
   }, [handleScroll, updateScrollState, handleUserInteraction]);
@@ -327,7 +366,10 @@ export function CountryGrid({
   // Reset on filter/search changes
   useEffect(() => {
     setVisibleCount(INITIAL_LOAD_COUNT);
-    setAutoScrollDirection('down');
+    // Reset scroll position to top when filters change
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
   }, [searchTerm, selectedArchetype, filteredCountries]);
 
   // Cleanup on unmount
@@ -352,6 +394,7 @@ export function CountryGrid({
       <div 
         ref={scrollContainerRef}
         className="relative max-h-[80vh] overflow-y-auto scrollbar-none"
+        data-country-grid="true"
         onScroll={handleScroll}
       >
         {/* Subtle gradient fades for infinite scroll */}
@@ -385,12 +428,14 @@ export function CountryGrid({
           <ScrollVelocityContainer>
             <div ref={countriesListRef}>
               <CountriesFocusGridModularBuilder
-                countries={filteredCountries.map(mapToCountryCardData)}
-                visibleCount={visibleCount}
+                countries={infiniteCountries}
+                visibleCount={infiniteCountries.length} // Show all infinite countries
                 onCardHoverChange={(countryId: string | null) => {
                   handleUserInteraction(); // Detect interaction
                   if (countryId) {
-                    const hovered = countries.find(c => c.countryCode === countryId);
+                    // Extract original ID from infinite scroll duplicate if needed
+                    const originalId = infiniteCountries.find(c => c.id === countryId)?.originalId || countryId;
+                    const hovered = countries.find(c => c.countryCode === originalId);
                     onCountryHover(hovered || null);
                   } else {
                     onCountryHover(null);
@@ -398,14 +443,16 @@ export function CountryGrid({
                 }}
                 onCountryClick={(countryId: string) => {
                   handleUserInteraction(); // Detect interaction
-                  const selected = filteredCountries.find(c => c.countryCode === countryId);
+                  // Extract original ID from infinite scroll duplicate if needed
+                  const originalId = infiniteCountries.find(c => c.id === countryId)?.originalId || countryId;
+                  const selected = filteredCountries.find(c => c.countryCode === originalId);
                   if (selected) {
                     onCountryClick(selected);
                   }
                 }}
                 isLoading={false}
-                hasMore={visibleCount < filteredCountries.length}
-                onLoadMore={() => setVisibleCount(prevCount => Math.min(prevCount + BATCH_SIZE, filteredCountries.length))}
+                hasMore={false} // No more loading needed for infinite scroll
+                onLoadMore={() => {}} // No-op for infinite scroll
                 searchInput={searchTerm}
                 filterBy={selectedArchetype}
                 onClearFilters={onClearFilters}
