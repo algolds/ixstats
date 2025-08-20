@@ -2,6 +2,7 @@
 export interface CommandPaletteProps {
   className?: string;
   isSticky?: boolean;
+  scrollY?: number;
 }
 
 // User Profile interface
@@ -52,6 +53,7 @@ export interface CompactViewProps {
   timeDisplayMode: TimeDisplayMode;
   setTimeDisplayMode: (mode: TimeDisplayMode) => void;
   onSwitchMode: (mode: ViewMode) => void;
+  scrollY?: number;
 }
 
 export interface SearchViewProps {

@@ -295,6 +295,16 @@ export default function ImportFromWikiPage() {
     }
   };
 
+  const handleCountryPreview = (result: SearchResult) => {
+    // This is called when a country is selected for preview
+    console.log('Country preview requested for:', result.title);
+  };
+
+  const handleContinueWithCountry = (result: SearchResult) => {
+    // This is called when user confirms they want to import the country
+    handleSelectResult(result);
+  };
+
   const loadMoreResults = () => {
     const nextPage = currentPage + 1;
     const startIndex = (nextPage - 1) * resultsPerPage;
@@ -418,6 +428,8 @@ export default function ImportFromWikiPage() {
                     loadMoreResults={loadMoreResults}
                     hasMoreResults={hasMoreResults}
                     formatNumber={formatNumber}
+                    onCountryPreview={handleCountryPreview}
+                    onContinueWithCountry={handleContinueWithCountry}
                   />
                 )}
               </AnimatePresence>

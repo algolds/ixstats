@@ -8,8 +8,6 @@ import {
   Globe, 
   Settings, 
   Crown,
-  Bell,
-  X,
   Rss
 } from "lucide-react";
 import { CommandPalette } from "~/components/DynamicIsland";
@@ -21,7 +19,10 @@ import {
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { ThinkPagesIcon } from "~/components/icons/ThinkPagesIcon";
-
+import { AnimatedShinyText } from "~/components/magicui/animated-shiny-text";
+import { ShineBorder } from "~/components/magicui/shine-border";
+import { FaWikipediaW } from "react-icons/fa";
+import { GiCardRandom } from "react-icons/gi";
 
 interface NavigationItem {
   name: string;
@@ -36,9 +37,8 @@ interface NavigationItem {
 export function Navigation() {
   const pathname = usePathname();
   const { user, isLoaded } = useUser();
+  const [scrollY, setScrollY] = useState(0);
   const [isSticky, setIsSticky] = useState(false);
-  const [hideSticky, setHideSticky] = useState(false);
-  const [scrollDirection, setScrollDirection] = useState<'up' | 'down' | 'none'>('none');
 
   // Get user profile to show linked country
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
@@ -47,34 +47,34 @@ export function Navigation() {
   );
 
 
-  // Sticky navigation scroll detection with RAF optimization and direction tracking
+  // Enhanced scroll detection with ultra-smooth transitions
   useEffect(() => {
     let rafId: number | undefined;
     let isScrolling = false;
     let lastScrollY = window.scrollY;
+    let lastTimestamp = performance.now();
     
     const handleScroll = () => {
       if (!isScrolling) {
         isScrolling = true;
-        rafId = requestAnimationFrame(() => {
-          const scrollY = window.scrollY;
-          const newStickyState = scrollY > 100;
+        rafId = requestAnimationFrame((timestamp) => {
+          const currentScrollY = window.scrollY;
+          const deltaTime = timestamp - lastTimestamp;
+          const direction = currentScrollY > lastScrollY ? 'down' : 'up';
           
-          // Determine scroll direction
-          const direction = scrollY > lastScrollY ? 'down' : scrollY < lastScrollY ? 'up' : 'none';
+          // Smooth interpolation for scroll position updates
+          const smoothScrollY = lastScrollY + (currentScrollY - lastScrollY) * Math.min(deltaTime / 16, 1);
           
-          // Only update states if they actually changed
-          setIsSticky(prev => prev !== newStickyState ? newStickyState : prev);
-          setScrollDirection(prev => prev !== direction ? direction : prev);
+          // Update scroll position for ultra-smooth transitions
+          setScrollY(smoothScrollY);
           
-          // Auto-hide sticky on rapid downward scroll
-          if (direction === 'down' && scrollY > 200) {
-            setHideSticky(true);
-          } else if (direction === 'up' && hideSticky) {
-            setHideSticky(false);
-          }
+          // Determine sticky state with smooth transition zone and hysteresis
+          const stickyThreshold = direction === 'down' ? 60 : 40;
+          const newStickyState = currentScrollY > stickyThreshold;
+          setIsSticky(newStickyState);
           
-          lastScrollY = scrollY;
+          lastScrollY = currentScrollY;
+          lastTimestamp = timestamp;
           isScrolling = false;
         });
       }
@@ -87,7 +87,7 @@ export function Navigation() {
         cancelAnimationFrame(rafId);
       }
     };
-  }, [hideSticky]);
+  }, []);
 
   const navigationItems: NavigationItem[] = [
     {
@@ -123,6 +123,18 @@ export function Navigation() {
       icon: Settings,
       requiresAuth: true,
       adminOnly: true,
+    },
+    {
+      name: "Wiki",
+      href: "/wiki",
+      icon: FaWikipediaW,
+      requiresAuth: false,
+    },
+    {
+      name: "Cards",
+      href: "/cards",
+      icon: GiCardRandom,
+      requiresAuth: true,
     }
   ];
 
@@ -139,6 +151,18 @@ export function Navigation() {
 
   const setupStatus = getSetupStatus();
 
+  // Filter visible navigation items based on user state
+  const visibleNavItems = navigationItems.filter(item => {
+    if (item.requiresAuth && !user) return false;
+    if (item.requiresCountry && setupStatus !== 'complete') return false;
+    if (item.adminOnly && (user as any)?.publicMetadata?.role !== 'admin') return false;
+    return true;
+  });
+
+  // Dynamic balancing: split items evenly on both sides of Dynamic Island
+  const leftNavItems = visibleNavItems.slice(0, Math.ceil(visibleNavItems.length / 2));
+  const rightNavItems = visibleNavItems.slice(Math.ceil(visibleNavItems.length / 2));
+
   return (
     <>
       <nav className="navigation-bar relative z-[10005] bg-gradient-to-r from-background/95 via-secondary/95 to-background/95 backdrop-blur-xl border-b border-border shadow-2xl">
@@ -148,28 +172,118 @@ export function Navigation() {
       <div className="max-w-none mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-center h-16 gap-6">
           
-          {/* Left Side Navigation - Directly to the left of dynamic island */}
+          {/* Left Side Navigation - Dynamically balanced */}
           <div className="flex items-center gap-3 z-[9995]">
             <NavigationMenu>
               <NavigationMenuList className="flex items-center gap-2">
-                {navigationItems.slice(0, 2).map((item) => {
+                {leftNavItems.map((item) => {
                   const Icon = item.icon;
                   const current = isCurrentPage(item.href);
-                  let showItem = true;
-                  if (item.requiresAuth && !user) showItem = false;
-                  if (item.requiresCountry && setupStatus !== 'complete') showItem = false;
-                  if (item.adminOnly && (user as any)?.publicMetadata?.role !== 'admin') showItem = false;
-                  if (!showItem) return null;
                   return (
                     <NavigationMenuItem key={item.name}>
-                      <Link
-                        href={item.href}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 will-change-auto hover:bg-accent/10 ${current ? 'bg-accent/15 text-foreground shadow-lg' : 'text-muted-foreground'}`}
-                        aria-current={current ? 'page' : undefined}
-                      >
-                        <Icon className="h-4 w-4" aria-hidden="true" />
-                        <span className="hidden lg:block">{item.name}</span>
-                      </Link>
+                      {current ? (
+                        <Link
+                          href={item.href}
+                          className="relative group flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 will-change-auto text-foreground bg-accent/20 overflow-hidden"
+                          aria-current="page"
+                        >
+                          {/* Icon with color-coded gradient glow and slower rotation */}
+                          <div className="relative">
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md">
+                              <Icon className={`h-4 w-4 ${
+                                item.name === "MyCountry®" ? "text-amber-400" :
+                                item.name === "ThinkPages" ? "text-blue-400" :
+                                item.name === "Dashboard" ? "text-emerald-400" :
+                                item.name === "Countries" ? "text-purple-400" :
+                                item.name === "Admin" ? "text-red-400" :
+                                item.name === "Dossier" ? "text-orange-400" :
+                                item.name === "Cards" ? "text-cyan-400" :
+                                "text-blue-400"
+                              }`} />
+                            </div>
+                            <Icon className={`h-4 w-4 relative z-10 transition-all duration-300 group-hover:animate-[spin_2s_linear_infinite] group-hover:scale-110 ${
+                              item.name === "MyCountry®" ? "group-hover:text-amber-400" :
+                              item.name === "ThinkPages" ? "group-hover:text-blue-400" :
+                              item.name === "Dashboard" ? "group-hover:text-emerald-400" :
+                              item.name === "Countries" ? "group-hover:text-purple-400" :
+                              item.name === "Admin" ? "group-hover:text-red-400" :
+                              item.name === "Dossier" ? "group-hover:text-orange-400" :
+                              item.name === "Cards" ? "group-hover:text-cyan-400" :
+                              "group-hover:text-blue-400"
+                            }`} aria-hidden="true" />
+                          </div>
+                          
+                          {/* Animated shiny text */}
+                          <span className="hidden lg:block relative overflow-hidden">
+                            <span className="group-hover:opacity-0 transition-opacity duration-300">{item.name}</span>
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                              <AnimatedShinyText shimmerWidth={60}>
+                                {item.name}
+                              </AnimatedShinyText>
+                            </div>
+                          </span>
+                        </Link>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          className="relative group flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 will-change-auto hover:bg-accent/10 text-muted-foreground overflow-hidden"
+                        >
+                          {/* Shine border on hover only - color coded by section */}
+                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                            <ShineBorder
+                              shineColor={
+                                item.name === "MyCountry®" ? ["#f59e0b", "#eab308", "#fbbf24"] :
+                                item.name === "ThinkPages" ? ["#3b82f6", "#1d4ed8", "#60a5fa"] :
+                                item.name === "Dashboard" ? ["#10b981", "#059669", "#34d399"] :
+                                item.name === "Countries" ? ["#8b5cf6", "#7c3aed", "#a78bfa"] :
+                                item.name === "Admin" ? ["#ef4444", "#dc2626", "#f87171"] :
+                                item.name === "Dossier" ? ["#f97316", "#ea580c", "#fb923c"] :
+                                item.name === "Cards" ? ["#06b6d4", "#0891b2", "#22d3ee"] :
+                                ["#3b82f6", "#8b5cf6", "#06b6d4"]
+                              }
+                              duration={30}
+                              borderWidth={1}
+                              className="rounded-lg"
+                            />
+                          </div>
+                          
+                          {/* Icon with color-coded gradient glow and slower rotation */}
+                          <div className="relative">
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md">
+                              <Icon className={`h-4 w-4 ${
+                                item.name === "MyCountry®" ? "text-amber-400" :
+                                item.name === "ThinkPages" ? "text-blue-400" :
+                                item.name === "Dashboard" ? "text-emerald-400" :
+                                item.name === "Countries" ? "text-purple-400" :
+                                item.name === "Admin" ? "text-red-400" :
+                                item.name === "Dossier" ? "text-orange-400" :
+                                item.name === "Cards" ? "text-cyan-400" :
+                                "text-blue-400"
+                              }`} />
+                            </div>
+                            <Icon className={`h-4 w-4 relative z-10 transition-all duration-300 group-hover:animate-[spin_2s_linear_infinite] group-hover:scale-110 ${
+                              item.name === "MyCountry®" ? "group-hover:text-amber-400" :
+                              item.name === "ThinkPages" ? "group-hover:text-blue-400" :
+                              item.name === "Dashboard" ? "group-hover:text-emerald-400" :
+                              item.name === "Countries" ? "group-hover:text-purple-400" :
+                              item.name === "Admin" ? "group-hover:text-red-400" :
+                              item.name === "Dossier" ? "group-hover:text-orange-400" :
+                              item.name === "Cards" ? "group-hover:text-cyan-400" :
+                              "group-hover:text-blue-400"
+                            }`} aria-hidden="true" />
+                          </div>
+                          
+                          {/* Animated shiny text */}
+                          <span className="hidden lg:block relative overflow-hidden">
+                            <span className="group-hover:opacity-0 transition-opacity duration-300">{item.name}</span>
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                              <AnimatedShinyText shimmerWidth={60}>
+                                {item.name}
+                              </AnimatedShinyText>
+                            </div>
+                          </span>
+                        </Link>
+                      )}
                     </NavigationMenuItem>
                   );
                 })}
@@ -177,35 +291,125 @@ export function Navigation() {
             </NavigationMenu>
           </div>
           
-          {/* CENTER: Command Palette - The Focal Point */}
+              {/* CENTER: Command Palette - The Focal Point */}
           <div className="relative z-[10010]">
             {/* Enhanced background glow for focal point */}
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/15 to-blue-500/10 rounded-full blur-3xl opacity-60 scale-150 pointer-events-none"></div>
-            <CommandPalette isSticky={isSticky} />
+            {!isSticky && <CommandPalette isSticky={false} scrollY={scrollY} />}
           </div>
           
-          {/* Right Side Navigation - Directly to the right of dynamic island */}
+          {/* Right Side Navigation - Dynamically balanced */}
           <div className="flex items-center gap-3 z-[9995]">
             <NavigationMenu>
               <NavigationMenuList className="flex items-center gap-2">
-                {navigationItems.slice(2).map((item) => {
+                {rightNavItems.map((item) => {
                   const Icon = item.icon;
                   const current = isCurrentPage(item.href);
-                  let showItem = true;
-                  if (item.requiresAuth && !user) showItem = false;
-                  if (item.requiresCountry && setupStatus !== 'complete') showItem = false;
-                  if (item.adminOnly && (user as any)?.publicMetadata?.role !== 'admin') showItem = false;
-                  if (!showItem) return null;
                   return (
                     <NavigationMenuItem key={item.name}>
-                      <Link
-                        href={item.href}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 will-change-auto hover:bg-accent/10 ${current ? 'bg-accent/15 text-foreground shadow-lg' : 'text-muted-foreground'}`}
-                        aria-current={current ? 'page' : undefined}
-                      >
-                        <Icon className="h-4 w-4" aria-hidden="true" />
-                        <span className="hidden lg:block">{item.name}</span>
-                      </Link>
+                      {current ? (
+                        <Link
+                          href={item.href}
+                          className="relative group flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 will-change-auto text-foreground bg-accent/20 overflow-hidden"
+                          aria-current="page"
+                        >
+                          {/* Icon with color-coded gradient glow and slower rotation */}
+                          <div className="relative">
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md">
+                              <Icon className={`h-4 w-4 ${
+                                item.name === "MyCountry®" ? "text-amber-400" :
+                                item.name === "ThinkPages" ? "text-blue-400" :
+                                item.name === "Dashboard" ? "text-emerald-400" :
+                                item.name === "Countries" ? "text-purple-400" :
+                                item.name === "Admin" ? "text-red-400" :
+                                item.name === "Dossier" ? "text-orange-400" :
+                                item.name === "Cards" ? "text-cyan-400" :
+                                "text-blue-400"
+                              }`} />
+                            </div>
+                            <Icon className={`h-4 w-4 relative z-10 transition-all duration-300 group-hover:animate-[spin_2s_linear_infinite] group-hover:scale-110 ${
+                              item.name === "MyCountry®" ? "group-hover:text-amber-400" :
+                              item.name === "ThinkPages" ? "group-hover:text-blue-400" :
+                              item.name === "Dashboard" ? "group-hover:text-emerald-400" :
+                              item.name === "Countries" ? "group-hover:text-purple-400" :
+                              item.name === "Admin" ? "group-hover:text-red-400" :
+                              item.name === "Dossier" ? "group-hover:text-orange-400" :
+                              item.name === "Cards" ? "group-hover:text-cyan-400" :
+                              "group-hover:text-blue-400"
+                            }`} aria-hidden="true" />
+                          </div>
+                          
+                          {/* Animated shiny text */}
+                          <span className="hidden lg:block relative overflow-hidden">
+                            <span className="group-hover:opacity-0 transition-opacity duration-300">{item.name}</span>
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                              <AnimatedShinyText shimmerWidth={60}>
+                                {item.name}
+                              </AnimatedShinyText>
+                            </div>
+                          </span>
+                        </Link>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          className="relative group flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 will-change-auto hover:bg-accent/10 text-muted-foreground overflow-hidden"
+                        >
+                          {/* Shine border on hover only - color coded by section */}
+                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                            <ShineBorder
+                              shineColor={
+                                item.name === "MyCountry®" ? ["#f59e0b", "#eab308", "#fbbf24"] :
+                                item.name === "ThinkPages" ? ["#3b82f6", "#1d4ed8", "#60a5fa"] :
+                                item.name === "Dashboard" ? ["#10b981", "#059669", "#34d399"] :
+                                item.name === "Countries" ? ["#8b5cf6", "#7c3aed", "#a78bfa"] :
+                                item.name === "Admin" ? ["#ef4444", "#dc2626", "#f87171"] :
+                                item.name === "Dossier" ? ["#f97316", "#ea580c", "#fb923c"] :
+                                item.name === "Cards" ? ["#06b6d4", "#0891b2", "#22d3ee"] :
+                                ["#3b82f6", "#8b5cf6", "#06b6d4"]
+                              }
+                              duration={30}
+                              borderWidth={1}
+                              className="rounded-lg"
+                            />
+                          </div>
+                          
+                          {/* Icon with color-coded gradient glow and slower rotation */}
+                          <div className="relative">
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md">
+                              <Icon className={`h-4 w-4 ${
+                                item.name === "MyCountry®" ? "text-amber-400" :
+                                item.name === "ThinkPages" ? "text-blue-400" :
+                                item.name === "Dashboard" ? "text-emerald-400" :
+                                item.name === "Countries" ? "text-purple-400" :
+                                item.name === "Admin" ? "text-red-400" :
+                                item.name === "Dossier" ? "text-orange-400" :
+                                item.name === "Cards" ? "text-cyan-400" :
+                                "text-blue-400"
+                              }`} />
+                            </div>
+                            <Icon className={`h-4 w-4 relative z-10 transition-all duration-300 group-hover:animate-[spin_2s_linear_infinite] group-hover:scale-110 ${
+                              item.name === "MyCountry®" ? "group-hover:text-amber-400" :
+                              item.name === "ThinkPages" ? "group-hover:text-blue-400" :
+                              item.name === "Dashboard" ? "group-hover:text-emerald-400" :
+                              item.name === "Countries" ? "group-hover:text-purple-400" :
+                              item.name === "Admin" ? "group-hover:text-red-400" :
+                              item.name === "Dossier" ? "group-hover:text-orange-400" :
+                              item.name === "Cards" ? "group-hover:text-cyan-400" :
+                              "group-hover:text-blue-400"
+                            }`} aria-hidden="true" />
+                          </div>
+                          
+                          {/* Animated shiny text */}
+                          <span className="hidden lg:block relative overflow-hidden">
+                            <span className="group-hover:opacity-0 transition-opacity duration-300">{item.name}</span>
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                              <AnimatedShinyText shimmerWidth={60}>
+                                {item.name}
+                              </AnimatedShinyText>
+                            </div>
+                          </span>
+                        </Link>
+                      )}
                     </NavigationMenuItem>
                   );
                 })}
@@ -219,13 +423,7 @@ export function Navigation() {
       <div className="lg:hidden">
         <div className="border-t border-border bg-background/90 backdrop-blur-xl">
           <div className="flex items-center justify-around px-4 py-2">
-            {navigationItems.filter(item => {
-              let showItem = true;
-              if (item.requiresAuth && !user) showItem = false;
-              if (item.requiresCountry && setupStatus !== 'complete') showItem = false;
-              if (item.adminOnly && (user as any)?.publicMetadata?.role !== 'admin') showItem = false;
-              return showItem;
-            }).slice(0, 5).map((item) => {
+            {visibleNavItems.slice(0, 5).map((item) => {
               const Icon = item.icon;
               const current = isCurrentPage(item.href);
               return (
@@ -248,40 +446,22 @@ export function Navigation() {
       </div>
       </nav>
 
-      {/* Sticky Navigation with Dynamic Island - Enhanced contextual positioning */}
-      {isSticky && !hideSticky && (
-        <div 
-          className={`fixed top-0 left-0 right-0 z-[10010] flex justify-center transition-transform duration-300 ease-out ${
-            scrollDirection === 'down' ? 'translate-y-[-10px]' : 'translate-y-0'
-          }`}
-          style={{ paddingTop: scrollDirection === 'up' ? '8px' : '4px' }}
-        >
-          <div className="relative">
-            <CommandPalette isSticky={isSticky} />
-            {/* Hide/Show Toggle - Position based on scroll direction */}
-            <button
-              onClick={() => setHideSticky(!hideSticky)}
-              className={`absolute top-1/2 -translate-y-1/2 w-8 h-8 bg-background/90 backdrop-blur-xl border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/90 transition-all duration-200 will-change-auto ${
-                scrollDirection === 'down' ? '-right-10 opacity-70' : '-right-12 opacity-100'
-              }`}
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
+      {/* Persistent Dynamic Island - Ultra-smooth transitions with physics-based motion */}
+      <div 
+        className={`fixed z-[10020] will-change-transform ${
+          isSticky ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        style={{ 
+          top: isSticky ? '8px' : '64px',
+          left: '50%',
+          transform: 'translate(-50%, 0)',
+          transition: 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+        }}
+      >
+        <div className="will-change-transform flex justify-center">
+          <CommandPalette isSticky={isSticky} scrollY={scrollY} />
         </div>
-      )}
-
-      {/* Show Sticky Toggle when hidden */}
-      {isSticky && hideSticky && (
-        <div className="fixed top-2 right-4 z-[100]">
-          <button
-            onClick={() => setHideSticky(false)}
-            className="w-10 h-10 bg-background/90 backdrop-blur-xl border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/90 transition-colors duration-200 will-change-auto"
-          >
-            <Bell className="h-4 w-4" />
-          </button>
-        </div>
-      )}
+      </div>
     </>
   );
 }

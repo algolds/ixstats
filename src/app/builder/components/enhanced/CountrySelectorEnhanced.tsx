@@ -26,7 +26,7 @@ export function CountrySelectorEnhanced({
   onBackToIntro
 }: CountrySelectorEnhancedProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedArchetype, setSelectedArchetype] = useState<string>("all");
+  const [selectedArchetypes, setSelectedArchetypes] = useState<string[]>([]);
   const [hoveredCountry, setHoveredCountry] = useState<RealCountryData | null>(null);
   const [softSelectedCountry, setSoftSelectedCountry] = useState<RealCountryData | null>(null);
   const [scrollPosition, setScrollPosition] = useState(0);
@@ -46,8 +46,8 @@ export function CountrySelectorEnhanced({
   const countryNames = useMemo(() => countries.map(c => c.name), [countries]);
   const { flagUrls } = useBulkFlags(countryNames);
   const filteredCountries = useMemo(() => {
-    return filterCountries(countries, searchTerm, selectedArchetype, archetypes);
-  }, [countries, searchTerm, selectedArchetype]);
+    return filterCountries(countries, searchTerm, selectedArchetypes, archetypes);
+  }, [countries, searchTerm, selectedArchetypes]);
 
   // Handle wheel events for smart scroll coordination
   const handleWheel = useCallback((e: WheelEvent) => {
@@ -118,7 +118,7 @@ export function CountrySelectorEnhanced({
 
   const handleClearAll = () => {
     setSearchTerm("");
-    setSelectedArchetype("all");
+    setSelectedArchetypes([]);
   };
 
   const handleCancel = () => {
@@ -140,8 +140,8 @@ export function CountrySelectorEnhanced({
       {/* Left Sidebar - Foundation Archetypes */}
       <FoundationArchetypeSelector
         countries={countries}
-        selectedArchetype={selectedArchetype}
-        onArchetypeSelect={setSelectedArchetype}
+        selectedArchetypes={selectedArchetypes}
+        onArchetypeSelect={setSelectedArchetypes}
         onArchetypeComposer={() => {
           // TODO: Implement archetype composer functionality
           console.log('Archetype Composer clicked');
@@ -173,7 +173,7 @@ export function CountrySelectorEnhanced({
                 countries={countries}
                 filteredCountries={filteredCountries}
                 searchTerm={searchTerm}
-                selectedArchetype={selectedArchetype}
+                selectedArchetype={selectedArchetypes.join(',')} // Convert array to string for backward compatibility
                 onCountryHover={setHoveredCountry}
                 onCountryClick={(country) => {
                   setSoftSelectedCountry(country);

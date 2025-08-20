@@ -55,7 +55,7 @@ export function CompactView({
   setIsUserInteracting,
   timeDisplayMode,
   setTimeDisplayMode,
-  onSwitchMode
+  onSwitchMode,
 }: CompactViewProps) {
   const { user, isLoaded } = useUser();
   
@@ -132,6 +132,9 @@ export function CompactView({
     console.log('[CompactView] State change - isSticky:', isSticky, 'isCollapsed:', isCollapsed);
   }, [isSticky, isCollapsed]);
 
+  // No scroll-based scaling - just transition between two states
+  const sizeScale = 1;
+  
   if (!mounted) return null;
 
   return (
@@ -149,11 +152,18 @@ export function CompactView({
           }
         }}
       >
-      <DynamicContainer 
-        className={`flex items-center justify-between transition-all duration-300 text-center ${ 
-          isSticky && isCollapsed ? 'px-3 py-2' : 'px-6 py-6'
-        } w-full min-h-fit h-auto`}
+      <div 
+        className="w-full h-full"
+        style={{
+          transform: `scale(${sizeScale})`,
+          transformOrigin: 'center'
+        }}
       >
+        <DynamicContainer 
+          className={`flex items-center justify-between transition-all duration-300 w-full min-h-fit h-auto ${
+            isSticky ? 'px-3 py-2' : 'px-6 py-6'
+          } ${isSticky ? 'w-auto' : 'w-full'}`}
+        >
         {/* IX Logo - Home Button */}
         <div className="flex items-center justify-center">
           <Tooltip>
@@ -161,7 +171,7 @@ export function CompactView({
               <button
                 onClick={() => window.location.href = '/'}
                 className={`relative group flex items-center justify-center rounded-xl transition-all duration-300 hover:scale-110 active:scale-95 ${ 
-                  isSticky && isCollapsed ? 'w-8 h-8' : 'w-10 h-10'
+                  isSticky ? 'w-8 h-8' : 'w-10 h-10'
                 }`}
               >
             {/* Gradient glow animation - only on hover */}
@@ -171,7 +181,7 @@ export function CompactView({
             <img 
               src="/images/ix-logo.svg" 
               alt="IxLogo"
-              className={`relative z-10 ${isSticky && isCollapsed ? 'w-8 h-8' : 'w-10 h-10'} transition-all duration-300 group-hover:scale-110 filter dark:brightness-0 dark:invert brightness-100 opacity-80 group-hover:opacity-100 group-hover:drop-shadow-lg`}
+              className={`relative z-10 ${isSticky ? 'w-6 h-6' : 'w-8 h-8'} transition-all duration-300 group-hover:scale-110 filter dark:brightness-0 dark:invert brightness-100 opacity-80 group-hover:opacity-100 group-hover:drop-shadow-lg`}
             />
               </button>
             </TooltipTrigger>
@@ -182,16 +192,16 @@ export function CompactView({
         </div>
         
         {/* Time Display and Greeting - combined section */}
-        <div className="flex-1 flex items-center justify-center">
-          {!(isSticky && isCollapsed) && (
-            <div className="flex flex-col items-center justify-center space-y-2">
+        <div className="flex-1 flex items-center justify-center" style={{ marginLeft: '10px' }}>
+          {!isSticky && (
+            <div className="flex flex-col items-center justify-center space-y-1">
             {/* Time Display - cycles through modes */}
             <button
               onClick={() => {
                 const currentMode = timeDisplayMode;
                 setTimeDisplayMode(currentMode === 'time' ? 'date' : currentMode === 'date' ? 'both' : 'time');
               }}
-              className="flex items-center justify-center gap-1.5 hover:bg-white/10 px-3 py-2 rounded-md transition-colors cursor-pointer"
+              className={`flex items-center justify-center ${isSticky ? 'gap-1' : 'gap-1.5'} hover:bg-white/10 ${isSticky ? 'px-2 py-1' : 'px-3 py-2'} rounded-md transition-colors cursor-pointer`}
             >
               {timeDisplayMode === 'time' && (
                 <>
@@ -233,11 +243,11 @@ export function CompactView({
               )}
             </button>
             
-            {/* Greeting - only show when NOT in sticky collapsed mode */}
-            {!(isSticky && isCollapsed) && (
+            {/* Greeting - only show when NOT sticky */}
+            {!isSticky && (
               <Popover>
                 <PopoverTrigger>
-                  <div className="relative group text-sm font-medium text-foreground cursor-pointer hover:bg-accent/10 rounded transition-colors flex items-center justify-center min-w-0">
+                  <div className={`relative group ${isSticky ? 'text-xs' : 'text-sm'} font-medium text-foreground cursor-pointer hover:bg-accent/10 rounded transition-colors flex items-center justify-center min-w-0 ${isSticky ? 'py-0.5 px-2' : 'py-1 px-3'}`}>
                     {/* Country flag background blur effect */}
                     {setupStatus === 'complete' && userProfile?.country && (
                       <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-300 rounded overflow-hidden">
@@ -277,7 +287,7 @@ export function CompactView({
                             <Crown className="h-6 w-6 text-amber-600 dark:text-amber-400" />
                           </div>
                           <div>
-                            <div className="font-bold text-white drop-shadow-lg">Executive Command</div>
+                            <div className="font-bold text-white drop-shadow-lg"> MyCountry Premium</div>
                             <div className="text-amber-200 dark:text-amber-100 text-sm font-medium">{userProfile.country.name}</div>
                           </div>
                           <div className="ml-auto">
@@ -346,7 +356,7 @@ export function CompactView({
                           className="group relative overflow-hidden bg-gradient-to-r from-amber-500/30 to-orange-500/25 dark:from-amber-500/20 dark:to-orange-500/20 hover:from-amber-500/40 hover:to-orange-500/35 dark:hover:from-amber-500/30 dark:hover:to-orange-500/30 border border-amber-400/50 dark:border-amber-300/30 hover:border-amber-500/70 dark:hover:border-amber-300/50 text-amber-800 dark:text-amber-200 hover:text-amber-900 dark:hover:text-amber-100 transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm"
                         >
                           <Crown className="h-4 w-4 mr-2 relative z-10" />
-                          <span className="relative z-10 font-medium">My Country</span>
+                          <span className="relative z-10 font-medium">Country Profile</span>
                         </Button>
                         <Button
                           size="sm"
@@ -354,7 +364,7 @@ export function CompactView({
                           className="group relative overflow-hidden bg-gradient-to-r from-blue-500/30 to-cyan-500/25 dark:from-blue-500/20 dark:to-cyan-500/20 hover:from-blue-500/40 hover:to-cyan-500/35 dark:hover:from-blue-500/30 dark:hover:to-cyan-500/30 border border-blue-400/50 dark:border-blue-300/30 hover:border-blue-500/70 dark:hover:border-blue-300/50 text-blue-800 dark:text-blue-200 hover:text-blue-900 dark:hover:text-blue-100 transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm"
                         >
                           <Target className="h-4 w-4 mr-2 relative z-10" />
-                          <span className="relative z-10 font-medium">Command</span>
+                          <span className="relative z-10 font-medium">Country Center</span>
                         </Button>
                       </div>
                     </div>
@@ -383,7 +393,7 @@ export function CompactView({
         </div>
         
         {/* Action buttons - icons only with hover tooltips */}
-        <div className={`flex items-center justify-center ${isSticky && isCollapsed ? 'gap-1' : 'gap-2'} ${isSticky && isCollapsed ? 'h-8' : 'h-10'}`}>
+        <div className={`flex items-center justify-center ${isSticky ? 'gap-1' : 'gap-2'}`}>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -391,10 +401,10 @@ export function CompactView({
                 variant="ghost"
                 onClick={() => onSwitchMode("search")}
                 className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all ${ 
-                  isSticky && isCollapsed ? 'h-8 w-8 p-0' : 'h-8 w-8 p-0'
+                  isSticky ? 'h-7 w-7 p-0' : 'h-8 w-8 p-0'
                 }`}
               >
-                <Search className={`transition-transform hover:scale-110 ${isSticky && isCollapsed ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                <Search className={`transition-transform hover:scale-110 ${isSticky ? 'h-3 w-3' : 'h-4 w-4'}`} />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">
@@ -412,10 +422,10 @@ export function CompactView({
                   isSticky && isCollapsed ? 'h-8 w-8 p-0' : 'h-8 w-8 p-0'
                 }`}
               >
-                <Bell className={`transition-transform hover:scale-110 ${isSticky && isCollapsed ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                <Bell className={`transition-transform hover:scale-110 ${isSticky ? 'h-3 w-3' : 'h-4 w-4'}`} />
                 {totalUnreadCount > 0 && (
                   <Badge className={`absolute bg-destructive text-foreground flex items-center justify-center rounded-full text-[10px] ${ 
-                    isSticky && isCollapsed ? '-top-0.5 -right-0.5 h-2.5 w-2.5 p-0' : '-top-1 -right-1 h-3 w-3 p-0'
+                    isSticky ? '-top-0.5 -right-0.5 h-2.5 w-2.5 p-0' : '-top-1 -right-1 h-3 w-3 p-0'
                   }`}>
                     {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
                   </Badge>
@@ -434,10 +444,10 @@ export function CompactView({
                 variant="ghost"
                 onClick={() => onSwitchMode("settings")}
                 className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all ${ 
-                  isSticky && isCollapsed ? 'h-8 w-8 p-0' : 'h-8 w-8 p-0'
+                  isSticky ? 'h-7 w-7 p-0' : 'h-8 w-8 p-0'
                 }`}
               >
-                <Settings className={`transition-transform hover:scale-110 ${isSticky && isCollapsed ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                <Settings className={`transition-transform hover:scale-110 ${isSticky ? 'h-3 w-3' : 'h-4 w-4'}`} />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">
@@ -446,6 +456,7 @@ export function CompactView({
           </Tooltip>
         </div>
       </DynamicContainer>
+      </div>
       </div>
     </TooltipProvider>
   );

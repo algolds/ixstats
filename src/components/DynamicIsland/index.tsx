@@ -22,9 +22,10 @@ export {
 interface CommandPaletteProps {
   className?: string;
   isSticky?: boolean;
+  scrollY?: number;
 }
 
-function CommandPaletteContent({ isSticky = false }: { isSticky?: boolean }) {
+function CommandPaletteContent({ isSticky = false, scrollY = 0 }: { isSticky?: boolean; scrollY?: number }) {
   const { setSize } = useDynamicIslandSize();
   const [mounted, setMounted] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -104,6 +105,7 @@ function CommandPaletteContent({ isSticky = false }: { isSticky?: boolean }) {
           timeDisplayMode={timeDisplayMode}
           setTimeDisplayMode={setTimeDisplayMode}
           onSwitchMode={switchMode}
+          scrollY={scrollY}
         />
       </DynamicIsland>
       
@@ -118,19 +120,19 @@ function CommandPaletteContent({ isSticky = false }: { isSticky?: boolean }) {
   );
 }
 
-export function CommandPalette({ className, isSticky }: CommandPaletteProps) {
+export function CommandPalette({ className, isSticky, scrollY }: CommandPaletteProps) {
   return (
     <div 
-      className={`w-full max-w-none flex items-center justify-center z-[10000] ${className || ''}`}
+      className={`${isSticky ? 'flex items-center justify-center' : 'w-full max-w-none flex items-center justify-center'} z-[10000] ${className || ''}`}
     >
       <DynamicIslandProvider initialSize={SIZE_PRESETS.COMPACT_TALL}>
-        <CommandPaletteWrapper isSticky={isSticky} />
+        <CommandPaletteWrapper isSticky={isSticky} scrollY={scrollY} />
       </DynamicIslandProvider>
     </div>
   );
 }
 
-function CommandPaletteWrapper({ isSticky }: { isSticky?: boolean }) {
+function CommandPaletteWrapper({ isSticky, scrollY }: { isSticky?: boolean; scrollY?: number }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const { isExpanded, switchMode } = useDynamicIslandState();
@@ -164,8 +166,8 @@ function CommandPaletteWrapper({ isSticky }: { isSticky?: boolean }) {
   }
   
   return (
-    <div ref={wrapperRef} className="relative w-full">
-      <CommandPaletteContent isSticky={isSticky} />
+    <div ref={wrapperRef} className={`relative ${isSticky ? 'flex items-center justify-center' : 'w-full'}`}>
+      <CommandPaletteContent isSticky={isSticky} scrollY={scrollY} />
     </div>
   );
 }

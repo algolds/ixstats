@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 900 602" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <rect id="Artboard1" x="0" y="0" width="900" height="601.47" style="fill:none;"/>
+    <g id="Artboard11" serif:id="Artboard1">
+        <rect id="rect4-67" x="0" y="0" width="900" height="600" style="fill:rgb(0,85,34);"/>
+        <g id="polygon6" transform="matrix(0.1,0,0,0.1,0,0)">
+            <path d="M9000,0L9000,1082L1622,6000L0,6000L0,4918L7378,0L9000,0Z" style="fill:white;fill-rule:nonzero;"/>
+        </g>
+        <g id="polygon8" transform="matrix(0.1,0,0,0.1,0,0)">
+            <path d="M0,0L0,1082L7378,6000L9000,6000L9000,4918L1622,0L0,0Z" style="fill:white;fill-rule:nonzero;"/>
+        </g>
+        <g id="polygon10" transform="matrix(0.1,0,0,0.1,0,0)">
+            <path d="M0,0L0,541L8189,6000L9000,6000L9000,5459L811,0L0,0Z" style="fill:rgb(0,81,186);fill-rule:nonzero;"/>
+        </g>
+        <g id="polygon12" transform="matrix(0.1,0,0,0.1,0,0)">
+            <path d="M9000,0L9000,541L811,6000L0,6000L0,5459L8189,0L9000,0Z" style="fill:rgb(0,81,186);fill-rule:nonzero;"/>
+        </g>
+    </g>
+</svg>

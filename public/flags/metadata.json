@@ -803,7 +803,1107 @@
         "baseUrl": "https://ixwiki.com",
         "priority": 1
       }
+    },
+    "geisenroda": {
+      "fileName": "geisenroda.png",
+      "originalUrl": "https://ixwiki.com/images/a/ab/Geisenroda.png",
+      "downloadedAt": 1755646843108,
+      "fileSize": 88451,
+      "source": {
+        "name": "IxWiki",
+        "baseUrl": "https://ixwiki.com",
+        "priority": 1
+      }
+    },
+    "arcerion": {
+      "fileName": "arcerion.png",
+      "originalUrl": "https://ixwiki.com/images/f/fd/Arco_2020s_flag.PNG",
+      "downloadedAt": 1755646843986,
+      "fileSize": 125057,
+      "source": {
+        "name": "IxWiki",
+        "baseUrl": "https://ixwiki.com",
+        "priority": 1
+      }
+    },
+    "atapakona": {
+      "fileName": "atapakona.png",
+      "originalUrl": "https://ixwiki.com/images/d/d1/Atapak_flag.png",
+      "downloadedAt": 1755646844448,
+      "fileSize": 1271639,
+      "source": {
+        "name": "IxWiki",
+        "baseUrl": "https://ixwiki.com",
+        "priority": 1
+      }
+    },
+    "akcelis": {
+      "fileName": "akcelis.png",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/f/fc/People%27s_State_of_Akcelis.png",
+      "downloadedAt": 1755646846514,
+      "fileSize": 85532,
+      "source": {
+        "name": "IxWiki",
+        "baseUrl": "https://ixwiki.com",
+        "priority": 1
+      }
+    },
+    "ainin": {
+      "fileName": "ainin.svg",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/c/ca/Ainin-flag_1_.svg",
+      "downloadedAt": 1755646866855,
+      "fileSize": 1742,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "azil": {
+      "fileName": "azil.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/a/ad/AzilFlag.png",
+      "downloadedAt": 1755646867473,
+      "fileSize": 20531,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "aram": {
+      "fileName": "aram.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/f/fc/Flag_of_Aram.png",
+      "downloadedAt": 1755646867483,
+      "fileSize": 1479,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "acdia": {
+      "fileName": "acdia.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/1/17/AcdiaFlag.png",
+      "downloadedAt": 1755646867486,
+      "fileSize": 48167,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "auroa": {
+      "fileName": "auroa.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/3/3f/AuroaFlag1.png",
+      "downloadedAt": 1755646867537,
+      "fileSize": 107083,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "amalfi": {
+      "fileName": "amalfi.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/5/52/Flag_of_Amalfi.png",
+      "downloadedAt": 1755646871532,
+      "fileSize": 11232,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "göke": {
+      "fileName": "gke.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/2/26/Flag_of_G%C3%B6ke.png",
+      "downloadedAt": 1755646871533,
+      "fileSize": 10575,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "ascion": {
+      "fileName": "ascion.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/c/c9/Flag_of_The_Asia_Pacific_Union_.png",
+      "downloadedAt": 1755646871809,
+      "fileSize": 45788,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "anðus": {
+      "fileName": "anus.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/d/dd/Andus-peak.png",
+      "downloadedAt": 1755646872513,
+      "fileSize": 356780,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "azura": {
+      "fileName": "azura.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/8/89/Flag_of_Azura.png",
+      "downloadedAt": 1755646873377,
+      "fileSize": 154212,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "awasin": {
+      "fileName": "awasin.jpg",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/e/e7/Awasin_flag.jpg",
+      "downloadedAt": 1755646873672,
+      "fileSize": 148142,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "azmara": {
+      "fileName": "azmara.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/6/63/Azmaran_Flag.png",
+      "downloadedAt": 1755646873673,
+      "fileSize": 11322,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "ayvana": {
+      "fileName": "ayvana.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/0/09/Ayvanaflag.png",
+      "downloadedAt": 1755646873954,
+      "fileSize": 45907,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "aterno": {
+      "fileName": "aterno.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/8/87/ATO.png",
+      "downloadedAt": 1755646874471,
+      "fileSize": 103970,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "aybrea": {
+      "fileName": "aybrea.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/4/4f/AybreaFlag.png",
+      "downloadedAt": 1755646875088,
+      "fileSize": 31888,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "garza": {
+      "fileName": "garza.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/6/6c/Flag_of_Garza.png",
+      "downloadedAt": 1755646875115,
+      "fileSize": 15889,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "abalos": {
+      "fileName": "abalos.svg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/1/15/Red_Ensign_of_England_%28Square_Canton%29.svg",
+      "downloadedAt": 1755646881846,
+      "fileSize": 1484,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "allieu": {
+      "fileName": "allieu.svg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/8/85/3-Color_Generic_Nordic_Cross.svg",
+      "downloadedAt": 1755646881881,
+      "fileSize": 398,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "acrea": {
+      "fileName": "acrea.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/9/9d/AcreaFlagNOR3.png",
+      "downloadedAt": 1755646883401,
+      "fileSize": 124019,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "alluna": {
+      "fileName": "alluna.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/0/00/AllunaFlag.png",
+      "downloadedAt": 1755646885381,
+      "fileSize": 24090,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "ghant": {
+      "fileName": "ghant.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/e/e5/Flag_of_Ghant.png",
+      "downloadedAt": 1755646885391,
+      "fileSize": 1694,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "atmora": {
+      "fileName": "atmora.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/9/96/Vlag_van_het_Atmoraanse_Keizerrijk.png",
+      "downloadedAt": 1755646886876,
+      "fileSize": 13842,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "angvar": {
+      "fileName": "angvar.jpg",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/e/ea/Flag_of_Angvar.jpg",
+      "downloadedAt": 1755646889404,
+      "fileSize": 181048,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "nual": {
+      "fileName": "nual.svg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e2/Flag_of_Oppland.svg",
+      "downloadedAt": 1755647173132,
+      "fileSize": 6414,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "ghana (differently)": {
+      "fileName": "ghana_differently.png",
+      "originalUrl": "https://static.wikia.nocookie.net/althistory/images/b/b6/Flag_of_Ghana_%28Differently%29.png/revision/latest?cb=20211008124600",
+      "downloadedAt": 1755647198716,
+      "fileSize": 116179,
+      "source": {
+        "name": "AlthistoryWiki",
+        "baseUrl": "https://althistory.fandom.com",
+        "priority": 3
+      }
+    },
+    "nesetiya": {
+      "fileName": "nesetiya.png",
+      "originalUrl": "https://static.wikia.nocookie.net/althistory/images/9/96/Nesetiya_flag.png/revision/latest?cb=20240908154757",
+      "downloadedAt": 1755647199021,
+      "fileSize": 83546,
+      "source": {
+        "name": "AlthistoryWiki",
+        "baseUrl": "https://althistory.fandom.com",
+        "priority": 3
+      }
+    },
+    "afghanistan (lucyandanny)": {
+      "fileName": "afghanistan_lucyandanny.png",
+      "originalUrl": "https://static.wikia.nocookie.net/althistory/images/c/cd/Flag_of_Afghanistan_%282013%E2%80%932021%29.svg/revision/latest?cb=20250625164222",
+      "downloadedAt": 1755647201105,
+      "fileSize": 232397,
+      "source": {
+        "name": "AlthistoryWiki",
+        "baseUrl": "https://althistory.fandom.com",
+        "priority": 3
+      }
+    },
+    "tarn": {
+      "fileName": "tarn.svg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5b/Flag_of_Hong_Kong.svg",
+      "downloadedAt": 1755649644505,
+      "fileSize": 845,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "india": {
+      "fileName": "india.svg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5a/1931_Flag_of_India.svg",
+      "downloadedAt": 1755649644683,
+      "fileSize": 6810,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "tsuki": {
+      "fileName": "tsuki.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/b/b1/Flag_of_Tsuki.png",
+      "downloadedAt": 1755649646186,
+      "fileSize": 5204,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "llihc": {
+      "fileName": "llihc.jpg",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/7/77/Llihc_989150.jpg",
+      "downloadedAt": 1755649646234,
+      "fileSize": 40109,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "trong": {
+      "fileName": "trong.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/c/ca/TrongFlag.png",
+      "downloadedAt": 1755649646484,
+      "fileSize": 138731,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "tunio": {
+      "fileName": "tunio.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/e/e5/TunioFlag.png",
+      "downloadedAt": 1755649648178,
+      "fileSize": 131833,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "cusco": {
+      "fileName": "cusco.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/0/0c/Flag_of_Cusco.png",
+      "downloadedAt": 1755649711466,
+      "fileSize": 3541,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "cavia": {
+      "fileName": "cavia.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/c/c4/CaviaFlag.png",
+      "downloadedAt": 1755649712502,
+      "fileSize": 10658,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "cartulia": {
+      "fileName": "cartulia.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/8/89/CartuliaFlag.png",
+      "downloadedAt": 1755649890315,
+      "fileSize": 9147,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "aswick": {
+      "fileName": "aswick.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/5/5b/Flag_Aswick_Static.png",
+      "downloadedAt": 1755649891139,
+      "fileSize": 9535,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "aoraqet'ya": {
+      "fileName": "aoraqetya.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/6/6b/Aoraqet_flag.png",
+      "downloadedAt": 1755649891268,
+      "fileSize": 120266,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "la ves": {
+      "fileName": "la_ves.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/0/01/LaVesFlag.png",
+      "downloadedAt": 1755649933901,
+      "fileSize": 42889,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "latium": {
+      "fileName": "latium.svg",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/0/07/Flag_of_Latium.svg",
+      "downloadedAt": 1755649949646,
+      "fileSize": 620,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "latilli": {
+      "fileName": "latilli.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/4/43/LatilliFlag.png",
+      "downloadedAt": 1755649950928,
+      "fileSize": 85848,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "plata": {
+      "fileName": "plata.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/8/88/Flag_of_Plata.png",
+      "downloadedAt": 1755649950946,
+      "fileSize": 3140,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "ravka": {
+      "fileName": "ravka.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/3/32/RavkaFlag5.png",
+      "downloadedAt": 1755653121987,
+      "fileSize": 142517,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "radictistan": {
+      "fileName": "radictistan.jpg",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/b/b5/RadictistanFlag.jpg",
+      "downloadedAt": 1755653122436,
+      "fileSize": 11751,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "diyar": {
+      "fileName": "diyar.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/3/30/Tnprp_diyar_flag_v2.png",
+      "downloadedAt": 1755653123489,
+      "fileSize": 43124,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "roda": {
+      "fileName": "roda.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/8/8e/RodaFlagPNG.png",
+      "downloadedAt": 1755653124054,
+      "fileSize": 121234,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "angola": {
+      "fileName": "angola.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/8/88/Angola_Flag.png",
+      "downloadedAt": 1755666540818,
+      "fileSize": 3282,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "china": {
+      "fileName": "china.svg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b6/Flag_of_China_%281889%E2%80%931912%29.svg",
+      "downloadedAt": 1755666545924,
+      "fileSize": 181984,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "cuba": {
+      "fileName": "cuba.jpg",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/c/c8/Flag_of_Cuba.jpg",
+      "downloadedAt": 1755666547552,
+      "fileSize": 8647,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "el salvador": {
+      "fileName": "el_salvador.jpeg",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/7/79/Elsalvador.jpeg",
+      "downloadedAt": 1755666549233,
+      "fileSize": 105497,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "grenada": {
+      "fileName": "grenada.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/1/12/1stTropicanRepublicFlag.png",
+      "downloadedAt": 1755666553462,
+      "fileSize": 10268,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "israel": {
+      "fileName": "israel.svg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Flag_of_Israel.svg",
+      "downloadedAt": 1755666555232,
+      "fileSize": 398,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "indonesia": {
+      "fileName": "indonesia.svg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/9/9f/Flag_of_Indonesia.svg",
+      "downloadedAt": 1755666555515,
+      "fileSize": 148,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "japan": {
+      "fileName": "japan.jpeg",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/e/e7/Japanflag.jpeg",
+      "downloadedAt": 1755666556619,
+      "fileSize": 70869,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "liberia": {
+      "fileName": "liberia.svg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b8/Flag_of_Liberia.svg",
+      "downloadedAt": 1755666558024,
+      "fileSize": 729,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "malaysia": {
+      "fileName": "malaysia.svg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/6/66/Flag_of_Malaysia.svg",
+      "downloadedAt": 1755666560732,
+      "fileSize": 683,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "malta": {
+      "fileName": "malta.svg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/8/86/Flag_of_the_Order_of_St._John_%28various%29.svg",
+      "downloadedAt": 1755666560964,
+      "fileSize": 190,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "philippines": {
+      "fileName": "philippines.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/3/37/BPHF.png",
+      "downloadedAt": 1755666564522,
+      "fileSize": 107560,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "slovenia": {
+      "fileName": "slovenia.svg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/6/6f/White-blue-white_flag.svg",
+      "downloadedAt": 1755666567041,
+      "fileSize": 152,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "south africa": {
+      "fileName": "south_africa.svg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/d/dc/Flag_of_South_Africa_%281928-1982%29.svg",
+      "downloadedAt": 1755666567042,
+      "fileSize": 1620,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "vietnam": {
+      "fileName": "vietnam.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/9/9d/Flag_of_the_Federal_Republic.png",
+      "downloadedAt": 1755666571431,
+      "fileSize": 40045,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "gallia-bruhl": {
+      "fileName": "gallia-bruhl.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/5/53/GalliaF.png",
+      "downloadedAt": 1755667922645,
+      "fileSize": 290707,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "gassasinia": {
+      "fileName": "gassasinia.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/6/6a/Gassasinian_Flag3.png",
+      "downloadedAt": 1755667923843,
+      "fileSize": 16603,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "galactic commonality": {
+      "fileName": "galactic_commonality.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/1/1b/Blorgflag1.png",
+      "downloadedAt": 1755667924244,
+      "fileSize": 64346,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "gaulan": {
+      "fileName": "gaulan.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/c/cf/Gaulan.png",
+      "downloadedAt": 1755667924573,
+      "fileSize": 67113,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "garima": {
+      "fileName": "garima.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/c/cf/Flag_of_Garima.png",
+      "downloadedAt": 1755667924652,
+      "fileSize": 1428,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "gabeonia": {
+      "fileName": "gabeonia.svg",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/e/ea/The_Federation_of_Gabeonia_-_Flag.svg",
+      "downloadedAt": 1755667925651,
+      "fileSize": 686,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "galaria": {
+      "fileName": "galaria.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/b/b5/Ile_du_Fleurs.png",
+      "downloadedAt": 1755667925931,
+      "fileSize": 47215,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "gatarbir": {
+      "fileName": "gatarbir.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/a/a7/Gatarbir_flag.png",
+      "downloadedAt": 1755667925951,
+      "fileSize": 3812,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "garetolia": {
+      "fileName": "garetolia.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/3/33/Flag_of_Garetolia.png",
+      "downloadedAt": 1755667928990,
+      "fileSize": 4171,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "glanodel": {
+      "fileName": "glanodel.jpg",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/3/33/Glanodel-Flag.jpg",
+      "downloadedAt": 1755668342924,
+      "fileSize": 501118,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "granzery": {
+      "fileName": "granzery.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/2/2c/Grozflagvasarden.png",
+      "downloadedAt": 1755668343460,
+      "fileSize": 2069,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "gesaria": {
+      "fileName": "gesaria.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/c/c7/Flag_of_Gesaria.png",
+      "downloadedAt": 1755668343485,
+      "fileSize": 92235,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "gelonia": {
+      "fileName": "gelonia.svg",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/f/fd/Flag_of_Gelonia.svg",
+      "downloadedAt": 1755668343534,
+      "fileSize": 1470,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "gorbatov": {
+      "fileName": "gorbatov.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/a/a1/Gorbatov_Flag.png",
+      "downloadedAt": 1755668343653,
+      "fileSize": 588962,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "gerzidie": {
+      "fileName": "gerzidie.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/e/ea/Gerzidie_Drapeau.png",
+      "downloadedAt": 1755668344357,
+      "fileSize": 74804,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "geatland": {
+      "fileName": "geatland.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/a/a5/GeatlandFlag.png",
+      "downloadedAt": 1755668344691,
+      "fileSize": 81227,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "grelend": {
+      "fileName": "grelend.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/9/99/GrelendFlag.png",
+      "downloadedAt": 1755668344930,
+      "fileSize": 117707,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "goyanes": {
+      "fileName": "goyanes.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/6/6a/IRG_Flag.png",
+      "downloadedAt": 1755668348743,
+      "fileSize": 52143,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "gugrait": {
+      "fileName": "gugrait.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/1/15/GugraitFlag.png",
+      "downloadedAt": 1755668349272,
+      "fileSize": 60169,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "greland": {
+      "fileName": "greland.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/9/99/GrelendFlag.png",
+      "downloadedAt": 1755668349770,
+      "fileSize": 117707,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "gwanghan": {
+      "fileName": "gwanghan.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/f/f6/Flag_of_Gwanghan.png",
+      "downloadedAt": 1755668350044,
+      "fileSize": 114647,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "great zhi": {
+      "fileName": "great_zhi.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/c/c1/Zhi.png",
+      "downloadedAt": 1755668351643,
+      "fileSize": 50993,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "getidaxa": {
+      "fileName": "getidaxa.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/d/d5/Getidaxaflag.png",
+      "downloadedAt": 1755668352589,
+      "fileSize": 16638,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "great epsilon": {
+      "fileName": "great_epsilon.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/4/48/Great_Epsilon_flag_2025.png",
+      "downloadedAt": 1755668352757,
+      "fileSize": 29865,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "gladysynthia": {
+      "fileName": "gladysynthia.png",
+      "originalUrl": "https://iiwiki.com/mediawiki/images/4/41/Gladysynthia_Flag_2024.png",
+      "downloadedAt": 1755668355069,
+      "fileSize": 70218,
+      "source": {
+        "name": "IiWiki",
+        "baseUrl": "https://iiwiki.com/mediawiki",
+        "priority": 2
+      }
+    },
+    "ganges (differently)": {
+      "fileName": "ganges_differently.png",
+      "originalUrl": "https://static.wikia.nocookie.net/althistory/images/7/75/Flag1535DelhiRaj.png/revision/latest?cb=20161228174615",
+      "downloadedAt": 1755668860145,
+      "fileSize": 30547,
+      "source": {
+        "name": "AlthistoryWiki",
+        "baseUrl": "https://althistory.fandom.com",
+        "priority": 3
+      }
+    },
+    "gambia (pharaonic survival)": {
+      "fileName": "gambia_pharaonic_survival.png",
+      "originalUrl": "https://static.wikia.nocookie.net/althistory/images/7/77/Flag_of_The_Gambia.svg/revision/latest?cb=20131016132014",
+      "downloadedAt": 1755668861724,
+      "fileSize": 318,
+      "source": {
+        "name": "AlthistoryWiki",
+        "baseUrl": "https://althistory.fandom.com",
+        "priority": 3
+      }
+    },
+    "chagatai (differently)": {
+      "fileName": "chagatai_differently.png",
+      "originalUrl": "https://static.wikia.nocookie.net/althistory/images/c/c7/Flag_of_Kyrgyzstan.svg/revision/latest?cb=20241013190632",
+      "downloadedAt": 1755668862521,
+      "fileSize": 15594,
+      "source": {
+        "name": "AlthistoryWiki",
+        "baseUrl": "https://althistory.fandom.com",
+        "priority": 3
+      }
+    },
+    "portugal (differently)": {
+      "fileName": "portugal_differently.png",
+      "originalUrl": "https://static.wikia.nocookie.net/althistory/images/a/a1/Flag_Portugal_%281830%29.svg/revision/latest?cb=20120813220957",
+      "downloadedAt": 1755668863251,
+      "fileSize": 291510,
+      "source": {
+        "name": "AlthistoryWiki",
+        "baseUrl": "https://althistory.fandom.com",
+        "priority": 3
+      }
+    },
+    "nye borgerlige garde (wrw)": {
+      "fileName": "nye_borgerlige_garde_wrw.png",
+      "originalUrl": "https://static.wikia.nocookie.net/althistory/images/8/8b/Nyeborgerlige-fb.png/revision/latest?cb=20250810161750",
+      "downloadedAt": 1755668863313,
+      "fileSize": 4049,
+      "source": {
+        "name": "AlthistoryWiki",
+        "baseUrl": "https://althistory.fandom.com",
+        "priority": 3
+      }
+    },
+    "singapore (differently)": {
+      "fileName": "singapore_differently.png",
+      "originalUrl": "https://static.wikia.nocookie.net/althistory/images/a/a3/Non-Muslim_Singapore.png/revision/latest?cb=20210102214209",
+      "downloadedAt": 1755668863832,
+      "fileSize": 154310,
+      "source": {
+        "name": "AlthistoryWiki",
+        "baseUrl": "https://althistory.fandom.com",
+        "priority": 3
+      }
+    },
+    "vanga (differently)": {
+      "fileName": "vanga_differently.png",
+      "originalUrl": "https://static.wikia.nocookie.net/althistory/images/2/24/Assam-Bengal_%28Proper_Flag%29.png/revision/latest?cb=20230314145334",
+      "downloadedAt": 1755668864146,
+      "fileSize": 48041,
+      "source": {
+        "name": "AlthistoryWiki",
+        "baseUrl": "https://althistory.fandom.com",
+        "priority": 3
+      }
+    },
+    "mcclellan regime (napoleon iii's legacy)": {
+      "fileName": "mcclellan_regime_napoleon_iiis_legacy.png",
+      "originalUrl": "https://static.wikia.nocookie.net/althistory/images/a/a4/Flag_of_the_United_States.svg/revision/latest?cb=20240708102526",
+      "downloadedAt": 1755668864303,
+      "fileSize": 823,
+      "source": {
+        "name": "AlthistoryWiki",
+        "baseUrl": "https://althistory.fandom.com",
+        "priority": 3
+      }
+    },
+    "german-austrian union state (an era of reform)": {
+      "fileName": "german-austrian_union_state_an_era_of_reform.png",
+      "originalUrl": "https://static.wikia.nocookie.net/althistory/images/9/98/Flag_of_The_Austro_German_Union.jpg/revision/latest?cb=20220906162550",
+      "downloadedAt": 1755668865609,
+      "fileSize": 528230,
+      "source": {
+        "name": "AlthistoryWiki",
+        "baseUrl": "https://althistory.fandom.com",
+        "priority": 3
+      }
+    },
+    "røde brigader af københavn (wrw)": {
+      "fileName": "rde_brigader_af_kbenhavn_wrw.png",
+      "originalUrl": "https://static.wikia.nocookie.net/althistory/images/8/8c/Ac2pqc3pxc881.png/revision/latest?cb=20250810160431",
+      "downloadedAt": 1755668866196,
+      "fileSize": 25813,
+      "source": {
+        "name": "AlthistoryWiki",
+        "baseUrl": "https://althistory.fandom.com",
+        "priority": 3
+      }
     }
   },
-  "updatedAt": 1755642138295
+  "updatedAt": 1755668866869
 }
