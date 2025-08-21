@@ -123,7 +123,11 @@ function CommandPaletteContent({ isSticky = false, scrollY = 0 }: { isSticky?: b
 export function CommandPalette({ className, isSticky, scrollY }: CommandPaletteProps) {
   return (
     <div 
-      className={`${isSticky ? 'flex items-center justify-center' : 'w-full max-w-none flex items-center justify-center'} z-[10000] ${className || ''}`}
+      className={`flex items-center justify-center z-[10000] ${className || ''}`}
+      style={{ 
+        width: '100%', // Always use full width for proper centering
+        maxWidth: isSticky ? '600px' : '100%' // Constrain max width when sticky
+      }}
     >
       <DynamicIslandProvider initialSize={SIZE_PRESETS.COMPACT_TALL}>
         <CommandPaletteWrapper isSticky={isSticky} scrollY={scrollY} />
@@ -166,7 +170,7 @@ function CommandPaletteWrapper({ isSticky, scrollY }: { isSticky?: boolean; scro
   }
   
   return (
-    <div ref={wrapperRef} className={`relative ${isSticky ? 'flex items-center justify-center' : 'w-full'}`}>
+    <div ref={wrapperRef} className="relative flex items-center justify-center">
       <CommandPaletteContent isSticky={isSticky} scrollY={scrollY} />
     </div>
   );

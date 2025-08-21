@@ -159,9 +159,21 @@ export function Navigation() {
     return true;
   });
 
-  // Dynamic balancing: split items evenly on both sides of Dynamic Island
-  const leftNavItems = visibleNavItems.slice(0, Math.ceil(visibleNavItems.length / 2));
-  const rightNavItems = visibleNavItems.slice(Math.ceil(visibleNavItems.length / 2));
+  // Intelligent balancing: ensure visual symmetry around dynamic island
+  const totalItems = visibleNavItems.length;
+  
+  // For better visual balance, try to keep sides equal or left-heavy by 1
+  const leftCount = Math.ceil(totalItems / 2);
+  const rightCount = totalItems - leftCount;
+  
+  // Create balanced arrays ensuring both sides have similar visual weight
+  const leftNavItems = visibleNavItems.slice(0, leftCount);
+  const rightNavItems = visibleNavItems.slice(leftCount);
+
+  // Ensure minimum spacing for dynamic island - add padding divs if needed
+  const minItemsPerSide = 1;
+  const leftPadding = Math.max(0, minItemsPerSide - leftNavItems.length);
+  const rightPadding = Math.max(0, minItemsPerSide - rightNavItems.length);
 
   return (
     <>
@@ -170,10 +182,10 @@ export function Navigation() {
       <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-b from-transparent to-background/20 rounded-b-3xl"></div>
       
       <div className="max-w-none mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-center h-16 gap-6">
+        <div className="flex items-center justify-between h-16 w-full relative">
           
-          {/* Left Side Navigation - Dynamically balanced */}
-          <div className="flex items-center gap-3 z-[9995]">
+          {/* Left Side Navigation */}
+          <div className="flex items-center justify-start gap-3 z-[9995] flex-1">
             <NavigationMenu>
               <NavigationMenuList className="flex items-center gap-2">
                 {leftNavItems.map((item) => {
@@ -291,15 +303,15 @@ export function Navigation() {
             </NavigationMenu>
           </div>
           
-              {/* CENTER: Command Palette - The Focal Point */}
-          <div className="relative z-[10010]">
+          {/* CENTER: Command Palette - Absolutely positioned for perfect centering */}
+          <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[10010]">
             {/* Enhanced background glow for focal point */}
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/15 to-blue-500/10 rounded-full blur-3xl opacity-60 scale-150 pointer-events-none"></div>
             {!isSticky && <CommandPalette isSticky={false} scrollY={scrollY} />}
           </div>
           
-          {/* Right Side Navigation - Dynamically balanced */}
-          <div className="flex items-center gap-3 z-[9995]">
+          {/* Right Side Navigation */}
+          <div className="flex items-center justify-end gap-3 z-[9995] flex-1">
             <NavigationMenu>
               <NavigationMenuList className="flex items-center gap-2">
                 {rightNavItems.map((item) => {
@@ -454,13 +466,11 @@ export function Navigation() {
         style={{ 
           top: isSticky ? '8px' : '64px',
           left: '50%',
-          transform: 'translate(-50%, 0)',
+          transform: 'translateX(-50%)', // Perfect horizontal centering
           transition: 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
         }}
       >
-        <div className="will-change-transform flex justify-center">
-          <CommandPalette isSticky={isSticky} scrollY={scrollY} />
-        </div>
+        <CommandPalette isSticky={isSticky} scrollY={scrollY} />
       </div>
     </>
   );

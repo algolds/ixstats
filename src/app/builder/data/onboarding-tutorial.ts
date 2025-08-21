@@ -21,8 +21,7 @@ export const builderTutorialSteps: Step[] = [
     full_description: "Every great nation starts with a foundation. Browse our database of real countries and choose one that matches your vision. Each foundation provides authentic economic data that you can customize.",
     media: {
       type: "image", 
-      src: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      alt: "World map with countries"
+      src: "https://images.unsplash.com/photo-1535483102974-fa1e64d0ca86?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
     }
   },
   {

@@ -381,7 +381,7 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5 text-cyan-500" />
-              AI Recommendations
+              Recommendations
             </CardTitle>
             <CardDescription>High priority suggestions</CardDescription>
           </CardHeader>

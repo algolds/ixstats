@@ -18,7 +18,7 @@ import { cn } from '~/lib/utils';
 import { api } from "~/trpc/react";
 import { createUrl } from "~/lib/url-utils";
 import { CountrySelectorEnhanced } from './CountrySelectorEnhanced';
-import { BuilderHub } from '../BuilderHub';
+import { EconomicCustomizationHub } from './EconomicCustomizationHub';
 import { InteractivePreview } from './InteractivePreview';
 import { GlassCard, GlassCardContent } from '../glass/GlassCard';
 import type { RealCountryData, EconomicInputs } from '../../lib/economy-data-service';
@@ -442,15 +442,12 @@ function BuilderContent() {
             exit={{ opacity: 0, x: 100 }}
             transition={{ duration: 0.5, ease: "easeInOut" }}
           >
-            <BuilderHub
+            <EconomicCustomizationHub
               inputs={economicInputs}
+              referenceCountry={selectedCountry}
               onInputsChange={handleInputsChange}
               onPreview={handlePreview}
               onBack={handleBack}
-              selectedCountry={selectedCountry}
-              countries={allCountries}
-              selectedArchetypes={selectedArchetypes}
-              onArchetypeSelect={setSelectedArchetypes}
             />
           </motion.div>
         )}
@@ -510,17 +507,7 @@ export default function BuilderPageEnhanced({ onBackToIntro }: BuilderPageEnhanc
   useEffect(() => {
     // Set page title
     document.title = "Country Builder - IxStats";
-
-    // Add dark mode support
-    const html = document.documentElement;
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const storedTheme = localStorage.getItem('theme');
-
-    if (storedTheme === 'dark' || (!storedTheme && prefersDark)) {
-      html.classList.add('dark');
-    } else {
-      html.classList.remove('dark');
-    }
+    // Theme handling is now managed by ThemeProvider - no manual intervention needed
   }, []);
 
   return (
@@ -548,10 +535,10 @@ export default function BuilderPageEnhanced({ onBackToIntro }: BuilderPageEnhanc
                   <Crown className="h-6 w-6 text-amber-400 absolute -top-1 -right-1" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-2">
+                  <h2 className="text-2xl font-bold text-foreground mb-2">
                     Create Your Nation
                   </h2>
-                  <p className="text-white/70">
+                  <p className="text-muted-foreground">
                     Sign in to access the Country Builder and create your custom economic simulation
                   </p>
                 </div>
@@ -566,7 +553,7 @@ export default function BuilderPageEnhanced({ onBackToIntro }: BuilderPageEnhanc
                       Get Started
                     </motion.button>
                   </SignInButton>
-                  <p className="text-white/50 text-sm">
+                  <p className="text-muted-foreground text-sm">
                     Free account • No membership required
                   </p>
                 </div>

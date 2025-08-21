@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { GlassCard, GlassCardContent, GlassCardHeader } from '../glass/GlassCard';
 import { Button } from '~/components/ui/button';
 import { Image as ImageIcon } from 'lucide-react';
-import { MediaSearchModal } from '~/components/thinkpages/MediaSearchModal';
+import { MediaSearchModal } from '~/components/MediaSearchModal';
 import { CountrySymbolsUploader } from '../CountrySymbolsUploader';
 import type { EconomicInputs, RealCountryData } from '~/app/builder/lib/economy-data-service';
 import { useBuilderTheming } from '~/hooks/useBuilderTheming';
@@ -112,52 +112,57 @@ export function NationalSymbolsSection({
   };
 
   return (
-    <div className="space-y-6">
-      <GlassCard depth="elevated" blur="medium">
-        <GlassCardHeader>
-          <div className="flex items-center gap-2">
-            <ImageIcon className="h-5 w-5 text-[var(--color-text-primary)]" />
-            <h3 className="font-semibold text-[var(--color-text-primary)]">National Symbols</h3>
-          </div>
-        </GlassCardHeader>
-        <GlassCardContent>
-          <CountrySymbolsUploader
-            flagUrl={inputs.flagUrl ?? ''}
-            coatOfArmsUrl={inputs.coatOfArmsUrl ?? ''}
-            foundationCountry={{
-              name: foundationCountryName, // Use the original foundation country name
-              flagUrl: foundationFlagUrl,
-              coatOfArmsUrl: foundationCoatOfArmsUrl // Now dynamically fetched from Wiki Commons
-            }}
-            onSelectFlag={() => setShowFlagImageModal(true)}
-            onSelectCoatOfArms={() => setShowCoatOfArmsImageModal(true)}
-            onColorsExtracted={(colors) => {
-              handleColorsExtracted(colors);
-            }}
-          />
+    <>
+      <div className="space-y-6">
+        <GlassCard depth="elevated" blur="medium">
+          <GlassCardHeader>
+            <div className="flex items-center gap-2">
+              <ImageIcon className="h-5 w-5 text-muted-foreground" />
+              <h3 className="font-semibold text-foreground">National Symbols</h3>
+            </div>
+          </GlassCardHeader>
+          <GlassCardContent>
+            <CountrySymbolsUploader
+              flagUrl={inputs.flagUrl ?? ''}
+              coatOfArmsUrl={inputs.coatOfArmsUrl ?? ''}
+              foundationCountry={{
+                name: foundationCountryName, // Use the original foundation country name
+                flagUrl: foundationFlagUrl,
+                coatOfArmsUrl: foundationCoatOfArmsUrl // Now dynamically fetched from Wiki Commons
+              }}
+              onSelectFlag={() => setShowFlagImageModal(true)}
+              onSelectCoatOfArms={() => setShowCoatOfArmsImageModal(true)}
+              onFlagUrlChange={handleFlagUrlChange}
+              onCoatOfArmsUrlChange={handleCoatOfArmsUrlChange}
+              onColorsExtracted={(colors) => {
+                handleColorsExtracted(colors);
+              }}
+            />
+          </GlassCardContent>
+        </GlassCard>
+      </div>
 
-          {showFlagImageModal && (
-            <MediaSearchModal
-              isOpen={showFlagImageModal}
-              onClose={() => setShowFlagImageModal(false)}
-              onImageSelect={(url) => {
-                handleFlagUrlChange(url);
-                setShowFlagImageModal(false);
-              }}
-            />
-          )}
-          {showCoatOfArmsImageModal && (
-            <MediaSearchModal
-              isOpen={showCoatOfArmsImageModal}
-              onClose={() => setShowCoatOfArmsImageModal(false)}
-              onImageSelect={(url) => {
-                handleCoatOfArmsUrlChange(url);
-                setShowCoatOfArmsImageModal(false);
-              }}
-            />
-          )}
-        </GlassCardContent>
-      </GlassCard>
-    </div>
+      {/* Modal components outside the main layout */}
+      {showFlagImageModal && (
+        <MediaSearchModal
+          isOpen={showFlagImageModal}
+          onClose={() => setShowFlagImageModal(false)}
+          onImageSelect={(url) => {
+            handleFlagUrlChange(url);
+            setShowFlagImageModal(false);
+          }}
+        />
+      )}
+      {showCoatOfArmsImageModal && (
+        <MediaSearchModal
+          isOpen={showCoatOfArmsImageModal}
+          onClose={() => setShowCoatOfArmsImageModal(false)}
+          onImageSelect={(url) => {
+            handleCoatOfArmsUrlChange(url);
+            setShowCoatOfArmsImageModal(false);
+          }}
+        />
+      )}
+    </>
   );
 }

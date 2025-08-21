@@ -23,8 +23,8 @@ export function SectionHeader({
       <div className="flex items-center gap-3">
         <Icon className={`h-6 w-6 ${section.color}`} />
         <div>
-          <h3 className="font-semibold text-[var(--color-text-primary)]">{section.name}</h3>
-          <p className="text-sm text-[var(--color-text-muted)]">{section.description}</p>
+          <h3 className="font-semibold text-slate-800 dark:text-white">{section.name}</h3>
+          <p className="text-sm text-slate-600 dark:text-slate-300">{section.description}</p>
         </div>
       </div>
       <div className="flex items-center gap-2">
@@ -32,7 +32,7 @@ export function SectionHeader({
           onClick={onToggleAdvanced}
           variant="outline"
           size="sm"
-          className="bg-[var(--color-bg-accent)] border-[var(--color-border-secondary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-accent)]/80"
+          className="bg-white/10 border-white/20 text-slate-800 dark:text-white hover:bg-white/15"
         >
           {showAdvanced ? 'Basic' : 'Advanced'}
         </Button>
