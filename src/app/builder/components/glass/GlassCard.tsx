@@ -88,13 +88,13 @@ export function GlassCard({
   
   const cardClasses = cn(
     'rounded-xl overflow-hidden transition-all duration-300',
-    'bg-opacity-50',
+    'bg-opacity-50 touch-manipulation',
     depthStyles[finalDepth],
     blurStyles[blur],
     gradientStyles[gradient],
     themeStyles[theme],
     hover && 'hover:bg-bg-surface/25 hover:border-border-secondary',
-    isInteractive && 'cursor-pointer',
+    isInteractive && 'cursor-pointer active:scale-[0.98] md:active:scale-100',
     className
   );
 

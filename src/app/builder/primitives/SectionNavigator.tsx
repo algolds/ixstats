@@ -23,8 +23,8 @@ export function SectionNavigator({
     <GlassCard depth="elevated" blur="medium">
       <GlassCardHeader>
         <div className="flex items-center gap-2">
-          <Settings className="h-5 w-5 text-[var(--color-text-primary)]" />
-          <h3 className="font-semibold text-[var(--color-text-primary)]">Sections</h3>
+          <Settings className="h-5 w-5 text-muted-foreground" />
+          <h3 className="font-semibold text-foreground">Sections</h3>
         </div>
       </GlassCardHeader>
       <GlassCardContent>
@@ -40,17 +40,18 @@ export function SectionNavigator({
                 whileTap={{ scale: 0.98 }}
                 onClick={() => onSectionChange(section.id)}
                 className={cn(
-                  'w-full p-3 rounded-lg border text-left transition-all duration-200',
+                  'w-full p-4 md:p-3 rounded-lg border text-left transition-all duration-200',
+                  'touch-manipulation min-h-[44px]', // iOS minimum touch target
                   isActive
-                    ? 'bg-[var(--color-bg-accent)] border-[var(--color-border-secondary)] shadow-lg'
-                    : 'border-[var(--color-border-primary)] hover:bg-[var(--color-bg-accent)]/50 hover:border-[var(--color-border-secondary)]'
+                    ? 'bg-accent/20 border-accent shadow-lg text-accent-foreground'
+                    : 'border-border hover:bg-accent/10 hover:border-accent text-muted-foreground hover:text-foreground'
                 )}
               >
                 <div className="flex items-center gap-3 mb-2">
                   <Icon className={cn('h-5 w-5', section.color)} />
-                  <span className="font-medium text-[var(--color-text-primary)]">{section.name}</span>
+                  <span className={cn("font-medium", isActive ? "text-foreground" : "text-muted-foreground")}>{section.name}</span>
                 </div>
-                <p className="text-sm text-[var(--color-text-muted)] mb-2">{section.description}</p>
+                <p className={cn("text-sm mb-2", isActive ? "text-muted-foreground" : "text-muted-foreground/70")}>{section.description}</p>
                 <div className="flex items-center gap-3">
                   <LiquidGlassIndicator 
                     percentage={section.completeness}
@@ -58,7 +59,7 @@ export function SectionNavigator({
                     size="sm"
                     className="flex-1"
                   />
-                  <span className="text-xs text-[var(--color-text-muted)] font-medium">{section.completeness}%</span>
+                  <span className={cn("text-xs font-medium", isActive ? "text-muted-foreground" : "text-muted-foreground/70")}>{section.completeness}%</span>
                 </div>
               </motion.button>
             );

@@ -18,7 +18,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Button } from '~/components/ui/button';
 import { api } from '~/trpc/react';
 import { toast } from 'sonner';
-import { MediaSearchModal } from './MediaSearchModal';
+import { MediaSearchModal } from '~/components/MediaSearchModal';
 import { WikiSearch } from './WikiSearch';
 
 interface AccountCreationModalProps {

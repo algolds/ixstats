@@ -134,18 +134,15 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
               <img src={flagUrl} alt="Flag" className="w-full h-full object-cover" />
             </div>
           )}
-          <div>
-            <h3 className="font-medium text-white">{economicInputs.countryName}</h3>
-            <p className="text-xs text-white/60">Live Economic Vitality</p>
-          </div>
+         
         </div>
 
         {/* Compact Rings Grid */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
           {rings.map((ring, index) => (
             <motion.div
               key={ring.id}
-              className="flex flex-col items-center p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-200 cursor-pointer group"
+              className="flex flex-col items-center p-4 md:p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-200 cursor-pointer group touch-manipulation min-h-[44px]"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => onRingClick?.(index)}

@@ -11,15 +11,25 @@ import {
   Activity,
   Zap,
   Heart,
-  Shield
+  Shield,
+  AlertTriangle
 } from 'lucide-react';
 import { cn } from '~/lib/utils';
 import { GlassCard, GlassCardContent } from './GlassCard';
+import { BuilderVitalityRings } from '../BuilderVitalityRings';
+import { PolicyAdvisor } from '../../primitives/PolicyAdvisor';
+import { generatePolicyAdvisorTips } from '../../utils/policyAdvisorUtils';
 import type { EconomicInputs } from '../../lib/economy-data-service';
+import type { ExtractedColors } from '~/lib/image-color-extractor';
+import { NumberFlowDisplay } from '~/components/ui/number-flow';
 
 interface LiveFeedbackProps {
   inputs: EconomicInputs;
   className?: string;
+  extractedColors?: ExtractedColors | null;
+  flagUrl?: string;
+  coatOfArmsUrl?: string;
+  activeSection?: string;
 }
 
 interface EconomicMetric {
@@ -33,21 +43,12 @@ interface EconomicMetric {
   category: 'economic' | 'social' | 'stability';
 }
 
-interface CitizenSentiment {
-  overall: number;
-  economic: number;
-  social: number;
-  political: number;
-}
 
-export function LiveFeedback({ inputs, className }: LiveFeedbackProps) {
+export function LiveFeedback({ inputs, className, extractedColors, flagUrl, coatOfArmsUrl, activeSection }: LiveFeedbackProps) {
   const [metrics, setMetrics] = useState<EconomicMetric[]>([]);
-  const [sentiment, setSentiment] = useState<CitizenSentiment>({
-    overall: 75,
-    economic: 70,
-    social: 80,
-    political: 75
-  });
+  
+  // Generate policy advisor tips for live preview
+  const advisorTips = generatePolicyAdvisorTips(inputs, activeSection);
 
   useEffect(() => {
     // Calculate real-time metrics based on economic inputs
@@ -129,45 +130,9 @@ export function LiveFeedback({ inputs, className }: LiveFeedbackProps) {
 
     const newMetrics = calculateMetrics();
     setMetrics(newMetrics);
-
-    // Update citizen sentiment based on metrics
-    const economicScore = newMetrics.filter(m => m.category === 'economic')
-      .reduce((avg, m) => avg + (m.trend === 'up' ? 80 : 60), 0) / 2;
-    const socialScore = newMetrics.filter(m => m.category === 'social')
-      .reduce((avg, m) => avg + (m.trend === 'up' ? 85 : 65), 0) / 2;
-    const stabilityScore = newMetrics.filter(m => m.category === 'stability')
-      .reduce((avg, m) => avg + m.value, 0) / 1;
-
-    setSentiment({
-      overall: (economicScore + socialScore + stabilityScore) / 3,
-      economic: economicScore,
-      social: socialScore,
-      political: stabilityScore
-    });
   }, [inputs]);
 
-  const formatValue = (value: number, unit: string): string => {
-    if (unit === '$') {
-      if (Math.abs(value) >= 1e12) return `$${(value / 1e12).toFixed(1)}T`;
-      if (Math.abs(value) >= 1e9) return `$${(value / 1e9).toFixed(1)}B`;
-      if (Math.abs(value) >= 1e6) return `$${(value / 1e6).toFixed(1)}M`;
-      if (Math.abs(value) >= 1e3) return `$${(value / 1e3).toFixed(1)}K`;
-      return `$${value.toFixed(0)}`;
-    }
-    return `${value.toFixed(1)}${unit}`;
-  };
 
-  const getSentimentColor = (score: number): string => {
-    if (score >= 80) return 'text-green-400';
-    if (score >= 60) return 'text-yellow-400';
-    return 'text-red-400';
-  };
-
-  const getSentimentIcon = (score: number) => {
-    if (score >= 80) return Shield;
-    if (score >= 60) return Activity;
-    return TrendingDown;
-  };
 
   return (
     <GlassCard 
@@ -185,37 +150,25 @@ export function LiveFeedback({ inputs, className }: LiveFeedbackProps) {
               <Zap className="h-5 w-5 text-blue-300" />
             </div>
             <div>
-              <h3 className="font-semibold text-white">Live Economic Dashboard</h3>
-              <p className="text-sm text-white/70">Real-time impact analysis</p>
+              <h3 className="font-semibold text-foreground">MyCountry Live Preview</h3>
+              <p className="text-sm text-muted-foreground">Real-time economic vitality analysis</p>
             </div>
           </div>
 
-          {/* Citizen Sentiment */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: 'Overall', value: sentiment.overall },
-              { label: 'Economic', value: sentiment.economic },
-              { label: 'Social', value: sentiment.social },
-              { label: 'Political', value: sentiment.political }
-            ].map((item) => {
-              const SentimentIcon = getSentimentIcon(item.value);
-              return (
-                <div key={item.label} className="text-center">
-                  <div className="flex items-center justify-center gap-1 mb-1">
-                    <SentimentIcon className={cn('h-4 w-4', getSentimentColor(item.value))} />
-                    <span className={cn('text-lg font-bold', getSentimentColor(item.value))}>
-                      {item.value.toFixed(0)}
-                    </span>
-                  </div>
-                  <p className="text-xs text-white/60">{item.label}</p>
-                </div>
-              );
-            })}
-          </div>
+          {/* National Vitality Rings */}
+          <BuilderVitalityRings
+            economicInputs={inputs}
+            extractedColors={extractedColors}
+            flagUrl={flagUrl}
+            coatOfArmsUrl={coatOfArmsUrl}
+            compact={true}
+            showMomentum={true}
+            className="w-full"
+          />
 
           {/* Key Metrics */}
           <div className="space-y-3">
-            <h4 className="text-sm font-medium text-white/80 flex items-center gap-2">
+            <h4 className="text-sm font-medium text-foreground flex items-center gap-2">
               <Activity className="h-4 w-4" />
               Key Economic Indicators
             </h4>
@@ -227,29 +180,34 @@ export function LiveFeedback({ inputs, className }: LiveFeedbackProps) {
                     key={metric.id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10"
+                    className="flex items-center justify-between p-3 rounded-lg bg-card/50 border border-border"
                   >
                     <div className="flex items-center gap-3">
-                      <Icon className="h-4 w-4 text-white/60" />
-                      <span className="text-sm text-white/80">{metric.label}</span>
+                      <Icon className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-foreground">{metric.label}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-white">
-                        {formatValue(metric.value, metric.unit)}
-                      </span>
+                      <NumberFlowDisplay
+                        value={metric.value}
+                        format={metric.unit === '$' ? 'currency' : metric.unit === '%' ? 'percentage' : 'default'}
+                        className="text-sm font-medium text-foreground"
+                        duration={800}
+                      />
                       <div className="flex items-center gap-1">
                         {metric.trend === 'up' ? (
                           <TrendingUp className="h-3 w-3 text-green-400" />
                         ) : metric.trend === 'down' ? (
                           <TrendingDown className="h-3 w-3 text-red-400" />
                         ) : null}
-                        <span className={cn(
-                          'text-xs font-medium',
-                          metric.trend === 'up' ? 'text-green-400' : 
-                          metric.trend === 'down' ? 'text-red-400' : 'text-white/60'
-                        )}>
-                          {metric.change > 0 ? '+' : ''}{metric.change.toFixed(1)}%
-                        </span>
+                        <NumberFlowDisplay
+                          value={metric.change}
+                          format="percentage"
+                          prefix={metric.change > 0 ? '+' : ''}
+                          trend={metric.trend}
+                          className="text-xs font-medium"
+                          duration={600}
+                          decimalPlaces={1}
+                        />
                       </div>
                     </div>
                   </motion.div>
@@ -257,6 +215,56 @@ export function LiveFeedback({ inputs, className }: LiveFeedbackProps) {
               })}
             </div>
           </div>
+
+          {/* Policy Insights */}
+          {advisorTips.length > 0 && (
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-foreground flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Live Policy Insights
+              </h4>
+              <div className="space-y-2">
+                {advisorTips.slice(0, 2).map((tip) => {
+                  const getTipIcon = (type: typeof tip.type) => {
+                    switch (type) {
+                      case 'warning': return AlertTriangle;
+                      case 'suggestion': return Shield;
+                      case 'optimization': return TrendingUp;
+                    }
+                  };
+                  
+                  const getTipColor = (type: typeof tip.type) => {
+                    switch (type) {
+                      case 'warning': return 'border-red-400/30 bg-red-400/10 text-red-300 dark:text-red-200';
+                      case 'suggestion': return 'border-blue-400/30 bg-blue-400/10 text-blue-300 dark:text-blue-200';
+                      case 'optimization': return 'border-green-400/30 bg-green-400/10 text-green-300 dark:text-green-200';
+                    }
+                  };
+
+                  const Icon = getTipIcon(tip.type);
+                  return (
+                    <motion.div
+                      key={tip.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className={cn(
+                        'p-3 rounded-lg border',
+                        getTipColor(tip.type)
+                      )}
+                    >
+                      <div className="flex items-start gap-2">
+                        <Icon className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <h5 className="font-medium text-xs mb-1">{tip.title}</h5>
+                          <p className="text-xs opacity-75">{tip.impact}</p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </GlassCardContent>
     </GlassCard>

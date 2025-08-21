@@ -59,10 +59,10 @@ export function EconomicCustomizationHub({
     setBuilderMode(showAdvanced ? 'advanced' : 'basic');
   }, [showAdvanced]);
 
-  // Generate policy advisor tips using utility function
+  // Generate policy advisor tips using utility function - context-aware
   useEffect(() => {
-    setAdvisorTips(generatePolicyAdvisorTips(inputs));
-  }, [inputs]);
+    setAdvisorTips(generatePolicyAdvisorTips(inputs, activeSection));
+  }, [inputs, activeSection]);
 
   const activeSectionData = sections.find(s => s.id === activeSection);
 
@@ -74,14 +74,19 @@ export function EconomicCustomizationHub({
     const commonProps = {
       inputs,
       onInputsChange,
-      showAdvanced
+      showAdvanced,
+      onToggleAdvanced: () => setShowAdvanced(!showAdvanced),
+      referenceCountry,
+      totalPopulation: inputs.coreIndicators.totalPopulation,
+      nominalGDP: inputs.coreIndicators.nominalGDP,
+      gdpPerCapita: inputs.coreIndicators.gdpPerCapita
     };
 
     switch (activeSection) {
       case 'symbols':
-        return <NationalSymbolsSection {...commonProps} referenceCountry={referenceCountry} />;
+        return <NationalSymbolsSection {...commonProps} />;
       case 'core':
-        return <CoreIndicatorsSection {...commonProps} referenceCountry={referenceCountry} />;
+        return <CoreIndicatorsSection {...commonProps} />;
       case 'labor':
         return <LaborEmploymentSection {...commonProps} />;
       case 'fiscal':
@@ -96,8 +101,8 @@ export function EconomicCustomizationHub({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4 md:p-6">
+      <div className="max-w-[1600px] mx-auto">
         {/* Header - Using modular component */}
         <EconomicHubHeader
           inputs={inputs}
@@ -108,13 +113,13 @@ export function EconomicCustomizationHub({
         <div className={cn(
           "grid gap-6",
           builderStyle === 'classic' 
-            ? "grid-cols-1 lg:grid-cols-5" // More compact layout for classic
-            : "grid-cols-1 lg:grid-cols-4"  // Standard layout for modern
+            ? "grid-cols-1 lg:grid-cols-6" // More compact layout for classic
+            : "grid-cols-1 lg:grid-cols-5"  // Wider layout: 1.5 columns + 2.5 columns + 1 column
         )}>
           {/* Sidebar Navigation */}
           <div className={cn(
-            "space-y-6",
-            builderStyle === 'classic' ? "lg:col-span-1" : ""
+            "space-y-4 md:space-y-6 sticky top-6 self-start",
+            builderStyle === 'classic' ? "lg:col-span-1" : "lg:col-span-1"
           )}>
             {/* Section Navigation - Using modular component */}
             <SectionNavigator
@@ -124,14 +129,14 @@ export function EconomicCustomizationHub({
             />
 
             {/* Policy Advisor - Using modular component */}
-            <PolicyAdvisor tips={advisorTips} maxTips={3} />
+            <PolicyAdvisor tips={advisorTips} maxTips={3} activeSection={activeSection} />
           </div>
 
           {/* Main Content */}
           <div className={cn(
             builderStyle === 'classic' 
-              ? "lg:col-span-3" // More space for content in classic mode
-              : "lg:col-span-2"  // Standard layout for modern
+              ? "lg:col-span-4" // More space for content in classic mode
+              : "lg:col-span-3"  // Wider content area for modern
           )}>
             <GlassCard depth="elevated" blur="medium" motionPreset="slide">
               <GlassCardHeader>
@@ -162,11 +167,18 @@ export function EconomicCustomizationHub({
 
           {/* Live Feedback Panel */}
           <div className={cn(
+            "sticky top-6 self-start",
             builderStyle === 'classic' 
               ? "lg:col-span-1" // Smaller feedback panel in classic mode
-              : ""  // Default behavior for modern
+              : "lg:col-span-1"  // Full width on mobile/tablet, sidebar on desktop
           )}>
-            <LiveFeedback inputs={inputs} />
+            <LiveFeedback 
+              inputs={inputs} 
+              activeSection={activeSection}
+              extractedColors={inputs.flagExtractedColors}
+              flagUrl={inputs.flagUrl}
+              coatOfArmsUrl={inputs.coatOfArmsUrl}
+            />
           </div>
         </div>
       </div>

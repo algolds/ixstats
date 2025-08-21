@@ -64,7 +64,7 @@ export function EconomicHubHeader({
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex items-center justify-between mb-8 relative z-50 bg-[var(--color-bg-primary)]/95 backdrop-blur-sm rounded-lg p-4 border border-[var(--color-border-primary)] overflow-hidden"
+      className="flex items-center justify-between mb-8 relative z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm rounded-lg p-4 border border-slate-200/30 dark:border-slate-700/30 overflow-hidden"
     >
       {/* Flag Background */}
       {flagUrl && (
@@ -81,7 +81,7 @@ export function EconomicHubHeader({
       )}
       
       {/* Overlay for blur effect and readability */}
-      <div className="absolute inset-0 backdrop-filter backdrop-blur-md bg-black/60 z-10" />
+      <div className="absolute inset-0 backdrop-filter backdrop-blur-md bg-white/60 dark:bg-black/60 z-10" />
       
       <div className="relative z-20 w-full">
         <div className="flex items-center justify-between">
@@ -90,24 +90,24 @@ export function EconomicHubHeader({
               onClick={onBack}
               variant="outline"
               size="default"
-              className="bg-[var(--color-bg-accent)] border-[var(--color-border-secondary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-accent)]/80 shadow-lg hover:shadow-xl transition-all duration-200"
+              className="bg-white/20 dark:bg-slate-800/60 border-white/30 dark:border-slate-600/40 text-slate-800 dark:text-white hover:bg-white/30 dark:hover:bg-slate-700/70 shadow-lg hover:shadow-xl transition-all duration-200"
             >
               <ChevronLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
             
             <div>
-              <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
+              <h3 className="text-lg font-semibold text-slate-800 dark:text-white">
                 Building: {inputs.countryName}
               </h3>
-              <p className="text-sm text-[var(--color-text-secondary)]">
+              <p className="text-sm text-slate-600 dark:text-slate-300">
                 Foundation Country: {getFoundationCountryName(referenceCountry)} {referenceCountry.countryCode ? `(${referenceCountry.countryCode})` : ''}
               </p>
             </div>
           </div>
         </div>
         
-        <p className="text-[var(--color-text-secondary)] mt-2">
+        <p className="text-slate-600 dark:text-slate-400 mt-2">
           Customize your economic parameters below
         </p>
       </div>

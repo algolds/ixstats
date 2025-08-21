@@ -25,11 +25,11 @@ interface GlassTooltipProps {
 }
 
 const themeStyles = {
-  gold: 'border-amber-300/30 text-amber-100',
-  blue: 'border-blue-300/30 text-blue-100',
-  indigo: 'border-indigo-300/30 text-indigo-100',
-  red: 'border-red-300/30 text-red-100',
-  neutral: 'border-gray-300/30 text-gray-100'
+  gold: 'border-amber-300/30 text-amber-800 dark:text-amber-100',
+  blue: 'border-blue-300/30 text-blue-800 dark:text-blue-100',
+  indigo: 'border-indigo-300/30 text-indigo-800 dark:text-indigo-100',
+  red: 'border-red-300/30 text-red-800 dark:text-red-100',
+  neutral: 'border-gray-300/30 text-gray-800 dark:text-gray-100'
 };
 
 
@@ -118,7 +118,7 @@ export function GlassTooltip({
   }, []);
 
   const getArrowClasses = () => {
-    const baseArrow = 'absolute w-3 h-3 transform rotate-45 bg-black/80 border border-white/20';
+    const baseArrow = 'absolute w-3 h-3 transform rotate-45 bg-white/90 dark:bg-black/80 border border-slate-200/50 dark:border-white/20';
     
     switch (position) {
       case 'top':
@@ -146,7 +146,7 @@ export function GlassTooltip({
           className={cn(
             'fixed pointer-events-none',
             'rounded-lg p-4 backdrop-blur-lg border shadow-2xl',
-            'bg-black/80 dark:bg-black/90',
+            'bg-white/90 dark:bg-black/90',
             themeStyles[theme],
             maxWidth,
             className
@@ -169,19 +169,19 @@ export function GlassTooltip({
               </div>
             )}
             
-            <div className="text-sm text-white/90">
+            <div className="text-sm text-slate-700 dark:text-white/90">
               {content}
             </div>
             
             {impact && impact.length > 0 && (
               <div className="space-y-2 pt-2 border-t border-white/10">
-                <div className="text-xs font-medium text-white/70 flex items-center gap-1">
+                <div className="text-xs font-medium text-slate-600 dark:text-white/70 flex items-center gap-1">
                   <TrendingUp className="h-3 w-3" />
                   Impact Analysis
                 </div>
                 {impact.map((item, index) => (
                   <div key={index} className="flex items-center justify-between text-xs">
-                    <span className="text-white/80">{item.metric}</span>
+                    <span className="text-slate-600 dark:text-white/80">{item.metric}</span>
                     <div className="flex items-center gap-1">
                       {item.change > 0 ? (
                         <TrendingUp className="h-3 w-3 text-green-400" />
@@ -191,7 +191,7 @@ export function GlassTooltip({
                       <span className={cn(
                         'font-medium',
                         item.change > 0 ? 'text-green-400' : 
-                        item.change < 0 ? 'text-red-400' : 'text-white/60'
+                        item.change < 0 ? 'text-red-400' : 'text-slate-600 dark:text-white/60'
                       )}>
                         {item.change > 0 ? '+' : ''}{item.change}%
                       </span>
@@ -238,7 +238,7 @@ export function InfoIcon({
   return (
     <HelpCircle 
       className={cn(
-        'h-4 w-4 text-white/40 hover:text-white/70 transition-colors cursor-help',
+        'h-4 w-4 text-slate-500 dark:text-white/40 hover:text-slate-700 dark:hover:text-white/70 transition-colors cursor-help',
         className
       )} 
       {...props}

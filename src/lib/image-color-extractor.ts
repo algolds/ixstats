@@ -55,9 +55,23 @@ export async function extractColorsFromImage(
       }
     };
 
-    img.onerror = () => {
-      reject(new Error('Failed to load image'));
+    let retryAttempted = false;
+
+    const handleError = () => {
+      if (!retryAttempted && typeof imageSource === 'string') {
+        console.warn('CORS failed, retrying without crossOrigin for:', imageSource);
+        retryAttempted = true;
+        // Retry without CORS
+        const img2 = new Image();
+        img2.onload = img.onload;
+        img2.onerror = () => reject(new Error('Failed to load image after retry'));
+        img2.src = imageSource;
+      } else {
+        reject(new Error('Failed to load image'));
+      }
     };
+
+    img.onerror = handleError;
 
     // Handle different image sources
     if (typeof imageSource === 'string') {

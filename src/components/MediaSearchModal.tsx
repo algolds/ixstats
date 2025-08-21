@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '~/lib/utils';
 import { X, Search, Loader2, Check } from 'lucide-react';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
+import * as SelectPrimitive from '@radix-ui/react-select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { api } from '~/trpc/react';
 import { toast } from 'sonner';
@@ -28,6 +30,21 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
   const [wikiSource, setWikiSource] = useState<'ixwiki' | 'iiwiki'>('ixwiki');
   const [wikiSearchResults, setWikiSearchResults] = useState<{ path: string; name: string; url?: string; description?: string; }[]>([]);
 
+  // Debounced search queries to reduce API calls
+  const [debouncedRepoQuery, setDebouncedRepoQuery] = useState('');
+  const [debouncedCommonsQuery, setDebouncedCommonsQuery] = useState('');
+
+  // Debounce search queries
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedRepoQuery(searchQuery), 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedCommonsQuery(wikiCommonsSearchQuery), 500);
+    return () => clearTimeout(timer);
+  }, [wikiCommonsSearchQuery]);
+
   const { ref: repoRef, inView: repoInView } = useInView();
   const { ref: commonsRef, inView: commonsInView } = useInView();
 
@@ -38,12 +55,14 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
     isLoading: isLoadingRepo,
     isFetchingNextPage: isFetchingNextRepoPage,
   } = api.thinkpages.searchUnsplashImages.useInfiniteQuery(
-    { query: searchQuery, per_page: 12 },
+    { query: debouncedRepoQuery, per_page: 6 },
     {
       getNextPageParam: (lastPage, allPages) => {
-        return lastPage.length === 12 ? allPages.length + 1 : undefined;
+        return lastPage.length === 6 ? allPages.length + 1 : undefined;
       },
-      enabled: activeTab === 'repository' && !!searchQuery
+      enabled: activeTab === 'repository' && !!debouncedRepoQuery,
+      staleTime: 5 * 60 * 1000, // 5 minutes cache
+      refetchOnWindowFocus: false
     }
   );
 
@@ -54,12 +73,14 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
     isLoading: isLoadingWikiCommons,
     isFetchingNextPage: isFetchingNextCommonsPage,
   } = api.thinkpages.searchWikiCommonsImages.useInfiniteQuery(
-    { query: wikiCommonsSearchQuery, per_page: 12 },
+    { query: debouncedCommonsQuery, per_page: 6 },
     {
       getNextPageParam: (lastPage, allPages) => {
-        return lastPage.length === 12 ? allPages.length + 1 : undefined;
+        return lastPage.length === 6 ? allPages.length + 1 : undefined;
       },
-      enabled: activeTab === 'wiki-commons' && !!wikiCommonsSearchQuery
+      enabled: activeTab === 'wiki-commons' && !!debouncedCommonsQuery,
+      staleTime: 5 * 60 * 1000, // 5 minutes cache
+      refetchOnWindowFocus: false
     }
   );
 
@@ -75,17 +96,24 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
     },
   });
 
+  // Throttled infinite scroll to prevent excessive API calls
   useEffect(() => {
-    if (repoInView && hasNextRepoPage) {
-      fetchNextRepoPage();
+    if (repoInView && hasNextRepoPage && !isFetchingNextRepoPage) {
+      const timer = setTimeout(() => {
+        fetchNextRepoPage();
+      }, 300); // 300ms throttle
+      return () => clearTimeout(timer);
     }
-  }, [repoInView, hasNextRepoPage, fetchNextRepoPage]);
+  }, [repoInView, hasNextRepoPage, isFetchingNextRepoPage, fetchNextRepoPage]);
 
   useEffect(() => {
-    if (commonsInView && hasNextCommonsPage) {
-      fetchNextCommonsPage();
+    if (commonsInView && hasNextCommonsPage && !isFetchingNextCommonsPage) {
+      const timer = setTimeout(() => {
+        fetchNextCommonsPage();
+      }, 300); // 300ms throttle
+      return () => clearTimeout(timer);
     }
-  }, [commonsInView, hasNextCommonsPage, fetchNextCommonsPage]);
+  }, [commonsInView, hasNextCommonsPage, isFetchingNextCommonsPage, fetchNextCommonsPage]);
 
   useEffect(() => {
     if (isOpen) {
@@ -96,7 +124,19 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
       setWikiSearchQuery('');
       setWikiSearchResults([]);
       setWikiSource('ixwiki');
+      setDebouncedRepoQuery('');
+      setDebouncedCommonsQuery('');
+      // Prevent body scroll when modal is open
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Restore body scroll when modal is closed
+      document.body.style.overflow = '';
     }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [isOpen]);
 
   const handleSelectImage = () => {
@@ -110,22 +150,34 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
   const images = imagesData?.pages.flatMap(page => page) ?? [];
   const wikiCommonsImages = wikiCommonsImagesData?.pages.flatMap(page => page) ?? [];
 
-  return (
+  // Create portal element
+  const [portalElement, setPortalElement] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setPortalElement(document.body);
+    }
+  }, []);
+
+  if (!portalElement) return null;
+
+  const modalContent = (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center hs-overlay-backdrop-open:bg-black/50">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
           />
 
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            onClick={(e) => e.stopPropagation()}
             className="relative w-full max-w-4xl mx-4 max-h-[90vh] flex flex-col bg-neutral-900/50 border border-white/10 rounded-xl shadow-lg backdrop-blur-xl"
           >
             {/* Header */}
@@ -155,23 +207,30 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
                 </div>
 
                 {/* Image Results */}
-                <div className="flex-1 p-4 overflow-y-auto grid grid-cols-3 gap-4">
+                <div className="flex-1 p-4 overflow-y-auto max-h-[60vh]">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {isLoadingRepo && images.length === 0 ? (
-                    <div className="col-span-3 flex justify-center items-center h-48">
+                    <div className="col-span-2 md:col-span-3 flex justify-center items-center h-48">
                       <Loader2 className="animate-spin h-8 w-8 text-blue-400" />
                     </div>
                   ) : images.length > 0 ? (
                     <>
-                      {images.map((image) => (
+                      {images.map((image, index) => (
                         <div
-                          key={image.id}
+                          key={`repo-${image.id}-${index}`}
                           className={cn(
                             "relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all",
                             selectedImage === image.url ? "border-blue-500" : "border-transparent hover:border-blue-400"
                           )}
                           onClick={() => setSelectedImage(image.url)}
                         >
-                          <img src={image.url} alt={image.description || "Unsplash Image"} className="w-full h-32 object-cover" />
+                          <img 
+                            src={image.url} 
+                            alt={image.description || "Unsplash Image"} 
+                            className="w-full h-32 object-cover"
+                            loading="lazy"
+                            decoding="async"
+                          />
                           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-sm font-medium">
                             {image.photographer}
                           </div>
@@ -182,15 +241,16 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
                           )}
                         </div>
                       ))}
-                      <div ref={repoRef} className="col-span-3 flex justify-center items-center p-4">
+                      <div ref={repoRef} className="col-span-2 md:col-span-3 flex justify-center items-center p-4">
                         {isFetchingNextRepoPage && <Loader2 className="animate-spin h-8 w-8 text-blue-400" />}
                       </div>
                     </>
                   ) : (
-                    <div className="col-span-3 text-center text-muted-foreground p-8">
+                    <div className="col-span-2 md:col-span-3 text-center text-muted-foreground p-8">
                       No images found. Try a different search query.
                     </div>
                   )}
+                  </div>
                 </div>
               </TabsContent>
 
@@ -206,23 +266,30 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
                 </div>
 
                 {/* Image Results */}
-                <div className="flex-1 p-4 overflow-y-auto grid grid-cols-3 gap-4">
+                <div className="flex-1 p-4 overflow-y-auto max-h-[60vh]">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {isLoadingWikiCommons && wikiCommonsImages.length === 0 ? (
-                    <div className="col-span-3 flex justify-center items-center h-48">
+                    <div className="col-span-2 md:col-span-3 flex justify-center items-center h-48">
                       <Loader2 className="animate-spin h-8 w-8 text-blue-400" />
                     </div>
                   ) : wikiCommonsImages.length > 0 ? (
                     <>
-                      {wikiCommonsImages.map((image) => (
+                      {wikiCommonsImages.map((image, index) => (
                         <div
-                          key={image.id}
+                          key={`commons-${image.id}-${index}`}
                           className={cn(
                             "relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all",
                             selectedImage === image.url ? "border-blue-500" : "border-transparent hover:border-blue-400"
                           )}
                           onClick={() => setSelectedImage(image.url)}
                         >
-                          <img src={image.url} alt={image.description || "Wiki Commons Image"} className="w-full h-32 object-cover" />
+                          <img 
+                            src={image.url} 
+                            alt={image.description || "Wiki Commons Image"} 
+                            className="w-full h-32 object-cover"
+                            loading="lazy"
+                            decoding="async"
+                          />
                           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-sm font-medium">
                             {image.photographer}
                           </div>
@@ -233,29 +300,64 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
                           )}
                         </div>
                       ))}
-                      <div ref={commonsRef} className="col-span-3 flex justify-center items-center p-4">
+                      <div ref={commonsRef} className="col-span-2 md:col-span-3 flex justify-center items-center p-4">
                         {isFetchingNextCommonsPage && <Loader2 className="animate-spin h-8 w-8 text-blue-400" />}
                       </div>
                     </>
                   ) : (
-                    <div className="col-span-3 text-center text-muted-foreground p-8">
+                    <div className="col-span-2 md:col-span-3 text-center text-muted-foreground p-8">
                       No images found. Try a different search query.
                     </div>
                   )}
+                  </div>
                 </div>
               </TabsContent>
 
               <TabsContent value="wiki" className="flex-1 flex flex-col data-[state=inactive]:hidden min-h-0">
                 <div className="p-4 border-b border-white/10 flex items-center gap-2">
-                  <Select value={wikiSource} onValueChange={(value) => setWikiSource(value as 'ixwiki' | 'iiwiki')}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Select a wiki" />
-                    </SelectTrigger>
-                    <SelectContent className="relative z-[80]">
-                      <SelectItem value="ixwiki">ixwiki</SelectItem>
-                      <SelectItem value="iiwiki">iiwiki</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <SelectPrimitive.Root value={wikiSource} onValueChange={(value) => setWikiSource(value as 'ixwiki' | 'iiwiki')}>
+                    <SelectPrimitive.Trigger className="flex h-10 w-[180px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                      <SelectPrimitive.Value placeholder="Select a wiki" />
+                      <SelectPrimitive.Icon asChild>
+                        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 opacity-50">
+                          <path d="m4.93179 5.43179c.20264-.20264.53153-.20264.73417 0L8 7.76576l2.33404-2.33397c.20264-.20264.53153-.20264.73417 0 .20264.20264.20264.53153 0 .73417L8.36708 8.56794c-.20264.20264-.53153.20264-.73417 0L5.29289 6.22612c-.20264-.20264-.20264-.53153 0-.73433Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
+                        </svg>
+                      </SelectPrimitive.Icon>
+                    </SelectPrimitive.Trigger>
+                    <SelectPrimitive.Portal>
+                      <SelectPrimitive.Content
+                        className="relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2"
+                        position="popper"
+                        side="bottom"
+                        align="start"
+                      >
+                        <SelectPrimitive.Viewport className="p-1 h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]">
+                          <SelectPrimitive.Item
+                            value="ixwiki"
+                            className="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                          >
+                            <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                              <SelectPrimitive.ItemIndicator>
+                                <Check className="h-4 w-4" />
+                              </SelectPrimitive.ItemIndicator>
+                            </span>
+                            <SelectPrimitive.ItemText>ixwiki</SelectPrimitive.ItemText>
+                          </SelectPrimitive.Item>
+                          <SelectPrimitive.Item
+                            value="iiwiki"
+                            className="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                          >
+                            <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                              <SelectPrimitive.ItemIndicator>
+                                <Check className="h-4 w-4" />
+                              </SelectPrimitive.ItemIndicator>
+                            </span>
+                            <SelectPrimitive.ItemText>iiwiki</SelectPrimitive.ItemText>
+                          </SelectPrimitive.Item>
+                        </SelectPrimitive.Viewport>
+                      </SelectPrimitive.Content>
+                    </SelectPrimitive.Portal>
+                  </SelectPrimitive.Root>
                   <Input
                     placeholder="Search for images (e.g., 'flag', 'coat of arms')..."
                     value={wikiSearchQuery}
@@ -267,22 +369,29 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
                     {searchWikiMutation.isPending ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Search className="h-4 w-4 mr-2" />}Search
                   </Button>
                 </div>
-                <div className="flex-1 p-4 overflow-y-auto grid grid-cols-3 gap-4">
+                <div className="flex-1 p-4 overflow-y-auto max-h-[60vh]">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {searchWikiMutation.isPending ? (
-                    <div className="col-span-3 flex justify-center items-center h-48">
+                    <div className="col-span-2 md:col-span-3 flex justify-center items-center h-48">
                       <Loader2 className="animate-spin h-8 w-8 text-blue-400" />
                     </div>
                   ) : wikiSearchResults.length > 0 ? (
-                    wikiSearchResults.map((image) => (
+                    wikiSearchResults.map((image, index) => (
                       <div
-                        key={image.path}
+                        key={`wiki-${image.path}-${index}`}
                         className={cn(
                           "relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all",
                           selectedImage === image.path ? "border-blue-500" : "border-transparent hover:border-blue-400"
                         )}
                         onClick={() => setSelectedImage(image.path)}
                       >
-                        <img src={image.url || image.path} alt={image.name || "Wiki Image"} className="w-full h-32 object-cover" />
+                        <img 
+                          src={image.url || image.path} 
+                          alt={image.name || "Wiki Image"} 
+                          className="w-full h-32 object-cover"
+                          loading="lazy"
+                          decoding="async"
+                        />
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-sm font-medium p-2 text-center">
                           {image.name?.replace('File:', '') || 'Wiki Image'}
                         </div>
@@ -294,10 +403,11 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
                       </div>
                     ))
                   ) : (
-                    <div className="col-span-3 text-center text-muted-foreground p-8">
+                    <div className="col-span-2 md:col-span-3 text-center text-muted-foreground p-8">
                       No images found. Try a different search query.
                     </div>
                   )}
+                  </div>
                 </div>
               </TabsContent>
             </Tabs>
@@ -313,4 +423,6 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
       )}
     </AnimatePresence>
   );
+
+  return createPortal(modalContent, portalElement);
 }
