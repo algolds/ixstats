@@ -39,10 +39,10 @@ import Link from "next/link";
 
 // Import repurposed builder components for editing
 import { CoreEconomicIndicatorsComponent } from "~/app/builder/components/CoreEconomicIndicators";
-import { LaborEmploymentComponent } from "~/app/builder/components/LaborEmployment";
-import { FiscalSystemComponent } from "~/app/builder/components/FiscalSystem";
+import { LaborEmploymentSection as LaborEmploymentComponent } from "~/app/builder/sections/LaborEmploymentSection";
+import { FiscalSystemSection as FiscalSystemComponent } from "~/app/builder/sections/FiscalSystemSection";
 import { GovernmentSpending } from "~/app/builder/components/GovernmentSpending";
-import { Demographics } from "~/app/builder/components/Demographics";
+import { DemographicsSection as Demographics } from "~/app/builder/sections/DemographicsSection";
 import type { EconomicInputs } from "~/app/builder/lib/economy-data-service";
 import { createDefaultEconomicInputs } from "~/app/builder/lib/economy-data-service";
 
@@ -85,16 +85,16 @@ export default function MyCountryEditor() {
       // Populate with existing country data
       inputs.countryName = country.name;
       inputs.coreIndicators = {
-        totalPopulation: country.currentPopulation || country.baselinePopulation || 0,
-        gdpPerCapita: country.currentGdpPerCapita || country.baselineGdpPerCapita || 0,
-        nominalGDP: country.currentTotalGdp || (country.currentPopulation * country.currentGdpPerCapita) || 0,
-        realGDPGrowthRate: country.realGDPGrowthRate || 3.0,
-        inflationRate: country.inflationRate || 2.0,
+        totalPopulation: (country as any).currentPopulation || country.baselinePopulation || 0,
+        gdpPerCapita: (country as any).currentGdpPerCapita || country.baselineGdpPerCapita || 0,
+        nominalGDP: (country as any).currentTotalGdp || ((country as any).currentPopulation * (country as any).currentGdpPerCapita) || 0,
+        realGDPGrowthRate: (country as any).realGDPGrowthRate || 3.0,
+        inflationRate: (country as any).inflationRate || 2.0,
         currencyExchangeRate: 1.0,
       };
       
-      if (country.unemploymentRate !== undefined) {
-        inputs.laborEmployment.unemploymentRate = country.unemploymentRate;
+      if ((country as any).unemploymentRate !== undefined) {
+        inputs.laborEmployment.unemploymentRate = (country as any).unemploymentRate;
       }
       
       setEconomicInputs(inputs);
@@ -284,8 +284,8 @@ export default function MyCountryEditor() {
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Badge variant="outline">{country.economicTier}</Badge>
-              <Badge variant="outline">Tier {country.populationTier}</Badge>
+              <Badge variant="outline">{(country as any).economicTier || 'Unknown'}</Badge>
+              <Badge variant="outline">Tier {(country as any).populationTier || 'Unknown'}</Badge>
               {hasChanges && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   <Edit className="h-3 w-3" />
@@ -380,22 +380,21 @@ export default function MyCountryEditor() {
 
         <TabsContent value="labor" className="space-y-6">
           <LaborEmploymentComponent
-            laborData={economicInputs.laborEmployment}
-            totalPopulation={economicInputs.coreIndicators.totalPopulation}
-            onLaborDataChangeAction={(newLaborData) => {
-              handleInputsChange({
-                ...economicInputs,
-                laborEmployment: newLaborData
-              });
+            inputs={economicInputs}
+            onInputsChange={(newInputs: any) => {
+              handleInputsChange(newInputs);
             }}
-            isReadOnly={false}
-            showComparison={false}
+            showAdvanced={false}
           />
         </TabsContent>
 
         <TabsContent value="fiscal" className="space-y-6">
           <FiscalSystemComponent
-            fiscalData={economicInputs.fiscalSystem}
+            inputs={economicInputs}
+            onInputsChange={(newInputs: any) => {
+              handleInputsChange(newInputs);
+            }}
+            showAdvanced={false}
             referenceCountry={{
               name: "Reference",
               countryCode: "REF",
@@ -407,12 +406,6 @@ export default function MyCountryEditor() {
             }}
             nominalGDP={economicInputs.coreIndicators.nominalGDP}
             totalPopulation={economicInputs.coreIndicators.totalPopulation}
-            onFiscalDataChange={(newFiscalData) => {
-              handleInputsChange({
-                ...economicInputs,
-                fiscalSystem: newFiscalData
-              });
-            }}
           />
         </TabsContent>
 
@@ -433,14 +426,12 @@ export default function MyCountryEditor() {
 
         <TabsContent value="demographics" className="space-y-6">
           <Demographics
-            demographicData={economicInputs.demographics}
-            totalPopulation={economicInputs.coreIndicators.totalPopulation}
-            onDemographicDataChange={(newDemographicData) => {
-              handleInputsChange({
-                ...economicInputs,
-                demographics: newDemographicData
-              });
+            inputs={economicInputs}
+            onInputsChange={(newInputs: any) => {
+              handleInputsChange(newInputs);
             }}
+            showAdvanced={false}
+            totalPopulation={economicInputs.coreIndicators.totalPopulation}
           />
         </TabsContent>
       </Tabs>

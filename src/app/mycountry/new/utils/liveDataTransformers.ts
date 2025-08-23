@@ -337,6 +337,20 @@ export function transformApiDataToVitalityIntelligence(
 }
 
 /**
+ * Map API categories to CriticalAlert categories
+ */
+function mapAlertCategory(category: string): 'economic' | 'population' | 'diplomatic' | 'governance' | 'crisis' {
+  switch (category) {
+    case 'security':
+      return 'crisis';
+    case 'social':
+      return 'population';
+    default:
+      return category as 'economic' | 'population' | 'diplomatic' | 'governance' | 'crisis';
+  }
+}
+
+/**
  * Transform real intelligence feed to critical alerts
  */
 export function transformApiIntelligenceToAlerts(intelligenceItems: ApiIntelligenceItem[]): CriticalAlert[] {
@@ -348,7 +362,7 @@ export function transformApiIntelligenceToAlerts(intelligenceItems: ApiIntellige
       title: item.title,
       message: item.description,
       severity: mapSeverity(item.severity),
-      category: item.category,
+      category: mapAlertCategory(item.category),
       priority: item.priority ? mapPriority(item.priority) : 'high',
       actionRequired: item.actionable,
       timeframe: item.severity === 'critical' ? 'immediate' : 'short',
@@ -389,6 +403,19 @@ export function transformApiIntelligenceToInsights(intelligenceItems: ApiIntelli
 }
 
 /**
+ * Map API categories to ActionableRecommendation categories
+ */
+function mapRecommendationCategory(category: string): 'economic' | 'population' | 'diplomatic' | 'governance' {
+  switch (category) {
+    case 'security':
+    case 'social':
+      return 'governance';
+    default:
+      return category as 'economic' | 'population' | 'diplomatic' | 'governance';
+  }
+}
+
+/**
  * Transform real intelligence feed to actionable recommendations
  */
 export function transformApiIntelligenceToRecommendations(intelligenceItems: ApiIntelligenceItem[]): ActionableRecommendation[] {
@@ -399,7 +426,7 @@ export function transformApiIntelligenceToRecommendations(intelligenceItems: Api
       id: item.id,
       title: `Address ${item.title}`,
       description: item.actions?.[0] || item.description,
-      category: item.category,
+      category: mapRecommendationCategory(item.category),
       urgency: mapSeverityToUrgency(item.severity),
       difficulty: 'moderate',
       estimatedDuration: item.severity === 'critical' ? '1-2 days' : '1-2 weeks',
@@ -446,15 +473,14 @@ export function transformApiDataToExecutiveIntelligence(
     forwardIntelligence: {
       predictions: [], // TODO: Implement predictions from historical data
       opportunities: [], // TODO: Transform opportunity intelligence items
-      risks: [], // TODO: Transform risk intelligence items
-      scenarios: [] // TODO: Implement scenario analysis
+      risks: [] // TODO: Transform risk intelligence items
     },
     overallStatus,
     confidenceLevel: Math.round(intelligenceItems.reduce((sum, item) => sum + item.confidence, 0.8) / Math.max(intelligenceItems.length, 1) * 100),
     lastMajorChange: {
       date: country.lastCalculated,
-      type: 'economic_update',
-      description: 'Economic vitality recalculated'
+      description: 'Economic vitality recalculated',
+      impact: 'Economic metrics updated based on latest data'
     }
   };
 }

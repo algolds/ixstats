@@ -78,11 +78,18 @@ interface GovernmentSpendingProps extends GovernmentSpendingData {
 }
 
 export function GovernmentSpending({
+  education = 0,
+  healthcare = 0,
+  socialSafety = 0,
   totalSpending,
   spendingGDPPercent,
   spendingPerCapita,
   spendingCategories,
   deficitSurplus,
+  performanceBasedBudgeting = false,
+  universalBasicServices = false,
+  greenInvestmentPriority = false,
+  digitalGovernmentInitiative = false,
   nominalGDP,
   totalPopulation,
   onSpendingDataChangeAction,
@@ -92,11 +99,18 @@ export function GovernmentSpending({
 }: GovernmentSpendingProps) {
   // Reconstruct spendingData object for compatibility
   const spendingData: GovernmentSpendingData = {
+    education,
+    healthcare,
+    socialSafety,
     totalSpending,
     spendingGDPPercent,
     spendingPerCapita,
     spendingCategories,
-    deficitSurplus
+    deficitSurplus,
+    performanceBasedBudgeting,
+    universalBasicServices,
+    greenInvestmentPriority,
+    digitalGovernmentInitiative
   };
   const [selectedView, setSelectedView] = useState<'overview' | 'breakdown' | 'efficiency' | 'analysis'>('overview');
   const [editMode, setEditMode] = useState(false);

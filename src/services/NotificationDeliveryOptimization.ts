@@ -10,6 +10,7 @@ import type {
   DeliveryMethod,
   NotificationPriority,
   NotificationCategory,
+  DeliveryContext,
 } from '~/types/unified-notifications';
 import type { BatchAnalysis } from './NotificationGrouping';
 
@@ -486,7 +487,8 @@ export class NotificationDeliveryOptimization {
     // Check user preferences first
     const categoryPrefs = preferences.categories[notification.category];
     if (categoryPrefs?.deliveryMethods?.length > 0) {
-      return categoryPrefs.deliveryMethods[0];
+      const method = categoryPrefs.deliveryMethods[0];
+      if (method) return method;
     }
     
     // Critical notifications use most prominent method
@@ -551,7 +553,8 @@ export class NotificationDeliveryOptimization {
       away: { badge: 20, silent: 15, toast: -10 }
     };
     
-    score += attentionBonus[attentionState.level]?.[method] || 0;
+    const levelBonus = attentionBonus[attentionState.level];
+    score += (levelBonus && method in levelBonus ? levelBonus[method as keyof typeof levelBonus] : 0);
     
     return Math.max(0, Math.min(100, score));
   }
@@ -637,7 +640,9 @@ export class NotificationDeliveryOptimization {
       'toast': 0.7,
       'modal': 0.9,
       'badge': 0.4,
-      'silent': 0.1
+      'silent': 0.1,
+      'command-palette': 0.6,
+      'push': 0.7
     };
     engagement *= methodMultiplier[deliveryMethod] || 0.5;
     
@@ -811,6 +816,10 @@ export class NotificationDeliveryOptimization {
     const [startHour, startMinute] = quietHours.start.split(':').map(Number);
     const [endHour, endMinute] = quietHours.end.split(':').map(Number);
     
+    if (startHour === undefined || startMinute === undefined || endHour === undefined || endMinute === undefined) {
+      return false; // Invalid time format
+    }
+    
     const startMinutes = startHour * 60 + startMinute;
     const endMinutes = endHour * 60 + endMinute;
     
@@ -824,6 +833,10 @@ export class NotificationDeliveryOptimization {
   private getQuietHoursEndTime(quietHours: { start: string; end: string }): number {
     const now = new Date();
     const [endHour, endMinute] = quietHours.end.split(':').map(Number);
+    
+    if (endHour === undefined || endMinute === undefined) {
+      return now.getTime() + 1000 * 60 * 60; // Default to 1 hour from now
+    }
     
     const endTime = new Date(now);
     endTime.setHours(endHour, endMinute, 0, 0);
@@ -965,16 +978,18 @@ const deliveryOptimizationInstance = new NotificationDeliveryOptimization();
 // Export convenience functions
 export const optimizeDelivery = async (
   notification: UnifiedNotification,
-  context: DeliveryContext
-): Promise<{ method: DeliveryMethod; shouldDefer: boolean; timing: number }> => {
-  return await deliveryOptimizationInstance.optimizeDelivery(notification, context);
+  context: NotificationContext,
+  preferences: UserNotificationPreferences,
+  batch?: BatchAnalysis
+): Promise<DeliveryOptimization> => {
+  return await deliveryOptimizationInstance.optimizeDelivery(notification, context, preferences, batch);
 };
 
 export const updateUserAttention = async (
-  action: string,
-  context: DeliveryContext
-): Promise<void> => {
-  return await deliveryOptimizationInstance.updateUserAttention(action, context);
+  userId: string,
+  indicators: AttentionIndicator[]
+): Promise<AttentionState> => {
+  return await deliveryOptimizationInstance.updateUserAttention(userId, indicators);
 };
 
 export default NotificationDeliveryOptimization;

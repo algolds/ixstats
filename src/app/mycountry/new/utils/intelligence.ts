@@ -329,7 +329,7 @@ export const generateTrendingInsights = (
         icon: BarChart3,
         trend: rankChange > 0 ? 'up' : 'down',
         significance: Math.abs(rankChange) > 5 ? 'major' : 'moderate',
-        metrics: [current.keyMetrics[0]].filter(Boolean),
+        metrics: current.keyMetrics[0] ? [current.keyMetrics[0]] : [],
         context: {
           comparison: 'peer',
           timeframe: 'recent',

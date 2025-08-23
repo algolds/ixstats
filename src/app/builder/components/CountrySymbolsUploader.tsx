@@ -93,10 +93,14 @@ export function CountrySymbolsUploader({
 
   // Set default images from foundation country
   useEffect(() => {
-    if (foundationCountry && !flagUrl && foundationCountry.flagUrl) {
-      // Could trigger onSelectFlag with foundation country data
+    if (foundationCountry && foundationCountry.flagUrl && onFlagUrlChange) {
+      // Always use foundation flag if available and user hasn't set a custom one
+      if (!flagUrl || flagUrl === '') {
+        console.log('[CountrySymbolsUploader] Auto-filling with foundation flag:', foundationCountry.flagUrl);
+        onFlagUrlChange(foundationCountry.flagUrl);
+      }
     }
-  }, [foundationCountry, flagUrl]);
+  }, [foundationCountry?.flagUrl, flagUrl, onFlagUrlChange]);
 
   return (
     <div className="pt-4 border-t border-border relative z-10">
@@ -193,7 +197,7 @@ export function CountrySymbolsUploader({
                             Country Flag
                         </label>
                         <div className="w-full h-40 border border-border rounded-md flex items-center justify-center overflow-hidden bg-black/20">
-                            {flagUrl ? (
+                            {(flagUrl && flagUrl !== '') ? (
                             <img src={flagUrl} alt="Country Flag" className="object-contain max-h-full max-w-full" />
                             ) : foundationCountry?.flagUrl ? (
                             <div 

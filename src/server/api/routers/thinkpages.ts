@@ -287,6 +287,7 @@ export const thinkpagesRouter = createTRPCRouter({
       postingFrequency: z.enum(['active', 'moderate', 'low']).optional(),
       politicalLean: z.enum(['left', 'center', 'right']).optional(),
       personality: z.enum(['serious', 'casual', 'satirical']).optional(),
+      isActive: z.boolean().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
@@ -299,6 +300,7 @@ export const thinkpagesRouter = createTRPCRouter({
           politicalLean: input.politicalLean,
           personality: input.personality,
           profileImageUrl: input.profileImageUrl,
+          isActive: input.isActive,
         },
       });
 
@@ -419,7 +421,7 @@ export const thinkpagesRouter = createTRPCRouter({
 
   // Get accounts by country
   getAccountsByCountry: publicProcedure
-    .input(z.object({ countryId: z.string().optional().default('') }).optional().default({}))
+    .input(z.object({ countryId: z.string().optional().default('') }).default({ countryId: '' }))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
       
@@ -1012,7 +1014,7 @@ export const thinkpagesRouter = createTRPCRouter({
       countryId: z.string().optional().default(''),
       type: z.enum(['all', 'joined', 'created']).optional().default('all'),
       accountId: z.string().optional()
-    }).optional().default({}))
+    }).optional().default(() => ({ countryId: '', type: 'all' as const })))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
@@ -1397,7 +1399,6 @@ export const thinkpagesRouter = createTRPCRouter({
           invitedUser: accountId,
           invitedBy: input.invitedBy,
         })),
-        skipDuplicates: true,
       });
 
       return invites;
@@ -1642,7 +1643,7 @@ export const thinkpagesRouter = createTRPCRouter({
       accountId: z.string().optional().default(''),
       limit: z.number().min(1).max(50).optional().default(20),
       cursor: z.string().optional()
-    }).optional().default({}))
+    }).optional().default(() => ({ accountId: '', limit: 20 })))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
@@ -1885,7 +1886,6 @@ export const thinkpagesRouter = createTRPCRouter({
             accountId: input.accountId,
             messageType: 'thinkshare'
           })),
-          skipDuplicates: true
         });
       }
 
@@ -2126,15 +2126,15 @@ export const thinkpagesRouter = createTRPCRouter({
         // Add bookmark
         await db.postBookmark.upsert({
           where: {
-            postId_accountId: {
+            userId_postId: {
               postId: input.postId,
-              accountId: input.accountId
+              userId: input.accountId
             }
           },
           update: {},
           create: {
             postId: input.postId,
-            accountId: input.accountId
+            userId: input.accountId
           }
         });
       } else {
@@ -2142,7 +2142,7 @@ export const thinkpagesRouter = createTRPCRouter({
         await db.postBookmark.deleteMany({
           where: {
             postId: input.postId,
-            accountId: input.accountId
+            userId: input.accountId
           }
         });
       }
@@ -2163,9 +2163,9 @@ export const thinkpagesRouter = createTRPCRouter({
       // Check if already flagged by this user
       const existingFlag = await db.postFlag.findUnique({
         where: {
-          postId_accountId: {
+          userId_postId: {
             postId: input.postId,
-            accountId: input.accountId
+            userId: input.accountId
           }
         }
       });
@@ -2180,7 +2180,7 @@ export const thinkpagesRouter = createTRPCRouter({
       await db.postFlag.create({
         data: {
           postId: input.postId,
-          accountId: input.accountId,
+          userId: input.accountId,
           reason: input.reason
         }
       });

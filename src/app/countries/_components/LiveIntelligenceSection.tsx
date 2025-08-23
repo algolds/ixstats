@@ -68,20 +68,16 @@ interface Notification {
   relatedData?: any;
 }
 
-// Helper function to convert API alerts to component Alert type
-interface AlertData {
+// Import the correct Alert type from the FocusCards component
+type FocusCardAlert = {
   id: string;
-  type: string;
-  priority: string;
+  type: 'info' | 'warning' | 'error' | 'success';
   title: string;
   message: string;
-  timestamp: number;
-  category: string;
-  actionRequired: boolean;
-  relatedData?: any;
-}
+  urgent: boolean;
+};
 
-function convertApiAlert(apiAlert: ApiAlert): AlertData {
+function convertApiAlert(apiAlert: ApiAlert): FocusCardAlert {
   return {
     id: apiAlert.id,
     type: apiAlert.type === 'error' ? 'error' : 

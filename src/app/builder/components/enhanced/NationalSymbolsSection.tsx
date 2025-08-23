@@ -91,6 +91,25 @@ export function NationalSymbolsSection({
     fetchSymbols();
   }, [referenceCountry.name, referenceCountry.countryCode]);
 
+  // Auto-fill flag and coat of arms from foundation country when available
+  useEffect(() => {
+    console.log('[NationalSymbolsSection] Auto-fill check:', {
+      foundationFlagUrl,
+      foundationCoatOfArmsUrl,
+      currentFlagUrl: inputs.flagUrl,
+      currentCoatOfArmsUrl: inputs.coatOfArmsUrl
+    });
+    
+    if (foundationFlagUrl && (!inputs.flagUrl || inputs.flagUrl === '')) {
+      console.log('[NationalSymbolsSection] Auto-filling flag with:', foundationFlagUrl);
+      handleFlagUrlChange(foundationFlagUrl);
+    }
+    if (foundationCoatOfArmsUrl && (!inputs.coatOfArmsUrl || inputs.coatOfArmsUrl === '')) {
+      console.log('[NationalSymbolsSection] Auto-filling coat of arms with:', foundationCoatOfArmsUrl);
+      handleCoatOfArmsUrlChange(foundationCoatOfArmsUrl);
+    }
+  }, [foundationFlagUrl, foundationCoatOfArmsUrl, inputs.flagUrl, inputs.coatOfArmsUrl]);
+
   // Enhanced theming for this section (use original foundation country name)
   const foundationCountryName = getFoundationCountryName(referenceCountry);
   const { handleColorsExtracted } = useBuilderTheming(foundationCountryName);
@@ -115,12 +134,6 @@ export function NationalSymbolsSection({
     <>
       <div className="space-y-6">
         <GlassCard depth="elevated" blur="medium">
-          <GlassCardHeader>
-            <div className="flex items-center gap-2">
-              <ImageIcon className="h-5 w-5 text-muted-foreground" />
-              <h3 className="font-semibold text-foreground">National Symbols</h3>
-            </div>
-          </GlassCardHeader>
           <GlassCardContent>
             <CountrySymbolsUploader
               flagUrl={inputs.flagUrl ?? ''}

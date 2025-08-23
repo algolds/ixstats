@@ -14,6 +14,8 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure, countryOwnerProcedure, executiveProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { db } from "~/server/db";
+import { standardize } from "~/lib/interface-standardizer";
+import { unifyIntelligenceItem, adaptExecutiveToQuick } from "~/lib/transformers/interface-adapters";
 import type { 
   CountryWithEconomicData,
   IntelligenceItem,
@@ -612,7 +614,14 @@ export const myCountryRouter = createTRPCRouter({
         });
       }
 
-      return actions;
+      // Transform legacy actions to proper ExecutiveAction interfaces  
+      return actions.map(action => ({
+        ...action,
+        type: 'executive' as const,
+        priority: action.urgency as any,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      }));
     }),
 
   /**

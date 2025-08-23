@@ -3,7 +3,8 @@
 
 import { intelligenceCache } from '~/lib/intelligence-cache';
 import { optimizedQueryService } from '~/server/services/optimized-query-service';
-import type { IntelligenceUpdate, IntelligenceWebSocketServer } from '~/lib/websocket/intelligence-websocket-server';
+import type { IntelligenceUpdate } from '~/lib/websocket/types';
+import type { IntelligenceWebSocketServer } from '~/lib/websocket/intelligence-websocket-server';
 
 interface InvalidationRule {
   pattern: RegExp | string;

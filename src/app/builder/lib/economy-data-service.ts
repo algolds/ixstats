@@ -2,6 +2,8 @@
 import * as XLSX from 'xlsx';
 import type { SpendingCategory, GovernmentSpendingData } from '~/types/economics';
 
+export type { GovernmentSpendingData };
+
 export interface RealCountryData {
   name: string;
   countryCode: string;
@@ -21,6 +23,9 @@ export interface RealCountryData {
   taxRevenueLcu?: string | number;
   womenBeatWifeDinnerPercent?: number | string;
   foundationCountryName?: string; // Original foundation country name for Wiki Commons API calls
+  lifeExpectancy?: number;
+  literacyRate?: number;
+  urbanizationRate?: number;
 }
 
 export interface CoreEconomicIndicators {
@@ -30,6 +35,37 @@ export interface CoreEconomicIndicators {
   realGDPGrowthRate: number;
   inflationRate: number;
   currencyExchangeRate: number;
+}
+
+// Type alias for compatibility
+export type CoreIndicatorsData = CoreEconomicIndicators;
+
+export interface NationalIdentityData {
+  countryName: string;
+  officialName: string;
+  governmentType: string;
+  motto: string;
+  mottoNative: string;
+  capitalCity: string;
+  largestCity: string;
+  demonym: string;
+  currency: string;
+  officialLanguages: string;
+  nationalLanguage: string;
+  nationalAnthem: string;
+  nationalDay: string;
+  callingCode: string;
+  internetTLD: string;
+  drivingSide: 'left' | 'right';
+  currencySymbol?: string;
+  isoCode?: string;
+  timeZone?: string;
+  emergencyNumber?: string;
+  postalCodeFormat?: string;
+  weekStartDay?: string;
+  nationalSport?: string;
+  coordinatesLatitude?: string;
+  coordinatesLongitude?: string;
 }
 
 export interface LaborEmploymentData {
@@ -51,6 +87,10 @@ export interface TaxRates {
   payrollTaxRate: number;
   exciseTaxRates: { type: string; rate: number }[];
   wealthTaxRate: number;
+  // Additional properties for compatibility
+  income: { bracket: number; rate: number }[];
+  corporate: { size: string; rate: number }[];
+  sales: number;
 }
 
 export interface FiscalSystemData {
@@ -132,6 +172,8 @@ export interface EconomicInputs {
   countryName: string;
   flagUrl?: string;
   coatOfArmsUrl?: string;
+  flagExtractedColors?: string[];
+  nationalIdentity?: NationalIdentityData;
   coreIndicators: CoreEconomicIndicators;
   laborEmployment: LaborEmploymentData;
   fiscalSystem: FiscalSystemData;
@@ -183,6 +225,7 @@ export function createDefaultEconomicInputs(referenceCountry?: RealCountryData):
       averageWorkweekHours: 40,
       minimumWage: Math.round(baseGDPPerCapita * 0.02),
       averageAnnualIncome: Math.round(baseGDPPerCapita * 0.8),
+      laborProtections: true,
     },
     fiscalSystem: {
       taxRevenueGDPPercent: baseTaxRevenuePercent,
@@ -211,6 +254,20 @@ export function createDefaultEconomicInputs(referenceCountry?: RealCountryData):
           { type: "Luxury Goods", rate: 15 },
         ],
         wealthTaxRate: 0.5,
+        // Compatibility aliases
+        income: [
+          { bracket: 0, rate: 0 },
+          { bracket: 20000, rate: 10 },
+          { bracket: 50000, rate: 22 },
+          { bracket: 100000, rate: 32 },
+          { bracket: 200000, rate: 37 },
+        ],
+        corporate: [
+          { size: "Small (< $1M revenue)", rate: 15 },
+          { size: "Medium ($1M - $10M)", rate: 21 },
+          { size: "Large (> $10M)", rate: 25 },
+        ],
+        sales: 8.5,
       },
       governmentBudgetGDPPercent: Math.min(baseTaxRevenuePercent + 2, 25),
       budgetDeficitSurplus: ((baseNominalGDP * baseTaxRevenuePercent) / 100) - ((baseNominalGDP * Math.min(baseTaxRevenuePercent + 2, 25)) / 100),
@@ -228,6 +285,13 @@ export function createDefaultEconomicInputs(referenceCountry?: RealCountryData):
       debtPerCapita: (baseNominalGDP * 0.7) / basePopulation,
       interestRates: 3.5,
       debtServiceCosts: (baseNominalGDP * 0.7 * 0.035),
+      incomeTaxRate: 22,
+      corporateTaxRate: 25,
+      salesTaxRate: 10,
+      progressiveTaxation: true,
+      balancedBudgetRule: false,
+      debtCeiling: 80,
+      antiAvoidance: true,
     },
     incomeWealth: {
       economicClasses: [
@@ -253,7 +317,14 @@ export function createDefaultEconomicInputs(referenceCountry?: RealCountryData):
         { category: "Social Security", amount: totalSpending * 0.20, percent: 20, icon: "Users2", color: "#ECC94B", description: "Welfare, pensions, and social benefits" },
         { category: "Other", amount: totalSpending * 0.13, percent: 13, icon: "MoreHorizontal", color: "#A0AEC0", description: "Administration, debt service, and miscellaneous" }
       ],
-      deficitSurplus: ((baseNominalGDP * baseTaxRevenuePercent) / 100) - totalSpending
+      deficitSurplus: ((baseNominalGDP * baseTaxRevenuePercent) / 100) - totalSpending,
+      education: totalSpending * 0.18,
+      healthcare: totalSpending * 0.22,
+      socialSafety: totalSpending * 0.20,
+      performanceBasedBudgeting: true,
+      universalBasicServices: false,
+      greenInvestmentPriority: true,
+      digitalGovernmentInitiative: true,
     },
     demographics: {
       ageDistribution: [
@@ -284,6 +355,7 @@ export function createDefaultEconomicInputs(referenceCountry?: RealCountryData):
         { status: "Temporary Residents", percent: 2, color: "#ECC94B" },
         { status: "Other", percent: 1, color: "#F56565" }
       ],
+      education: 85,
       populationGrowthRate: 0.5,
     }
   };
@@ -389,8 +461,9 @@ export async function parseEconomyData(): Promise<RealCountryData[]> {
       };
 
       // Convert if an alpha-3 code is found in the map
-      if (alpha3ToAlpha2Map[countryCode.toUpperCase()]) {
-        countryCode = alpha3ToAlpha2Map[countryCode.toUpperCase()];
+      const alpha2Code = alpha3ToAlpha2Map[countryCode.toUpperCase()];
+      if (alpha2Code) {
+        countryCode = alpha2Code;
       } else {
         // Fallback: if it's 3 characters, try to convert to lowercase and use first two.
         // Otherwise, just lowercase it (assuming it's already alpha-2 or a custom code).

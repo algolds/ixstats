@@ -8,7 +8,7 @@ import { useUser } from "@clerk/nextjs";
 
 export default function HashtagPage() {
   const params = useParams();
-  const tag = params.tag as string;
+  const tag = params?.tag as string;
   const { user } = useUser();
 
   const { data: feed, isLoading: isLoadingFeed } = api.thinkpages.getFeed.useQuery({ hashtag: tag });

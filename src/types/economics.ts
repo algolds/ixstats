@@ -131,6 +131,8 @@ export interface CoreEconomicIndicatorsData {
   // Government spending
   export interface GovernmentSpendingData {
     education: number
+    healthcare: number
+    socialSafety: number
     totalSpending: number
     spendingGDPPercent: number
     spendingPerCapita: number

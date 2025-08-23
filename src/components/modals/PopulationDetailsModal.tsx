@@ -27,6 +27,7 @@ import {
   Area,
   ComposedChart,
   Bar,
+  BarChart,
   PieChart,
   Pie,
   Cell,
@@ -63,7 +64,7 @@ export function PopulationDetailsModal({
   const [timeRange, setTimeRange] = useState("1y");
 
   const {
-    data: economicData,
+    data: economicDataRaw,
     isLoading: isEconomicLoading,
   } = api.countries.getEconomicData.useQuery(
     { countryId },
@@ -74,7 +75,7 @@ export function PopulationDetailsModal({
   );
 
   const {
-    data: historicalData,
+    data: historicalDataRaw,
     isLoading: isHistoricalLoading,
     refetch,
   } = api.countries.getHistoricalData.useQuery(
@@ -86,7 +87,7 @@ export function PopulationDetailsModal({
   );
 
   const {
-    data: globalStats,
+    data: globalStatsRaw,
     isLoading: isGlobalLoading,
   } = api.countries.getGlobalStats.useQuery(
     undefined,
@@ -98,7 +99,7 @@ export function PopulationDetailsModal({
 
   // Get top countries by population for comparison
   const {
-    data: topCountriesByPopulation,
+    data: topCountriesByPopulationRaw,
     isLoading: isTopCountriesLoading,
   } = api.countries.getTopCountriesByPopulation.useQuery(
     { limit: 15 },
@@ -107,6 +108,12 @@ export function PopulationDetailsModal({
       staleTime: 5 * 60 * 1000,
     }
   );
+
+  // Type assertions to access computed fields
+  const economicData = economicDataRaw as any;
+  const historicalData = historicalDataRaw as any;
+  const globalStats = globalStatsRaw as any;
+  const topCountriesByPopulation = topCountriesByPopulationRaw as any;
 
   const chartData = useMemo(() => {
     if (!historicalData?.length) return [];
@@ -126,8 +133,8 @@ export function PopulationDetailsModal({
       new Date(Date.now() - monthsToShow * 30 * 24 * 60 * 60 * 1000);
     
     return historicalData
-      .filter((point) => new Date(point.ixTimeTimestamp) >= cutoffDate)
-      .map((point) => ({
+      .filter((point: any) => new Date(point.ixTimeTimestamp) >= cutoffDate)
+      .map((point: any) => ({
         year: IxTime.getCurrentGameYear(point.ixTimeTimestamp),
         population: point.population,
         populationGrowthRate: (point.populationGrowthRate || 0) * 100,
@@ -136,7 +143,7 @@ export function PopulationDetailsModal({
         timestamp: point.ixTimeTimestamp,
         date: IxTime.formatIxTime(point.ixTimeTimestamp, true),
       }))
-      .sort((a, b) => (a.timestamp ?? 0) - (b.timestamp ?? 0));
+      .sort((a: any, b: any) => (a.timestamp ?? 0) - (b.timestamp ?? 0));
   }, [historicalData, timeRange]);
 
   const projectionData = useMemo(() => {
@@ -163,13 +170,13 @@ export function PopulationDetailsModal({
   const comparisonData = useMemo(() => {
     if (!topCountriesByPopulation || !economicData) return [];
     
-    return topCountriesByPopulation.map((country) => ({
+    return topCountriesByPopulation.map((country: any) => ({
       name: country.name.length > 12 ? country.name.substring(0, 9) + "..." : country.name,
       fullName: country.name,
       population: country.currentPopulation,
       populationTier: country.populationTier,
       isCurrentCountry: country.id === countryId,
-    })).sort((a, b) => b.population - a.population);
+    })).sort((a: any, b: any) => b.population - a.population);
   }, [topCountriesByPopulation, economicData, countryId]);
 
   const populationTierInfo = useMemo(() => {
@@ -234,7 +241,7 @@ export function PopulationDetailsModal({
       growth,
       globalComparison,
       globalAverage: globalStats.averagePopulation,
-      rank: comparisonData.findIndex(c => c.isCurrentCountry) + 1,
+      rank: comparisonData.findIndex((c: any) => c.isCurrentCountry) + 1,
       totalCountries: comparisonData.length,
       density: current.populationDensity,
     };
@@ -264,7 +271,7 @@ export function PopulationDetailsModal({
               ))
             ) : economicData ? (
               <>
-                <Card variant="social" className="p-4">
+                <Card className="p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Users className="h-4 w-4 text-blue-600" />
                     <span className="text-sm font-medium">Current Population</span>
@@ -277,7 +284,7 @@ export function PopulationDetailsModal({
                   </p>
                 </Card>
 
-                <Card variant="social" className="p-4">
+                <Card className="p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <TrendingUp className="h-4 w-4 text-green-600" />
                     <span className="text-sm font-medium">Growth Rate</span>
@@ -290,7 +297,7 @@ export function PopulationDetailsModal({
                   </p>
                 </Card>
 
-                <Card variant="social" className="p-4">
+                <Card className="p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Globe className="h-4 w-4 text-purple-600" />
                     <span className="text-sm font-medium">World Ranking</span>
@@ -303,7 +310,7 @@ export function PopulationDetailsModal({
                   </p>
                 </Card>
 
-                <Card variant="social" className="p-4">
+                <Card className="p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <MapPin className="h-4 w-4 text-orange-600" />
                     <span className="text-sm font-medium">Population Density</span>
@@ -356,7 +363,7 @@ export function PopulationDetailsModal({
               </div>
             </div>
             
-            <Card variant="social">
+            <Card>
               {isHistoricalLoading ? (
                 <Skeleton className="h-80" />
               ) : chartData.length > 0 ? (
@@ -433,7 +440,7 @@ export function PopulationDetailsModal({
                 </Badge>
               </h3>
               
-              <Card variant="social">
+              <Card>
                 <div className="h-80 p-4">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={projectionData}>
@@ -479,7 +486,7 @@ export function PopulationDetailsModal({
                 Global Population Rankings
               </h3>
               
-              <Card variant="social">
+              <Card>
                 {isTopCountriesLoading ? (
                   <Skeleton className="h-80" />
                 ) : comparisonData.length > 0 ? (
@@ -508,7 +515,7 @@ export function PopulationDetailsModal({
                         />
                         <Bar 
                           dataKey="population" 
-                          fill={(entry) => entry.isCurrentCountry ? "#3b82f6" : "#94a3b8"}
+                          fill="#94a3b8"
                         />
                       </BarChart>
                     </ResponsiveContainer>
@@ -525,7 +532,7 @@ export function PopulationDetailsModal({
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Demographics Breakdown</h3>
               
-              <Card variant="social">
+              <Card>
                 <div className="p-4 space-y-4">
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
@@ -570,7 +577,7 @@ export function PopulationDetailsModal({
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Population Tier System</h3>
             
-            <Card variant="social" className="p-4">
+            <Card className="p-4">
               {populationTierInfo && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                   {populationTierInfo.allTiers.map((tier, index) => (
@@ -605,7 +612,7 @@ export function PopulationDetailsModal({
                 <h3 className="text-lg font-semibold">Performance Summary</h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card variant="social" className="p-4">
+                  <Card className="p-4">
                     <div className="flex items-center gap-2 mb-2">
                       {performanceMetrics.growth > 0 ? (
                         <ArrowUp className="h-4 w-4 text-green-600" />
@@ -624,7 +631,7 @@ export function PopulationDetailsModal({
                     </p>
                   </Card>
 
-                  <Card variant="social" className="p-4">
+                  <Card className="p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <Globe className="h-4 w-4 text-blue-600" />
                       <span className="font-medium">vs Global Average</span>
@@ -639,7 +646,7 @@ export function PopulationDetailsModal({
                     </p>
                   </Card>
 
-                  <Card variant="social" className="p-4">
+                  <Card className="p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <BarChart3 className="h-4 w-4 text-purple-600" />
                       <span className="font-medium">World Ranking</span>

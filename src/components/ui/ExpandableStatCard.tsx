@@ -66,7 +66,7 @@ export function ExpandableStatCard({
                 <div className="text-sm text-muted-foreground">
                   <div className="mb-2">Real-time population estimate:</div>
                   <div className="text-3xl font-bold text-blue-600 mb-2">
-                    {typeof value === 'number' ? <AnimatedNumber value={value} duration={1800} /> : formattedValue}
+                    {typeof value === 'number' ? <AnimatedNumber value={value} duration={1500} /> : formattedValue}
                   </div>
                   <div className="text-xs text-muted-foreground">This number updates as new data is imported.</div>
                 </div>
@@ -88,7 +88,7 @@ export function ExpandableStatCard({
                     <span className="text-xs text-muted-foreground">General health based on top GDP</span>
                   </div>
                   <div className="mt-2 text-lg font-bold text-green-700">
-                    {typeof value === 'number' ? <AnimatedNumber value={value} duration={1800} prefix="$" decimals={0} /> : formattedValue}
+                    {typeof value === 'number' ? <AnimatedNumber value={value} duration={1500} prefix="$" decimals={0} /> : formattedValue}
                   </div>
                 </div>
               )}

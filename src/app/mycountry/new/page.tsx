@@ -105,6 +105,7 @@ function MyCountryNewContent() {
   // Enhanced country data - vitality scores now come from API
   const enhancedCountryData: CountryData | null = country ? {
     ...country,
+    flag: country.flag || undefined,
     region: country.region || '',
     continent: country.continent || '',
     governmentType: country.governmentType || undefined,
@@ -125,10 +126,7 @@ function MyCountryNewContent() {
     { 
       enabled: !!userProfile?.countryId && isOwner && isSignedIn && !!user?.id && viewMode === 'executive',
       retry: false, // Don't retry auth failures
-      refetchOnWindowFocus: false,
-      onError: (error) => {
-        console.warn('Intelligence feed not available:', error.message);
-      }
+      refetchOnWindowFocus: false
     }
   );
   

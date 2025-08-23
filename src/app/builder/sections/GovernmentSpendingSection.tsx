@@ -4,12 +4,12 @@ import React from 'react';
 import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
 import {
-  GlassSlider,
-  GlassToggle,
-  GlassPieChart,
-  GlassBarChart,
-  GoogleLineChart,
-} from '~/components/charts';
+  EnhancedSlider,
+  EnhancedToggle,
+  EnhancedPieChart,
+  EnhancedBarChart,
+  MetricCard,
+} from '../primitives/enhanced';
 import type { EconomicInputs } from '../lib/economy-data-service';
 import type { SectionContentProps } from '../types/builder';
 
@@ -24,12 +24,12 @@ export function GovernmentSpendingSection({
 }: GovernmentSpendingSectionProps) {
   // Government spending data for visualization
   const spendingCategories = [
-    { name: 'Education', value: inputs.governmentSpending.spendingCategories.find(c => c.category === 'Education')?.percent || 0, icon: '🎓', priority: 'high' },
-    { name: 'Healthcare', value: inputs.governmentSpending.spendingCategories.find(c => c.category === 'Healthcare')?.percent || 0, icon: '🏥', priority: 'high' },
-    { name: 'Defense', value: inputs.governmentSpending.spendingCategories.find(c => c.category === 'Defense')?.percent || 0, icon: '🛡️', priority: 'medium' },
-    { name: 'Infrastructure', value: inputs.governmentSpending.spendingCategories.find(c => c.category === 'Infrastructure')?.percent || 0, icon: '🏗️', priority: 'high' },
-    { name: 'Social Security', value: inputs.governmentSpending.spendingCategories.find(c => c.category === 'Social Security')?.percent || 0, icon: '👥', priority: 'high' },
-    { name: 'Environmental', value: inputs.governmentSpending.spendingCategories.find(c => c.category === 'Other')?.percent || 0 || 8, icon: '🌱', priority: 'medium' }
+    { name: 'Education', value: inputs.governmentSpending.spendingCategories.find(c => c.category === 'Education')?.percent || 0, icon: '🎓', priority: 'high', color: 'blue' },
+    { name: 'Healthcare', value: inputs.governmentSpending.spendingCategories.find(c => c.category === 'Healthcare')?.percent || 0, icon: '🏥', priority: 'high', color: 'emerald' },
+    { name: 'Defense', value: inputs.governmentSpending.spendingCategories.find(c => c.category === 'Defense')?.percent || 0, icon: '🛡️', priority: 'medium', color: 'red' },
+    { name: 'Infrastructure', value: inputs.governmentSpending.spendingCategories.find(c => c.category === 'Infrastructure')?.percent || 0, icon: '🏗️', priority: 'high', color: 'gold' },
+    { name: 'Social Security', value: inputs.governmentSpending.spendingCategories.find(c => c.category === 'Social Security')?.percent || 0, icon: '👥', priority: 'high', color: 'purple' },
+    { name: 'Environmental', value: inputs.governmentSpending.spendingCategories.find(c => c.category === 'Other')?.percent || 0 || 8, icon: '🌱', priority: 'medium', color: 'emerald' }
   ];
 
   const totalSpending = spendingCategories.reduce((sum, cat) => sum + cat.value, 0);
@@ -139,82 +139,106 @@ export function GovernmentSpendingSection({
 
       {/* Spending Category Controls */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <GlassSlider
+        <EnhancedSlider
           label="Education Spending"
-          value={inputs.governmentSpending.spendingCategories.find(c => c.category === 'Education')?.percent || 0}
-          onChange={(value) => updateSpending('education', value)}
+          description="Investment in education system and human capital"
+          value={Number(inputs.governmentSpending.spendingCategories.find(c => c.category === 'Education')?.percent) || 0}
+          onChange={(value) => updateSpending('education', Number(value))}
           min={5}
           max={35}
           step={0.5}
+          precision={1}
           unit="% of budget"
-          theme="blue"
+          sectionId="government"
           showTicks={true}
           tickCount={7}
+          showValue={true}
+          showRange={true}
         />
 
-        <GlassSlider
+        <EnhancedSlider
           label="Healthcare Spending"
-          value={inputs.governmentSpending.spendingCategories.find(c => c.category === 'Healthcare')?.percent || 0}
-          onChange={(value) => updateSpending('healthcare', value)}
+          description="Public health services and medical infrastructure"
+          value={Number(inputs.governmentSpending.spendingCategories.find(c => c.category === 'Healthcare')?.percent) || 0}
+          onChange={(value) => updateSpending('healthcare', Number(value))}
           min={8}
           max={40}
           step={0.5}
+          precision={1}
           unit="% of budget"
-          theme="default"
+          sectionId="government"
           showTicks={true}
           tickCount={7}
+          showValue={true}
+          showRange={true}
         />
 
-        <GlassSlider
+        <EnhancedSlider
           label="Defense Spending"
-          value={inputs.governmentSpending.spendingCategories.find(c => c.category === 'Defense')?.percent || 0}
-          onChange={(value) => updateSpending('defense', value)}
+          description="Military and national security expenditure"
+          value={Number(inputs.governmentSpending.spendingCategories.find(c => c.category === 'Defense')?.percent) || 0}
+          onChange={(value) => updateSpending('defense', Number(value))}
           min={2}
           max={30}
           step={0.5}
+          precision={1}
           unit="% of budget"
-          theme="purple"
+          sectionId="government"
           showTicks={true}
           tickCount={6}
+          showValue={true}
+          showRange={true}
         />
 
-        <GlassSlider
+        <EnhancedSlider
           label="Infrastructure Spending"
-          value={inputs.governmentSpending.spendingCategories.find(c => c.category === 'Infrastructure')?.percent || 0}
-          onChange={(value) => updateSpending('infrastructure', value)}
+          description="Roads, utilities, and public works projects"
+          value={Number(inputs.governmentSpending.spendingCategories.find(c => c.category === 'Infrastructure')?.percent) || 0}
+          onChange={(value) => updateSpending('infrastructure', Number(value))}
           min={5}
           max={25}
           step={0.5}
+          precision={1}
           unit="% of budget"
-          theme="emerald"
+          sectionId="government"
           showTicks={true}
           tickCount={5}
+          showValue={true}
+          showRange={true}
         />
 
-        <GlassSlider
+        <EnhancedSlider
           label="Social Security"
-          value={inputs.governmentSpending.spendingCategories.find(c => c.category === 'Social Security')?.percent || 0}
-          onChange={(value) => updateSpending('socialSecurity', value)}
+          description="Pensions, unemployment, and welfare programs"
+          value={Number(inputs.governmentSpending.spendingCategories.find(c => c.category === 'Social Security')?.percent) || 0}
+          onChange={(value) => updateSpending('socialSecurity', Number(value))}
           min={5}
           max={35}
           step={0.5}
+          precision={1}
           unit="% of budget"
-          theme="gold"
+          sectionId="government"
           showTicks={true}
           tickCount={7}
+          showValue={true}
+          showRange={true}
         />
 
-        <GlassSlider
+        <EnhancedSlider
           label="Environmental Programs"
-          value={inputs.governmentSpending.spendingCategories.find(c => c.category === 'Other')?.percent || 0 || 8}
-          onChange={(value) => updateSpending('environmental', value)}
+          description="Green initiatives and climate action funding"
+          value={Number(inputs.governmentSpending.spendingCategories.find(c => c.category === 'Other')?.percent) || 8}
+          onChange={(value) => updateSpending('environmental', Number(value))}
           min={2}
           max={20}
           step={0.5}
+          precision={1}
           unit="% of budget"
-          theme="emerald"
+          sectionId="government"
           showTicks={true}
           tickCount={5}
+          showValue={true}
+          showRange={true}
         />
       </div>
 
@@ -222,77 +246,88 @@ export function GovernmentSpendingSection({
       <div className="space-y-4">
         <h4 className="text-lg font-semibold text-[var(--color-text-primary)]">Spending Policies</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <GlassToggle
+          <EnhancedToggle
             label="Performance-Based Budgeting"
             description="Link funding to measurable outcomes"
             checked={inputs.governmentSpending.performanceBasedBudgeting}
             onChange={(checked) => updateSpendingPolicy('performanceBasedBudgeting', checked)}
-            theme="blue"
+            sectionId="government"
+            variant="switch"
+            showIcons={true}
           />
 
-          <GlassToggle
+          <EnhancedToggle
             label="Universal Basic Services"
             description="Free public services for all citizens"
             checked={inputs.governmentSpending.universalBasicServices}
             onChange={(checked) => updateSpendingPolicy('universalBasicServices', checked)}
-            theme="emerald"
+            sectionId="government"
+            variant="switch"
+            showIcons={true}
           />
 
-          <GlassToggle
+          <EnhancedToggle
             label="Green Investment Priority"
             description="Prioritize environmental and sustainable projects"
             checked={inputs.governmentSpending.greenInvestmentPriority}
             onChange={(checked) => updateSpendingPolicy('greenInvestmentPriority', checked)}
-            theme="emerald"
+            sectionId="government"
+            variant="switch"
+            showIcons={true}
           />
 
-          <GlassToggle
+          <EnhancedToggle
             label="Digital Government Initiative"
             description="Major investment in digital infrastructure"
             checked={inputs.governmentSpending.digitalGovernmentInitiative}
             onChange={(checked) => updateSpendingPolicy('digitalGovernmentInitiative', checked)}
-            theme="purple"
+            sectionId="government"
+            variant="switch"
+            showIcons={true}
           />
         </div>
       </div>
 
       {/* Spending Visualization */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <GlassPieChart
+        <EnhancedPieChart
           data={spendingCategories.map(cat => ({
             category: cat.name,
-            amount: cat.value,
-            percent: cat.value,
+            value: cat.value,
             icon: cat.icon,
           }))}
-          dataKey="amount"
+          dataKey="value"
           nameKey="category"
           title="Budget Allocation"
           description="Government spending by sector"
           height={350}
-          theme="purple"
+          sectionId="government"
+          showLegend={true}
+          showPercentage={true}
+          formatValue={(value) => `${value.toFixed(1)}%`}
+          minSlicePercentage={2}
         />
 
-        <GlassBarChart
+        <EnhancedBarChart
           data={spendingEfficiencyData}
           xKey="name"
           yKey={['allocation', 'efficiency']}
           title="Spending Efficiency Analysis"
           description="Budget allocation vs effectiveness scores"
           height={350}
-          theme="gold"
+          sectionId="government"
+          formatValue={(value) => `${value.toFixed(1)}%`}
+          showTooltip={true}
+          showGrid={true}
+          stacked={false}
         />
       </div>
 
-      <div className="w-full">
-        <GoogleLineChart
-          data={historicalSpendingData}
-          title="Historical Spending Trends"
-          description="Government spending patterns over time (% of total budget)"
-          height={250}
-          theme="blue"
-          curveType="function"
-        />
+      {/* Note: Historical trends chart removed - can be added back with Enhanced Line Chart */}
+      <div className="w-full p-4 rounded-lg border border-purple-200/30 bg-purple-50/20">
+        <p className="text-sm text-muted-foreground text-center">
+          📊 Historical spending trends visualization will be available when Enhanced Line Chart is implemented
+        </p>
       </div>
     </div>
   );

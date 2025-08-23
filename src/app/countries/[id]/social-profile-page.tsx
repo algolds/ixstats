@@ -20,6 +20,7 @@ import type {
   SocialMetrics,
   AchievementConstellation
 } from "~/types/social-profile";
+import { adaptCountryForSocialProfile } from '~/lib/transformers/interface-adapters';
 import { 
   RiStarLine, 
   RiTrophyLine,
@@ -200,9 +201,14 @@ export default function SocialCountryProfilePage({ params }: SocialCountryProfil
     };
 
     return {
-      ...country,
-      flagUrl,
-      unsplashImageUrl: unsplashImage,
+      ...adaptCountryForSocialProfile(country),
+      continent: country.continent || undefined,
+      region: country.region || undefined,
+      governmentType: country.governmentType || undefined,
+      leader: country.leader || undefined,
+      religion: country.religion || undefined,
+      flagUrl: flagUrl || undefined,
+      unsplashImageUrl: unsplashImage?.url,
       socialMetrics,
       achievementConstellation,
       diplomaticRelations,

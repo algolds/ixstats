@@ -116,6 +116,7 @@ export const adminRouter = createTRPCRouter({
           botHealth,
           botStatus: originalBotStatus ? {
             ...originalBotStatus,
+            botUser: originalBotStatus.botUser || undefined,
             realWorldTime: Date.now(),
             gameYear: IxTime.getCurrentGameYear(),
           } : null,

@@ -176,10 +176,13 @@ export default function DashboardRefactored() {
     retryDelay: 1000
   });
 
-  const { data: countryData } = api.countries.getByIdAtTime.useQuery(
+  const { data: countryDataRaw } = api.countries.getByIdAtTime.useQuery(
     { id: userProfile?.countryId || '' },
     { enabled: !!userProfile?.countryId, retry: 1, retryDelay: 1000 }
   );
+
+  // Type assertion to access calculated fields
+  const countryData = countryDataRaw as any;
 
   // SDI data for Global Intelligence section
   const { data: activeCrises } = api.sdi.getActiveCrises.useQuery(
@@ -203,25 +206,29 @@ const { data: allData, error: countriesError, isLoading: countriesLoading } = ap
 // Process data
 const processedCountries: ProcessedCountryData[] = useMemo(() => {
   const countriesRaw = allData?.countries ?? [];
-  return countriesRaw.map((country) => ({
-    id: country.id,
-    name: country.name,
-    currentPopulation: country.currentPopulation ?? 0,
-    currentGdpPerCapita: country.currentGdpPerCapita ?? 0,
-    currentTotalGdp: country.currentTotalGdp ?? 0,
-    economicTier: country.economicTier ?? "Unknown",
-    populationTier: country.populationTier ?? "Unknown",
-    landArea: country.landArea ?? null,
-    populationDensity: country.populationDensity ?? null,
-    gdpDensity: country.gdpDensity ?? null,
-    adjustedGdpGrowth: country.adjustedGdpGrowth ?? 0,
-    populationGrowthRate: country.populationGrowthRate ?? 0,
-    continent: country.continent ?? null,
-    region: country.region ?? null,
-    governmentType: country.governmentType ?? null,
-    religion: country.religion ?? null,
-    leader: country.leader ?? null,
-  }));
+  return countriesRaw.map((countryRaw) => {
+    // Type assertion to access calculated fields
+    const country = countryRaw as any;
+    return {
+      id: country.id,
+      name: country.name,
+      currentPopulation: country.currentPopulation ?? 0,
+      currentGdpPerCapita: country.currentGdpPerCapita ?? 0,
+      currentTotalGdp: country.currentTotalGdp ?? 0,
+      economicTier: country.economicTier ?? "Unknown",
+      populationTier: country.populationTier ?? "Unknown",
+      landArea: country.landArea ?? null,
+      populationDensity: country.populationDensity ?? null,
+      gdpDensity: country.gdpDensity ?? null,
+      adjustedGdpGrowth: country.adjustedGdpGrowth ?? 0,
+      populationGrowthRate: country.populationGrowthRate ?? 0,
+      continent: country.continent ?? null,
+      region: country.region ?? null,
+      governmentType: country.governmentType ?? null,
+      religion: country.religion ?? null,
+      leader: country.leader ?? null,
+    };
+  });
 }, [allData]);
 
   const powerGrouped = useMemo(() => 

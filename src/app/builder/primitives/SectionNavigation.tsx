@@ -1,8 +1,10 @@
-import { HelpCircle, LucideIcon } from "lucide-react";
+import { HelpCircle, type LucideIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 
+type SectionId = "demographics" | "fiscal" | "labor" | "spending" | "income" | "core";
+
 export interface Section {
-  key: string;
+  key: SectionId;
   label: string;
   icon: LucideIcon;
   description: string;
@@ -10,8 +12,8 @@ export interface Section {
 
 interface SectionNavigationProps {
   sections: Section[];
-  activeSection: "demographics" | "fiscal" | "labor" | "spending" | "income" | "core";
-  onSectionChange: (section: "demographics" | "fiscal" | "labor" | "spending" | "income" | "core") => void;
+  activeSection: SectionId;
+  onSectionChange: (section: SectionId) => void;
 }
 
 export function SectionNavigation({ sections, activeSection, onSectionChange }: SectionNavigationProps) {

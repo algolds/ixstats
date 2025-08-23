@@ -15,11 +15,13 @@ import type {
 // Enhanced category definitions with sub-categories
 export interface EnhancedCategory {
   primary: NotificationCategory;
+  secondary?: NotificationCategory; // Optional secondary categorization
   subcategory: string;
   urgencyLevel: 1 | 2 | 3 | 4 | 5; // 1=lowest, 5=highest
   defaultPriority: NotificationPriority;
   contextualFactors: string[];
   escalationTriggers: EscalationTrigger[];
+  confidence: number;
   deliveryPreferences: {
     immediate: boolean;
     batchable: boolean;
@@ -215,6 +217,7 @@ export class NotificationCategorization {
           reasoning: 'Significant economic decline detected'
         }
       ],
+      confidence: 0.85,
       deliveryPreferences: {
         immediate: false,
         batchable: true,
@@ -230,6 +233,7 @@ export class NotificationCategorization {
       defaultPriority: 'critical',
       contextualFactors: ['any_time', 'any_mode'],
       escalationTriggers: [],
+      confidence: 1.0,
       deliveryPreferences: {
         immediate: true,
         batchable: false,
@@ -252,6 +256,7 @@ export class NotificationCategorization {
           reasoning: 'Significant diplomatic deterioration'
         }
       ],
+      confidence: 0.80,
       deliveryPreferences: {
         immediate: false,
         batchable: true,
@@ -273,6 +278,7 @@ export class NotificationCategorization {
           reasoning: 'Diplomatic conflict requires immediate attention'
         }
       ],
+      confidence: 0.95,
       deliveryPreferences: {
         immediate: true,
         batchable: false,
@@ -295,6 +301,7 @@ export class NotificationCategorization {
           reasoning: 'Government efficiency decline'
         }
       ],
+      confidence: 0.85,
       deliveryPreferences: {
         immediate: false,
         batchable: true,
@@ -311,6 +318,7 @@ export class NotificationCategorization {
       defaultPriority: 'critical',
       contextualFactors: ['any_time', 'any_mode'],
       escalationTriggers: [],
+      confidence: 1.0,
       deliveryPreferences: {
         immediate: true,
         batchable: false,
@@ -333,6 +341,7 @@ export class NotificationCategorization {
           reasoning: 'Significant achievement milestone reached'
         }
       ],
+      confidence: 0.90,
       deliveryPreferences: {
         immediate: false,
         batchable: true,
@@ -355,6 +364,7 @@ export class NotificationCategorization {
           reasoning: 'System stability at risk'
         }
       ],
+      confidence: 0.95,
       deliveryPreferences: {
         immediate: true,
         batchable: false,
@@ -674,16 +684,24 @@ export const categorizeNotification = (
     isExecutiveMode: false,
     currentRoute: '',
     ixTime: Date.now(),
-    deviceInfo: { type: 'desktop', platform: 'unknown', screenSize: 'large' },
-    networkStatus: { online: true, connectionType: 'unknown' },
-    batteryStatus: { level: 100, charging: true },
-    userActivity: { isActive: true, lastActivity: Date.now(), interactionHistory: [] },
-    locationInfo: { timezone: 'UTC', locale: 'en-US' },
-    preferences: { quietHours: null, categories: {} },
-    socialContext: { connections: [], recentActivity: [] },
-    economicProfile: { tier: 'unknown', interests: [] },
-    performanceMetrics: { cpuUsage: 0, memoryUsage: 0, renderTime: 0 },
-    environmentalFactors: { lightLevel: 'normal', noiseLevel: 'low', weatherConditions: 'unknown' }
+    realTime: Date.now(),
+    timeMultiplier: 2,
+    activeFeatures: [],
+    recentActions: [],
+    focusMode: false,
+    sessionDuration: 0,
+    isUserActive: true,
+    lastInteraction: Date.now(),
+    deviceType: 'desktop',
+    screenSize: 'large',
+    networkQuality: 'high',
+    batteryLevel: 100,
+    userPreferences: { channels: [], quietHours: [] },
+    historicalEngagement: [],
+    interactionHistory: [],
+    contextualFactors: {},
+    urgencyFactors: [],
+    contextualRelevance: 0.5
   };
   return categorizationInstance.categorizeNotification(notification, defaultContext);
 };
@@ -695,10 +713,18 @@ export const calculateDynamicUrgency = (
   // Add default category - will be determined during actual categorization
   const defaultCategory: EnhancedCategory = {
     primary: 'system',
-    secondary: null,
+    subcategory: 'default',
+    urgencyLevel: 2,
+    defaultPriority: 'medium',
+    contextualFactors: [],
+    escalationTriggers: [],
     confidence: 0.5,
-    reasoning: 'Default category assignment',
-    contextualFactors: []
+    deliveryPreferences: {
+      immediate: false,
+      batchable: true,
+      suppressible: true,
+      requiresAction: false,
+    }
   };
   return categorizationInstance.calculateDynamicUrgency(notification, context, defaultCategory);
 };

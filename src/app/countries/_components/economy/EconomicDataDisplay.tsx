@@ -233,11 +233,18 @@ export function EconomicDataDisplay({
                 socialMobilityIndex: 50, // Default value since property doesn't exist
             },
             spending: {
+              education: 0,
+              healthcare: 0,
+              socialSafety: 0,
+              totalSpending: 0,
               spendingGDPPercent: 22, // Default value since property doesn't exist
               spendingPerCapita: 0, // Default value since property doesn't exist
               deficitSurplus: 0, // Default value since property doesn't exist
               spendingCategories: [],
-              totalSpending: 0
+              performanceBasedBudgeting: false,
+              universalBasicServices: false,
+              greenInvestmentPriority: false,
+              digitalGovernmentInitiative: false
             },
             demographics: {
               lifeExpectancy: 75, // Default value since property doesn't exist

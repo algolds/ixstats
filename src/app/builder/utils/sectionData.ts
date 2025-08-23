@@ -13,10 +13,10 @@ import type { Section } from '../types/builder';
 export const sections: Section[] = [
   {
     id: 'symbols',
-    name: 'National Symbols',
+    name: 'National Identity',
     icon: Flag,
     color: 'text-[var(--color-warning)]',
-    description: 'Flag, coat of arms, national identity',
+    description: 'Flag, symbols, government type, culture',
     completeness: 95
   },
   {

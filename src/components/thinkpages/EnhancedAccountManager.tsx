@@ -55,7 +55,7 @@ export function EnhancedAccountManager({
   const [filterType, setFilterType] = useState<'all' | 'government' | 'media' | 'citizen'>('all');
   const [favoriteAccounts, setFavoriteAccounts] = useState<string[]>([]);
 
-  const toggleAccountVisibilityMutation = api.thinkpages.toggleAccountVisibility.useMutation({
+  const updateAccountMutation = api.thinkpages.updateAccount.useMutation({
     onSuccess: () => {
       toast.success("Account visibility updated");
     }
@@ -166,7 +166,7 @@ export function EnhancedAccountManager({
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
-                onClick={() => toggleAccountVisibilityMutation.mutate({ 
+                onClick={() => updateAccountMutation.mutate({ 
                   accountId: account.id, 
                   isActive: !account.isActive 
                 })}

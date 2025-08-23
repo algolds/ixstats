@@ -29,8 +29,7 @@ interface Alert {
   type: 'critical' | 'warning' | 'info' | 'success';
   title: string;
   message: string;
-  actionRequired: boolean;
-  priority: 'high' | 'medium' | 'low';
+  urgent: boolean;
 }
 
 interface Opportunity {
@@ -50,6 +49,15 @@ interface LeadershipMetric {
   change: string;
   icon: React.ElementType;
   format: 'number' | 'percentage' | 'currency' | 'text';
+}
+
+interface Opportunity {
+  id: string;
+  title: string;
+  description: string;
+  impact: 'high' | 'medium' | 'low';
+  timeframe: string;
+  category: 'economic' | 'social' | 'diplomatic' | 'governance';
 }
 
 interface TemporalContext {
@@ -123,6 +131,21 @@ function getOpportunityIcon(category: Opportunity['category']) {
     case 'governance':
       return <Shield className="h-4 w-4 text-orange-600" />;
   }
+}
+
+interface ExecutiveSummaryProps {
+  nationalHealth: {
+    overallScore: number;
+    trendDirection: 'up' | 'down' | 'stable';
+    criticalAlerts: Alert[];
+    keyOpportunities: Opportunity[];
+  };
+  leadershipMetrics: LeadershipMetric[];
+  temporalContext: TemporalContext;
+  countryName: string;
+  countryFlag?: string;
+  isOwner?: boolean;
+  className?: string;
 }
 
 function formatMetricValue(value: number | string, format: LeadershipMetric['format']) {

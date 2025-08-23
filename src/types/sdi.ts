@@ -1,18 +1,8 @@
 // src/types/sdi.ts
 // Sovereign Digital Interface Type Definitions
 
-export interface IntelligenceItem {
-  id: string;
-  title: string;
-  content: string;
-  category: 'economic' | 'crisis' | 'diplomatic' | 'security' | 'technology' | 'environment';
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  source: string;
-  timestamp: Date;
-  region?: string;
-  affectedCountries?: string[];
-  isActive: boolean;
-}
+// Re-export unified IntelligenceItem to maintain backward compatibility  
+export type { IntelligenceItem } from './intelligence-unified';
 
 export interface CrisisEvent {
   id: string;

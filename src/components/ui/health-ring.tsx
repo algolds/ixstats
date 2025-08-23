@@ -48,20 +48,23 @@ export const HealthRing: React.FC<HealthRingProps> = ({
   // Ensure size is a valid number
   const validSize = typeof size === 'number' && !isNaN(size) && size > 0 ? size : 110;
   const stroke = 8;
-  const radius = (validSize - stroke * 2) / 2;
+  const radius = Math.max(1, (validSize - stroke * 2) / 2); // Ensure radius is at least 1
   const circumference = 2 * Math.PI * radius;
-  const progress = Math.max(0, Math.min(target, value));
-  const offset = circumference - (progress / target) * circumference;
+  const safeTarget = Math.max(1, target || 100); // Ensure target is at least 1
+  const safeValue = typeof value === 'number' && !isNaN(value) ? value : 0;
+  const progress = Math.max(0, Math.min(safeTarget, safeValue));
+  const progressRatio = safeTarget > 0 ? progress / safeTarget : 0;
+  const offset = isNaN(circumference - progressRatio * circumference) ? circumference : circumference - progressRatio * circumference;
   const rgb = hexToRgb(color);
   const [hovered, setHovered] = useState(false);
   
-  // Framer Motion physics springs
+  // Framer Motion physics springs with safe values
   const springProgress = useSpring(progress, { stiffness: 100, damping: 15 });
   const springScale = useSpring(hovered ? 1.05 : 1, { stiffness: 400, damping: 25 });
   const springGlow = useSpring(hovered ? 1 : 0.8, { stiffness: 300, damping: 20 });
   
-  // Transform values for dynamic effects
-  const animatedOffset = useTransform(springProgress, [0, target], [circumference, circumference - (target / target) * circumference]);
+  // Transform values for dynamic effects with safe calculations
+  const animatedOffset = useTransform(springProgress, [0, safeTarget], [circumference, 0]);
   
   // Glassy border color
   const borderColor = `rgba(${rgb.r},${rgb.g},${rgb.b},0.45)`;
@@ -231,7 +234,7 @@ export const HealthRing: React.FC<HealthRingProps> = ({
         <span className="text-2xl font-bold text-foreground">
           <AnimatedNumber value={progress} decimals={0} />
         </span>
-        {target !== 100 && <span className="text-xs text-muted-foreground">of {target}</span>}
+        {safeTarget !== 100 && <span className="text-xs text-muted-foreground">of {safeTarget}</span>}
       </div>
     </motion.div>
   );

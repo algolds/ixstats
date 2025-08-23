@@ -231,7 +231,9 @@ export class EnhancedNotificationPriority {
           const now = new Date();
           const quietEnd = new Date();
           const [endHour, endMinute] = userPreferences.quietHours.end.split(':').map(Number);
-          quietEnd.setHours(endHour, endMinute, 0, 0);
+          if (endHour !== undefined && endMinute !== undefined) {
+            quietEnd.setHours(endHour, endMinute, 0, 0);
+          }
           
           if (now < quietEnd) {
             cluster.deliveryWindow.start = Math.max(
@@ -385,7 +387,7 @@ export class EnhancedNotificationPriority {
     context: NotificationContext
   ): number {
     // IxTime-based temporal relevance
-    const gameHour = IxTime.getGameHour(context.ixTime);
+    const gameHour = new Date(context.ixTime).getHours();
     const isBusinessHours = gameHour >= 9 && gameHour <= 17;
     
     if (isBusinessHours && ['economic', 'governance'].includes(notification.category)) {
@@ -574,6 +576,10 @@ export class EnhancedNotificationPriority {
     const now = new Date();
     const [startHour, startMinute] = quietHours.start.split(':').map(Number);
     const [endHour, endMinute] = quietHours.end.split(':').map(Number);
+    
+    if (startHour === undefined || startMinute === undefined || endHour === undefined || endMinute === undefined) {
+      return false;
+    }
     
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
     const startMinutes = startHour * 60 + startMinute;

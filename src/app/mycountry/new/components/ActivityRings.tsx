@@ -303,7 +303,7 @@ export function ActivityRings({
     <div className={`flex flex-wrap gap-6 justify-center ${className}`}>
       {rings.map((ring, index) => (
         <ActivityRingComponent
-          key={`ring-${ring.id || ring.label || `index-${index}`}`}
+          key={`ring-${ring.id || `index-${index}`}`}
           ring={ring}
           config={config}
           index={index}

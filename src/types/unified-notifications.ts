@@ -127,15 +127,20 @@ export interface NotificationContext {
   recentActions: string[];
   focusMode: boolean;
   sessionDuration: number;
+  isUserActive: boolean;
+  lastInteraction?: number; // Timestamp of last user interaction
   
   // Device Context
   deviceType: 'desktop' | 'tablet' | 'mobile';
   screenSize: 'small' | 'medium' | 'large';
   networkQuality: 'high' | 'medium' | 'low';
+  batteryLevel?: number; // 0-100 battery percentage
   
   // Intelligence Factors
   userPreferences: UserNotificationPreferences;
   historicalEngagement: NotificationEngagement[];
+  interactionHistory: any[];
+  contextualFactors: Record<string, any>;
   urgencyFactors: string[];
   contextualRelevance: number; // 0-1 score
 }

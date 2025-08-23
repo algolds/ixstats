@@ -331,10 +331,13 @@ export class NotificationOrchestrator {
       this.rateLimiters.set(key, []);
     }
     
-    const timestamps = this.rateLimiters.get(key)!;
+    const timestamps = this.rateLimiters.get(key);
+    if (!timestamps) {
+      return false;
+    }
     
     // Remove old timestamps
-    while (timestamps.length > 0 && timestamps[0] < now - windowMs) {
+    while (timestamps.length > 0 && timestamps[0] !== undefined && timestamps[0] < now - windowMs) {
       timestamps.shift();
     }
     
@@ -469,12 +472,14 @@ export class NotificationOrchestrator {
 
     // Use category preferences if available
     if (categoryPrefs?.deliveryMethods?.length > 0) {
-      return categoryPrefs.deliveryMethods[0];
+      const method = categoryPrefs.deliveryMethods[0];
+      if (method) return method;
     }
 
     // Use user's preferred methods
     if (preferences.preferredMethods?.length > 0) {
-      return preferences.preferredMethods[0];
+      const method = preferences.preferredMethods[0];
+      if (method) return method;
     }
 
     // Default based on context

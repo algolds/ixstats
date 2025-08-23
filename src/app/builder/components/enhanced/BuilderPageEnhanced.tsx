@@ -325,7 +325,8 @@ function BuilderContent() {
           baselinePopulation: economicInputs.coreIndicators.totalPopulation,
           baselineGdpPerCapita: economicInputs.coreIndicators.gdpPerCapita,
           ...additionalData,
-        }
+        },
+        nationalIdentity: economicInputs.nationalIdentity
       });
 
       // Save backup to localStorage

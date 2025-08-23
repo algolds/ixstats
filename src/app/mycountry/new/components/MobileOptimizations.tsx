@@ -171,14 +171,19 @@ export function useTouchGestures() {
     let tapTimeout: NodeJS.Timeout;
 
     const handleTouchStart = (e: TouchEvent) => {
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
-      setTouchState(prev => ({ ...prev, isTouch: true }));
+      const firstTouch = e.touches[0];
+      if (firstTouch) {
+        startX = firstTouch.clientX;
+        startY = firstTouch.clientY;
+        setTouchState(prev => ({ ...prev, isTouch: true }));
+      }
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
-      const endX = e.changedTouches[0].clientX;
-      const endY = e.changedTouches[0].clientY;
+      const lastTouch = e.changedTouches[0];
+      if (!lastTouch) return;
+      const endX = lastTouch.clientX;
+      const endY = lastTouch.clientY;
       const deltaX = endX - startX;
       const deltaY = endY - startY;
       const minSwipeDistance = 50;

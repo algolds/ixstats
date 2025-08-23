@@ -38,6 +38,7 @@ import { ActivityRings, createDefaultActivityRings } from './components/Activity
 import { FocusCards, createDefaultFocusCards } from './components/FocusCards';
 import { ExecutiveSummary } from './components/ExecutiveSummary';
 import { useFlag } from '~/hooks/useFlag';
+import type { QuickAction } from '~/types/actions';
 
 interface IntelligenceFeedItem {
   id: string;
@@ -49,18 +50,6 @@ interface IntelligenceFeedItem {
   timestamp: number;
   actionable: boolean;
   source: string;
-}
-
-interface QuickAction {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ElementType;
-  category: 'policy' | 'budget' | 'diplomatic' | 'emergency';
-  urgency: 'critical' | 'high' | 'medium' | 'low';
-  estimatedTime: string;
-  impact: string;
-  enabled: boolean;
 }
 
 interface CountryData {
