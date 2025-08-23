@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { IxTime } from '~/lib/ixtime';
+import * as crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -203,8 +204,8 @@ export async function generateAndPostCitizenReaction(postId: string) {
   }
 
   const reactionTypes = ['like', 'laugh', 'angry', 'thumbsup', 'thumbsdown'];
-  const randomReactionType = reactionTypes[Math.floor(Math.random() * reactionTypes.length)];
-  const randomCitizenAccount = citizenAccounts[Math.floor(Math.random() * citizenAccounts.length)];
+  const randomReactionType = reactionTypes[crypto.randomInt(reactionTypes.length)];
+  const randomCitizenAccount = citizenAccounts[crypto.randomInt(citizenAccounts.length)];
 
   // Check if this account already reacted to this post
   const existingReaction = await prisma.postReaction.findUnique({
