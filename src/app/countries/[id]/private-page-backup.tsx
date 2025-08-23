@@ -539,7 +539,20 @@ export default function CountryDetailPage({ params }: CountryDetailPageProps) {
                         onFiscalDataChange={editMode ? (data) => handleSectionChange('fiscal', data) : () => {}}
                       />
                       <GovernmentSpending
-                        {...(editedEconomyData?.spending ?? { totalSpending: 0, spendingGDPPercent: 0, spendingPerCapita: 0, spendingCategories: [], deficitSurplus: 0 })}
+                        {...(editedEconomyData?.spending ?? { 
+                          education: 0,
+                          healthcare: 0,
+                          socialSafety: 0,
+                          totalSpending: 0, 
+                          spendingGDPPercent: 0, 
+                          spendingPerCapita: 0, 
+                          spendingCategories: [], 
+                          deficitSurplus: 0,
+                          performanceBasedBudgeting: false,
+                          universalBasicServices: false,
+                          greenInvestmentPriority: false,
+                          digitalGovernmentInitiative: false
+                        })}
                         nominalGDP={editedEconomyData?.core?.nominalGDP ?? 0}
                         totalPopulation={editedEconomyData?.core?.totalPopulation ?? 0}
                         onSpendingDataChangeAction={editMode ? (data) => handleSectionChange('spending', data) : () => {}}

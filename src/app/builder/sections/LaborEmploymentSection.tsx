@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, type ElementType } from 'react';
 import { Briefcase, Users, Clock, DollarSign, TrendingUp, TrendingDown, Shield, AlertTriangle } from 'lucide-react';
 import {
-  GlassSlider,
-  GlassDial,
-  GlassNumberPicker,
-  GlassToggle,
-  GlassPieChart,
-  GlassBarChart,
-} from '~/components/charts';
+  EnhancedSlider,
+  EnhancedDial,
+  EnhancedNumberInput,
+  EnhancedToggle,
+  EnhancedPieChart,
+  EnhancedBarChart,
+} from '../primitives/enhanced';
 import type { EconomicInputs, LaborEmploymentData } from '../lib/economy-data-service';
 import type { SectionContentProps } from '../types/builder';
 import { 
@@ -25,6 +25,14 @@ interface LaborEmploymentSectionProps extends ExtendedSectionProps {
   onToggleAdvanced?: () => void;
 }
 
+interface Metric {
+  label: string;
+  value: string | number;
+  unit?: string;
+  icon: ElementType;
+  trend?: 'up' | 'down' | 'neutral';
+}
+
 export function LaborEmploymentSection({
   inputs,
   onInputsChange,
@@ -37,7 +45,7 @@ export function LaborEmploymentSection({
   const totalPopulation = inputs.coreIndicators.totalPopulation;
   
   // Calculate metrics for overview
-  const metrics = useMemo(() => {
+  const metrics: Metric[] = useMemo(() => {
     const workingAgePopulation = Math.round(totalPopulation * 0.65);
     const laborForce = Math.round(workingAgePopulation * (laborEmployment.laborForceParticipationRate / 100));
     const employed = Math.round(laborForce * ((100 - laborEmployment.unemploymentRate) / 100));
@@ -49,28 +57,24 @@ export function LaborEmploymentSection({
         value: sectionUtils.formatNumber(laborForce),
         unit: `(${laborEmployment.laborForceParticipationRate.toFixed(1)}%)`,
         icon: Users,
-        theme: 'indigo' as const
       },
       {
         label: "Unemployment Rate",
         value: `${laborEmployment.unemploymentRate.toFixed(1)}%`,
         icon: laborEmployment.unemploymentRate > 10 ? TrendingDown : TrendingUp,
-        theme: laborEmployment.unemploymentRate > 10 ? 'red' : laborEmployment.unemploymentRate > 7 ? 'gold' : 'emerald' as const,
-        trend: laborEmployment.unemploymentRate > 10 ? 'down' : laborEmployment.unemploymentRate > 7 ? 'neutral' : 'up' as const
+        trend: laborEmployment.unemploymentRate > 10 ? 'down' : laborEmployment.unemploymentRate > 7 ? 'neutral' : 'up'
       },
       {
         label: "Average Income",
         value: sectionUtils.formatCurrency(laborEmployment.averageAnnualIncome, '$', 0),
         unit: "/year",
         icon: DollarSign,
-        theme: 'indigo' as const
       },
       {
         label: "Work Hours",
         value: `${laborEmployment.averageWorkweekHours}`,
         unit: "hrs/week",
         icon: Clock,
-        theme: 'indigo' as const
       }
     ];
   }, [laborEmployment, totalPopulation]);
@@ -99,68 +103,88 @@ export function LaborEmploymentSection({
   ];
 
   const wageData = [
-    { name: 'Minimum Wage', value: laborEmployment.minimumWage },
-    { name: 'Average Income', value: laborEmployment.averageAnnualIncome / 12 }, // Monthly
-    { name: 'Median Income', value: (laborEmployment.averageAnnualIncome * 0.85) / 12 } // Estimated monthly
+    { name: 'Minimum Wage', value: laborEmployment.minimumWage, color: 'red' },
+    { name: 'Average Income', value: laborEmployment.averageAnnualIncome / 12, color: 'blue' }, // Monthly
+    { name: 'Median Income', value: (laborEmployment.averageAnnualIncome * 0.85) / 12, color: 'emerald' } // Estimated monthly
   ];
 
   const workforceData = [
-    { name: 'Labor Force Participation', value: laborEmployment.laborForceParticipationRate },
-    { name: 'Employment Rate', value: 100 - laborEmployment.unemploymentRate },
-    { name: 'Youth Employment', value: Math.max(0, 100 - laborEmployment.unemploymentRate * 1.5) },
-    { name: 'Senior Employment', value: Math.max(0, 100 - laborEmployment.unemploymentRate * 0.8) }
+    { name: 'Labor Force Participation', value: laborEmployment.laborForceParticipationRate, color: 'blue' },
+    { name: 'Employment Rate', value: 100 - laborEmployment.unemploymentRate, color: 'emerald' },
+    { name: 'Youth Employment', value: Math.max(0, 100 - laborEmployment.unemploymentRate * 1.5), color: 'gold' },
+    { name: 'Senior Employment', value: Math.max(0, 100 - laborEmployment.unemploymentRate * 0.8), color: 'purple' }
   ];
 
   // Basic view content - Essential labor metrics
   const basicContent = (
     <>
-      <GlassSlider
+      <EnhancedSlider
         label="Unemployment Rate"
-        value={laborEmployment.unemploymentRate}
-        onChange={(value) => handleLaborChange('unemploymentRate', value)}
+        description="Percentage of labor force without employment"
+        value={Number(laborEmployment.unemploymentRate) || 0}
+        onChange={(value) => handleLaborChange('unemploymentRate', Number(value))}
         min={0}
         max={25}
         step={0.1}
+        precision={1}
         unit="%"
-        theme="indigo"
+        sectionId="labor"
+        icon={Briefcase}
         showTicks={true}
         tickCount={6}
+        showValue={true}
+        showRange={true}
         referenceValue={referenceCountry?.unemploymentRate}
         referenceLabel={referenceCountry?.name}
+        showComparison={true}
       />
 
-      <GlassDial
+      <EnhancedSlider
         label="Labor Force Participation"
-        value={laborEmployment.laborForceParticipationRate}
-        onChange={(value) => handleLaborChange('laborForceParticipationRate', value)}
+        description="Percentage of working-age population in labor force"
+        value={Number(laborEmployment.laborForceParticipationRate) || 0}
+        onChange={(value) => handleLaborChange('laborForceParticipationRate', Number(value))}
         min={30}
         max={90}
         step={0.5}
+        precision={1}
         unit="%"
-        theme="indigo"
+        sectionId="labor"
+        icon={Users}
+        showTicks={true}
+        tickCount={7}
+        showValue={true}
+        showRange={true}
       />
 
-      <GlassNumberPicker
+      <EnhancedNumberInput
         label="Average Annual Income"
-        value={laborEmployment.averageAnnualIncome}
-        onChange={(value) => handleLaborChange('averageAnnualIncome', value)}
+        description="Mean yearly earnings across all employed workers"
+        value={Number(laborEmployment.averageAnnualIncome) || 0}
+        onChange={(value) => handleLaborChange('averageAnnualIncome', Number(value))}
         min={5000}
         max={120000}
         step={1000}
         unit=" $/year"
-        theme="indigo"
+        sectionId="labor"
+        icon={DollarSign}
+        showButtons={true}
+        format={(value) => `$${Number(value).toLocaleString()}`}
       />
 
       {/* Basic visualization */}
       <div className="md:col-span-2">
-        <GlassPieChart
+        <EnhancedPieChart
           data={laborData}
           dataKey="value"
           nameKey="category"
           title="Employment Status"
           description="Labor force distribution"
           height={250}
-          theme="indigo"
+          sectionId="labor"
+          showLegend={true}
+          showPercentage={true}
+          formatValue={(value) => `${value.toFixed(1)}%`}
         />
       </div>
     </>
@@ -170,52 +194,74 @@ export function LaborEmploymentSection({
   const advancedContent = (
     <>
       {/* Detailed Controls */}
-      <GlassNumberPicker
+      <EnhancedNumberInput
         label="Minimum Wage"
-        value={laborEmployment.minimumWage}
-        onChange={(value) => handleLaborChange('minimumWage', value)}
+        description="Legally mandated minimum hourly wage"
+        value={Number(laborEmployment.minimumWage) || 0}
+        onChange={(value) => handleLaborChange('minimumWage', Number(value))}
         min={500}
         max={4000}
         step={50}
         unit=" $/month"
-        theme="indigo"
+        sectionId="labor"
+        icon={DollarSign}
+        showButtons={true}
+        format={(value) => `$${Number(value).toLocaleString()}`}
       />
 
-      <GlassSlider
+      <EnhancedSlider
         label="Average Work Week"
-        value={laborEmployment.averageWorkweekHours}
-        onChange={(value) => handleLaborChange('averageWorkweekHours', value)}
+        description="Standard hours worked per week across all sectors"
+        value={Number(laborEmployment.averageWorkweekHours) || 0}
+        onChange={(value) => handleLaborChange('averageWorkweekHours', Number(value))}
         min={20}
         max={60}
         step={1}
         unit=" hours"
-        theme="indigo"
+        sectionId="labor"
+        icon={Clock}
         showTicks={true}
         tickCount={5}
+        showValue={true}
+        showRange={true}
       />
 
-      <GlassNumberPicker
+      <EnhancedNumberInput
         label="Total Workforce"
-        value={laborEmployment.totalWorkforce}
-        onChange={(value) => handleLaborChange('totalWorkforce', value)}
-        min={totalPopulation * 0.3}
-        max={totalPopulation * 0.8}
+        description="Total number of people employed or seeking employment"
+        value={Number(laborEmployment.totalWorkforce) || 0}
+        onChange={(value) => handleLaborChange('totalWorkforce', Number(value))}
+        min={Number(totalPopulation) * 0.3}
+        max={Number(totalPopulation) * 0.8}
         step={1000}
         unit=" people"
-        theme="indigo"
+        sectionId="labor"
+        icon={Users}
+        showButtons={true}
+        format={(value) => {
+          const num = Number(value);
+          if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
+          if (num >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
+          return num.toString();
+        }}
       />
 
-      <GlassSlider
+      <EnhancedSlider
         label="Employment Rate"
-        value={laborEmployment.employmentRate}
-        onChange={(value) => handleLaborChange('employmentRate', value)}
+        description="Percentage of labor force that is employed"
+        value={Number(laborEmployment.employmentRate) || 0}
+        onChange={(value) => handleLaborChange('employmentRate', Number(value))}
         min={50}
         max={100}
         step={0.1}
+        precision={1}
         unit="%"
-        theme="indigo"
+        sectionId="labor"
+        icon={TrendingUp}
         showTicks={true}
         tickCount={6}
+        showValue={true}
+        showRange={true}
       />
 
       {/* Labor Policy Toggles */}
@@ -225,45 +271,55 @@ export function LaborEmploymentSection({
           Labor Policies
         </h5>
         <FormGrid columns={2}>
-          <GlassToggle
+          <EnhancedToggle
             label="Strong Labor Protections"
             description="Enhanced worker rights and job security"
             checked={laborEmployment.laborProtections}
             onChange={(checked) => handleLaborChange('laborProtections', checked)}
-            theme="indigo"
+            sectionId="labor"
+            variant="switch"
+            showIcons={true}
           />
-          <GlassToggle
+          <EnhancedToggle
             label="Collective Bargaining"
             description="Support for union organizing and negotiations"
             checked={false} // TODO: Add to data model
             onChange={(checked) => {/* TODO: Implement */}}
-            theme="indigo"
+            sectionId="labor"
+            variant="switch"
+            showIcons={true}
           />
         </FormGrid>
       </div>
 
       {/* Advanced Visualizations */}
       <div className="md:col-span-2">
-        <GlassBarChart
+        <EnhancedBarChart
           data={wageData}
           xKey="name"
           yKey="value"
           title="Income Distribution"
           description="Monthly income levels across the economy"
           height={300}
-          theme="indigo"
+          sectionId="labor"
+          formatValue={(value) => `$${value.toLocaleString()}`}
+          showTooltip={true}
+          showGrid={true}
         />
       </div>
 
       <div className="md:col-span-2">
-        <GlassBarChart
+        <EnhancedBarChart
           data={workforceData}
           xKey="name"
           yKey="value"
           title="Employment Metrics"
           description="Labor market participation across demographics"
           height={250}
-          theme="indigo"
+          sectionId="labor"
+          formatValue={(value) => `${value.toFixed(1)}%`}
+          showTooltip={true}
+          showGrid={true}
         />
       </div>
     </>
@@ -312,7 +368,7 @@ export function LaborEmploymentSection({
 
   return (
     <SectionBase
-      config={sectionConfigs.labor}
+      config={sectionConfigs.labor!}
       inputs={inputs}
       onInputsChange={onInputsChange}
       showAdvanced={showAdvanced}

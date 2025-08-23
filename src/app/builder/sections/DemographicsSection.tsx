@@ -3,12 +3,11 @@
 import React, { useState, useMemo } from 'react';
 import { Users, Heart, Building2, GraduationCap, Globe, Baby, UserCheck, Home, MapPin } from 'lucide-react';
 import {
-  GlassSlider,
-  GlassNumberInput,
-  GlassToggle,
-  GlassProgressRing,
-  GlassMetricCard
-} from '../components/glass/GlassInputs';
+  EnhancedSlider,
+  EnhancedNumberInput,
+  EnhancedToggle,
+  MetricCard,
+} from '../primitives/enhanced';
 import type { EconomicInputs, DemographicData } from '../lib/economy-data-service';
 import type { SectionContentProps } from '../types/builder';
 import { 
@@ -141,52 +140,55 @@ export function DemographicsSection({
   }));
 
   const urbanRuralData = [
-    { name: 'Urban', value: demographics.urbanRuralSplit.urban },
-    { name: 'Rural', value: demographics.urbanRuralSplit.rural }
+    { name: 'Urban', value: demographics.urbanRuralSplit.urban, color: 'blue' },
+    { name: 'Rural', value: demographics.urbanRuralSplit.rural, color: 'emerald' }
   ];
 
   // Basic view content - Essential demographics
   const basicContent = (
     <>
-      <GlassNumberInput
+      <EnhancedNumberInput
         label="Life Expectancy"
-        value={demographics.lifeExpectancy}
-        onChange={(value) => handleDemographicChange('lifeExpectancy', value)}
+        value={Number(demographics.lifeExpectancy) || 0}
+        onChange={(value) => handleDemographicChange('lifeExpectancy', Number(value))}
         min={50}
         max={90}
         step={0.1}
         precision={1}
         unit=" years"
-        theme="gold"
+        sectionId="demographics"
+        icon={Heart}
       />
 
-      <GlassSlider
+      <EnhancedSlider
         label="Literacy Rate"
-        value={demographics.literacyRate}
-        onChange={(value) => handleDemographicChange('literacyRate', value)}
+        value={Number(demographics.literacyRate) || 0}
+        onChange={(value) => handleDemographicChange('literacyRate', Number(value))}
         min={40}
         max={100}
         step={0.1}
         unit="%"
-        theme="gold"
+        sectionId="demographics"
+        icon={GraduationCap}
         showTicks={true}
         tickCount={7}
       />
 
-      <GlassSlider
+      <EnhancedSlider
         label="Urbanization Rate"
-        value={demographics.urbanRuralSplit.urban}
+        value={Number(demographics.urbanRuralSplit.urban) || 0}
         onChange={(value) => {
           handleDemographicChange('urbanRuralSplit', {
-            urban: value,
-            rural: 100 - value
+            urban: Number(value),
+            rural: 100 - Number(value)
           });
         }}
         min={20}
         max={95}
         step={1}
         unit="%"
-        theme="gold"
+        sectionId="demographics"
+        icon={Building2}
         showTicks={true}
         tickCount={6}
       />
@@ -198,29 +200,19 @@ export function DemographicsSection({
           Population Distribution
         </h4>
         <div className="grid grid-cols-2 gap-4">
-          <GlassMetricCard
-            title="Urban Population"
+          <MetricCard
+            label="Urban Population"
             value={demographics.urbanRuralSplit.urban}
             unit="%"
             icon={Building2}
-            theme="gold"
+            sectionId="demographics"
           />
-          <GlassMetricCard
-            title="Rural Population"
+          <MetricCard
+            label="Rural Population"
             value={demographics.urbanRuralSplit.rural}
             unit="%"
             icon={Home}
-            theme="gold"
-          />
-        </div>
-        <div className="flex justify-center">
-          <GlassProgressRing
-            value={demographics.urbanRuralSplit.urban}
-            max={100}
-            size={120}
-            theme="gold"
-            label="Urbanization"
-            showValue={true}
+            sectionId="demographics"
           />
         </div>
       </div>
@@ -259,14 +251,13 @@ export function DemographicsSection({
             </h4>
             <div className="grid grid-cols-3 gap-4">
               {demographics.ageDistribution.map((group) => (
-                <GlassProgressRing
+                <MetricCard
                   key={group.group}
-                  value={group.percent}
-                  max={50}
-                  size={80}
-                  theme={group.group === '0-15' ? 'blue' : group.group === '65+' ? 'red' : 'neutral'}
                   label={group.group}
-                  showValue={true}
+                  value={group.percent.toFixed(1)}
+                  unit="%"
+                  icon={Users}
+                  sectionId="demographics"
                 />
               ))}
             </div>
@@ -274,16 +265,17 @@ export function DemographicsSection({
 
           {/* Age Group Controls - Use intuitive sliders instead of confusing dials */}
           {demographics.ageDistribution.map((group, index) => (
-            <GlassSlider
+            <EnhancedSlider
               key={group.group}
               label={`${group.group} Population`}
-              value={group.percent}
-              onChange={(value) => handleAgeDistributionChange(index, value)}
+              value={Number(group.percent) || 0}
+              onChange={(value) => handleAgeDistributionChange(index, Number(value))}
               min={5}
               max={50}
               step={0.5}
               unit="%"
-              theme={group.group === '0-15' ? 'blue' : group.group === '65+' ? 'red' : 'neutral'}
+              sectionId="demographics"
+              icon={Users}
               showTicks={true}
               tickCount={5}
             />
@@ -301,25 +293,27 @@ export function DemographicsSection({
                 {region.name}
               </h5>
               <FormGrid columns={2}>
-                <GlassSlider
+                <EnhancedSlider
                   label="Population"
-                  value={region.population}
-                  onChange={(value) => handleRegionChange(index, 'population', value)}
-                  min={totalPopulation * 0.01}
-                  max={totalPopulation * 0.8}
-                  step={totalPopulation * 0.01}
+                  value={Number(region.population) || 0}
+                  onChange={(value) => handleRegionChange(index, 'population', Number(value))}
+                  min={Number(totalPopulation) * 0.01}
+                  max={Number(totalPopulation) * 0.8}
+                  step={Number(totalPopulation) * 0.01}
                   unit=" people"
-                  theme="gold"
+                  sectionId="demographics"
+                  icon={MapPin}
                 />
-                <GlassSlider
+                <EnhancedSlider
                   label="Urban %"
-                  value={region.urbanPercent}
-                  onChange={(value) => handleRegionChange(index, 'urbanPercent', value)}
+                  value={Number(region.urbanPercent) || 0}
+                  onChange={(value) => handleRegionChange(index, 'urbanPercent', Number(value))}
                   min={0}
                   max={100}
                   step={0.1}
                   unit="%"
-                  theme="gold"
+                  sectionId="demographics"
+                  icon={Building2}
                 />
               </FormGrid>
             </div>
@@ -337,13 +331,13 @@ export function DemographicsSection({
             </h4>
             <div className="grid grid-cols-2 gap-4">
               {demographics.educationLevels.map((level) => (
-                <GlassMetricCard
+                <MetricCard
                   key={level.level}
-                  title={level.level}
-                  value={level.percent}
+                  label={level.level}
+                  value={level.percent.toFixed(1)}
                   unit="%"
                   icon={GraduationCap}
-                  theme="gold"
+                  sectionId="demographics"
                 />
               ))}
             </div>
@@ -351,16 +345,17 @@ export function DemographicsSection({
 
           {/* Education Level Controls */}
           {demographics.educationLevels.map((level, index) => (
-            <GlassSlider
+            <EnhancedSlider
               key={level.level}
               label={level.level}
-              value={level.percent}
-              onChange={(value) => handleEducationLevelChange(index, value)}
+              value={Number(level.percent) || 0}
+              onChange={(value) => handleEducationLevelChange(index, Number(value))}
               min={0}
               max={60}
               step={0.1}
               unit="%"
-              theme="gold"
+              sectionId="demographics"
+              icon={GraduationCap}
               showTicks={true}
               tickCount={5}
             />
@@ -373,19 +368,21 @@ export function DemographicsSection({
               Social Policies
             </h5>
             <FormGrid columns={2}>
-              <GlassToggle
+              <EnhancedToggle
                 label="Universal Healthcare"
                 description="Free healthcare for all citizens"
                 checked={false}
                 onChange={(checked) => {/* TODO: Implement social policy state */}}
-                theme="default"
+                sectionId="demographics"
+                icon={Heart}
               />
-              <GlassToggle
+              <EnhancedToggle
                 label="Free Education"
                 description="Public education through university level"
                 checked={false}
                 onChange={(checked) => {/* TODO: Implement social policy state */}}
-                theme="gold"
+                sectionId="demographics"
+                icon={GraduationCap}
               />
             </FormGrid>
           </div>
@@ -426,7 +423,12 @@ export function DemographicsSection({
 
   return (
     <SectionBase
-      config={sectionConfigs.demographics}
+      config={sectionConfigs.demographics || { 
+        id: 'demographics', 
+        title: 'Demographics', 
+        icon: Users, 
+        theme: 'red' as const
+      }}
       inputs={inputs}
       onInputsChange={onInputsChange}
       showAdvanced={showAdvanced}

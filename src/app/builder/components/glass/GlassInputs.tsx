@@ -553,9 +553,9 @@ export function GlassMetricCard({
               </div>
             )}
           </div>
-          {Icon && (
-            <Icon className="h-6 w-6 text-muted-foreground" />
-          )}
+          {Icon && 
+            React.createElement(Icon, { className: "h-6 w-6 text-muted-foreground" })
+          }
         </div>
       </GlassCardContent>
     </GlassCard>

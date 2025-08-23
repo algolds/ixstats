@@ -1,16 +1,16 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { Coins, TrendingUp, TrendingDown, DollarSign, Building, CreditCard, Shield, PieChart, AlertTriangle } from 'lucide-react';
+import { Coins, TrendingUp, TrendingDown, DollarSign, Building, Building2, CreditCard, Shield, PieChart, AlertTriangle } from 'lucide-react';
 import {
-  GlassSlider,
-  GlassDial,
-  GlassNumberPicker,
-  GlassToggle,
-  GlassBarChart,
-  GoogleGaugeChart,
-  GoogleLineChart,
-} from '~/components/charts';
+  EnhancedSlider,
+  EnhancedDial,
+  EnhancedNumberInput,
+  EnhancedToggle,
+  EnhancedBarChart,
+  EnhancedPieChart,
+  MetricCard,
+} from '../primitives/enhanced';
 import type { EconomicInputs, FiscalSystemData } from '../lib/economy-data-service';
 import type { SectionContentProps } from '../types/builder';
 import { 
@@ -45,7 +45,7 @@ export function FiscalSystemSection({
     const totalRevenue = fiscalSystem.governmentRevenueTotal;
     const totalSpending = (nominalGDP * fiscalSystem.governmentBudgetGDPPercent) / 100;
     const budgetBalance = fiscalSystem.budgetDeficitSurplus || 0;
-    const budgetHealth = budgetBalance >= 0 ? 'up' : Math.abs(budgetBalance / nominalGDP) < 0.03 ? 'neutral' : 'down';
+    const budgetHealth: 'up' | 'neutral' | 'down' = budgetBalance >= 0 ? 'up' : Math.abs(budgetBalance / nominalGDP) < 0.03 ? 'neutral' : 'down';
     
     return [
       {
@@ -67,7 +67,7 @@ export function FiscalSystemSection({
         value: sectionUtils.formatCurrency(Math.abs(budgetBalance)),
         unit: budgetBalance >= 0 ? 'Surplus' : 'Deficit',
         icon: budgetBalance >= 0 ? TrendingUp : TrendingDown,
-        theme: budgetBalance >= 0 ? 'emerald' : 'red' as const,
+        theme: budgetBalance >= 0 ? 'emerald' as const : 'red' as const,
         trend: budgetHealth
       },
       {
@@ -75,8 +75,8 @@ export function FiscalSystemSection({
         value: `${fiscalSystem.totalDebtGDPRatio.toFixed(1)}%`,
         unit: "of GDP",
         icon: CreditCard,
-        theme: fiscalSystem.totalDebtGDPRatio > 90 ? 'red' : fiscalSystem.totalDebtGDPRatio > 60 ? 'gold' : 'blue' as const,
-        trend: fiscalSystem.totalDebtGDPRatio > 90 ? 'down' : 'neutral'
+        theme: fiscalSystem.totalDebtGDPRatio > 90 ? 'red' as const : fiscalSystem.totalDebtGDPRatio > 60 ? 'gold' as const : 'blue' as const,
+        trend: fiscalSystem.totalDebtGDPRatio > 90 ? 'down' as const : 'neutral' as const
       }
     ];
   }, [fiscalSystem, nominalGDP]);
@@ -101,11 +101,11 @@ export function FiscalSystemSection({
     const newTaxRates = { ...fiscalSystem.taxRates };
     
     if (category === 'income' && newTaxRates.personalIncomeTaxRates[1]) {
-      newTaxRates.personalIncomeTaxRates[1].rate = value;
+      newTaxRates.personalIncomeTaxRates[1].rate = Number(value);
     } else if (category === 'corporate' && newTaxRates.corporateTaxRates[1]) {
-      newTaxRates.corporateTaxRates[1].rate = value;
+      newTaxRates.corporateTaxRates[1].rate = Number(value);
     } else if (category === 'sales') {
-      newTaxRates.salesTaxRate = value;
+      newTaxRates.salesTaxRate = Number(value);
     }
     
     handleFiscalChange('taxRates', newTaxRates);
@@ -131,17 +131,20 @@ export function FiscalSystemSection({
     { 
       name: 'Income Tax', 
       rate: fiscalSystem.taxRates.personalIncomeTaxRates[1]?.rate || 0, 
-      revenue: (fiscalSystem.taxRates.personalIncomeTaxRates[1]?.rate || 0) * 0.8 
+      revenue: (fiscalSystem.taxRates.personalIncomeTaxRates[1]?.rate || 0) * 0.8,
+      color: 'blue'
     },
     { 
       name: 'Corporate Tax', 
       rate: fiscalSystem.taxRates.corporateTaxRates[1]?.rate || 0, 
-      revenue: (fiscalSystem.taxRates.corporateTaxRates[1]?.rate || 0) * 0.6 
+      revenue: (fiscalSystem.taxRates.corporateTaxRates[1]?.rate || 0) * 0.6,
+      color: 'emerald'
     },
     { 
       name: 'VAT/Sales Tax', 
       rate: fiscalSystem.taxRates.salesTaxRate, 
-      revenue: fiscalSystem.taxRates.salesTaxRate * 1.2 
+      revenue: fiscalSystem.taxRates.salesTaxRate * 1.2,
+      color: 'gold'
     }
   ];
 
@@ -165,56 +168,109 @@ export function FiscalSystemSection({
     ['Fiscal Health', fiscalHealthScore]
   ];
 
+  const taxBredownData = [
+    { category: 'Income Tax', value: fiscalSystem.taxRates.personalIncomeTaxRates[1]?.rate || 0, color: 'blue' },
+    { category: 'Corporate Tax', value: fiscalSystem.taxRates.corporateTaxRates[1]?.rate || 0, color: 'emerald' },
+    { category: 'Sales Tax', value: fiscalSystem.taxRates.salesTaxRate, color: 'gold' },
+    { category: 'Property Tax', value: fiscalSystem.taxRates.propertyTaxRate, color: 'purple' },
+    { category: 'Other Taxes', value: Math.max(0, fiscalSystem.taxRevenueGDPPercent - 
+      ((fiscalSystem.taxRates.personalIncomeTaxRates[1]?.rate || 0) + 
+       (fiscalSystem.taxRates.corporateTaxRates[1]?.rate || 0) + 
+       fiscalSystem.taxRates.salesTaxRate + 
+       fiscalSystem.taxRates.propertyTaxRate)), color: 'red' }
+  ];
+
   // Basic view content - Essential fiscal controls
   const basicContent = (
     <>
-      <GlassNumberPicker
+      {/* Overview Metrics */}
+      <div className="md:col-span-2 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {metrics.map((metric, index) => (
+            <MetricCard
+              key={index}
+              {...metric}
+              sectionId="fiscal"
+              className="h-full"
+            />
+          ))}
+        </div>
+      </div>
+
+      <EnhancedSlider
         label="Tax Revenue (% of GDP)"
+        description="Government revenue from all taxes as percentage of GDP"
         value={fiscalSystem.taxRevenueGDPPercent}
         onChange={(value) => handleFiscalChange('taxRevenueGDPPercent', value)}
         min={5}
         max={50}
         step={0.5}
+        precision={1}
         unit="% of GDP"
-        theme="blue"
+        sectionId="fiscal"
+        icon={DollarSign}
+        showTicks={true}
+        tickCount={6}
+        showValue={true}
+        showRange={true}
+        referenceValue={referenceCountry?.taxRevenuePercent}
+        referenceLabel={referenceCountry?.name}
+        showComparison={true}
       />
 
-      <GlassNumberPicker
+      <EnhancedSlider
         label="Government Spending (% of GDP)"
+        description="Total government expenditure as percentage of GDP"
         value={fiscalSystem.governmentBudgetGDPPercent}
         onChange={(value) => handleFiscalChange('governmentBudgetGDPPercent', value)}
         min={10}
         max={60}
         step={0.5}
+        precision={1}
         unit="% of GDP"
-        theme="blue"
+        sectionId="fiscal"
+        icon={Building}
+        showTicks={true}
+        tickCount={6}
+        showValue={true}
+        showRange={true}
+        referenceValue={referenceCountry?.governmentSpending}
+        referenceLabel={referenceCountry?.name}
+        showComparison={true}
       />
 
-      <GlassDial
+      <EnhancedSlider
         label="Public Debt (% of GDP)"
+        description="Total government debt as percentage of GDP"
         value={fiscalSystem.totalDebtGDPRatio}
         onChange={(value) => handleFiscalChange('totalDebtGDPRatio', value)}
         min={0}
         max={200}
         step={1}
-        unit="%"
-        theme="blue"
+        precision={1}
+        unit="% of GDP"
+        sectionId="fiscal"
+        icon={CreditCard}
+        showTicks={true}
+        tickCount={5}
+        showValue={true}
+        showRange={true}
       />
 
       {/* Basic visualization */}
       <div className="md:col-span-2">
-        <GoogleGaugeChart
-          data={fiscalGaugeData}
-          title="Fiscal Health Score"
-          description="Overall fiscal sustainability"
+        <EnhancedPieChart
+          data={taxBredownData}
+          dataKey="value"
+          nameKey="category"
+          title="Tax Revenue Sources"
+          description="Breakdown of government revenue streams"
           height={250}
-          theme="blue"
-          min={0}
-          max={100}
-          yellowFrom={30}
-          yellowTo={70}
-          redFrom={0}
-          redTo={30}
+          sectionId="fiscal"
+          showLegend={true}
+          showPercentage={true}
+          formatValue={(value) => `${value.toFixed(1)}%`}
+          minSlicePercentage={3}
         />
       </div>
     </>
@@ -246,69 +302,73 @@ export function FiscalSystemSection({
       {selectedView === 'revenue' && (
         <>
           <div className="md:col-span-2">
-            <GlassBarChart
+            <EnhancedBarChart
               data={taxData}
               xKey="name"
-              yKey={['rate', 'revenue']}
+              yKey="rate"
               title="Tax Rates vs Revenue Generation"
               description="Tax policy effectiveness"
               height={300}
-              theme="blue"
+              sectionId="fiscal"
             />
           </div>
 
           {/* Tax Rate Controls */}
-          <GlassSlider
+          <EnhancedSlider
             label="Income Tax Rate"
-            value={fiscalSystem.taxRates.personalIncomeTaxRates[1]?.rate || 0}
+            value={Number(fiscalSystem.taxRates.personalIncomeTaxRates[1]?.rate) || 0}
             onChange={(value) => handleTaxRateChange('income', value)}
             min={0}
             max={70}
             step={0.5}
             unit="%"
-            theme="blue"
+            sectionId="fiscal"
+            icon={DollarSign}
             showTicks={true}
             tickCount={8}
           />
 
-          <GlassSlider
+          <EnhancedSlider
             label="Corporate Tax Rate"
-            value={fiscalSystem.taxRates.corporateTaxRates[1]?.rate || 0}
+            value={Number(fiscalSystem.taxRates.corporateTaxRates[1]?.rate) || 0}
             onChange={(value) => handleTaxRateChange('corporate', value)}
             min={0}
             max={50}
             step={0.5}
             unit="%"
-            theme="blue"
+            sectionId="fiscal"
+            icon={Building}
             showTicks={true}
             tickCount={6}
           />
 
-          <GlassSlider
+          <EnhancedSlider
             label="Sales Tax Rate"
-            value={fiscalSystem.taxRates.salesTaxRate}
+            value={Number(fiscalSystem.taxRates.salesTaxRate) || 0}
             onChange={(value) => handleTaxRateChange('sales', value)}
             min={0}
             max={30}
             step={0.5}
             unit="%"
-            theme="blue"
+            sectionId="fiscal"
+            icon={CreditCard}
             showTicks={true}
             tickCount={7}
           />
 
-          <GlassSlider
+          <EnhancedSlider
             label="Property Tax Rate"
-            value={fiscalSystem.taxRates.propertyTaxRate}
+            value={Number(fiscalSystem.taxRates.propertyTaxRate) || 0}
             onChange={(value) => handleFiscalChange('taxRates', {
               ...fiscalSystem.taxRates,
-              propertyTaxRate: value
+              propertyTaxRate: Number(value)
             })}
             min={0}
             max={5}
             step={0.1}
             unit="%"
-            theme="blue"
+            sectionId="fiscal"
+            icon={Building}
             showTicks={true}
             tickCount={6}
           />
@@ -320,7 +380,7 @@ export function FiscalSystemSection({
         <>
           {/* Spending Categories */}
           {fiscalSystem.governmentSpendingByCategory.map((category, index) => (
-            <GlassSlider
+            <EnhancedSlider
               key={category.category}
               label={category.category}
               value={category.percent}
@@ -329,7 +389,8 @@ export function FiscalSystemSection({
               max={40}
               step={0.1}
               unit="%"
-              theme="blue"
+              sectionId="fiscal"
+              icon={Building}
               showTicks={true}
               tickCount={5}
             />
@@ -341,62 +402,67 @@ export function FiscalSystemSection({
       {selectedView === 'debt' && (
         <>
           <div className="md:col-span-2">
-            <GoogleLineChart
-              data={budgetBalanceData}
-              title="Budget Balance Projection"
-              description="Historical and projected budget balance as % of GDP"
-              height={250}
-              theme="blue"
-              curveType="function"
-            />
+            <div className="space-y-4">
+              <h4 className="text-sm font-semibold text-foreground">Budget Balance Projection</h4>
+              <p className="text-xs text-muted-foreground">Historical and projected budget balance as % of GDP</p>
+              <div className="h-64 bg-card/50 rounded-lg border border-border flex items-center justify-center">
+                <span className="text-sm text-muted-foreground">Chart placeholder - Budget Balance Trend</span>
+              </div>
+            </div>
           </div>
 
-          <GlassSlider
+          <EnhancedSlider
             label="Internal Debt (% of GDP)"
-            value={fiscalSystem.internalDebtGDPPercent}
-            onChange={(value) => handleFiscalChange('internalDebtGDPPercent', value)}
+            value={Number(fiscalSystem.internalDebtGDPPercent) || 0}
+            onChange={(value) => handleFiscalChange('internalDebtGDPPercent', Number(value))}
             min={0}
             max={150}
             step={1}
             unit="%"
-            theme="blue"
+            sectionId="fiscal"
+            icon={CreditCard}
             showTicks={true}
             tickCount={6}
           />
 
-          <GlassSlider
+          <EnhancedSlider
             label="External Debt (% of GDP)"
-            value={fiscalSystem.externalDebtGDPPercent}
-            onChange={(value) => handleFiscalChange('externalDebtGDPPercent', value)}
+            value={Number(fiscalSystem.externalDebtGDPPercent) || 0}
+            onChange={(value) => handleFiscalChange('externalDebtGDPPercent', Number(value))}
             min={0}
             max={100}
             step={1}
             unit="%"
-            theme="blue"
+            sectionId="fiscal"
+            icon={TrendingDown}
             showTicks={true}
             tickCount={6}
           />
 
-          <GlassNumberPicker
+          <EnhancedNumberInput
             label="Interest Rates (%)"
-            value={fiscalSystem.interestRates}
-            onChange={(value) => handleFiscalChange('interestRates', value)}
+            value={Number(fiscalSystem.interestRates) || 0}
+            onChange={(value) => handleFiscalChange('interestRates', Number(value))}
             min={0}
             max={15}
             step={0.1}
+            precision={1}
             unit="%"
-            theme="blue"
+            sectionId="fiscal"
+            icon={DollarSign}
           />
 
-          <GlassNumberPicker
+          <EnhancedNumberInput
             label="Debt Ceiling (% of GDP)"
-            value={fiscalSystem.debtCeiling}
-            onChange={(value) => handleFiscalChange('debtCeiling', value)}
+            value={Number(fiscalSystem.debtCeiling) || 0}
+            onChange={(value) => handleFiscalChange('debtCeiling', Number(value))}
             min={0}
             max={500}
             step={10}
+            precision={0}
             unit="%"
-            theme="blue"
+            sectionId="fiscal"
+            icon={Shield}
           />
 
           {/* Policy Toggles */}
@@ -406,19 +472,21 @@ export function FiscalSystemSection({
               Fiscal Policies
             </h5>
             <FormGrid columns={2}>
-              <GlassToggle
+              <EnhancedToggle
                 label="Progressive Tax System"
                 description="Higher rates for higher income brackets"
                 checked={fiscalSystem.progressiveTaxation}
                 onChange={(checked) => handleFiscalChange('progressiveTaxation', checked)}
-                theme="blue"
+                sectionId="fiscal"
+                icon={TrendingUp}
               />
-              <GlassToggle
+              <EnhancedToggle
                 label="Balanced Budget Rule"
                 description="Constitutional requirement for balanced budgets"
                 checked={fiscalSystem.balancedBudgetRule}
                 onChange={(checked) => handleFiscalChange('balancedBudgetRule', checked)}
-                theme="blue"
+                sectionId="fiscal"
+                icon={Shield}
               />
             </FormGrid>
           </div>
@@ -455,7 +523,12 @@ export function FiscalSystemSection({
 
   return (
     <SectionBase
-      config={sectionConfigs.fiscal}
+      config={sectionConfigs.fiscal || { 
+        id: 'fiscal', 
+        title: 'Fiscal System', 
+        icon: Building2, 
+        theme: 'blue' as const
+      }}
       inputs={inputs}
       onInputsChange={onInputsChange}
       showAdvanced={showAdvanced}

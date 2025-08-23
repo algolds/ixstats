@@ -106,24 +106,34 @@ export function LiveFeedback({ inputs, className, extractedColors, flagUrl, coat
           category: 'economic'
         },
         {
-          id: 'economic-stability',
-          label: 'Economic Stability',
-          value: economicStability,
-          change: economicStability > 70 ? 0.5 : -0.2,
-          trend: economicStability > 70 ? 'up' : 'down',
-          icon: Activity,
-          unit: '%',
-          category: 'stability'
+          id: 'population',
+          label: 'Population',
+          value: inputs.coreIndicators.totalPopulation,
+          change: 0.8, // Population growth
+          trend: 'up',
+          icon: Users,
+          unit: '',
+          category: 'economic'
         },
         {
-          id: 'social-wellbeing',
-          label: 'Social Wellbeing',
-          value: socialWellbeing,
-          change: socialWellbeing > 75 ? 0.8 : -0.3,
-          trend: socialWellbeing > 75 ? 'up' : 'down',
-          icon: Heart,
+          id: 'gdp-per-capita',
+          label: 'GDP per Capita',
+          value: inputs.coreIndicators.gdpPerCapita,
+          change: inputs.coreIndicators.realGDPGrowthRate,
+          trend: inputs.coreIndicators.realGDPGrowthRate > 0 ? 'up' : 'down',
+          icon: TrendingUp,
+          unit: '$',
+          category: 'economic'
+        },
+        {
+          id: 'growth-rate',
+          label: 'Growth Rate',
+          value: inputs.coreIndicators.realGDPGrowthRate,
+          change: 0.1, // Small positive change
+          trend: inputs.coreIndicators.realGDPGrowthRate > 2 ? 'up' : inputs.coreIndicators.realGDPGrowthRate > 0 ? 'stable' : 'down',
+          icon: inputs.coreIndicators.realGDPGrowthRate > 0 ? TrendingUp : TrendingDown,
           unit: '%',
-          category: 'social'
+          category: 'economic'
         }
       ];
     };
@@ -174,30 +184,30 @@ export function LiveFeedback({ inputs, className, extractedColors, flagUrl, coat
             </h4>
             <div className="space-y-2">
               {metrics.map((metric) => {
-                const Icon = metric.icon;
+                const Icon = metric.icon as React.ComponentType<{ className?: string }>;
                 return (
                   <motion.div
                     key={metric.id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="flex items-center justify-between p-3 rounded-lg bg-card/50 border border-border"
+                    className="flex items-center justify-between p-2.5 rounded-lg bg-card/50 border border-border min-h-[44px]"
                   >
-                    <div className="flex items-center gap-3">
-                      <Icon className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-foreground">{metric.label}</span>
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <Icon className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                      <span className="text-xs font-medium text-foreground truncate">{metric.label}</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
                       <NumberFlowDisplay
                         value={metric.value}
                         format={metric.unit === '$' ? 'currency' : metric.unit === '%' ? 'percentage' : 'default'}
-                        className="text-sm font-medium text-foreground"
+                        className="text-xs font-semibold text-foreground"
                         duration={800}
                       />
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-0.5">
                         {metric.trend === 'up' ? (
-                          <TrendingUp className="h-3 w-3 text-green-400" />
+                          <TrendingUp className="h-2.5 w-2.5 text-green-400 flex-shrink-0" />
                         ) : metric.trend === 'down' ? (
-                          <TrendingDown className="h-3 w-3 text-red-400" />
+                          <TrendingDown className="h-2.5 w-2.5 text-red-400 flex-shrink-0" />
                         ) : null}
                         <NumberFlowDisplay
                           value={metric.change}
@@ -241,7 +251,7 @@ export function LiveFeedback({ inputs, className, extractedColors, flagUrl, coat
                     }
                   };
 
-                  const Icon = getTipIcon(tip.type);
+                  const Icon = getTipIcon(tip.type) as React.ComponentType<{ className?: string }>;
                   return (
                     <motion.div
                       key={tip.id}

@@ -288,7 +288,7 @@ const ProjectionDisplay: React.FC<ProjectionDisplayProps> = ({ projections, sele
                 <div key={scenario} className="flex justify-between items-center">
                   <span className="text-sm capitalize">{scenario}:</span>
                   <span className="text-sm font-medium">
-                    ${formatLargeNumber(data.gdp)}
+                    ${formatLargeNumber((data as any).gdp)}
                   </span>
                 </div>
               ))}
@@ -332,7 +332,7 @@ const ProjectionDisplay: React.FC<ProjectionDisplayProps> = ({ projections, sele
       <div className="glass-card glass-depth-child p-4">
         <h4 className="font-medium mb-3">Key Projection Factors</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {selectedProjection.keyFactors.map((factor, index) => (
+          {selectedProjection.keyFactors.map((factor: any, index: number) => (
             <div key={index} className="flex items-start gap-2">
               <div className="w-2 h-2 bg-accent rounded-full mt-2 flex-shrink-0" />
               <span className="text-sm">{factor}</span>

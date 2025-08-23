@@ -50,10 +50,8 @@ export function ThinkPagesHubCard({ userProfile, className }: ThinkPagesHubCardP
     { enabled: !!userProfile?.countryId }
   );
 
-  const { data: mentions } = api.thinkpages.getMentions?.useQuery(
-    { accountIds: accounts?.map(acc => acc.id) || [] },
-    { enabled: !!accounts?.length }
-  ) || { data: [] };
+  // getMentions is not implemented yet, so use empty array
+  const mentions: any[] = [];
 
   const getAccountTypeCount = (type: string) => {
     return accounts?.filter(account => account.accountType === type).length || 0;

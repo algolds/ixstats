@@ -1,5 +1,5 @@
 // Quick test of unified flag service
-const { unifiedFlagService } = require('./src/lib/unified-flag-service.ts');
+const { unifiedFlagService } = require('./src/lib/unified-flag-service.js');
 
 async function testFlagService() {
   console.log('Testing unified flag service...');

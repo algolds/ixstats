@@ -13,21 +13,8 @@ export type { CountryWithEconomicData } from './ixstats';
 /**
  * Intelligence feed item for executive dashboard
  */
-export interface IntelligenceItem {
-  id: string;
-  type: 'alert' | 'opportunity' | 'update' | 'prediction';
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  title: string;
-  description: string;
-  category: 'economic' | 'diplomatic' | 'social' | 'governance' | 'security';
-  timestamp: number; // Unix timestamp
-  actionable: boolean;
-  source: string;
-  affectedRegions?: string[];
-  confidence?: number; // 0-1 scale
-  relatedItems?: string[]; // IDs of related intelligence items
-  tags?: string[];
-}
+// Re-export unified IntelligenceItem to maintain backward compatibility
+export type { IntelligenceItem } from './intelligence-unified';
 
 /**
  * Achievement earned by the country

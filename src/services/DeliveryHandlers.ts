@@ -139,7 +139,11 @@ export class DynamicIslandDeliveryHandler implements DeliveryHandler {
     notifications: UnifiedNotification[],
     context: NotificationContext
   ): UnifiedNotification {
-    const category = notifications[0].category;
+    if (notifications.length === 0) {
+      throw new Error('Cannot create batch notification from empty array');
+    }
+    
+    const category = notifications[0]!.category;
     const count = notifications.length;
     
     const batchNotification: UnifiedNotification = {

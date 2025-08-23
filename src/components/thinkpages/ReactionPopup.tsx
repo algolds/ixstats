@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, type FC } from 'react';
 import { motion } from 'framer-motion';
 import { Heart, Smile, Angry, ThumbsUp, ThumbsDown, Flame, Plus } from 'lucide-react';
 import { api } from '~/trpc/react';
 
-const REACTION_ICONS: { [key: string]: React.ElementType } = {
+const REACTION_ICONS: { [key: string]: FC<{ className?: string }> } = {
   like: Heart,
   laugh: Smile,
   angry: Angry,
@@ -21,13 +21,18 @@ const DISCORD_EMOJI_REACTIONS = [
   { name: 'pog', url: 'https://cdn.discordapp.com/emojis/739969522139209748.png', id: '739969522139209748' },
 ];
 
+interface DiscordEmoji {
+  id: string;
+  name: string;
+  url: string;
+}
+
 interface ReactionPopupProps {
-  reactions: any[];
   onSelectReaction: (reactionType: string) => void;
   postReactionCounts?: Record<string, number>;
 }
 
-export function ReactionPopup({ reactions, onSelectReaction, postReactionCounts }: ReactionPopupProps) {
+export function ReactionPopup({ onSelectReaction, postReactionCounts }: ReactionPopupProps) {
   const [showMoreEmojis, setShowMoreEmojis] = useState(false);
   
   // Always load Discord emojis since they're prominently featured
@@ -87,7 +92,7 @@ export function ReactionPopup({ reactions, onSelectReaction, postReactionCounts 
             </div>
           ) : discordEmojis?.emojis ? (
             <>
-              {discordEmojis.emojis.slice(0, showMoreEmojis ? discordEmojis.emojis.length : 16).map((emoji: any) => (
+              {discordEmojis.emojis.slice(0, showMoreEmojis ? discordEmojis.emojis.length : 16).map((emoji: DiscordEmoji) => (
                 <button
                   key={emoji.id}
                   onClick={() => onSelectReaction(`discord:${emoji.name}`)}

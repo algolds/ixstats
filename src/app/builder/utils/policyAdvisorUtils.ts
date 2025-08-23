@@ -228,7 +228,8 @@ export function generatePolicyAdvisorTips(inputs: EconomicInputs, activeSection?
   // === DEMOGRAPHICS SECTION ===
   if (!activeSection || activeSection === 'demographics') {
     // Age distribution analysis
-    if (inputs.demographics.ageDistribution.over65 > 20) {
+    const over65 = inputs.demographics.ageDistribution.find(g => g.group === '65+')?.percent || 0;
+    if (over65 > 20) {
       tips.push({
         id: 'aging-population',
         section: 'demographics',
@@ -239,7 +240,8 @@ export function generatePolicyAdvisorTips(inputs: EconomicInputs, activeSection?
       });
     }
 
-    if (inputs.demographics.ageDistribution.under18 > 40) {
+    const under18 = inputs.demographics.ageDistribution.find(g => g.group === '0-15')?.percent || 0;
+    if (under18 > 40) {
       tips.push({
         id: 'youth-bulge',
         section: 'demographics',

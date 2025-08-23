@@ -54,7 +54,7 @@ export function transformToVitalityIntelligence(
       score: country.economicVitality,
       trend: previousCountry 
         ? calculateTrend(country.economicVitality, previousCountry.economicVitality)
-        : 'stable',
+        : 'stable' as const,
       change: {
         value: previousCountry 
           ? country.economicVitality - previousCountry.economicVitality
@@ -71,7 +71,7 @@ export function transformToVitalityIntelligence(
           unit: '',
           trend: previousCountry 
             ? calculateTrend(country.currentGdpPerCapita, previousCountry.currentGdpPerCapita)
-            : 'stable',
+            : 'stable' as const,
           changeValue: previousCountry 
             ? country.currentGdpPerCapita - previousCountry.currentGdpPerCapita
             : 0,
@@ -109,7 +109,7 @@ export function transformToVitalityIntelligence(
           changeValue: 0,
           changePercent: 0,
           changePeriod: 'current',
-          status: 'good' as const as const
+          status: 'good' as const
         }
       ],
       criticalAlerts: [],
@@ -133,7 +133,7 @@ export function transformToVitalityIntelligence(
       score: country.populationWellbeing,
       trend: previousCountry 
         ? calculateTrend(country.populationWellbeing, previousCountry.populationWellbeing)
-        : 'stable',
+        : 'stable' as const,
       change: {
         value: previousCountry 
           ? country.populationWellbeing - previousCountry.populationWellbeing
@@ -178,7 +178,7 @@ export function transformToVitalityIntelligence(
           changeValue: 0,
           changePercent: 0,
           changePeriod: 'current',
-          status: 'good' as const as const
+          status: 'good' as const
         }
       ],
       criticalAlerts: [],
@@ -202,7 +202,7 @@ export function transformToVitalityIntelligence(
       score: country.diplomaticStanding,
       trend: previousCountry 
         ? calculateTrend(country.diplomaticStanding, previousCountry.diplomaticStanding)
-        : 'stable',
+        : 'stable' as const,
       change: {
         value: previousCountry 
           ? country.diplomaticStanding - previousCountry.diplomaticStanding
@@ -264,7 +264,7 @@ export function transformToVitalityIntelligence(
       score: country.governmentalEfficiency,
       trend: previousCountry 
         ? calculateTrend(country.governmentalEfficiency, previousCountry.governmentalEfficiency)
-        : 'stable',
+        : 'stable' as const,
       change: {
         value: previousCountry 
           ? country.governmentalEfficiency - previousCountry.governmentalEfficiency

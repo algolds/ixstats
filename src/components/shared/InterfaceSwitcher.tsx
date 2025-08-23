@@ -5,6 +5,7 @@ import { useUser } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
 import { getUserInterfacePreferences } from "~/lib/interface-routing";
 import { navigateTo } from "~/lib/url-utils";
+import { createUserProfileQueryParams } from '~/lib/user-utils';
 
 // Check if Clerk is configured
 const isClerkConfigured = Boolean(
@@ -14,9 +15,10 @@ const isClerkConfigured = Boolean(
 function InterfaceSwitcherContent({ currentInterface, countryId }: { currentInterface: 'sdi' | 'eci', countryId?: string }) {
   const router = useRouter();
   const { user } = useUser();
+  const userProfileQueryParams = createUserProfileQueryParams(user);
   const { data: profile } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
-    { enabled: !!user?.id }
+    userProfileQueryParams.input,
+    { enabled: userProfileQueryParams.enabled }
   );
 
   if (!profile) return null;

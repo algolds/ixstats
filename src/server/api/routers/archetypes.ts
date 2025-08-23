@@ -16,7 +16,7 @@ const createArchetypeSchema = z.object({
   color: z.string(),
   gradient: z.string(),
   tags: z.array(z.string()),
-  filterRules: z.record(z.any()), // JSON object
+  filterRules: z.record(z.string(), z.any()), // JSON object
   priority: z.number().default(0),
   isSelectable: z.boolean().default(true),
 });
@@ -30,7 +30,7 @@ const updateArchetypeSchema = z.object({
   color: z.string().optional(),
   gradient: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  filterRules: z.record(z.any()).optional(),
+  filterRules: z.record(z.string(), z.any()).optional(),
   priority: z.number().optional(),
   isSelectable: z.boolean().optional(),
   isActive: z.boolean().optional(),
@@ -192,7 +192,7 @@ export const archetypesRouter = createTRPCRouter({
             },
           });
 
-          const countryIds = countryMatches.map(match => match.countryId);
+          const countryIds = countryMatches.map((match: any) => match.countryId as string);
           
           const countries = await ctx.db.country.findMany({
             where: { id: { in: countryIds } },
@@ -316,7 +316,7 @@ export const archetypesRouter = createTRPCRouter({
         const archetype = await ctx.db.archetype.create({
           data: {
             ...input,
-            tags: input.tags,
+            tags: Array.isArray(input.tags) ? JSON.stringify(input.tags) : input.tags,
             filterRules: JSON.stringify(input.filterRules),
           },
           include: { category: true },
@@ -335,14 +335,15 @@ export const archetypesRouter = createTRPCRouter({
   updateArchetype: protectedProcedure
     .input(updateArchetypeSchema)
     .mutation(async ({ ctx, input }) => {
-      const { id, ...updateData } = input;
+      const { id, categoryId, ...updateData } = input;
       
       try {
         const archetype = await ctx.db.archetype.update({
           where: { id },
           data: {
             ...updateData,
-            ...(updateData.tags && { tags: updateData.tags }),
+            ...(categoryId && { categoryId }),
+            ...(updateData.tags && { tags: JSON.stringify(updateData.tags) }),
             ...(updateData.filterRules && { filterRules: JSON.stringify(updateData.filterRules) }),
           },
           include: { category: true },
@@ -399,7 +400,7 @@ export const archetypesRouter = createTRPCRouter({
                   gradient: archetype.gradient,
                   priority: archetype.priority,
                   isSelectable: archetype.isSelectable,
-                  tags: archetype.tags,
+                  tags: JSON.stringify(archetype.tags),
                   filterRules: JSON.stringify({
                     // Convert filter functions to JSON rules
                     // This is a simplified conversion - you'd implement more sophisticated rule conversion

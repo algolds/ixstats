@@ -19,11 +19,16 @@ export const usersRouter = createTRPCRouter({
   getProfile: publicProcedure
     .input(
       z.object({
-        userId: z.string(),
+        userId: z.string().min(1, "User ID cannot be empty"),
       })
     )
     .query(async ({ ctx, input }) => {
       try {
+        // Validate input
+        if (!input.userId || input.userId.trim() === '') {
+          throw new Error("User ID is required and cannot be empty");
+        }
+
         // Get user from DB
         const user = await ctx.db.user.findUnique({
           where: { clerkUserId: input.userId },
@@ -131,6 +136,34 @@ export const usersRouter = createTRPCRouter({
           languages: z.string().optional(),
           capital: z.string().optional(),
         }).optional(),
+        // National Identity data from builder
+        nationalIdentity: z.object({
+          countryName: z.string().optional(),
+          officialName: z.string().optional(),
+          governmentType: z.string().optional(),
+          motto: z.string().optional(),
+          mottoNative: z.string().optional(),
+          capitalCity: z.string().optional(),
+          largestCity: z.string().optional(),
+          demonym: z.string().optional(),
+          currency: z.string().optional(),
+          currencySymbol: z.string().optional(),
+          officialLanguages: z.string().optional(),
+          nationalLanguage: z.string().optional(),
+          nationalAnthem: z.string().optional(),
+          nationalDay: z.string().optional(),
+          callingCode: z.string().optional(),
+          internetTLD: z.string().optional(),
+          drivingSide: z.string().optional(),
+          timeZone: z.string().optional(),
+          isoCode: z.string().optional(),
+          coordinatesLatitude: z.string().optional(),
+          coordinatesLongitude: z.string().optional(),
+          emergencyNumber: z.string().optional(),
+          postalCodeFormat: z.string().optional(),
+          nationalSport: z.string().optional(),
+          weekStartDay: z.string().optional(),
+        }).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -219,6 +252,40 @@ export const usersRouter = createTRPCRouter({
             gdpDensity: currentStats.newStats.gdpDensity,
           },
         });
+
+        // Create national identity record if data provided
+        if (input.nationalIdentity) {
+          await ctx.db.nationalIdentity.create({
+            data: {
+              countryId: newCountry.id,
+              countryName: input.nationalIdentity.countryName || input.countryName,
+              officialName: input.nationalIdentity.officialName,
+              governmentType: input.nationalIdentity.governmentType,
+              motto: input.nationalIdentity.motto,
+              mottoNative: input.nationalIdentity.mottoNative,
+              capitalCity: input.nationalIdentity.capitalCity,
+              largestCity: input.nationalIdentity.largestCity,
+              demonym: input.nationalIdentity.demonym,
+              currency: input.nationalIdentity.currency,
+              currencySymbol: input.nationalIdentity.currencySymbol,
+              officialLanguages: input.nationalIdentity.officialLanguages,
+              nationalLanguage: input.nationalIdentity.nationalLanguage,
+              nationalAnthem: input.nationalIdentity.nationalAnthem,
+              nationalDay: input.nationalIdentity.nationalDay,
+              callingCode: input.nationalIdentity.callingCode,
+              internetTLD: input.nationalIdentity.internetTLD,
+              drivingSide: input.nationalIdentity.drivingSide,
+              timeZone: input.nationalIdentity.timeZone,
+              isoCode: input.nationalIdentity.isoCode,
+              coordinatesLatitude: input.nationalIdentity.coordinatesLatitude,
+              coordinatesLongitude: input.nationalIdentity.coordinatesLongitude,
+              emergencyNumber: input.nationalIdentity.emergencyNumber,
+              postalCodeFormat: input.nationalIdentity.postalCodeFormat,
+              nationalSport: input.nationalIdentity.nationalSport,
+              weekStartDay: input.nationalIdentity.weekStartDay,
+            },
+          });
+        }
         return {
           success: true,
           country: newCountry,

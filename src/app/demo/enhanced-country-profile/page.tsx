@@ -85,7 +85,7 @@ export default function EnhancedCountryProfileDemo() {
               country.economicTier, 
               country.populationTier,
               country.name,
-              country.continent
+              country.continent || undefined
             );
             // Track download as required by Unsplash API terms
             if (imageData.downloadUrl) {
@@ -97,8 +97,8 @@ export default function EnhancedCountryProfileDemo() {
           }
         })
       ).then(results => {
-        const imageMap = results.reduce((acc, curr) => ({ ...acc, ...curr }), {});
-        setUnsplashImages(imageMap);
+        const imageMap = results.reduce((acc, curr) => ({ ...acc, ...curr }), {}) as Record<string, string | undefined>;
+        setUnsplashImages(imageMap as Record<string, string>);
       });
     }
   }, [demoCountries]);
@@ -108,9 +108,19 @@ export default function EnhancedCountryProfileDemo() {
     if (!selectedCountry) return null;
     
     return SocialProfileTransformer.transformCountryData(
-      selectedCountry,
-      flagUrls[selectedCountry.name],
-      unsplashImages[selectedCountry.name]
+      {
+        ...selectedCountry,
+        landArea: selectedCountry.landArea ?? undefined,
+        populationDensity: selectedCountry.populationDensity ?? undefined,
+        gdpDensity: selectedCountry.gdpDensity ?? undefined,
+        continent: selectedCountry.continent ?? undefined,
+        region: selectedCountry.region ?? undefined,
+        governmentType: selectedCountry.governmentType ?? undefined,
+        religion: selectedCountry.religion ?? undefined,
+        leader: selectedCountry.leader ?? undefined
+      },
+      flagUrls[selectedCountry.name] || undefined,
+      unsplashImages[selectedCountry.name] || undefined
     );
   }, [selectedCountry, flagUrls, unsplashImages]);
 
@@ -295,7 +305,7 @@ export default function EnhancedCountryProfileDemo() {
         {/* Enhanced Profile Display */}
         <AnimatePresence mode="wait">
           <motion.div
-            key={selectedCountry.id}
+            key={selectedCountry?.id || 'default'}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}

@@ -50,7 +50,7 @@ export function GlassTooltip({
   const [coordinates, setCoordinates] = useState({ x: 0, y: 0 });
   const triggerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Calculate position
   const calculatePosition = (triggerRect: DOMRect) => {
@@ -93,7 +93,7 @@ export function GlassTooltip({
   };
 
   const showTooltip = () => {
-    clearTimeout(timeoutRef.current);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       setIsVisible(true);
       // Calculate position after tooltip is rendered
@@ -106,14 +106,14 @@ export function GlassTooltip({
   };
 
   const hideTooltip = () => {
-    clearTimeout(timeoutRef.current);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     setIsVisible(false);
   };
 
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
-      clearTimeout(timeoutRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, []);
 

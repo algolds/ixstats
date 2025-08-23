@@ -48,8 +48,8 @@ interface PostComposerProps {
 
 const VISIBILITY_OPTIONS = {
   public: { icon: Globe, label: 'Public', description: 'Anyone can see this post' },
-  followers: { icon: Users, label: 'Followers', description: 'Only your followers can see this' },
-  mentioned: { icon: AtSign, label: 'Mentioned only', description: 'Only mentioned accounts can see this' }
+  private: { icon: Lock, label: 'Private', description: 'Only you and mentioned users can see this' },
+  unlisted: { icon: AtSign, label: 'Mentioned only', description: 'Only mentioned accounts can see this' }
 };
 
 export function PostComposer({
@@ -62,7 +62,7 @@ export function PostComposer({
   compact = false
 }: PostComposerProps) {
   const [content, setContent] = useState(replyTo ? `@${replyTo.account.username} ` : '');
-  const [visibility, setVisibility] = useState<'public' | 'followers' | 'mentioned'>('public');
+  const [visibility, setVisibility] = useState<'public' | 'private' | 'unlisted'>('public');
   const [showVisibilityMenu, setShowVisibilityMenu] = useState(false);
   const [isExpanded, setIsExpanded] = useState(!!replyTo);
   const [mentionQuery, setMentionQuery] = useState('');
@@ -119,6 +119,22 @@ export function PostComposer({
     }
   };
 
+  const insertText = (text: string) => {
+    if (textareaRef.current) {
+      const start = textareaRef.current.selectionStart;
+      const end = textareaRef.current.selectionEnd;
+      const newContent = content.substring(0, start) + text + content.substring(end);
+      setContent(newContent);
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+          textareaRef.current.selectionStart = start + text.length;
+          textareaRef.current.selectionEnd = start + text.length;
+        }
+      }, 0);
+    }
+  };
+
   const VisibilityIcon = VISIBILITY_OPTIONS[visibility].icon;
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -130,7 +146,7 @@ export function PostComposer({
     const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
 
     if (mentionMatch) {
-      setMentionQuery(mentionMatch[1]);
+      setMentionQuery(mentionMatch[1] ?? '');
     } else {
       setMentionQuery('');
     }
@@ -212,7 +228,7 @@ export function PostComposer({
                   >
                     <div className="flex items-center gap-2">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={account.profileImageUrl} />
+                        <AvatarImage src={account.profileImageUrl ?? undefined} />
                         <AvatarFallback>{account.displayName.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div>
@@ -322,11 +338,11 @@ export function PostComposer({
                     )}
                     <Button
                       onClick={handlePost}
-                      disabled={!canPost || createPostMutation.isLoading}
+                      disabled={!canPost || createPostMutation.isPending}
                       size="sm"
                       className="flex items-center gap-2"
                     >
-                      {createPostMutation.isLoading && <Loader2 className="animate-spin h-4 w-4 mr-2" />}<Send className="h-4 w-4" />
+                      {createPostMutation.isPending && <Loader2 className="animate-spin h-4 w-4 mr-2" />}<Send className="h-4 w-4" />
                       {replyTo ? 'Reply' : 'Post'}
                     </Button>
                   </div>
@@ -343,11 +359,11 @@ export function PostComposer({
             <div className="flex justify-end mt-2">
               <Button
                 onClick={handlePost}
-                disabled={!canPost || createPostMutation.isLoading}
+                disabled={!canPost || createPostMutation.isPending}
                 size="sm"
                 className="flex items-center gap-2"
               >
-                {createPostMutation.isLoading && <Loader2 className="animate-spin h-4 w-4 mr-2" />}<Send className="h-4 w-4" />
+                {createPostMutation.isPending && <Loader2 className="animate-spin h-4 w-4 mr-2" />}<Send className="h-4 w-4" />
                 Post
               </Button>
             </div>

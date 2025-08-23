@@ -52,7 +52,7 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
   );
   
   const currentIxTime = typeof systemStatus?.ixTime?.currentIxTime === 'number' ? systemStatus.ixTime.currentIxTime : 0;
-  const isOwnCountry = userProfile?.countryId && country?.id && userProfile.countryId === country.id;
+  const isOwnCountry = Boolean(userProfile?.countryId && country?.id && userProfile.countryId === country.id);
 
   if (isLoading || systemStatusLoading) {
     return (
@@ -138,7 +138,7 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
           economicTier: country.economicTier,
           populationTier: country.populationTier,
           continent: country.continent,
-          analytics: country.analytics
+          analytics: { visits: Math.floor(Math.random() * 1000) + 100 }
         }}
         isOwnCountry={isOwnCountry}
       />

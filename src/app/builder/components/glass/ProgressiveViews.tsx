@@ -160,7 +160,7 @@ export function SectionContainer({
                 "p-2 rounded-lg bg-card/50 border border-border",
                 "flex items-center justify-center"
               )}>
-                <Icon className="h-5 w-5 text-muted-foreground" />
+                {React.createElement(Icon, { className: "h-5 w-5 text-muted-foreground" })}
               </div>
             )}
             <div>
@@ -282,9 +282,9 @@ export function MetricOverview({ metrics, className }: MetricOverviewProps) {
                 </div>
               )}
             </div>
-            {metric.icon && (
-              <metric.icon className="h-5 w-5 text-muted-foreground" />
-            )}
+            {metric.icon && 
+              React.createElement(metric.icon, { className: "h-5 w-5 text-muted-foreground" })
+            }
           </div>
         </motion.div>
       ))}

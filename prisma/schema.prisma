@@ -90,6 +90,7 @@ model Country {
   historicalData              HistoricalDataPoint[]
   incomeDistribution          IncomeDistribution?
   laborMarket                 LaborMarket?
+  nationalIdentity            NationalIdentity?
   user                        User?
   thinkpagesAccounts          ThinkpagesAccount[]
   moodMetrics                 CountryMoodMetric[]
@@ -842,7 +843,7 @@ model Archetype {
   priority     Int               @default(0)
   isSelectable Boolean           @default(true)
   isActive     Boolean           @default(true)
-  tags         String[]          // JSON array of tags
+  tags         String?           // JSON array of tags
   filterRules  String            // JSON object with filter rules
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
@@ -888,4 +889,147 @@ model CountryArchetypeMatch {
   @@index([countryId])
   @@index([archetypeId])
   @@index([matchScore])
+}
+
+model NationalIdentity {
+  id                      String   @id @default(cuid())
+  countryId               String   @unique
+  countryName             String?
+  officialName            String?
+  governmentType          String?
+  motto                   String?
+  mottoNative             String?
+  capitalCity             String?
+  largestCity             String?
+  demonym                 String?
+  currency                String?
+  currencySymbol          String?
+  officialLanguages       String?
+  nationalLanguage        String?
+  nationalAnthem          String?
+  nationalDay             String?
+  callingCode             String?
+  internetTLD             String?
+  drivingSide             String?
+  timeZone                String?
+  isoCode                 String?
+  coordinatesLatitude     String?
+  coordinatesLongitude    String?
+  emergencyNumber         String?
+  postalCodeFormat        String?
+  nationalSport           String?
+  weekStartDay            String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  
+  // Relations
+  country                 Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  
+  @@index([countryId])
+}
+
+// Missing models for TypeScript errors
+model postBookmark {
+  id     String @id @default(cuid())
+  userId String
+  postId String
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, postId])
+}
+
+model postFlag {
+  id     String @id @default(cuid())
+  userId String
+  postId String
+  reason String?
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, postId])
+}
+
+model nationalIdentity {
+  id        String   @id @default(cuid())
+  countryId String
+  userId    String?
+  name      String
+  culture   String?
+  language  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([countryId])
+}
+
+model archetypeCategory {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String?
+  createdAt   DateTime @default(now())
+  
+  archetypes archetype[]
+}
+
+model archetype {
+  id           String @id @default(cuid())
+  name         String
+  description  String?
+  categoryId   String
+  traits       String? // JSON string
+  createdAt    DateTime @default(now())
+  
+  category     archetypeCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  userSelections userArchetypeSelection[]
+  countryMatches countryArchetypeMatch[]
+  
+  @@index([categoryId])
+}
+
+model userArchetypeSelection {
+  id          String @id @default(cuid())
+  userId      String
+  archetypeId String
+  createdAt   DateTime @default(now())
+  
+  archetype   archetype @relation(fields: [archetypeId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, archetypeId])
+}
+
+model countryArchetypeMatch {
+  id          String @id @default(cuid())
+  countryId   String
+  archetypeId String
+  matchScore  Float
+  createdAt   DateTime @default(now())
+  
+  archetype   archetype @relation(fields: [archetypeId], references: [id], onDelete: Cascade)
+  
+  @@unique([countryId, archetypeId])
+}
+
+model countryActivity {
+  id        String   @id @default(cuid())
+  countryId String
+  type      String
+  data      String   // JSON string
+  timestamp DateTime @default(now())
+  
+  @@index([countryId])
+  @@index([type])
+  @@index([timestamp])
+}
+
+model diplomaticAction {
+  id               String   @id @default(cuid())
+  fromCountryId    String
+  toCountryId      String
+  actionType       String
+  description      String?
+  status           String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  @@index([fromCountryId])
+  @@index([toCountryId])
 }

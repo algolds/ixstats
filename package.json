@@ -91,6 +91,7 @@
     "@tsparticles/slim": "^3.8.1",
     "aspect-ratio": "^2.1.6",
     "button": "^1.1.1",
+    "chart.js": "^4.5.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",

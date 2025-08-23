@@ -237,7 +237,7 @@ export class SocialProfileTransformer {
 
     return selectedCountries.map((countryName, index) => {
       const relationTypes: DiplomaticRelation['relationType'][] = [
-        'alliance', 'trade', 'defense_pact', 'neutral'
+        'alliance', 'trade', 'neutral', 'tension'
       ];
       
       // Higher tier countries more likely to have positive relations
@@ -248,9 +248,9 @@ export class SocialProfileTransformer {
       const typeRand = this.getDeterministicRandom(country.id, index + 300);
       const conflictRand = this.getDeterministicRandom(country.id, index + 400);
       
-      const relationType = relationRand < positiveRelationChance 
-        ? relationTypes[Math.floor(typeRand * 3)] // Positive relations
-        : conflictRand < 0.1 ? 'rivalry' : 'neutral'; // Small chance of rivalry
+      const relationType: DiplomaticRelation['relationType'] = relationRand < positiveRelationChance 
+        ? (relationTypes[Math.floor(typeRand * relationTypes.length)] || 'neutral') // Positive relations
+        : conflictRand < 0.1 ? 'tension' : 'neutral'; // Small chance of tension instead of rivalry
       
       const strengthRand = this.getDeterministicRandom(country.id, index + 500);
       const strength = Math.floor(strengthRand * 40) + 60; // 60-100%
@@ -522,10 +522,10 @@ export class SocialProfileTransformer {
     return targets;
   }
 
-  private static getNextEconomicTier(currentTier: string): string | null {
+  private static getNextEconomicTier(currentTier: string): string | undefined {
     const tiers = ['Impoverished', 'Developing', 'Developed', 'Healthy', 'Strong', 'Very Strong', 'Extravagant'];
     const currentIndex = tiers.indexOf(currentTier);
-    return currentIndex >= 0 && currentIndex < tiers.length - 1 ? tiers[currentIndex + 1] : null;
+    return currentIndex >= 0 && currentIndex < tiers.length - 1 ? tiers[currentIndex + 1] : undefined;
   }
 
   private static getMinGdpForTier(tier: string): number {

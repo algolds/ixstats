@@ -137,8 +137,8 @@ export function AccountSettingsModal({
               <div className="py-4 px-6 flex justify-end items-center border-t border-white/10">
                 <div className="flex gap-x-2">
                   <Button variant="outline" onClick={onClose}>Cancel</Button>
-                  <Button onClick={handleSave} disabled={updateAccountMutation.isLoading}>
-                    {updateAccountMutation.isLoading && <Loader2 className="animate-spin h-4 w-4 mr-2" />}Save
+                  <Button onClick={handleSave} disabled={updateAccountMutation.isPending}>
+                    {updateAccountMutation.isPending && <Loader2 className="animate-spin h-4 w-4 mr-2" />}Save
                   </Button>
                 </div>
               </div>

@@ -3,11 +3,12 @@
 
 import type { LucideIcon } from 'lucide-react';
 
-// Base interfaces for data priority and context
-export type DataPriority = 'critical' | 'high' | 'medium' | 'low';
-export type TrendDirection = 'up' | 'down' | 'stable';
+// Base interfaces for data priority and context  
+// Re-export unified types for backward compatibility
+export type { StandardPriority as DataPriority } from '~/types/base';
+export type { StandardTrend as TrendDirection } from '~/types/base';
 export type AlertSeverity = 'critical' | 'warning' | 'info' | 'success';
-export type TimeHorizon = 'immediate' | 'short' | 'medium' | 'long';
+export type { StandardTimeframe as TimeHorizon } from '~/types/base';
 export type ActionUrgency = 'urgent' | 'important' | 'routine' | 'future';
 
 // Enhanced metric with context and trend analysis

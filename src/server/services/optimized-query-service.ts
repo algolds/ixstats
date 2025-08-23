@@ -62,8 +62,6 @@ export class OptimizedQueryService {
         include: {
           _count: {
             select: {
-              economicData: true,
-              populationData: true,
               dmInputs: true
             }
           }
@@ -133,8 +131,8 @@ export class OptimizedQueryService {
       const intelligence = await db.intelligenceItem.findMany({
         where: { 
           OR: [
-            { countryId },
-            { countryId: null, category: 'global' }
+            { affectedCountries: { contains: countryId } },
+            { category: 'global' }
           ]
         },
         orderBy: [
@@ -146,19 +144,11 @@ export class OptimizedQueryService {
           id: true,
           category: true,
           title: true,
-          summary: true,
-          details: true,
+          content: true,
           priority: true,
-          confidenceScore: true,
           timestamp: true,
           source: true,
-          countryId: true,
-          country: {
-            select: {
-              id: true,
-              name: true
-            }
-          }
+          affectedCountries: true
         }
       });
 
@@ -226,18 +216,12 @@ export class OptimizedQueryService {
             id: { in: uncachedIds }
           },
           include: {
-            economicData: {
-              orderBy: { lastCalculated: 'desc' },
-              take: 1
-            },
-            populationData: {
-              orderBy: { lastCalculated: 'desc' },
+            dmInputs: {
+              orderBy: { ixTimeTimestamp: 'desc' },
               take: 1
             },
             _count: {
               select: {
-                economicData: true,
-                populationData: true,
                 dmInputs: true
               }
             }
@@ -310,12 +294,8 @@ export class OptimizedQueryService {
       const country = await db.country.findUnique({
         where: { id: countryId },
         include: {
-          economicData: {
-            orderBy: { lastCalculated: 'desc' },
-            take: 2 // Current and previous for comparison
-          },
-          populationData: {
-            orderBy: { lastCalculated: 'desc' },
+          dmInputs: {
+            orderBy: { ixTimeTimestamp: 'desc' },
             take: 2
           }
         }
@@ -391,10 +371,8 @@ export class OptimizedQueryService {
           id: true, 
           name: true, 
           region: true,
-          economicData: {
-            orderBy: { lastCalculated: 'desc' },
-            take: 1
-          }
+          currentTotalGdp: true,
+          economicTier: true
         }
       });
 
@@ -407,16 +385,15 @@ export class OptimizedQueryService {
           id: { not: countryId }
         },
         take: 10, // Limit for performance
-        include: {
-          economicData: {
-            orderBy: { lastCalculated: 'desc' },
-            take: 1
-          }
+        select: {
+          id: true,
+          name: true,
+          region: true,
+          currentTotalGdp: true,
+          economicTier: true
         },
         orderBy: {
-          economicData: {
-            _count: 'desc'
-          }
+          currentTotalGdp: 'desc'
         }
       });
 
@@ -473,12 +450,12 @@ export class OptimizedQueryService {
    * Calculate vitality intelligence from country data
    */
   private calculateVitalityIntelligence(country: any): any {
-    const latestEconomic = country.economicData?.[0];
-    const previousEconomic = country.economicData?.[1];
-    const latestPopulation = country.populationData?.[0];
-    const previousPopulation = country.populationData?.[1];
+    // Use direct country fields instead of relations
+    const currentGdp = country.currentTotalGdp || 0;
+    const currentPopulation = country.currentPopulation || 0;
+    const gdpGrowthRate = country.realGDPGrowthRate || 0;
 
-    if (!latestEconomic || !latestPopulation) {
+    if (!currentGdp || !currentPopulation) {
       return {
         vitalityScore: 0,
         economicHealth: 'unknown',
@@ -487,13 +464,9 @@ export class OptimizedQueryService {
       };
     }
 
-    const economicGrowth = previousEconomic 
-      ? ((latestEconomic.totalGdp - previousEconomic.totalGdp) / previousEconomic.totalGdp) * 100
-      : 0;
+    const economicGrowth = gdpGrowthRate;
 
-    const populationGrowth = previousPopulation
-      ? ((latestPopulation.totalPopulation - previousPopulation.totalPopulation) / previousPopulation.totalPopulation) * 100
-      : 0;
+    const populationGrowth = country.populationGrowthRate || 0;
 
     const vitalityScore = Math.max(0, Math.min(100, 50 + (economicGrowth * 2) + populationGrowth));
 
@@ -544,12 +517,12 @@ export class OptimizedQueryService {
    * Calculate regional comparison metrics
    */
   private calculateRegionalMetrics(targetCountry: any, regionalCountries: any[]): any {
-    if (!targetCountry.economicData?.[0]) return {};
+    if (!targetCountry.currentTotalGdp) return {};
 
-    const targetGDP = targetCountry.economicData[0].totalGdp;
+    const targetGDP = targetCountry.currentTotalGdp;
     const regionalGDPs = regionalCountries
-      .map(c => c.economicData?.[0]?.totalGdp)
-      .filter(gdp => gdp !== undefined);
+      .map(c => c.currentTotalGdp)
+      .filter(gdp => gdp !== undefined && gdp > 0);
 
     if (regionalGDPs.length === 0) return {};
 

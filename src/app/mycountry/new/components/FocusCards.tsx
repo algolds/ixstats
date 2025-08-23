@@ -76,6 +76,27 @@ interface FocusCard {
   };
 }
 
+interface FocusCard {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ElementType;
+  status: 'excellent' | 'good' | 'concerning' | 'critical';
+  theme: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    bg: string;
+  };
+  metrics: FocusMetric[];
+  quickActions: FocusAction[];
+  alerts: Alert[];
+  trends: {
+    shortTerm: 'improving' | 'declining' | 'stable';
+    longTerm: 'improving' | 'declining' | 'stable';
+  };
+}
+
 interface FocusCardsProps {
   cards: FocusCard[];
   layout?: 'grid' | 'stack' | 'carousel';
@@ -503,6 +524,17 @@ export function createDefaultFocusCards(countryData: {
           estimatedImpact: { economic: '+5%', timeframe: '2 years' },
         },
       ],
+      quickActions: [
+        {
+          id: 'economic-boost',
+          label: 'Quick Economic Boost',
+          type: 'policy',
+          enabled: true,
+          requiresConfirmation: false,
+          urgency: 'medium',
+          estimatedImpact: { economic: '+1%', timeframe: '1 month' },
+        },
+      ],
       alerts: countryData.economic.alerts,
       trends: {
         shortTerm: 'improving',
@@ -573,6 +605,17 @@ export function createDefaultFocusCards(countryData: {
           requiresConfirmation: true,
           urgency: 'high',
           estimatedImpact: { social: '+20%', timeframe: '3 years' },
+        },
+      ],
+      quickActions: [
+        {
+          id: 'population-initiative',
+          label: 'Population Initiative',
+          type: 'policy',
+          enabled: true,
+          requiresConfirmation: false,
+          urgency: 'low',
+          estimatedImpact: { social: '+2%', timeframe: '6 months' },
         },
       ],
       alerts: countryData.population.alerts,
@@ -647,6 +690,17 @@ export function createDefaultFocusCards(countryData: {
           estimatedImpact: { diplomatic: '+5%', timeframe: '2 years' },
         },
       ],
+      quickActions: [
+        {
+          id: 'diplomatic-outreach',
+          label: 'Diplomatic Outreach',
+          type: 'diplomatic',
+          enabled: true,
+          requiresConfirmation: false,
+          urgency: 'medium',
+          estimatedImpact: { diplomatic: '+3%', timeframe: '3 months' },
+        },
+      ],
       alerts: countryData.diplomatic.alerts,
       trends: {
         shortTerm: 'improving',
@@ -717,6 +771,17 @@ export function createDefaultFocusCards(countryData: {
           requiresConfirmation: false,
           urgency: 'low',
           estimatedImpact: { social: '+12%', timeframe: '6 months' },
+        },
+      ],
+      quickActions: [
+        {
+          id: 'government-reform',
+          label: 'Quick Reform',
+          type: 'policy',
+          enabled: true,
+          requiresConfirmation: false,
+          urgency: 'low',
+          estimatedImpact: { social: '+1%', timeframe: '2 months' },
         },
       ],
       alerts: countryData.government.alerts,

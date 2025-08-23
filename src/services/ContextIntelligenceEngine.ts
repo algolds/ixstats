@@ -496,7 +496,8 @@ export class ContextIntelligenceEngine {
     // Use category preferences
     const categoryPrefs = userPreferences.categories[notification.category];
     if (categoryPrefs?.deliveryMethods.length > 0) {
-      return categoryPrefs.deliveryMethods[0];
+      const method = categoryPrefs.deliveryMethods[0];
+      if (method) return method;
     }
 
     // Default based on engagement level

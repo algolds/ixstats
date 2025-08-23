@@ -9,6 +9,10 @@ import type {
   NotificationCategory,
   NotificationPriority,
   UserNotificationPreferences,
+  GroupingPreferences,
+  NotificationGroup,
+  NotificationBatch,
+  DeliveryContext,
 } from '~/types/unified-notifications';
 import type { NotificationCluster } from './EnhancedNotificationPriority';
 
@@ -773,27 +777,24 @@ class SemanticAnalyzer {
 }
 
 // Create singleton instance for export
-const groupingInstance = new NotificationGrouping({
-  enableGrouping: true,
-  maxGroupSize: 5,
-  timeWindow: 300000,
-  groupByCategory: true,
-  groupBySeverity: false
-});
+const groupingInstance = new NotificationGrouping();
 
 // Export convenience functions
 export const groupNotifications = async (
   notifications: UnifiedNotification[],
-  preferences: GroupingPreferences
-): Promise<NotificationGroup[]> => {
-  return await groupingInstance.groupNotifications(notifications, preferences);
+  context: NotificationContext,
+  preferences: UserNotificationPreferences,
+  strategyName?: string
+): Promise<NotificationCluster[]> => {
+  return await groupingInstance.groupNotifications(notifications, context, preferences, strategyName);
 };
 
 export const createSmartBatches = async (
-  groups: NotificationGroup[],
-  context: DeliveryContext
-): Promise<NotificationBatch[]> => {
-  return await groupingInstance.createSmartBatches(groups, context);
+  clusters: NotificationCluster[],
+  context: NotificationContext,
+  preferences: UserNotificationPreferences
+): Promise<BatchAnalysis[]> => {
+  return await groupingInstance.createSmartBatches(clusters, context, preferences);
 };
 
 export default NotificationGrouping;

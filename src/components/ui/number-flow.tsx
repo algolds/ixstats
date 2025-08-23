@@ -25,9 +25,9 @@ const formatters = {
     }).format(value),
   
   population: (value: number) => {
-    if (value >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
-    if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
-    if (value >= 1e3) return `${(value / 1e3).toFixed(1)}K`;
+    if (safeValue >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
+    if (safeValue >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
+    if (safeValue >= 1e3) return `${(value / 1e3).toFixed(1)}K`;
     return value.toString();
   },
 
@@ -46,8 +46,11 @@ export function NumberFlowDisplay({
   duration = 1000,
   trend
 }: NumberFlowDisplayProps) {
+  // Ensure value is a valid number
+  const safeValue = typeof value === 'number' && !isNaN(value) ? value : 0;
+  
   // Apply format-specific transformations
-  let displayValue = value;
+  let displayValue = safeValue;
   let displaySuffix = suffix;
   let displayPrefix = prefix;
 
@@ -61,36 +64,36 @@ export function NumberFlowDisplay({
 
   // For population and currency, we might want to scale the value
   if (format === 'population') {
-    if (value >= 1e9) {
-      displayValue = value / 1e9;
+    if (safeValue >= 1e9) {
+      displayValue = safeValue / 1e9;
       displaySuffix = 'B';
       decimalPlaces = Math.max(decimalPlaces, 2);
-    } else if (value >= 1e6) {
-      displayValue = value / 1e6;
+    } else if (safeValue >= 1e6) {
+      displayValue = safeValue / 1e6;
       displaySuffix = 'M';
       decimalPlaces = Math.max(decimalPlaces, 1);
-    } else if (value >= 1e3) {
-      displayValue = value / 1e3;
+    } else if (safeValue >= 1e3) {
+      displayValue = safeValue / 1e3;
       displaySuffix = 'K';
       decimalPlaces = Math.max(decimalPlaces, 1);
     }
   }
 
   if (format === 'currency') {
-    if (value >= 1e12) {
-      displayValue = value / 1e12;
+    if (safeValue >= 1e12) {
+      displayValue = safeValue / 1e12;
       displaySuffix = 'T';
       decimalPlaces = Math.max(decimalPlaces, 1);
-    } else if (value >= 1e9) {
-      displayValue = value / 1e9;
+    } else if (safeValue >= 1e9) {
+      displayValue = safeValue / 1e9;
       displaySuffix = 'B';
       decimalPlaces = Math.max(decimalPlaces, 1);
-    } else if (value >= 1e6) {
-      displayValue = value / 1e6;
+    } else if (safeValue >= 1e6) {
+      displayValue = safeValue / 1e6;
       displaySuffix = 'M';
       decimalPlaces = Math.max(decimalPlaces, 1);
-    } else if (value >= 1e3) {
-      displayValue = value / 1e3;
+    } else if (safeValue >= 1e3) {
+      displayValue = safeValue / 1e3;
       displaySuffix = 'K';
       decimalPlaces = Math.max(decimalPlaces, 1);
     }

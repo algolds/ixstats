@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { standardize } from "~/lib/interface-standardizer";
+import { unifyIntelligenceItem } from "~/lib/transformers/interface-adapters";
 
 export const intelligenceRouter = createTRPCRouter({
   getFeed: publicProcedure.query(async ({ ctx }) => {
@@ -10,19 +12,8 @@ export const intelligenceRouter = createTRPCRouter({
       take: 50
     });
 
-    return items.map(item => ({
-      id: item.id,
-      title: item.title,
-      content: item.content,
-      type: item.category,
-      region: item.region,
-      priority: item.priority,
-      timestamp: item.timestamp,
-      source: item.source,
-      description: item.content,
-      affectedCountries: item.affectedCountries,
-      relatedCountries: item.affectedCountries ? item.affectedCountries.split(',') : []
-    }));
+    // Transform to unified intelligence format
+    return items.map(unifyIntelligenceItem);
   }),
 
   getLatestIntelligence: publicProcedure.query(async ({ ctx }) => {
@@ -33,17 +24,8 @@ export const intelligenceRouter = createTRPCRouter({
       take: 20
     });
 
-    return items.map(item => ({
-      id: item.id,
-      title: item.title,
-      content: item.content,
-      category: item.category,
-      priority: item.priority,
-      source: item.source,
-      timestamp: item.timestamp,
-      region: item.region,
-      relatedCountries: item.affectedCountries ? item.affectedCountries.split(',') : []
-    }));
+    // Transform to unified intelligence format
+    return items.map(unifyIntelligenceItem);
   }),
 
   createIntelligenceItem: publicProcedure

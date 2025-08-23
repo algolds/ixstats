@@ -33,6 +33,9 @@ import { useIntelligenceWebSocket } from '~/hooks/useIntelligenceWebSocket';
 import { PublicMyCountryPage } from '../public-page';
 import { ExecutiveDashboard } from '../executive-dashboard';
 import { api } from "~/trpc/react";
+import { standardize } from '~/lib/interface-standardizer';
+import { ensureCountryData } from '~/lib/type-guards';
+import { adaptExecutiveToQuick } from '~/lib/transformers/interface-adapters';
 
 // Executive actions now come from real API - no mock data needed
 
@@ -80,7 +83,7 @@ export function MyCountryDataWrapper({
   const { setNotifications, setExecutiveMode } = useExecutiveNotifications();
   
   // Unified notification system - using global notifications
-  const { addNotification } = useUnifiedNotifications();
+  const { createNotification } = useUnifiedNotifications();
   
   // Real-time intelligence WebSocket integration
   const {
@@ -98,7 +101,7 @@ export function MyCountryDataWrapper({
       console.log('Real-time intelligence update:', update);
       // Handle real-time intelligence updates
       if (update.severity === 'critical' || update.priority === 'urgent') {
-        addNotification({
+        createNotification({
           id: `rt_${update.id}`,
           title: update.title,
           message: update.description || '',
@@ -111,7 +114,7 @@ export function MyCountryDataWrapper({
     onAlert: (alert) => {
       console.log('Real-time intelligence alert:', alert);
       // Handle critical alerts
-      addNotification({
+      createNotification({
         id: `alert_${alert.id}`,
         title: `🚨 ${alert.title}`,
         message: alert.description || '',
@@ -124,7 +127,7 @@ export function MyCountryDataWrapper({
       
       // Update executive notifications for alerts
       if (viewMode === 'executive') {
-        setNotifications(prev => [{
+        setNotifications((prev: ExecutiveNotification[]) => [{
           id: alert.id,
           title: alert.title,
           message: alert.description || '',
@@ -136,7 +139,7 @@ export function MyCountryDataWrapper({
     },
     onConnect: () => {
       console.log('Intelligence WebSocket connected');
-      addNotification({
+      createNotification({
         id: 'ws_connected',
         title: '🔗 Real-time Intelligence Connected',
         message: 'Live intelligence updates are now active',
@@ -147,7 +150,7 @@ export function MyCountryDataWrapper({
     },
     onDisconnect: () => {
       console.log('Intelligence WebSocket disconnected');
-      addNotification({
+      createNotification({
         id: 'ws_disconnected',
         title: '⚠️ Real-time Intelligence Disconnected',
         message: 'Attempting to reconnect...',
@@ -169,7 +172,7 @@ export function MyCountryDataWrapper({
     onSuccess: (result) => {
       console.log('[Executive Action] Success:', result.message);
       // Add success notification
-      addNotification({
+      createNotification({
         type: 'success',
         category: 'governance',
         title: 'Action Executed',
@@ -182,7 +185,7 @@ export function MyCountryDataWrapper({
     onError: (error) => {
       console.error('[Executive Action] Error:', error.message);
       // Add error notification
-      addNotification({
+      createNotification({
         type: 'alert',
         category: 'system',
         title: 'Action Failed',
@@ -205,10 +208,8 @@ export function MyCountryDataWrapper({
       actionable: true,
       priority: Math.abs(data.change) > 5 ? 'high' as const : 'medium' as const,
     };
-    return addNotification(notification);
+    return createNotification(notification);
   };
-  
-  const createNotification = addNotification;
   
   // Set executive mode and notifications based on view mode
   React.useEffect(() => {
@@ -320,8 +321,9 @@ export function MyCountryDataWrapper({
     return ranks[tier as keyof typeof ranks] || 0;
   };
 
-  // Use synced data if available, fallback to original country data
-  const enhancedCountryData = syncedCountryData || country;
+  // Use synced data if available, fallback to original country data with type safety
+  const rawCountryData = syncedCountryData || country;
+  const enhancedCountryData = ensureCountryData(rawCountryData);
   const isLoading = dataSyncLoading;
 
   return (
@@ -363,7 +365,7 @@ export function MyCountryDataWrapper({
             <ExecutiveDashboard
               country={enhancedCountryData}
               intelligenceFeed={intelligenceFeed}
-              quickActions={executiveActions}
+              quickActions={executiveActions.map(adaptExecutiveToQuick)}
               currentIxTime={currentIxTime}
               timeAcceleration={timeAcceleration}
               onActionClick={(actionId: string) => {

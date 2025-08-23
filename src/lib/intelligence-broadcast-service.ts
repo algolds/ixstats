@@ -6,6 +6,7 @@ import { db } from '~/server/db';
 import type { IntelligenceWebSocketServer } from './websocket/intelligence-websocket-server';
 import type { IntelligenceUpdate } from './websocket/types';
 import type { Country } from '@prisma/client';
+import { standardize } from './interface-standardizer';
 
 interface IntelligenceBroadcastServiceOptions {
   websocketServer?: IntelligenceWebSocketServer;
@@ -329,19 +330,9 @@ export class IntelligenceBroadcastService {
 
       // Broadcast each new intelligence item
       for (const item of newItems) {
-        this.websocketServer.broadcastNewIntelligenceItem({
-          id: item.id,
-          title: item.title,
-          description: item.content,
-          category: item.category,
-          priority: item.priority,
-          severity: item.severity || 'info',
-          countryId: item.countryId,
-          source: item.source,
-          timestamp: item.timestamp,
-          affectedCountries: item.affectedCountries,
-          confidence: item.confidence
-        });
+        // Bulk standardize intelligence item before broadcasting
+        const standardizedItem = standardize.intelligence(item);
+        this.websocketServer.broadcastNewIntelligenceItem(standardizedItem);
       }
 
     } catch (error) {

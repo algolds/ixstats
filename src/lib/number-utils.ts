@@ -4,7 +4,8 @@
  */
 
 export type NumberFormat = 'default' | 'currency' | 'population' | 'percentage' | 'compact';
-export type TrendDirection = 'up' | 'down' | 'stable';
+// Re-export StandardTrend as TrendDirection for backward compatibility
+export type { StandardTrend as TrendDirection } from '~/types/base';
 
 export interface NumberDisplayConfig {
   value: number;

@@ -18,6 +18,7 @@ import {
 } from "~/components/ui/navigation-menu";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
+import { createUserProfileQueryParams } from '~/lib/user-utils';
 import { ThinkPagesIcon } from "~/components/icons/ThinkPagesIcon";
 import { AnimatedShinyText } from "~/components/magicui/animated-shiny-text";
 import { ShineBorder } from "~/components/magicui/shine-border";
@@ -41,9 +42,10 @@ export function Navigation() {
   const [isSticky, setIsSticky] = useState(false);
 
   // Get user profile to show linked country
+  const userProfileQueryParams = createUserProfileQueryParams(user);
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
-    { enabled: !!user?.id }
+    userProfileQueryParams.input,
+    { enabled: userProfileQueryParams.enabled }
   );
 
 

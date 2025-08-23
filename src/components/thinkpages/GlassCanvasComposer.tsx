@@ -49,6 +49,7 @@ export function GlassCanvasComposer({
 
   // Get latest economic data for visualizations
   const { data: economicData } = api.countries.getEconomicData.useQuery({ countryId });
+  const { data: gdpHistoryData } = api.countries.getHistoricalData.useQuery({ countryId });
   const { data: diplomaticData } = api.diplomatic.getRelationships.useQuery({ countryId });
   const { data: tradeData } = api.countries.getTradeData.useQuery({ countryId });
 
@@ -110,7 +111,7 @@ export function GlassCanvasComposer({
             id: `econ-${Date.now()}`,
             type: 'economic_chart',
             title: 'GDP Growth Trajectory',
-            data: economicData?.gdpHistory || [],
+            data: gdpHistoryData || [],
             config: {
               chartType: 'line',
               colors: ['#3B82F6', '#10B981'],
@@ -180,7 +181,7 @@ export function GlassCanvasComposer({
             <div className="flex items-center gap-2">
               <TrendingUp className="h-6 w-6 text-green-400" />
               <div className="text-sm">
-                <div className="font-medium">GDP: +{((economicData?.gdpGrowth || 0.03) * 100).toFixed(1)}%</div>
+                <div className="font-medium">GDP: +{(((economicData as any)?.adjustedGdpGrowth || 0.03) * 100).toFixed(1)}%</div>
                 <div className="text-xs text-muted-foreground">Q4 Performance</div>
               </div>
             </div>

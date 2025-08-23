@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Settings } from 'lucide-react';
 import { cn } from '~/lib/utils';
 import { GlassCard, GlassCardContent, GlassCardHeader } from '../glass/GlassCard';
 import { LiveFeedback } from '../glass/LiveFeedback';
@@ -14,14 +15,14 @@ import { SectionNavigator } from '../../primitives/SectionNavigator';
 import { PolicyAdvisor } from '../../primitives/PolicyAdvisor';
 import { SectionHeader } from '../../primitives/SectionHeader';
 
-// Import section components
+// Import section components (using modern versions)
 import {
-  NationalSymbolsSection,
-  CoreIndicatorsSection,
-  LaborEmploymentSection,
-  FiscalSystemSection,
-  GovernmentSpendingSection,
-  DemographicsSection
+  NationalIdentitySection,
+  CoreIndicatorsSectionModern as CoreIndicatorsSection,
+  LaborEmploymentSectionModern as LaborEmploymentSection,
+  FiscalSystemSectionModern as FiscalSystemSection,
+  GovernmentSpendingSectionModern as GovernmentSpendingSection,
+  DemographicsSectionModern as DemographicsSection
 } from '../../sections';
 
 // Import utilities
@@ -84,7 +85,7 @@ export function EconomicCustomizationHub({
 
     switch (activeSection) {
       case 'symbols':
-        return <NationalSymbolsSection {...commonProps} />;
+        return <NationalIdentitySection {...commonProps} />;
       case 'core':
         return <CoreIndicatorsSection {...commonProps} />;
       case 'labor':
@@ -99,6 +100,9 @@ export function EconomicCustomizationHub({
         return null;
     }
   };
+
+  // Check if current section is a modern section (has its own header)
+  const isModernSection = ['core', 'labor', 'fiscal', 'government', 'demographics'].includes(activeSection);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4 md:p-6">
@@ -138,31 +142,52 @@ export function EconomicCustomizationHub({
               ? "lg:col-span-4" // More space for content in classic mode
               : "lg:col-span-3"  // Wider content area for modern
           )}>
-            <GlassCard depth="elevated" blur="medium" motionPreset="slide">
-              <GlassCardHeader>
-                {/* Section Header - Using modular component */}
-                {activeSectionData && (
+{isModernSection ? (
+              // Modern sections have their own glass cards and headers
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeSection}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {renderSectionContent()}
+                </motion.div>
+              </AnimatePresence>
+            ) : (
+              // Legacy sections use the hub's glass card wrapper
+              <GlassCard depth="elevated" blur="medium" motionPreset="slide">
+                <GlassCardHeader>
+                  {/* Section Header - Using modular component */}
                   <SectionHeader
-                    section={activeSectionData}
+                    section={activeSectionData || { 
+                      id: activeSection, 
+                      name: 'Section', 
+                      description: '',
+                      icon: Settings,
+                      color: 'text-gray-500',
+                      completeness: 0
+                    }}
                     showAdvanced={showAdvanced}
                     onToggleAdvanced={() => setShowAdvanced(!showAdvanced)}
                   />
-                )}
-              </GlassCardHeader>
-              <GlassCardContent>
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeSection}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    {renderSectionContent()}
-                  </motion.div>
-                </AnimatePresence>
-              </GlassCardContent>
-            </GlassCard>
+                </GlassCardHeader>
+                <GlassCardContent>
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={activeSection}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      {renderSectionContent()}
+                    </motion.div>
+                  </AnimatePresence>
+                </GlassCardContent>
+              </GlassCard>
+            )}
           </div>
 
           {/* Live Feedback Panel */}
@@ -175,7 +200,7 @@ export function EconomicCustomizationHub({
             <LiveFeedback 
               inputs={inputs} 
               activeSection={activeSection}
-              extractedColors={inputs.flagExtractedColors}
+              extractedColors={null}
               flagUrl={inputs.flagUrl}
               coatOfArmsUrl={inputs.coatOfArmsUrl}
             />

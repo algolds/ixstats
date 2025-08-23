@@ -437,7 +437,7 @@ export async function runWebSocketTests(): Promise<void> {
       console.log('⚠️  WebSocket infrastructure needs attention before production deployment');
     }
 
-    return results;
+    // Results logged above, function returns void
   } catch (error) {
     console.error('Test execution failed:', error);
     throw error;
