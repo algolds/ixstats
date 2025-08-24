@@ -17,6 +17,9 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { ThinkpagesSocialPlatform } from "~/components/thinkpages/ThinkpagesSocialPlatform";
+import { EnhancedAccountManager } from "~/components/thinkpages/EnhancedAccountManager";
+import { AccountCreationModal } from "~/components/thinkpages/AccountCreationModal";
+import { AccountSettingsModal } from "~/components/thinkpages/AccountSettingsModal";
 import dynamic from 'next/dynamic';
 
 // Dynamically import components to prevent tRPC queries from running until needed
@@ -61,6 +64,10 @@ import { api } from "~/trpc/react";
 export default function ThinkPagesMainPage() {
   const { user } = useUser();
   const [activeView, setActiveView] = useState<'feed' | 'thinktanks' | 'messages'>('feed');
+  const [selectedAccount, setSelectedAccount] = useState<any>(null);
+  const [showAccountCreation, setShowAccountCreation] = useState(false);
+  const [showAccountSettings, setShowAccountSettings] = useState(false);
+  const [settingsAccount, setSettingsAccount] = useState<any>(null);
 
   // Handle URL parameters for auto-selecting view and conversation
   useEffect(() => {
@@ -109,6 +116,31 @@ export default function ThinkPagesMainPage() {
       refetchAccounts();
     }
   }, [isDataReady, userProfile?.countryId, refetchAccounts]);
+
+  // Account management handlers
+  const handleAccountSelect = (account: any) => {
+    setSelectedAccount(account);
+  };
+
+  const handleAccountSettings = (account: any) => {
+    setSettingsAccount(account);
+    setShowAccountSettings(true);
+  };
+
+  const handleCreateAccount = () => {
+    setShowAccountCreation(true);
+  };
+
+  const handleAccountCreated = () => {
+    setShowAccountCreation(false);
+    refetchAccounts();
+  };
+
+  const handleAccountUpdated = () => {
+    setShowAccountSettings(false);
+    setSettingsAccount(null);
+    refetchAccounts();
+  };
 
   if (!isDataReady) {
     return (
@@ -204,36 +236,71 @@ export default function ThinkPagesMainPage() {
           </div>
           
         </motion.div>
-        {/* Main Content */}
+        {/* Main Content with Account Manager Sidebar */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
+          className="grid grid-cols-1 lg:grid-cols-4 gap-6"
         >
-          {activeView === 'feed' && (
-            <ThinkpagesSocialPlatform
+          {/* Left Sidebar - Account Manager */}
+          <div className="lg:col-span-1 space-y-4">
+            <EnhancedAccountManager
               countryId={countryData.id}
-              countryName={countryData.name}
+              accounts={accounts || []}
+              selectedAccount={selectedAccount}
+              onAccountSelect={handleAccountSelect}
+              onAccountSettings={handleAccountSettings}
+              onCreateAccount={handleCreateAccount}
               isOwner={true}
             />
-          )}
+          </div>
 
-          {activeView === 'thinktanks' && isDataReady && countryData?.id && countryData?.name && (
-            <ThinktankGroups
-              countryId={countryData.id}
-              countryName={countryData.name}
-              userAccounts={accounts || []}
-            />
-          )}
+          {/* Main Content Area */}
+          <div className="lg:col-span-3">
+            {activeView === 'feed' && (
+              <ThinkpagesSocialPlatform
+                countryId={countryData.id}
+                countryName={countryData.name}
+                isOwner={true}
+              />
+            )}
 
-          {activeView === 'messages' && isDataReady && countryData?.id && countryData?.name && (
-            <ThinkshareMessages
-              countryId={countryData.id}
-              countryName={countryData.name}
-              userAccounts={accounts || []}
-            />
-          )}
+            {activeView === 'thinktanks' && isDataReady && countryData?.id && countryData?.name && (
+              <ThinktankGroups
+                countryId={countryData.id}
+                countryName={countryData.name}
+                userAccounts={accounts || []}
+              />
+            )}
+
+            {activeView === 'messages' && isDataReady && countryData?.id && countryData?.name && (
+              <ThinkshareMessages
+                countryId={countryData.id}
+                countryName={countryData.name}
+                userAccounts={accounts || []}
+              />
+            )}
+          </div>
         </motion.div>
+
+        {/* Account Management Modals */}
+        {showAccountCreation && (
+          <AccountCreationModal
+            countryId={countryData.id}
+            isOpen={showAccountCreation}
+            onClose={() => setShowAccountCreation(false)}
+            onAccountCreated={handleAccountCreated}
+          />
+        )}
+
+        {showAccountSettings && settingsAccount && (
+          <AccountSettingsModal
+            account={settingsAccount}
+            isOpen={showAccountSettings}
+            onClose={() => setShowAccountSettings(false)}
+            onAccountUpdated={handleAccountUpdated}
+          />
+        )}
 
         {/* Authentic Footer */}
         <motion.div 

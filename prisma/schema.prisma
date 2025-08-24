@@ -395,8 +395,20 @@ model DiplomaticRelation {
   lastContact        DateTime
   status             String
   diplomaticChannels String?
+  recentActivity     String?  // Latest diplomatic activity
+  tradeVolume        Float?   // Annual trade volume
+  culturalExchange   String?  // 'High', 'Medium', 'Low'
+  economicTier       String?  // Target country's economic tier
+  flagUrl            String?  // Target country's flag
+  establishedAt      DateTime @default(now())
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+  
+  @@unique([country1, country2])
+  @@index([country1])
+  @@index([country2])
+  @@index([relationship])
+  @@index([status])
 }
 
 model Treaty {
@@ -1011,19 +1023,30 @@ model ActivityFeed {
 model DiplomaticEvent {
   id          String   @id @default(cuid())
   country1Id  String
-  country2Id  String
-  eventType   String   // 'trade_agreement', 'alliance', 'conflict', 'treaty'
+  country2Id  String?  // Made optional for embassy-related events
+  eventType   String   // 'trade_agreement', 'alliance', 'conflict', 'treaty', 'embassy_established', 'mission_completed', 'embassy_upgraded'
   title       String
   description String
   tradeValue  Float?   // For trade agreements
   status      String   @default("active") // 'active', 'expired', 'cancelled'
   metadata    String?  // JSON object with additional event data
+  
+  // Embassy game system fields
+  embassyId          String?  // Related embassy
+  missionId          String?  // Related mission
+  severity          String   @default("info") // 'info', 'warning', 'critical', 'positive'
+  relationshipImpact Float   @default(0) // Impact on relationship strength
+  reputationImpact   Float   @default(0) // Impact on reputation
+  economicImpact     Float   @default(0) // Economic impact
+  ixTimeTimestamp    Float?  // IxTime context
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
   @@index([country1Id])
   @@index([country2Id])
   @@index([eventType])
+  @@index([embassyId])
   @@index([createdAt])
 }
 
@@ -1089,3 +1112,297 @@ model DiplomaticAction {
   @@index([fromCountryId])
   @@index([toCountryId])
 }
+
+// Enhanced Diplomatic Relations System
+
+model Embassy {
+  id              String   @id @default(cuid())
+  hostCountryId   String   // Country hosting the embassy
+  guestCountryId  String   // Country that owns the embassy
+  name            String   // Embassy name/title
+  location        String?  // City/region location
+  ambassadorName  String?
+  staffCount      Int      @default(1)
+  establishedAt   DateTime @default(now())
+  status          String   @default("active") // 'active', 'suspended', 'closed', 'under_construction'
+  services        String?  // JSON array of embassy services
+  securityLevel   String   @default("STANDARD") // 'BASIC', 'STANDARD', 'HIGH', 'MAXIMUM'
+  
+  // Game Mechanics - Economic
+  establishmentCost    Float    @default(0) // Cost to establish
+  maintenanceCost      Float    @default(1000) // Monthly maintenance
+  lastMaintenancePaid  DateTime @default(now())
+  budget              Float    @default(50000) // Embassy budget
+  
+  // Game Mechanics - Levels & Upgrades
+  level               Int      @default(1) // Embassy level (1-5)
+  experience          Int      @default(0) // Embassy experience points
+  upgradeProgress     Float    @default(0) // 0-100 upgrade progress
+  
+  // Game Mechanics - Influence & Effectiveness
+  influence           Float    @default(10) // Local influence (0-100)
+  effectiveness       Float    @default(50) // Overall effectiveness (0-100)
+  reputation          Float    @default(50) // Local reputation (0-100)
+  
+  // Game Mechanics - Capacity & Resources
+  maxStaff            Int      @default(5) // Maximum staff capacity
+  currentMissions     Int      @default(0) // Active missions count
+  maxMissions         Int      @default(2) // Maximum concurrent missions
+  
+  // Game Mechanics - Specializations
+  specialization      String?  // 'trade', 'intelligence', 'cultural', 'military', 'research'
+  specializationLevel Int      @default(0) // Specialization level (0-3)
+  
+  // Game Mechanics - Status Effects
+  buffs               String?  // JSON array of active buffs
+  debuffs             String?  // JSON array of active debuffs
+  lastActivity        DateTime @default(now())
+  
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  
+  // Relations
+  missions           EmbassyMission[]
+  upgrades           EmbassyUpgrade[]
+  
+  @@unique([hostCountryId, guestCountryId])
+  @@index([hostCountryId])
+  @@index([guestCountryId])
+  @@index([status])
+  @@index([level])
+  @@index([specialization])
+}
+
+model DiplomaticChannel {
+  id              String   @id @default(cuid())
+  name            String
+  type            String   // 'BILATERAL', 'MULTILATERAL', 'EMERGENCY'
+  classification  String   @default("PUBLIC") // 'PUBLIC', 'RESTRICTED', 'CONFIDENTIAL'
+  encrypted       Boolean  @default(false)
+  lastActivity    DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  participants    DiplomaticChannelParticipant[]
+  messages        DiplomaticMessage[]
+  
+  @@index([type])
+  @@index([classification])
+  @@index([lastActivity])
+}
+
+model DiplomaticChannelParticipant {
+  id          String   @id @default(cuid())
+  channelId   String
+  countryId   String
+  countryName String
+  flagUrl     String?
+  role        String   @default("MEMBER") // 'MEMBER', 'MODERATOR', 'OBSERVER'
+  joinedAt    DateTime @default(now())
+  
+  // Relations
+  channel     DiplomaticChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  
+  @@unique([channelId, countryId])
+  @@index([channelId])
+  @@index([countryId])
+}
+
+model DiplomaticMessage {
+  id              String   @id @default(cuid())
+  channelId       String
+  fromCountryId   String
+  fromCountryName String
+  toCountryId     String?  // Optional for broadcast messages
+  toCountryName   String?
+  subject         String?
+  content         String
+  classification  String   @default("PUBLIC") // 'PUBLIC', 'RESTRICTED', 'CONFIDENTIAL'
+  priority        String   @default("NORMAL") // 'LOW', 'NORMAL', 'HIGH', 'URGENT'
+  status          String   @default("SENT") // 'SENT', 'DELIVERED', 'READ', 'ARCHIVED'
+  encrypted       Boolean  @default(false)
+  ixTimeTimestamp Float    // IxTime timestamp for game context
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  channel         DiplomaticChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  
+  @@index([channelId])
+  @@index([fromCountryId])
+  @@index([toCountryId])
+  @@index([classification])
+  @@index([priority])
+  @@index([status])
+  @@index([ixTimeTimestamp])
+}
+
+model CulturalExchange {
+  id                    String   @id @default(cuid())
+  title                 String
+  type                  String   // 'festival', 'exhibition', 'education', 'cuisine', 'arts', 'sports', 'technology', 'diplomacy'
+  description           String
+  hostCountryId         String
+  hostCountryName       String
+  hostCountryFlag       String?
+  status                String   @default("planning") // 'planning', 'active', 'completed', 'cancelled'
+  startDate             DateTime
+  endDate               DateTime
+  ixTimeContext         Float    // IxTime context for the exchange
+  participants          Int      @default(0)
+  culturalImpact        Float    @default(0) // 0-100 score
+  diplomaticValue       Float    @default(0) // 0-100 score
+  socialEngagement      Int      @default(0)
+  achievements          String?  // JSON array of achievements
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relations
+  participatingCountries CulturalExchangeParticipant[]
+  culturalArtifacts      CulturalArtifact[]
+  
+  @@index([hostCountryId])
+  @@index([type])
+  @@index([status])
+  @@index([startDate])
+}
+
+model CulturalExchangeParticipant {
+  id          String   @id @default(cuid())
+  exchangeId  String
+  countryId   String
+  countryName String
+  flagUrl     String?
+  role        String   // 'co-host', 'participant', 'observer'
+  joinedAt    DateTime @default(now())
+  
+  // Relations
+  exchange    CulturalExchange @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
+  
+  @@unique([exchangeId, countryId])
+  @@index([exchangeId])
+  @@index([countryId])
+}
+
+model CulturalArtifact {
+  id            String   @id @default(cuid())
+  exchangeId    String
+  type          String   // 'photo', 'video', 'document', 'artwork', 'recipe', 'music'
+  title         String
+  description   String?
+  thumbnailUrl  String?
+  fileUrl       String?
+  contributor   String   // Name/title of contributor
+  countryId     String   // Contributing country
+  uploadedAt    DateTime @default(now())
+  
+  // Relations
+  exchange      CulturalExchange @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
+  
+  @@index([exchangeId])
+  @@index([countryId])
+  @@index([type])
+}
+
+// Embassy Game System Models
+
+model EmbassyMission {
+  id              String   @id @default(cuid())
+  embassyId       String
+  name            String
+  type            String   // 'trade_negotiation', 'intelligence_gathering', 'cultural_outreach', 'security_cooperation', 'research_collaboration'
+  description     String
+  difficulty      String   // 'easy', 'medium', 'hard', 'expert'
+  status          String   @default("active") // 'active', 'completed', 'failed', 'cancelled'
+  
+  // Mission Requirements
+  requiredStaff       Int      @default(1)
+  requiredLevel       Int      @default(1)
+  requiredSpecialization String? // Required embassy specialization
+  
+  // Mission Costs & Duration
+  cost                Float    @default(0)
+  duration            Int      @default(7) // Duration in days
+  startedAt           DateTime @default(now())
+  completesAt         DateTime
+  
+  // Mission Rewards
+  experienceReward    Int      @default(0)
+  influenceReward     Float    @default(0)
+  reputationReward    Float    @default(0)
+  economicReward      Float    @default(0)
+  
+  // Mission Progress
+  progress            Float    @default(0) // 0-100
+  successChance       Float    @default(50) // 0-100
+  complications       String?  // JSON array of complications
+  
+  // IxTime Integration
+  ixTimeStarted       Float
+  ixTimeCompletes     Float
+  
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  
+  // Relations
+  embassy            Embassy  @relation(fields: [embassyId], references: [id], onDelete: Cascade)
+  
+  @@index([embassyId])
+  @@index([type])
+  @@index([status])
+  @@index([completesAt])
+}
+
+model EmbassyUpgrade {
+  id              String   @id @default(cuid())
+  embassyId       String
+  upgradeType     String   // 'staff_expansion', 'security_enhancement', 'tech_upgrade', 'facility_expansion', 'specialization_improvement'
+  name            String
+  description     String
+  level           Int      @default(1) // Upgrade level
+  
+  // Upgrade Costs
+  cost            Float
+  duration        Int      // Duration in days
+  requiredLevel   Int      @default(1) // Required embassy level
+  
+  // Upgrade Status
+  status          String   @default("available") // 'available', 'in_progress', 'completed'
+  startedAt       DateTime?
+  completesAt     DateTime?
+  progress        Float    @default(0) // 0-100
+  
+  // Upgrade Effects (JSON)
+  effects         String?  // JSON object with upgrade effects
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  embassy         Embassy  @relation(fields: [embassyId], references: [id], onDelete: Cascade)
+  
+  @@index([embassyId])
+  @@index([upgradeType])
+  @@index([status])
+}
+
+model EmbassyRequirement {
+  id                  String   @id @default(cuid())
+  hostCountryId       String   // Country where embassy will be established
+  requiredRelationship String  @default("neutral") // 'ally', 'friendly', 'neutral'
+  minRelationStrength Int     @default(25) // Minimum relationship strength
+  establishmentCost   Float   @default(100000) // Base cost to establish
+  approvalTime        Int     @default(30) // Days for approval
+  specialRequirements String? // JSON array of special requirements
+  
+  // Economic factors
+  economicTierMultiplier Float @default(1.0) // Cost multiplier based on target country's economic tier
+  
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  
+  @@unique([hostCountryId])
+  @@index([hostCountryId])
+}
+

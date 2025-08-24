@@ -4,6 +4,7 @@ import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "~/trpc/react";
 import { useUser } from "@clerk/nextjs";
+import Link from "next/link";
 
 // Components
 import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
@@ -18,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 
 // Icons
 import { 
@@ -44,6 +46,7 @@ import {
 // Utils
 import { cn } from "~/lib/utils";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
+import { createUrl } from "~/lib/url-utils";
 
 interface GlobalStatsDisplayProps {
   stats: {
@@ -109,35 +112,163 @@ interface QuickActionsProps {
 }
 
 function QuickActions({ user, userProfile }: QuickActionsProps) {
+  const [showActiveUsers, setShowActiveUsers] = useState(false);
+  
+  // Fetch active users for Find Friends
+  const { data: activeUsers } = api.users.getActiveUsers.useQuery({
+    limit: 15,
+    excludeUserId: user?.id,
+  }, { enabled: !!user?.id });
+
   return (
-    <Card className="glass-hierarchy-child">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Zap className="h-5 w-5 text-yellow-500" />
-          Quick Actions
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 gap-3">
-          <Button variant="outline" className="flex flex-col items-center gap-2 h-auto p-4">
-            <UserPlus className="h-5 w-5" />
-            <span className="text-sm">Find Friends</span>
-          </Button>
-          <Button variant="outline" className="flex flex-col items-center gap-2 h-auto p-4">
-            <MessageSquare className="h-5 w-5" />
-            <span className="text-sm">Messages</span>
-          </Button>
-          <Button variant="outline" className="flex flex-col items-center gap-2 h-auto p-4">
-            <Trophy className="h-5 w-5" />
-            <span className="text-sm">Achievements</span>
-          </Button>
-          <Button variant="outline" className="flex flex-col items-center gap-2 h-auto p-4">
-            <Settings className="h-5 w-5" />
-            <span className="text-sm">Settings</span>
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+    <>
+      <Card className="glass-hierarchy-child">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="h-5 w-5 text-yellow-500" />
+            Quick Actions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-3">
+            {/* Find Friends - Show Active Members */}
+            <Button 
+              variant="outline" 
+              className="flex flex-col items-center gap-2 h-auto p-4"
+              onClick={() => setShowActiveUsers(true)}
+            >
+              <UserPlus className="h-5 w-5" />
+              <span className="text-sm">Find Friends</span>
+              {activeUsers && activeUsers.length > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  {activeUsers.length} active
+                </Badge>
+              )}
+            </Button>
+
+            {/* Messages - Go to ThinkPages */}
+            <Link href={createUrl("/thinkpages")}>
+              <Button variant="outline" className="flex flex-col items-center gap-2 h-auto p-4 w-full">
+                <MessageSquare className="h-5 w-5" />
+                <span className="text-sm">Messages</span>
+              </Button>
+            </Link>
+
+            {/* Achievements - Show User Achievements */}
+            <Button 
+              variant="outline" 
+              className="flex flex-col items-center gap-2 h-auto p-4"
+              onClick={() => {
+                // For now, show achievements count - could expand to modal
+                const achievements = userProfile?.achievements || 0;
+                alert(`You have earned ${achievements} achievements!`);
+              }}
+            >
+              <Trophy className="h-5 w-5" />
+              <span className="text-sm">Achievements</span>
+              {userProfile?.achievements && userProfile.achievements > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  {userProfile.achievements}
+                </Badge>
+              )}
+            </Button>
+
+            {/* Settings - Go to User Profile */}
+            <Link href={createUrl("/profile")}>
+              <Button variant="outline" className="flex flex-col items-center gap-2 h-auto p-4 w-full">
+                <Settings className="h-5 w-5" />
+                <span className="text-sm">Settings</span>
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Active Users Modal for Find Friends */}
+      <AnimatePresence>
+        {showActiveUsers && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowActiveUsers(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-background rounded-xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto glass-hierarchy-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <UserPlus className="h-5 w-5 text-green-500" />
+                  Active Members
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowActiveUsers(false)}
+                >
+                  ✕
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                {activeUsers && activeUsers.length > 0 ? (
+                  activeUsers.map((member) => (
+                    <div
+                      key={member.id}
+                      className="flex items-center gap-4 p-3 glass-hierarchy-child rounded-lg hover:scale-[1.01] transition-transform"
+                    >
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                          {member.leader.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-medium text-foreground truncate">
+                            {member.leader}
+                          </h4>
+                          <Badge variant="outline" className="text-xs">
+                            {member.economicTier}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate">
+                          Leader of {member.countryName}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Joined {new Date(member.joinedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+
+                      <div className="text-right">
+                        <Link href={createUrl(`/countries/${member.countryId}`)}>
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">No Active Members</h3>
+                    <p className="text-muted-foreground">
+                      Be the first to join the community!
+                    </p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 
@@ -259,7 +390,13 @@ export function EnhancedCommandCenter() {
             )}
             
             {/* Quick Actions */}
-            <QuickActions user={user} userProfile={userProfile} />
+            <QuickActions 
+              user={user} 
+              userProfile={{
+                ...userProfile,
+                achievements: socialData?.achievements || 0,
+              }} 
+            />
           </motion.div>
 
           {/* Main Content Area */}
@@ -278,7 +415,7 @@ export function EnhancedCommandCenter() {
                       <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="feed" className="flex items-center gap-2">
                           <Activity className="h-4 w-4" />
-                          Activity Feed
+                           Feed
                         </TabsTrigger>
                         <TabsTrigger value="discover" className="flex items-center gap-2">
                           <Globe className="h-4 w-4" />

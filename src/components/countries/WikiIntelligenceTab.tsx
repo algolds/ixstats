@@ -809,7 +809,8 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
               { id: 'infobox', label: 'Overview', icon: RiInformationLine },
               { id: 'sections', label: 'Dossier', icon: RiBookOpenLine },
               { id: 'conflicts', label: `Data Analysis ${dataConflicts.length > 0 ? `(${dataConflicts.length})` : ''}`, icon: RiShieldLine },
-              { id: 'settings', label: 'Discovery Settings', icon: RiSettings3Line }
+              // Only show settings for authenticated users with higher clearance
+              ...(viewerClearanceLevel !== 'PUBLIC' ? [{ id: 'settings', label: 'Discovery Settings', icon: RiSettings3Line }] : [])
             ].map((view) => {
             const ViewIcon = view.icon;
             return (
@@ -1049,19 +1050,19 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
                         <div className="space-y-6">
                           {/* Historical Timeline */}
                           {timeline && (
-                            <div className="bg-gradient-to-r from-amber-900/10 via-orange-900/10 to-red-900/10 rounded-lg border border-amber-500/20 p-4">
+                            <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-red-500/10 dark:from-amber-900/10 dark:via-orange-900/10 dark:to-red-900/10 rounded-lg border border-amber-500/20 p-4">
                               <h4 className="font-medium flex items-center gap-2 mb-4">
-                                <RiHistoryLine className="h-4 w-4 text-amber-400" />
+                                <RiHistoryLine className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                                 Historical Timeline
                               </h4>
                               <div className="space-y-3">
                                 {timeline.map((event) => (
                                   <div key={event.order} className="flex items-start gap-3">
-                                    <div className="flex-shrink-0 w-2 h-2 bg-amber-400 rounded-full mt-2"></div>
+                                    <div className="flex-shrink-0 w-2 h-2 bg-amber-600 dark:bg-amber-400 rounded-full mt-2"></div>
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-start justify-between gap-3">
                                         <div className="flex-1">
-                                          <div className="text-sm font-medium text-amber-200">
+                                          <div className="text-sm font-medium text-amber-800 dark:text-amber-200">
                                             {parseInfoboxValue(event.event, handleWikiLinkClick)}
                                           </div>
                                           <div className="text-xs text-muted-foreground mt-1">

@@ -4,6 +4,8 @@ import React, { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { IxTime } from "~/lib/ixtime";
+import { api } from "~/trpc/react";
+import { toast } from "sonner";
 import { 
   RiGlobalLine,
   RiStarLine,
@@ -168,7 +170,7 @@ const STATUS_STYLES = {
 
 const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> = ({
   primaryCountry,
-  exchanges,
+  exchanges: propExchanges,
   onCreateExchange,
   onJoinExchange,
   onViewArtifact,
@@ -179,6 +181,65 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'timeline'>('grid');
+
+  // Fetch live cultural exchanges
+  const { data: liveExchanges, isLoading: exchangesLoading, refetch: refetchExchanges } = api.diplomatic.getCulturalExchanges.useQuery(
+    { 
+      countryId: primaryCountry.id,
+      status: filterStatus !== 'all' ? filterStatus as any : undefined,
+      type: filterType !== 'all' ? filterType : undefined
+    },
+    { 
+      enabled: !!primaryCountry.id,
+      refetchInterval: 30000
+    }
+  );
+
+  // Create exchange mutation
+  const createExchangeMutation = api.diplomatic.createCulturalExchange.useMutation({
+    onSuccess: () => {
+      toast.success('Cultural exchange created successfully!');
+      setShowCreateModal(false);
+      refetchExchanges();
+    },
+    onError: (error) => {
+      toast.error(`Failed to create exchange: ${error.message}`);
+    }
+  });
+
+  // Join exchange mutation
+  const joinExchangeMutation = api.diplomatic.joinCulturalExchange.useMutation({
+    onSuccess: () => {
+      toast.success('Successfully joined cultural exchange!');
+      refetchExchanges();
+    },
+    onError: (error) => {
+      toast.error(`Failed to join exchange: ${error.message}`);
+    }
+  });
+
+  // Use live data if available, fallback to prop data
+  const exchanges = useMemo(() => {
+    if (liveExchanges && liveExchanges.length > 0) {
+      return liveExchanges.map(exchange => ({
+        id: exchange.id,
+        title: exchange.title,
+        type: exchange.type as CulturalExchange['type'],
+        description: exchange.description,
+        hostCountry: exchange.hostCountry,
+        participatingCountries: exchange.participatingCountries,
+        status: exchange.status as CulturalExchange['status'],
+        startDate: exchange.startDate,
+        endDate: exchange.endDate,
+        ixTimeContext: exchange.ixTimeContext,
+        metrics: exchange.metrics,
+        achievements: exchange.achievements,
+        culturalArtifacts: exchange.culturalArtifacts,
+        diplomaticOutcomes: undefined // Not included in API response yet
+      }));
+    }
+    return propExchanges;
+  }, [liveExchanges, propExchanges]);
 
   // Filter exchanges
   const filteredExchanges = useMemo(() => {
@@ -205,18 +266,32 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   }, [exchanges, filterType, filterStatus]);
 
   const handleCreateExchange = useCallback((exchangeData: Partial<CulturalExchange>) => {
-    onCreateExchange?.({
-      ...exchangeData,
-      hostCountry: primaryCountry,
-      status: 'planning',
-      ixTimeContext: IxTime.getCurrentIxTime(),
+    if (!exchangeData.title || !exchangeData.description || !exchangeData.startDate || !exchangeData.endDate) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    createExchangeMutation.mutate({
+      title: exchangeData.title,
+      type: exchangeData.type || 'festival',
+      description: exchangeData.description,
+      hostCountryId: primaryCountry.id,
+      hostCountryName: primaryCountry.name,
+      hostCountryFlag: primaryCountry.flagUrl,
+      startDate: exchangeData.startDate,
+      endDate: exchangeData.endDate
     });
-    setShowCreateModal(false);
-  }, [onCreateExchange, primaryCountry]);
+  }, [primaryCountry, createExchangeMutation]);
 
   const handleJoinExchange = useCallback((exchangeId: string, role: 'participant' | 'observer') => {
-    onJoinExchange?.(exchangeId, role);
-  }, [onJoinExchange]);
+    joinExchangeMutation.mutate({
+      exchangeId,
+      countryId: primaryCountry.id,
+      countryName: primaryCountry.name,
+      flagUrl: primaryCountry.flagUrl,
+      role
+    });
+  }, [primaryCountry, joinExchangeMutation]);
 
   // Calculate participation metrics
   const participationMetrics = useMemo(() => {
@@ -247,6 +322,9 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
             <span className="text-sm font-normal text-[--intel-silver] ml-2">
               ({filteredExchanges.length} exchanges)
             </span>
+            {exchangesLoading && (
+              <div className="w-4 h-4 border-2 border-[--intel-gold]/20 border-t-[--intel-gold] rounded-full animate-spin" />
+            )}
           </h3>
           <p className="text-[--intel-silver] text-sm mt-1">
             Cross-cultural collaboration and diplomatic engagement for {primaryCountry.name}
@@ -262,7 +340,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
                 "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                 viewMode === 'grid' 
                   ? "bg-[--intel-gold]/20 text-[--intel-gold]" 
-                  : "text-[--intel-silver] hover:text-white"
+                  : "text-[--intel-silver] hover:text-foreground"
               )}
             >
               Grid
@@ -273,7 +351,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
                 "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                 viewMode === 'timeline' 
                   ? "bg-[--intel-gold]/20 text-[--intel-gold]" 
-                  : "text-[--intel-silver] hover:text-white"
+                  : "text-[--intel-silver] hover:text-foreground"
               )}
             >
               Timeline
@@ -315,17 +393,25 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-4 p-4 bg-white/5 rounded-lg border border-[--intel-gold]/20">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 bg-white/5 rounded-lg border border-[--intel-gold]/20">
         <div className="flex items-center gap-2">
           <RiPaletteLine className="h-4 w-4 text-[--intel-silver]" />
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[--intel-gold]/50"
+            className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-foreground text-sm focus:outline-none focus:border-[--intel-gold]/50 dark:bg-black/20 dark:border-white/30"
+            style={{
+              backgroundImage: "url(\"data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e\")",
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 8px center',
+              backgroundSize: '16px',
+              appearance: 'none',
+              paddingRight: '32px'
+            }}
           >
-            <option value="all">All Types</option>
+            <option value="all" className="bg-black text-foreground">All Types</option>
             {Object.entries(EXCHANGE_TYPES).map(([type, config]) => (
-              <option key={type} value={type}>{config.label}</option>
+              <option key={type} value={type} className="bg-black text-foreground">{config.label}</option>
             ))}
           </select>
         </div>
@@ -335,11 +421,19 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[--intel-gold]/50"
+            className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-foreground text-sm focus:outline-none focus:border-[--intel-gold]/50 dark:bg-black/20 dark:border-white/30"
+            style={{
+              backgroundImage: "url(\"data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e\")",
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 8px center',
+              backgroundSize: '16px',
+              appearance: 'none',
+              paddingRight: '32px'
+            }}
           >
-            <option value="all">All Status</option>
+            <option value="all" className="bg-black text-foreground">All Status</option>
             {Object.entries(STATUS_STYLES).map(([status, config]) => (
-              <option key={status} value={status}>{config.label}</option>
+              <option key={status} value={status} className="bg-black text-foreground">{config.label}</option>
             ))}
           </select>
         </div>
@@ -381,7 +475,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
                             <Icon className={cn("h-5 w-5", typeConfig.color)} />
                           </div>
                           <div>
-                            <h4 className="font-semibold text-white text-sm">{exchange.title}</h4>
+                            <h4 className="font-semibold text-foreground text-sm">{exchange.title}</h4>
                             <p className="text-xs text-[--intel-silver]">{typeConfig.label}</p>
                           </div>
                         </div>
@@ -431,7 +525,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
                                     className="w-full h-full object-cover rounded"
                                   />
                                 ) : (
-                                  <span className="text-xs text-white">{country.name.charAt(0)}</span>
+                                  <span className="text-xs text-foreground">{country.name.charAt(0)}</span>
                                 )}
                               </div>
                             ))}
@@ -485,7 +579,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
                         >
                           <div className="flex items-start justify-between mb-2">
                             <div>
-                              <h4 className="font-semibold text-white">{exchange.title}</h4>
+                              <h4 className="font-semibold text-foreground">{exchange.title}</h4>
                               <p className="text-[--intel-silver] text-sm">{typeConfig.label}</p>
                             </div>
                             <div className={cn(
@@ -527,10 +621,10 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
             {selectedExchange ? (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-lg font-bold text-white">Exchange Details</h4>
+                  <h4 className="text-lg font-bold text-foreground">Exchange Details</h4>
                   <button
                     onClick={() => setSelectedExchange(null)}
-                    className="p-2 text-[--intel-silver] hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                    className="p-2 text-[--intel-silver] hover:text-foreground hover:bg-white/10 rounded-lg transition-colors"
                   >
                     <RiCloseLine className="h-4 w-4" />
                   </button>
@@ -539,7 +633,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
                 {/* Exchange Overview */}
                 <div className="space-y-4">
                   <div>
-                    <h5 className="text-lg font-bold text-white mb-2">{selectedExchange.title}</h5>
+                    <h5 className="text-lg font-bold text-foreground mb-2">{selectedExchange.title}</h5>
                     <div className="flex items-center gap-2 mb-3">
                       {React.createElement(EXCHANGE_TYPES[selectedExchange.type].icon, {
                         className: cn("h-5 w-5", EXCHANGE_TYPES[selectedExchange.type].color)
@@ -581,7 +675,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
                   {/* Cultural Artifacts Preview */}
                   {selectedExchange.culturalArtifacts.length > 0 && (
                     <div className="space-y-3">
-                      <h6 className="font-medium text-white flex items-center gap-2">
+                      <h6 className="font-medium text-foreground flex items-center gap-2">
                         <RiCameraLine className="h-4 w-4" />
                         Cultural Artifacts ({selectedExchange.culturalArtifacts.length})
                       </h6>
@@ -691,11 +785,38 @@ const CreateExchangeForm: React.FC<CreateExchangeFormProps> = ({ onSubmit, onCan
     description: '',
     startDate: '',
     endDate: '',
+    invitedCountries: [] as string[],
+    isPublic: true,
+    maxParticipants: 100,
+    culturalFocus: '',
+    expectedOutcomes: ''
   });
+  
+  const [showInvitePanel, setShowInvitePanel] = useState(false);
+  const [availableCountries] = useState([
+    { id: 'caphiria', name: 'Caphiria', flagUrl: '/flags/caphiria.png' },
+    { id: 'urcea', name: 'Urcea', flagUrl: '/flags/urcea.png' },
+    { id: 'burgundie', name: 'Burgundie', flagUrl: '/flags/burgundie.png' },
+    { id: 'kiravia', name: 'Kiravia', flagUrl: '/flags/kiravia.png' },
+    { id: 'varshan', name: 'Varshan', flagUrl: '/flags/varshan.png' },
+  ]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title || !formData.description || !formData.startDate || !formData.endDate) return;
+    if (!formData.title || !formData.description || !formData.startDate || !formData.endDate) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    
+    // Send global notifications to invited countries
+    if (formData.invitedCountries.length > 0) {
+      formData.invitedCountries.forEach(countryId => {
+        const country = availableCountries.find(c => c.id === countryId);
+        if (country) {
+          toast.success(`Cultural exchange invitation sent to ${country.name}`);
+        }
+      });
+    }
     
     onSubmit({
       title: formData.title,
@@ -703,7 +824,12 @@ const CreateExchangeForm: React.FC<CreateExchangeFormProps> = ({ onSubmit, onCan
       description: formData.description,
       startDate: formData.startDate,
       endDate: formData.endDate,
-      participatingCountries: [],
+      participatingCountries: formData.invitedCountries.map(id => ({
+        id,
+        name: availableCountries.find(c => c.id === id)?.name || id,
+        flagUrl: availableCountries.find(c => c.id === id)?.flagUrl,
+        role: 'participant' as const
+      })),
       metrics: {
         participants: 0,
         culturalImpact: 0,
@@ -715,50 +841,77 @@ const CreateExchangeForm: React.FC<CreateExchangeFormProps> = ({ onSubmit, onCan
     });
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xl font-bold text-[--intel-gold] flex items-center gap-2">
-          <RiAddLine className="h-5 w-5" />
-          Create Cultural Exchange
-        </h3>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="p-2 text-[--intel-silver] hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-        >
-          <RiCloseLine className="h-4 w-4" />
-        </button>
-      </div>
+  const toggleCountryInvite = (countryId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      invitedCountries: prev.invitedCountries.includes(countryId)
+        ? prev.invitedCountries.filter(id => id !== countryId)
+        : [...prev.invitedCountries, countryId]
+    }));
+  };
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="col-span-2">
-          <label className="block text-sm font-medium text-white mb-2">Exchange Title</label>
-          <input
-            type="text"
-            value={formData.title}
-            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-            placeholder="Cultural Festival 2024..."
-            className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder:text-[--intel-silver] focus:outline-none focus:border-[--intel-gold]/50"
-            required
-          />
+  return (
+    <div className="glass-hierarchy-modal">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Header */}
+        <div className="glass-hierarchy-child rounded-lg p-4 border-b border-[--intel-gold]/20">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-bold text-[--intel-gold] flex items-center gap-2">
+              <RiGlobalLine className="h-6 w-6" />
+              Create Cultural Exchange
+            </h3>
+            <button
+              type="button"
+              onClick={onCancel}
+              className="p-2 text-[--intel-silver] hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <RiCloseLine className="h-5 w-5" />
+            </button>
+          </div>
+          <p className="text-[--intel-silver] text-sm mt-2">
+            Foster diplomatic relationships through cultural collaboration
+          </p>
         </div>
+
+        {/* Basic Information */}
+        <div className="glass-hierarchy-child rounded-lg p-6 space-y-4">
+          <h4 className="font-semibold text-foreground mb-4">Basic Information</h4>
+          
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Exchange Title *</label>
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              placeholder="Annual Cultural Festival 2024..."
+              className="w-full bg-white/10 dark:bg-black/20 border border-white/20 rounded-lg px-4 py-3 text-foreground placeholder:text-[--intel-silver] focus:outline-none focus:border-[--intel-gold]/50"
+              required
+            />
+          </div>
         
         <div>
-          <label className="block text-sm font-medium text-white mb-2">Exchange Type</label>
+          <label className="block text-sm font-medium text-foreground mb-2">Exchange Type</label>
           <select
             value={formData.type}
             onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as keyof typeof EXCHANGE_TYPES }))}
-            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-3 text-white focus:outline-none focus:border-[--intel-gold]/50"
+            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-3 text-foreground focus:outline-none focus:border-[--intel-gold]/50 dark:bg-black/20 dark:border-white/30"
+            style={{
+              backgroundImage: "url(\"data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e\")",
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 12px center',
+              backgroundSize: '16px',
+              appearance: 'none',
+              paddingRight: '40px'
+            }}
           >
             {Object.entries(EXCHANGE_TYPES).map(([type, config]) => (
-              <option key={type} value={type}>{config.label}</option>
+              <option key={type} value={type} className="bg-black text-foreground">{config.label}</option>
             ))}
           </select>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-white mb-2">Host Country</label>
+          <label className="block text-sm font-medium text-foreground mb-2">Host Country</label>
           <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/20">
             {hostCountry.flagUrl && (
               <img
@@ -767,41 +920,41 @@ const CreateExchangeForm: React.FC<CreateExchangeFormProps> = ({ onSubmit, onCan
                 className="w-6 h-4 object-cover rounded border border-white/20"
               />
             )}
-            <span className="text-white font-medium">{hostCountry.name}</span>
+            <span className="text-foreground font-medium">{hostCountry.name}</span>
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-white mb-2">Start Date</label>
+          <label className="block text-sm font-medium text-foreground mb-2">Start Date</label>
           <input
             type="date"
             value={formData.startDate}
             onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-            className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[--intel-gold]/50"
+            className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-[--intel-gold]/50"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-white mb-2">End Date</label>
+          <label className="block text-sm font-medium text-foreground mb-2">End Date</label>
           <input
             type="date"
             value={formData.endDate}
             onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
-            className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[--intel-gold]/50"
+            className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-[--intel-gold]/50"
             required
           />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-white mb-2">Description</label>
+        <label className="block text-sm font-medium text-foreground mb-2">Description</label>
         <textarea
           value={formData.description}
           onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
           placeholder="Describe the cultural exchange program..."
           rows={4}
-          className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder:text-[--intel-silver] focus:outline-none focus:border-[--intel-gold]/50 resize-none"
+          className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-foreground placeholder:text-[--intel-silver] focus:outline-none focus:border-[--intel-gold]/50 resize-none"
           required
         />
       </div>
@@ -815,7 +968,7 @@ const CreateExchangeForm: React.FC<CreateExchangeFormProps> = ({ onSubmit, onCan
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-[--intel-silver] hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+            className="px-4 py-2 text-[--intel-silver] hover:text-foreground hover:bg-white/10 rounded-lg transition-colors"
           >
             Cancel
           </button>
@@ -829,6 +982,7 @@ const CreateExchangeForm: React.FC<CreateExchangeFormProps> = ({ onSubmit, onCan
         </div>
       </div>
     </form>
+    </div>
   );
 };
 

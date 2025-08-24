@@ -108,199 +108,95 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
   const [flagUrls, setFlagUrls] = useState<Record<string, string>>({});
   const [showTrending, setShowTrending] = useState(false);
 
-  // Fetch real data
-  const { data: allCountries } = api.countries.getAll.useQuery();
-  const { data: globalStats } = api.countries.getGlobalStats.useQuery();
+  // tRPC mutations for engagement
+  const engageWithActivityMutation = api.activities.engageWithActivity.useMutation();
+
+  // Fetch live data from tRPC APIs
+  const { data: activitiesData, isLoading: activitiesLoading, refetch: refetchActivities } = api.activities.getGlobalFeed.useQuery({
+    limit: 20,
+    filter: activeTab === 'achievements' ? 'achievements' : 'all',
+    category: filterType,
+  });
+
+  const { data: trendingData, isLoading: trendingLoading } = api.activities.getTrendingTopics.useQuery({
+    limit: 6,
+    timeRange: '24h',
+  });
+
   const { data: userCountry } = api.countries.getByIdAtTime.useQuery(
     { id: userProfile?.countryId || '' },
     { enabled: !!userProfile?.countryId }
   );
 
-  // Generate trending topics from real data
+  // Transform trending data
   const trendingTopics: TrendingTopic[] = useMemo(() => {
-    if (!allCountries?.countries) return [];
-    const countries = allCountries.countries;
-    const topics: TrendingTopic[] = [];
-    
-    // Economic achievements
-    const extravagantCountries = countries.filter(c => c.economicTier === 'Extravagant').length;
-    if (extravagantCountries > 0) {
-      topics.push({ id: '1', title: 'Economic Powerhouse Achievement', category: 'Achievement', participants: extravagantCountries, trend: 'up' });
-    }
-    
-    // Growth trends
-    const highGrowthCountries = countries.filter(c => (c.adjustedGdpGrowth || 0) > 0.04).length;
-    if (highGrowthCountries > 0) {
-      topics.push({ id: '2', title: 'High Growth Nations', category: 'Economics', participants: highGrowthCountries, trend: 'up' });
-    }
-    
-    // Population milestones
-    const largePopulationCountries = countries.filter(c => (c.currentPopulation || 0) > 50000000).length;
-    if (largePopulationCountries > 0) {
-      topics.push({ id: '3', title: 'Population Milestones', category: 'Demographics', participants: largePopulationCountries, trend: 'stable' });
-    }
-    
-    return topics;
-  }, [allCountries]);
+    if (!trendingData) return [];
+    return trendingData.map(topic => ({
+      id: topic.id,
+      title: topic.title,
+      category: topic.category,
+      participants: topic.participants,
+      trend: topic.trend,
+    }));
+  }, [trendingData]);
 
-  // Generate realistic activity feed
+  // Transform activity feed data
   const activityFeed = useMemo((): ActivityFeedItem[] => {
-    if (!allCountries?.countries) return [];
+    if (!activitiesData?.activities) return [];
 
-    const countries = allCountries.countries;
-    const activities: ActivityFeedItem[] = [];
-    const now = new Date();
+    return activitiesData.activities.map((activity) => ({
+      id: activity.id,
+      type: activity.type as ActivityFeedItem['type'],
+      category: activity.category as ActivityFeedItem['category'],
+      user: {
+        id: activity.user.id,
+        name: activity.user.name,
+        avatar: undefined, // No placeholder avatars - only real user avatars
+        countryName: activity.user.countryName,
+        countryFlag: activity.user.countryName ? flagUrls[activity.user.countryName] : undefined,
+      },
+      content: {
+        title: activity.content.title,
+        description: activity.content.description,
+        metadata: activity.content.metadata,
+      },
+      engagement: {
+        likes: activity.engagement.likes,
+        comments: activity.engagement.comments,
+        shares: activity.engagement.shares,
+        views: activity.engagement.views || 0,
+      },
+      timestamp: new Date(activity.timestamp),
+      priority: activity.priority as ActivityFeedItem['priority'],
+      visibility: activity.visibility as ActivityFeedItem['visibility'],
+      relatedCountries: activity.relatedCountries || [],
+    }));
+  }, [activitiesData, flagUrls]);
 
-    // Generate achievement activities
-    const topPerformers = [...countries]
-      .sort((a, b) => (b.currentTotalGdp || 0) - (a.currentTotalGdp || 0))
-      .slice(0, 10);
-
-    topPerformers.forEach((country, index) => {
-      if (Math.random() > 0.6) { // 40% chance of recent activity
-        activities.push({
-          id: `achievement-${country.id}-${index}`,
-          type: 'achievement',
-          category: 'game',
-          user: {
-            id: `user-${country.id}`,
-            name: country.leader || `Leader of ${country.name}`,
-            countryName: country.name,
-            countryFlag: flagUrls[country.name]
-          },
-          content: {
-            title: 'Economic Milestone Reached',
-            description: `${country.name} has achieved ${formatCurrency(country.currentTotalGdp || 0)} total GDP, entering the ${country.economicTier} tier!`,
-            metadata: {
-              gdp: country.currentTotalGdp,
-              tier: country.economicTier,
-              growth: country.adjustedGdpGrowth
+  // Load flags for countries mentioned in activities
+  useEffect(() => {
+    if (activitiesData?.activities) {
+      const countryNames = new Set<string>();
+      
+      activitiesData.activities.forEach(activity => {
+        if (activity.user.countryName) {
+          countryNames.add(activity.user.countryName);
+        }
+      });
+      
+      if (countryNames.size > 0) {
+        unifiedFlagService.batchGetFlags(Array.from(countryNames)).then((flags) => {
+          const filteredFlags: Record<string, string> = {};
+          Object.entries(flags).forEach(([key, value]) => {
+            if (value !== null) {
+              filteredFlags[key] = value;
             }
-          },
-          engagement: {
-            likes: Math.floor(Math.random() * 50) + 10,
-            comments: Math.floor(Math.random() * 20) + 2,
-            shares: Math.floor(Math.random() * 15) + 1,
-            views: Math.floor(Math.random() * 200) + 50
-          },
-          timestamp: new Date(now.getTime() - Math.random() * 48 * 60 * 60 * 1000),
-          priority: country.economicTier === 'Extravagant' ? 'critical' : 'high',
-          visibility: 'public',
-          relatedCountries: [country.id]
+          });
+          setFlagUrls(filteredFlags);
         });
       }
-    });
-
-    // Generate social activities
-    if (userProfile?.countryId) {
-      activities.push({
-        id: 'social-follow-1',
-        type: 'social',
-        category: 'social',
-        user: {
-          id: 'user-random-1',
-          name: 'Alexandra Chen',
-          avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b5c5?w=100',
-          countryName: 'Valorheim',
-          countryFlag: flagUrls['Valorheim']
-        },
-        content: {
-          title: 'New Follower',
-          description: `Started following ${userCountry?.name || 'your country'} and added them to their watchlist`,
-          metadata: {
-            followType: 'country'
-          }
-        },
-        engagement: {
-          likes: 5,
-          comments: 1,
-          shares: 0,
-          views: 23
-        },
-        timestamp: new Date(now.getTime() - 3 * 60 * 60 * 1000), // 3 hours ago
-        priority: 'medium',
-        visibility: 'public'
-      });
     }
-
-    // Generate diplomatic activities
-    activities.push({
-      id: 'diplomatic-1',
-      type: 'diplomatic',
-      category: 'game',
-      user: {
-        id: 'system',
-        name: 'IxStats System',
-        avatar: undefined
-      },
-      content: {
-        title: 'New Trade Alliance Formed',
-        description: 'Lysandria and Crystalia have established a comprehensive trade agreement, boosting both economies',
-        metadata: {
-          countries: ['Lysandria', 'Crystalia'],
-          tradeValue: 50000000000,
-          agreementType: 'trade'
-        }
-      },
-      engagement: {
-        likes: 34,
-        comments: 8,
-        shares: 12,
-        views: 156
-      },
-      timestamp: new Date(now.getTime() - 6 * 60 * 60 * 1000), // 6 hours ago
-      priority: 'high',
-      visibility: 'public',
-      relatedCountries: ['lysandria', 'crystalia']
-    });
-
-    // Generate meta/platform activities
-    activities.push({
-      id: 'meta-1',
-      type: 'meta',
-      category: 'platform',
-      user: {
-        id: 'platform-team',
-        name: 'IxStats Team',
-        avatar: undefined
-      },
-      content: {
-        title: 'New Feature: Enhanced Activity Feed',
-        description: 'Introducing the new social activity feed with real-time updates, friend following, and diplomatic intelligence',
-        metadata: {
-          version: '2.1.0',
-          features: ['Social Feed', 'Friend System', 'Diplomatic Tracking']
-        }
-      },
-      engagement: {
-        likes: 128,
-        comments: 23,
-        shares: 45,
-        views: 892
-      },
-      timestamp: new Date(now.getTime() - 12 * 60 * 60 * 1000), // 12 hours ago
-      priority: 'medium',
-      visibility: 'public'
-    });
-
-    return activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  }, [allCountries, userProfile, userCountry, flagUrls]);
-
-  // Load flags
-  useEffect(() => {
-    if (allCountries?.countries) {
-      const countryNames = allCountries.countries.map(c => c.name);
-      unifiedFlagService.batchGetFlags(countryNames).then((flags) => {
-        const filteredFlags: Record<string, string> = {};
-        Object.entries(flags).forEach(([key, value]) => {
-          if (value !== null) {
-            filteredFlags[key] = value;
-          }
-        });
-        setFlagUrls(filteredFlags);
-      });
-    }
-  }, [allCountries]);
+  }, [activitiesData]);
 
   const getActivityIcon = (type: ActivityFeedItem['type']) => {
     switch (type) {
@@ -349,6 +245,22 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
     return date.toLocaleDateString();
   };
 
+  const handleEngagement = async (activityId: string, action: 'like' | 'comment' | 'share' | 'view') => {
+    if (!user?.id) return;
+    
+    try {
+      await engageWithActivityMutation.mutateAsync({
+        activityId,
+        action,
+        userId: user.id,
+      });
+      // Refetch the activities to show updated engagement numbers
+      await refetchActivities();
+    } catch (error) {
+      console.error('Error engaging with activity:', error);
+    }
+  };
+
   const filteredActivities = activityFeed.filter(activity => {
     const matchesTab = activeTab === 'all' || 
       (activeTab === 'following' && userProfile?.followingCountries?.some(id => 
@@ -366,7 +278,7 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
     return matchesTab && matchesFilter && matchesSearch;
   });
 
-  if (!allCountries) {
+  if (activitiesLoading || trendingLoading) {
     return (
       <Card className={cn("w-full", className)}>
         <CardHeader>
@@ -401,7 +313,7 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Activity className="h-5 w-5 text-blue-500" />
-            Platform Activity Feed
+             Activity Feed
             <Badge variant="secondary" className="ml-2">Live</Badge>
           </CardTitle>
           
@@ -583,29 +495,35 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
                         </div>
                       )}
 
-                      {/* Engagement Actions */}
+                      {/* Engagement Actions - REAL DATA ONLY */}
                       <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                        <button className="flex items-center gap-1 hover:text-red-500 transition-colors">
+                        <button 
+                          className="flex items-center gap-1 hover:text-red-500 transition-colors disabled:opacity-50"
+                          onClick={() => handleEngagement(activity.id, 'like')}
+                          disabled={engageWithActivityMutation.isLoading}
+                        >
                           <Heart className="h-4 w-4" />
-                          {activity.engagement.likes}
+                          0
                         </button>
-                        <button className="flex items-center gap-1 hover:text-blue-500 transition-colors">
+                        <button 
+                          className="flex items-center gap-1 hover:text-blue-500 transition-colors disabled:opacity-50"
+                          onClick={() => handleEngagement(activity.id, 'comment')}
+                          disabled={engageWithActivityMutation.isLoading}
+                        >
                           <MessageSquare className="h-4 w-4" />
-                          {activity.engagement.comments}
+                          0
                         </button>
-                        <button className="flex items-center gap-1 hover:text-green-500 transition-colors">
+                        <button 
+                          className="flex items-center gap-1 hover:text-green-500 transition-colors disabled:opacity-50"
+                          onClick={() => handleEngagement(activity.id, 'share')}
+                          disabled={engageWithActivityMutation.isLoading}
+                        >
                           <Share2 className="h-4 w-4" />
-                          {activity.engagement.shares}
+                          0
                         </button>
                         <button className="flex items-center gap-1 hover:text-purple-500 transition-colors">
                           <Bookmark className="h-4 w-4" />
                         </button>
-                        {activity.engagement.views && (
-                          <span className="flex items-center gap-1 ml-auto">
-                            <Eye className="h-4 w-4" />
-                            {activity.engagement.views}
-                          </span>
-                        )}
                       </div>
                     </div>
                   </div>
