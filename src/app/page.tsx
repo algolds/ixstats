@@ -1,12 +1,12 @@
 import { HydrateClient } from "~/trpc/server";
-import { CommandCenter } from "./_components/CommandCenter";
+import { EnhancedCommandCenter } from "./_components/EnhancedCommandCenter";
 
 export default function Home() {
-  // Landing page - show CommandCenter without authentication checks
-  // Authentication and redirects will be handled client-side if needed
+  // Enhanced home page with social activity feed and platform-wide engagement
+  // Combines the best of the original CommandCenter with new social features
   return (
     <HydrateClient>
-      <CommandCenter />
+      <EnhancedCommandCenter />
     </HydrateClient>
   );
 }

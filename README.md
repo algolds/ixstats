@@ -1,9 +1,9 @@
-# IxStats - Advanced Economic Simulation Platform
+# IxStats - Advanced Worldbuilding Platform
 *65% Complete - Production-Ready Core with Advanced Features in Development*
 
 A comprehensive Next.js 15 application for real-time economic modeling, strategic intelligence, and executive nation management. Features sophisticated tier-based economic modeling, glass physics UI framework, comprehensive intelligence systems, and IxTime synchronization with Discord bot integration. Built for tabletop RPG campaigns, world-building, and advanced economic simulation.
 
-## 📊 **Current Status (January 2025)**
+## 📊 **Current Status (Aug 2025)**
 - ✅ **Core Infrastructure** (95%): Next.js 15, Prisma, tRPC APIs, IxTime system fully operational
 - ✅ **Design System** (90%): Glass physics framework, 100+ UI components, responsive design
 - 🔄 **Intelligence System** (75%): Components built, live data integration in progress
@@ -182,10 +182,10 @@ src/
 ### Core Systems
 
 #### IxTime System (`src/lib/ixtime.ts`)
-The heart of the economic simulation, providing synchronized time flow:
+The heart of the world simulation, providing a global synchronized time flow:
 - **Real-world epoch**: October 4, 2020 (when IxTime started)
 - **In-game epoch**: January 1, 2028 (roster data baseline)
-- **Base time multiplier**: 4x faster than real time (configurable 0x-10x)
+- **Base time multiplier**: 2x faster than real time (configurable 0x-10x)
 - **Discord bot integration**: Synchronized time control across services
 - **Key functions**: `getCurrentIxTime()`, `getYearsSinceGameEpoch()`, `convertToIxTime()`
 
@@ -205,8 +205,8 @@ Comprehensive intelligence and crisis management system:
 - **Economic Indicators**: Advanced economic monitoring and trend analysis
 - **Treaty Management**: International agreement tracking and compliance monitoring
 
-#### MyCountry Intelligence System (`src/app/mycountry/new/`)
-Advanced executive intelligence platform with predictive analytics and decision support:
+#### MyCountry System (`src/app/mycountry/new/`)
+Advanced executive platform with predictive analytics and decision support:
 - **Component Architecture**: 4 main intelligence components with TypeScript type safety
 - **Data Transformation**: Converts country data to actionable intelligence with forecasting
 - **Smart Notifications**: Multi-dimensional priority scoring with contextual intelligence
@@ -216,7 +216,7 @@ Advanced executive intelligence platform with predictive analytics and decision 
 
 ## 🎯 Core Features
 
-### 🏛️ MyCountry® Executive Intelligence Suite
+### 🏛️ MyCountry® Suite
 Advanced executive command interface with AI-powered intelligence and strategic decision support:
 
 #### 🧠 Intelligence System Architecture

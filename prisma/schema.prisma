@@ -976,7 +976,95 @@ model PostFlag {
   @@unique([userId, postId])
 }
 
-model countryActivity {
+// Activity Feed System
+model ActivityFeed {
+  id          String   @id @default(cuid())
+  type        String   // 'achievement', 'diplomatic', 'economic', 'social', 'meta'
+  category    String   @default("game") // 'game', 'platform', 'social'  
+  userId      String?  // Clerk user ID (optional for system activities)
+  countryId   String?  // Country ID (optional for user activities)
+  title       String
+  description String
+  metadata    String?  // JSON object with additional data
+  priority    Priority @default(MEDIUM)
+  visibility  String   @default("public") // 'public', 'followers', 'friends'
+  relatedCountries String? // JSON array of country IDs
+  
+  // Engagement metrics
+  likes       Int      @default(0)
+  comments    Int      @default(0)
+  shares      Int      @default(0)
+  views       Int      @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([type])
+  @@index([category])
+  @@index([userId])
+  @@index([countryId])
+  @@index([priority])
+  @@index([createdAt])
+  @@index([visibility])
+}
+
+model DiplomaticEvent {
+  id          String   @id @default(cuid())
+  country1Id  String
+  country2Id  String
+  eventType   String   // 'trade_agreement', 'alliance', 'conflict', 'treaty'
+  title       String
+  description String
+  tradeValue  Float?   // For trade agreements
+  status      String   @default("active") // 'active', 'expired', 'cancelled'
+  metadata    String?  // JSON object with additional event data
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([country1Id])
+  @@index([country2Id])
+  @@index([eventType])
+  @@index([createdAt])
+}
+
+model UserConnection {
+  id               String   @id @default(cuid())
+  userId           String   // Clerk user ID
+  targetUserId     String?  // Target user (for friend connections)
+  targetCountryId  String?  // Target country (for following countries)
+  connectionType   String   // 'friend', 'following_user', 'following_country'
+  status           String   @default("active") // 'active', 'pending', 'blocked'
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  @@unique([userId, targetUserId, connectionType])
+  @@unique([userId, targetCountryId, connectionType])
+  @@index([userId])
+  @@index([targetUserId])
+  @@index([targetCountryId])
+  @@index([connectionType])
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String   // Clerk user ID
+  achievementId String   
+  title         String
+  description   String
+  category      String   // 'economic', 'diplomatic', 'social', 'growth', 'milestone'
+  rarity        String   // 'common', 'uncommon', 'rare', 'epic', 'legendary'
+  iconUrl       String?
+  metadata      String?  // JSON object with achievement data
+  unlockedAt    DateTime @default(now())
+  
+  @@index([userId])
+  @@index([category])
+  @@index([rarity])
+  @@index([unlockedAt])
+}
+
+// Legacy models for backward compatibility (renamed to follow conventions)
+model CountryActivity {
   id        String   @id @default(cuid())
   countryId String
   type      String
@@ -988,7 +1076,7 @@ model countryActivity {
   @@index([timestamp])
 }
 
-model diplomaticAction {
+model DiplomaticAction {
   id               String   @id @default(cuid())
   fromCountryId    String
   toCountryId      String
