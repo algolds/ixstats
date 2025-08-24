@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { CountriesHeader } from "./CountriesHeader";
-import { CommandPalette } from "~/components/DynamicIsland";
 import { CountriesFocusGridModular } from "./CountriesFocusGridModular";
 import { CountriesStats } from "./CountriesStats";
 import { type CountryCardData } from "~/components/countries/CountryFocusCard";
@@ -220,8 +219,6 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
           onClearFilters={handleClearFilters}
         />
 
-        {/* Command Palette */}
-        <CommandPalette />
       </div>
     </div>
   );

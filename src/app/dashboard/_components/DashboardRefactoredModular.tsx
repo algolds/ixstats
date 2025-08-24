@@ -20,7 +20,6 @@ import { MyCountryCard } from "./MyCountryCard";
 import { GlobalIntelligenceCard } from "./GlobalIntelligenceCard";
 import { ECICard } from "./ECICard";
 import { SDICard } from "./SDICard";
-import { CommandPalette } from "~/components/DynamicIsland";
 import { TrendingTopicsCard } from "./TrendingTopicsCard";
 import { ThinkPagesHubCard } from "./ThinkPagesHubCard";
 import { ThinkPagesStatusCard } from "./ThinkPagesStatusCard";
@@ -674,8 +673,6 @@ const DashboardRefactoredModular = React.memo(function DashboardRefactoredModula
             </>
           )}
 
-          {/* Command Palette */}
-          <CommandPalette />
         </div>
       </div>
     </React.Fragment>

@@ -1,35 +1,24 @@
 "use client";
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { cn } from '~/lib/utils';
 import { 
-  Plus, 
-  Crown, 
-  Newspaper, 
   Users, 
   TrendingUp, 
   Search, 
-  Settings, 
   RefreshCw,
   Loader2
 } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { AccountSettingsModal } from './AccountSettingsModal';
-import { AccountCreationModal } from './AccountCreationModal';
-import { PostComposer } from './PostComposer';
 import { ThinkpagesPost } from './ThinkpagesPost';
-import { EnhancedAccountManager } from './EnhancedAccountManager';
-import { GlassCanvasComposer } from './GlassCanvasComposer';
 import { LiveEventsFeed } from './LiveEventsFeed';
 import { ThinkPagesGuide } from './ThinkPagesGuide';
 import { api } from '~/trpc/react';
 import { toast } from 'sonner';
 import { BlurFade } from '~/components/magicui/blur-fade';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 
 interface ThinkpagesSocialPlatformProps {
   countryId: string;
@@ -42,14 +31,8 @@ export function ThinkpagesSocialPlatform({
   countryName,
   isOwner
 }: ThinkpagesSocialPlatformProps) {
-  const [selectedAccount, setSelectedAccount] = useState<any | null>(null);
-  const [showAccountCreation, setShowAccountCreation] = useState(false);
   const [feedFilter, setFeedFilter] = useState<'recent' | 'trending' | 'hot'>('recent');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showAccountSettings, setShowAccountSettings] = useState(false);
-  const [selectedAccountForSettings, setSelectedAccountForSettings] = useState<any | null>(null);
-
-  const { data: accounts, isLoading: isLoadingAccounts, refetch: refetchAccounts } = api.thinkpages.getAccountsByCountry.useQuery({ countryId });
   const { data: feed, isLoading: isLoadingFeed, refetch: refetchFeed } = api.thinkpages.getFeed.useQuery({ countryId, filter: feedFilter });
   const { data: trendingTopics, isLoading: isLoadingTrending, refetch: refetchTrending } = api.thinkpages.getTrendingTopics.useQuery({ limit: 5 });
   const calculateTrendingMutation = api.thinkpages.calculateTrendingTopics.useMutation({
@@ -62,28 +45,15 @@ export function ThinkpagesSocialPlatform({
     }
   });
 
-  const handleAccountCreated = useCallback(() => {
-    refetchAccounts();
-  }, [refetchAccounts]);
-
-  const handlePost = useCallback(() => {
-    refetchFeed();
-  }, [refetchFeed]);
-
-  const getAccountTypeCount = (type: string) => {
-    return accounts?.filter(account => account.accountType === type).length || 0;
-  };
-
-  const getAccountTypeColor = (type: string) => {
-    switch (type) {
-      case 'government': return 'border-amber-500/30 bg-amber-500/10 text-amber-400';
-      case 'media': return 'border-blue-500/30 bg-blue-500/10 text-blue-400';
-      case 'citizen': return 'border-green-500/30 bg-green-500/10 text-green-400';
-      default: return 'border-gray-500/30 bg-gray-500/10 text-gray-400';
-    }
-  };
 
   const filteredPosts = feed?.posts.filter(post => {
+    // Only show posts from this country's accounts
+    const isFromThisCountry = post.account.countryId === countryId;
+    
+    if (!isFromThisCountry) {
+      return false;
+    }
+    
     if (searchQuery) {
       return post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
              post.account.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -94,33 +64,15 @@ export function ThinkpagesSocialPlatform({
 
   return (
     <div className="space-y-6">
+      {/* Country Feed Header */}
+      <div className="text-center space-y-2">
+        <h3 className="text-xl font-bold text-[--intel-gold]">{countryName} ThinkPages</h3>
+        <p className="text-[--intel-silver] text-sm">Posts and thoughts from this nation</p>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Sidebar - Account Manager */}
-        <div className="lg:col-span-3 space-y-4">
-          {isLoadingAccounts ? (
-            <Card className="glass-hierarchy-child">
-              <CardContent className="p-8 text-center">
-                <Loader2 className="animate-spin h-8 w-8 mx-auto" />
-              </CardContent>
-            </Card>
-          ) : (
-            <EnhancedAccountManager
-              countryId={countryId}
-              accounts={accounts || []}
-              selectedAccount={selectedAccount}
-              onAccountSelect={setSelectedAccount}
-              onAccountSettings={(account) => { setSelectedAccountForSettings(account); setShowAccountSettings(true); }}
-              onCreateAccount={() => setShowAccountCreation(true)}
-              isOwner={isOwner}
-            />
-          )}
-        </div>
-
-        {/* Main Content Area */}
-        <div className="lg:col-span-6 space-y-4">
-          {/* Thinkpages Header with Canonical Design */}
-          
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Feed - Takes up most space */}
+        <div className="lg:col-span-2 space-y-4">
           <Card className="glass-hierarchy-child">
             <CardContent className="p-4">
               <div className="flex items-center gap-4">
@@ -129,7 +81,7 @@ export function ThinkpagesSocialPlatform({
                   <Input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search posts, accounts, hashtags..."
+                    placeholder={`Search ${countryName} posts and accounts...`}
                     className="pl-10"
                   />
                 </div>
@@ -168,14 +120,6 @@ export function ThinkpagesSocialPlatform({
             </CardContent>
           </Card>
 
-          {isOwner && selectedAccount && (
-            <GlassCanvasComposer
-              account={selectedAccount}
-              onPost={handlePost}
-              placeholder="What's happening in your nation? Share with live economic data..."
-              countryId={countryId}
-            />
-          )}
 
           <div className="space-y-4">
             <AnimatePresence>
@@ -183,7 +127,7 @@ export function ThinkpagesSocialPlatform({
                 <BlurFade key={post.id} delay={0.05 * index} inView={true}>
                   <ThinkpagesPost
                     post={post}
-                    currentUserAccountId={selectedAccount?.id || ''}
+                    currentUserAccountId={''}
                     onLike={(postId) => {
                       refetchFeed();
                     }}
@@ -191,7 +135,6 @@ export function ThinkpagesSocialPlatform({
                       refetchFeed();
                     }}
                     onReply={(postId) => {
-                      // Open reply composer
                       console.log('Reply to:', postId);
                       refetchFeed();
                     }}
@@ -215,11 +158,11 @@ export function ThinkpagesSocialPlatform({
               <Card className="glass-hierarchy-child">
                 <CardContent className="p-8 text-center">
                   <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No Thoughts Found</h3>
+                  <h3 className="text-lg font-semibold mb-2">No Posts from {countryName}</h3>
                   <p className="text-muted-foreground">
                     {searchQuery 
-                      ? "No posts match your search criteria." 
-                      : "Be the first to think something on Thinkpages!"
+                      ? "No posts from this country match your search criteria." 
+                      : `This country hasn't posted anything on ThinkPages yet.`
                     }
                   </p>
                 </CardContent>
@@ -229,7 +172,7 @@ export function ThinkpagesSocialPlatform({
         </div>
 
         {/* Right Sidebar - Trending & Live Events */}
-        <div className="lg:col-span-3 space-y-4">
+        <div className="lg:col-span-1 space-y-4">
           {/* Trending Topics */}
           <Card className="glass-hierarchy-child">
             <CardHeader className="pb-3">
@@ -287,23 +230,6 @@ export function ThinkpagesSocialPlatform({
         </div>
       </div>
 
-      <AccountCreationModal
-        isOpen={showAccountCreation}
-        onClose={() => setShowAccountCreation(false)}
-        onAccountCreated={handleAccountCreated}
-        countryId={countryId}
-        countryName={countryName}
-        existingAccountCount={accounts?.length || 0}
-      />
-
-      {selectedAccountForSettings && (
-        <AccountSettingsModal
-          isOpen={showAccountSettings}
-          onClose={() => setShowAccountSettings(false)}
-          account={selectedAccountForSettings}
-          onAccountUpdate={() => refetchAccounts()}
-        />
-      )}
     </div>
   );
 }
