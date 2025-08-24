@@ -61,6 +61,8 @@ import { ThinkpagesSocialPlatform } from "~/components/thinkpages/ThinkpagesSoci
 import { DynamicIsland, DynamicContainer, DynamicTitle, DynamicDiv, DynamicIslandProvider, SIZE_PRESETS } from "~/components/ui/dynamic-island";
 import type { AchievementConstellation as AchievementConstellationType, DiplomaticAchievement } from "~/types/achievement-constellation";
 import { ACHIEVEMENT_TEMPLATES, calculatePrestigeScore } from "~/types/achievement-constellation";
+import { api } from "~/trpc/react";
+import { toast } from "sonner";
 
 interface DiplomaticIntelligenceProfileProps {
   country: EnhancedCountryProfileData;
@@ -100,6 +102,30 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
+  // ThinkShare integration
+  const { data: viewerAccounts } = api.thinkpages.getAccountsByCountry.useQuery(
+    { countryId: viewerCountryId || '' },
+    { enabled: !!viewerCountryId }
+  );
+  const { data: targetCountryAccounts } = api.thinkpages.getAccountsByCountry.useQuery(
+    { countryId: country.id },
+    { enabled: !!country.id }
+  );
+
+  const createConversationMutation = api.thinkpages.createConversation.useMutation({
+    onSuccess: (newConversation: any) => {
+      toast.success(`Opening secure channel with ${country.name}...`);
+      // Redirect to ThinkShare and auto-select the messages view
+      const url = new URL('/thinkpages', window.location.origin);
+      url.searchParams.set('view', 'messages');
+      url.searchParams.set('conversation', newConversation.id);
+      window.location.href = url.toString();
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to establish secure communication: ${error.message}`);
+    }
+  });
+
   // Calculate intelligence metrics with clearance-based access
   const intelligenceMetrics = useMemo(() => {
     const baseMetrics = {
@@ -135,6 +161,38 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
   const handleSocialAction = useCallback((action: SocialActionType) => {
     onSocialAction?.(action, country.id);
   }, [onSocialAction, country.id]);
+
+  // Handle ThinkShare messaging
+  const handleStartThinkshareConversation = useCallback(async () => {
+    // Check if viewer has accounts
+    if (!viewerAccounts || viewerAccounts.length === 0) {
+      toast.error('You need a ThinkPages account to send messages. Please create one first.');
+      return;
+    }
+
+    // Check if target country has accounts
+    if (!targetCountryAccounts || targetCountryAccounts.length === 0) {
+      toast.error(`${country.name} does not have any ThinkPages accounts to message.`);
+      return;
+    }
+
+    // Use the viewer's primary account and target country's first government account (or first account)
+    const viewerAccount = viewerAccounts[0];
+    const targetAccount = targetCountryAccounts.find(acc => acc.accountType === 'government') || targetCountryAccounts[0];
+
+    if (!viewerAccount || !targetAccount) {
+      toast.error('Unable to find suitable accounts for messaging.');
+      return;
+    }
+
+    try {
+      await createConversationMutation.mutateAsync({
+        participantIds: [viewerAccount.id, targetAccount.id]
+      });
+    } catch (error) {
+      // Error is handled in the mutation's onError callback
+    }
+  }, [viewerAccounts, targetCountryAccounts, country.name, createConversationMutation]);
 
   // Toggle card expansion
   const toggleCard = useCallback((cardId: string) => {
@@ -817,11 +875,12 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                 Follow Nation
               </button>
               <button
-                onClick={() => handleSocialAction('message')}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg transition-colors"
+                onClick={handleStartThinkshareConversation}
+                disabled={createConversationMutation.isPending}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg transition-colors disabled:opacity-50"
               >
                 <RiChat3Line className="h-4 w-4" />
-                Secure Message
+                {createConversationMutation.isPending ? 'Starting...' : 'Secure Message'}
               </button>
               <button
                 onClick={() => window.location.href = `/countries/${country.id}`}
@@ -1497,22 +1556,25 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                   
                   <DynamicDiv className="flex-1 overflow-y-auto space-y-2">
                     {[
-                      { action: 'follow', icon: RiUserAddLine, label: 'Follow Nation', desc: 'Monitor developments', color: 'text-blue-400' },
-                      { action: 'message', icon: RiChat3Line, label: 'Diplomatic Message', desc: 'Secure correspondence', color: 'text-purple-400' },
-                      { action: 'propose', icon: RiShakeHandsLine, label: 'Alliance Proposal', desc: 'Formal proposal', color: 'text-green-400' },
-                      { action: 'congratulate', icon: RiStarLine, label: 'Congratulate', desc: 'Recognize achievements', color: 'text-[--intel-gold]' }
+                      { action: 'follow', icon: RiUserAddLine, label: 'Follow Nation', desc: 'Monitor developments', color: 'text-blue-400', handler: () => handleSocialAction('follow') },
+                      { action: 'message', icon: RiChat3Line, label: 'Diplomatic Message', desc: 'Secure correspondence', color: 'text-purple-400', handler: handleStartThinkshareConversation },
+                      { action: 'propose', icon: RiShakeHandsLine, label: 'Alliance Proposal', desc: 'Formal proposal', color: 'text-green-400', handler: () => handleSocialAction('propose') },
+                      { action: 'congratulate', icon: RiStarLine, label: 'Congratulate', desc: 'Recognize achievements', color: 'text-[--intel-gold]', handler: () => handleSocialAction('congratulate') }
                     ].map(actionItem => (
                       <button
                         key={actionItem.action}
                         onClick={() => {
-                          handleSocialAction(actionItem.action as SocialActionType);
+                          actionItem.handler();
                           setShowDiplomaticActions(false);
                         }}
-                        className="w-full flex items-center gap-3 p-3 bg-white/5 hover:bg-white/15 rounded-lg transition-colors text-left border border-white/10"
+                        disabled={actionItem.action === 'message' && createConversationMutation.isPending}
+                        className="w-full flex items-center gap-3 p-3 bg-white/5 hover:bg-white/15 rounded-lg transition-colors text-left border border-white/10 disabled:opacity-50"
                       >
                         <actionItem.icon className={cn("h-4 w-4", actionItem.color)} />
                         <div className="flex-1">
-                          <div className="font-medium text-white text-sm">{actionItem.label}</div>
+                          <div className="font-medium text-white text-sm">
+                            {actionItem.action === 'message' && createConversationMutation.isPending ? 'Starting...' : actionItem.label}
+                          </div>
                           <div className="text-xs text-[--intel-silver]">{actionItem.desc}</div>
                         </div>
                       </button>

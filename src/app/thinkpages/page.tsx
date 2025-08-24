@@ -62,6 +62,21 @@ export default function ThinkPagesMainPage() {
   const { user } = useUser();
   const [activeView, setActiveView] = useState<'feed' | 'thinktanks' | 'messages'>('feed');
 
+  // Handle URL parameters for auto-selecting view and conversation
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const viewParam = urlParams.get('view');
+      const conversationParam = urlParams.get('conversation');
+      
+      if (viewParam === 'messages') {
+        setActiveView('messages');
+      }
+      
+      // The conversation parameter will be handled by the ThinkshareMessages component
+    }
+  }, []);
+
   // Get user profile and country data
   const { data: userProfile } = api.users.getProfile.useQuery(
     { userId: user?.id || '' },

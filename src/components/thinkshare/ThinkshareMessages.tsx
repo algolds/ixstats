@@ -68,6 +68,20 @@ export function ThinkshareMessages({ countryId, countryName, userAccounts }: Thi
   const [searchQuery, setSearchQuery] = useState('');
   const [showNewConversationModal, setShowNewConversationModal] = useState(false);
 
+  // Handle URL parameter for auto-selecting conversation
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const conversationParam = urlParams.get('conversation');
+      
+      if (conversationParam) {
+        setSelectedConversation(conversationParam);
+        // Clean up URL after setting the conversation
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
+  }, []);
+
   // Get current user's primary account
   const currentAccount: Account | undefined = userAccounts?.[0];
 
