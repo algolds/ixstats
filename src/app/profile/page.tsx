@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import { toast } from 'sonner';
 import { api } from "~/trpc/react";
 
 // Force dynamic rendering to avoid SSG issues with Clerk
@@ -586,7 +587,7 @@ function ProfileContent() {
                                   toast.error(error.message || 'Failed to update Thinkpages settings');
                                 }
                               }}
-                              disabled={updateThinkpagesAccountMutation.isLoading}
+                              disabled={updateThinkpagesAccountMutation.isPending}
                               className="px-3 py-1 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white rounded-md text-sm disabled:opacity-50"
                             >
                               <Save className="h-4 w-4" />

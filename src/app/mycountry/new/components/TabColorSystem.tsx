@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import { createContext, useContext, useState, useCallback, useMemo } from 'react';
 
 // Comprehensive tab color system for MyCountry interface
 export interface TabTheme {
@@ -257,7 +257,9 @@ export const TAB_THEMES: Record<string, TabTheme> = {
 
 // Utility functions for tab theming
 export function getTabTheme(tabId: string): TabTheme {
-  return TAB_THEMES[tabId] || TAB_THEMES.global;
+  const theme = TAB_THEMES[tabId as keyof typeof TAB_THEMES];
+  if (theme) return theme;
+  return TAB_THEMES.global;
 }
 
 export function applyTabTheme(tabId: string): React.CSSProperties {
@@ -272,7 +274,7 @@ interface TabThemeContextType {
   applyThemeStyles: (element: HTMLElement) => void;
 }
 
-const TabThemeContext = React.createContext<TabThemeContextType | null>(null);
+const TabThemeContext = createContext<TabThemeContextType | null>(null);
 
 export function TabThemeProvider({ 
   children, 
@@ -281,21 +283,21 @@ export function TabThemeProvider({
   children: React.ReactNode;
   defaultTheme?: string;
 }) {
-  const [currentThemeId, setCurrentThemeId] = React.useState(defaultTheme);
+  const [currentThemeId, setCurrentThemeId] = useState(defaultTheme);
   const currentTheme = getTabTheme(currentThemeId);
 
-  const setTheme = React.useCallback((themeId: string) => {
+  const setTheme = useCallback((themeId: string) => {
     setCurrentThemeId(themeId);
   }, []);
 
-  const applyThemeStyles = React.useCallback((element: HTMLElement) => {
+  const applyThemeStyles = useCallback((element: HTMLElement) => {
     const theme = getTabTheme(currentThemeId);
     Object.entries(theme.cssVars).forEach(([property, value]) => {
       element.style.setProperty(property, value);
     });
   }, [currentThemeId]);
 
-  const contextValue = React.useMemo(() => ({
+  const contextValue = useMemo(() => ({
     currentTheme,
     setTheme,
     applyThemeStyles,
@@ -311,7 +313,7 @@ export function TabThemeProvider({
 }
 
 export function useTabTheme() {
-  const context = React.useContext(TabThemeContext);
+  const context = useContext(TabThemeContext);
   if (!context) {
     throw new Error('useTabTheme must be used within a TabThemeProvider');
   }
@@ -356,7 +358,7 @@ export function TabIndicator({
         boxShadow: isActive 
           ? `0 0 20px ${tabTheme.colors.glow}` 
           : undefined,
-        ringColor: tabTheme.colors.primary,
+        // ringColor: tabTheme.colors.primary, // Not a valid CSS property
       }}
     >
       <span className="relative z-10">{label}</span>

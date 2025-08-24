@@ -3,7 +3,8 @@
 
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState, memo, useEffect } from 'react';
+import type { FC } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, TrendingDown, AlertTriangle, Target, Brain, Clock, Zap, BarChart3 } from 'lucide-react';
 import { predictiveAnalyticsEngine } from '~/lib/predictive-analytics-engine';
@@ -50,7 +51,7 @@ interface ActionableInsightsProps {
  * Advanced Forward-Looking Intelligence Component
  * Displays AI-generated predictive analytics and strategic intelligence
  */
-const ForwardLookingIntelligence: React.FC<ForwardLookingIntelligenceProps> = React.memo(({
+const ForwardLookingIntelligence: FC<ForwardLookingIntelligenceProps> = memo(({
   countryId,
   viewMode = 'overview',
   className = ''
@@ -70,7 +71,7 @@ const ForwardLookingIntelligence: React.FC<ForwardLookingIntelligenceProps> = Re
   });
 
   // Generate forward intelligence when data is available
-  React.useEffect(() => {
+  useEffect(() => {
     if (country && intelligence && !isGenerating && !forwardIntelligence) {
       generateForwardIntelligence();
     }
@@ -372,7 +373,7 @@ const RiskAssessmentDisplay: React.FC<RiskAssessmentDisplayProps> = ({ riskAsses
 
       {/* Risk Factors Breakdown */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {Object.entries(riskAssessment.riskFactors).map(([category, risk]) => (
+        {Object.entries(riskAssessment.riskFactors || {}).map(([category, risk]: [string, any]) => (
           <div key={category} className="glass-card glass-depth-child p-4">
             <div className="flex items-center justify-between mb-3">
               <h4 className="font-medium capitalize">{category} Risk</h4>
@@ -390,7 +391,7 @@ const RiskAssessmentDisplay: React.FC<RiskAssessmentDisplayProps> = ({ riskAsses
               <div>
                 <div className="text-sm font-medium mb-1">Risk Factors:</div>
                 <ul className="space-y-1">
-                  {risk.factors.map((factor, index) => (
+                  {(risk.factors || []).map((factor: any, index: number) => (
                     <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
                       <span className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
                       {factor}
@@ -417,7 +418,7 @@ const RiskAssessmentDisplay: React.FC<RiskAssessmentDisplayProps> = ({ riskAsses
           <div>
             <h4 className="font-medium mb-2">Short-term Actions</h4>
             <ul className="space-y-2">
-              {riskAssessment.mitigation.shortTerm.map((action, index) => (
+              {(riskAssessment.mitigation?.shortTerm || []).map((action: any, index: number) => (
                 <li key={index} className="text-sm flex items-start gap-2">
                   <span className="w-2 h-2 bg-yellow-400 rounded-full mt-2 flex-shrink-0" />
                   {action}
@@ -429,7 +430,7 @@ const RiskAssessmentDisplay: React.FC<RiskAssessmentDisplayProps> = ({ riskAsses
           <div>
             <h4 className="font-medium mb-2">Long-term Strategy</h4>
             <ul className="space-y-2">
-              {riskAssessment.mitigation.longTerm.map((strategy, index) => (
+              {(riskAssessment.mitigation?.longTerm || []).map((strategy: any, index: number) => (
                 <li key={index} className="text-sm flex items-start gap-2">
                   <span className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0" />
                   {strategy}
@@ -496,7 +497,7 @@ const CompetitiveIntelligenceDisplay: React.FC<{ competitive: ForwardIntelligenc
       <div className="glass-card glass-depth-parent p-6">
         <h3 className="font-semibold mb-4">Performance Benchmarks</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {Object.entries(competitive.benchmarkComparisons).map(([metric, values]) => (
+          {Object.entries(competitive.benchmarkComparisons || {}).map(([metric, values]: [string, any]) => (
             <div key={metric} className="space-y-3">
               <h4 className="font-medium capitalize">{metric.replace(/([A-Z])/g, ' $1').trim()}</h4>
               <div className="space-y-2">
@@ -523,7 +524,7 @@ const CompetitiveIntelligenceDisplay: React.FC<{ competitive: ForwardIntelligenc
         <div className="glass-card glass-depth-child p-4">
           <h4 className="font-medium text-green-400 mb-3">Competitive Advantages</h4>
           <ul className="space-y-2">
-            {competitive.competitiveAdvantages.map((advantage, index) => (
+            {(competitive.competitiveAdvantages || []).map((advantage: any, index: number) => (
               <li key={index} className="text-sm flex items-start gap-2">
                 <TrendingUp className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
                 {advantage}
@@ -535,7 +536,7 @@ const CompetitiveIntelligenceDisplay: React.FC<{ competitive: ForwardIntelligenc
         <div className="glass-card glass-depth-child p-4">
           <h4 className="font-medium text-yellow-400 mb-3">Vulnerabilities</h4>
           <ul className="space-y-2">
-            {competitive.vulnerabilities.map((vulnerability, index) => (
+            {(competitive.vulnerabilities || []).map((vulnerability: any, index: number) => (
               <li key={index} className="text-sm flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
                 {vulnerability}
@@ -549,7 +550,7 @@ const CompetitiveIntelligenceDisplay: React.FC<{ competitive: ForwardIntelligenc
       <div className="glass-card glass-depth-parent p-6">
         <h3 className="font-semibold mb-4">Strategic Recommendations</h3>
         <ul className="space-y-3">
-          {competitive.strategicRecommendations.map((recommendation, index) => (
+          {(competitive.strategicRecommendations || []).map((recommendation: any, index: number) => (
             <li key={index} className="flex items-start gap-3">
               <span className="flex items-center justify-center w-6 h-6 bg-accent text-accent-foreground rounded-full text-xs font-medium">
                 {index + 1}
@@ -566,11 +567,11 @@ const CompetitiveIntelligenceDisplay: React.FC<{ competitive: ForwardIntelligenc
 /**
  * Milestone Timeline Component
  */
-const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({ milestones }) => {
+const MilestoneTimeline: FC<MilestoneTimelineProps> = ({ milestones }) => {
   const allMilestones = [
-    ...milestones.economicMilestones.map(m => ({ ...m, category: 'economic' })),
-    ...milestones.populationMilestones.map(m => ({ ...m, category: 'population' })),
-    ...milestones.tierProgressions.timeline.map(m => ({ 
+    ...(milestones.economicMilestones || []).map((m: any) => ({ ...m, category: 'economic' })),
+    ...(milestones.populationMilestones || []).map((m: any) => ({ ...m, category: 'population' })),
+    ...(milestones.tierProgressions?.timeline || []).map((m: any) => ({ 
       ...m, 
       category: 'tier',
       type: 'Tier Progression',
@@ -612,7 +613,7 @@ const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({ milestones }) => 
             <div className="mt-4">
               <h4 className="font-medium mb-2">Requirements:</h4>
               <ul className="space-y-1">
-                {milestones.tierProgressions.requirements.map((req, index) => (
+                {(milestones.tierProgressions?.requirements || []).map((req: any, index: number) => (
                   <li key={index} className="text-sm flex items-start gap-2">
                     <span className="w-2 h-2 bg-accent rounded-full mt-2 flex-shrink-0" />
                     {req}
@@ -696,7 +697,7 @@ const ActionableInsights: React.FC<ActionableInsightsProps> = ({ insights }) => 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
-            className={`glass-card glass-depth-child p-4 border-l-4 ${priorityColors[insight.priority]}`}
+            className={`glass-card glass-depth-child p-4 border-l-4 ${priorityColors[insight.priority as keyof typeof priorityColors] || priorityColors.medium}`}
           >
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center gap-2">
@@ -894,7 +895,4 @@ function getMilestoneCategoryColor(category: string): string {
 // Performance tracking
 ForwardLookingIntelligence.displayName = 'ForwardLookingIntelligence';
 
-export default PerformanceUtils.withPerformanceTracking(
-  ForwardLookingIntelligence,
-  'ForwardLookingIntelligence'
-);
+export default ForwardLookingIntelligence;

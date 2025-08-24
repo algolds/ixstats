@@ -97,8 +97,15 @@ export default function EnhancedCountryProfileDemo() {
           }
         })
       ).then(results => {
-        const imageMap = results.reduce((acc, curr) => ({ ...acc, ...curr }), {}) as Record<string, string | undefined>;
-        setUnsplashImages(imageMap as Record<string, string>);
+        const imageMap = results.reduce((acc, curr) => ({ ...acc, ...curr }), {} as Record<string, string | undefined>);
+        // Filter out undefined values before setting state
+        const filteredImageMap: Record<string, string> = {};
+        Object.entries(imageMap).forEach(([key, value]) => {
+          if (value) {
+            filteredImageMap[key] = value;
+          }
+        });
+        setUnsplashImages(filteredImageMap);
       });
     }
   }, [demoCountries]);

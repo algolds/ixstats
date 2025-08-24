@@ -148,7 +148,7 @@ function MobileSectionNavigator({
       </div>
       
       {sections.map((section) => {
-        const Icon = SectionIcons[section.id] || Activity;
+        const Icon = (SectionIcons[section.id as keyof typeof SectionIcons] || Activity) as React.ElementType;
         const isExpanded = expandedSections.has(section.id);
         
         return (
@@ -161,7 +161,7 @@ function MobileSectionNavigator({
               <Icon className="h-4 w-4 mr-3 flex-shrink-0" />
               <div className="flex-1 text-left">
                 <div className="text-sm font-medium">{section.title}</div>
-                <div className="text-xs text-foreground/60">{section.description}</div>
+                <div className="text-xs text-foreground/60">{section.purpose}</div>
               </div>
               {section.priority === 'critical' && (
                 <Badge variant="destructive" className="ml-2 text-xs">
@@ -218,7 +218,7 @@ interface CollapsibleSectionProps {
 function CollapsibleSection({
   id,
   title,
-  icon: Icon,
+  icon,
   badge,
   children,
   defaultExpanded = false,
@@ -228,6 +228,7 @@ function CollapsibleSection({
   purpose,
   disableHeaderClick = false
 }: CollapsibleSectionProps) {
+  const Icon = icon as React.ElementType;
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -287,12 +288,7 @@ function CollapsibleSection({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg glass-hierarchy-interactive">
-              <StandardIcon 
-                icon={Icon} 
-                size="md" 
-                theme={colorTheme} 
-                variant="primary"
-              />
+              <Icon className="h-5 w-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -446,7 +442,7 @@ export function UnifiedLayout({
                   className="fixed left-0 top-14 bottom-0 z-50 w-80 bg-background border-r border-border overflow-y-auto"
                 >
                   <MobileSectionNavigator
-                    sections={CONTENT_HIERARCHY.sections}
+                    sections={CONTENT_HIERARCHY}
                     onSectionSelect={setActiveTab}
                     expandedSections={mobileState.expandedSections}
                     onToggleSection={toggleSection}

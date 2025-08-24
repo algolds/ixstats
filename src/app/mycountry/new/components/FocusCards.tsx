@@ -16,6 +16,23 @@ import {
   Clock,
   Zap
 } from 'lucide-react';
+
+// Icon lookup for string-based icon resolution  
+const icons: Record<string, any> = {
+  TrendingUp, 
+  Users, 
+  Globe, 
+  Building2,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
+  MoreHorizontal,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Zap
+};
+
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
@@ -45,13 +62,8 @@ interface FocusAction {
   };
 }
 
-interface Alert {
-  id: string;
-  type: 'info' | 'warning' | 'error' | 'success';
-  title: string;
-  message: string;
-  urgent: boolean;
-}
+// Use standardized CriticalAlert from unified interfaces
+import type { CriticalAlert } from '~/types/intelligence-unified';
 
 interface FocusCard {
   id: string;
@@ -63,7 +75,7 @@ interface FocusCard {
   priority: 'high' | 'medium' | 'low';
   metrics: FocusMetric[];
   actions: FocusAction[];
-  alerts: Alert[];
+  alerts: CriticalAlert[];
   trends: {
     shortTerm: 'improving' | 'declining' | 'stable';
     longTerm: 'improving' | 'declining' | 'stable';
@@ -90,7 +102,7 @@ interface FocusCard {
   };
   metrics: FocusMetric[];
   quickActions: FocusAction[];
-  alerts: Alert[];
+  alerts: CriticalAlert[];
   trends: {
     shortTerm: 'improving' | 'declining' | 'stable';
     longTerm: 'improving' | 'declining' | 'stable';
@@ -175,7 +187,9 @@ function FocusCardComponent({
   onActionClick?: (cardId: string, actionId: string) => void;
 }) {
   const [expanded, setExpanded] = React.useState(false);
-  const Icon = card.icon;
+  // Resolve icon from string name to component
+  const iconName = typeof card.icon === 'string' ? card.icon : 'Zap';
+  const Icon = icons[iconName] || icons.Zap;
 
   const cardVariants: Variants = {
     hidden: { opacity: 0, y: 20, scale: 0.95 },
@@ -271,16 +285,16 @@ function FocusCardComponent({
                 <div
                   key={`alert-${alert.id || 'fallback'}-${alertIndex}`}
                   className={`flex items-center gap-2 p-2 rounded-md text-sm ${
-                    alert.type === 'error' ? 'bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-300' :
-                    alert.type === 'warning' ? 'bg-yellow-50 text-yellow-700 dark:bg-yellow-950/50 dark:text-yellow-300' :
-                    alert.type === 'success' ? 'bg-green-50 text-green-700 dark:bg-green-950/50 dark:text-green-300' :
+                    alert.severity === 'critical' ? 'bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-300' :
+                    alert.severity === 'high' ? 'bg-yellow-50 text-yellow-700 dark:bg-yellow-950/50 dark:text-yellow-300' :
+                    alert.severity === 'low' ? 'bg-green-50 text-green-700 dark:bg-green-950/50 dark:text-green-300' :
                     'bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300'
                   }`}
                 >
-                  {alert.type === 'error' && <AlertTriangle className="h-4 w-4" />}
-                  {alert.type === 'warning' && <Clock className="h-4 w-4" />}
-                  {alert.type === 'success' && <CheckCircle className="h-4 w-4" />}
-                  {alert.type === 'info' && <Zap className="h-4 w-4" />}
+                  {alert.severity === 'critical' && <AlertTriangle className="h-4 w-4" />}
+                  {alert.severity === 'high' && <Clock className="h-4 w-4" />}
+                  {alert.severity === 'low' && <CheckCircle className="h-4 w-4" />}
+                  {alert.severity === 'medium' && <Zap className="h-4 w-4" />}
                   <div>
                     <div className="font-medium">{alert.title}</div>
                     <div className="text-xs opacity-80">{alert.message}</div>
@@ -439,28 +453,28 @@ export function createDefaultFocusCards(countryData: {
     gdpPerCapita: number;
     growthRate: number;
     economicTier: string;
-    alerts: Alert[];
+    alerts: CriticalAlert[];
   };
   population: {
     healthScore: number;
     population: number;
     growthRate: number;
     populationTier: string;
-    alerts: Alert[];
+    alerts: CriticalAlert[];
   };
   diplomatic: {
     healthScore: number;
     allies: number;
     reputation: string;
     treaties: number;
-    alerts: Alert[];
+    alerts: CriticalAlert[];
   };
   government: {
     healthScore: number;
     approval: number;
     efficiency: string;
     stability: string;
-    alerts: Alert[];
+    alerts: CriticalAlert[];
   };
 }): FocusCard[] {
   return [

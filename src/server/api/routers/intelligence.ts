@@ -145,6 +145,8 @@ export const intelligenceRouter = createTRPCRouter({
       await ctx.db.intelligenceItem.createMany({
         data: sampleData.map(item => ({
           ...item,
+          category: item.category.toUpperCase() as any,
+          priority: item.priority.toUpperCase() as any,
           isActive: true
         }))
       });
@@ -195,6 +197,8 @@ if (process.env.NODE_ENV === 'development') {
       await ctx.db.intelligenceItem.createMany({
         data: sampleData.map(item => ({
           ...item,
+          category: item.category.toUpperCase() as any,
+          priority: item.priority.toUpperCase() as any,
           isActive: true
         }))
       });

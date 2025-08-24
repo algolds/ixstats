@@ -56,8 +56,25 @@ export interface CompactViewProps {
   scrollY?: number;
 }
 
+export interface CountriesData {
+  countries: Array<{
+    id: string;
+    name: string;
+    // Add other properties if needed, based on how countriesData.countries is used
+    // For example, if you access currentGdpPerCapita, add it here:
+    currentGdpPerCapita?: number | null;
+  }>;
+}
+
 export interface SearchViewProps {
-  onClose: () => void;
+  searchQuery: string;
+  setSearchQuery?: (query: string) => void; // Made optional
+  searchFilter: SearchFilter;
+  setSearchFilter?: (filter: SearchFilter) => void; // Made optional
+  debouncedSearchQuery: string;
+  searchResults: SearchResult[];
+  countriesData?: CountriesData; // Made optional as it might not always be present
+  closeDropdown: () => void;
 }
 
 export interface NotificationsViewProps {

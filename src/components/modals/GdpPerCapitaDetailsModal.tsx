@@ -337,10 +337,12 @@ export function GdpPerCapitaDetailsModal({
                   <LineChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
-                      dataKey="year" 
+                      dataKey="timestamp"
                       domain={['dataMin', 'dataMax']}
                       type="number"
-                      scale="linear"
+                      scale="time"
+                      name="Time"
+                      tickFormatter={(ts) => IxTime.getCurrentGameYear(ts as number)}
                     />
                     <YAxis 
                       label={{ value: 'GDP per Capita ($)', angle: -90, position: 'insideLeft' }}
@@ -348,7 +350,7 @@ export function GdpPerCapitaDetailsModal({
                     />
                     <Tooltip 
                       formatter={(value: any) => [formatCurrency(value), 'GDP per Capita']}
-                      labelFormatter={(label) => `Year ${label}`}
+                      labelFormatter={(label) => `Year ${IxTime.getCurrentGameYear(label as number)}`}
                     />
                     <Line 
                       type="monotone" 

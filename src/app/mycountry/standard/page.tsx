@@ -478,28 +478,19 @@ function MyCountryStandardContent() {
               taxRates: { personalIncomeTaxRates: [], corporateTaxRates: [], salesTaxRate: 0, propertyTaxRate: 0, payrollTaxRate: 0, exciseTaxRates: [], wealthTaxRate: 0 },
               governmentSpendingByCategory: [],
             }}
-            referenceCountry={{
-              name: "Reference",
-              countryCode: "REF",
-              gdp: economyData?.core?.nominalGDP ?? 0,
-              gdpPerCapita: economyData?.core?.gdpPerCapita ?? 0,
-              taxRevenuePercent: economyData?.fiscal?.taxRevenueGDPPercent ?? 0,
-              unemploymentRate: economyData?.labor?.unemploymentRate ?? 0,
-              population: economyData?.core?.totalPopulation ?? 0
-            }}
             nominalGDP={economyData?.core?.nominalGDP ?? 0}
             totalPopulation={economyData?.core?.totalPopulation ?? 0}
             onFiscalDataChange={() => {}}
           />
           
           <GovernmentSpending
-            spendingData={economyData?.spending ?? {
+            {...(economyData?.spending ?? {
               totalSpending: 0,
               spendingGDPPercent: 0,
               spendingPerCapita: 0,
               spendingCategories: [],
               deficitSurplus: 0
-            }}
+            })}
             nominalGDP={economyData?.core?.nominalGDP ?? 0}
             totalPopulation={economyData?.core?.totalPopulation ?? 0}
             onSpendingDataChangeAction={() => {}}
@@ -515,7 +506,7 @@ function MyCountryStandardContent() {
               ageDistribution: economyData?.demographics?.ageDistribution ?? [],
             } as any}
             totalPopulation={economyData?.core?.totalPopulation ?? 0}
-            onDemographicDataChange={() => {}}
+            onDemographicDataChangeAction={() => {}}
           />
         </TabsContent>
       </Tabs>

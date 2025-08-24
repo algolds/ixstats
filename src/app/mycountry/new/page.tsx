@@ -111,6 +111,10 @@ function MyCountryNewContent() {
     governmentType: country.governmentType || undefined,
     landArea: country.landArea || undefined,
     populationDensity: country.populationDensity || undefined,
+    // Ensure number types for growth rates (handle potential null values)
+    realGDPGrowthRate: country.realGDPGrowthRate ?? 0,
+    populationGrowthRate: country.populationGrowthRate ?? 0,
+    adjustedGdpGrowth: country.adjustedGdpGrowth ?? 0,
     // API already returns timestamps as numbers and includes vitality scores
     lastCalculated: country.lastCalculated,
     baselineDate: country.baselineDate,

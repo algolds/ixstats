@@ -53,7 +53,7 @@ export function SearchView({
             key={filter}
             size="sm"
             variant={searchFilter === filter ? "default" : "ghost"}
-            onClick={() => setSearchFilter(filter)}
+            onClick={() => setSearchFilter && setSearchFilter(filter)}
             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${ 
               searchFilter === filter 
                 ? 'bg-primary text-primary-foreground shadow-sm' 
@@ -75,7 +75,7 @@ export function SearchView({
         <Input
           placeholder={`Search ${searchFilter === 'all' ? 'everything' : searchFilter}...`}
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => setSearchQuery && setSearchQuery(e.target.value)}
           className="pl-12 pr-16 py-3 bg-accent/10 border text-foreground placeholder:text-muted-foreground rounded-xl text-base focus:bg-accent/15 focus:border-blue-400 transition-all"
           data-command-palette-search="true"
           autoFocus
@@ -88,7 +88,7 @@ export function SearchView({
       </div>
 
       <ScrollArea className="max-h-96">
-        {searchResults.length > 0 ? (
+        {searchResults && searchResults.length > 0 ? (
           <div className="space-y-3">
             {searchResults.map((result) => (
               <TooltipProvider key={result.id}>
@@ -205,7 +205,7 @@ export function SearchView({
             <div className="p-6 bg-gradient-to-b from-muted/30 to-muted/50 rounded-2xl max-w-md mx-auto">
               <Command className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
               <div className="text-foreground text-lg mb-3">
-                Search {searchFilter === 'all' ? 'Everything' : searchFilter.charAt(0).toUpperCase() + searchFilter.slice(1)}
+                Search {searchFilter === 'all' ? 'Everything' : (searchFilter || 'all').charAt(0).toUpperCase() + (searchFilter || 'all').slice(1)}
               </div>
               <div className="text-muted-foreground/70 text-sm mb-4">
                 {searchFilter === 'all' ? (

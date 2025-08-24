@@ -17,20 +17,40 @@ import {
   BarChart3,
   Users,
   DollarSign,
-  Shield
+  Shield,
+  Building2,
+  Activity
 } from 'lucide-react';
+
+// Icon lookup for string-based icon resolution
+const icons: Record<string, any> = {
+  Crown,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Target,
+  Zap,
+  Calendar,
+  Globe2,
+  BarChart3,
+  Users,
+  DollarSign,
+  Shield,
+  Building: Building2,
+  Activity,
+  TrendingUp2: TrendingUp
+};
+
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
 import { Progress } from '~/components/ui/progress';
 import { Separator } from '~/components/ui/separator';
 
-interface Alert {
-  id: string;
-  type: 'critical' | 'warning' | 'info' | 'success';
-  title: string;
-  message: string;
-  urgent: boolean;
-}
+// Use standardized CriticalAlert from unified interfaces
+import type { CriticalAlert } from '~/types/intelligence-unified';
 
 interface Opportunity {
   id: string;
@@ -83,7 +103,7 @@ interface ExecutiveSummaryProps {
   nationalHealth: {
     overallScore: number; // 0-100 composite score
     trendDirection: 'up' | 'down' | 'stable';
-    criticalAlerts: Alert[];
+    criticalAlerts: CriticalAlert[];
     keyOpportunities: Opportunity[];
   };
   leadershipMetrics: LeadershipMetric[];
@@ -107,15 +127,15 @@ function getTrendIcon(trend: 'up' | 'down' | 'stable', size = 16) {
   }
 }
 
-function getAlertIcon(type: Alert['type']) {
-  switch (type) {
+function getAlertIcon(severity: 'critical' | 'high' | 'medium' | 'low') {
+  switch (severity) {
     case 'critical':
       return <AlertTriangle className="h-4 w-4 text-red-600" />;
-    case 'warning':
+    case 'high':
       return <Clock className="h-4 w-4 text-yellow-600" />;
-    case 'info':
+    case 'medium':
       return <Zap className="h-4 w-4 text-blue-600" />;
-    case 'success':
+    case 'low':
       return <CheckCircle className="h-4 w-4 text-green-600" />;
   }
 }
@@ -137,7 +157,7 @@ interface ExecutiveSummaryProps {
   nationalHealth: {
     overallScore: number;
     trendDirection: 'up' | 'down' | 'stable';
-    criticalAlerts: Alert[];
+    criticalAlerts: CriticalAlert[];
     keyOpportunities: Opportunity[];
   };
   leadershipMetrics: LeadershipMetric[];
@@ -259,13 +279,13 @@ export function ExecutiveSummary({
                   <div
                     key={alert.id && alert.id.trim() ? `alert-${alert.id.trim()}` : `alert-fallback-${index}`}
                     className={`glass-hierarchy-child p-3 rounded-lg border-l-4 ${
-                      alert.type === 'critical' ? 'border-l-red-500 bg-red-50/50 dark:bg-red-950/20' :
-                      alert.type === 'warning' ? 'border-l-yellow-500 bg-yellow-50/50 dark:bg-yellow-950/20' :
+                      alert.severity === 'critical' ? 'border-l-red-500 bg-red-50/50 dark:bg-red-950/20' :
+                      alert.severity === 'high' ? 'border-l-yellow-500 bg-yellow-50/50 dark:bg-yellow-950/20' :
                       'border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/20'
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      {getAlertIcon(alert.type)}
+                      {getAlertIcon(alert.severity)}
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium">{alert.title}</div>
                         <div className="text-xs text-muted-foreground mt-1">
@@ -292,7 +312,8 @@ export function ExecutiveSummary({
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {leadershipMetrics.map((metric, index) => {
-                const Icon = metric.icon;
+                const iconName = typeof metric.icon === 'string' ? metric.icon : 'BarChart3';
+                const Icon = icons[iconName] || icons.BarChart3;
                 return (
                   <motion.div
                     key={metric.id && metric.id.trim() ? `metric-${metric.id.trim()}` : `metric-fallback-${index}`}

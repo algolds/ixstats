@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Crown,
@@ -39,6 +39,23 @@ import { FocusCards, createDefaultFocusCards } from './components/FocusCards';
 import { ExecutiveSummary } from './components/ExecutiveSummary';
 import { useFlag } from '~/hooks/useFlag';
 import type { QuickAction } from '~/types/actions';
+import type { IconReference } from '~/types/base';
+
+// Icon lookup system for IconReference resolution
+const icons = {
+  Crown, Settings, Bell, Shield, Globe2, TrendingUp, Users, Building2,
+  MessageSquare, Calendar, Zap, BarChart3, AlertTriangle, CheckCircle,
+  Clock, Target, Briefcase, FileText, Activity, Eye, Search, Filter,
+  MoreHorizontal, ChevronRight, Sparkles
+} as const;
+
+// Helper function to resolve IconReference to React component
+function resolveIcon(iconRef: IconReference | string) {
+  if (typeof iconRef === 'string') {
+    return icons[iconRef as keyof typeof icons] || icons.Activity;
+  }
+  return icons[iconRef.name as keyof typeof icons] || icons.Activity;
+}
 
 interface IntelligenceFeedItem {
   id: string;
@@ -238,7 +255,7 @@ function QuickActionsPanel({ actions, onActionClick }: {
       </CardHeader>
       <CardContent className="space-y-3">
         {urgentActions.map((action, index) => {
-          const Icon = action.icon;
+          const Icon = resolveIcon(action.icon);
           return (
             <motion.div
               key={action.id ? `action-${action.id}` : `action-fallback-${index}`}
@@ -312,10 +329,21 @@ export function ExecutiveDashboard({
       trendDirection: 'up' as const,
       criticalAlerts: intelligenceFeed.filter(item => item.severity === 'critical').slice(0, 3).map(item => ({
         id: item.id,
-        type: item.severity === 'critical' ? 'critical' as const : 'warning' as const,
+        createdAt: item.timestamp,
+        category: item.category as any,
+        source: 'intelligence-feed',
+        confidence: 85,
+        actionable: item.actionable,
         title: item.title,
         message: item.description,
-        urgent: item.actionable,
+        severity: item.severity as any,
+        actionRequired: item.actionable,
+        timeframe: 'immediate' as const,
+        estimatedImpact: {
+          magnitude: item.severity as any,
+          areas: [item.category],
+        },
+        recommendedActions: ['Review details', 'Take action'],
       })),
       keyOpportunities: [
         {
