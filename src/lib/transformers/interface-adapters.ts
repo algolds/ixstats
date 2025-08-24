@@ -153,26 +153,23 @@ const unifyMetric = (metric: any): IntelligenceMetric => ({
 });
 
 // Transform database entities to interface types (for Prisma → TypeScript)
-export const adaptDatabaseToInterface = <T>(dbEntity: any): T => ({
-  ...dbEntity,
-  // Handle null → undefined conversion
-  flag: dbEntity.flag || undefined,
-  // Convert Date objects to Unix timestamps
-  createdAt: dbEntity.createdAt instanceof Date ? dbEntity.createdAt.getTime() : dbEntity.createdAt,
-  updatedAt: dbEntity.updatedAt instanceof Date ? dbEntity.updatedAt.getTime() : dbEntity.updatedAt,
-  timestamp: dbEntity.timestamp instanceof Date ? dbEntity.timestamp.getTime() : dbEntity.timestamp,
-  // Normalize lastCalculated to string format for compatibility
-  lastCalculated: dbEntity.lastCalculated ? (
-    dbEntity.lastCalculated instanceof Date ? 
-      dbEntity.lastCalculated.toISOString() :
-      typeof dbEntity.lastCalculated === 'number' ?
-        new Date(dbEntity.lastCalculated).toISOString() :
-        dbEntity.lastCalculated
-  ) : undefined,
-  // Convert enum cases to lowercase for union types
-  priority: dbEntity.priority ? String(dbEntity.priority).toLowerCase() : undefined,
-  category: dbEntity.category ? String(dbEntity.category).toLowerCase() : undefined,
-});
+export const adaptDatabaseToInterface = <T>(dbEntity: any): T => {
+  // Use the new enum-aware adapter
+  const { adaptDatabaseEntityWithEnums } = require('./database-adapters');
+  return adaptDatabaseEntityWithEnums<T>({
+    ...dbEntity,
+    // Handle specific field mappings
+    flag: dbEntity.flag || undefined,
+    // Normalize lastCalculated to string format for compatibility
+    lastCalculated: dbEntity.lastCalculated ? (
+      dbEntity.lastCalculated instanceof Date ? 
+        dbEntity.lastCalculated.toISOString() :
+        typeof dbEntity.lastCalculated === 'number' ?
+          new Date(dbEntity.lastCalculated).toISOString() :
+          dbEntity.lastCalculated
+    ) : undefined,
+  });
+};
 
 // Comprehensive timestamp normalization utilities
 export const normalizeToUnixTimestamp = (timestamp: any): number => {

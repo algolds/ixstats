@@ -456,7 +456,13 @@ export const useNotificationStore = create<NotificationStore>()(
             screenSize: 'large',
             networkQuality: 'high',
             batteryLevel: 100,
-            userPreferences: { channels: [], quietHours: [] },
+            userPreferences: { 
+              preferredMethods: [],
+              quietHours: { start: '22:00', end: '07:00' },
+              batchingEnabled: false,
+              maxNotificationsPerHour: 10,
+              categories: {} as any
+            },
             historicalEngagement: [],
             interactionHistory: [],
             contextualFactors: {},
@@ -497,7 +503,13 @@ export const useNotificationStore = create<NotificationStore>()(
               screenSize: 'large',
               networkQuality: 'high',
               batteryLevel: 100,
-              userPreferences: { channels: [], quietHours: [] },
+              userPreferences: { 
+              preferredMethods: [],
+              quietHours: { start: '22:00', end: '07:00' },
+              batchingEnabled: false,
+              maxNotificationsPerHour: 10,
+              categories: {} as any
+            },
               historicalEngagement: [],
               interactionHistory: [],
               contextualFactors: {},

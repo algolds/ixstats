@@ -32,12 +32,14 @@ export const sdiRouter = createTRPCRouter({
 
       const data: IntelligenceItem[] = rawData.map((item): IntelligenceItem => ({
         id: item.id,
+        createdAt: item.timestamp.getTime(),
+        type: 'update' as const,
         title: item.title,
-        content: item.content,
-        category: item.category as IntelligenceItem['category'],
-        priority: item.priority as IntelligenceItem['priority'],
+        description: item.content,
+        category: item.category as any,
+        severity: item.priority as any,
         source: item.source,
-        timestamp: item.timestamp,
+        timestamp: item.timestamp.getTime(),
         region: item.region || undefined,
         affectedCountries: item.affectedCountries ? JSON.parse(item.affectedCountries) : undefined,
         isActive: item.isActive
@@ -232,9 +234,9 @@ export const sdiRouter = createTRPCRouter({
     };
     
     crises.forEach(crisis => {
-      const severity = crisis.severity === 'critical' ? 0.15 : 
-                     crisis.severity === 'high' ? 0.10 : 
-                     crisis.severity === 'medium' ? 0.05 : 0.02;
+      const severity = crisis.severity === 'CRITICAL' ? 0.15 : 
+                     crisis.severity === 'HIGH' ? 0.10 : 
+                     crisis.severity === 'MEDIUM' ? 0.05 : 0.02;
       
       if (crisis.type === 'economic_crisis') {
         crisisImpact.gold += severity; // Safe haven demand
@@ -407,7 +409,7 @@ export const sdiRouter = createTRPCRouter({
         ctx.db.intelligenceItem.findMany({
           where: {
             ...whereClause,
-            category: 'diplomatic'
+            category: 'DIPLOMATIC'
           },
           orderBy: { timestamp: 'desc' },
           take: 10
@@ -444,7 +446,7 @@ export const sdiRouter = createTRPCRouter({
           title: item.title,
           content: item.content,
           priority: item.priority,
-          timestamp: item.timestamp,
+          timestamp: item.timestamp.getTime(),
           source: item.source
         }))
       };
@@ -468,8 +470,8 @@ export const sdiRouter = createTRPCRouter({
       }
     });
     
-    const criticalCrises = recentCrises.filter(c => c.severity === 'critical').length;
-    const highCrises = recentCrises.filter(c => c.severity === 'high').length;
+    const criticalCrises = recentCrises.filter(c => c.severity === 'CRITICAL').length;
+    const highCrises = recentCrises.filter(c => c.severity === 'HIGH').length;
     
     let systemHealth: 'operational' | 'warning' | 'critical' = 'operational';
     let uptime = 99.8;
@@ -512,8 +514,8 @@ export const sdiRouter = createTRPCRouter({
         data: {
           title: input.title,
           content: input.content,
-          category: input.category,
-          priority: input.priority,
+          category: input.category.toUpperCase() as any,
+          priority: input.priority.toUpperCase() as any,
           source: input.source,
           region: input.region,
           affectedCountries: input.affectedCountries ? JSON.stringify(input.affectedCountries) : undefined,
@@ -565,6 +567,7 @@ export const sdiRouter = createTRPCRouter({
       const newCrisis = await ctx.db.crisisEvent.create({
         data: {
           ...input,
+          severity: input.severity.toUpperCase() as any,
           affectedCountries: JSON.stringify(input.affectedCountries),
           timestamp: new Date(),
         },
@@ -586,7 +589,11 @@ export const sdiRouter = createTRPCRouter({
       coordinates: z.object({ lat: z.number(), lng: z.number() }).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
+      const { id, ...rawData } = input;
+      const data = {
+        ...rawData,
+        ...(rawData.severity && { severity: rawData.severity.toUpperCase() as any }),
+      };
       const updated = await ctx.db.crisisEvent.update({
         where: { id },
         data,
@@ -806,7 +813,7 @@ export const sdiRouter = createTRPCRouter({
             title: item.title,
             content: item.content.substring(0, 200) + '...',
             relevance,
-            timestamp: item.timestamp,
+            timestamp: item.timestamp.getTime(),
             category: item.category
           });
         });

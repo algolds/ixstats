@@ -372,10 +372,12 @@ export function PopulationDetailsModal({
                     <ComposedChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
-                        dataKey="year" 
+                        dataKey="timestamp"
                         domain={['dataMin', 'dataMax']}
                         type="number"
-                        scale="linear"
+                        scale="time"
+                        name="Time"
+                        tickFormatter={(ts) => IxTime.getCurrentGameYear(ts as number)}
                       />
                       <YAxis 
                         yAxisId="population"
@@ -398,7 +400,7 @@ export function PopulationDetailsModal({
                           }
                           return [value, name];
                         }}
-                        labelFormatter={(label) => `Year ${label}`}
+                        labelFormatter={(label) => `Year ${IxTime.getCurrentGameYear(label as number)}`}
                       />
                       <Area
                         yAxisId="population"

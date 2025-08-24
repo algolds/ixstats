@@ -473,7 +473,8 @@ export function transformApiDataToExecutiveIntelligence(
     forwardIntelligence: {
       predictions: [], // TODO: Implement predictions from historical data
       opportunities: [], // TODO: Transform opportunity intelligence items
-      risks: [] // TODO: Transform risk intelligence items
+      risks: [], // TODO: Transform risk intelligence items
+      competitiveIntelligence: [] // TODO: Transform competitive intelligence
     },
     overallStatus,
     confidenceLevel: Math.round(intelligenceItems.reduce((sum, item) => sum + item.confidence, 0.8) / Math.max(intelligenceItems.length, 1) * 100),

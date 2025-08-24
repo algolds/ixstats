@@ -8,6 +8,7 @@ import type {
   CriticalAlert,
   ActionableRecommendation
 } from '../types/intelligence';
+import type { StandardTrend } from '../../../../types/base';
 import { 
   calculateTrend,
   determinePriority,
@@ -54,7 +55,7 @@ export function transformToVitalityIntelligence(
       score: country.economicVitality,
       trend: previousCountry 
         ? calculateTrend(country.economicVitality, previousCountry.economicVitality)
-        : 'stable' as const,
+        : 'stable' as StandardTrend,
       change: {
         value: previousCountry 
           ? country.economicVitality - previousCountry.economicVitality
@@ -71,7 +72,7 @@ export function transformToVitalityIntelligence(
           unit: '',
           trend: previousCountry 
             ? calculateTrend(country.currentGdpPerCapita, previousCountry.currentGdpPerCapita)
-            : 'stable' as const,
+            : 'stable' as StandardTrend,
           changeValue: previousCountry 
             ? country.currentGdpPerCapita - previousCountry.currentGdpPerCapita
             : 0,
@@ -105,7 +106,7 @@ export function transformToVitalityIntelligence(
           id: 'economic-tier',
           label: 'Economic Tier',
           value: country.economicTier,
-          trend: 'stable' as const,
+          trend: 'stable' as StandardTrend,
           changeValue: 0,
           changePercent: 0,
           changePeriod: 'current',
@@ -133,7 +134,7 @@ export function transformToVitalityIntelligence(
       score: country.populationWellbeing,
       trend: previousCountry 
         ? calculateTrend(country.populationWellbeing, previousCountry.populationWellbeing)
-        : 'stable' as const,
+        : 'stable' as StandardTrend,
       change: {
         value: previousCountry 
           ? country.populationWellbeing - previousCountry.populationWellbeing
@@ -147,7 +148,7 @@ export function transformToVitalityIntelligence(
           id: 'population',
           label: 'Population',
           value: `${(country.currentPopulation / 1000000).toFixed(1)}M`,
-          trend: (country.populationGrowthRate > 0.01 ? 'up' : country.populationGrowthRate < 0 ? 'down' : 'stable') as const,
+          trend: (country.populationGrowthRate > 0.01 ? 'up' : country.populationGrowthRate < 0 ? 'down' : 'stable') as StandardTrend,
           changeValue: previousCountry 
             ? country.currentPopulation - previousCountry.currentPopulation
             : 0,
@@ -162,7 +163,7 @@ export function transformToVitalityIntelligence(
           label: 'Growth Rate',
           value: Number((country.populationGrowthRate * 100).toFixed(1)),
           unit: '%',
-          trend: (country.populationGrowthRate > 0.015 ? 'up' : country.populationGrowthRate < 0.005 ? 'down' : 'stable') as const,
+          trend: (country.populationGrowthRate > 0.015 ? 'up' : country.populationGrowthRate < 0.005 ? 'down' : 'stable') as StandardTrend,
           changeValue: previousCountry 
             ? (country.populationGrowthRate - previousCountry.populationGrowthRate) * 100
             : 0,
@@ -174,7 +175,7 @@ export function transformToVitalityIntelligence(
           id: 'population-tier',
           label: 'Population Tier',
           value: country.populationTier,
-          trend: 'stable' as const,
+          trend: 'stable' as StandardTrend,
           changeValue: 0,
           changePercent: 0,
           changePeriod: 'current',
@@ -202,7 +203,7 @@ export function transformToVitalityIntelligence(
       score: country.diplomaticStanding,
       trend: previousCountry 
         ? calculateTrend(country.diplomaticStanding, previousCountry.diplomaticStanding)
-        : 'stable' as const,
+        : 'stable' as StandardTrend,
       change: {
         value: previousCountry 
           ? country.diplomaticStanding - previousCountry.diplomaticStanding
@@ -216,7 +217,7 @@ export function transformToVitalityIntelligence(
           id: 'diplomatic-treaties',
           label: 'Active Treaties',
           value: 12, // Mock data - would come from actual diplomatic data
-          trend: 'up' as const,
+          trend: 'up' as StandardTrend,
           changeValue: 2,
           changePercent: 20,
           changePeriod: 'this year',
@@ -226,7 +227,7 @@ export function transformToVitalityIntelligence(
           id: 'trade-partners',
           label: 'Trade Partners',
           value: 34,
-          trend: 'up' as const,
+          trend: 'up' as StandardTrend,
           changeValue: 5,
           changePercent: 17,
           changePeriod: 'this year',
@@ -236,7 +237,7 @@ export function transformToVitalityIntelligence(
           id: 'diplomatic-reputation',
           label: 'Global Reputation',
           value: 'Rising',
-          trend: 'up' as const,
+          trend: 'up' as StandardTrend,
           changeValue: 0,
           changePercent: 8,
           changePeriod: 'recent',
@@ -264,7 +265,7 @@ export function transformToVitalityIntelligence(
       score: country.governmentalEfficiency,
       trend: previousCountry 
         ? calculateTrend(country.governmentalEfficiency, previousCountry.governmentalEfficiency)
-        : 'stable' as const,
+        : 'stable' as StandardTrend,
       change: {
         value: previousCountry 
           ? country.governmentalEfficiency - previousCountry.governmentalEfficiency
@@ -279,7 +280,7 @@ export function transformToVitalityIntelligence(
           label: 'Public Approval',
           value: 72,
           unit: '%',
-          trend: 'up' as const,
+          trend: 'up' as StandardTrend,
           changeValue: 5,
           changePercent: 7.4,
           changePeriod: 'this month',
@@ -290,7 +291,7 @@ export function transformToVitalityIntelligence(
           label: 'Policy Success Rate',
           value: 73,
           unit: '%',
-          trend: 'up' as const,
+          trend: 'up' as StandardTrend,
           changeValue: 3,
           changePercent: 4.3,
           changePeriod: 'recent',

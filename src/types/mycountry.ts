@@ -6,6 +6,7 @@
  */
 
 import type { LucideIcon } from 'lucide-react';
+import type { IntelligenceItem } from './intelligence-unified';
 
 // Re-export from ixstats for consistency
 export type { CountryWithEconomicData } from './ixstats';

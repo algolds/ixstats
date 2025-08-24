@@ -81,7 +81,7 @@ export function useDataSync(countryId: string, options: DataSyncOptions = {}) {
   const retryCountRef = useRef(0);
   const pollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // const lastIxTimeRef = useRef<number>(0); // Not currently used, available for future temporal tracking
-  const processDataUpdateRef = useRef<(data: any) => void>();
+  const processDataUpdateRef = useRef<(data: any) => void>(() => {});
 
   // Stable timestamp to prevent infinite re-renders
   const [stableTimestamp] = useState(() => IxTime.getCurrentIxTime());

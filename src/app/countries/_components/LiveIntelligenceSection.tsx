@@ -9,6 +9,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Progress } from "~/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import type { CriticalAlert } from '~/types/intelligence-unified';
 import { 
   Brain,
   Activity,
@@ -77,15 +78,24 @@ type FocusCardAlert = {
   urgent: boolean;
 };
 
-function convertApiAlert(apiAlert: ApiAlert): FocusCardAlert {
+function convertApiAlert(apiAlert: ApiAlert): CriticalAlert {
   return {
     id: apiAlert.id,
-    type: apiAlert.type === 'error' ? 'error' : 
-          apiAlert.type === 'warning' ? 'warning' :
-          apiAlert.type === 'success' ? 'success' : 'info',
+    createdAt: Date.now(),
+    category: 'economic', // Default category
+    source: 'system',
+    confidence: 80,
+    actionable: apiAlert.urgent,
     title: apiAlert.title,
     message: apiAlert.message,
-    urgent: apiAlert.urgent,
+    severity: apiAlert.urgent ? 'critical' : 'medium',
+    actionRequired: apiAlert.urgent,
+    timeframe: 'immediate',
+    estimatedImpact: {
+      magnitude: 'medium',
+      areas: []
+    },
+    recommendedActions: []
   };
 }
 

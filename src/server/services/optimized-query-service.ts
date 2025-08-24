@@ -132,7 +132,7 @@ export class OptimizedQueryService {
         where: { 
           OR: [
             { affectedCountries: { contains: countryId } },
-            { category: 'global' }
+            { category: 'ECONOMIC' }
           ]
         },
         orderBy: [

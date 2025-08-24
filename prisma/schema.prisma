@@ -7,6 +7,29 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Standardized enums matching TypeScript union types
+enum Priority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum Category {
+  ECONOMIC
+  DIPLOMATIC
+  SOCIAL
+  GOVERNANCE
+  SECURITY
+  INFRASTRUCTURE
+}
+
+enum Trend {
+  UP
+  DOWN
+  STABLE
+}
+
 model Post {
   id        Int      @id @default(autoincrement())
   name      String
@@ -330,13 +353,17 @@ model IntelligenceItem {
   id                String   @id @default(cuid())
   title             String
   content           String
-  category          String
-  priority          String
+  category          Category // Use enum
+  priority          Priority @default(MEDIUM) // Use enum with default
   source            String
   timestamp         DateTime
   region            String?
   affectedCountries String?
   isActive          Boolean  @default(true)
+  actionable        Boolean  @default(false) // Add missing field
+  confidence        Int?     // 0-100 scale
+  itemType          String   @default("update") // type field (renamed to avoid conflicts)
+  severity          Priority @default(MEDIUM) // Align with TypeScript interfaces
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
@@ -345,7 +372,7 @@ model CrisisEvent {
   id                String   @id @default(cuid())
   type              String
   title             String
-  severity          String
+  severity          Priority // Use enum
   affectedCountries String?
   casualties        Int?
   economicImpact    Float?
@@ -353,6 +380,7 @@ model CrisisEvent {
   timestamp         DateTime
   description       String?
   location          String?
+  category          Category @default(GOVERNANCE) // Add category field
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
@@ -928,8 +956,8 @@ model NationalIdentity {
   @@index([countryId])
 }
 
-// Missing models for TypeScript errors
-model postBookmark {
+// Legacy models for backward compatibility (using PascalCase naming)
+model PostBookmark {
   id     String @id @default(cuid())
   userId String
   postId String
@@ -938,7 +966,7 @@ model postBookmark {
   @@unique([userId, postId])
 }
 
-model postFlag {
+model PostFlag {
   id     String @id @default(cuid())
   userId String
   postId String
@@ -946,66 +974,6 @@ model postFlag {
   createdAt DateTime @default(now())
   
   @@unique([userId, postId])
-}
-
-model nationalIdentity {
-  id        String   @id @default(cuid())
-  countryId String
-  userId    String?
-  name      String
-  culture   String?
-  language  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@index([countryId])
-}
-
-model archetypeCategory {
-  id          String @id @default(cuid())
-  name        String @unique
-  description String?
-  createdAt   DateTime @default(now())
-  
-  archetypes archetype[]
-}
-
-model archetype {
-  id           String @id @default(cuid())
-  name         String
-  description  String?
-  categoryId   String
-  traits       String? // JSON string
-  createdAt    DateTime @default(now())
-  
-  category     archetypeCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  userSelections userArchetypeSelection[]
-  countryMatches countryArchetypeMatch[]
-  
-  @@index([categoryId])
-}
-
-model userArchetypeSelection {
-  id          String @id @default(cuid())
-  userId      String
-  archetypeId String
-  createdAt   DateTime @default(now())
-  
-  archetype   archetype @relation(fields: [archetypeId], references: [id], onDelete: Cascade)
-  
-  @@unique([userId, archetypeId])
-}
-
-model countryArchetypeMatch {
-  id          String @id @default(cuid())
-  countryId   String
-  archetypeId String
-  matchScore  Float
-  createdAt   DateTime @default(now())
-  
-  archetype   archetype @relation(fields: [archetypeId], references: [id], onDelete: Cascade)
-  
-  @@unique([countryId, archetypeId])
 }
 
 model countryActivity {

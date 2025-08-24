@@ -15,16 +15,11 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { GlassCard } from "~/components/ui/enhanced-card";
 import { Progress } from "~/components/ui/progress";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
+  Tooltip,
+  ResponsiveContainer,
 } from "recharts";
 import {
   Users,
@@ -47,6 +42,53 @@ interface PopulationTierDetailsModalProps {
   onClose: () => void;
   countryId: string;
   countryName: string;
+}
+
+interface TierData {
+  tier: string;
+  name: string;
+  range: string;
+  min: number;
+  max: number;
+  icon: string;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+  description: string;
+  benefits: string[];
+  challenges: string[];
+  growthModifiers: {
+    economic: string;
+    population: string;
+    development: string;
+  };
+}
+
+interface CurrentTierInfo {
+  current: TierData;
+  next: TierData | undefined;
+  previous: TierData | undefined;
+  index: number;
+  progressToNext: number;
+  populationNeeded: number;
+}
+
+interface TierDistributionData {
+  name: string;
+  fullName: string;
+  count: number;
+  color: string;
+}
+
+interface ProcessedData {
+  currentTierInfo: CurrentTierInfo | null;
+  tierDistributionData: TierDistributionData[];
+  currentPopulation: number;
+  populationTierDistribution: Record<string, number>;
+}
+
+interface TierDistributionPayload {
+  fullName: string;
 }
 
 export function PopulationTierDetailsModal({
@@ -77,7 +119,7 @@ export function PopulationTierDetailsModal({
     }
   );
 
-  const tierSystemData = useMemo(() => {
+  const tierSystemData: TierData[] = useMemo(() => {
     const tiers = [
       {
         tier: "1",
@@ -316,40 +358,55 @@ export function PopulationTierDetailsModal({
     return tiers;
   }, []);
 
-  const currentTierInfo = useMemo(() => {
-    if (!economicData) return null;
+  const processedData: ProcessedData = useMemo(() => {
+    if (!economicData || !globalStats) {
+      return {
+        currentTierInfo: null,
+        tierDistributionData: [],
+        currentPopulation: 0,
+        populationTierDistribution: {} as Record<string, number>,
+      };
+    }
+
+    const { currentPopulation } = economicData as any;
+    const { populationTierDistribution } = globalStats as { populationTierDistribution: Record<string, number> };
 
     const currentTier = tierSystemData.find(tier => 
-      economicData.currentPopulation >= tier.min && economicData.currentPopulation <= tier.max
+      currentPopulation >= tier.min && currentPopulation <= tier.max
     );
 
     const currentIndex = tierSystemData.findIndex(tier => tier === currentTier);
     const nextTier = tierSystemData[currentIndex + 1];
     const previousTier = tierSystemData[currentIndex - 1];
 
-    const progressToNext = nextTier ? 
-      ((economicData.currentPopulation - currentTier!.min) / (nextTier.min - currentTier!.min)) * 100 : 100;
+    const progressToNext = (currentTier && nextTier) ? 
+      ((currentPopulation - currentTier.min) / (nextTier.min - currentTier.min)) * 100 : 100;
 
-    return {
+    const currentTierInfo: CurrentTierInfo | null = currentTier ? {
       current: currentTier,
       next: nextTier,
       previous: previousTier,
       index: currentIndex,
       progressToNext,
-      populationNeeded: nextTier ? nextTier.min - economicData.currentPopulation : 0,
-    };
-  }, [economicData, tierSystemData]);
+      populationNeeded: nextTier ? nextTier.min - currentPopulation : 0,
+    } : null;
 
-  const tierDistributionData = useMemo(() => {
-    if (!globalStats?.populationTierDistribution) return [];
-    
-    return tierSystemData.map((tier) => ({
+    const tierDistributionData: TierDistributionData[] = tierSystemData.map((tier) => ({
       name: `Tier ${tier.tier}`,
       fullName: tier.name,
-      count: globalStats.populationTierDistribution[tier.tier] || 0,
+      count: populationTierDistribution[tier.tier] ?? 0,
       color: tier.color,
     }));
-  }, [globalStats, tierSystemData]);
+
+    return {
+      currentTierInfo,
+      tierDistributionData,
+      currentPopulation,
+      populationTierDistribution,
+    };
+  }, [economicData, globalStats, tierSystemData]);
+
+  const { currentTierInfo, tierDistributionData, currentPopulation } = processedData;
 
   if (!isOpen) return null;
 
@@ -382,7 +439,7 @@ export function PopulationTierDetailsModal({
                     </h3>
                     <p className="text-muted-foreground">{currentTierInfo.current.description}</p>
                     <p className="text-sm">
-                      Population: {formatPopulation(economicData.currentPopulation)} 
+                      Population: {formatPopulation((economicData as any)?.currentPopulation || 0)} 
                       <span className="text-muted-foreground ml-2">({currentTierInfo.current.range})</span>
                     </p>
                   </div>
@@ -494,7 +551,7 @@ export function PopulationTierDetailsModal({
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {tierSystemData.map((tier, index) => (
+              {tierSystemData.map((tier) => (
                 <GlassCard 
                   key={tier.tier}
                   variant="social" 
@@ -557,9 +614,9 @@ export function PopulationTierDetailsModal({
                             ))}
                           </Pie>
                           <Tooltip 
-                            formatter={(value: any, name, props) => [
+                            formatter={(value: number, name, props) => [
                               `${value} countries`, 
-                              props.payload.fullName
+                              (props as any)?.payload?.fullName || name
                             ]}
                           />
                         </PieChart>

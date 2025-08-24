@@ -139,11 +139,12 @@ async function generateIntelligenceFeed(countryId: string): Promise<Intelligence
         if (Math.abs(gdpChange) > 2) {
           intelligenceItems.push({
             id: `econ_${Date.now()}`,
+            createdAt: currentTime,
             type: gdpChange > 0 ? 'opportunity' : 'alert',
-            severity: Math.abs(gdpChange) > 5 ? 'high' : 'medium',
+            severity: (Math.abs(gdpChange) > 5 ? 'HIGH' : 'MEDIUM') as any,
             title: `Economic ${gdpChange > 0 ? 'Growth' : 'Decline'} Detected`,
             description: `GDP per capita has ${gdpChange > 0 ? 'increased' : 'decreased'} by ${Math.abs(gdpChange).toFixed(2)}% this period.`,
-            category: 'economic',
+            category: 'ECONOMIC' as any,
             timestamp: currentTime,
             actionable: true,
             source: 'Economic Intelligence Unit',
@@ -158,11 +159,12 @@ async function generateIntelligenceFeed(countryId: string): Promise<Intelligence
     if (country.populationGrowthRate > 0.05) {
       intelligenceItems.push({
         id: `pop_${Date.now()}`,
+        createdAt: currentTime,
         type: 'update',
-        severity: 'medium',
+        severity: 'MEDIUM' as any,
         title: 'High Population Growth Detected',
         description: `Population growing at ${(country.populationGrowthRate * 100).toFixed(2)}% - infrastructure planning may be needed.`,
-        category: 'social',
+        category: 'SOCIAL' as any,
         timestamp: currentTime,
         actionable: true,
         source: 'Demographics Bureau',
@@ -188,13 +190,14 @@ async function generateIntelligenceFeed(countryId: string): Promise<Intelligence
     globalIntelligence.forEach(item => {
       intelligenceItems.push({
         id: item.id,
-        type: item.category === 'crisis' ? 'alert' : 'update',
-        severity: item.priority as 'low' | 'medium' | 'high' | 'critical',
+        createdAt: item.timestamp.getTime(),
+        type: item.category === 'SECURITY' ? 'alert' : 'update',
+        severity: item.priority.toLowerCase() as 'low' | 'medium' | 'high' | 'critical',
         title: item.title,
         description: item.content,
-        category: item.category as 'economic' | 'diplomatic' | 'social' | 'governance',
+        category: item.category.toLowerCase() as 'economic' | 'diplomatic' | 'social' | 'governance',
         timestamp: item.timestamp.getTime(),
-        actionable: item.priority !== 'low',
+        actionable: item.priority !== 'LOW',
         source: item.source,
         confidence: 0.85,
       });
