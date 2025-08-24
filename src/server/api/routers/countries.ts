@@ -33,6 +33,7 @@ import type {
 } from "~/types/ixstats";
 import { getEconomicTierFromGdpPerCapita } from "~/types/ixstats";
 import { detectEconomicMilestoneAndTriggerNarrative } from "~/lib/auto-post-service";
+import { ActivityGenerator } from "~/lib/activity-generator";
 
 // Simple in-memory cache for frequently accessed data
 const cache = new Map<string, { data: unknown; timestamp: number; ttl: number }>();
@@ -1124,6 +1125,12 @@ const countriesRouter = createTRPCRouter({
         }));
         const res = calc.calculateTimeProgression(baselineStats, now, dmInputs);
 
+        // Check for tier changes and milestones before update
+        const oldEconomicTier = c.economicTier;
+        const oldPopulationTier = c.populationTier;
+        const oldGdp = c.currentTotalGdp || 0;
+        const oldPopulation = c.currentPopulation || 0;
+        
         const updated = await ctx.db.country.update({
           where: { id: c.id },
           data: {
@@ -1140,6 +1147,80 @@ const countriesRouter = createTRPCRouter({
             lastCalculated: new Date(now),
           },
         });
+
+        // Generate activities for this country update
+        try {
+          // Get userId if country is claimed by a user
+          const user = await ctx.db.user.findFirst({
+            where: { countryId: c.id },
+            select: { clerkUserId: true }
+          });
+          const userId = user?.clerkUserId;
+
+          // Check for economic tier changes
+          if (oldEconomicTier !== res.newStats.economicTier.toString()) {
+            await ActivityGenerator.createTierChange(
+              c.id,
+              'economic',
+              oldEconomicTier,
+              res.newStats.economicTier.toString(),
+              userId
+            );
+          }
+
+          // Check for population tier changes
+          if (oldPopulationTier !== res.newStats.populationTier.toString()) {
+            await ActivityGenerator.createTierChange(
+              c.id,
+              'population',
+              oldPopulationTier,
+              res.newStats.populationTier.toString(),
+              userId
+            );
+          }
+
+          // Check for significant GDP milestones (every 100B, 500B, 1T, etc.)
+          const newGdp = res.newStats.currentTotalGdp;
+          const gdpMilestones = [100e9, 500e9, 1e12, 2e12, 5e12, 10e12, 50e12]; // 100B to 50T
+          for (const milestone of gdpMilestones) {
+            if (oldGdp < milestone && newGdp >= milestone) {
+              await ActivityGenerator.createEconomicMilestone(
+                c.id,
+                'Total GDP',
+                milestone,
+                userId
+              );
+              break; // Only trigger one milestone per update
+            }
+          }
+
+          // Check for population milestones (every 10M, 50M, 100M, etc.)
+          const newPopulation = res.newStats.currentPopulation;
+          const populationMilestones = [10e6, 25e6, 50e6, 100e6, 250e6, 500e6, 1e9]; // 10M to 1B
+          for (const milestone of populationMilestones) {
+            if (oldPopulation < milestone && newPopulation >= milestone) {
+              await ActivityGenerator.createPopulationMilestone(
+                c.id,
+                milestone,
+                userId
+              );
+              break; // Only trigger one milestone per update
+            }
+          }
+
+          // Check for high economic growth
+          const growthRate = res.newStats.adjustedGdpGrowth || 0;
+          if (growthRate >= 0.04) { // 4%+ growth rate
+            await ActivityGenerator.createHighGrowthActivity(
+              c.id,
+              growthRate,
+              userId
+            );
+          }
+        } catch (activityError) {
+          console.warn('Failed to generate activities for country', c.id, ':', activityError);
+          // Don't throw - continue with the update process
+        }
 
         await ctx.db.historicalDataPoint.create({
           data: {
@@ -1170,6 +1251,7 @@ const countriesRouter = createTRPCRouter({
       const start = Date.now();
       const results = [];
       const historicalPointsToCreate = [];
+      let activitiesCreated = 0;
 
       for (const c of all) {
         const calc = new IxStatsCalculator(econCfg, c.baselineDate.getTime());
@@ -1180,6 +1262,12 @@ const countriesRouter = createTRPCRouter({
           ixTimeTimestamp: i.ixTimeTimestamp.getTime()
         }));
         const res = calc.calculateTimeProgression(baselineStats, now, dmInputs);
+        
+        // Store old values for comparison
+        const oldEconomicTier = c.economicTier;
+        const oldPopulationTier = c.populationTier;
+        const oldGdp = c.currentTotalGdp || 0;
+        const oldPopulation = c.currentPopulation || 0;
         
         const updateData = {
           currentPopulation: validateNumber(res.newStats.currentPopulation, 1e11),
@@ -1200,6 +1288,62 @@ const countriesRouter = createTRPCRouter({
           data: updateData
         });
         results.push(updated);
+
+        // Generate activities for significant changes (batch updates are less frequent, so we're more selective)
+        try {
+          // Get userId if country is claimed
+          const user = await ctx.db.user.findFirst({
+            where: { countryId: c.id },
+            select: { clerkUserId: true }
+          });
+          const userId = user?.clerkUserId;
+
+          // Only create activities for significant tier changes
+          if (oldEconomicTier !== res.newStats.economicTier.toString()) {
+            await ActivityGenerator.createTierChange(
+              c.id,
+              'economic',
+              oldEconomicTier,
+              res.newStats.economicTier.toString(),
+              userId
+            );
+            activitiesCreated++;
+          }
+
+          // Only create activities for major milestones (larger thresholds for batch updates)
+          const newGdp = res.newStats.currentTotalGdp;
+          const majorGdpMilestones = [500e9, 1e12, 5e12, 10e12]; // 500B, 1T, 5T, 10T
+          for (const milestone of majorGdpMilestones) {
+            if (oldGdp < milestone && newGdp >= milestone) {
+              await ActivityGenerator.createEconomicMilestone(
+                c.id,
+                'Total GDP',
+                milestone,
+                userId
+              );
+              activitiesCreated++;
+              break;
+            }
+          }
+
+          // Major population milestones only
+          const newPopulation = res.newStats.currentPopulation;
+          const majorPopulationMilestones = [50e6, 100e6, 500e6]; // 50M, 100M, 500M
+          for (const milestone of majorPopulationMilestones) {
+            if (oldPopulation < milestone && newPopulation >= milestone) {
+              await ActivityGenerator.createPopulationMilestone(
+                c.id,
+                milestone,
+                userId
+              );
+              activitiesCreated++;
+              break;
+            }
+          }
+        } catch (activityError) {
+          console.warn('Failed to generate activity for country', c.id, ':', activityError);
+          // Don't interrupt the batch process
+        }
         
         historicalPointsToCreate.push({
           countryId: c.id,

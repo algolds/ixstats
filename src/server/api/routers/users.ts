@@ -386,4 +386,79 @@ export const usersRouter = createTRPCRouter({
         throw new Error("Failed to update profile");
       }
     }),
+
+  // Get user social data
+  getSocialData: publicProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        // Get user's country and calculate influence based on country performance
+        const user = await ctx.db.user.findUnique({
+          where: { clerkUserId: input.userId },
+          include: { country: true },
+        });
+
+        if (!user || !user.country) {
+          return {
+            achievements: 0,
+            influence: 0,
+            followingCountries: [],
+            friends: [],
+          };
+        }
+
+        // Calculate achievements based on country data
+        const country = user.country;
+        let achievements = 0;
+        let influence = 0;
+
+        // Achievement calculation
+        if (country.economicTier === "Extravagant") achievements += 5;
+        else if (country.economicTier === "Very Strong") achievements += 4;
+        else if (country.economicTier === "Strong") achievements += 3;
+        else if (country.economicTier === "Healthy") achievements += 2;
+        else achievements += 1;
+
+        if (country.currentPopulation && country.currentPopulation > 10000000) achievements += 3;
+        else if (country.currentPopulation && country.currentPopulation > 5000000) achievements += 2;
+        else achievements += 1;
+
+        if (country.currentTotalGdp && country.currentTotalGdp > 1000000000000) achievements += 4; // 1T+
+        else if (country.currentTotalGdp && country.currentTotalGdp > 100000000000) achievements += 3; // 100B+
+        else if (country.currentTotalGdp && country.currentTotalGdp > 10000000000) achievements += 2; // 10B+
+        else achievements += 1;
+
+        // Influence calculation based on economic metrics
+        const gdpPerCapitaScore = Math.min(40, (country.currentGdpPerCapita || 0) / 1000); // Max 40 points
+        const totalGdpScore = Math.min(30, Math.log10((country.currentTotalGdp || 1) / 1000000000) * 10); // Max 30 points
+        const populationScore = Math.min(20, Math.log10((country.currentPopulation || 1) / 1000000) * 10); // Max 20 points
+        const growthScore = Math.min(10, (country.adjustedGdpGrowth || 0) * 1000); // Max 10 points
+        
+        influence = Math.round(gdpPerCapitaScore + totalGdpScore + populationScore + growthScore);
+        influence = Math.max(0, Math.min(100, influence)); // Clamp to 0-100
+
+        // Get following countries (for now, return empty array - could be expanded)
+        const followingCountries: string[] = [];
+        const friends: string[] = [];
+
+        return {
+          achievements,
+          influence,
+          followingCountries,
+          friends,
+        };
+      } catch (error) {
+        console.error("Error fetching social data:", error);
+        return {
+          achievements: 0,
+          influence: 0,
+          followingCountries: [],
+          friends: [],
+        };
+      }
+    }),
 }); 

@@ -1,8 +1,8 @@
-# Country Builder System
+# MyCountry Builder System
 
 ## Overview
 
-The Country Builder is a sophisticated, modern nation-building platform that combines real-world economic data with an intuitive, visually stunning interface for creating detailed models and fictional nations. Tne builder also uses an advanced physics-based design system.
+The MyCountry Builder is a sophisticated, modern nation-building platform that combines real-world economic data with an intuitive, visually stunning interface for creating detailed models and fictional nations. Tne builder also uses an advanced physics-based design system.
 
 \\
 ## Purpose & Vision

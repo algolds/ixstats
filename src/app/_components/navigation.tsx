@@ -8,7 +8,14 @@ import {
   Globe, 
   Settings, 
   Crown,
-  Rss
+  Rss,
+  ChevronDown,
+  TestTube,
+  Beaker,
+  Zap,
+  Cpu,
+  Database,
+  FlaskConical
 } from "lucide-react";
 import { CommandPalette } from "~/components/DynamicIsland";
 import {
@@ -16,14 +23,24 @@ import {
   NavigationMenuList,
   NavigationMenuItem
 } from "~/components/ui/navigation-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from "~/components/ui/dropdown-menu";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { createUserProfileQueryParams } from '~/lib/user-utils';
 import { ThinkPagesIcon } from "~/components/icons/ThinkPagesIcon";
 import { AnimatedShinyText } from "~/components/magicui/animated-shiny-text";
 import { ShineBorder } from "~/components/magicui/shine-border";
-import { FaWikipediaW } from "react-icons/fa";
-import { GiCardRandom } from "react-icons/gi";
+import { FaLanguage, FaWikipediaW } from "react-icons/fa";
+import { GiCardRandom, GiFamilyTree } from "react-icons/gi";
+import { GiSoapExperiment } from "react-icons/gi";
+import { GiVibratingShield } from "react-icons/gi";
+import { FaTreeCity } from "react-icons/fa6";
 
 interface NavigationItem {
   name: string;
@@ -32,6 +49,15 @@ interface NavigationItem {
   requiresAuth?: boolean;
   requiresCountry?: boolean;
   adminOnly?: boolean;
+  description?: string;
+  isDropdown?: boolean;
+  dropdownItems?: DropdownItem[];
+}
+
+interface DropdownItem {
+  name: string;
+  href: string;
+  icon: any;
   description?: string;
 }
 
@@ -99,7 +125,7 @@ export function Navigation() {
       requiresAuth: true,
     },
     {
-      name: "Countries",
+      name: "Explore",
       href: "/countries",
       icon: Globe,
       requiresAuth: false,
@@ -137,6 +163,45 @@ export function Navigation() {
       href: "/cards",
       icon: GiCardRandom,
       requiresAuth: true,
+    },
+    {
+      name: "Labs",
+      href: "",
+      icon: GiSoapExperiment,
+      requiresAuth: true,
+      isDropdown: true,
+      dropdownItems: [
+        {
+          name: "Vexel",
+          href: "/labs/vexel",
+          icon: GiVibratingShield,
+          description: "Heraldry generator"
+        },
+        {
+          name: "Onoma",
+          href: "/labs/onoma",
+          icon: Database,
+          description: "Markov name generator"
+        },
+        {
+          name: "Strata",
+          href: "/labs/strata",
+          icon: FaTreeCity,
+          description: "City/roadmap generator"
+        },
+        {
+          name: "Dynas",
+          href: "/labs/dynas",
+          icon: GiFamilyTree,
+          description: "Family/Dynasty Generator"
+        },
+        {
+          name: "Nomora",
+          href: "/labs/nomora",
+          icon: FaLanguage,
+          description: "Conlang Generator"
+        }
+      ]
     }
   ];
 
@@ -193,6 +258,70 @@ export function Navigation() {
                 {leftNavItems.map((item) => {
                   const Icon = item.icon;
                   const current = isCurrentPage(item.href);
+                  
+                  // Handle dropdown items
+                  if (item.isDropdown && item.dropdownItems) {
+                    return (
+                      <NavigationMenuItem key={item.name}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger className="relative group flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 will-change-auto hover:bg-accent/10 text-muted-foreground overflow-hidden">
+                              {/* Shine border on hover only - color coded by section */}
+                              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                                <ShineBorder
+                                  shineColor={["#8b5cf6", "#7c3aed", "#a78bfa"]}
+                                  duration={30}
+                                  borderWidth={1}
+                                  className="rounded-lg"
+                                />
+                              </div>
+                              
+                              {/* Icon with color-coded gradient glow and slower rotation */}
+                              <div className="relative">
+                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md">
+                                  <Icon className="h-4 w-4 text-purple-400" />
+                                </div>
+                                <Icon className="h-4 w-4 relative z-10 transition-all duration-300 group-hover:animate-[spin_2s_linear_infinite] group-hover:scale-110 group-hover:text-purple-400" aria-hidden="true" />
+                              </div>
+                              
+                              {/* Animated shiny text */}
+                              <span className="hidden lg:block relative overflow-hidden">
+                                <span className="group-hover:opacity-0 transition-opacity duration-300">{item.name}</span>
+                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                  <AnimatedShinyText shimmerWidth={60}>
+                                    {item.name}
+                                  </AnimatedShinyText>
+                                </div>
+                              </span>
+                              
+                              <ChevronDown className="h-3 w-3 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="w-56 glass-panel">
+                            {item.dropdownItems.map((subItem, index) => {
+                              const SubIcon = subItem.icon;
+                              return (
+                                <div key={subItem.name}>
+                                  <DropdownMenuItem>
+                                    <Link href={subItem.href} className="flex items-center gap-3 px-3 py-3 cursor-pointer">
+                                      <SubIcon className="h-4 w-4 text-muted-foreground" />
+                                      <div className="flex flex-col">
+                                        <span className="font-medium">{subItem.name}</span>
+                                        {subItem.description && (
+                                          <span className="text-xs text-muted-foreground">{subItem.description}</span>
+                                        )}
+                                      </div>
+                                    </Link>
+                                  </DropdownMenuItem>
+                                  {index < item.dropdownItems!.length - 1 && <DropdownMenuSeparator />}
+                                </div>
+                              );
+                            })}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </NavigationMenuItem>
+                    );
+                  }
+                  
+                  // Handle regular items
                   return (
                     <NavigationMenuItem key={item.name}>
                       {current ? (
@@ -319,6 +448,70 @@ export function Navigation() {
                 {rightNavItems.map((item) => {
                   const Icon = item.icon;
                   const current = isCurrentPage(item.href);
+                  
+                  // Handle dropdown items
+                  if (item.isDropdown && item.dropdownItems) {
+                    return (
+                      <NavigationMenuItem key={item.name}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger className="relative group flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 will-change-auto hover:bg-accent/10 text-muted-foreground overflow-hidden">
+                              {/* Shine border on hover only - color coded by section */}
+                              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                                <ShineBorder
+                                  shineColor={["#8b5cf6", "#7c3aed", "#a78bfa"]}
+                                  duration={30}
+                                  borderWidth={1}
+                                  className="rounded-lg"
+                                />
+                              </div>
+                              
+                              {/* Icon with color-coded gradient glow and slower rotation */}
+                              <div className="relative">
+                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md">
+                                  <Icon className="h-4 w-4 text-purple-400" />
+                                </div>
+                                <Icon className="h-4 w-4 relative z-10 transition-all duration-300 group-hover:animate-[spin_2s_linear_infinite] group-hover:scale-110 group-hover:text-purple-400" aria-hidden="true" />
+                              </div>
+                              
+                              {/* Animated shiny text */}
+                              <span className="hidden lg:block relative overflow-hidden">
+                                <span className="group-hover:opacity-0 transition-opacity duration-300">{item.name}</span>
+                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                  <AnimatedShinyText shimmerWidth={60}>
+                                    {item.name}
+                                  </AnimatedShinyText>
+                                </div>
+                              </span>
+                              
+                              <ChevronDown className="h-3 w-3 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-56 glass-panel">
+                            {item.dropdownItems.map((subItem, index) => {
+                              const SubIcon = subItem.icon;
+                              return (
+                                <div key={subItem.name}>
+                                  <DropdownMenuItem>
+                                    <Link href={subItem.href} className="flex items-center gap-3 px-3 py-3 cursor-pointer">
+                                      <SubIcon className="h-4 w-4 text-muted-foreground" />
+                                      <div className="flex flex-col">
+                                        <span className="font-medium">{subItem.name}</span>
+                                        {subItem.description && (
+                                          <span className="text-xs text-muted-foreground">{subItem.description}</span>
+                                        )}
+                                      </div>
+                                    </Link>
+                                  </DropdownMenuItem>
+                                  {index < item.dropdownItems!.length - 1 && <DropdownMenuSeparator />}
+                                </div>
+                              );
+                            })}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </NavigationMenuItem>
+                    );
+                  }
+                  
+                  // Handle regular items
                   return (
                     <NavigationMenuItem key={item.name}>
                       {current ? (
@@ -440,6 +633,34 @@ export function Navigation() {
             {visibleNavItems.slice(0, 5).map((item) => {
               const Icon = item.icon;
               const current = isCurrentPage(item.href);
+              
+              // For mobile, dropdown items become simple links to the first sub-item or disabled
+              if (item.isDropdown && item.dropdownItems) {
+                const firstSubItem = item.dropdownItems[0];
+                if (firstSubItem) {
+                  return (
+                    <Link
+                      key={item.name}
+                      href={firstSubItem.href}
+                      className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors duration-200 will-change-auto text-muted-foreground hover:text-foreground hover:bg-accent/10"
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span className="text-xs font-medium">{item.name}</span>
+                    </Link>
+                  );
+                }
+                // If no sub-items, render as disabled
+                return (
+                  <div
+                    key={item.name}
+                    className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-muted-foreground/50"
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span className="text-xs font-medium">{item.name}</span>
+                  </div>
+                );
+              }
+              
               return (
                 <Link
                   key={item.name}

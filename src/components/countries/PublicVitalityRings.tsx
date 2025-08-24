@@ -5,11 +5,12 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { HealthRing } from '~/components/ui/health-ring';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
+import { Button } from '~/components/ui/button';
 import { 
   TrendingUp, 
   Users, 
@@ -19,7 +20,9 @@ import {
   BarChart3,
   Zap,
   Target,
-  Crown
+  Crown,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { formatCurrency, formatPopulation } from '~/lib/chart-utils';
 import { getFlagColors } from '~/lib/flag-color-extractor';
@@ -49,6 +52,7 @@ export const PublicVitalityRings: React.FC<PublicVitalityRingsProps> = ({
   country,
   className
 }) => {
+  const [showAllMetrics, setShowAllMetrics] = useState(false);
   const flagColors = getFlagColors(country.name);
 
   // Calculate comprehensive vitality metrics
@@ -182,58 +186,102 @@ export const PublicVitalityRings: React.FC<PublicVitalityRingsProps> = ({
         </div>
 
         {/* Individual Vitality Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          {vitalityMetrics.map((metric, index) => {
+        <div className="space-y-8">
+          <div className="grid grid-cols-3 gap-8">
+            {vitalityMetrics.slice(0, 3).map((metric, index) => {
             const performance = getPerformanceLevel(metric.value);
             return (
               <motion.div
                 key={metric.id}
-                className="p-4 rounded-lg glass-hierarchy-child hover:glass-depth-2 transition-all duration-200 group"
+                className="flex flex-col items-center text-center space-y-3"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.1 }}
               >
-                {/* Category Badge */}
-                <Badge variant="outline" className="mb-2 text-xs">
-                  {metric.category}
-                </Badge>
-
-                <div className="flex items-center gap-3 mb-3">
-                  <HealthRing
-                    value={metric.value}
-                    size={60}
-                    color={metric.color}
-                    label={metric.label}
-                    tooltip={metric.description}
-                    className="flex-shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <metric.icon className="h-4 w-4" style={{ color: metric.color }} />
-                      <span className="font-medium text-sm truncate">{metric.label}</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground mb-1">{metric.subtitle}</div>
-                    <div className="font-semibold text-sm truncate" style={{ color: metric.color }}>
-                      {metric.details}
-                    </div>
+                <HealthRing
+                  value={metric.value}
+                  size={80}
+                  color={metric.color}
+                  label={metric.label}
+                  tooltip={metric.description}
+                />
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center gap-2">
+                    <metric.icon className="h-4 w-4" style={{ color: metric.color }} />
+                    <span className="font-medium text-sm">{metric.label}</span>
                   </div>
-                </div>
-
-                {/* Performance Indicator */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1">
-                    {getPerformanceIcon(metric.value)}
-                    <span className={`text-xs font-medium ${performance.color}`}>
-                      {performance.label}
-                    </span>
+                  <div className="text-xs text-muted-foreground">{metric.subtitle}</div>
+                  <div className="font-semibold text-sm" style={{ color: metric.color }}>
+                    {metric.details}
                   </div>
-                  <span className="text-xs font-bold" style={{ color: metric.color }}>
-                    {Math.round(metric.value)}%
-                  </span>
                 </div>
               </motion.div>
             );
-          })}
+            })}
+          </div>
+          
+          {showAllMetrics && (
+            <motion.div 
+              className="grid grid-cols-3 gap-8"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {vitalityMetrics.slice(3).map((metric, index) => {
+                const performance = getPerformanceLevel(metric.value);
+                return (
+                  <motion.div
+                    key={metric.id}
+                    className="flex flex-col items-center text-center space-y-3"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: index * 0.1 }}
+                  >
+                    <HealthRing
+                      value={metric.value}
+                      size={80}
+                      color={metric.color}
+                      label={metric.label}
+                      tooltip={metric.description}
+                    />
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-center gap-2">
+                        <metric.icon className="h-4 w-4" style={{ color: metric.color }} />
+                        <span className="font-medium text-sm">{metric.label}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">{metric.subtitle}</div>
+                      <div className="font-semibold text-sm" style={{ color: metric.color }}>
+                        {metric.details}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          )}
+          
+          {/* Toggle Button */}
+          <div className="flex justify-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAllMetrics(!showAllMetrics)}
+              className="glass-hierarchy-interactive"
+            >
+              {showAllMetrics ? (
+                <>
+                  <ChevronUp className="h-4 w-4 mr-2" />
+                  Show Less
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4 mr-2" />
+                  Show More Metrics
+                </>
+              )}
+            </Button>
+          </div>
         </div>
 
         {/* Quick Stats Summary */}
