@@ -4,6 +4,8 @@ import React, { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { IxTime } from "~/lib/ixtime";
+import { api } from "~/trpc/react";
+import { toast } from "sonner";
 import { 
   RiLockLine,
   RiShieldLine,
@@ -91,8 +93,8 @@ const PRIORITY_STYLES = {
 const SecureDiplomaticChannelsComponent: React.FC<SecureDiplomaticChannelsProps> = ({
   currentCountryId,
   currentCountryName,
-  channels,
-  messages,
+  channels: propChannels,
+  messages: propMessages,
   viewerClearanceLevel = 'PUBLIC',
   onSendMessage,
   onCreateChannel,
@@ -103,6 +105,53 @@ const SecureDiplomaticChannelsComponent: React.FC<SecureDiplomaticChannelsProps>
   const [showNewMessage, setShowNewMessage] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPriority, setFilterPriority] = useState<string>('all');
+
+  // Fetch live diplomatic channels
+  const { data: liveChannels, isLoading: channelsLoading, refetch: refetchChannels } = api.diplomatic.getChannels.useQuery(
+    {
+      countryId: currentCountryId,
+      clearanceLevel: viewerClearanceLevel
+    },
+    { 
+      enabled: !!currentCountryId,
+      refetchInterval: 15000
+    }
+  );
+
+  // Fetch messages for active channel
+  const { data: liveMessages, isLoading: messagesLoading, refetch: refetchMessages } = api.diplomatic.getChannelMessages.useQuery(
+    {
+      channelId: activeChannelId || '',
+      countryId: currentCountryId,
+      clearanceLevel: viewerClearanceLevel
+    },
+    {
+      enabled: !!activeChannelId && !!currentCountryId,
+      refetchInterval: 5000
+    }
+  );
+
+  // Send message mutation
+  const sendMessageMutation = api.diplomatic.sendMessage.useMutation({
+    onSuccess: () => {
+      toast.success('Message sent successfully');
+      setShowNewMessage(false);
+      refetchMessages();
+      refetchChannels();
+    },
+    onError: (error) => {
+      toast.error(`Failed to send message: ${error.message}`);
+    }
+  });
+
+  // Use live data or fallback to prop data
+  const channels = useMemo(() => {
+    return liveChannels || propChannels;
+  }, [liveChannels, propChannels]);
+
+  const messages = useMemo(() => {
+    return liveMessages || propMessages;
+  }, [liveMessages, propMessages]);
 
   // Filter channels based on clearance level
   const accessibleChannels = useMemo(() => {
@@ -153,23 +202,21 @@ const SecureDiplomaticChannelsComponent: React.FC<SecureDiplomaticChannelsProps>
   }, [accessibleChannels, activeChannelId]);
 
   const handleSendMessage = useCallback((messageData: Partial<DiplomaticMessage>) => {
-    if (!activeChannelId || !onSendMessage) return;
+    if (!activeChannelId) return;
     
-    const message: Partial<DiplomaticMessage> = {
-      ...messageData,
-      from: {
-        countryId: currentCountryId,
-        countryName: currentCountryName
-      },
-      timestamp: new Date().toISOString(),
-      ixTimeTimestamp: IxTime.getCurrentIxTime(),
-      status: 'SENT',
+    const messageInput = {
+      channelId: activeChannelId,
+      fromCountryId: currentCountryId,
+      fromCountryName: currentCountryName,
+      subject: messageData.subject,
+      content: messageData.content || '',
+      classification: messageData.classification || 'PUBLIC',
+      priority: messageData.priority || 'NORMAL',
       encrypted: activeChannel?.encrypted || false
     };
     
-    onSendMessage(activeChannelId, message);
-    setShowNewMessage(false);
-  }, [activeChannelId, onSendMessage, currentCountryId, currentCountryName, activeChannel?.encrypted]);
+    sendMessageMutation.mutate(messageInput);
+  }, [activeChannelId, currentCountryId, currentCountryName, activeChannel?.encrypted, sendMessageMutation]);
 
   return (
     <div className="secure-diplomatic-channels h-full flex flex-col lg:flex-row gap-6">
@@ -180,6 +227,9 @@ const SecureDiplomaticChannelsComponent: React.FC<SecureDiplomaticChannelsProps>
           <h3 className="text-lg font-bold text-[--intel-gold] flex items-center gap-2">
             <RiShieldLine className="h-5 w-5" />
             Secure Channels
+            {channelsLoading && (
+              <div className="w-4 h-4 border-2 border-[--intel-gold]/20 border-t-[--intel-gold] rounded-full animate-spin" />
+            )}
           </h3>
           <button
             onClick={() => setShowNewChannel(true)}
@@ -210,7 +260,7 @@ const SecureDiplomaticChannelsComponent: React.FC<SecureDiplomaticChannelsProps>
                     {channel.type === 'BILATERAL' && <RiUserLine className="h-4 w-4 text-blue-400" />}
                     {channel.type === 'MULTILATERAL' && <RiGroupLine className="h-4 w-4 text-purple-400" />}
                     {channel.type === 'EMERGENCY' && <RiAlertLine className="h-4 w-4 text-red-400" />}
-                    <span className="font-medium text-white truncate">{channel.name}</span>
+                    <span className="font-medium text-foreground truncate">{channel.name}</span>
                     {channel.encrypted && <RiLockLine className="h-3 w-3 text-[--intel-gold]" />}
                   </div>
                   
@@ -231,7 +281,7 @@ const SecureDiplomaticChannelsComponent: React.FC<SecureDiplomaticChannelsProps>
                 </div>
                 
                 {channel.unreadCount > 0 && (
-                  <div className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+                  <div className="bg-red-500 text-foreground text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
                     {channel.unreadCount}
                   </div>
                 )}
@@ -257,7 +307,7 @@ const SecureDiplomaticChannelsComponent: React.FC<SecureDiplomaticChannelsProps>
             <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10 mb-4">
               <div className="flex items-center gap-3">
                 <div>
-                  <h4 className="text-lg font-bold text-white flex items-center gap-2">
+                  <h4 className="text-lg font-bold text-foreground flex items-center gap-2">
                     {activeChannel.name}
                     {activeChannel.encrypted && (
                       <div className="flex items-center gap-1 text-[--intel-gold] text-sm">
@@ -300,7 +350,7 @@ const SecureDiplomaticChannelsComponent: React.FC<SecureDiplomaticChannelsProps>
                   placeholder="Search messages..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder:text-[--intel-silver] focus:outline-none focus:border-[--intel-gold]/50"
+                  className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-foreground placeholder:text-[--intel-silver] focus:outline-none focus:border-[--intel-gold]/50"
                 />
               </div>
               
@@ -309,7 +359,7 @@ const SecureDiplomaticChannelsComponent: React.FC<SecureDiplomaticChannelsProps>
                 <select
                   value={filterPriority}
                   onChange={(e) => setFilterPriority(e.target.value)}
-                  className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[--intel-gold]/50"
+                  className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-foreground text-sm focus:outline-none focus:border-[--intel-gold]/50"
                 >
                   <option value="all">All Priorities</option>
                   <option value="URGENT">Urgent</option>
@@ -348,7 +398,7 @@ const SecureDiplomaticChannelsComponent: React.FC<SecureDiplomaticChannelsProps>
                               className="w-5 h-3 object-cover rounded border border-white/20"
                             />
                           )}
-                          <span className="font-medium text-white">
+                          <span className="font-medium text-foreground">
                             {isOutgoing ? 'You' : message.from.countryName}
                           </span>
                         </div>
@@ -385,7 +435,7 @@ const SecureDiplomaticChannelsComponent: React.FC<SecureDiplomaticChannelsProps>
                     
                     {/* Message Subject */}
                     {message.subject && (
-                      <div className="font-semibold text-white mb-2">
+                      <div className="font-semibold text-foreground mb-2">
                         {message.subject}
                       </div>
                     )}
@@ -503,7 +553,7 @@ const NewMessageForm: React.FC<NewMessageFormProps> = ({ onSend, onCancel, viewe
         <button
           type="button"
           onClick={onCancel}
-          className="p-2 text-[--intel-silver] hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+          className="p-2 text-[--intel-silver] hover:text-foreground hover:bg-white/10 rounded-lg transition-colors"
         >
           <RiCloseLine className="h-4 w-4" />
         </button>
@@ -511,11 +561,11 @@ const NewMessageForm: React.FC<NewMessageFormProps> = ({ onSend, onCancel, viewe
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-white mb-2">Classification</label>
+          <label className="block text-sm font-medium text-foreground mb-2">Classification</label>
           <select
             value={classification}
             onChange={(e) => setClassification(e.target.value as any)}
-            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[--intel-gold]/50"
+            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-foreground focus:outline-none focus:border-[--intel-gold]/50"
           >
             <option value="PUBLIC">PUBLIC</option>
             {(viewerClearanceLevel === 'RESTRICTED' || viewerClearanceLevel === 'CONFIDENTIAL') && (
@@ -528,11 +578,11 @@ const NewMessageForm: React.FC<NewMessageFormProps> = ({ onSend, onCancel, viewe
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-white mb-2">Priority</label>
+          <label className="block text-sm font-medium text-foreground mb-2">Priority</label>
           <select
             value={priority}
             onChange={(e) => setPriority(e.target.value as any)}
-            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[--intel-gold]/50"
+            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-foreground focus:outline-none focus:border-[--intel-gold]/50"
           >
             <option value="LOW">Low</option>
             <option value="NORMAL">Normal</option>
@@ -543,25 +593,25 @@ const NewMessageForm: React.FC<NewMessageFormProps> = ({ onSend, onCancel, viewe
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-white mb-2">Subject</label>
+        <label className="block text-sm font-medium text-foreground mb-2">Subject</label>
         <input
           type="text"
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           placeholder="Diplomatic message subject..."
-          className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder:text-[--intel-silver] focus:outline-none focus:border-[--intel-gold]/50"
+          className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-foreground placeholder:text-[--intel-silver] focus:outline-none focus:border-[--intel-gold]/50"
           required
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-white mb-2">Message</label>
+        <label className="block text-sm font-medium text-foreground mb-2">Message</label>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="Compose your diplomatic message..."
           rows={6}
-          className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder:text-[--intel-silver] focus:outline-none focus:border-[--intel-gold]/50 resize-none"
+          className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-foreground placeholder:text-[--intel-silver] focus:outline-none focus:border-[--intel-gold]/50 resize-none"
           required
         />
       </div>
@@ -580,7 +630,7 @@ const NewMessageForm: React.FC<NewMessageFormProps> = ({ onSend, onCancel, viewe
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-[--intel-silver] hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+            className="px-4 py-2 text-[--intel-silver] hover:text-foreground hover:bg-white/10 rounded-lg transition-colors"
           >
             Cancel
           </button>

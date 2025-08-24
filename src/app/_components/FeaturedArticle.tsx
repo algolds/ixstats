@@ -96,16 +96,8 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
       // Test if the template content is valid wikitext
       if (templateResult.trim().length === 0) {
         console.warn("Template content is empty");
-        // Create fallback content instead of showing error
-        const fallbackData: FeaturedArticleData = {
-          title: "Welcome to IxWiki",
-          description: "Discover the rich world of IxWiki, where nations come to life through detailed articles, comprehensive statistics, and engaging content.",
-          articleUrl: "https://ixwiki.com/wiki/Main_Page",
-          category: "Featured",
-          lastUpdated: new Date().toLocaleDateString(),
-        };
-        
-        setArticleData(fallbackData);
+        // Don't create fallback - return empty instead
+        setArticleData(null);
         setHtmlContent(`
           <style>
             .featured-article-fallback {
@@ -674,31 +666,9 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
     fetchFeaturedArticle();
   };
 
-  if (isLoading) {
-    return (
-      <Card className={className}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5" />
-            Featured Article
-            <Badge variant="secondary" className="ml-auto">
-              Loading...
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-2/3" />
-            <div className="flex gap-2">
-              <Skeleton className="h-8 w-24" />
-              <Skeleton className="h-8 w-32" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
+  // Don't render anything if there's no real article data - NO PLACEHOLDERS
+  if (isLoading || !articleData || !htmlContent) {
+    return null;
   }
 
 

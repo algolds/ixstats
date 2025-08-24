@@ -96,7 +96,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
   onSocialAction
 }) => {
   const [activeIntelSection, setActiveIntelSection] = useState<'command-center' | 'intelligence-dossier' | 'diplomatic-operations' | 'stratcomm-intel' | 'thinkpages-social'>('command-center');
-  const [activeDiplomaticTab, setActiveDiplomaticTab] = useState<'networks' | 'channels' | 'cultural' | 'objectives'>('networks');
+  const [activeDiplomaticTab, setActiveDiplomaticTab] = useState<'networks' | 'channels' | 'cultural' | 'achievements'>('networks');
   const [showDiplomaticActions, setShowDiplomaticActions] = useState(false);
   const [selectedAchievement, setSelectedAchievement] = useState<DiplomaticAchievement | null>(null);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
@@ -1161,17 +1161,17 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                         </div>
                       </button>
                       <button
-                        onClick={() => setActiveDiplomaticTab('objectives')}
+                        onClick={() => setActiveDiplomaticTab('achievements')}
                         className={cn(
                           "flex-1 py-3 px-4 text-sm font-medium transition-colors",
-                          activeDiplomaticTab === 'objectives'
+                          activeDiplomaticTab === 'achievements'
                             ? "text-[--intel-gold] bg-[--intel-gold]/10 border-b-2 border-[--intel-gold]"
                             : "text-[--intel-silver] hover:text-white hover:bg-white/5"
                         )}
                       >
                         <div className="flex items-center gap-2 justify-center">
                           <RiStarLine className="h-4 w-4" />
-                          Strategic Objectives
+                          Achievements & Rankings
                         </div>
                       </button>
                     </div>
@@ -1282,9 +1282,9 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                           </motion.div>
                         )}
 
-                        {activeDiplomaticTab === 'objectives' && (
+                        {activeDiplomaticTab === 'achievements' && (
                           <motion.div
-                            key="objectives"
+                            key="achievements"
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}

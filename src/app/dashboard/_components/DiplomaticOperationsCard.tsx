@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { 
@@ -59,12 +59,30 @@ export function DiplomaticOperationsCard({
     { enabled: !!userProfile?.countryId }
   ) || { data: null };
 
-  // Mock data for demonstration (replace with real API calls)
-  const embassyNetworks = [
-    { id: 1, country: "Caphiria", status: "active", strength: 85 },
-    { id: 2, country: "Urcea", status: "strengthening", strength: 72 },
-    { id: 3, country: "Burgundie", status: "neutral", strength: 45 },
-  ];
+  // Fetch live embassy network data
+  const { data: liveEmbassies, isLoading: embassiesLoading } = api.diplomatic.getEmbassies.useQuery(
+    { countryId: userProfile?.countryId || '' },
+    { enabled: !!userProfile?.countryId, refetchInterval: 60000 }
+  );
+
+  // Use live embassy data or fallback to mock
+  const embassyNetworks = useMemo(() => {
+    if (liveEmbassies && liveEmbassies.length > 0) {
+      return liveEmbassies.map((embassy, index) => ({
+        id: index + 1,
+        country: embassy.country,
+        status: embassy.status,
+        strength: embassy.strength
+      }));
+    }
+    
+    // Fallback mock data
+    return [
+      { id: 1, country: "Caphiria", status: "active", strength: 85 },
+      { id: 2, country: "Urcea", status: "strengthening", strength: 72 },
+      { id: 3, country: "Burgundie", status: "neutral", strength: 45 },
+    ];
+  }, [liveEmbassies]);
 
   const activeTreaties = [
     { id: 1, name: "Trade Agreement Alpha", status: "active", progress: 100 },
@@ -146,6 +164,9 @@ export function DiplomaticOperationsCard({
               <Badge variant="outline" className="text-xs">
                 {embassyNetworks.length} Active
               </Badge>
+              {embassiesLoading && (
+                <div className="w-3 h-3 border border-blue-400/20 border-t-blue-400 rounded-full animate-spin" />
+              )}
             </div>
             
             <div className="space-y-2">

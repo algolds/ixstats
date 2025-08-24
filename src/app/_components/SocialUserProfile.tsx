@@ -109,22 +109,22 @@ export function SocialUserProfile({ userProfile, className }: SocialUserProfileP
     { enabled: !!userProfile?.id }
   );
 
-  // Calculate social metrics from real data
+  // Calculate social metrics from real data only
   const socialMetrics: SocialMetrics = {
     followers: socialData?.friends?.length || 0,
     following: socialData?.followingCountries?.length || 0,
-    profileViews: 0, // Remove views from display
+    profileViews: 0, // Not tracked, keep at 0
     influence: socialData?.influence || 0,
     achievements: socialData?.achievements || 0,
-    socialRank: Math.max(1, 500 - (socialData?.influence || 0) * 5), // Rank based on influence
-    engagementRate: Math.min(1, (socialData?.influence || 0) / 100),
-    streakDays: Math.floor(Math.random() * 30) + 1 // This would come from activity tracking
+    socialRank: 0, // Remove fake ranks
+    engagementRate: 0, // Not calculated from real data yet
+    streakDays: 0 // Not tracked yet
   };
 
-  // Real friends data (empty for now, could be expanded)
+  // Real friends data only - no placeholders
   const friends: Friend[] = [];
 
-  // Real achievements data (empty for now, could be expanded based on country performance)
+  // Real achievements data only - no placeholders
   const achievements: Achievement[] = [];
 
   const getRarityColor = (rarity: Achievement['rarity']) => {
@@ -216,11 +216,7 @@ export function SocialUserProfile({ userProfile, className }: SocialUserProfileP
             <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground mb-4">
               <span className="flex items-center gap-1">
                 <Calendar className="h-4 w-4" />
-                Joined {userProfile?.joinedAt?.toLocaleDateString() || '7/14/2025'}
-              </span>
-              <span className="flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                Rank #{socialMetrics.socialRank}
+                {userProfile?.joinedAt ? `Joined ${userProfile.joinedAt.toLocaleDateString()}` : 'Joined recently'}
               </span>
             </div>
 
@@ -266,13 +262,7 @@ export function SocialUserProfile({ userProfile, className }: SocialUserProfileP
               <span className="text-sm text-muted-foreground">{socialMetrics.influence}/100</span>
             </div>
             <Progress value={socialMetrics.influence} className="mb-2 h-2" />
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>Next level at 80</span>
-              <span className="flex items-center gap-1">
-                <Zap className="h-3 w-3" />
-                {socialMetrics.streakDays} day streak
-              </span>
-            </div>
+            {/* Remove placeholder streak info */}
           </div>
 
           {/* Quick Actions */}

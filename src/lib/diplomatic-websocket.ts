@@ -131,10 +131,13 @@ export class DiplomaticWebSocket {
 
         this.ws.onerror = (error) => {
           clearTimeout(connectionTimeout);
-          const errorMessage = this.getWebSocketErrorMessage(error);
-          console.error('Diplomatic WebSocket error:', errorMessage);
-          this.onStatusChange('error');
-          reject(new Error(errorMessage));
+          // Only log errors if we're not already closed/disconnected
+          if (this.ws && this.ws.readyState !== WebSocket.CLOSED) {
+            const errorMessage = this.getWebSocketErrorMessage(error);
+            console.error('Diplomatic WebSocket error:', errorMessage);
+            this.onStatusChange('error');
+            reject(new Error(errorMessage));
+          }
         };
 
       } catch (error) {
