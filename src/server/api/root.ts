@@ -15,6 +15,7 @@ import { diplomaticRouter } from "./routers/diplomatic";
 import { thinkpagesRouter } from "./routers/thinkpages";
 import { archetypesRouter } from "./routers/archetypes";
 import { activitiesRouter } from "./routers/activities";
+import { enhancedEconomicsRouter } from "./routers/enhanced-economics";
 
 /**
  * This is the primary router for your server.
@@ -35,6 +36,7 @@ export const appRouter = createTRPCRouter({
   thinkpages: thinkpagesRouter, // Thinkpages social platform
   archetypes: archetypesRouter, // Enhanced archetype system for country filtering
   activities: activitiesRouter, // Live activity feed system
+  enhancedEconomics: enhancedEconomicsRouter, // Enhanced economic analysis system
   system: adminRouter, // Alias for global stats
 });
 

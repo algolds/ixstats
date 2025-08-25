@@ -38,7 +38,7 @@ import type {
   NotificationStatus,
   UserNotificationPreferences,
 } from '~/types/unified-notifications';
-import { generateSafeKey } from '~/app/mycountry/new/utils/keyValidation';
+import { generateSafeKey } from '~/app/mycountry/utils/keyValidation';
 
 // Notification center configuration
 interface NotificationCenterConfig {

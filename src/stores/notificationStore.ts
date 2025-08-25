@@ -34,7 +34,7 @@ import {
   groupNotifications,
   createSmartBatches 
 } from '~/services/NotificationGrouping';
-import { generateSafeKey } from '~/app/mycountry/new/utils/keyValidation';
+import { generateSafeKey } from '~/app/mycountry/utils/keyValidation';
 
 interface NotificationState {
   // Core data

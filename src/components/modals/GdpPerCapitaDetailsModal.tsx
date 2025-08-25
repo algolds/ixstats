@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { api } from "~/trpc/react";
 import {
   Dialog,
@@ -59,6 +59,25 @@ export function GdpPerCapitaDetailsModal({
   countryName,
 }: GdpPerCapitaDetailsModalProps) {
   const [timeRange, setTimeRange] = useState("1y");
+
+  // Enhanced escape functionality
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, onClose]);
 
   const {
     data: economicData,
@@ -220,14 +239,25 @@ export function GdpPerCapitaDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-4rem)] w-[calc(100vw-2rem)] sm:w-[calc(100vw-4rem)] max-h-[90vh] overflow-y-auto z-[9999] shadow-2xl border-2 border-white/10 backdrop-blur-xl bg-background/95">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            GDP per Capita Analysis - {countryName}
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              GDP per Capita Analysis - {countryName}
+            </DialogTitle>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onClose}
+              className="h-8 w-8 p-0 rounded-full hover:bg-destructive/20 hover:text-destructive"
+            >
+              ✕
+            </Button>
+          </div>
           <DialogDescription>
             Detailed GDP per capita analysis with global comparisons and economic tier insights
+            <div className="text-xs text-muted-foreground mt-1">Press ESC or click outside to close</div>
           </DialogDescription>
         </DialogHeader>
 

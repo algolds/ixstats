@@ -28,6 +28,9 @@ import type {
   ActionableRecommendation,
   IntelligenceComponentProps 
 } from '../types/intelligence';
+import { getIntelligenceEconomicData, getQuickEconomicHealth } from '~/lib/enhanced-economic-service';
+import type { CountryStats } from '~/types/ixstats';
+import type { EconomyData } from '~/types/economics';
 
 interface ExecutiveCommandCenterProps extends IntelligenceComponentProps {
   intelligence: ExecutiveIntelligence;
@@ -37,6 +40,8 @@ interface ExecutiveCommandCenterProps extends IntelligenceComponentProps {
     leader: string;
   };
   isOwner: boolean;
+  countryStats?: CountryStats;
+  economyData?: EconomyData;
   onActionClick?: (action: ActionableRecommendation) => void;
   onAlertClick?: (alert: CriticalAlert) => void;
   onPrivateAccess?: () => void;
@@ -287,6 +292,8 @@ export function ExecutiveCommandCenter({
   intelligence,
   country,
   isOwner,
+  countryStats,
+  economyData,
   onActionClick,
   onAlertClick,
   onPrivateAccess,
@@ -294,6 +301,21 @@ export function ExecutiveCommandCenter({
   loading = false
 }: ExecutiveCommandCenterProps) {
   const [viewMode, setViewMode] = useState<'overview' | 'detailed'>('overview');
+  
+  // Enhanced economic intelligence
+  const enhancedEconomicData = useMemo(() => {
+    if (countryStats && economyData) {
+      try {
+        const healthCheck = getQuickEconomicHealth(countryStats, economyData);
+        const intelligenceData = getIntelligenceEconomicData(countryStats, economyData);
+        return { healthCheck, intelligenceData, hasData: true };
+      } catch (error) {
+        console.warn('Enhanced economic data unavailable:', error);
+        return { hasData: false };
+      }
+    }
+    return { hasData: false };
+  }, [countryStats, economyData]);
   
   const overallHealthColor = useMemo(() => {
     switch (intelligence.overallStatus) {
@@ -423,6 +445,68 @@ export function ExecutiveCommandCenter({
                   actions={intelligence.urgentActions}
                   onActionClick={onActionClick}
                 />
+
+                {/* Enhanced Economic Intelligence */}
+                {enhancedEconomicData.hasData && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.3 }}
+                    className="space-y-4"
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <TrendingUp className="h-4 w-4 text-emerald-600" />
+                      <span className="font-semibold text-emerald-600">Enhanced Economic Intelligence</span>
+                      <Badge className={`text-xs ${
+                        enhancedEconomicData.healthCheck!.overallGrade === 'A+' || enhancedEconomicData.healthCheck!.overallGrade === 'A' ? 
+                          'bg-green-100 text-green-800' : 
+                        enhancedEconomicData.healthCheck!.overallGrade.startsWith('B') ? 
+                          'bg-blue-100 text-blue-800' : 
+                        enhancedEconomicData.healthCheck!.overallGrade.startsWith('C') ? 
+                          'bg-yellow-100 text-yellow-800' : 
+                          'bg-red-100 text-red-800'
+                      }`}>
+                        Grade {enhancedEconomicData.healthCheck!.overallGrade}
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="text-center p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800">
+                        <div className="text-lg font-bold text-emerald-600">
+                          {enhancedEconomicData.intelligenceData!.executiveIntelligence.overallRating.score}
+                        </div>
+                        <div className="text-xs text-emerald-700">Overall Score</div>
+                      </div>
+
+                      <div className="text-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+                        <div className="text-sm font-bold text-blue-600 capitalize">
+                          {enhancedEconomicData.healthCheck!.healthIndicators.growth}
+                        </div>
+                        <div className="text-xs text-blue-700">Growth</div>
+                      </div>
+
+                      <div className="text-center p-3 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800">
+                        <div className="text-sm font-bold text-purple-600 capitalize">
+                          {enhancedEconomicData.healthCheck!.healthIndicators.stability}
+                        </div>
+                        <div className="text-xs text-purple-700">Stability</div>
+                      </div>
+
+                      <div className="text-center p-3 rounded-lg bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800">
+                        <div className="text-sm font-bold text-orange-600 capitalize">
+                          {enhancedEconomicData.healthCheck!.healthIndicators.sustainability}
+                        </div>
+                        <div className="text-xs text-orange-700">Sustainability</div>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <p className="text-sm text-blue-800 dark:text-blue-200">
+                        <strong>AI Analysis:</strong> {enhancedEconomicData.healthCheck!.keyMessage}
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
               </motion.div>
             ) : (
               <motion.div
