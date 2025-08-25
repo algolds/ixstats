@@ -4,7 +4,7 @@
 import type { LucideIcon } from 'lucide-react';
 
 // Import and re-export unified types for backward compatibility
-import type { StandardPriority, StandardTrend, StandardTimeframe } from '../../../../types/base';
+import type { StandardPriority, StandardTrend, StandardTimeframe } from '~/types/base';
 
 export type DataPriority = StandardPriority;
 export type TrendDirection = StandardTrend;

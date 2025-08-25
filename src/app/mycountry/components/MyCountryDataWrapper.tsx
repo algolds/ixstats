@@ -30,8 +30,8 @@ import { useUnifiedNotifications } from '~/hooks/useUnifiedNotifications';
 import { UnifiedLayout } from './UnifiedLayout';
 import { useExecutiveNotifications, type ExecutiveNotification } from '~/contexts/ExecutiveNotificationContext';
 import { useIntelligenceWebSocket } from '~/hooks/useIntelligenceWebSocket';
-import { PublicMyCountryPage } from '../public-page';
-import { ExecutiveDashboard } from '../executive-dashboard';
+// import { PublicMyCountryPage } from '../public-page';
+// import { ExecutiveDashboard } from '../executive-dashboard';
 import { api } from "~/trpc/react";
 import { standardize } from '~/lib/interface-standardizer';
 import { ensureCountryData } from '~/lib/type-guards';
@@ -407,35 +407,13 @@ export function MyCountryDataWrapper({
           transition={{ duration: 0.4 }}
         >
           {viewMode === 'executive' && isOwner ? (
-            <ExecutiveDashboard
-              country={enhancedCountryData}
-              intelligenceFeed={intelligenceFeed}
-              quickActions={executiveActions.map(adaptExecutiveToQuick)}
-              currentIxTime={currentIxTime}
-              timeAcceleration={timeAcceleration}
-              onActionClick={(actionId: string) => {
-                // Execute the action via API
-                executeActionMutation.mutate({
-                  countryId: userProfile?.countryId || '',
-                  actionId: actionId,
-                  parameters: {}
-                });
-                // Also call the original handler for any additional logic
-                onActionClick(actionId);
-              }}
-              onFocusAreaClick={onFocusAreaClick}
-              onSettingsClick={onSettingsClick}
-            />
+            <div className="text-center p-8">
+              <p className="text-gray-600">Executive Dashboard - Component needs integration</p>
+            </div>
           ) : (
-            <PublicMyCountryPage
-              country={enhancedCountryData}
-              achievements={achievements}
-              milestones={milestones}
-              rankings={rankings}
-              intelligenceFeed={intelligenceFeed}
-              isOwner={isOwner}
-              onPrivateAccess={onPrivateAccess}
-            />
+            <div className="text-center p-8">
+              <p className="text-gray-600">Public MyCountry Page - Component needs integration</p>
+            </div>
           )}
         </motion.div>
 

@@ -1,6 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState, useMemo, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -27,14 +29,31 @@ import {
   Shield,
   Zap,
   Eye,
-  Calendar
+  Calendar,
+  ChevronDown
 } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
-import { FocusCards, createDefaultFocusCards } from "~/app/mycountry/new/components/FocusCards";
+import { FocusCards, createDefaultFocusCards } from "~/app/mycountry/components/FocusCards";
 import { HealthRing } from "~/components/ui/health-ring";
+import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 
 interface LiveIntelligenceSectionProps {
   countryId: string;
+  country?: {
+    name: string;
+    economicTier: string;
+    currentGdpPerCapita: number;
+    currentTotalGdp: number;
+    currentPopulation: number;
+    populationTier: string;
+    populationGrowthRate?: number;
+    adjustedGdpGrowth?: number;
+    growthStreak?: number;
+    populationDensity?: number;
+    landArea?: number;
+    continent?: string;
+    region?: string;
+  };
 }
 
 interface IntelligenceBriefing {
@@ -99,7 +118,8 @@ function convertApiAlert(apiAlert: ApiAlert): CriticalAlert {
   };
 }
 
-export function LiveIntelligenceSection({ countryId }: LiveIntelligenceSectionProps) {
+export function LiveIntelligenceSection({ countryId, country }: LiveIntelligenceSectionProps) {
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   // Get live intelligence data
   const { data: briefings, isLoading: briefingsLoading } = api.countries.getIntelligenceBriefings.useQuery(
     { countryId, timeframe: 'week' }
@@ -118,6 +138,92 @@ export function LiveIntelligenceSection({ countryId }: LiveIntelligenceSectionPr
   );
 
   const isLoading = briefingsLoading || focusLoading || activityLoading || notificationsLoading;
+
+  // Calculate strategic assessment metrics like the profile page
+  const economicMetrics = useMemo(() => {
+    if (!country) return null;
+    const economicHealth = Math.min(100, (country.currentGdpPerCapita / 50000) * 100);
+    const growthRate = country.adjustedGdpGrowth || 0;
+    const unemploymentRate = Math.max(2, Math.min(15, 8 - (growthRate * 100)));
+    
+    return {
+      economicHealth,
+      growthRate,
+      unemploymentRate,
+      gdpPerCapita: country.currentGdpPerCapita,
+      totalGdp: country.currentTotalGdp,
+      economicTier: country.economicTier,
+      growthTrend: (growthRate > 0.02 ? 'up' : growthRate < -0.01 ? 'down' : 'stable') as 'up' | 'down' | 'stable'
+    };
+  }, [country]);
+
+  const demographicMetrics = useMemo(() => {
+    if (!country) return null;
+    const popGrowthRate = country.populationGrowthRate || 0;
+    const populationGrowth = Math.min(100, Math.max(0, (popGrowthRate * 100 + 2) * 25));
+    const literacyRate = Math.min(99, 70 + (country.currentGdpPerCapita / 1000));
+    const lifeExpectancy = Math.min(85, 65 + (country.currentGdpPerCapita / 2000));
+    
+    return {
+      populationGrowth,
+      literacyRate,
+      lifeExpectancy,
+      population: country.currentPopulation,
+      populationTier: country.populationTier,
+      populationDensity: country.populationDensity,
+      landArea: country.landArea,
+      growthTrend: (popGrowthRate > 0.01 ? 'up' : popGrowthRate < 0 ? 'down' : 'stable') as 'up' | 'down' | 'stable'
+    };
+  }, [country]);
+
+  const developmentMetrics = useMemo(() => {
+    if (!country) return null;
+    const tierScores: Record<string, number> = {
+      "Extravagant": 100, "Very Strong": 85, "Strong": 70,
+      "Healthy": 55, "Developed": 40, "Developing": 25
+    };
+    const developmentIndex = tierScores[country.economicTier] || 10;
+    const stabilityRating = Math.min(100, 75 + ((country.growthStreak || 0) * 2));
+    
+    return {
+      developmentIndex,
+      stabilityRating,
+      economicTier: country.economicTier,
+      growthStreak: country.growthStreak || 0,
+      continent: country.continent,
+      region: country.region
+    };
+  }, [country]);
+
+  // Helper functions for trends
+  const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
+    switch (trend) {
+      case 'up': return TrendingUp;
+      case 'down': return TrendingUp; // Using same icon, will rotate with color
+      default: return Activity;
+    }
+  };
+
+  const getTrendColor = (trend: 'up' | 'down' | 'stable') => {
+    switch (trend) {
+      case 'up': return 'text-green-400';
+      case 'down': return 'text-red-400';
+      default: return 'text-gray-400';
+    }
+  };
+
+  // Toggle card expansion
+  const toggleCard = useCallback((cardId: string) => {
+    setExpandedCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(cardId)) {
+        newSet.delete(cardId);
+      } else {
+        newSet.add(cardId);
+      }
+      return newSet;
+    });
+  }, []);
 
   if (isLoading) {
     return (
@@ -208,7 +314,7 @@ export function LiveIntelligenceSection({ countryId }: LiveIntelligenceSectionPr
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview" className="flex items-center gap-1">
             <Activity className="h-4 w-4" />
             Overview
@@ -221,52 +327,379 @@ export function LiveIntelligenceSection({ countryId }: LiveIntelligenceSectionPr
             <Brain className="h-4 w-4" />
             Briefings
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-1">
-            <Bell className="h-4 w-4" />
-            Alerts
-          </TabsTrigger>
         </TabsList>
 
-        {/* Overview Tab - Activity Rings */}
+        {/* Overview Tab - Strategic Assessment + Alerts */}
         <TabsContent value="overview" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5 text-blue-500" />
-                National Vitality Rings
-              </CardTitle>
-              <CardDescription>Real-time assessment of key national performance indicators</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {activityData.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                  {activityData.map((ring, index) => (
-                    <div key={index} className="flex flex-col items-center text-center">
-                      <HealthRing
-                        value={Number(ring.value)}
-                        size={80}
-                        color={ring.color}
-                        className="mb-3"
-                      />
-                      <div className="flex items-center gap-1 mb-1">
-                        <ring.icon className="h-4 w-4" style={{ color: ring.color }} />
-                        <span className="font-medium text-sm">{ring.label}</span>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Strategic Assessment Cards */}
+            <div className="lg:col-span-2 space-y-4">
+              {/* Economic Intelligence Card */}
+              {economicMetrics && (
+                <Card className="border border-amber-500/20 dark:border-amber-400/20 bg-gradient-to-br from-amber-500/5 dark:from-amber-400/5 to-transparent">
+                  <CardContent className="p-0">
+                    <button
+                      onClick={() => toggleCard('economic')}
+                      className="w-full p-4 text-left hover:bg-amber-500/10 dark:hover:bg-amber-400/10 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <DollarSign className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                          <div>
+                            <h3 className="text-lg font-semibold text-amber-700 dark:text-amber-300">Economic Intelligence</h3>
+                            <p className="text-sm text-muted-foreground">{formatCurrency(economicMetrics.gdpPerCapita)} GDP/capita</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-amber-600 dark:text-amber-400">
+                              {economicMetrics.economicHealth.toFixed(0)}%
+                            </div>
+                            <div className="text-xs text-muted-foreground flex items-center gap-1">
+                              {(() => {
+                                const TrendIcon = getTrendIcon(economicMetrics.growthTrend);
+                                return (
+                                  <TrendIcon className={cn("h-3 w-3", getTrendColor(economicMetrics.growthTrend))} />
+                                );
+                              })()} 
+                              {economicMetrics.economicTier}
+                            </div>
+                          </div>
+                          <motion.div
+                            animate={{ rotate: expandedCards.has('economic') ? 180 : 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          </motion.div>
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {ring.value.toFixed(1)}% performance
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-sm">No activity data available</p>
-                </div>
+                    </button>
+                    
+                    <AnimatePresence>
+                      {expandedCards.has('economic') && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="border-t border-amber-500/20 dark:border-amber-400/20 bg-amber-500/5 dark:bg-amber-400/5"
+                        >
+                          <div className="p-4 space-y-4">
+                            <div className="grid grid-cols-3 gap-4 text-sm">
+                              <div className="bg-muted/50 rounded-lg p-3">
+                                <div className="text-muted-foreground text-xs">Total GDP</div>
+                                <div className="font-semibold text-foreground">{formatCurrency(economicMetrics.totalGdp)}</div>
+                              </div>
+                              <div className="bg-muted/50 rounded-lg p-3">
+                                <div className="text-muted-foreground text-xs">Growth Rate</div>
+                                <div className="font-semibold text-foreground">{(economicMetrics.growthRate * 100).toFixed(1)}%</div>
+                              </div>
+                              <div className="bg-muted/50 rounded-lg p-3">
+                                <div className="text-muted-foreground text-xs">Unemployment Est.</div>
+                                <div className="font-semibold text-foreground">{economicMetrics.unemploymentRate.toFixed(1)}%</div>
+                              </div>
+                            </div>
+                            
+                            <div className="p-3 bg-amber-50/50 dark:bg-amber-950/20 rounded-lg border border-amber-200/20 dark:border-amber-800/20">
+                              <div className="text-xs text-muted-foreground mb-2">Economic Assessment</div>
+                              <div className="text-sm leading-relaxed text-foreground">
+                                {economicMetrics.economicHealth > 70 
+                                  ? "Strong economic fundamentals with healthy GDP per capita and growth trajectory."
+                                  : economicMetrics.economicHealth > 40
+                                  ? "Moderate economic performance. Growth opportunities exist with strategic development."
+                                  : "Developing economy with significant potential for expansion and improvement."
+                                }
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </CardContent>
+                </Card>
               )}
-            </CardContent>
-          </Card>
 
+              {/* Demographic Intelligence Card */}
+              {demographicMetrics && (
+                <Card className="border border-blue-500/20 dark:border-blue-400/20 bg-gradient-to-br from-blue-500/5 dark:from-blue-400/5 to-transparent">
+                  <CardContent className="p-0">
+                    <button
+                      onClick={() => toggleCard('demographic')}
+                      className="w-full p-4 text-left hover:bg-blue-500/10 dark:hover:bg-blue-400/10 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                          <div>
+                            <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-300">Population Intelligence</h3>
+                            <p className="text-sm text-muted-foreground">{formatPopulation(demographicMetrics.population)} people</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                              Tier {demographicMetrics.populationTier}
+                            </div>
+                            <div className="text-xs text-muted-foreground flex items-center gap-1">
+                              {(() => {
+                                const TrendIcon = getTrendIcon(demographicMetrics.growthTrend);
+                                return (
+                                  <TrendIcon className={cn("h-3 w-3", getTrendColor(demographicMetrics.growthTrend))} />
+                                );
+                              })()} 
+                              {((country?.populationGrowthRate || 0) * 100).toFixed(1)}%
+                            </div>
+                          </div>
+                          <motion.div
+                            animate={{ rotate: expandedCards.has('demographic') ? 180 : 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          </motion.div>
+                        </div>
+                      </div>
+                    </button>
+                    
+                    <AnimatePresence>
+                      {expandedCards.has('demographic') && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="border-t border-blue-500/20 dark:border-blue-400/20 bg-blue-500/5 dark:bg-blue-400/5"
+                        >
+                          <div className="p-4 space-y-4">
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div className="bg-muted/50 rounded-lg p-3">
+                                <div className="text-muted-foreground text-xs">Life Expectancy</div>
+                                <div className="font-semibold text-foreground">{demographicMetrics.lifeExpectancy.toFixed(0)} years</div>
+                              </div>
+                              <div className="bg-muted/50 rounded-lg p-3">
+                                <div className="text-muted-foreground text-xs">Literacy Rate</div>
+                                <div className="font-semibold text-foreground">{demographicMetrics.literacyRate.toFixed(1)}%</div>
+                              </div>
+                              {demographicMetrics.populationDensity && (
+                                <div className="bg-muted/50 rounded-lg p-3">
+                                  <div className="text-muted-foreground text-xs">Density</div>
+                                  <div className="font-semibold text-foreground">{demographicMetrics.populationDensity.toFixed(1)}/km²</div>
+                                </div>
+                              )}
+                              {demographicMetrics.landArea && (
+                                <div className="bg-muted/50 rounded-lg p-3">
+                                  <div className="text-muted-foreground text-xs">Land Area</div>
+                                  <div className="font-semibold text-foreground">{demographicMetrics.landArea.toLocaleString()} km²</div>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="p-3 bg-blue-50/50 dark:bg-blue-950/20 rounded-lg border border-blue-200/20 dark:border-blue-800/20">
+                              <div className="text-xs text-muted-foreground mb-2">Demographic Analysis</div>
+                              <div className="text-sm leading-relaxed text-foreground">
+                                {demographicMetrics.populationGrowth > 70
+                                  ? "Robust population growth indicating strong social stability and economic opportunities."
+                                  : demographicMetrics.populationGrowth > 40
+                                  ? "Moderate demographic trends with balanced population dynamics."
+                                  : "Stable or declining population growth, typical of developed nations."
+                                }
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Development Intelligence Card */}
+              {developmentMetrics && (
+                <Card className="border border-purple-500/20 dark:border-purple-400/20 bg-gradient-to-br from-purple-500/5 dark:from-purple-400/5 to-transparent">
+                  <CardContent className="p-0">
+                    <button
+                      onClick={() => toggleCard('development')}
+                      className="w-full p-4 text-left hover:bg-purple-500/10 dark:hover:bg-purple-400/10 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Building className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                          <div>
+                            <h3 className="text-lg font-semibold text-purple-700 dark:text-purple-300">Development Intelligence</h3>
+                            <p className="text-sm text-muted-foreground">{developmentMetrics.economicTier} nation</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                              {developmentMetrics.developmentIndex}%
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {developmentMetrics.growthStreak}Q Streak
+                            </div>
+                          </div>
+                          <motion.div
+                            animate={{ rotate: expandedCards.has('development') ? 180 : 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          </motion.div>
+                        </div>
+                      </div>
+                    </button>
+                    
+                    <AnimatePresence>
+                      {expandedCards.has('development') && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="border-t border-purple-500/20 dark:border-purple-400/20 bg-purple-500/5 dark:bg-purple-400/5"
+                        >
+                          <div className="p-4 space-y-4">
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div className="bg-muted/50 rounded-lg p-3">
+                                <div className="text-muted-foreground text-xs">Development Index</div>
+                                <div className="font-semibold text-foreground">{developmentMetrics.developmentIndex}%</div>
+                              </div>
+                              <div className="bg-muted/50 rounded-lg p-3">
+                                <div className="text-muted-foreground text-xs">Stability Rating</div>
+                                <div className="font-semibold text-foreground">{developmentMetrics.stabilityRating.toFixed(0)}%</div>
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Economic Tier:</span>
+                                <span className="text-purple-600 dark:text-purple-400 font-medium">{developmentMetrics.economicTier}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Growth Streak:</span>
+                                <span className="text-green-600 dark:text-green-400">{developmentMetrics.growthStreak} Quarters</span>
+                              </div>
+                              {developmentMetrics.region && (
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Region:</span>
+                                  <span className="text-foreground">{developmentMetrics.region}</span>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="p-3 bg-purple-50/50 dark:bg-purple-950/20 rounded-lg border border-purple-200/20 dark:border-purple-800/20">
+                              <div className="text-xs text-muted-foreground mb-2">Development Assessment</div>
+                              <div className="text-sm leading-relaxed text-foreground">
+                                {developmentMetrics.developmentIndex > 80
+                                  ? "Highly developed nation with advanced infrastructure and strong institutional frameworks."
+                                  : developmentMetrics.developmentIndex > 50
+                                  ? "Well-developed country with solid economic foundations and growing capabilities."
+                                  : "Developing nation with significant potential for growth and modernization."
+                                }
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Alerts Column */}
+            <div className="space-y-4">
+              {/* High Priority Alerts */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-red-500" />
+                    Critical Alerts
+                  </CardTitle>
+                  <CardDescription className="text-xs">High priority notifications</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {highPriorityNotifications.length > 0 ? (
+                    <div className="space-y-2">
+                      {highPriorityNotifications.map((notif: Notification) => (
+                        <div key={notif.id} className={`p-3 rounded-lg border-l-4 ${
+                          notif.priority === 'critical' ? 'border-l-red-500 bg-red-50 dark:bg-red-950/20' :
+                          'border-l-orange-500 bg-orange-50 dark:bg-orange-950/20'
+                        }`}>
+                          <div className="flex items-start justify-between mb-1">
+                            <h4 className="font-semibold text-sm">{notif.title}</h4>
+                            <Badge 
+                              className={`text-xs ${
+                                notif.priority === 'critical' ? 'bg-red-500' : 'bg-orange-500'
+                              }`}
+                            >
+                              {notif.priority}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-2">{notif.message}</p>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">{notif.category}</span>
+                            <span className="text-muted-foreground">{new Date(notif.timestamp).toLocaleDateString()}</span>
+                          </div>
+                          {notif.actionRequired && (
+                            <Button variant="outline" size="sm" className="w-full mt-2 h-6 text-xs">
+                              Take Action
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-muted-foreground">
+                      <CheckCircle className="h-8 w-8 mx-auto mb-2 opacity-50 text-green-500" />
+                      <p className="text-xs text-green-600">No critical alerts</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Recent Notifications */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Bell className="h-4 w-4 text-blue-500" />
+                    Recent Activity
+                  </CardTitle>
+                  <CardDescription className="text-xs">Latest system updates</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {notifications?.notifications && notifications.notifications.length > 0 ? (
+                    <div className="space-y-2">
+                      {notifications.notifications.slice(0, 4).map((notif: Notification) => (
+                        <div key={notif.id} className="p-2 bg-muted/30 rounded-lg border">
+                          <div className="flex items-start justify-between mb-1">
+                            <h4 className="font-medium text-xs">{notif.title}</h4>
+                            <Badge variant="outline" className="text-xs">
+                              {notif.priority}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-1">{notif.message}</p>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(notif.timestamp).toLocaleDateString()}
+                          </div>
+                        </div>
+                      ))}
+                      {notifications.total > 4 && (
+                        <div className="text-center pt-2">
+                          <Button variant="ghost" size="sm" className="text-xs h-6">
+                            +{notifications.total - 4} more
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-muted-foreground">
+                      <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-xs">No recent activity</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </TabsContent>
 
         {/* Focus Areas Tab - Focus Cards */}
@@ -374,109 +807,6 @@ export function LiveIntelligenceSection({ countryId }: LiveIntelligenceSectionPr
           </Card>
         </TabsContent>
 
-        {/* Notifications Tab */}
-        <TabsContent value="notifications" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* High Priority Notifications */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-red-500" />
-                  High Priority Alerts
-                </CardTitle>
-                <CardDescription>Critical and high-priority notifications requiring attention</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {highPriorityNotifications.length > 0 ? (
-                  <div className="space-y-3">
-                    {highPriorityNotifications.map((notif: Notification) => (
-                      <Card key={notif.id} className={`border-l-4 ${
-                        notif.priority === 'critical' ? 'border-l-red-500 bg-red-50 dark:bg-red-950/20' :
-                        'border-l-orange-500 bg-orange-50 dark:bg-orange-950/20'
-                      }`}>
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between mb-2">
-                            <h4 className="font-semibold text-sm">{notif.title}</h4>
-                            <Badge 
-                              className={
-                                notif.priority === 'critical' ? 'bg-red-500' : 'bg-orange-500'
-                              }
-                            >
-                              {notif.priority}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground mb-2">{notif.message}</p>
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">{notif.category}</span>
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-3 w-3" />
-                              {new Date(notif.timestamp).toLocaleString()}
-                            </div>
-                          </div>
-                          {notif.actionRequired && (
-                            <Button variant="outline" size="sm" className="w-full mt-2 h-6 text-xs">
-                              Take Action
-                            </Button>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-50 text-green-500" />
-                    <p className="text-sm text-green-600">No high priority alerts</p>
-                    <p className="text-xs text-muted-foreground">All systems operating normally</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Recent Notifications */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5 text-blue-500" />
-                  Recent Notifications
-                </CardTitle>
-                <CardDescription>Latest system notifications and updates</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {notifications?.notifications && notifications.notifications.length > 0 ? (
-                  <div className="space-y-2">
-                    {notifications.notifications.slice(0, 6).map((notif: Notification) => (
-                      <div key={notif.id} className="p-3 bg-muted/50 rounded-lg border">
-                        <div className="flex items-start justify-between mb-1">
-                          <h4 className="font-medium text-sm">{notif.title}</h4>
-                          <Badge variant="outline" className="text-xs">
-                            {notif.priority}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground mb-1">{notif.message}</p>
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>{notif.type}</span>
-                          <span>{new Date(notif.timestamp).toLocaleString()}</span>
-                        </div>
-                      </div>
-                    ))}
-                    {notifications.total > 6 && (
-                      <div className="text-center">
-                        <Button variant="ghost" size="sm" className="text-xs">
-                          View All {notifications.total} Notifications
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Bell className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p className="text-sm">No recent notifications</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
       </Tabs>
 
       {/* Footer with data freshness indicator */}

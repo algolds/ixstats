@@ -8,7 +8,7 @@ import type {
   CriticalAlert,
   ActionableRecommendation
 } from '../types/intelligence';
-import type { StandardTrend } from '../../../../types/base';
+import type { StandardTrend } from '~/types/base';
 import { 
   calculateTrend,
   determinePriority,

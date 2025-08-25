@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect } from "react";
 import { api } from "~/trpc/react";
 import {
   Dialog,
@@ -97,6 +97,25 @@ export function PopulationTierDetailsModal({
   countryId,
   countryName,
 }: PopulationTierDetailsModalProps) {
+  // Enhanced escape functionality
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, onClose]);
+
   const {
     data: economicData,
     isLoading: isEconomicLoading,
@@ -412,7 +431,7 @@ export function PopulationTierDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-4rem)] w-[calc(100vw-2rem)] sm:w-[calc(100vw-4rem)] max-h-[90vh] overflow-y-auto z-[9999] shadow-2xl border-2 border-white/10 backdrop-blur-xl bg-background/95">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />

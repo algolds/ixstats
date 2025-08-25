@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from 'react';
-import { BarChart3, TrendingUp, Users, DollarSign, Activity } from 'lucide-react';
+import { BarChart3, TrendingUp, Users, DollarSign, Activity, Zap } from 'lucide-react';
 import {
   EnhancedNumberInput,
   EnhancedSlider,
@@ -9,8 +9,12 @@ import {
   EnhancedBarChart,
   MetricCard
 } from '../primitives/enhanced';
+import { Badge } from '~/components/ui/badge';
+import { getBuilderEconomicMetrics } from '~/lib/enhanced-economic-service';
 import type { EconomicInputs, RealCountryData } from '../lib/economy-data-service';
 import type { SectionContentProps } from '../types/builder';
+import type { CountryStats } from '~/types/ixstats';
+import type { EconomyData } from '~/types/economics';
 
 interface CoreIndicatorsSectionProps extends SectionContentProps {
   inputs: EconomicInputs;
