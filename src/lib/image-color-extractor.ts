@@ -79,8 +79,13 @@ export async function extractColorsFromImage(
       img.src = imageSource;
     } else {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        img.src = e.target?.result as string;
+      reader.onload = (e: ProgressEvent<FileReader>) => {
+        const result = e.target?.result;
+        if (typeof result === 'string') {
+          img.src = result;
+        } else {
+          reject(new Error('Failed to read file as string'));
+        }
       };
       reader.onerror = () => reject(new Error('Failed to read file'));
       reader.readAsDataURL(imageSource);
@@ -98,10 +103,10 @@ function extractDominantColors(imageData: ImageData): ExtractedColors {
   // Sample pixels (skip some for performance)
   const step = 4; // Sample every 4th pixel
   for (let i = 0; i < data.length; i += step * 4) {
-    const r = data[i];
-    const g = data[i + 1];
-    const b = data[i + 2];
-    const a = data[i + 3];
+    const r = data[i] ?? 0;
+    const g = data[i + 1] ?? 0;
+    const b = data[i + 2] ?? 0;
+    const a = data[i + 3] ?? 255;
     
     // Skip transparent pixels and very light/dark colors
     if (a < 128 || (r > 240 && g > 240 && b > 240) || (r < 15 && g < 15 && b < 15)) {
@@ -247,9 +252,9 @@ export function applyExtractedColors(element: HTMLElement, colors: ExtractedColo
 export function getContrastColor(backgroundColor: string): string {
   // Convert hex to RGB
   const hex = backgroundColor.replace('#', '');
-  const r = parseInt(hex.substr(0, 2), 16);
-  const g = parseInt(hex.substr(2, 2), 16);
-  const b = parseInt(hex.substr(4, 2), 16);
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
   
   // Calculate luminance
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;

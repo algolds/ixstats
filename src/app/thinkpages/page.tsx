@@ -287,6 +287,8 @@ export default function ThinkPagesMainPage() {
         {showAccountCreation && (
           <AccountCreationModal
             countryId={countryData.id}
+            countryName={countryData.name}
+            existingAccountCount={accounts?.length || 0}
             isOpen={showAccountCreation}
             onClose={() => setShowAccountCreation(false)}
             onAccountCreated={handleAccountCreated}
@@ -298,7 +300,7 @@ export default function ThinkPagesMainPage() {
             account={settingsAccount}
             isOpen={showAccountSettings}
             onClose={() => setShowAccountSettings(false)}
-            onAccountUpdated={handleAccountUpdated}
+            onAccountUpdate={handleAccountUpdated}
           />
         )}
 

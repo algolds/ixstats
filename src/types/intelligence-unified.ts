@@ -8,9 +8,14 @@ export interface IntelligenceItem extends BaseIntelligence {
   severity: StandardPriority;    // Unified with priority
   timestamp: number;             // Standardized Unix timestamp
   affectedRegions?: string[];
+  affectedCountries?: string[] | string;  // Added for API compatibility
   relatedItems?: string[];
   tags?: string[];
   metrics?: IntelligenceMetric[];
+  // API compatibility fields
+  content?: string;              // Alternative to description
+  region?: string;               // Single region field
+  isActive?: boolean;           // Activity status
 }
 
 // Standardized intelligence metric

@@ -13,7 +13,7 @@ import {
   RiAwardLine,
   RiShieldLine,
   RiStarFill,
-  RiFlashLine,
+  RiFlaskLine,
   RiFireLine,
   RiCheckLine,
   RiCloseLine
@@ -104,7 +104,7 @@ const RealTimeAchievementNotificationsComponent: React.FC<AchievementNotificatio
       toast({
         title: "Offline Mode",
         description: "Achievement notifications require WebSocket connection",
-        variant: "destructive",
+        type: "error",
       });
     }
   }, [isConnected, toast]);
@@ -202,11 +202,11 @@ const RealTimeAchievementNotificationsComponent: React.FC<AchievementNotificatio
         oscillator.frequency.value = freq;
         oscillator.type = 'sine';
         
-        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime ?? 0);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, (audioContext.currentTime ?? 0) + 0.3);
         
-        oscillator.start(audioContext.currentTime + index * 0.15);
-        oscillator.stop(audioContext.currentTime + 0.3 + index * 0.15);
+        oscillator.start((audioContext.currentTime ?? 0) + index * 0.15);
+        oscillator.stop((audioContext.currentTime ?? 0) + 0.3 + index * 0.15);
       });
     } catch (error) {
       console.warn('Could not play achievement sound:', error);

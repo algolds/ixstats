@@ -585,7 +585,7 @@ export function ThinktankGroups({ countryId, countryName, userAccounts }: Thinkt
                                   )}
                                 </div>
                               ) : (
-                                <Check className="h-3 w-3 text-muted-foreground" title="Delivered" />
+                                <Check className="h-3 w-3 text-muted-foreground" />
                               )}
                             </div>
                           )}
@@ -922,7 +922,7 @@ function ThinktankCard({
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
             <Avatar className="h-12 w-12 border-2 border-background shadow-lg">
-              <AvatarImage src={group.avatar} alt={group.name} />
+              <AvatarImage src={group.avatar || undefined} alt={group.name} />
               <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white font-semibold">
                 {group.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
               </AvatarFallback>
@@ -1116,7 +1116,7 @@ function CreateGroupModal({
 
           <div>
             <Label htmlFor="group-privacy">Privacy</Label>
-            <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}>
+            <Select value={formData.type} onValueChange={(value: "public" | "private" | "invite_only") => setFormData(prev => ({ ...prev, type: value }))}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>

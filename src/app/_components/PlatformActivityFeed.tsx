@@ -500,7 +500,7 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
                         <button 
                           className="flex items-center gap-1 hover:text-red-500 transition-colors disabled:opacity-50"
                           onClick={() => handleEngagement(activity.id, 'like')}
-                          disabled={engageWithActivityMutation.isLoading}
+                          disabled={engageWithActivityMutation.isPending}
                         >
                           <Heart className="h-4 w-4" />
                           0
@@ -508,7 +508,7 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
                         <button 
                           className="flex items-center gap-1 hover:text-blue-500 transition-colors disabled:opacity-50"
                           onClick={() => handleEngagement(activity.id, 'comment')}
-                          disabled={engageWithActivityMutation.isLoading}
+                          disabled={engageWithActivityMutation.isPending}
                         >
                           <MessageSquare className="h-4 w-4" />
                           0
@@ -516,7 +516,7 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
                         <button 
                           className="flex items-center gap-1 hover:text-green-500 transition-colors disabled:opacity-50"
                           onClick={() => handleEngagement(activity.id, 'share')}
-                          disabled={engageWithActivityMutation.isLoading}
+                          disabled={engageWithActivityMutation.isPending}
                         >
                           <Share2 className="h-4 w-4" />
                           0

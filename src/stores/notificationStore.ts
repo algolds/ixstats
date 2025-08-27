@@ -439,6 +439,8 @@ export const useNotificationStore = create<NotificationStore>()(
           type: 'alert',
           priority: 'high',
           severity: 'important',
+          status: 'pending',
+          deliveryMethod: 'dynamic-island',
           context: {
             userId: 'demo-user',
             isExecutiveMode: false,
@@ -461,7 +463,11 @@ export const useNotificationStore = create<NotificationStore>()(
               quietHours: { start: '22:00', end: '07:00' },
               batchingEnabled: false,
               maxNotificationsPerHour: 10,
-              categories: {} as any
+              categories: {} as any,
+              executiveModeFilters: ['economic', 'governance', 'security', 'crisis'],
+              publicModeFilters: ['achievement', 'opportunity', 'system'],
+              allowMLPersonalization: true,
+              trackEngagement: true
             },
             historicalEngagement: [],
             interactionHistory: [],
@@ -486,6 +492,8 @@ export const useNotificationStore = create<NotificationStore>()(
             type: 'update',
             priority: 'medium',
             severity: 'informational',
+            status: 'pending',
+            deliveryMethod: 'toast',
             context: {
               userId: 'system',
               isExecutiveMode: false,
@@ -508,7 +516,11 @@ export const useNotificationStore = create<NotificationStore>()(
               quietHours: { start: '22:00', end: '07:00' },
               batchingEnabled: false,
               maxNotificationsPerHour: 10,
-              categories: {} as any
+              categories: {} as any,
+              executiveModeFilters: ['economic', 'governance', 'security', 'crisis'],
+              publicModeFilters: ['achievement', 'opportunity', 'system'],
+              allowMLPersonalization: true,
+              trackEngagement: true
             },
               historicalEngagement: [],
               interactionHistory: [],

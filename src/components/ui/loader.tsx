@@ -21,7 +21,13 @@ export const LoaderOne = () => {
         animate={{
           y: [0, 10, 0],
         }}
-        transition={transition(0)}
+        transition={{
+          duration: 1,
+          repeat: Infinity,
+          repeatType: "loop" as const,
+          delay: 0,
+          ease: "easeInOut",
+        }}
         className="h-4 w-4 rounded-full border border-neutral-300 bg-gradient-to-b from-neutral-400 to-neutral-300"
       />
       <motion.div
@@ -31,7 +37,13 @@ export const LoaderOne = () => {
         animate={{
           y: [0, 10, 0],
         }}
-        transition={transition(1)}
+        transition={{
+          duration: 1,
+          repeat: Infinity,
+          repeatType: "loop" as const,
+          delay: 0.2,
+          ease: "easeInOut",
+        }}
         className="h-4 w-4 rounded-full border border-neutral-300 bg-gradient-to-b from-neutral-400 to-neutral-300"
       />
       <motion.div
@@ -41,7 +53,13 @@ export const LoaderOne = () => {
         animate={{
           y: [0, 10, 0],
         }}
-        transition={transition(2)}
+        transition={{
+          duration: 1,
+          repeat: Infinity,
+          repeatType: "loop" as const,
+          delay: 0.4,
+          ease: "easeInOut",
+        }}
         className="h-4 w-4 rounded-full border border-neutral-300 bg-gradient-to-b from-neutral-400 to-neutral-300"
       />
     </div>
@@ -61,7 +79,13 @@ export const LoaderTwo = () => {
   return (
     <div className="flex items-center">
       <motion.div
-        transition={transition(0)}
+        transition={{
+          duration: 1,
+          repeat: Infinity,
+          repeatType: "loop" as const,
+          delay: 0,
+          ease: "easeInOut",
+        }}
         initial={{
           x: 0,
         }}
@@ -129,7 +153,7 @@ export const LoaderFour = ({ text = "Loading..." }: { text?: string }) => {
     <div className="relative font-bold text-black [perspective:1000px] dark:text-white">
       <motion.span
         animate={{
-          skew: [0, -40, 0],
+          skewX: [0, -40, 0],
           scaleX: [1, 2, 1],
         }}
         transition={{

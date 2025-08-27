@@ -21,7 +21,7 @@ import {
   GlassSlider,
   type ChartTheme
 } from './index';
-import { GlassCard, GlassCardContent, GlassCardHeader } from '../glass/GlassCard';
+import { GlassCard, GlassCardContent, GlassCardHeader } from '~/app/builder/components/glass/GlassCard';
 
 interface ChartShowcaseProps {
   className?: string;

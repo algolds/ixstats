@@ -253,9 +253,9 @@ export const CountryProfileInfoBox: React.FC<CountryProfileInfoBoxProps> = ({
                   {section.items.map((item, itemIndex) => (
                     <div key={itemIndex} className="flex justify-between items-start gap-3">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
-                        {item.icon && (
-                          <item.icon className="h-3 w-3 flex-shrink-0 text-muted-foreground" />
-                        )}
+                        {(item as any).icon && 
+                          React.createElement((item as any).icon, { className: "h-3 w-3 flex-shrink-0 text-muted-foreground" })
+                        }
                         <span className="text-sm text-muted-foreground truncate">{item.label}:</span>
                       </div>
                       <span className="text-sm font-medium text-right">{item.value}</span>

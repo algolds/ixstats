@@ -25,7 +25,7 @@ interface ChartSkeletonProps {
 }
 
 function ChartSkeleton({ height = 300, type = 'bar' }: ChartSkeletonProps) {
-  const elements = useMemo(() => {
+  const elements = useMemo((): React.ReactElement | React.ReactElement[] => {
     switch (type) {
       case 'bar':
         return Array.from({ length: 6 }, (_, i) => (
@@ -79,7 +79,7 @@ function ChartSkeleton({ height = 300, type = 'bar' }: ChartSkeletonProps) {
           />
         );
       default:
-        return elements;
+        return [];
     }
   }, [type]);
 

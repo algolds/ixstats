@@ -44,7 +44,7 @@ function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    [shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!];
   }
   return shuffled;
 }
@@ -188,7 +188,7 @@ export function AnimatedFlagsBackground({
     if (!sessionData.allSets[sessionData.currentSetIndex]) {
       return [];
     }
-    return sessionData.allSets[sessionData.currentSetIndex].countries.slice(0, maxFlags);
+    return sessionData.allSets[sessionData.currentSetIndex]?.countries.slice(0, maxFlags) || [];
   }, [sessionData, maxFlags]);
   
   // Memoize the flag positions and animations to prevent recalculation
@@ -228,7 +228,7 @@ export function AnimatedFlagsBackground({
         rotate: [(index % 5) * 6 - 12, (index % 5) * 6 - 8, (index % 5) * 6 - 16, (index % 5) * 6 - 12],
         transition: {
           duration: flag.duration,
-          ease: "easeInOut",
+          ease: [0.4, 0.0, 0.2, 1],
           repeat: Infinity,
           delay: flag.delay,
         }
@@ -241,7 +241,7 @@ export function AnimatedFlagsBackground({
         scale: [1, 1.02, 0.98, 1],
         transition: {
           duration: flag.duration * 0.7,
-          ease: "easeInOut", 
+          ease: [0.4, 0.0, 0.2, 1], 
           repeat: Infinity,
           delay: flag.delay + 1,
         }

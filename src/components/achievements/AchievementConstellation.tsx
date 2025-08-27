@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import type { ReactElement } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { ConstellationBuilder } from "~/lib/constellation-builder";
@@ -249,7 +250,7 @@ const AchievementConstellationComponent: React.FC<AchievementConstellationProps>
   const renderConnections = () => {
     if (!showConnections) return null;
 
-    const connections: JSX.Element[] = [];
+    const connections: ReactElement[] = [];
     const processedConnections = new Set<string>(); // Track processed connections to prevent duplicates
 
     filteredAchievements.forEach(achievement => {
@@ -479,4 +480,5 @@ const AchievementConstellationComponent: React.FC<AchievementConstellationProps>
 
 AchievementConstellationComponent.displayName = 'AchievementConstellation';
 
-export const AchievementConstellation = React.memo(AchievementConstellationComponent);
+const AchievementConstellationMemoized = React.memo(AchievementConstellationComponent);
+export { AchievementConstellationMemoized as AchievementConstellation };

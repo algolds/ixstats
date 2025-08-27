@@ -482,7 +482,9 @@ export function transformApiDataToExecutiveIntelligence(
       date: country.lastCalculated,
       description: 'Economic vitality recalculated',
       impact: 'Economic metrics updated based on latest data'
-    }
+    },
+    viewMode: 'executive' as const,
+    priorityThreshold: 'high' as const
   };
 }
 

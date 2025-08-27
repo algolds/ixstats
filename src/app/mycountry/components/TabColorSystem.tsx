@@ -259,7 +259,8 @@ export const TAB_THEMES: Record<string, TabTheme> = {
 export function getTabTheme(tabId: string): TabTheme {
   const theme = TAB_THEMES[tabId as keyof typeof TAB_THEMES];
   if (theme) return theme;
-  return TAB_THEMES.global;
+  if (TAB_THEMES.global) return TAB_THEMES.global;
+  return TAB_THEMES.mycountry as TabTheme;
 }
 
 export function applyTabTheme(tabId: string): React.CSSProperties {

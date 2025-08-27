@@ -68,7 +68,9 @@ export const CountriesFocusGrid: React.FC<CountriesFocusGridProps> = ({
     if (processedCountries.length > 0) {
       const randomIndex = Math.floor(Math.random() * processedCountries.length);
       const randomCountry = processedCountries[randomIndex];
-      onCountryClick?.(randomCountry.id);
+      if (randomCountry) {
+        onCountryClick?.(randomCountry.id);
+      }
     }
   };
 
@@ -232,7 +234,7 @@ export const CountriesFocusGrid: React.FC<CountriesFocusGridProps> = ({
           <div className="glass-hierarchy-interactive px-4 py-2 rounded-lg cursor-pointer hover:scale-[1.02] transition-transform"
                        onClick={() => setShowDynamicIsland(true)}>
                     <div className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-                      <Command className="h-4 w-4" />
+                      <RiCommandLine className="h-4 w-4" />
                       <span className="text-sm">Press ⌘K to open command palette</span>
                     </div>
                   </div>

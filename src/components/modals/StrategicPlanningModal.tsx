@@ -11,40 +11,30 @@ import {
 } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Separator } from "~/components/ui/separator";
 import { Skeleton } from "~/components/ui/skeleton";
 import { GlassCard } from "~/components/ui/enhanced-card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { Slider } from "~/components/ui/slider";
-import { Switch } from "~/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import {
-  LineChart,
   Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  AreaChart,
   Area,
-  BarChart,
-  Bar,
   ComposedChart,
 } from "recharts";
 import {
   Target,
   Calendar,
   TrendingUp,
-  Users,
-  DollarSign,
   Lightbulb,
   Play,
   Save,
-  RefreshCw,
   AlertTriangle,
   CheckCircle,
   Clock,
@@ -98,7 +88,6 @@ export function StrategicPlanningModal({
 }: StrategicPlanningModalProps) {
   const [activeTab, setActiveTab] = useState("scenarios");
   const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
-  const [isCreatingScenario, setIsCreatingScenario] = useState(false);
   const [scenarioForm, setScenarioForm] = useState({
     name: "",
     description: "",
@@ -217,17 +206,17 @@ export function StrategicPlanningModal({
       const yearsFromNow = i;
       
       // Apply scenario modifiers to growth calculations
-      const modifiedPopGrowth = economicData.populationGrowthRate * selectedScenario.parameters.populationGrowthModifier;
-      const modifiedEconGrowth = economicData.adjustedGdpGrowth * selectedScenario.parameters.economicGrowthModifier;
+      const modifiedPopGrowth = ((economicData as any)?.populationGrowthRate ?? 0) * selectedScenario.parameters.populationGrowthModifier;
+      const modifiedEconGrowth = ((economicData as any)?.adjustedGdpGrowth ?? 0) * selectedScenario.parameters.economicGrowthModifier;
       
       const popGrowthFactor = Math.pow(1 + modifiedPopGrowth, yearsFromNow);
       const econGrowthFactor = Math.pow(1 + modifiedEconGrowth, yearsFromNow);
       
       data.push({
         year,
-        population: (economicData.currentPopulation * popGrowthFactor) / 1000000, // in millions
-        totalGdp: (economicData.currentTotalGdp * econGrowthFactor) / 1000000000, // in billions
-        gdpPerCapita: (economicData.currentGdpPerCapita * econGrowthFactor),
+        population: (((economicData as any)?.currentPopulation ?? 0) * popGrowthFactor) / 1000000, // in millions
+        totalGdp: (((economicData as any)?.currentTotalGdp ?? 0) * econGrowthFactor) / 1000000000, // in billions
+        gdpPerCapita: (((economicData as any)?.currentGdpPerCapita ?? 0) * econGrowthFactor),
         isProjection: i > 0,
       });
     }
@@ -319,25 +308,25 @@ export function StrategicPlanningModal({
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-blue-600">
-                      {formatPopulation(economicData.currentPopulation)}
+                      {formatPopulation((economicData as any)?.currentPopulation ?? 0)}
                     </div>
                     <div className="text-sm text-muted-foreground">Population</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-green-600">
-                      {formatCurrency(economicData.currentTotalGdp)}
+                      {formatCurrency((economicData as any)?.currentTotalGdp ?? 0)}
                     </div>
                     <div className="text-sm text-muted-foreground">Total GDP</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-purple-600">
-                      {formatCurrency(economicData.currentGdpPerCapita)}
+                      {formatCurrency((economicData as any)?.currentGdpPerCapita ?? 0)}
                     </div>
                     <div className="text-sm text-muted-foreground">GDP per Capita</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-orange-600">
-                      {(economicData.adjustedGdpGrowth * 100).toFixed(2)}%
+                      {(((economicData as any)?.adjustedGdpGrowth ?? 0) * 100).toFixed(2)}%
                     </div>
                     <div className="text-sm text-muted-foreground">Growth Rate</div>
                   </div>
@@ -351,7 +340,6 @@ export function StrategicPlanningModal({
                 <h3 className="text-lg font-semibold">Strategic Scenarios</h3>
                 <Button 
                   onClick={() => {
-                    setIsCreatingScenario(true);
                     setActiveTab("builder");
                   }}
                   className="flex items-center gap-2"
@@ -454,7 +442,7 @@ export function StrategicPlanningModal({
                     <Label>Planning Timeframe: {scenarioForm.timeframe} years</Label>
                     <Slider
                       value={[scenarioForm.timeframe]}
-                      onValueChange={(value) => setScenarioForm(prev => ({ ...prev, timeframe: value[0] }))}
+                      onValueChange={(value: number[]) => setScenarioForm(prev => ({ ...prev, timeframe: value[0] ?? 10 }))}
                       max={50}
                       min={5}
                       step={5}
@@ -472,7 +460,7 @@ export function StrategicPlanningModal({
                       <Label>Economic Growth Modifier: {((scenarioForm.parameters.economicGrowthModifier - 1) * 100).toFixed(1)}%</Label>
                       <Slider
                         value={[scenarioForm.parameters.economicGrowthModifier]}
-                        onValueChange={(value) => handleParameterChange('economicGrowthModifier', value[0])}
+                        onValueChange={(value: number[]) => handleParameterChange('economicGrowthModifier', value[0] ?? 1.0)}
                         max={2.0}
                         min={0.5}
                         step={0.1}
@@ -484,7 +472,7 @@ export function StrategicPlanningModal({
                       <Label>Investment Level: {scenarioForm.parameters.investmentLevel}% of GDP</Label>
                       <Slider
                         value={[scenarioForm.parameters.investmentLevel]}
-                        onValueChange={(value) => handleParameterChange('investmentLevel', value[0])}
+                        onValueChange={(value: number[]) => handleParameterChange('investmentLevel', value[0] ?? 20)}
                         max={50}
                         min={10}
                         step={1}
@@ -496,7 +484,7 @@ export function StrategicPlanningModal({
                       <Label>Infrastructure Spending: {scenarioForm.parameters.infrastructureSpending}% of Budget</Label>
                       <Slider
                         value={[scenarioForm.parameters.infrastructureSpending]}
-                        onValueChange={(value) => handleParameterChange('infrastructureSpending', value[0])}
+                        onValueChange={(value: number[]) => handleParameterChange('infrastructureSpending', value[0] ?? 15)}
                         max={40}
                         min={5}
                         step={1}
@@ -508,7 +496,7 @@ export function StrategicPlanningModal({
                       <Label>Education Spending: {scenarioForm.parameters.educationSpending}% of Budget</Label>
                       <Slider
                         value={[scenarioForm.parameters.educationSpending]}
-                        onValueChange={(value) => handleParameterChange('educationSpending', value[0])}
+                        onValueChange={(value: number[]) => handleParameterChange('educationSpending', value[0] ?? 10)}
                         max={30}
                         min={5}
                         step={1}
@@ -520,7 +508,7 @@ export function StrategicPlanningModal({
                       <Label>Trade Openness: {scenarioForm.parameters.tradeOpenness}%</Label>
                       <Slider
                         value={[scenarioForm.parameters.tradeOpenness]}
-                        onValueChange={(value) => handleParameterChange('tradeOpenness', value[0])}
+                        onValueChange={(value: number[]) => handleParameterChange('tradeOpenness', value[0] ?? 70)}
                         max={100}
                         min={20}
                         step={5}
@@ -607,10 +595,10 @@ export function StrategicPlanningModal({
                           <YAxis yAxisId="gdp" orientation="left" />
                           <YAxis yAxisId="pop" orientation="right" />
                           <Tooltip 
-                            formatter={(value: any, name: string) => {
-                              if (name === 'totalGdp') return [`$${value.toFixed(1)}B`, 'Total GDP'];
-                              if (name === 'population') return [`${value.toFixed(1)}M`, 'Population'];
-                              if (name === 'gdpPerCapita') return [formatCurrency(value), 'GDP per Capita'];
+                            formatter={(value: number | string, name: string) => {
+                              if (name === 'totalGdp' && typeof value === 'number') return [`$${value.toFixed(1)}B`, 'Total GDP'];
+                              if (name === 'population' && typeof value === 'number') return [`${value.toFixed(1)}M`, 'Population'];
+                              if (name === 'gdpPerCapita' && typeof value === 'number') return [formatCurrency(value), 'GDP per Capita'];
                               return [value, name];
                             }}
                             labelFormatter={(label) => `Year ${label}`}

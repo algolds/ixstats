@@ -372,7 +372,7 @@ export function GdpPerCapitaDetailsModal({
                       type="number"
                       scale="time"
                       name="Time"
-                      tickFormatter={(ts) => IxTime.getCurrentGameYear(ts as number)}
+                      tickFormatter={(ts) => String(IxTime.getCurrentGameYear(ts as number))}
                     />
                     <YAxis 
                       label={{ value: 'GDP per Capita ($)', angle: -90, position: 'insideLeft' }}

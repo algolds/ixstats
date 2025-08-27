@@ -51,10 +51,12 @@ export class ConstellationBuilder {
 
       positions.forEach((position, index) => {
         const achievement = categoryAchievements[index];
-        layout.customPositions![achievement.id] = {
-          ...position,
-          connections: this.calculateConnections(achievement, achievements)
-        };
+        if (achievement) {
+          layout.customPositions![achievement.id] = {
+            ...position,
+            connections: this.calculateConnections(achievement, achievements)
+          };
+        }
       });
     });
 
@@ -71,7 +73,7 @@ export class ConstellationBuilder {
       if (!groups[achievement.category]) {
         groups[achievement.category] = [];
       }
-      groups[achievement.category].push(achievement);
+      groups[achievement.category]?.push(achievement);
     });
 
     // Sort achievements within each category by tier and rarity
@@ -122,17 +124,22 @@ export class ConstellationBuilder {
     if (achievements.length === 1) {
       // Single achievement at category center
       const achievement = achievements[0];
-      positions.push({
-        x: categoryCenter.x,
-        y: categoryCenter.y,
-        brightness: this.calculateBrightness(achievement),
-        size: this.calculateSize(achievement),
-        layer: this.calculateLayer(achievement)
-      });
+      if (achievement) {
+        positions.push({
+          x: categoryCenter.x,
+          y: categoryCenter.y,
+          brightness: this.calculateBrightness(achievement),
+          size: this.calculateSize(achievement),
+          layer: this.calculateLayer(achievement)
+        });
+      }
     } else {
       // Multiple achievements in constellation pattern
-      const shape = ACHIEVEMENT_CATEGORY_CONFIG[achievements[0].category].constellationShape;
-      positions.push(...this.createConstellationShape(achievements, categoryCenter, maxRadius, shape));
+      const firstAchievement = achievements[0];
+      if (firstAchievement) {
+        const shape = ACHIEVEMENT_CATEGORY_CONFIG[firstAchievement.category].constellationShape;
+        positions.push(...this.createConstellationShape(achievements, categoryCenter, maxRadius, shape));
+      }
     }
 
     return positions;
@@ -250,18 +257,20 @@ export class ConstellationBuilder {
       const pointIndex = index % 4;
       const point = diamondPoints[pointIndex];
       
-      // Add some variation for multiple achievements at same point
-      const variation = Math.floor(index / 4) * 0.3;
-      const xOffset = (Math.random() - 0.5) * variation * radius;
-      const yOffset = (Math.random() - 0.5) * variation * radius;
+      if (point) {
+        // Add some variation for multiple achievements at same point
+        const variation = Math.floor(index / 4) * 0.3;
+        const xOffset = (Math.random() - 0.5) * variation * radius;
+        const yOffset = (Math.random() - 0.5) * variation * radius;
 
-      positions.push({
-        x: center.x + point.x + xOffset,
-        y: center.y + point.y + yOffset,
-        brightness: this.calculateBrightness(achievement),
-        size: this.calculateSize(achievement),
-        layer: this.calculateLayer(achievement)
-      });
+        positions.push({
+          x: center.x + point.x + xOffset,
+          y: center.y + point.y + yOffset,
+          brightness: this.calculateBrightness(achievement),
+          size: this.calculateSize(achievement),
+          layer: this.calculateLayer(achievement)
+        });
+      }
     });
 
     return positions;
@@ -286,18 +295,20 @@ export class ConstellationBuilder {
       const pointIndex = index % 3;
       const point = trianglePoints[pointIndex];
       
-      // Add variation for multiple achievements
-      const variation = Math.floor(index / 3) * 0.4;
-      const xOffset = (Math.random() - 0.5) * variation * radius;
-      const yOffset = (Math.random() - 0.5) * variation * radius;
+      if (point) {
+        // Add variation for multiple achievements
+        const variation = Math.floor(index / 3) * 0.4;
+        const xOffset = (Math.random() - 0.5) * variation * radius;
+        const yOffset = (Math.random() - 0.5) * variation * radius;
 
-      positions.push({
-        x: center.x + point.x + xOffset,
-        y: center.y + point.y + yOffset,
-        brightness: this.calculateBrightness(achievement),
-        size: this.calculateSize(achievement),
-        layer: this.calculateLayer(achievement)
-      });
+        positions.push({
+          x: center.x + point.x + xOffset,
+          y: center.y + point.y + yOffset,
+          brightness: this.calculateBrightness(achievement),
+          size: this.calculateSize(achievement),
+          layer: this.calculateLayer(achievement)
+        });
+      }
     });
 
     return positions;

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { 
+import type { 
   ThinkPagesWebSocketEvent, 
   ThinkPagesClientState, 
   ThinkPagesWebSocketHookOptions,
@@ -140,11 +140,11 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
               break;
               
             case 'group:update':
-              options.onGroupUpdate?.(data.data);
+              options.onGroupUpdate?.(data.data as any);
               break;
               
             case 'conversation:update':
-              options.onConversationUpdate?.(data.data);
+              options.onConversationUpdate?.(data.data as any);
               break;
           }
         } catch (error) {

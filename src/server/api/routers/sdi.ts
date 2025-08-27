@@ -40,9 +40,11 @@ export const sdiRouter = createTRPCRouter({
         severity: item.priority as any,
         source: item.source,
         timestamp: item.timestamp.getTime(),
-        region: item.region || undefined,
         affectedCountries: item.affectedCountries ? JSON.parse(item.affectedCountries) : undefined,
-        isActive: item.isActive
+        content: item.content || undefined,
+        region: item.region || undefined,
+        isActive: item.isActive,
+        actionable: item.priority === 'critical' || item.priority === 'high'
       }));
 
       return {
