@@ -172,7 +172,7 @@ const SecureDiplomaticChannelsComponent: React.FC<SecureDiplomaticChannelsProps>
     if (!activeChannelId) return [];
     
     let filtered = messages.filter(msg => 
-      (msg.from.countryId === currentCountryId || msg.to.countryId === currentCountryId) &&
+      (msg.from.countryId === currentCountryId || msg.to?.countryId === currentCountryId) &&
       // Filter by clearance level
       (viewerClearanceLevel === 'CONFIDENTIAL' || 
        (viewerClearanceLevel === 'RESTRICTED' && msg.classification !== 'CONFIDENTIAL') ||
@@ -183,7 +183,7 @@ const SecureDiplomaticChannelsComponent: React.FC<SecureDiplomaticChannelsProps>
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(msg =>
-        msg.subject.toLowerCase().includes(query) ||
+        msg.subject?.toLowerCase().includes(query) ||
         msg.content.toLowerCase().includes(query) ||
         msg.from.countryName.toLowerCase().includes(query)
       );
@@ -267,8 +267,8 @@ const SecureDiplomaticChannelsComponent: React.FC<SecureDiplomaticChannelsProps>
                   <div className="flex items-center gap-2 text-xs text-[--intel-silver]">
                     <span className={cn(
                       "px-2 py-1 rounded-full",
-                      CLASSIFICATION_STYLES[channel.classification].bg,
-                      CLASSIFICATION_STYLES[channel.classification].color
+                      CLASSIFICATION_STYLES[channel.classification as keyof typeof CLASSIFICATION_STYLES]?.bg || CLASSIFICATION_STYLES.PUBLIC.bg,
+                      CLASSIFICATION_STYLES[channel.classification as keyof typeof CLASSIFICATION_STYLES]?.color || CLASSIFICATION_STYLES.PUBLIC.color
                     )}>
                       {channel.classification}
                     </span>
@@ -319,8 +319,8 @@ const SecureDiplomaticChannelsComponent: React.FC<SecureDiplomaticChannelsProps>
                   <div className="flex items-center gap-3 text-sm text-[--intel-silver]">
                     <span className={cn(
                       "px-2 py-1 rounded-full text-xs",
-                      CLASSIFICATION_STYLES[activeChannel.classification].bg,
-                      CLASSIFICATION_STYLES[activeChannel.classification].color
+                      CLASSIFICATION_STYLES[activeChannel.classification as keyof typeof CLASSIFICATION_STYLES]?.bg || CLASSIFICATION_STYLES.PUBLIC.bg,
+                      CLASSIFICATION_STYLES[activeChannel.classification as keyof typeof CLASSIFICATION_STYLES]?.color || CLASSIFICATION_STYLES.PUBLIC.color
                     )}>
                       {activeChannel.classification}
                     </span>
@@ -349,7 +349,7 @@ const SecureDiplomaticChannelsComponent: React.FC<SecureDiplomaticChannelsProps>
                   type="text"
                   placeholder="Search messages..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-foreground placeholder:text-[--intel-silver] focus:outline-none focus:border-[--intel-gold]/50"
                 />
               </div>
@@ -358,7 +358,7 @@ const SecureDiplomaticChannelsComponent: React.FC<SecureDiplomaticChannelsProps>
                 <RiFilterLine className="h-4 w-4 text-[--intel-silver]" />
                 <select
                   value={filterPriority}
-                  onChange={(e) => setFilterPriority(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterPriority(e.target.value)}
                   className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-foreground text-sm focus:outline-none focus:border-[--intel-gold]/50"
                 >
                   <option value="all">All Priorities</option>
@@ -374,8 +374,8 @@ const SecureDiplomaticChannelsComponent: React.FC<SecureDiplomaticChannelsProps>
             <div className="flex-1 space-y-4 overflow-y-auto max-h-96">
               {channelMessages.map((message) => {
                 const isOutgoing = message.from.countryId === currentCountryId;
-                const priorityStyle = PRIORITY_STYLES[message.priority];
-                const classificationStyle = CLASSIFICATION_STYLES[message.classification];
+                const priorityStyle = PRIORITY_STYLES[message.priority as keyof typeof PRIORITY_STYLES] || PRIORITY_STYLES.NORMAL;
+                const classificationStyle = CLASSIFICATION_STYLES[message.classification as keyof typeof CLASSIFICATION_STYLES] || CLASSIFICATION_STYLES.PUBLIC;
                 
                 return (
                   <motion.div
@@ -391,9 +391,9 @@ const SecureDiplomaticChannelsComponent: React.FC<SecureDiplomaticChannelsProps>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2">
-                          {message.from.flagUrl && (
+                          {(message.from as any).flagUrl && (
                             <img
-                              src={message.from.flagUrl}
+                              src={(message.from as any).flagUrl}
                               alt={`${message.from.countryName} flag`}
                               className="w-5 h-3 object-cover rounded border border-white/20"
                             />
@@ -466,7 +466,12 @@ const SecureDiplomaticChannelsComponent: React.FC<SecureDiplomaticChannelsProps>
               
               {accessibleChannels.length > 0 && (
                 <button
-                  onClick={() => setActiveChannelId(accessibleChannels[0]?.id || null)}
+                  onClick={() => {
+                    const firstChannel = accessibleChannels[0];
+                    if (firstChannel?.id) {
+                      setActiveChannelId(firstChannel.id);
+                    }
+                  }}
                   className="mt-4 px-4 py-2 bg-[--intel-gold]/20 hover:bg-[--intel-gold]/30 text-[--intel-gold] rounded-lg transition-colors"
                 >
                   Open First Channel
@@ -564,7 +569,7 @@ const NewMessageForm: React.FC<NewMessageFormProps> = ({ onSend, onCancel, viewe
           <label className="block text-sm font-medium text-foreground mb-2">Classification</label>
           <select
             value={classification}
-            onChange={(e) => setClassification(e.target.value as any)}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setClassification(e.target.value as 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL')}
             className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-foreground focus:outline-none focus:border-[--intel-gold]/50"
           >
             <option value="PUBLIC">PUBLIC</option>
@@ -581,7 +586,7 @@ const NewMessageForm: React.FC<NewMessageFormProps> = ({ onSend, onCancel, viewe
           <label className="block text-sm font-medium text-foreground mb-2">Priority</label>
           <select
             value={priority}
-            onChange={(e) => setPriority(e.target.value as any)}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setPriority(e.target.value as 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT')}
             className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-foreground focus:outline-none focus:border-[--intel-gold]/50"
           >
             <option value="LOW">Low</option>
@@ -597,7 +602,7 @@ const NewMessageForm: React.FC<NewMessageFormProps> = ({ onSend, onCancel, viewe
         <input
           type="text"
           value={subject}
-          onChange={(e) => setSubject(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSubject(e.target.value)}
           placeholder="Diplomatic message subject..."
           className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-foreground placeholder:text-[--intel-silver] focus:outline-none focus:border-[--intel-gold]/50"
           required
@@ -608,7 +613,7 @@ const NewMessageForm: React.FC<NewMessageFormProps> = ({ onSend, onCancel, viewe
         <label className="block text-sm font-medium text-foreground mb-2">Message</label>
         <textarea
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value)}
           placeholder="Compose your diplomatic message..."
           rows={6}
           className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-foreground placeholder:text-[--intel-silver] focus:outline-none focus:border-[--intel-gold]/50 resize-none"

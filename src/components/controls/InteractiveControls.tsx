@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
+import { motion, useMotionValue, useTransform, type PanInfo } from 'framer-motion';
 import { cn } from '~/lib/utils';
 import { Minus, Plus, RotateCcw, Zap } from 'lucide-react';
 
@@ -244,11 +244,11 @@ export function GlassDial({
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
     
-    const clientX = 'clientX' in event ? event.clientX : ('touches' in event ? event.touches[0].clientX : 0);
-    const clientY = 'clientY' in event ? event.clientY : ('touches' in event ? event.touches[0].clientY : 0);
+    const clientX = 'clientX' in event ? event.clientX : ('touches' in event ? event.touches[0]?.clientX : 0);
+    const clientY = 'clientY' in event ? event.clientY : ('touches' in event ? event.touches[0]?.clientY : 0);
     
-    const deltaX = clientX - centerX;
-    const deltaY = clientY - centerY;
+    const deltaX = (clientX || 0) - centerX;
+    const deltaY = (clientY || 0) - centerY;
     
     let newAngle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
     
@@ -440,16 +440,16 @@ export function GlassSlider({
     let clientPos, trackSize;
     
     if (orientation === 'horizontal') {
-      clientPos = 'clientX' in event ? event.clientX : ('touches' in event ? event.touches[0].clientX : 0);
+      clientPos = 'clientX' in event ? event.clientX : ('touches' in event ? event.touches[0]?.clientX : 0);
       trackSize = rect.width;
-      clientPos -= rect.left;
+      clientPos = (clientPos || 0) - rect.left;
     } else {
-      clientPos = 'clientY' in event ? event.clientY : ('touches' in event ? event.touches[0].clientY : 0);
+      clientPos = 'clientY' in event ? event.clientY : ('touches' in event ? event.touches[0]?.clientY : 0);
       trackSize = rect.height;
-      clientPos = rect.bottom - clientPos; // Invert for vertical
+      clientPos = rect.bottom - (clientPos || 0); // Invert for vertical
     }
     
-    const percentage = Math.max(0, Math.min(100, (clientPos / trackSize) * 100));
+    const percentage = Math.max(0, Math.min(100, ((clientPos || 0) / trackSize) * 100));
     const newValue = min + (percentage / 100) * (max - min);
     const steppedValue = Math.round(newValue / step) * step;
     

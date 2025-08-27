@@ -12,7 +12,10 @@ import { api } from '~/trpc/react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import type { IntelligenceItem } from '~/types/sdi';
+
 import { createUrl } from '~/lib/url-utils';
+
+// Use the updated IntelligenceItem type that now includes API compatibility fields
 
 // Check if Clerk is configured
 const isClerkConfigured = Boolean(
@@ -35,7 +38,7 @@ const priorityColors = {
   critical: 'bg-red-500'
 };
 
-function IntelligenceFeedContent() {
+function IntelligenceFeedContent(): React.ReactElement {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedPriority, setSelectedPriority] = useState<string>('all');
   const router = useRouter();
@@ -92,7 +95,7 @@ function IntelligenceFeedContent() {
   };
 
   return (
-    <GlassCard variant="diplomatic" blur="prominent" glow="hover" className="p-0 lg:p-0 sdi-hero-card overflow-hidden relative animate-fade-in">
+    <GlassCard variant="diplomatic" glow="hover" className="p-0 lg:p-0 sdi-hero-card overflow-hidden relative animate-fade-in">
       {/* Aurora overlay for cinematic effect */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div className="aurora-bg opacity-40" />
@@ -157,15 +160,15 @@ function IntelligenceFeedContent() {
         {/* Intelligence Items Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           {filteredData.map((item: IntelligenceItem) => {
-            const IconComponent = categoryIcons[item.category];
+            const IconComponent = categoryIcons[item.category as keyof typeof categoryIcons];
             return (
               <Card key={item.id} className="bg-blue-900/20 border-blue-700/30 hover:bg-blue-800/30 transition-all">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
                       <IconComponent className={`w-5 h-5 ${getCategoryColor(item.category)}`} />
-                      <Badge className={`${priorityColors[item.priority]} text-white`}>
-                        {item.priority}
+                      <Badge className={`${priorityColors[item.severity as keyof typeof priorityColors] || 'bg-gray-500'} text-white`}>
+                        {item.severity}
                       </Badge>
                     </div>
                     <span className="text-xs text-blue-300 flex items-center gap-1">
@@ -176,16 +179,25 @@ function IntelligenceFeedContent() {
                   <CardTitle className="text-blue-100 text-lg">{item.title}</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <p className="text-blue-200 text-sm mb-3">{item.content}</p>
+                  <p className="text-blue-200 text-sm mb-3">{item.description || item.content}</p>
                   <div className="flex items-center justify-between text-xs text-blue-300">
-                    <span>{item.source}</span>
+                    <span>{item.source || 'Unknown Source'}</span>
                     {item.region && <span>{item.region}</span>}
                   </div>
                   {Array.isArray(item.affectedCountries) && item.affectedCountries.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2">
                       {item.affectedCountries.map((countryId: string) => (
                         (userRole === 'admin' || userRole === 'dm' || userCountryId === countryId) && (
-                          <Button key={countryId} size="sm" className="bg-orange-600/80 text-white border-orange-500/30 hover:bg-orange-600/90" onClick={() => router.push(createUrl('/eci'))}>
+                          <Button 
+                            key={countryId} 
+                            size="sm" 
+                            className="bg-orange-600/80 text-white border-orange-500/30 hover:bg-orange-600/90" 
+                            onClick={() => {
+                              if (typeof window !== 'undefined') {
+                                router.push(createUrl('/eci'));
+                              }
+                            }}
+                          >
                             🏛️ View in ECI ({countryId})
                           </Button>
                         )
@@ -203,8 +215,8 @@ function IntelligenceFeedContent() {
           <h3 className="text-lg font-semibold text-blue-100 mb-4">Live Intelligence Stream</h3>
           <InfiniteMovingCards
             items={filteredData.map((item: IntelligenceItem) => ({
-              quote: item.content,
-              name: item.source,
+              quote: item.description || item.content || '',
+              name: item.source || 'Intelligence',
               title: item.category.charAt(0).toUpperCase() + item.category.slice(1),
               key: item.id
             }))}
@@ -219,11 +231,13 @@ function IntelligenceFeedContent() {
   );
 }
 
-export default function IntelligenceFeed() {
+export default function IntelligenceFeed(): React.ReactElement {
+  const router = useRouter();
+  
   // Show message when Clerk is not configured
   if (!isClerkConfigured) {
     return (
-      <GlassCard variant="diplomatic" blur="prominent" glow="hover" className="p-8 text-center animate-fade-in">
+      <GlassCard variant="diplomatic" glow="hover" className="p-8 text-center animate-fade-in">
         <Shield className="h-12 w-12 mx-auto mb-4 text-blue-300" />
         <h2 className="text-2xl font-bold mb-4 text-blue-100">Authentication Not Configured</h2>
         <p className="text-blue-200 mb-6">
@@ -232,13 +246,21 @@ export default function IntelligenceFeed() {
         </p>
         <div className="flex gap-4 justify-center">
           <Button 
-            onClick={() => router.push(createUrl("/dashboard"))}
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                router.push(createUrl("/dashboard"));
+              }
+            }}
             className="bg-blue-600 hover:bg-blue-700 text-white"
           >
             View Dashboard
           </Button>
           <Button 
-            onClick={() => router.push(createUrl("/countries"))}
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                router.push(createUrl("/countries"));
+              }
+            }}
             variant="outline"
             className="border-blue-500 text-blue-300 hover:bg-blue-800"
           >

@@ -17,7 +17,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  TooltipProps
+  type TooltipProps
 } from 'recharts';
 import { motion } from 'framer-motion';
 import { cn } from '~/lib/utils';
@@ -59,8 +59,8 @@ interface PieChartProps extends BaseChartProps {
 }
 
 // Custom Glass Tooltip Component
-function GlassTooltip({ active, payload, label, labelFormatter, formatter }: TooltipProps<any, any>) {
-  if (!active || !payload?.length) return null;
+function GlassTooltip({ active, payload, label, labelFormatter, formatter }: any) {
+  if (!active || !payload || payload.length === 0) return null;
 
   return (
     <motion.div
@@ -78,7 +78,7 @@ function GlassTooltip({ active, payload, label, labelFormatter, formatter }: Too
         </p>
       )}
       <div className="space-y-1">
-        {payload.map((entry, index) => (
+        {payload.map((entry: any, index: number) => (
           <div key={index} className="flex items-center gap-2 text-xs">
             <div
               className="w-3 h-3 rounded-sm"

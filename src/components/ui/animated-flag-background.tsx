@@ -29,7 +29,7 @@ export const AnimatedFlagBackground: React.FC<AnimatedFlagBackgroundProps> = ({
   const animationFrameRef = useRef<number>();
   const [isHovered, setIsHovered] = useState(false);
   const [flagLoaded, setFlagLoaded] = useState(false);
-  const controls = useAnimation();
+  const controls = useAnimation({});
 
   // Physics parameters based on intensity
   const getPhysicsParams = () => {

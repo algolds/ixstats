@@ -131,7 +131,7 @@ export function ThinkPagesGuide() {
           return (
             <motion.div key={section.id} layout className="border border-border rounded-lg overflow-hidden">
               <motion.button
-                onClick={() => setActiveSection(isActive ? null : section.id)}
+                onClick={() => setActiveSection(isActive ? null : section.id as "about" | "tips" | "features")}
                 className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors"
                 whileTap={{ scale: 0.98 }}
               >

@@ -92,7 +92,7 @@ export function transformToVitalityIntelligence(
           label: 'Growth Rate',
           value: Number((country.realGDPGrowthRate * 100).toFixed(1)),
           unit: '%',
-          trend: country.realGDPGrowthRate > 0.02 ? 'up' : country.realGDPGrowthRate < 0 ? 'down' : 'stable',
+          trend: (country.realGDPGrowthRate > 0.02 ? 'up' : country.realGDPGrowthRate < 0 ? 'down' : 'stable') as StandardTrend,
           changeValue: previousCountry 
             ? (country.realGDPGrowthRate - previousCountry.realGDPGrowthRate) * 100
             : 0,
@@ -301,7 +301,7 @@ export function transformToVitalityIntelligence(
           id: 'government-efficiency',
           label: 'Efficiency Rating',
           value: 'High',
-          trend: 'stable',
+          trend: 'stable' as StandardTrend,
           changeValue: 0,
           changePercent: 0,
           changePeriod: 'current',
@@ -345,7 +345,7 @@ export function transformToVitalityIntelligence(
       recommendations,
       criticalAlerts
     };
-  });
+  }) as VitalityIntelligence[];
 }
 
 // Transform to full ExecutiveIntelligence

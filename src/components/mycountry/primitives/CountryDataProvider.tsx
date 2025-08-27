@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext } from 'react';
+import type { ReactNode } from 'react';
 import { api } from "~/trpc/react";
 import { generateCountryEconomicData, type CountryProfile } from "~/lib/economic-data-templates";
 import { AlertTriangle, Crown } from 'lucide-react';
@@ -172,7 +173,7 @@ export function CountryDataProvider({ children, userId }: CountryDataProviderPro
     activityRingsData,
     currentIxTime,
     isLoading: false,
-    error: profileError || countryError || null,
+    error: profileError?.message || countryError?.message || null,
   };
 
   return (

@@ -169,7 +169,7 @@ export function DiscordEmojiPicker({
               </div>
             ) : (
               <div className="p-3 grid grid-cols-6 gap-2">
-                {filterEmojis(discordEmojis || []).map((emoji) => (
+                {filterEmojis((discordEmojis as any) || []).map((emoji: any) => (
                   <button
                     key={emoji.id}
                     onClick={() => handleEmojiClick(emoji)}
@@ -191,7 +191,7 @@ export function DiscordEmojiPicker({
                 ))}
                 
                 {/* No results */}
-                {discordEmojis && filterEmojis(discordEmojis).length === 0 && (
+                {discordEmojis && filterEmojis(discordEmojis as any).length === 0 && (
                   <div className="col-span-6 text-center py-4 text-muted-foreground text-sm">
                     No emojis found
                   </div>

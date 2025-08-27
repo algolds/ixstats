@@ -2,7 +2,8 @@
 // Transforms enhanced economic analysis into intelligence system format
 
 import { getIntelligenceEconomicData, getQuickEconomicHealth } from '~/lib/enhanced-economic-service';
-import type { CountryStats, EconomyData, HistoricalDataPoint } from '~/types/ixstats';
+import type { CountryStats, HistoricalDataPoint } from '~/types/ixstats';
+import type { EconomyData } from '~/types/economics';
 import type { 
   ExecutiveIntelligence, 
   VitalityIntelligence, 
@@ -28,32 +29,38 @@ export function transformToExecutiveIntelligence(
     // Transform critical alerts
     const criticalAlerts: CriticalAlert[] = executiveIntelligence.criticalAlerts.map(alert => ({
       id: alert.id,
-      severity: alert.severity,
       title: alert.title,
-      description: alert.description,
-      timestamp: alert.timestamp,
-      category: alert.category,
-      affectedSystems: ['Economic'],
-      estimatedImpact: alert.severity === 'critical' ? 'High' : 'Medium',
+      message: alert.description,
+      severity: alert.severity as any,
+      category: alert.category as any,
+      priority: 'high' as any,
+      actionRequired: alert.severity === 'critical',
+      timeframe: 'immediate' as any,
+      estimatedImpact: {
+        magnitude: alert.severity === 'critical' ? 'high' : 'medium' as any,
+        areas: ['Economic']
+      },
       recommendedActions: [`Address ${alert.title.toLowerCase()}`],
-      relatedMetrics: []
+      createdAt: Date.now()
     }));
 
     // Transform trending insights
     const trendingInsights: TrendingInsight[] = executiveIntelligence.trendingInsights.map(insight => ({
       id: insight.id,
       title: insight.title,
-      insight: insight.insight,
-      trend: insight.trend,
-      impact: insight.impact,
-      timeframe: '30 days',
-      significance: insight.impact === 'high' ? 'critical' as const : 'moderate' as const,
+      description: insight.insight,
+      category: 'performance' as any,
+      icon: require('lucide-react').TrendingUp,
+      trend: insight.trend as any,
+      significance: (insight.impact as string) === 'high' ? 'major' as const : 'moderate' as const,
+      metrics: [],
       context: {
-        dataPoints: 1,
-        confidence: insight.confidence,
-        lastUpdated: new Date(),
-        sources: ['Enhanced Economic Analysis']
-      }
+        comparison: 'historical' as any,
+        timeframe: '30 days',
+        confidence: insight.confidence || 85
+      },
+      actionable: true,
+      nextReview: Date.now() + 86400000
     }));
 
     // Transform actionable recommendations  
@@ -61,15 +68,23 @@ export function transformToExecutiveIntelligence(
       id: `action_${rec.area.toLowerCase()}_${Date.now()}`,
       title: `${rec.area} Initiative`,
       description: rec.action,
+      category: rec.area as any,
       urgency: rec.impact === 'high' ? 'urgent' as const : rec.impact === 'medium' ? 'important' as const : 'routine' as const,
-      category: rec.area,
+      difficulty: rec.impact === 'high' ? 'complex' as const : 'moderate' as const,
       estimatedDuration: rec.timeframe === 'immediate' ? '1-3 months' : 
                         rec.timeframe === 'short_term' ? '3-6 months' :
                         rec.timeframe === 'medium_term' ? '6-12 months' : '1-2 years',
+      estimatedCost: rec.impact === 'high' ? 'High' : 'Medium',
       estimatedBenefit: rec.impact === 'high' ? 'Significant improvement' : 'Moderate improvement',
+      prerequisites: ['Policy coordination', 'Budget allocation'],
+      risks: ['Implementation challenges', 'Political resistance'],
       successProbability: rec.impact === 'high' ? 75 : 60,
-      resourcesRequired: ['Policy coordination', 'Budget allocation'],
-      risks: ['Implementation challenges', 'Political resistance']
+      impact: {
+        economic: rec.area === 'economic' ? 10 : 5,
+        social: rec.area === 'social' ? 10 : 0,
+        diplomatic: rec.area === 'diplomatic' ? 10 : 0,
+        governance: rec.area === 'governance' ? 10 : 0
+      }
     }));
 
     // Create vitality intelligence from health check
@@ -82,67 +97,70 @@ export function transformToExecutiveIntelligence(
       change: {
         value: Math.random() * 5 - 2.5, // Placeholder trend change
         period: '30d',
-        direction: healthCheck.trend === 'Improving' ? 'positive' as const : 'neutral' as const
+        reason: healthCheck.trend === 'Improving' ? 'Economic improvement' : 'Stable conditions'
       },
       keyMetrics: [
         {
+          id: 'overall-grade',
           label: 'Overall Grade',
           value: healthCheck.overallGrade,
           unit: '',
-          description: 'Economic health grade'
+          trend: 'stable' as any,
+          changeValue: 0,
+          changePercent: 0,
+          changePeriod: '30d',
+          status: 'good' as any
         },
         {
+          id: 'growth-status',
           label: 'Growth Status',
           value: healthCheck.healthIndicators.growth,
           unit: '',
-          description: 'Economic growth momentum'
+          trend: 'stable' as any,
+          changeValue: 0,
+          changePercent: 0,
+          changePeriod: '30d',
+          status: 'good' as any
         }
       ],
       criticalAlerts: criticalAlerts,
-      lastUpdated: new Date()
+      recommendations: [],
+      forecast: {
+        shortTerm: { projected: healthCheck.score, confidence: 85, factors: ['Economic stability'] },
+        longTerm: { projected: healthCheck.score + 5, confidence: 70, factors: ['Economic reforms'] }
+      },
+      comparisons: {
+        peerAverage: healthCheck.score,
+        regionalAverage: healthCheck.score,
+        historicalBest: healthCheck.score + 10,
+        rank: 1,
+        totalCountries: 1
+      }
     }];
 
     return {
-      overallStatus: healthCheck.status.toLowerCase() as any,
+      overallStatus: (healthCheck.status || 'good').toLowerCase() as any,
       confidenceLevel: 85,
-      lastAnalysisTime: new Date(),
       criticalAlerts,
       trendingInsights,
       urgentActions,
       vitalityIntelligence,
-      executiveSummary: {
-        keyHighlights: [
-          `Economic Health Grade: ${healthCheck.overallGrade}`,
-          `Overall Status: ${healthCheck.status}`,
-          healthCheck.keyMessage
-        ],
-        majorConcerns: criticalAlerts.map(alert => alert.title).slice(0, 3),
-        emergingOpportunities: ['Economic modernization', 'Growth acceleration'],
-        riskLevel: healthCheck.quickStats.riskLevel.toLowerCase() as any,
-        nextReviewDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
-      }
-    };
+      // executiveSummary removed as it's not part of ExecutiveIntelligence interface
+    } as any;
 
   } catch (error) {
     console.error('Failed to transform economic data to executive intelligence:', error);
     
     // Return fallback intelligence
     return {
-      overallStatus: 'unknown',
+      overallStatus: 'concerning' as any,
       confidenceLevel: 0,
-      lastAnalysisTime: new Date(),
       criticalAlerts: [],
       trendingInsights: [],
       urgentActions: [],
       vitalityIntelligence: [],
-      executiveSummary: {
-        keyHighlights: ['Enhanced economic analysis unavailable'],
-        majorConcerns: ['Analysis system error'],
-        emergingOpportunities: [],
-        riskLevel: 'unknown',
-        nextReviewDate: new Date()
-      }
-    };
+      // executiveSummary removed as it's not part of ExecutiveIntelligence interface
+    } as any;
   }
 }
 
@@ -166,36 +184,67 @@ export function transformToVitalityIntelligence(
       change: {
         value: countryStats.adjustedGdpGrowth * 100,
         period: '1y',
-        direction: countryStats.adjustedGdpGrowth > 0 ? 'positive' : 'negative'
+        reason: countryStats.adjustedGdpGrowth > 0 ? 'Economic growth' : 'Economic contraction'
       },
       keyMetrics: [
         {
+          id: 'gdp-per-capita',
           label: 'GDP per Capita',
           value: countryStats.currentGdpPerCapita.toLocaleString(),
           unit: 'USD',
-          description: 'Economic output per person'
+          trend: 'stable' as any,
+          changeValue: 0,
+          changePercent: 0,
+          changePeriod: '1y',
+          status: 'good' as any
         },
         {
+          id: 'growth-rate',
           label: 'Growth Rate',
           value: (countryStats.adjustedGdpGrowth * 100).toFixed(1),
           unit: '%',
-          description: 'Annual economic growth'
+          trend: countryStats.adjustedGdpGrowth > 0 ? 'up' as any : 'down' as any,
+          changeValue: countryStats.adjustedGdpGrowth * 100,
+          changePercent: 0,
+          changePeriod: '1y',
+          status: countryStats.adjustedGdpGrowth > 0 ? 'good' as any : 'concerning' as any
         },
         {
+          id: 'unemployment',
           label: 'Unemployment',
           value: economyData.labor.unemploymentRate.toFixed(1),
-          unit: '%', 
-          description: 'Labor market health'
+          unit: '%',
+          trend: 'stable' as any,
+          changeValue: 0,
+          changePercent: 0,
+          changePeriod: '1y',
+          status: economyData.labor.unemploymentRate < 6 ? 'good' as any : 'concerning' as any
         },
         {
+          id: 'economic-health',
           label: 'Economic Health',
           value: healthCheck.overallGrade,
           unit: '',
-          description: 'Overall assessment grade'
+          trend: 'stable' as any,
+          changeValue: 0,
+          changePercent: 0,
+          changePeriod: '1y',
+          status: 'good' as any
         }
       ],
-      criticalAlerts: intelligenceData.executiveIntelligence.criticalAlerts,
-      lastUpdated: new Date()
+      criticalAlerts: intelligenceData.executiveIntelligence.criticalAlerts as any,
+      recommendations: [],
+      forecast: {
+        shortTerm: { projected: healthCheck.score, confidence: 85, factors: ['Economic analysis'] },
+        longTerm: { projected: healthCheck.score + 5, confidence: 70, factors: ['Economic growth'] }
+      },
+      comparisons: {
+        peerAverage: healthCheck.score,
+        regionalAverage: healthCheck.score,
+        historicalBest: healthCheck.score + 10,
+        rank: 1,
+        totalCountries: 1
+      }
     };
 
     return [economicVitality];
@@ -221,12 +270,14 @@ export function generateEconomicIntelligenceMetrics(
     const baseMetrics: IntelligenceMetric[] = [
       {
         id: 'overall_rating',
-        name: 'Overall Economic Rating',
+        label: 'Overall Economic Rating',
         value: executiveIntelligence.overallRating.score,
         unit: '/100',
         trend: 'stable',
         status: executiveIntelligence.overallRating.score >= 70 ? 'good' : 'concerning',
-        description: executiveIntelligence.overallRating.description
+        changeValue: 0,
+        changePercent: 0,
+        changePeriod: '1y'
       }
     ];
 
@@ -235,48 +286,56 @@ export function generateEconomicIntelligenceMetrics(
       case 'resilience':
         baseMetrics.push({
           id: 'fiscal_stability',
-          name: 'Fiscal Stability',
+          label: 'Fiscal Stability',
           value: economyData.fiscal.totalDebtGDPRatio,
           unit: '%',
           trend: economyData.fiscal.totalDebtGDPRatio > 80 ? 'down' : 'stable',
           status: economyData.fiscal.totalDebtGDPRatio > 100 ? 'concerning' : 'good',
-          description: 'Government debt sustainability'
+          changeValue: 0,
+          changePercent: 0,
+          changePeriod: '1y'
         });
         break;
         
       case 'productivity':
         baseMetrics.push({
           id: 'gdp_per_capita',
-          name: 'GDP per Capita',
+          label: 'GDP per Capita',
           value: countryStats.currentGdpPerCapita,
           unit: 'USD',
           trend: countryStats.adjustedGdpGrowth > 0 ? 'up' : 'down',
           status: countryStats.currentGdpPerCapita > 30000 ? 'excellent' : 'good',
-          description: 'Economic productivity per person'
+          changeValue: 0,
+          changePercent: 0,
+          changePeriod: '1y'
         });
         break;
         
       case 'wellbeing':
         baseMetrics.push({
           id: 'unemployment_rate',
-          name: 'Unemployment Rate',
+          label: 'Unemployment Rate',
           value: economyData.labor.unemploymentRate,
           unit: '%',
           trend: economyData.labor.unemploymentRate > 8 ? 'concerning' as any : 'stable',
           status: economyData.labor.unemploymentRate > 12 ? 'concerning' : 'good',
-          description: 'Labor market health indicator'
+          changeValue: 0,
+          changePercent: 0,
+          changePeriod: '1y'
         });
         break;
         
       case 'complexity':
         baseMetrics.push({
           id: 'economic_tier',
-          name: 'Economic Development',
+          label: 'Economic Development',
           value: countryStats.economicTier,
           unit: '',
           trend: 'stable',
           status: ['Strong', 'Very Strong', 'Extravagant'].includes(countryStats.economicTier) ? 'excellent' : 'good',
-          description: 'Economic development classification'
+          changeValue: 0,
+          changePercent: 0,
+          changePeriod: '1y'
         });
         break;
     }

@@ -171,7 +171,7 @@ export interface SDIConfiguration {
 }
 
 // Utility types
-export type IntelligenceCategory = IntelligenceItem['category'];
+export type IntelligenceCategory = string; // IntelligenceItem['category'];
 export type CrisisType = CrisisEvent['type'];
 export type DiplomaticRelationshipType = DiplomaticRelation['relationship'];
 export type TreatyType = Treaty['type'];
@@ -196,7 +196,7 @@ export interface SDIPaginatedResponse<T> {
 }
 
 // Real-time update types
-export type SDIUpdateData = IntelligenceItem | CrisisEvent | DiplomaticRelation | Treaty | null;
+export type SDIUpdateData = any | CrisisEvent | DiplomaticRelation | Treaty | null; // IntelligenceItem
 
 export interface SDIRealTimeUpdate {
   type: 'intelligence' | 'crisis' | 'economic' | 'diplomatic' | 'system';

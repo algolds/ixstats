@@ -176,9 +176,9 @@ export const predictFuture = (
   historical: number[], 
   factors: string[],
   timeHorizon: 'short' | 'long' = 'short'
-): { value: number; confidence: number } => {
+): { projected: number; confidence: number; factors: string[] } => {
   if (historical.length < 2) {
-    return { value: historical[0] ?? 50, confidence: 20 };
+    return { projected: historical[0] ?? 50, confidence: 20, factors };
   }
   
   // Simple linear regression for trend prediction
@@ -206,8 +206,9 @@ export const predictFuture = (
   const confidence = Math.min(95, baseConfidence + factorAdjustment);
   
   return {
-    value: Math.max(0, Math.min(100, predicted)),
-    confidence: Math.round(confidence)
+    projected: Math.max(0, Math.min(100, predicted)),
+    confidence: Math.round(confidence),
+    factors
   };
 };
 

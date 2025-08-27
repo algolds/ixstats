@@ -8,7 +8,8 @@ import {
   Home,
   ChevronDown,
   LogOut,
-  AlertCircle
+  AlertCircle,
+  Settings
 } from "lucide-react";
 import { SignInButton } from "~/context/auth-context";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";

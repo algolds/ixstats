@@ -70,6 +70,7 @@ const AchievementNotificationDemoComponent: React.FC<AchievementNotificationDemo
     if (!isActive) return;
     
     const achievement = DEMO_ACHIEVEMENTS[currentDemo];
+    if (!achievement) return;
     
     // Simulate achievement unlock event
     const event = new CustomEvent('achievement-unlock', {
@@ -169,7 +170,7 @@ const AchievementNotificationDemoComponent: React.FC<AchievementNotificationDemo
             </div>
 
             {/* Current Achievement Preview */}
-            {isActive && (
+            {isActive && DEMO_ACHIEVEMENTS[currentDemo] && (
               <div className="p-3 bg-white/5 rounded-lg border border-white/10">
                 <div className="text-xs text-[--intel-silver] mb-2">Next Achievement:</div>
                 <div className="font-medium text-white">
@@ -197,7 +198,7 @@ const AchievementNotificationDemoComponent: React.FC<AchievementNotificationDemo
                 </label>
                 <select
                   value={position}
-                  onChange={(e) => setPosition(e.target.value as any)}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setPosition(e.target.value as 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'center')}
                   className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[--intel-gold]/50"
                 >
                   <option value="top-right">Top Right</option>
@@ -214,7 +215,7 @@ const AchievementNotificationDemoComponent: React.FC<AchievementNotificationDemo
                   <input
                     type="checkbox"
                     checked={showParticles}
-                    onChange={(e) => setShowParticles(e.target.checked)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setShowParticles(e.target.checked)}
                     className="rounded border-gray-300 text-[--intel-gold] focus:ring-[--intel-gold]/50"
                   />
                   Particle Effects
@@ -224,7 +225,7 @@ const AchievementNotificationDemoComponent: React.FC<AchievementNotificationDemo
                   <input
                     type="checkbox"
                     checked={playSound}
-                    onChange={(e) => setPlaySound(e.target.checked)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPlaySound(e.target.checked)}
                     className="rounded border-gray-300 text-[--intel-gold] focus:ring-[--intel-gold]/50"
                   />
                   Sound Effects

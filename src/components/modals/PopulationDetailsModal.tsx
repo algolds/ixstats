@@ -396,7 +396,7 @@ export function PopulationDetailsModal({
                         type="number"
                         scale="time"
                         name="Time"
-                        tickFormatter={(ts) => IxTime.getCurrentGameYear(ts as number)}
+                        tickFormatter={(ts) => String(IxTime.getCurrentGameYear(ts as number))}
                       />
                       <YAxis 
                         yAxisId="population"

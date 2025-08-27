@@ -18,7 +18,7 @@ export function WikiSearch({ onImageSelect }: WikiSearchProps) {
 
   const searchWikiMutation = api.thinkpages.searchWiki.useMutation({
     onSuccess: (data) => {
-      setSearchResults(data);
+      setSearchResults(data as any);
       if (data.length === 0) {
         toast.info('No files found.');
       }

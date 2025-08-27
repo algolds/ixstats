@@ -43,8 +43,8 @@ export const intelligenceRouter = createTRPCRouter({
         data: {
           title: input.title,
           content: input.content,
-          category: input.category,
-          priority: input.priority,
+          category: input.category as any,
+          priority: input.priority as any,
           source: input.source,
           region: input.region,
           affectedCountries: input.affectedCountries,

@@ -383,7 +383,7 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(({
                       </div>
                     ) : discordEmojis?.success && discordEmojis.emojis.length > 0 ? (
                       <div className="grid grid-cols-6 gap-1">
-                        {discordEmojis.emojis.map((emoji) => (
+                        {discordEmojis.emojis.map((emoji: any) => (
                           <button
                             key={emoji.id}
                             onClick={() => insertEmoji({ url: emoji.url, name: emoji.name })}

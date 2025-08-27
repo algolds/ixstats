@@ -4,7 +4,7 @@
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { api } from '~/trpc/react';
-import type { Country, IntelligenceItem, VitalityIntelligence } from '~/types/intelligence';
+import type { Country, IntelligenceItem, VitalityIntelligence } from '~/types/intelligence-unified';
 
 interface OptimizedIntelligenceData {
   country: Country | null;
@@ -42,18 +42,18 @@ export function useOptimizedIntelligenceData({
       // Core country data - longest cache since it changes less frequently
       {
         queryKey: ['country', countryId],
-        queryFn: () => api.countries.getByIdAtTime.query({ id: countryId }),
+        queryFn: async () => await api.countries.getByIdAtTime.query({ id: countryId }),
         staleTime: staleTime * 2, // Country data stays fresh longer
-        cacheTime: cacheTime * 2,
+        gcTime: cacheTime * 2,
         enabled: !!countryId
       },
       
       // Intelligence feed - medium cache since it updates regularly
       {
         queryKey: ['intelligence', countryId],
-        queryFn: () => api.intelligence.getFeed.query(),
+        queryFn: async () => await api.intelligence.getFeed.query(),
         staleTime,
-        cacheTime,
+        gcTime: cacheTime,
         enabled: !!countryId && enableIntelligence
       },
       
@@ -62,7 +62,7 @@ export function useOptimizedIntelligenceData({
         queryKey: ['vitality', countryId],
         queryFn: () => Promise.resolve(null), // API method doesn't exist
         staleTime: staleTime / 2,
-        cacheTime,
+        gcTime: cacheTime,
         enabled: false // Disabled until API is implemented
       }
     ]
@@ -80,7 +80,11 @@ export function useOptimizedIntelligenceData({
       isError: queries.some(q => q.isError),
       error: queries.find(q => q.error)?.error || null,
       refetchAll: () => {
-        queries.forEach(query => query.refetch());
+        queries.forEach((query) => {
+          if (query?.refetch) {
+            query.refetch();
+          }
+        });
       }
     };
   }, [queries]);
@@ -108,7 +112,7 @@ export function useOptimizedExecutiveIntelligence(countryId: string) {
         queryKey: ['regional-comparison', countryId],
         queryFn: () => Promise.resolve(null), // API method doesn't exist
         staleTime: 60000, // Regional data changes less frequently
-        cacheTime: 300000,
+        gcTime: 300000,
         enabled: !!countryId && !!baseData.country
       },
       
@@ -117,7 +121,7 @@ export function useOptimizedExecutiveIntelligence(countryId: string) {
         queryKey: ['economic-trends', countryId],
         queryFn: () => Promise.resolve(null), // API method doesn't exist
         staleTime: 120000, // Trends are calculated data, can be cached longer
-        cacheTime: 600000,
+        gcTime: 600000,
         enabled: !!countryId && !!baseData.country
       },
       
@@ -126,7 +130,7 @@ export function useOptimizedExecutiveIntelligence(countryId: string) {
         queryKey: ['critical-alerts', countryId],
         queryFn: () => Promise.resolve(null), // API method doesn't exist
         staleTime: 5000, // Critical alerts need to be very fresh
-        cacheTime: 30000,
+        gcTime: 30000,
         enabled: !!countryId
       }
     ]
@@ -134,13 +138,17 @@ export function useOptimizedExecutiveIntelligence(countryId: string) {
 
   return useMemo(() => ({
     ...baseData,
-    regionalComparison: executiveQueries[0].data,
-    economicTrends: executiveQueries[1].data,
-    criticalAlerts: executiveQueries[2].data,
+    regionalComparison: executiveQueries[0]?.data || null,
+    economicTrends: executiveQueries[1]?.data || null,
+    criticalAlerts: executiveQueries[2]?.data || null,
     executiveLoading: executiveQueries.some(q => q.isLoading),
     refetchExecutive: () => {
       baseData.refetchAll();
-      executiveQueries.forEach(query => query.refetch());
+      executiveQueries.forEach((query) => {
+        if (query?.refetch) {
+          query.refetch();
+        }
+      });
     }
   }), [baseData, executiveQueries]);
 }
@@ -178,11 +186,18 @@ export function useIntelligenceSubset(
  * Performance monitoring hook for query optimization
  * Tracks query performance and provides optimization insights
  */
+interface QueryPerformanceMetrics {
+  cacheHitRate: number;
+  averageQueryTime: number;
+  totalQueries: number;
+  optimizationSuggestions: string[];
+}
+
 export function useQueryPerformanceMetrics() {
   return useQuery({
     queryKey: ['query-performance-metrics'],
-    queryFn: async () => {
-      const metrics = {
+    queryFn: async (): Promise<QueryPerformanceMetrics> => {
+      const metrics: QueryPerformanceMetrics = {
         cacheHitRate: 0,
         averageQueryTime: 0,
         totalQueries: 0,
@@ -195,7 +210,7 @@ export function useQueryPerformanceMetrics() {
       return metrics;
     },
     staleTime: 60000, // Performance metrics update every minute
-    cacheTime: 120000
+    gcTime: 120000
   });
 }
 

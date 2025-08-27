@@ -19,17 +19,14 @@ export function WikiImageSearch({ onImageSelect, selectedImage, setSelectedImage
   const [searchQuery, setSearchQuery] = useState('');
   const [wikiSource, setWikiSource] = useState('ixwiki');
 
-  const { data: searchResults, isLoading, isFetching, refetch } = api.thinkpages.searchWiki.useQuery(
-    { query: searchQuery, wiki: wikiSource as any },
-    { enabled: !!searchQuery.trim(), keepPreviousData: true }
-  );
+  const { mutate: searchWiki, data: searchResults, isPending: isLoading } = api.thinkpages.searchWiki.useMutation();
 
   const handleSearch = () => {
     if (!searchQuery.trim()) {
       toast.info('Please enter a search query.');
       return;
     }
-    refetch();
+    searchWiki({ query: searchQuery, wiki: wikiSource as "ixwiki" | "iiwiki" });
   };
 
   return (
@@ -61,7 +58,7 @@ export function WikiImageSearch({ onImageSelect, selectedImage, setSelectedImage
             <Loader2 className="animate-spin h-8 w-8 text-blue-400" />
           </div>
         ) : searchResults && searchResults.length > 0 ? (
-          searchResults.map((file) => (
+          searchResults.map((file: any) => (
             <div
               key={file.path}
               className={cn(

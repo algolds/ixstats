@@ -596,7 +596,7 @@ export const diplomaticRouter = createTRPCRouter({
       const cost = upgradeCostArray[input.level - 1];
       const duration = input.level * 7; // Days
 
-      if (embassy.budget < cost) {
+      if (embassy.budget < (cost || 0)) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Insufficient embassy budget' });
       }
 
@@ -608,7 +608,7 @@ export const diplomaticRouter = createTRPCRouter({
           name: `${input.upgradeType.replace('_', ' ')} Level ${input.level}`,
           description: `Upgrade ${input.upgradeType.replace('_', ' ')} to level ${input.level}`,
           level: input.level,
-          cost,
+          cost: cost || 0,
           duration,
           requiredLevel: Math.ceil(input.level / 2),
           status: 'in_progress',
@@ -897,8 +897,8 @@ export const diplomaticRouter = createTRPCRouter({
         
         return {
           embassyId: embassy.id,
-          targetCountryId: embassy.targetCountryId,
-          targetCountryName: embassy.targetCountry || 'Unknown',
+          targetCountryId: (embassy as any).guestCountryId || embassy.id,
+          targetCountryName: (embassy as any).targetCountry || 'Unknown',
           currentInfluence: totalInfluence,
           level: embassy.level || 1,
           completedMissions,
@@ -927,7 +927,7 @@ export const diplomaticRouter = createTRPCRouter({
       reason: z.string()
     }))
     .mutation(async ({ ctx, input }) => {
-      const relationship = await ctx.db.diplomaticRelationship.findUnique({
+      const relationship = await ctx.db.diplomaticRelation.findUnique({
         where: { id: input.relationshipId }
       });
 
@@ -956,7 +956,7 @@ export const diplomaticRouter = createTRPCRouter({
         newRelationshipType = 'neutral';
       }
 
-      const updated = await ctx.db.diplomaticRelationship.update({
+      const updated = await ctx.db.diplomaticRelation.update({
         where: { id: input.relationshipId },
         data: {
           strength: newStrength,
@@ -995,7 +995,7 @@ export const diplomaticRouter = createTRPCRouter({
     .query(async ({ ctx }) => {
       const countries = await ctx.db.country.findMany({
         include: {
-          embassiesHosted: {
+          embassies: {
             select: {
               influence: true,
               level: true,
@@ -1006,10 +1006,10 @@ export const diplomaticRouter = createTRPCRouter({
       });
 
       const leaderboard = countries.map(country => {
-        const activeEmbassies = country.embassiesHosted.filter(e => e.status === 'ACTIVE');
-        const totalInfluence = activeEmbassies.reduce((sum, e) => sum + (e.influence || 0), 0);
+        const activeEmbassies = (country as any).embassies.filter((e: any) => e.status === 'ACTIVE');
+        const totalInfluence = activeEmbassies.reduce((sum: number, e: any) => sum + (e.influence || 0), 0);
         const averageLevel = activeEmbassies.length > 0 ? 
-          activeEmbassies.reduce((sum, e) => sum + (e.level || 1), 0) / activeEmbassies.length : 0;
+          activeEmbassies.reduce((sum: number, e: any) => sum + (e.level || 1), 0) / activeEmbassies.length : 0;
 
         return {
           countryId: country.id,

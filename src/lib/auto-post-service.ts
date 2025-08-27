@@ -32,6 +32,10 @@ export async function generateAndPostCrisisEvent(crisisEventId: string) {
   }
 
   const postingAccount = mediaAccounts[0];
+  if (!postingAccount) {
+    console.warn('No posting account available');
+    return null;
+  }
 
   // Generate post content based on crisis event details
   let content = ``;
@@ -103,6 +107,11 @@ export async function detectEconomicMilestoneAndTriggerNarrative() {
 
     if (governmentAccounts.length > 0) {
       const governmentAccount = governmentAccounts[0];
+      if (!governmentAccount) {
+        console.warn(`Government account not found for country ${country.name}`);
+        continue;
+      }
+      
       const content = `EXCELLENT NEWS: Our nation, ${country.name}, has achieved a remarkable ${(country.adjustedGdpGrowth * 100).toFixed(1)}% GDP growth! This reflects our strong economic policies and the hard work of our citizens. #EconomicGrowth #${country.name.replace(/\s/g, '')}`;
 
       const newGovernmentPost = await prisma.thinkpagesPost.create({
@@ -153,8 +162,12 @@ export async function generateAndPostMediaResponse(parentPostId: string, country
   }
 
   const postingAccount = mediaAccounts[0];
+  if (!postingAccount) {
+    console.warn('No posting account available for media response');
+    return null;
+  }
 
-  const content = `ANALYSIS: ${parentPost.account.displayName}'s claim of ${countryName} GDP growth is significant. While positive, questions remain about long-term sustainability and equitable distribution. #Economy #${countryName.replace(/\s/g, '')}`;
+  const content = `ANALYSIS: ${parentPost.account?.displayName || 'Government'}'s claim of ${countryName} GDP growth is significant. While positive, questions remain about long-term sustainability and equitable distribution. #Economy #${countryName.replace(/\s/g, '')}`;
 
   const newMediaPost = await prisma.thinkpagesPost.create({
     data: {
@@ -206,6 +219,11 @@ export async function generateAndPostCitizenReaction(postId: string) {
   const reactionTypes = ['like', 'laugh', 'angry', 'thumbsup', 'thumbsdown'];
   const randomReactionType = reactionTypes[crypto.randomInt(reactionTypes.length)];
   const randomCitizenAccount = citizenAccounts[crypto.randomInt(citizenAccounts.length)];
+  
+  if (!randomCitizenAccount || !randomReactionType) {
+    console.warn('No random citizen account or reaction type available');
+    return null;
+  }
 
   // Check if this account already reacted to this post
   const existingReaction = await prisma.postReaction.findUnique({

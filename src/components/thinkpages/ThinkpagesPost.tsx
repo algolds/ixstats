@@ -138,6 +138,8 @@ export function ThinkpagesPost({
   currentUserAccountId = '',
   onLike,
   onRepost,
+  onReply,
+  onShare,
   onReaction,
   onAccountClick,
   compact = false,

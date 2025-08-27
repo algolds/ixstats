@@ -148,7 +148,7 @@ function MobileSectionNavigator({
       </div>
       
       {sections.map((section) => {
-        const Icon = (SectionIcons[section.id as keyof typeof SectionIcons] || Activity) as React.ElementType;
+        const Icon: React.ComponentType<any> = (SectionIcons[section.id as keyof typeof SectionIcons] as React.ComponentType<any> | undefined) || Activity;
         const isExpanded = expandedSections.has(section.id);
         
         return (
@@ -228,7 +228,7 @@ function CollapsibleSection({
   purpose,
   disableHeaderClick = false
 }: CollapsibleSectionProps) {
-  const Icon = icon as React.ElementType;
+  const Icon: React.ComponentType<any> = icon as React.ComponentType<any>;
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isMobile, setIsMobile] = useState(false);
 

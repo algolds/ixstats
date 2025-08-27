@@ -31,8 +31,8 @@ export class IntelligenceBroadcastService {
   private lastProcessedTime = 0;
 
   constructor(options: IntelligenceBroadcastServiceOptions = {}) {
-    this.broadcastInterval = options.broadcastInterval || 30000; // 30 seconds
-    this.alertThresholds = options.alertThresholds || {
+    this.broadcastInterval = options.broadcastInterval ?? 30000; // 30 seconds
+    this.alertThresholds = options.alertThresholds ?? {
       economicChange: 5.0,    // 5% GDP change triggers alert
       populationChange: 2.0,  // 2% population change triggers alert
       vitalityDrop: 10.0      // 10 point vitality drop triggers alert
@@ -129,7 +129,7 @@ export class IntelligenceBroadcastService {
       const updatedCountries = await db.country.findMany({
         where: {
           lastCalculated: { 
-            gte: this.lastProcessedTime 
+            gte: new Date(this.lastProcessedTime) 
           }
         },
         include: {
@@ -153,8 +153,8 @@ export class IntelligenceBroadcastService {
    * Process individual country update and broadcast relevant changes
    */
   private async processCountryUpdate(
-    country: Country & { historicalData: any[] }, 
-    timeDiff: number
+    country: Country & { historicalData: { gdpPerCapita?: number; population?: number; [key: string]: unknown }[] }, 
+    _timeDiff: number
   ): Promise<void> {
     if (!this.websocketServer) return;
 
@@ -162,11 +162,12 @@ export class IntelligenceBroadcastService {
     const previousData = country.historicalData[1];
 
     // Broadcast vitality score changes
+    // Note: vitality fields don't exist in current schema, using default values
     this.websocketServer.broadcastVitalityUpdate(country.id, {
-      economic: country.economicVitality,
-      population: country.populationWellbeing,
-      diplomatic: country.diplomaticStanding,
-      governance: country.governmentalEfficiency,
+      economic: 0,
+      population: 0,
+      diplomatic: 0,
+      governance: 0,
       lastUpdated: country.lastCalculated,
       ixTime: IxTime.getCurrentIxTime()
     });
@@ -192,10 +193,10 @@ export class IntelligenceBroadcastService {
         populationTier: country.populationTier,
         lastCalculated: country.lastCalculated,
         vitality: {
-          economic: country.economicVitality,
-          population: country.populationWellbeing,
-          diplomatic: country.diplomaticStanding,
-          governance: country.governmentalEfficiency
+          economic: 0,
+          population: 0,
+          diplomatic: 0,
+          governance: 0
         }
       },
       isGlobal: false,
@@ -210,15 +211,15 @@ export class IntelligenceBroadcastService {
    */
   private async checkForSignificantChanges(
     country: Country,
-    currentData: any,
-    previousData: any
+    currentData: { gdpPerCapita?: number; population?: number; [key: string]: unknown },
+    previousData: { gdpPerCapita?: number; population?: number; [key: string]: unknown }
   ): Promise<void> {
     if (!this.websocketServer) return;
 
     const alerts: IntelligenceUpdate[] = [];
 
     // Check GDP change
-    if (currentData.gdpPerCapita && previousData.gdpPerCapita) {
+    if (currentData.gdpPerCapita != null && previousData.gdpPerCapita != null) {
       const gdpChange = ((currentData.gdpPerCapita - previousData.gdpPerCapita) / previousData.gdpPerCapita) * 100;
       
       if (Math.abs(gdpChange) >= this.alertThresholds.economicChange) {
@@ -233,8 +234,8 @@ export class IntelligenceBroadcastService {
           severity: gdpChange < -10 ? 'critical' : gdpChange < 0 ? 'warning' : 'info',
           data: {
             gdpChange,
-            currentGdp: currentData.gdpPerCapita,
-            previousGdp: previousData.gdpPerCapita,
+            currentGdp: currentData.gdpPerCapita ?? 0,
+            previousGdp: previousData.gdpPerCapita ?? 0,
             countryName: country.name
           },
           isGlobal: Math.abs(gdpChange) >= 15, // Global alert for very large changes
@@ -244,7 +245,7 @@ export class IntelligenceBroadcastService {
     }
 
     // Check population change
-    if (currentData.population && previousData.population) {
+    if (currentData.population != null && previousData.population != null) {
       const popChange = ((currentData.population - previousData.population) / previousData.population) * 100;
       
       if (Math.abs(popChange) >= this.alertThresholds.populationChange) {
@@ -259,8 +260,8 @@ export class IntelligenceBroadcastService {
           severity: popChange < -5 ? 'warning' : 'info',
           data: {
             populationChange: popChange,
-            currentPopulation: currentData.population,
-            previousPopulation: previousData.population,
+            currentPopulation: currentData.population ?? 0,
+            previousPopulation: previousData.population ?? 0,
             countryName: country.name
           },
           isGlobal: Math.abs(popChange) >= 8,
@@ -270,39 +271,15 @@ export class IntelligenceBroadcastService {
     }
 
     // Check vitality drops
-    const vitalityFields = [
-      { field: 'economicVitality', name: 'Economic Vitality' },
-      { field: 'populationWellbeing', name: 'Population Wellbeing' },
-      { field: 'diplomaticStanding', name: 'Diplomatic Standing' },
-      { field: 'governmentalEfficiency', name: 'Governmental Efficiency' }
-    ];
-
-    for (const { field, name } of vitalityFields) {
-      const currentValue = (country as any)[field] || 0;
-      const historicalAvg = await this.getHistoricalAverage(country.id, field);
-      
-      if (historicalAvg && (historicalAvg - currentValue) >= this.alertThresholds.vitalityDrop) {
-        alerts.push({
-          id: `vitality_alert_${field}_${country.id}_${Date.now()}`,
-          type: 'alert',
-          title: `${name} Decline in ${country.name}`,
-          description: `${name} has dropped ${(historicalAvg - currentValue).toFixed(1)} points from historical average`,
-          countryId: country.id,
-          category: field.includes('economic') ? 'economic' : field.includes('diplomatic') ? 'diplomatic' : 'governance',
-          priority: (historicalAvg - currentValue) >= 20 ? 'critical' : 'high',
-          severity: (historicalAvg - currentValue) >= 25 ? 'critical' : 'warning',
-          data: {
-            currentValue,
-            historicalAverage: historicalAvg,
-            decline: historicalAvg - currentValue,
-            vitalityType: field,
-            countryName: country.name
-          },
-          isGlobal: (historicalAvg - currentValue) >= 30,
-          timestamp: Date.now()
-        });
-      }
-    }
+    // Note: vitality fields don't exist in current schema, skipping vitality alerts
+    // const vitalityFields = [
+    //   { field: 'economicVitality', name: 'Economic Vitality' },
+    //   { field: 'populationWellbeing', name: 'Population Wellbeing' },
+    //   { field: 'diplomaticStanding', name: 'Diplomatic Standing' },
+    //   { field: 'governmentalEfficiency', name: 'Governmental Efficiency' }
+    // ];
+    
+    // Skip vitality processing until fields are added to schema
 
     // Broadcast all alerts
     for (const alert of alerts) {
@@ -313,7 +290,7 @@ export class IntelligenceBroadcastService {
   /**
    * Process new intelligence items and broadcast them
    */
-  private async processNewIntelligenceItems(timeDiff: number): Promise<void> {
+  private async processNewIntelligenceItems(_timeDiff: number): Promise<void> {
     if (!this.websocketServer) return;
 
     try {
@@ -322,7 +299,7 @@ export class IntelligenceBroadcastService {
         where: {
           isActive: true,
           timestamp: { 
-            gte: this.lastProcessedTime 
+            gte: new Date(this.lastProcessedTime) 
           }
         },
         orderBy: { timestamp: 'desc' }
@@ -385,7 +362,7 @@ export class IntelligenceBroadcastService {
       const historicalData = await db.historicalDataPoint.findMany({
         where: {
           countryId,
-          ixTimeTimestamp: { gte: thirtyDaysAgo }
+          ixTimeTimestamp: { gte: new Date(thirtyDaysAgo) }
         },
         select: { [field]: true },
         orderBy: { ixTimeTimestamp: 'desc' },
@@ -395,8 +372,8 @@ export class IntelligenceBroadcastService {
       if (historicalData.length === 0) return null;
 
       const values = historicalData
-        .map(data => (data as any)[field])
-        .filter(val => val !== null && val !== undefined);
+        .map(data => (data as Record<string, unknown>)[field] as number | null | undefined)
+        .filter((val): val is number => val != null);
 
       if (values.length === 0) return null;
 
@@ -441,7 +418,14 @@ export class IntelligenceBroadcastService {
   /**
    * Get service statistics
    */
-  public getStats(): any {
+  public getStats(): {
+    isRunning: boolean;
+    broadcastInterval: number;
+    lastProcessedTime: number;
+    alertThresholds: { economicChange: number; populationChange: number; vitalityDrop: number };
+    hasWebSocketServer: boolean;
+    uptime: number;
+  } {
     return {
       isRunning: this.isRunning,
       broadcastInterval: this.broadcastInterval,

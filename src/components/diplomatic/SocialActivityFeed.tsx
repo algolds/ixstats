@@ -244,7 +244,7 @@ const SocialActivityFeedComponent: React.FC<SocialActivityFeedProps> = ({
 
     // Transform intelligence feed data
     if (intelligenceData) {
-      intelligenceData.forEach(item => {
+      intelligenceData.forEach((item: any) => {
         activities.push({
           id: item.id,
           type: 'intelligence_briefing',
@@ -261,7 +261,9 @@ const SocialActivityFeedComponent: React.FC<SocialActivityFeedProps> = ({
             impact: item.priority === 'critical' ? 90 : 
                    item.priority === 'high' ? 70 : 
                    item.priority === 'medium' ? 50 : 30,
-            significance: item.priority as 'low' | 'medium' | 'high' | 'critical',
+            significance: (item.priority === 'critical' ? 'critical' : 
+                         item.priority === 'high' ? 'high' : 
+                         item.priority === 'medium' ? 'medium' : 'low') as 'low' | 'medium' | 'high' | 'critical',
             visibility: 'public'
           },
           interactions: {
@@ -270,15 +272,16 @@ const SocialActivityFeedComponent: React.FC<SocialActivityFeedProps> = ({
             shares: Math.floor(Math.random() * 15),
             bookmarks: Math.floor(Math.random() * 10)
           },
-          tags: [item.type || 'intelligence', item.region || 'global'].filter(Boolean),
-          trend: item.priority === 'critical' ? 'breaking' : item.priority === 'high' ? 'trending' : undefined
+          tags: [item.type || 'intelligence', item.region || 'global'].filter(Boolean) as string[],
+          trend: (item.priority === 'critical' ? 'breaking' : 
+                 item.priority === 'high' ? 'trending' : undefined) as 'trending' | 'breaking' | 'developing' | undefined
         });
       });
     }
 
     // Transform activity data
     if (activityData) {
-      activityData.forEach(activity => {
+      activityData.forEach((activity: any) => {
         const activityType = activity.activityType === 'diplomatic' ? 'embassy_established' :
                            activity.activityType === 'economic' ? 'trade_agreement' :
                            activity.activityType === 'cultural' ? 'cultural_exchange' :
@@ -298,8 +301,10 @@ const SocialActivityFeedComponent: React.FC<SocialActivityFeedProps> = ({
           metrics: {
             impact: activity.importance === 'high' ? 80 : 
                    activity.importance === 'medium' ? 60 : 40,
-            significance: activity.importance as 'low' | 'medium' | 'high',
-            visibility: activity.classification.toLowerCase() as 'public' | 'restricted' | 'confidential'
+            significance: (activity.importance === 'high' ? 'high' : 
+                         activity.importance === 'medium' ? 'medium' : 'low') as 'low' | 'medium' | 'high' | 'critical',
+            visibility: (activity.classification?.toLowerCase() === 'confidential' ? 'confidential' : 
+                       activity.classification?.toLowerCase() === 'restricted' ? 'restricted' : 'public') as 'public' | 'restricted' | 'confidential'
           },
           interactions: {
             likes: Math.floor(Math.random() * 30) + 5,
@@ -307,17 +312,17 @@ const SocialActivityFeedComponent: React.FC<SocialActivityFeedProps> = ({
             shares: Math.floor(Math.random() * 10),
             bookmarks: Math.floor(Math.random() * 8)
           },
-          tags: [activity.activityType, activity.classification.toLowerCase()],
-          relatedAchievements: activity.relatedCountries && activity.relatedCountries.length > 0 ? ['diplomatic_action'] : undefined
+          tags: [activity.activityType, activity.classification.toLowerCase()] as string[],
+          relatedAchievements: (activity.relatedCountries && activity.relatedCountries.length > 0) ? ['diplomatic_action'] : undefined
         });
       });
     }
 
     return activities;
-  }, [intelligenceData, activityData]);
+  }, [intelligenceData, activityData]) as ActivityItem[];
 
   // Filter and sort activities
-  const filteredActivities = useMemo(() => {
+  const filteredActivities = useMemo((): ActivityItem[] => {
     let filtered = transformedActivities.length > 0 ? transformedActivities : MOCK_ACTIVITIES;
 
     // Apply type filter
@@ -348,10 +353,10 @@ const SocialActivityFeedComponent: React.FC<SocialActivityFeedProps> = ({
     });
 
     return filtered.slice(0, maxItems);
-  }, [filter, feedType, countryId, sortBy, maxItems]);
+  }, [filter, feedType, countryId, sortBy, maxItems, transformedActivities]);
 
   // Toggle item expansion
-  const toggleExpansion = useCallback((itemId: string) => {
+  const toggleExpansion = useCallback((itemId: string): void => {
     setExpandedItems(prev => {
       const newSet = new Set(prev);
       if (newSet.has(itemId)) {
@@ -364,7 +369,7 @@ const SocialActivityFeedComponent: React.FC<SocialActivityFeedProps> = ({
   }, []);
 
   // Get relative time
-  const getRelativeTime = useCallback((timestamp: string) => {
+  const getRelativeTime = useCallback((timestamp: string): string => {
     const now = new Date();
     const time = new Date(timestamp);
     const diffMs = now.getTime() - time.getTime();
@@ -380,7 +385,7 @@ const SocialActivityFeedComponent: React.FC<SocialActivityFeedProps> = ({
   }, []);
 
   // Render activity item
-  const renderActivityItem = (activity: ActivityItem, index: number) => {
+  const renderActivityItem = (activity: ActivityItem, index: number): React.ReactElement => {
     const typeConfig = ACTIVITY_TYPES[activity.type];
     const IconComponent = typeConfig.icon;
     const isExpanded = expandedItems.has(activity.id);
@@ -610,7 +615,7 @@ const SocialActivityFeedComponent: React.FC<SocialActivityFeedProps> = ({
           {/* Sort */}
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
+            onChange={(e) => setSortBy(e.target.value as 'recent' | 'popular' | 'impact')}
             className="px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-[--intel-gold]/50"
           >
             <option value="recent" className="bg-[--intel-navy]">Most Recent</option>

@@ -1,7 +1,8 @@
 "use client";
 
 import { cn } from "~/lib/utils";
-import { AnimatePresence, motion, MotionProps } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import type { MotionProps } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 type CharacterSet = string[] | readonly string[];
@@ -71,7 +72,7 @@ export function HyperText({
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
+        if (entry?.isIntersecting) {
           setTimeout(() => {
             setIsAnimating(true);
           }, delay);
@@ -107,9 +108,9 @@ export function HyperText({
           letter === " "
             ? letter
             : index <= iterationCount.current
-              ? children[index]
-              : characterSet[getRandomInt(characterSet.length)],
-        ),
+              ? children[index] || ""
+              : characterSet[getRandomInt(characterSet.length)] || "",
+        ).filter((char): char is string => char != null),
       );
 
       if (progress < 1) {
