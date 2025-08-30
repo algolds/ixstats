@@ -125,6 +125,18 @@ export function getSectionColors(sectionId?: SectionId, theme?: PrimitiveTheme):
 export function generateSectionChartColors(sectionId?: SectionId, theme?: PrimitiveTheme, count: number = 5): string[] {
   const colors = getSectionColors(sectionId, theme);
   
+  // Define a set of vibrant, distinct fallback colors
+  const vibrantFallbacks = [
+    'hsl(217, 91%, 60%)', // Blue
+    'hsl(160, 84%, 60%)', // Emerald
+    'hsl(45, 93%, 58%)',  // Gold
+    'hsl(262, 83%, 58%)', // Purple
+    'hsl(0, 84%, 60%)',   // Red
+    'hsl(300, 80%, 60%)', // Magenta
+    'hsl(60, 90%, 60%)',  // Yellow
+    'hsl(180, 80%, 60%)', // Cyan
+  ];
+
   // Define base hue and complementary color schemes for each theme
   const themeColorConfig = {
     gold: { baseHue: 45, complementary: [25, 65, 195, 285] }, // Orange, yellow-green, blue, purple
@@ -138,24 +150,26 @@ export function generateSectionChartColors(sectionId?: SectionId, theme?: Primit
   const config = themeColorConfig[theme || 'default'] || themeColorConfig.default;
                  
   return Array.from({ length: count }, (_, i) => {
+    // Use vibrant fallbacks for the first few colors to ensure visibility
+    if (i < vibrantFallbacks.length) {
+      return vibrantFallbacks[i];
+    }
+    
+    // Fallback to existing complementary/triadic logic for additional colors
     if (i === 0) {
-      // Primary theme color for the main data
       return colors.primary;
     } else if (i === 1) {
-      // Accent theme color for secondary data
       return colors.accent;
     } else if (i < 6) {
-      // Use complementary colors for variety - NO BLACK, ensure lightness > 50%
       const complementaryHue = config.complementary[(i - 2) % config.complementary.length];
-      const saturation = Math.max(75, 90 - (i * 2)); // Higher saturation for vibrancy
-      const lightness = Math.max(55, 65 + (i % 2 === 0 ? 10 : -5)); // Ensure never too dark
+      const saturation = Math.max(75, 90 - (i * 2));
+      const lightness = Math.max(55, 65 + (i % 2 === 0 ? 10 : -5));
       return `hsl(${complementaryHue}, ${saturation}%, ${lightness}%)`;
     } else {
-      // For additional colors, create triadic variations - NO BLACK, ALWAYS BRIGHT
-      const triadicOffset = 120 * ((i - 6) % 3); // Triadic color harmony
+      const triadicOffset = 120 * ((i - 6) % 3);
       const newHue = (config.baseHue + triadicOffset) % 360;
-      const saturation = Math.max(70, 90 - ((i - 6) * 2)); // Higher minimum saturation
-      const lightness = Math.max(55, 70 + ((i - 6) % 2 === 0 ? 10 : -5)); // ALWAYS bright colors
+      const saturation = Math.max(70, 90 - ((i - 6) * 2));
+      const lightness = Math.max(55, 70 + ((i - 6) % 2 === 0 ? 10 : -5));
       return `hsl(${newHue}, ${saturation}%, ${lightness}%)`;
     }
   });

@@ -22,7 +22,8 @@ import {
   LaborEmploymentSectionModern as LaborEmploymentSection,
   FiscalSystemSectionModern as FiscalSystemSection,
   GovernmentSpendingSectionModern as GovernmentSpendingSection,
-  DemographicsSectionModern as DemographicsSection
+  DemographicsSectionModern as DemographicsSection,
+  GovernmentStructureSection
 } from '../../sections';
 
 // Import utilities
@@ -71,12 +72,17 @@ export function EconomicCustomizationHub({
     setActiveSection(sectionId);
   };
 
+  const handleToggleAdvanced = () => {
+    console.log('Toggling advanced view from EconomicCustomizationHub');
+    setShowAdvanced(!showAdvanced);
+  };
+
   const renderSectionContent = () => {
     const commonProps = {
       inputs,
       onInputsChange,
       showAdvanced,
-      onToggleAdvanced: () => setShowAdvanced(!showAdvanced),
+      onToggleAdvanced: handleToggleAdvanced,
       referenceCountry,
       totalPopulation: inputs.coreIndicators.totalPopulation,
       nominalGDP: inputs.coreIndicators.nominalGDP,
@@ -93,7 +99,16 @@ export function EconomicCustomizationHub({
       case 'fiscal':
         return <FiscalSystemSection {...commonProps} />;
       case 'government':
-        return <GovernmentSpendingSection {...commonProps} />;
+        return (
+          <GovernmentSpendingSection
+            spendingData={inputs.governmentSpending}
+            nominalGDP={inputs.coreIndicators.nominalGDP}
+            totalPopulation={inputs.coreIndicators.totalPopulation}
+            onSpendingDataChangeAction={(newSpendingData: any) => onInputsChange({ ...inputs, governmentSpending: newSpendingData })}
+          />
+        );
+      case 'structure':
+        return <GovernmentStructureSection {...commonProps} />;
       case 'demographics':
         return <DemographicsSection {...commonProps} />;
       default:
@@ -170,7 +185,7 @@ export function EconomicCustomizationHub({
                       completeness: 0
                     }}
                     showAdvanced={showAdvanced}
-                    onToggleAdvanced={() => setShowAdvanced(!showAdvanced)}
+                    onToggleAdvanced={handleToggleAdvanced}
                   />
                 </GlassCardHeader>
                 <GlassCardContent>

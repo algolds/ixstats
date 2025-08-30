@@ -45,6 +45,7 @@ import { PublicVitalityRings } from "~/components/countries/PublicVitalityRings"
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { cn } from "~/lib/utils";
 import { useFlag } from "~/hooks/useUnifiedFlags";
+import { usePermissions } from "~/hooks/usePermissions";
 
 interface SocialMetrics {
   followers: number;
@@ -93,6 +94,9 @@ export function SocialUserProfile({ userProfile, className }: SocialUserProfileP
   const { user } = useUser();
   const [showFriends, setShowFriends] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
+  
+  // Get user role information
+  const { user: roleUser, isLoading: roleLoading } = usePermissions();
   
   // Fetch user country data
   const { data: userCountry } = api.countries.getByIdAtTime.useQuery(
@@ -193,23 +197,27 @@ export function SocialUserProfile({ userProfile, className }: SocialUserProfileP
                 <h2 className="text-xl font-bold text-foreground">
                   {user?.firstName || 'User'}
                 </h2>
-                <Badge className={cn("flex items-center gap-1 text-xs px-2 py-1", influenceLevel.color)}>
-                  <InfluenceIcon className="h-3 w-3" />
-                  {influenceLevel.label}
-                </Badge>
+                {!roleLoading && roleUser?.role ? (
+                  <Badge 
+                    className={`flex items-center gap-1 text-xs px-2 py-1 ${
+                      roleUser.role.level <= 0 ? 'bg-purple-100 text-purple-800 border-purple-200' :
+                      roleUser.role.level <= 10 ? 'bg-red-100 text-red-800 border-red-200' :
+                      roleUser.role.level <= 20 ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                      roleUser.role.level <= 30 ? 'bg-green-100 text-green-800 border-green-200' :
+                      'bg-gray-100 text-gray-800 border-gray-200'
+                    }`}
+                  >
+                    <Briefcase className="h-3 w-3" />
+                    {roleUser.role.displayName}
+                  </Badge>
+                ) : (
+                  <Badge className="flex items-center gap-1 text-xs px-2 py-1 bg-gray-100 text-gray-800 border-gray-200">
+                    <User className="h-3 w-3" />
+                    {roleLoading ? 'Loading...' : (user?.firstName || 'User')}
+                  </Badge>
+                )}
               </div>
               
-              {userCountry && (
-                <div className="text-muted-foreground mb-3">
-                  Leader of{' '}
-                  <Link
-                    href={createUrl(`/countries/${userCountry.id}`)}
-                    className="text-foreground hover:text-primary transition-colors font-medium"
-                  >
-                    {userCountry.name}
-                  </Link>
-                </div>
-              )}
             </div>
 
             {/* Meta Info */}
@@ -222,10 +230,13 @@ export function SocialUserProfile({ userProfile, className }: SocialUserProfileP
 
             {/* Actions */}
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" />
-                Message
-              </Button>
+              {/* Only show Message button if not viewing own profile */}
+              {userProfile?.id && user?.id && userProfile.id !== user.id && (
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Message
+                </Button>
+              )}
               <Button variant="outline" size="sm">
                 <Settings className="h-4 w-4" />
               </Button>

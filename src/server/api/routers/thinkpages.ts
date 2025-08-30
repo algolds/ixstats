@@ -1541,43 +1541,28 @@ export const thinkpagesRouter = createTRPCRouter({
   // Create a new conversation
   createConversation: publicProcedure
     .input(z.object({
-      participantIds: z.array(z.string())
+      participantIds: z.array(z.string().min(1))
     }))
     .mutation(async ({ ctx, input }) => {
-      console.log('✅ createConversation mutation called successfully');
-      console.log('📥 Raw input received:', input);
+      console.log('🔍 Server mutation called with raw input:', input);
+      console.log('🔍 Input type:', typeof input);
       console.log('🔍 Input keys:', Object.keys(input || {}));
-      console.log('📋 Participant IDs:', input.participantIds);
+      console.log('🔍 participantIds:', input?.participantIds);
       
       const { db } = ctx;
+      const { participantIds } = input;
 
-      // Simple validation
-      if (!input.participantIds || input.participantIds.length === 0) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'participantIds is required'
-        });
-      }
-
-      const validParticipantIds = input.participantIds.filter(id => id && id.trim().length > 0);
-      
-      if (validParticipantIds.length === 0) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Valid participant IDs are required'
-        });
-      }
-
-      // For direct conversations, ensure 1-2 participants (allow self-messaging)
-      if (validParticipantIds.length > 2) {
+      // Validate participants
+      if (participantIds.length === 0 || participantIds.length > 2) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'Direct conversations must have 1-2 participants'
         });
       }
 
-      // Check if all unique participants exist (don't duplicate for self-messaging)
-      const uniqueParticipantIds = [...new Set(validParticipantIds)];
+      const uniqueParticipantIds = [...new Set(participantIds)];
+      
+      // Verify all participants exist
       const accounts = await db.thinkpagesAccount.findMany({
         where: { id: { in: uniqueParticipantIds } }
       });
@@ -1589,50 +1574,59 @@ export const thinkpagesRouter = createTRPCRouter({
         });
       }
 
-      // Check if conversation already exists (for direct conversations)
-      const allConversations = await db.thinkshareConversation.findMany({
+      // Check for existing conversation
+      const existingConv = await db.thinkshareConversation.findFirst({
         where: {
           type: 'direct',
+          AND: uniqueParticipantIds.map(participantId => ({
+            participants: {
+              some: {
+                accountId: participantId,
+                isActive: true
+              }
+            }
+          })),
           participants: {
-            some: {
-              accountId: { in: uniqueParticipantIds }
+            none: {
+              accountId: {
+                notIn: uniqueParticipantIds
+              },
+              isActive: true
             }
           }
         },
         include: {
-          participants: true
+          participants: {
+            where: { isActive: true },
+            include: { account: true }
+          }
         }
       });
 
-      // Check each conversation to see if it matches our participant set
-      for (const conv of allConversations) {
-        const convParticipantIds = conv.participants.map(p => p.accountId).sort();
-        const inputParticipantIds = uniqueParticipantIds.sort();
-        
-        if (JSON.stringify(convParticipantIds) === JSON.stringify(inputParticipantIds)) {
-          console.log('🔄 Found existing conversation:', conv.id);
-          return conv;
-        }
+      if (existingConv) {
+        return existingConv;
       }
 
-      // Create conversation
-      console.log('🆕 Creating new conversation');
+      // Create new conversation
       const conversation = await db.thinkshareConversation.create({
         data: {
-          type: 'direct'
+          type: 'direct',
+          participants: {
+            createMany: {
+              data: uniqueParticipantIds.map(accountId => ({
+                accountId,
+                role: 'participant'
+              }))
+            }
+          }
+        },
+        include: {
+          participants: {
+            where: { isActive: true },
+            include: { account: true }
+          }
         }
       });
-
-      // Add participants (using unique IDs to avoid constraint violations)
-      await db.conversationParticipant.createMany({
-        data: uniqueParticipantIds.map(accountId => ({
-          conversationId: conversation.id,
-          accountId,
-          role: 'participant'
-        }))
-      });
-
-      console.log('✅ Conversation created successfully:', conversation.id);
 
       return conversation;
     }),
@@ -1808,6 +1802,9 @@ export const thinkpagesRouter = createTRPCRouter({
       })).optional()
     }))
     .mutation(async ({ ctx, input }) => {
+      console.log('🔍 sendMessage called with input:', input);
+      console.log('🔍 messageType:', input.messageType);
+      
       const { db } = ctx;
 
       // Verify user is participant

@@ -14,3 +14,6 @@ export { GovernmentSpendingSectionModern } from './GovernmentSpendingSectionMode
 
 // Re-export enhanced National Identity section
 export { NationalIdentitySection } from '../components/enhanced/NationalIdentitySection';
+
+// Government Structure section
+export { GovernmentStructureSection } from './GovernmentStructureSection';

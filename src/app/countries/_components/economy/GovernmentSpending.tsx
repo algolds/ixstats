@@ -85,7 +85,7 @@ export function GovernmentSpending({
   spendingGDPPercent,
   spendingPerCapita,
   spendingCategories,
-  deficitSurplus,
+  deficitSurplus = 0,
   performanceBasedBudgeting = false,
   universalBasicServices = false,
   greenInvestmentPriority = false,

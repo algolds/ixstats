@@ -7,42 +7,9 @@ import { HealthRing } from "~/components/ui/health-ring";
 import { TextReveal, FadeIn } from "~/components/ui/text-reveal";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { IxTime } from "~/lib/ixtime";
-import { 
-  // Intelligence & Security Icons
-  RiShieldLine, 
-  RiEyeLine, 
-  RiLockLine,
-  RiGlobalLine,
-  RiFileTextLine,
-  RiBarChartLine,
-  // Diplomatic Icons
-  RiShakeHandsLine,
-  RiTeamLine,
-  RiBuildingLine,
-  RiFlagLine,
-  // Activity & Social Icons
-  RiNotification3Line,
-  RiChat3Line,
-  RiUserAddLine,
-  RiStarLine,
-  // Navigation Icons
-  RiArrowRightLine,
-  RiExternalLinkLine,
-  RiRefreshLine,
-  // Intelligence Glyphs (using available icons as diplomatic glyphs)
-  RiSearchLine,
-  RiScanLine,
-  RiWifiLine, // Replace RiSatelliteLine
-  RiSettings3Line,
-  // Economic & Demographic Icons
-  RiMoneyDollarCircleLine,
-  RiSubtractLine,
-  RiArrowUpLine,
-  RiArrowDownLine,
-  RiMapLine,
-  RiInformationLine,
-  RiMapPinLine
-} from "react-icons/ri";
+import { RiArrowDownLine, RiArrowUpLine, RiBarChartLine, RiChat3Line, RiExternalLinkLine, RiFileTextLine, RiGlobalLine, RiLockLine, RiMapPinLine, RiNotification3Line, RiRefreshLine, RiShakeHandsLine, RiShieldLine, RiStarLine, RiSubtractLine, RiTeamLine, RiUserAddLine, RiWifiLine } from "react-icons/ri"; // Keep RiLockLine for clearance restriction display
+import { ClassificationBadge, CLASSIFICATION_LEVELS } from "~/components/ui/ClassificationBadge";
+import { INTELLIGENCE_GLYPHS, IntelligenceGlyph } from "~/components/ui/IntelligenceGlyph";
 
 import type { EnhancedCountryProfileData, SocialActionType } from "~/types/social-profile";
 import { EmbassyNetworkVisualization } from "~/components/diplomatic/EmbassyNetworkVisualization";
@@ -70,24 +37,6 @@ interface DiplomaticIntelligenceProfileProps {
   viewerClearanceLevel?: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
   onSocialAction?: (action: SocialActionType, targetId: string) => void;
 }
-
-// Intelligence Classification Levels
-const CLASSIFICATION_LEVELS = {
-  'PUBLIC': { color: 'text-green-400', bg: 'bg-green-500/20', label: 'PUBLIC' },
-  'RESTRICTED': { color: 'text-yellow-400', bg: 'bg-yellow-500/20', label: 'RESTRICTED' },
-  'CONFIDENTIAL': { color: 'text-red-400', bg: 'bg-red-500/20', label: 'CONFIDENTIAL' }
-} as const;
-
-// Intelligence Glyph System
-const INTELLIGENCE_GLYPHS = {
-  economic: RiBarChartLine,
-  diplomatic: RiShakeHandsLine,
-  security: RiShieldLine,
-  surveillance: RiScanLine,
-  intelligence: RiSearchLine,
-  communications: RiWifiLine,
-  analysis: RiSettings3Line
-} as const;
 
 const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligenceProfileProps> = ({
   country,
@@ -307,16 +256,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      style={{
-        // Intelligence Command Center Styling
-        '--intel-navy': '#0F172A',
-        '--intel-gold': '#D4AF37', 
-        '--intel-silver': '#94A3B8',
-        '--intel-amber': '#F59E0B',
-        '--intel-glass-blur': 'blur(16px)',
-        '--intel-classification-overlay': 'rgba(15, 23, 42, 0.85)',
-        '--intel-security-border': '1px solid rgba(212, 175, 55, 0.3)',
-      } as React.CSSProperties}
+      
     >
       {/* Intelligence Command Header */}
       <div className="glass-hierarchy-parent rounded-xl overflow-hidden mb-6">
@@ -354,7 +294,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                 onClick={() => setShowDiplomaticActions(true)}
                 className="flex items-center gap-2 bg-[--intel-gold]/20 hover:bg-[--intel-gold]/30 text-[--intel-gold] px-4 py-2 rounded-lg text-sm font-medium transition-colors"
               >
-                <RiShakeHandsLine className="h-4 w-4" />
+                <IntelligenceGlyph type="diplomatic" size={4} />
                 Diplomatic Actions
               </button>
             </div>
@@ -428,16 +368,16 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                     <span className="font-medium">{country.economicTier}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <RiTeamLine className="h-4 w-4" />
+                    <IntelligenceGlyph type="team" />
                     <span>{formatPopulation(country.currentPopulation)}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <RiBarChartLine className="h-4 w-4" />
+                    <IntelligenceGlyph type="economic" />
                     <span>{formatCurrency(country.currentGdpPerCapita)}</span>
                   </div>
                   {country.globalRanking && (
                     <div className="flex items-center gap-2">
-                      <RiStarLine className="h-4 w-4" />
+                      <IntelligenceGlyph type="star" />
                       <span>Global Rank #{country.globalRanking}</span>
                     </div>
                   )}
@@ -556,7 +496,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <RiMoneyDollarCircleLine className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      <IntelligenceGlyph type="money" />
                       <span className="text-sm font-medium text-amber-700 dark:text-amber-300">Economic Intel</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -567,7 +507,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                         animate={{ rotate: expandedCards.has('economic') ? 180 : 0 }}
                         transition={{ duration: 0.2 }}
                       >
-                        <RiArrowDownLine className="h-3 w-3 text-muted-foreground" />
+                        <IntelligenceGlyph type="arrowDown" />
                       </motion.div>
                     </div>
                   </div>
@@ -657,7 +597,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                         animate={{ rotate: expandedCards.has('demographic') ? 180 : 0 }}
                         transition={{ duration: 0.2 }}
                       >
-                        <RiArrowDownLine className="h-3 w-3 text-muted-foreground" />
+                        <IntelligenceGlyph type="arrowDown" />
                       </motion.div>
                     </div>
                   </div>
@@ -740,7 +680,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <RiBarChartLine className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                      <IntelligenceGlyph type="economic" />
                       <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Development Intel</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1124,7 +1064,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                           "flex-1 py-3 px-4 text-sm font-medium transition-colors",
                           activeDiplomaticTab === 'networks'
                             ? "text-[--intel-gold] bg-[--intel-gold]/10 border-b-2 border-[--intel-gold]"
-                            : "text-[--intel-silver] hover:text-white hover:bg-white/5"
+                            : "text-[--intel-silver] hover:text-foreground hover:bg-muted/50"
                         )}
                       >
                         <div className="flex items-center gap-2 justify-center">
@@ -1138,7 +1078,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                           "flex-1 py-3 px-4 text-sm font-medium transition-colors",
                           activeDiplomaticTab === 'channels'
                             ? "text-[--intel-gold] bg-[--intel-gold]/10 border-b-2 border-[--intel-gold]"
-                            : "text-[--intel-silver] hover:text-white hover:bg-white/5"
+                            : "text-[--intel-silver] hover:text-foreground hover:bg-muted/50"
                         )}
                       >
                         <div className="flex items-center gap-2 justify-center">
@@ -1152,7 +1092,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                           "flex-1 py-3 px-4 text-sm font-medium transition-colors",
                           activeDiplomaticTab === 'cultural'
                             ? "text-[--intel-gold] bg-[--intel-gold]/10 border-b-2 border-[--intel-gold]"
-                            : "text-[--intel-silver] hover:text-white hover:bg-white/5"
+                            : "text-[--intel-silver] hover:text-foreground hover:bg-muted/50"
                         )}
                       >
                         <div className="flex items-center gap-2 justify-center">
@@ -1166,7 +1106,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                           "flex-1 py-3 px-4 text-sm font-medium transition-colors",
                           activeDiplomaticTab === 'achievements'
                             ? "text-[--intel-gold] bg-[--intel-gold]/10 border-b-2 border-[--intel-gold]"
-                            : "text-[--intel-silver] hover:text-white hover:bg-white/5"
+                            : "text-[--intel-silver] hover:text-foreground hover:bg-muted/50"
                         )}
                       >
                         <div className="flex items-center gap-2 justify-center">
@@ -1558,7 +1498,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                     {[
                       { action: 'follow', icon: RiUserAddLine, label: 'Follow Nation', desc: 'Monitor developments', color: 'text-blue-400', handler: () => handleSocialAction('follow') },
                       { action: 'message', icon: RiChat3Line, label: 'Diplomatic Message', desc: 'Secure correspondence', color: 'text-purple-400', handler: handleStartThinkshareConversation },
-                      { action: 'propose', icon: RiShakeHandsLine, label: 'Alliance Proposal', desc: 'Formal proposal', color: 'text-green-400', handler: () => handleSocialAction('propose') },
+                      { action: 'propose_alliance', icon: RiShakeHandsLine, label: 'Alliance Proposal', desc: 'Formal proposal', color: 'text-green-400', handler: () => handleSocialAction('propose_alliance') },
                       { action: 'congratulate', icon: RiStarLine, label: 'Congratulate', desc: 'Recognize achievements', color: 'text-[--intel-gold]', handler: () => handleSocialAction('congratulate') }
                     ].map(actionItem => (
                       <button

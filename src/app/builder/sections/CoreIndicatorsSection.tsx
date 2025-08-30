@@ -273,6 +273,7 @@ export function CoreIndicatorsSection({
               formatValue={formatCurrency}
               showTooltip={true}
               showGrid={true}
+              showValues={true}
             />
 
             {/* Growth & Inflation Chart */}
@@ -292,6 +293,7 @@ export function CoreIndicatorsSection({
               showTooltip={true}
               showGrid={true}
               stacked={false}
+              showValues={true}
             />
           </div>
         </div>

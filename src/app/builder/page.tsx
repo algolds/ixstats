@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic';
 
 import React, { useState } from 'react';
-import { BuilderPageEnhanced } from "./components/enhanced";
+import { AtomicBuilderPageEnhanced } from "./components/enhanced/AtomicBuilderPageEnhanced";
 import { BuilderOnboardingWizard } from './components/BuilderOnboardingWizard';
 import { useRouter } from 'next/navigation';
 import { createUrl } from "~/lib/url-utils";
@@ -24,7 +24,7 @@ export default function CreateCountryBuilder() {
   };
 
   if (isBuilding) {
-    return <BuilderPageEnhanced onBackToIntro={handleBackToIntro} />;
+    return <AtomicBuilderPageEnhanced onBackToIntro={handleBackToIntro} />;
   }
 
   return (

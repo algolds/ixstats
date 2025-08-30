@@ -180,7 +180,7 @@ export default function SetupPage() {
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 mb-4">
                       Start fresh with a new nation. You'll be guided through the 
-                      process of setting up your country's economic profile.
+                      MyCountry Builder.
                     </p>
                     <div className="flex items-center text-indigo-600 dark:text-indigo-400">
                       <span className="text-sm font-medium">Choose this option</span>
@@ -316,7 +316,7 @@ export default function SetupPage() {
                     Create New Country
                   </h1>
                   <p className="text-gray-600 dark:text-gray-400">
-                    Start fresh with a new nation. You'll be guided through setting up your country's economic profile.
+                    Start fresh with a new nation. You'll be guided through the MyCountry Builder
                   </p>
                 </div>
 
@@ -330,10 +330,10 @@ export default function SetupPage() {
                       </div>
                       <div>
                         <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                          Country Builder
+                          MyCountry® Builder
                         </h3>
                         <p className="text-gray-600 dark:text-gray-400">
-                          Use our interactive country builder to create a realistic economic profile based on real-world data.
+                          Use our interactive country builder to create your country however you want.
                         </p>
                       </div>
                     </div>
@@ -362,7 +362,7 @@ export default function SetupPage() {
                       </div>
                       <div>
                         <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                          Economic Foundation
+                           Foundation
                         </h3>
                         <p className="text-gray-600 dark:text-gray-400">
                           Configure GDP, growth rates, fiscal policies, and economic indicators.

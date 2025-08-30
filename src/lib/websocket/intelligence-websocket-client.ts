@@ -1,8 +1,8 @@
 // WebSocket Client for Real-time Intelligence Updates
 // Frontend client for live intelligence data with automatic reconnection
 
-import { io } from 'socket.io-client';
-import type { Socket } from 'socket.io-client';
+import * as socketIO from 'socket.io-client';
+const io = socketIO.default || socketIO;
 import type { 
   IntelligenceUpdate, 
   WebSocketClientState, 
@@ -11,7 +11,7 @@ import type {
 } from './types';
 
 export class IntelligenceWebSocketClient {
-  private socket: Socket | null = null;
+  private socket: any = null;
   private state: WebSocketClientState = {
     connected: false,
     authenticated: false,

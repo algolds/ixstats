@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
 import { motion } from 'framer-motion';
 import { cn } from '~/lib/utils';
 import { useSectionTheme, generateSectionChartColors, getGlassClasses } from './theme-utils';
@@ -26,6 +26,26 @@ interface ChartTooltipProps {
   label?: string | number;
   formatValue?: (value: number) => string;
   colors: string[];
+}
+
+// Custom label renderer for bar values
+function renderCustomLabel(entry: any, formatValue?: (value: number) => string) {
+  if (!entry || entry.value === undefined || entry.value === null) return null;
+  
+  return (
+    <text
+      x={entry.x + entry.width / 2}
+      y={entry.y - 5}
+      fill="currentColor"
+      textAnchor="middle"
+      dominantBaseline="bottom"
+      fontSize="11"
+      fontWeight="500"
+      className="fill-gray-700 dark:fill-gray-300"
+    >
+      {formatValue ? formatValue(entry.value) : entry.value}
+    </text>
+  );
 }
 
 function ChartTooltip({ active, payload, label, formatValue, colors }: ChartTooltipProps) {
@@ -235,7 +255,10 @@ export function EnhancedBarChart({
           'p-4 rounded-lg',
           getGlassClasses('base', resolvedTheme, sectionId)
         )}
-        style={{ height: `${height + 32}px`, width: width }}
+        style={{ 
+          height: `${!isNaN(height) ? height + 32 : 300}px`, 
+          width: (width && !isNaN(width)) ? `${width}px` : undefined 
+        }}
       >
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
@@ -307,6 +330,17 @@ export function EnhancedBarChart({
                       fill={chartColors[cellIndex % chartColors.length]} 
                     />
                   ))}
+                  {/* Add data labels if showValues is true */}
+                  {showValues && (
+                    <LabelList
+                      dataKey={key}
+                      position="top"
+                      fontSize={11}
+                      fontWeight="500"
+                      className="fill-gray-700 dark:fill-gray-300"
+                      formatter={formatValue ? (value: any) => formatValue(Number(value)) : undefined}
+                    />
+                  )}
                 </Bar>
               ))
             ) : (
@@ -326,6 +360,17 @@ export function EnhancedBarChart({
                     fill={chartColors[index % chartColors.length]} 
                   />
                 ))}
+                {/* Add data labels if showValues is true */}
+                {showValues && (
+                  <LabelList
+                    dataKey={yKey}
+                    position="top"
+                    fontSize={11}
+                    fontWeight="500"
+                    className="fill-gray-700 dark:fill-gray-300"
+                    formatter={formatValue ? (value: any) => formatValue(Number(value)) : undefined}
+                  />
+                )}
               </Bar>
             )}
           </BarChart>

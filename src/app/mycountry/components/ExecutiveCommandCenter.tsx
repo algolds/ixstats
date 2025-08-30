@@ -31,6 +31,9 @@ import type {
 import { getIntelligenceEconomicData, getQuickEconomicHealth } from '~/lib/enhanced-economic-service';
 import type { CountryStats } from '~/types/ixstats';
 import type { EconomyData } from '~/types/economics';
+import { api } from '~/trpc/react';
+import { useUser } from '@clerk/nextjs';
+import { toast } from 'sonner';
 
 interface ExecutiveCommandCenterProps extends IntelligenceComponentProps {
   intelligence: ExecutiveIntelligence;
@@ -300,7 +303,36 @@ export function ExecutiveCommandCenter({
   className = '',
   loading = false
 }: ExecutiveCommandCenterProps) {
+  const { user } = useUser();
   const [viewMode, setViewMode] = useState<'overview' | 'detailed'>('overview');
+  
+  // Get live quick actions from API
+  const { data: quickActions, refetch: refetchActions } = api.eci.getQuickActions.useQuery(
+    { userId: user?.id || '' },
+    { enabled: !!user?.id }
+  );
+  
+  // Execute quick action mutation
+  const executeAction = api.eci.executeQuickAction.useMutation({
+    onSuccess: (result) => {
+      toast.success(`Action executed: ${result.message}`);
+      void refetchActions();
+    },
+    onError: (error) => {
+      toast.error(`Failed to execute action: ${error.message}`);
+    }
+  });
+  
+  // Handle quick action execution
+  const handleQuickActionClick = (action: ActionableRecommendation) => {
+    if (action.id && user?.id) {
+      executeAction.mutate({
+        userId: user.id,
+        actionType: action.id,
+        parameters: {}
+      });
+    }
+  };
   
   // Enhanced economic intelligence
   const enhancedEconomicData = useMemo(() => {
@@ -442,8 +474,17 @@ export function ExecutiveCommandCenter({
                 />
                 
                 <QuickActionsSection 
-                  actions={intelligence.urgentActions}
-                  onActionClick={onActionClick}
+                  actions={quickActions ? quickActions.map((action: any) => ({
+                    id: action.id,
+                    title: action.title,
+                    description: action.description,
+                    urgency: action.urgency as 'urgent' | 'important' | 'routine' | 'future',
+                    estimatedDuration: action.estimatedDuration,
+                    successProbability: action.successProbability,
+                    estimatedBenefit: action.estimatedBenefit,
+                    context: { confidence: action.successProbability }
+                  })) : intelligence.urgentActions}
+                  onActionClick={handleQuickActionClick}
                 />
 
                 {/* Enhanced Economic Intelligence */}

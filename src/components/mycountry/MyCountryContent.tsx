@@ -169,30 +169,33 @@ export function MyCountryContent({ variant = 'unified', title }: MyCountryConten
         {/* Left Sidebar - National Vitality Index */}
         {variant === 'unified' && (
           <div className="xl:col-span-1">
-            <Card className="overflow-hidden glass-hierarchy-parent border-amber-200 dark:border-amber-700/40 dark:shadow-amber-900/10 sticky top-6">
+            <Card className="overflow-hidden glass-hierarchy-parent border-indigo-200 dark:border-indigo-700/40 dark:shadow-indigo-900/10 sticky top-6">
               {/* Flag Background with Subtle Depth */}
               <div className="absolute inset-0">
                 {flagUrl ? (
                   <>
                     <div className="absolute inset-0 bg-gradient-to-br from-black/10 via-transparent to-black/20 z-[1]" />
-                    <img 
-                      src={flagUrl} 
-                      alt={`${country.name} flag`}
-                      className="w-full h-full object-cover opacity-35 scale-125 shadow-inner"
-                      onError={(e) => {
-                        console.log('Flag failed to load:', flagUrl);
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-amber-50/85 to-yellow-50/85 dark:from-amber-900/15 dark:to-yellow-800/10 dark:backdrop-blur-[2px] z-[2]" />
+                    <div className="relative w-full h-full overflow-hidden group ripple-effect"> {/* Added wrapper for ripple effect */}
+                      <img 
+                        src={flagUrl} 
+                        alt={`${country.name} flag`}
+                        className="w-full h-full object-cover opacity-35 scale-125 shadow-inner transition-transform duration-300 group-hover:scale-110"
+                        onError={(e) => {
+                          console.log('Flag failed to load:', flagUrl);
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                      {/* Ripple effect pseudo-element will be handled by custom CSS for .ripple-effect */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/85 via-purple-50/85 to-pink-50/85 dark:from-indigo-900/15 dark:via-purple-900/10 dark:to-pink-800/8 dark:backdrop-blur-[2px] z-[2] group-hover:opacity-90 transition-opacity duration-300" />
+                    </div>
                   </>
                 ) : (
-                  <div className="absolute inset-0 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/12 dark:to-yellow-800/8 dark:backdrop-blur-[1px]" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/12 dark:to-purple-800/8 dark:backdrop-blur-[1px]" />
                 )}
               </div>
               
               <div className="relative z-20">
-                <CardHeader className={vitalityCollapsed ? "py-1 px-3" : ""}>
+                <CardHeader className={vitalityCollapsed ? "py-2 px-4" : ""}>
                   <div className="flex items-center justify-between">
                     <CardTitle className={vitalityCollapsed ? "text-sm font-medium" : ""}>
                       {vitalityCollapsed ? "Vitality" : "National Vitality Index"}
@@ -217,7 +220,7 @@ export function MyCountryContent({ variant = 'unified', title }: MyCountryConten
                   )}
                 </CardHeader>
                 
-                <CardContent className={vitalityCollapsed ? "px-3 py-1" : ""}>
+                <CardContent className={vitalityCollapsed ? "px-4 py-2" : ""}>
                   {!vitalityCollapsed && (
                     <>
                       <CountryMetricsGrid 

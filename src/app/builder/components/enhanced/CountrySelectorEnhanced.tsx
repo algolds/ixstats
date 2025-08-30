@@ -43,10 +43,10 @@ export function CountrySelectorEnhanced({
   }, [isSearchStickyAndInView, hoveredCountry, softSelectedCountry]);
 
   // Preload flags for all countries
-  const countryNames = useMemo(() => countries.map(c => c.name), [countries]);
+  const countryNames = useMemo(() => countries?.map(c => c.name) || [], [countries]);
   const { flagUrls } = useBulkFlags(countryNames);
   const filteredCountries = useMemo(() => {
-    return filterCountries(countries, searchTerm, selectedArchetypes, archetypes);
+    return filterCountries(countries || [], searchTerm, selectedArchetypes, archetypes);
   }, [countries, searchTerm, selectedArchetypes]);
 
   // Handle wheel events for smart scroll coordination
@@ -139,7 +139,7 @@ export function CountrySelectorEnhanced({
       
       {/* Left Sidebar - Foundation Archetypes */}
       <FoundationArchetypeSelector
-        countries={countries}
+        countries={countries || []}
         selectedArchetypes={selectedArchetypes}
         onArchetypeSelect={setSelectedArchetypes}
         onArchetypeComposer={() => {
@@ -154,12 +154,14 @@ export function CountrySelectorEnhanced({
       </div>
 
       {/* Main Content Area - Center 60% + Right Sidebar */}
-      <div className="pl-96 pr-6">
-        <div className="relative max-w-7xl mx-auto z-10 p-6 pt-0">
+      {/* Main Content Area - Center 60% + Right Sidebar */}
+      {/* Main Content Area - Center 60% + Right Sidebar */}
+      <div className="pl-92 pr-6">
+        <div className="relative max-w-7xl z-10 p-6 pt-0">
           {/* Main Content: Center Panel (Search/Countries) + Right Preview */}
           <div className="relative flex gap-8 z-20" ref={gridContainerRef}>
             {/* Center Panel - 60% of remaining space */}
-            <div className="flex-1 space-y-6" style={{ flexBasis: '60%' }}>
+            <div className="flex-1 space-y-6">
               {/* Search and Filters */}
               <SearchFilter
                 ref={searchCardRef}
@@ -170,7 +172,7 @@ export function CountrySelectorEnhanced({
 
               {/* Countries Grid */}
               <CountryGrid
-                countries={countries}
+                countries={countries || []}
                 filteredCountries={filteredCountries}
                 searchTerm={searchTerm}
                 selectedArchetype={selectedArchetypes.join(',')} // Convert array to string for backward compatibility

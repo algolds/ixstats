@@ -26,9 +26,10 @@ interface ThinkshareConversation {
 
 interface ChatHeaderProps {
   selectedConversation: ThinkshareConversation;
+  currentAccountId?: string;
 }
 
-export function ChatHeader({ selectedConversation }: ChatHeaderProps) {
+export function ChatHeader({ selectedConversation, currentAccountId }: ChatHeaderProps) {
   const getAccountTypeIcon = (accountType: string) => {
     switch (accountType) {
       case 'government': return <Crown className="h-3 w-3 text-amber-500" />;
@@ -52,11 +53,17 @@ export function ChatHeader({ selectedConversation }: ChatHeaderProps) {
               </Avatar>
               <div>
                 <h3 className="font-semibold flex items-center gap-2">
-                  {selectedConversation.otherParticipants[0].account.displayName}
+                  {selectedConversation.otherParticipants[0].accountId === currentAccountId 
+                    ? selectedConversation.otherParticipants[0].account.displayName + " (You)"
+                    : selectedConversation.otherParticipants[0].account.displayName
+                  }
                   {getAccountTypeIcon(selectedConversation.otherParticipants[0].account.accountType)}
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  @{selectedConversation.otherParticipants[0].account.username}
+                  {selectedConversation.otherParticipants[0].accountId === currentAccountId 
+                    ? "Your personal notes"
+                    : "@" + selectedConversation.otherParticipants[0].account.username
+                  }
                 </p>
               </div>
             </>

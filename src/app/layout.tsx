@@ -16,7 +16,7 @@ import { WebGLErrorHandler } from "~/components/webgl-error-handler";
 import { ToastProvider } from "~/components/ui/toast";
 import { IxTimeProvider } from "~/contexts/IxTimeContext";
 import { ExecutiveNotificationProvider } from "~/contexts/ExecutiveNotificationContext";
-import { UnifiedNotificationProvider } from "~/hooks/useUnifiedNotifications";
+import { GlobalNotificationSystem } from "~/components/notifications/GlobalNotificationSystem";
 
 export const dynamic = 'force-dynamic';
 
@@ -47,21 +47,21 @@ const RootLayout = ({
       <ThemeProvider>
         <AuthProvider>
           <IxTimeProvider>
-            <ExecutiveNotificationProvider>
-              <UnifiedNotificationProvider>
-                <ToastProvider>
-              <WebGLErrorHandler />
-              <div className="min-h-screen flex flex-col">
-                <Navigation />
-                {/* <GlobalActivityMarquee /> */}
-                <SetupRedirect />
-                <main className="flex-1">
-                  {children}
-                </main>
-              </div>
+            <ToastProvider>
+              <ExecutiveNotificationProvider>
+                <GlobalNotificationSystem>
+                  <WebGLErrorHandler />
+                  <div className="min-h-screen flex flex-col">
+                    <Navigation />
+                    {/* <GlobalActivityMarquee /> */}
+                    <SetupRedirect />
+                    <main className="flex-1">
+                      {children}
+                    </main>
+                  </div>
+                </GlobalNotificationSystem>
+              </ExecutiveNotificationProvider>
             </ToastProvider>
-              </UnifiedNotificationProvider>
-            </ExecutiveNotificationProvider>
           </IxTimeProvider>
         </AuthProvider>
       </ThemeProvider>

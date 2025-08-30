@@ -303,6 +303,7 @@ export function GovernmentSpendingSection({
           height={350}
           sectionId="government"
           showLegend={true}
+          showLabels={true}
           showPercentage={true}
           formatValue={(value) => `${value.toFixed(1)}%`}
           minSlicePercentage={2}
@@ -320,6 +321,7 @@ export function GovernmentSpendingSection({
           showTooltip={true}
           showGrid={true}
           stacked={false}
+          showValues={true}
         />
       </div>
 

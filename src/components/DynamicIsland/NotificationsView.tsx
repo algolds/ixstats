@@ -2,7 +2,6 @@ import React from 'react';
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { ScrollArea } from "~/components/ui/scroll-area";
 import { useToast } from "~/components/ui/toast";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useExecutiveNotifications } from "~/contexts/ExecutiveNotificationContext";
@@ -19,7 +18,8 @@ import {
   Globe,
   Users,
   Building2,
-  ChevronDown
+  ChevronDown,
+  Plus
 } from "lucide-react";
 import type { NotificationsViewProps } from './types';
 
@@ -74,6 +74,16 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
     },
   });
 
+  const createTestNotificationMutation = api.notifications.createNotification.useMutation({
+    onSuccess: () => {
+      void refetchNotifications();
+      toast({
+        type: "success",
+        title: "Test notification created",
+      });
+    },
+  });
+
   const unreadNotifications = notificationsData?.unreadCount || 0;
   const enhancedUnreadCount = enhancedStats.unread || 0;
   const totalUnreadCount = unreadNotifications + (isExecutiveMode ? executiveUnreadCount : 0) + enhancedUnreadCount;
@@ -91,6 +101,30 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
           )}
         </div>
         <div className="flex items-center gap-2">
+          {process.env.NODE_ENV === 'development' && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                const testNotifications = [
+                  { title: "Economic Alert", description: "GDP growth increased by 2.5%", type: "economic" as const },
+                  { title: "System Update", description: "New features available", type: "info" as const },
+                  { title: "Crisis Alert", description: "Minor diplomatic tension detected", type: "warning" as const }
+                ];
+                const randomNotification = testNotifications[Math.floor(Math.random() * testNotifications.length)];
+                if (randomNotification) {
+                  createTestNotificationMutation.mutate({
+                    ...randomNotification,
+                    adminUserId: user?.id || "debug"
+                  });
+                }
+              }}
+              disabled={createTestNotificationMutation.isPending}
+              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 px-2 py-2 text-xs"
+            >
+              <Plus className="h-3 w-3" />
+            </Button>
+          )}
           {totalUnreadCount > 0 && (
             <Button
               size="sm"
@@ -124,34 +158,113 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
         </div>
       </div>
 
-      <ScrollArea className="max-h-72">
+      <div 
+        className="max-h-80 overflow-y-auto overflow-x-hidden pr-1"
+        style={{
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.scrollbarColor = 'rgba(255, 255, 255, 0.4) transparent';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.scrollbarColor = 'rgba(255, 255, 255, 0.2) transparent';
+        }}
+      >
         {(() => {
+          // Safely get notification sources with proper defaults
           const standardNotifications = notificationsData?.notifications || [];
-          const validExecutiveNotifications = (executiveNotifications || []).filter((n: any) => n && n.id);
-          const validEnhancedNotifications = enhancedNotifications.filter((n: any) => n && n.id);
+          const executiveNotificationsList = (isExecutiveMode ? (executiveNotifications || []) : [])
+            .filter((n: any) => n && n.id)
+            .map((n: any) => ({ ...n, source: 'executive' }));
+          const enhancedNotificationsList = (enhancedNotifications || [])
+            .filter((n: any) => n && n.id)
+            .map((n: any) => ({ ...n, source: 'enhanced' }));
           
-          // Combine all notification sources and deduplicate by ID
+          // Combine all notification sources
           const allNotifications = [
-            ...validEnhancedNotifications.map(n => ({ ...n, source: 'enhanced' })),
-            ...(isExecutiveMode ? validExecutiveNotifications.map(n => ({ ...n, source: 'executive' })) : []),
-            ...standardNotifications.map(n => ({ ...n, source: 'standard' }))
-          ].reduce((acc, notification) => {
-            const existingIndex = acc.findIndex(n => n.id === notification.id);
-            if (existingIndex === -1) {
+            ...enhancedNotificationsList,
+            ...executiveNotificationsList, 
+            ...standardNotifications.map((n: any) => ({ ...n, source: 'standard' }))
+          ]
+          // Remove any invalid notifications
+          .filter((n: any) => n && n.id && n.title)
+          // Deduplicate by ID and source combination
+          .reduce((acc: any[], notification: any) => {
+            const key = `${notification.source}-${notification.id}`;
+            const exists = acc.some((n: any) => `${n.source}-${n.id}` === key);
+            if (!exists) {
               acc.push(notification);
             }
             return acc;
-          }, [] as any[])
+          }, [])
+          // Sort by timestamp, newest first
           .sort((a: any, b: any) => {
-            // Sort by timestamp, newest first
-            const aTime = a.timestamp || a.createdAt || 0;
-            const bTime = b.timestamp || b.createdAt || 0;
+            const aTime = new Date(a.timestamp || a.createdAt || 0).getTime();
+            const bTime = new Date(b.timestamp || b.createdAt || 0).getTime();
             return bTime - aTime;
           });
           
-          return allNotifications.length > 0 ? (
-            <div className="space-y-3">
-              {allNotifications.map((notification: any, index: number) => {
+          // Group notifications iOS-style by category and time
+          const groupedNotifications = allNotifications.reduce((groups: any, notification: any) => {
+            const category = notification.category || notification.type || 'general';
+            const now = new Date().getTime();
+            const notificationTime = new Date(notification.timestamp || notification.createdAt || 0).getTime();
+            const hoursDiff = Math.floor((now - notificationTime) / (1000 * 60 * 60));
+            
+            let timeGroup = '';
+            if (hoursDiff < 1) timeGroup = 'Recent';
+            else if (hoursDiff < 24) timeGroup = 'Earlier Today';
+            else if (hoursDiff < 168) timeGroup = 'This Week';
+            else timeGroup = 'Earlier';
+            
+            const groupKey = `${timeGroup}-${category}`;
+            
+            if (!groups[groupKey]) {
+              groups[groupKey] = {
+                title: category === 'general' ? timeGroup : `${timeGroup} • ${category.charAt(0).toUpperCase() + category.slice(1)}`,
+                timeGroup,
+                category,
+                notifications: []
+              };
+            }
+            
+            groups[groupKey].notifications.push(notification);
+            return groups;
+          }, {});
+
+          // Sort groups by time priority
+          const sortedGroups = Object.values(groupedNotifications).sort((a: any, b: any) => {
+            const timeOrder = { 'Recent': 0, 'Earlier Today': 1, 'This Week': 2, 'Earlier': 3 };
+            return (timeOrder[a.timeGroup as keyof typeof timeOrder] || 3) - (timeOrder[b.timeGroup as keyof typeof timeOrder] || 3);
+          });
+
+          console.log('Notification Debug:', {
+            standardCount: standardNotifications.length,
+            executiveCount: executiveNotificationsList.length,
+            enhancedCount: enhancedNotificationsList.length,
+            totalCombined: allNotifications.length,
+            groupCount: sortedGroups.length,
+            groups: sortedGroups.map((g: any) => ({ title: g.title, count: g.notifications.length }))
+          });
+          
+          return sortedGroups.length > 0 ? (
+            <div className="space-y-4">
+              {sortedGroups.map((group: any, groupIndex: number) => (
+                <div key={`group-${groupIndex}`} className="space-y-2">
+                  {/* Group Header */}
+                  <div className="flex items-center justify-between px-1">
+                    <h4 className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">
+                      {group.title}
+                    </h4>
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 bg-muted/40">
+                      {group.notifications.length}
+                    </Badge>
+                  </div>
+                  
+                  {/* Grouped Notifications */}
+                  <div className="space-y-2">
+                    {group.notifications.map((notification: any, index: number) => {
                 // Determine notification type and appropriate handling
                 const isEnhancedNotification = notification.source === 'enhanced';
                 const isExecutiveNotification = notification.source === 'executive';
@@ -179,14 +292,14 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                        (notification as any).type === "error" ? AlertCircle :
                        Bell);
 
-                return (
-                  <div
-                    key={notification.id ? `${notification.source}-${notification.id}` : `${notification.source}-fallback-${index}`}
-                    className={`p-4 rounded-xl border cursor-pointer transition-all hover:bg-accent/50 ${ 
-                      (notification.status === 'read' || notification.read)
-                        ? 'bg-muted/30 border' 
-                        : 'bg-muted/50 border shadow-lg'
-                    }`}
+                      return (
+                        <div
+                          key={notification.id ? `${notification.source}-${notification.id}` : `${notification.source}-fallback-${index}`}
+                          className={`p-3 rounded-lg border cursor-pointer transition-all hover:bg-accent/50 ${ 
+                            (notification.status === 'read' || notification.read)
+                              ? 'bg-muted/20 border-muted/40' 
+                              : 'bg-muted/30 border-muted/60 shadow-sm'
+                          }`}
                     onClick={() => {
                       const isRead = notification.status === 'read' || notification.read;
                       
@@ -301,8 +414,11 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                       </div>
                     </div>
                   </div>
-                );
-              })}
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="text-center py-8">
@@ -325,7 +441,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
             </div>
           );
         })()}
-      </ScrollArea>
+      </div>
     </div>
   );
 }

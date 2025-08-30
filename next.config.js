@@ -14,25 +14,66 @@ const config = {
   // Use the dynamic basePath.
   basePath: basePath,
 
-  // When using basePath, assetPrefix is not usually needed.
-  // Next.js automatically prefixes assets (like images, CSS) with the basePath.
-  // The assetPrefix key has been removed to avoid potential conflicts.
-
   trailingSlash: false,
   reactStrictMode: true,
+  
+  // Performance optimizations
+  experimental: {
+    // Enable optimizations for heavy packages
+    optimizePackageImports: [
+      "recharts", 
+      "framer-motion", 
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-tabs",
+      "@radix-ui/react-select",
+      "@clerk/nextjs"
+    ],
+    // Reduce compilation time
+    esmExternals: true,
+  },
 
-  // App Router is now stable in Next.js 13+, no experimental flag needed
-
+  // TypeScript performance
   typescript: {
     ignoreBuildErrors: true,
+    tsconfigPath: './tsconfig.json',
   },
+  
   eslint: {
     ignoreDuringBuilds: true,
   },
 
+  // Webpack optimizations
+  webpack: (config, { dev, isServer }) => {
+    // Development optimizations - reduce compilation time
+    if (dev) {
+      config.watchOptions = {
+        poll: false,
+        ignored: [
+          '**/node_modules/**',
+          '**/.next/**',
+          '**/dist/**',
+          '**/.git/**',
+          '**/prisma/**',
+        ],
+      };
+      
+      // Faster builds in development
+      config.optimization.removeAvailableModules = false;
+      config.optimization.removeEmptyChunks = false;
+      config.optimization.splitChunks = false;
+    }
+
+    return config;
+  },
+
+  // Build performance
+  productionBrowserSourceMaps: false,
+
   // It's good practice to keep your image domains defined.
   images: {
     domains: ['localhost', 'lh3.googleusercontent.com', 'upload.wikimedia.org', 'images.unsplash.com'],
+    formats: ['image/avif', 'image/webp'],
   },
 
   async rewrites() {

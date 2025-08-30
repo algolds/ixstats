@@ -1,9 +1,9 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { AuthenticationGuard, CountryDataProvider, MyCountryContent } from "~/components/mycountry";
+import { AuthenticationGuard, CountryDataProvider } from "~/components/mycountry";
+import { EnhancedMyCountryContent } from "~/components/mycountry/EnhancedMyCountryContent";
 
-// Force dynamic rendering to avoid SSG issues with Clerk
 export const dynamic = 'force-dynamic';
 
 export default function MyCountryPage() {
@@ -12,7 +12,7 @@ export default function MyCountryPage() {
   return (
     <AuthenticationGuard redirectPath="/mycountry">
       <CountryDataProvider userId={user?.id || ''}>
-        <MyCountryContent 
+        <EnhancedMyCountryContent 
           variant="unified" 
           title="MyCountry® - IxStats"
         />

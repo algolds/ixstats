@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   DynamicContainer,
 } from "../ui/dynamic-island";
@@ -26,6 +26,8 @@ import { useIxTime } from "~/contexts/IxTimeContext";
 import { api } from "~/trpc/react";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useExecutiveNotifications } from "~/contexts/ExecutiveNotificationContext";
+import { useGlobalNotificationBridge } from "~/services/GlobalNotificationBridge";
+import { usePermissions } from "~/hooks/usePermissions";
 import type { CompactViewProps } from './types';
 
 // Helper functions
@@ -59,12 +61,17 @@ export function CompactView({
 }: CompactViewProps) {
   const { user, isLoaded } = useUser();
   
+  // Get user role information
+  const { user: roleUser, permissions } = usePermissions();
+  
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
     { userId: user?.id || '' },
     { enabled: !!user?.id }
   );
   const { ixTimeTimestamp } = useIxTime();
   const [mounted, setMounted] = useState(false);
+  const [isFlashing, setIsFlashing] = useState(false);
+  const previousNotificationCountRef = useRef(0);
   
   // Current time state
   const [currentTime, setCurrentTime] = useState({
@@ -75,12 +82,17 @@ export function CompactView({
 
   // Enhanced notification system integration
   const enhancedStats = useNotificationStore(state => state.stats);
+  const notifications = useNotificationStore(state => state.notifications);
+  const { getStats } = useGlobalNotificationBridge();
   
   // Get executive notifications context
   const { 
     unreadCount: executiveUnreadCount, 
     isExecutiveMode,
   } = useExecutiveNotifications();
+  
+  // Get bridge statistics
+  const bridgeStats = getStats();
 
   // Standard notifications count
   const {
@@ -98,7 +110,8 @@ export function CompactView({
 
   const unreadNotifications = notificationsData?.unreadCount || 0;
   const enhancedUnreadCount = enhancedStats.unread || 0;
-  const totalUnreadCount = unreadNotifications + (isExecutiveMode ? executiveUnreadCount : 0) + enhancedUnreadCount;
+  const liveNotificationCount = notifications.filter(n => n.status !== 'read' && n.status !== 'dismissed').length;
+  const totalUnreadCount = unreadNotifications + (isExecutiveMode ? executiveUnreadCount : 0) + enhancedUnreadCount + liveNotificationCount;
 
   const getSetupStatus = () => {
     if (!isLoaded || profileLoading) return 'loading';
@@ -125,7 +138,30 @@ export function CompactView({
   useEffect(() => {
     setMounted(true);
     console.log('[CompactView] Mounted with isSticky:', isSticky, 'isCollapsed:', isCollapsed);
+    // Initialize previous count
+    previousNotificationCountRef.current = totalUnreadCount;
   }, []);
+
+  // Flash animation when new notifications arrive
+  useEffect(() => {
+    if (mounted && totalUnreadCount > previousNotificationCountRef.current) {
+      console.log('[CompactView] New notification detected! Flashing dynamic island');
+      setIsFlashing(true);
+      
+      // Stop flashing after animation completes
+      const timeout = setTimeout(() => {
+        setIsFlashing(false);
+      }, 1000); // 1 second flash duration
+      
+      // Update the previous count
+      previousNotificationCountRef.current = totalUnreadCount;
+      
+      return () => clearTimeout(timeout);
+    } else if (mounted) {
+      // Update count without flashing if count decreased (notifications dismissed)
+      previousNotificationCountRef.current = totalUnreadCount;
+    }
+  }, [totalUnreadCount, mounted]);
   
   // Debug sticky state changes
   useEffect(() => {
@@ -162,7 +198,9 @@ export function CompactView({
         <DynamicContainer 
           className={`flex items-center justify-between transition-all duration-300 w-full min-h-fit h-auto ${
             isSticky ? 'px-3 py-2' : 'px-6 py-6'
-          } ${isSticky ? 'w-auto' : 'w-full'}`}
+          } ${isSticky ? 'w-auto' : 'w-full'} ${
+            isFlashing ? 'animate-flash-notification' : ''
+          }`}
         >
         {/* IX Logo - Home Button */}
         <div className="flex items-center justify-center">
@@ -424,7 +462,7 @@ export function CompactView({
               >
                 <Bell className={`transition-transform hover:scale-110 ${isSticky ? 'h-3 w-3' : 'h-4 w-4'}`} />
                 {totalUnreadCount > 0 && (
-                  <Badge className={`absolute bg-destructive text-foreground flex items-center justify-center rounded-full text-[10px] ${ 
+                  <Badge className={`absolute animate-pulse bg-gradient-to-r from-red-500 to-pink-500 text-white flex items-center justify-center rounded-full text-[10px] border-0 shadow-lg ${ 
                     isSticky ? '-top-0.5 -right-0.5 h-2.5 w-2.5 p-0' : '-top-1 -right-1 h-3 w-3 p-0'
                   }`}>
                     {totalUnreadCount > 9 ? '9+' : totalUnreadCount}

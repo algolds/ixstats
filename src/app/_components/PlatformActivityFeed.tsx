@@ -107,9 +107,13 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
   const [searchQuery, setSearchQuery] = useState('');
   const [flagUrls, setFlagUrls] = useState<Record<string, string>>({});
   const [showTrending, setShowTrending] = useState(false);
+  const [showComments, setShowComments] = useState<Record<string, boolean>>({});
+  const [newComment, setNewComment] = useState<Record<string, string>>({});
 
   // tRPC mutations for engagement
   const engageWithActivityMutation = api.activities.engageWithActivity.useMutation();
+  const addCommentMutation = api.activities.addComment.useMutation();
+  const testMutation = api.activities.testMutation.useMutation();
 
   // Fetch live data from tRPC APIs
   const { data: activitiesData, isLoading: activitiesLoading, refetch: refetchActivities } = api.activities.getGlobalFeed.useQuery({
@@ -126,6 +130,19 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
   const { data: userCountry } = api.countries.getByIdAtTime.useQuery(
     { id: userProfile?.countryId || '' },
     { enabled: !!userProfile?.countryId }
+  );
+
+  // Get user engagement state for like/share buttons
+  const activityIds = activitiesData?.activities?.map(a => a.id) || [];
+  const { data: userEngagement } = api.activities.getUserEngagement.useQuery(
+    {
+      activityIds,
+      userId: user?.id || '',
+    },
+    { 
+      enabled: !!user?.id && activityIds.length > 0,
+      refetchOnWindowFocus: false,
+    }
   );
 
   // Transform trending data
@@ -150,10 +167,10 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
       category: activity.category as ActivityFeedItem['category'],
       user: {
         id: activity.user.id,
-        name: activity.user.name,
+        name: activity.category === 'platform' || activity.type === 'meta' ? 'SYSTEM' : activity.user.name,
         avatar: undefined, // No placeholder avatars - only real user avatars
-        countryName: activity.user.countryName,
-        countryFlag: activity.user.countryName ? flagUrls[activity.user.countryName] : undefined,
+        countryName: activity.category === 'platform' || activity.type === 'meta' ? 'System' : activity.user.countryName,
+        countryFlag: activity.category === 'platform' || activity.type === 'meta' ? undefined : (activity.user.countryName ? flagUrls[activity.user.countryName] : undefined),
       },
       content: {
         title: activity.content.title,
@@ -245,19 +262,71 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
     return date.toLocaleDateString();
   };
 
-  const handleEngagement = async (activityId: string, action: 'like' | 'comment' | 'share' | 'view') => {
-    if (!user?.id) return;
+  const handleEngagement = async (activityId: string, action: 'like' | 'unlike' | 'share' | 'view') => {
+    if (!user?.id || !activityId) {
+      console.error('Missing user ID or activity ID', { userId: user?.id, activityId });
+      return;
+    }
+    
+    const mutationInput = {
+      activityId,
+      action,
+      userId: user.id,
+    };
+    
+    console.log('Engaging with activity:', mutationInput);
+    console.log('Mutation input JSON:', JSON.stringify(mutationInput));
     
     try {
-      await engageWithActivityMutation.mutateAsync({
-        activityId,
-        action,
-        userId: user.id,
-      });
-      // Refetch the activities to show updated engagement numbers
-      await refetchActivities();
+      const result = await engageWithActivityMutation.mutateAsync(mutationInput);
+      
+      if (result.success) {
+        // Refetch the activities and user engagement to show updated state
+        await Promise.all([
+          refetchActivities(),
+          // The userEngagement query will be invalidated automatically by tRPC
+        ]);
+      }
     } catch (error) {
       console.error('Error engaging with activity:', error);
+    }
+  };
+
+  const handleComment = async (activityId: string) => {
+    if (!user?.id || !newComment[activityId]?.trim()) return;
+    
+    try {
+      await addCommentMutation.mutateAsync({
+        activityId,
+        userId: user.id,
+        content: newComment[activityId].trim(),
+      });
+      
+      // Clear the comment input and refetch activities
+      setNewComment(prev => ({ ...prev, [activityId]: '' }));
+      await refetchActivities();
+    } catch (error) {
+      console.error('Error adding comment:', error);
+    }
+  };
+
+  const toggleComments = (activityId: string) => {
+    setShowComments(prev => ({
+      ...prev,
+      [activityId]: !prev[activityId],
+    }));
+  };
+
+  const testMutationCall = async () => {
+    console.log('Testing mutation with simple params...');
+    try {
+      const result = await testMutation.mutateAsync({
+        testId: 'test-123',
+        testAction: 'test-action',
+      });
+      console.log('Test mutation result:', result);
+    } catch (error) {
+      console.error('Test mutation error:', error);
     }
   };
 
@@ -338,6 +407,7 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
               <TrendingUp className="h-4 w-4" />
               Trending
             </Button>
+           
           </div>
         </div>
 
@@ -424,40 +494,42 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
                   className={cn(
-                    "glass-hierarchy-child rounded-xl p-4 hover:scale-[1.01] transition-all duration-200 group",
+                    "glass-hierarchy-child rounded-xl p-4 hover:scale-[1.01] transition-all duration-200 group relative overflow-hidden",
                     priorityBorder
                   )}
                 >
-                  <div className="flex gap-4">
+                  {/* Background Flag Blur */}
+                  {activity.user.countryFlag && (
+                    <div 
+                      className="absolute inset-0 bg-cover bg-center opacity-10 blur-md"
+                      style={{ backgroundImage: `url(${activity.user.countryFlag})` }}
+                    />
+                  )}
+                  
+                  <div className="flex gap-4 relative z-10">
                     {/* User Avatar */}
                     <div className="flex-shrink-0">
                       <Avatar className="h-12 w-12">
-                        <AvatarImage src={activity.user.avatar} />
+                        {activity.user.countryFlag ? (
+                          <AvatarImage src={activity.user.countryFlag} />
+                        ) : (
+                          <AvatarImage src={activity.user.avatar} />
+                        )}
                         <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                          {activity.user.name.split(' ').map(n => n[0]).join('')}
+                          {activity.user.countryName ? activity.user.countryName.charAt(0).toUpperCase() : 'U'}
                         </AvatarFallback>
                       </Avatar>
-                      {activity.user.countryFlag && (
-                        <img 
-                          src={activity.user.countryFlag} 
-                          alt="Country flag" 
-                          className="w-8 h-6 rounded-sm border-2 border-white/20 absolute -bottom-2 -right-2 shadow-lg"
-                        />
-                      )}
                     </div>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-semibold text-foreground">
-                            {activity.user.name}
-                          </h4>
-                          {activity.user.countryName && (
-                            <Badge variant="outline" className="text-xs">
-                              {activity.user.countryName}
-                            </Badge>
-                          )}
+                          <Link href={createUrl("/thinkpages")} className="hover:underline">
+                            <h4 className="font-semibold text-foreground">
+                              @{activity.user.countryName || 'Unknown'}
+                            </h4>
+                          </Link>
                           <IconComponent className={cn("h-4 w-4", iconColor)} />
                         </div>
                         <span className="text-xs text-muted-foreground">
@@ -495,36 +567,99 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
                         </div>
                       )}
 
-                      {/* Engagement Actions - REAL DATA ONLY */}
+                      {/* Engagement Actions - LIVE DATA */}
                       <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                        {/* Like Button */}
                         <button 
-                          className="flex items-center gap-1 hover:text-red-500 transition-colors disabled:opacity-50"
-                          onClick={() => handleEngagement(activity.id, 'like')}
+                          className={cn(
+                            "flex items-center gap-1 transition-colors disabled:opacity-50",
+                            userEngagement?.[activity.id]?.liked 
+                              ? "text-red-500 hover:text-red-600" 
+                              : "hover:text-red-500"
+                          )}
+                          onClick={() => {
+                            console.log('Button clicked for activity:', activity);
+                            console.log('Activity ID:', activity.id);
+                            console.log('User ID:', user?.id);
+                            handleEngagement(
+                              activity.id, 
+                              userEngagement?.[activity.id]?.liked ? 'unlike' : 'like'
+                            );
+                          }}
                           disabled={engageWithActivityMutation.isPending}
                         >
-                          <Heart className="h-4 w-4" />
-                          0
+                          <Heart className={cn(
+                            "h-4 w-4",
+                            userEngagement?.[activity.id]?.liked && "fill-current"
+                          )} />
+                          {activity.engagement.likes}
                         </button>
+
+                        {/* Comment Button */}
                         <button 
-                          className="flex items-center gap-1 hover:text-blue-500 transition-colors disabled:opacity-50"
-                          onClick={() => handleEngagement(activity.id, 'comment')}
-                          disabled={engageWithActivityMutation.isPending}
+                          className="flex items-center gap-1 hover:text-blue-500 transition-colors"
+                          onClick={() => toggleComments(activity.id)}
                         >
                           <MessageSquare className="h-4 w-4" />
-                          0
+                          {activity.engagement.comments}
                         </button>
+
+                        {/* Share Button */}
                         <button 
-                          className="flex items-center gap-1 hover:text-green-500 transition-colors disabled:opacity-50"
+                          className={cn(
+                            "flex items-center gap-1 transition-colors disabled:opacity-50",
+                            userEngagement?.[activity.id]?.shared 
+                              ? "text-green-500 hover:text-green-600" 
+                              : "hover:text-green-500"
+                          )}
                           onClick={() => handleEngagement(activity.id, 'share')}
                           disabled={engageWithActivityMutation.isPending}
                         >
                           <Share2 className="h-4 w-4" />
-                          0
-                        </button>
-                        <button className="flex items-center gap-1 hover:text-purple-500 transition-colors">
-                          <Bookmark className="h-4 w-4" />
+                          {activity.engagement.shares}
                         </button>
                       </div>
+
+                      {/* Comment Section */}
+                      {showComments[activity.id] && (
+                        <div className="mt-4 pt-4 border-t border-border/50">
+                          {/* Add Comment */}
+                          <div className="flex gap-3 mb-4">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={user?.imageUrl} />
+                              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm">
+                                {user?.firstName?.[0]}{user?.lastName?.[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <textarea
+                                value={newComment[activity.id] || ''}
+                                onChange={(e) => setNewComment(prev => ({
+                                  ...prev,
+                                  [activity.id]: e.target.value
+                                }))}
+                                placeholder="Write a comment..."
+                                className="w-full p-3 glass-hierarchy-interactive rounded-lg resize-none text-sm"
+                                rows={2}
+                              />
+                              <div className="flex justify-end mt-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleComment(activity.id)}
+                                  disabled={addCommentMutation.isPending || !newComment[activity.id]?.trim()}
+                                >
+                                  {addCommentMutation.isPending ? 'Posting...' : 'Comment'}
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Comments List Placeholder */}
+                          <div className="text-sm text-muted-foreground text-center py-4">
+                            Comments will appear here
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </motion.div>

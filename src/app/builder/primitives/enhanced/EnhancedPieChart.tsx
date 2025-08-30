@@ -288,7 +288,10 @@ export function EnhancedPieChart({
             'flex-shrink-0 p-4 rounded-lg',
             getGlassClasses('base', resolvedTheme, sectionId)
           )}
-          style={{ height: `${height + 32}px`, width: width || height + 32 }}
+          style={{ 
+            height: `${!isNaN(height) ? height + 32 : 300}px`, 
+            width: (width && !isNaN(width)) ? `${width}px` : `${!isNaN(height) ? height + 32 : 300}px` 
+          }}
         >
           <ResponsiveContainer width="100%" height="100%">
             <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>

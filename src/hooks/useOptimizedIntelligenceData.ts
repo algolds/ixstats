@@ -2,9 +2,11 @@
 // Smart query batching and optimization for maximum performance
 
 import { useQueries, useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { api } from '~/trpc/react';
 import type { Country, IntelligenceItem, VitalityIntelligence } from '~/types/intelligence-unified';
+import { useNotificationStore } from '~/stores/notificationStore';
+import { useUnifiedNotifications } from '~/hooks/useUnifiedNotifications';
 
 interface OptimizedIntelligenceData {
   country: Country | null;
@@ -69,6 +71,56 @@ export function useOptimizedIntelligenceData({
   });
 
   // Memoize the result to prevent unnecessary re-renders
+  // Get notification system for live wire integration
+  const { createNotification } = useUnifiedNotifications();
+  const addNotification = useNotificationStore(state => state.addNotification);
+
+  // Wire intelligence data changes to global notifications
+  useEffect(() => {
+    const [, intelligenceQuery] = queries;
+    
+    if (intelligenceQuery.data && Array.isArray(intelligenceQuery.data)) {
+      // Check for new high-priority intelligence items
+      const highPriorityItems = intelligenceQuery.data.filter((item: IntelligenceItem) => 
+        ['high', 'critical'].includes(item.priority || 'medium')
+      );
+
+      // Create notifications for critical intelligence updates
+      highPriorityItems.forEach(async (item: IntelligenceItem) => {
+        const notificationData = {
+          source: 'intelligence' as const,
+          title: `Intelligence Alert: ${item.title}`,
+          message: item.content || 'New intelligence information available',
+          category: 'security' as const,
+          type: 'alert' as const,
+          priority: (item.priority || 'medium') as 'low' | 'medium' | 'high' | 'critical',
+          severity: 'important' as const,
+          deliveryMethod: 'dynamic-island' as const,
+          actionable: true,
+          actions: [{
+            id: 'view-intelligence',
+            label: 'View Details',
+            type: 'primary' as const,
+            onClick: () => window.location.href = '/sdi'
+          }],
+          triggers: [{
+            type: 'data-change' as const,
+            source: 'intelligence-feed',
+            data: item,
+            confidence: 0.9
+          }]
+        };
+        
+        // Add to both systems for redundancy
+        try {
+          await addNotification(notificationData);
+        } catch (error) {
+          console.warn('Failed to add intelligence notification:', error);
+        }
+      });
+    }
+  }, [queries[1].data, addNotification]);
+
   const result = useMemo((): OptimizedIntelligenceData => {
     const [countryQuery, intelligenceQuery, vitalityQuery] = queries;
     

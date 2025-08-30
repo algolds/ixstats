@@ -1,15 +1,30 @@
 "use client";
 
 import React from 'react';
-import { Send, Plus } from 'lucide-react';
+import { Send, Plus, User } from 'lucide-react';
 import { Card, CardContent } from '~/components/ui/card';
 import { Button } from '~/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
+
+interface Account {
+  id: string;
+  displayName: string;
+  profileImageUrl?: string | null;
+}
 
 interface ThinkshareHeaderProps {
   onNewMessageClick: () => void;
+  accounts: Account[];
+  selectedAccount: string | null;
+  onAccountChange: (accountId: string) => void;
 }
 
-export function ThinkshareHeader({ onNewMessageClick }: ThinkshareHeaderProps) {
+export function ThinkshareHeader({ 
+  onNewMessageClick,
+  accounts,
+  selectedAccount,
+  onAccountChange 
+}: ThinkshareHeaderProps) {
   return (
     <Card className="glass-hierarchy-parent overflow-hidden relative">
       <div className="absolute inset-0 bg-gradient-to-br from-green-600/10 via-transparent to-emerald-600/10" />
@@ -32,13 +47,29 @@ export function ThinkshareHeader({ onNewMessageClick }: ThinkshareHeaderProps) {
               </p>
             </div>
           </div>
-          <Button 
-            onClick={onNewMessageClick}
-            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            New Message
-          </Button>
+          <div className="flex items-center gap-4">
+            <Select onValueChange={onAccountChange} value={selectedAccount || undefined}>
+              <SelectTrigger className="w-[200px]">
+                <User className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Select Account" />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts.map(account => (
+                  <SelectItem key={account.id} value={account.id}>
+                    {account.displayName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button 
+              onClick={onNewMessageClick}
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+              disabled={!selectedAccount}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              New Message
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

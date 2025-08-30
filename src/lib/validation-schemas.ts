@@ -125,7 +125,7 @@ export function validateArray<T>(
   return data
     .map(item => schema.safeParse(item))
     .filter(result => result.success)
-    .map(result => (result as z.SafeParseSuccess<T>).data);
+    .map(result => (result as z.ZodSafeParseSuccess<T>).data);
 }
 
 // Bulk validation functions

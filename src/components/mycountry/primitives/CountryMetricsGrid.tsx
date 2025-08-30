@@ -24,9 +24,9 @@ export function CountryMetricsGrid({ metrics, variant = 'standard' }: CountryMet
                    variant === 'compact' ? 'grid-cols-2 md:grid-cols-4' : 
                    'grid-cols-2 md:grid-cols-4';
 
-  const cardSize = variant === 'compact' ? 'p-3' : 'p-4';
-  const textSize = variant === 'compact' ? 'text-sm' : variant === 'executive' ? 'text-lg' : 'text-xl';
-  const labelSize = variant === 'compact' ? 'text-xs' : 'text-sm';
+  const cardSize = variant === 'compact' ? 'p-4' : 'p-4';
+  const textSize = variant === 'compact' ? 'text-xs' : variant === 'executive' ? 'text-lg' : 'text-xl';
+  const labelSize = variant === 'compact' ? 'text-[0.65rem]' : 'text-sm';
 
   return (
     <Card className={variant === 'executive' ? 
@@ -34,13 +34,13 @@ export function CountryMetricsGrid({ metrics, variant = 'standard' }: CountryMet
       ''
     }>
       <CardContent className={variant === 'executive' ? 'p-6' : 'p-4'}>
-        <div className={`grid ${gridCols} gap-4`}>
+        <div className={`flex flex-wrap justify-center gap-4`}>
           {metrics.map((metric, index) => (
             <Tooltip key={index}>
               <TooltipTrigger asChild>
-                <div className={`text-center ${cardSize} border rounded-lg ${metric.colorClass} transition-all duration-300 hover:scale-105 cursor-pointer`}>
-                  <div className={`${textSize} font-bold`}>{metric.value}</div>
-                  <div className={`${labelSize} text-muted-foreground`}>{metric.label}</div>
+                <div className={`text-center ${cardSize} border rounded-lg ${metric.colorClass} transition-all duration-300 hover:scale-105 cursor-pointer flex flex-col justify-between flex-shrink-0`}>
+                  <div className={`${textSize} font-bold flex-grow whitespace-nowrap`}>{metric.value}</div>
+                  <div className={`${labelSize} text-muted-foreground whitespace-nowrap`}>{metric.label}</div>
                 </div>
               </TooltipTrigger>
               <TooltipContent>

@@ -39,6 +39,7 @@ import {
 import { format } from "date-fns";
 import { cn } from "~/lib/utils";
 import { toast } from "sonner";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
 
 interface CabinetMeetingModalProps {
   children: React.ReactNode;
@@ -84,6 +85,15 @@ export function CabinetMeetingModal({
       toast.error(`Failed to schedule meeting: ${error.message}`);
     },
   });
+
+  // Meeting statistics
+  const meetingStats = {
+    totalMeetings: meetings?.length || 0,
+    upcomingMeetings: meetings?.filter((m: any) => new Date(m.scheduledDate) > new Date()).length || 0,
+    completedMeetings: meetings?.filter((m: any) => m.status === 'completed').length || 0,
+    averageAttendance: meetings?.length > 0 ? 
+      meetings.reduce((sum: number, m: any) => sum + (m.attendees?.length || 0), 0) / meetings.length : 0
+  };
 
   const resetForm = () => {
     setFormData({
@@ -169,7 +179,7 @@ export function CabinetMeetingModal({
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent style={{ width: '100vw', maxWidth: '100vw', height: '100vh', maxHeight: '100vh', padding: '24px', margin: '0px', overflowY: 'auto' }} onEscapeKeyDown={(e) => { e.preventDefault(); setOpen(false); }}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CalendarIcon className="h-5 w-5 text-blue-500" />
@@ -228,9 +238,12 @@ export function CabinetMeetingModal({
                               "flex-1 justify-start text-left font-normal",
                               !selectedDate && "text-muted-foreground"
                             )}
+                            asChild
                           >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
+                            <span>
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
+                            </span>
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto">

@@ -84,7 +84,10 @@ export function ViewToggle({
     <div className={cn("flex items-center justify-between", className)}>
       <div className="flex items-center gap-3">
         <motion.button
-          onClick={onToggle}
+          onClick={() => {
+            console.log('Toggling advanced view from ViewToggle');
+            onToggle();
+          }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           className={cn(
@@ -237,7 +240,7 @@ export function MetricOverview({ metrics, className }: MetricOverviewProps) {
     )}>
       {metrics.map((metric, index) => (
         <motion.div
-          key={metric.label}
+          key={`${metric.label}-${index}`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.1, duration: 0.3 }}

@@ -639,7 +639,7 @@ function GlobalStatsIslandContent() {
                   <div>
                     <div className="text-sm font-medium text-white">Growth Rate</div>
                     <div className="text-xs text-white/80">
-                      {formatGrowthRateFromDecimal(globalStats.globalGrowthRate)}
+                      {formatGrowthRateFromDecimal(isNaN(globalStats.globalGrowthRate) ? 0 : globalStats.globalGrowthRate)}
                     </div>
                   </div>
                 </div>

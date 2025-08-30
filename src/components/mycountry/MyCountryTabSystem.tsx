@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { 
   Crown, Brain, BarChart3, TrendingUp, Briefcase, 
-  Building, PieChart, Target, Sparkles, ArrowUp, Lock, Activity
+  Building, PieChart, Target, Sparkles, ArrowUp, Lock, Activity, DollarSign
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card';
@@ -27,6 +27,7 @@ import { api } from "~/trpc/react";
 import { useUser } from "@clerk/nextjs";
 import Link from 'next/link';
 import { createUrl } from '~/lib/url-utils';
+import { GovernmentStructureDisplay } from './GovernmentStructureDisplay';
 
 interface MyCountryTabSystemProps {
   variant?: 'unified' | 'standard' | 'premium';
@@ -51,6 +52,12 @@ function smartNormalizeGrowthRate(value: number | null | undefined, fallback = 3
 export function MyCountryTabSystem({ variant = 'unified' }: MyCountryTabSystemProps) {
   const { user } = useUser();
   const { country, economyData, currentIxTime } = useCountryData();
+  
+  // Fetch government structure for dynamic spending data
+  const { data: governmentStructure } = api.government.getByCountryId.useQuery(
+    { countryId: country?.id || '' },
+    { enabled: !!country?.id }
+  );
   const [activeTab, setActiveTab] = useState(
     variant === 'premium' ? "executive" : 
     variant === 'standard' ? "overview" : "executive"
@@ -357,42 +364,91 @@ export function MyCountryTabSystem({ variant = 'unified' }: MyCountryTabSystemPr
       {/* Government Tab */}
       <TabsContent value="government" className="space-y-6">
         <ThemedTabContent theme="government" className="tab-content-enter space-y-6">
-          <FiscalSystemComponent
-            fiscalData={economyData?.fiscal ?? {
-              taxRevenueGDPPercent: 0, governmentRevenueTotal: 0, taxRevenuePerCapita: 0,
-              governmentBudgetGDPPercent: 0, budgetDeficitSurplus: 0, internalDebtGDPPercent: 0,
-              externalDebtGDPPercent: 0, totalDebtGDPRatio: 0, debtPerCapita: 0,
-              interestRates: 0, debtServiceCosts: 0,
-              taxRates: { personalIncomeTaxRates: [], corporateTaxRates: [], salesTaxRate: 0, propertyTaxRate: 0, payrollTaxRate: 0, exciseTaxRates: [], wealthTaxRate: 0 },
-              governmentSpendingByCategory: [],
-            }}
-            nominalGDP={economyData?.core?.nominalGDP ?? 0}
-            totalPopulation={economyData?.core?.totalPopulation ?? 0}
-            onFiscalDataChange={() => {}}
-            isReadOnly={true}
-            showAnalytics={variant === 'premium'}
-          />
-          
-          <GovernmentSpending
-            {...(economyData?.spending ?? {
-              education: 0,
-              healthcare: 0,
-              socialSafety: 0,
-              totalSpending: 0,
-              spendingGDPPercent: 0,
-              spendingPerCapita: 0,
-              spendingCategories: [],
-              deficitSurplus: 0,
-              performanceBasedBudgeting: false,
-              universalBasicServices: false,
-              greenInvestmentPriority: false,
-              digitalGovernmentInitiative: false,
-            })}
-            nominalGDP={economyData?.core?.nominalGDP ?? 0}
-            totalPopulation={economyData?.core?.totalPopulation ?? 0}
-            onSpendingDataChangeAction={() => {}}
-            isReadOnly={true}
-          />
+          {/* Government Sub-Tabs */}
+          <Tabs defaultValue="structure" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-3">
+              <TabsTrigger value="structure" className="flex items-center gap-2">
+                <Crown className="h-4 w-4" />
+                <span className="hidden sm:inline">Structure & Branches</span>
+                <span className="sm:hidden">Structure</span>
+              </TabsTrigger>
+              <TabsTrigger value="spending" className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                <span className="hidden sm:inline">Spending & Budget</span>
+                <span className="sm:hidden">Budget</span>
+              </TabsTrigger>
+              <TabsTrigger value="fiscal" className="flex items-center gap-2">
+                <Building className="h-4 w-4" />
+                <span className="hidden sm:inline">Fiscal System</span>
+                <span className="sm:hidden">Fiscal</span>
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Structure & Branches Tab */}
+            <TabsContent value="structure" className="space-y-6">
+              <div className="animate-in slide-in-from-bottom-4 duration-700">
+                {country?.id ? (
+                  <GovernmentStructureDisplay 
+                    countryId={country.id} 
+                    variant="full" 
+                  />
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Loading government structure...
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* Spending & Budget Tab */}
+            <TabsContent value="spending" className="space-y-6">
+              <div className="animate-in slide-in-from-bottom-4 duration-700">
+                <GovernmentSpending
+                  {...(economyData?.spending ?? {
+                    education: 0,
+                    healthcare: 0,
+                    socialSafety: 0,
+                    totalSpending: 0,
+                    spendingGDPPercent: 0,
+                    spendingPerCapita: 0,
+                    spendingCategories: [],
+                    deficitSurplus: 0,
+                    performanceBasedBudgeting: false,
+                    universalBasicServices: false,
+                    greenInvestmentPriority: false,
+                    digitalGovernmentInitiative: false,
+                  })}
+                  nominalGDP={economyData?.core?.nominalGDP ?? 0}
+                  totalPopulation={economyData?.core?.totalPopulation ?? 0}
+                  onSpendingDataChangeAction={() => {}}
+                  isReadOnly={true}
+                />
+              </div>
+            </TabsContent>
+
+            {/* Fiscal System Tab */}
+            <TabsContent value="fiscal" className="space-y-6">
+              <div className="animate-in slide-in-from-bottom-4 duration-700">
+                <FiscalSystemComponent
+                  fiscalData={economyData?.fiscal ?? {
+                    taxRevenueGDPPercent: 0, governmentRevenueTotal: 0, taxRevenuePerCapita: 0,
+                    governmentBudgetGDPPercent: 0, budgetDeficitSurplus: 0, internalDebtGDPPercent: 0,
+                    externalDebtGDPPercent: 0, totalDebtGDPRatio: 0, debtPerCapita: 0,
+                    interestRates: 0, debtServiceCosts: 0,
+                    taxRates: { personalIncomeTaxRates: [], corporateTaxRates: [], salesTaxRate: 0, propertyTaxRate: 0, payrollTaxRate: 0, exciseTaxRates: [], wealthTaxRate: 0 },
+                    governmentSpendingByCategory: [],
+                  }}
+                  nominalGDP={economyData?.core?.nominalGDP ?? 0}
+                  totalPopulation={economyData?.core?.totalPopulation ?? 0}
+                  onFiscalDataChange={() => {}}
+                  isReadOnly={true}
+                  showAnalytics={variant === 'premium'}
+                  governmentStructure={governmentStructure}
+                  countryId={country?.id}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
         </ThemedTabContent>
       </TabsContent>
 

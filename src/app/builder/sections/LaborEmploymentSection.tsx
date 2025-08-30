@@ -183,6 +183,7 @@ export function LaborEmploymentSection({
           height={250}
           sectionId="labor"
           showLegend={true}
+          showLabels={true}
           showPercentage={true}
           formatValue={(value) => `${value.toFixed(1)}%`}
         />
@@ -305,6 +306,7 @@ export function LaborEmploymentSection({
           formatValue={(value) => `$${value.toLocaleString()}`}
           showTooltip={true}
           showGrid={true}
+          showValues={true}
         />
       </div>
 
@@ -320,6 +322,7 @@ export function LaborEmploymentSection({
           formatValue={(value) => `${value.toFixed(1)}%`}
           showTooltip={true}
           showGrid={true}
+          showValues={true}
         />
       </div>
     </>

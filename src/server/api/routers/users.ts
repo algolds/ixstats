@@ -512,4 +512,109 @@ export const usersRouter = createTRPCRouter({
         return [];
       }
     }),
+
+  // Get current user with role and permissions
+  getCurrentUserWithRole: publicProcedure
+    .query(async ({ ctx }) => {
+      try {
+        const { userId } = ctx.auth;
+        
+        if (!userId) {
+          return { user: null };
+        }
+
+        const user = await ctx.db.user.findUnique({
+          where: { clerkUserId: userId },
+          include: {
+            role: {
+              include: {
+                rolePermissions: {
+                  include: {
+                    permission: true
+                  }
+                }
+              }
+            },
+            country: {
+              select: {
+                id: true,
+                name: true,
+                economicTier: true
+              }
+            }
+          }
+        });
+
+        if (!user) {
+          return { user: null };
+        }
+
+        // Transform role data to include permissions array
+        const transformedRole = user.role ? {
+          ...user.role,
+          permissions: user.role.rolePermissions.map(rp => rp.permission)
+        } : null;
+
+        return {
+          user: {
+            ...user,
+            role: transformedRole
+          }
+        };
+      } catch (error) {
+        console.error("Error fetching current user with role:", error);
+        return { user: null };
+      }
+    }),
+
+  // Get user by Clerk ID with role (for admin use)
+  getUserWithRole: publicProcedure
+    .input(z.object({
+      clerkUserId: z.string()
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const user = await ctx.db.user.findUnique({
+          where: { clerkUserId: input.clerkUserId },
+          include: {
+            role: {
+              include: {
+                rolePermissions: {
+                  include: {
+                    permission: true
+                  }
+                }
+              }
+            },
+            country: {
+              select: {
+                id: true,
+                name: true,
+                economicTier: true
+              }
+            }
+          }
+        });
+
+        if (!user) {
+          return { user: null };
+        }
+
+        // Transform role data to include permissions array
+        const transformedRole = user.role ? {
+          ...user.role,
+          permissions: user.role.rolePermissions.map(rp => rp.permission)
+        } : null;
+
+        return {
+          user: {
+            ...user,
+            role: transformedRole
+          }
+        };
+      } catch (error) {
+        console.error("Error fetching user with role:", error);
+        return { user: null };
+      }
+    }),
 }); 

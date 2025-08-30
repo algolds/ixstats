@@ -16,6 +16,9 @@ import { thinkpagesRouter } from "./routers/thinkpages";
 import { archetypesRouter } from "./routers/archetypes";
 import { activitiesRouter } from "./routers/activities";
 import { enhancedEconomicsRouter } from "./routers/enhanced-economics";
+import { rolesRouter } from "./routers/roles";
+import { governmentRouter } from "./routers/government";
+import { atomicGovernmentRouter } from "./routers/atomicGovernment";
 
 /**
  * This is the primary router for your server.
@@ -26,6 +29,7 @@ export const appRouter = createTRPCRouter({
   countries: countriesRouter,
   admin: adminRouter, // FIXED: Added admin router
   users: usersRouter, // FIXED: Added users router
+  roles: rolesRouter, // Role and permission management
   sdi: sdiRouter,
   intelligence: intelligenceRouter,
   eci: eciRouter, // ECI router for Executive Command Interface
@@ -37,6 +41,8 @@ export const appRouter = createTRPCRouter({
   archetypes: archetypesRouter, // Enhanced archetype system for country filtering
   activities: activitiesRouter, // Live activity feed system
   enhancedEconomics: enhancedEconomicsRouter, // Enhanced economic analysis system
+  government: governmentRouter, // Government structure and budget management system
+  atomicGovernment: atomicGovernmentRouter, // Atomic government component system
   system: adminRouter, // Alias for global stats
 });
 

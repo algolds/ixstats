@@ -30,11 +30,33 @@ const createActivitySchema = z.object({
 
 const engagementActionSchema = z.object({
   activityId: z.string(),
-  action: z.enum(['like', 'comment', 'share', 'view']),
+  action: z.string(),
+  userId: z.string(),
+});
+
+const commentActionSchema = z.object({
+  activityId: z.string(),
+  userId: z.string(),
+  content: z.string().min(1).max(2000),
+});
+
+const getUserEngagementSchema = z.object({
+  activityIds: z.array(z.string()),
   userId: z.string(),
 });
 
 export const activitiesRouter = createTRPCRouter({
+  // Test mutation to debug parameter passing
+  testMutation: publicProcedure
+    .input(z.object({
+      testId: z.string(),
+      testAction: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      console.log('TEST MUTATION - Raw input:', JSON.stringify(input));
+      return { success: true, received: input };
+    }),
+
   // Get global activity feed
   getGlobalFeed: publicProcedure
     .input(activityFilterSchema)
@@ -256,37 +278,182 @@ export const activitiesRouter = createTRPCRouter({
       }
     }),
 
-  // Handle engagement actions (like, comment, share, view)
+  // Handle engagement actions (like, unlike, share, view)  
   engageWithActivity: publicProcedure
-    .input(engagementActionSchema)
+    .input(z.object({
+      activityId: z.string(),
+      action: z.string(),
+      userId: z.string(),
+    }))
     .mutation(async ({ ctx, input }) => {
-      try {
-        const updateData: any = {};
-        
-        switch (input.action) {
-          case 'like':
-            updateData.likes = { increment: 1 };
-            break;
-          case 'comment':
-            updateData.comments = { increment: 1 };
-            break;
-          case 'share':
-            updateData.shares = { increment: 1 };
-            break;
-          case 'view':
-            updateData.views = { increment: 1 };
-            break;
-        }
-
-        const activity = await ctx.db.activityFeed.update({
-          where: { id: input.activityId },
-          data: updateData,
+      console.log('ENGAGEMENT MUTATION - Raw input received:', JSON.stringify(input));
+      
+      if (input.action === 'like') {
+        // Check if already liked
+        const existingLike = await ctx.db.activityLike.findUnique({
+          where: {
+            activityId_userId: {
+              activityId: input.activityId,
+              userId: input.userId,
+            },
+          },
         });
 
-        return { success: true, activity };
+        if (existingLike) {
+          return { success: false, message: 'Already liked' };
+        }
+
+        // Create like and increment counter
+        await ctx.db.$transaction([
+          ctx.db.activityLike.create({
+            data: {
+              activityId: input.activityId,
+              userId: input.userId,
+            },
+          }),
+          ctx.db.activityFeed.update({
+            where: { id: input.activityId },
+            data: { likes: { increment: 1 } },
+          }),
+        ]);
+
+        return { success: true, message: 'Liked!' };
+      }
+
+      if (input.action === 'unlike') {
+        // Find and remove like
+        const like = await ctx.db.activityLike.findUnique({
+          where: {
+            activityId_userId: {
+              activityId: input.activityId,
+              userId: input.userId,
+            },
+          },
+        });
+
+        if (!like) {
+          return { success: false, message: 'Not liked' };
+        }
+
+        await ctx.db.$transaction([
+          ctx.db.activityLike.delete({
+            where: { id: like.id },
+          }),
+          ctx.db.activityFeed.update({
+            where: { id: input.activityId },
+            data: { likes: { decrement: 1 } },
+          }),
+        ]);
+
+        return { success: true, message: 'Unliked!' };
+      }
+
+      return { success: false, message: 'Invalid action' };
+    }),
+
+  // Add comment to activity
+  addComment: publicProcedure
+    .input(commentActionSchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Create comment and increment counter
+        const comment = await ctx.db.$transaction(async (tx) => {
+          const newComment = await tx.activityComment.create({
+            data: {
+              activityId: input.activityId,
+              userId: input.userId,
+              content: input.content,
+            },
+          });
+
+          await tx.activityFeed.update({
+            where: { id: input.activityId },
+            data: { comments: { increment: 1 } },
+          });
+
+          return newComment;
+        });
+
+        return { success: true, comment };
       } catch (error) {
-        console.error('Error engaging with activity:', error);
-        throw new Error('Failed to engage with activity');
+        console.error('Error adding comment:', error);
+        throw new Error('Failed to add comment');
+      }
+    }),
+
+  // Get comments for an activity
+  getComments: publicProcedure
+    .input(z.object({
+      activityId: z.string(),
+      limit: z.number().min(1).max(50).default(20),
+      cursor: z.string().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const comments = await ctx.db.activityComment.findMany({
+          where: { activityId: input.activityId },
+          orderBy: { createdAt: 'desc' },
+          take: input.limit + 1,
+          cursor: input.cursor ? { id: input.cursor } : undefined,
+          skip: input.cursor ? 1 : 0,
+        });
+
+        let nextCursor: string | undefined = undefined;
+        if (comments.length > input.limit) {
+          const nextItem = comments.pop();
+          nextCursor = nextItem!.id;
+        }
+
+        return { comments, nextCursor };
+      } catch (error) {
+        console.error('Error fetching comments:', error);
+        throw new Error('Failed to fetch comments');
+      }
+    }),
+
+  // Get user engagement state for activities
+  getUserEngagement: publicProcedure
+    .input(getUserEngagementSchema)
+    .query(async ({ ctx, input }) => {
+      try {
+        // Return empty object if no activity IDs provided
+        if (!input.activityIds?.length || !input.userId) {
+          return {};
+        }
+
+        const [likes, shares] = await Promise.all([
+          ctx.db.activityLike.findMany({
+            where: {
+              activityId: { in: input.activityIds },
+              userId: input.userId,
+            },
+            select: { activityId: true },
+          }),
+          ctx.db.activityShare.findMany({
+            where: {
+              activityId: { in: input.activityIds },
+              userId: input.userId,
+            },
+            select: { activityId: true },
+          }),
+        ]);
+
+        const likedActivityIds = new Set(likes.map(like => like.activityId));
+        const sharedActivityIds = new Set(shares.map(share => share.activityId));
+
+        const engagement: Record<string, { liked: boolean; shared: boolean }> = {};
+        
+        input.activityIds.forEach(activityId => {
+          engagement[activityId] = {
+            liked: likedActivityIds.has(activityId),
+            shared: sharedActivityIds.has(activityId),
+          };
+        });
+
+        return engagement;
+      } catch (error) {
+        console.error('Error fetching user engagement:', error);
+        return {};
       }
     }),
 

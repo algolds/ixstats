@@ -161,6 +161,7 @@ export const sdiRouter = createTRPCRouter({
     // Aggregate live data from all countries at current IxTime
     const targetTime = require("~/lib/ixtime").IxTime.getCurrentIxTime();
     const countries = await ctx.db.country.findMany({});
+    console.log('DEBUG (sdi.ts): Fetched countries count:', countries.length);
 
     let globalGDP = 0;
     let totalGrowth = 0;
@@ -170,11 +171,13 @@ export const sdiRouter = createTRPCRouter({
 
     for (const c of countries) {
       globalGDP += c.currentTotalGdp || (c.baselinePopulation * c.baselineGdpPerCapita) || 0;
-      totalGrowth += c.adjustedGdpGrowth || 0.03;
+      totalGrowth += (typeof c.adjustedGdpGrowth === 'number' && !isNaN(c.adjustedGdpGrowth)) ? c.adjustedGdpGrowth : 0.03;
       totalInflation += 0.02; // Default inflation rate
       totalUnemployment += 5.0; // Default unemployment rate
       count++;
     }
+
+    console.log('DEBUG (sdi.ts): Before globalGrowth calculation - totalGrowth:', totalGrowth, 'count:', count);
 
     // Calculate averages
     const globalGrowth = count > 0 ? (totalGrowth / count) : 0;

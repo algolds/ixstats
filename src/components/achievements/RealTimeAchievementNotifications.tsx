@@ -202,11 +202,12 @@ const RealTimeAchievementNotificationsComponent: React.FC<AchievementNotificatio
         oscillator.frequency.value = freq;
         oscillator.type = 'sine';
         
-        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime ?? 0);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, (audioContext.currentTime ?? 0) + 0.3);
+        const currentTime = audioContext.currentTime || 0;
+        gainNode.gain.setValueAtTime(0.1, currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + 0.3);
         
-        oscillator.start((audioContext.currentTime ?? 0) + index * 0.15);
-        oscillator.stop((audioContext.currentTime ?? 0) + 0.3 + index * 0.15);
+        oscillator.start(currentTime + index * 0.15);
+        oscillator.stop(currentTime + 0.3 + index * 0.15);
       });
     } catch (error) {
       console.warn('Could not play achievement sound:', error);

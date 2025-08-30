@@ -10,6 +10,8 @@ import { SectionContainer, BasicView, AdvancedView, FormGrid, MetricOverview, Va
 export interface BaseSectionProps {
   inputs: EconomicInputs;
   onInputsChange: (inputs: EconomicInputs) => void;
+  isReadOnly: boolean;
+  showComparison: boolean;
   showAdvanced: boolean;
   onToggleAdvanced?: () => void;
   referenceCountry?: RealCountryData;
