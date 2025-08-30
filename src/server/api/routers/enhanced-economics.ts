@@ -211,7 +211,6 @@ export const enhancedEconomicsRouter = createTRPCRouter({
         const country = await ctx.db.country.findUnique({
           where: { id: countryId },
           include: {
-            economicData: true,
             historicalData: {
               orderBy: { createdAt: 'desc' },
               take: 20
@@ -234,8 +233,8 @@ export const enhancedEconomicsRouter = createTRPCRouter({
           currentGdpPerCapita: (country as any).gdpPerCapita || country.currentGdpPerCapita || 0,
           currentTotalPopulation: (country as any).population || country.currentPopulation || 0,
           adjustedGdpGrowth: (country as any).growthRate || country.adjustedGdpGrowth || 0,
-          economicTier: (country.economicTier || 'emerging') as EconomicTier,
-          populationTier: (country.populationTier || 'medium') as PopulationTier,
+          economicTier: (country.economicTier || 'Developing') as EconomicTier,
+          populationTier: (country.populationTier || '2') as PopulationTier,
           populationGrowthRate: country.populationGrowthRate || 0.02
         };
 

@@ -168,7 +168,10 @@ export function EditorTabs({
               onInputsChange={(newInputs: any) => {
                 handleInputsChange(newInputs);
               }}
+              isReadOnly={false}
+              showComparison={true}
               showAdvanced={showAdvanced}
+              referenceCountry={undefined}
             />
           </motion.div>
         </TabsContent>
@@ -192,16 +195,10 @@ export function EditorTabs({
               onInputsChange={(newInputs: any) => {
                 handleInputsChange(newInputs);
               }}
+              isReadOnly={false}
+              showComparison={true}
               showAdvanced={showAdvanced}
-              referenceCountry={{
-                name: "Reference",
-                countryCode: "REF",
-                gdp: economicInputs.coreIndicators.nominalGDP,  
-                gdpPerCapita: economicInputs.coreIndicators.gdpPerCapita,
-                taxRevenuePercent: economicInputs.fiscalSystem.taxRevenueGDPPercent,
-                unemploymentRate: economicInputs.laborEmployment.unemploymentRate,
-                population: economicInputs.coreIndicators.totalPopulation
-              }}
+              referenceCountry={undefined}
               nominalGDP={economicInputs.coreIndicators.nominalGDP}
               totalPopulation={economicInputs.coreIndicators.totalPopulation}
             />
@@ -340,8 +337,10 @@ export function EditorTabs({
               onInputsChange={(newInputs: any) => {
                 handleInputsChange(newInputs);
               }}
+              isReadOnly={false}
+              showComparison={true}
               showAdvanced={showAdvanced}
-              totalPopulation={economicInputs.coreIndicators.totalPopulation}
+              referenceCountry={undefined}
             />
           </motion.div>
         </TabsContent>

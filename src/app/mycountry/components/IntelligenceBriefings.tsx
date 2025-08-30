@@ -36,6 +36,8 @@ import type {
   DataPriority,
   IntelligenceComponentProps
 } from '../types/intelligence';
+import { api } from '~/utils/api';
+import { ComponentType } from '@prisma/client';
 
 // Enhanced briefing types for focused intelligence display
 interface IntelligenceBriefing {
@@ -471,16 +473,117 @@ export function IntelligenceBriefings({
   filterPriority = ['critical', 'high', 'medium'],
   showFilters = true,
   className = '',
-  loading = false
-}: IntelligenceBriefingsProps) {
+  loading = false,
+  countryId
+}: IntelligenceBriefingsProps & { countryId?: string }) {
   const [activeTab, setActiveTab] = useState<'all' | 'hot_issue' | 'opportunity' | 'risk_mitigation' | 'strategic_initiative'>('all');
   const [priorityFilter, setPriorityFilter] = useState<DataPriority[]>(filterPriority);
 
-  // Generate briefings with memoization for performance
-  const allBriefings = useMemo(() => 
-    generateIntelligenceBriefings(vitalityData), 
-    [vitalityData]
+  // Fetch atomic intelligence recommendations
+  const { data: atomicRecommendations, isLoading: atomicLoading } = api.countries.getAtomicIntelligenceRecommendations.useQuery(
+    { countryId: countryId! },
+    { 
+      enabled: !!countryId,
+      refetchInterval: 5 * 60 * 1000 // Refetch every 5 minutes
+    }
   );
+
+  // Fetch atomic effectiveness
+  const { data: atomicEffectiveness } = api.countries.getAtomicEffectiveness.useQuery(
+    { countryId: countryId! },
+    { enabled: !!countryId }
+  );
+
+  // Generate atomic briefings from recommendations
+  const atomicBriefings = useMemo(() => {
+    if (!atomicRecommendations || !atomicEffectiveness) return [];
+    
+    const briefings: IntelligenceBriefing[] = [];
+    
+    // Convert atomic recommendations to briefings
+    atomicRecommendations.forEach((rec, index) => {
+      let briefingType: IntelligenceBriefing['type'] = 'strategic_initiative';
+      let urgency: IntelligenceBriefing['urgency'] = 'this_quarter';
+      
+      switch (rec.type) {
+        case 'component_add':
+          briefingType = 'opportunity';
+          urgency = rec.priority === 'high' ? 'this_week' : 'this_month';
+          break;
+        case 'component_improve':
+          briefingType = 'strategic_initiative';
+          urgency = 'this_month';
+          break;
+        case 'synergy_opportunity':
+          briefingType = 'opportunity';
+          urgency = 'this_week';
+          break;
+        case 'conflict_resolution':
+          briefingType = 'risk_mitigation';
+          urgency = rec.priority === 'critical' ? 'immediate' : 'this_week';
+          break;
+      }
+
+      briefings.push({
+        id: `atomic-${rec.type}-${index}`,
+        title: `🧬 ${rec.title}`,
+        description: rec.description,
+        type: briefingType,
+        priority: rec.priority as DataPriority,
+        area: 'governance',
+        confidence: 85,
+        urgency,
+        impact: {
+          magnitude: Math.abs(rec.expectedImpact.economic + rec.expectedImpact.stability + rec.expectedImpact.legitimacy),
+          timeframe: urgency === 'immediate' ? 'immediate' : 'medium_term',
+          sectors: ['governance', 'economic']
+        },
+        evidence: {
+          metrics: [
+            `Current effectiveness: ${atomicEffectiveness.overallScore}%`,
+            `Components active: ${atomicEffectiveness.componentCount}`,
+            rec.expectedImpact.economic > 0 ? `+${rec.expectedImpact.economic}% economic impact` : 
+            rec.expectedImpact.economic < 0 ? `${rec.expectedImpact.economic}% economic impact` : '',
+            rec.expectedImpact.stability > 0 ? `+${rec.expectedImpact.stability} stability points` : 
+            rec.expectedImpact.stability < 0 ? `${rec.expectedImpact.stability} stability points` : '',
+            rec.expectedImpact.legitimacy > 0 ? `+${rec.expectedImpact.legitimacy} legitimacy points` : 
+            rec.expectedImpact.legitimacy < 0 ? `${rec.expectedImpact.legitimacy} legitimacy points` : ''
+          ].filter(Boolean),
+          trends: [`Atomic government effectiveness trend`],
+          sources: ['Atomic Government Analysis', 'Component Effectiveness Calculator']
+        },
+        recommendations: [{
+          id: `atomic-action-${index}`,
+          title: rec.type === 'component_add' ? 'Implement Component' : 
+                 rec.type === 'conflict_resolution' ? 'Resolve Conflict' : 'Optimize System',
+          description: rec.description,
+          priority: rec.priority as DataPriority,
+          estimatedDuration: rec.priority === 'critical' ? '1-2 weeks' : 
+                           rec.priority === 'high' ? '2-4 weeks' : '1-2 months',
+          requiredResources: ['Policy Review', 'Administrative Changes'],
+          successProbability: rec.priority === 'high' ? 85 : 
+                            rec.priority === 'medium' ? 75 : 65,
+          risks: rec.type === 'conflict_resolution' ? 
+                 ['System disruption', 'Transition period'] : 
+                 ['Implementation challenges', 'Resource allocation']
+        }],
+        metadata: {
+          lastUpdated: new Date(),
+          dataFreshness: 95,
+          automationLevel: 'full',
+          reviewStatus: 'pending'
+        }
+      });
+    });
+
+    return briefings;
+  }, [atomicRecommendations, atomicEffectiveness]);
+
+  // Generate briefings with memoization for performance
+  const allBriefings = useMemo(() => {
+    const vitalityBriefings = generateIntelligenceBriefings(vitalityData);
+    return [...atomicBriefings, ...vitalityBriefings];
+  }, [vitalityData, atomicBriefings]);
 
   // Filter briefings based on tab and priority
   const filteredBriefings = useMemo(() => {

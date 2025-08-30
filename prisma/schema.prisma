@@ -100,6 +100,7 @@ model Country {
   ruralPopulationPercent      Float?
   literacyRate                Float?
   localGrowthFactor           Float                 @default(1.0)
+  usesAtomicGovernment        Boolean               @default(true)
   lastCalculated              DateTime              @default(now())
   baselineDate                DateTime              @default(now())
   createdAt                   DateTime              @default(now())
@@ -120,12 +121,14 @@ model Country {
   archetypeMatches            CountryArchetypeMatch[] @relation("CountryArchetypes")
   governmentStructure         GovernmentStructure?
   taxSystem                   TaxSystem?
+  atomicEffectiveness         AtomicEffectiveness?
   
   // Atomic Government Components
   governmentComponents        GovernmentComponent[]   @relation("CountryComponents")
   componentSynergies          ComponentSynergy[]      @relation("CountrySynergies")
   budgetScenarios             BudgetScenario[]        @relation("CountryBudgetScenarios")
   fiscalPolicies              FiscalPolicy[]          @relation("CountryFiscalPolicies")
+  atomicEconomicImpacts       AtomicEconomicImpact[]  @relation("AtomicEconomicImpacts")
 
   @@index([name])
   @@index([economicTier])
@@ -820,6 +823,51 @@ model FiscalPolicy {
   
   @@index([countryId])
   @@index([policyType])
+  @@index([isActive])
+}
+
+// Atomic Effectiveness Caching Model
+model AtomicEffectiveness {
+  id                  String   @id @default(cuid())
+  countryId           String   @unique
+  overallScore        Float
+  taxEffectiveness    Float
+  economicPolicyScore Float
+  stabilityScore      Float
+  legitimacyScore     Float
+  componentCount      Int      @default(0)
+  synergyBonus        Float    @default(0)
+  conflictPenalty     Float    @default(0)
+  lastCalculated      DateTime @default(now())
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  // Relations
+  country             Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  
+  @@index([countryId])
+  @@index([overallScore])
+  @@index([lastCalculated])
+}
+
+// Atomic Economic Impact Tracking
+model AtomicEconomicImpact {
+  id              String        @id @default(cuid())
+  countryId       String
+  componentType   ComponentType
+  economicMetric  String        // 'gdp_growth', 'tax_efficiency', 'stability_index'
+  impactMultiplier Float
+  effectiveDate   DateTime      @default(now())
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  
+  // Relations
+  country         Country       @relation("AtomicEconomicImpacts", fields: [countryId], references: [id], onDelete: Cascade)
+  
+  @@index([countryId])
+  @@index([componentType])
+  @@index([economicMetric])
+  @@index([effectiveDate])
   @@index([isActive])
 }
 

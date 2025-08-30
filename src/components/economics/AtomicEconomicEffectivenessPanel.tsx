@@ -21,8 +21,8 @@ import {
 
 import type { ComponentType } from '~/types/government';
 import { 
-  calculateAtomicEconomicEffectiveness, 
-  getAtomicEconomicRecommendations 
+  calculateAtomicEconomicImpact, 
+  getAtomicIntelligenceRecommendations 
 } from '~/lib/atomic-economic-integration';
 
 interface AtomicEconomicEffectivenessPanelProps {

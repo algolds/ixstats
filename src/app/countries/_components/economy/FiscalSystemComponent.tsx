@@ -464,7 +464,7 @@ export function FiscalSystemComponent({
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {spendingData.slice(0, 5).map((item) => (
+                    {spendingData.slice(0, 5).map((item: { category: string; amount: number; percent: number }) => (
                       <div key={item.category} className="space-y-1">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">

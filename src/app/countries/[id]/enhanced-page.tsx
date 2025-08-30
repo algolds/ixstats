@@ -442,6 +442,8 @@ export default function EnhancedPublicCountryPage({ params }: EnhancedPublicCoun
                 <LaborEmploymentSection 
                   inputs={economicData as any}
                   onInputsChange={() => {}}
+                  isReadOnly={true}
+                  showComparison={true}
                   showAdvanced={true}
                   referenceCountry={country as any}
                   className="some-class"
@@ -479,6 +481,8 @@ export default function EnhancedPublicCountryPage({ params }: EnhancedPublicCoun
                 <DemographicsSection 
                   inputs={economicData as any}
                   onInputsChange={() => {}}
+                  isReadOnly={true}
+                  showComparison={true}
                   showAdvanced={true}
                   referenceCountry={country as any}
                   className="some-class"

@@ -374,6 +374,8 @@ export function LaborEmploymentSection({
       config={sectionConfigs.labor!}
       inputs={inputs}
       onInputsChange={onInputsChange}
+      isReadOnly={false}
+      showComparison={true}
       showAdvanced={showAdvanced}
       onToggleAdvanced={onToggleAdvanced}
       referenceCountry={referenceCountry}
