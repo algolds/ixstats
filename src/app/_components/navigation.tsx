@@ -33,6 +33,7 @@ import {
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { createUserProfileQueryParams } from '~/lib/user-utils';
+import { useHasRoleLevel } from "~/hooks/usePermissions";
 import { ThinkPagesIcon } from "~/components/icons/ThinkPagesIcon";
 import { AnimatedShinyText } from "~/components/magicui/animated-shiny-text";
 import { ShineBorder } from "~/components/magicui/shine-border";
@@ -66,6 +67,9 @@ export function Navigation() {
   const { user, isLoaded } = useUser();
   const [scrollY, setScrollY] = useState(0);
   const [isSticky, setIsSticky] = useState(false);
+  
+  // Use new role management system
+  const isAdmin = useHasRoleLevel(10); // Admin level or higher
 
   // Get user profile to show linked country
   const userProfileQueryParams = createUserProfileQueryParams(user);
@@ -222,7 +226,7 @@ export function Navigation() {
   const visibleNavItems = navigationItems.filter(item => {
     if (item.requiresAuth && !user) return false;
     if (item.requiresCountry && setupStatus !== 'complete') return false;
-    if (item.adminOnly && (user as any)?.publicMetadata?.role !== 'admin') return false;
+    if (item.adminOnly && !isAdmin) return false;
     return true;
   });
 

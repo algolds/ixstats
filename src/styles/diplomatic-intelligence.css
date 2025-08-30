@@ -2,13 +2,13 @@
 /* CIA-Style Intelligence Presentation with Glass Physics Integration */
 
 .diplomatic-intelligence-profile {
-  /* Intelligence Authority Color Palette */
+  /* Intelligence Authority Color Palette - Default (Light Mode) */
   --intel-navy: #0F172A;          /* Deep authority blue */
   --intel-gold: #D4AF37;          /* Diplomatic gold */
   --intel-silver: #94A3B8;        /* Classified silver */
   --intel-amber: #F59E0B;         /* Alert amber */
   
-  /* Glass Effects with Intelligence Depth */
+  /* Glass Effects with Intelligence Depth - Default (Light Mode) */
   --intel-glass-blur: blur(16px);
   --intel-classification-overlay: rgba(15, 23, 42, 0.85);
   --intel-security-border: 1px solid rgba(212, 175, 55, 0.3);
@@ -63,13 +63,13 @@
 /* Intelligence Glyph Icons */
 .intelligence-glyph {
   color: var(--intel-gold);
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  filter: drop_shadow(0 2px 4px rgba(0, 0, 0, 0.3));
   transition: all 0.3s ease;
 }
 
 .intelligence-glyph:hover {
   color: #F4E58C; /* Lighter gold */
-  filter: drop-shadow(0 4px 8px rgba(212, 175, 55, 0.4));
+  filter: drop_shadow(0 4px 8px rgba(212, 175, 55, 0.4));
   transform: scale(1.1);
 }
 
@@ -298,8 +298,13 @@
 /* Dark Mode Enhancements */
 [data-theme="dark"] .diplomatic-intelligence-profile {
   /* Enhanced contrast for dark backgrounds */
-  --intel-classification-overlay: rgba(15, 23, 42, 0.9);
-  --intel-security-border: 1px solid rgba(212, 175, 55, 0.4);
+  --intel-navy: #020617; /* Even darker navy for dark mode */
+  --intel-gold: #FFD700; /* Brighter gold for dark mode */
+  --intel-silver: #CBD5E1; /* Lighter silver for dark mode */
+  --intel-amber: #FBBF24; /* Brighter amber for dark mode */
+  --intel-glass-blur: blur(20px); /* Slightly more blur in dark mode */
+  --intel-classification-overlay: rgba(2, 6, 23, 0.95); /* Darker overlay */
+  --intel-security-border: 1px solid rgba(255, 215, 0, 0.4); /* Gold border */
 }
 
 [data-theme="dark"] .intel-content-section {
@@ -316,8 +321,13 @@
 
 /* Light Mode Adjustments */
 [data-theme="light"] .diplomatic-intelligence-profile {
+  --intel-navy: #0F172A;
+  --intel-gold: #D4AF37;
+  --intel-silver: #94A3B8;
+  --intel-amber: #F59E0B;
+  --intel-glass-blur: blur(16px);
   --intel-classification-overlay: rgba(15, 23, 42, 0.7);
-  --intel-navy: #1E293B;
+  --intel-security-border: 1px solid rgba(212, 175, 55, 0.3);
 }
 
 [data-theme="light"] .intel-content-section {

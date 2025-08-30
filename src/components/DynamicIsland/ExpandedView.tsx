@@ -34,7 +34,13 @@ export function ExpandedView({ mode, onClose }: ExpandedViewProps) {
         </div>
         
         <div className="relative z-10">
-          {mode === 'search' && <SearchView onClose={onClose} />}
+          {mode === 'search' && <SearchView 
+            searchQuery=""
+            searchFilter="all"
+            debouncedSearchQuery=""
+            searchResults={[]}
+            closeDropdown={onClose}
+          />}
           {mode === 'notifications' && <NotificationsView onClose={onClose} />}
           {mode === 'settings' && <SettingsView onClose={onClose} />}
         </div>

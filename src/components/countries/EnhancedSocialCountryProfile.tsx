@@ -533,7 +533,7 @@ const EnhancedSocialCountryProfileComponent: React.FC<EnhancedSocialCountryProfi
                                 <div className="text-right">
                                   <div className="flex items-center gap-1 text-pink-400">
                                     <RiStarLine className="h-4 w-4" />
-                                    <span className="text-sm font-medium">{achievement.socialReactions}</span>
+                                    <span className="text-sm font-medium">{achievement.socialReactions?.length || 0}</span>
                                   </div>
                                 </div>
                               </div>
@@ -582,7 +582,10 @@ const EnhancedSocialCountryProfileComponent: React.FC<EnhancedSocialCountryProfi
                                   </div>
                                   {relation.recentActivity && (
                                     <div className="text-xs text-white/60 [text-shadow:0_0_10px_rgba(0,0,0,0.8)]">
-                                      {relation.recentActivity}
+                                      {Array.isArray(relation.recentActivity) 
+                                        ? relation.recentActivity.length > 0 ? `${relation.recentActivity.length} recent activities` : 'No recent activity'
+                                        : relation.recentActivity
+                                      }
                                     </div>
                                   )}
                                 </div>
@@ -639,11 +642,11 @@ const EnhancedSocialCountryProfileComponent: React.FC<EnhancedSocialCountryProfi
                                   <span className="text-white/60 text-xs [text-shadow:0_0_10px_rgba(0,0,0,0.8)]">
                                     {activity.timestamp}
                                   </span>
-                                  {activity.relatedCountry && (
+                                  {activity.relatedCountries && activity.relatedCountries.length > 0 && (
                                     <>
                                       <span className="text-white/40">•</span>
                                       <span className="text-white/60 text-xs [text-shadow:0_0_10px_rgba(0,0,0,0.8)]">
-                                        {activity.relatedCountry}
+                                        {activity.relatedCountries[0]}
                                       </span>
                                     </>
                                   )}
@@ -740,7 +743,7 @@ const EnhancedSocialCountryProfileComponent: React.FC<EnhancedSocialCountryProfi
                   </button>
 
                   <button
-                    onClick={() => handleSocialAction('propose')}
+                    onClick={() => handleSocialAction('propose_alliance')}
                     className="w-full flex items-center gap-3 p-3 bg-accent/10 hover:bg-accent/20 rounded-lg transition-colors text-left"
                   >
                     <RiShakeHandsLine className="h-5 w-5 text-green-400" />

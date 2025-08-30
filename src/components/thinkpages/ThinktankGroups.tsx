@@ -97,7 +97,7 @@ interface ThinktankGroup {
   isJoined?: boolean;
 }
 
-const categories = ['All', 'Environment', 'Technology', 'Business', 'Healthcare', 'Culture', 'Education', 'Sports'];
+const categories = ['All', 'Worldbuilding', 'Nation Sim', 'Diplomacy', 'Economics', 'History & Lore', 'Culture', 'Geography', 'Politics'];
 
 // Enhanced text formatting with better mention and hashtag styling
 const formatContentEnhanced = (content: string) => {

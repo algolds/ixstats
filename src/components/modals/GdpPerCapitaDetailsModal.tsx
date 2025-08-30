@@ -257,8 +257,8 @@ export function GdpPerCapitaDetailsModal({
           </div>
           <DialogDescription>
             Detailed GDP per capita analysis with global comparisons and economic tier insights
-            <div className="text-xs text-muted-foreground mt-1">Press ESC or click outside to close</div>
           </DialogDescription>
+          <div className="text-xs text-muted-foreground mt-1">Press ESC or click outside to close</div>
         </DialogHeader>
 
         <div className="space-y-6">

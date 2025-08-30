@@ -96,7 +96,7 @@ function GlobalStatsDisplay({ stats }: GlobalStatsDisplayProps) {
           </div>
           <div className="text-center p-4 glass-hierarchy-child rounded-lg">
             <div className="text-2xl font-bold text-green-500 mb-1">
-              {(stats.globalGrowthRate * 100).toFixed(1)}%
+              {isNaN(stats.globalGrowthRate) ? '0.000' : (stats.globalGrowthRate * 100).toFixed(3)}%
             </div>
             <div className="text-sm text-muted-foreground">Global Growth</div>
           </div>

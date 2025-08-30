@@ -12,6 +12,8 @@ import { api } from '~/trpc/react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import type { IntelligenceItem } from '~/types/sdi';
+import { useGlobalNotificationBridge } from '~/services/GlobalNotificationBridge';
+import { useEffect, useRef } from 'react';
 
 import { createUrl } from '~/lib/url-utils';
 
@@ -42,6 +44,8 @@ function IntelligenceFeedContent(): React.ReactElement {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedPriority, setSelectedPriority] = useState<string>('all');
   const router = useRouter();
+  const { wireIntelligence } = useGlobalNotificationBridge();
+  const previousDataRef = useRef<IntelligenceItem[]>([]);
 
   const { user } = useUser();
   const { data: userProfile } = api.users.getProfile.useQuery(
@@ -69,6 +73,34 @@ function IntelligenceFeedContent(): React.ReactElement {
         ? [item.affectedCountries]
         : []),
   }));
+
+  // Wire intelligence data to global notification system
+  useEffect(() => {
+    if (filteredData.length === 0) return;
+    
+    const previous = previousDataRef.current;
+    const newItems = filteredData.filter(item => 
+      !previous.some(prev => prev.id === item.id)
+    );
+    
+    if (newItems.length > 0) {
+      console.log(`[IntelligenceFeed] Wiring ${newItems.length} new intelligence items to notifications`);
+      
+      // Filter for high-priority items that should create notifications
+      const notificationWorthyItems = newItems.filter(item => 
+        ['high', 'critical'].includes(item.severity || 'medium') ||
+        item.category === 'crisis' ||
+        (item.affectedCountries && Array.isArray(item.affectedCountries) && 
+         item.affectedCountries.includes(userCountryId || ''))
+      );
+      
+      if (notificationWorthyItems.length > 0) {
+        wireIntelligence(notificationWorthyItems);
+      }
+    }
+    
+    previousDataRef.current = filteredData;
+  }, [filteredData, wireIntelligence, userCountryId]);
 
   const formatTimeAgo = (timestamp: Date) => {
     const now = new Date();
@@ -157,6 +189,17 @@ function IntelligenceFeedContent(): React.ReactElement {
           <div className="text-red-400 text-center py-8">Error loading intelligence: {error.message}</div>
         )}
 
+        {/* Real-time connection indicator */}
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm text-blue-300">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            Live connection to notification system
+          </div>
+          <div className="text-xs text-blue-400">
+            {filteredData.filter(item => ['high', 'critical'].includes(item.severity || 'medium')).length} priority alerts
+          </div>
+        </div>
+        
         {/* Intelligence Items Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           {filteredData.map((item: IntelligenceItem) => {

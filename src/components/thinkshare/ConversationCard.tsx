@@ -120,7 +120,7 @@ export function ConversationCard({
             <div className="flex items-center gap-2 min-w-0">
               <h4 className="font-medium text-sm truncate">
                     {conversation.type === 'direct' && otherParticipant
-                      ? (otherParticipant.accountId === currentAccountId ? 'Notes (Self-Chat)' : otherParticipant.account.displayName)
+                      ? (otherParticipant.accountId === currentAccountId ? otherParticipant.account.displayName + ' (You)' : otherParticipant.account.displayName)
                       : conversation.name || 'Group Chat'
                     }
                   </h4>

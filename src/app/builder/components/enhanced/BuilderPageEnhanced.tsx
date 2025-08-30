@@ -155,7 +155,7 @@ function BuilderContent() {
   const [currentPhase, setCurrentPhase] = useState<BuilderPhase>('select');
   const [allCountries, setAllCountries] = useState<RealCountryData[]>([]);
   const [selectedCountry, setSelectedCountry] = useState<RealCountryData | null>(null);
-  const [economicInputs, setEconomicInputs] = useState<EconomicInputs | null>(null);
+  const [economicInputs, setEconomicInputs] = useState<EconomicInputs>(createDefaultEconomicInputs());
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);

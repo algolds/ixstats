@@ -25,6 +25,7 @@ import { Separator } from "~/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { Progress } from "~/components/ui/progress";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { 
   FileText, 
   TrendingUp, 
@@ -194,7 +195,7 @@ export function EconomicPolicyModal({
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+            <DialogContent style={{ width: '100vw', maxWidth: '100vw', height: '100vh', maxHeight: '100vh', padding: '24px', margin: '0px', overflowY: 'auto' }} onEscapeKeyDown={(e) => { e.preventDefault(); setOpen(false); }}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-green-500" />
@@ -438,7 +439,11 @@ export function EconomicPolicyModal({
                           className="h-2"
                         />
                         <p className="text-xs text-muted-foreground mt-1">
-                          Score: {calculateImpactScore()} (based on weighted economic factors)
+                          Score: <NumberFlowDisplay 
+                            value={calculateImpactScore()}
+                            decimalPlaces={0}
+                            className="inline"
+                          /> (based on weighted economic factors)
                         </p>
                       </div>
                     </div>
@@ -452,11 +457,23 @@ export function EconomicPolicyModal({
                       <div className="p-6 text-sm space-y-2">
                         <div className="flex justify-between">
                           <span>Current GDP:</span>
-                          <span className="font-medium">${(countryData.currentTotalGdp / 1e12).toFixed(2)}T</span>
+                          <span className="font-medium">$
+                            <NumberFlowDisplay 
+                              value={countryData.currentTotalGdp / 1e12}
+                              decimalPlaces={2}
+                              className="inline"
+                            />T
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span>GDP per Capita:</span>
-                          <span className="font-medium">${countryData.currentGdpPerCapita.toLocaleString()}</span>
+                          <span className="font-medium">$
+                            <NumberFlowDisplay 
+                              value={countryData.currentGdpPerCapita}
+                              decimalPlaces={0}
+                              className="inline"
+                            />
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span>Economic Tier:</span>

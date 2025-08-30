@@ -318,20 +318,7 @@ export function CoreEconomicIndicatorsComponent({ // Renamed component to avoid 
         </div>
 
 
-      <div className="p-4 bg-[var(--color-bg-tertiary)] rounded-lg border border-[var(--color-border-primary)]">
-        <div className="flex items-start">
-          <Info className="h-5 w-5 text-[var(--color-info)] mr-3 mt-0.5 flex-shrink-0" />
-          <div>
-            <h4 className="text-sm font-medium text-[var(--color-text-primary)] mb-1">
-              Economic Health: <span className={healthIndicator.color}>{healthIndicator.label}</span>
-            </h4>
-            <p className="text-xs text-[var(--color-text-muted)]">
-              Based on {(indicators.realGDPGrowthRate * 100).toFixed(1)}% growth and {(indicators.inflationRate * 100).toFixed(1)}% inflation. 
-              Optimal: 2-4% growth with 2-3% inflation for sustainable development.
-            </p>
-          </div>
-        </div>
-      </div>
+      
 
       
     </div>

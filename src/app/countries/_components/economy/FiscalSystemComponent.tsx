@@ -49,6 +49,8 @@ import {
   YAxis,
   CartesianGrid,
   Legend,
+  LabelList,
+  Label as RechartsLabel
 } from 'recharts';
 import { formatCurrency, formatPercentage, calculateBudgetHealth } from "./utils";
 import type { FiscalSystemData } from "~/types/economics";
@@ -62,6 +64,8 @@ interface FiscalSystemComponentProps {
   onFiscalDataChange?: (data: FiscalSystemData) => void;
   isReadOnly?: boolean;
   showAnalytics?: boolean;
+  governmentStructure?: any; // Government structure data for dynamic spending
+  countryId?: string; // For fetching government data
 }
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#6b7280'];
@@ -73,8 +77,10 @@ export function FiscalSystemComponent({
   onFiscalDataChange,
   isReadOnly = true,
   showAnalytics = true,
+  governmentStructure,
+  countryId,
 }: FiscalSystemComponentProps) {
-  const [view, setView] = useState<"overview" | "revenue" | "debt" | "analysis">("overview");
+  const [view, setView] = useState<"overview" | "revenue" | "spending" | "debt" | "taxes" | "analysis">("overview");
   const [editMode, setEditMode] = useState(false);
 
   const budgetHealth = calculateBudgetHealth({
@@ -136,14 +142,33 @@ export function FiscalSystemComponent({
     { name: 'External Debt', value: fiscalData.externalDebtGDPPercent, color: COLORS[1] },
   ];
   
-  const spendingData = fiscalData.governmentSpendingByCategory || [
-    { category: 'Defense', amount: nominalGDP * 0.04, percent: 20 },
-    { category: 'Education', amount: nominalGDP * 0.035, percent: 17.5 },
-    { category: 'Healthcare', amount: nominalGDP * 0.035, percent: 17.5 },
-    { category: 'Infrastructure', amount: nominalGDP * 0.025, percent: 12.5 },
-    { category: 'Social Security', amount: nominalGDP * 0.045, percent: 22.5 },
-    { category: 'Other', amount: nominalGDP * 0.02, percent: 10 },
-  ];
+  // Generate dynamic spending data based on government structure if available
+  const generateSpendingData = () => {
+    if (governmentStructure?.budgetAllocations?.length > 0) {
+      // Use actual government structure budget data
+      const totalBudget = governmentStructure.totalBudget;
+      return governmentStructure.budgetAllocations.map((allocation: any) => {
+        const department = governmentStructure.departments?.find((d: any) => d.id === allocation.departmentId);
+        return {
+          category: department?.name || department?.category || 'Unknown',
+          amount: allocation.allocatedAmount,
+          percent: allocation.allocatedPercent,
+        };
+      });
+    }
+    
+    // Fallback to default spending if no government structure
+    return fiscalData.governmentSpendingByCategory || [
+      { category: 'Defense', amount: nominalGDP * 0.04, percent: 20 },
+      { category: 'Education', amount: nominalGDP * 0.035, percent: 17.5 },
+      { category: 'Healthcare', amount: nominalGDP * 0.035, percent: 17.5 },
+      { category: 'Infrastructure', amount: nominalGDP * 0.025, percent: 12.5 },
+      { category: 'Social Security', amount: nominalGDP * 0.045, percent: 22.5 },
+      { category: 'Other', amount: nominalGDP * 0.02, percent: 10 },
+    ];
+  };
+
+  const spendingData = generateSpendingData();
 
   const fiscalMetrics = [
     {
@@ -178,6 +203,12 @@ export function FiscalSystemComponent({
     }
   };
 
+  // Custom label function for pie charts to show data directly on chart
+  const renderPieLabel = (entry: any) => {
+    if (entry.value < 2) return null; // Don't show labels for very small slices
+    return `${entry.value.toFixed(1)}%`;
+  };
+
   return (
     <TooltipProvider>
       <div className="space-y-6">
@@ -205,10 +236,12 @@ export function FiscalSystemComponent({
             )}
             {showAnalytics && (
               <Tabs value={view} onValueChange={(v) => setView(v as any)}>
-                <TabsList className="grid grid-cols-4 w-[400px]">
+                <TabsList className="grid grid-cols-6 w-[600px]">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="revenue">Revenue</TabsTrigger>
-                  <TabsTrigger value="debt">Debt</TabsTrigger>
+                  <TabsTrigger value="revenue">Tax Revenue</TabsTrigger>
+                  <TabsTrigger value="spending">Gov Spending</TabsTrigger>
+                  <TabsTrigger value="debt">Debt Mgmt</TabsTrigger>
+                  <TabsTrigger value="taxes">Tax Builder</TabsTrigger>
                   <TabsTrigger value="analysis">Analysis</TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -404,12 +437,21 @@ export function FiscalSystemComponent({
                           outerRadius={70}
                           paddingAngle={2}
                           dataKey="value"
+                          label={renderPieLabel}
+                          labelLine={false}
                         >
                           {revenueData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
                         <RechartsTooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+                        <Legend 
+                          verticalAlign="bottom" 
+                          height={36}
+                          formatter={(value, entry: any) => (
+                            <span style={{ color: entry.color }}>{value}: {entry.payload?.value?.toFixed(1)}%</span>
+                          )}
+                        />
                       </RechartsPieChart>
                     </ResponsiveContainer>
                   </div>
@@ -775,6 +817,356 @@ export function FiscalSystemComponent({
                     )}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {view === "spending" && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Government Spending Breakdown</CardTitle>
+                <CardDescription>Detailed analysis of government expenditures by category</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Enhanced Spending Chart */}
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={spendingData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="category" 
+                          angle={-45}
+                          textAnchor="end"
+                          height={100}
+                        />
+                        <YAxis 
+                          yAxisId="left"
+                          label={{ value: '% of Budget', angle: -90, position: 'insideLeft' }}
+                        />
+                        <YAxis 
+                          yAxisId="right"
+                          orientation="right"
+                          label={{ value: 'Amount (Billions)', angle: 90, position: 'insideRight' }}
+                        />
+                        <RechartsTooltip 
+                          formatter={(value: number, name: string) => [
+                            name === 'percent' ? `${value.toFixed(1)}%` : formatCurrency(value),
+                            name === 'percent' ? '% of Budget' : 'Amount'
+                          ]}
+                        />
+                        <Legend />
+                        <Bar yAxisId="left" dataKey="percent" fill="#3b82f6" name="% of Budget">
+                          <LabelList dataKey="percent" position="top" formatter={(value: number) => `${value.toFixed(1)}%`} />
+                        </Bar>
+                        <Bar yAxisId="right" dataKey="amount" fill="#10b981" name="Amount">
+                          <LabelList dataKey="amount" position="top" formatter={(value: number) => formatCurrency(value)} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Spending Analysis Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {spendingData.map((item) => (
+                      <Card key={item.category}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center">
+                              {getCategoryIcon(item.category)}
+                              <span className="font-medium text-sm">{item.category}</span>
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="text-2xl font-bold">{formatCurrency(item.amount)}</div>
+                            <div className="text-sm text-muted-foreground">{item.percent.toFixed(1)}% of total budget</div>
+                            <div className="text-xs text-muted-foreground">
+                              {formatCurrency(item.amount / totalPopulation)} per capita
+                            </div>
+                          </div>
+                          <Progress value={item.percent} className="h-2 mt-2" />
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+
+                  {/* Spending Efficiency Metrics */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Spending Efficiency</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Total Spending/GDP</span>
+                            <Badge variant="outline">
+                              {((spendingData.reduce((sum, item) => sum + item.amount, 0) / nominalGDP) * 100).toFixed(1)}%
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Per Capita Spending</span>
+                            <Badge variant="outline">
+                              {formatCurrency(spendingData.reduce((sum, item) => sum + item.amount, 0) / totalPopulation)}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm">Admin Efficiency</span>
+                            <Badge className="bg-green-100 text-green-800">High</Badge>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Priority Areas</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {spendingData
+                            .sort((a, b) => b.percent - a.percent)
+                            .slice(0, 3)
+                            .map((item, index) => (
+                              <div key={item.category} className="flex items-center gap-2">
+                                <Badge variant="outline" className="w-6 h-6 rounded-full p-0 flex items-center justify-center text-xs">
+                                  {index + 1}
+                                </Badge>
+                                <div className="flex items-center">
+                                  {getCategoryIcon(item.category)}
+                                  <span className="text-sm">{item.category}</span>
+                                </div>
+                                <Badge className="ml-auto">{item.percent.toFixed(1)}%</Badge>
+                              </div>
+                            ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {view === "taxes" && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Tax System Builder</CardTitle>
+                <CardDescription>Design and configure your nation's tax system</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Tax Structure Configuration */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h4 className="text-lg font-semibold">Direct Taxes</h4>
+                      
+                      {/* Personal Income Tax */}
+                      <div className="p-4 border rounded-lg space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">Personal Income Tax</Label>
+                          <Badge>{((fiscalData.taxRates?.personalIncomeTaxRates?.[0] || 20)).toFixed(1)}%</Badge>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="50"
+                          step="1"
+                          value={fiscalData.taxRates?.personalIncomeTaxRates?.[0] || 20}
+                          onChange={(e) => {
+                            const newRates = [...(fiscalData.taxRates?.personalIncomeTaxRates || [20])];
+                            newRates[0] = parseFloat(e.target.value);
+                            onFiscalDataChange?.({
+                              ...fiscalData,
+                              taxRates: { ...fiscalData.taxRates, personalIncomeTaxRates: newRates }
+                            });
+                          }}
+                          className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>0%</span>
+                          <span>Progressive Rate</span>
+                          <span>50%</span>
+                        </div>
+                      </div>
+
+                      {/* Corporate Tax */}
+                      <div className="p-4 border rounded-lg space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">Corporate Tax Rate</Label>
+                          <Badge>{((fiscalData.taxRates?.corporateTaxRates?.[0] || 25)).toFixed(1)}%</Badge>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="40"
+                          step="1"
+                          value={fiscalData.taxRates?.corporateTaxRates?.[0] || 25}
+                          onChange={(e) => {
+                            const newRates = [...(fiscalData.taxRates?.corporateTaxRates || [25])];
+                            newRates[0] = parseFloat(e.target.value);
+                            onFiscalDataChange?.({
+                              ...fiscalData,
+                              taxRates: { ...fiscalData.taxRates, corporateTaxRates: newRates }
+                            });
+                          }}
+                          className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>0%</span>
+                          <span>Business Tax</span>
+                          <span>40%</span>
+                        </div>
+                      </div>
+
+                      {/* Wealth Tax */}
+                      <div className="p-4 border rounded-lg space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">Wealth Tax Rate</Label>
+                          <Badge>{(fiscalData.taxRates?.wealthTaxRate || 0).toFixed(1)}%</Badge>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="5"
+                          step="0.1"
+                          value={fiscalData.taxRates?.wealthTaxRate || 0}
+                          onChange={(e) => handleTaxRateChange('wealthTaxRate', parseFloat(e.target.value))}
+                          className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>0%</span>
+                          <span>Net Worth</span>
+                          <span>5%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h4 className="text-lg font-semibold">Indirect Taxes</h4>
+
+                      {/* Sales Tax */}
+                      <div className="p-4 border rounded-lg space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">Sales Tax (VAT)</Label>
+                          <Badge>{(fiscalData.taxRates?.salesTaxRate || 0).toFixed(1)}%</Badge>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="25"
+                          step="0.5"
+                          value={fiscalData.taxRates?.salesTaxRate || 0}
+                          onChange={(e) => handleTaxRateChange('salesTaxRate', parseFloat(e.target.value))}
+                          className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>0%</span>
+                          <span>Consumption Tax</span>
+                          <span>25%</span>
+                        </div>
+                      </div>
+
+                      {/* Property Tax */}
+                      <div className="p-4 border rounded-lg space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">Property Tax Rate</Label>
+                          <Badge>{(fiscalData.taxRates?.propertyTaxRate || 0).toFixed(1)}%</Badge>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="5"
+                          step="0.1"
+                          value={fiscalData.taxRates?.propertyTaxRate || 0}
+                          onChange={(e) => handleTaxRateChange('propertyTaxRate', parseFloat(e.target.value))}
+                          className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>0%</span>
+                          <span>Real Estate</span>
+                          <span>5%</span>
+                        </div>
+                      </div>
+
+                      {/* Payroll Tax */}
+                      <div className="p-4 border rounded-lg space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">Payroll Tax Rate</Label>
+                          <Badge>{(fiscalData.taxRates?.payrollTaxRate || 0).toFixed(1)}%</Badge>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="30"
+                          step="0.5"
+                          value={fiscalData.taxRates?.payrollTaxRate || 0}
+                          onChange={(e) => handleTaxRateChange('payrollTaxRate', parseFloat(e.target.value))}
+                          className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>0%</span>
+                          <span>Social Security</span>
+                          <span>30%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tax Revenue Projection */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Revenue Projection</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-green-600">
+                            {formatCurrency(fiscalData.governmentRevenueTotal * 0.4)}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Income Tax</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-blue-600">
+                            {formatCurrency(fiscalData.governmentRevenueTotal * 0.25)}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Corporate Tax</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-purple-600">
+                            {formatCurrency(fiscalData.governmentRevenueTotal * 0.2)}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Sales Tax</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-orange-600">
+                            {formatCurrency(fiscalData.governmentRevenueTotal * 0.15)}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Other Taxes</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Tax System Summary */}
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      <div className="font-medium">Tax System Configuration</div>
+                      <p className="text-sm mt-1">
+                        Total projected revenue: <strong>{formatCurrency(fiscalData.governmentRevenueTotal)}</strong> 
+                        ({fiscalData.taxRevenueGDPPercent.toFixed(1)}% of GDP)
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Effective tax rate: {((fiscalData.governmentRevenueTotal / nominalGDP) * 100).toFixed(1)}% of GDP
+                      </p>
+                    </AlertDescription>
+                  </Alert>
+                </div>
               </CardContent>
             </Card>
           </div>

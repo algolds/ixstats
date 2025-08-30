@@ -192,7 +192,7 @@ export function SearchView({
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => setSearchFilter('all')}
+                  onClick={() => setSearchFilter?.('all')}
                   className="mt-2 text-xs text-muted-foreground hover:text-foreground"
                 >
                   Search all categories instead

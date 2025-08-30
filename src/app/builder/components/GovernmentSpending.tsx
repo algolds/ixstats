@@ -140,7 +140,7 @@ export function GovernmentSpending({
   };
 
   const getBudgetHealth = () => {
-    const deficit = spendingData.deficitSurplus;
+    const deficit = spendingData.deficitSurplus ?? 0;
     const deficitPercent = nominalGDP > 0 ? (deficit / nominalGDP) * 100 : 0;
     
     if (deficitPercent > 1) return { color: "text-green-600", label: "Surplus" };

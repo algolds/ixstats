@@ -22,6 +22,7 @@ import {
   ChartTooltip, 
   ChartTooltipContent
 } from "~/components/ui/chart";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -254,7 +255,11 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                           <div>
                             <p className="text-sm font-medium text-muted-foreground">Current GDP</p>
                             <p className="text-2xl font-bold text-green-600">
-                              {formatCurrency((countryData?.currentTotalGdp || 0) / 1e12)}T
+                              $<NumberFlowDisplay 
+                                value={(countryData?.currentTotalGdp || 0) / 1e12}
+                                decimalPlaces={2}
+                                className="inline"
+                              />T
                             </p>
                           </div>
                           <DollarSign className="h-8 w-8 text-green-500" />
@@ -268,7 +273,11 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                           <div>
                             <p className="text-sm font-medium text-muted-foreground">GDP per Capita</p>
                             <p className="text-2xl font-bold text-blue-600">
-                              {formatCurrency(countryData?.currentGdpPerCapita || 0)}
+                              $<NumberFlowDisplay 
+                                value={countryData?.currentGdpPerCapita || 0}
+                                decimalPlaces={0}
+                                className="inline"
+                              />
                             </p>
                           </div>
                           <Calculator className="h-8 w-8 text-blue-500" />
@@ -283,7 +292,13 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                             <p className="text-sm font-medium text-muted-foreground">Growth Rate</p>
                             <div className="flex items-center gap-2">
                               <p className="text-2xl font-bold">
-                                {gdpStats?.growth ? `${gdpStats.growth.toFixed(2)}%` : 'N/A'}
+                                {gdpStats?.growth ? (
+                                  <><NumberFlowDisplay 
+                                    value={gdpStats.growth}
+                                    decimalPlaces={2}
+                                    className="inline"
+                                  />%</>
+                                ) : 'N/A'}
                               </p>
                               {gdpStats?.growth && getTrendIcon(gdpStats.growth)}
                             </div>

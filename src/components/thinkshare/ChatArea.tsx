@@ -150,7 +150,7 @@ export function ChatArea({
       conversationId: selectedConversation.id,
       accountId: currentAccount.id,
       content: finalContent,
-      messageType: 'rich_text' // Assuming rich text from editor
+      messageType: 'text' // Use 'text' instead of 'rich_text'
     });
 
     setReplyingToMessage(null);
@@ -159,7 +159,7 @@ export function ChatArea({
   return (
     <Card className="glass-hierarchy-child h-[700px] flex flex-col">
       {/* Chat Header */}
-      <ChatHeader selectedConversation={selectedConversation} />
+      <ChatHeader selectedConversation={selectedConversation} currentAccountId={currentAccount?.id} />
 
       <Separator />
 

@@ -240,23 +240,25 @@ export default function ThinkPagesMainPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-1 lg:grid-cols-4 gap-6"
+          className={`grid grid-cols-1 ${activeView === 'feed' ? 'lg:grid-cols-4' : 'lg:grid-cols-1'} gap-6`}
         >
           {/* Left Sidebar - Account Manager */}
-          <div className="lg:col-span-1 space-y-4">
-            <EnhancedAccountManager
-              countryId={countryData.id}
-              accounts={accounts || []}
-              selectedAccount={selectedAccount}
-              onAccountSelect={handleAccountSelect}
-              onAccountSettings={handleAccountSettings}
-              onCreateAccount={handleCreateAccount}
-              isOwner={true}
-            />
-          </div>
+          {activeView === 'feed' && (
+            <div className="lg:col-span-1 space-y-4">
+              <EnhancedAccountManager
+                countryId={countryData.id}
+                accounts={accounts || []}
+                selectedAccount={selectedAccount}
+                onAccountSelect={handleAccountSelect}
+                onAccountSettings={handleAccountSettings}
+                onCreateAccount={handleCreateAccount}
+                isOwner={true}
+              />
+            </div>
+          )}
 
           {/* Main Content Area */}
-          <div className="lg:col-span-3">
+          <div className={activeView === 'feed' ? "lg:col-span-3" : "lg:col-span-4"}>
             {activeView === 'feed' && (
               <ThinkpagesSocialPlatform
                 countryId={countryData.id}

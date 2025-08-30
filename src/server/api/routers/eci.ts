@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { triggerNotification } from "./sdi";
+import { PolicyEffectService } from "~/services/PolicyEffectService";
 
 const cabinetMeetingSchema = z.object({
   userId: z.string(),
@@ -128,13 +129,50 @@ export const eciRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
         where: { clerkUserId: input.userId },
-        include: { country: true }
+        include: { country: { include: { economicModel: true } } }
       });
 
       if (!user?.country) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "User must be associated with a country"
+        });
+      }
+
+      // Create or find economic model for the country
+      let economicModel = user.country.economicModel;
+      if (!economicModel) {
+        economicModel = await ctx.db.economicModel.create({
+          data: {
+            countryId: user.country.id,
+            baseYear: new Date().getFullYear(),
+            projectionYears: 10,
+            gdpGrowthRate: user.country.adjustedGdpGrowth,
+            inflationRate: 0.02, // Default 2%
+            unemploymentRate: 0.05, // Default 5%
+            interestRate: 0.03, // Default 3%
+            exchangeRate: 1.0,
+            populationGrowthRate: user.country.populationGrowthRate,
+            investmentRate: 0.20,
+            fiscalBalance: 0.0,
+            tradeBalance: 0.0
+          }
+        });
+      }
+
+      // Create policy effect if impact data provided
+      if (input.impact && economicModel) {
+        await ctx.db.policyEffect.create({
+          data: {
+            economicModelId: economicModel.id,
+            name: input.title,
+            description: input.description,
+            gdpEffectPercentage: input.impact.gdpGrowthProjection || 0,
+            inflationEffectPercentage: input.impact.inflationImpact || 0,
+            employmentEffectPercentage: -(input.impact.unemploymentImpact || 0), // Negative because unemployment impact is inverse
+            yearImplemented: new Date().getFullYear(),
+            durationYears: 5 // Default duration
+          }
         });
       }
 
@@ -145,19 +183,22 @@ export const eciRouter = createTRPCRouter({
             ...input,
             countryId: user.country.id,
             createdBy: user.id,
-            createdAt: new Date()
+            createdAt: new Date(),
+            economicModelId: economicModel?.id
           }),
           description: `Economic policy: ${input.title}`
         }
       });
+      
       // Trigger notification for the country
       await triggerNotification(ctx, {
         countryId: user.country.id,
         title: `New Economic Policy Proposed`,
         description: `A new economic policy titled '${input.title}' has been proposed.`,
-        href: '/eci/mycountry',
+        href: '/mycountry',
         type: 'economic_policy'
       });
+      
       return result;
     }),
 
@@ -471,6 +512,199 @@ export const eciRouter = createTRPCRouter({
       const metrics = await calculateRealTimeMetrics(ctx.db, user.country.id);
 
       return metrics;
+    }),
+
+  // Policy Implementation - Apply real economic effects
+  implementEconomicPolicy: publicProcedure
+    .input(z.object({
+      userId: z.string(),
+      policyId: z.string(),
+      implementationNotes: z.string().optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.db.user.findUnique({
+        where: { clerkUserId: input.userId },
+        include: { country: { include: { economicModel: true } } }
+      });
+
+      if (!user?.country) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User must be associated with a country"
+        });
+      }
+
+      // Get the policy
+      const policyConfig = await ctx.db.systemConfig.findUnique({
+        where: { id: input.policyId }
+      });
+
+      if (!policyConfig) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Policy not found"
+        });
+      }
+
+      const policyData = JSON.parse(policyConfig.value);
+
+      // Update policy status to implemented
+      await ctx.db.systemConfig.update({
+        where: { id: input.policyId },
+        data: {
+          value: JSON.stringify({
+            ...policyData,
+            status: 'implemented',
+            implementedAt: new Date(),
+            implementationNotes: input.implementationNotes
+          })
+        }
+      });
+
+      // Apply economic effects if policy has impact data
+      if (policyData.impact && user.country.economicModel) {
+        const currentGrowth = user.country.adjustedGdpGrowth;
+        const policyImpact = policyData.impact.gdpGrowthProjection || 0;
+        const newGrowthRate = Math.max(0, currentGrowth + (policyImpact / 100));
+
+        // Update country's growth rate
+        await ctx.db.country.update({
+          where: { id: user.country.id },
+          data: {
+            adjustedGdpGrowth: newGrowthRate,
+            lastCalculated: new Date()
+          }
+        });
+
+        // Create a DM input to track the policy effect
+        await ctx.db.dmInputs.create({
+          data: {
+            countryId: user.country.id,
+            ixTimeTimestamp: new Date(),
+            inputType: 'economic_policy',
+            value: policyImpact,
+            description: `Policy implemented: ${policyData.title}`,
+            duration: 60, // 60 days duration
+            createdBy: user.id
+          }
+        });
+      }
+
+      // Trigger notification
+      await triggerNotification(ctx, {
+        countryId: user.country.id,
+        title: `Economic Policy Implemented`,
+        description: `Policy '${policyData.title}' has been successfully implemented.`,
+        href: '/mycountry',
+        type: 'policy_implementation'
+      });
+
+      return { success: true, message: 'Policy implemented successfully' };
+    }),
+
+  // Quick Actions for Executive Command Center
+  getQuickActions: publicProcedure
+    .input(z.object({ userId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const user = await ctx.db.user.findUnique({
+        where: { clerkUserId: input.userId },
+        include: { country: true }
+      });
+
+      if (!user?.country) {
+        return [];
+      }
+
+      const quickActions = await generateQuickActions(ctx.db, user.country);
+      return quickActions;
+    }),
+
+  // Execute Quick Action
+  executeQuickAction: publicProcedure
+    .input(z.object({
+      userId: z.string(),
+      actionType: z.string(),
+      parameters: z.record(z.any()).optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.db.user.findUnique({
+        where: { clerkUserId: input.userId },
+        include: { country: true }
+      });
+
+      if (!user?.country) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User must be associated with a country"
+        });
+      }
+
+      const result = await executeQuickActionHandler(ctx.db, user.country, input.actionType, input.parameters || {});
+      
+      // Trigger notification
+      await triggerNotification(ctx, {
+        countryId: user.country.id,
+        title: `Quick Action Executed`,
+        description: `Action '${input.actionType}' has been executed.`,
+        href: '/mycountry',
+        type: 'quick_action'
+      });
+
+      return result;
+    }),
+
+  // Apply policy effects to country economics
+  applyPolicyEffects: publicProcedure
+    .input(z.object({ userId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.db.user.findUnique({
+        where: { clerkUserId: input.userId },
+        include: { country: true }
+      });
+
+      if (!user?.country) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User must be associated with a country"
+        });
+      }
+
+      const policyService = new PolicyEffectService(ctx.db);
+      await policyService.applyPolicyEffects(user.country.id);
+
+      // Trigger notification
+      await triggerNotification(ctx, {
+        countryId: user.country.id,
+        title: `Policy Effects Applied`,
+        description: `All active policies have been recalculated and applied to your country's economics.`,
+        href: '/mycountry',
+        type: 'policy_effects'
+      });
+
+      return { success: true, message: 'Policy effects successfully applied' };
+    }),
+
+  // Get policy effectiveness analysis
+  getPolicyEffectiveness: publicProcedure
+    .input(z.object({ 
+      userId: z.string(),
+      category: z.string()
+    }))
+    .query(async ({ ctx, input }) => {
+      const user = await ctx.db.user.findUnique({
+        where: { clerkUserId: input.userId },
+        include: { country: true }
+      });
+
+      if (!user?.country) {
+        return { effectiveness: 0.5, recommendations: [] };
+      }
+
+      const policyService = new PolicyEffectService(ctx.db);
+      const effectiveness = await policyService.calculatePolicyEffectiveness(user.country.id, input.category);
+      const recommendations = await policyService.getPolicyRecommendations(user.country.id);
+
+      return { effectiveness, recommendations };
     })
 });
 
@@ -656,4 +890,153 @@ async function calculateRealTimeMetrics(db: any, countryId: string) {
     security: Math.round(securityScore),
     political: Math.round(politicalScore)
   };
+}
+
+// Generate quick actions based on country state
+async function generateQuickActions(db: any, country: any) {
+  const quickActions = [];
+  
+  // Economic Quick Actions
+  if (country.currentGdpPerCapita < 25000) {
+    quickActions.push({
+      id: 'infrastructure_boost',
+      title: 'Infrastructure Investment',
+      description: 'Boost GDP through targeted infrastructure spending',
+      urgency: 'important',
+      estimatedDuration: '6 months',
+      successProbability: 85,
+      estimatedBenefit: '+2.5% GDP growth',
+      actionType: 'infrastructure_boost',
+      category: 'economic'
+    });
+  }
+  
+  // Check for recent threats
+  const recentThreats = await db.systemConfig.findMany({
+    where: {
+      key: { contains: `eci_security_threat_${country.id}` },
+      updatedAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } // Last 7 days
+    },
+    take: 5
+  });
+  
+  if (recentThreats.length > 0) {
+    quickActions.push({
+      id: 'security_review',
+      title: 'Security Assessment',
+      description: 'Conduct comprehensive security review',
+      urgency: 'urgent',
+      estimatedDuration: '2 weeks',
+      successProbability: 95,
+      estimatedBenefit: 'Enhanced security',
+      actionType: 'security_review',
+      category: 'security'
+    });
+  }
+  
+  // Population growth actions
+  if (country.populationGrowthRate > 0.03) {
+    quickActions.push({
+      id: 'education_expansion',
+      title: 'Education Capacity',
+      description: 'Expand educational infrastructure for growing population',
+      urgency: 'important',
+      estimatedDuration: '1 year',
+      successProbability: 90,
+      estimatedBenefit: 'Long-term productivity',
+      actionType: 'education_expansion',
+      category: 'social'
+    });
+  }
+  
+  // Trade opportunities
+  quickActions.push({
+    id: 'trade_mission',
+    title: 'Trade Mission',
+    description: 'Organize diplomatic trade mission',
+    urgency: 'routine',
+    estimatedDuration: '3 months',
+    successProbability: 75,
+    estimatedBenefit: 'New trade partnerships',
+    actionType: 'trade_mission',
+    category: 'diplomatic'
+  });
+  
+  return quickActions;
+}
+
+// Execute quick actions with real effects
+async function executeQuickActionHandler(db: any, country: any, actionType: string, parameters: any) {
+  switch (actionType) {
+    case 'infrastructure_boost':
+      // Apply temporary GDP growth boost
+      await db.dmInputs.create({
+        data: {
+          countryId: country.id,
+          ixTimeTimestamp: new Date(),
+          inputType: 'economic_policy',
+          value: 2.5, // 2.5% GDP boost
+          description: 'Infrastructure investment quick action',
+          duration: 180, // 180 days
+          isActive: true
+        }
+      });
+      return { success: true, message: 'Infrastructure boost applied', effect: '+2.5% GDP growth for 6 months' };
+      
+    case 'security_review':
+      // Mark all active threats as under review
+      const threats = await db.systemConfig.findMany({
+        where: { key: { contains: `eci_security_threat_${country.id}` } }
+      });
+      
+      for (const threat of threats) {
+        const threatData = JSON.parse(threat.value);
+        if (threatData.status === 'active') {
+          await db.systemConfig.update({
+            where: { id: threat.id },
+            data: {
+              value: JSON.stringify({
+                ...threatData,
+                status: 'monitoring',
+                reviewedAt: new Date()
+              })
+            }
+          });
+        }
+      }
+      return { success: true, message: 'Security review initiated', effect: 'All threats under monitoring' };
+      
+    case 'education_expansion':
+      // Apply long-term productivity boost
+      await db.dmInputs.create({
+        data: {
+          countryId: country.id,
+          ixTimeTimestamp: new Date(),
+          inputType: 'special_event',
+          value: 1.5, // 1.5% productivity boost
+          description: 'Education expansion program',
+          duration: 365, // 1 year
+          isActive: true
+        }
+      });
+      return { success: true, message: 'Education expansion started', effect: '+1.5% productivity for 1 year' };
+      
+    case 'trade_mission':
+      // Create diplomatic event
+      await db.diplomaticEvent.create({
+        data: {
+          country1Id: country.id,
+          eventType: 'trade_mission',
+          title: 'Trade Mission Initiative',
+          description: 'Organized trade mission to develop new partnerships',
+          status: 'active',
+          economicImpact: 5000000, // $5M economic impact
+          ixTimeTimestamp: Date.now() / 1000
+        }
+      });
+      return { success: true, message: 'Trade mission organized', effect: 'New diplomatic opportunities' };
+      
+    default:
+      return { success: false, message: 'Unknown action type' };
+  }
 }

@@ -132,8 +132,8 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
     );
   }
 
-  if (!country) {
-    return <div className="container mx-auto px-4 py-8">Country not found.</div>;
+  if (!country || !enhancedCountryData) {
+    return <div className="container mx-auto px-4 py-8">Country data not found or not available.</div>;
   }
 
 

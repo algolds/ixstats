@@ -290,7 +290,7 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
           "relative p-4 rounded-lg border backdrop-blur-sm transition-all duration-300",
           isViewer
             ? "bg-[--intel-gold]/20 border-[--intel-gold]/50 shadow-lg"
-            : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"
+            : "bg-card border-border hover:bg-muted/50 hover:border-border"
         )}
       >
         {/* Tier indicator */}
@@ -304,7 +304,7 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
           <div className="flex items-center gap-2 min-w-[60px]">
             <div className={cn(
               "text-2xl font-bold",
-              country.rank <= 3 ? "text-[--intel-gold]" : "text-white"
+              country.rank <= 3 ? "text-[--intel-gold]" : "text-foreground"
             )}>
               #{country.rank}
             </div>
@@ -327,7 +327,7 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
           {/* Country info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-1">
-              <h4 className="font-semibold text-white truncate">{country.name}</h4>
+              <h4 className="font-semibold text-foreground truncate">{country.name}</h4>
               <span className="text-xs text-[--intel-silver] bg-white/10 px-2 py-1 rounded">
                 {country.code}
               </span>
@@ -366,7 +366,7 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
           <div className="text-right">
             <div className={cn(
               "text-lg font-bold",
-              currentCategory?.color || "text-white"
+              currentCategory?.color || "text-foreground"
             )}>
               {currentCategory?.format(metricValue) || metricValue}
             </div>
@@ -383,7 +383,7 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
           </div>
 
           {/* View details */}
-          <button className="p-2 text-[--intel-silver] hover:text-white transition-colors rounded">
+          <button className="p-2 text-[--intel-silver] hover:text-foreground transition-colors rounded">
             <RiEyeLine className="w-4 h-4" />
           </button>
         </div>
@@ -412,13 +412,13 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
               "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
               showTrends
                 ? "bg-[--intel-gold]/20 text-[--intel-gold]"
-                : "bg-white/10 text-[--intel-silver] hover:text-white"
+                : "bg-muted/50 text-[--intel-silver] hover:text-foreground"
             )}
           >
             <RiTimeLine className="w-4 h-4" />
           </button>
           
-          <button className="p-2 text-[--intel-silver] hover:text-white transition-colors rounded-lg bg-white/10">
+          <button className="p-2 text-[--intel-silver] hover:text-foreground transition-colors rounded-lg bg-muted/50">
             <RiRefreshLine className="w-4 h-4" />
           </button>
         </div>
@@ -436,7 +436,7 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
                 "flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200",
                 activeCategory === category.id
                   ? "bg-[--intel-gold]/20 text-[--intel-gold] border border-[--intel-gold]/30"
-                  : "bg-white/5 text-[--intel-silver] hover:bg-white/10 hover:text-white border border-transparent"
+                  : "bg-muted/50 text-[--intel-silver] hover:bg-muted hover:text-foreground border border-transparent"
               )}
             >
               <IconComponent className="w-4 h-4" />
@@ -456,7 +456,7 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
             placeholder="Search countries..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-[--intel-silver] focus:outline-none focus:border-[--intel-gold]/50"
+            className="w-full pl-10 pr-4 py-2 bg-input border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-ring"
           />
         </div>
 
@@ -464,7 +464,7 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
         <select
           value={filterTier}
           onChange={(e) => setFilterTier(e.target.value)}
-          className="px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-[--intel-gold]/50"
+          className="px-3 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:border-ring"
         >
           <option value="">All Tiers</option>
           {Object.entries(TIER_CONFIG).map(([tier, config]) => (
@@ -477,7 +477,7 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
         {/* Sort order */}
         <button
           onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-          className="flex items-center gap-2 px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-[--intel-silver] hover:text-white transition-colors"
+          className="flex items-center gap-2 px-3 py-2 bg-input border border-border rounded-lg text-[--intel-silver] hover:text-foreground transition-colors"
         >
           <RiFilterLine className="w-4 h-4" />
           {sortOrder === 'desc' ? 'Highest' : 'Lowest'} First
@@ -486,10 +486,10 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
 
       {/* Current category info */}
       {currentCategory && (
-        <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
+        <div className="p-4 bg-card border border-border rounded-lg">
           <div className="flex items-center gap-3 mb-2">
             <currentCategory.icon className={cn("w-5 h-5", currentCategory.color)} />
-            <h4 className="font-semibold text-white">{currentCategory.title}</h4>
+            <h4 className="font-semibold text-foreground">{currentCategory.title}</h4>
           </div>
           <p className="text-sm text-[--intel-silver]">{currentCategory.description}</p>
         </div>

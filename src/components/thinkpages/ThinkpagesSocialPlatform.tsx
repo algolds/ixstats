@@ -67,7 +67,6 @@ export function ThinkpagesSocialPlatform({
       {/* Country Feed Header */}
       <div className="text-center space-y-2">
         <h3 className="text-xl font-bold text-[--intel-gold]">{countryName} ThinkPages</h3>
-        <p className="text-[--intel-silver] text-sm">Posts and thoughts from this nation</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

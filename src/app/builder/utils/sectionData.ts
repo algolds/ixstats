@@ -6,7 +6,8 @@ import {
   Users,
   Coins,
   Building2,
-  Heart
+  Heart,
+  Crown
 } from 'lucide-react';
 import type { Section } from '../types/builder';
 
@@ -50,6 +51,14 @@ export const sections: Section[] = [
     color: 'text-[var(--color-purple)]',
     description: 'Education, healthcare, infrastructure',
     completeness: 85
+  },
+  {
+    id: 'structure',
+    name: 'Government Structure',
+    icon: Crown,
+    color: 'text-[var(--color-accent)]',
+    description: 'Departments, ministries, budget allocation',
+    completeness: 0
   },
   {
     id: 'demographics',

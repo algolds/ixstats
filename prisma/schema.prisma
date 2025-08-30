@@ -118,6 +118,14 @@ model Country {
   thinkpagesAccounts          ThinkpagesAccount[]
   moodMetrics                 CountryMoodMetric[]
   archetypeMatches            CountryArchetypeMatch[] @relation("CountryArchetypes")
+  governmentStructure         GovernmentStructure?
+  taxSystem                   TaxSystem?
+  
+  // Atomic Government Components
+  governmentComponents        GovernmentComponent[]   @relation("CountryComponents")
+  componentSynergies          ComponentSynergy[]      @relation("CountrySynergies")
+  budgetScenarios             BudgetScenario[]        @relation("CountryBudgetScenarios")
+  fiscalPolicies              FiscalPolicy[]          @relation("CountryFiscalPolicies")
 
   @@index([name])
   @@index([economicTier])
@@ -290,13 +298,18 @@ model User {
   id          String   @id @default(cuid())
   clerkUserId String   @unique
   countryId   String?  @unique
+  roleId      String?  // Foreign key to Role
+  isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   country     Country? @relation(fields: [countryId], references: [id])
+  role        Role?    @relation(fields: [roleId], references: [id])
   archetypeSelections UserArchetypeSelection[] @relation("UserArchetypes")
 
   @@index([clerkUserId])
   @@index([countryId])
+  @@index([roleId])
+  @@index([isActive])
 }
 
 model EconomicModel {
@@ -465,6 +478,349 @@ model UserPreferences {
   updatedAt            DateTime @updatedAt
   
   @@index([userId])
+}
+
+// Tax System Models
+model TaxSystem {
+  id                    String          @id @default(cuid())
+  countryId             String          @unique
+  taxSystemName         String
+  taxAuthority          String?         // Name of tax authority
+  fiscalYear            String          @default("calendar")
+  taxCode               String?         // International tax code
+  baseRate              Float?          // Base tax rate for calculations
+  progressiveTax        Boolean         @default(true)
+  flatTaxRate           Float?          // If not progressive
+  alternativeMinTax     Boolean         @default(false)
+  alternativeMinRate    Float?
+  taxHolidays           String?         // JSON array of tax holidays
+  complianceRate        Float?          // 0-100%
+  collectionEfficiency  Float?          // 0-100%
+  lastReform            DateTime?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  
+  // Relations
+  country               Country         @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  taxCategories         TaxCategory[]
+  taxBrackets           TaxBracket[]
+  taxPolicy             TaxPolicy[]
+  taxExemptions         TaxExemption[]
+  taxCalculations       TaxCalculation[]
+  
+  @@index([countryId])
+}
+
+model TaxCategory {
+  id                String          @id @default(cuid())
+  taxSystemId       String
+  categoryName      String          // Income, Corporate, Sales, Property, etc.
+  categoryType      String          // Direct, Indirect
+  description       String?
+  isActive          Boolean         @default(true)
+  baseRate          Float?
+  calculationMethod String          @default("percentage") // percentage, fixed, tiered
+  minimumAmount     Float?
+  maximumAmount     Float?
+  exemptionAmount   Float?          // Standard exemption
+  deductionAllowed  Boolean         @default(true)
+  standardDeduction Float?
+  priority          Int             @default(50)
+  color             String?         // For UI
+  icon              String?         // Icon name for UI
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  
+  // Relations
+  taxSystem         TaxSystem       @relation(fields: [taxSystemId], references: [id], onDelete: Cascade)
+  taxBrackets       TaxBracket[]
+  taxExemptions     TaxExemption[]
+  taxDeductions     TaxDeduction[]
+  
+  @@index([taxSystemId])
+  @@index([categoryName])
+}
+
+model TaxBracket {
+  id            String      @id @default(cuid())
+  taxSystemId   String
+  categoryId    String
+  bracketName   String?     // E.g., "Low Income", "Middle Income"
+  minIncome     Float       // Minimum income for this bracket
+  maxIncome     Float?      // Maximum income (null for highest bracket)
+  rate          Float       // Tax rate as percentage
+  flatAmount    Float?      // Fixed amount if applicable
+  marginalRate  Boolean     @default(true) // True for marginal, false for flat
+  isActive      Boolean     @default(true)
+  priority      Int         @default(50)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  // Relations
+  taxSystem     TaxSystem   @relation(fields: [taxSystemId], references: [id], onDelete: Cascade)
+  category      TaxCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  @@index([taxSystemId])
+  @@index([categoryId])
+  @@index([minIncome, maxIncome])
+}
+
+model TaxExemption {
+  id              String      @id @default(cuid())
+  taxSystemId     String
+  categoryId      String?     // Null for system-wide exemptions
+  exemptionName   String      // Name of exemption
+  exemptionType   String      // Individual, Corporate, Sector, Geographic
+  description     String?
+  exemptionAmount Float?      // Fixed exemption amount
+  exemptionRate   Float?      // Percentage exemption
+  qualifications  String?     // JSON criteria for qualification
+  isActive        Boolean     @default(true)
+  startDate       DateTime?
+  endDate         DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  // Relations
+  taxSystem       TaxSystem   @relation(fields: [taxSystemId], references: [id], onDelete: Cascade)
+  category        TaxCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  @@index([taxSystemId])
+  @@index([categoryId])
+  @@index([exemptionType])
+}
+
+model TaxDeduction {
+  id              String      @id @default(cuid())
+  categoryId      String
+  deductionName   String      // Mortgage, Education, Charity, etc.
+  deductionType   String      // Standard, Itemized
+  description     String?
+  maximumAmount   Float?      // Max deductible amount
+  percentage      Float?      // Percentage of income/expense
+  qualifications  String?     // JSON criteria
+  isActive        Boolean     @default(true)
+  priority        Int         @default(50)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  // Relations
+  category        TaxCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  @@index([categoryId])
+  @@index([deductionType])
+}
+
+model TaxPolicy {
+  id              String      @id @default(cuid())
+  taxSystemId     String
+  policyName      String      // E.g., "Economic Stimulus Tax Relief"
+  policyType      String      // Rate Change, Exemption, Deduction
+  description     String?
+  targetCategory  String?     // Which tax category this affects
+  impactType      String      // Increase, Decrease, Neutral
+  rateChange      Float?      // Change in rate (+ or -)
+  effectiveDate   DateTime
+  expiryDate      DateTime?
+  isActive        Boolean     @default(true)
+  estimatedRevenue Float?     // Estimated revenue impact
+  affectedPopulation Float?   // Number of taxpayers affected
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  // Relations
+  taxSystem       TaxSystem   @relation(fields: [taxSystemId], references: [id], onDelete: Cascade)
+  
+  @@index([taxSystemId])
+  @@index([effectiveDate])
+  @@index([isActive])
+}
+
+model TaxCalculation {
+  id                  String      @id @default(cuid())
+  taxSystemId         String
+  calculationName     String      // E.g., "2024 Tax Year Calculation"
+  taxableIncome       Float
+  totalDeductions     Float       @default(0)
+  totalExemptions     Float       @default(0)
+  adjustedGrossIncome Float
+  taxOwed             Float
+  effectiveRate       Float       // Overall tax rate
+  marginalRate        Float       // Highest bracket rate
+  breakdown           String?     // JSON breakdown by category
+  calculationDate     DateTime    @default(now())
+  taxYear             Int
+  isActive            Boolean     @default(true)
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  
+  // Relations
+  taxSystem           TaxSystem   @relation(fields: [taxSystemId], references: [id], onDelete: Cascade)
+  
+  @@index([taxSystemId])
+  @@index([taxYear])
+  @@index([calculationDate])
+}
+
+// Atomic Government Component System
+enum ComponentType {
+  // Power Distribution
+  CENTRALIZED_POWER
+  FEDERAL_SYSTEM
+  CONFEDERATE_SYSTEM
+  UNITARY_SYSTEM
+  
+  // Decision Process
+  DEMOCRATIC_PROCESS
+  AUTOCRATIC_PROCESS
+  TECHNOCRATIC_PROCESS
+  CONSENSUS_PROCESS
+  OLIGARCHIC_PROCESS
+  
+  // Legitimacy Sources
+  ELECTORAL_LEGITIMACY
+  TRADITIONAL_LEGITIMACY
+  PERFORMANCE_LEGITIMACY
+  CHARISMATIC_LEGITIMACY
+  RELIGIOUS_LEGITIMACY
+  
+  // Institution Types
+  PROFESSIONAL_BUREAUCRACY
+  MILITARY_ADMINISTRATION
+  INDEPENDENT_JUDICIARY
+  PARTISAN_INSTITUTIONS
+  TECHNOCRATIC_AGENCIES
+  
+  // Control Mechanisms
+  RULE_OF_LAW
+  SURVEILLANCE_SYSTEM
+  ECONOMIC_INCENTIVES
+  SOCIAL_PRESSURE
+  MILITARY_ENFORCEMENT
+}
+
+model GovernmentComponent {
+  id                  String        @id @default(cuid())
+  countryId           String
+  componentType       ComponentType
+  effectivenessScore  Float         @default(50)
+  implementationDate  DateTime      @default(now())
+  implementationCost  Float         @default(0)
+  maintenanceCost     Float         @default(0)
+  requiredCapacity    Float         @default(50)
+  isActive            Boolean       @default(true)
+  notes               String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  
+  // Relations
+  country             Country       @relation("CountryComponents", fields: [countryId], references: [id], onDelete: Cascade)
+  synergies           ComponentSynergy[] @relation("PrimaryComponent")
+  conflictsWith       ComponentSynergy[] @relation("SecondaryComponent")
+  
+  @@index([countryId])
+  @@index([componentType])
+  @@index([isActive])
+}
+
+model ComponentSynergy {
+  id                    String             @id @default(cuid())
+  countryId             String
+  primaryComponentId    String
+  secondaryComponentId  String
+  synergyType           String             // 'MULTIPLICATIVE' | 'ADDITIVE' | 'CONFLICTING'
+  effectMultiplier      Float              @default(1.0)
+  description           String?
+  discoveredAt          DateTime           @default(now())
+  createdAt             DateTime           @default(now())
+  
+  // Relations
+  country               Country            @relation("CountrySynergies", fields: [countryId], references: [id], onDelete: Cascade)
+  primaryComponent      GovernmentComponent @relation("PrimaryComponent", fields: [primaryComponentId], references: [id], onDelete: Cascade)
+  secondaryComponent    GovernmentComponent @relation("SecondaryComponent", fields: [secondaryComponentId], references: [id], onDelete: Cascade)
+  
+  @@index([countryId])
+  @@index([synergyType])
+  @@unique([primaryComponentId, secondaryComponentId])
+}
+
+// Note: PolicyEffect already exists in the schema, using existing model
+
+// Enhanced Budget System
+enum BudgetCategoryType {
+  MANDATORY
+  DISCRETIONARY  
+  EMERGENCY
+}
+
+enum BudgetPriorityLevel {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+model BudgetScenario {
+  id              String        @id @default(cuid())
+  countryId       String
+  name            String
+  description     String?
+  totalBudget     Float
+  assumptions     String?       // JSON array of assumptions
+  riskLevel       String        // 'LOW' | 'MEDIUM' | 'HIGH'
+  feasibility     Float         @default(50)
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relations
+  country         Country       @relation("CountryBudgetScenarios", fields: [countryId], references: [id], onDelete: Cascade)
+  categories      BudgetScenarioCategory[]
+  
+  @@index([countryId])
+  @@index([isActive])
+}
+
+model BudgetScenarioCategory {
+  id                String          @id @default(cuid())
+  scenarioId        String
+  categoryName      String
+  allocatedAmount   Float
+  allocatedPercent  Float
+  priority          BudgetPriorityLevel @default(MEDIUM)
+  efficiency        Float           @default(50)
+  performance       Float           @default(50)
+  createdAt         DateTime        @default(now())
+  
+  // Relations
+  scenario          BudgetScenario  @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  
+  @@index([scenarioId])
+}
+
+model FiscalPolicy {
+  id                String      @id @default(cuid())
+  countryId         String
+  name              String
+  policyType        String      // 'TAX_POLICY' | 'SPENDING_POLICY' | 'DEBT_POLICY'
+  impact            Float
+  implementation    String      // 'IMMEDIATE' | 'SHORT_TERM' | 'LONG_TERM'
+  cost              Float
+  benefits          Float
+  description       String?
+  isActive          Boolean     @default(true)
+  appliedDate       DateTime?
+  expiryDate        DateTime?
+  measuredImpact    Float?      // Actual measured impact
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  
+  // Relations
+  country           Country     @relation("CountryFiscalPolicies", fields: [countryId], references: [id], onDelete: Cascade)
+  
+  @@index([countryId])
+  @@index([policyType])
+  @@index([isActive])
 }
 
 // Thinkpages Social Platform Models
@@ -1011,6 +1367,11 @@ model ActivityFeed {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
+  // Relations
+  activityLikes    ActivityLike[]
+  activityComments ActivityComment[]
+  activityShares   ActivityShare[]
+  
   @@index([type])
   @@index([category])
   @@index([userId])
@@ -1018,6 +1379,44 @@ model ActivityFeed {
   @@index([priority])
   @@index([createdAt])
   @@index([visibility])
+}
+
+model ActivityLike {
+  id         String       @id @default(cuid())
+  activityId String
+  userId     String       // Clerk user ID
+  createdAt  DateTime     @default(now())
+  activity   ActivityFeed @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  
+  @@unique([activityId, userId]) // Prevent duplicate likes
+  @@index([activityId])
+  @@index([userId])
+}
+
+model ActivityComment {
+  id         String       @id @default(cuid())
+  activityId String
+  userId     String       // Clerk user ID
+  content    String       // Rich text content from echo editor
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  activity   ActivityFeed @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  
+  @@index([activityId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model ActivityShare {
+  id         String       @id @default(cuid())
+  activityId String
+  userId     String       // Clerk user ID
+  createdAt  DateTime     @default(now())
+  activity   ActivityFeed @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  
+  @@unique([activityId, userId]) // Prevent duplicate shares from same user
+  @@index([activityId])
+  @@index([userId])
 }
 
 model DiplomaticEvent {
@@ -1405,4 +1804,232 @@ model EmbassyRequirement {
   @@unique([hostCountryId])
   @@index([hostCountryId])
 }
+
+// Role-Based Access Control System
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique // 'owner', 'admin', 'staff', 'moderator', 'user'
+  displayName String   // 'System Owner', 'Administrator', etc.
+  description String?
+  level       Int      @unique // Hierarchy level (0=highest, 100=lowest)
+  isSystem    Boolean  @default(false) // System roles cannot be deleted
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  users       User[]
+  rolePermissions RolePermission[]
+  
+  @@index([name])
+  @@index([level])
+  @@index([isActive])
+  @@index([isSystem])
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  name        String   @unique // 'user.manage', 'system.config', etc.
+  displayName String   // 'Manage Users', 'System Configuration'
+  description String?
+  category    String   // 'system', 'user', 'content', 'moderation', 'analytics'
+  isSystem    Boolean  @default(false) // System permissions cannot be deleted
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  rolePermissions RolePermission[]
+  
+  @@index([name])
+  @@index([category])
+  @@index([isSystem])
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  permissionId String
+  createdAt    DateTime   @default(now())
+  
+  // Relations
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+model UserSession {
+  id          String   @id @default(cuid())
+  clerkUserId String   
+  roleId      String?  // Role at time of session
+  permissions String?  // JSON array of permissions for quick access
+  ipAddress   String?
+  userAgent   String?
+  lastActivity DateTime @default(now())
+  expiresAt   DateTime
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  @@index([clerkUserId])
+  @@index([roleId])
+  @@index([lastActivity])
+  @@index([isActive])
+  @@index([expiresAt])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?  // Clerk user ID
+  action      String   // 'role.assign', 'permission.grant', etc.
+  target      String?  // Target user/resource ID
+  details     String?  // JSON object with action details
+  ipAddress   String?
+  userAgent   String?
+  success     Boolean  @default(true)
+  error       String?  // Error message if action failed
+  timestamp   DateTime @default(now())
+  
+  @@index([userId])
+  @@index([action])
+  @@index([timestamp])
+  @@index([success])
+}
+
+// Government Structure Models
+
+model GovernmentStructure {
+  id                 String   @id @default(cuid())
+  countryId          String   @unique
+  governmentName     String   // e.g., "Imperial Government", "Federal Administration"
+  governmentType     String   // e.g., "Constitutional Monarchy", "Federal Republic"
+  headOfState        String?  // e.g., "Emperor", "President"
+  headOfGovernment   String?  // e.g., "Prime Minister", "Chancellor"
+  legislatureName    String?  // e.g., "Imperial Senate", "Parliament"
+  executiveName      String?  // e.g., "Imperial Cabinet", "Executive Council"
+  judicialName       String?  // e.g., "Supreme Court", "High Court"
+  totalBudget        Float    @default(0)
+  fiscalYear         String   @default("Calendar Year") // "Calendar Year", "April-March", etc.
+  budgetCurrency     String   @default("USD")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  
+  // Relations
+  country            Country              @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  departments        GovernmentDepartment[]
+  budgetAllocations  BudgetAllocation[]
+  revenueSources     RevenueSource[]
+  
+  @@index([countryId])
+}
+
+model GovernmentDepartment {
+  id                    String   @id @default(cuid())
+  governmentStructureId String
+  name                  String   // e.g., "Ministry of Defense", "Department of Education"
+  shortName             String?  // e.g., "MoD", "DoE"
+  category              String   // e.g., "Defense", "Education", "Health", "Infrastructure"
+  description           String?
+  minister              String?  // Name of the minister/secretary
+  ministerTitle         String   @default("Minister") // "Minister", "Secretary", "Director General"
+  headquarters          String?  // Location/building
+  established           String?  // Year established
+  employeeCount         Int?     // Number of employees
+  icon                  String?  // Icon name for UI
+  color                 String   @default("#6366f1") // Theme color
+  priority              Int      @default(50) // 1-100, higher = more important
+  isActive              Boolean  @default(true)
+  parentDepartmentId    String?  // For sub-departments
+  organizationalLevel   String   @default("Ministry") // "Ministry", "Department", "Agency", "Bureau"
+  functions             String?  // JSON array of functions/responsibilities
+  kpis                  String?  // JSON array of Key Performance Indicators
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relations
+  governmentStructure   GovernmentStructure @relation(fields: [governmentStructureId], references: [id], onDelete: Cascade)
+  parentDepartment      GovernmentDepartment? @relation("DepartmentHierarchy", fields: [parentDepartmentId], references: [id])
+  subDepartments        GovernmentDepartment[] @relation("DepartmentHierarchy")
+  budgetAllocations     BudgetAllocation[]
+  subBudgets            SubBudgetCategory[]
+  
+  @@index([governmentStructureId])
+  @@index([category])
+  @@index([parentDepartmentId])
+  @@index([isActive])
+}
+
+model BudgetAllocation {
+  id                    String   @id @default(cuid())
+  governmentStructureId String
+  departmentId          String
+  budgetYear            Int      // e.g., 2024
+  allocatedAmount       Float
+  allocatedPercent      Float    // Percentage of total budget
+  spentAmount           Float    @default(0)
+  encumberedAmount      Float    @default(0) // Committed but not spent
+  availableAmount       Float    @default(0) // Calculated field
+  budgetStatus          String   @default("Allocated") // "Allocated", "In Use", "Overspent", "Underutilized"
+  lastReviewed          DateTime @default(now())
+  notes                 String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relations
+  governmentStructure   GovernmentStructure @relation(fields: [governmentStructureId], references: [id], onDelete: Cascade)
+  department            GovernmentDepartment @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  
+  @@unique([departmentId, budgetYear])
+  @@index([governmentStructureId])
+  @@index([departmentId])
+  @@index([budgetYear])
+}
+
+model SubBudgetCategory {
+  id           String   @id @default(cuid())
+  departmentId String
+  name         String   // e.g., "Personnel", "Operations", "Capital Expenditure"
+  description  String?
+  amount       Float
+  percent      Float    // Percentage of department budget
+  budgetType   String   // "Personnel", "Operations", "Capital", "Research", "Other"
+  isRecurring  Boolean  @default(true) // Annual recurring expense
+  priority     String   @default("Medium") // "Critical", "High", "Medium", "Low"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Relations
+  department   GovernmentDepartment @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  
+  @@index([departmentId])
+  @@index([budgetType])
+}
+
+// Revenue and Taxation Models
+
+model RevenueSource {
+  id                    String   @id @default(cuid())
+  governmentStructureId String
+  name                  String   // e.g., "Income Tax", "Corporate Tax", "VAT"
+  category              String   // e.g., "Direct Tax", "Indirect Tax", "Non-Tax Revenue"
+  description           String?
+  rate                  Float?   // Tax rate if applicable
+  revenueAmount         Float    @default(0) // Annual revenue
+  revenuePercent        Float    @default(0) // Percentage of total revenue
+  isActive              Boolean  @default(true)
+  collectionMethod      String?  // How it's collected
+  administeredBy        String?  // Which department administers it
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relations
+  governmentStructure   GovernmentStructure @relation(fields: [governmentStructureId], references: [id], onDelete: Cascade)
+  
+  @@index([governmentStructureId])
+  @@index([category])
+  @@index([isActive])
+}
+
 

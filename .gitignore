@@ -85,3 +85,6 @@ cypress/videos/
 *.log
 *.bak
 *.old
+
+# clerk configuration (can include secrets)
+/.clerk/

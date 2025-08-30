@@ -9,7 +9,7 @@ export interface RealCountryData {
   countryCode: string;
   gdp: number;
   gdpPerCapita: number;
-  taxRevenuePercent: number;
+  taxRevenuePercent?: number;
   unemploymentRate: number;
   inflationRate?: number;
   population: number;
@@ -26,6 +26,12 @@ export interface RealCountryData {
   lifeExpectancy?: number;
   literacyRate?: number;
   urbanizationRate?: number;
+  // Additional fields for country builder
+  economicTier?: 'Developing' | 'Emerging' | 'Developed' | 'Advanced';
+  baselinePopulation?: number;
+  baselineGdpPerCapita?: number;
+  maxGdpGrowthRate?: number;
+  flag?: string;
 }
 
 export interface CoreEconomicIndicators {
@@ -478,6 +484,9 @@ export async function parseEconomyData(): Promise<RealCountryData[]> {
         if (countryName === "0" || countryName === "") return null;
       }
 
+      const economicTier = getEconomicTier(gdpPerCapita);
+      const maxGdpGrowthRate = Math.min(8, Math.max(2, 5 - (gdpPerCapita / 10000))); // Higher income = lower max growth potential
+      
       return {
         name: countryName,
         countryCode: countryCode,
@@ -489,6 +498,12 @@ export async function parseEconomyData(): Promise<RealCountryData[]> {
         taxesLessSubsidies: parseFloat(String(row['Taxes less subsidies']).trim()) || undefined,
         taxRevenueLcu: String(row['Tax revenue (LCU)']).trim() === '..' ? undefined : parseFloat(String(row['Tax revenue (LCU)']).trim()) || undefined,
         womenBeatWifeDinnerPercent: String(row['Women who believe a husband is justified in beating his wife is she burns dinner (%)']).trim() === '..' ? undefined : parseFloat(String(row['Women who believe a husband is justified in beating his wife is she burns dinner (%)']).trim()) || undefined,
+        // Additional computed fields for country builder
+        economicTier,
+        baselinePopulation: population,
+        baselineGdpPerCapita: gdpPerCapita,
+        maxGdpGrowthRate,
+        flag: `https://flagcdn.com/w320/${countryCode}.png`,
       };
     }).filter(country => country !== null && country.name !== "0" && country.name !== "") as RealCountryData[];
     
