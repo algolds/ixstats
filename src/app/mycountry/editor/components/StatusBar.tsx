@@ -5,7 +5,7 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { Zap, Activity, AlertTriangle, CheckCircle } from "lucide-react";
-import type { Country } from "~/types/mycountry";
+import type { Country } from "~/types/ixstats";
 import type { EconomicInputs } from "~/app/builder/lib/economy-data-service";
 
 interface ValidationError {

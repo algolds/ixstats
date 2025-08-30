@@ -1,418 +1,284 @@
-/**
- * Atomic Economic Integration
- * Connects economic indicators and calculations to atomic government components
- */
+// src/lib/atomic-economic-integration.ts
+import { type ComponentType, type Country, type GovernmentComponent, type AtomicEffectiveness } from '@prisma/client';
+import { getAtomicEffectivenessService } from '~/services/AtomicEffectivenessService';
+import { db } from '~/server/db';
 
-import type { ComponentType } from '~/types/government';
+export interface AtomicEconomicModifiers {
+  taxCollectionMultiplier: number;
+  gdpGrowthModifier: number;
+  stabilityBonus: number;
+  innovationMultiplier: number;
+  internationalTradeBonus: number;
+  governmentEfficiencyMultiplier: number;
+}
 
-// Economic effectiveness multipliers based on atomic components
-export const ECONOMIC_EFFECTIVENESS_MODIFIERS = {
-  // Power Distribution Components
-  CENTRALIZED_POWER: {
-    gdpGrowthRate: 1.05,
-    inflationControl: 1.15,
-    economicStability: 1.10,
-    policyImplementation: 1.20,
-    description: "Centralized power enables rapid economic policy implementation"
-  },
-  FEDERAL_SYSTEM: {
-    gdpGrowthRate: 1.02,
-    inflationControl: 0.95,
-    economicStability: 1.05,
-    policyImplementation: 0.90,
-    description: "Federal systems provide regional economic flexibility"
-  },
-  CONFEDERATE_SYSTEM: {
-    gdpGrowthRate: 0.90,
-    inflationControl: 0.85,
-    economicStability: 0.80,
-    policyImplementation: 0.70,
-    description: "Confederate systems struggle with coordinated economic policy"
-  },
-  UNITARY_SYSTEM: {
-    gdpGrowthRate: 1.08,
-    inflationControl: 1.12,
-    economicStability: 1.15,
-    policyImplementation: 1.15,
-    description: "Unitary systems enable consistent economic policy"
-  },
-
-  // Decision Process Components
-  DEMOCRATIC_PROCESS: {
-    gdpGrowthRate: 1.00,
-    inflationControl: 0.95,
-    economicStability: 1.05,
-    policyImplementation: 0.85,
-    description: "Democratic processes ensure sustainable but slower economic decisions"
-  },
-  AUTOCRATIC_PROCESS: {
-    gdpGrowthRate: 1.15,
-    inflationControl: 1.10,
-    economicStability: 0.90,
-    policyImplementation: 1.25,
-    description: "Autocratic processes enable rapid economic responses"
-  },
-  TECHNOCRATIC_PROCESS: {
-    gdpGrowthRate: 1.20,
-    inflationControl: 1.25,
-    economicStability: 1.15,
-    policyImplementation: 1.15,
-    description: "Technocratic governance optimizes economic policy effectiveness"
-  },
-  CONSENSUS_PROCESS: {
-    gdpGrowthRate: 0.95,
-    inflationControl: 1.05,
-    economicStability: 1.20,
-    policyImplementation: 0.80,
-    description: "Consensus building creates stable but slow economic policy"
-  },
-  OLIGARCHIC_PROCESS: {
-    gdpGrowthRate: 0.85,
-    inflationControl: 0.90,
-    economicStability: 0.85,
-    policyImplementation: 1.00,
-    description: "Oligarchic systems distort economic priorities"
-  },
-
-  // Legitimacy Source Components
-  ELECTORAL_LEGITIMACY: {
-    gdpGrowthRate: 1.05,
-    inflationControl: 1.00,
-    economicStability: 1.10,
-    policyImplementation: 0.90,
-    description: "Electoral legitimacy provides stable economic expectations"
-  },
-  TRADITIONAL_LEGITIMACY: {
-    gdpGrowthRate: 0.95,
-    inflationControl: 1.05,
-    economicStability: 1.15,
-    policyImplementation: 1.00,
-    description: "Traditional authority maintains steady economic conditions"
-  },
-  PERFORMANCE_LEGITIMACY: {
-    gdpGrowthRate: 1.15,
-    inflationControl: 1.10,
-    economicStability: 1.05,
-    policyImplementation: 1.20,
-    description: "Performance-based legitimacy drives economic results"
-  },
-  CHARISMATIC_LEGITIMACY: {
-    gdpGrowthRate: 1.10,
-    inflationControl: 0.95,
-    economicStability: 0.90,
-    policyImplementation: 1.15,
-    description: "Charismatic leadership can drive ambitious economic programs"
-  },
-  RELIGIOUS_LEGITIMACY: {
-    gdpGrowthRate: 0.90,
-    inflationControl: 1.10,
-    economicStability: 1.20,
-    policyImplementation: 1.05,
-    description: "Religious legitimacy prioritizes stability over growth"
-  },
-
-  // Institution Components
-  PROFESSIONAL_BUREAUCRACY: {
-    gdpGrowthRate: 1.15,
-    inflationControl: 1.20,
-    economicStability: 1.15,
-    policyImplementation: 1.30,
-    description: "Professional bureaucracy maximizes economic policy effectiveness"
-  },
-  MILITARY_ADMINISTRATION: {
-    gdpGrowthRate: 1.05,
-    inflationControl: 1.15,
-    economicStability: 0.95,
-    policyImplementation: 1.20,
-    description: "Military administration prioritizes strategic sectors"
-  },
-  INDEPENDENT_JUDICIARY: {
-    gdpGrowthRate: 1.08,
-    inflationControl: 1.05,
-    economicStability: 1.25,
-    policyImplementation: 1.10,
-    description: "Independent judiciary provides economic predictability"
-  },
-  PARTISAN_INSTITUTIONS: {
-    gdpGrowthRate: 0.90,
-    inflationControl: 0.85,
-    economicStability: 0.80,
-    policyImplementation: 0.95,
-    description: "Partisan institutions create economic policy inconsistency"
-  },
-  TECHNOCRATIC_AGENCIES: {
-    gdpGrowthRate: 1.25,
-    inflationControl: 1.30,
-    economicStability: 1.20,
-    policyImplementation: 1.35,
-    description: "Technocratic agencies optimize economic management"
-  },
-
-  // Control Mechanism Components
-  RULE_OF_LAW: {
-    gdpGrowthRate: 1.12,
-    inflationControl: 1.10,
-    economicStability: 1.30,
-    policyImplementation: 1.15,
-    description: "Rule of law provides essential economic stability"
-  },
-  SURVEILLANCE_SYSTEM: {
-    gdpGrowthRate: 0.95,
-    inflationControl: 1.05,
-    economicStability: 0.90,
-    policyImplementation: 1.10,
-    description: "Surveillance systems may inhibit economic dynamism"
-  }
-} as const;
-
-// Component synergies for economic effectiveness
-export const ECONOMIC_COMPONENT_SYNERGIES = {
-  // Technocratic process + Professional bureaucracy = Optimal economic management
-  'TECHNOCRATIC_PROCESS+PROFESSIONAL_BUREAUCRACY': {
-    gdpGrowthRate: 1.20,
-    policyImplementation: 1.25,
-    description: "Technocratic governance with professional bureaucracy maximizes economic efficiency"
-  },
+export interface AtomicEnhancedCountryData {
+  // Base country data
+  id: string;
+  name: string;
+  currentPopulation: number;
+  currentGdpPerCapita: number;
+  currentTotalGdp: number;
+  adjustedGdpGrowth: number;
+  taxRevenueGDPPercent: number | null;
   
-  // Rule of law + Independent judiciary = Investor confidence
-  'RULE_OF_LAW+INDEPENDENT_JUDICIARY': {
-    gdpGrowthRate: 1.15,
-    economicStability: 1.20,
-    description: "Rule of law with independent judiciary maximizes investor confidence"
-  },
+  // Atomic enhancements
+  atomicModifiers: AtomicEconomicModifiers;
+  atomicEffectiveness: AtomicEffectiveness;
+  enhancedGdpGrowth: number;
+  enhancedTaxRevenue: number;
+  stabilityIndex: number;
+  governmentCapacityIndex: number;
   
-  // Performance legitimacy + Technocratic agencies = Results-driven economic policy
-  'PERFORMANCE_LEGITIMACY+TECHNOCRATIC_AGENCIES': {
-    gdpGrowthRate: 1.25,
-    policyImplementation: 1.20,
-    description: "Performance legitimacy with technocratic agencies drives economic results"
-  },
-  
-  // Centralized power + Autocratic process = Rapid economic transformation
-  'CENTRALIZED_POWER+AUTOCRATIC_PROCESS': {
-    gdpGrowthRate: 1.30,
-    policyImplementation: 1.35,
-    economicStability: 0.85,
-    description: "Centralized autocracy enables rapid economic transformation"
-  },
-  
-  // Democratic process + Electoral legitimacy = Sustainable economic policy
-  'DEMOCRATIC_PROCESS+ELECTORAL_LEGITIMACY': {
-    economicStability: 1.25,
-    inflationControl: 1.10,
-    description: "Democratic legitimacy creates sustainable economic policy"
-  }
-} as const;
+  // Impact analysis
+  economicImpactFromAtomic: {
+    gdpImpactPercent: number;
+    taxImpactPercent: number;
+    stabilityImpactPoints: number;
+    overallEffectivenessGrade: string;
+  };
+}
 
-// Component conflicts that reduce economic effectiveness
-export const ECONOMIC_COMPONENT_CONFLICTS = {
-  // Surveillance + Rule of law = Reduced business confidence
-  'SURVEILLANCE_SYSTEM+RULE_OF_LAW': {
-    gdpGrowthRate: 0.90,
-    description: "Surveillance undermines rule of law credibility"
-  },
-  
-  // Military administration + Democratic process = Policy inconsistency
-  'MILITARY_ADMINISTRATION+DEMOCRATIC_PROCESS': {
-    policyImplementation: 0.80,
-    description: "Military administration conflicts with democratic processes"
-  },
-  
-  // Federal system + Centralized power = Coordination inefficiency
-  'FEDERAL_SYSTEM+CENTRALIZED_POWER': {
-    policyImplementation: 0.85,
-    description: "Federal structure conflicts with centralized economic control"
-  },
-  
-  // Partisan institutions + Technocratic agencies = Politicization of economic policy
-  'PARTISAN_INSTITUTIONS+TECHNOCRATIC_AGENCIES': {
-    gdpGrowthRate: 0.85,
-    policyImplementation: 0.90,
-    description: "Partisan institutions undermine technocratic economic management"
-  }
-} as const;
+export interface CountryWithAtomicComponents extends Country {
+  governmentComponents: GovernmentComponent[];
+  atomicEffectiveness?: AtomicEffectiveness | null;
+}
 
-/**
- * Calculate economic effectiveness based on atomic government components
- */
-export function calculateAtomicEconomicEffectiveness(
+export async function calculateAtomicEconomicImpact(
   components: ComponentType[],
-  baseEconomicData: {
-    gdpGrowthRate: number;
-    inflationRate: number;
-    gdpPerCapita: number;
-    economicStability?: number;
-    policyEffectiveness?: number;
-  }
-): {
-  gdpGrowthRate: number;
-  inflationRate: number;
-  economicStability: number;
-  policyEffectiveness: number;
-  overallScore: number;
-  modifierBreakdown: {
-    component: ComponentType;
-    modifiers: any;
-    description: string;
-  }[];
-  synergies: string[];
-  conflicts: string[];
-} {
-  let gdpMultiplier = 1.0;
-  let inflationMultiplier = 1.0;
-  let stabilityMultiplier = 1.0;
-  let policyMultiplier = 1.0;
+  baseGdpPerCapita: number,
+  baseTaxRevenue: number = 0
+): Promise<AtomicEconomicModifiers> {
+  const atomicService = getAtomicEffectivenessService(db);
+  const componentBreakdown = atomicService.getComponentBreakdown(components);
   
-  const modifierBreakdown: any[] = [];
-  const synergies: string[] = [];
-  const conflicts: string[] = [];
+  let modifiers: AtomicEconomicModifiers = {
+    taxCollectionMultiplier: 1.0,
+    gdpGrowthModifier: 1.0,
+    stabilityBonus: 0,
+    innovationMultiplier: 1.0,
+    internationalTradeBonus: 0,
+    governmentEfficiencyMultiplier: 1.0
+  };
 
-  // Apply individual component modifiers
-  for (const component of components) {
-    const modifier = ECONOMIC_EFFECTIVENESS_MODIFIERS[component];
-    if (modifier) {
-      gdpMultiplier *= modifier.gdpGrowthRate;
-      inflationMultiplier *= modifier.inflationControl;
-      stabilityMultiplier *= modifier.economicStability;
-      policyMultiplier *= modifier.policyImplementation;
-      
-      modifierBreakdown.push({
-        component,
-        modifiers: modifier,
-        description: modifier.description
-      });
+  // Apply component-specific modifiers
+  componentBreakdown.forEach(component => {
+    // Tax collection improvements
+    modifiers.taxCollectionMultiplier *= component.taxImpact;
+    
+    // Economic growth modifiers
+    modifiers.gdpGrowthModifier *= component.economicImpact;
+    
+    // Stability improvements (additive)
+    modifiers.stabilityBonus += component.stabilityImpact;
+    
+    // Innovation effects (primarily from technocratic components)
+    if ([ComponentType.TECHNOCRATIC_PROCESS, ComponentType.TECHNOCRATIC_AGENCIES].includes(component.type)) {
+      modifiers.innovationMultiplier *= 1.15;
     }
-  }
-
-  // Check for synergies
-  for (let i = 0; i < components.length; i++) {
-    for (let j = i + 1; j < components.length; j++) {
-      const synergyKey = `${components[i]}+${components[j]}` as keyof typeof ECONOMIC_COMPONENT_SYNERGIES;
-      const synergy = ECONOMIC_COMPONENT_SYNERGIES[synergyKey];
-      
-      if (synergy) {
-        if (synergy.gdpGrowthRate) gdpMultiplier *= synergy.gdpGrowthRate;
-        if (synergy.inflationControl) inflationMultiplier *= synergy.inflationControl;
-        if (synergy.economicStability) stabilityMultiplier *= synergy.economicStability;
-        if (synergy.policyImplementation) policyMultiplier *= synergy.policyImplementation;
-        synergies.push(synergy.description);
-      }
-
-      // Check for conflicts
-      const conflictKey = `${components[i]}+${components[j]}` as keyof typeof ECONOMIC_COMPONENT_CONFLICTS;
-      const conflict = ECONOMIC_COMPONENT_CONFLICTS[conflictKey];
-      
-      if (conflict) {
-        if (conflict.gdpGrowthRate) gdpMultiplier *= conflict.gdpGrowthRate;
-        if (conflict.inflationControl) inflationMultiplier *= conflict.inflationControl;
-        if (conflict.policyImplementation) policyMultiplier *= conflict.policyImplementation;
-        conflicts.push(conflict.description);
-      }
+    
+    // International trade bonuses (from rule of law, stability)
+    if ([ComponentType.RULE_OF_LAW, ComponentType.INDEPENDENT_JUDICIARY].includes(component.type)) {
+      modifiers.internationalTradeBonus += 5;
     }
+    
+    // Government efficiency
+    modifiers.governmentEfficiencyMultiplier *= (component.baseEffectiveness / 70); // Normalize around 70 as neutral
+  });
+
+  // Apply synergy bonuses
+  const synergies = atomicService.detectPotentialSynergies(components);
+  synergies.forEach(synergy => {
+    // Major synergy effects based on the integration guide
+    if (synergy.components.includes(ComponentType.TECHNOCRATIC_PROCESS) && 
+        synergy.components.includes(ComponentType.PROFESSIONAL_BUREAUCRACY)) {
+      modifiers.gdpGrowthModifier *= 1.15; // Additional 15% bonus
+      modifiers.innovationMultiplier *= 1.20;
+      modifiers.governmentEfficiencyMultiplier *= 1.25;
+    }
+    
+    if (synergy.components.includes(ComponentType.RULE_OF_LAW) && 
+        synergy.components.includes(ComponentType.INDEPENDENT_JUDICIARY)) {
+      modifiers.internationalTradeBonus += 15;
+      modifiers.stabilityBonus += 10;
+    }
+  });
+
+  // Apply conflict penalties
+  const conflicts = atomicService.detectConflicts(components);
+  conflicts.forEach(conflict => {
+    // Democratic-Surveillance conflict reduces legitimacy and economic confidence
+    if (conflict.components.includes(ComponentType.DEMOCRATIC_PROCESS) && 
+        conflict.components.includes(ComponentType.SURVEILLANCE_SYSTEM)) {
+      modifiers.gdpGrowthModifier *= 0.95; // 5% penalty
+      modifiers.internationalTradeBonus -= 10;
+    }
+  });
+
+  return modifiers;
+}
+
+export async function calculateCountryDataWithAtomicEnhancement(
+  country: CountryWithAtomicComponents
+): Promise<AtomicEnhancedCountryData> {
+  // Get atomic effectiveness
+  const atomicService = getAtomicEffectivenessService(db);
+  
+  let atomicEffectiveness: AtomicEffectiveness;
+  if (country.usesAtomicGovernment && country.governmentComponents.length > 0) {
+    atomicEffectiveness = await atomicService.getCountryEffectiveness(country.id);
+  } else {
+    // Default effectiveness for non-atomic countries
+    atomicEffectiveness = {
+      id: '',
+      countryId: country.id,
+      overallScore: 50,
+      taxEffectiveness: 50,
+      economicPolicyScore: 50,
+      stabilityScore: 50,
+      legitimacyScore: 50,
+      componentCount: 0,
+      synergyBonus: 0,
+      conflictPenalty: 0,
+      lastCalculated: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
   }
-
-  // Calculate final values
-  const finalGdpGrowthRate = baseEconomicData.gdpGrowthRate * gdpMultiplier;
-  const finalInflationRate = baseEconomicData.inflationRate / inflationMultiplier; // Lower is better for inflation
-  const finalEconomicStability = (baseEconomicData.economicStability || 70) * stabilityMultiplier;
-  const finalPolicyEffectiveness = (baseEconomicData.policyEffectiveness || 60) * policyMultiplier;
-
-  // Calculate overall economic performance score
-  const overallScore = Math.round(
-    (Math.min(100, finalGdpGrowthRate * 10) * 0.3 + // GDP growth (capped at 10%)
-     Math.min(100, 100 - Math.abs(finalInflationRate - 2) * 10) * 0.25 + // Inflation target ~2%
-     Math.min(100, finalEconomicStability) * 0.25 + // Stability
-     Math.min(100, finalPolicyEffectiveness) * 0.2) // Policy effectiveness
+  
+  // Calculate atomic modifiers
+  const activeComponents = country.governmentComponents
+    .filter(c => c.isActive)
+    .map(c => c.componentType);
+    
+  const atomicModifiers = await calculateAtomicEconomicImpact(
+    activeComponents,
+    country.currentGdpPerCapita,
+    country.taxRevenueGDPPercent || 0
   );
-
+  
+  // Apply atomic enhancements to base metrics
+  const baseGdpGrowth = country.adjustedGdpGrowth;
+  const baseTaxRevenue = country.taxRevenueGDPPercent || 0;
+  
+  const enhancedGdpGrowth = baseGdpGrowth * atomicModifiers.gdpGrowthModifier;
+  const enhancedTaxRevenue = baseTaxRevenue * atomicModifiers.taxCollectionMultiplier;
+  
+  // Calculate stability index (0-100 scale)
+  const baseStability = 50; // Default stability
+  const stabilityIndex = Math.max(0, Math.min(100, 
+    baseStability + atomicModifiers.stabilityBonus
+  ));
+  
+  // Government capacity index based on atomic effectiveness
+  const governmentCapacityIndex = atomicEffectiveness.overallScore;
+  
+  // Calculate impact analysis
+  const gdpImpactPercent = baseGdpGrowth > 0 ? 
+    ((enhancedGdpGrowth - baseGdpGrowth) / baseGdpGrowth) * 100 : 0;
+  const taxImpactPercent = baseTaxRevenue > 0 ? 
+    ((enhancedTaxRevenue - baseTaxRevenue) / baseTaxRevenue) * 100 : 0;
+  const stabilityImpactPoints = atomicModifiers.stabilityBonus;
+  
+  // Grade overall effectiveness
+  let effectivenessGrade = 'F';
+  if (atomicEffectiveness.overallScore >= 90) effectivenessGrade = 'A+';
+  else if (atomicEffectiveness.overallScore >= 85) effectivenessGrade = 'A';
+  else if (atomicEffectiveness.overallScore >= 80) effectivenessGrade = 'A-';
+  else if (atomicEffectiveness.overallScore >= 75) effectivenessGrade = 'B+';
+  else if (atomicEffectiveness.overallScore >= 70) effectivenessGrade = 'B';
+  else if (atomicEffectiveness.overallScore >= 65) effectivenessGrade = 'B-';
+  else if (atomicEffectiveness.overallScore >= 60) effectivenessGrade = 'C+';
+  else if (atomicEffectiveness.overallScore >= 55) effectivenessGrade = 'C';
+  else if (atomicEffectiveness.overallScore >= 50) effectivenessGrade = 'C-';
+  else if (atomicEffectiveness.overallScore >= 40) effectivenessGrade = 'D';
+  
   return {
-    gdpGrowthRate: Math.round(finalGdpGrowthRate * 100) / 100,
-    inflationRate: Math.round(finalInflationRate * 100) / 100,
-    economicStability: Math.round(finalEconomicStability * 100) / 100,
-    policyEffectiveness: Math.round(finalPolicyEffectiveness * 100) / 100,
-    overallScore,
-    modifierBreakdown,
-    synergies,
-    conflicts
+    // Base country data
+    id: country.id,
+    name: country.name,
+    currentPopulation: country.currentPopulation,
+    currentGdpPerCapita: country.currentGdpPerCapita,
+    currentTotalGdp: country.currentTotalGdp,
+    adjustedGdpGrowth: country.adjustedGdpGrowth,
+    taxRevenueGDPPercent: country.taxRevenueGDPPercent,
+    
+    // Atomic enhancements
+    atomicModifiers,
+    atomicEffectiveness,
+    enhancedGdpGrowth,
+    enhancedTaxRevenue,
+    stabilityIndex,
+    governmentCapacityIndex,
+    
+    // Impact analysis
+    economicImpactFromAtomic: {
+      gdpImpactPercent,
+      taxImpactPercent,
+      stabilityImpactPoints,
+      overallEffectivenessGrade: effectivenessGrade
+    }
   };
 }
 
-/**
- * Get economic policy recommendations based on atomic components
- */
-export function getAtomicEconomicRecommendations(
-  components: ComponentType[],
-  currentEconomicData: {
-    gdpGrowthRate: number;
-    inflationRate: number;
-    unemploymentRate?: number;
-  }
-): {
-  recommendedPolicies: string[];
-  warnings: string[];
-  opportunities: string[];
-} {
-  const recommendedPolicies: string[] = [];
-  const warnings: string[] = [];
-  const opportunities: string[] = [];
-
-  // Professional bureaucracy recommendations
-  if (components.includes('PROFESSIONAL_BUREAUCRACY')) {
-    recommendedPolicies.push("Implement complex industrial policies");
-    recommendedPolicies.push("Deploy sophisticated financial regulations");
-    opportunities.push("Leverage bureaucratic capacity for economic planning");
-  }
-
-  // Technocratic governance recommendations
-  if (components.includes('TECHNOCRATIC_PROCESS') || components.includes('TECHNOCRATIC_AGENCIES')) {
-    recommendedPolicies.push("Focus on evidence-based economic policy");
-    recommendedPolicies.push("Invest in data-driven economic monitoring");
-    opportunities.push("Optimize economic policies using technical expertise");
-  }
-
-  // Democratic legitimacy considerations
-  if (components.includes('ELECTORAL_LEGITIMACY') || components.includes('DEMOCRATIC_PROCESS')) {
-    recommendedPolicies.push("Ensure inclusive economic growth");
-    recommendedPolicies.push("Build public support for economic reforms");
-    warnings.push("Economic reforms may face democratic constraints");
-  }
-
-  // Rule of law advantages
-  if (components.includes('RULE_OF_LAW')) {
-    opportunities.push("Attract foreign investment through legal certainty");
-    recommendedPolicies.push("Strengthen intellectual property protection");
-  }
-
-  // Centralized power considerations
-  if (components.includes('CENTRALIZED_POWER')) {
-    opportunities.push("Implement rapid economic transformation programs");
-    warnings.push("Ensure economic policies don't create regional imbalances");
-  }
-
-  // Surveillance system warnings
-  if (components.includes('SURVEILLANCE_SYSTEM')) {
-    warnings.push("Surveillance may discourage entrepreneurship");
-    recommendedPolicies.push("Balance security with economic freedom");
-  }
-
-  // Economic performance based recommendations
-  if (currentEconomicData.gdpGrowthRate < 2) {
-    recommendedPolicies.push("Focus on productivity-enhancing investments");
-    if (components.includes('TECHNOCRATIC_PROCESS')) {
-      opportunities.push("Use technocratic capacity for growth acceleration");
-    }
-  }
-
-  if (currentEconomicData.inflationRate > 4) {
-    recommendedPolicies.push("Implement anti-inflationary measures");
-    if (components.includes('CENTRALIZED_POWER')) {
-      opportunities.push("Use centralized authority for inflation control");
-    }
-  }
-
-  return {
-    recommendedPolicies,
-    warnings,
-    opportunities
+// Helper function to get atomic intelligence recommendations
+export async function getAtomicIntelligenceRecommendations(
+  countryId: string
+): Promise<Array<{
+  type: 'component_add' | 'component_improve' | 'synergy_opportunity' | 'conflict_resolution';
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  title: string;
+  description: string;
+  expectedImpact: {
+    economic: number;
+    stability: number;
+    legitimacy: number;
   };
+}>> {
+  const atomicService = getAtomicEffectivenessService(db);
+  
+  // Get current country data
+  const country = await db.country.findUnique({
+    where: { id: countryId },
+    include: {
+      governmentComponents: { where: { isActive: true } },
+      atomicEffectiveness: true
+    }
+  });
+  
+  if (!country) return [];
+  
+  const recommendations = [];
+  const currentComponents = country.governmentComponents.map(c => c.componentType);
+  
+  // Check for missing high-impact components
+  const highImpactComponents = [
+    ComponentType.PROFESSIONAL_BUREAUCRACY,
+    ComponentType.RULE_OF_LAW,
+    ComponentType.INDEPENDENT_JUDICIARY,
+    ComponentType.TECHNOCRATIC_PROCESS
+  ];
+  
+  for (const component of highImpactComponents) {
+    if (!currentComponents.includes(component)) {
+      const componentData = atomicService.getComponentBreakdown([component])[0];
+      if (componentData) {
+        recommendations.push({
+          type: 'component_add' as const,
+          priority: 'high' as const,
+          title: `Add ${component.replace(/_/g, ' ')}`,
+          description: `Adding this component could significantly improve government effectiveness`,
+          expectedImpact: {
+            economic: (componentData.economicImpact - 1) * 100,
+            stability: componentData.stabilityImpact,
+            legitimacy: componentData.legitimacyImpact
+          }
+        });
+      }
+    }
+  }
+  
+  return recommendations.slice(0, 10); // Limit to top 10 recommendations
 }
+
+export type { AtomicEnhancedCountryData, CountryWithAtomicComponents };

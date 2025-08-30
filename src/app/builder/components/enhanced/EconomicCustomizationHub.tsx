@@ -101,10 +101,7 @@ export function EconomicCustomizationHub({
       case 'government':
         return (
           <GovernmentSpendingSection
-            spendingData={inputs.governmentSpending}
-            nominalGDP={inputs.coreIndicators.nominalGDP}
-            totalPopulation={inputs.coreIndicators.totalPopulation}
-            onSpendingDataChangeAction={(newSpendingData: any) => onInputsChange({ ...inputs, governmentSpending: newSpendingData })}
+            {...commonProps}
           />
         );
       case 'structure':

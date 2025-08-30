@@ -7,6 +7,13 @@ import { IxTime } from "~/lib/ixtime";
 import { getDefaultEconomicConfig, CONFIG_CONSTANTS } from "~/lib/config-service";
 import { parseRosterFile } from "~/lib/data-parser";
 import { IxStatsCalculator } from "~/lib/calculations";
+import { 
+  calculateCountryDataWithAtomicEnhancement,
+  getAtomicIntelligenceRecommendations,
+  type CountryWithAtomicComponents 
+} from "~/lib/atomic-economic-integration";
+import { getAtomicEffectivenessService } from "~/services/AtomicEffectivenessService";
+import { ComponentType } from "@prisma/client";
 import type { 
   SystemStatus, 
   AdminPageBotStatusView, 
@@ -2421,6 +2428,169 @@ const countriesRouter = createTRPCRouter({
           { country: "Trade Partner 3", volume: Math.random() * 600000000 }
         ]
       };
+    }),
+
+  // ============ ATOMIC COMPONENTS INTEGRATION ENDPOINTS ============
+
+  // Get country with atomic enhancement
+  getByNameWithAtomic: publicProcedure
+    .input(z.object({ name: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const country = await ctx.db.country.findUnique({
+        where: { name: input.name },
+        include: {
+          governmentComponents: {
+            where: { isActive: true }
+          },
+          componentSynergies: {
+            include: {
+              primaryComponent: true,
+              secondaryComponent: true
+            }
+          },
+          atomicEffectiveness: true
+        }
+      }) as CountryWithAtomicComponents | null;
+      
+      if (!country) return null;
+      
+      // Calculate with atomic enhancements
+      const enhancedData = await calculateCountryDataWithAtomicEnhancement(country);
+      
+      return {
+        ...country,
+        atomicEnhancements: enhancedData.economicImpactFromAtomic,
+        enhancedGdpGrowth: enhancedData.enhancedGdpGrowth,
+        enhancedTaxRevenue: enhancedData.enhancedTaxRevenue,
+        stabilityIndex: enhancedData.stabilityIndex,
+        governmentCapacityIndex: enhancedData.governmentCapacityIndex,
+        atomicModifiers: enhancedData.atomicModifiers
+      };
+    }),
+
+  // Get countries filtered by atomic components
+  getByAtomicComponents: publicProcedure
+    .input(z.object({
+      componentTypes: z.array(z.nativeEnum(ComponentType)),
+      requireAll: z.boolean().default(false) // true = AND, false = OR
+    }))
+    .query(async ({ ctx, input }) => {
+      let countries;
+      
+      if (input.requireAll) {
+        // For AND logic, we need to check that all components exist
+        countries = await ctx.db.country.findMany({
+          include: {
+            governmentComponents: {
+              where: { isActive: true }
+            }
+          }
+        });
+        
+        // Filter for countries that have ALL required components
+        countries = countries.filter(country => 
+          input.componentTypes.every(componentType =>
+            country.governmentComponents.some(comp => 
+              comp.componentType === componentType && comp.isActive
+            )
+          )
+        );
+      } else {
+        // For OR logic, use Prisma's some query
+        countries = await ctx.db.country.findMany({
+          where: {
+            governmentComponents: {
+              some: {
+                componentType: { in: input.componentTypes },
+                isActive: true
+              }
+            }
+          },
+          include: {
+            governmentComponents: {
+              where: { isActive: true }
+            }
+          }
+        });
+      }
+      
+      return countries;
+    }),
+
+  // Get atomic effectiveness for a country
+  getAtomicEffectiveness: publicProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const atomicService = getAtomicEffectivenessService(ctx.db);
+      return atomicService.getCountryEffectiveness(input.countryId);
+    }),
+
+  // Get atomic intelligence recommendations
+  getAtomicIntelligenceRecommendations: publicProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return getAtomicIntelligenceRecommendations(input.countryId);
+    }),
+
+  // Get component effectiveness breakdown
+  getComponentEffectivenessBreakdown: publicProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const country = await ctx.db.country.findUnique({
+        where: { id: input.countryId },
+        include: {
+          governmentComponents: { where: { isActive: true } }
+        }
+      });
+      
+      if (!country) return null;
+      
+      const atomicService = getAtomicEffectivenessService(ctx.db);
+      const componentTypes = country.governmentComponents.map(c => c.componentType);
+      const breakdown = atomicService.getComponentBreakdown(componentTypes);
+      
+      const synergies = atomicService.detectPotentialSynergies(componentTypes);
+      const conflicts = atomicService.detectConflicts(componentTypes);
+      
+      return {
+        components: breakdown,
+        synergies,
+        conflicts,
+        totalComponents: componentTypes.length,
+        synergyCount: synergies.length,
+        conflictCount: conflicts.length
+      };
+    }),
+
+  // Toggle atomic government mode for a country
+  toggleAtomicGovernment: protectedProcedure
+    .input(z.object({ 
+      countryId: z.string(),
+      useAtomic: z.boolean()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const updated = await ctx.db.country.update({
+        where: { id: input.countryId },
+        data: { usesAtomicGovernment: input.useAtomic }
+      });
+      
+      // Invalidate cache for this country
+      const atomicService = getAtomicEffectivenessService(ctx.db);
+      atomicService.invalidateCache(input.countryId);
+      
+      return updated;
+    }),
+
+  // Recalculate atomic effectiveness (admin function)
+  recalculateAtomicEffectiveness: protectedProcedure
+    .input(z.object({ countryId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const atomicService = getAtomicEffectivenessService(ctx.db);
+      
+      // Force recalculation by bypassing cache
+      const effectiveness = await atomicService.calculateEffectiveness(input.countryId);
+      
+      return effectiveness;
     }),
 });
 

@@ -292,7 +292,9 @@ export function AtomicEditorTabs({
                 handleInputsChange(newEconomicInputs);
               }}
               isReadOnly={false}
-              showComparison={false}
+              showComparison={true}
+              showAdvanced={false}
+              referenceCountry={undefined}
             />
           </motion.div>
         </TabsContent>
@@ -324,9 +326,8 @@ export function AtomicEditorTabs({
                   }}
                   isReadOnly={false}
                   showComparison={false}
-                  nominalGDP={economicInputs.coreIndicators.nominalGDP}
-                  totalPopulation={economicInputs.coreIndicators.totalPopulation}
-                  countryId={country?.id}
+                  showAdvanced={false}
+                  referenceCountry={undefined}
                 />
               </TabsContent>
 

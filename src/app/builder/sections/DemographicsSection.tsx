@@ -431,6 +431,8 @@ export function DemographicsSection({
       }}
       inputs={inputs}
       onInputsChange={onInputsChange}
+      isReadOnly={false}
+      showComparison={true}
       showAdvanced={showAdvanced}
       onToggleAdvanced={onToggleAdvanced}
       referenceCountry={referenceCountry}

@@ -345,7 +345,7 @@ function BuilderContent() {
   const resetBuilder = () => {
     setCurrentPhase('select');
     setSelectedCountry(null);
-    setEconomicInputs(null);
+    setEconomicInputs(createDefaultEconomicInputs());
     setError(null);
   };
 

@@ -241,7 +241,7 @@ export const archetypes: CategorizedCountryArchetype[] = [
     description: 'Countries with moderate tax revenue rates (indicating efficient collection).',
     icon: DollarSign,
     color: 'text-blue-600',
-    filter: (country: RealCountryData) => country.taxRevenuePercent > 15 && country.taxRevenuePercent < 30,
+    filter: (country: RealCountryData) => country.taxRevenuePercent !== undefined && country.taxRevenuePercent > 15 && country.taxRevenuePercent < 30,
     gradient: 'from-blue-600/20 to-cyan-600/10',
     categoryId: 'economic-classifications',
     priority: 13,
