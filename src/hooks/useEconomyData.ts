@@ -2,6 +2,7 @@
 
 import { useMemo } from "react"
 import { api } from "~/trpc/react"
+import { useAtomicState } from "~/components/atomic/AtomicStateProvider"
 import type {
   EconomyData,
   CoreEconomicIndicatorsData,
@@ -19,18 +20,50 @@ export function useEconomyData(countryId: string) {
       { staleTime: 60_000 }
     )
 
+  // Try to get atomic state for enhanced calculations
+  let atomicState = null;
+  try {
+    atomicState = useAtomicState();
+  } catch {
+    // AtomicStateProvider not available, use traditional calculations
+    atomicState = null;
+  }
+
   const economy = useMemo<EconomyData | null>(() => {
     if (!data) return null
     
     // Type assertion to access country properties
     const countryData = data as any;
 
+    // Get atomic modifiers if available
+    const atomicModifiers = atomicState?.state?.economicModifiers;
+    const atomicTaxEffectiveness = atomicState?.state?.taxEffectiveness;
+
+    // Apply atomic modifiers to base economic data
+    const baseGdpGrowthRate = countryData.adjustedGdpGrowth || countryData.maxGdpGrowthRate || 0.03;
+    const baseGdp = countryData.currentTotalGdp || countryData.nominalGDP || 0;
+    const baseTaxRevenuePercent = countryData.taxRevenueGDPPercent ?? 20;
+    
+    // Enhanced GDP calculations with atomic government effectiveness
+    const enhancedGdpGrowthRate = atomicModifiers 
+      ? baseGdpGrowthRate * atomicModifiers.gdpGrowthModifier
+      : baseGdpGrowthRate;
+    
+    const enhancedGdp = atomicModifiers
+      ? baseGdp * (1 + (atomicModifiers.gdpGrowthModifier - 1) * 0.5) // Apply partial multiplier effect
+      : baseGdp;
+    
+    // Enhanced tax collection with atomic effectiveness
+    const enhancedTaxRevenuePercent = atomicTaxEffectiveness
+      ? baseTaxRevenuePercent * atomicTaxEffectiveness.overallMultiplier
+      : baseTaxRevenuePercent;
+
     const economyData: EconomyData = {
       core: {
         totalPopulation: countryData.currentPopulation || countryData.baselinePopulation || 0,
-        nominalGDP: countryData.currentTotalGdp || countryData.nominalGDP || 0,
+        nominalGDP: enhancedGdp,
         gdpPerCapita: countryData.currentGdpPerCapita || countryData.baselineGdpPerCapita || 0,
-        realGDPGrowthRate: countryData.adjustedGdpGrowth || countryData.maxGdpGrowthRate || 0.03,
+        realGDPGrowthRate: enhancedGdpGrowthRate,
         inflationRate: countryData.inflationRate || 0.02,
         currencyExchangeRate: countryData.currencyExchangeRate || 1.0
       },
@@ -92,9 +125,9 @@ export function useEconomyData(countryId: string) {
         }
       },
       fiscal: {
-        taxRevenueGDPPercent: countryData.taxRevenueGDPPercent ?? 20,
-        governmentRevenueTotal: countryData.governmentRevenueTotal ?? (countryData.currentTotalGdp || countryData.nominalGDP || 0) * 0.20,
-        taxRevenuePerCapita: countryData.taxRevenuePerCapita ?? ((countryData.currentTotalGdp || countryData.nominalGDP || 0) * 0.20) / (countryData.currentPopulation || countryData.baselinePopulation || 1),
+        taxRevenueGDPPercent: enhancedTaxRevenuePercent,
+        governmentRevenueTotal: countryData.governmentRevenueTotal ?? enhancedGdp * (enhancedTaxRevenuePercent / 100),
+        taxRevenuePerCapita: countryData.taxRevenuePerCapita ?? (enhancedGdp * (enhancedTaxRevenuePercent / 100)) / (countryData.currentPopulation || countryData.baselinePopulation || 1),
         governmentBudgetGDPPercent: countryData.governmentBudgetGDPPercent ?? 22,
         budgetDeficitSurplus: countryData.budgetDeficitSurplus ?? 0,
         internalDebtGDPPercent: countryData.internalDebtGDPPercent ?? 30,
@@ -224,7 +257,7 @@ export function useEconomyData(countryId: string) {
     };
     
     return economyData;
-  }, [data])
+  }, [data, atomicModifiers, atomicTaxEffectiveness])
 
   return { economy, isLoading, error, refetch }
 }

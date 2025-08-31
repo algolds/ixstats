@@ -5,7 +5,7 @@
 
 import type { ComponentType } from '~/types/government';
 import { calculateAtomicTaxEffectiveness } from './atomic-tax-integration';
-import { calculateAtomicEconomicEffectiveness } from './atomic-economic-integration';
+import { calculateAtomicEconomicImpact } from './atomic-economic-integration';
 
 export interface AtomicIntelligenceItem {
   id: string;
@@ -226,7 +226,7 @@ export function calculateAtomicGovernmentStability(
 /**
  * Generate atomic intelligence items based on government composition
  */
-export function generateAtomicIntelligence(
+export async function generateAtomicIntelligence(
   components: ComponentType[],
   economicData: {
     gdpGrowthRate: number;
@@ -259,7 +259,7 @@ export function generateAtomicIntelligence(
 
   // Calculate effectiveness metrics
   const stability = calculateAtomicGovernmentStability(components);
-  const economic = calculateAtomicEconomicEffectiveness(components, economicData);
+  const economic = await calculateAtomicEconomicImpact(components, economicData.gdpPerCapita || 15000, economicData.taxRevenue || 0.2);
   const tax = calculateAtomicTaxEffectiveness(components, taxData);
 
   // Government stability analysis
