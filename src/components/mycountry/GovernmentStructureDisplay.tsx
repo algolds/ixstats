@@ -12,12 +12,17 @@ import {
   DollarSign, 
   Edit2, 
   Plus, 
-  AlertTriangle 
+  AlertTriangle,
+  Settings,
+  TrendingUp,
+  Zap,
+  Shield
 } from 'lucide-react';
 import { api } from "~/trpc/react";
 import { useUser } from "@clerk/nextjs";
 import Link from 'next/link';
 import { createUrl } from '~/lib/url-utils';
+import { useAtomicGovernment, useAtomicState } from '~/components/atomic/AtomicStateProvider';
 
 interface GovernmentStructureDisplayProps {
   countryId: string;
@@ -33,6 +38,16 @@ export function GovernmentStructureDisplay({
     { userId: user?.id || '' },
     { enabled: !!user?.id }
   );
+
+  // Try to use atomic state if available
+  let atomicState = null;
+  let atomicGovernment = null;
+  try {
+    atomicState = useAtomicState();
+    atomicGovernment = useAtomicGovernment();
+  } catch {
+    // Not in atomic context, fallback to traditional approach
+  }
 
   // Use EXACT same pattern as other working queries
   const { data: governmentData, isLoading, refetch } = api.government.getByCountryId.useQuery(
@@ -77,6 +92,171 @@ export function GovernmentStructureDisplay({
     );
   }
 
+  // Check if we have atomic state available
+  if (atomicState && atomicGovernment && atomicState.state.selectedComponents.length > 0) {
+    // Use atomic-driven government structure
+    const { traditionalStructure, realTimeMetrics, effectivenessScore } = atomicGovernment;
+    const { selectedComponents } = atomicState.state;
+
+    return (
+      <div className="space-y-6">
+        {/* Atomic Government Overview */}
+        <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-purple/5">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Zap className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    {traditionalStructure.governmentType}
+                    <Badge variant="default" className="text-xs bg-primary/10 text-primary border-primary/20">
+                      Atomic-Driven
+                    </Badge>
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Powered by {selectedComponents.length} Atomic Components
+                  </p>
+                </div>
+              </div>
+              {isOwner && (
+                <div className="flex items-center gap-2">
+                  <Link href={createUrl("/mycountry/editor?tab=atomic")}>
+                    <Button variant="outline" size="sm" className="flex items-center gap-2">
+                      <Settings className="h-4 w-4" />
+                      Edit Components
+                    </Button>
+                  </Link>
+                  <Link href={createUrl("/mycountry/editor?tab=structure")}>
+                    <Button variant="outline" size="sm" className="flex items-center gap-2">
+                      <Edit2 className="h-4 w-4" />
+                      Legacy Editor
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </div>
+          </CardHeader>
+          
+          <CardContent>
+            {/* Real-time Atomic Metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="text-center p-3 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border border-primary/20">
+                <div className="flex items-center justify-center mb-2">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                </div>
+                <div className="text-2xl font-bold text-primary">{effectivenessScore.toFixed(0)}%</div>
+                <div className="text-xs text-muted-foreground">Effectiveness</div>
+              </div>
+              
+              <div className="text-center p-3 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                <div className="flex items-center justify-center mb-2">
+                  <Users className="h-5 w-5 text-green-600" />
+                </div>
+                <div className="text-2xl font-bold text-green-700">
+                  {realTimeMetrics.governmentCapacity.toFixed(0)}%
+                </div>
+                <div className="text-xs text-muted-foreground">Gov Capacity</div>
+              </div>
+              
+              <div className="text-center p-3 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-center mb-2">
+                  <Zap className="h-5 w-5 text-blue-600" />
+                </div>
+                <div className="text-2xl font-bold text-blue-700">
+                  {realTimeMetrics.policyImplementationSpeed.toFixed(0)}%
+                </div>
+                <div className="text-xs text-muted-foreground">Policy Speed</div>
+              </div>
+              
+              <div className="text-center p-3 bg-gradient-to-br from-purple-50 to-violet-50 rounded-lg border border-purple-200">
+                <div className="flex items-center justify-center mb-2">
+                  <Shield className="h-5 w-5 text-purple-600" />
+                </div>
+                <div className="text-2xl font-bold text-purple-700">
+                  {realTimeMetrics.crisisResiliency.toFixed(0)}%
+                </div>
+                <div className="text-xs text-muted-foreground">Crisis Resiliency</div>
+              </div>
+            </div>
+
+            {/* Active Atomic Components */}
+            <div className="mb-6">
+              <h4 className="font-semibold mb-3">Active Atomic Components</h4>
+              <div className="flex flex-wrap gap-2">
+                {selectedComponents.map((component) => (
+                  <Badge key={component} variant="outline" className="bg-primary/5 border-primary/20 text-primary">
+                    {component.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {/* Generated Structure */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="font-semibold mb-3">Executive Structure</h4>
+                <div className="space-y-2 text-sm">
+                  {traditionalStructure.executiveStructure.map((position, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-primary rounded-full"></div>
+                      <span>{position}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-3">Key Departments</h4>
+                <div className="space-y-2 text-sm">
+                  {traditionalStructure.departments.slice(0, 5).map((dept, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-muted/30 rounded">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>{dept.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          +{dept.effectivenessBonus}% effectiveness
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          P{dept.priority}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Budget Distribution (Atomic-Generated) */}
+            <div className="mt-6">
+              <h4 className="font-semibold mb-3">Atomic Budget Allocation</h4>
+              <div className="space-y-2">
+                {Object.entries(traditionalStructure.budgetAllocations).map(([category, percentage]) => (
+                  <div key={category} className="flex items-center justify-between">
+                    <span className="capitalize text-sm">{category.replace('_', ' ')}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 bg-muted h-2 rounded-full overflow-hidden">
+                        <div 
+                          className="bg-primary h-full transition-all"
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium min-w-[3rem]">{percentage}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Fallback to traditional government structure if no atomic data
   if (!governmentData) {
     return (
       <Card className="border-2 border-dashed border-muted">
@@ -85,17 +265,25 @@ export function GovernmentStructureDisplay({
           <h4 className="text-lg font-semibold mb-2">No Government Structure</h4>
           <p className="text-muted-foreground mb-4">
             {isOwner 
-              ? "Set up your nation's government structure to manage departments and budgets." 
+              ? "Create your nation's government using atomic components or traditional structure." 
               : "This country has not configured its government structure yet."
             }
           </p>
           {isOwner && (
-            <Link href={createUrl("/mycountry/editor?tab=structure")}>
-              <Button className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Create Government Structure
-              </Button>
-            </Link>
+            <div className="flex items-center justify-center gap-3">
+              <Link href={createUrl("/builder")}>
+                <Button className="flex items-center gap-2 bg-primary">
+                  <Zap className="h-4 w-4" />
+                  Build with Atomic Components
+                </Button>
+              </Link>
+              <Link href={createUrl("/mycountry/editor?tab=structure")}>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Traditional Builder
+                </Button>
+              </Link>
+            </div>
           )}
         </CardContent>
       </Card>
