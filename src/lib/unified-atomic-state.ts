@@ -1,6 +1,35 @@
 /**
  * Unified Atomic State Management System
- * Single source of truth for all atomic components across the entire platform
+ * 
+ * This module provides the central nervous system for atomic government components
+ * across the entire IxStats platform. It serves as the single source of truth
+ * for all atomic component data, calculations, and interactions.
+ * 
+ * Key Features:
+ * - Real-time component effectiveness calculation
+ * - Dynamic synergy and conflict detection
+ * - Economic impact modeling with government effectiveness multipliers
+ * - Auto-generated traditional government structures from atomic components
+ * - AI-powered intelligence feeds and recommendations
+ * - Cross-system integration with all platform components
+ * 
+ * Architecture:
+ * ```
+ * Atomic Components (User Selection)
+ *   ↓
+ * UnifiedAtomicStateManager (Central State)
+ *   ↓ ┌─────────────────────────────────────────────┐
+ *   ├─→ Economic Systems (GDP, Tax, Trade)
+ *   ├─→ Government Structure (Auto-Generated)
+ *   ├─→ Intelligence Systems (AI Analysis)
+ *   ├─→ Real-time Metrics (Performance Tracking)
+ *   └─→ Analytics Systems (Historical Data)
+ * ```
+ * 
+ * @fileoverview Central atomic state management for IxStats platform
+ * @author IxStats Development Team
+ * @since 2025-01-05
+ * @version 2.0.0
  */
 
 import { ComponentType } from '@prisma/client';
@@ -91,10 +120,50 @@ export interface UnifiedAtomicState {
   };
 }
 
+/**
+ * Unified Atomic State Manager
+ * 
+ * The central nervous system for atomic government components across the entire
+ * IxStats platform. This class manages all atomic component state, calculations,
+ * and cross-system integrations in real-time.
+ * 
+ * Features:
+ * - Observable state pattern with real-time listener notifications
+ * - Cascade effect calculations when components change
+ * - Integration with economic, intelligence, and analytics systems
+ * - Auto-generated traditional government structures
+ * - Performance optimized with intelligent caching
+ * 
+ * Usage:
+ * ```typescript
+ * const manager = new UnifiedAtomicStateManager({
+ *   countryContext: { countryId: 'country-123', size: 'medium' }
+ * });
+ * 
+ * // Subscribe to state changes
+ * const unsubscribe = manager.subscribe((state) => {
+ *   console.log('Effectiveness:', state.effectivenessScore);
+ *   console.log('Economic Impact:', state.economicModifiers.gdpGrowthModifier);
+ * });
+ * 
+ * // Update components triggers cascade calculations
+ * manager.setSelectedComponents([ComponentType.RULE_OF_LAW, ComponentType.PROFESSIONAL_BUREAUCRACY]);
+ * ```
+ * 
+ * @class UnifiedAtomicStateManager
+ * @version 2.0.0
+ */
 export class UnifiedAtomicStateManager {
+  /** Internal state object containing all atomic component data and derived calculations */
   private state: UnifiedAtomicState;
+  
+  /** Array of listener functions that receive state updates */
   private listeners: Array<(state: UnifiedAtomicState) => void> = [];
+  
+  /** Integration with the atomic builder state management system */
   private builderStateManager: AtomicBuilderStateManager;
+  
+  /** Interval ID for real-time metric updates (runs every 30 seconds) */
   private updateInterval: NodeJS.Timeout | null = null;
 
   constructor(initialState?: Partial<UnifiedAtomicState>) {
@@ -143,7 +212,24 @@ export class UnifiedAtomicStateManager {
   // Public API Methods
   
   /**
-   * Subscribe to state changes
+   * Subscribe to state changes with automatic cleanup
+   * 
+   * Adds a listener function that will be called whenever the atomic state changes.
+   * This enables real-time UI updates across all connected components.
+   * 
+   * @param listener - Callback function that receives the updated state
+   * @returns Unsubscribe function to remove the listener
+   * 
+   * @example
+   * ```typescript
+   * const unsubscribe = manager.subscribe((state) => {
+   *   updateUI(state.effectivenessScore);
+   *   updateEconomics(state.economicModifiers);
+   * });
+   * 
+   * // Clean up when component unmounts
+   * useEffect(() => unsubscribe, []);
+   * ```
    */
   subscribe(listener: (state: UnifiedAtomicState) => void): () => void {
     this.listeners.push(listener);
@@ -169,7 +255,35 @@ export class UnifiedAtomicStateManager {
   }
 
   /**
-   * Update selected components (triggers cascade updates)
+   * Update selected atomic components with cascade effect calculations
+   * 
+   * This is the primary method for updating the government composition. When components
+   * change, it triggers a cascade of recalculations across all integrated systems:
+   * - Government effectiveness scoring
+   * - Economic impact modeling (GDP, tax collection, trade)
+   * - Traditional government structure generation
+   * - AI intelligence feed generation  
+   * - Real-time performance metrics
+   * 
+   * @param components - Array of atomic government components to activate
+   * 
+   * @example
+   * ```typescript
+   * // Create a technocratic democracy with strong institutions
+   * manager.setSelectedComponents([
+   *   ComponentType.DEMOCRATIC_PROCESS,
+   *   ComponentType.TECHNOCRATIC_PROCESS,      // Creates synergy
+   *   ComponentType.PROFESSIONAL_BUREAUCRACY, // Creates synergy with technocratic
+   *   ComponentType.RULE_OF_LAW,
+   *   ComponentType.INDEPENDENT_JUDICIARY
+   * ]);
+   * 
+   * // This triggers:
+   * // 1. Effectiveness calculation (85%+ with synergies)
+   * // 2. Economic boost (GDP +15%, Tax collection +20%)
+   * // 3. Auto-generated departments (Civil Service, Policy Analysis)
+   * // 4. Intelligence alerts about optimization opportunities
+   * ```
    */
   setSelectedComponents(components: ComponentType[]) {
     this.state.selectedComponents = components;
