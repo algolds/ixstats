@@ -1436,7 +1436,7 @@ const countriesRouter = createTRPCRouter({
             description: input.description,
             duration: input.duration || null,
             isActive: true,
-            createdBy: "admin", // TODO: Get from auth context
+            createdBy: ctx.user?.id ?? "system", // Use authenticated user ID
           },
         });
 
@@ -1986,7 +1986,10 @@ const countriesRouter = createTRPCRouter({
         ));
 
         const diplomaticHealthScore = Math.min(100, Math.max(20,
-          60 + Math.random() * 40 // Placeholder calculation
+          (country.globalDiplomaticInfluence || 50) + 
+          (country.tradeRelationshipStrength || 10) + 
+          (country.allianceStrength || 15) - 
+          (country.diplomaticTensions || 5)
         ));
 
         const govEfficiency = Math.min(100, Math.max(30,
@@ -2031,16 +2034,19 @@ const countriesRouter = createTRPCRouter({
           },
           diplomatic: {
             healthScore: Math.round(diplomaticHealthScore),
-            allies: Math.floor(Math.random() * 15) + 5, // Placeholder
-            reputation: 'Stable', // Placeholder
-            treaties: Math.floor(Math.random() * 20) + 10, // Placeholder
+            allies: Math.floor((country.globalDiplomaticInfluence || 50) / 10) + 3,
+            reputation: diplomaticHealthScore > 75 ? 'Strong' : diplomaticHealthScore > 50 ? 'Stable' : 'Improving',
+            treaties: Math.floor((country.tradeRelationshipStrength || 25) / 2) + 5,
             alerts: [],
           },
           government: {
             healthScore: Math.round(govEfficiency),
-            approval: Math.round(60 + Math.random() * 30), // Placeholder
-            efficiency: 'Good', // Placeholder
-            stability: 'Stable', // Placeholder
+            approval: Math.round(Math.min(95, Math.max(25, 
+              50 + (currentStats.newStats.adjustedGdpGrowth * 1500) + 
+              (economicHealthScore - 50) / 2
+            ))),
+            efficiency: govEfficiency > 80 ? 'Excellent' : govEfficiency > 60 ? 'Good' : 'Improving',
+            stability: diplomaticHealthScore > 70 && govEfficiency > 60 ? 'Stable' : 'Monitored',
             alerts: [],
           },
           generatedAt: currentTime,
@@ -2093,7 +2099,8 @@ const countriesRouter = createTRPCRouter({
         ));
 
         const diplomaticStanding = Math.min(100, Math.max(20,
-          60 + Math.random() * 40
+          (country.globalDiplomaticInfluence || 50) + 
+          (country.allianceStrength || 15) * 0.8
         ));
 
         const governmentalEfficiency = Math.min(100, Math.max(30,
@@ -2116,14 +2123,14 @@ const countriesRouter = createTRPCRouter({
             tier: currentStats.newStats.populationTier,
           },
           diplomaticMetrics: {
-            allies: `${Math.floor(Math.random() * 15) + 5}`,
-            reputation: 'Stable',
-            treaties: `${Math.floor(Math.random() * 20) + 10}`,
+            allies: `${Math.floor((country.globalDiplomaticInfluence || 50) / 10) + 3}`,
+            reputation: diplomaticStanding > 75 ? 'Strong' : diplomaticStanding > 50 ? 'Stable' : 'Developing',
+            treaties: `${Math.floor((country.tradeRelationshipStrength || 25) / 2) + 5}`,
           },
           governmentMetrics: {
-            approval: `${Math.round(60 + Math.random() * 30)}%`,
-            efficiency: 'Good',
-            stability: 'Stable',
+            approval: `${Math.round(Math.min(95, Math.max(25, 50 + (currentStats.newStats.adjustedGdpGrowth * 1500))))}%`,
+            efficiency: governmentalEfficiency > 80 ? 'Excellent' : governmentalEfficiency > 60 ? 'Good' : 'Improving',
+            stability: diplomaticStanding > 70 && governmentalEfficiency > 60 ? 'Stable' : 'Monitored',
           },
           generatedAt: currentTime,
         };
@@ -2372,7 +2379,7 @@ const countriesRouter = createTRPCRouter({
           description: `GDP growth of ${(country.adjustedGdpGrowth * 100).toFixed(1)}% achieved`,
           value: country.adjustedGdpGrowth,
           category: "economic_growth",
-          achievedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString()
+          achievedAt: new Date(Date.now() - (country.adjustedGdpGrowth > 0.05 ? 3 : 7) * 24 * 60 * 60 * 1000).toISOString()
         });
       }
 
@@ -2383,7 +2390,7 @@ const countriesRouter = createTRPCRouter({
           description: "Significant population increase recorded",
           value: (country.currentPopulation - country.baselinePopulation) / country.baselinePopulation,
           category: "population",
-          achievedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString()
+          achievedAt: new Date(Date.now() - (country.populationGrowthRate > 0.02 ? 15 : 30) * 24 * 60 * 60 * 1000).toISOString()
         });
       }
 
@@ -2416,16 +2423,32 @@ const countriesRouter = createTRPCRouter({
       countryId: z.string()
     }))
     .query(async ({ ctx, input }) => {
-      // Mock trade data for now
+      const country = await ctx.db.country.findUnique({
+        where: { id: input.countryId }
+      });
+
+      if (!country) {
+        throw new Error("Country not found");
+      }
+
+      // Calculate trade data based on country economic indicators
+      const gdpBase = country.currentTotalGdp || 1000000000;
+      const tradeIntensity = (country.tradeRelationshipStrength || 25) / 100;
+      
+      const totalVolume = gdpBase * 0.6 * tradeIntensity; // Trade typically 60% of GDP * relationship strength
+      const exports = totalVolume * 0.52; // Slightly export-oriented
+      const imports = totalVolume * 0.48;
+      const tradeBalance = exports - imports;
+      
       return {
-        totalVolume: Math.random() * 10000000000, // Random trade volume
-        exports: Math.random() * 5000000000,
-        imports: Math.random() * 5000000000,
-        tradeBalance: Math.random() * 1000000000 - 500000000,
+        totalVolume,
+        exports,
+        imports,
+        tradeBalance,
         topPartners: [
-          { country: "Trade Partner 1", volume: Math.random() * 1000000000 },
-          { country: "Trade Partner 2", volume: Math.random() * 800000000 },
-          { country: "Trade Partner 3", volume: Math.random() * 600000000 }
+          { country: "Major Trade Partner", volume: totalVolume * 0.25 },
+          { country: "Regional Partner", volume: totalVolume * 0.18 },
+          { country: "Economic Ally", volume: totalVolume * 0.12 }
         ]
       };
     }),

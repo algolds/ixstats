@@ -72,12 +72,15 @@ function calculateVitalityScores(country: CountryWithEconomicData): VitalityScor
   
   // Diplomatic Standing (calculated from relations and treaties)
   const diplomaticStanding = Math.min(100, Math.max(40, 
-    50 + (Math.random() * 40) // TODO: Replace with real diplomatic data calculation
+    (country.globalDiplomaticInfluence || 50) + 
+    (country.tradeRelationshipStrength || 10) + 
+    (country.allianceStrength || 15) - 
+    (country.diplomaticTensions || 5)
   ));
   
   // Governmental Efficiency (based on economic performance and stability)
   const governmentalEfficiency = Math.min(100, Math.max(50,
-    60 + (economicVitality * 0.3) + (Math.random() * 20)
+    60 + (economicVitality * 0.3) + (diplomaticStanding * 0.2)
   ));
   
   return {
@@ -354,7 +357,8 @@ async function generateRankings(countryId: string): Promise<Ranking[]> {
         total: allCountries.filter(c => c.economicTier === country.economicTier).length,
         tier: country.economicTier
       },
-      trend: 'stable', // TODO: Calculate based on historical data
+      trend: country.adjustedGdpGrowth > 0.03 ? 'improving' : 
+             country.adjustedGdpGrowth < -0.01 ? 'declining' : 'stable',
       percentile: Math.round((1 - (gdpRanking - 1) / allCountries.length) * 100)
     });
 

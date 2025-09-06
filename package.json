@@ -37,6 +37,8 @@
     "clean": "rm -rf .next dist build",
     "clean:all": "npm run clean && rm -rf node_modules && rm -rf prisma/dev.db",
     "fresh": "npm run clean:all && npm install && npm run db:setup",
+    "websocket:server": "tsx src/lib/websocket-server.ts",
+    "websocket:dev": "tsx watch src/lib/websocket-server.ts",
     "auth:check": "node scripts/check-auth-config.js",
     "auth:check:dev": "NODE_ENV=development node scripts/check-auth-config.js",
     "auth:check:prod": "NODE_ENV=production node scripts/check-auth-config.js",

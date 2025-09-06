@@ -4,6 +4,7 @@ import { useUser } from "@clerk/nextjs";
 import { AuthenticationGuard, CountryDataProvider, useCountryData } from "~/components/mycountry";
 import { EnhancedMyCountryContent } from "~/components/mycountry/EnhancedMyCountryContent";
 import { AtomicStateProvider } from "~/components/atomic/AtomicStateProvider";
+import { MobileOptimized } from "./components/MobileOptimizations";
 
 export const dynamic = 'force-dynamic';
 
@@ -35,10 +36,12 @@ export default function MyCountryPage() {
   const { user } = useUser();
 
   return (
-    <AuthenticationGuard redirectPath="/mycountry">
-      <CountryDataProvider userId={user?.id || ''}>
-        <MyCountryWithAtomicState />
-      </CountryDataProvider>
-    </AuthenticationGuard>
+    <MobileOptimized enableTouchGestures={true} className="min-h-screen">
+      <AuthenticationGuard redirectPath="/mycountry">
+        <CountryDataProvider userId={user?.id || ''}>
+          <MyCountryWithAtomicState />
+        </CountryDataProvider>
+      </AuthenticationGuard>
+    </MobileOptimized>
   );
 }

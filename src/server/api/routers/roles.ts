@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
 // Permission categories enum
@@ -20,11 +20,22 @@ export const ROLE_LEVELS = {
   USER: 100
 } as const;
 
-// Helper function to check if user has permission (to be implemented later)
+// Helper function to check if user has permission
 async function checkPermission(ctx: any, permission: string): Promise<boolean> {
-  // TODO: Implement actual permission checking logic
-  // For now, return true (will be implemented with auth context)
-  return true;
+  if (!ctx.auth?.userId || !ctx.user?.role) {
+    return false;
+  }
+
+  // Check if user's role has the required permission
+  const rolePermissions = await ctx.db.rolePermission.findMany({
+    where: { 
+      roleId: ctx.user.role.id,
+      permission: { name: permission }
+    },
+    include: { permission: true }
+  });
+
+  return rolePermissions.length > 0;
 }
 
 // Helper function to log actions
@@ -111,7 +122,7 @@ export const rolesRouter = createTRPCRouter({
     }),
 
   // Create a new role
-  createRole: publicProcedure
+  createRole: adminProcedure
     .input(z.object({
       name: z.string().min(1).max(50).regex(/^[a-z_]+$/, "Role name must be lowercase with underscores only"),
       displayName: z.string().min(1).max(100),
@@ -121,10 +132,7 @@ export const rolesRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx, input }) => {
       try {
-        // TODO: Add permission check
-        // if (!(await checkPermission(ctx, 'role.create'))) {
-        //   throw new TRPCError({ code: 'FORBIDDEN', message: 'Insufficient permissions' });
-        // }
+        // Admin permission verified by adminProcedure middleware
 
         // Check if role name already exists
         const existingRole = await ctx.db.role.findUnique({

@@ -291,6 +291,41 @@ const auditLogMiddleware = t.middleware(async ({ ctx, next, path, input }) => {
 });
 
 /**
+ * Admin role middleware - Validates user has admin permissions
+ */
+const adminMiddleware = t.middleware(async ({ ctx, next }) => {
+  // First ensure user is authenticated
+  if (!ctx.auth?.userId || !ctx.user) {
+    throw new Error('UNAUTHORIZED: Authentication required');
+  }
+
+  // Check if user has admin role
+  if (!ctx.user.role) {
+    throw new Error('FORBIDDEN: No role assigned');
+  }
+
+  // Check for admin roles (level 0-20 are considered admin levels)
+  const adminRoles = ['owner', 'admin', 'staff'];
+  const isAdmin = adminRoles.includes(ctx.user.role.name) || ctx.user.role.level <= 20;
+
+  if (!isAdmin) {
+    console.warn(`[ADMIN_ACCESS_DENIED] User ${ctx.auth.userId} (role: ${ctx.user.role.name}) attempted admin access`);
+    throw new Error('FORBIDDEN: Admin privileges required');
+  }
+
+  console.log(`[ADMIN_ACCESS] Admin ${ctx.auth.userId} (role: ${ctx.user.role.name}) accessing admin functions`);
+
+  return next({
+    ctx: {
+      ...ctx,
+      auth: ctx.auth,
+      user: ctx.user,
+      isAdmin: true,
+    }
+  });
+});
+
+/**
  * Data privacy middleware - Sanitizes sensitive information in responses
  */
 const dataPrivacyMiddleware = t.middleware(async ({ ctx, next, path }) => {
@@ -350,6 +385,14 @@ export const countryOwnerProcedure = t.procedure
   .use(timingMiddleware)
   .use(authMiddleware)
   .use(countryOwnerMiddleware)
+  .use(dataPrivacyMiddleware);
+export const adminProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(authMiddleware)
+  .use(adminMiddleware)
+  .use(inputValidationMiddleware)
+  .use(rateLimitMiddleware)
+  .use(auditLogMiddleware)
   .use(dataPrivacyMiddleware);
 export const executiveProcedure = t.procedure
   .use(timingMiddleware)

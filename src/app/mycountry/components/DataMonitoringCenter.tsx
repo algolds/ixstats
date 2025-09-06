@@ -26,6 +26,8 @@ import { IxTime } from '~/lib/ixtime';
 import { useGlobalNotifications } from './GlobalNotificationSystem';
 import { getDatabaseIntegrationService } from '../services/DatabaseIntegrationService';
 import { useDataSync } from '../hooks/useDataSync';
+import { useRealTimeIntelligence } from '~/hooks/useRealTimeIntelligence';
+import { analyzeTrend, calculateEconomicTrend, formatTrendForIntelligence } from '~/lib/historical-trends';
 
 interface DataMonitoringCenterProps {
   countryId: string;
@@ -61,6 +63,14 @@ export function DataMonitoringCenter({
 }: DataMonitoringCenterProps) {
   const { addNotification } = useGlobalNotifications();
   const dbService = getDatabaseIntegrationService();
+  
+  // Real-time intelligence integration
+  const { 
+    connectionState, 
+    latestUpdate, 
+    updates, 
+    isConnected 
+  } = useRealTimeIntelligence({ countryId });
   
   // State for monitoring data
   const [systemMetrics, setSystemMetrics] = useState<SystemMetrics>({
@@ -332,7 +342,7 @@ export function DataMonitoringCenter({
         </div>
 
         <div className="flex-1 overflow-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 p-4 md:p-6">
             
             {/* System Status */}
             <Card>
@@ -343,7 +353,7 @@ export function DataMonitoringCenter({
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Connection</span>
@@ -360,6 +370,12 @@ export function DataMonitoringCenter({
                       <span className={`font-mono ${systemMetrics.errors > 0 ? 'text-red-500' : ''}`}>
                         {systemMetrics.errors}
                       </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Intelligence</span>
+                      <Badge variant={connectionState.status === 'connected' ? "default" : "outline"}>
+                        {connectionState.status === 'connected' ? 'Live' : 'Offline'}
+                      </Badge>
                     </div>
                   </div>
                   

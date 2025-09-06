@@ -1,14 +1,27 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
-// Production base path
-const BASE_PATH = process.env.NODE_ENV === "production" ? "/projects/ixstats" : "";
+// Get base path from environment - should match Next.js basePath
+const BASE_PATH = process.env.BASE_PATH || "";
 
 const isProtectedRoute = createRouteMatcher([
   '/admin(.*)',
   '/profile(.*)',
   // Setup page should be accessible without authentication when using fallback auth
   // '/setup(.*)',
+]);
+
+const isPublicRoute = createRouteMatcher([
+  '/',
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+  '/api(.*)',
+  '/countries',
+  '/countries/(.*)',
+  '/thinkpages',
+  '/thinkpages/(.*)',
+  '/builder',
+  '/builder/(.*)',
 ]);
 
 // Check if Clerk is configured with valid keys
@@ -26,18 +39,38 @@ function simpleMiddleware(_req: NextRequest) {
 
 export default isClerkConfigured 
   ? clerkMiddleware(async (auth, req) => {
+      // Allow public routes to pass through without auth
+      if (isPublicRoute(req)) {
+        return NextResponse.next();
+      }
+      
+      // For protected routes, check authentication
       if (isProtectedRoute(req)) {
         const { userId } = await auth();
         if (!userId) {
           // Build the redirect URL with the return path
-          const returnUrl = encodeURIComponent(`${BASE_PATH}${req.nextUrl.pathname}${req.nextUrl.search}`);
-          // Use environment-specific sign-in URL
-          const signInUrl = process.env.NODE_ENV === "production" 
-            ? `https://accounts.ixwiki.com/sign-in?redirect_url=${returnUrl}`
-            : `/sign-in?redirect_url=${returnUrl}`;
-          return NextResponse.redirect(signInUrl);
+          const currentPath = req.nextUrl.pathname + req.nextUrl.search;
+          const returnUrl = encodeURIComponent(`${BASE_PATH}${currentPath}`);
+          
+          // Build absolute sign-in URL based on environment
+          const baseUrl = req.nextUrl.origin;
+          let signInUrl: string;
+          
+          if (process.env.NODE_ENV === "production") {
+            signInUrl = `https://accounts.ixwiki.com/sign-in?redirect_url=${returnUrl}`;
+          } else {
+            // For development, ensure we construct a proper absolute URL
+            const signInPath = `${BASE_PATH}/sign-in`;
+            signInUrl = `${baseUrl}${signInPath}?redirect_url=${returnUrl}`;
+          }
+            
+          console.log(`[Middleware] Redirecting to: ${signInUrl}`);
+          return NextResponse.redirect(new URL(signInUrl));
         }
       }
+      
+      // For all other routes, continue without auth requirement
+      return NextResponse.next();
     })
   : simpleMiddleware;
 
