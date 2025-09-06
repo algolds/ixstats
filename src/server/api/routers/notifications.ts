@@ -1,7 +1,7 @@
 // src/server/api/routers/notifications.ts
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
 const NotificationLevel = z.enum(['low', 'medium', 'high', 'critical']);
@@ -157,7 +157,7 @@ export const notificationsRouter = createTRPCRouter({
     }),
 
   // Create notification (admin only)
-  createNotification: publicProcedure
+  createNotification: adminProcedure
     .input(z.object({
       title: z.string().min(1).max(200),
       description: z.string().max(1000).optional(),
@@ -172,8 +172,7 @@ export const notificationsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
-      // For now, skip admin verification since authentication isn't fully set up
-      // TODO: Add proper admin role checking when auth context is available
+      // Admin role verified by adminProcedure middleware
 
       const notification = await db.notification.create({
         data: {
@@ -297,7 +296,7 @@ export const notificationsRouter = createTRPCRouter({
     }),
 
   // Delete notification (admin only)
-  deleteNotification: publicProcedure
+  deleteNotification: adminProcedure
     .input(z.object({
       notificationId: z.string(),
       adminUserId: z.string(),
@@ -305,8 +304,7 @@ export const notificationsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
-      // For now, skip admin verification since authentication isn't fully set up
-      // TODO: Add proper admin role checking when auth context is available
+      // Admin role verified by adminProcedure middleware
 
       await db.notification.delete({
         where: { id: input.notificationId },
@@ -316,15 +314,14 @@ export const notificationsRouter = createTRPCRouter({
     }),
 
   // Get notification stats (admin only)
-  getNotificationStats: publicProcedure
+  getNotificationStats: adminProcedure
     .input(z.object({
       adminUserId: z.string().optional(),
     }))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
-      // For now, skip admin verification since authentication isn't fully set up
-      // TODO: Add proper admin role checking when auth context is available
+      // Admin role verified by adminProcedure middleware
 
       const [totalNotifications, unreadNotifications, typeBreakdown] = await Promise.all([
         db.notification.count(),

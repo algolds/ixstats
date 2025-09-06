@@ -166,7 +166,7 @@ export const diplomaticRouter = createTRPCRouter({
           id: embassy.id,
           country: embassy.hostCountryId === input.countryId ? embassy.guestCountryId : embassy.hostCountryId,
           status: embassy.status,
-          strength: Math.floor(Math.random() * 40) + 60, // Mock strength for now
+          strength: Math.floor((embassy.staffCount || 5) * 8 + (embassy.services ? JSON.parse(embassy.services).length * 10 : 30)),
           role: embassy.hostCountryId === input.countryId ? 'host' : 'guest',
           ambassadorName: embassy.ambassadorName,
           location: embassy.location,

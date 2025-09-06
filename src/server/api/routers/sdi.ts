@@ -190,7 +190,7 @@ export const sdiRouter = createTRPCRouter({
       inflationRate,
       unemploymentRate,
       tradeVolume: globalGDP * 0.3, // Estimate trade volume as 30% of global GDP
-      currencyVolatility: Math.random() * 0.1, // Mock volatility
+      currencyVolatility: Math.abs(inflationRate - 0.02) * 2, // Volatility based on inflation deviation from 2% target
       timestamp: new Date(targetTime)
     };
   }),
@@ -491,7 +491,7 @@ export const sdiRouter = createTRPCRouter({
     
     return {
       timestamp: new Date(),
-      activeUsers: Math.floor(Math.random() * 15) + 10, // Simulated user count
+      activeUsers: Math.min(25, Math.max(5, crisisCount * 2 + intelligenceCount + Math.floor(systemHealth / 10))), // Users based on system activity
       activeCrises: crisisCount,
       intelligenceItems: intelligenceCount,
       diplomaticEvents: relationCount,

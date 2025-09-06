@@ -2,7 +2,7 @@
 // FIXED: Complete admin router with proper functionality
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { getDefaultEconomicConfig, CONFIG_CONSTANTS } from "~/lib/config-service";
 import { parseRosterFile } from "~/lib/data-parser";
@@ -882,11 +882,9 @@ export const adminRouter = createTRPCRouter({
   // === ADMIN USER/COUNTRY MANAGEMENT ENDPOINTS ===
 
   // List all users and their claimed countries
-  listUsersWithCountries: publicProcedure.query(async ({ ctx }) => {
-    // TODO: Replace with real admin check (e.g., ctx.user?.role === 'admin')
-    // if (!ctx.user || ctx.user.role !== 'admin') throw new Error('Unauthorized');
+  listUsersWithCountries: adminProcedure.query(async ({ ctx }) => {
     const users = await ctx.db.user.findMany({
-      include: { country: true },
+      include: { country: true, role: true },
       orderBy: { createdAt: 'asc' },
     });
     return users.map(u => ({
@@ -899,8 +897,7 @@ export const adminRouter = createTRPCRouter({
   }),
 
   // List all countries and their assigned users
-  listCountriesWithUsers: publicProcedure.query(async ({ ctx }) => {
-    // TODO: Replace with real admin check
+  listCountriesWithUsers: adminProcedure.query(async ({ ctx }) => {
     const countries = await ctx.db.country.findMany({
       include: { user: true },
       orderBy: { name: 'asc' },
@@ -915,10 +912,9 @@ export const adminRouter = createTRPCRouter({
   }),
 
   // Assign a user to a country (admin override)
-  assignUserToCountry: publicProcedure
+  assignUserToCountry: adminProcedure
     .input(z.object({ userId: z.string(), countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // TODO: Replace with real admin check
       // Unlink any user currently assigned to this country
       await ctx.db.user.updateMany({ where: { countryId: input.countryId }, data: { countryId: null } });
       // Unlink this user from any country they currently claim
@@ -933,10 +929,9 @@ export const adminRouter = createTRPCRouter({
     }),
 
   // Unassign a user from a country (admin override)
-  unassignUserFromCountry: publicProcedure
+  unassignUserFromCountry: adminProcedure
     .input(z.object({ userId: z.string(), countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // TODO: Replace with real admin check
       await ctx.db.user.updateMany({ where: { clerkUserId: input.userId, countryId: input.countryId }, data: { countryId: null } });
       return { success: true };
     }),
