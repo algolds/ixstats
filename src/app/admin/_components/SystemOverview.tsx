@@ -82,12 +82,16 @@ export function SystemOverview() {
     undefined,
     {
       retry: false,
-      refetchOnWindowFocus: false,
-      onError: (error: unknown) => {
-        console.error("Failed to fetch calculation formulas:", error);
-      }
+      refetchOnWindowFocus: false
     }
   );
+
+  // Handle formulas error
+  useEffect(() => {
+    if (formulasError) {
+      console.error("Failed to fetch calculation formulas:", formulasError);
+    }
+  }, [formulasError]);
 
   // Mock metrics for demonstration - replace with real API calls
   useEffect(() => {

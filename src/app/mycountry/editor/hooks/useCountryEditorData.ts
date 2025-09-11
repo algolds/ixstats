@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
-import { createDefaultEconomicInputs, EconomicInputs } from "~/app/builder/lib/economy-data-service";
+import { createDefaultEconomicInputs, type EconomicInputs } from "~/app/builder/lib/economy-data-service";
 import { GovernmentBuilderState, DepartmentInput, BudgetAllocationInput, RevenueSourceInput } from "~/types/government";
 
 function calculatePopulationTier(population: number): string {

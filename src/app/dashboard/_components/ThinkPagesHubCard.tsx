@@ -41,8 +41,7 @@ export function ThinkPagesHubCard({ userProfile, className }: ThinkPagesHubCardP
   );
 
   const { data: recentFeed } = api.thinkpages.getFeed.useQuery(
-    { countryId: userProfile?.countryId || '', filter: 'recent' },
-    { enabled: !!userProfile?.countryId }
+    { filter: 'recent' }
   );
 
   const { data: trendingTopics } = api.thinkpages.getTrendingTopics.useQuery(
