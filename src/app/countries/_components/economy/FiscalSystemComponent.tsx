@@ -859,10 +859,10 @@ export function FiscalSystemComponent({
                         />
                         <Legend />
                         <Bar yAxisId="left" dataKey="percent" fill="#3b82f6" name="% of Budget">
-                          <LabelList dataKey="percent" position="top" formatter={(value: number) => `${value.toFixed(1)}%` as React.ReactNode} />
+                          <LabelList dataKey="percent" position="top" formatter={(value: any) => `${Number(value).toFixed(1)}%`} />
                         </Bar>
                         <Bar yAxisId="right" dataKey="amount" fill="#10b981" name="Amount">
-                          <LabelList dataKey="amount" position="top" formatter={(value: number) => formatCurrency(value) as React.ReactNode} />
+                          <LabelList dataKey="amount" position="top" formatter={(value: any) => formatCurrency(Number(value))} />
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>

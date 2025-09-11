@@ -58,8 +58,7 @@ export function StrategicCommunicationsCard({
   );
 
   const { data: recentPosts } = api.thinkpages.getFeed.useQuery(
-    { countryId: userProfile?.countryId || '', filter: 'recent' },
-    { enabled: !!userProfile?.countryId }
+    { filter: 'recent' }
   );
 
   // Mock data for strategic communications (replace with real API calls)

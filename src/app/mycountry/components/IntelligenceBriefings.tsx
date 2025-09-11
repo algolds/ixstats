@@ -37,7 +37,7 @@ import type {
   IntelligenceComponentProps,
   ActionUrgency
 } from '../types/intelligence';
-import { api } from '~/utils/api';
+import { api } from '~/trpc/react';
 import { ComponentType } from '@prisma/client';
 
 // Enhanced briefing types for focused intelligence display
@@ -535,7 +535,13 @@ export function IntelligenceBriefings({
         confidence: 85,
         urgency,
         impact: {
-          magnitude: Math.abs(rec.expectedImpact.economic + rec.expectedImpact.stability + rec.expectedImpact.legitimacy),
+          magnitude: (() => {
+            const totalImpact = Math.abs(rec.expectedImpact.economic + rec.expectedImpact.stability + rec.expectedImpact.legitimacy);
+            if (totalImpact > 0.8) return 'critical';
+            if (totalImpact > 0.5) return 'high';
+            if (totalImpact > 0.2) return 'medium';
+            return 'low';
+          })() as 'low' | 'medium' | 'high' | 'critical',
           timeframe: urgency === 'immediate' ? 'immediate' : 'medium_term',
           sectors: ['governance', 'economic']
         },
@@ -551,7 +557,7 @@ export function IntelligenceBriefings({
             rec.expectedImpact.legitimacy < 0 ? `${rec.expectedImpact.legitimacy} legitimacy points` : ''
           ].filter(Boolean),
           trends: [`Atomic government effectiveness trend`],
-          // sources: ['Atomic Government Analysis', 'Component Effectiveness Calculator'] // Removed as not in interface
+          comparisons: [`Component efficiency vs baseline`, `System synergy analysis`]
         },
         recommendations: [{
           id: `atomic-action-${index}`,

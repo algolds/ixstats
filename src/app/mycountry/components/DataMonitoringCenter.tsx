@@ -91,7 +91,7 @@ export function DataMonitoringCenter({
   // Use the data sync hook for real-time updates
   const { 
     syncState, 
-    isConnected, 
+    isConnected: isSyncConnected, 
     forceRefresh,
     data: countryData 
   } = useDataSync(countryId, {
