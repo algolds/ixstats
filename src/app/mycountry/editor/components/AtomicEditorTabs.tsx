@@ -328,6 +328,8 @@ export function AtomicEditorTabs({
                   showComparison={false}
                   showAdvanced={false}
                   referenceCountry={undefined}
+                  nominalGDP={economicInputs.coreIndicators?.nominalGDP || 1000000}
+                  totalPopulation={economicInputs.coreIndicators?.totalPopulation || 100000}
                 />
               </TabsContent>
 
@@ -363,7 +365,6 @@ export function AtomicEditorTabs({
                 });
               }}
               isReadOnly={false}
-              showComparison={false}
               nominalGDP={economicInputs.coreIndicators.nominalGDP}
               totalPopulation={economicInputs.coreIndicators.totalPopulation}
             />
@@ -497,6 +498,7 @@ export function AtomicEditorTabs({
               }}
               isReadOnly={false}
               showComparison={false}
+              showAdvanced={false}
             />
           </motion.div>
         </TabsContent>

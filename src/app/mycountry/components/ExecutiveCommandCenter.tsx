@@ -478,10 +478,17 @@ export function ExecutiveCommandCenter({
                     id: action.id,
                     title: action.title,
                     description: action.description,
+                    category: action.category || 'governance',
                     urgency: action.urgency as 'urgent' | 'important' | 'routine' | 'future',
+                    difficulty: action.difficulty || 'medium',
                     estimatedDuration: action.estimatedDuration,
+                    estimatedCost: action.estimatedCost || 0,
                     successProbability: action.successProbability,
                     estimatedBenefit: action.estimatedBenefit,
+                    prerequisites: action.prerequisites || [],
+                    expectedOutcome: action.expectedOutcome || 'Improved system performance',
+                    risks: action.risks || ['Implementation complexity'],
+                    impact: action.impact || 'medium',
                     context: { confidence: action.successProbability }
                   })) : intelligence.urgentActions}
                   onActionClick={handleQuickActionClick}
