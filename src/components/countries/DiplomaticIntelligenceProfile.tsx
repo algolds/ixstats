@@ -127,7 +127,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
 
     // Use the viewer's primary account and target country's first government account (or first account)
     const viewerAccount = viewerAccounts[0];
-    const targetAccount = targetCountryAccounts.find(acc => acc.accountType === 'government') || targetCountryAccounts[0];
+    const targetAccount = targetCountryAccounts.find((acc: any) => acc.accountType === 'government') || targetCountryAccounts[0];
 
     if (!viewerAccount || !targetAccount) {
       toast.error('Unable to find suitable accounts for messaging.');

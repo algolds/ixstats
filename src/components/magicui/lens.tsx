@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion, useMotionTemplate } from "motion/react";
+import { AnimatePresence, motion, useMotionTemplate } from "framer-motion";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 
 interface Position {

@@ -175,7 +175,8 @@ export class PredictiveAnalyticsEngine {
         economicProjections,
         riskAssessment,
         competitiveIntelligence,
-        milestoneForecasts
+        milestoneForecasts,
+        historicalData
       );
 
       // Compile model metadata
@@ -425,7 +426,8 @@ export class PredictiveAnalyticsEngine {
     projections: EconomicProjection[],
     risks: RiskAssessment,
     competitive: CompetitiveIntelligence,
-    milestones: MilestoneForecast
+    milestones: MilestoneForecast,
+    historical: HistoricalDataPoint[]
   ): ForwardIntelligence['actionableInsights'] {
     const insights: ForwardIntelligence['actionableInsights'] = [];
 

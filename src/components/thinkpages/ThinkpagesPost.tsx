@@ -184,7 +184,7 @@ export function ThinkpagesPost({
     try {
       await pinPostMutation.mutateAsync({
         postId: post.id,
-        accountId: currentUserAccountId,
+        userId: currentUserAccountId,
         pinned: !post.pinned
       });
       toast.success(post.pinned ? 'Post unpinned' : 'Post pinned');
@@ -198,7 +198,7 @@ export function ThinkpagesPost({
     try {
       await bookmarkPostMutation.mutateAsync({
         postId: post.id,
-        accountId: currentUserAccountId,
+        userId: currentUserAccountId,
         bookmarked: true
       });
       toast.success('Post bookmarked');
@@ -219,7 +219,7 @@ export function ThinkpagesPost({
     try {
       await flagPostMutation.mutateAsync({
         postId: post.id,
-        accountId: currentUserAccountId,
+        userId: currentUserAccountId,
         reason: flagReason
       });
       toast.success('Post flagged');
@@ -246,7 +246,7 @@ export function ThinkpagesPost({
     try {
       await updatePostMutation.mutateAsync({
         postId: post.id,
-        accountId: currentUserAccountId,
+        userId: currentUserAccountId,
         content: editText
       });
       toast.success('Post updated');
@@ -298,7 +298,7 @@ export function ThinkpagesPost({
     try {
       // Enhanced reply with hashtag and mention extraction
       await createPostMutation.mutateAsync({
-        accountId: currentUserAccountId,
+        userId: currentUserAccountId,
         content: replyText,
         parentPostId: post.id,
         visibility: 'public',

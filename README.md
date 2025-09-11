@@ -1,14 +1,16 @@
 # IxStats - Advanced Worldbuilding Platform
-*100% Complete - Production-Ready with Full Feature Set* ✅
+*Version 1.0.0 - Production-Ready for Public Deployment* 🚀
 
 A comprehensive Next.js 15 application for real-time economic modeling, strategic intelligence, and executive nation management. Features sophisticated tier-based economic modeling, glass physics UI framework, comprehensive intelligence systems, and IxTime synchronization with Discord bot integration. Built for tabletop RPG campaigns, world-building, and advanced economic simulation.
 
-## 📊 **Current Status (January 2025)**
+## 📊 **Production Status (January 2025)**
+- ✅ **Security Hardened**: Credentials secured, debug code cleaned, production-ready configuration
+- ✅ **Build Optimized**: Webpack cache issues resolved, modular imports, optimized bundle splitting
 - ✅ **Core Infrastructure** (100%): Next.js 15, Prisma, tRPC APIs, IxTime system fully operational
-- ✅ **Design System** (100%): Glass physics framework, 100+ UI components, responsive design
-- ✅ **Intelligence System** (100%): Live data integration complete with real-time WebSocket infrastructure
-- ✅ **Authentication System** (100%): Complete role-based access control with Clerk integration
-- ✅ **Advanced Features** (100%): ECI/SDI modules fully implemented with admin interfaces
+- ✅ **Design System** (100%): Glass physics framework, 100+ UI components, mobile-responsive
+- ✅ **Intelligence System** (100%): Real-time data integration with live economic calculations
+- ✅ **Authentication System** (100%): Role-based access control with Clerk integration
+- ✅ **Advanced Features** (100%): ECI/SDI modules, executive dashboards, diplomatic systems
 
 ## 🚀 Quick Start
 
@@ -47,22 +49,42 @@ A comprehensive Next.js 15 application for real-time economic modeling, strategi
 
 ### Production Deployment
 
-1. **Build application**
-   ```bash
-   npm run build
-   ```
+⚠️ **SECURITY NOTICE**: Before production deployment, you MUST:
+- Replace placeholder credentials in `.env.production` with your actual production keys
+- Never commit real credentials to version control
+- Get production keys from [Clerk Dashboard](https://dashboard.clerk.com) and [Discord Developer Portal](https://discord.com/developers/applications)
 
-2. **Start production server**
-   ```bash
-   npm run start:prod
-   ```
-   - Runs on port 3550 with `/projects/ixstats` base path
-   - Access at: http://localhost:3550/projects/ixstats
+#### **Fast Deployment (Recommended)**
+```bash
+# Quick optimized build (2-3 minutes)
+npm run build:fast
+npm run start:prod
+```
 
-3. **One-command deployment**
-   ```bash
-   npm run deploy:prod
-   ```
+#### **Full Production Build**
+```bash
+# Complete build with all optimizations (5-10 minutes)
+npm run build
+npm run start:prod
+```
+
+#### **Background Build for Large Deployments**
+```bash
+# Build in background to avoid timeout issues
+nohup npm run build > build.log 2>&1 &
+# Monitor progress: tail -f build.log
+# After completion: npm run start:prod
+```
+
+#### **One-Command Deployment**
+```bash
+npm run deploy:prod    # Uses optimized build process
+```
+
+**Production Access:**
+- Server runs on port 3550 with `/projects/ixstats` base path
+- Local access: http://localhost:3550/projects/ixstats
+- Production URL: https://ixwiki.com/projects/ixstats
 
 ## 📋 Essential Commands
 
@@ -75,9 +97,11 @@ npm run dev:db           # Setup database and start development
 npm run start:dev        # Start development server (port 3000, root path)
 ```
 
-### Production
+### Production & Build
 ```bash
-npm run build            # Build for production
+npm run build            # Full production build (5-10 min)
+npm run build:fast       # Fast optimized build (2-3 min) - Recommended
+npm run build:no-check   # Build without linting
 npm run start:prod       # Start production server (port 3550, /projects/ixstats basePath)
 npm run deploy:prod      # Build and start production server
 npm run preview          # Build and preview locally
@@ -366,7 +390,104 @@ DISCORD_GUILD_ID="..."                           # Discord server ID
 - **Authentication**: Clerk production keys or disabled
 - **Reverse Proxy**: Nginx configuration for external access
 
+## 🚨 Troubleshooting
+
+### Build Issues
+
+#### **"Command timed out" or Webpack Cache Warnings**
+```bash
+# Clean build cache and retry with fast build
+npm run clean
+npm run build:fast
+```
+
+#### **Large Bundle Size / Memory Issues**
+The project includes optimized webpack configuration with:
+- **Modular imports**: Tree-shaking for framer-motion, recharts, @radix-ui
+- **Chunk splitting**: 244KB max chunk size for optimal loading
+- **Memory management**: Reduced webpack memory usage
+
+If you encounter build timeouts:
+```bash
+# Option 1: Fast build (recommended)
+npm run build:fast
+
+# Option 2: Background build
+nohup npm run build > build.log 2>&1 &
+tail -f build.log  # Monitor progress
+
+# Option 3: Clean and rebuild
+npm run clean:all && npm install && npm run build:fast
+```
+
+#### **TypeScript Errors During Build**
+```bash
+# Check TypeScript separately
+npm run typecheck
+
+# Build without TypeScript checking (faster)
+npm run build:no-check
+```
+
+### Runtime Issues
+
+#### **Authentication Problems**
+```bash
+# Check Clerk configuration
+npm run auth:check:dev    # Development
+npm run auth:check:prod   # Production
+
+# Verify environment variables are set
+cat .env.local | grep CLERK  # Development
+cat .env.production | grep CLERK  # Production
+```
+
+#### **Database Connection Issues**
+```bash
+# Reset and reinitialize database
+npm run db:reset
+npm run db:setup
+
+# Generate fresh Prisma client
+npm run db:generate
+```
+
+#### **Port Conflicts**
+```bash
+# Check what's using the ports
+lsof -i :3000  # Development
+lsof -i :3550  # Production
+
+# Kill processes if needed
+kill $(lsof -ti:3000)
+```
+
+### Performance Issues
+
+#### **Slow Development Server**
+- Use `npm run dev:simple` for faster startup without validation
+- Clear `.next` folder: `npm run clean`
+- Restart with fresh node_modules: `npm run fresh`
+
+#### **Production Build Too Large**
+The project is configured with bundle optimization:
+- Automatic code splitting
+- Tree-shaking for major dependencies
+- Modular imports for UI libraries
+
+Monitor bundle size with:
+```bash
+# Build and check output
+npm run build
+# Check .next/static/chunks/ for chunk sizes
+```
+
 ## 🛠️ Development Guidelines
+
+### Build Performance
+- **Use `build:fast`** for most development builds (2-3 minutes)
+- **Use `build`** only for final production builds (5-10 minutes)
+- **Background builds** for CI/CD: `nohup npm run build > build.log 2>&1 &`
 
 ### Time System Integration
 - Always use `IxTime.getCurrentIxTime()` for current game time
@@ -575,6 +696,50 @@ tail -f server.log
 - **IxMaps**: Interactive mapping system integration
 - **IxTime API**: Game world time coordination
 
+## 🚀 Production Deployment Checklist
+
+### **Pre-Deployment Security**
+- [ ] **Replace placeholder credentials** in `.env.production`
+  - [ ] Clerk production keys (`pk_live_*`, `sk_live_*`)
+  - [ ] Discord bot credentials (Application ID, Bot Token, Public Key)
+  - [ ] Database URL for production environment
+- [ ] **Verify `.env.production` is NOT committed to git**
+- [ ] **Test authentication flows** with production keys
+
+### **Build & Performance**
+- [ ] **Run optimized build**: `npm run build:fast` (recommended)
+- [ ] **Verify build succeeds** without timeout errors
+- [ ] **Test production server**: `npm run start:prod`
+- [ ] **Check bundle size** is under 5MB total
+- [ ] **Validate chunk splitting** works correctly
+
+### **System Validation**
+- [ ] **Database connection** works in production environment
+- [ ] **All API endpoints** respond correctly
+- [ ] **Authentication system** functions with production keys
+- [ ] **Mobile responsiveness** tested on actual devices
+- [ ] **Performance metrics** meet targets (< 3s load time)
+
+### **Final Launch**
+```bash
+# Quick deployment (recommended)
+cd /ixwiki/public/projects/ixstats
+npm run build:fast
+npm run start:prod
+
+# Background deployment (for large systems)
+nohup npm run build > build.log 2>&1 &
+# Wait for completion, then:
+npm run start:prod
+```
+
+### **Post-Launch Monitoring**
+- [ ] **Monitor server logs** for errors
+- [ ] **Check performance metrics** (response times, memory usage)
+- [ ] **Verify real-time features** (WebSocket connections, live data)
+- [ ] **Test user registration/login flows**
+- [ ] **Validate economic calculations** are working with real data
+
 ---
 
-**IxStats** - Comprehensive economic simulation and analysis platform for world-builders and game masters.
+**IxStats v1.0.0** - Production-ready comprehensive economic simulation and analysis platform for world-builders, game masters, and strategic planning. 🎊

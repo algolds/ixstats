@@ -99,12 +99,15 @@ export const useDiplomaticUpdates = (
         managerRef.current = DiplomaticWebSocketManager.getInstance();
       }
 
-      // Check if WebSocket server URL is configured
+      // Check if WebSocket server URL is configured, with development fallback
       const botUrl = typeof window !== 'undefined' 
         ? env.NEXT_PUBLIC_IXTIME_BOT_URL 
         : env.IXTIME_BOT_URL;
 
-      if (!botUrl) {
+      // Use development WebSocket configuration as fallback
+      const wsServerUrl = botUrl || 'ws://localhost:3555';
+
+      if (!wsServerUrl) {
         console.warn('No WebSocket server URL configured - diplomatic updates disabled');
         setState(prevState => ({
           ...prevState,
@@ -116,7 +119,7 @@ export const useDiplomaticUpdates = (
       }
 
       const wsConfig = {
-        url: botUrl,
+        url: wsServerUrl,
         countryId: configRef.current.countryId,
         clearanceLevel: configRef.current.clearanceLevel,
         subscriptions: configRef.current.subscriptions || []

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { CountriesHeader } from "./CountriesHeader";
 import { CountriesFocusGridModular } from "./CountriesFocusGridModular";
 import { CountriesStats } from "./CountriesStats";
+import { CountriesCommandPalette } from "./CountriesCommandPalette";
 import { type CountryCardData } from "~/components/countries/CountryFocusCard";
 import { createUrl } from "~/lib/url-utils";
 
@@ -220,6 +221,21 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
         />
 
       </div>
+
+      {/* Command Palette */}
+      <CountriesCommandPalette
+        isOpen={showDynamicIsland}
+        onClose={() => setShowDynamicIsland(false)}
+        searchInput={searchInput}
+        onSearchChange={setSearchInput}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        filterBy={filterBy}
+        onFilterChange={setFilterBy}
+        onReshuffle={handleReshuffle}
+        onImFeelingLucky={handleImFeelingLucky}
+        resultsCount={processedCountries.length}
+      />
     </div>
   );
 };

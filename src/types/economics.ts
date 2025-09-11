@@ -8,6 +8,7 @@ export interface CoreEconomicIndicatorsData {
     realGDPGrowthRate: number  // decimal (e.g. 0.03)
     inflationRate: number      // decimal
     currencyExchangeRate: number
+    giniCoefficient?: number   // 0-100 scale, income inequality measure
   }
   
   // Labor & employment - Enhanced with detailed metrics

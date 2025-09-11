@@ -17,6 +17,8 @@ const SearchUnsplashImagesSchema = z.object({
   color: z.string().optional(), // Unsplash API supports specific color names or hex codes
 });
 
+// Legacy schema - ThinkTanks and ThinkShare no longer use separate accounts
+// Only kept for in-universe ThinkPages posts
 const CreateAccountSchema = z.object({
   countryId: z.string(),
   accountType: z.enum(['government', 'media', 'citizen']),
@@ -32,7 +34,7 @@ const CreateAccountSchema = z.object({
 });
 
 const CreatePostSchema = z.object({
-  accountId: z.string(),
+  userId: z.string(), // Changed to userId (clerkUserId)
   content: z.string().min(1).max(280),
   hashtags: z.array(z.string()).optional(),
   mentions: z.array(z.string()).optional(),
@@ -43,12 +45,12 @@ const CreatePostSchema = z.object({
 
 const AddReactionSchema = z.object({
   postId: z.string(),
-  accountId: z.string(),
+  userId: z.string(), // Changed to userId (clerkUserId)
   reactionType: z.enum(['like', 'laugh', 'angry', 'sad', 'fire', 'thumbsup', 'thumbsdown']),
 });
 
 const GetFeedSchema = z.object({
-  countryId: z.string().optional(),
+  userId: z.string().optional(), // Changed from countryId to userId
   hashtag: z.string().optional(),
   filter: z.enum(['recent', 'trending', 'hot']).default('recent'),
   limit: z.number().min(1).max(50).default(20),
@@ -249,33 +251,40 @@ export const thinkpagesRouter = createTRPCRouter({
     return { success: true };
   }),
 
-  // Search accounts
-  searchAccounts: publicProcedure
+  // Search users globally for ThinkTanks/ThinkShare
+  searchUsers: publicProcedure
     .input(z.object({
       query: z.string(),
     }))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
-      const accounts = await db.thinkpagesAccount.findMany({
+      // Search users by clerkUserId or country name
+      const users = await db.user.findMany({
         where: {
           OR: [
             {
-              username: {
+              clerkUserId: {
                 contains: input.query,
               },
             },
             {
-              displayName: {
-                contains: input.query,
+              country: {
+                name: {
+                  contains: input.query,
+                },
               },
             },
           ],
+          isActive: true,
+        },
+        include: {
+          country: true,
         },
         take: 5,
       });
 
-      return accounts;
+      return users;
     }),
 
   // Update account
@@ -462,7 +471,7 @@ export const thinkpagesRouter = createTRPCRouter({
       });
 
       const result: Record<string, number> = {};
-      counts.forEach(c => {
+      counts.forEach((c: any) => {
         result[c.accountType] = c._count.id;
       });
 
@@ -532,7 +541,7 @@ export const thinkpagesRouter = createTRPCRouter({
           select: { id: true, username: true }
         });
 
-        const mentionData = mentionedAccounts.map(account => ({
+        const mentionData = mentionedAccounts.map((account: any) => ({
           postId: post.id,
           mentionedAccountId: account.id,
           position: input.content.indexOf(`@${account.username}`)
@@ -736,7 +745,7 @@ export const thinkpagesRouter = createTRPCRouter({
       const transformedPosts = posts.map(post => ({
         ...post,
         hashtags: post.hashtags ? JSON.parse(post.hashtags) : [],
-        reactionCounts: post.reactions.reduce((acc, reaction) => {
+        reactionCounts: post.reactions.reduce((acc: any, reaction: any) => {
           acc[reaction.reactionType] = (acc[reaction.reactionType] || 0) + 1;
           return acc;
         }, {} as Record<string, number>),
@@ -898,7 +907,7 @@ export const thinkpagesRouter = createTRPCRouter({
           continue;
         }
 
-        const citizenAccountIds = citizenAccounts.map((acc) => acc.id);
+        const citizenAccountIds = citizenAccounts.map((acc: any) => acc.id);
 
         const recentCitizenPosts = await db.thinkpagesPost.findMany({
           where: {
@@ -959,20 +968,23 @@ export const thinkpagesRouter = createTRPCRouter({
       type: z.enum(['public', 'private', 'invite_only']).default('public'),
       category: z.string().optional(),
       tags: z.array(z.string()).optional(),
-      createdBy: z.string(), // accountId
+      createdBy: z.string(), // userId (clerkUserId)
     }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
-      // Verify the creator account exists
-      const creatorAccount = await db.thinkpagesAccount.findUnique({
-        where: { id: input.createdBy }
+      // Verify the creator user exists - or allow ThinkTanks to work without full user setup
+      const creatorUser = await db.user.findUnique({
+        where: { clerkUserId: input.createdBy },
+        include: { country: true }
       });
 
-      if (!creatorAccount) {
+      // For ThinkTanks, we'll allow creation even without full user setup
+      // This enables global access without requiring country selection
+      if (!input.createdBy || input.createdBy.trim() === '') {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Creator account not found'
+          code: 'BAD_REQUEST',
+          message: 'User ID is required'
         });
       }
 
@@ -989,10 +1001,7 @@ export const thinkpagesRouter = createTRPCRouter({
           memberCount: 1
         },
         include: {
-          creator: true,
-          members: {
-            include: { account: true }
-          }
+          members: true
         }
       });
 
@@ -1000,7 +1009,7 @@ export const thinkpagesRouter = createTRPCRouter({
       await db.thinktankMember.create({
         data: {
           groupId: group.id,
-          accountId: input.createdBy,
+          userId: input.createdBy,
           role: 'owner'
         }
       });
@@ -1008,25 +1017,24 @@ export const thinkpagesRouter = createTRPCRouter({
       return group;
     }),
 
-  // Get ThinkTanks for a country
-  getThinktanksByCountry: publicProcedure
+  // Get ThinkTanks globally (no country restriction)
+  getThinktanks: publicProcedure
     .input(z.object({
-      countryId: z.string().optional().default(''),
-      type: z.enum(['all', 'joined', 'created']).optional().default('all'),
-      accountId: z.string().optional()
-    }).optional().default(() => ({ countryId: '', type: 'all' as const })))
+      userId: z.string().optional().default(''),
+      type: z.enum(['all', 'joined', 'created']).optional().default('all')
+    }).optional().default(() => ({ userId: '', type: 'all' as const })))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
       try {
         // FAILSAFE: Handle ANY invalid input scenario
         if (!input) {
-          console.log('getThinktanksByCountry: No input provided, returning empty array');
+          console.log('getThinktanks: No input provided, returning empty array');
           return [];
         }
         
-        if (!input.countryId || input.countryId.trim() === '' || input.countryId === 'INVALID') {
-          console.log('getThinktanksByCountry: Invalid countryId, returning empty array');
+        if (!input.userId || input.userId.trim() === '' || input.userId === 'INVALID') {
+          console.log('getThinktanks: Invalid userId, returning empty array');
           return [];
         }
 
@@ -1034,24 +1042,22 @@ export const thinkpagesRouter = createTRPCRouter({
           isActive: true
         };
 
-        if (input.type === 'joined' && input.accountId) {
+        if (input.type === 'joined' && input.userId) {
           whereClause.members = {
             some: {
-              accountId: input.accountId,
+              userId: input.userId,
               isActive: true
             }
           };
-        } else if (input.type === 'created' && input.accountId) {
-          whereClause.createdBy = input.accountId;
+        } else if (input.type === 'created' && input.userId) {
+          whereClause.createdBy = input.userId;
         }
 
         const groups = await db.thinktankGroup.findMany({
           where: whereClause,
           include: {
-            creator: true,
             members: {
-              where: { isActive: true },
-              include: { account: true }
+              where: { isActive: true }
             },
             _count: {
               select: {
@@ -1069,10 +1075,10 @@ export const thinkpagesRouter = createTRPCRouter({
         return groups.map(group => ({
           ...group,
           tags: group.tags ? JSON.parse(group.tags) : [],
-          isJoined: input.accountId ? group.members.some(m => m.accountId === input.accountId) : false
+          isJoined: input.userId ? group.members.some(m => m.userId === input.userId) : false
         }));
       } catch (error) {
-        console.error('Error in getThinktanksByCountry:', error);
+        console.error('Error in getThinktanks:', error);
         // FAILSAFE: Return empty array instead of throwing error
         return [];
       }
@@ -1082,7 +1088,7 @@ export const thinkpagesRouter = createTRPCRouter({
   joinThinktank: publicProcedure
     .input(z.object({
       groupId: z.string(),
-      accountId: z.string()
+      userId: z.string() // Changed to userId (clerkUserId)
     }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
@@ -1099,12 +1105,24 @@ export const thinkpagesRouter = createTRPCRouter({
         });
       }
 
+      // Verify user exists and is active
+      const user = await db.user.findUnique({
+        where: { clerkUserId: input.userId }
+      });
+
+      if (!user || !user.isActive) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found or inactive'
+        });
+      }
+
       // Check if user is already a member
       const existingMember = await db.thinktankMember.findUnique({
         where: {
-          groupId_accountId: {
+          groupId_userId: {
             groupId: input.groupId,
-            accountId: input.accountId
+            userId: input.userId
           }
         }
       });
@@ -1127,7 +1145,7 @@ export const thinkpagesRouter = createTRPCRouter({
         await db.thinktankMember.create({
           data: {
             groupId: input.groupId,
-            accountId: input.accountId,
+            userId: input.userId,
             role: 'member'
           }
         });
@@ -1146,16 +1164,16 @@ export const thinkpagesRouter = createTRPCRouter({
   leaveThinktank: publicProcedure
     .input(z.object({
       groupId: z.string(),
-      accountId: z.string()
+      userId: z.string() // Changed to userId (clerkUserId)
     }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
       const member = await db.thinktankMember.findUnique({
         where: {
-          groupId_accountId: {
+          groupId_userId: {
             groupId: input.groupId,
-            accountId: input.accountId
+            userId: input.userId
           }
         }
       });
@@ -1172,7 +1190,7 @@ export const thinkpagesRouter = createTRPCRouter({
         const otherActiveMembers = await db.thinktankMember.count({
           where: {
             groupId: input.groupId,
-            accountId: { not: input.accountId },
+            userId: { not: input.userId },
             isActive: true
           }
         });
@@ -1204,11 +1222,29 @@ export const thinkpagesRouter = createTRPCRouter({
   getThinktankMessages: publicProcedure
     .input(z.object({
       groupId: z.string(),
+      userId: z.string(), // Added to verify membership
       limit: z.number().min(1).max(100).default(50),
       cursor: z.string().optional()
     }))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
+
+      // Verify user is a member of the group
+      const member = await db.thinktankMember.findUnique({
+        where: {
+          groupId_userId: {
+            groupId: input.groupId,
+            userId: input.userId
+          }
+        }
+      });
+
+      if (!member || !member.isActive) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Not a member of this group'
+        });
+      }
 
       const messages = await db.thinktankMessage.findMany({
         where: {
@@ -1216,13 +1252,8 @@ export const thinkpagesRouter = createTRPCRouter({
           deletedAt: null
         },
         include: {
-          account: true,
-          replyTo: {
-            include: { account: true }
-          },
-          readReceipts: {
-            include: { account: true }
-          },
+          replyTo: true,
+          readReceipts: true,
           _count: {
             select: { replies: true }
           }
@@ -1248,7 +1279,7 @@ export const thinkpagesRouter = createTRPCRouter({
   sendThinktankMessage: publicProcedure
     .input(z.object({
       groupId: z.string(),
-      accountId: z.string(),
+      userId: z.string(), // Changed to userId (clerkUserId)
       content: z.string().min(1),
       messageType: z.enum(['text', 'image', 'file', 'system']).default('text'),
       replyToId: z.string().optional(),
@@ -1266,9 +1297,9 @@ export const thinkpagesRouter = createTRPCRouter({
       // Verify user is a member of the group
       const member = await db.thinktankMember.findUnique({
         where: {
-          groupId_accountId: {
+          groupId_userId: {
             groupId: input.groupId,
-            accountId: input.accountId
+            userId: input.userId
           }
         }
       });
@@ -1284,19 +1315,16 @@ export const thinkpagesRouter = createTRPCRouter({
       const message = await db.thinktankMessage.create({
         data: {
           groupId: input.groupId,
-          accountId: input.accountId,
+          userId: input.userId,
           content: input.content,
           messageType: input.messageType,
           replyToId: input.replyToId,
           mentions: input.mentions ? JSON.stringify(input.mentions) : null,
           attachments: input.attachments ? JSON.stringify(input.attachments) : null,
-          ixTimeTimestamp: new Date() // Store real-world time for social media timestamps // Keep IxTime for reference
+          ixTimeTimestamp: new Date()
         },
         include: {
-          account: true,
-          replyTo: {
-            include: { account: true }
-          }
+          replyTo: true
         }
       });
 
@@ -1343,16 +1371,16 @@ export const thinkpagesRouter = createTRPCRouter({
   updateMemberRole: publicProcedure
     .input(z.object({
       groupId: z.string(),
-      accountId: z.string(),
+      userId: z.string(), // Changed to userId (clerkUserId)
       role: z.enum(['admin', 'member']),
     }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
       await db.thinktankMember.update({
         where: {
-          groupId_accountId: {
+          groupId_userId: {
             groupId: input.groupId,
-            accountId: input.accountId,
+            userId: input.userId,
           },
         },
         data: { role: input.role },
@@ -1363,15 +1391,15 @@ export const thinkpagesRouter = createTRPCRouter({
   removeMemberFromThinktank: publicProcedure
     .input(z.object({
       groupId: z.string(),
-      accountId: z.string(),
+      userId: z.string(), // Changed to userId (clerkUserId)
     }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
       await db.thinktankMember.delete({
         where: {
-          groupId_accountId: {
+          groupId_userId: {
             groupId: input.groupId,
-            accountId: input.accountId,
+            userId: input.userId,
           },
         },
       });
@@ -1387,16 +1415,16 @@ export const thinkpagesRouter = createTRPCRouter({
   inviteToThinktank: publicProcedure
     .input(z.object({
       groupId: z.string(),
-      accountIds: z.array(z.string()),
-      invitedBy: z.string(),
+      userIds: z.array(z.string()), // Changed to userIds (clerkUserIds)
+      invitedBy: z.string(), // userId (clerkUserId)
     }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
       const invites = await db.thinktankInvite.createMany({
-        data: input.accountIds.map(accountId => ({
+        data: input.userIds.map(userId => ({
           groupId: input.groupId,
-          invitedUser: accountId,
+          invitedUser: userId,
           invitedBy: input.invitedBy,
         })),
       });
@@ -1422,7 +1450,7 @@ export const thinkpagesRouter = createTRPCRouter({
     .input(z.object({
       groupId: z.string(),
       title: z.string().min(1),
-      createdBy: z.string(), // accountId
+      createdBy: z.string(), // userId (clerkUserId)
     }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
@@ -1441,12 +1469,12 @@ export const thinkpagesRouter = createTRPCRouter({
   addReactionToMessage: publicProcedure
     .input(z.object({
       messageId: z.string(),
-      accountId: z.string(),
+      userId: z.string(), // Changed to userId (clerkUserId)
       reaction: z.string(),
     }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
-      const { messageId, accountId, reaction } = input;
+      const { messageId, userId, reaction } = input;
 
       const message = await db.thinkshareMessage.findUnique({
         where: { id: messageId },
@@ -1541,7 +1569,7 @@ export const thinkpagesRouter = createTRPCRouter({
   // Create a new conversation
   createConversation: publicProcedure
     .input(z.object({
-      participantIds: z.array(z.string().min(1))
+      participantIds: z.array(z.string().min(1)) // Now expects userIds (clerkUserIds)
     }))
     .mutation(async ({ ctx, input }) => {
       console.log('🔍 Server mutation called with raw input:', input);
@@ -1562,12 +1590,16 @@ export const thinkpagesRouter = createTRPCRouter({
 
       const uniqueParticipantIds = [...new Set(participantIds)];
       
-      // Verify all participants exist
-      const accounts = await db.thinkpagesAccount.findMany({
-        where: { id: { in: uniqueParticipantIds } }
+      // Verify all participants exist as users
+      const users = await db.user.findMany({
+        where: { 
+          clerkUserId: { in: uniqueParticipantIds },
+          isActive: true
+        },
+        include: { country: true }
       });
 
-      if (accounts.length !== uniqueParticipantIds.length) {
+      if (users.length !== uniqueParticipantIds.length) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'One or more participants not found'
@@ -1581,14 +1613,14 @@ export const thinkpagesRouter = createTRPCRouter({
           AND: uniqueParticipantIds.map(participantId => ({
             participants: {
               some: {
-                accountId: participantId,
+                userId: participantId,
                 isActive: true
               }
             }
           })),
           participants: {
             none: {
-              accountId: {
+              userId: {
                 notIn: uniqueParticipantIds
               },
               isActive: true
@@ -1597,8 +1629,7 @@ export const thinkpagesRouter = createTRPCRouter({
         },
         include: {
           participants: {
-            where: { isActive: true },
-            include: { account: true }
+            where: { isActive: true }
           }
         }
       });
@@ -1613,8 +1644,8 @@ export const thinkpagesRouter = createTRPCRouter({
           type: 'direct',
           participants: {
             createMany: {
-              data: uniqueParticipantIds.map(accountId => ({
-                accountId,
+              data: uniqueParticipantIds.map(userId => ({
+                userId,
                 role: 'participant'
               }))
             }
@@ -1622,8 +1653,7 @@ export const thinkpagesRouter = createTRPCRouter({
         },
         include: {
           participants: {
-            where: { isActive: true },
-            include: { account: true }
+            where: { isActive: true }
           }
         }
       });
@@ -1631,13 +1661,13 @@ export const thinkpagesRouter = createTRPCRouter({
       return conversation;
     }),
 
-  // Get conversations for an account
+  // Get conversations for a user
   getConversations: publicProcedure
     .input(z.object({
-      accountId: z.string().optional().default(''),
+      userId: z.string().optional().default(''), // Changed to userId (clerkUserId)
       limit: z.number().min(1).max(50).optional().default(20),
       cursor: z.string().optional()
-    }).optional().default(() => ({ accountId: '', limit: 20 })))
+    }).optional().default(() => ({ userId: '', limit: 20 })))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
@@ -1651,8 +1681,8 @@ export const thinkpagesRouter = createTRPCRouter({
           };
         }
         
-        if (!input.accountId || input.accountId.trim() === '' || input.accountId === 'INVALID') {
-          console.log('getConversations: Invalid accountId, returning empty result');
+        if (!input.userId || input.userId.trim() === '' || input.userId === 'INVALID') {
+          console.log('getConversations: Invalid userId, returning empty result');
           return {
             conversations: [],
             nextCursor: null
@@ -1664,20 +1694,18 @@ export const thinkpagesRouter = createTRPCRouter({
           isActive: true,
           participants: {
             some: {
-              accountId: input.accountId,
+              userId: input.userId,
               isActive: true
             }
           }
         },
         include: {
           participants: {
-            where: { isActive: true },
-            include: { account: true }
+            where: { isActive: true }
           },
           messages: {
             orderBy: { ixTimeTimestamp: 'desc' },
-            take: 1,
-            include: { account: true }
+            take: 1
           },
           _count: {
             select: { messages: true }
@@ -1691,11 +1719,11 @@ export const thinkpagesRouter = createTRPCRouter({
 
       return {
         conversations: conversations.map(conv => {
-          const otherParticipants = conv.participants.filter(p => p.accountId !== input.accountId);
+          const otherParticipants = conv.participants.filter(p => p.userId !== input.userId);
           const lastMessage = conv.messages[0];
           
           // Calculate unread count
-          const participant = conv.participants.find(p => p.accountId === input.accountId);
+          const participant = conv.participants.find(p => p.userId === input.userId);
           
           return {
             ...conv,
@@ -1721,7 +1749,7 @@ export const thinkpagesRouter = createTRPCRouter({
   getConversationMessages: publicProcedure
     .input(z.object({
       conversationId: z.string().default(''),
-      accountId: z.string().default(''),
+      userId: z.string().default(''), // Changed to userId (clerkUserId)
       limit: z.number().min(1).max(100).default(50),
       cursor: z.string().optional()
     }))
@@ -1730,7 +1758,7 @@ export const thinkpagesRouter = createTRPCRouter({
 
       // Early return for invalid IDs
       if (!input.conversationId || input.conversationId.trim() === '' || input.conversationId === 'INVALID' ||
-          !input.accountId || input.accountId.trim() === '' || input.accountId === 'INVALID') {
+          !input.userId || input.userId.trim() === '' || input.userId === 'INVALID') {
         return {
           messages: [],
           nextCursor: null
@@ -1740,9 +1768,9 @@ export const thinkpagesRouter = createTRPCRouter({
       // Verify user is participant
       const participant = await db.conversationParticipant.findUnique({
         where: {
-          conversationId_accountId: {
+          conversationId_userId: {
             conversationId: input.conversationId,
-            accountId: input.accountId
+            userId: input.userId
           }
         }
       });
@@ -1760,13 +1788,8 @@ export const thinkpagesRouter = createTRPCRouter({
           deletedAt: null
         },
         include: {
-          account: true,
-          replyTo: {
-            include: { account: true }
-          },
-          readReceipts: {
-            include: { account: true }
-          }
+          replyTo: true,
+          readReceipts: true
         },
         orderBy: { ixTimeTimestamp: 'desc' },
         take: input.limit,
@@ -1789,7 +1812,7 @@ export const thinkpagesRouter = createTRPCRouter({
   sendMessage: publicProcedure
     .input(z.object({
       conversationId: z.string(),
-      accountId: z.string(),
+      userId: z.string(), // Changed to userId (clerkUserId)
       content: z.string().min(1),
       messageType: z.enum(['text', 'image', 'file', 'system']).default('text'),
       replyToId: z.string().optional(),
@@ -1810,9 +1833,9 @@ export const thinkpagesRouter = createTRPCRouter({
       // Verify user is participant
       const participant = await db.conversationParticipant.findUnique({
         where: {
-          conversationId_accountId: {
+          conversationId_userId: {
             conversationId: input.conversationId,
-            accountId: input.accountId
+            userId: input.userId
           }
         }
       });
@@ -1828,20 +1851,17 @@ export const thinkpagesRouter = createTRPCRouter({
       const message = await db.thinkshareMessage.create({
         data: {
           conversationId: input.conversationId,
-          accountId: input.accountId,
+          userId: input.userId,
           content: input.content,
           messageType: input.messageType,
           replyToId: input.replyToId,
           mentions: input.mentions ? JSON.stringify(input.mentions) : null,
           attachments: input.attachments ? JSON.stringify(input.attachments) : null,
-          ixTimeTimestamp: new Date() // Store real-world time for social media timestamps // Keep IxTime for reference
+          ixTimeTimestamp: new Date()
         },
         include: {
-          account: true,
           conversation: true,
-          replyTo: {
-            include: { account: true }
-          }
+          replyTo: true
         }
       });
 
@@ -1858,7 +1878,7 @@ export const thinkpagesRouter = createTRPCRouter({
   markMessagesAsRead: publicProcedure
     .input(z.object({
       conversationId: z.string(),
-      accountId: z.string(),
+      userId: z.string(), // Changed to userId (clerkUserId)
       messageIds: z.array(z.string()).optional() // If not provided, mark all as read
     }))
     .mutation(async ({ ctx, input }) => {
@@ -1867,9 +1887,9 @@ export const thinkpagesRouter = createTRPCRouter({
       // Update participant lastReadAt
       await db.conversationParticipant.update({
         where: {
-          conversationId_accountId: {
+          conversationId_userId: {
             conversationId: input.conversationId,
-            accountId: input.accountId
+            userId: input.userId
           }
         },
         data: { lastReadAt: new Date() }
@@ -1880,7 +1900,7 @@ export const thinkpagesRouter = createTRPCRouter({
         await db.messageReadReceipt.createMany({
           data: input.messageIds.map(messageId => ({
             messageId,
-            accountId: input.accountId,
+            userId: input.userId,
             messageType: 'thinkshare'
           })),
         });
@@ -1889,10 +1909,10 @@ export const thinkpagesRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  // Update account presence/online status
+  // Update user presence/online status
   updatePresence: publicProcedure
     .input(z.object({
-      accountId: z.string(),
+      userId: z.string(), // Changed to userId (clerkUserId)
       isOnline: z.boolean(),
       status: z.enum(['available', 'busy', 'away', 'invisible']).optional(),
       customStatus: z.string().optional()
@@ -1900,10 +1920,10 @@ export const thinkpagesRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
-      await db.accountPresence.upsert({
-        where: { accountId: input.accountId },
+      await db.userPresence.upsert({
+        where: { userId: input.userId },
         create: {
-          accountId: input.accountId,
+          userId: input.userId,
           isOnline: input.isOnline,
           status: input.status || 'available',
           customStatus: input.customStatus,
@@ -1920,19 +1940,18 @@ export const thinkpagesRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  // Get presence for multiple accounts
-  getPresenceForAccounts: publicProcedure
+  // Get presence for multiple users
+  getPresenceForUsers: publicProcedure
     .input(z.object({
-      accountIds: z.array(z.string())
+      userIds: z.array(z.string()) // Changed to userIds (clerkUserIds)
     }))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
-      const presence = await db.accountPresence.findMany({
+      const presence = await db.userPresence.findMany({
         where: {
-          accountId: { in: input.accountIds }
-        },
-        include: { account: true }
+          userId: { in: input.userIds }
+        }
       });
 
       return presence;

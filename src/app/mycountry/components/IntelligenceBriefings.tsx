@@ -34,7 +34,8 @@ import type {
   ActionableRecommendation,
   CriticalAlert,
   DataPriority,
-  IntelligenceComponentProps
+  IntelligenceComponentProps,
+  ActionUrgency
 } from '../types/intelligence';
 import { api } from '~/utils/api';
 import { ComponentType } from '@prisma/client';
@@ -501,7 +502,7 @@ export function IntelligenceBriefings({
     const briefings: IntelligenceBriefing[] = [];
     
     // Convert atomic recommendations to briefings
-    atomicRecommendations.forEach((rec, index) => {
+    atomicRecommendations.forEach((rec: any, index: number) => {
       let briefingType: IntelligenceBriefing['type'] = 'strategic_initiative';
       let urgency: IntelligenceBriefing['urgency'] = 'this_quarter';
       
@@ -550,14 +551,14 @@ export function IntelligenceBriefings({
             rec.expectedImpact.legitimacy < 0 ? `${rec.expectedImpact.legitimacy} legitimacy points` : ''
           ].filter(Boolean),
           trends: [`Atomic government effectiveness trend`],
-          sources: ['Atomic Government Analysis', 'Component Effectiveness Calculator']
+          // sources: ['Atomic Government Analysis', 'Component Effectiveness Calculator'] // Removed as not in interface
         },
         recommendations: [{
           id: `atomic-action-${index}`,
           title: rec.type === 'component_add' ? 'Implement Component' : 
                  rec.type === 'conflict_resolution' ? 'Resolve Conflict' : 'Optimize System',
           description: rec.description,
-          priority: rec.priority as DataPriority,
+          urgency: rec.priority as ActionUrgency,
           estimatedDuration: rec.priority === 'critical' ? '1-2 weeks' : 
                            rec.priority === 'high' ? '2-4 weeks' : '1-2 months',
           requiredResources: ['Policy Review', 'Administrative Changes'],

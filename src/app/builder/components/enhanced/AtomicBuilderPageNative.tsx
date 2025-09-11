@@ -118,7 +118,7 @@ export function AtomicBuilderPageNative({
     if (developmentLevel === 'developing') {
       challenges.push({ type: 'development', severity: 'high' });
     }
-    if (inputs.coreIndicators.giniCoefficient > 40) {
+    if (inputs.coreIndicators.giniCoefficient && inputs.coreIndicators.giniCoefficient > 40) {
       challenges.push({ type: 'inequality', severity: 'medium' });
     }
 

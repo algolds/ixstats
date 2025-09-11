@@ -59,13 +59,32 @@ export function ensureCountryData(data: CountryWithEconomicData | undefined | nu
     realGDPGrowthRate: 0,
   };
   
-  // Add missing vitality properties for component compatibility
+  // Calculate vitality properties from actual economic data
+  const gdpPerCapita = baseData.currentGdpPerCapita || 0;
+  const gdpGrowth = baseData.adjustedGdpGrowth || baseData.realGDPGrowthRate || 0;
+  const population = baseData.currentPopulation || 1;
+  
   return {
     ...baseData,
-    economicVitality: Math.random() * 100, // TODO: Calculate from actual data
-    populationWellbeing: Math.random() * 100,
-    diplomaticStanding: Math.random() * 100,
-    governmentalEfficiency: Math.random() * 100
+    // Economic vitality based on GDP per capita and growth rate
+    economicVitality: Math.min(100, Math.max(0, 
+      (gdpPerCapita / 1000) * 10 + (gdpGrowth * 20) + 30
+    )),
+    // Population wellbeing correlates with GDP per capita
+    populationWellbeing: Math.min(100, Math.max(0, 
+      (gdpPerCapita / 800) * 8 + (population > 50000000 ? -5 : 5) + 40
+    )),
+    // Diplomatic standing based on economic tier and stability
+    diplomaticStanding: Math.min(100, Math.max(0,
+      (baseData.economicTier === 'Developed' ? 70 : 
+       baseData.economicTier === 'Advanced' ? 85 : 50) +
+      (Math.abs(gdpGrowth) < 5 ? 10 : -10)
+    )),
+    // Governmental efficiency based on economic performance
+    governmentalEfficiency: Math.min(100, Math.max(0,
+      60 + (gdpGrowth > 2 ? 20 : gdpGrowth < -2 ? -20 : 0) +
+      (gdpPerCapita > 30000 ? 15 : gdpPerCapita > 15000 ? 5 : -5)
+    ))
   };
 }
 

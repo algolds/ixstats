@@ -123,7 +123,7 @@ export function MessageList({
           {/* Enhanced Typing Indicators */}
           {getTypingIndicators().map(indicator => {
               // Find the participant info from the conversation
-              const participant = selectedConversation.otherParticipants.find(p => p.accountId === indicator.accountId);
+              const participant = selectedConversation.otherParticipants.find((p: any) => p.accountId === indicator.accountId);
               const displayName = participant?.account.displayName || 'Someone';
               const profileImage = participant?.account.profileImageUrl;
               
@@ -134,7 +134,7 @@ export function MessageList({
                       <Avatar className="h-6 w-6">
                         <AvatarImage src={profileImage || undefined} />
                         <AvatarFallback className="text-xs">
-                          {displayName.split(' ').map(n => n[0]).join('')}
+                          {displayName.split(' ').map((n: string) => n[0]).join('')}
                         </AvatarFallback>
                       </Avatar>
                       <span className="text-xs text-muted-foreground font-medium">

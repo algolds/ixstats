@@ -301,8 +301,8 @@ export function CollaborativeDocument({
                       {searchResults && searchResults.length > 0 ? (
                         <div className="space-y-2">
                           {searchResults
-                            .filter(account => !members.some(member => member.accountId === account.id))
-                            .map((account) => (
+                            .filter((account: any) => !members.some(member => member.accountId === account.id))
+                            .map((account: any) => (
                             <div
                               key={account.id}
                               className="flex items-center justify-between p-2 rounded-lg hover:bg-muted"

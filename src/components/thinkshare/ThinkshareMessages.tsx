@@ -15,8 +15,7 @@ import { ChatArea } from './ChatArea';
 import { NewConversationModal } from './NewConversationModal';
 
 interface ThinkshareMessagesProps {
-  countryId: string;
-  countryName: string;
+  userId: string; // Changed to userId (clerkUserId)
   userAccounts?: any[]; // Optional - for backward compatibility with thinkpages
 }
 
@@ -29,41 +28,23 @@ interface ThinkshareConversation {
   lastActivity: Date;
   otherParticipants: {
     id: string;
-    accountId: string;
-    account: {
-      id: string;
-      username: string;
-      displayName: string;
-      profileImageUrl?: string | null;
-      accountType: string;
-    };
+    userId: string; // Changed from accountId to userId
     isActive: boolean;
   }[];
   lastMessage?: {
     id: string;
-    accountId: string;
+    userId: string; // Changed from accountId to userId
     content: string;
     ixTimeTimestamp: Date;
     createdAt?: Date;
-    account: {
-      id: string;
-      username: string;
-      displayName: string;
-    };
   };
   lastReadAt?: Date;
   unreadCount: number;
 }
 
-interface Account {
-  id: string;
-  username: string;
-  displayName: string;
-  profileImageUrl?: string | null;
-  accountType: string;
-}
+// No longer using separate Account interface - using global User accounts
 
-export function ThinkshareMessages({ countryId, countryName, userAccounts = [] }: ThinkshareMessagesProps) {
+export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMessagesProps) {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showNewConversationModal, setShowNewConversationModal] = useState(false);
@@ -82,17 +63,11 @@ export function ThinkshareMessages({ countryId, countryName, userAccounts = [] }
     }
   }, []);
 
-  // Get user's country data directly for thinkshare (no thinkpages account required)
-  const { data: userProfile } = api.users.getProfile.useQuery(
-    { userId: 'dummy' }, // Will be replaced with actual auth
-    { enabled: false } // Disabled for now - will be enabled with proper auth
-  );
+  // Use the global user ID directly - no longer need thinkpages accounts for ThinkShare
+  const currentUserId = userId;
 
-  // Use the first available thinkpages account
-  const currentAccount: Account | undefined = userAccounts?.[0];
-
-  // Show error state if no thinkpages account is available
-  if (!currentAccount) {
+  // Show error state if no user ID is provided
+  if (!currentUserId) {
     return (
       <div className="space-y-6">
         <Card className="glass-hierarchy-parent">
@@ -111,13 +86,13 @@ export function ThinkshareMessages({ countryId, countryName, userAccounts = [] }
   }
 
   // API Queries with smart enabling for live functionality (moved above callbacks)
-  const shouldFetchConversations = currentAccount?.id && currentAccount.id.trim() !== '';
+  const shouldFetchConversations = currentUserId && currentUserId.trim() !== '';
   
-  // Use unified API that works with both thinkpages accounts and country-based users
+  // Use unified API that works with global users
   const { data: conversations, isLoading: isLoadingConversations, refetch: refetchConversations } = api.thinkpages.getConversations.useQuery({
-    accountId: currentAccount?.id ?? 'INVALID'
+    userId: currentUserId ?? 'INVALID'
   }, {
-    enabled: Boolean(shouldFetchConversations), // Enable when we have valid account
+    enabled: Boolean(shouldFetchConversations), // Enable when we have valid user
     retry: 1,
     refetchOnWindowFocus: false,
     staleTime: 30000,
@@ -125,7 +100,7 @@ export function ThinkshareMessages({ countryId, countryName, userAccounts = [] }
 
     const { data: conversationMessages, isLoading: isLoadingMessages, refetch: refetchMessages } = api.thinkpages.getConversationMessages.useQuery({
     conversationId: selectedConversation ?? 'INVALID',
-    accountId: currentAccount?.id ?? 'INVALID'
+    userId: currentUserId ?? 'INVALID'
   }, {
     enabled: !!selectedConversation,
     refetchOnWindowFocus: false,
@@ -140,8 +115,8 @@ export function ThinkshareMessages({ countryId, countryName, userAccounts = [] }
   const subscribeToConversation = () => {};
   const markMessageAsRead = () => {};
 
-  // Search for other countries/users to message
-  const { data: allAccounts, isLoading: isLoadingAccounts } = api.thinkpages.searchAccounts.useQuery({
+  // Search for other users to message
+  const { data: allUsers, isLoading: isLoadingUsers } = api.thinkpages.searchUsers.useQuery({
     query: searchQuery ?? 'INVALID'
   }, {
     enabled: Boolean(showNewConversationModal && searchQuery && searchQuery.length > 2), // Only when searching
@@ -166,16 +141,16 @@ export function ThinkshareMessages({ countryId, countryName, userAccounts = [] }
   });
 
   const handleCreateConversation = async (participantId: string) => {
-    console.log('🔧 handleCreateConversation called with:', { participantId, currentAccountId: currentAccount?.id });
+    console.log('🔧 handleCreateConversation called with:', { participantId, currentUserId });
     
-    if (!currentAccount?.id?.trim() || !participantId?.trim()) {
-      toast.error('Invalid account or participant');
+    if (!currentUserId?.trim() || !participantId?.trim()) {
+      toast.error('Invalid user or participant');
       return;
     }
 
-    const participantIds = participantId === currentAccount.id 
-      ? [currentAccount.id] // Self-message
-      : [currentAccount.id, participantId]; // Regular conversation
+    const participantIds = participantId === currentUserId 
+      ? [currentUserId] // Self-message
+      : [currentUserId, participantId]; // Regular conversation
     
     const mutationInput = { participantIds };
     console.log('📤 About to call mutation with input:', mutationInput);
@@ -219,7 +194,7 @@ export function ThinkshareMessages({ countryId, countryName, userAccounts = [] }
       <ThinkshareHeader
         onNewMessageClick={() => setShowNewConversationModal(true)}
         accounts={userAccounts}
-        selectedAccount={currentAccount?.id ?? null}
+        selectedAccount={currentUserId}
         onAccountChange={handleAccountChange}
       />
 
@@ -234,7 +209,7 @@ export function ThinkshareMessages({ countryId, countryName, userAccounts = [] }
             setSearchQuery={setSearchQuery}
             selectedConversation={selectedConversation}
             setSelectedConversation={setSelectedConversation}
-            currentAccountId={currentAccount?.id || ''}
+            currentAccountId={currentUserId || ''}
             onNewConversationClick={() => setShowNewConversationModal(true)}
             getAccountTypeIcon={getAccountTypeIcon}
             clientState={clientState}
@@ -246,7 +221,7 @@ export function ThinkshareMessages({ countryId, countryName, userAccounts = [] }
           {selectedConv ? (
             <ChatArea
               selectedConversation={selectedConv}
-              currentAccount={currentAccount}
+              currentUserId={currentUserId}
               conversationMessages={conversationMessages}
               isLoadingMessages={isLoadingMessages}
               refetchMessages={refetchMessages}
@@ -284,10 +259,10 @@ export function ThinkshareMessages({ countryId, countryName, userAccounts = [] }
         }}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        accounts={allAccounts || []}
-        isLoading={isLoadingAccounts}
+        users={allUsers || []}
+        isLoading={isLoadingUsers}
         onCreateConversation={handleCreateConversation}
-        currentAccount={currentAccount}
+        currentUserId={currentUserId}
       />
     </div>
   );

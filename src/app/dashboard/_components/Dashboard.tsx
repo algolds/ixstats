@@ -1,8 +1,8 @@
 // src/app/dashboard/_components/Dashboard.tsx
 "use client";
 
-import DashboardRefactoredModular from "./DashboardRefactoredModular";
+import DashboardClean from "./DashboardClean";
 
 export default function Dashboard() {
-  return <DashboardRefactoredModular />;
+  return <DashboardClean />;
 }

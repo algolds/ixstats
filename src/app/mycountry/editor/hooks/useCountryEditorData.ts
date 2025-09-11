@@ -186,10 +186,8 @@ export function useCountryEditorData() {
   }, [economicInputs, errors]);
 
   useEffect(() => {
-    if (country?.flagSvg) { // Assuming country object has a flagSvg property
-      setFlagUrl(country.flagSvg);
-    } else if (country?.flagPng) { // Fallback to PNG if SVG is not available
-      setFlagUrl(country.flagPng);
+    if (country && 'flag' in country && country.flag) { // Type-safe check for flag property
+      setFlagUrl(country.flag);
     } else {
       setFlagUrl(null); // Or a placeholder URL
     }

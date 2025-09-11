@@ -11,7 +11,8 @@ import {
   Activity,
   AlertCircle,
   CheckCircle,
-  Info
+  Info,
+  Settings
 } from 'lucide-react';
 import { ComponentType } from '@prisma/client';
 import { cn } from '~/lib/utils';

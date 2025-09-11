@@ -85,9 +85,16 @@ interface ChatAreaProps {
   isLoadingMessages: boolean;
   refetchMessages: () => Promise<any>;
   refetchConversations: () => Promise<any>;
-  clientState: any; // TODO: Define a proper type for clientState
+  clientState: {
+    isTyping?: boolean;
+    lastSeen?: string;
+    connectionStatus?: 'connected' | 'disconnected' | 'connecting';
+  };
   sendTypingIndicator: (conversationId: string, accountId: string | undefined, isTyping: boolean) => void;
-  markMessagesAsReadMutation: any; // TODO: Define a proper type
+  markMessagesAsReadMutation: {
+    mutate: (data: { conversationId: string; messageIds: string[] }) => Promise<void>;
+    isLoading: boolean;
+  };
 }
 
 export function ChatArea({
@@ -135,7 +142,7 @@ export function ChatArea({
     if (selectedConversation && currentAccount) {
       markMessagesAsReadMutation.mutate({
         conversationId: selectedConversation.id,
-        accountId: currentAccount.id
+        userId: currentAccount.id
       });
     }
   }, [selectedConversation?.id, currentAccount?.id]); // Removed markMessagesAsReadMutation from deps!

@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { HealthRing } from "~/components/ui/health-ring";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Separator } from "~/components/ui/separator";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +16,7 @@ import {
 } from "~/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import { Textarea } from "~/components/ui/textarea";
 import {
   LineChart as RechartsLineChart,
   Line,
@@ -43,7 +43,10 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { IxTime } from "~/lib/ixtime";
+import { IxnayWikiService } from "~/lib/mediawiki-service";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { AnimatedFlagBackground } from "~/components/ui/animated-flag-background";
+import { unsplashService, type UnsplashImageData } from "~/lib/unsplash-service";
 import {
   // Intelligence Icons
   RiBarChartLine,
@@ -71,7 +74,12 @@ import {
   // Status Icons
   RiCheckboxCircleLine,
   RiAlertLine,
-  RiInformationLine
+  RiInformationLine,
+  // Wiki Intelligence Icons
+  RiExternalLinkLine,
+  RiImageLine,
+  RiFileLine,
+  RiEditLine
 } from "react-icons/ri";
 
 // Types for enhanced briefing
@@ -125,6 +133,30 @@ interface CountryInformation {
   icon: React.ElementType;
 }
 
+// Wiki Intelligence Data interfaces
+interface WikiSection {
+  id: string;
+  title: string;
+  content: string;
+  classification: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
+  importance: 'critical' | 'high' | 'medium' | 'low';
+  images?: string[];
+}
+
+interface WikiIntelligenceData {
+  countryName: string;
+  sections: WikiSection[];
+  lastUpdated: number;
+  confidence: number;
+  infobox?: {
+    image_flag?: string;
+    flag?: string;
+    image_coat?: string;
+    coat_of_arms?: string;
+    [key: string]: any;
+  };
+}
+
 interface EnhancedIntelligenceBriefingProps {
   // Country data
   country: {
@@ -151,6 +183,7 @@ interface EnhancedIntelligenceBriefingProps {
   
   // Intelligence data
   intelligenceAlerts?: IntelligenceAlert[];
+  wikiData?: WikiIntelligenceData;
   currentIxTime: number;
   
   // Security context
@@ -230,6 +263,7 @@ const getStatusFromValue = (value: number): 'excellent' | 'good' | 'fair' | 'poo
 export const EnhancedIntelligenceBriefing: React.FC<EnhancedIntelligenceBriefingProps> = ({
   country,
   intelligenceAlerts = [],
+  wikiData: propWikiData,
   currentIxTime,
   viewerClearanceLevel = 'PUBLIC',
   isOwnCountry = false,
@@ -238,6 +272,259 @@ export const EnhancedIntelligenceBriefing: React.FC<EnhancedIntelligenceBriefing
   const [activeSection, setActiveSection] = useState<'overview' | 'vitality' | 'metrics' | 'information'>('overview');
   const [showClassified, setShowClassified] = useState(false);
   const [expandedMetrics, setExpandedMetrics] = useState<Set<string>>(new Set());
+
+  // Local wiki data state - fetch our own if not provided
+  const [localWikiData, setLocalWikiData] = useState<WikiIntelligenceData | undefined>(undefined);
+  const [isLoadingWiki, setIsLoadingWiki] = useState(false);
+  const [showFullOverview, setShowFullOverview] = useState(false);
+  const [showEditor, setShowEditor] = useState(false);
+  const [editorContent, setEditorContent] = useState('');
+  
+  // Unsplash background images state
+  const [cardBackgroundImages, setCardBackgroundImages] = useState<{[key: string]: UnsplashImageData}>({});
+  const [isLoadingBackgrounds, setIsLoadingBackgrounds] = useState(false);
+  const [unsplashEnabled, setUnsplashEnabled] = useState(true);
+  
+  // Use provided wikiData or fetch our own
+  const wikiData = propWikiData || localWikiData;
+
+  // Fetch wiki data if not provided
+  useEffect(() => {
+    if (propWikiData || isLoadingWiki || localWikiData) return;
+
+    const fetchWikiData = async () => {
+      setIsLoadingWiki(true);
+      try {
+        const wikiService = new IxnayWikiService();
+        const [mainPageWikitext, infobox] = await Promise.all([
+          wikiService.getPageWikitext(country.name),
+          wikiService.getCountryInfobox(country.name)
+        ]);
+        
+        if (typeof mainPageWikitext === 'string' && mainPageWikitext.length > 100) {
+          // Extract first 3 paragraphs (same logic as WikiIntelligenceTab)
+          let cleanContent = mainPageWikitext;
+          
+          // Remove infobox completely using proper brace counting
+          let braceDepth = 0;
+          let infoboxStart = -1;
+          let infoboxEnd = -1;
+          
+          // Find infobox start
+          const infoboxMatch = cleanContent.match(/\{\{\s*Infobox\s+/i);
+          if (infoboxMatch) {
+            infoboxStart = infoboxMatch.index!;
+            let i = infoboxStart;
+            
+            // Count braces to find the end
+            while (i < cleanContent.length - 1) {
+              const char = cleanContent[i];
+              const nextChar = cleanContent[i + 1];
+              
+              if (char === '{' && nextChar === '{') {
+                braceDepth++;
+                i += 2;
+              } else if (char === '}' && nextChar === '}') {
+                braceDepth--;
+                if (braceDepth === 0) {
+                  infoboxEnd = i + 2;
+                  break;
+                }
+                i += 2;
+              } else {
+                i++;
+              }
+            }
+            
+            // Remove the infobox
+            if (infoboxEnd > infoboxStart) {
+              cleanContent = cleanContent.substring(0, infoboxStart) + cleanContent.substring(infoboxEnd);
+            }
+          }
+          
+          // Remove templates but preserve wiki markup for bold/italics
+          cleanContent = cleanContent
+            .replace(/\{\{[^\{\}]*(?:\{[^\{\}]*\}[^\{\}]*)*\}\}/g, '')
+            .replace(/\[\[Category:[^\]]*\]\]/gi, '')
+            .replace(/\[\[File:[^\]]*\]\]/gi, '')
+            .replace(/<ref[^>]*>.*?<\/ref>/gi, '')
+            .replace(/<!--.*?-->/g, '')
+            // Remove any remaining table markup
+            .replace(/\{\|[\s\S]*?\|\}/g, '')
+            .trim();
+
+          // Split into paragraphs and store all paragraphs
+          const allParagraphs = cleanContent
+            .split(/\n\n+/)
+            .filter(p => p.trim().length > 50)
+            .slice(0, 5); // Get up to 5 paragraphs
+            
+          // Join all paragraphs but mark where to split for "show more"
+          const paragraphs = allParagraphs.join('\n\n||PARAGRAPH_BREAK||');
+
+          setLocalWikiData({
+            countryName: country.name,
+            infobox: infobox?.parsedTemplateData,
+            sections: [{
+              id: 'overview',
+              title: 'Overview', 
+              content: paragraphs,
+              classification: 'PUBLIC',
+              importance: 'critical'
+            }],
+            lastUpdated: Date.now(),
+            confidence: 75
+          });
+        }
+      } catch (error) {
+        console.error('[EnhancedIntelligenceBriefing] Failed to fetch wiki data:', error);
+      } finally {
+        setIsLoadingWiki(false);
+      }
+    };
+
+    fetchWikiData();
+  }, [country.name, propWikiData, isLoadingWiki, localWikiData]);
+
+  // Load Unsplash background images for individual cards
+  useEffect(() => {
+    const loadCardBackgroundImages = async () => {
+      if (!unsplashEnabled || isLoadingBackgrounds || Object.keys(cardBackgroundImages).length > 0) return;
+      
+      setIsLoadingBackgrounds(true);
+      
+      try {
+        // Generate tier-specific search queries for different card types
+        const tierKeywords = {
+          'Extravagant': 'luxury modern',
+          'Very Strong': 'developed advanced',
+          'Strong': 'growing urban',
+          'Healthy': 'city community',
+          'Developed': 'developing growth',
+          'Developing': 'emerging progress',
+          'Impoverished': 'rural basic'
+        };
+
+        const baseTierKeyword = tierKeywords[country.economicTier as keyof typeof tierKeywords] || 'business';
+        
+        // Define different search queries for different card types with more variety
+        const cardQueries = {
+          'economic-analysis': `${baseTierKeyword} economics finance charts graphs dashboard`,
+          'demographics-analysis': `${baseTierKeyword} population people urban society demographics`,
+          'development-analysis': `${baseTierKeyword} infrastructure construction development urban planning`,
+          'executive-summary': `${baseTierKeyword} government leadership headquarters executive`,
+          'economic-power': `${baseTierKeyword} financial markets money banking currency`,
+          'demographics': `${baseTierKeyword} community people social population statistics`,
+          'strategic-assessment': `${baseTierKeyword} military strategy defense intelligence analysis`,
+          'labor-force': `${baseTierKeyword} workers employment labor industry workforce`,
+          'geography': `${baseTierKeyword} landscape geography terrain natural environment`
+        };
+        
+        const loadedImages: {[key: string]: UnsplashImageData} = {};
+        
+        // Load images for each card type with fallback handling
+        const cardKeys = Object.keys(cardQueries);
+        for (let i = 0; i < cardKeys.length; i++) {
+          const cardKey = cardKeys[i];
+          const query = cardQueries[cardKey as keyof typeof cardQueries];
+          
+          try {
+            // Add delay between requests to avoid rate limiting
+            if (i > 0) {
+              await new Promise(resolve => setTimeout(resolve, 800));
+            }
+            
+            const images = await unsplashService.searchImages({
+              query,
+              orientation: 'landscape',
+              size: 'regular',
+              per_page: 3, // Get 3 images to have variety
+              page: Math.floor(i / 3) + 1 // Different pages for different cards
+            });
+            
+            if (images.length > 0) {
+              // Select different images from the results to ensure variety
+              const imageIndex = i % images.length;
+              const selectedImage = images[imageIndex];
+              loadedImages[cardKey] = selectedImage;
+              
+              // Track download as required by Unsplash API
+              if (selectedImage.downloadUrl) {
+                try {
+                  await unsplashService.trackDownload(selectedImage.downloadUrl);
+                } catch (trackError) {
+                  console.warn(`Failed to track download for ${cardKey}:`, trackError);
+                }
+              }
+            }
+          } catch (error) {
+            console.warn(`Failed to load image for ${cardKey}:`, error);
+            // Continue loading other images even if one fails
+          }
+        }
+        
+        setCardBackgroundImages(loadedImages);
+      } catch (error) {
+        console.error('[EnhancedIntelligenceBriefing] Failed to load background images:', error);
+        // Disable Unsplash if there's a 403 or other API error
+        if (error instanceof Error && error.message.includes('403')) {
+          console.warn('Unsplash API access denied - disabling background images');
+          setUnsplashEnabled(false);
+        }
+      } finally {
+        setIsLoadingBackgrounds(false);
+      }
+    };
+    
+    loadCardBackgroundImages();
+  }, [country.economicTier, country.name, isLoadingBackgrounds, cardBackgroundImages, unsplashEnabled]);
+
+  // Wiki content parsing functions
+  const handleWikiLinkClick = useCallback((link: string) => {
+    if (link.startsWith('http')) {
+      window.open(link, '_blank');
+    } else {
+      window.open(`https://ixwiki.com/wiki/${encodeURIComponent(link)}`, '_blank');
+    }
+  }, []);
+
+  const parseWikiContent = useCallback((content: string, linkHandler: (link: string) => void) => {
+    if (!content) return null;
+    
+    // Replace wiki links [[Link|Display]] or [[Link]]
+    let parsed = content.replace(/\[\[([^|\]]+)(\|([^\]]+))?\]\]/g, (match, link, pipe, display) => {
+      const displayText = display || link;
+      const onClick = () => linkHandler(link);
+      return `<span class="text-blue-400 hover:text-blue-300 cursor-pointer underline" data-link="${link}">${displayText}</span>`;
+    });
+    
+    // Replace external links [http://example.com Display]
+    parsed = parsed.replace(/\[([^\s]+)\s+([^\]]+)\]/g, (match, url, display) => {
+      return `<a href="${url}" target="_blank" class="text-blue-400 hover:text-blue-300 underline">${display}</a>`;
+    });
+    
+    // Parse wiki markup for bold and italics
+    parsed = parsed.replace(/'''([^']+)'''/g, '<strong class="font-bold">$1</strong>'); // Bold
+    parsed = parsed.replace(/''([^']+)''/g, '<em class="italic">$1</em>'); // Italics
+    
+    // Add basic line breaks
+    parsed = parsed.replace(/\n\n/g, '<br/><br/>');
+    parsed = parsed.replace(/\n/g, ' ');
+    
+    return (
+      <div 
+        dangerouslySetInnerHTML={{ __html: parsed }}
+        onClick={(e) => {
+          const target = e.target as HTMLElement;
+          const link = target.getAttribute('data-link');
+          if (link) {
+            e.preventDefault();
+            linkHandler(link);
+          }
+        }}
+      />
+    );
+  }, []);
 
   // Calculate vitality metrics
   const vitalityMetrics: VitalityMetric[] = useMemo(() => {
@@ -665,108 +952,220 @@ export const EnhancedIntelligenceBriefing: React.FC<EnhancedIntelligenceBriefing
               )}
 
               {/* Country Status Summary */}
-              <Card className="glass-hierarchy-child">
+              <Card className="glass-hierarchy-child relative overflow-hidden">
+                {/* Flag Background */}
+                <div className="absolute inset-0 opacity-[0.05] pointer-events-none">
+                  {wikiData?.infobox?.image_flag || wikiData?.infobox?.flag ? (
+                    <img
+                      src={`https://ixwiki.com/wiki/Special:Filepath/${wikiData.infobox.image_flag || wikiData.infobox.flag}`}
+                      alt="Flag background"
+                      className="w-full h-full object-cover object-center blur-sm"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <UnifiedCountryFlag countryName={country.name} size="xl" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-r from-background/75 via-background/50 to-background/75"></div>
+                </div>
+                
                 <CardHeader>
                  
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-6">
-                    {/* Real-time Strategic Intelligence */}
-                    <div>
-                      <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <RiSettings3Line className="h-5 w-5" style={{ color: flagColors.primary }} />
-                        Real-time Strategic Intelligence
-                        <span className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-full animate-pulse">
-                          LIVE
-                        </span>
-                      </h4>
+                  <div className="space-y-6 relative">
+                    {/* Strategic Intelligence Briefing - Overview directly in main container */}
+                    
+                    {/* Coat of Arms - Prominent display */}
+                    {(wikiData?.infobox?.image_coat || wikiData?.infobox?.coat_of_arms) && (
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        <div className="flex-1"></div>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <div className="group cursor-pointer">
+                              <div className="relative p-3 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-lg border border-amber-400/30 group-hover:border-amber-400/50 transition-all duration-300 backdrop-blur-sm">
+                                <img
+                                  src={`https://ixwiki.com/wiki/Special:Filepath/${wikiData.infobox.image_coat || wikiData.infobox.coat_of_arms}`}
+                                  alt="Coat of Arms"
+                                  className="w-16 h-16 rounded object-cover group-hover:scale-105 transition-transform duration-300"
+                                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                />
+                                <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full animate-pulse"></div>
+                              </div>
+                              <div className="text-center mt-2">
+                                <div className="text-xs font-medium text-amber-400">Coat of Arms</div>
+                              </div>
+                            </div>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl">
+                            <DialogHeader>
+                              <DialogTitle>Coat of Arms - {country.name}</DialogTitle>
+                            </DialogHeader>
+                            <div className="flex justify-center p-4">
+                              <img
+                                src={`https://ixwiki.com/wiki/Special:Filepath/${wikiData.infobox.image_coat || wikiData.infobox.coat_of_arms}`}
+                                alt="Coat of Arms"
+                                className="max-w-full max-h-96 object-contain rounded-lg"
+                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                              />
+                            </div>
+                            <div className="text-center text-sm text-muted-foreground">
+                              Official coat of arms of {country.name}
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    )}
+
+                    {/* Overview Text - Wiki data or IxStats fallback */}
+                    {(() => {
+                      const overviewSection = wikiData?.sections?.find(section => section.id === 'overview');
                       
-                      {/* Active Threat Assessment Matrix */}
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                        <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-lg p-4">
-                          <div className="flex items-center gap-2 mb-3">
-                            <RiEyeLine className="h-5 w-5 text-blue-400" />
-                            <span className="font-semibold text-blue-400">Active Monitoring</span>
-                            <div className="w-2 h-2 bg-blue-400 rounded-full animate-ping ml-auto" />
-                          </div>
-                          <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Economic Indicators:</span>
-                              <span className="text-green-400">STABLE</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Social Stability:</span>
-                              <span className="text-green-400">NORMAL</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">External Relations:</span>
-                              <span className="text-yellow-400">MONITORING</span>
-                            </div>
-                          </div>
-                        </div>
+                      // Fallback content using IxStats data when no wiki data
+                      if (!overviewSection) {
+                        const fallbackContent = `${country.name} is a ${country.governmentType || 'sovereign'} nation located in ${country.continent || 'an undisclosed region'}. With a population of ${country.currentPopulation.toLocaleString()} citizens and a GDP per capita of $${country.currentGdpPerCapita.toLocaleString()}, the country operates as a ${country.economicTier.toLowerCase()}-tier economy. ${country.leader ? `The current leader is ${country.leader}.` : ''} ${country.capital ? `The capital city is ${country.capital}.` : ''}`;
                         
-                        <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-lg p-4">
-                          <div className="flex items-center gap-2 mb-3">
-                            <RiBarChartLine className="h-5 w-5 text-purple-400" />
-                            <span className="font-semibold text-purple-400">Growth Trajectory</span>
+                        return (
+                          <div className="space-y-4">
+                            <div className="text-sm leading-relaxed prose prose-sm prose-invert max-w-none">
+                              <div className="text-muted-foreground">{fallbackContent}</div>
+                            </div>
+                            
+                            {/* Echo Editor Interface */}
+                            <div className="flex gap-2 pt-3 border-t border-border/30">
+                              <Dialog open={showEditor} onOpenChange={setShowEditor}>
+                                <DialogTrigger asChild>
+                                  <Button variant="outline" size="sm" className="flex-1">
+                                    <RiEditLine className="h-3 w-3 mr-1" />
+                                    Create Overview
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                                  <DialogHeader>
+                                    <DialogTitle>Create Country Overview - {country.name}</DialogTitle>
+                                  </DialogHeader>
+                                  
+                                  <div className="space-y-4">
+                                    <div>
+                                      <p className="text-sm text-muted-foreground mb-4">
+                                        Write a comprehensive overview of {country.name}. This will be displayed as the main description on the intelligence briefing.
+                                      </p>
+                                      
+                                      <Textarea
+                                        value={editorContent}
+                                        onChange={(e) => setEditorContent(e.target.value)}
+                                        placeholder={`${country.name} is located in ${country.continent || 'the region'}. With a population of ${country.currentPopulation.toLocaleString()} and a ${country.economicTier.toLowerCase()}-tier economy, the nation...`}
+                                        className="min-h-[300px] font-mono text-sm"
+                                        style={{ fontFamily: 'ui-monospace, "Cascadia Code", "Roboto Mono", monospace' }}
+                                      />
+                                      
+                                      <div className="text-xs text-muted-foreground mt-2">
+                                        {editorContent.length} characters • Supports wiki markup ('''bold''', ''italic'', [[links]])
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex justify-end gap-2">
+                                      <Button variant="outline" onClick={() => setShowEditor(false)}>
+                                        Cancel
+                                      </Button>
+                                      <Button 
+                                        onClick={() => {
+                                          // Save the content as local wiki data
+                                          if (editorContent.trim()) {
+                                            setLocalWikiData({
+                                              countryName: country.name,
+                                              infobox: undefined,
+                                              sections: [{
+                                                id: 'overview',
+                                                title: 'Overview',
+                                                content: editorContent.trim(),
+                                                classification: 'PUBLIC',
+                                                importance: 'critical'
+                                              }],
+                                              lastUpdated: Date.now(),
+                                              confidence: 100
+                                            });
+                                            setShowEditor(false);
+                                            setEditorContent('');
+                                          }
+                                        }}
+                                        disabled={!editorContent.trim()}
+                                      >
+                                        Save Overview
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            </div>
                           </div>
-                          <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Economic Growth:</span>
-                              <span className="text-green-400">+{(country.adjustedGdpGrowth * 100).toFixed(1)}%</span>
+                        );
+                      }
+
+                      // Wiki content exists - show it
+                      const paragraphs = overviewSection.content.split('||PARAGRAPH_BREAK||');
+                      const firstParagraph = paragraphs[0] || '';
+                      const remainingParagraphs = paragraphs.slice(1);
+                      const hasMoreContent = remainingParagraphs.length > 0 && remainingParagraphs.some(p => p.trim());
+
+                      return (
+                        <div className="space-y-4">
+                          <div className="text-sm leading-relaxed prose prose-sm prose-invert max-w-none">
+                            {parseWikiContent(firstParagraph, handleWikiLinkClick)}
+                            
+                            {showFullOverview && hasMoreContent && (
+                              <div className="mt-4 space-y-3">
+                                {remainingParagraphs.filter(p => p.trim()).map((paragraph, index) => (
+                                  <div key={index}>
+                                    {parseWikiContent(paragraph, handleWikiLinkClick)}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          
+                          {hasMoreContent && (
+                            <div className="flex justify-center pt-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowFullOverview(!showFullOverview)}
+                                className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                              >
+                                {showFullOverview ? (
+                                  <>
+                                    <RiArrowUpLine className="h-4 w-4 mr-1" />
+                                    Show Less
+                                  </>
+                                ) : (
+                                  <>
+                                    <RiArrowDownLine className="h-4 w-4 mr-1" />
+                                    Show More
+                                  </>
+                                )}
+                              </Button>
                             </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Population Growth:</span>
-                              <span className="text-blue-400">+{(country.populationGrowthRate * 100).toFixed(1)}%</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Streak:</span>
-                              <span className="text-yellow-400">{(country as any).growthStreak || 0}Q</span>
-                            </div>
+                          )}
+                          
+                          {/* Full Article Access */}
+                          <div className="flex gap-2 pt-3 border-t border-border/30">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                window.open(`https://ixwiki.com/wiki/${encodeURIComponent(country.name)}`, '_blank');
+                              }}
+                              className="flex-1"
+                            >
+                              <RiExternalLinkLine className="h-3 w-3 mr-1" />
+                              View Full Article
+                            </Button>
                           </div>
                         </div>
-                      </div>
-                      
-                      {/* Intelligence Alerts Stream */}
-                      <div className="bg-gradient-to-r from-orange-500/10 via-red-500/10 to-pink-500/10 border border-orange-500/30 rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-3">
-                          <RiAlertLine className="h-5 w-5 text-orange-400" />
-                          <span className="font-semibold text-orange-400">Intelligence Alerts</span>
-                          <Badge variant="outline" className="text-xs border-orange-500/30 text-orange-400">
-                            Real-time
-                          </Badge>
-                        </div>
-                        <div className="space-y-3">
-                          <div className="flex items-start gap-3 text-sm">
-                            <div className="w-2 h-2 bg-green-400 rounded-full mt-2" />
-                            <div>
-                              <span className="text-green-400 font-medium">Economic Stability Confirmed</span>
-                              <p className="text-muted-foreground text-xs mt-1">
-                                GDP growth remains within expected parameters • {IxTime.formatIxTime(currentIxTime - 3600000, true)}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-start gap-3 text-sm">
-                            <div className="w-2 h-2 bg-blue-400 rounded-full mt-2" />
-                            <div>
-                              <span className="text-blue-400 font-medium">Diplomatic Activity Detected</span>
-                              <p className="text-muted-foreground text-xs mt-1">
-                                Increased international engagement observed • {IxTime.formatIxTime(currentIxTime - 1800000, true)}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-start gap-3 text-sm">
-                            <div className="w-2 h-2 bg-yellow-400 rounded-full mt-2 animate-pulse" />
-                            <div>
-                              <span className="text-yellow-400 font-medium">Population Metrics Update</span>
-                              <p className="text-muted-foreground text-xs mt-1">
-                                Latest demographic analysis completed • {IxTime.formatIxTime(currentIxTime - 900000, true)}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                      );
+                    })()}
+                    
                   </div>
                 </CardContent>
               </Card>
@@ -777,14 +1176,26 @@ export const EnhancedIntelligenceBriefing: React.FC<EnhancedIntelligenceBriefing
           {activeSection === 'metrics' && (
             <div className="space-y-6">
               {/* Comprehensive Economic Intelligence Analysis */}
-              <Card className="glass-hierarchy-child">
-                <CardHeader>
+              <Card className="glass-hierarchy-child relative overflow-hidden">
+                {/* Card Background Image */}
+                {cardBackgroundImages['economic-analysis'] && (
+                  <div className="absolute inset-0 z-0">
+                    <img
+                      src={cardBackgroundImages['economic-analysis'].url}
+                      alt={cardBackgroundImages['economic-analysis'].description || 'Economic analysis background'}
+                      className="w-full h-full object-cover object-center blur-sm"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                    <div className="absolute inset-0 bg-background/70"></div>
+                  </div>
+                )}
+                <CardHeader className="relative z-10">
                   <CardTitle className="flex items-center gap-2">
                     <RiBarChartLine className="h-5 w-5" style={{ color: flagColors.secondary }} />
                     Economic Intelligence Analysis
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="relative z-10">
                   <Dialog>
                     <DialogTrigger asChild>
                       <Card className="cursor-pointer hover:scale-[1.01] transition-all duration-300 border border-border/50 hover:border-border group">
@@ -1113,14 +1524,26 @@ export const EnhancedIntelligenceBriefing: React.FC<EnhancedIntelligenceBriefing
               </Card>
 
               {/* Comprehensive Demographics Intelligence Analysis */}
-              <Card className="glass-hierarchy-child">
-                <CardHeader>
+              <Card className="glass-hierarchy-child relative overflow-hidden">
+                {/* Card Background Image */}
+                {cardBackgroundImages['demographics-analysis'] && (
+                  <div className="absolute inset-0 z-0">
+                    <img
+                      src={cardBackgroundImages['demographics-analysis'].url}
+                      alt={cardBackgroundImages['demographics-analysis'].description || 'Demographics analysis background'}
+                      className="w-full h-full object-cover object-center blur-sm"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                    <div className="absolute inset-0 bg-background/70"></div>
+                  </div>
+                )}
+                <CardHeader className="relative z-10">
                   <CardTitle className="flex items-center gap-2">
                     <RiTeamLine className="h-5 w-5" style={{ color: flagColors.accent }} />
                     Demographics Intelligence Analysis
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="relative z-10">
                   <Dialog>
                     <DialogTrigger asChild>
                       <Card className="cursor-pointer hover:scale-[1.01] transition-all duration-300 border border-border/50 hover:border-border group">
@@ -1456,14 +1879,26 @@ export const EnhancedIntelligenceBriefing: React.FC<EnhancedIntelligenceBriefing
               </Card>
 
               {/* Comprehensive Development & Government Intelligence Analysis */}
-              <Card className="glass-hierarchy-child">
-                <CardHeader>
+              <Card className="glass-hierarchy-child relative overflow-hidden">
+                {/* Card Background Image */}
+                {cardBackgroundImages['development-analysis'] && (
+                  <div className="absolute inset-0 z-0">
+                    <img
+                      src={cardBackgroundImages['development-analysis'].url}
+                      alt={cardBackgroundImages['development-analysis'].description || 'Development analysis background'}
+                      className="w-full h-full object-cover object-center blur-sm"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                    <div className="absolute inset-0 bg-background/70"></div>
+                  </div>
+                )}
+                <CardHeader className="relative z-10">
                   <CardTitle className="flex items-center gap-2">
                     <RiGlobalLine className="h-5 w-5" style={{ color: flagColors.primary }} />
                     Development & Government Intelligence
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="relative z-10">
                   <Dialog>
                     <DialogTrigger asChild>
                       <Card className="cursor-pointer hover:scale-[1.01] transition-all duration-300 border border-border/50 hover:border-border group">
@@ -1881,16 +2316,35 @@ export const EnhancedIntelligenceBriefing: React.FC<EnhancedIntelligenceBriefing
               {/* Labor & Government Metrics */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Labor Metrics */}
-                <Card className="glass-hierarchy-child">
-                  <CardHeader>
+                <Card className="glass-hierarchy-child relative overflow-hidden">
+                  {/* Card Background Image */}
+                  {cardBackgroundImages['labor-force'] && (
+                    <div className="absolute inset-0 z-0">
+                      <img
+                        src={cardBackgroundImages['labor-force'].url}
+                        alt={cardBackgroundImages['labor-force'].description || 'Labor force background'}
+                        className="w-full h-full object-cover object-center blur-sm"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                      <div className="absolute inset-0 bg-background/70"></div>
+                    </div>
+                  )}
+                  <CardHeader className="relative z-10">
                     <CardTitle className="flex items-center gap-2">
                       <RiBuildingLine className="h-5 w-5" style={{ color: flagColors.primary }} />
                       Labor Force
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="relative z-10">
                     <div className="space-y-4">
                       {countryMetrics
+                        .filter(metric => metric.id.includes('labor') || metric.id.includes('unemployment'))
+                        .filter(metric => hasAccess(metric.classification))
+                        .length === 0 ? (
+                          <div className="p-4 text-center text-sm text-muted-foreground">
+                            No labor force data available
+                          </div>
+                        ) : countryMetrics
                         .filter(metric => metric.id.includes('labor') || metric.id.includes('unemployment'))
                         .filter(metric => hasAccess(metric.classification))
                         .map((metric) => {
@@ -1926,22 +2380,48 @@ export const EnhancedIntelligenceBriefing: React.FC<EnhancedIntelligenceBriefing
                             )}
                           </div>
                         );
-                      })}
+                        })}
                     </div>
                   </CardContent>
                 </Card>
 
                 {/* Government & Geographic */}
-                <Card className="glass-hierarchy-child">
-                  <CardHeader>
+                <Card className="glass-hierarchy-child relative overflow-hidden">
+                  {/* Card Background Image */}
+                  {cardBackgroundImages['geography'] && (
+                    <div className="absolute inset-0 z-0">
+                      <img
+                        src={cardBackgroundImages['geography'].url}
+                        alt={cardBackgroundImages['geography'].description || 'Geography background'}
+                        className="w-full h-full object-cover object-center blur-sm"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                      <div className="absolute inset-0 bg-background/70"></div>
+                    </div>
+                  )}
+                  <CardHeader className="relative z-10">
                     <CardTitle className="flex items-center gap-2">
                       <RiMapLine className="h-5 w-5" style={{ color: flagColors.primary }} />
                       Government & Geography
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="relative z-10">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {countryMetrics
+                        .filter(metric => 
+                          metric.id.includes('government') || 
+                          metric.id.includes('capital') || 
+                          metric.id.includes('continent') || 
+                          metric.id.includes('region') ||
+                          metric.id.includes('area') ||
+                          metric.id.includes('density')
+                        )
+                        .filter(metric => hasAccess(metric.classification))
+                        .length === 0 ? (
+                          <div className="col-span-2 p-4 text-center text-sm text-muted-foreground">
+                            No government & geography data available
+                          </div>
+                        ) : countryMetrics
                         .filter(metric => 
                           metric.id.includes('government') || 
                           metric.id.includes('capital') || 
@@ -1972,7 +2452,7 @@ export const EnhancedIntelligenceBriefing: React.FC<EnhancedIntelligenceBriefing
                             </div>
                           </div>
                         );
-                      })}
+                        })}
                     </div>
                   </CardContent>
                 </Card>
@@ -1981,45 +2461,239 @@ export const EnhancedIntelligenceBriefing: React.FC<EnhancedIntelligenceBriefing
           )}
 
           {activeSection === 'information' && (
-            <div className="space-y-4">
-              {countryInformation.map((section) => {
-                const SectionIcon = section.icon as React.ComponentType<{ className?: string; style?: React.CSSProperties; }>;
-                const accessibleItems = section.items.filter(item => hasAccess(item.classification));
+            <div className="space-y-6">
+              {/* CIA Factbook-Style Analysis */}
+              <div className="flex items-center gap-2 mb-4">
+                <RiGlobalLine className="h-5 w-5 text-blue-400" />
+                <h3 className="text-lg font-semibold">Intelligence Analysis</h3>
+                <Badge variant="outline" className="text-xs">
+                  Classification: {viewerClearanceLevel}
+                </Badge>
+              </div>
+              
+              {/* Executive Summary */}
+              <Card className="bg-gradient-to-r from-blue-500/5 to-cyan-500/5 border-blue-500/20 relative z-10 overflow-hidden">
+                {/* Card Background Image */}
+                {cardBackgroundImages['executive-summary'] && (
+                  <div className="absolute inset-0 z-0">
+                    <img
+                      src={cardBackgroundImages['executive-summary'].url}
+                      alt={cardBackgroundImages['executive-summary'].description || 'Executive summary background'}
+                      className="w-full h-full object-cover object-center blur-sm"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                    <div className="absolute inset-0 bg-background/70"></div>
+                  </div>
+                )}
+                <CardHeader className="pb-3 relative z-10">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <RiEyeLine className="h-4 w-4" />
+                    Executive Assessment
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 relative z-10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium">Economic Threat Level:</span>{' '}
+                      <span className={`font-semibold ${
+                        country.economicTier === 'High' ? 'text-red-400' :
+                        country.economicTier === 'Upper-Middle' ? 'text-orange-400' :
+                        country.economicTier === 'Lower-Middle' ? 'text-yellow-400' : 'text-green-400'
+                      }`}>
+                        {country.economicTier === 'High' ? 'SIGNIFICANT' :
+                         country.economicTier === 'Upper-Middle' ? 'MODERATE' :
+                         country.economicTier === 'Lower-Middle' ? 'LOW' : 'MINIMAL'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-medium">Regional Influence:</span>{' '}
+                      <span className="font-semibold text-blue-400">
+                        {country.currentTotalGdp > 500000000000 ? 'MAJOR' :
+                         country.currentTotalGdp > 100000000000 ? 'SIGNIFICANT' :
+                         country.currentTotalGdp > 50000000000 ? 'MODERATE' : 'LIMITED'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-medium">Stability Index:</span>{' '}
+                      <span className={`font-semibold ${
+                        country.populationGrowthRate > 0.03 ? 'text-orange-400' :
+                        country.populationGrowthRate > 0.01 ? 'text-green-400' : 'text-yellow-400'
+                      }`}>
+                        {country.populationGrowthRate > 0.03 ? 'DYNAMIC' :
+                         country.populationGrowthRate > 0.01 ? 'STABLE' : 'DECLINING'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-medium">Development Status:</span>{' '}
+                      <span className="font-semibold text-purple-400">
+                        {country.currentGdpPerCapita > 40000 ? 'ADVANCED' :
+                         country.currentGdpPerCapita > 20000 ? 'DEVELOPING' : 'EMERGING'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-blue-500/10 rounded-md p-3 mt-4">
+                    <p className="text-sm leading-relaxed">
+                      <strong>Intelligence Summary:</strong> {country.name} represents a {country.economicTier.toLowerCase()}-tier economy with 
+                      {country.currentTotalGdp > 100000000000 ? ' significant regional economic influence' : ' moderate regional presence'}. 
+                      Population dynamics show {country.populationGrowthRate > 0.02 ? 'robust growth' : 'stable demographics'} 
+                      with {Math.round(country.populationDensity || 0)} people per sq km. 
+                      {country.leader ? `Current leadership under ${country.leader} ` : 'Government leadership '}
+                      maintains {country.governmentType || 'standard'} governance structure.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Key Metrics Dashboard */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Economic Power */}
+                <Card className="bg-gradient-to-br from-emerald-500/5 to-green-500/5 border-emerald-500/20 relative z-10 overflow-hidden">
+                  {/* Card Background Image */}
+                  {cardBackgroundImages['economic-power'] && (
+                    <div className="absolute inset-0 z-0">
+                      <img
+                        src={cardBackgroundImages['economic-power'].url}
+                        alt={cardBackgroundImages['economic-power'].description || 'Economic power background'}
+                        className="w-full h-full object-cover object-center blur-sm"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                      <div className="absolute inset-0 bg-background/75"></div>
+                    </div>
+                  )}
+                  <CardContent className="p-4 relative z-10">
+                    <div className="flex items-center justify-between mb-2">
+                      <RiMoneyDollarCircleLine className="h-5 w-5 text-emerald-400" />
+                      <Badge variant="outline" className="text-xs">Economic</Badge>
+                    </div>
+                    <div className="space-y-2">
+                      <div>
+                        <div className="text-xs text-muted-foreground">Total GDP</div>
+                        <div className="font-semibold">${(country.currentTotalGdp / 1e9).toFixed(1)}B</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Per Capita</div>
+                        <div className="font-semibold">${country.currentGdpPerCapita.toLocaleString()}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Growth Rate</div>
+                        <div className="font-semibold text-emerald-400">+{(country.adjustedGdpGrowth * 100).toFixed(1)}%</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
                 
-                if (accessibleItems.length === 0) return null;
+                {/* Demographics */}
+                <Card className="bg-gradient-to-br from-blue-500/5 to-cyan-500/5 border-blue-500/20 relative z-10 overflow-hidden">
+                  {/* Card Background Image */}
+                  {cardBackgroundImages['demographics'] && (
+                    <div className="absolute inset-0 z-0">
+                      <img
+                        src={cardBackgroundImages['demographics'].url}
+                        alt={cardBackgroundImages['demographics'].description || 'Demographics background'}
+                        className="w-full h-full object-cover object-center blur-sm"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                      <div className="absolute inset-0 bg-background/75"></div>
+                    </div>
+                  )}
+                  <CardContent className="p-4 relative z-10">
+                    <div className="flex items-center justify-between mb-2">
+                      <RiTeamLine className="h-5 w-5 text-blue-400" />
+                      <Badge variant="outline" className="text-xs">Demographics</Badge>
+                    </div>
+                    <div className="space-y-2">
+                      <div>
+                        <div className="text-xs text-muted-foreground">Population</div>
+                        <div className="font-semibold">{(country.currentPopulation / 1e6).toFixed(1)}M</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Density</div>
+                        <div className="font-semibold">{Math.round(country.populationDensity || 0)}/km²</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Growth Rate</div>
+                        <div className="font-semibold text-blue-400">+{(country.populationGrowthRate * 100).toFixed(2)}%</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
                 
-                return (
-                  <Card key={section.id} className="glass-hierarchy-child">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <SectionIcon className="h-5 w-5" style={{ color: flagColors.accent }} />
-                        {section.category}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {accessibleItems.map((item, index) => (
-                          <div key={index} className="flex items-center justify-between py-2">
-                            <span className="text-sm text-muted-foreground">{item.label}:</span>
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{item.value}</span>
-                              <Badge 
-                                variant="outline" 
-                                className={cn(
-                                  "text-xs",
-                                  CLASSIFICATION_STYLES[item.classification].color
-                                )}
-                              >
-                                {item.classification}
-                              </Badge>
+                {/* Strategic Assessment */}
+                <Card className="bg-gradient-to-br from-purple-500/5 to-violet-500/5 border-purple-500/20 relative z-10 overflow-hidden">
+                  {/* Card Background Image */}
+                  {cardBackgroundImages['strategic-assessment'] && (
+                    <div className="absolute inset-0 z-0">
+                      <img
+                        src={cardBackgroundImages['strategic-assessment'].url}
+                        alt={cardBackgroundImages['strategic-assessment'].description || 'Strategic assessment background'}
+                        className="w-full h-full object-cover object-center blur-sm"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                      <div className="absolute inset-0 bg-background/75"></div>
+                    </div>
+                  )}
+                  <CardContent className="p-4 relative z-10">
+                    <div className="flex items-center justify-between mb-2">
+                      <RiBarChart2Line className="h-5 w-5 text-purple-400" />
+                      <Badge variant="outline" className="text-xs">Strategic</Badge>
+                    </div>
+                    <div className="space-y-2">
+                      <div>
+                        <div className="text-xs text-muted-foreground">Economic Tier</div>
+                        <div className="font-semibold">{country.economicTier}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Pop. Tier</div>
+                        <div className="font-semibold">{country.populationTier}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Last Updated</div>
+                        <div className="font-semibold text-purple-400">
+                          {Math.floor((currentIxTime - country.lastCalculated) / (1000 * 60 * 60 * 24))}d ago
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Intelligence Alerts */}
+              {intelligenceAlerts && intelligenceAlerts.length > 0 && (
+                <Card className="bg-gradient-to-r from-amber-500/5 to-orange-500/5 border-amber-500/20 relative z-10">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <RiAlertLine className="h-4 w-4 text-amber-400" />
+                      Active Intelligence Alerts ({intelligenceAlerts.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {intelligenceAlerts.slice(0, 3).map((alert) => (
+                        <div key={alert.id} className="flex items-start gap-3 p-2 rounded-md bg-background/50">
+                          <div className={`w-2 h-2 rounded-full mt-2 ${
+                            alert.type === 'critical' ? 'bg-red-400' :
+                            alert.type === 'warning' ? 'bg-orange-400' :
+                            alert.type === 'info' ? 'bg-blue-400' : 'bg-green-400'
+                          }`} />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium">{alert.title}</div>
+                            <div className="text-xs text-muted-foreground">{alert.description}</div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {new Date(alert.timestamp).toLocaleDateString()}
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                        </div>
+                      ))}
+                      {intelligenceAlerts.length > 3 && (
+                        <div className="text-xs text-muted-foreground text-center pt-2">
+                          +{intelligenceAlerts.length - 3} more alerts available
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
         </motion.div>

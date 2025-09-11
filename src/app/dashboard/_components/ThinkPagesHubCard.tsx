@@ -54,7 +54,7 @@ export function ThinkPagesHubCard({ userProfile, className }: ThinkPagesHubCardP
   const mentions: any[] = [];
 
   const getAccountTypeCount = (type: string) => {
-    return accounts?.filter(account => account.accountType === type).length || 0;
+    return accounts?.filter((account: any) => account.accountType === type).length || 0;
   };
 
   const unreadMentions = Array.isArray(mentions) ? mentions.filter((mention: any) => !mention.read).length : 0;

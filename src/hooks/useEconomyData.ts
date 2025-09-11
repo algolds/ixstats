@@ -257,7 +257,7 @@ export function useEconomyData(countryId: string) {
     };
     
     return economyData;
-  }, [data, atomicModifiers, atomicTaxEffectiveness])
+  }, [data, atomicState])
 
   return { economy, isLoading, error, refetch }
 }

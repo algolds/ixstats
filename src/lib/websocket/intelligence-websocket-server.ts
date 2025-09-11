@@ -290,7 +290,10 @@ export class IntelligenceWebSocketServer {
         vitality: {
           economic: country.actualGdpGrowth || 0,
           population: country.populationGrowthRate || 0,
-          diplomatic: Math.random() * 100, // TODO: Add diplomatic field to schema
+          diplomatic: Math.min(100, Math.max(0, 
+            50 + (country.actualGdpGrowth || 0) * 10 + 
+            (country.currentGdpPerCapita > 25000 ? 20 : country.currentGdpPerCapita > 10000 ? 10 : 0)
+          )),
           governance: country.employmentRate || 0
         },
         lastUpdated: country.lastCalculated,
@@ -460,7 +463,10 @@ export class IntelligenceWebSocketServer {
         this.broadcastVitalityUpdate(country.id, {
           economic: country.actualGdpGrowth,
           population: country.populationGrowthRate,
-          diplomatic: Math.random() * 100, // TODO: Add diplomatic field to schema
+          diplomatic: Math.min(100, Math.max(0, 
+            50 + (country.actualGdpGrowth || 0) * 10 + 
+            (country.currentGdpPerCapita > 25000 ? 20 : country.currentGdpPerCapita > 10000 ? 10 : 0)
+          )),
           governance: country.employmentRate,
           lastUpdated: country.lastCalculated
         });

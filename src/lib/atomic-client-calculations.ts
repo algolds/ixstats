@@ -12,6 +12,10 @@ export interface ClientAtomicEconomicModifiers {
   innovationMultiplier: number;
   internationalTradeBonus: number;
   governmentEfficiencyMultiplier: number;
+  gdpImpact?: number;
+  stabilityIndex?: number;
+  internationalStanding?: number;
+  taxEfficiency?: number;
 }
 
 export interface ComponentEffectivenessData {
@@ -289,7 +293,11 @@ export function calculateClientAtomicEconomicImpact(
       stabilityBonus: 0,
       innovationMultiplier: 1.0,
       internationalTradeBonus: 0,
-      governmentEfficiencyMultiplier: 1.0
+      governmentEfficiencyMultiplier: 1.0,
+      gdpImpact: 0,
+      stabilityIndex: 50,
+      internationalStanding: 50,
+      taxEfficiency: 1.0
     };
   }
 
@@ -299,7 +307,11 @@ export function calculateClientAtomicEconomicImpact(
     stabilityBonus: 0,
     innovationMultiplier: 1.0,
     internationalTradeBonus: 0,
-    governmentEfficiencyMultiplier: 1.0
+    governmentEfficiencyMultiplier: 1.0,
+    gdpImpact: 0,
+    stabilityIndex: 50,
+    internationalStanding: 50,
+    taxEfficiency: 1.0
   };
 
   // Apply base component effects

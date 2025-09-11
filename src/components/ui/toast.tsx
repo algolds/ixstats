@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { createContext, useContext, useReducer } from "react"
-import { AnimatePresence, motion } from "motion/react"
+import { AnimatePresence, motion } from "framer-motion"
 import { CheckCircle, AlertTriangle, Info, X, AlertCircle } from "lucide-react"
 
 export type ToastType = "success" | "error" | "warning" | "info"

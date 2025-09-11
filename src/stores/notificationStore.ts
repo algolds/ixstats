@@ -479,8 +479,8 @@ export const useNotificationStore = create<NotificationStore>()(
           relevanceScore: 85,
           actionable: true,
           actions: [
-            { id: 'view-details', label: 'View Economic Report', type: 'primary', onClick: () => console.log('View details clicked') },
-            { id: 'acknowledge', label: 'Acknowledge', type: 'secondary', onClick: () => console.log('Acknowledge clicked') }
+            { id: 'view-details', label: 'View Economic Report', type: 'primary', onClick: () => {} },
+            { id: 'acknowledge', label: 'Acknowledge', type: 'secondary', onClick: () => {} }
           ]
         });
 

@@ -859,10 +859,10 @@ export function FiscalSystemComponent({
                         />
                         <Legend />
                         <Bar yAxisId="left" dataKey="percent" fill="#3b82f6" name="% of Budget">
-                          <LabelList dataKey="percent" position="top" formatter={(value: number) => `${value.toFixed(1)}%`} />
+                          <LabelList dataKey="percent" position="top" formatter={(value: number) => `${value.toFixed(1)}%` as React.ReactNode} />
                         </Bar>
                         <Bar yAxisId="right" dataKey="amount" fill="#10b981" name="Amount">
-                          <LabelList dataKey="amount" position="top" formatter={(value: number) => formatCurrency(value)} />
+                          <LabelList dataKey="amount" position="top" formatter={(value: number) => formatCurrency(value) as React.ReactNode} />
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>
@@ -870,7 +870,7 @@ export function FiscalSystemComponent({
 
                   {/* Spending Analysis Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {spendingData.map((item) => (
+                    {spendingData.map((item: any) => (
                       <Card key={item.category}>
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between mb-2">
@@ -903,13 +903,13 @@ export function FiscalSystemComponent({
                           <div className="flex justify-between items-center">
                             <span className="text-sm">Total Spending/GDP</span>
                             <Badge variant="outline">
-                              {((spendingData.reduce((sum, item) => sum + item.amount, 0) / nominalGDP) * 100).toFixed(1)}%
+                              {((spendingData.reduce((sum: number, item: any) => sum + item.amount, 0) / nominalGDP) * 100).toFixed(1)}%
                             </Badge>
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-sm">Per Capita Spending</span>
                             <Badge variant="outline">
-                              {formatCurrency(spendingData.reduce((sum, item) => sum + item.amount, 0) / totalPopulation)}
+                              {formatCurrency(spendingData.reduce((sum: number, item: any) => sum + item.amount, 0) / totalPopulation)}
                             </Badge>
                           </div>
                           <div className="flex justify-between items-center">
@@ -927,9 +927,9 @@ export function FiscalSystemComponent({
                       <CardContent>
                         <div className="space-y-2">
                           {spendingData
-                            .sort((a, b) => b.percent - a.percent)
+                            .sort((a: any, b: any) => b.percent - a.percent)
                             .slice(0, 3)
-                            .map((item, index) => (
+                            .map((item: any, index: number) => (
                               <div key={item.category} className="flex items-center gap-2">
                                 <Badge variant="outline" className="w-6 h-6 rounded-full p-0 flex items-center justify-center text-xs">
                                   {index + 1}
@@ -969,17 +969,17 @@ export function FiscalSystemComponent({
                       <div className="p-4 border rounded-lg space-y-3">
                         <div className="flex items-center justify-between">
                           <Label className="text-sm font-medium">Personal Income Tax</Label>
-                          <Badge>{((fiscalData.taxRates?.personalIncomeTaxRates?.[0] || 20)).toFixed(1)}%</Badge>
+                          <Badge>{((fiscalData.taxRates?.personalIncomeTaxRates?.[0]?.rate || 20)).toFixed(1)}%</Badge>
                         </div>
                         <input
                           type="range"
                           min="0"
                           max="50"
                           step="1"
-                          value={fiscalData.taxRates?.personalIncomeTaxRates?.[0] || 20}
+                          value={fiscalData.taxRates?.personalIncomeTaxRates?.[0]?.rate || 20}
                           onChange={(e) => {
-                            const newRates = [...(fiscalData.taxRates?.personalIncomeTaxRates || [20])];
-                            newRates[0] = parseFloat(e.target.value);
+                            const newRates = [...(fiscalData.taxRates?.personalIncomeTaxRates || [{ bracket: 50000, rate: 20 }])];
+                            newRates[0] = { ...newRates[0], rate: parseFloat(e.target.value) };
                             onFiscalDataChange?.({
                               ...fiscalData,
                               taxRates: { ...fiscalData.taxRates, personalIncomeTaxRates: newRates }
@@ -998,17 +998,17 @@ export function FiscalSystemComponent({
                       <div className="p-4 border rounded-lg space-y-3">
                         <div className="flex items-center justify-between">
                           <Label className="text-sm font-medium">Corporate Tax Rate</Label>
-                          <Badge>{((fiscalData.taxRates?.corporateTaxRates?.[0] || 25)).toFixed(1)}%</Badge>
+                          <Badge>{((fiscalData.taxRates?.corporateTaxRates?.[0]?.rate || 25)).toFixed(1)}%</Badge>
                         </div>
                         <input
                           type="range"
                           min="0"
                           max="40"
                           step="1"
-                          value={fiscalData.taxRates?.corporateTaxRates?.[0] || 25}
+                          value={fiscalData.taxRates?.corporateTaxRates?.[0]?.rate || 25}
                           onChange={(e) => {
-                            const newRates = [...(fiscalData.taxRates?.corporateTaxRates || [25])];
-                            newRates[0] = parseFloat(e.target.value);
+                            const newRates = [...(fiscalData.taxRates?.corporateTaxRates || [{ size: 'Small', rate: 25 }])];
+                            newRates[0] = { ...newRates[0], rate: parseFloat(e.target.value) };
                             onFiscalDataChange?.({
                               ...fiscalData,
                               taxRates: { ...fiscalData.taxRates, corporateTaxRates: newRates }

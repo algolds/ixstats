@@ -44,7 +44,7 @@ class RealTimeIntelligenceServer {
   }
 
   private setupWebSocketHandlers() {
-    this.wss.on('connection', (ws, request) => {
+    this.wss.on('connection', (ws: any, request: any) => {
       const { query } = parse(request.url || '', true);
       const countryId = query.countryId as string;
       const userId = query.userId as string;
