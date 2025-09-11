@@ -95,27 +95,18 @@ export default function ThinkPagesMainPage() {
     { enabled: !!userProfile?.countryId }
   );
 
-  const { data: accounts, refetch: refetchAccounts } = api.thinkpages.getAccountsByCountry.useQuery(
-    { countryId: userProfile?.countryId || 'INVALID' },
-    { 
-      enabled: false, // NEVER auto-enable
-      retry: 0,
-      refetchOnWindowFocus: false
-    }
-  );
+  // No longer need thinkpages accounts for ThinkTanks and ThinkShare
+  // They now work with global user accounts directly
+  const accounts: any[] = []; // Empty array for backward compatibility
 
-  // More comprehensive validation
-  const isDataReady = user && userProfile && countryData && 
-                     userProfile.countryId && userProfile.countryId.trim() !== '' &&
-                     countryData.id && countryData.id.trim() !== '' &&
-                     countryData.name && countryData.name.trim() !== '';
+  // Simplified validation - only need user authentication for global features
+  const isDataReady = user && user.id;
 
-  // Manual control for accounts query
-  React.useEffect(() => {
-    if (isDataReady && userProfile.countryId && userProfile.countryId.trim() !== '') {
-      refetchAccounts();
-    }
-  }, [isDataReady, userProfile?.countryId, refetchAccounts]);
+  // ThinkTanks and ThinkShare work globally, only Feed requires country setup
+  const isCountryDataReady = userProfile && countryData && 
+                           userProfile.countryId && userProfile.countryId.trim() !== '' &&
+                           countryData.id && countryData.id.trim() !== '' &&
+                           countryData.name && countryData.name.trim() !== '';
 
   // Account management handlers
   const handleAccountSelect = (account: any) => {
@@ -133,13 +124,11 @@ export default function ThinkPagesMainPage() {
 
   const handleAccountCreated = () => {
     setShowAccountCreation(false);
-    refetchAccounts();
   };
 
   const handleAccountUpdated = () => {
     setShowAccountSettings(false);
     setSettingsAccount(null);
-    refetchAccounts();
   };
 
   if (!isDataReady) {
@@ -197,9 +186,11 @@ export default function ThinkPagesMainPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              <Badge variant="outline" className="text-xs">
-                {countryData.name}
-              </Badge>
+              {countryData?.name && (
+                <Badge variant="outline" className="text-xs">
+                  {countryData.name}
+                </Badge>
+              )}
               <Button variant="ghost" size="sm">
                 <Settings className="h-4 w-4" />
               </Button>
@@ -243,7 +234,7 @@ export default function ThinkPagesMainPage() {
           className={`grid grid-cols-1 ${activeView === 'feed' ? 'lg:grid-cols-4' : 'lg:grid-cols-1'} gap-6`}
         >
           {/* Left Sidebar - Account Manager */}
-          {activeView === 'feed' && (
+          {activeView === 'feed' && isCountryDataReady && (
             <div className="lg:col-span-1 space-y-4">
               <EnhancedAccountManager
                 countryId={countryData.id}
@@ -259,7 +250,7 @@ export default function ThinkPagesMainPage() {
 
           {/* Main Content Area */}
           <div className={activeView === 'feed' ? "lg:col-span-3" : "lg:col-span-4"}>
-            {activeView === 'feed' && (
+            {activeView === 'feed' && isCountryDataReady && (
               <ThinkpagesSocialPlatform
                 countryId={countryData.id}
                 countryName={countryData.name}
@@ -267,18 +258,33 @@ export default function ThinkPagesMainPage() {
               />
             )}
 
-            {activeView === 'thinktanks' && isDataReady && countryData?.id && countryData?.name && (
+            {activeView === 'feed' && !isCountryDataReady && (
+              <Card className="glass-hierarchy-parent">
+                <CardContent className="p-8 text-center">
+                  <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Country Setup Required</h3>
+                  <p className="text-muted-foreground mb-4">
+                    To access the social feed, please complete your country setup first.
+                  </p>
+                  <Link href={createUrl("/setup")}>
+                    <Button>
+                      Complete Setup
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            )}
+
+            {activeView === 'thinktanks' && user?.id && (
               <ThinktankGroups
-                countryId={countryData.id}
-                countryName={countryData.name}
+                userId={user.id}
                 userAccounts={accounts || []}
               />
             )}
 
-            {activeView === 'messages' && isDataReady && countryData?.id && countryData?.name && (
+            {activeView === 'messages' && user?.id && (
               <ThinkshareMessages
-                countryId={countryData.id}
-                countryName={countryData.name}
+                userId={user.id}
                 userAccounts={accounts || []}
               />
             )}
@@ -286,7 +292,7 @@ export default function ThinkPagesMainPage() {
         </motion.div>
 
         {/* Account Management Modals */}
-        {showAccountCreation && (
+        {showAccountCreation && isCountryDataReady && (
           <AccountCreationModal
             countryId={countryData.id}
             countryName={countryData.name}

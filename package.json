@@ -1,11 +1,12 @@
 {
   "name": "ixstats",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "next build",
     "build:no-check": "next build --no-lint",
+    "build:fast": "SKIP_ENV_VALIDATION=true next build --no-lint",
     "check": "next lint && tsc --noEmit",
     "dev": "./start-development.sh",
     "start": "next start -p ${PORT:-3000}",
@@ -112,7 +113,6 @@
     "lucide-react": "^0.525.0",
     "mini-svg-data-uri": "^1.4.4",
     "morgan": "^1.10.1",
-    "motion": "^12.23.12",
     "next": "^15.4.1",
     "next-themes": "^0.4.6",
     "preline": "^3.2.3",

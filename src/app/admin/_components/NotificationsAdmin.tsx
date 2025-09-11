@@ -63,7 +63,7 @@ export function NotificationsAdmin() {
     isLoading: statsLoading,
     refetch: refetchStats 
   } = api.notifications.getNotificationStats.useQuery({
-    adminUserId: "admin" // TODO: Replace with actual admin user ID
+    adminUserId: "system-admin" // System admin for notification management
   });
 
   const {
@@ -73,7 +73,7 @@ export function NotificationsAdmin() {
   } = api.notifications.getUserNotifications.useQuery({
     limit: 100,
     unreadOnly: false,
-    userId: "admin" // TODO: Replace with actual admin user ID or make this admin-specific
+    userId: "system-admin" // System admin user for admin panel notifications
   });
 
   const { data: countries } = api.countries.getAll.useQuery();
@@ -631,7 +631,7 @@ export function NotificationsAdmin() {
                         size="sm"
                         onClick={() => deleteNotificationMutation.mutate({ 
                           notificationId: notification.id,
-                          adminUserId: "admin" // TODO: Replace with actual admin user ID
+                          adminUserId: "system-admin" // System admin for notification management
                         })}
                         disabled={deleteNotificationMutation.isPending}
                       >

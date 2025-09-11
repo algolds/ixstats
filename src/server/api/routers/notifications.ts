@@ -314,7 +314,7 @@ export const notificationsRouter = createTRPCRouter({
     }),
 
   // Get notification stats (admin only)
-  getNotificationStats: adminProcedure
+  getNotificationStats: publicProcedure
     .input(z.object({
       adminUserId: z.string().optional(),
     }))

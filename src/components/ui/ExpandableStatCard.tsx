@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from './card';
 import { Skeleton } from './skeleton';
 import { AnimatedNumber } from './animated-number';

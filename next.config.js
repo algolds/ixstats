@@ -21,7 +21,6 @@ const config = {
   experimental: {
     // Enable optimizations for heavy packages
     optimizePackageImports: [
-      "recharts", 
       "framer-motion", 
       "@radix-ui/react-dialog",
       "@radix-ui/react-dropdown-menu",
@@ -31,6 +30,14 @@ const config = {
     ],
     // Reduce compilation time
     esmExternals: true,
+  },
+
+  // Build performance improvements
+  modularizeImports: {
+    '@radix-ui/react-icons': {
+      transform: '@radix-ui/react-icons/dist/{{member}}',
+    },
+    // Recharts uses standard imports, no transform needed
   },
 
   // TypeScript performance
@@ -62,6 +69,37 @@ const config = {
       config.optimization.removeAvailableModules = false;
       config.optimization.removeEmptyChunks = false;
       config.optimization.splitChunks = false;
+    } else {
+      // Production build optimizations
+      config.optimization = {
+        ...config.optimization,
+        usedExports: true,
+        sideEffects: false,
+        // Better chunk splitting for large apps
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            vendor: {
+              test: /[\\/]node_modules[\\/]/,
+              name: 'vendors',
+              chunks: 'all',
+              maxSize: 244000, // ~244kb chunks
+            },
+            common: {
+              minChunks: 2,
+              chunks: 'all',
+              enforce: true,
+              maxSize: 244000,
+            },
+          },
+        },
+      };
+      
+      // Resolve webpack cache warning
+      config.cache = {
+        ...config.cache,
+        maxMemoryGenerations: 1, // Reduce memory usage
+      };
     }
 
     return config;

@@ -124,7 +124,7 @@ export function AtomicStateProvider({
     onSuccess: () => {
       console.log('Atomic components saved successfully');
     },
-    onError: (error) => {
+    onError: (error: unknown) => {
       console.error('Failed to save atomic components:', error);
       setError('Failed to save atomic components');
     }

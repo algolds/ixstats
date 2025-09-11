@@ -33,7 +33,7 @@ export function ThinkpagesSocialPlatform({
 }: ThinkpagesSocialPlatformProps) {
   const [feedFilter, setFeedFilter] = useState<'recent' | 'trending' | 'hot'>('recent');
   const [searchQuery, setSearchQuery] = useState('');
-  const { data: feed, isLoading: isLoadingFeed, refetch: refetchFeed } = api.thinkpages.getFeed.useQuery({ countryId, filter: feedFilter });
+  const { data: feed, isLoading: isLoadingFeed, refetch: refetchFeed } = api.thinkpages.getFeed.useQuery({ userId: countryId, filter: feedFilter });
   const { data: trendingTopics, isLoading: isLoadingTrending, refetch: refetchTrending } = api.thinkpages.getTrendingTopics.useQuery({ limit: 5 });
   const calculateTrendingMutation = api.thinkpages.calculateTrendingTopics.useMutation({
     onSuccess: () => {

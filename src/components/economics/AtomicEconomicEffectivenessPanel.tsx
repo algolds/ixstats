@@ -18,6 +18,10 @@ import {
   Zap,
   Info
 } from 'lucide-react';
+import { 
+  calculateAtomicEconomicEffectiveness, 
+  getAtomicEconomicRecommendations 
+} from '~/lib/atomic-economic-integration';
 
 import type { ComponentType } from '~/types/government';
 import { 
@@ -169,7 +173,7 @@ export function AtomicEconomicEffectivenessPanel({
                       Economic Synergies
                     </h4>
                     <div className="space-y-1">
-                      {effectiveness.synergies.map((synergy, index) => (
+                      {effectiveness.synergies.map((synergy: any, index: number) => (
                         <div key={index} className="text-sm text-green-700 bg-green-50 p-2 rounded">
                           {synergy}
                         </div>
@@ -185,7 +189,7 @@ export function AtomicEconomicEffectivenessPanel({
                       Economic Conflicts
                     </h4>
                     <div className="space-y-1">
-                      {effectiveness.conflicts.map((conflict, index) => (
+                      {effectiveness.conflicts.map((conflict: any, index: number) => (
                         <div key={index} className="text-sm text-red-700 bg-red-50 p-2 rounded">
                           {conflict}
                         </div>
@@ -215,7 +219,7 @@ export function AtomicEconomicEffectivenessPanel({
                 Recommended Policies
               </h4>
               <ul className="space-y-1">
-                {recommendations.recommendedPolicies.map((policy, index) => (
+                {recommendations.recommendedPolicies.map((policy: any, index: number) => (
                   <li key={index} className="text-sm text-blue-700 bg-blue-50 p-2 rounded">
                     • {policy}
                   </li>
@@ -231,7 +235,7 @@ export function AtomicEconomicEffectivenessPanel({
                 Economic Warnings
               </h4>
               <ul className="space-y-1">
-                {recommendations.warnings.map((warning, index) => (
+                {recommendations.warnings.map((warning: any, index: number) => (
                   <li key={index} className="text-sm text-yellow-700 bg-yellow-50 p-2 rounded">
                     ⚠ {warning}
                   </li>
@@ -247,7 +251,7 @@ export function AtomicEconomicEffectivenessPanel({
                 Economic Opportunities
               </h4>
               <ul className="space-y-1">
-                {recommendations.opportunities.map((opportunity, index) => (
+                {recommendations.opportunities.map((opportunity: any, index: number) => (
                   <li key={index} className="text-sm text-green-700 bg-green-50 p-2 rounded">
                     💡 {opportunity}
                   </li>
@@ -269,7 +273,7 @@ export function AtomicEconomicEffectivenessPanel({
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {effectiveness.modifierBreakdown.map((breakdown, index) => (
+              {effectiveness.modifierBreakdown.map((breakdown: any, index: number) => (
                 <div key={index} className="border-l-4 border-blue-200 pl-4">
                   <h4 className="font-medium text-sm">
                     {breakdown.component.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase())}

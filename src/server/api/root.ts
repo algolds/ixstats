@@ -19,6 +19,7 @@ import { enhancedEconomicsRouter } from "./routers/enhanced-economics";
 import { rolesRouter } from "./routers/roles";
 import { governmentRouter } from "./routers/government";
 import { atomicGovernmentRouter } from "./routers/atomicGovernment";
+import { formulasRouter } from "./routers/formulas";
 
 /**
  * This is the primary router for your server.
@@ -43,6 +44,7 @@ export const appRouter = createTRPCRouter({
   enhancedEconomics: enhancedEconomicsRouter, // Enhanced economic analysis system
   government: governmentRouter, // Government structure and budget management system
   atomicGovernment: atomicGovernmentRouter, // Atomic government component system
+  formulas: formulasRouter, // Internal calculation formulas and system monitoring
   system: adminRouter, // Alias for global stats
 });
 

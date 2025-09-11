@@ -728,7 +728,11 @@ export class UnifiedAtomicStateManager {
       stabilityBonus: 0,
       innovationMultiplier: 1.0,
       internationalTradeBonus: 0,
-      governmentEfficiencyMultiplier: 1.0
+      governmentEfficiencyMultiplier: 1.0,
+      gdpImpact: 0,
+      stabilityIndex: 50,
+      internationalStanding: 50,
+      taxEfficiency: 1.0
     };
   }
 

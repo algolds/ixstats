@@ -51,21 +51,13 @@ import { Textarea } from '~/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
 
 interface ThinktankGroupsProps {
-  countryId: string;
-  countryName: string;
+  userId: string; // Changed from countryId to userId (clerkUserId)
   userAccounts: any[];
 }
 
 interface GroupChatMessage {
   id: string;
-  accountId: string;
-  account: {
-    id: string;
-    username: string;
-    displayName: string;
-    profileImageUrl?: string | null;
-    accountType: string;
-  };
+  userId: string; // Changed from accountId to userId
   content: string;
   messageType: string;
   ixTimeTimestamp: Date;
@@ -88,7 +80,6 @@ interface ThinktankGroup {
   createdBy: string;
   isActive: boolean;
   createdAt: Date;
-  creator: any;
   members: any[];
   _count: {
     members: number;
@@ -177,7 +168,7 @@ const formatContentEnhanced = (content: string) => {
   return formattedContent;
 };
 
-export function ThinktankGroups({ countryId, countryName, userAccounts }: ThinktankGroupsProps) {
+export function ThinktankGroups({ userId, userAccounts }: ThinktankGroupsProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [activeTab, setActiveTab] = useState<'discover' | 'joined' | 'created'>('discover');
@@ -188,8 +179,8 @@ export function ThinktankGroups({ countryId, countryName, userAccounts }: Thinkt
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const richTextEditorRef = useRef<RichTextEditorRef>(null);
 
-  // Get current user's primary account
-  const currentAccount = userAccounts?.[0];
+  // Use the global user ID instead of account-based system
+  const currentUserId = userId;
 
   // Real-time WebSocket functionality
   const { 
@@ -198,7 +189,7 @@ export function ThinktankGroups({ countryId, countryName, userAccounts }: Thinkt
     subscribeToGroup, 
     markMessageAsRead 
   } = useThinkPagesWebSocket({
-    accountId: currentAccount?.id,
+    accountId: currentUserId, // Using userId instead of account ID
     autoReconnect: true,
     onMessageUpdate: (update) => {
       if (selectedGroup && (update.groupId === selectedGroup.id)) {
@@ -214,7 +205,7 @@ export function ThinktankGroups({ countryId, countryName, userAccounts }: Thinkt
   });
 
   // Validate required props - more defensive check
-  const hasValidProps = countryId && countryName && countryId.trim() !== '' && countryName.trim() !== '';
+  const hasValidProps = userId && userId.trim() !== '';
   
   // Early return if required props are missing
   if (!hasValidProps) {
@@ -234,12 +225,11 @@ export function ThinktankGroups({ countryId, countryName, userAccounts }: Thinkt
   }
 
   // API Queries with defensive input validation - USE CONDITIONAL QUERY
-  const shouldFetchGroups = hasValidProps && countryId && countryId.trim() !== '';
+  const shouldFetchGroups = hasValidProps && userId && userId.trim() !== '';
   
-  const { data: groups, isLoading: isLoadingGroups, refetch: refetchGroups } = api.thinkpages.getThinktanksByCountry.useQuery({
-    countryId: countryId || 'INVALID',
-    type: activeTab === 'discover' ? 'all' : activeTab,
-    accountId: currentAccount?.id || undefined
+  const { data: groups, isLoading: isLoadingGroups, refetch: refetchGroups } = api.thinkpages.getThinktanks.useQuery({
+    userId: userId || 'INVALID',
+    type: activeTab === 'discover' ? 'all' : activeTab
   }, {
     enabled: false, // NEVER auto-enable
     retry: 0,
@@ -249,13 +239,16 @@ export function ThinktankGroups({ countryId, countryName, userAccounts }: Thinkt
 
   // Manual fetch only when conditions are met
   React.useEffect(() => {
-    if (shouldFetchGroups && countryId && countryId.trim() !== '') {
+    if (shouldFetchGroups && userId && userId.trim() !== '') {
       refetchGroups();
     }
-  }, [shouldFetchGroups, countryId, activeTab, currentAccount?.id, refetchGroups]);
+  }, [shouldFetchGroups, userId, activeTab, refetchGroups]);
 
   const { data: groupMessages, isLoading: isLoadingMessages, refetch: refetchMessages } = api.thinkpages.getThinktankMessages.useQuery(
-    { groupId: selectedGroup?.id || 'INVALID' },
+    { 
+      groupId: selectedGroup?.id || 'INVALID',
+      userId: currentUserId || 'INVALID'
+    },
     { 
       enabled: false, // NEVER auto-enable
       retry: 0,
@@ -317,29 +310,29 @@ export function ThinktankGroups({ countryId, countryName, userAccounts }: Thinkt
     const finalContent = content || messageText;
     const finalPlainText = plainText || messageText;
     
-    if (!finalPlainText.trim() || !selectedGroup || !currentAccount) return;
+    if (!finalPlainText.trim() || !selectedGroup || !currentUserId) return;
 
     sendMessageMutation.mutate({
       groupId: selectedGroup.id,
-      accountId: currentAccount.id,
+      userId: currentUserId,
       content: finalContent,
-      messageType: content && content !== plainText ? 'text' : 'text' // Using 'text' as 'rich_text' is not in API schema
+      messageType: content && content !== plainText ? 'text' : 'text'
     });
 
     // Clear the simple input if used
     if (!content) {
       setMessageText('');
     }
-  }, [messageText, selectedGroup, currentAccount, sendMessageMutation]);
+  }, [messageText, selectedGroup, currentUserId, sendMessageMutation]);
 
   const handleJoinGroup = useCallback((groupId: string) => {
-    if (!currentAccount) return;
+    if (!currentUserId) return;
     
     joinGroupMutation.mutate({
       groupId,
-      accountId: currentAccount.id
+      userId: currentUserId
     });
-  }, [currentAccount, joinGroupMutation]);
+  }, [currentUserId, joinGroupMutation]);
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -356,15 +349,6 @@ export function ThinktankGroups({ countryId, countryName, userAccounts }: Thinkt
       case 'private': return 'Private';
       case 'invite_only': return 'Invite Only';
       default: return 'Unknown';
-    }
-  };
-
-  const getAccountTypeIcon = (accountType: string) => {
-    switch (accountType) {
-      case 'government': return <Crown className="h-3 w-3 text-amber-500" />;
-      case 'media': return <Hash className="h-3 w-3 text-blue-500" />;
-      case 'citizen': return <Globe className="h-3 w-3 text-green-500" />;
-      default: return null;
     }
   };
 
@@ -433,71 +417,6 @@ export function ThinktankGroups({ countryId, countryName, userAccounts }: Thinkt
                 >
                   <File className="h-4 w-4" />
                 </Button>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      title="Group Settings"
-                    >
-                      <Settings className="h-4 w-4" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Group Settings</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label>Group Name</Label>
-                        <Input defaultValue={selectedGroup.name} />
-                      </div>
-                      <div>
-                        <Label>Description</Label>
-                        <Textarea defaultValue={selectedGroup.description || ''} />
-                      </div>
-                      <div>
-                        <Label>Privacy</Label>
-                        <Select defaultValue="public">
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="public">Public</SelectItem>
-                            <SelectItem value="private">Private</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <Button>Save Changes</Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-                
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      title="Invite Members"
-                    >
-                      <UserPlus className="h-4 w-4" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Invite Members</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label>Search Users</Label>
-                        <Input placeholder="Search by username..." />
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Invite functionality coming soon...
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -525,46 +444,37 @@ export function ThinktankGroups({ countryId, countryName, userAccounts }: Thinkt
                       key={message.id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className={`flex ${message.accountId === currentAccount?.id ? 'justify-end' : 'justify-start'}`}
+                      className={`flex ${message.userId === currentUserId ? 'justify-end' : 'justify-start'}`}
                     >
-                      <div className={`max-w-[70%] ${message.accountId === currentAccount?.id ? 'order-2' : 'order-1'}`}>
-                        {message.accountId !== currentAccount?.id && (
+                      <div className={`max-w-[70%] ${message.userId === currentUserId ? 'order-2' : 'order-1'}`}>
+                        {message.userId !== currentUserId && (
                           <div className="flex items-center gap-2 mb-1">
                             <Avatar className="h-6 w-6">
-                              <AvatarImage src={message.account.profileImageUrl || undefined} />
                               <AvatarFallback className="text-xs">
-                                {message.account.displayName.split(' ').map(n => n[0]).join('')}
+                                {message.userId.substring(0, 2).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
                             <span className="text-xs text-muted-foreground font-medium">
-                              {message.account.displayName}
+                              User {message.userId.substring(0, 8)}
                             </span>
-                            {getAccountTypeIcon(message.account.accountType)}
                           </div>
                         )}
                         
                         <div
                           className={`p-3 rounded-2xl ${
-                            message.accountId === currentAccount?.id
+                            message.userId === currentUserId
                               ? 'bg-gradient-to-r from-orange-600 to-yellow-600 text-white ml-4'
                               : 'bg-background/50 border border-orange-200/30 mr-4'
                           }`}
                         >
-                          {message.messageType === 'rich_text' ? (
-                            <div 
-                              className="text-sm [&_img]:inline-block [&_img]:h-5 [&_img]:w-5 [&_img]:mx-1 [&_img]:align-middle" 
-                              dangerouslySetInnerHTML={{ __html: formatContentEnhanced(message.content) }}
-                            />
-                          ) : (
-                            <div 
-                              className="text-sm whitespace-pre-wrap"
-                              dangerouslySetInnerHTML={{ __html: formatContentEnhanced(message.content) }}
-                            />
-                          )}
+                          <div 
+                            className="text-sm whitespace-pre-wrap"
+                            dangerouslySetInnerHTML={{ __html: formatContentEnhanced(message.content) }}
+                          />
                         </div>
                         
                         <div className={`flex items-center gap-1 mt-1 px-3 ${
-                          message.accountId === currentAccount?.id ? 'justify-end' : 'justify-start'
+                          message.userId === currentUserId ? 'justify-end' : 'justify-start'
                         }`}>
                           <span className="text-xs text-muted-foreground">
                             {new Date(message.ixTimeTimestamp).toLocaleTimeString([], { 
@@ -572,7 +482,7 @@ export function ThinktankGroups({ countryId, countryName, userAccounts }: Thinkt
                               minute: '2-digit' 
                             })}
                           </span>
-                          {message.accountId === currentAccount?.id && (
+                          {message.userId === currentUserId && (
                             <div className="flex items-center gap-1">
                               {/* Enhanced read receipts for groups */}
                               {message.readReceipts && message.readReceipts.length > 0 ? (
@@ -597,7 +507,7 @@ export function ThinktankGroups({ countryId, countryName, userAccounts }: Thinkt
                 
                 {/* Enhanced Group Typing Indicators */}
                 {Array.from(clientState.typingIndicators.values())
-                  .filter(indicator => indicator.groupId === selectedGroup?.id && indicator.accountId !== currentAccount?.id)
+                  .filter(indicator => indicator.groupId === selectedGroup?.id && indicator.accountId !== currentUserId)
                   .map(indicator => {
                     // In group chats, we can try to find member info
                     // For now, we'll use the account ID, but this could be enhanced with member lookup
@@ -703,9 +613,9 @@ export function ThinktankGroups({ countryId, countryName, userAccounts }: Thinkt
         <CollaborativeDocument
           groupId={selectedGroup.id}
           groupName={selectedGroup.name}
-          currentUserAccount={currentAccount}
+          currentUserId={currentUserId}
           userAccounts={userAccounts}
-          isOwner={selectedGroup.createdBy === currentAccount?.id}
+          isOwner={selectedGroup.createdBy === currentUserId}
           members={selectedGroup.members}
         />
       </div>
@@ -732,7 +642,7 @@ export function ThinktankGroups({ countryId, countryName, userAccounts }: Thinkt
                   ThinkTanks
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Group discussions and collaboration spaces
+                  Global discussion and collaboration spaces
                 </p>
               </div>
             </div>
@@ -747,10 +657,10 @@ export function ThinktankGroups({ countryId, countryName, userAccounts }: Thinkt
               isOpen={showCreateModal}
               onClose={() => setShowCreateModal(false)}
               onCreateGroup={(data) => {
-                if (!currentAccount) return;
+                if (!currentUserId) return;
                 createGroupMutation.mutate({
                   ...data,
-                  createdBy: currentAccount.id
+                  createdBy: currentUserId
                 });
               }}
             />
@@ -1086,7 +996,7 @@ function CreateGroupModal({
             <div>
               <DialogTitle className="text-lg">Create New ThinkTank</DialogTitle>
               <p className="text-sm text-muted-foreground">
-                Start a discussion group
+                Start a global discussion group
               </p>
             </div>
           </div>

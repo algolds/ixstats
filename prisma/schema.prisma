@@ -116,7 +116,6 @@ model Country {
   laborMarket                 LaborMarket?
   nationalIdentity            NationalIdentity?
   user                        User?
-  thinkpagesAccounts          ThinkpagesAccount[]
   moodMetrics                 CountryMoodMetric[]
   archetypeMatches            CountryArchetypeMatch[] @relation("CountryArchetypes")
   governmentStructure         GovernmentStructure?
@@ -871,59 +870,14 @@ model AtomicEconomicImpact {
   @@index([isActive])
 }
 
-// Thinkpages Social Platform Models
-model ThinkpagesAccount {
-  id                  String   @id @default(cuid())
-  countryId           String
-  accountType         String   // 'government' | 'media' | 'citizen'
-  username            String   @unique // @handle
-  displayName         String
-  firstName           String
-  lastName            String
-  bio                 String?
-  profileImageUrl     String?
-  verified            Boolean  @default(false)
-  followerCount       Int      @default(0)
-  followingCount      Int      @default(0)
-  postCount           Int      @default(0)
-  postingFrequency    String   @default("moderate") // 'active' | 'moderate' | 'low'
-  politicalLean       String   @default("center") // 'left' | 'center' | 'right'
-  personality         String   @default("serious") // 'serious' | 'casual' | 'satirical'
-  isActive            Boolean  @default(true)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-  
-  // Relations
-  country             Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
-  posts               ThinkpagesPost[]
-  reactions           PostReaction[]
-  mentions            PostMention[]
-  
-  // ThinkTanks (Groups) Relations
-  createdThinktanks   ThinktankGroup[]  @relation("ThinktankCreator")
-  thinktankMemberships ThinktankMember[] @relation("ThinktankMemberships")
-  thinktankMessages   ThinktankMessage[] @relation("ThinktankMessages")
-  sentInvites         ThinktankInvite[]  @relation("SentInvites")
-  createdDocs         CollaborativeDoc[] @relation("CreatedDocs")
-  editedDocs          CollaborativeDoc[] @relation("EditedDocs")
-  
-  // ThinkShare (Messaging) Relations
-  conversationParticipants ConversationParticipant[] @relation("ConversationParticipants")
-  thinkshareMessages  ThinkshareMessage[] @relation("ThinkshareMessages")
-  messageReadReceipts MessageReadReceipt[] @relation("MessageReadReceipts")
-  
-  // Presence Relations
-  presence            AccountPresence? @relation("AccountPresence")
-  
-  @@index([countryId])
-  @@index([accountType])
-  @@index([username])
-  @@index([verified])
-}
+// Global User-based Social Platform Models - No Country Restrictions
+// ThinkTanks and ThinkShare now use global User accounts instead of country-specific ThinkpagesAccounts
 
+// Legacy ThinkPages model - kept for in-universe social media posts only
+// ThinkTanks and ThinkShare no longer use this model
 model ThinkpagesPost {
   id                String   @id @default(cuid())
-  accountId         String
+  userId            String   // Changed to use User.clerkUserId instead of ThinkpagesAccount
   content           String   // 280 character limit enforced in frontend
   hashtags          String?  // JSON array of hashtag strings
   postType          String   @default("original") // 'original' | 'repost' | 'reply'
@@ -941,8 +895,7 @@ model ThinkpagesPost {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   
-  // Relations
-  account           ThinkpagesAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  // Relations - only for in-universe ThinkPages component
   parentPost        ThinkpagesPost?   @relation("PostReplies", fields: [parentPostId], references: [id])
   replies           ThinkpagesPost[]  @relation("PostReplies")
   repostOf          ThinkpagesPost?   @relation("PostReposts", fields: [repostOfId], references: [id])
@@ -951,7 +904,7 @@ model ThinkpagesPost {
   mentions          PostMention[]
   mediaAttachments  MediaAttachment[]
   
-  @@index([accountId])
+  @@index([userId])
   @@index([ixTimeTimestamp])
   @@index([trending])
   @@index([visibility])
@@ -962,32 +915,30 @@ model ThinkpagesPost {
 model PostReaction {
   id           String   @id @default(cuid())
   postId       String
-  accountId    String
+  userId       String   // Changed to use User.clerkUserId
   reactionType String   // 'like' | 'laugh' | 'angry' | 'sad' | 'fire' | 'thumbsup' | 'thumbsdown'
   timestamp    DateTime @default(now())
   
   // Relations
-  post         ThinkpagesPost    @relation(fields: [postId], references: [id], onDelete: Cascade)
-  account      ThinkpagesAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  post         ThinkpagesPost @relation(fields: [postId], references: [id], onDelete: Cascade)
   
-  @@unique([postId, accountId]) // One reaction per account per post
+  @@unique([postId, userId]) // One reaction per user per post
   @@index([postId])
-  @@index([accountId])
+  @@index([userId])
   @@index([reactionType])
 }
 
 model PostMention {
   id              String   @id @default(cuid())
   postId          String
-  mentionedAccountId String
+  mentionedUserId String   // Changed to use User.clerkUserId
   position        Int      // Character position in the post content
   
   // Relations
-  post            ThinkpagesPost    @relation(fields: [postId], references: [id], onDelete: Cascade)
-  mentionedAccount ThinkpagesAccount @relation(fields: [mentionedAccountId], references: [id], onDelete: Cascade)
+  post            ThinkpagesPost @relation(fields: [postId], references: [id], onDelete: Cascade)
   
   @@index([postId])
-  @@index([mentionedAccountId])
+  @@index([mentionedUserId])
 }
 
 model MediaAttachment {
@@ -1024,6 +975,7 @@ model TrendingTopic {
   @@index([isActive])
 }
 
+// Legacy model - kept for in-universe sentiment analysis only
 model CountryMoodMetric {
   id            String   @id @default(cuid())
   countryId     String
@@ -1038,7 +990,7 @@ model CountryMoodMetric {
   @@index([timestamp])
 }
 
-// ThinkTanks (Groups) Models
+// Global ThinkTanks (Groups) Models - Now uses global User accounts
 model ThinktankGroup {
   id                String   @id @default(cuid())
   name              String
@@ -1048,14 +1000,13 @@ model ThinktankGroup {
   category          String?  // 'Environment' | 'Technology' | 'Business' | etc.
   tags              String?  // JSON array of tag strings
   memberCount       Int      @default(0)
-  createdBy         String   // accountId of creator
+  createdBy         String   // User.clerkUserId of creator
   isActive          Boolean  @default(true)
   settings          String?  // JSON object for group settings
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   
-  // Relations
-  creator           ThinkpagesAccount @relation("ThinktankCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  // Relations - now use global Users instead of ThinkpagesAccounts
   members           ThinktankMember[]
   messages          ThinktankMessage[]
   invites           ThinktankInvite[]
@@ -1070,45 +1021,43 @@ model ThinktankGroup {
 model ThinktankMember {
   id          String   @id @default(cuid())
   groupId     String
-  accountId   String
+  userId      String   // Changed to use User.clerkUserId
   role        String   @default("member") // 'owner' | 'admin' | 'moderator' | 'member'
   joinedAt    DateTime @default(now())
   isActive    Boolean  @default(true)
   permissions String?  // JSON object for member permissions
   
   // Relations
-  group       ThinktankGroup    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  account     ThinkpagesAccount @relation("ThinktankMemberships", fields: [accountId], references: [id], onDelete: Cascade)
+  group       ThinktankGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
   
-  @@unique([groupId, accountId])
+  @@unique([groupId, userId])
   @@index([groupId])
-  @@index([accountId])
+  @@index([userId])
   @@index([role])
 }
 
 model ThinktankMessage {
   id              String   @id @default(cuid())
   groupId         String
-  accountId       String
+  userId          String   // Changed to use User.clerkUserId
   content         String   // Rich text content from echo-editor
   messageType     String   @default("text") // 'text' | 'image' | 'file' | 'system'
   replyToId       String?  // For threaded conversations
   editedAt        DateTime?
   deletedAt       DateTime?
   reactions       String?  // JSON object of reaction counts
-  mentions        String?  // JSON array of mentioned account IDs
+  mentions        String?  // JSON array of mentioned user IDs
   attachments     String?  // JSON array of attachment objects
   ixTimeTimestamp DateTime @default(now())
   
   // Relations
   group           ThinktankGroup     @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  account         ThinkpagesAccount  @relation("ThinktankMessages", fields: [accountId], references: [id], onDelete: Cascade)
   replyTo         ThinktankMessage?  @relation("MessageReplies", fields: [replyToId], references: [id])
   replies         ThinktankMessage[] @relation("MessageReplies")
   readReceipts    MessageReadReceipt[]
   
   @@index([groupId])
-  @@index([accountId])
+  @@index([userId])
   @@index([ixTimeTimestamp])
   @@index([messageType])
 }
@@ -1116,7 +1065,7 @@ model ThinktankMessage {
 model ThinktankInvite {
   id          String   @id @default(cuid())
   groupId     String
-  invitedBy   String   // accountId
+  invitedBy   String   // User.clerkUserId
   invitedUser String?  // username or email
   inviteCode  String?  // For invite links
   expiresAt   DateTime?
@@ -1124,8 +1073,7 @@ model ThinktankInvite {
   createdAt   DateTime @default(now())
   
   // Relations
-  group       ThinktankGroup    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  inviter     ThinkpagesAccount @relation("SentInvites", fields: [invitedBy], references: [id], onDelete: Cascade)
+  group       ThinktankGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
   
   @@index([groupId])
   @@index([invitedBy])
@@ -1138,23 +1086,21 @@ model CollaborativeDoc {
   title       String
   content     String?  // Rich text content for lore writing/planning
   version     Int      @default(1)
-  createdBy   String   // accountId
-  lastEditBy  String?  // accountId
+  createdBy   String   // User.clerkUserId
+  lastEditBy  String?  // User.clerkUserId
   isPublic    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
   // Relations
-  group       ThinktankGroup    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  creator     ThinkpagesAccount @relation("CreatedDocs", fields: [createdBy], references: [id], onDelete: Cascade)
-  lastEditor  ThinkpagesAccount? @relation("EditedDocs", fields: [lastEditBy], references: [id])
+  group       ThinktankGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
   
   @@index([groupId])
   @@index([createdBy])
   @@index([isPublic])
 }
 
-// ThinkShare (Private Messaging) Models
+// Global ThinkShare (Private Messaging) Models - Now uses global User accounts
 model ThinkshareConversation {
   id           String   @id @default(cuid())
   type         String   @default("direct") // 'direct' | 'group'
@@ -1165,7 +1111,7 @@ model ThinkshareConversation {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   
-  // Relations
+  // Relations - now use global Users instead of ThinkpagesAccounts
   participants ConversationParticipant[]
   messages     ThinkshareMessage[]
   
@@ -1177,7 +1123,7 @@ model ThinkshareConversation {
 model ConversationParticipant {
   id              String   @id @default(cuid())
   conversationId  String
-  accountId       String
+  userId          String   // Changed to use User.clerkUserId
   joinedAt        DateTime @default(now())
   leftAt          DateTime?
   isActive        Boolean  @default(true)
@@ -1187,37 +1133,35 @@ model ConversationParticipant {
   
   // Relations
   conversation    ThinkshareConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  account         ThinkpagesAccount      @relation("ConversationParticipants", fields: [accountId], references: [id], onDelete: Cascade)
   
-  @@unique([conversationId, accountId])
+  @@unique([conversationId, userId])
   @@index([conversationId])
-  @@index([accountId])
+  @@index([userId])
 }
 
 model ThinkshareMessage {
   id              String   @id @default(cuid())
   conversationId  String
-  accountId       String
+  userId          String   // Changed to use User.clerkUserId
   content         String   // Rich text content from echo-editor
   messageType     String   @default("text") // 'text' | 'image' | 'file' | 'system'
   replyToId       String?  // For threaded conversations
   editedAt        DateTime?
   deletedAt       DateTime?
   reactions       String?  // JSON object of reaction counts
-  mentions        String?  // JSON array of mentioned account IDs
+  mentions        String?  // JSON array of mentioned user IDs
   attachments     String?  // JSON array of attachment objects
   isSystem        Boolean  @default(false)
   ixTimeTimestamp DateTime @default(now())
   
   // Relations
-  conversation    ThinkshareConversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  account         ThinkpagesAccount       @relation("ThinkshareMessages", fields: [accountId], references: [id], onDelete: Cascade)
-  replyTo         ThinkshareMessage?      @relation("ThinkshareReplies", fields: [replyToId], references: [id])
-  replies         ThinkshareMessage[]     @relation("ThinkshareReplies")
+  conversation    ThinkshareConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  replyTo         ThinkshareMessage?     @relation("ThinkshareReplies", fields: [replyToId], references: [id])
+  replies         ThinkshareMessage[]    @relation("ThinkshareReplies")
   readReceipts    MessageReadReceipt[]
   
   @@index([conversationId])
-  @@index([accountId])
+  @@index([userId])
   @@index([ixTimeTimestamp])
   @@index([messageType])
 }
@@ -1225,33 +1169,29 @@ model ThinkshareMessage {
 model MessageReadReceipt {
   id              String   @id @default(cuid())
   messageId       String
-  accountId       String
+  userId          String   // Changed to use User.clerkUserId
   readAt          DateTime @default(now())
   messageType     String   // 'thinktank' | 'thinkshare'
   
   // Relations for polymorphic association
   thinktankMessage  ThinktankMessage?  @relation(fields: [messageId], references: [id], onDelete: Cascade)
   thinkshareMessage ThinkshareMessage? @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  account           ThinkpagesAccount  @relation("MessageReadReceipts", fields: [accountId], references: [id], onDelete: Cascade)
   
-  @@unique([messageId, accountId])
+  @@unique([messageId, userId])
   @@index([messageId])
-  @@index([accountId])
+  @@index([userId])
   @@index([messageType])
 }
 
-// Online Status and Presence
-model AccountPresence {
+// Global User Presence - No longer tied to ThinkpagesAccounts
+model UserPresence {
   id          String   @id @default(cuid())
-  accountId   String   @unique
+  userId      String   @unique // Changed to use User.clerkUserId
   isOnline    Boolean  @default(false)
   lastSeen    DateTime @default(now())
   status      String   @default("available") // 'available' | 'busy' | 'away' | 'invisible'
   customStatus String?
   updatedAt   DateTime @updatedAt
-  
-  // Relations
-  account     ThinkpagesAccount @relation("AccountPresence", fields: [accountId], references: [id], onDelete: Cascade)
   
   @@index([isOnline])
   @@index([lastSeen])

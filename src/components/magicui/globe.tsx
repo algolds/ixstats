@@ -2,7 +2,7 @@
 
 import createGlobe from "cobe";
 import type { COBEOptions } from "cobe";
-import { useMotionValue, useSpring } from "motion/react";
+import { useMotionValue, useSpring } from "framer-motion";
 import { useEffect, useRef } from "react";
 
 import { cn } from "~/lib/utils";

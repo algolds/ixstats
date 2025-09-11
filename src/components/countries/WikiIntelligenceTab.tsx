@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Separator } from "~/components/ui/separator";
+import { CountryProfileInfoBox } from "./CountryProfileInfoBox";
 import { IxTime } from "~/lib/ixtime";
 import { IxnayWikiService, type CountryInfobox } from "~/lib/mediawiki-service";
 import {
@@ -18,12 +18,9 @@ import {
   RiBuildingLine,
   RiMoneyDollarCircleLine,
   RiTeamLine,
-  RiHistoryLine,
   RiHeartLine,
   // Intelligence Icons
   RiShieldLine,
-  RiEyeLine,
-  RiLockLine,
   RiInformationLine,
   RiAlertLine,
   RiExternalLinkLine,
@@ -31,8 +28,9 @@ import {
   RiSettings3Line,
   // Media Icons
   RiImageLine,
-  RiVideoLine,
-  RiFileLine
+  RiFileLine,
+  RiHistoryLine,
+  RiArrowDownLine
 } from "react-icons/ri";
 
 // Enhanced wiki data types
@@ -369,7 +367,7 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
     error: undefined
   });
   
-  const [activeView, setActiveView] = useState<'infobox' | 'sections' | 'conflicts' | 'settings'>('infobox');
+  const [activeView, setActiveView] = useState<'sections' | 'conflicts' | 'settings'>('sections');
   const [refreshing, setRefreshing] = useState(false);
   const [wikiSettings, setWikiSettings] = useState({
     enableIxWiki: true,
@@ -470,7 +468,7 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
           const processedContent = extractIntelligentSummary(wikitext, sectionType);
           
           sections.push({
-            id: sectionType + '-' + sections.length,
+            id: sectionType === 'overview' ? 'overview' : sectionType + '-' + sections.length,
             title: formatSectionTitle(pageTitle, countryName),
             content: processedContent,
             classification,
@@ -495,8 +493,11 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
 
   // Load wiki data
   useEffect(() => {
+    const abortController = new AbortController();
+    
     const loadWikiData = async () => {
       try {
+        if (abortController.signal.aborted) return;
         setWikiData(prev => ({ ...prev, isLoading: true, error: undefined }));
         
         console.log(`[WikiIntelligence] Loading data for: ${countryName}`);
@@ -510,8 +511,39 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
           ? await discoverSectionsWithSettings()
           : [];
         
+        // Ensure there's always an overview section
+        let finalSections: WikiSection[] = [];
+        
+        if (intelligentSections.length > 0) {
+          finalSections = intelligentSections;
+          
+          // Check if we have an overview section, if not, try to get one from the main country page
+          const hasOverview = finalSections.some(section => section.id === 'overview');
+          if (!hasOverview) {
+            try {
+              console.log(`[WikiIntelligence] No overview found in intelligent sections, fetching main country page`);
+              const mainPageWikitext = await wikiService.getPageWikitext(countryName);
+              if (typeof mainPageWikitext === 'string' && mainPageWikitext.length > 100) {
+                const processedContent = extractIntelligentSummary(mainPageWikitext, 'overview');
+                finalSections.unshift({
+                  id: 'overview',
+                  title: 'Overview',
+                  content: processedContent,
+                  classification: 'PUBLIC',
+                  importance: 'critical',
+                  lastModified: new Date().toISOString(),
+                  wordCount: mainPageWikitext.split(' ').length
+                });
+                console.log(`[WikiIntelligence] Added overview section from main country page`);
+              }
+            } catch (error) {
+              console.log(`[WikiIntelligence] Could not fetch main page for overview:`, error);
+            }
+          }
+        }
+        
         // Fallback sections with enhanced wiki-style content and real links
-        const fallbackSections: WikiSection[] = intelligentSections.length > 0 ? intelligentSections : [
+        const fallbackSections: WikiSection[] = finalSections.length > 0 ? finalSections : [
           {
             id: 'overview',
             title: 'Overview',
@@ -588,16 +620,29 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
         });
         
       } catch (error) {
+        // Handle abort errors gracefully
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.log(`[WikiIntelligence] Request aborted for ${countryName}`);
+          return; // Don't set error state for aborted requests
+        }
+        
         console.error(`[WikiIntelligence] Error loading data for ${countryName}:`, error);
-        setWikiData(prev => ({
-          ...prev,
-          isLoading: false,
-          error: error instanceof Error ? error.message : 'Failed to load wiki data'
-        }));
+        if (!abortController.signal.aborted) {
+          setWikiData(prev => ({
+            ...prev,
+            isLoading: false,
+            error: error instanceof Error ? error.message : 'Failed to load wiki data'
+          }));
+        }
       }
     };
 
     loadWikiData();
+    
+    // Cleanup function to abort ongoing requests
+    return () => {
+      abortController.abort();
+    };
   }, [countryName, wikiService.constructor.name, viewerClearanceLevel]);
 
   // Calculate data conflicts
@@ -652,6 +697,7 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
 
   // Refresh wiki data with current settings
   const handleRefresh = async () => {
+    const abortController = new AbortController();
     setRefreshing(true);
     try {
       console.log('[WikiIntelligence] Manual refresh triggered with settings:', wikiSettings);
@@ -697,14 +743,24 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
       
       console.log(`[WikiIntelligence] Refresh complete: ${finalSections.length} sections loaded`);
     } catch (error) {
+      // Handle abort errors gracefully
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log(`[WikiIntelligence] Refresh aborted for ${countryName}`);
+        return;
+      }
+      
       console.error('[WikiIntelligence] Refresh error:', error);
-      setWikiData(prev => ({
-        ...prev,
-        isLoading: false,
-        error: error instanceof Error ? error.message : 'Refresh failed'
-      }));
+      if (!abortController.signal.aborted) {
+        setWikiData(prev => ({
+          ...prev,
+          isLoading: false,
+          error: error instanceof Error ? error.message : 'Refresh failed'
+        }));
+      }
     } finally {
-      setRefreshing(false);
+      if (!abortController.signal.aborted) {
+        setRefreshing(false);
+      }
     }
   };
 
@@ -780,9 +836,7 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
               </div>
               <div>
                 <h2 className="text-xl font-semibold">Wiki Intelligence</h2>
-                <p className="text-sm text-muted-foreground">
-                  Wiki Dossier • Confidence: {wikiData.confidence}%
-                </p>
+               
               </div>
             </div>
           
@@ -806,7 +860,6 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
           {/* Navigation */}
           <div className="flex flex-wrap gap-2 mb-6">
             {[ 
-              { id: 'infobox', label: 'Overview', icon: RiInformationLine },
               { id: 'sections', label: 'Dossier', icon: RiBookOpenLine },
               { id: 'conflicts', label: `Data Analysis ${dataConflicts.length > 0 ? `(${dataConflicts.length})` : ''}`, icon: RiShieldLine },
               // Only show settings for authenticated users with higher clearance
@@ -839,478 +892,276 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3 }}
         >
-          {activeView === 'infobox' && (
-            <div className="space-y-6">
-              {wikiData.infobox ? (
-                <Card className="glass-hierarchy-child">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <RiGlobalLine className="h-5 w-5" style={{ color: flagColors.primary }} />
-                         Intelligence
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {/* National Symbols & Media - Compact Hero Section */}
-                    {(wikiData.infobox.image_flag || wikiData.infobox.flag || wikiData.infobox.image_coat || wikiData.infobox.coat_of_arms) && (
-                      <div className="mb-6 relative overflow-hidden rounded-lg bg-gradient-to-r from-blue-900/15 via-purple-900/10 to-amber-900/15 border border-amber-500/20">
-                        <div className="absolute inset-0 bg-repeat opacity-20" style={{backgroundImage: "radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)"}}></div>
-                        <div className="relative p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-lg font-semibold text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-200">
-                              National Symbols
-                            </h3>
-                            <div className="text-xs text-muted-foreground">State Identity</div>
-                          </div>
-                          
-                          <div className="flex items-center gap-6">
-                            {(wikiData.infobox.image_flag || wikiData.infobox.flag) && (
-                              <div className="flex items-center gap-3 group cursor-pointer" 
-                                   onClick={() => {
-                                     const flagFile = wikiData.infobox?.image_flag || wikiData.infobox?.flag;
-                                     if (flagFile) window.open(`https://ixwiki.com/wiki/File:${flagFile}`, '_blank');
-                                   }}>
-                                <div className="relative p-2 bg-white/5 rounded border border-blue-400/30 group-hover:bg-white/10 transition-all duration-300">
-                                  <img
-                                    src={`https://ixwiki.com/wiki/Special:Filepath/${wikiData.infobox.image_flag || wikiData.infobox.flag}`}
-                                    alt="Flag"
-                                    className="w-12 h-8 rounded shadow-sm object-cover group-hover:scale-105 transition-transform duration-300"
-                                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                  />
-                                  <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                                </div>
-                                <div>
-                                  <div className="font-medium text-blue-400 text-sm">Flag</div>
-                                  <div className="text-xs text-muted-foreground">National Banner</div>
-                                </div>
-                              </div>
-                            )}
-                            
-                            {(wikiData.infobox.image_coat || wikiData.infobox.coat_of_arms) && (
-                              <div className="flex items-center gap-3 group cursor-pointer"
-                                   onClick={() => {
-                                     const coatFile = wikiData.infobox?.image_coat || wikiData.infobox?.coat_of_arms;
-                                     if (coatFile) window.open(`https://ixwiki.com/wiki/File:${coatFile}`, '_blank');
-                                   }}>
-                                <div className="relative p-2 bg-white/5 rounded border border-amber-400/30 group-hover:bg-white/10 transition-all duration-300">
-                                  <img
-                                    src={`https://ixwiki.com/wiki/Special:Filepath/${wikiData.infobox.image_coat || wikiData.infobox.coat_of_arms}`}
-                                    alt="Coat of Arms"
-                                    className="w-10 h-10 rounded shadow-sm object-cover group-hover:scale-105 transition-transform duration-300"
-                                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                  />
-                                  <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
-                                </div>
-                                <div>
-                                  <div className="font-medium text-amber-400 text-sm">Coat of Arms</div>
-                                  <div className="text-xs text-muted-foreground">State Emblem</div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* ENHANCED INFOBOX INTELLIGENCE - Curated & Formatted Fields */}
-                    {(() => {
-                      // Helper function to format field names naturally
-                      const formatFieldName = (key: string): string => {
-                        const fieldNames: Record<string, string> = {
-                          'government_type': 'Government System',
-                          'leader_name1': 'Head of State',
-                          'leader_name2': 'Head of Government', 
-                          'leader_title1': 'Executive Title',
-                          'leader_title2': 'Government Leader',
-                          'capital': 'Capital City',
-                          'largest_city': 'Largest City',
-                          'official_languages': 'Official Languages',
-                          'religion': 'Primary Religion',
-                          'ethnic_groups': 'Ethnic Composition',
-                          'demonym': 'Demonym',
-                          'national_anthem': 'National Anthem',
-                          'national_motto': 'National Motto',
-                          'time_zone': 'Time Zone',
-                          'calling_code': 'Calling Code',
-                          'drives_on': 'Driving Side',
-                          'driving_side': 'Traffic Direction',
-                          'currency': 'Currency',
-                          'currency_code': 'Currency Code',
-                          'legislature': 'Legislature',
-                          'upper_house': 'Upper House',
-                          'lower_house': 'Lower House',
-                          'sovereignty_type': 'Sovereignty Type',
-                          'head_of_state': 'Head of State'
-                        };
-                        return fieldNames[key] || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                      };
-
-                      // Extract and organize historical timeline events
-                      const extractHistoricalTimeline = () => {
-                        const timelineEvents: Array<{ event: string; date: string; order: number }> = [];
-                        const infobox = wikiData.infobox;
-                        
-                        if (!infobox) return null;
-                        
-                        // Collect all established_event/date pairs
-                        for (let i = 1; i <= 10; i++) {
-                          const eventKey = `established_event${i}` as keyof typeof infobox;
-                          const dateKey = `established_date${i}` as keyof typeof infobox;
-                          
-                          const event = infobox[eventKey];
-                          const date = infobox[dateKey];
-                          
-                          if (event && date && typeof event === 'string' && typeof date === 'string') {
-                            timelineEvents.push({
-                              event: event.trim(),
-                              date: date.trim(),
-                              order: i
-                            });
-                          }
-                        }
-                        
-                        return timelineEvents.length > 0 ? timelineEvents : null;
-                      };
-
-                      // Extract leadership information intelligently
-                      const extractLeadership = () => {
-                        const leadership: Array<{ title: string; name: string; key: string }> = [];
-                        const infobox = wikiData.infobox;
-                        
-                        if (!infobox) return null;
-                        
-                        // Map leader titles to names
-                        for (let i = 1; i <= 5; i++) {
-                          const titleKey = `leader_title${i}` as keyof typeof infobox;
-                          const nameKey = `leader_name${i}` as keyof typeof infobox;
-                          
-                          const title = infobox[titleKey];
-                          const name = infobox[nameKey];
-                          
-                          if (title && name && typeof title === 'string' && typeof name === 'string') {
-                            leadership.push({
-                              title: title.trim(),
-                              name: name.trim(),
-                              key: `leader_${i}`
-                            });
-                          }
-                        }
-                        
-                        return leadership.length > 0 ? leadership : null;
-                      };
-
-                      const timeline = extractHistoricalTimeline();
-                      const leadership = extractLeadership();
-
-                      // Categorize and filter fields intelligently  
-                      const sections = Object.entries(wikiData.infobox)
-                        .filter(([key, value]) => 
-                          value && 
-                          typeof value === 'string' && 
-                          value.trim() !== '' &&
-                          !key.includes('image_') && 
-                          !key.includes('flag') &&
-                          !key.includes('coat') &&
-                          !key.includes('raw') &&
-                          !key.includes('parsed') &&
-                          !key.includes('rendered') &&
-                          // Exclude timeline events (handled separately)
-                          !key.startsWith('established_event') &&
-                          !key.startsWith('established_date') &&
-                          // Exclude leadership (handled separately) 
-                          !key.startsWith('leader_name') &&
-                          !key.startsWith('leader_title') &&
-                          // Exclude economic fields since IxStats data is more accurate
-                          !['gdp_ppp', 'gdp_nominal', 'GDP_PPP', 'GDP_nominal', 'GDP_PPP_per_capita', 'GDP_nominal_per_capita', 'population_estimate', 'population_census', 'population_density', 'area_km2', 'area_total', 'area_rank'].includes(key)
-                        )
-                        .reduce((sections: Record<string, Array<[string, string, string]>>, [key, value]) => {
-                          // Categorize remaining fields
-                          const govFields = ['government_type', 'capital', 'legislature', 'upper_house', 'lower_house', 'head_of_state', 'sovereignty_type'];
-                          const geoFields = ['continent', 'largest_city', 'drives_on', 'driving_side'];
-                          const cultFields = ['official_languages', 'religion', 'ethnic_groups', 'demonym', 'national_anthem', 'time_zone', 'calling_code', 'cctld', 'motto', 'national_motto', 'currency', 'currency_code'];
-                          
-                          const formattedName = formatFieldName(key);
-                          
-                          if (govFields.includes(key)) {
-                            if (!sections.government) sections.government = [];
-                            sections.government.push([key, value, formattedName]);
-                          } else if (geoFields.includes(key)) {
-                            if (!sections.geography) sections.geography = [];
-                            sections.geography.push([key, value, formattedName]);
-                          } else if (cultFields.includes(key)) {
-                            if (!sections.culture) sections.culture = [];
-                            sections.culture.push([key, value, formattedName]);
-                          } else {
-                            if (!sections.other) sections.other = [];
-                            sections.other.push([key, value, formattedName]);
-                          }
-                          return sections;
-                        }, {});
-                      
-                      return (
-                        <div className="space-y-6">
-                          {/* Historical Timeline */}
-                          {timeline && (
-                            <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-red-500/10 dark:from-amber-900/10 dark:via-orange-900/10 dark:to-red-900/10 rounded-lg border border-amber-500/20 p-4">
-                              <h4 className="font-medium flex items-center gap-2 mb-4">
-                                <RiHistoryLine className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                                Historical Timeline
-                              </h4>
-                              <div className="space-y-3">
-                                {timeline.map((event) => (
-                                  <div key={event.order} className="flex items-start gap-3">
-                                    <div className="flex-shrink-0 w-2 h-2 bg-amber-600 dark:bg-amber-400 rounded-full mt-2"></div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-start justify-between gap-3">
-                                        <div className="flex-1">
-                                          <div className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                                            {parseInfoboxValue(event.event, handleWikiLinkClick)}
-                                          </div>
-                                          <div className="text-xs text-muted-foreground mt-1">
-                                            {parseInfoboxValue(event.date, handleWikiLinkClick)}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Leadership */}
-                          {leadership && (
-                            <div className="bg-gradient-to-r from-blue-900/10 via-purple-900/10 to-indigo-900/10 rounded-lg border border-blue-500/20 p-4">
-                              <h4 className="font-medium flex items-center gap-2 mb-4">
-                                <RiBuildingLine className="h-4 w-4 text-blue-400" />
-                                Current Leadership
-                              </h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {leadership.map((leader) => (
-                                  <div key={leader.key} className="bg-muted/20 rounded-lg p-3">
-                                    <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">
-                                      {leader.title}
-                                    </div>
-                                    <div className="text-sm font-medium text-blue-200">
-                                      {parseInfoboxValue(leader.name, handleWikiLinkClick)}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Organized Sections */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                            {Object.entries(sections).map(([sectionName, fields]) => {
-                              const icons = {
-                                government: { icon: RiBuildingLine, color: flagColors.secondary, title: "Government & Politics" },
-                                geography: { icon: RiMapLine, color: flagColors.accent, title: "Geographic Details" },
-                                culture: { icon: RiHeartLine, color: flagColors.primary, title: "Culture & Society" },
-                                other: { icon: RiInformationLine, color: flagColors.secondary, title: "Additional Details" }
-                              };
-                              const config = icons[sectionName as keyof typeof icons];
-                              const IconComponent = config.icon;
-                              
-                              return (
-                                <div key={sectionName} className="space-y-3">
-                                  <h4 className="font-medium flex items-center gap-2">
-                                    <IconComponent className="h-4 w-4" style={{ color: config.color }} />
-                                    {config.title}
-                                  </h4>
-                                  <div className="space-y-3 text-sm">
-                                    {fields.map(([key, value, displayName]) => (
-                                      <div key={key} className="bg-muted/20 rounded-lg p-3">
-                                        <div className="flex items-start justify-between gap-2">
-                                          <span className="text-muted-foreground font-medium text-xs uppercase tracking-wide">
-                                            {displayName}
-                                          </span>
-                                        </div>
-                                        <div className="mt-1 text-foreground leading-relaxed">
-                                          {parseInfoboxValue(value, handleWikiLinkClick)}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                    
-                    {/* Raw infobox data for advanced users */}
-                    {viewerClearanceLevel !== 'PUBLIC' && (
-                      <div className="mt-6 pt-6 border-t border-border/50">
-                        <details className="group">
-                          <summary className="cursor-pointer text-sm font-medium text-muted-foreground group-open:text-foreground">
-                            Raw Intelligence Data ({Object.keys(wikiData.infobox).length} fields)
-                          </summary>
-                          <div className="mt-3 p-3 bg-muted/30 rounded text-xs font-mono max-h-64 overflow-auto">
-                            <pre>{JSON.stringify(wikiData.infobox, null, 2)}</pre>
-                          </div>
-                        </details>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className="glass-hierarchy-child">
-                  <CardContent className="p-8 text-center">
-                    <RiBookOpenLine className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <h3 className="text-lg font-semibold mb-2">No Infobox Data Available</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Wiki infobox data could not be retrieved for {countryName}.
-                    </p>
-                    <Button onClick={handleRefresh} variant="outline">
-                      <RiRefreshLine className="h-4 w-4 mr-2" />
-                      Retry Connection
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-
-
           {activeView === 'sections' && (
-            <div className="space-y-4">
-              {wikiData.sections
-                .filter(section => hasAccess(section.classification))
-                .map((section) => {
-                const SectionIcon = SECTION_ICONS[section.id as keyof typeof SECTION_ICONS] || SECTION_ICONS.default;
-                return (
-                  <Card key={section.id} className="glass-hierarchy-child">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2">
-                          <SectionIcon className="h-5 w-5" style={{ color: flagColors.primary }} />
-                          {section.title}
-                        </CardTitle>
-                        <div className="flex items-center gap-2">
-                          <Badge 
-                            variant="outline"
-                            className={cn(
-                              "text-xs",
-                              CLASSIFICATION_STYLES[section.classification].color
-                            )}
-                          >
-                            {section.classification}
-                          </Badge>
-                          <Badge 
-                            variant="secondary"
-                            className={cn(
-                              "text-xs",
-                              section.importance === 'critical' && "bg-red-500/20 text-red-400",
-                              section.importance === 'high' && "bg-orange-500/20 text-orange-400",
-                              section.importance === 'medium' && "bg-blue-500/20 text-blue-400",
-                              section.importance === 'low' && "bg-gray-500/20 text-gray-400"
-                            )}
-                          >
-                            {section.importance.toUpperCase()}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {/* Enhanced content with image support */}
-                      <div className="space-y-4">
-                        {/* Content with proper link handling and image support */}
-                        <div className="text-sm leading-relaxed prose prose-sm prose-invert max-w-none">
-                          {parseWikiContent(section.content, handleWikiLinkClick)}
-                        </div>
-                        
-                        {/* Display actual images if they exist */}
-                        {section.images && section.images.length > 0 && (
-                          <div className="mt-4 space-y-2">
-                            <p className="text-xs text-muted-foreground mb-2">Media from wiki source:</p>
-                            <div className="flex flex-wrap gap-2">
-                              {section.images.map((imageLink, index) => {
-                                const fileName = imageLink.replace(/\\\[\[File:([^|\\]+).*\\\]\]/, '$1');
-                                return (
-                                  <img
-                                    key={index}
-                                    src={`https://ixwiki.com/wiki/Special:Filepath/${fileName}`}
-                                    alt={`Image from ${section.title}`}
-                                    className="max-w-32 h-auto rounded border border-muted-foreground/30 cursor-pointer"
-                                    onError={(e) => e.currentTarget.style.display = 'none'}
-                                    onClick={() => window.open(`https://ixwiki.com/wiki/File:${fileName}`, '_blank')}
-                                  />
-                                );
-                              })}
-                            </div>
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+              {/* Main Content - Dossier Sections */}
+              <div className="xl:col-span-3 space-y-4">
+                {wikiData.sections
+                  .filter(section => hasAccess(section.classification) && section.id !== 'overview')
+                  .map((section) => {
+                  const SectionIcon = SECTION_ICONS[section.id as keyof typeof SECTION_ICONS] || SECTION_ICONS.default;
+                  return (
+                    <Card key={section.id} className="glass-hierarchy-child">
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="flex items-center gap-2">
+                            <SectionIcon className="h-5 w-5" style={{ color: flagColors.primary }} />
+                            {section.title}
+                          </CardTitle>
+                          <div className="flex items-center gap-2">
+                            <Badge 
+                              variant="outline"
+                              className={cn(
+                                "text-xs",
+                                CLASSIFICATION_STYLES[section.classification].color
+                              )}
+                            >
+                              {section.classification}
+                            </Badge>
+                            <Badge 
+                              variant="secondary"
+                              className={cn(
+                                "text-xs",
+                                section.importance === 'critical' && "bg-red-500/20 text-red-400",
+                                section.importance === 'high' && "bg-orange-500/20 text-orange-400",
+                                section.importance === 'medium' && "bg-blue-500/20 text-blue-400",
+                                section.importance === 'low' && "bg-gray-500/20 text-gray-400"
+                              )}
+                            >
+                              {section.importance.toUpperCase()}
+                            </Badge>
                           </div>
-                        )}
-                        
-                        {/* Wiki markup indicators */}
-                        {section.content.includes('{{') && (
-                          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
-                            <div className="flex items-center gap-2 text-sm text-blue-400">
-                              <RiFileLine className="h-4 w-4" />
-                              <span>Contains Wiki Templates</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Dynamic content available - templates may include infoboxes, navboxes, or other structured data
-                            </p>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {/* Enhanced content with image support */}
+                        <div className="space-y-4">
+                          {/* Content with proper link handling and image support */}
+                          <div className="text-sm leading-relaxed prose prose-sm prose-invert max-w-none">
+                            {parseWikiContent(section.content, handleWikiLinkClick)}
                           </div>
-                        )}
-                        
-                        {/* Full Article Access */}
-                        <div className="flex gap-2 pt-3 border-t border-border/30">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              // Open full wiki article for the section
-                              const articleName = section.title.includes(' of ') 
-                                ? section.title 
-                                : `${section.title} of ${countryName}`;
-                              window.open(`https://ixwiki.com/wiki/${encodeURIComponent(articleName)}`, '_blank');
-                            }}
-                            className="flex-1"
-                          >
-                            <RiExternalLinkLine className="h-3 w-3 mr-1" />
-                            View Full Article
-                          </Button>
                           
+                          {/* Display actual images if they exist */}
                           {section.images && section.images.length > 0 && (
+                            <div className="mt-4 space-y-2">
+                              <p className="text-xs text-muted-foreground mb-2">Media from wiki source:</p>
+                              <div className="flex flex-wrap gap-2">
+                                {section.images.map((imageLink, index) => {
+                                  const fileName = imageLink.replace(/\\\[\[File:([^|\\]+).*\\\]\]/, '$1');
+                                  return (
+                                    <img
+                                      key={index}
+                                      src={`https://ixwiki.com/wiki/Special:Filepath/${fileName}`}
+                                      alt={`Image from ${section.title}`}
+                                      className="max-w-32 h-auto rounded border border-muted-foreground/30 cursor-pointer"
+                                      onError={(e) => e.currentTarget.style.display = 'none'}
+                                      onClick={() => window.open(`https://ixwiki.com/wiki/File:${fileName}`, '_blank')}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Wiki markup indicators */}
+                          {section.content.includes('{{') && (
+                            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
+                              <div className="flex items-center gap-2 text-sm text-blue-400">
+                                <RiFileLine className="h-4 w-4" />
+                                <span>Contains Wiki Templates</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Dynamic content available - templates may include infoboxes, navboxes, or other structured data
+                              </p>
+                            </div>
+                          )}
+                          
+                          {/* Full Article Access */}
+                          <div className="flex gap-2 pt-3 border-t border-border/30">
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => {
-                                // Show category page for this section's media
+                                // Open full wiki article for the section
                                 const articleName = section.title.includes(' of ') 
                                   ? section.title 
                                   : `${section.title} of ${countryName}`;
-                                window.open(`https://ixwiki.com/wiki/Category:${encodeURIComponent(articleName)}_images`, '_blank');
+                                window.open(`https://ixwiki.com/wiki/${encodeURIComponent(articleName)}`, '_blank');
                               }}
+                              className="flex-1"
                             >
-                              <RiImageLine className="h-3 w-3 mr-1" />
-                              {section.images.length} Media
+                              <RiExternalLinkLine className="h-3 w-3 mr-1" />
+                              View Full Article
                             </Button>
-                          )}
-                        </div>
-                        
-                        {/* Section metadata */}
-                        <div className="mt-4 pt-3 border-t border-border/30 text-xs text-muted-foreground">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                              <span>{section.wordCount} words</span>
-                              <span>Last updated: {new Date(section.lastModified).toLocaleDateString()}</span>
-                            </div>
-                            {section.content.includes('[') && (
-                              <span className="flex items-center gap-1 text-blue-400">
-                                <RiExternalLinkLine className="h-3 w-3" />
-                                {section.content.match(/\\\[\[[^\]]*\\\]/g)?.length || 0} wiki links
-                              </span>
+                            
+                            {section.images && section.images.length > 0 && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  // Show category page for this section's media
+                                  const articleName = section.title.includes(' of ') 
+                                    ? section.title 
+                                    : `${section.title} of ${countryName}`;
+                                  window.open(`https://ixwiki.com/wiki/Category:${encodeURIComponent(articleName)}_images`, '_blank');
+                                }}
+                              >
+                                <RiImageLine className="h-3 w-3 mr-1" />
+                                {section.images.length} Media
+                              </Button>
                             )}
                           </div>
+                          
+                          {/* Section metadata */}
+                          <div className="mt-4 pt-3 border-t border-border/30 text-xs text-muted-foreground">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                <span>{section.wordCount} words</span>
+                                <span>Last updated: {new Date(section.lastModified).toLocaleDateString()}</span>
+                              </div>
+                              {section.content.includes('[') && (
+                                <span className="flex items-center gap-1 text-blue-400">
+                                  <RiExternalLinkLine className="h-3 w-3" />
+                                  {section.content.match(/\\\[\[[^\]]*\\\]/g)?.length || 0} wiki links
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {/* Right Sidebar - Wiki Infobox */}
+              <div className="xl:col-span-1">
+                <div className="sticky top-6">
+                  {wikiData.infobox ? (
+                    <Card className="glass-hierarchy-child">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <RiGlobalLine className="h-5 w-5" style={{ color: flagColors.primary }} />
+                          Wiki Intelligence
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {/* NATIONAL SYMBOLS - Compact but Prominent */}
+                        {(wikiData.infobox.image_flag || wikiData.infobox.flag || wikiData.infobox.image_coat || wikiData.infobox.coat_of_arms) && (
+                          <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-red-500/10 rounded-lg border border-amber-500/20 p-3">
+                            <h4 className="font-medium flex items-center gap-2 mb-3 text-sm">
+                              <RiShieldLine className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                              National Symbols
+                            </h4>
+                            <div className="flex items-center justify-center gap-4">
+                              {(wikiData.infobox.image_flag || wikiData.infobox.flag) && (
+                                <div className="group cursor-pointer" 
+                                     onClick={() => {
+                                       const flagFile = wikiData.infobox?.image_flag || wikiData.infobox?.flag;
+                                       if (flagFile) window.open(`https://ixwiki.com/wiki/File:${flagFile}`, '_blank');
+                                     }}>
+                                  <div className="text-center">
+                                    <div className="relative p-2 bg-blue-500/10 rounded-lg border border-blue-400/30 group-hover:border-blue-400/50 transition-all duration-300 mb-1">
+                                      <img
+                                        src={`https://ixwiki.com/wiki/Special:Filepath/${wikiData.infobox.image_flag || wikiData.infobox.flag}`}
+                                        alt="National Flag"
+                                        className="w-12 h-7 rounded shadow-lg object-cover group-hover:scale-105 transition-transform duration-300"
+                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                      />
+                                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                                    </div>
+                                    <div className="font-medium text-blue-400 text-xs">Flag</div>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {(wikiData.infobox.image_coat || wikiData.infobox.coat_of_arms) && (
+                                <div className="group cursor-pointer"
+                                     onClick={() => {
+                                       const coatFile = wikiData.infobox?.image_coat || wikiData.infobox?.coat_of_arms;
+                                       if (coatFile) window.open(`https://ixwiki.com/wiki/File:${coatFile}`, '_blank');
+                                     }}>
+                                  <div className="text-center">
+                                    <div className="relative p-2 bg-amber-500/10 rounded-lg border border-amber-400/30 group-hover:border-amber-400/50 transition-all duration-300 mb-1">
+                                      <img
+                                        src={`https://ixwiki.com/wiki/Special:Filepath/${wikiData.infobox.image_coat || wikiData.infobox.coat_of_arms}`}
+                                        alt="Coat of Arms"
+                                        className="w-7 h-7 rounded shadow-lg object-cover group-hover:scale-105 transition-transform duration-300"
+                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                      />
+                                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
+                                    </div>
+                                    <div className="font-medium text-amber-400 text-xs">Coat of Arms</div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Key Info Fields - Compact Sidebar Format */}
+                        {(() => {
+                          // Extract key fields for sidebar display
+                          const keyFields = [
+                            { key: 'capital', label: 'Capital' },
+                            { key: 'government_type', label: 'Government' },
+                            { key: 'leader_name1', label: 'Head of State' },
+                            { key: 'official_languages', label: 'Languages' },
+                            { key: 'currency', label: 'Currency' },
+                            { key: 'demonym', label: 'Demonym' },
+                          ].filter(field => wikiData.infobox?.[field.key as keyof typeof wikiData.infobox]);
+
+                          return keyFields.length > 0 ? (
+                            <div className="space-y-3">
+                              {keyFields.map(field => (
+                                <div key={field.key} className="bg-muted/20 rounded-lg p-2">
+                                  <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">
+                                    {field.label}
+                                  </div>
+                                  <div className="text-xs text-foreground leading-relaxed">
+                                    {parseInfoboxValue(
+                                      wikiData.infobox?.[field.key as keyof typeof wikiData.infobox] as string,
+                                      handleWikiLinkClick
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : null;
+                        })()}
+
+                        {/* Raw data for advanced users */}
+                        {viewerClearanceLevel !== 'PUBLIC' && (
+                          <div className="pt-3 border-t border-border/50">
+                            <details className="group">
+                              <summary className="cursor-pointer text-xs font-medium text-muted-foreground group-open:text-foreground">
+                                Raw Data ({Object.keys(wikiData.infobox).length} fields)
+                              </summary>
+                              <div className="mt-2 p-2 bg-muted/30 rounded text-xs font-mono max-h-32 overflow-auto">
+                                <pre className="text-xs">{JSON.stringify(wikiData.infobox, null, 1)}</pre>
+                              </div>
+                            </details>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card className="glass-hierarchy-child">
+                      <CardContent className="p-4 text-center">
+                        <RiBookOpenLine className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                        <h3 className="text-sm font-semibold mb-1">No Infobox Data</h3>
+                        <p className="text-xs text-muted-foreground mb-3">
+                          Wiki infobox could not be retrieved.
+                        </p>
+                        <Button onClick={handleRefresh} variant="outline" size="sm">
+                          <RiRefreshLine className="h-3 w-3 mr-1" />
+                          Retry
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 

@@ -1,5 +1,5 @@
 // src/lib/atomic-economic-integration.ts
-import { type ComponentType, type Country, type GovernmentComponent, type AtomicEffectiveness } from '@prisma/client';
+import { ComponentType, type Country, type GovernmentComponent, type AtomicEffectiveness } from '@prisma/client';
 import { getAtomicEffectivenessService } from '~/services/AtomicEffectivenessService';
 import { db } from '~/server/db';
 

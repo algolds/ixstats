@@ -25,6 +25,7 @@ export interface CoreEconomicIndicators {
   realGDPGrowthRate: number;
   inflationRate: number;
   currencyExchangeRate: number;
+  giniCoefficient?: number;
 }
 
 export interface RealCountryData {

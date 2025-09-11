@@ -29,15 +29,9 @@ const isProductionEnvironment = process.env.NODE_ENV === 'production';
 const isUsingTestKeys = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith('pk_test_');
 const isUsingLiveKeys = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith('pk_live_');
 
-// Enhanced logging for environment and key detection
+// Production environment validation
 if (typeof window === 'undefined') { // Server-side only
-  console.log('🔐 Clerk Configuration Check:');
-  console.log(`   Environment: ${process.env.NODE_ENV}`);
-  console.log(`   Has Publishable Key: ${!!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}`);
-  console.log(`   Key Type: ${isUsingTestKeys ? 'TEST' : isUsingLiveKeys ? 'LIVE' : 'NONE/INVALID'}`);
-  console.log(`   Is Configured: ${isClerkConfigured}`);
-  
-  if (isProductionEnvironment && !isUsingLiveKeys) {
+  if (isProductionEnvironment && !isUsingLiveKeys && isClerkConfigured) {
     console.warn('⚠️  PRODUCTION WARNING: Not using live Clerk keys in production environment');
   }
   if (isDevEnvironment && isUsingLiveKeys) {
@@ -178,10 +172,7 @@ export function SignInButton({ children, mode, asChild, ...props }: { children?:
       console.error('🚨 Authentication will not work properly in production with test keys!');
     }
 
-    // Success message for correct key usage
-    if (isProductionEnvironment && isUsingLiveKeys) {
-      console.log('✅ Production Clerk keys correctly configured');
-    }
+    // Log success only in development for debugging
     if (isDevEnvironment && isUsingTestKeys) {
       console.log('✅ Development Clerk keys correctly configured');
     }

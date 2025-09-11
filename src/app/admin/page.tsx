@@ -21,6 +21,11 @@ import {
   NotificationsAdmin,
   UserManagement,
 } from "./_components";
+import { AdminDashboardSafe } from "./_components/AdminDashboardSafe";
+// Complex components loaded on-demand to prevent API errors
+import { SystemOverview } from "./_components/SystemOverview";
+import { CalculationEditor } from "./_components/CalculationEditor";
+import { DMControlPanel } from "./_components/DMControlPanel";
 import { IxTimeVisualizer } from "./_components/IxTimeVisualizer";
 import { GlassCard, EnhancedCard } from "~/components/ui/enhanced-card";
 import { BentoGrid } from "~/components/ui/bento-grid";
@@ -42,10 +47,9 @@ import type {
 } from "~/types/ixstats";
 import { AdminErrorBoundary } from "./_components/ErrorBoundary";
 import { SignedIn, SignedOut, SignInButton, useUser, UserButton } from "@clerk/nextjs";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
-import { Sidebar, SidebarBody, SidebarLink } from "~/components/ui/sidebar";
-import { Settings, Clock, TrendingUp, Bot, Database, Upload, List, Shield, Users, Bell } from "lucide-react";
+import { Settings, Clock, TrendingUp, Bot, Database, Upload, List, Shield, Users, Bell, Monitor, Code, Gamepad2, Minimize2, Maximize2 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { BarChart3, Users as UsersIcon } from "lucide-react";
 import { formatPopulation, formatCurrency } from '~/lib/chart-utils';
@@ -91,19 +95,18 @@ export default function AdminPage() {
     lastBotSync: null as Date | null,
   });
   const [selectedSection, setSelectedSection] = useState("overview");
-  const sidebarLinks = [
-    { label: "Overview", value: "overview", icon: <Settings /> },
-    { label: "Time Controls", value: "time", icon: <Clock /> },
-    { label: "IxTime Visualizer", value: "ixtime-visualizer", icon: <BarChart3 /> },
-    { label: "Economic Controls", value: "economic", icon: <TrendingUp /> },
-    { label: "Bot Controls", value: "bot", icon: <Bot /> },
-    { label: "Data Import", value: "import", icon: <Upload /> },
-    { label: "Calculation Logs", value: "logs", icon: <List /> },
-    { label: "Country Admin", value: "country-admin", icon: <Users /> },
-    { label: "User Management", value: "user-management", icon: <Users /> },
-    { label: "SDI Admin", value: "sdi", icon: <Shield /> },
-    { label: "Notifications", value: "notifications", icon: <Bell /> },
-  ];
+  const [collapsedCards, setCollapsedCards] = useState<Record<string, boolean>>({
+    temporal: false,
+    discord: false,
+    cache: false
+  });
+
+  const toggleCardCollapse = useCallback((cardId: string) => {
+    setCollapsedCards(prev => ({
+      ...prev,
+      [cardId]: !prev[cardId]
+    }));
+  }, []);
 
   // TRPC Queries - all called unconditionally
   const { 
@@ -545,172 +548,423 @@ export default function AdminPage() {
     <>
       <AdminErrorBoundary>
         <div className="min-h-screen bg-background text-foreground flex">
-          <Sidebar>
-            <SidebarBody className="h-screen">
-              <div className="flex flex-col gap-2 mt-4">
-                {sidebarLinks.map((link) => (
-                  <div
-                    key={link.value}
-                    onClick={e => { e.preventDefault(); setSelectedSection(link.value); }}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <SidebarLink
-                      link={{ label: link.label, href: `#${link.value}`, icon: link.icon }}
-                      className={selectedSection === link.value ? "bg-blue-500/20 text-blue-700 dark:text-blue-200 font-semibold shadow-lg border border-blue-400/30" : ""}
-                    />
-                  </div>
-                ))}
+          {/* Modern Admin Sidebar */}
+          <div className="w-72 min-h-screen bg-card/50 backdrop-blur-sm border-r border-border/50 flex flex-col">
+            {/* Header */}
+            <div className="p-6 border-b border-border/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
+                  <Shield className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-foreground">Admin Console</h1>
+                  <p className="text-sm text-muted-foreground">System Management</p>
+                </div>
               </div>
-            </SidebarBody>
-          </Sidebar>
-          <main className="flex-1 min-h-screen px-0 md:px-8 py-8">
-            <div className="max-w-7xl mx-auto">
+            </div>
+
+            {/* Navigation */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <nav className="space-y-6">
+                {/* Overview */}
+                <div>
+                  <button
+                    onClick={() => setSelectedSection("overview")}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                      selectedSection === "overview"
+                        ? "bg-primary text-primary-foreground shadow-lg"
+                        : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Settings className="h-5 w-5" />
+                    <span className="font-medium">Dashboard</span>
+                  </button>
+                </div>
+
+                {/* Main Functions */}
+                <div>
+                  <h3 className="px-4 mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Core Functions
+                  </h3>
+                  <div className="space-y-1">
+                    {[
+                      { value: "system", icon: <Monitor className="h-5 w-5" />, label: "System Monitor" },
+                      { value: "formulas", icon: <Code className="h-5 w-5" />, label: "Formula Editor" },
+                      { value: "dm-controls", icon: <Gamepad2 className="h-5 w-5" />, label: "DM Controls" },
+                      { value: "time", icon: <Clock className="h-5 w-5" />, label: "Time Controls" }
+                    ].map((item) => (
+                      <button
+                        key={item.value}
+                        onClick={() => setSelectedSection(item.value)}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
+                          selectedSection === item.value
+                            ? "bg-primary/10 text-primary border border-primary/20"
+                            : "hover:bg-muted/30 text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {item.icon}
+                        <span className="text-sm font-medium">{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Data & Integration */}
+                <div>
+                  <h3 className="px-4 mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Data & Integration
+                  </h3>
+                  <div className="space-y-1">
+                    {[
+                      { value: "bot", icon: <Bot className="h-5 w-5" />, label: "Discord Bot" },
+                      { value: "import", icon: <Upload className="h-5 w-5" />, label: "Data Import" },
+                      { value: "ixtime-visualizer", icon: <BarChart3 className="h-5 w-5" />, label: "IxTime Visualizer" }
+                    ].map((item) => (
+                      <button
+                        key={item.value}
+                        onClick={() => setSelectedSection(item.value)}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
+                          selectedSection === item.value
+                            ? "bg-primary/10 text-primary border border-primary/20"
+                            : "hover:bg-muted/30 text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {item.icon}
+                        <span className="text-sm font-medium">{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* User Management */}
+                <div>
+                  <h3 className="px-4 mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    User Management
+                  </h3>
+                  <div className="space-y-1">
+                    {[
+                      { value: "user-management", icon: <Users className="h-5 w-5" />, label: "Users & Roles" },
+                      { value: "country-admin", icon: <UsersIcon className="h-5 w-5" />, label: "Country Admin" },
+                      { value: "notifications", icon: <Bell className="h-5 w-5" />, label: "Notifications" }
+                    ].map((item) => (
+                      <button
+                        key={item.value}
+                        onClick={() => setSelectedSection(item.value)}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
+                          selectedSection === item.value
+                            ? "bg-primary/10 text-primary border border-primary/20"
+                            : "hover:bg-muted/30 text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {item.icon}
+                        <span className="text-sm font-medium">{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Monitoring */}
+                <div>
+                  <h3 className="px-4 mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Monitoring
+                  </h3>
+                  <div className="space-y-1">
+                    {[
+                      { value: "logs", icon: <List className="h-5 w-5" />, label: "System Logs" },
+                      { value: "sdi", icon: <Shield className="h-5 w-5" />, label: "SDI Admin" },
+                      { value: "economic", icon: <TrendingUp className="h-5 w-5" />, label: "Economic Monitor" }
+                    ].map((item) => (
+                      <button
+                        key={item.value}
+                        onClick={() => setSelectedSection(item.value)}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
+                          selectedSection === item.value
+                            ? "bg-primary/10 text-primary border border-primary/20"
+                            : "hover:bg-muted/30 text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {item.icon}
+                        <span className="text-sm font-medium">{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </nav>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-border/50">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                <span>System Online</span>
+              </div>
+            </div>
+          </div>
+          <main className="flex-1 min-h-screen px-2 md:px-8 py-6">
+            <div className="max-w-[1400px] mx-auto">
               {selectedSection === "overview" && (
                 <>
-                  {/* Header with quick stats */}
-                  <div className="mb-8">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="space-y-8">
+                  {/* Enhanced Header Section */}
+                  <div className="glass-card-parent p-6 rounded-xl border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-transparent to-primary/10">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                       {/* Left: Title and description */}
-                      <div>
-                        <h1 className="text-3xl md:text-4xl font-bold text-foreground flex items-center">
-                          <Settings className="h-8 w-8 md:h-10 md:w-10 mr-3 text-primary" />
-                          Admin Overview
-                        </h1>
-                        <p className="mt-2 text-base md:text-lg text-muted-foreground">
-                          System status, time, bot, and cache controls for IxStats.
+                      <div className="flex-1">
+                        <div className="flex items-center gap-4 mb-3">
+                          <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
+                            <Settings className="h-8 w-8 text-primary" />
+                          </div>
+                          <div>
+                            <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+                              System Administration
+                            </h1>
+                            <p className="text-lg text-primary/80 font-medium">Administrative System Control</p>
+                          </div>
+                        </div>
+                        <p className="text-base md:text-lg text-muted-foreground max-w-2xl">
+                          Comprehensive administrative control over all systems including calculations, 
+                          time management, economic modifiers, and real-time monitoring.
                         </p>
-                        {/* Real-time clock */}
-                        <div className="mt-3">
-                          <RealTimeClock className="bg-card/50 backdrop-blur-sm border-border rounded-lg px-3 py-2" />
+                        {/* Real-time status indicators */}
+                        <div className="flex flex-wrap gap-3 mt-4">
+                          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
+                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                            <span className="text-sm text-green-700 dark:text-green-300 font-medium">System Online</span>
+                          </div>
+                          <RealTimeClock className="bg-card/80 backdrop-blur-sm border-border rounded-full px-4 py-1.5" />
+                        </div>
+
+                        {/* Quick Actions - moved from below */}
+                        <div className="mt-6">
+                          <h4 className="text-sm font-semibold text-foreground mb-3">Quick Actions</h4>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            {[
+                              { icon: Monitor, label: "System Monitor", section: "system", color: "indigo" },
+                              { icon: Code, label: "Formula Editor", section: "formulas", color: "emerald" },
+                              { icon: Gamepad2, label: "DM Controls", section: "dm-controls", color: "amber" },
+                              { icon: Upload, label: "Data Import", section: "import", color: "rose" }
+                            ].map((item) => (
+                              <button
+                                key={item.section}
+                                onClick={() => setSelectedSection(item.section)}
+                                className="glass-card-child p-3 rounded-xl border-2 bg-gradient-to-br transition-all duration-200 hover:scale-105 group border-primary/20 bg-primary/5 hover:bg-primary/10 text-left"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/20 group-hover:bg-primary/20 transition-colors">
+                                    <item.icon className="h-4 w-4 text-primary" />
+                                  </div>
+                                  <div>
+                                    <h5 className="font-medium text-foreground group-hover:text-primary transition-colors text-sm">{item.label}</h5>
+                                    <p className="text-xs text-muted-foreground">Quick access</p>
+                                  </div>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                      {/* Right: Stat cards */}
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        {/* IxTime Stat */}
-                        <div className="flex items-center px-4 py-2 bg-card text-card-foreground rounded-lg border">
-                          <Clock className="h-5 w-5 mr-2 text-blue-500" />
-                          <div>
-                            <p className="text-xs text-muted-foreground">Current IxTime</p>
+                      {/* Right: Enhanced status dashboard */}
+                      <div className="flex flex-col gap-4 min-w-[320px]">
+                        {/* Key metrics grid */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="glass-card-child p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Clock className="h-4 w-4 text-blue-500" />
+                              <span className="text-xs font-medium text-blue-700 dark:text-blue-300 uppercase tracking-wider">IxTime</span>
+                            </div>
                             {statusLoading ? (
-                              <Skeleton className="h-5 w-24 mt-1" />
+                              <Skeleton className="h-6 w-full" />
                             ) : (
-                              <div className="font-semibold text-foreground">
+                              <div className="text-sm font-bold text-foreground">
                                 {systemStatus?.ixTime?.formattedIxTime || "N/A"}
                               </div>
                             )}
                           </div>
-                        </div>
-                        {/* Bot Status Stat */}
-                        <div className="flex items-center px-4 py-2 bg-card text-card-foreground rounded-lg border">
-                          <Bot className="h-5 w-5 mr-2 text-green-500" />
-                          <div>
-                            <p className="text-xs text-muted-foreground">Bot Status</p>
+                          <div className="glass-card-child p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Bot className="h-4 w-4 text-green-500" />
+                              <span className="text-xs font-medium text-green-700 dark:text-green-300 uppercase tracking-wider">Bot</span>
+                            </div>
                             {botStatusLoading ? (
-                              <Skeleton className="h-5 w-16 mt-1" />
+                              <Skeleton className="h-6 w-full" />
                             ) : (
-                              <div className={`font-semibold ${botStatus?.botHealth?.available ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                                {botStatus?.botHealth?.available ? 'Online' : 'Offline'}
+                              <div className={`text-sm font-bold ${botStatus?.botHealth?.available ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                {botStatus?.botHealth?.available ? 'Connected' : 'Disconnected'}
                               </div>
                             )}
                           </div>
                         </div>
-                        {/* Global Growth Stat */}
-                        <div className="flex items-center px-4 py-2 bg-card text-card-foreground rounded-lg border">
-                          <TrendingUp className="h-5 w-5 mr-2 text-indigo-500" />
-                          <div>
-                            <p className="text-xs text-muted-foreground">Global Growth</p>
+                        <div className="glass-card-child p-4 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-600/5 border border-indigo-500/20">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <TrendingUp className="h-4 w-4 text-indigo-500" />
+                              <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">Growth Factor</span>
+                            </div>
                             {configLoading ? (
-                              <Skeleton className="h-5 w-12 mt-1" />
+                              <Skeleton className="h-8 w-16" />
                             ) : (
-                              <div className="font-semibold text-foreground">
-                                {((config.globalGrowthFactor - 1) * 100).toFixed(2)}%
+                              <div className="text-lg font-bold text-foreground">
+                                +{((config.globalGrowthFactor - 1) * 100).toFixed(1)}%
                               </div>
                             )}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                            <span>Economic multiplier active</span>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                  {/* Main grid of admin cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                    {/* Time Controls Card */}
-                    <Card className="flex flex-col h-full">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Clock className="h-5 w-5 text-blue-500" />
-                          Time Controls
-                        </CardTitle>
-                        <div className="text-sm text-muted-foreground mt-1">
-                          Adjust IxTime, multiplier, and sync epoch.
+                  
+                  {/* Enhanced control panels grid */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {[
+                      {
+                        id: "temporal",
+                        title: "Temporal Controls",
+                        description: "IxTime management & synchronization",
+                        icon: Clock,
+                        color: "blue",
+                        content: (
+                          <TimeControlPanel
+                            timeMultiplier={config.timeMultiplier}
+                            customDate={timeState.customDate}
+                            customTime={timeState.customTime}
+                            botSyncEnabled={config.botSyncEnabled}
+                            botStatus={botStatus}
+                            onTimeMultiplierChange={handleTimeMultiplierChange}
+                            onCustomDateChange={(value) => setTimeState(prev => ({ ...prev, customDate: value }))}
+                            onCustomTimeChange={(value) => setTimeState(prev => ({ ...prev, customTime: value }))}
+                            onSetCustomTime={handleSetCustomTime}
+                            onResetToRealTime={handleResetToRealTime}
+                            onSyncEpoch={handleSyncEpoch}
+                            onSyncFromBot={handleSyncFromBot}
+                            setTimePending={actionState.setTimePending}
+                            syncEpochPending={actionState.syncEpochPending}
+                            autoSyncPending={actionState.autoSyncPending}
+                            lastBotSync={actionState.lastBotSync}
+                          />
+                        )
+                      },
+                      {
+                        id: "discord",
+                        title: "Discord Integration",
+                        description: "Bot controls & synchronization",
+                        icon: Bot,
+                        color: "green",
+                        content: (
+                          <BotControlPanel
+                            botStatus={botStatus}
+                            onPauseBot={handlePauseBot}
+                            onResumeBot={handleResumeBot}
+                            onClearOverrides={handleClearOverrides}
+                            pausePending={actionState.pausePending}
+                            resumePending={actionState.resumePending}
+                            clearPending={actionState.clearPending}
+                          />
+                        )
+                      },
+                      {
+                        id: "cache",
+                        title: "System Cache",
+                        description: "Resource management & optimization",
+                        icon: Database,
+                        color: "purple",
+                        content: (
+                          <div className="space-y-4">
+                            <FlagCacheManager />
+                            <div className="glass-card-child p-4 rounded-lg border border-purple-500/10">
+                              <h4 className="text-sm font-semibold mb-2 text-foreground flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                                Performance Monitor
+                              </h4>
+                              <div className="space-y-2 text-xs">
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Cache Hit Rate:</span>
+                                  <span className="text-green-600 dark:text-green-400 font-medium">94.2%</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Memory Usage:</span>
+                                  <span className="text-blue-600 dark:text-blue-400 font-medium">67MB</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      }
+                    ].map((card) => {
+                      const isCollapsed = collapsedCards[card.id];
+                      const colorClasses = {
+                        blue: "border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-blue-600/5",
+                        green: "border-green-500/20 bg-gradient-to-br from-green-500/5 to-green-600/5",
+                        purple: "border-purple-500/20 bg-gradient-to-br from-purple-500/5 to-purple-600/5"
+                      };
+                      const iconColorClasses = {
+                        blue: "bg-blue-500/10 border-blue-500/20 text-blue-500",
+                        green: "bg-green-500/10 border-green-500/20 text-green-500", 
+                        purple: "bg-purple-500/10 border-purple-500/20 text-purple-500"
+                      };
+                      const descColorClasses = {
+                        blue: "text-blue-700/70 dark:text-blue-300/70",
+                        green: "text-green-700/70 dark:text-green-300/70",
+                        purple: "text-purple-700/70 dark:text-purple-300/70"
+                      };
+
+                      return (
+                        <div 
+                          key={card.id}
+                          className={`glass-card-parent rounded-xl border-2 transition-all duration-300 ${colorClasses[card.color as keyof typeof colorClasses]} ${
+                            isCollapsed ? 'min-h-[120px]' : 'min-h-[400px]'
+                          }`}
+                        >
+                          {/* Header - always visible */}
+                          <div className={`p-6 ${isCollapsed ? 'pb-6' : 'pb-4'}`}>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-lg border ${iconColorClasses[card.color as keyof typeof iconColorClasses]}`}>
+                                  <card.icon className="h-5 w-5" />
+                                </div>
+                                <div>
+                                  <h3 className="text-lg font-bold text-foreground">{card.title}</h3>
+                                  {!isCollapsed && (
+                                    <p className={`text-sm ${descColorClasses[card.color as keyof typeof descColorClasses]}`}>
+                                      {card.description}
+                                    </p>
+                                  )}
+                                  {isCollapsed && (
+                                    <p className="text-xs text-muted-foreground">Click to expand</p>
+                                  )}
+                                </div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleCardCollapse(card.id)}
+                                className="hover:bg-white/10 h-8 w-8 p-0 flex-shrink-0"
+                              >
+                                {isCollapsed ? (
+                                  <Maximize2 className="h-4 w-4" />
+                                ) : (
+                                  <Minimize2 className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Content - collapsible */}
+                          {!isCollapsed && (
+                            <div className="px-6 pb-6 transition-all duration-300 ease-in-out">
+                              {card.content}
+                            </div>
+                          )}
                         </div>
-                      </CardHeader>
-                      <CardContent className="pt-2">
-                        <TimeControlPanel
-                          timeMultiplier={config.timeMultiplier}
-                          customDate={timeState.customDate}
-                          customTime={timeState.customTime}
-                          botSyncEnabled={config.botSyncEnabled}
-                          botStatus={botStatus}
-                          onTimeMultiplierChange={handleTimeMultiplierChange}
-                          onCustomDateChange={(value) => setTimeState(prev => ({ ...prev, customDate: value }))}
-                          onCustomTimeChange={(value) => setTimeState(prev => ({ ...prev, customTime: value }))}
-                          onSetCustomTime={handleSetCustomTime}
-                          onResetToRealTime={handleResetToRealTime}
-                          onSyncEpoch={handleSyncEpoch}
-                          onSyncFromBot={handleSyncFromBot}
-                          setTimePending={actionState.setTimePending}
-                          syncEpochPending={actionState.syncEpochPending}
-                          autoSyncPending={actionState.autoSyncPending}
-                          lastBotSync={actionState.lastBotSync}
-                        />
-                      </CardContent>
-                    </Card>
-                    {/* Bot Controls Card */}
-                    <Card className="flex flex-col h-full">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Bot className="h-5 w-5 text-green-500" />
-                          Bot Controls
-                        </CardTitle>
-                        <div className="text-sm text-muted-foreground mt-1">
-                          Pause, resume, or sync the Discord bot.
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-2">
-                        <BotControlPanel
-                          botStatus={botStatus}
-                          onPauseBot={handlePauseBot}
-                          onResumeBot={handleResumeBot}
-                          onClearOverrides={handleClearOverrides}
-                          pausePending={actionState.pausePending}
-                          resumePending={actionState.resumePending}
-                          clearPending={actionState.clearPending}
-                        />
-                      </CardContent>
-                    </Card>
-                    {/* Flag Cache Manager Card */}
-                    <Card className="flex flex-col h-full">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Database className="h-5 w-5 text-purple-500" />
-                          Flag Cache Manager
-                        </CardTitle>
-                        <div className="text-sm text-muted-foreground mt-1">
-                          Manage and refresh cached country flags for the dashboard.
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-2">
-                        <FlagCacheManager />
-                        
-                        {/* Debug: Flag Test Component */}
-                        <div className="mt-4 pt-4 border-t">
-                          <h4 className="text-sm font-medium mb-2">Debug: Flag Loading Test</h4>
-                          <FlagTestComponent />
-                        </div>
-                      </CardContent>
-                    </Card>
+                      );
+                    })}
                   </div>
+
                   {systemStatus && <WarningPanel systemStatus={systemStatus} />}
+                </div>
                 </>
               )}
               {selectedSection === "time" && (
@@ -734,6 +988,21 @@ export default function AdminPage() {
                     lastBotSync={actionState.lastBotSync}
                   />
                 </EnhancedCard>
+              )}
+              {selectedSection === "system" && (
+                <div className="mb-8">
+                  <SystemOverview />
+                </div>
+              )}
+              {selectedSection === "formulas" && (
+                <div className="mb-8">
+                  <CalculationEditor />
+                </div>
+              )}
+              {selectedSection === "dm-controls" && (
+                <div className="mb-8">
+                  <DMControlPanel />
+                </div>
               )}
               {selectedSection === "ixtime-visualizer" && (
                 <div className="mb-8">

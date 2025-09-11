@@ -48,12 +48,12 @@ export function WikiImageSearch({ onImageSelect, selectedImage, setSelectedImage
           onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
           className="flex-1"
         />
-        <Button onClick={handleSearch} disabled={isLoading || isFetching || !searchQuery.trim()}>
-          {isLoading || isFetching ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Search className="h-4 w-4 mr-2" />}Search
+        <Button onClick={handleSearch} disabled={isLoading || !searchQuery.trim()}>
+          {isLoading ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Search className="h-4 w-4 mr-2" />}Search
         </Button>
       </div>
       <div className="flex-1 p-4 overflow-y-auto grid grid-cols-3 gap-4">
-        {isLoading || isFetching ? (
+        {isLoading ? (
           <div className="col-span-3 flex justify-center items-center h-48">
             <Loader2 className="animate-spin h-8 w-8 text-blue-400" />
           </div>

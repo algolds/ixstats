@@ -82,7 +82,7 @@ export function PostComposer({
 
     try {
       const newPost = await createPostMutation.mutateAsync({
-        accountId: account.id,
+        userId: account.id,
         content: content.trim(),
         visibility,
         parentPostId: replyTo?.id,
@@ -216,7 +216,7 @@ export function PostComposer({
             {mentionQuery && (
               <div className="absolute z-10 w-full bg-background border border-border rounded-lg shadow-lg mt-1">
                 {isLoadingMentions && <div className="p-2">Loading...</div>}
-                {mentionResults?.map(account => (
+                {mentionResults?.map((account: any) => (
                   <button
                     key={account.id}
                     onClick={() => {

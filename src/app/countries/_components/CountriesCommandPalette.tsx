@@ -48,7 +48,7 @@ export const CountriesCommandPalette: React.FC<CountriesCommandPaletteProps> = (
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[10001]"
+            className="fixed inset-0 bg-black/40 backdrop-blur-md z-[10001]"
           />
           
           {/* Command Palette */}
@@ -59,20 +59,20 @@ export const CountriesCommandPalette: React.FC<CountriesCommandPaletteProps> = (
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="fixed left-4 top-1/2 -translate-y-1/2 w-96 z-[10002]"
             style={{
-              background: "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",
-              backdropFilter: "blur(20px) saturate(180%)",
-              WebkitBackdropFilter: "blur(20px) saturate(180%)",
-              border: "1px solid rgba(255,255,255,0.2)",
-              borderRadius: "12px",
-              boxShadow: "0 16px 64px rgba(0, 0, 0, 0.15), 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.4)"
+              background: "linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.15) 100%)",
+              backdropFilter: "blur(32px) saturate(200%)",
+              WebkitBackdropFilter: "blur(32px) saturate(200%)",
+              border: "1px solid rgba(255,255,255,0.3)",
+              borderRadius: "16px",
+              boxShadow: "0 24px 96px rgba(0, 0, 0, 0.25), 0 16px 48px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.5)"
             }}
           >
             {/* Refraction border effects */}
-            <div className="absolute inset-0 pointer-events-none rounded-xl">
-              <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-              <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-              <div className="absolute top-0 left-0 w-px h-full bg-gradient-to-b from-transparent via-white/30 to-transparent" />
-              <div className="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+            <div className="absolute inset-0 pointer-events-none rounded-2xl">
+              <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+              <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+              <div className="absolute top-0 left-0 w-px h-full bg-gradient-to-b from-transparent via-white/40 to-transparent" />
+              <div className="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-transparent via-white/30 to-transparent" />
             </div>
 
             <div className="relative z-10 p-6">

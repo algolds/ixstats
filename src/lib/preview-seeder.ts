@@ -27,41 +27,60 @@ export class PreviewSeeder {
       clearExisting = false
     } = options;
 
-    console.log("🌱 Starting preview data seeding...");
+    // Only log in development environment
+    if (process.env.NODE_ENV === 'development') {
+      console.log("🌱 Starting preview data seeding...");
+    }
 
     if (clearExisting) {
       await this.clearExistingData();
     }
 
     // Step 1: Generate and insert countries
-    console.log(`📍 Creating ${countriesCount} countries...`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`📍 Creating ${countriesCount} countries...`);
+    }
     const countries = await this.seedCountries(countriesCount);
 
     // Step 2: Generate historical data
-    console.log(`📊 Generating ${historicalMonths} months of historical data...`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`📊 Generating ${historicalMonths} months of historical data...`);
+    }
     await this.seedHistoricalData(countries, historicalMonths);
 
     // Step 3: Create preview users
-    console.log(`👥 Creating ${usersCount} preview users...`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`👥 Creating ${usersCount} preview users...`);
+    }
     const users = await this.seedUsers(usersCount, countries);
 
     // Step 4: Generate user activities
-    console.log(`🎯 Generating user activities...`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`🎯 Generating user activities...`);
+    }
     await this.seedUserActivities(users);
 
     // Step 5: Add DM inputs for dynamic scenarios
-    console.log(`🎛️ Adding DM inputs for scenario testing...`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`🎛️ Adding DM inputs for scenario testing...`);
+    }
     await this.seedDmInputs(countries);
 
     // Step 6: Create calculation logs
-    console.log(`📋 Creating calculation logs...`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`📋 Creating calculation logs...`);
+    }
     await this.seedCalculationLogs();
 
-    console.log("✅ Preview data seeding completed successfully!");
+    if (process.env.NODE_ENV === 'development') {
+      console.log("✅ Preview data seeding completed successfully!");
+    }
   }
 
   private async clearExistingData(): Promise<void> {
-    console.log("🧹 Clearing existing data...");
+    if (process.env.NODE_ENV === 'development') {
+      console.log("🧹 Clearing existing data...");
+    }
     
     // Clear in order to respect foreign key constraints
     await this.db.calculationLog.deleteMany();
@@ -287,7 +306,9 @@ export class PreviewSeeder {
     
     // For now, we'll just log the activities since we don't have a UserActivity table
     // In a real implementation, you'd create this table and insert the data
-    console.log(`Generated ${activities.length} user activities for analysis`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Generated ${activities.length} user activities for analysis`);
+    }
   }
 
   private async seedDmInputs(countries: any[]): Promise<void> {

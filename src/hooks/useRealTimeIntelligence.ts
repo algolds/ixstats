@@ -77,7 +77,7 @@ export function useRealTimeIntelligence(
     setConnectionState(prev => ({ ...prev, status: 'connecting' }));
 
     try {
-      // Use WebSocket server port (different from main app)
+      // Always use development WebSocket configuration (port 3555)
       const wsUrl = `ws://localhost:3555/ws/intelligence?countryId=${countryId}&userId=${user.id}`;
       wsRef.current = new WebSocket(wsUrl);
 

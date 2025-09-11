@@ -95,19 +95,21 @@ const RealTimeAchievementNotificationsComponent: React.FC<AchievementNotificatio
   playSound = true,
   className
 }) => {
-  const { isConnected, recentEvents, actions } = useAchievementUpdates(countryId);
+  const enableRealTime = false; // Disable real-time by default
+  const { isConnected, recentEvents, actions } = useAchievementUpdates(countryId, enableRealTime);
   const [notifications, setNotifications] = useState<NotificationState[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!isConnected) {
+    // Only show connection error if real-time is enabled but not connected
+    if (enableRealTime && !isConnected) {
       toast({
         title: "Offline Mode",
         description: "Achievement notifications require WebSocket connection",
         type: "error",
       });
     }
-  }, [isConnected, toast]);
+  }, [isConnected, toast, enableRealTime]);
 
   // Process new achievement events
   useEffect(() => {
