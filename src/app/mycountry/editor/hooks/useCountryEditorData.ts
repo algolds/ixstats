@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
 import { createDefaultEconomicInputs, type EconomicInputs } from "~/app/builder/lib/economy-data-service";
-import { GovernmentBuilderState, DepartmentInput, BudgetAllocationInput, RevenueSourceInput } from "~/types/government";
+import { type GovernmentBuilderState, type DepartmentInput, type BudgetAllocationInput, type RevenueSourceInput } from "~/types/government";
 
 function calculatePopulationTier(population: number): string {
   if (population >= 1_000_000_000) return "Global Power";

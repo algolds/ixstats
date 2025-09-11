@@ -543,7 +543,7 @@ export function IntelligenceBriefings({
             return 'low';
           })() as 'low' | 'medium' | 'high' | 'critical',
           timeframe: urgency === 'immediate' ? 'immediate' : 'medium_term',
-          sectors: ['governance', 'economic']
+          scope: ['governance', 'economic']
         },
         evidence: {
           metrics: [
@@ -564,15 +564,21 @@ export function IntelligenceBriefings({
           title: rec.type === 'component_add' ? 'Implement Component' : 
                  rec.type === 'conflict_resolution' ? 'Resolve Conflict' : 'Optimize System',
           description: rec.description,
+          category: 'governance',
           urgency: rec.priority as ActionUrgency,
+          difficulty: rec.priority === 'critical' ? 'hard' : rec.priority === 'high' ? 'medium' : 'easy',
           estimatedDuration: rec.priority === 'critical' ? '1-2 weeks' : 
                            rec.priority === 'high' ? '2-4 weeks' : '1-2 months',
-          requiredResources: ['Policy Review', 'Administrative Changes'],
+          estimatedCost: rec.priority === 'critical' ? 10000 : rec.priority === 'high' ? 5000 : 1000,
           successProbability: rec.priority === 'high' ? 85 : 
                             rec.priority === 'medium' ? 75 : 65,
+          estimatedBenefit: rec.priority === 'critical' ? 'high' : rec.priority === 'high' ? 'medium' : 'low',
+          prerequisites: ['Government approval', 'Budget allocation'],
+          expectedOutcome: 'Enhanced government effectiveness',
           risks: rec.type === 'conflict_resolution' ? 
                  ['System disruption', 'Transition period'] : 
-                 ['Implementation challenges', 'Resource allocation']
+                 ['Implementation challenges', 'Resource allocation'],
+          impact: rec.priority === 'critical' ? 'high' : rec.priority === 'high' ? 'medium' : 'low'
         }],
         metadata: {
           lastUpdated: new Date(),

@@ -991,7 +991,15 @@ export function DMControlPanel() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleEdit(input)}
+                            onClick={() => {
+                              const inputConfig = ALL_DM_INPUTS.find(config => config.value === input.inputType);
+                              const enrichedInput = {
+                                ...input,
+                                scale: inputConfig?.scale || 'macro' as InputScale,
+                                category: inputConfig?.category || 'global' as InputCategory
+                              };
+                              handleEdit(enrichedInput);
+                            }}
                           >
                             <Edit3 className="h-4 w-4" />
                           </Button>
