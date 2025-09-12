@@ -84,8 +84,8 @@ export function AtomicStateProvider({
         const components: ComponentType[] = [];
         
         // If government data exists, extract atomic components
-        if (governmentData?.atomicComponents) {
-          governmentData.atomicComponents.forEach((comp: any) => {
+        if ((governmentData as any)?.atomicComponents) {
+          (governmentData as any).atomicComponents.forEach((comp: any) => {
             if (comp.componentType && comp.isActive) {
               components.push(comp.componentType);
             }
@@ -120,7 +120,7 @@ export function AtomicStateProvider({
   }, [governmentData, countryData, isLoadingGovernment, isLoadingCountry, manager, countryId]);
 
   // Mutation to save atomic components
-  const saveComponentsMutation = api.government.updateAtomicComponents.useMutation({
+  const saveComponentsMutation = (api.government as any).updateAtomicComponents.useMutation({
     onSuccess: () => {
       console.log('Atomic components saved successfully');
     },

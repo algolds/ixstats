@@ -204,7 +204,7 @@ export class IntuitiveEconomicAnalysis {
     groupedAnalysis: GroupedAnalysisResult;
   }> {
     // Run comprehensive calculations
-    const detailedAnalysis = this.enhancedCalculator.analyzeCountry(countryStats, economyData, historicalData);
+    const detailedAnalysis = (this.enhancedCalculator as any).analyzeCountry(countryStats, economyData, historicalData);
     const groupedAnalysis = this.runGroupedAnalysis(countryStats, economyData, historicalData);
 
     // Generate intuitive summaries

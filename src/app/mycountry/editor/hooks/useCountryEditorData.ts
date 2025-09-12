@@ -355,7 +355,7 @@ export function useCountryEditorData() {
         governmentBudgetGDPPercent: economicInputs.fiscalSystem.governmentBudgetGDPPercent,
         budgetDeficitSurplus: economicInputs.fiscalSystem.budgetDeficitSurplus,
         internalDebtGDPPercent: economicInputs.fiscalSystem.internalDebtGDPPercent,
-        externalDebtGDPPercent: economicInputs.fiscalSystem.externalDebtGDPRatio,
+        externalDebtGDPPercent: economicInputs.fiscalSystem.externalDebtGDPPercent,
         totalDebtGDPRatio: economicInputs.fiscalSystem.totalDebtGDPRatio,
         debtPerCapita: (economicInputs.fiscalSystem.totalDebtGDPRatio / 100) * economicInputs.coreIndicators.nominalGDP / economicInputs.coreIndicators.totalPopulation,
         interestRates: economicInputs.fiscalSystem.interestRates,

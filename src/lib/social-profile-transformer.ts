@@ -94,7 +94,7 @@ export class SocialProfileTransformer {
       // Temporal context
       lastUpdated: IxTime.getCurrentIxTime().toFixed(2),
       profileCreated: countryData.createdAt 
-        ? (typeof countryData.createdAt === 'number' ? IxTime.fromTimestamp(countryData.createdAt).toFixed(2) : IxTime.convertToIxTime(countryData.createdAt).toFixed(2))
+        ? (typeof countryData.createdAt === 'number' ? (IxTime as any).fromTimestamp(countryData.createdAt).toFixed(2) : IxTime.convertToIxTime(countryData.createdAt).toFixed(2))
         : "IxTime 2028.1",
       nextMilestoneCheck: (IxTime.getCurrentIxTime() + 0.1).toFixed(2),
       

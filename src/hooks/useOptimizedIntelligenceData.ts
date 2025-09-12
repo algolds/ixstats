@@ -44,7 +44,7 @@ export function useOptimizedIntelligenceData({
       // Core country data - longest cache since it changes less frequently
       {
         queryKey: ['country', countryId],
-        queryFn: async () => await api.countries.getByIdAtTime.query({ id: countryId }),
+        queryFn: async () => await api.countries.getByIdAtTime({ id: countryId }),
         staleTime: staleTime * 2, // Country data stays fresh longer
         gcTime: cacheTime * 2,
         enabled: !!countryId
@@ -53,7 +53,7 @@ export function useOptimizedIntelligenceData({
       // Intelligence feed - medium cache since it updates regularly
       {
         queryKey: ['intelligence', countryId],
-        queryFn: async () => await api.intelligence.getFeed.query(),
+        queryFn: async () => await api.intelligence.getFeed(),
         staleTime,
         gcTime: cacheTime,
         enabled: !!countryId && enableIntelligence
@@ -82,7 +82,7 @@ export function useOptimizedIntelligenceData({
     if (intelligenceQuery.data && Array.isArray(intelligenceQuery.data)) {
       // Check for new high-priority intelligence items
       const highPriorityItems = intelligenceQuery.data.filter((item: IntelligenceItem) => 
-        ['high', 'critical'].includes(item.priority || 'medium')
+        ['high', 'critical'].includes((item as any).priority || 'medium')
       );
 
       // Create notifications for critical intelligence updates
@@ -93,7 +93,7 @@ export function useOptimizedIntelligenceData({
           message: item.content || 'New intelligence information available',
           category: 'security' as const,
           type: 'alert' as const,
-          priority: (item.priority || 'medium') as 'low' | 'medium' | 'high' | 'critical',
+          priority: ((item as any).priority || 'medium') as 'low' | 'medium' | 'high' | 'critical',
           severity: 'important' as const,
           deliveryMethod: 'dynamic-island' as const,
           actionable: true,
