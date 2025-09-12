@@ -292,7 +292,7 @@ export class IntelligenceWebSocketServer {
           population: country.populationGrowthRate || 0,
           diplomatic: Math.min(100, Math.max(0, 
             50 + (country.actualGdpGrowth || 0) * 10 + 
-            (country.currentGdpPerCapita > 25000 ? 20 : country.currentGdpPerCapita > 10000 ? 10 : 0)
+            ((country as any).currentGdpPerCapita > 25000 ? 20 : (country as any).currentGdpPerCapita > 10000 ? 10 : 0)
           )),
           governance: country.employmentRate || 0
         },
@@ -465,7 +465,7 @@ export class IntelligenceWebSocketServer {
           population: country.populationGrowthRate,
           diplomatic: Math.min(100, Math.max(0, 
             50 + (country.actualGdpGrowth || 0) * 10 + 
-            (country.currentGdpPerCapita > 25000 ? 20 : country.currentGdpPerCapita > 10000 ? 10 : 0)
+            ((country as any).currentGdpPerCapita > 25000 ? 20 : (country as any).currentGdpPerCapita > 10000 ? 10 : 0)
           )),
           governance: country.employmentRate,
           lastUpdated: country.lastCalculated

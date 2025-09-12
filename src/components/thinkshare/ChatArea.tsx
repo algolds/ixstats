@@ -193,7 +193,7 @@ export function ChatArea({
       <MessageInput
         onSendMessage={handleSendMessage}
         onTyping={(isTyping) => {
-          if (selectedConversation && clientState.connected) {
+          if (selectedConversation && clientState.connectionStatus === 'connected') {
             sendTypingIndicator(selectedConversation.id, undefined, isTyping);
           }
         }}

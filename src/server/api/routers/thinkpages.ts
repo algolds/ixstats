@@ -290,7 +290,7 @@ export const thinkpagesRouter = createTRPCRouter({
   // Update account
   updateAccount: publicProcedure
     .input(z.object({
-      accountId: z.string(),
+      userId: z.string(),
       verified: z.boolean().optional(),
       profileImageUrl: z.string().url().optional(),
       postingFrequency: z.enum(['active', 'moderate', 'low']).optional(),
@@ -301,8 +301,8 @@ export const thinkpagesRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
-      const account = await db.thinkpagesAccount.update({
-        where: { id: input.accountId },
+      const account = await db.user.update({
+        where: { id: input.userId },
         data: {
           verified: input.verified,
           postingFrequency: input.postingFrequency,
@@ -322,7 +322,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
-      const existingAccount = await db.thinkpagesAccount.findUnique({
+      const existingAccount = await db.user.findUnique({
         where: { username: input.username },
       });
       return { isAvailable: !existingAccount };
@@ -349,7 +349,7 @@ export const thinkpagesRouter = createTRPCRouter({
       const { db } = ctx;
       
       // Check if username is already taken
-      const existingAccount = await db.thinkpagesAccount.findUnique({
+      const existingAccount = await db.user.findUnique({
         where: { username: input.username }
       });
       
@@ -362,7 +362,7 @@ export const thinkpagesRouter = createTRPCRouter({
       
       // Check if country exists
       const country = await db.country.findUnique({
-        where: { id: input.countryId }
+        where: { id: (input as any).countryId }
       });
       
       if (!country) {
@@ -373,8 +373,8 @@ export const thinkpagesRouter = createTRPCRouter({
       }
       
       // Count existing accounts for this country
-      const accountCount = await db.thinkpagesAccount.count({
-        where: { countryId: input.countryId }
+      const accountCount = await db.user.count({
+        where: { countryId: (input as any).countryId }
       });
       
       if (accountCount >= 25) {
@@ -391,9 +391,9 @@ export const thinkpagesRouter = createTRPCRouter({
         citizen: 17,
       };
 
-      const currentAccountTypeCount = await db.thinkpagesAccount.count({
+      const currentAccountTypeCount = await db.user.count({
         where: {
-          countryId: input.countryId,
+          countryId: (input as any).countryId,
           accountType: input.accountType,
         },
       });
@@ -408,9 +408,9 @@ export const thinkpagesRouter = createTRPCRouter({
       }
       
       // Create the account
-      const account = await db.thinkpagesAccount.create({
+      const account = await db.user.create({
         data: {
-          countryId: input.countryId,
+          countryId: (input as any).countryId,
           accountType: input.accountType,
           username: input.username,
           displayName: `${input.firstName} ${input.lastName}`,
@@ -435,13 +435,13 @@ export const thinkpagesRouter = createTRPCRouter({
       const { db } = ctx;
       
       // Early return for invalid country ID
-      if (!input || !input.countryId || input.countryId.trim() === '' || input.countryId === 'INVALID') {
+      if (!input || !(input as any).countryId || (input as any).countryId.trim() === '' || (input as any).countryId === 'INVALID') {
         return [];
       }
       
-      const accounts = await db.thinkpagesAccount.findMany({
+      const accounts = await db.user.findMany({
         where: { 
-          countryId: input.countryId,
+          countryId: (input as any).countryId,
           isActive: true
         },
         orderBy: [
@@ -459,10 +459,10 @@ export const thinkpagesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
-      const counts = await db.thinkpagesAccount.groupBy({
+      const counts = await db.user.groupBy({
         by: ['accountType'],
         where: {
-          countryId: input.countryId,
+          countryId: (input as any).countryId,
           isActive: true,
         },
         _count: {
@@ -485,8 +485,8 @@ export const thinkpagesRouter = createTRPCRouter({
       const { db } = ctx;
       
       // Verify account exists and is active
-      const account = await db.thinkpagesAccount.findUnique({
-        where: { id: input.accountId }
+      const account = await db.user.findUnique({
+        where: { id: input.userId }
       });
       
       if (!account || !account.isActive) {
@@ -504,7 +504,7 @@ export const thinkpagesRouter = createTRPCRouter({
       // Create the post
       const post = await db.thinkpagesPost.create({
         data: {
-          accountId: input.accountId,
+          userId: input.userId,
           content: input.content,
           hashtags: input.hashtags ? JSON.stringify(input.hashtags) : null,
           postType,
@@ -525,14 +525,14 @@ export const thinkpagesRouter = createTRPCRouter({
       });
       
       // Update account post count
-      await db.thinkpagesAccount.update({
-        where: { id: input.accountId },
+      await db.user.update({
+        where: { id: input.userId },
         data: { postCount: { increment: 1 } }
       });
       
       // Create mentions if any
       if (input.mentions && input.mentions.length > 0) {
-        const mentionedAccounts = await db.thinkpagesAccount.findMany({
+        const mentionedAccounts = await db.user.findMany({
           where: {
             username: {
               in: input.mentions.map(m => m.replace('@', '')) // Remove @ for lookup
@@ -579,9 +579,9 @@ export const thinkpagesRouter = createTRPCRouter({
 
       const existingReaction = await db.postReaction.findUnique({
         where: {
-          postId_accountId: {
+          postId_userId: {
             postId: input.postId,
-            accountId: input.accountId,
+            userId: input.userId,
           },
         },
       });
@@ -596,9 +596,9 @@ export const thinkpagesRouter = createTRPCRouter({
 
         const reaction = await db.postReaction.update({
           where: {
-            postId_accountId: {
+            postId_userId: {
               postId: input.postId,
-              accountId: input.accountId,
+              userId: input.userId,
             },
           },
           data: { reactionType: input.reactionType },
@@ -616,7 +616,7 @@ export const thinkpagesRouter = createTRPCRouter({
         const reaction = await db.postReaction.create({
           data: {
             postId: input.postId,
-            accountId: input.accountId,
+            userId: input.userId,
             reactionType: input.reactionType,
           },
         });
@@ -634,7 +634,7 @@ export const thinkpagesRouter = createTRPCRouter({
   removeReaction: publicProcedure
     .input(z.object({
       postId: z.string(),
-      accountId: z.string(),
+      userId: z.string(),
     }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
@@ -655,9 +655,9 @@ export const thinkpagesRouter = createTRPCRouter({
 
       const existingReaction = await db.postReaction.findUnique({
         where: {
-          postId_accountId: {
+          postId_userId: {
             postId: input.postId,
-            accountId: input.accountId,
+            userId: input.userId,
           },
         },
       });
@@ -667,9 +667,9 @@ export const thinkpagesRouter = createTRPCRouter({
 
         await db.postReaction.delete({
           where: {
-            postId_accountId: {
+            postId_userId: {
               postId: input.postId,
-              accountId: input.accountId,
+              userId: input.userId,
             },
           },
         });
@@ -696,9 +696,9 @@ export const thinkpagesRouter = createTRPCRouter({
       };
       
       // Add country filter if specified
-      if (input.countryId) {
+      if ((input as any).countryId) {
         whereClause.account = {
-          countryId: input.countryId
+          countryId: (input as any).countryId
         };
       }
       
@@ -745,7 +745,7 @@ export const thinkpagesRouter = createTRPCRouter({
       const transformedPosts = posts.map(post => ({
         ...post,
         hashtags: post.hashtags ? JSON.parse(post.hashtags) : [],
-        reactionCounts: post.reactions.reduce((acc: any, reaction: any) => {
+        reactionCounts: (post as any).reactions.reduce((acc: any, reaction: any) => {
           acc[reaction.reactionType] = (acc[reaction.reactionType] || 0) + 1;
           return acc;
         }, {} as Record<string, number>),
@@ -780,12 +780,12 @@ export const thinkpagesRouter = createTRPCRouter({
 
   // Get account details
   getAccount: publicProcedure
-    .input(z.object({ accountId: z.string() }))
+    .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
       
-      const account = await db.thinkpagesAccount.findUnique({
-        where: { id: input.accountId },
+      const account = await db.user.findUnique({
+        where: { id: input.userId },
         include: {
           country: true,
           _count: {
@@ -813,7 +813,7 @@ export const thinkpagesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
-      const account = await db.thinkpagesAccount.findFirst({
+      const account = await db.user.findFirst({
         where: { country: { user: { clerkUserId: input.clerkUserId } } },
         include: {
           country: true,
@@ -893,7 +893,7 @@ export const thinkpagesRouter = createTRPCRouter({
       });
 
       for (const country of countries) {
-        const citizenAccounts = await db.thinkpagesAccount.findMany({
+        const citizenAccounts = await db.user.findMany({
           where: {
             countryId: country.id,
             accountType: 'citizen',
@@ -911,7 +911,7 @@ export const thinkpagesRouter = createTRPCRouter({
 
         const recentCitizenPosts = await db.thinkpagesPost.findMany({
           where: {
-            accountId: { in: citizenAccountIds },
+            userId: { in: citizenAccountIds },
             ixTimeTimestamp: { gte: twentyFourHoursAgo },
           },
           include: { reactions: true }, // Include reactions for sentiment analysis
@@ -2014,7 +2014,7 @@ export const thinkpagesRouter = createTRPCRouter({
     .input(z.object({
       postId: z.string(),
       content: z.string().min(1).max(1000),
-      accountId: z.string(),
+      userId: z.string(),
     }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
@@ -2022,7 +2022,7 @@ export const thinkpagesRouter = createTRPCRouter({
       // Verify ownership
       const post = await db.thinkpagesPost.findUnique({
         where: { id: input.postId },
-        select: { accountId: true }
+        select: { userId: true }
       });
       
       if (!post) {
@@ -2032,7 +2032,7 @@ export const thinkpagesRouter = createTRPCRouter({
         });
       }
       
-      if (post.accountId !== input.accountId) {
+      if (post.userId !== input.userId) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You can only edit your own posts'
@@ -2058,7 +2058,7 @@ export const thinkpagesRouter = createTRPCRouter({
   deletePost: publicProcedure
     .input(z.object({
       postId: z.string(),
-      accountId: z.string(),
+      userId: z.string(),
     }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
@@ -2066,7 +2066,7 @@ export const thinkpagesRouter = createTRPCRouter({
       // Verify ownership
       const post = await db.thinkpagesPost.findUnique({
         where: { id: input.postId },
-        select: { accountId: true }
+        select: { userId: true }
       });
       
       if (!post) {
@@ -2076,7 +2076,7 @@ export const thinkpagesRouter = createTRPCRouter({
         });
       }
       
-      if (post.accountId !== input.accountId) {
+      if (post.userId !== input.userId) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You can only delete your own posts'
@@ -2094,7 +2094,7 @@ export const thinkpagesRouter = createTRPCRouter({
   pinPost: publicProcedure
     .input(z.object({
       postId: z.string(),
-      accountId: z.string(),
+      userId: z.string(),
       pinned: z.boolean(),
     }))
     .mutation(async ({ ctx, input }) => {
@@ -2103,7 +2103,7 @@ export const thinkpagesRouter = createTRPCRouter({
       // Verify ownership
       const post = await db.thinkpagesPost.findUnique({
         where: { id: input.postId },
-        select: { accountId: true }
+        select: { userId: true }
       });
       
       if (!post) {
@@ -2113,7 +2113,7 @@ export const thinkpagesRouter = createTRPCRouter({
         });
       }
       
-      if (post.accountId !== input.accountId) {
+      if (post.userId !== input.userId) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You can only pin your own posts'
@@ -2132,7 +2132,7 @@ export const thinkpagesRouter = createTRPCRouter({
   bookmarkPost: publicProcedure
     .input(z.object({
       postId: z.string(),
-      accountId: z.string(),
+      userId: z.string(),
       bookmarked: z.boolean(),
     }))
     .mutation(async ({ ctx, input }) => {
@@ -2144,13 +2144,13 @@ export const thinkpagesRouter = createTRPCRouter({
           where: {
             userId_postId: {
               postId: input.postId,
-              userId: input.accountId
+              userId: input.userId
             }
           },
           update: {},
           create: {
             postId: input.postId,
-            userId: input.accountId
+            userId: input.userId
           }
         });
       } else {
@@ -2158,7 +2158,7 @@ export const thinkpagesRouter = createTRPCRouter({
         await db.postBookmark.deleteMany({
           where: {
             postId: input.postId,
-            userId: input.accountId
+            userId: input.userId
           }
         });
       }
@@ -2170,7 +2170,7 @@ export const thinkpagesRouter = createTRPCRouter({
   flagPost: publicProcedure
     .input(z.object({
       postId: z.string(),
-      accountId: z.string(),
+      userId: z.string(),
       reason: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
@@ -2181,7 +2181,7 @@ export const thinkpagesRouter = createTRPCRouter({
         where: {
           userId_postId: {
             postId: input.postId,
-            userId: input.accountId
+            userId: input.userId
           }
         }
       });
@@ -2196,7 +2196,7 @@ export const thinkpagesRouter = createTRPCRouter({
       await db.postFlag.create({
         data: {
           postId: input.postId,
-          userId: input.accountId,
+          userId: input.userId,
           reason: input.reason
         }
       });

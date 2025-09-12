@@ -139,7 +139,7 @@ export class EnhancedEconomicService {
         grouped: grouped || this.createEmptyGroupedAnalysis(),
         metadata: {
           analysisTimestamp: new Date().toISOString(),
-          ixTimeEpoch: IxTime.getCurrentIxTime().epoch,
+          ixTimeEpoch: (IxTime.getCurrentIxTime() as any).epoch,
           version: '1.0.0',
           processingTimeMs: Date.now() - startTime
         }
@@ -196,7 +196,7 @@ export class EnhancedEconomicService {
       traditional: [
         { label: 'GDP per Capita', value: `$${countryStats.currentGdpPerCapita.toLocaleString()}` },
         { label: 'Economic Tier', value: countryStats.economicTier },
-        { label: 'Population', value: countryStats.currentTotalPopulation.toLocaleString() },
+        { label: 'Population', value: countryStats.currentPopulation.toLocaleString() },
         { label: 'Unemployment', value: `${economyData.labor.unemploymentRate.toFixed(1)}%` },
         { label: 'Inflation', value: `${(economyData.core.inflationRate * 100).toFixed(1)}%` }
       ],

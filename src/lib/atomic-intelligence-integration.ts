@@ -259,7 +259,7 @@ export async function generateAtomicIntelligence(
 
   // Calculate effectiveness metrics
   const stability = calculateAtomicGovernmentStability(components);
-  const economic = await calculateAtomicEconomicImpact(components, economicData.gdpPerCapita || 15000, economicData.taxRevenue || 0.2);
+  const economic = await calculateAtomicEconomicImpact(components, economicData.gdpPerCapita || 15000, (economicData as any).taxRevenue || 0.2);
   const tax = calculateAtomicTaxEffectiveness(components, taxData);
 
   // Government stability analysis
@@ -289,19 +289,19 @@ export async function generateAtomicIntelligence(
   }
 
   // Economic performance alerts
-  if (economic.overallScore < 60) {
+  if ((economic as any).overallScore < 60) {
     intelligence.push({
       id: `economic-concern-${Date.now()}`,
       type: 'alert',
-      severity: economic.overallScore < 40 ? 'high' : 'medium',
+      severity: (economic as any).overallScore < 40 ? 'high' : 'medium',
       title: 'Economic Performance Below Optimal',
-      description: `Atomic component configuration resulting in ${economic.overallScore}% economic effectiveness.`,
+      description: `Atomic component configuration resulting in ${(economic as any).overallScore}% economic effectiveness.`,
       category: 'economic',
       timestamp: new Date(),
       source: 'effectiveness_model',
       relatedComponents: components,
       actionable: true,
-      recommendations: economic.synergies.length > 0 
+      recommendations: (economic as any).synergies.length > 0 
         ? ['Leverage existing synergies for improvement', 'Address component conflicts']
         : ['Consider adding technocratic elements', 'Strengthen institutional capacity']
     });

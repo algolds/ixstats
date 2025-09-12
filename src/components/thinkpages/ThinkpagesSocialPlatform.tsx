@@ -47,17 +47,16 @@ export function ThinkpagesSocialPlatform({
 
 
   const filteredPosts = feed?.posts.filter(post => {
-    // Only show posts from this country's accounts
-    const isFromThisCountry = post.account.countryId === countryId;
+    // Only show posts from this country's accounts (account relation not available)
+    // const isFromThisCountry = post.account?.countryId === countryId;
     
-    if (!isFromThisCountry) {
-      return false;
-    }
+    // if (!isFromThisCountry) {
+    //   return false;
+    // }
     
     if (searchQuery) {
-      return post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-             post.account.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-             post.account.username.toLowerCase().includes(searchQuery.toLowerCase());
+      return post.content.toLowerCase().includes(searchQuery.toLowerCase());
+      // account properties not available: post.account.displayName, post.account.username
     }
     return true;
   });

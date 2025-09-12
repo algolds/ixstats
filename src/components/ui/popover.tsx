@@ -56,7 +56,7 @@ function PopoverContent({
             "group max-h-[var(--available-height)] w-72 max-w-[var(--available-width)] overflow-x-hidden overflow-y-auto overscroll-contain rounded-xl p-4 transition-[transform,scale,opacity] duration-150 ease-out",
             "origin-[var(--transform-origin)] data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
             // Default glass styling with contextual depth detection
-            !className?.includes('glass-') && "glass-contextual-popover glass-refraction",
+            !(typeof className === 'string' && className.includes('glass-')) && "glass-contextual-popover glass-refraction",
             className
           )}
         >

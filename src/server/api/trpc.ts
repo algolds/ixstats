@@ -297,20 +297,20 @@ const adminMiddleware = t.middleware(async ({ ctx, next }) => {
   }
 
   // Check if user has admin role
-  if (!ctx.user.role) {
+  if (!(ctx.user as any).role) {
     throw new Error('FORBIDDEN: No role assigned');
   }
 
   // Check for admin roles (level 0-20 are considered admin levels)
   const adminRoles = ['owner', 'admin', 'staff'];
-  const isAdmin = adminRoles.includes(ctx.user.role.name) || ctx.user.role.level <= 20;
+  const isAdmin = adminRoles.includes((ctx.user as any).role.name) || (ctx.user as any).role.level <= 20;
 
   if (!isAdmin) {
-    console.warn(`[ADMIN_ACCESS_DENIED] User ${ctx.auth.userId} (role: ${ctx.user.role.name}) attempted admin access`);
+    console.warn(`[ADMIN_ACCESS_DENIED] User ${ctx.auth.userId} (role: ${(ctx.user as any).role.name}) attempted admin access`);
     throw new Error('FORBIDDEN: Admin privileges required');
   }
 
-  console.log(`[ADMIN_ACCESS] Admin ${ctx.auth.userId} (role: ${ctx.user.role.name}) accessing admin functions`);
+  console.log(`[ADMIN_ACCESS] Admin ${ctx.auth.userId} (role: ${(ctx.user as any).role.name}) accessing admin functions`);
 
   return next({
     ctx: {

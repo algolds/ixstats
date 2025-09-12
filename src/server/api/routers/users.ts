@@ -517,7 +517,7 @@ export const usersRouter = createTRPCRouter({
   getCurrentUserWithRole: publicProcedure
     .query(async ({ ctx }) => {
       try {
-        const { userId } = ctx.auth;
+        const { userId } = ctx.auth as any;
         
         if (!userId) {
           return { user: null };

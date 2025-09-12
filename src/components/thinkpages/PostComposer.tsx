@@ -66,7 +66,7 @@ export function PostComposer({
   const [showVisibilityMenu, setShowVisibilityMenu] = useState(false);
   const [isExpanded, setIsExpanded] = useState(!!replyTo);
   const [mentionQuery, setMentionQuery] = useState('');
-  const { data: mentionResults, isLoading: isLoadingMentions } = api.thinkpages.searchAccounts.useQuery({ query: mentionQuery }, { enabled: !!mentionQuery });
+  const { data: mentionResults, isLoading: isLoadingMentions } = { data: [], isLoading: false }; // Disabled until searchAccounts endpoint exists
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const createPostMutation = api.thinkpages.createPost.useMutation();

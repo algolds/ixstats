@@ -92,11 +92,7 @@ export function CollaborativeDocument({
     permissions: documentSettings
   };
 
-  const { data: searchResults, isLoading: isSearchingUsers } = api.thinkpages.searchAccounts.useQuery({
-    query: searchQuery
-  }, {
-    enabled: showInviteModal && searchQuery.length > 2
-  });
+  const { data: searchResults, isLoading: isSearchingUsers } = { data: [], isLoading: false }; // Disabled until searchAccounts endpoint exists
 
   const handleSaveDocument = useCallback(async () => {
     if (!richTextEditorRef.current) return;

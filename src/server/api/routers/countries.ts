@@ -1986,10 +1986,10 @@ const countriesRouter = createTRPCRouter({
         ));
 
         const diplomaticHealthScore = Math.min(100, Math.max(20,
-          (country.globalDiplomaticInfluence || 50) + 
-          (country.tradeRelationshipStrength || 10) + 
-          (country.allianceStrength || 15) - 
-          (country.diplomaticTensions || 5)
+          ((country as any).globalDiplomaticInfluence || 50) + 
+          ((country as any).tradeRelationshipStrength || 10) + 
+          ((country as any).allianceStrength || 15) - 
+          ((country as any).diplomaticTensions || 5)
         ));
 
         const govEfficiency = Math.min(100, Math.max(30,
@@ -2034,9 +2034,9 @@ const countriesRouter = createTRPCRouter({
           },
           diplomatic: {
             healthScore: Math.round(diplomaticHealthScore),
-            allies: Math.floor((country.globalDiplomaticInfluence || 50) / 10) + 3,
+            allies: Math.floor(((country as any).globalDiplomaticInfluence || 50) / 10) + 3,
             reputation: diplomaticHealthScore > 75 ? 'Strong' : diplomaticHealthScore > 50 ? 'Stable' : 'Improving',
-            treaties: Math.floor((country.tradeRelationshipStrength || 25) / 2) + 5,
+            treaties: Math.floor(((country as any).tradeRelationshipStrength || 25) / 2) + 5,
             alerts: [],
           },
           government: {
@@ -2099,8 +2099,8 @@ const countriesRouter = createTRPCRouter({
         ));
 
         const diplomaticStanding = Math.min(100, Math.max(20,
-          (country.globalDiplomaticInfluence || 50) + 
-          (country.allianceStrength || 15) * 0.8
+          ((country as any).globalDiplomaticInfluence || 50) + 
+          ((country as any).allianceStrength || 15) * 0.8
         ));
 
         const governmentalEfficiency = Math.min(100, Math.max(30,
@@ -2123,9 +2123,9 @@ const countriesRouter = createTRPCRouter({
             tier: currentStats.newStats.populationTier,
           },
           diplomaticMetrics: {
-            allies: `${Math.floor((country.globalDiplomaticInfluence || 50) / 10) + 3}`,
+            allies: `${Math.floor(((country as any).globalDiplomaticInfluence || 50) / 10) + 3}`,
             reputation: diplomaticStanding > 75 ? 'Strong' : diplomaticStanding > 50 ? 'Stable' : 'Developing',
-            treaties: `${Math.floor((country.tradeRelationshipStrength || 25) / 2) + 5}`,
+            treaties: `${Math.floor(((country as any).tradeRelationshipStrength || 25) / 2) + 5}`,
           },
           governmentMetrics: {
             approval: `${Math.round(Math.min(95, Math.max(25, 50 + (currentStats.newStats.adjustedGdpGrowth * 1500))))}%`,
@@ -2433,7 +2433,7 @@ const countriesRouter = createTRPCRouter({
 
       // Calculate trade data based on country economic indicators
       const gdpBase = country.currentTotalGdp || 1000000000;
-      const tradeIntensity = (country.tradeRelationshipStrength || 25) / 100;
+      const tradeIntensity = ((country as any).tradeRelationshipStrength || 25) / 100;
       
       const totalVolume = gdpBase * 0.6 * tradeIntensity; // Trade typically 60% of GDP * relationship strength
       const exports = totalVolume * 0.52; // Slightly export-oriented

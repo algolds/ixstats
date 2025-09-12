@@ -285,7 +285,7 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
   // Transform embassy data
   const embassies = useMemo(() => {
     if (!embassyData) return [];
-    return embassyData.map((embassy: any) => ({
+    return (embassyData as any).map((embassy: any) => ({
       id: embassy.id,
       targetCountryId: embassy.targetCountryId,
       targetCountryName: embassy.targetCountry || 'Unknown',

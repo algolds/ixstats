@@ -70,12 +70,12 @@ export function LiveDataIntegration({
   
   // Transform country data into economic metrics
   const economicData = countryData ? {
-    gdp: countryData.currentTotalGdp || 0,
-    gdpPerCapita: countryData.currentGdpPerCapita || 0,
-    growthRate: countryData.adjustedGdpGrowth || 0,
-    population: countryData.currentTotalPopulation || 0,
-    economicTier: countryData.economicTier || 'emerging',
-    populationGrowthRate: countryData.populationGrowthRate || 0
+    gdp: (countryData as any).currentTotalGdp || 0,
+    gdpPerCapita: (countryData as any).currentGdpPerCapita || 0,
+    growthRate: (countryData as any).adjustedGdpGrowth || 0,
+    population: (countryData as any).currentPopulation || 0,
+    economicTier: (countryData as any).economicTier || 'emerging',
+    populationGrowthRate: (countryData as any).populationGrowthRate || 0
   } : null;
 
   // Diplomatic events stream - using diplomatic relations and recent changes

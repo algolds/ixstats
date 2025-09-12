@@ -21,19 +21,19 @@ export async function generateAndPostCrisisEvent(crisisEventId: string) {
   // For simplicity, let's say media accounts post about all crises for now.
   const accountTypeToPost = 'media'; 
 
-  const mediaAccounts = await prisma.thinkpagesAccount.findMany({
-    where: { accountType: accountTypeToPost, isActive: true },
+  const activeUsers = await prisma.user.findMany({
+    where: { isActive: true },
     take: 1, // Just pick one for now
   });
 
-  if (mediaAccounts.length === 0) {
-    console.warn(`No active ${accountTypeToPost} accounts found for auto-posting crisis event ${crisisEvent.id}`);
+  if (activeUsers.length === 0) {
+    console.warn(`No active users found for auto-posting crisis event ${crisisEvent.id}`);
     return null;
   }
 
-  const postingAccount = mediaAccounts[0];
-  if (!postingAccount) {
-    console.warn('No posting account available');
+  const postingUser = activeUsers[0];
+  if (!postingUser) {
+    console.warn('No posting user available');
     return null;
   }
 
@@ -59,7 +59,7 @@ export async function generateAndPostCrisisEvent(crisisEventId: string) {
   // Create the post
   const newPost = await prisma.thinkpagesPost.create({
     data: {
-      accountId: postingAccount.id,
+      userId: postingUser.clerkUserId,
       content: content,
       postType: 'original',
       visibility: 'public',
@@ -67,13 +67,7 @@ export async function generateAndPostCrisisEvent(crisisEventId: string) {
     },
   });
 
-  // Increment post count for the account
-  await prisma.thinkpagesAccount.update({
-    where: { id: postingAccount.id },
-    data: { postCount: { increment: 1 } },
-  });
-
-  console.log(`Auto-posted crisis event ${crisisEvent.id} from ${postingAccount.username}`);
+  console.log(`Auto-posted crisis event ${crisisEvent.id} from user ${postingUser.id}`);
   return newPost;
 }
 
@@ -100,15 +94,15 @@ export async function detectEconomicMilestoneAndTriggerNarrative() {
 
   for (const country of countriesWithGrowth) {
     // Trigger government announcement
-    const governmentAccounts = await prisma.thinkpagesAccount.findMany({
-      where: { accountType: 'government', countryId: country.id, isActive: true },
+    const governmentUsers = await prisma.user.findMany({
+      where: { countryId: country.id, isActive: true },
       take: 1,
     });
 
-    if (governmentAccounts.length > 0) {
-      const governmentAccount = governmentAccounts[0];
-      if (!governmentAccount) {
-        console.warn(`Government account not found for country ${country.name}`);
+    if (governmentUsers.length > 0) {
+      const governmentUser = governmentUsers[0];
+      if (!governmentUser) {
+        console.warn(`Government user not found for country ${country.name}`);
         continue;
       }
       
@@ -116,18 +110,13 @@ export async function detectEconomicMilestoneAndTriggerNarrative() {
 
       const newGovernmentPost = await prisma.thinkpagesPost.create({
         data: {
-          accountId: governmentAccount.id,
+          userId: governmentUser.clerkUserId,
           content: content.substring(0, 280),
           postType: 'original',
           visibility: 'public',
           hashtags: JSON.stringify(['EconomicGrowth', country.name.replace(/\s/g, '')]),
           ixTimeTimestamp: new Date(IxTime.getCurrentIxTime()),
         },
-      });
-
-      await prisma.thinkpagesAccount.update({
-        where: { id: governmentAccount.id },
-        data: { postCount: { increment: 1 } },
       });
 
       console.log(`Auto-posted government announcement for ${country.name}`);
@@ -151,7 +140,7 @@ export async function generateAndPostMediaResponse(parentPostId: string, country
     return null;
   }
 
-  const mediaAccounts = await prisma.thinkpagesAccount.findMany({
+  const mediaAccounts = await prisma.user.findMany({
     where: { accountType: 'media', isActive: true },
     take: 1,
   });
@@ -167,7 +156,7 @@ export async function generateAndPostMediaResponse(parentPostId: string, country
     return null;
   }
 
-  const content = `ANALYSIS: ${parentPost.account?.displayName || 'Government'}'s claim of ${countryName} GDP growth is significant. While positive, questions remain about long-term sustainability and equitable distribution. #Economy #${countryName.replace(/\s/g, '')}`;
+  const content = `ANALYSIS: ${(parentPost as any).account?.displayName || 'Government'}'s claim of ${countryName} GDP growth is significant. While positive, questions remain about long-term sustainability and equitable distribution. #Economy #${countryName.replace(/\s/g, '')}`;
 
   const newMediaPost = await prisma.thinkpagesPost.create({
     data: {
@@ -181,7 +170,7 @@ export async function generateAndPostMediaResponse(parentPostId: string, country
     },
   });
 
-  await prisma.thinkpagesAccount.update({
+  await prisma.user.update({
     where: { id: postingAccount.id },
     data: { postCount: { increment: 1 } },
   });
@@ -192,7 +181,7 @@ export async function generateAndPostMediaResponse(parentPostId: string, country
     data: { replyCount: { increment: 1 } },
   });
 
-  console.log(`Auto-posted media response to ${parentPost.id} from ${postingAccount.username}`);
+  console.log(`Auto-posted media response to ${parentPost.id} from ${(postingAccount as any).username}`);
   return newMediaPost;
 }
 
@@ -206,7 +195,7 @@ export async function generateAndPostCitizenReaction(postId: string) {
     return null;
   }
 
-  const citizenAccounts = await prisma.thinkpagesAccount.findMany({
+  const citizenAccounts = await prisma.user.findMany({
     where: { accountType: 'citizen', isActive: true },
     take: 5, // Get a few citizen accounts
   });
@@ -246,7 +235,7 @@ export async function generateAndPostCitizenReaction(postId: string) {
       },
       data: { reactionType: randomReactionType },
     });
-    console.log(`Citizen account ${randomCitizenAccount.username} updated reaction to ${randomReactionType} on post ${postId}`);
+    console.log(`Citizen account ${(randomCitizenAccount as any).username} updated reaction to ${randomReactionType} on post ${postId}`);
   } else {
     // Otherwise, create a new reaction
     await prisma.postReaction.create({
@@ -257,7 +246,7 @@ export async function generateAndPostCitizenReaction(postId: string) {
         timestamp: new Date(IxTime.getCurrentIxTime()),
       },
     });
-    console.log(`Citizen account ${randomCitizenAccount.username} reacted with ${randomReactionType} to post ${postId}`);
+    console.log(`Citizen account ${(randomCitizenAccount as any).username} reacted with ${randomReactionType} to post ${postId}`);
   }
 
   // Update reaction counts on the post

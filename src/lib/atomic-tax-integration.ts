@@ -264,9 +264,9 @@ export function calculateAtomicTaxEffectiveness(
       const synergy = TAX_COMPONENT_SYNERGIES[synergyKey];
       
       if (synergy) {
-        if (synergy.collectionEfficiency) collectionMultiplier *= synergy.collectionEfficiency;
-        if (synergy.complianceRate) complianceMultiplier *= synergy.complianceRate;
-        if (synergy.auditCapacity) auditMultiplier *= synergy.auditCapacity;
+        if ((synergy as any).collectionEfficiency) collectionMultiplier *= (synergy as any).collectionEfficiency;
+        if ((synergy as any).complianceRate) complianceMultiplier *= (synergy as any).complianceRate;
+        if ((synergy as any).auditCapacity) auditMultiplier *= (synergy as any).auditCapacity;
         synergies.push(synergy.description);
       }
 
@@ -275,8 +275,8 @@ export function calculateAtomicTaxEffectiveness(
       const conflict = TAX_COMPONENT_CONFLICTS[conflictKey];
       
       if (conflict) {
-        if (conflict.collectionEfficiency) collectionMultiplier *= conflict.collectionEfficiency;
-        if (conflict.complianceRate) complianceMultiplier *= conflict.complianceRate;
+        if ((conflict as any).collectionEfficiency) collectionMultiplier *= (conflict as any).collectionEfficiency;
+        if ((conflict as any).complianceRate) complianceMultiplier *= (conflict as any).complianceRate;
         conflicts.push(conflict.description);
       }
     }

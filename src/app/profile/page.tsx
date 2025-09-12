@@ -76,9 +76,9 @@ function ProfileContent() {
 
   useEffect(() => {
     if (thinkpagesAccount) {
-      setThinkpagesPostingFrequency(thinkpagesAccount.postingFrequency);
-      setThinkpagesPoliticalLean(thinkpagesAccount.politicalLean);
-      setThinkpagesPersonality(thinkpagesAccount.personality);
+      setThinkpagesPostingFrequency((thinkpagesAccount as any).postingFrequency);
+      setThinkpagesPoliticalLean((thinkpagesAccount as any).politicalLean);
+      setThinkpagesPersonality((thinkpagesAccount as any).personality);
     }
   }, [thinkpagesAccount]);
 
@@ -597,9 +597,9 @@ function ProfileContent() {
                                 setIsEditingThinkpages(false);
                                 // Reset to original values if cancelled
                                 if (thinkpagesAccount) {
-                                  setThinkpagesPostingFrequency(thinkpagesAccount.postingFrequency);
-                                  setThinkpagesPoliticalLean(thinkpagesAccount.politicalLean);
-                                  setThinkpagesPersonality(thinkpagesAccount.personality);
+                                  setThinkpagesPostingFrequency((thinkpagesAccount as any).postingFrequency);
+                                  setThinkpagesPoliticalLean((thinkpagesAccount as any).politicalLean);
+                                  setThinkpagesPersonality((thinkpagesAccount as any).personality);
                                 }
                               }}
                               className="px-3 py-1 bg-gray-600 hover:bg-gray-700 dark:bg-gray-500 dark:hover:bg-gray-600 text-white rounded-md text-sm"

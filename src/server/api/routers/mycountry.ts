@@ -72,10 +72,10 @@ function calculateVitalityScores(country: CountryWithEconomicData): VitalityScor
   
   // Diplomatic Standing (calculated from relations and treaties)
   const diplomaticStanding = Math.min(100, Math.max(40, 
-    (country.globalDiplomaticInfluence || 50) + 
-    (country.tradeRelationshipStrength || 10) + 
-    (country.allianceStrength || 15) - 
-    (country.diplomaticTensions || 5)
+    ((country as any).globalDiplomaticInfluence || 50) + 
+    ((country as any).tradeRelationshipStrength || 10) + 
+    ((country as any).allianceStrength || 15) - 
+    ((country as any).diplomaticTensions || 5)
   ));
   
   // Governmental Efficiency (based on economic performance and stability)

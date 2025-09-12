@@ -18,15 +18,13 @@ import {
   Zap,
   Info
 } from 'lucide-react';
-import { 
-  calculateAtomicEconomicEffectiveness, 
-  getAtomicEconomicRecommendations 
-} from '~/lib/atomic-economic-integration';
-
 import type { ComponentType } from '~/types/government';
 import { 
   calculateAtomicEconomicImpact, 
-  getAtomicIntelligenceRecommendations 
+  getAtomicIntelligenceRecommendations,
+  calculateCountryDataWithAtomicEnhancement,
+  calculateAtomicEconomicEffectiveness,
+  getAtomicEconomicRecommendations
 } from '~/lib/atomic-economic-integration';
 
 interface AtomicEconomicEffectivenessPanelProps {

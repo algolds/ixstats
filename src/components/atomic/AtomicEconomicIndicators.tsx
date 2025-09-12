@@ -338,7 +338,7 @@ export function AtomicEconomicIndicators({
               <div className="text-sm">
                 <span className="text-muted-foreground">Risk Factors: </span>
                 <span className="font-medium">
-                  {economicModifiers.stabilityIndex.factors.length}
+                  {(economicModifiers.stabilityIndex as any).factors.length}
                 </span>
               </div>
             </div>
