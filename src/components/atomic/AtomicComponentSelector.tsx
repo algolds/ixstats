@@ -333,7 +333,7 @@ export function AtomicComponentSelector({
         {Object.values(ATOMIC_COMPONENT_CATEGORIES).map((category) => {
           const Icon = category.icon;
           const selectedCount = selectedComponents.filter(comp =>
-            category.components.includes(comp)
+            category.components.includes(comp as any)
           ).length;
           
           return (

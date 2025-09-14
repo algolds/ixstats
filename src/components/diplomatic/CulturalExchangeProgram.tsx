@@ -219,7 +219,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   });
 
   // Use live data if available, fallback to prop data
-  const exchanges = useMemo(() => {
+  const exchanges = useMemo((): CulturalExchange[] => {
     if (liveExchanges && liveExchanges.length > 0) {
       return liveExchanges.map(exchange => ({
         id: exchange.id,
@@ -235,15 +235,19 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
         metrics: exchange.metrics,
         achievements: exchange.achievements,
         culturalArtifacts: exchange.culturalArtifacts,
-        diplomaticOutcomes: undefined // Not included in API response yet
-      }));
+        diplomaticOutcomes: {
+          newPartnerships: 0,
+          tradeAgreements: 0,
+          futureCollaborations: []
+        }
+      })) as CulturalExchange[];
     }
-    return propExchanges;
+    return propExchanges as CulturalExchange[];
   }, [liveExchanges, propExchanges]);
 
   // Filter exchanges
   const filteredExchanges = useMemo(() => {
-    let filtered = exchanges;
+    let filtered: CulturalExchange[] = exchanges;
 
     if (filterType !== 'all') {
       filtered = filtered.filter(exchange => exchange.type === filterType);

@@ -161,11 +161,7 @@ export function EnhancedMyCountryContent({ variant = 'unified', title }: Enhance
         try {
           await createComponentMutation.mutateAsync({
             countryId: country.id,
-            componentType,
-            effectivenessScore: 75, // Default effectiveness
-            implementationCost: 100000, // Default cost
-            maintenanceCost: 10000,
-            requiredCapacity: 60
+            componentType: componentType as any
           });
         } catch (error) {
           console.error('Failed to create component:', error);
@@ -441,8 +437,8 @@ export function EnhancedMyCountryContent({ variant = 'unified', title }: Enhance
 
                   <TabsContent value="components" className="space-y-4">
                     <AtomicComponentSelector
-                      selectedComponents={selectedComponents}
-                      onComponentChange={handleComponentChange}
+                      selectedComponents={selectedComponents as any}
+                      onComponentChange={async (components) => handleComponentChange(components as any)}
                       maxComponents={10}
                       isReadOnly={false}
                     />
@@ -472,7 +468,7 @@ export function EnhancedMyCountryContent({ variant = 'unified', title }: Enhance
                         <CardContent>
                           <TaxBuilder
                             countryId={country.id}
-                            onSave={(taxSystem) => {
+                            onSave={async (taxSystem) => {
                               console.log('Tax system saved:', taxSystem);
                             }}
                           />
@@ -488,8 +484,7 @@ export function EnhancedMyCountryContent({ variant = 'unified', title }: Enhance
                         </CardHeader>
                         <CardContent>
                           <GovernmentBuilder
-                            countryId={country.id}
-                            onSave={(government) => {
+                            onSave={async (government) => {
                               console.log('Government structure saved:', government);
                             }}
                           />

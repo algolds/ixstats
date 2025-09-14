@@ -59,7 +59,7 @@ const MetricCard = ({
         opacity: 0.85,
       }}
     />
-    <GlassCard variant="glass" blur="prominent" glow="hover" className="hover:scale-105 transition-all duration-300 relative z-20">
+    <GlassCard variant="glass" glow="hover" className="hover:scale-105 transition-all duration-300 relative z-20">
       <div className={`p-3 rounded-2xl bg-gradient-to-r ${color} shadow-lg mb-4 w-fit`}>
         <Icon className="w-6 h-6 text-white" />
       </div>
@@ -465,7 +465,7 @@ export default function GlobalOverview() {
       </div>
 
       {/* Header with Live Status */}
-      <GlassCard variant="diplomatic" blur="prominent" glow="hover" className="p-8 mb-6 z-30 relative">
+      <GlassCard variant="diplomatic" glow="hover" className="p-8 mb-6 z-30 relative">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-4xl font-bold text-blue-100 diplomatic-header mb-2">Global Overview</h1>

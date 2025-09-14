@@ -70,7 +70,12 @@ interface AIRecommendation {
   type: 'economic' | 'social' | 'political' | 'environmental' | 'strategic';
   title: string;
   description: string;
-  impact: 'low' | 'medium' | 'high' | 'critical';
+  impact: {
+    economic?: number;
+    social?: number;
+    diplomatic?: number;
+    governance?: number;
+  };
   confidence: number;
   timeframe: 'immediate' | 'short_term' | 'medium_term' | 'long_term';
   actions: string[];
@@ -171,7 +176,7 @@ export function AIAdvisorModal({
         type: "economic",
         title: "Boost Economic Growth",
         description: "GDP growth is below optimal levels. Consider investment incentives and infrastructure development.",
-        impact: "high",
+        impact: { economic: 8, governance: 6 },
         confidence: 0.85,
         timeframe: "medium_term",
         actions: [
@@ -191,7 +196,7 @@ export function AIAdvisorModal({
         type: "social",
         title: "Address Population Growth",
         description: "Population growth is declining. Consider policies to support demographic sustainability.",
-        impact: "medium",
+        impact: { social: 6, governance: 4 },
         confidence: 0.78,
         timeframe: "long_term",
         actions: [
@@ -211,7 +216,7 @@ export function AIAdvisorModal({
         type: "economic",
         title: "Reduce Economic Volatility",
         description: "High GDP volatility detected. Implement stabilization measures.",
-        impact: "high",
+        impact: { economic: 7, governance: 5 },
         confidence: 0.82,
         timeframe: "immediate",
         actions: [
@@ -278,7 +283,7 @@ export function AIAdvisorModal({
           type: "economic",
           title: "Economic Growth Strategy",
           description: "Comprehensive approach to boost GDP growth through strategic investments.",
-          impact: "high",
+          impact: { economic: 8, governance: 6 },
           confidence: 0.88,
           timeframe: "medium_term",
           actions: [
@@ -308,7 +313,7 @@ export function AIAdvisorModal({
           type: "social",
           title: "Population Policy Framework",
           description: "Balanced approach to population management and social development.",
-          impact: "medium",
+          impact: { social: 6, governance: 4 },
           confidence: 0.75,
           timeframe: "long_term",
           actions: [
@@ -338,7 +343,7 @@ export function AIAdvisorModal({
           type: "strategic",
           title: "Risk Mitigation Strategy",
           description: "Comprehensive approach to reduce economic volatility and manage risks.",
-          impact: "high",
+          impact: { economic: 7, governance: 6 },
           confidence: 0.85,
           timeframe: "immediate",
           actions: [
@@ -366,8 +371,23 @@ export function AIAdvisorModal({
     return RECOMMENDATION_COLORS[type as keyof typeof RECOMMENDATION_COLORS] || "#6b7280";
   };
 
-  const getImpactColor = (impact: string) => {
-    return IMPACT_COLORS[impact as keyof typeof IMPACT_COLORS] || "#6b7280";
+  // Convert impact object to display string and color
+  const getImpactDisplay = (impact: { economic?: number; social?: number; diplomatic?: number; governance?: number; }) => {
+    const maxValue = Math.max(
+      impact.economic || 0,
+      impact.social || 0,
+      impact.diplomatic || 0,
+      impact.governance || 0
+    );
+
+    if (maxValue >= 8) return { text: "High", color: "#ef4444" };
+    if (maxValue >= 6) return { text: "Medium", color: "#f59e0b" };
+    if (maxValue >= 4) return { text: "Low", color: "#10b981" };
+    return { text: "Minimal", color: "#6b7280" };
+  };
+
+  const getImpactColor = (impact: { economic?: number; social?: number; diplomatic?: number; governance?: number; }) => {
+    return getImpactDisplay(impact).color;
   };
 
   if (isLoading) {
@@ -452,12 +472,12 @@ export function AIAdvisorModal({
                                       style={{ backgroundColor: getRecommendationColor(rec.type) }}
                                     />
                                     <span className="text-xs font-medium">{rec.title}</span>
-                                    <Badge 
-                                      variant="outline" 
+                                    <Badge
+                                      variant="outline"
                                       className="ml-auto text-xs"
                                       style={{ borderColor: getImpactColor(rec.impact) }}
                                     >
-                                      {rec.impact}
+                                      {getImpactDisplay(rec.impact).text}
                                     </Badge>
                                   </div>
                                 </div>
@@ -546,11 +566,11 @@ export function AIAdvisorModal({
                         className="w-3 h-3 rounded-full"
                         style={{ backgroundColor: getRecommendationColor(recommendation.type) }}
                       />
-                      <Badge 
+                      <Badge
                         variant="outline"
                         style={{ borderColor: getImpactColor(recommendation.impact) }}
                       >
-                        {recommendation.impact}
+                        {getImpactDisplay(recommendation.impact).text}
                       </Badge>
                     </div>
                     
@@ -650,11 +670,11 @@ export function AIAdvisorModal({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <h4 className="font-medium mb-2">Impact</h4>
-                    <Badge 
+                    <Badge
                       variant="outline"
                       style={{ borderColor: getImpactColor(selectedRecommendation.impact) }}
                     >
-                      {selectedRecommendation.impact}
+                      {getImpactDisplay(selectedRecommendation.impact).text}
                     </Badge>
                   </div>
                   <div>

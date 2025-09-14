@@ -347,7 +347,7 @@ export function SubBudgetManager({
           <div className="space-y-3">
             {!isAddingNew ? (
               <Button
-                variant="dashed"
+                variant="outline"
                 onClick={() => setIsAddingNew(true)}
                 className="w-full h-12 border-2 border-dashed border-[var(--color-border-primary)] hover:border-[var(--color-brand-primary)]"
               >

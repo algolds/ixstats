@@ -78,7 +78,7 @@ const MIGRATION_SCENARIOS: MigrationScenario[] = [
     name: 'Technocratic Optimization',
     description: 'Transition to technocratic governance for maximum efficiency',
     fromComponents: [],
-    toComponents: ['TECHNOCRATIC_PROCESS', 'PROFESSIONAL_BUREAUCRACY', 'TECHNOCRATIC_AGENCIES', 'RULE_OF_LAW'],
+    toComponents: ['TECHNOCRATIC_PROCESS', 'PROFESSIONAL_BUREAUCRACY', 'TECHNOCRATIC_AGENCIES', 'RULE_OF_LAW'] as any,
     category: 'efficiency',
     difficulty: 'medium',
     timeframe: 'medium',
@@ -90,7 +90,7 @@ const MIGRATION_SCENARIOS: MigrationScenario[] = [
     name: 'Democratic Stabilization',
     description: 'Strengthen democratic institutions and legitimacy',
     fromComponents: [],
-    toComponents: ['DEMOCRATIC_PROCESS', 'ELECTORAL_LEGITIMACY', 'INDEPENDENT_JUDICIARY', 'RULE_OF_LAW'],
+    toComponents: ['DEMOCRATIC_PROCESS', 'ELECTORAL_LEGITIMACY', 'INDEPENDENT_JUDICIARY', 'RULE_OF_LAW'] as any,
     category: 'stability',
     difficulty: 'hard',
     timeframe: 'long',
@@ -102,7 +102,7 @@ const MIGRATION_SCENARIOS: MigrationScenario[] = [
     name: 'Administrative Efficiency',
     description: 'Enhance bureaucratic capacity while maintaining legitimacy',
     fromComponents: [],
-    toComponents: ['PROFESSIONAL_BUREAUCRACY', 'PERFORMANCE_LEGITIMACY', 'TECHNOCRATIC_AGENCIES', 'UNITARY_SYSTEM'],
+    toComponents: ['PROFESSIONAL_BUREAUCRACY', 'PERFORMANCE_LEGITIMACY', 'TECHNOCRATIC_AGENCIES', 'UNITARY_SYSTEM'] as any,
     category: 'efficiency',
     difficulty: 'easy',
     timeframe: 'short',
@@ -114,7 +114,7 @@ const MIGRATION_SCENARIOS: MigrationScenario[] = [
     name: 'Stability Enhancement',
     description: 'Prioritize long-term stability and predictability',
     fromComponents: [],
-    toComponents: ['TRADITIONAL_LEGITIMACY', 'RULE_OF_LAW', 'INDEPENDENT_JUDICIARY', 'CONSENSUS_PROCESS'],
+    toComponents: ['TRADITIONAL_LEGITIMACY', 'RULE_OF_LAW', 'INDEPENDENT_JUDICIARY', 'CONSENSUS_PROCESS'] as any,
     category: 'stability',
     difficulty: 'medium',
     timeframe: 'medium',
@@ -138,7 +138,7 @@ export function AtomicMigrationTools({
   // Calculate current metrics
   const currentMetrics = useMemo(() => {
     const tax = calculateAtomicTaxEffectiveness(currentComponents, taxData);
-    const economic = calculateAtomicEconomicEffectiveness(currentComponents, economicData);
+    const economic = calculateAtomicEconomicEffectiveness(currentComponents as any, economicData);
     const stability = calculateAtomicGovernmentStability(currentComponents);
     
     return { tax, economic, stability };
@@ -149,7 +149,7 @@ export function AtomicMigrationTools({
     const componentsToAnalyze = selectedScenario ? selectedScenario.toComponents : customComponents;
     
     const tax = calculateAtomicTaxEffectiveness(componentsToAnalyze, taxData);
-    const economic = calculateAtomicEconomicEffectiveness(componentsToAnalyze, economicData);
+    const economic = calculateAtomicEconomicEffectiveness(componentsToAnalyze as any, economicData);
     const stability = calculateAtomicGovernmentStability(componentsToAnalyze);
     
     return { tax, economic, stability };
@@ -171,11 +171,11 @@ export function AtomicMigrationTools({
       recommendations.push('Rule of Law and Independent Judiciary would enhance stability');
     }
     
-    if (currentComponents.includes('PARTISAN_INSTITUTIONS')) {
+    if (currentComponents.includes('PARTISAN_INSTITUTIONS' as any)) {
       recommendations.push('Consider replacing Partisan Institutions with Professional Bureaucracy');
     }
     
-    if (currentComponents.includes('OLIGARCHIC_PROCESS')) {
+    if (currentComponents.includes('OLIGARCHIC_PROCESS' as any)) {
       recommendations.push('Transition from Oligarchic to Democratic or Technocratic Process');
     }
 

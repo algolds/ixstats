@@ -266,7 +266,7 @@ export function EditorTabs({
             {governmentData ? (
               <GovernmentBuilder
                 initialData={governmentData}
-                onSave={handleGovernmentSave}
+                onSave={async (data) => handleGovernmentSave(data)}
                 onPreview={async (data) => {
                   console.log('Government preview:', data);
                   setGovernmentData(data);

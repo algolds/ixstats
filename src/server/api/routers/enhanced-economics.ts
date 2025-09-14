@@ -12,10 +12,7 @@ import {
 } from "~/lib/enhanced-economic-service";
 import { IxStatsCalculator } from "~/lib/calculations";
 import { getDefaultEconomicConfig } from "~/lib/config-service";
-import type { CountryStats, HistoricalDataPoint } from "~/types/ixstats";
-// Using string literals instead of importing missing types
-type EconomicTier = 'emerging' | 'developing' | 'advanced' | 'powerhouse';
-type PopulationTier = 'small' | 'medium' | 'large' | 'massive';
+import type { CountryStats, HistoricalDataPoint, EconomicTier, PopulationTier } from "~/types/ixstats";
 
 // Input validation schemas
 const countryStatsSchema = z.object({

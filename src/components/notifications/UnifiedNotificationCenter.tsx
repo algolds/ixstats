@@ -286,8 +286,8 @@ export function UnifiedNotificationCenter({
         status: 'delivered',
         actionable: true,
         actions: [
-          { id: 'view-details', label: 'View Details', type: 'primary' },
-          { id: 'acknowledge', label: 'Acknowledge', type: 'secondary' }
+          { id: 'view-details', label: 'View Details', type: 'primary', onClick: () => console.log('View details') },
+          { id: 'acknowledge', label: 'Acknowledge', type: 'secondary', onClick: () => console.log('Acknowledge') }
         ]
       },
       {
@@ -324,7 +324,7 @@ export function UnifiedNotificationCenter({
         status: 'delivered',
         actionable: true,
         actions: [
-          { id: 'celebrate', label: 'Share Achievement', type: 'primary' }
+          { id: 'celebrate', label: 'Share Achievement', type: 'primary', onClick: () => console.log('Celebrate') }
         ]
       }
     ];
@@ -426,7 +426,7 @@ export function UnifiedNotificationCenter({
             <div className="flex items-center gap-2">
               {config.enableFiltering && (
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
+                  <DropdownMenuTrigger>
                     <Button variant="outline" size="sm">
                       <Filter className="w-4 h-4" />
                     </Button>

@@ -203,7 +203,7 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
         {/* Conversations List */}
         <div className="lg:col-span-4">
           <ConversationList
-            conversations={conversations?.conversations || []}
+            conversations={(conversations?.conversations || []) as any}
             isLoadingConversations={isLoadingConversations}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
@@ -220,15 +220,19 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
         <div className="lg:col-span-8">
           {selectedConv ? (
             <ChatArea
-              selectedConversation={selectedConv}
+              selectedConversation={selectedConv as any}
               currentUserId={currentUserId}
-              conversationMessages={conversationMessages}
+              conversationMessages={conversationMessages as any}
               isLoadingMessages={isLoadingMessages}
               refetchMessages={refetchMessages}
               refetchConversations={refetchConversations}
-              clientState={clientState}
+              clientState={{
+                connected: clientState.connected || false,
+                typingIndicators: clientState.typingIndicators || new Map(),
+                ...clientState
+              } as any}
               sendTypingIndicator={sendTypingIndicator}
-              markMessagesAsReadMutation={markMessagesAsReadMutation}
+              markMessagesAsReadMutation={markMessagesAsReadMutation as any}
             />
           ) : (
             <Card className="glass-hierarchy-child h-[700px] flex items-center justify-center">
@@ -259,10 +263,10 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
         }}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        users={allUsers || []}
+        accounts={allUsers as any || []}
         isLoading={isLoadingUsers}
         onCreateConversation={handleCreateConversation}
-        currentUserId={currentUserId}
+        currentAccount={{ id: currentUserId } as any}
       />
     </div>
   );

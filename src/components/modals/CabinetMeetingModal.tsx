@@ -91,8 +91,8 @@ export function CabinetMeetingModal({
     totalMeetings: meetings?.length || 0,
     upcomingMeetings: meetings?.filter((m: any) => new Date(m.scheduledDate) > new Date()).length || 0,
     completedMeetings: meetings?.filter((m: any) => m.status === 'completed').length || 0,
-    averageAttendance: meetings?.length > 0 ? 
-      meetings.reduce((sum: number, m: any) => sum + (m.attendees?.length || 0), 0) / meetings.length : 0
+    averageAttendance: (meetings?.length ?? 0) > 0 ? 
+      (meetings ?? []).reduce((sum: number, m: any) => sum + (m.attendees?.length || 0), 0) / (meetings?.length ?? 1) : 0
   };
 
   const resetForm = () => {

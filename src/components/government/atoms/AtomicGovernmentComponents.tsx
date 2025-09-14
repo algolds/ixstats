@@ -80,7 +80,7 @@ export enum ComponentType {
 }
 
 // Atomic Component Library
-export const ATOMIC_COMPONENTS: Record<ComponentType, AtomicGovernmentComponent> = {
+export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentComponent>> = {
   // Power Distribution
   [ComponentType.CENTRALIZED_POWER]: {
     id: 'centralized_power',
@@ -462,8 +462,8 @@ export function AtomicComponentSelector({
           const component1 = ATOMIC_COMPONENTS[comp1];
           const component2 = ATOMIC_COMPONENTS[comp2];
           
-          if (component1.synergies.includes(comp2)) synergyScore += 10;
-          if (component1.conflicts.includes(comp2)) conflictScore += 10;
+          if (component1?.synergies.includes(comp2)) synergyScore += 10;
+          if (component1?.conflicts.includes(comp2)) conflictScore += 10;
         }
       });
     });
@@ -483,7 +483,7 @@ export function AtomicComponentSelector({
   
   const { synergyScore, conflictScore } = calculateSynergies(selectedComponents);
   const effectivenessScore = selectedComponents.reduce(
-    (sum, comp) => sum + ATOMIC_COMPONENTS[comp].effectiveness, 0
+    (sum, comp) => sum + (ATOMIC_COMPONENTS[comp]?.effectiveness || 0), 0
   ) / selectedComponents.length || 0;
   
   return (
@@ -550,10 +550,10 @@ export function AtomicComponentSelector({
                   const component = ATOMIC_COMPONENTS[componentType];
                   const isSelected = selectedComponents.includes(componentType);
                   const hasConflict = selectedComponents.some(selected => 
-                    component.conflicts.includes(selected) || ATOMIC_COMPONENTS[selected].conflicts.includes(componentType)
+                    component?.conflicts.includes(selected) || ATOMIC_COMPONENTS[selected]?.conflicts.includes(componentType)
                   );
                   const hasSynergy = selectedComponents.some(selected => 
-                    component.synergies.includes(selected) || ATOMIC_COMPONENTS[selected].synergies.includes(componentType)
+                    component?.synergies.includes(selected) || ATOMIC_COMPONENTS[selected]?.synergies.includes(componentType)
                   );
                   
                   return (
@@ -571,10 +571,10 @@ export function AtomicComponentSelector({
                       onClick={() => toggleComponent(componentType)}
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <h4 className="font-medium text-sm">{component.name}</h4>
+                        <h4 className="font-medium text-sm">{component?.name}</h4>
                         <div className="flex items-center gap-1">
                           <Badge variant="outline" className="text-xs">
-                            {component.effectiveness}%
+                            {component?.effectiveness}%
                           </Badge>
                           {isSelected && <CheckCircle className="h-4 w-4 text-green-500" />}
                           {hasConflict && !isSelected && <AlertCircle className="h-4 w-4 text-red-500" />}
@@ -583,13 +583,13 @@ export function AtomicComponentSelector({
                       </div>
                       
                       <p className="text-xs text-muted-foreground mb-3">
-                        {component.description}
+                        {component?.description}
                       </p>
                       
                       <div className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-4">
-                          <span>Cost: ${(component.implementationCost / 1000).toFixed(0)}k</span>
-                          <span>Capacity: {component.requiredCapacity}%</span>
+                          <span>Cost: ${((component?.implementationCost || 0) / 1000).toFixed(0)}k</span>
+                          <span>Capacity: {component?.requiredCapacity}%</span>
                         </div>
                       </div>
                     </div>
@@ -611,7 +611,7 @@ export function AtomicComponentSelector({
                   variant="default" 
                   className="flex items-center gap-1"
                 >
-                  {ATOMIC_COMPONENTS[componentType].name}
+                  {ATOMIC_COMPONENTS[componentType]?.name}
                   {!isReadOnly && (
                     <button
                       onClick={(e) => {
@@ -653,7 +653,7 @@ export function AtomicComponentSelector({
               <div className="text-center">
                 <div className="text-lg font-bold">
                   ${Math.round(selectedComponents.reduce(
-                    (sum, comp) => sum + ATOMIC_COMPONENTS[comp].implementationCost, 0
+                    (sum, comp) => sum + (ATOMIC_COMPONENTS[comp]?.implementationCost || 0), 0
                   ) / 1000)}k
                 </div>
                 <div className="text-sm text-muted-foreground">

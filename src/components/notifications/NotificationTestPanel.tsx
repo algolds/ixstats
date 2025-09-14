@@ -46,7 +46,7 @@ export function NotificationTestPanel() {
         category: 'security',
         type: 'alert',
         priority: 'critical',
-        severity: 'critical',
+        severity: 'urgent',
         deliveryMethod: 'dynamic-island',
         actionable: true,
         actions: [{
@@ -56,12 +56,12 @@ export function NotificationTestPanel() {
           onClick: () => setTestResults(prev => [...prev, 'Intelligence notification action clicked'])
         }],
         triggers: [{
-          type: 'manual-test',
+          type: 'user-action',
           source: 'test-panel',
           data: { testType: 'intelligence' },
           confidence: 1.0
         }]
-      });
+      } as any);
       
       setTestResults(prev => [...prev, '✅ Intelligence notification created successfully']);
     } catch (error) {
@@ -72,7 +72,7 @@ export function NotificationTestPanel() {
   const testEconomicNotification = async () => {
     try {
       await addNotification({
-        source: 'economic',
+        source: 'intelligence',
         title: '📈 TEST: Economic Alert',
         message: 'GDP has increased by 15.2% this quarter, indicating strong economic growth.',
         category: 'economic',
@@ -93,7 +93,7 @@ export function NotificationTestPanel() {
           data: { metric: 'GDP', changePercent: 15.2, value: 2400000000000 },
           confidence: 0.9
         }]
-      });
+      } as any);
       
       setTestResults(prev => [...prev, '✅ Economic notification created successfully']);
     } catch (error) {
@@ -144,12 +144,15 @@ export function NotificationTestPanel() {
       // Test direct bridge integration
       wireIntelligence([{
         id: `test-intel-${Date.now()}`,
+        type: 'alert',
         title: 'Bridge Test Intelligence',
-        content: 'Testing direct bridge integration for intelligence data.',
+        description: 'Testing direct bridge integration for intelligence data.',
+        severity: 'medium',
         category: 'security',
-        priority: 'high',
-        timestamp: new Date(),
-        source: 'test-bridge'
+        timestamp: Date.now(),
+        createdAt: Date.now(),
+        source: 'test-bridge',
+        actionable: true
       }]);
       
       wireEconomic({

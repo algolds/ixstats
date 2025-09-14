@@ -41,7 +41,7 @@ export function AccountSettingsModal({
   const handleSave = async () => {
     try {
       const updatedAccount = await updateAccountMutation.mutateAsync({
-        accountId: account.id,
+        userId: account.id,
         verified,
         postingFrequency,
         politicalLean,

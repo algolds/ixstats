@@ -480,7 +480,7 @@ export function ExecutiveCommandCenter({
                     description: action.description,
                     category: action.category || 'governance',
                     urgency: action.urgency as 'urgent' | 'important' | 'routine' | 'future',
-                    difficulty: action.difficulty || 'medium',
+                    difficulty: action.difficulty || 'moderate',
                     estimatedDuration: action.estimatedDuration,
                     estimatedCost: action.estimatedCost || 0,
                     successProbability: action.successProbability,

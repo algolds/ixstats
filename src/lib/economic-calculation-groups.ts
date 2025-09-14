@@ -163,6 +163,13 @@ export class EconomicCalculationGroups {
   }
 
   /**
+   * Get group weights for external calculations
+   */
+  get weights() {
+    return this.groupWeights;
+  }
+
+  /**
    * Calculate Growth Dynamics Group
    */
   calculateGrowthDynamics(
@@ -767,11 +774,11 @@ export function runGroupedAnalysis(
 
   // Calculate weighted overall score
   const overallScore = (
-    growthDynamics.overallScore * calculator.groupWeights.growth_dynamics +
-    financialHealth.overallScore * calculator.groupWeights.financial_health +
-    humanDevelopment.overallScore * calculator.groupWeights.human_development +
-    economicStructure.overallScore * calculator.groupWeights.economic_structure +
-    externalRelations.overallScore * calculator.groupWeights.external_relations
+    growthDynamics.overallScore * calculator.weights.growth_dynamics +
+    financialHealth.overallScore * calculator.weights.financial_health +
+    humanDevelopment.overallScore * calculator.weights.human_development +
+    economicStructure.overallScore * calculator.weights.economic_structure +
+    externalRelations.overallScore * calculator.weights.external_relations
   );
 
   // Identify strengths and challenges

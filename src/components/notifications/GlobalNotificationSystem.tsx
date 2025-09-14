@@ -58,9 +58,10 @@ export function GlobalNotificationSystem({
           // Show toast for certain types of notifications
           if (notification.deliveryMethod === 'toast' || notification.priority === 'low') {
             toast({
-              title: notification.title,
-              description: notification.message,
-              duration: 5000,
+              title: String(notification.title),
+              description: String(notification.message),
+              type: 'info',
+              duration: 5000
             });
           }
         });
@@ -122,12 +123,12 @@ export function GlobalNotificationSystem({
   return (
     <UnifiedNotificationProvider
       userId={user?.id}
-      countryId={userProfile?.countryId}
+      countryId={userProfile?.countryId ?? undefined}
       isExecutiveMode={isExecutiveMode}
     >
       {/* Live Data Integration - connects all data streams */}
       <LiveDataIntegration
-        countryId={userProfile?.countryId}
+        countryId={userProfile?.countryId ?? undefined}
         isExecutiveMode={isExecutiveMode}
         enableIntelligenceStream={true}
         enableEconomicStream={true}

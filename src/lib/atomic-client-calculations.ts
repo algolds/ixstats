@@ -324,12 +324,12 @@ export function calculateClientAtomicEconomicImpact(
       modifiers.governmentEfficiencyMultiplier *= (data.baseEffectiveness / 70); // Normalize around 70
 
       // Innovation effects (primarily from technocratic components)
-      if ([ComponentType.TECHNOCRATIC_PROCESS, ComponentType.TECHNOCRATIC_AGENCIES].includes(component)) {
+      if ([ComponentType.TECHNOCRATIC_PROCESS, ComponentType.TECHNOCRATIC_AGENCIES].includes(component as any)) {
         modifiers.innovationMultiplier *= 1.15;
       }
 
       // International trade bonuses (from rule of law, stability)
-      if ([ComponentType.RULE_OF_LAW, ComponentType.INDEPENDENT_JUDICIARY].includes(component)) {
+      if ([ComponentType.RULE_OF_LAW, ComponentType.INDEPENDENT_JUDICIARY].includes(component as any)) {
         modifiers.internationalTradeBonus += 5;
       }
     }

@@ -455,19 +455,19 @@ export class AtomicRecommendationEngine {
     // Political tradition adjustments
     if (countryProfile.politicalTradition === 'democratic') {
       if ([ComponentType.DEMOCRATIC_PROCESS, ComponentType.ELECTORAL_LEGITIMACY, 
-           ComponentType.RULE_OF_LAW, ComponentType.INDEPENDENT_JUDICIARY].includes(component)) {
+           ComponentType.RULE_OF_LAW, ComponentType.INDEPENDENT_JUDICIARY].includes(component as any)) {
         compatibility += 0.2;
       }
-      if ([ComponentType.AUTOCRATIC_PROCESS, ComponentType.MILITARY_ADMINISTRATION].includes(component)) {
+      if ([ComponentType.AUTOCRATIC_PROCESS, ComponentType.MILITARY_ADMINISTRATION].includes(component as any)) {
         compatibility -= 0.3;
       }
     }
 
     if (countryProfile.politicalTradition === 'traditional') {
-      if ([ComponentType.TRADITIONAL_LEGITIMACY, ComponentType.CONSENSUS_PROCESS].includes(component)) {
+      if ([ComponentType.TRADITIONAL_LEGITIMACY, ComponentType.CONSENSUS_PROCESS].includes(component as any)) {
         compatibility += 0.2;
       }
-      if ([ComponentType.TECHNOCRATIC_PROCESS, ComponentType.TECHNOCRATIC_AGENCIES].includes(component)) {
+      if ([ComponentType.TECHNOCRATIC_PROCESS, ComponentType.TECHNOCRATIC_AGENCIES].includes(component as any)) {
         compatibility -= 0.2;
       }
     }

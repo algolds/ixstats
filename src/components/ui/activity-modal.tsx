@@ -85,7 +85,7 @@ export function ActivityPopover({ open, anchorEl, onClose, countryData, selected
 
   const selectedData = selectedRing !== undefined ? activityData[selectedRing] : null;
 
-  if (!open) return null;
+  if (!open || !selectedData) return null;
 
   return (
     <div className="fixed inset-0 z-[99999] flex items-center justify-center">
@@ -138,7 +138,7 @@ export function ActivityPopover({ open, anchorEl, onClose, countryData, selected
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 rounded-lg glass-depth-1 glass-refraction">
                   <div className="flex items-center gap-2 mb-2">
-                    <selectedData.icon className="h-4 w-4" style={{ color: selectedData.color } as any} />
+                    <selectedData.icon className="h-4 w-4" style={{ color: selectedData.color }} />
                     <span className="font-medium">Current Value</span>
                   </div>
                   <p className="text-2xl font-bold glow-text">{selectedData.value.toFixed(1)}%</p>
@@ -237,7 +237,7 @@ export function ActivityPopover({ open, anchorEl, onClose, countryData, selected
                     />
                     <div className="text-center space-y-1">
                       <div className="flex items-center gap-2 justify-center">
-                        <ring.icon className="h-4 w-4" style={{ color: ring.color } as any} />
+                        <ring.icon className="h-4 w-4" style={{ color: ring.color }} />
                         <span className="font-medium">{ring.label}</span>
                       </div>
                       <p className="text-sm text-muted-foreground">{ring.subtitle}</p>

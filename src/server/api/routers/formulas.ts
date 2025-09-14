@@ -27,7 +27,7 @@ export const formulasRouter = createTRPCRouter({
             isActive: true,
             version: "2.1.3",
             lastModified: new Date(),
-            modifiedBy: ctx.userId || "system"
+            modifiedBy: ctx.user?.id || "system"
           },
           {
             id: "tax-efficiency",
@@ -48,7 +48,7 @@ export const formulasRouter = createTRPCRouter({
             isActive: true,
             version: "1.8.1",
             lastModified: new Date(Date.now() - 86400000),
-            modifiedBy: ctx.userId || "system"
+            modifiedBy: ctx.user?.id || "system"
           }
         ]
       };
@@ -67,8 +67,8 @@ export const formulasRouter = createTRPCRouter({
       name: z.string().optional(),
       description: z.string().optional(),
       formula: z.string().optional(),
-      variables: z.record(z.number()).optional(),
-      constants: z.record(z.any()).optional(),
+      variables: z.record(z.string(), z.number()).optional(),
+      constants: z.record(z.string(), z.any()).optional(),
       isActive: z.boolean().optional()
     }))
     .mutation(async ({ ctx, input }) => {
@@ -82,7 +82,7 @@ export const formulasRouter = createTRPCRouter({
   testFormula: adminProcedure
     .input(z.object({
       formulaId: z.string(),
-      testInputs: z.record(z.number()),
+      testInputs: z.record(z.string(), z.number()),
       expectedOutput: z.number().optional()
     }))
     .mutation(async ({ ctx, input }) => {
@@ -154,7 +154,7 @@ export const formulasRouter = createTRPCRouter({
           formulaId: input.formulaId || `formula-${i % 3}`,
           formulaName: `Formula ${i % 3 + 1}`,
           timestamp: new Date(Date.now() - (i * 3600000)), // i hours ago
-          user: ctx.userId || "admin",
+          user: ctx.user?.id || "admin",
           executionTime: Math.random() * 1000 + 100,
           success: Math.random() > 0.1 // 90% success rate
         });

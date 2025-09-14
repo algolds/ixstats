@@ -7,11 +7,11 @@ import { IxTime } from "~/lib/ixtime";
 import { getDefaultEconomicConfig, CONFIG_CONSTANTS } from "~/lib/config-service";
 import { parseRosterFile } from "~/lib/data-parser";
 import { IxStatsCalculator } from "~/lib/calculations";
-import { 
+import {
   calculateCountryDataWithAtomicEnhancement,
-  getAtomicIntelligenceRecommendations,
-  type CountryWithAtomicComponents 
-} from "~/lib/atomic-economic-integration";
+  getAtomicIntelligenceRecommendations
+} from "~/lib/atomic-economic-integration.server";
+import { type CountryWithAtomicComponents } from "~/lib/atomic-economic-integration";
 import { getAtomicEffectivenessService } from "~/services/AtomicEffectivenessService";
 import { ComponentType } from "@prisma/client";
 import type { 
@@ -451,7 +451,7 @@ const countriesRouter = createTRPCRouter({
       let tierChangeProjection = null;
       const currentGDPPC = result.newStats.currentGdpPerCapita;
       const projectionsGDPPC = projections.map(p => p.stats.currentGdpPerCapita);
-      const tierThresholds = Object.values(econCfg.economicTierThresholds).sort((a, b) => a - b);
+      const tierThresholds = Object.values(econCfg.economicTierThresholds).filter((v): v is number => typeof v === 'number').sort((a, b) => a - b);
       let nextTier = null;
       for (let i = 0; i < tierThresholds.length; i++) {
         if (tierThresholds[i]! > currentGDPPC) {

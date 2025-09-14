@@ -266,7 +266,7 @@ export function ThinkpagesPost({
     try {
       await deletePostMutation.mutateAsync({
         postId: post.id,
-        accountId: currentUserAccountId
+        userId: currentUserAccountId
       });
       toast.success('Post deleted');
       setShowDeleteConfirm(false);

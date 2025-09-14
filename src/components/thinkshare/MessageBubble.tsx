@@ -158,7 +158,7 @@ const MessageBubble = React.memo(function MessageBubble({
                       className="p-1 hover:bg-accent rounded transition-colors text-lg"
                       onClick={() => {
                         if (!currentAccount) return;
-                        addReactionMutation.mutate({ messageId: message.id, accountId: currentAccount.id, reaction: emoji });
+                        addReactionMutation.mutate({ messageId: message.id, userId: currentAccount.id, reaction: emoji });
                         setShowQuickReactions(null);
                       }}
                     >

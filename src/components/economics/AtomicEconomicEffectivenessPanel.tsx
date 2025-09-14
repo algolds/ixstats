@@ -19,10 +19,8 @@ import {
   Info
 } from 'lucide-react';
 import type { ComponentType } from '~/types/government';
-import { 
-  calculateAtomicEconomicImpact, 
-  getAtomicIntelligenceRecommendations,
-  calculateCountryDataWithAtomicEnhancement,
+import {
+  calculateAtomicEconomicImpact,
   calculateAtomicEconomicEffectiveness,
   getAtomicEconomicRecommendations
 } from '~/lib/atomic-economic-integration';
@@ -46,8 +44,8 @@ export function AtomicEconomicEffectivenessPanel({
   showDetailedBreakdown = false,
   className
 }: AtomicEconomicEffectivenessPanelProps) {
-  const effectiveness = calculateAtomicEconomicEffectiveness(components, baseEconomicData);
-  const recommendations = getAtomicEconomicRecommendations(components, baseEconomicData);
+  const effectiveness = calculateAtomicEconomicEffectiveness(components as any, baseEconomicData);
+  const recommendations = getAtomicEconomicRecommendations(components as any, baseEconomicData);
 
   const getPerformanceColor = (value: number, type: 'growth' | 'inflation' | 'score') => {
     if (type === 'growth') {

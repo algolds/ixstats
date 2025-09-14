@@ -277,7 +277,7 @@ export function MyCountryTabSystem({ variant = 'unified' }: MyCountryTabSystemPr
           <ThemedTabContent theme="intelligence" className="tab-content-enter">
             <LiveIntelligenceSection 
               countryId={country.id} 
-              countryData={{
+              country={{
                 name: country.name,
                 economicTier: country.economicTier,
                 currentGdpPerCapita: country.currentGdpPerCapita,

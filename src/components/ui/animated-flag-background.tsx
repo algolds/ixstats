@@ -26,10 +26,10 @@ export const AnimatedFlagBackground: React.FC<AnimatedFlagBackgroundProps> = ({
   fallbackColor = 'rgba(59, 130, 246, 0.1)'
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number>(0);
   const [isHovered, setIsHovered] = useState(false);
   const [flagLoaded, setFlagLoaded] = useState(false);
-  const controls = useAnimation({});
+  const controls = useAnimation();
 
   // Physics parameters based on intensity
   const getPhysicsParams = () => {

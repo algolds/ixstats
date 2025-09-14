@@ -185,7 +185,7 @@ const generateIntelligenceBriefings = (vitalityData: VitalityIntelligence[]): In
           priority: 'high',
           area: vitality.area,
           confidence: 85,
-          urgency: 'this_month',
+          urgency: 'important',
           impact: {
             magnitude: 'high',
             scope: [vitality.area, 'regional standing'],
@@ -566,27 +566,23 @@ export function IntelligenceBriefings({
           description: rec.description,
           category: 'governance',
           urgency: rec.priority as ActionUrgency,
-          difficulty: rec.priority === 'critical' ? 'hard' : rec.priority === 'high' ? 'medium' : 'easy',
+          difficulty: rec.priority === 'critical' ? 'major' : rec.priority === 'high' ? 'moderate' : 'easy',
           estimatedDuration: rec.priority === 'critical' ? '1-2 weeks' : 
                            rec.priority === 'high' ? '2-4 weeks' : '1-2 months',
-          estimatedCost: rec.priority === 'critical' ? 10000 : rec.priority === 'high' ? 5000 : 1000,
+          estimatedCost: rec.priority === 'critical' ? '$10,000' : rec.priority === 'high' ? '$5,000' : '$1,000',
           successProbability: rec.priority === 'high' ? 85 : 
                             rec.priority === 'medium' ? 75 : 65,
           estimatedBenefit: rec.priority === 'critical' ? 'high' : rec.priority === 'high' ? 'medium' : 'low',
           prerequisites: ['Government approval', 'Budget allocation'],
-          expectedOutcome: 'Enhanced government effectiveness',
           risks: rec.type === 'conflict_resolution' ? 
                  ['System disruption', 'Transition period'] : 
                  ['Implementation challenges', 'Resource allocation'],
-          impact: rec.priority === 'critical' ? 'high' : rec.priority === 'high' ? 'medium' : 'low'
-        }],
-        metadata: {
-          lastUpdated: new Date(),
-          dataFreshness: 95,
-          automationLevel: 'full',
-          reviewStatus: 'pending'
-        }
-      });
+          impact: {
+            governance: rec.priority === 'critical' ? 8 : rec.priority === 'high' ? 5 : 2,
+            economic: rec.priority === 'critical' ? 6 : rec.priority === 'high' ? 4 : 1
+          }
+        }]
+      } as any);
     });
 
     return briefings;

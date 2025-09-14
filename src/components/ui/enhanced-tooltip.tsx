@@ -51,7 +51,7 @@ export function EnhancedTooltip({
   const [coordinates, setCoordinates] = useState({ x: 0, y: 0 });
   const triggerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const themeStyle = themeStyles.default;
 
@@ -118,7 +118,7 @@ export function EnhancedTooltip({
 
   const showTooltip = () => {
     if (disabled) return;
-    clearTimeout(timeoutRef.current);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       setIsVisible(true);
       // Calculate position after tooltip is rendered
@@ -131,14 +131,14 @@ export function EnhancedTooltip({
   };
 
   const hideTooltip = () => {
-    clearTimeout(timeoutRef.current);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     setIsVisible(false);
   };
 
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
-      clearTimeout(timeoutRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, []);
 

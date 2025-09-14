@@ -18,8 +18,7 @@ interface ThinkshareConversation {
       id: string;
       username: string;
       displayName: string;
-      profileImageUrl?: string | null;
-      accountType: string;
+      // Note: profileImageUrl and accountType removed from User model
     };
   }[];
 }
