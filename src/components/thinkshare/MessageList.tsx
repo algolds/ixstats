@@ -89,8 +89,8 @@ export function MessageList({
     }
     
     return Array.from(clientState.typingIndicators.values())
-      .filter(indicator => 
-        indicator.conversationId === selectedConversation.id && 
+      .filter((indicator: any) =>
+        indicator.conversationId === selectedConversation.id &&
         indicator.accountId !== currentAccount.id
       );
   };
@@ -121,7 +121,7 @@ export function MessageList({
           )}
           
           {/* Enhanced Typing Indicators */}
-          {getTypingIndicators().map(indicator => {
+          {getTypingIndicators().map((indicator: any) => {
               // Find the participant info from the conversation
               const participant = selectedConversation.otherParticipants.find((p: any) => p.accountId === indicator.accountId);
               const displayName = participant?.account.displayName || 'Someone';

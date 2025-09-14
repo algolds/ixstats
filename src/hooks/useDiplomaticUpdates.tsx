@@ -127,7 +127,7 @@ export const useDiplomaticUpdates = (
 
       // Add event and status listeners
       managerRef.current.addEventListener(handleEvent);
-      managerRef.current.addStatusListener(handleStatusChange);
+      managerRef.current.addStatusListener(handleStatusChange as (status: string) => void);
 
       // Initialize connection with timeout
       const initTimeout = setTimeout(() => {
@@ -173,7 +173,7 @@ export const useDiplomaticUpdates = (
   const disconnect = useCallback(() => {
     if (managerRef.current) {
       managerRef.current.removeEventListener(handleEvent);
-      managerRef.current.removeStatusListener(handleStatusChange);
+      managerRef.current.removeStatusListener(handleStatusChange as (status: string) => void);
       managerRef.current.disconnect();
       managerRef.current = null;
     }

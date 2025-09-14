@@ -145,7 +145,7 @@ export function AtomicEditorTabs({
         try {
           await createComponentMutation.mutateAsync({
             countryId: country.id,
-            componentType,
+            componentType: componentType as any,
             effectivenessScore: 75,
             implementationCost: 100000,
             maintenanceCost: 10000,
@@ -358,6 +358,7 @@ export function AtomicEditorTabs({
             </div>
             <GovernmentSpending
               {...economicInputs.governmentSpending}
+              spendingData={economicInputs.governmentSpending}
               onSpendingDataChangeAction={(newData) => {
                 handleInputsChange({
                   ...economicInputs,

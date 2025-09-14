@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
 import { createDefaultEconomicInputs, type EconomicInputs } from "~/app/builder/lib/economy-data-service";
-import { type GovernmentBuilderState, type DepartmentInput, type BudgetAllocationInput, type RevenueSourceInput } from "~/types/government";
+import { type GovernmentBuilderState, type DepartmentInput, type BudgetAllocationInput, type RevenueSourceInput, type GovernmentType } from "~/types/government";
 
 function calculatePopulationTier(population: number): string {
   if (population >= 1_000_000_000) return "Global Power";
@@ -187,7 +187,7 @@ export function useCountryEditorData() {
 
   useEffect(() => {
     if (country && 'flag' in country && country.flag) { // Type-safe check for flag property
-      setFlagUrl(country.flag);
+      setFlagUrl(country.flag as string);
     } else {
       setFlagUrl(null); // Or a placeholder URL
     }
@@ -200,51 +200,51 @@ export function useCountryEditorData() {
       const builderData: GovernmentBuilderState = {
         structure: {
           governmentName: existingGovernment.governmentName,
-          governmentType: existingGovernment.governmentType,
-          headOfState: existingGovernment.headOfState,
-          headOfGovernment: existingGovernment.headOfGovernment,
-          legislatureName: existingGovernment.legislatureName,
-          executiveName: existingGovernment.executiveName,
-          judicialName: existingGovernment.judicialName,
+          governmentType: existingGovernment.governmentType as GovernmentType,
+          headOfState: existingGovernment.headOfState ?? undefined,
+          headOfGovernment: existingGovernment.headOfGovernment ?? undefined,
+          legislatureName: existingGovernment.legislatureName ?? undefined,
+          executiveName: existingGovernment.executiveName ?? undefined,
+          judicialName: existingGovernment.judicialName ?? undefined,
           totalBudget: existingGovernment.totalBudget,
           fiscalYear: existingGovernment.fiscalYear,
           budgetCurrency: existingGovernment.budgetCurrency
         },
-        departments: existingGovernment.departments.map((dept: DepartmentInput) => ({
+        departments: existingGovernment.departments.map((dept: any) => ({
           name: dept.name,
-          shortName: dept.shortName,
+          shortName: dept.shortName ?? undefined,
           category: dept.category,
-          description: dept.description,
-          minister: dept.minister,
-          ministerTitle: dept.ministerTitle,
-          headquarters: dept.headquarters,
-          established: dept.established,
-          employeeCount: dept.employeeCount,
-          icon: dept.icon,
-          color: dept.color,
-          priority: dept.priority,
-          parentDepartmentId: dept.parentDepartmentId,
-          organizationalLevel: dept.organizationalLevel,
+          description: dept.description ?? undefined,
+          minister: dept.minister ?? undefined,
+          ministerTitle: dept.ministerTitle ?? undefined,
+          headquarters: dept.headquarters ?? undefined,
+          established: dept.established ?? undefined,
+          employeeCount: dept.employeeCount ?? undefined,
+          icon: dept.icon ?? undefined,
+          color: dept.color ?? undefined,
+          priority: dept.priority ?? undefined,
+          parentDepartmentId: dept.parentDepartmentId ?? undefined,
+          organizationalLevel: dept.organizationalLevel ?? undefined,
           functions: dept.functions || []
         })),
-        budgetAllocations: existingGovernment.budgetAllocations.map((alloc: BudgetAllocationInput) => ({
+        budgetAllocations: existingGovernment.budgetAllocations.map((alloc: any) => ({
           departmentId: alloc.departmentId,
           budgetYear: alloc.budgetYear,
           allocatedAmount: alloc.allocatedAmount,
           allocatedPercent: alloc.allocatedPercent,
-          notes: alloc.notes
+          notes: alloc.notes ?? undefined
         })),
-        revenueSources: existingGovernment.revenueSources.map((rev: RevenueSourceInput) => ({
+        revenueSources: existingGovernment.revenueSources.map((rev: any) => ({
           name: rev.name,
           category: rev.category,
-          description: rev.description,
-          rate: rev.rate,
+          description: rev.description ?? undefined,
+          rate: rev.rate ?? undefined,
           revenueAmount: rev.revenueAmount,
-          collectionMethod: rev.collectionMethod,
-          administeredBy: rev.administeredBy
+          collectionMethod: rev.collectionMethod ?? undefined,
+          administeredBy: rev.administeredBy ?? undefined
         })),
         isValid: true,
-        errors: {}
+        errors: { structure: [], departments: {}, budget: [], revenue: [] }
       };
       
       setGovernmentData(builderData);
@@ -262,7 +262,7 @@ export function useCountryEditorData() {
         budgetAllocations: [],
         revenueSources: [],
         isValid: false,
-        errors: {}
+        errors: { structure: [], departments: {}, budget: [], revenue: [] }
       };
       
       setGovernmentData(emptyData);
@@ -375,10 +375,12 @@ export function useCountryEditorData() {
         literacyRate: economicInputs.demographics.literacyRate,
       };
 
-      await updateCountryMutation.mutateAsync({
-        countryId: country.id,
-        economicData
-      });
+      if (country?.id) {
+        await updateCountryMutation.mutateAsync({
+          countryId: country.id,
+          economicData
+        });
+      }
       
       setHasChanges(false);
       await refetchCountry();

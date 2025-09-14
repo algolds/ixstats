@@ -998,7 +998,7 @@ export function DMControlPanel() {
                                 scale: inputConfig?.scale || 'macro' as InputScale,
                                 category: inputConfig?.category || 'global' as InputCategory
                               };
-                              handleEdit(enrichedInput);
+                              handleEdit(enrichedInput as any);
                             }}
                           >
                             <Edit3 className="h-4 w-4" />

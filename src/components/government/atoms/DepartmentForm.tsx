@@ -379,15 +379,15 @@ export function DepartmentForm({
               Parent Department
             </Label>
             <Select
-              value={data.parentDepartmentId || ''}
-              onValueChange={(value) => handleChange('parentDepartmentId', value || undefined)}
+              value={data.parentDepartmentId || 'no-parent'}
+              onValueChange={(value) => handleChange('parentDepartmentId', value === 'no-parent' ? undefined : value)}
               disabled={isReadOnly}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select parent department (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No Parent</SelectItem>
+                <SelectItem value="no-parent">No Parent</SelectItem>
                 {availableParents.map((parent) => (
                   <SelectItem key={parent.id} value={parent.id}>
                     {parent.name}

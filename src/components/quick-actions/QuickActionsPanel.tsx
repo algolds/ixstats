@@ -162,8 +162,8 @@ export function QuickActionsPanel({ className }: QuickActionsPanelProps) {
 
         <CardContent className="space-y-3">
           {quickActions && quickActions.length > 0 ? (
-            quickActions.map((action: QuickAction, index: number) => {
-              const urgencyConf = urgencyConfig[action.urgency];
+            quickActions.map((action: any, index: number) => {
+              const urgencyConf = urgencyConfig[action.urgency as keyof typeof urgencyConfig] || urgencyConfig.routine;
               const UrgencyIcon = urgencyConf.icon;
               const CategoryIcon = categoryIcons[action.category as keyof typeof categoryIcons] || Activity;
 

@@ -960,8 +960,8 @@ export const diplomaticRouter = createTRPCRouter({
         where: { id: input.relationshipId },
         data: {
           strength: newStrength,
-          relationship: newRelationshipType,
-          lastActivity: new Date()
+          relationship: newRelationshipType
+          // lastActivity: new Date()
         }
       });
 
@@ -969,8 +969,8 @@ export const diplomaticRouter = createTRPCRouter({
       if (newRelationshipType !== relationship.relationship) {
         await ctx.db.diplomaticEvent.create({
           data: {
-            country1Id: relationship.country1Id,
-            country2Id: relationship.country2Id,
+            country1Id: relationship.country1,
+            country2Id: relationship.country2,
             eventType: 'relationship_change',
             title: `Relationship Status Changed`,
             description: `Diplomatic relationship evolved from ${relationship.relationship} to ${newRelationshipType} due to ${input.reason}`,
@@ -995,13 +995,13 @@ export const diplomaticRouter = createTRPCRouter({
     .query(async ({ ctx }) => {
       const countries = await ctx.db.country.findMany({
         include: {
-          embassies: {
-            select: {
-              influence: true,
-              level: true,
-              status: true
-            }
-          }
+          // embassies: {
+          //   select: {
+          //     influence: true,
+          //     level: true,
+          //     status: true
+          //   }
+          // }
         }
       });
 

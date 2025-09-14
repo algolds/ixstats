@@ -44,7 +44,7 @@ export const sdiRouter = createTRPCRouter({
         content: item.content || undefined,
         region: item.region || undefined,
         isActive: item.isActive,
-        actionable: item.priority === 'critical' || item.priority === 'high'
+        actionable: item.priority === 'CRITICAL' || item.priority === 'HIGH'
       }));
 
       return {
@@ -479,19 +479,22 @@ export const sdiRouter = createTRPCRouter({
     const highCrises = recentCrises.filter(c => c.severity === 'HIGH').length;
     
     let systemHealth: 'operational' | 'warning' | 'critical' = 'operational';
+    let systemHealthScore = 100;
     let uptime = 99.8;
-    
+
     if (criticalCrises > 0) {
       systemHealth = 'critical';
+      systemHealthScore = 50;
       uptime = 95.0;
     } else if (highCrises > 2 || crisisCount > 10) {
       systemHealth = 'warning';
+      systemHealthScore = 75;
       uptime = 98.5;
     }
-    
+
     return {
       timestamp: new Date(),
-      activeUsers: Math.min(25, Math.max(5, crisisCount * 2 + intelligenceCount + Math.floor(systemHealth / 10))), // Users based on system activity
+      activeUsers: Math.min(25, Math.max(5, crisisCount * 2 + intelligenceCount + Math.floor(systemHealthScore / 10))), // Users based on system activity
       activeCrises: crisisCount,
       intelligenceItems: intelligenceCount,
       diplomaticEvents: relationCount,

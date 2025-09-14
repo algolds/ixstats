@@ -85,7 +85,7 @@ export class EnhancedEconomicService {
     options: EconomicAnalysisOptions = {}
   ): Promise<EconomicAnalysisResult> {
     const startTime = Date.now();
-    const cacheKey = this.generateCacheKey(countryStats.countryId, options);
+    const cacheKey = this.generateCacheKey(countryStats.country, options);
     
     // Check cache first
     if (options.cache?.useCache && !options.cache?.forceRefresh) {

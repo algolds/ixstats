@@ -94,9 +94,9 @@ export const GlassContainer = forwardRef<HTMLDivElement, GlassContainerProps>(
 
       // Call original handlers
       if (event.type === 'mouseenter' && onMouseEnter) {
-        onMouseEnter(event as React.MouseEvent);
+        onMouseEnter(event as React.MouseEvent<HTMLDivElement>);
       } else if (event.type === 'focus' && onFocus) {
-        onFocus(event as React.FocusEvent);
+        onFocus(event as React.FocusEvent<HTMLDivElement>);
       }
     };
 
@@ -110,9 +110,9 @@ export const GlassContainer = forwardRef<HTMLDivElement, GlassContainerProps>(
 
       // Call original handlers
       if (event.type === 'mouseleave' && onMouseLeave) {
-        onMouseLeave(event as React.MouseEvent);
+        onMouseLeave(event as React.MouseEvent<HTMLDivElement>);
       } else if (event.type === 'blur' && onBlur) {
-        onBlur(event as React.FocusEvent);
+        onBlur(event as React.FocusEvent<HTMLDivElement>);
       }
     };
 
@@ -123,7 +123,7 @@ export const GlassContainer = forwardRef<HTMLDivElement, GlassContainerProps>(
         onDepthChange?.(newDepth);
       }
 
-      onClick?.(event);
+      onClick?.(event as React.MouseEvent<HTMLDivElement>);
     };
 
     // Build class names

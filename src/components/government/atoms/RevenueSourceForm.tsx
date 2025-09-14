@@ -131,7 +131,7 @@ export function RevenueSourceForm({
   };
 
   const totalCalculated = data.reduce((sum, item) => sum + item.revenueAmount, 0);
-  const totalPercent = data.reduce((sum, item) => sum + item.revenuePercent, 0);
+  const totalPercent = data.reduce((sum, item) => sum + (item.revenuePercent ?? 0), 0);
 
   const handleUpdate = (index: number, field: keyof RevenueSourceInput, value: any) => {
     const updated = [...data];
@@ -366,7 +366,7 @@ export function RevenueSourceForm({
                           step="1000000"
                         />
                         <p className="text-xs text-[var(--color-text-muted)]">
-                          {formatCurrency(item.revenueAmount)} ({item.revenuePercent.toFixed(1)}%)
+                          {formatCurrency(item.revenueAmount)} ({(item.revenuePercent ?? 0).toFixed(1)}%)
                         </p>
                       </div>
 
@@ -440,7 +440,7 @@ export function RevenueSourceForm({
             {!isAddingNew ? (
               <div className="space-y-3">
                 <Button
-                  variant="dashed"
+                  variant="outline"
                   onClick={() => setIsAddingNew(true)}
                   className="w-full h-12 border-2 border-dashed border-[var(--color-border-primary)] hover:border-[var(--color-brand-primary)]"
                 >

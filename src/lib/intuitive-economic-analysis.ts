@@ -52,7 +52,7 @@ export interface ActionableInsights {
     description: string;
     impact: 'High' | 'Medium' | 'Low';
     timeframe: '3 months' | '6 months' | '1 year';
-    difficulty: 'Easy' | 'Moderate' | 'Challenging';
+    difficulty: 'easy' | 'moderate' | 'complex';
     category: 'Policy' | 'Investment' | 'Reform' | 'Emergency';
   }>;
 
@@ -351,7 +351,7 @@ export class IntuitiveEconomicAnalysis {
         description: `Unemployment at ${economyData.labor.unemploymentRate.toFixed(1)}% requires urgent job creation programs`,
         impact: 'High' as const,
         timeframe: '6 months' as const,
-        difficulty: 'Moderate' as const,
+        difficulty: 'moderate' as const,
         category: 'Policy' as const
       });
     }
@@ -362,7 +362,7 @@ export class IntuitiveEconomicAnalysis {
         description: 'High debt levels require immediate budget balancing measures',
         impact: 'High' as const,
         timeframe: '1 year' as const,
-        difficulty: 'Challenging' as const,
+        difficulty: 'complex' as const,
         category: 'Policy' as const
       });
     }
@@ -373,7 +373,7 @@ export class IntuitiveEconomicAnalysis {
         description: 'High inflation eroding purchasing power - monetary tightening needed',
         impact: 'High' as const,
         timeframe: '3 months' as const,
-        difficulty: 'Moderate' as const,
+        difficulty: 'moderate' as const,
         category: 'Policy' as const
       });
     }

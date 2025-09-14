@@ -292,9 +292,9 @@ class GlobalNotificationBridge extends EventEmitter {
     }
   }
 
-  private getSeverity(priority: NotificationPriority): 'informational' | 'important' | 'urgent' | 'critical' {
+  private getSeverity(priority: NotificationPriority): 'informational' | 'important' | 'urgent' {
     switch (priority) {
-      case 'critical': return 'critical';
+      case 'critical': return 'urgent'; // Critical maps to urgent since critical is not in NotificationSeverity
       case 'high': return 'urgent';
       case 'medium': return 'important';
       case 'low': return 'informational';

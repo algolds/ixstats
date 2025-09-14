@@ -613,7 +613,7 @@ export function ThinktankGroups({ userId, userAccounts }: ThinktankGroupsProps) 
         <CollaborativeDocument
           groupId={selectedGroup.id}
           groupName={selectedGroup.name}
-          currentUserId={currentUserId}
+          currentUserAccount={userAccounts?.find(acc => acc.id === currentUserId)}
           userAccounts={userAccounts}
           isOwner={selectedGroup.createdBy === currentUserId}
           members={selectedGroup.members}

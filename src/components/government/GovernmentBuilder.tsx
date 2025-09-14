@@ -49,17 +49,17 @@ interface GovernmentBuilderProps {
 const governmentTemplates: GovernmentTemplate[] = [
   {
     name: 'Caphirian Imperial Administration',
-    governmentType: 'Imperial Constitutional System',
+    governmentType: 'Constitutional Monarchy',
     description: 'Complex administrative structure with Imperial oversight and provincial autonomy',
     fiscalYear: 'Calendar Year',
     departments: [
       {
         name: 'Imperial Ministry of State',
         shortName: 'IMS',
-        category: 'Executive',
+        category: 'Interior',
         description: 'Central coordination of imperial policy and provincial oversight',
         ministerTitle: 'Imperial Chancellor',
-        organizationalLevel: 'Supreme Ministry',
+        organizationalLevel: 'Ministry',
         icon: 'Crown',
         color: '#7c2d12',
         priority: 100,
@@ -71,7 +71,7 @@ const governmentTemplates: GovernmentTemplate[] = [
           { name: 'Policy Development', budgetType: 'Operations', percent: 40, isRecurring: true, priority: 'High' }
         ],
         kpis: [
-          { name: 'Imperial Unity Index', description: 'Measure of provincial cooperation and imperial cohesion', targetValue: 85, unit: '%', frequency: 'Quarterly', trend: 'Up', category: 'Political' }
+          { name: 'Imperial Unity Index', description: 'Measure of provincial cooperation and imperial cohesion', targetValue: 85, unit: '%', frequency: 'Quarterly', trend: 'Up', category: 'Performance' }
         ]
       },
       {
@@ -94,7 +94,7 @@ const governmentTemplates: GovernmentTemplate[] = [
         ],
         kpis: [
           { name: 'Defense Readiness', description: 'Overall military readiness and capability', targetValue: 90, unit: '%', frequency: 'Monthly', trend: 'Up', category: 'Performance' },
-          { name: 'Recruitment Rate', description: 'Success rate in meeting recruitment targets', targetValue: 95, unit: '%', frequency: 'Monthly', trend: 'Stable', category: 'Personnel' }
+          { name: 'Recruitment Rate', description: 'Success rate in meeting recruitment targets', targetValue: 95, unit: '%', frequency: 'Monthly', trend: 'Stable', category: 'Performance' }
         ]
       },
       {
@@ -303,7 +303,11 @@ export function GovernmentBuilder({
       },
       departments: template.departments.map(dept => ({
         ...dept,
-        kpis: dept.kpis?.map(kpi => ({ ...kpi, currentValue: 0 })) || []
+        kpis: dept.kpis?.map((kpi, index) => ({ 
+          ...kpi, 
+          id: `${dept.name}-kpi-${index}-${Date.now()}`,
+          currentValue: 0 
+        })) || []
       })),
       budgetAllocations: template.departments.map(dept => ({
         departmentId: `temp-${dept.name}`,
@@ -434,12 +438,12 @@ export function GovernmentBuilder({
           <AlertDescription>
             Please fix the following issues:
             <ul className="mt-2 list-disc list-inside space-y-1">
-              {Object.entries(validation.errors).map(([key, errors]) => (
+              {Object.entries(validation.errors as Record<string, any>).map(([key, errors]) => (
                 Array.isArray(errors) ? errors.map((error, index) => (
                   <li key={`${key}-${index}`} className="text-sm">{error}</li>
                 )) : Object.entries(errors).map(([subKey, subErrors]) => (
                   <li key={`${key}-${subKey}`} className="text-sm">
-                    Department {parseInt(subKey) + 1}: {Array.isArray(subErrors) ? subErrors.join(', ') : subErrors}
+                    Department {parseInt(subKey) + 1}: {Array.isArray(subErrors) ? subErrors.join(', ') : String(subErrors)}
                   </li>
                 ))
               ))}

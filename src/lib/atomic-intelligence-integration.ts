@@ -181,19 +181,19 @@ export function calculateAtomicGovernmentStability(
   }
 
   // Check for specific risk patterns
-  if (components.includes('PARTISAN_INSTITUTIONS') && components.length > 2) {
+  if (components.includes('PARTISAN_INSTITUTIONS' as any) && components.length > 2) {
     riskFactors.push('Partisan institutions may undermine governance quality');
   }
   
-  if (components.includes('OLIGARCHIC_PROCESS')) {
+  if (components.includes('OLIGARCHIC_PROCESS' as any)) {
     riskFactors.push('Oligarchic decision-making may reduce legitimacy');
   }
 
-  if (components.includes('PROFESSIONAL_BUREAUCRACY')) {
+  if (components.includes('PROFESSIONAL_BUREAUCRACY' as any)) {
     strengths.push('Professional bureaucracy provides implementation capacity');
   }
 
-  if (components.includes('RULE_OF_LAW')) {
+  if (components.includes('RULE_OF_LAW' as any)) {
     strengths.push('Rule of law provides institutional stability');
   }
 
@@ -393,7 +393,7 @@ export async function generateAtomicIntelligence(
   }
 
   // Predictive analysis
-  if (components.includes('TECHNOCRATIC_PROCESS') && components.includes('PROFESSIONAL_BUREAUCRACY')) {
+  if (components.includes('TECHNOCRATIC_PROCESS' as any) && components.includes('PROFESSIONAL_BUREAUCRACY' as any)) {
     intelligence.push({
       id: `prediction-optimal-${Date.now()}`,
       type: 'prediction',

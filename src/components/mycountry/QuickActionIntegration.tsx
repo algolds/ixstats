@@ -198,7 +198,7 @@ export function QuickActionIntegration({ className }: QuickActionIntegrationProp
           </Button>
         </CabinetMeetingModal>
 
-        <NationalSecurityModal mode="create">
+        <NationalSecurityModal mode="dashboard">
           <Button className="w-full h-16 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white">
             <div className="flex flex-col items-center gap-1">
               <Shield className="h-5 w-5" />

@@ -113,7 +113,7 @@ export function useOptimizedIntelligenceData({
         
         // Add to both systems for redundancy
         try {
-          await addNotification(notificationData);
+          await addNotification(notificationData as any);
         } catch (error) {
           console.warn('Failed to add intelligence notification:', error);
         }

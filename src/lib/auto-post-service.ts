@@ -132,7 +132,7 @@ export async function detectEconomicMilestoneAndTriggerNarrative() {
 export async function generateAndPostMediaResponse(parentPostId: string, countryName: string) {
   const parentPost = await prisma.thinkpagesPost.findUnique({
     where: { id: parentPostId },
-    include: { account: true },
+    // include: { account: true },
   });
 
   if (!parentPost) {
@@ -141,7 +141,12 @@ export async function generateAndPostMediaResponse(parentPostId: string, country
   }
 
   const mediaAccounts = await prisma.user.findMany({
-    where: { accountType: 'media', isActive: true },
+    where: {
+      isActive: true,
+      role: {
+        name: 'media' // Using role-based filtering instead of accountType
+      }
+    },
     take: 1,
   });
 
@@ -160,7 +165,7 @@ export async function generateAndPostMediaResponse(parentPostId: string, country
 
   const newMediaPost = await prisma.thinkpagesPost.create({
     data: {
-      accountId: postingAccount.id,
+      userId: postingAccount.id,
       content: content.substring(0, 280),
       postType: 'reply', // It's a reply to the government post
       parentPostId: parentPost.id,
@@ -172,7 +177,7 @@ export async function generateAndPostMediaResponse(parentPostId: string, country
 
   await prisma.user.update({
     where: { id: postingAccount.id },
-    data: { postCount: { increment: 1 } },
+    // data: { postCount: { increment: 1 } },
   });
 
   // Update parent post's reply count
@@ -196,7 +201,12 @@ export async function generateAndPostCitizenReaction(postId: string) {
   }
 
   const citizenAccounts = await prisma.user.findMany({
-    where: { accountType: 'citizen', isActive: true },
+    where: {
+      isActive: true,
+      role: {
+        name: 'citizen' // Using role-based filtering instead of accountType
+      }
+    },
     take: 5, // Get a few citizen accounts
   });
 
@@ -217,9 +227,9 @@ export async function generateAndPostCitizenReaction(postId: string) {
   // Check if this account already reacted to this post
   const existingReaction = await prisma.postReaction.findUnique({
     where: {
-      postId_accountId: {
+      postId_userId: {
         postId: postId,
-        accountId: randomCitizenAccount.id,
+        userId: randomCitizenAccount.id,
       },
     },
   });
@@ -228,9 +238,9 @@ export async function generateAndPostCitizenReaction(postId: string) {
     // If already reacted, update the reaction type
     await prisma.postReaction.update({
       where: {
-        postId_accountId: {
+        postId_userId: {
           postId: postId,
-          accountId: randomCitizenAccount.id,
+          userId: randomCitizenAccount.id,
         },
       },
       data: { reactionType: randomReactionType },
@@ -241,7 +251,7 @@ export async function generateAndPostCitizenReaction(postId: string) {
     await prisma.postReaction.create({
       data: {
         postId: postId,
-        accountId: randomCitizenAccount.id,
+        userId: randomCitizenAccount.id,
         reactionType: randomReactionType,
         timestamp: new Date(IxTime.getCurrentIxTime()),
       },

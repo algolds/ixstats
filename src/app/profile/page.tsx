@@ -575,7 +575,7 @@ function ProfileContent() {
                               onClick={async () => {
                                 try {
                                   await updateThinkpagesAccountMutation.mutateAsync({
-                                    accountId: thinkpagesAccount.id,
+                                    userId: thinkpagesAccount.id,
                                     postingFrequency: thinkpagesPostingFrequency as 'active' | 'moderate' | 'low',
                                     politicalLean: thinkpagesPoliticalLean as 'left' | 'center' | 'right',
                                     personality: thinkpagesPersonality as 'serious' | 'casual' | 'satirical',

@@ -258,7 +258,7 @@ export function AnimatedFlagsBackground({
           width: `${flag.size}px`,
           height: `${flag.size * 0.67}px`, // Maintain flag ratio
         }}
-        variants={floatVariants}
+        variants={floatVariants as any}
         animate="animate"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: flag.opacity }}
@@ -266,7 +266,7 @@ export function AnimatedFlagsBackground({
       >
         <motion.div 
           className="w-full h-full backdrop-blur-[1px] bg-white/5 rounded-sm border border-white/10 overflow-hidden hover:bg-white/10 transition-all duration-1000"
-          variants={pulseVariants}
+          variants={pulseVariants as any}
           animate="animate"
         >
           <SimpleFlag 

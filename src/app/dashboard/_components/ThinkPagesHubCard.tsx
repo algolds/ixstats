@@ -53,7 +53,9 @@ export function ThinkPagesHubCard({ userProfile, className }: ThinkPagesHubCardP
   const mentions: any[] = [];
 
   const getAccountTypeCount = (type: string) => {
-    return accounts?.filter((account: any) => account.accountType === type).length || 0;
+    // Note: accountType removed from User model, using role-based counting instead
+    // This is a placeholder implementation - replace with actual role-based logic
+    return accounts?.filter((account: any) => account.role?.name?.toLowerCase() === type).length || 0;
   };
 
   const unreadMentions = Array.isArray(mentions) ? mentions.filter((mention: any) => !mention.read).length : 0;

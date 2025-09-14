@@ -142,7 +142,7 @@ export function ChatArea({
     if (selectedConversation && currentAccount) {
       markMessagesAsReadMutation.mutate({
         conversationId: selectedConversation.id,
-        userId: currentAccount.id
+        messageIds: [] // Empty array to mark all as read
       });
     }
   }, [selectedConversation?.id, currentAccount?.id]); // Removed markMessagesAsReadMutation from deps!
@@ -155,7 +155,7 @@ export function ChatArea({
 
     sendMessageMutation.mutate({
       conversationId: selectedConversation.id,
-      accountId: currentAccount.id,
+      userId: currentAccount.id,
       content: finalContent,
       messageType: 'text' // Use 'text' instead of 'rich_text'
     });

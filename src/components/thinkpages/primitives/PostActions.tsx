@@ -105,7 +105,7 @@ export function PostActions({
       if (existingReaction) {
         await removeReactionMutation.mutateAsync({ 
           postId, 
-          accountId: currentUserAccountId 
+          userId: currentUserAccountId 
         });
       } else {
         await addReactionMutation.mutateAsync({ 
@@ -165,7 +165,7 @@ export function PostActions({
       if (existingReaction && existingReaction.reactionType === reactionType) {
         await removeReactionMutation.mutateAsync({ 
           postId, 
-          accountId: currentUserAccountId 
+          userId: currentUserAccountId 
         });
       } else {
         await addReactionMutation.mutateAsync({ 
@@ -260,7 +260,6 @@ export function PostActions({
             {showReactionPopup && (
               <div className="relative z-50">
                 <ReactionPopup
-                  reactions={reactions}
                   onSelectReaction={handleReaction}
                   postReactionCounts={reactionCounts}
                 />

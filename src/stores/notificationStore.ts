@@ -611,8 +611,7 @@ function getDeviceType(): 'mobile' | 'tablet' | 'desktop' {
 }
 
 function getNetworkCondition(): 'poor' | 'good' | 'excellent' {
-  // @ts-ignore - navigator.connection is experimental
-  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
   
   if (!connection) return 'good';
   
