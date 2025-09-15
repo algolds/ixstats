@@ -103,7 +103,7 @@ export function UnifiedNotificationProvider({
     userId: effectiveUserId,
     countryId: effectiveCountryId,
     isExecutiveMode,
-    currentRoute: pathname,
+    currentRoute: pathname || '',
     userRole: 'user', // Could be enhanced
     ixTime: IxTime.getCurrentIxTime(),
     realTime: Date.now(),

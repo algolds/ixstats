@@ -185,7 +185,7 @@ const generateIntelligenceBriefings = (vitalityData: VitalityIntelligence[]): In
           priority: 'high',
           area: vitality.area,
           confidence: 85,
-          urgency: 'important',
+          urgency: 'this_week',
           impact: {
             magnitude: 'high',
             scope: [vitality.area, 'regional standing'],

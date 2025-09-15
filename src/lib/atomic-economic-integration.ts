@@ -304,4 +304,3 @@ export function getAtomicEconomicRecommendations(
   };
 }
 
-export type { AtomicEnhancedCountryData, CountryWithAtomicComponents };

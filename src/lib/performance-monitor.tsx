@@ -1,6 +1,7 @@
 // Performance Monitor - Phase 3 Performance Enhancement
 // Comprehensive query and application performance monitoring
 
+import React from 'react';
 import { IxTime } from '~/lib/ixtime';
 
 interface QueryMetrics {
@@ -439,7 +440,7 @@ export const PerformanceUtils = {
    * Hook for tracking custom performance metrics
    */
   usePerformanceMetric: (metricName: string) => {
-    const startTime = React.useRef<number>();
+    const startTime = React.useRef<number | undefined>(undefined);
     
     const startMeasurement = React.useCallback(() => {
       startTime.current = performance.now();

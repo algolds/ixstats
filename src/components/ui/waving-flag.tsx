@@ -63,7 +63,7 @@ export const WavingFlag: React.FC<WavingFlagProps> = ({
         times: [0, 0.25, 0.55, 0.8, 1] // More refined timing
       }
     }
-  };
+  } as const;
 
   return (
     <div 

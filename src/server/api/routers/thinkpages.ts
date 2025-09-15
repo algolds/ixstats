@@ -1711,7 +1711,18 @@ export const thinkpagesRouter = createTRPCRouter({
         },
         include: {
           participants: {
-            where: { isActive: true }
+            where: { isActive: true },
+            include: {
+              account: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayName: true,
+                  profileImageUrl: true,
+                  accountType: true
+                }
+              }
+            }
           },
           messages: {
             orderBy: { ixTimeTimestamp: 'desc' },

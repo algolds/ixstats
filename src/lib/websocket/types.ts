@@ -3,7 +3,7 @@
 
 export interface IntelligenceUpdate {
   id: string;
-  type: 'new_intelligence' | 'vitality_update' | 'alert' | 'system_update' | 'economic_change';
+  type: 'new_intelligence' | 'vitality_update' | 'alert' | 'system_update' | 'economic_change' | 'cache-invalidation';
   title: string;
   description?: string;
   countryId?: string;

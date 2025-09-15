@@ -1,4 +1,4 @@
-import { ThinkpagesPost, PostReaction } from '@prisma/client';
+import type { ThinkpagesPost, PostReaction } from '@prisma/client';
 
 interface PostWithReactions extends ThinkpagesPost {
   reactions: PostReaction[];

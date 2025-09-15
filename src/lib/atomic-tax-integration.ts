@@ -3,30 +3,35 @@
  * Connects tax system effectiveness to atomic government components
  */
 
-import type { ComponentType } from '~/types/government';
+import { ComponentType } from '~/types/government';
 
 // Tax collection effectiveness multipliers based on atomic components
-export const TAX_EFFECTIVENESS_MODIFIERS = {
+export const TAX_EFFECTIVENESS_MODIFIERS: Record<ComponentType, {
+  collectionEfficiency: number;
+  complianceRate: number;
+  auditCapacity: number;
+  description: string;
+}> = {
   // Power Distribution Components
-  CENTRALIZED_POWER: {
+  [ComponentType.CENTRALIZED_POWER]: {
     collectionEfficiency: 1.15,
     complianceRate: 1.10,
     auditCapacity: 1.20,
     description: "Centralized power enables efficient tax collection"
   },
-  FEDERAL_SYSTEM: {
+  [ComponentType.FEDERAL_SYSTEM]: {
     collectionEfficiency: 0.95,
     complianceRate: 1.05,
     auditCapacity: 0.90,
     description: "Federal systems have coordination challenges but local compliance"
   },
-  CONFEDERATE_SYSTEM: {
+  [ComponentType.CONFEDERATE_SYSTEM]: {
     collectionEfficiency: 0.80,
     complianceRate: 0.85,
     auditCapacity: 0.70,
     description: "Confederate systems have weak central tax authority"
   },
-  UNITARY_SYSTEM: {
+  [ComponentType.UNITARY_SYSTEM]: {
     collectionEfficiency: 1.10,
     complianceRate: 1.05,
     auditCapacity: 1.15,
@@ -34,31 +39,31 @@ export const TAX_EFFECTIVENESS_MODIFIERS = {
   },
 
   // Decision Process Components
-  DEMOCRATIC_PROCESS: {
+  [ComponentType.DEMOCRATIC_PROCESS]: {
     collectionEfficiency: 0.95,
     complianceRate: 1.15,
     auditCapacity: 0.90,
     description: "Democratic processes increase voluntary compliance"
   },
-  AUTOCRATIC_PROCESS: {
+  [ComponentType.AUTOCRATIC_PROCESS]: {
     collectionEfficiency: 1.20,
     complianceRate: 0.85,
     auditCapacity: 1.30,
     description: "Autocratic systems can enforce collection but reduce voluntary compliance"
   },
-  TECHNOCRATIC_PROCESS: {
+  [ComponentType.TECHNOCRATIC_PROCESS]: {
     collectionEfficiency: 1.25,
     complianceRate: 1.10,
     auditCapacity: 1.20,
     description: "Technocratic governance optimizes tax system efficiency"
   },
-  CONSENSUS_PROCESS: {
+  [ComponentType.CONSENSUS_PROCESS]: {
     collectionEfficiency: 0.85,
     complianceRate: 1.20,
     auditCapacity: 0.80,
     description: "Consensus building delays implementation but increases acceptance"
   },
-  OLIGARCHIC_PROCESS: {
+  [ComponentType.OLIGARCHIC_PROCESS]: {
     collectionEfficiency: 0.90,
     complianceRate: 0.75,
     auditCapacity: 1.10,
@@ -66,31 +71,31 @@ export const TAX_EFFECTIVENESS_MODIFIERS = {
   },
 
   // Legitimacy Source Components
-  ELECTORAL_LEGITIMACY: {
+  [ComponentType.ELECTORAL_LEGITIMACY]: {
     collectionEfficiency: 0.95,
     complianceRate: 1.20,
     auditCapacity: 0.90,
     description: "Electoral legitimacy increases voluntary tax compliance"
   },
-  TRADITIONAL_LEGITIMACY: {
+  [ComponentType.TRADITIONAL_LEGITIMACY]: {
     collectionEfficiency: 1.00,
     complianceRate: 1.15,
     auditCapacity: 0.95,
     description: "Traditional authority maintains steady compliance"
   },
-  PERFORMANCE_LEGITIMACY: {
+  [ComponentType.PERFORMANCE_LEGITIMACY]: {
     collectionEfficiency: 1.10,
     complianceRate: 1.25,
     auditCapacity: 1.05,
     description: "Performance-based legitimacy increases compliance through results"
   },
-  CHARISMATIC_LEGITIMACY: {
+  [ComponentType.CHARISMATIC_LEGITIMACY]: {
     collectionEfficiency: 1.05,
     complianceRate: 1.30,
     auditCapacity: 0.85,
     description: "Charismatic leadership inspires voluntary compliance"
   },
-  RELIGIOUS_LEGITIMACY: {
+  [ComponentType.RELIGIOUS_LEGITIMACY]: {
     collectionEfficiency: 1.00,
     complianceRate: 1.35,
     auditCapacity: 0.80,
@@ -98,31 +103,31 @@ export const TAX_EFFECTIVENESS_MODIFIERS = {
   },
 
   // Institution Components
-  PROFESSIONAL_BUREAUCRACY: {
+  [ComponentType.PROFESSIONAL_BUREAUCRACY]: {
     collectionEfficiency: 1.30,
     complianceRate: 1.10,
     auditCapacity: 1.40,
     description: "Professional bureaucracy maximizes tax administration efficiency"
   },
-  MILITARY_ADMINISTRATION: {
+  [ComponentType.MILITARY_ADMINISTRATION]: {
     collectionEfficiency: 1.15,
     complianceRate: 0.80,
     auditCapacity: 1.25,
     description: "Military administration enforces collection but reduces trust"
   },
-  INDEPENDENT_JUDICIARY: {
+  [ComponentType.INDEPENDENT_JUDICIARY]: {
     collectionEfficiency: 1.05,
     complianceRate: 1.25,
     auditCapacity: 1.15,
     description: "Independent judiciary increases trust in fair tax enforcement"
   },
-  PARTISAN_INSTITUTIONS: {
+  [ComponentType.PARTISAN_INSTITUTIONS]: {
     collectionEfficiency: 0.85,
     complianceRate: 0.90,
     auditCapacity: 0.95,
     description: "Partisan institutions create inconsistent tax policy"
   },
-  TECHNOCRATIC_AGENCIES: {
+  [ComponentType.TECHNOCRATIC_AGENCIES]: {
     collectionEfficiency: 1.35,
     complianceRate: 1.05,
     auditCapacity: 1.45,
@@ -130,17 +135,35 @@ export const TAX_EFFECTIVENESS_MODIFIERS = {
   },
 
   // Control Mechanism Components
-  RULE_OF_LAW: {
+  [ComponentType.RULE_OF_LAW]: {
     collectionEfficiency: 1.10,
     complianceRate: 1.30,
     auditCapacity: 1.20,
     description: "Rule of law creates predictable and fair tax environment"
   },
-  SURVEILLANCE_SYSTEM: {
+  [ComponentType.SURVEILLANCE_SYSTEM]: {
     collectionEfficiency: 1.25,
     complianceRate: 0.75,
     auditCapacity: 1.50,
     description: "Surveillance increases detection but reduces voluntary compliance"
+  },
+  [ComponentType.ECONOMIC_INCENTIVES]: {
+    collectionEfficiency: 1.05,
+    complianceRate: 1.15,
+    auditCapacity: 0.95,
+    description: "Economic incentives encourage voluntary tax compliance"
+  },
+  [ComponentType.SOCIAL_PRESSURE]: {
+    collectionEfficiency: 0.95,
+    complianceRate: 1.10,
+    auditCapacity: 0.90,
+    description: "Social pressure moderately increases compliance"
+  },
+  [ComponentType.MILITARY_ENFORCEMENT]: {
+    collectionEfficiency: 1.20,
+    complianceRate: 0.70,
+    auditCapacity: 1.30,
+    description: "Military enforcement maximizes collection but reduces voluntary compliance"
   }
 } as const;
 
@@ -318,33 +341,33 @@ export function getAtomicTaxRecommendations(
   const optimizations: string[] = [];
 
   // Professional bureaucracy recommendations
-  if (components.includes('PROFESSIONAL_BUREAUCRACY')) {
+  if (components.includes(ComponentType.PROFESSIONAL_BUREAUCRACY)) {
     recommendedPolicies.push("Implement complex progressive tax structures");
     recommendedPolicies.push("Deploy advanced tax technology systems");
     optimizations.push("Leverage professional capacity for sophisticated tax policy");
   }
 
   // Democratic legitimacy recommendations
-  if (components.includes('ELECTORAL_LEGITIMACY') || components.includes('DEMOCRATIC_PROCESS')) {
+  if (components.includes(ComponentType.ELECTORAL_LEGITIMACY) || components.includes(ComponentType.DEMOCRATIC_PROCESS)) {
     recommendedPolicies.push("Focus on transparent tax spending");
     recommendedPolicies.push("Implement taxpayer bill of rights");
     optimizations.push("Build public support through democratic participation");
   }
 
   // Surveillance system warnings
-  if (components.includes('SURVEILLANCE_SYSTEM')) {
+  if (components.includes(ComponentType.SURVEILLANCE_SYSTEM)) {
     warnings.push("High surveillance may reduce voluntary compliance");
     optimizations.push("Balance enforcement with trust-building measures");
   }
 
   // Federal system considerations
-  if (components.includes('FEDERAL_SYSTEM')) {
+  if (components.includes(ComponentType.FEDERAL_SYSTEM)) {
     recommendedPolicies.push("Coordinate federal and state tax policies");
     warnings.push("Watch for tax competition between jurisdictions");
   }
 
   // Rule of law synergies
-  if (components.includes('RULE_OF_LAW')) {
+  if (components.includes(ComponentType.RULE_OF_LAW)) {
     recommendedPolicies.push("Strengthen tax court system");
     optimizations.push("Emphasize consistent and fair enforcement");
   }

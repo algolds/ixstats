@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "~/trpc/react";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 import Link from "next/link";
 
 // Components
@@ -14,6 +14,7 @@ import { LeaderboardsSection } from "./LeaderboardsSection";
 import { TierVisualization } from "./TierVisualization";
 import { FeaturedArticle } from "./FeaturedArticle";
 import { MyCountryCard } from "~/app/dashboard/_components/MyCountryCard";
+import { AdminQuickAccess } from "./AdminQuickAccess";
 
 // UI Components
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -130,81 +131,6 @@ function CountryCard({ country, index }: CountryCardProps) {
   );
 }
 
-// Smart Header with contextual information
-interface SmartHeaderProps {
-  globalStats?: {
-    totalPopulation: number;
-    totalGdp: number;
-    averageGdpPerCapita: number;
-    totalCountries: number;
-    globalGrowthRate: number;
-  };
-  userContext?: {
-    hasCountry: boolean;
-    isAdmin: boolean;
-    role?: string;
-  };
-}
-
-function SmartHeader({ globalStats, userContext }: SmartHeaderProps) {
-  return (
-    <Card className="glass-hierarchy-parent">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          {/* Left: System Status - Dashboard Style */}
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg">
-                <Activity className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-foreground">System Status</h2>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-3 w-3 text-blue-500" />
-                    <span>IxTime Active</span>
-                    <Badge variant="outline" className="text-xs ml-1">2.0x</Badge>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Bot className="h-3 w-3 text-green-500" />
-                    <span>Bot Online</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right: Quick Actions - Enhanced */}
-          <div className="flex items-center gap-3">
-            {globalStats && (
-              <div className="hidden lg:flex items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <Globe className="h-4 w-4 text-purple-500" />
-                  <span className="font-medium">{globalStats.totalCountries}</span>
-                  <span>Nations</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Users className="h-4 w-4 text-blue-500" />
-                  <span className="font-medium">{formatPopulation(globalStats.totalPopulation)}</span>
-                  <span>People</span>
-                </div>
-              </div>
-            )}
-            
-            {userContext?.isAdmin && (
-              <Link href={createUrl("/admin")}>
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  Admin
-                </Button>
-              </Link>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 // Context-aware main content component
 interface SmartDashboardContentProps {
@@ -224,19 +150,28 @@ interface SmartDashboardContentProps {
 
 function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, adaptedGlobalStats, activityRingsData }: SmartDashboardContentProps) {
   const [contentMode, setContentMode] = useState<'discover' | 'mycountry' | 'activity' | 'admin'>('discover');
-  
-  // Auto-select content mode based on user context
+  const [hasUserSelectedTab, setHasUserSelectedTab] = useState(false);
+
+  // Auto-select content mode based on user context (only on initial load, not after user selection)
   React.useEffect(() => {
-    if (isAdmin) {
-      setContentMode('admin');
-    } else if (userCountry) {
-      setContentMode('mycountry');
-    } else if (userProfile) {
-      setContentMode('activity');
-    } else {
-      setContentMode('discover');
+    if (!hasUserSelectedTab) {
+      if (isAdmin) {
+        setContentMode('admin');
+      } else if (userCountry) {
+        setContentMode('mycountry');
+      } else if (userProfile) {
+        setContentMode('activity');
+      } else {
+        setContentMode('discover');
+      }
     }
-  }, [isAdmin, userCountry, userProfile]);
+  }, [isAdmin, userCountry, userProfile, hasUserSelectedTab]);
+
+  // Handle manual tab selection
+  const handleTabChange = (mode: 'discover' | 'mycountry' | 'activity' | 'admin') => {
+    setContentMode(mode);
+    setHasUserSelectedTab(true);
+  };
 
   const contentModes = [
     { id: 'discover', label: 'Discover', icon: Globe, description: 'Explore nations & trends' },
@@ -260,7 +195,7 @@ function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, a
                   key={mode.id}
                   variant={isActive ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setContentMode(mode.id as 'discover' | 'mycountry' | 'activity' | 'admin')}
+                  onClick={() => handleTabChange(mode.id as 'discover' | 'mycountry' | 'activity' | 'admin')}
                   disabled={mode.disabled}
                   className="flex items-center gap-2"
                 >
@@ -485,29 +420,7 @@ function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, a
 
           {/* Admin Mode */}
           {contentMode === 'admin' && isAdmin && (
-            <motion.div
-              key="admin"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="space-y-6"
-            >
-              <div className="text-center py-12">
-                <Shield className="h-16 w-16 mx-auto text-purple-500 mb-4" />
-                <h3 className="text-2xl font-bold text-foreground mb-2">
-                  System Administration
-                </h3>
-                <p className="text-muted-foreground mb-6">
-                  Complete control over all system operations and data
-                </p>
-                <Link href={createUrl("/admin")}>
-                  <Button size="lg" className="flex items-center gap-2">
-                    <Settings className="h-5 w-5" />
-                    Open Admin Dashboard
-                  </Button>
-                </Link>
-              </div>
-            </motion.div>
+            <AdminQuickAccess />
           )}
         </AnimatePresence>
       </CardContent>
@@ -612,23 +525,6 @@ export function EnhancedCommandCenter() {
       />
       
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 mt-16 relative z-10">
-        {/* Enhanced Smart Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-        >
-          <SmartHeader 
-            globalStats={adaptedGlobalStats}
-            userContext={{
-              hasCountry: !!userCountry,
-              isAdmin: isAdmin,
-              role: roleUser?.role?.displayName
-            }}
-          />
-        </motion.div>
-
-
         {/* Main Layout - Left Sidebar + Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-8">
           

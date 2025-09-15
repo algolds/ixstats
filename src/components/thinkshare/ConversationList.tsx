@@ -19,7 +19,8 @@ interface ThinkshareConversation {
       id: string;
       username: string;
       displayName: string;
-      // Note: profileImageUrl and accountType removed from User model
+      profileImageUrl?: string | null;
+      accountType: string;
     };
     isActive: boolean;
   }[];

@@ -2020,4 +2020,27 @@ model RevenueSource {
   @@index([isActive])
 }
 
+// Admin Panel Favorites System
+model AdminFavorite {
+  id          String   @id @default(cuid())
+  userId      String   // Clerk user ID
+  panelType   String   // 'dashboard', 'users', 'countries', 'analytics', 'system', etc.
+  panelId     String   // Specific panel identifier (e.g., 'user-management', 'system-logs')
+  displayName String   // Human readable name for the panel
+  description String?  // Optional description
+  iconName    String?  // Icon identifier (lucide icon name)
+  url         String   // URL/route to the panel
+  category    String   @default("general") // 'system', 'content', 'users', 'analytics', 'tools'
+  order       Int      @default(0) // Custom ordering
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, panelId])
+  @@index([userId])
+  @@index([category])
+  @@index([isActive])
+  @@index([order])
+}
+
 

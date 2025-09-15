@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import type { AtomicIntelligenceItem } from '~/lib/atomic-intelligence-integration';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
@@ -93,16 +94,25 @@ export function AtomicAnalyticsDashboard({
   className
 }: AtomicAnalyticsDashboardProps) {
   const [activeView, setActiveView] = useState<'overview' | 'components' | 'effectiveness' | 'trends'>('overview');
+  const [intelligence, setIntelligence] = useState<AtomicIntelligenceItem[]>([]);
+
+  // Generate intelligence asynchronously
+  useEffect(() => {
+    const generateIntelligence = async () => {
+      const intelligenceData = await generateAtomicIntelligence(components, economicData, taxData);
+      setIntelligence(intelligenceData);
+    };
+    generateIntelligence();
+  }, [components, economicData, taxData]);
 
   // Calculate all effectiveness metrics
   const metrics = useMemo(() => {
     const tax = calculateAtomicTaxEffectiveness(components, taxData);
     const economic = calculateAtomicEconomicEffectiveness(components as any, economicData);
     const stability = calculateAtomicGovernmentStability(components);
-    const intelligence = generateAtomicIntelligence(components, economicData, taxData);
 
     return { tax, economic, stability, intelligence };
-  }, [components, economicData, taxData]);
+  }, [components, economicData, taxData, intelligence]);
 
   // Component effectiveness breakdown
   const componentEffectiveness = useMemo(() => {

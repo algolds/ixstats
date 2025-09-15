@@ -219,7 +219,7 @@ export default function GlobalOverview() {
 
   const searchParams = useSearchParams();
   const router = useRouter();
-  const highlightCountryId = searchParams.get('countryId');
+  const highlightCountryId = searchParams?.get('countryId');
 
   const { user } = useUser();
   const { data: userProfile } = api.users.getProfile.useQuery(
@@ -654,7 +654,7 @@ export default function GlobalOverview() {
             <NationCard
               key={nation.id}
               nation={nation}
-              flagUrl={flagUrls[nation.name] || null}
+              flagUrl={flagUrls[nation.name] ?? null}
               highlightCountryId={highlightCountryId}
               userCountryId={userCountryId}
               router={router}

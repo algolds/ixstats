@@ -176,12 +176,22 @@ export function generateGovernmentSpendingData(profile: CountryProfile): Governm
   const totalRevenue = profile.totalGdp * (taxRevenuePercent / 100);
   const deficit = totalSpending - totalRevenue;
 
+  const spendingCategories = getSpendingCategoriesWithAmounts(totalSpending);
+
+  // Calculate major spending categories from spendingCategories
+  const education = spendingCategories.find(c => c.category.toLowerCase().includes('education'))?.amount || 0;
+  const healthcare = spendingCategories.find(c => c.category.toLowerCase().includes('health'))?.amount || 0;
+  const socialSafety = spendingCategories.find(c => c.category.toLowerCase().includes('social'))?.amount || 0;
+
   return {
+    education,
+    healthcare,
+    socialSafety,
     totalSpending: totalSpending,
     spendingGDPPercent: spendingPercent,
     spendingPerCapita: totalSpending / profile.population,
     deficitSurplus: -deficit,
-    spendingCategories: getSpendingCategoriesWithAmounts(totalSpending),
+    spendingCategories: spendingCategories,
   };
 }
 

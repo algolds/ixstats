@@ -24,10 +24,10 @@ export const ATOMIC_COMPONENT_CATEGORIES = {
     icon: Settings,
     color: 'blue',
     components: [
-      ComponentType.CENTRALIZED_POWER,
-      ComponentType.FEDERAL_SYSTEM,
-      ComponentType.CONFEDERATE_SYSTEM,
-      ComponentType.UNITARY_SYSTEM
+      'CENTRALIZED_POWER' as ComponentType,
+      'FEDERAL_SYSTEM' as ComponentType,
+      'CONFEDERATE_SYSTEM' as ComponentType,
+      'UNITARY_SYSTEM' as ComponentType
     ]
   },
   DECISION_PROCESS: {
@@ -333,7 +333,7 @@ export function AtomicComponentSelector({
         {Object.values(ATOMIC_COMPONENT_CATEGORIES).map((category) => {
           const Icon = category.icon;
           const selectedCount = selectedComponents.filter(comp =>
-            category.components.includes(comp as any)
+            (category.components as readonly ComponentType[]).includes(comp as ComponentType)
           ).length;
           
           return (

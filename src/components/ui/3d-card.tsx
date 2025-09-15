@@ -138,9 +138,9 @@ export const CardItem = ({
 
   return (
     <Tag
-      ref={ref as any}
+      ref={ref}
       className={cn("w-fit transition duration-200 ease-linear", className)}
-      {...(rest as any)}
+      {...rest}
     >
       {children}
     </Tag>

@@ -66,6 +66,15 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
   // Use the global user ID directly - no longer need thinkpages accounts for ThinkShare
   const currentUserId = userId;
 
+  // Create currentAccount object for ChatArea
+  const currentAccount = currentUserId ? {
+    id: currentUserId,
+    username: currentUserId, // fallback
+    displayName: currentUserId, // fallback
+    profileImageUrl: null,
+    accountType: 'user'
+  } : undefined;
+
   // Show error state if no user ID is provided
   if (!currentUserId) {
     return (
@@ -221,16 +230,12 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
           {selectedConv ? (
             <ChatArea
               selectedConversation={selectedConv as any}
-              currentUserId={currentUserId}
+              currentAccount={currentAccount}
               conversationMessages={conversationMessages as any}
               isLoadingMessages={isLoadingMessages}
               refetchMessages={refetchMessages}
               refetchConversations={refetchConversations}
-              clientState={{
-                connected: clientState.connected || false,
-                typingIndicators: clientState.typingIndicators || new Map(),
-                ...clientState
-              } as any}
+              clientState={{ isTyping: false, lastSeen: undefined, connectionStatus: "connected" as const }}
               sendTypingIndicator={sendTypingIndicator}
               markMessagesAsReadMutation={markMessagesAsReadMutation as any}
             />

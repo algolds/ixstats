@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
@@ -59,8 +59,14 @@ export function AtomicIntelligenceFeed({
   className
 }: AtomicIntelligenceFeedProps) {
   
-  const intelligence = useMemo(() => {
-    return generateAtomicIntelligence(components, economicData, taxData).slice(0, maxItems);
+  const [intelligence, setIntelligence] = useState<AtomicIntelligenceItem[]>([]);
+
+  useEffect(() => {
+    const generateIntelligence = async () => {
+      const intelligenceData = await generateAtomicIntelligence(components, economicData, taxData);
+      setIntelligence(intelligenceData.slice(0, maxItems));
+    };
+    generateIntelligence();
   }, [components, economicData, taxData, maxItems]);
 
   const stability = useMemo(() => {
