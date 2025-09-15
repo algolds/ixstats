@@ -1085,17 +1085,23 @@ const countriesRouter = createTRPCRouter({
         '5': Number(stats.popTier5Count) || 0,
       };
 
+      const globalGrowthFactor = getDefaultEconomicConfig().globalGrowthFactor;
+      const globalGrowthRate = (globalGrowthFactor - 1); // Convert multiplier (1.0321) to rate (0.0321)
+
       const response = {
         totalPopulation,
         totalGdp,
         averageGdpPerCapita: avgGdpPc,
         averagePopulation: totalCountries > 0 ? totalPopulation / totalCountries : 0,
-        totalCountries,
+        countryCount: totalCountries, // Add countryCount field that UI expects
+        totalCountries, // Keep for backward compatibility
         economicTierDistribution,
         populationTierDistribution,
         averagePopulationDensity: avgPopD || null,
         averageGdpDensity: avgGdpD || null,
-        globalGrowthFactor: getDefaultEconomicConfig().globalGrowthFactor,
+        globalGrowthFactor, // Keep original for any other uses
+        globalGrowthRate,   // Add the rate that UI expects
+        timestamp: targetTime, // Add timestamp field that UI expects
         ixTimeTimestamp: targetTime,
       };
 

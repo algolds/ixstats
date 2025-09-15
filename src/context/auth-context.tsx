@@ -10,6 +10,7 @@ interface User {
   lastName?: string | null;
   emailAddresses: { emailAddress: string }[];
   imageUrl?: string;
+  createdAt?: number;
 }
 
 interface AuthContextType {
@@ -19,7 +20,7 @@ interface AuthContextType {
   signOut?: () => Promise<void>;
 }
 
-// Check if Clerk is configured and determine environment
+// Clerk is the default auth provider - always use it when available
 const isClerkConfigured = Boolean(
   process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith('pk_')
 );
@@ -46,20 +47,14 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // Memoize fallback auth to prevent re-creation
-  const fallbackAuth = useMemo<AuthContextType>(() => ({
-    user: null,
-    isLoaded: true,
-    isSignedIn: false,
-  }), []);
-
-  // Use Clerk hooks only if Clerk is configured
-  const clerkUser = isClerkConfigured ? useClerkUser() : null;
-  const clerkAuth = isClerkConfigured ? useClerkAuth() : null;
+  // Always use Clerk hooks when configured - this is the native integration
+  const clerkUser = useClerkUser();
+  const clerkAuth = useClerkAuth();
 
   // Memoize auth value to prevent unnecessary re-renders
   const authValue: AuthContextType = useMemo(() => {
-    if (isClerkConfigured && clerkUser && clerkAuth) {
+    if (isClerkConfigured) {
+      // Native Clerk integration - use Clerk data directly
       return {
         user: clerkUser.user ? {
           id: clerkUser.user.id,
@@ -67,14 +62,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           lastName: clerkUser.user.lastName,
           emailAddresses: clerkUser.user.emailAddresses,
           imageUrl: clerkUser.user.imageUrl,
+          createdAt: clerkUser.user.createdAt,
         } : null,
         isLoaded: clerkUser.isLoaded,
         isSignedIn: Boolean(clerkUser.isSignedIn),
         signOut: clerkAuth.signOut,
       };
     }
-    return fallbackAuth;
-  }, [clerkUser, clerkAuth, fallbackAuth]);
+
+    // Fallback when Clerk is not configured
+    return {
+      user: null,
+      isLoaded: true,
+      isSignedIn: false,
+    };
+  }, [clerkUser, clerkAuth]);
 
   return (
     <AuthContext.Provider value={authValue}>

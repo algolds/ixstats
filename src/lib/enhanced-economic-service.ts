@@ -271,12 +271,12 @@ export class EnhancedEconomicService {
     return `economic_analysis_${countryId}_${JSON.stringify(options)}`;
   }
 
-  private getFromCache(key: string): any {
+  private getFromCache(key: string): EconomicAnalysisResult | undefined {
     const cached = this.cache.get(key);
     if (cached && Date.now() - cached.timestamp < cached.ttl) {
       return cached.data;
     }
-    return null;
+    return undefined;
   }
 
   private setCache(key: string, data: any, ttl: number): void {

@@ -6,10 +6,11 @@
 'use client';
 
 import { EventEmitter } from 'events';
-import type { 
-  UnifiedNotification, 
-  NotificationCategory, 
-  NotificationPriority 
+import type {
+  UnifiedNotification,
+  NotificationCategory,
+  NotificationPriority,
+  DeliveryMethod
 } from '~/types/unified-notifications';
 import type { IntelligenceItem } from '~/types/intelligence-unified';
 import { useNotificationStore } from '~/stores/notificationStore';
@@ -242,7 +243,7 @@ class GlobalNotificationBridge extends EventEmitter {
         networkQuality: 'high' as const,
         batteryLevel: 100,
         userPreferences: {
-          preferredMethods: ['dynamic-island'],
+          preferredMethods: ['dynamic-island'] as DeliveryMethod[],
           quietHours: null,
           batchingEnabled: true,
           maxNotificationsPerHour: 30,
@@ -268,11 +269,11 @@ class GlobalNotificationBridge extends EventEmitter {
         relevanceScore: 0.7,
         status: 'pending' as const
       };
+
       await store.addNotification(completeNotification);
       
       // Track recent notifications
       this.recentNotifications.set(notificationKey, Date.now());
-      
       console.log(`[NotificationBridge] Created ${rule.priority} notification:`, notification.title);
       
       // Emit event for other systems

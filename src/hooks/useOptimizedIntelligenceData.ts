@@ -44,7 +44,10 @@ export function useOptimizedIntelligenceData({
       // Core country data - longest cache since it changes less frequently
       {
         queryKey: ['country', countryId],
-        queryFn: async () => await api.countries.getByIdAtTime({ id: countryId }),
+        queryFn: async () => {
+          const result = await api.countries.getByIdAtTime.query({ id: countryId });
+          return result;
+        },
         staleTime: staleTime * 2, // Country data stays fresh longer
         gcTime: cacheTime * 2,
         enabled: !!countryId
@@ -53,7 +56,10 @@ export function useOptimizedIntelligenceData({
       // Intelligence feed - medium cache since it updates regularly
       {
         queryKey: ['intelligence', countryId],
-        queryFn: async () => await api.intelligence.getFeed(),
+        queryFn: async () => {
+          const result = await api.intelligence.getFeed.query();
+          return result;
+        },
         staleTime,
         gcTime: cacheTime,
         enabled: !!countryId && enableIntelligence

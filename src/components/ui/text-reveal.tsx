@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useAnimation, useInView } from "framer-motion";
+import { motion, useAnimation, useInView, useMotionValue, useTransform, animate } from "framer-motion";
 import { useEffect, useRef } from "react";
 import { cn } from "~/lib/utils";
 
@@ -63,18 +63,29 @@ interface CountUpProps {
   decimals?: number;
 }
 
-export const CountUp = ({ 
-  from = 0, 
-  to, 
-  duration = 1, 
-  delay = 0, 
-  className, 
-  prefix = "", 
+export const CountUp = ({
+  from = 0,
+  to,
+  duration = 1,
+  delay = 0,
+  className,
+  prefix = "",
   suffix = "",
-  decimals = 0 
+  decimals = 0
 }: CountUpProps) => {
-  const ref = useRef(null);
+  const ref = useRef<HTMLSpanElement>(null);
   const isInView = useInView(ref, { once: true });
+  const count = useMotionValue(from);
+  const rounded = useTransform(count, (latest) =>
+    decimals > 0 ? latest.toFixed(decimals) : Math.round(latest).toString()
+  );
+
+  useEffect(() => {
+    if (isInView) {
+      const controls = animate(count, to, { duration, delay, ease: "easeOut" });
+      return controls.stop;
+    }
+  }, [isInView, count, to, duration, delay]);
 
   return (
     <motion.span
@@ -91,18 +102,9 @@ export const CountUp = ({
           transition={{ duration, delay, ease: "easeOut" }}
         >
           {prefix}
-          <motion.span
-            initial={from}
-            animate={to}
-            transition={{ duration, delay, ease: "easeOut" }}
-            onUpdate={(latest) => {
-              if (ref.current) {
-                const value = typeof latest === 'number' ? latest : to;
-                const formatted = decimals > 0 ? value.toFixed(decimals) : Math.round(value).toString();
-                (ref.current as HTMLElement).textContent = `${prefix}${formatted}${suffix}`;
-              }
-            }}
-          />
+          <motion.span>
+            {rounded}
+          </motion.span>
           {suffix}
         </motion.span>
       )}

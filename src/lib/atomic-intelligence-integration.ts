@@ -3,7 +3,7 @@
  * Generates intelligence feeds and alerts based on atomic government components
  */
 
-import type { ComponentType } from '~/types/government';
+import { ComponentType } from '~/types/government';
 import { calculateAtomicTaxEffectiveness } from './atomic-tax-integration';
 import { calculateAtomicEconomicImpact } from './atomic-economic-integration';
 
@@ -38,37 +38,40 @@ export interface AtomicGovernmentStability {
 }
 
 // Component stability contributions
-const STABILITY_MODIFIERS = {
+const STABILITY_MODIFIERS: Record<ComponentType, { stability: number; legitimacy: number; capacity: number; policy: number }> = {
   // Power Distribution
-  CENTRALIZED_POWER: { stability: 0.8, legitimacy: 0.7, capacity: 0.9, policy: 0.9 },
-  FEDERAL_SYSTEM: { stability: 0.7, legitimacy: 0.8, capacity: 0.6, policy: 0.6 },
-  CONFEDERATE_SYSTEM: { stability: 0.5, legitimacy: 0.6, capacity: 0.4, policy: 0.4 },
-  UNITARY_SYSTEM: { stability: 0.9, legitimacy: 0.8, capacity: 0.8, policy: 0.9 },
+  [ComponentType.CENTRALIZED_POWER]: { stability: 0.8, legitimacy: 0.7, capacity: 0.9, policy: 0.9 },
+  [ComponentType.FEDERAL_SYSTEM]: { stability: 0.7, legitimacy: 0.8, capacity: 0.6, policy: 0.6 },
+  [ComponentType.CONFEDERATE_SYSTEM]: { stability: 0.5, legitimacy: 0.6, capacity: 0.4, policy: 0.4 },
+  [ComponentType.UNITARY_SYSTEM]: { stability: 0.9, legitimacy: 0.8, capacity: 0.8, policy: 0.9 },
 
-  // Decision Processes  
-  DEMOCRATIC_PROCESS: { stability: 0.8, legitimacy: 0.9, capacity: 0.7, policy: 0.6 },
-  AUTOCRATIC_PROCESS: { stability: 0.6, legitimacy: 0.5, capacity: 0.8, policy: 0.9 },
-  TECHNOCRATIC_PROCESS: { stability: 0.9, legitimacy: 0.7, capacity: 0.95, policy: 0.95 },
-  CONSENSUS_PROCESS: { stability: 0.9, legitimacy: 0.8, capacity: 0.6, policy: 0.5 },
-  OLIGARCHIC_PROCESS: { stability: 0.4, legitimacy: 0.3, capacity: 0.7, policy: 0.7 },
+  // Decision Processes
+  [ComponentType.DEMOCRATIC_PROCESS]: { stability: 0.8, legitimacy: 0.9, capacity: 0.7, policy: 0.6 },
+  [ComponentType.AUTOCRATIC_PROCESS]: { stability: 0.6, legitimacy: 0.5, capacity: 0.8, policy: 0.9 },
+  [ComponentType.TECHNOCRATIC_PROCESS]: { stability: 0.9, legitimacy: 0.7, capacity: 0.95, policy: 0.95 },
+  [ComponentType.CONSENSUS_PROCESS]: { stability: 0.9, legitimacy: 0.8, capacity: 0.6, policy: 0.5 },
+  [ComponentType.OLIGARCHIC_PROCESS]: { stability: 0.4, legitimacy: 0.3, capacity: 0.7, policy: 0.7 },
 
   // Legitimacy Sources
-  ELECTORAL_LEGITIMACY: { stability: 0.8, legitimacy: 0.95, capacity: 0.7, policy: 0.7 },
-  TRADITIONAL_LEGITIMACY: { stability: 0.9, legitimacy: 0.8, capacity: 0.6, policy: 0.7 },
-  PERFORMANCE_LEGITIMACY: { stability: 0.7, legitimacy: 0.85, capacity: 0.8, policy: 0.9 },
-  CHARISMATIC_LEGITIMACY: { stability: 0.5, legitimacy: 0.9, capacity: 0.6, policy: 0.8 },
-  RELIGIOUS_LEGITIMACY: { stability: 0.85, legitimacy: 0.9, capacity: 0.6, policy: 0.7 },
+  [ComponentType.ELECTORAL_LEGITIMACY]: { stability: 0.8, legitimacy: 0.95, capacity: 0.7, policy: 0.7 },
+  [ComponentType.TRADITIONAL_LEGITIMACY]: { stability: 0.9, legitimacy: 0.8, capacity: 0.6, policy: 0.7 },
+  [ComponentType.PERFORMANCE_LEGITIMACY]: { stability: 0.7, legitimacy: 0.85, capacity: 0.8, policy: 0.9 },
+  [ComponentType.CHARISMATIC_LEGITIMACY]: { stability: 0.5, legitimacy: 0.9, capacity: 0.6, policy: 0.8 },
+  [ComponentType.RELIGIOUS_LEGITIMACY]: { stability: 0.85, legitimacy: 0.9, capacity: 0.6, policy: 0.7 },
 
   // Institutions
-  PROFESSIONAL_BUREAUCRACY: { stability: 0.9, legitimacy: 0.7, capacity: 0.95, policy: 0.9 },
-  MILITARY_ADMINISTRATION: { stability: 0.7, legitimacy: 0.5, capacity: 0.8, policy: 0.85 },
-  INDEPENDENT_JUDICIARY: { stability: 0.95, legitimacy: 0.9, capacity: 0.8, policy: 0.8 },
-  PARTISAN_INSTITUTIONS: { stability: 0.4, legitimacy: 0.4, capacity: 0.5, policy: 0.4 },
-  TECHNOCRATIC_AGENCIES: { stability: 0.85, legitimacy: 0.6, capacity: 0.95, policy: 0.95 },
+  [ComponentType.PROFESSIONAL_BUREAUCRACY]: { stability: 0.9, legitimacy: 0.7, capacity: 0.95, policy: 0.9 },
+  [ComponentType.MILITARY_ADMINISTRATION]: { stability: 0.7, legitimacy: 0.5, capacity: 0.8, policy: 0.85 },
+  [ComponentType.INDEPENDENT_JUDICIARY]: { stability: 0.95, legitimacy: 0.9, capacity: 0.8, policy: 0.8 },
+  [ComponentType.PARTISAN_INSTITUTIONS]: { stability: 0.4, legitimacy: 0.4, capacity: 0.5, policy: 0.4 },
+  [ComponentType.TECHNOCRATIC_AGENCIES]: { stability: 0.85, legitimacy: 0.6, capacity: 0.95, policy: 0.95 },
 
   // Control Mechanisms
-  RULE_OF_LAW: { stability: 0.95, legitimacy: 0.9, capacity: 0.8, policy: 0.85 },
-  SURVEILLANCE_SYSTEM: { stability: 0.6, legitimacy: 0.4, capacity: 0.8, policy: 0.8 }
+  [ComponentType.RULE_OF_LAW]: { stability: 0.95, legitimacy: 0.9, capacity: 0.8, policy: 0.85 },
+  [ComponentType.SURVEILLANCE_SYSTEM]: { stability: 0.6, legitimacy: 0.4, capacity: 0.8, policy: 0.8 },
+  [ComponentType.ECONOMIC_INCENTIVES]: { stability: 0.7, legitimacy: 0.6, capacity: 0.7, policy: 0.8 },
+  [ComponentType.SOCIAL_PRESSURE]: { stability: 0.5, legitimacy: 0.7, capacity: 0.6, policy: 0.6 },
+  [ComponentType.MILITARY_ENFORCEMENT]: { stability: 0.4, legitimacy: 0.3, capacity: 0.9, policy: 0.8 }
 } as const;
 
 // Critical component conflicts that trigger alerts
@@ -181,19 +184,19 @@ export function calculateAtomicGovernmentStability(
   }
 
   // Check for specific risk patterns
-  if (components.includes('PARTISAN_INSTITUTIONS' as any) && components.length > 2) {
+  if (components.includes(ComponentType.PARTISAN_INSTITUTIONS) && components.length > 2) {
     riskFactors.push('Partisan institutions may undermine governance quality');
   }
-  
-  if (components.includes('OLIGARCHIC_PROCESS' as any)) {
+
+  if (components.includes(ComponentType.OLIGARCHIC_PROCESS)) {
     riskFactors.push('Oligarchic decision-making may reduce legitimacy');
   }
 
-  if (components.includes('PROFESSIONAL_BUREAUCRACY' as any)) {
+  if (components.includes(ComponentType.PROFESSIONAL_BUREAUCRACY)) {
     strengths.push('Professional bureaucracy provides implementation capacity');
   }
 
-  if (components.includes('RULE_OF_LAW' as any)) {
+  if (components.includes(ComponentType.RULE_OF_LAW)) {
     strengths.push('Rule of law provides institutional stability');
   }
 
@@ -237,7 +240,7 @@ export async function generateAtomicIntelligence(
     collectionEfficiency: number;
     complianceRate: number;
   }
-): AtomicIntelligenceItem[] {
+): Promise<AtomicIntelligenceItem[]> {
   const intelligence: AtomicIntelligenceItem[] = [];
   
   if (components.length === 0) {
@@ -259,7 +262,7 @@ export async function generateAtomicIntelligence(
 
   // Calculate effectiveness metrics
   const stability = calculateAtomicGovernmentStability(components);
-  const economic = await calculateAtomicEconomicImpact(components, economicData.gdpPerCapita || 15000, (economicData as any).taxRevenue || 0.2);
+  const economic = calculateAtomicEconomicImpact(components, economicData.gdpPerCapita || 15000, (economicData as any).taxRevenue || 0.2);
   const tax = calculateAtomicTaxEffectiveness(components, taxData);
 
   // Government stability analysis
@@ -393,7 +396,7 @@ export async function generateAtomicIntelligence(
   }
 
   // Predictive analysis
-  if (components.includes('TECHNOCRATIC_PROCESS' as any) && components.includes('PROFESSIONAL_BUREAUCRACY' as any)) {
+  if (components.includes(ComponentType.TECHNOCRATIC_PROCESS) && components.includes(ComponentType.PROFESSIONAL_BUREAUCRACY)) {
     intelligence.push({
       id: `prediction-optimal-${Date.now()}`,
       type: 'prediction',
@@ -403,7 +406,7 @@ export async function generateAtomicIntelligence(
       category: 'policy',
       timestamp: new Date(),
       source: 'effectiveness_model',
-      relatedComponents: ['TECHNOCRATIC_PROCESS', 'PROFESSIONAL_BUREAUCRACY'],
+      relatedComponents: [ComponentType.TECHNOCRATIC_PROCESS, ComponentType.PROFESSIONAL_BUREAUCRACY],
       actionable: false,
       recommendations: ['Capitalize on implementation advantages', 'Consider ambitious reform agenda'],
       metrics: {

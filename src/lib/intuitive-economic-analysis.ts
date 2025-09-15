@@ -914,7 +914,7 @@ export class IntuitiveEconomicAnalysis {
   }
 
   private generateGroupPriorityActions(groups: Array<{ overallScore: number }>): Array<{ group: string; action: string; urgency: 'high' | 'medium' | 'low' }> {
-    const actions = [];
+    const actions: Array<{ group: string; action: string; urgency: 'high' | 'medium' | 'low' }> = [];
     
     groups.forEach((group, index) => {
       const groupName = ['Growth Dynamics', 'Financial Health', 'Human Development', 'Economic Structure', 'External Relations'][index];

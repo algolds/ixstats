@@ -36,6 +36,7 @@ import { FlagCacheManager } from "~/components/FlagCacheManager";
 import { FlagTestComponent } from "~/components/FlagTestComponent";
 import { RealTimeClock } from "~/components/ui/real-time-clock";
 import { api } from "~/trpc/react";
+import { AdminFavoriteButton } from "~/components/admin/AdminFavoriteButton";
 import { IxTime } from "~/lib/ixtime";
 import { CONFIG_CONSTANTS } from "~/lib/config-service";
 import type { 

@@ -13,7 +13,7 @@ export const PathGlareCard = ({
 }: PathGlareCardProps) => {
   const isPointerInside = useRef(false);
   const refElement = useRef<HTMLDivElement>(null);
-  const animationFrame = useRef<number>(0);
+  const animationFrame = useRef<number | undefined>(undefined);
   const state = useRef({
     glare: {
       x: 50,

@@ -1,5 +1,9 @@
 import type { BaseIntelligence, BaseEntity, StandardPriority, StandardCategory, StandardTrend, StandardTimeframe, IconReference } from './base';
 
+// Re-export types from other modules for unified access
+export type { Country } from './ixstats';
+export type { VitalityIntelligence } from '../app/mycountry/types/intelligence';
+
 // Unified intelligence item (replaces all variants)
 export interface IntelligenceItem extends BaseIntelligence {
   type: 'alert' | 'opportunity' | 'update' | 'prediction' | 'insight';

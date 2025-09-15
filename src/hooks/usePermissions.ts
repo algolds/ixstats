@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useUser } from '~/context/auth-context';
 import { api } from '~/trpc/react';
 
@@ -31,16 +31,18 @@ export interface UserPermissionData {
 
 // Hook to get current user's permissions
 export function usePermissions(): UserPermissionData {
+  // Use the native auth context which integrates with Clerk
   const { user: authUser, isSignedIn, isLoaded } = useUser();
-  
+
   // Query user data including role and permissions
   const { data: userData, isLoading, error } = api.users.getCurrentUserWithRole.useQuery(
     undefined,
-    { 
+    {
       enabled: isSignedIn && isLoaded && !!authUser,
-      retry: false 
+      retry: false
     }
   );
+
 
   const permissions = useMemo(() => {
     if (!userData?.user?.role?.permissions) return [];

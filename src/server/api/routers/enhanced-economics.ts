@@ -224,7 +224,7 @@ export const enhancedEconomicsRouter = createTRPCRouter({
 
         // Convert to required format
         const countryStats: CountryStats = {
-          countryId: country.id,
+          id: country.id,
           name: country.name,
           currentTotalGdp: (country as any).totalGdp || country.currentTotalGdp || 0,
           currentGdpPerCapita: (country as any).gdpPerCapita || country.currentGdpPerCapita || 0,

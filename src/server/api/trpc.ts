@@ -10,6 +10,7 @@ import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 import { getAuth } from "@clerk/nextjs/server";
+import { verifyToken } from "@clerk/nextjs/server";
 import type { NextRequest } from "next/server";
 
 import { db } from "~/server/db";
@@ -30,17 +31,48 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
   // Extract Clerk auth information if available
   let auth = null;
   let user = null;
-  
+
   try {
+    // Try to get auth from request first (for app router)
     if (opts.req) {
       auth = getAuth(opts.req);
-      if (auth?.userId) {
-        // Get user from database to include country ownership info
-        user = await db.user.findUnique({
-          where: { clerkUserId: auth.userId },
-          include: { country: true }
-        });
+    }
+
+    // If no auth from request, try to get it from authorization header (for API routes)
+    if (!auth?.userId) {
+      const authHeader = opts.headers.get('authorization');
+      if (authHeader?.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        try {
+          const verifiedToken = await verifyToken(token, {
+            secretKey: process.env.CLERK_SECRET_KEY!,
+          });
+          if (verifiedToken?.sub) {
+            auth = { userId: verifiedToken.sub };
+          }
+        } catch (tokenError) {
+          console.warn('[TRPC Context] Token verification failed:', tokenError);
+        }
       }
+    }
+
+    // Get user from database if we have a userId
+    if (auth?.userId) {
+      user = await db.user.findUnique({
+        where: { clerkUserId: auth.userId },
+        include: {
+          country: true,
+          role: {
+            include: {
+              rolePermissions: {
+                include: {
+                  permission: true
+                }
+              }
+            }
+          }
+        }
+      });
     }
   } catch (error) {
     console.warn('[TRPC Context] Auth extraction failed:', error);

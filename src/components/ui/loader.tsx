@@ -278,7 +278,7 @@ export const GlobalLoader = () => {
     <div className="flex flex-col items-center justify-center min-h-[200px] w-full py-8">
       <motion.div
         animate={{ rotate: [0, 360] }}
-        transition={{ repeat: Infinity, duration: 1.6, ease: "linear" }}
+        transition={{ repeat: Infinity, duration: 1.6, ease: [0, 0, 1, 1] }}
         className="inline-block"
       >
         <IxLogoSVG width={80} height={80} />

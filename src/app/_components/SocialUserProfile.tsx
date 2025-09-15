@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "~/trpc/react";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 import Link from "next/link";
 import { createUrl } from "~/lib/url-utils";
 
@@ -25,7 +25,6 @@ import {
   Zap,
   Globe,
   MessageSquare,
-  Settings,
   MapPin,
   Calendar,
   TrendingUp,
@@ -97,6 +96,8 @@ export function SocialUserProfile({ userProfile, className }: SocialUserProfileP
   
   // Get user role information
   const { user: roleUser, isLoading: roleLoading } = usePermissions();
+
+
   
   // Fetch user country data
   const { data: userCountry } = api.countries.getByIdAtTime.useQuery(
@@ -197,8 +198,8 @@ export function SocialUserProfile({ userProfile, className }: SocialUserProfileP
                 <h2 className="text-xl font-bold text-foreground">
                   {user?.firstName || 'User'}
                 </h2>
-                {!roleLoading && roleUser?.role ? (
-                  <Badge 
+{!roleLoading && roleUser?.role ? (
+                  <Badge
                     className={`flex items-center gap-1 text-xs px-2 py-1 ${
                       roleUser.role.level <= 0 ? 'bg-purple-100 text-purple-800 border-purple-200' :
                       roleUser.role.level <= 10 ? 'bg-red-100 text-red-800 border-red-200' :
@@ -210,10 +211,15 @@ export function SocialUserProfile({ userProfile, className }: SocialUserProfileP
                     <Briefcase className="h-3 w-3" />
                     {roleUser.role.displayName}
                   </Badge>
+                ) : roleLoading ? (
+                  <Badge className="flex items-center gap-1 text-xs px-2 py-1 bg-gray-100 text-gray-800 border-gray-200">
+                    <User className="h-3 w-3" />
+                    Loading...
+                  </Badge>
                 ) : (
                   <Badge className="flex items-center gap-1 text-xs px-2 py-1 bg-gray-100 text-gray-800 border-gray-200">
                     <User className="h-3 w-3" />
-                    {roleLoading ? 'Loading...' : (user?.firstName || 'User')}
+                    Member
                   </Badge>
                 )}
               </div>
@@ -237,9 +243,6 @@ export function SocialUserProfile({ userProfile, className }: SocialUserProfileP
                   Message
                 </Button>
               )}
-              <Button variant="outline" size="sm">
-                <Settings className="h-4 w-4" />
-              </Button>
             </div>
           </div>
           

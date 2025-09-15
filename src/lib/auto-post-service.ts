@@ -177,7 +177,7 @@ export async function generateAndPostMediaResponse(parentPostId: string, country
 
   await prisma.user.update({
     where: { id: postingAccount.id },
-    // data: { postCount: { increment: 1 } },
+    data: { postCount: { increment: 1 } },
   });
 
   // Update parent post's reply count
