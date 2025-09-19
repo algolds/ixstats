@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Crown, Brain, BarChart3, TrendingUp, Briefcase, 
   Building, PieChart, Target, Sparkles, ArrowUp, Lock, Activity, DollarSign
@@ -59,9 +59,30 @@ export function MyCountryTabSystem({ variant = 'unified' }: MyCountryTabSystemPr
     { enabled: !!country?.id }
   );
   const [activeTab, setActiveTab] = useState(
-    variant === 'premium' ? "executive" : 
+    variant === 'premium' ? "executive" :
     variant === 'standard' ? "overview" : "executive"
   );
+
+  // Handle URL hash navigation
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      const validTabs = ['overview', 'economy', 'labor', 'government', 'demographics', 'executive', 'intelligence', 'analytics'];
+      if (hash && validTabs.includes(hash)) {
+        setActiveTab(hash);
+      }
+    };
+
+    // Check hash on mount
+    handleHashChange();
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange);
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, []);
 
   // Data queries for analytics tab
   const { data: historicalData, isLoading: historicalLoading } = api.countries.getHistoricalData.useQuery(
@@ -141,7 +162,7 @@ export function MyCountryTabSystem({ variant = 'unified' }: MyCountryTabSystemPr
       <>
         {/* Upgrade Banner for Standard */}
         {variant === 'standard' && (
-          <Card className="border-gradient-to-r from-purple-500/20 to-blue-500/20 bg-gradient-to-r from-purple-50/50 to-blue-50/50 dark:from-purple-950/20 dark:to-blue-950/20 mb-6">
+          <Card className="border-purple-200/30 bg-gradient-to-r from-purple-50/80 to-blue-50/80 dark:from-purple-950/30 dark:to-blue-950/30 mb-6">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -258,13 +279,20 @@ export function MyCountryTabSystem({ variant = 'unified' }: MyCountryTabSystemPr
     );
   };
 
+  // Handle tab change and update URL hash
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    // Update URL hash without triggering page reload
+    window.history.replaceState(null, '', `#${value}`);
+  };
+
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
       {renderTabsList()}
 
       {/* Executive Command Center Tab */}
       {(variant === 'premium' || variant === 'unified') && (
-        <TabsContent value="executive">
+        <TabsContent value="executive" id="executive">
           <ThemedTabContent theme="executive" className="tab-content-enter">
             <CountryExecutiveSection countryId={country.id} userId={user?.id} />
           </ThemedTabContent>
@@ -273,7 +301,7 @@ export function MyCountryTabSystem({ variant = 'unified' }: MyCountryTabSystemPr
 
       {/* Intelligence Tab */}
       {(variant === 'premium' || variant === 'unified') && (
-        <TabsContent value="intelligence">
+        <TabsContent value="intelligence" id="intelligence">
           <ThemedTabContent theme="intelligence" className="tab-content-enter">
             <LiveIntelligenceSection 
               countryId={country.id} 
@@ -297,7 +325,7 @@ export function MyCountryTabSystem({ variant = 'unified' }: MyCountryTabSystemPr
       )}
 
       {/* Overview Tab */}
-      <TabsContent value="overview" className="space-y-6">
+      <TabsContent value="overview" className="space-y-6" id="overview">
         <CountryAtGlance 
           country={{
             ...country,
@@ -312,7 +340,7 @@ export function MyCountryTabSystem({ variant = 'unified' }: MyCountryTabSystemPr
       </TabsContent>
 
       {/* Economy Tab */}
-      <TabsContent value="economy" className="space-y-6">
+      <TabsContent value="economy" className="space-y-6" id="economy">
         <ThemedTabContent theme="economy" className="tab-content-enter space-y-6">
           <div className="animate-in slide-in-from-bottom-4 duration-700">
             <EconomicSummaryWidget 
@@ -340,7 +368,7 @@ export function MyCountryTabSystem({ variant = 'unified' }: MyCountryTabSystemPr
       </TabsContent>
 
       {/* Labor Tab */}
-      <TabsContent value="labor">
+      <TabsContent value="labor" id="labor">
         <ThemedTabContent theme="labor" className="tab-content-enter">
           <LaborEmployment
             laborData={economyData?.labor ?? { 
@@ -362,7 +390,7 @@ export function MyCountryTabSystem({ variant = 'unified' }: MyCountryTabSystemPr
       </TabsContent>
 
       {/* Government Tab */}
-      <TabsContent value="government" className="space-y-6">
+      <TabsContent value="government" className="space-y-6" id="government">
         <ThemedTabContent theme="government" className="tab-content-enter space-y-6">
           {/* Government Sub-Tabs */}
           <Tabs defaultValue="structure" className="space-y-4">
@@ -453,7 +481,7 @@ export function MyCountryTabSystem({ variant = 'unified' }: MyCountryTabSystemPr
       </TabsContent>
 
       {/* Demographics Tab */}
-      <TabsContent value="demographics">
+      <TabsContent value="demographics" id="demographics">
         <ThemedTabContent theme="demographics" className="tab-content-enter">
           <Demographics
             demographicData={{
@@ -468,7 +496,7 @@ export function MyCountryTabSystem({ variant = 'unified' }: MyCountryTabSystemPr
 
       {/* Advanced Analytics Tab */}
       {(variant === 'premium' || variant === 'unified') && (
-        <TabsContent value="analytics" className="space-y-6">
+        <TabsContent value="analytics" className="space-y-6" id="analytics">
           <ThemedTabContent theme="detailed" className="tab-content-enter space-y-6">
             <div className="space-y-6">
               <div className="animate-in slide-in-from-bottom-4 duration-700">

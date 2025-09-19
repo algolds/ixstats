@@ -105,6 +105,11 @@ export function SocialUserProfile({ userProfile, className }: SocialUserProfileP
     { enabled: !!userProfile?.countryId }
   );
 
+  const { data: activityRingsData } = api.countries.getActivityRingsData.useQuery(
+    { countryId: userProfile?.countryId || '' },
+    { enabled: !!userProfile?.countryId }
+  );
+
   // Get country flag
   const { flagUrl } = useFlag(userCountry?.name);
 
@@ -438,6 +443,7 @@ export function SocialUserProfile({ userProfile, className }: SocialUserProfileP
             continent: userCountry.continent || null,
             region: userCountry.region || null,
           }}
+          activityRingsData={activityRingsData}
           className="w-full"
         />
       )}

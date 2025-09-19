@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import { 
   Gauge, TrendingUp, Globe, DollarSign, Users, Building2, ChevronUp, ChevronDown
 } from "lucide-react";
@@ -168,49 +169,61 @@ export function ECICard({
           <div className="mt-4 flex flex-wrap gap-2 justify-center">
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                  <TrendingUp className="h-4 w-4 text-green-400" />
-                </div>
+                <Link href="/mycountry#economy">
+                  <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+                    <TrendingUp className="h-4 w-4 text-green-400" />
+                  </div>
+                </Link>
               </TooltipTrigger>
               <TooltipContent>Economic Intelligence</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                  <Globe className="h-4 w-4 text-blue-400" />
-                </div>
+                <Link href="/countries">
+                  <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+                    <Globe className="h-4 w-4 text-blue-400" />
+                  </div>
+                </Link>
               </TooltipTrigger>
               <TooltipContent>Trade Analysis</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                  <DollarSign className="h-4 w-4 text-yellow-400" />
-                </div>
+                <Link href="/mycountry#economy">
+                  <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+                    <DollarSign className="h-4 w-4 text-yellow-400" />
+                  </div>
+                </Link>
               </TooltipTrigger>
               <TooltipContent>Financial Metrics</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                  <Users className="h-4 w-4 text-purple-400" />
-                </div>
+                <Link href="/mycountry#demographics">
+                  <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+                    <Users className="h-4 w-4 text-purple-400" />
+                  </div>
+                </Link>
               </TooltipTrigger>
               <TooltipContent>Population Analytics</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                  <Building2 className="h-4 w-4 text-orange-400" />
-                </div>
+                <Link href="/mycountry#government">
+                  <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+                    <Building2 className="h-4 w-4 text-orange-400" />
+                  </div>
+                </Link>
               </TooltipTrigger>
               <TooltipContent>Infrastructure Status</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                  <Gauge className="h-4 w-4 text-indigo-400" />
-                </div>
+                <Link href="/mycountry#analytics">
+                  <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+                    <Gauge className="h-4 w-4 text-indigo-400" />
+                  </div>
+                </Link>
               </TooltipTrigger>
               <TooltipContent>Performance Gauge</TooltipContent>
             </Tooltip>

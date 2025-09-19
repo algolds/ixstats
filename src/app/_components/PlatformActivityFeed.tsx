@@ -525,7 +525,7 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <Link href={createUrl("/thinkpages")} className="hover:underline">
+                          <Link href="/thinkpages" className="hover:underline">
                             <h4 className="font-semibold text-foreground">
                               @{activity.user.countryName || 'Unknown'}
                             </h4>

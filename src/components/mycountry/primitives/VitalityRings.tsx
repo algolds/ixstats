@@ -65,6 +65,8 @@ export function VitalityRings({ data, variant = 'sidebar', collapsed = false }: 
             size={48}
             color={config.color}
             className="flex-shrink-0 group-hover:scale-110 transition-transform duration-300"
+            label={config.label}
+            tooltip={`${config.label}: ${value.toFixed(1)}% performance - ${config.subtitle}`}
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 mb-1">
@@ -88,6 +90,8 @@ export function VitalityRings({ data, variant = 'sidebar', collapsed = false }: 
             size={80}
             color={config.color}
             className="flex-shrink-0"
+            label={config.label}
+            tooltip={`${config.label}: ${value.toFixed(1)}% performance - ${config.subtitle}`}
           />
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
@@ -110,6 +114,8 @@ export function VitalityRings({ data, variant = 'sidebar', collapsed = false }: 
           size={80}
           color={config.color}
           className="flex-shrink-0"
+          label={config.label}
+          tooltip={`${config.label}: ${value.toFixed(1)}% performance - ${config.subtitle}`}
         />
         <div className="space-y-1">
           <div className="flex items-center justify-center gap-2">

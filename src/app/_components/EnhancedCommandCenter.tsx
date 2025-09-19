@@ -16,6 +16,11 @@ import { FeaturedArticle } from "./FeaturedArticle";
 import { MyCountryCard } from "~/app/dashboard/_components/MyCountryCard";
 import { AdminQuickAccess } from "./AdminQuickAccess";
 
+// Dashboard Components - Only the essential ones for MyCountry
+import { ECICard } from "~/app/dashboard/_components/ECICard";
+import { SDICard } from "~/app/dashboard/_components/SDICard";
+import { StrategicOperationsSuite } from "~/app/dashboard/_components/StrategicOperationsSuite";
+
 // UI Components
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -146,11 +151,13 @@ interface SmartDashboardContentProps {
     globalGrowthRate: number;
   };
   activityRingsData?: any;
+  user?: any;
 }
 
-function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, adaptedGlobalStats, activityRingsData }: SmartDashboardContentProps) {
+function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, adaptedGlobalStats, activityRingsData, user }: SmartDashboardContentProps) {
   const [contentMode, setContentMode] = useState<'discover' | 'mycountry' | 'activity' | 'admin'>('discover');
   const [hasUserSelectedTab, setHasUserSelectedTab] = useState(false);
+  const [myCountryTab, setMyCountryTab] = useState<'overview' | 'intelligence' | 'operations'>('overview');
 
   // Auto-select content mode based on user context (only on initial load, not after user selection)
   React.useEffect(() => {
@@ -280,7 +287,7 @@ function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, a
                 </div>
                 
                 <div className="text-center">
-                  <Link href={createUrl("/leaderboards")}>
+                  <Link href="/countries">
                     <Button variant="outline" className="flex items-center gap-2">
                       <Eye className="h-4 w-4" />
                       View Complete Leaderboards
@@ -307,93 +314,188 @@ function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, a
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="space-y-8"
+              className="space-y-6"
             >
-              {/* Dashboard-style Header */}
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-foreground flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-                      <Crown className="h-5 w-5 text-white" />
-                    </div>
-                    MyCountry Command Center
-                  </h2>
-                  <Badge variant="secondary" className="px-3 py-1 text-sm">
-                    {userCountry.name} • {userCountry.calculatedStats?.economicTier}
-                  </Badge>
-                </div>
-                
-                <MyCountryCard
-                  countryData={userCountry ? {
-                    id: userCountry.id,
-                    name: userCountry.name,
-                    currentPopulation: userCountry.calculatedStats?.currentPopulation || 0,
-                    currentGdpPerCapita: userCountry.calculatedStats?.currentGdpPerCapita || 0,
-                    currentTotalGdp: userCountry.calculatedStats?.currentTotalGdp || 0,
-                    economicTier: userCountry.calculatedStats?.economicTier || 'Unknown',
-                    populationTier: userCountry.calculatedStats?.populationTier || 'Medium',
-                    adjustedGdpGrowth: userCountry.calculatedStats?.adjustedGdpGrowth || 0,
-                    populationGrowthRate: userCountry.calculatedStats?.populationGrowthRate || 0,
-                    populationDensity: userCountry.calculatedStats?.populationDensity,
-                    continent: userCountry.continent,
-                    region: userCountry.region,
-                    governmentType: userCountry.governmentType,
-                    religion: userCountry.religion,
-                    leader: userCountry.leader
-                  } : undefined}
-                  activityRingsData={activityRingsData}
-                  expandedCards={new Set()}
-                  setExpandedCards={() => {}}
-                  setActivityPopoverOpen={() => {}}
-                  isRippleActive={false}
-                  isGlobalCardSlid={false}
-                />
+              {/* Command Center Header */}
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-foreground flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                    <Crown className="h-5 w-5 text-white" />
+                  </div>
+                  MyCountry Command Center
+                </h2>
+                <Badge variant="secondary" className="px-3 py-1 text-sm">
+                  {userCountry.name} • {userCountry.calculatedStats?.economicTier}
+                </Badge>
               </div>
 
-              {/* Enhanced Quick Actions */}
-              <div className="space-y-4">
-                <h3 className="text-xl font-bold text-foreground flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                    <Zap className="h-4 w-4 text-white" />
+              {/* MyCountry Sub-Tabs */}
+              <Tabs value={myCountryTab} onValueChange={(value) => setMyCountryTab(value as 'overview' | 'intelligence' | 'operations')} className="w-full">
+                <TabsList className="grid w-full grid-cols-3 bg-muted/50 dark:bg-muted/20">
+                  <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground">
+                    <Home className="h-4 w-4" />
+                    Overview
+                  </TabsTrigger>
+                  <TabsTrigger value="intelligence" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground">
+                    <Star className="h-4 w-4" />
+                    Intelligence
+                  </TabsTrigger>
+                  <TabsTrigger value="operations" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground">
+                    <Target className="h-4 w-4" />
+                    Operations
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* Overview Tab */}
+                <TabsContent value="overview" className="space-y-8 mt-6">
+                  <MyCountryCard
+                    countryData={userCountry ? {
+                      id: userCountry.id,
+                      name: userCountry.name,
+                      currentPopulation: userCountry.calculatedStats?.currentPopulation || 0,
+                      currentGdpPerCapita: userCountry.calculatedStats?.currentGdpPerCapita || 0,
+                      currentTotalGdp: userCountry.calculatedStats?.currentTotalGdp || 0,
+                      economicTier: userCountry.calculatedStats?.economicTier || 'Unknown',
+                      populationTier: userCountry.calculatedStats?.populationTier || 'Medium',
+                      adjustedGdpGrowth: userCountry.calculatedStats?.adjustedGdpGrowth || 0,
+                      populationGrowthRate: userCountry.calculatedStats?.populationGrowthRate || 0,
+                      populationDensity: userCountry.calculatedStats?.populationDensity,
+                      continent: userCountry.continent,
+                      region: userCountry.region,
+                      governmentType: userCountry.governmentType,
+                      religion: userCountry.religion,
+                      leader: userCountry.leader
+                    } : undefined}
+                    activityRingsData={activityRingsData}
+                    expandedCards={new Set()}
+                    setExpandedCards={() => {}}
+                    setActivityPopoverOpen={() => {}}
+                    isRippleActive={false}
+                    isGlobalCardSlid={false}
+                  />
+
+                  {/* Quick Actions */}
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-bold text-foreground flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                        <Zap className="h-4 w-4 text-white" />
+                      </div>
+                      Quick Actions
+                    </h3>
+
+                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-6">
+                      <button
+                        onClick={() => setMyCountryTab('intelligence')}
+                        className="glass-hierarchy-child hover:glass-hierarchy-interactive h-32 rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.02] group cursor-pointer"
+                      >
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Activity className="h-6 w-6 text-white" />
+                        </div>
+                        <span className="font-semibold text-foreground">Intelligence</span>
+                      </button>
+                      <button
+                        onClick={() => setMyCountryTab('operations')}
+                        className="glass-hierarchy-child hover:glass-hierarchy-interactive h-32 rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.02] group cursor-pointer"
+                      >
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Target className="h-6 w-6 text-white" />
+                        </div>
+                        <span className="font-semibold text-foreground">Operations</span>
+                      </button>
+                      <Link href="/mycountry#economy">
+                        <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-32 rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <TrendingUp className="h-6 w-6 text-white" />
+                          </div>
+                          <span className="font-semibold text-foreground">Economics</span>
+                        </div>
+                      </Link>
+                      <Link href="/sdi/diplomatic">
+                        <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-32 rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-violet-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Users className="h-6 w-6 text-white" />
+                          </div>
+                          <span className="font-semibold text-foreground">Diplomacy</span>
+                        </div>
+                      </Link>
+                      <Link href="/countries">
+                        <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-32 rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <BarChart3 className="h-6 w-6 text-white" />
+                          </div>
+                          <span className="font-semibold text-foreground">Rankings</span>
+                        </div>
+                      </Link>
+                    </div>
                   </div>
-                  Quick Actions
-                </h3>
-                
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                  <Link href={createUrl("/mycountry/new")}>
-                    <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-32 rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Activity className="h-6 w-6 text-white" />
-                      </div>
-                      <span className="font-semibold text-foreground">Intelligence</span>
+                </TabsContent>
+
+                {/* Intelligence Tab */}
+                <TabsContent value="intelligence" className="space-y-8 mt-6">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xl font-bold text-foreground flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center">
+                          <Star className="h-4 w-4 text-white" />
+                        </div>
+                        Intelligence Suite
+                      </h3>
+                      <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs px-3 py-1">
+                        Premium
+                      </Badge>
                     </div>
-                  </Link>
-                  <Link href={createUrl("/mycountry/economics")}>
-                    <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-32 rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <TrendingUp className="h-6 w-6 text-white" />
-                      </div>
-                      <span className="font-semibold text-foreground">Economics</span>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      <ECICard
+                        countryData={userCountry ? {
+                          id: userCountry.id,
+                          name: userCountry.name,
+                          currentPopulation: userCountry.calculatedStats?.currentPopulation || 0,
+                          currentGdpPerCapita: userCountry.calculatedStats?.currentGdpPerCapita || 0,
+                          currentTotalGdp: userCountry.calculatedStats?.currentTotalGdp || 0,
+                          economicTier: userCountry.calculatedStats?.economicTier || 'Unknown',
+                          populationTier: userCountry.calculatedStats?.populationTier || 'Medium',
+                          populationDensity: userCountry.calculatedStats?.populationDensity,
+                          landArea: userCountry.landArea
+                        } : undefined}
+                        userProfile={userProfile}
+                        userId={user?.id}
+                        isEciExpanded={false}
+                        toggleEciExpansion={() => {}}
+                        focusedCard={null}
+                        setFocusedCard={() => {}}
+                      />
+
+                      <SDICard
+                        userProfile={userProfile}
+                        isSdiExpanded={false}
+                        toggleSdiExpansion={() => {}}
+                        focusedCard={null}
+                        setFocusedCard={() => {}}
+                      />
                     </div>
-                  </Link>
-                  <Link href={createUrl("/diplomatic")}>
-                    <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-32 rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-violet-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Users className="h-6 w-6 text-white" />
-                      </div>
-                      <span className="font-semibold text-foreground">Diplomacy</span>
+                  </div>
+                </TabsContent>
+
+                {/* Operations Tab */}
+                <TabsContent value="operations" className="space-y-8 mt-6">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xl font-bold text-foreground flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center">
+                          <Target className="h-4 w-4 text-white" />
+                        </div>
+                        Strategic Operations
+                      </h3>
+                      <Badge className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-3 py-1">
+                        Advanced
+                      </Badge>
                     </div>
-                  </Link>
-                  <Link href={createUrl("/dashboard")}>
-                    <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-32 rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Settings className="h-6 w-6 text-white" />
-                      </div>
-                      <span className="font-semibold text-foreground">Settings</span>
-                    </div>
-                  </Link>
-                </div>
-              </div>
+
+                    <StrategicOperationsSuite userProfile={userProfile} />
+                  </div>
+                </TabsContent>
+              </Tabs>
             </motion.div>
           )}
 
@@ -447,6 +549,7 @@ export function EnhancedCommandCenter() {
     { userId: user?.id || '' },
     { enabled: !!user?.id }
   );
+
 
   // Get user's country data
   const { data: userCountry } = api.countries.getByIdAtTime.useQuery(
@@ -573,13 +676,14 @@ export function EnhancedCommandCenter() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2 }}
           >
-            <SmartDashboardContent 
+            <SmartDashboardContent
               userProfile={userProfile}
               userCountry={userCountry}
               isAdmin={isAdmin}
               countries={countries}
               adaptedGlobalStats={adaptedGlobalStats}
               activityRingsData={activityRingsData}
+              user={user}
             />
           </motion.div>
           
