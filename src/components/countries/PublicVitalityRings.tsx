@@ -43,13 +43,22 @@ interface CountryData {
   region?: string | null;
 }
 
+interface ActivityRingsData {
+  economicVitality: number;
+  populationWellbeing: number;
+  diplomaticStanding: number;
+  governmentalEfficiency: number;
+}
+
 interface PublicVitalityRingsProps {
   country: CountryData;
+  activityRingsData?: ActivityRingsData;
   className?: string;
 }
 
 export const PublicVitalityRings: React.FC<PublicVitalityRingsProps> = ({
   country,
+  activityRingsData,
   className
 }) => {
   const [showAllMetrics, setShowAllMetrics] = useState(false);
@@ -172,17 +181,28 @@ export const PublicVitalityRings: React.FC<PublicVitalityRingsProps> = ({
         <div className="mb-6 text-center">
           <div className="flex items-center justify-center mb-3">
             <HealthRing
-              value={(economicHealth + populationGrowth + developmentIndex) / 3}
+              value={activityRingsData ?
+                Math.round((activityRingsData.economicVitality + activityRingsData.populationWellbeing + activityRingsData.diplomaticStanding + activityRingsData.governmentalEfficiency) / 4) :
+                Math.round((economicHealth + populationGrowth + developmentIndex) / 3)
+              }
               size={120}
               color={flagColors.primary}
               label="Overall Vitality"
-              tooltip="Composite score based on economic, demographic, and development metrics"
+              tooltip={activityRingsData ?
+                "Live calculation based on economic vitality, population wellbeing, diplomatic standing, and governmental efficiency" :
+                "Composite score based on economic, demographic, and development metrics"
+              }
             />
           </div>
           <h3 className="text-2xl font-bold mb-1" style={{ color: flagColors.primary }}>
-            {Math.round((economicHealth + populationGrowth + developmentIndex) / 3)}%
+            {activityRingsData ?
+              Math.round((activityRingsData.economicVitality + activityRingsData.populationWellbeing + activityRingsData.diplomaticStanding + activityRingsData.governmentalEfficiency) / 4) :
+              Math.round((economicHealth + populationGrowth + developmentIndex) / 3)
+            }%
           </h3>
-          <p className="text-sm text-muted-foreground">Overall National Vitality</p>
+          <p className="text-sm text-muted-foreground">
+            {activityRingsData ? "National Vitality Index (Live Data)" : "Overall National Vitality"}
+          </p>
         </div>
 
 

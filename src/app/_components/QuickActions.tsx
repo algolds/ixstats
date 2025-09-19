@@ -27,7 +27,7 @@ export function QuickActions({ userProfile, systemPermissions = [] }: QuickActio
       title: 'International Directory',
       description: 'Browse and explore all nations',
       icon: Globe,
-      href: createUrl('/countries'),
+      href: '/countries',
       variant: 'diplomatic' as const,
       available: true
     },
@@ -35,7 +35,7 @@ export function QuickActions({ userProfile, systemPermissions = [] }: QuickActio
       title: 'MyCountry®',
       description: userProfile?.countryId ? 'Manage your nation' : 'Set up your country',
       icon: Crown,
-      href: userProfile?.countryId ? createUrl(`/countries/${userProfile.countryId}`) : createUrl('/setup'),
+      href: userProfile?.countryId ? `/countries/${userProfile.countryId}` : '/mycountry',
       variant: 'economic' as const,
       available: true,
       badge: userProfile?.countryId ? undefined : 'Setup Required'
@@ -44,7 +44,7 @@ export function QuickActions({ userProfile, systemPermissions = [] }: QuickActio
       title: 'Global Analytics',
       description: 'World rankings and statistics',
       icon: BarChart3,
-      href: createUrl('/dashboard'),
+      href: '/',
       variant: 'cultural' as const,
       available: true
     },
@@ -52,7 +52,7 @@ export function QuickActions({ userProfile, systemPermissions = [] }: QuickActio
       title: 'System Administration',
       description: 'Manage system settings and data',
       icon: Settings,
-      href: createUrl('/admin'),
+      href: '/admin',
       variant: 'military' as const,
       available: systemPermissions.includes('admin'),
       badge: 'Admin Only'
@@ -64,28 +64,28 @@ export function QuickActions({ userProfile, systemPermissions = [] }: QuickActio
       title: 'World Map',
       description: 'Geographic visualization',
       icon: Map,
-      href: createUrl('/map'),
+      href: '/countries',
       available: true
     },
     {
       title: 'Diplomacy Hub',
       description: 'International relations',
       icon: MessageSquare,
-      href: createUrl('/diplomacy'),
+      href: '/sdi/diplomatic',
       available: userProfile?.countryId
     },
     {
       title: 'Economic Modeling',
       description: 'Advanced economic tools',
       icon: TrendingUp,
-      href: createUrl('/modeling'),
+      href: '/mycountry#analytics',
       available: systemPermissions.includes('advanced_tools')
     },
     {
       title: 'Player Directory',
       description: 'Connect with other players',
       icon: Users,
-      href: createUrl('/players'),
+      href: '/countries',
       available: true
     }
   ];

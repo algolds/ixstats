@@ -250,7 +250,7 @@ export function AdminQuickAccess() {
             <p className="text-muted-foreground mb-6">
               Add your frequently used admin panels to favorites for quick access.
             </p>
-            <Link href={createUrl("/admin")}>
+            <Link href="/admin">
               <Button className="flex items-center gap-2">
                 <Shield className="h-4 w-4" />
                 Browse Admin Panels

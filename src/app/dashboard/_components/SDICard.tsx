@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import { 
   Eye, Shield, AlertTriangle, Target, Brain, Settings, ChevronUp, ChevronDown
 } from "lucide-react";
@@ -109,49 +110,61 @@ export function SDICard({
           <div className="mt-4 flex flex-wrap gap-2 justify-center">
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                  <Shield className="h-4 w-4 text-red-400" />
-                </div>
+                <Link href="/mycountry#government">
+                  <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+                    <Shield className="h-4 w-4 text-red-400" />
+                  </div>
+                </Link>
               </TooltipTrigger>
               <TooltipContent>Security Monitoring</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                  <AlertTriangle className="h-4 w-4 text-orange-400" />
-                </div>
+                <Link href="/mycountry#analytics">
+                  <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+                    <AlertTriangle className="h-4 w-4 text-orange-400" />
+                  </div>
+                </Link>
               </TooltipTrigger>
               <TooltipContent>Threat Analysis</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                  <Eye className="h-4 w-4 text-blue-400" />
-                </div>
+                <Link href="/mycountry#intelligence">
+                  <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+                    <Eye className="h-4 w-4 text-blue-400" />
+                  </div>
+                </Link>
               </TooltipTrigger>
               <TooltipContent>Intelligence Reports</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                  <Target className="h-4 w-4 text-purple-400" />
-                </div>
+                <Link href="/mycountry#analytics">
+                  <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+                    <Target className="h-4 w-4 text-purple-400" />
+                  </div>
+                </Link>
               </TooltipTrigger>
               <TooltipContent>Crisis Management</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                  <Brain className="h-4 w-4 text-green-400" />
-                </div>
+                <Link href="/mycountry#government">
+                  <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+                    <Brain className="h-4 w-4 text-green-400" />
+                  </div>
+                </Link>
               </TooltipTrigger>
               <TooltipContent>Strategic Planning</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
-                  <Settings className="h-4 w-4 text-gray-400" />
-                </div>
+                <Link href="/mycountry#government">
+                  <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+                    <Settings className="h-4 w-4 text-gray-400" />
+                  </div>
+                </Link>
               </TooltipTrigger>
               <TooltipContent>Defense Systems</TooltipContent>
             </Tooltip>

@@ -260,23 +260,24 @@ export function EnhancedMyCountryContent({ variant = 'unified', title }: Enhance
   }
 
   const vitalityData = activityRingsData || {
-    economicVitality: 75,
-    populationWellbeing: 68,
-    diplomaticStanding: 82,
-    governmentalEfficiency: existingComponents ? 
-      existingComponents.reduce((sum, c) => sum + c.effectivenessScore, 0) / existingComponents.length : 71
+    economicVitality: 0,
+    populationWellbeing: 0,
+    diplomaticStanding: 0,
+    governmentalEfficiency: 0
   };
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">
       {/* Unified Header */}
-      <CountryHeader
-        countryName={country.name}
-        countryId={country.id}
-        economicTier={country.economicTier}
-        populationTier={country.populationTier}
-        variant={variant}
-      />
+      <div id="overview">
+        <CountryHeader
+          countryName={country.name}
+          countryId={country.id}
+          economicTier={country.economicTier}
+          populationTier={country.populationTier}
+          variant={variant}
+        />
+      </div>
 
       {/* Crisis Status Banner */}
       <CrisisStatusBanner countryId={country.id} />
@@ -306,7 +307,7 @@ export function EnhancedMyCountryContent({ variant = 'unified', title }: Enhance
         
         {/* Left Sidebar - National Vitality Index */}
         {variant === 'unified' && (
-          <div className="xl:col-span-1">
+          <div className="xl:col-span-1" id="vitality">
             <Card className="overflow-hidden glass-hierarchy-parent border-indigo-200 dark:border-indigo-700/40 dark:shadow-indigo-900/10 sticky top-6">
               {/* Flag Background with Subtle Depth */}
               <div className="absolute inset-0">
@@ -400,7 +401,8 @@ export function EnhancedMyCountryContent({ variant = 'unified', title }: Enhance
 
           {/* Enhanced Government Management Section - Only for premium/unified */}
           {(variant === 'premium' || variant === 'unified') && (
-            <Card className="mb-6 glass-hierarchy-parent border-amber-200 dark:border-amber-700/40">
+            <div id="government">
+              <Card className="mb-6 glass-hierarchy-parent border-amber-200 dark:border-amber-700/40">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -495,10 +497,13 @@ export function EnhancedMyCountryContent({ variant = 'unified', title }: Enhance
                 </Tabs>
               </CardContent>
             </Card>
+            </div>
           )}
 
           {/* Tab System */}
-          <MyCountryTabSystem variant={variant} />
+          <div id="tabs">
+            <MyCountryTabSystem variant={variant} />
+          </div>
         </div>
       </div>
     </div>
