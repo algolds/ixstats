@@ -99,7 +99,7 @@ export default function TestFavoritesPage() {
                         <Icon className="h-8 w-8 text-purple-500" />
                         <AdminFavoriteButton
                           {...panel}
-                          size="md"
+                          size="lg"
                           variant="ghost"
                         />
                       </div>
