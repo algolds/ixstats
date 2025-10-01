@@ -223,7 +223,7 @@ export default function GlobalOverview() {
 
   const { user } = useUser();
   const { data: userProfile } = api.users.getProfile.useQuery(
-    { userId: user?.id || 'placeholder-disabled' },
+    undefined,
     { enabled: !!user?.id }
   );
   const userCountryId = userProfile?.countryId;
@@ -654,7 +654,7 @@ export default function GlobalOverview() {
             <NationCard
               key={nation.id}
               nation={nation}
-              flagUrl={flagUrls[nation.name] || null}
+              flagUrl={flagUrls[nation.name] ?? null}
               highlightCountryId={highlightCountryId}
               userCountryId={userCountryId}
               router={router}

@@ -45,7 +45,7 @@ export function LiveDataIntegration({
 
   // Get user profile for country context
   const { data: userProfile } = api.users.getProfile.useQuery(
-    { userId: user?.id || 'placeholder-disabled' },
+    undefined,
     { enabled: !!user?.id }
   );
   
