@@ -139,7 +139,7 @@ export class EnhancedEconomicService {
         grouped: grouped || this.createEmptyGroupedAnalysis(),
         metadata: {
           analysisTimestamp: new Date().toISOString(),
-          ixTimeEpoch: (IxTime.getCurrentIxTime() as any).epoch,
+          ixTimeEpoch: IxTime.getCurrentIxTime(),
           version: '1.0.0',
           processingTimeMs: Date.now() - startTime
         }
@@ -153,7 +153,7 @@ export class EnhancedEconomicService {
       return result;
     } catch (error) {
       console.error('Enhanced economic analysis failed:', error);
-      throw new Error(`Economic analysis failed: ${error.message}`);
+      throw new Error(`Economic analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -248,8 +248,8 @@ export class EnhancedEconomicService {
         {
           area: 'economic',
           overallScore: comprehensive.resilience.overallScore,
-          status: health.status.toLowerCase() as any,
-          trend: health.trend.toLowerCase() as any,
+          status: health.status.toLowerCase() as 'excellent' | 'good' | 'fair' | 'concerning' | 'critical',
+          trend: health.trend.toLowerCase() as 'improving' | 'stable' | 'declining',
           metrics: [
             {
               id: 'resilience',
@@ -319,7 +319,7 @@ export class EnhancedEconomicService {
       strengths: [],
       challenges: [],
       priorityActions: []
-    } as any;
+    };
   }
 }
 

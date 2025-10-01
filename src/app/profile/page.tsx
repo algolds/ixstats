@@ -64,13 +64,13 @@ function ProfileContent() {
 
   // Get user profile
   const { data: userProfile, isLoading: profileLoading, refetch: refetchProfile } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id }
   );
 
   // Get Thinkpages account
   const { data: thinkpagesAccount, isLoading: thinkpagesAccountLoading, refetch: refetchThinkpagesAccount } = api.thinkpages.getThinkpagesAccountByUserId.useQuery(
-    { clerkUserId: user?.id || '' },
+    { clerkUserId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id }
   );
 

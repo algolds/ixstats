@@ -2,13 +2,13 @@
 // Sovereign Digital Interface tRPC Router
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "../trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure, premiumProcedure } from "../trpc";
 import type { IntelligenceItem, CrisisEvent, DiplomaticRelation, Treaty, EconomicIndicator } from "~/types/sdi";
 import { generateAndPostCrisisEvent } from "~/lib/auto-post-service";
 
 export const sdiRouter = createTRPCRouter({
   // Intelligence Feed
-  getIntelligenceFeed: publicProcedure
+  getIntelligenceFeed: premiumProcedure
     .input(z.object({
       category: z.enum(['all', 'economic', 'crisis', 'diplomatic', 'security', 'technology', 'environment']).optional(),
       priority: z.enum(['all', 'low', 'medium', 'high', 'critical']).optional(),
@@ -58,7 +58,7 @@ export const sdiRouter = createTRPCRouter({
     }),
 
   // Crisis Management
-  getActiveCrises: publicProcedure.query(async ({ ctx }) => {
+  getActiveCrises: premiumProcedure.query(async ({ ctx }) => {
     const crises = await ctx.db.crisisEvent.findMany({
       orderBy: { timestamp: 'desc' },
     });
@@ -79,7 +79,7 @@ export const sdiRouter = createTRPCRouter({
     }));
   }),
 
-  getCrisisEvents: publicProcedure.query(async ({ ctx }) => {
+  getCrisisEvents: premiumProcedure.query(async ({ ctx }) => {
     const crises = await ctx.db.crisisEvent.findMany({
       orderBy: { timestamp: 'desc' },
       take: 50

@@ -152,7 +152,7 @@ const DashboardRefactoredModular = React.memo(function DashboardRefactoredModula
 
   // Data fetching
   const { data: userProfile } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id }
   );
 

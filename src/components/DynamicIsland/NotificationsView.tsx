@@ -50,8 +50,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
   } = api.notifications.getUserNotifications.useQuery({
     limit: 5,
     unreadOnly: false,
-    userId: user?.id,
-  }, { 
+  }, {
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,

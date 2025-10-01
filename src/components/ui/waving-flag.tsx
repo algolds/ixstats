@@ -45,7 +45,7 @@ export const WavingFlag: React.FC<WavingFlagProps> = ({
       y: 0,
       transition: {
         duration: 1.2,
-        ease: [0.25, 0.1, 0.25, 1] // Apple's preferred cubic bezier
+        ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number] // Apple's preferred cubic bezier
       }
     },
     ripple: {
@@ -59,7 +59,7 @@ export const WavingFlag: React.FC<WavingFlagProps> = ({
       y: [0, -rippleStrength * 0.4, rippleStrength * 0.6, -rippleStrength * 0.2, 0],
       transition: {
         duration: duration,
-        ease: [0.25, 0.1, 0.25, 1], // Apple's signature easing
+        ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number], // Apple's signature easing
         times: [0, 0.25, 0.55, 0.8, 1] // More refined timing
       }
     }
@@ -112,13 +112,13 @@ export const WavingFlag: React.FC<WavingFlagProps> = ({
                     'transparent'
                   ]
                 }}
-                exit={{ 
+                exit={{
                   opacity: 0,
-                  transition: { duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }
+                  transition: { duration: 0.8, ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number] }
                 }}
-                transition={{ 
+                transition={{
                   duration: duration,
-                  ease: [0.25, 0.1, 0.25, 1],
+                  ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
                   times: [0, 0.3, 0.6, 0.85, 1]
                 }}
               />
@@ -141,13 +141,13 @@ export const WavingFlag: React.FC<WavingFlagProps> = ({
                     'transparent'
                   ]
                 }}
-                exit={{ 
+                exit={{
                   opacity: 0,
-                  transition: { duration: 1.0, ease: [0.25, 0.1, 0.25, 1] }
+                  transition: { duration: 1.0, ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number] }
                 }}
-                transition={{ 
+                transition={{
                   duration: duration * 1.2,
-                  ease: [0.25, 0.1, 0.25, 1],
+                  ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
                   times: [0, 0.2, 0.5, 0.75, 1]
                 }}
               />
@@ -191,7 +191,7 @@ export const WavingFlag: React.FC<WavingFlagProps> = ({
         }}
         transition={{
           duration: isHovered ? duration : 1.2,
-          ease: [0.25, 0.1, 0.25, 1]
+          ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number]
         }}
       />
     </div>

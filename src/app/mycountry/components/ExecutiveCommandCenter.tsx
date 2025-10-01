@@ -308,7 +308,7 @@ export function ExecutiveCommandCenter({
   
   // Get live quick actions from API
   const { data: quickActions, refetch: refetchActions } = api.eci.getQuickActions.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id }
   );
   

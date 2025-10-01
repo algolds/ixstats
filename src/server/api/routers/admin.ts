@@ -962,4 +962,71 @@ export const adminRouter = createTRPCRouter({
       await ctx.db.user.updateMany({ where: { clerkUserId: input.userId, countryId: input.countryId }, data: { countryId: null } });
       return { success: true };
     }),
+
+  // Get navigation settings (wiki/cards/labs visibility)
+  getNavigationSettings: publicProcedure
+    .query(async ({ ctx }) => {
+      try {
+        const settings = await ctx.db.systemConfig.findMany({
+          where: {
+            key: {
+              in: ['showWikiTab', 'showCardsTab', 'showLabsTab']
+            }
+          }
+        });
+
+        const settingsMap = settings.reduce((acc, setting) => {
+          acc[setting.key] = setting.value === 'true';
+          return acc;
+        }, {} as Record<string, boolean>);
+
+        return {
+          showWikiTab: settingsMap.showWikiTab ?? true, // Default to true
+          showCardsTab: settingsMap.showCardsTab ?? true, // Default to true
+          showLabsTab: settingsMap.showLabsTab ?? true, // Default to true
+        };
+      } catch (error) {
+        console.error("Failed to get navigation settings:", error);
+        // Return defaults on error
+        return {
+          showWikiTab: true,
+          showCardsTab: true,
+          showLabsTab: true,
+        };
+      }
+    }),
+
+  // Update navigation settings (wiki/cards/labs visibility)
+  updateNavigationSettings: adminProcedure
+    .input(z.object({
+      showWikiTab: z.boolean(),
+      showCardsTab: z.boolean(),
+      showLabsTab: z.boolean(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const configUpdates = [
+          { key: 'showWikiTab', value: input.showWikiTab.toString() },
+          { key: 'showCardsTab', value: input.showCardsTab.toString() },
+          { key: 'showLabsTab', value: input.showLabsTab.toString() },
+        ];
+
+        for (const config of configUpdates) {
+          await ctx.db.systemConfig.upsert({
+            where: { key: config.key },
+            update: { value: config.value, updatedAt: new Date() },
+            create: {
+              key: config.key,
+              value: config.value,
+              description: `Navigation tab visibility setting for ${config.key}`,
+            },
+          });
+        }
+
+        return { success: true, message: "Navigation settings updated successfully" };
+      } catch (error) {
+        console.error("Failed to update navigation settings:", error);
+        throw new Error("Failed to update navigation settings");
+      }
+    }),
 });

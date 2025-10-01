@@ -17,18 +17,38 @@ export function getSafeUserId(user: { id?: string } | null | undefined): string 
  */
 export function createUserProfileQueryParams(user: { id?: string } | null | undefined) {
   const userId = getSafeUserId(user);
-  
-  // Only return valid input when userId exists
-  // This prevents sending empty strings to tRPC procedures that reject them
+
+  // When no userId is available, we need to provide a valid input that won't be used
+  // since enabled is false, but tRPC still validates the input schema
   if (!userId) {
     return {
-      input: undefined as any, // This will prevent the query from running
+      input: { userId: 'placeholder-disabled' }, // Valid string that won't be used
       enabled: false
     };
   }
-  
+
   return {
     input: { userId },
     enabled: true
+  };
+}
+
+/**
+ * Creates safe query options for users.getProfile - simpler version for direct use
+ * Returns the object directly usable in useQuery calls
+ */
+export function createSafeUserProfileQuery(user: { id?: string } | null | undefined) {
+  const userId = getSafeUserId(user);
+
+  if (!userId) {
+    return {
+      input: { userId: 'placeholder-disabled' },
+      options: { enabled: false }
+    };
+  }
+
+  return {
+    input: { userId },
+    options: { enabled: true }
   };
 }

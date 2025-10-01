@@ -159,12 +159,12 @@ export function convertGovernmentStructureToSpending(
     ? governmentData.structure.totalBudget 
     : governmentData.totalBudget;
     
-  const departments = 'departments' in governmentData && Array.isArray(governmentData.departments)
-    ? governmentData.departments 
+  const departments = ('departments' in governmentData && Array.isArray(governmentData.departments))
+    ? governmentData.departments
     : [];
     
-  const budgetAllocations = 'budgetAllocations' in governmentData && Array.isArray(governmentData.budgetAllocations)
-    ? governmentData.budgetAllocations 
+  const budgetAllocations = ('budgetAllocations' in governmentData && Array.isArray(governmentData.budgetAllocations))
+    ? governmentData.budgetAllocations
     : [];
 
   // Group departments by spending category
@@ -281,7 +281,7 @@ export function createHybridSpendingData(
   totalPopulation: number
 ): GovernmentSpendingData {
   if (shouldUseGovernmentStructureData(governmentData)) {
-    return convertGovernmentStructureToSpending(governmentData!, nominalGDP, totalPopulation);
+    return convertGovernmentStructureToSpending(governmentData, nominalGDP, totalPopulation);
   }
   
   return currentSpendingData;

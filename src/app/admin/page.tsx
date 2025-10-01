@@ -5,7 +5,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback } from "react";
-import { 
+import {
   StatusCards,
   BotStatusBanner,
   BotControlPanel,
@@ -21,6 +21,7 @@ import {
   NotificationsAdmin,
   UserManagement,
 } from "./_components";
+import { NavigationSettings } from "./_components/NavigationSettings";
 import { AdminDashboardSafe } from "./_components/AdminDashboardSafe";
 // Complex components loaded on-demand to prevent API errors
 import { SystemOverview } from "./_components/SystemOverview";
@@ -592,7 +593,8 @@ export default function AdminPage() {
                       { value: "system", icon: <Monitor className="h-5 w-5" />, label: "System Monitor" },
                       { value: "formulas", icon: <Code className="h-5 w-5" />, label: "Formula Editor" },
                       { value: "dm-controls", icon: <Gamepad2 className="h-5 w-5" />, label: "DM Controls" },
-                      { value: "time", icon: <Clock className="h-5 w-5" />, label: "Time Controls" }
+                      { value: "time", icon: <Clock className="h-5 w-5" />, label: "Time Controls" },
+                      { value: "navigation", icon: <Settings className="h-5 w-5" />, label: "Navigation Settings" }
                     ].map((item) => (
                       <button
                         key={item.value}
@@ -1097,6 +1099,11 @@ export default function AdminPage() {
                 <EnhancedCard variant="glass" className="mb-8">
                   <UserManagement />
                 </EnhancedCard>
+              )}
+              {selectedSection === "navigation" && (
+                <div className="mb-8">
+                  <NavigationSettings />
+                </div>
               )}
             </div>
           </main>

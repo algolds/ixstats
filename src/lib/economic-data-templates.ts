@@ -19,9 +19,9 @@ export interface CountryProfile {
   gdpPerCapita: number;
   totalGdp: number;
   economicTier: string;
-  landArea?: number | null;
-  continent?: string | null;
-  region?: string | null;
+  landArea?: number;
+  continent?: string;
+  region?: string;
 }
 
 /**

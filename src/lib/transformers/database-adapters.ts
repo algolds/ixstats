@@ -75,7 +75,7 @@ export const typescriptToPrisma = {
 };
 
 // Enhanced database entity adapter with enum conversion
-export const adaptDatabaseEntityWithEnums = <T>(dbEntity: any): T => {
+export const adaptDatabaseEntityWithEnums = <T>(dbEntity: Record<string, unknown>): T => {
   const adapted = { ...dbEntity };
 
   // Convert Prisma enums to TypeScript union types

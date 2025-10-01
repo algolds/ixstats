@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, premiumProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { triggerNotification } from "./sdi";
 import { PolicyEffectService } from "~/services/PolicyEffectService";
@@ -59,7 +59,7 @@ const strategicPlanSchema = z.object({
 
 export const eciRouter = createTRPCRouter({
   // Cabinet Meeting Management
-  createCabinetMeeting: publicProcedure
+  createCabinetMeeting: premiumProcedure
     .input(cabinetMeetingSchema)
     .mutation(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
@@ -98,7 +98,7 @@ export const eciRouter = createTRPCRouter({
       return result;
     }),
 
-  getCabinetMeetings: publicProcedure
+  getCabinetMeetings: premiumProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
@@ -124,7 +124,7 @@ export const eciRouter = createTRPCRouter({
     }),
 
   // Economic Policy Management
-  createEconomicPolicy: publicProcedure
+  createEconomicPolicy: premiumProcedure
     .input(economicPolicySchema)
     .mutation(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
@@ -202,7 +202,7 @@ export const eciRouter = createTRPCRouter({
       return result;
     }),
 
-  getEconomicPolicies: publicProcedure
+  getEconomicPolicies: premiumProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
@@ -228,7 +228,7 @@ export const eciRouter = createTRPCRouter({
     }),
 
   // National Security Management
-  createSecurityThreat: publicProcedure
+  createSecurityThreat: premiumProcedure
     .input(securityThreatSchema)
     .mutation(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
@@ -266,7 +266,7 @@ export const eciRouter = createTRPCRouter({
       return result;
     }),
 
-  getSecurityThreats: publicProcedure
+  getSecurityThreats: premiumProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
@@ -291,7 +291,7 @@ export const eciRouter = createTRPCRouter({
       }));
     }),
 
-  getSecurityDashboard: publicProcedure
+  getSecurityDashboard: premiumProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
@@ -334,7 +334,7 @@ export const eciRouter = createTRPCRouter({
     }),
 
   // Strategic Planning Management
-  createStrategicPlan: publicProcedure
+  createStrategicPlan: premiumProcedure
     .input(strategicPlanSchema)
     .mutation(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
@@ -363,7 +363,7 @@ export const eciRouter = createTRPCRouter({
       });
     }),
 
-  getStrategicPlans: publicProcedure
+  getStrategicPlans: premiumProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
@@ -389,7 +389,7 @@ export const eciRouter = createTRPCRouter({
     }),
 
   // Advanced Analytics
-  getAdvancedAnalytics: publicProcedure
+  getAdvancedAnalytics: premiumProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
@@ -426,7 +426,7 @@ export const eciRouter = createTRPCRouter({
     }),
 
   // AI Advisor
-  getAIRecommendations: publicProcedure
+  getAIRecommendations: premiumProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
@@ -456,7 +456,7 @@ export const eciRouter = createTRPCRouter({
     }),
 
   // Predictive Models
-  getPredictiveModels: publicProcedure
+  getPredictiveModels: premiumProcedure
     .input(z.object({
       userId: z.string(),
       timeframe: z.enum(['6_months', '1_year', '2_years', '5_years']).default('1_year'),
@@ -492,7 +492,7 @@ export const eciRouter = createTRPCRouter({
     }),
 
   // Real-time Metrics (to replace hardcoded values)
-  getRealTimeMetrics: publicProcedure
+  getRealTimeMetrics: premiumProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
@@ -515,7 +515,7 @@ export const eciRouter = createTRPCRouter({
     }),
 
   // Policy Implementation - Apply real economic effects
-  implementEconomicPolicy: publicProcedure
+  implementEconomicPolicy: premiumProcedure
     .input(z.object({
       userId: z.string(),
       policyId: z.string(),
@@ -603,7 +603,7 @@ export const eciRouter = createTRPCRouter({
     }),
 
   // Quick Actions for Executive Command Center
-  getQuickActions: publicProcedure
+  getQuickActions: premiumProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
@@ -620,7 +620,7 @@ export const eciRouter = createTRPCRouter({
     }),
 
   // Execute Quick Action
-  executeQuickAction: publicProcedure
+  executeQuickAction: premiumProcedure
     .input(z.object({
       userId: z.string(),
       actionType: z.string(),
@@ -654,7 +654,7 @@ export const eciRouter = createTRPCRouter({
     }),
 
   // Apply policy effects to country economics
-  applyPolicyEffects: publicProcedure
+  applyPolicyEffects: premiumProcedure
     .input(z.object({ userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
@@ -685,8 +685,8 @@ export const eciRouter = createTRPCRouter({
     }),
 
   // Get policy effectiveness analysis
-  getPolicyEffectiveness: publicProcedure
-    .input(z.object({ 
+  getPolicyEffectiveness: premiumProcedure
+    .input(z.object({
       userId: z.string(),
       category: z.string()
     }))

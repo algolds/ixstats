@@ -69,7 +69,7 @@ export function CabinetMeetingModal({
 
   // Get existing meetings for context
   const { data: meetings, isLoading: meetingsLoading, refetch } = api.eci.getCabinetMeetings.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id && open }
   );
 
@@ -157,7 +157,7 @@ export function CabinetMeetingModal({
     scheduledDateTime.setHours(hours!, minutes);
 
     createMeeting.mutate({
-      userId: user?.id || '',
+      userId: user?.id || 'placeholder-disabled',
       title: formData.title,
       description: formData.description,
       scheduledDate: scheduledDateTime,

@@ -90,7 +90,7 @@ export default function EnhancedPublicCountryPage({ params }: EnhancedPublicCoun
   );
   const { data: systemStatus } = api.admin.getSystemStatus.useQuery();
   const { data: userProfile } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
+    undefined,
     { enabled: !!user?.id }
   );
   

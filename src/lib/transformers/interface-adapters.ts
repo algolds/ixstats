@@ -22,7 +22,7 @@ const URGENCY_TO_IMPACT: Record<string, StandardPriority> = {
 };
 
 // Transform legacy ExecutiveAction to unified ExecutiveAction first, then to QuickAction
-export const adaptLegacyExecutiveAction = (legacyAction: any): ExecutiveAction => ({
+export const adaptLegacyExecutiveAction = (legacyAction: Record<string, unknown>): ExecutiveAction => ({
   id: legacyAction.id,
   type: 'executive',
   title: legacyAction.title,
@@ -41,7 +41,7 @@ export const adaptLegacyExecutiveAction = (legacyAction: any): ExecutiveAction =
 });
 
 // Transform ExecutiveAction to QuickAction (fixes major type error)
-export const adaptExecutiveToQuick = (action: any): QuickAction => {
+export const adaptExecutiveToQuick = (action: Record<string, unknown>): QuickAction => {
   // First convert legacy format to unified format if needed
   const unifiedAction = action.type ? action : adaptLegacyExecutiveAction(action);
   
@@ -78,7 +78,7 @@ const calculateEstimatedTime = (action: ExecutiveAction): string => {
 };
 
 // Transform legacy IntelligenceItem variants to unified format with backward compatibility
-export const unifyIntelligenceItem = (item: any): IntelligenceItem & { 
+export const unifyIntelligenceItem = (item: Record<string, unknown>): IntelligenceItem & { 
   // Backward compatibility properties
   priority?: string;
   content?: string;
@@ -103,11 +103,11 @@ export const unifyIntelligenceItem = (item: any): IntelligenceItem & {
   // Backward compatibility mappings
   priority: normalizePriority(item.severity || item.priority || item.urgency),
   content: item.description || item.message || item.content,
-  relatedCountries: item.affectedRegions || (item.affectedCountries ? item.affectedCountries.split(',') : [])
+  relatedCountries: item.affectedRegions || (typeof item.affectedCountries === 'string' ? item.affectedCountries.split(',') : [])
 });
 
 // Normalize timestamp to Unix timestamp
-const normalizeTimestamp = (timestamp: any): number => {
+const normalizeTimestamp = (timestamp: unknown): number => {
   if (typeof timestamp === 'number') return timestamp;
   if (timestamp instanceof Date) return timestamp.getTime();
   if (typeof timestamp === 'string') return new Date(timestamp).getTime();
@@ -115,7 +115,7 @@ const normalizeTimestamp = (timestamp: any): number => {
 };
 
 // Normalize category to StandardCategory
-const normalizeCategory = (category: any): StandardCategory => {
+const normalizeCategory = (category: unknown): StandardCategory => {
   const normalized = String(category).toLowerCase();
   if (['economic', 'economy'].includes(normalized)) return 'economic';
   if (['diplomatic', 'diplomacy', 'foreign'].includes(normalized)) return 'diplomatic';  
@@ -127,7 +127,7 @@ const normalizeCategory = (category: any): StandardCategory => {
 };
 
 // Normalize priority/severity to StandardPriority
-const normalizePriority = (priority: any): StandardPriority => {
+const normalizePriority = (priority: unknown): StandardPriority => {
   const normalized = String(priority).toLowerCase();
   if (['critical', 'urgent'].includes(normalized)) return 'critical';
   if (['high', 'important'].includes(normalized)) return 'high';
@@ -136,27 +136,27 @@ const normalizePriority = (priority: any): StandardPriority => {
 };
 
 // Unify metric interface
-const unifyMetric = (metric: any): IntelligenceMetric => ({
-  id: metric.id || `metric-${Date.now()}-${Math.random()}`,
-  label: metric.label,
-  value: metric.value,
-  unit: metric.unit,
-  trend: metric.trend || 'stable',
-  changeValue: metric.changeValue || 0,
-  changePercent: metric.changePercent || 0, 
-  changePeriod: metric.changePeriod || 'current',
-  status: metric.status || 'good',
-  rank: metric.rank,
-  target: metric.target,
+const unifyMetric = (metric: Record<string, unknown>): IntelligenceMetric => ({
+  id: (metric.id as string) || `metric-${Date.now()}-${Math.random()}`,
+  label: String(metric.label || ''),
+  value: Number(metric.value || 0),
+  unit: metric.unit as string | undefined,
+  trend: (metric.trend as StandardTrend) || 'stable',
+  changeValue: Number(metric.changeValue || 0),
+  changePercent: Number(metric.changePercent || 0),
+  changePeriod: String(metric.changePeriod || 'current'),
+  status: (metric.status as 'critical' | 'concerning' | 'good' | 'excellent') || 'good',
+  rank: metric.rank as { global: number; regional: number; total: number } | undefined,
+  target: metric.target as { value: number; achieved: boolean; timeToTarget?: string } | undefined,
   createdAt: normalizeTimestamp(metric.createdAt),
   updatedAt: metric.updatedAt ? normalizeTimestamp(metric.updatedAt) : undefined
 });
 
 // Transform database entities to interface types (for Prisma → TypeScript)
-export const adaptDatabaseToInterface = <T>(dbEntity: any): T => {
+export const adaptDatabaseToInterface = <T>(dbEntity: Record<string, unknown>): T => {
   // Use the new enum-aware adapter
   const { adaptDatabaseEntityWithEnums } = require('./database-adapters');
-  return adaptDatabaseEntityWithEnums<T>({
+  return adaptDatabaseEntityWithEnums({
     ...dbEntity,
     // Handle specific field mappings
     flag: dbEntity.flag || undefined,
@@ -187,7 +187,7 @@ export const normalizeToISOString = (timestamp: any): string => {
 };
 
 // Enhanced country data transformer for social profile compatibility
-export const adaptCountryForSocialProfile = (country: any): any => ({
+export const adaptCountryForSocialProfile = (country: Record<string, unknown>): Record<string, unknown> => ({
   ...country,
   lastCalculated: normalizeToISOString(country.lastCalculated),
   baselineDate: normalizeToISOString(country.baselineDate || country.createdAt),

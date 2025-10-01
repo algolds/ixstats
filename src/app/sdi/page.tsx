@@ -56,7 +56,7 @@ function SdiContent() {
 
   // Get user profile to check country assignment
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id }
   );
 

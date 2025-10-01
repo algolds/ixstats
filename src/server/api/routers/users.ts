@@ -2,11 +2,11 @@
 // Simplified users router with profile management and country linking
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { getDefaultEconomicConfig } from "~/lib/config-service";
 import { IxStatsCalculator } from "~/lib/calculations";
-import type { 
+import type {
   Country,
   CountryStats,
   BaseCountryData
@@ -15,8 +15,64 @@ import type {
 // Temporary storage for user-country mappings until we fix the User model
 
 export const usersRouter = createTRPCRouter({
-  // Get user profile with linked country
+  // Get current user's profile using auth context (no input required)
   getProfile: publicProcedure
+    .query(async ({ ctx }) => {
+      try {
+        // Check if user is authenticated
+        if (!ctx.auth?.userId) {
+          return {
+            userId: null,
+            countryId: null,
+            country: null,
+            hasCompletedSetup: false,
+          };
+        }
+
+        const userId = ctx.auth.userId;
+
+        // Get user from DB
+        const user = await ctx.db.user.findUnique({
+          where: { clerkUserId: userId },
+          include: { country: true },
+        });
+        if (!user || !user.countryId) {
+          return {
+            userId: userId,
+            countryId: null,
+            country: null,
+            hasCompletedSetup: false,
+          };
+        }
+        // Get country details
+        const country = await ctx.db.country.findUnique({
+          where: { id: user.countryId },
+          include: {
+            dmInputs: {
+              where: { isActive: true },
+              orderBy: { ixTimeTimestamp: "desc" },
+            },
+          },
+        });
+        return {
+          userId: userId,
+          countryId: country?.id || null,
+          country: country,
+          hasCompletedSetup: !!country,
+        };
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+        return {
+          userId: null,
+          countryId: null,
+          country: null,
+          hasCompletedSetup: false,
+        };
+      }
+    }),
+
+  // Get user profile by ID (for admin use)
+  getProfileById: publicProcedure
     .input(
       z.object({
         userId: z.string().min(1, "User ID cannot be empty"),
@@ -367,7 +423,7 @@ export const usersRouter = createTRPCRouter({
         userId: z.string(),
         settings: z.object({
           displayName: z.string().optional(),
-          preferences: z.record(z.string(), z.any()).optional(),
+          preferences: z.record(z.string(), z.unknown()).optional(),
         }),
       })
     )
@@ -517,7 +573,7 @@ export const usersRouter = createTRPCRouter({
   getCurrentUserWithRole: publicProcedure
     .query(async ({ ctx }) => {
       try {
-        const { userId } = ctx.auth as any;
+        const { userId } = ctx.auth as { userId?: string };
         
         if (!userId) {
           return { user: null };
@@ -572,8 +628,12 @@ export const usersRouter = createTRPCRouter({
     .mutation(async ({ ctx }) => {
       try {
         // Check if auth context exists
-        if (!ctx.auth || !ctx.auth.userId) {
-          throw new Error("Not authenticated - no auth context");
+        if (!ctx.auth?.userId) {
+          return {
+            user: null,
+            created: false,
+            error: "Not authenticated - no auth context"
+          };
         }
 
         const userId = ctx.auth.userId;
@@ -670,7 +730,11 @@ export const usersRouter = createTRPCRouter({
         return { user: newUser, created: true };
       } catch (error) {
         console.error("Error creating user record:", error);
-        throw new Error(`Failed to create user record: ${error.message}`);
+        return {
+          user: null,
+          created: false,
+          error: `Failed to create user record: ${error instanceof Error ? error.message : 'Unknown error'}`
+        };
       }
     }),
 
@@ -761,7 +825,7 @@ export const usersRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("Error setting up database:", error);
-        throw new Error(`Failed to setup database: ${error.message}`);
+        throw new Error(`Failed to setup database: ${error instanceof Error ? error.message : String(error)}`);
       }
     }),
 
@@ -982,4 +1046,82 @@ export const usersRouter = createTRPCRouter({
         return { user: null };
       }
     }),
-}); 
+
+  // Get user's membership status
+  getMembershipStatus: publicProcedure
+    .query(async ({ ctx }) => {
+      try {
+        // Check if user is authenticated
+        if (!ctx.auth?.userId) {
+          return {
+            tier: 'basic' as const,
+            isPremium: false,
+            features: {
+              sdi: false,
+              eci: false,
+              intelligence: false,
+              advancedAnalytics: false,
+            },
+          };
+        }
+
+        const user = await ctx.db.user.findUnique({
+          where: { clerkUserId: ctx.auth.userId },
+          select: { membershipTier: true },
+        });
+
+        const tier = (user?.membershipTier as 'basic' | 'mycountry_premium') ?? 'basic';
+        const isPremium = tier === 'mycountry_premium';
+
+        return {
+          tier,
+          isPremium,
+          features: {
+            sdi: isPremium,
+            eci: isPremium,
+            intelligence: isPremium,
+            advancedAnalytics: isPremium,
+          },
+        };
+      } catch (error) {
+        console.error("Error fetching membership status:", error);
+        return {
+          tier: 'basic' as const,
+          isPremium: false,
+          features: {
+            sdi: false,
+            eci: false,
+            intelligence: false,
+            advancedAnalytics: false,
+          },
+        };
+      }
+    }),
+
+  // Update user's membership tier (for admin use)
+  updateMembershipTier: publicProcedure
+    .input(z.object({
+      userId: z.string(),
+      tier: z.enum(['basic', 'mycountry_premium']),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        await ctx.db.user.upsert({
+          where: { clerkUserId: input.userId },
+          update: { membershipTier: input.tier },
+          create: {
+            clerkUserId: input.userId,
+            membershipTier: input.tier
+          },
+        });
+
+        return {
+          success: true,
+          message: `Membership tier updated to ${input.tier}`,
+        };
+      } catch (error) {
+        console.error("Error updating membership tier:", error);
+        throw new Error("Failed to update membership tier");
+      }
+    }),
+});

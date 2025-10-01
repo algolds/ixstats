@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { 
-  BarChart3, 
-  Globe, 
-  Settings, 
+import {
+  BarChart3,
+  Globe,
+  Settings,
   Crown,
   Rss,
   ChevronDown,
@@ -15,7 +15,13 @@ import {
   Zap,
   Cpu,
   Database,
-  FlaskConical
+  FlaskConical,
+  Shield,
+  TrendingUp,
+  Activity,
+  Globe2,
+  MessageSquare,
+  AlertTriangle
 } from "lucide-react";
 import { CommandPalette } from "~/components/DynamicIsland";
 import {
@@ -34,6 +40,7 @@ import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { createUserProfileQueryParams } from '~/lib/user-utils';
 import { useHasRoleLevel } from "~/hooks/usePermissions";
+import { usePremium } from "~/hooks/usePremium";
 import { ThinkPagesIcon } from "~/components/icons/ThinkPagesIcon";
 import { AnimatedShinyText } from "~/components/magicui/animated-shiny-text";
 import { ShineBorder } from "~/components/magicui/shine-border";
@@ -50,6 +57,7 @@ interface NavigationItem {
   requiresAuth?: boolean;
   requiresCountry?: boolean;
   adminOnly?: boolean;
+  premiumOnly?: boolean;
   description?: string;
   isDropdown?: boolean;
   dropdownItems?: DropdownItem[];
@@ -60,6 +68,7 @@ interface DropdownItem {
   href: string;
   icon: any;
   description?: string;
+  premiumOnly?: boolean;
 }
 
 export function Navigation() {
@@ -67,16 +76,22 @@ export function Navigation() {
   const { user, isLoaded } = useUser();
   const [scrollY, setScrollY] = useState(0);
   const [isSticky, setIsSticky] = useState(false);
-  
+
   // Use new role management system
   const isAdmin = useHasRoleLevel(10); // Admin level or higher
 
+  // Get premium status
+  const { isPremium } = usePremium();
+
+  // Get navigation settings from admin
+  const { data: navigationSettings } = api.admin.getNavigationSettings.useQuery(undefined, {
+    // Default to showing all tabs if query fails
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+
   // Get user profile to show linked country
-  const userProfileQueryParams = createUserProfileQueryParams(user);
-  const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
-    userProfileQueryParams.input,
-    { enabled: userProfileQueryParams.enabled }
-  );
+  const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery();
 
 
   // Enhanced scroll detection with ultra-smooth transitions
@@ -141,6 +156,60 @@ export function Navigation() {
       requiresAuth: true,
       requiresCountry: true,
       description: "Your national dashboard and executive command center",
+    },
+    {
+      name: "ECI",
+      href: "/eci",
+      icon: TrendingUp,
+      requiresAuth: true,
+      requiresCountry: true,
+      premiumOnly: true,
+      description: "Executive Command Interface - AI-powered policy management",
+    },
+    {
+      name: "SDI",
+      href: "",
+      icon: Shield,
+      requiresAuth: true,
+      premiumOnly: true,
+      isDropdown: true,
+      description: "Sovereign Digital Interface - Intelligence and crisis management",
+      dropdownItems: [
+        {
+          name: "Dashboard",
+          href: "/sdi",
+          icon: Activity,
+          description: "SDI overview and status"
+        },
+        {
+          name: "Intelligence",
+          href: "/sdi/intelligence",
+          icon: Globe2,
+          description: "Global intelligence feeds",
+          premiumOnly: true
+        },
+        {
+          name: "Crisis Monitor",
+          href: "/sdi/crisis",
+          icon: AlertTriangle,
+          description: "Crisis tracking and response",
+          premiumOnly: true
+        },
+        {
+          name: "Diplomatic",
+          href: "/sdi/diplomatic",
+          icon: MessageSquare,
+          description: "Diplomatic communications",
+          premiumOnly: true
+        },
+        {
+          name: "Economic Intel",
+          href: "/sdi/economic",
+          icon: TrendingUp,
+          description: "Economic intelligence analysis",
+          premiumOnly: true
+        }
+      ]
     },
     {
       name: "ThinkPages",
@@ -222,12 +291,33 @@ export function Navigation() {
 
   const setupStatus = getSetupStatus();
 
-  // Filter visible navigation items based on user state
+  // Filter visible navigation items based on user state and admin settings
   const visibleNavItems = navigationItems.filter(item => {
     if (item.requiresAuth && !user) return false;
     if (item.requiresCountry && setupStatus !== 'complete') return false;
     if (item.adminOnly && !isAdmin) return false;
+    if (item.premiumOnly && !isPremium) return false;
+
+    // Check admin navigation settings
+    if (navigationSettings) {
+      if (item.name === "Wiki" && !navigationSettings.showWikiTab) return false;
+      if (item.name === "Cards" && !navigationSettings.showCardsTab) return false;
+      if (item.name === "Labs" && !navigationSettings.showLabsTab) return false;
+    }
+
     return true;
+  }).map(item => {
+    // Also filter dropdown items based on premium access
+    if (item.isDropdown && item.dropdownItems) {
+      return {
+        ...item,
+        dropdownItems: item.dropdownItems.filter(dropdownItem => {
+          if (dropdownItem.premiumOnly && !isPremium) return false;
+          return true;
+        })
+      };
+    }
+    return item;
   });
 
   // Intelligent balancing: ensure visual symmetry around dynamic island
@@ -341,9 +431,10 @@ export function Navigation() {
                                 item.name === "MyCountry®" ? "text-amber-400" :
                                 item.name === "ThinkPages" ? "text-blue-400" :
                                 item.name === "Dashboard" ? "text-emerald-400" :
-                                item.name === "Countries" ? "text-purple-400" :
+                                item.name === "Explore" ? "text-purple-400" :
+                                item.name === "ECI" ? "text-indigo-400" :
+                                item.name === "SDI" ? "text-red-400" :
                                 item.name === "Admin" ? "text-red-400" :
-                                item.name === "Dossier" ? "text-orange-400" :
                                 item.name === "Cards" ? "text-cyan-400" :
                                 "text-blue-400"
                               }`} />
@@ -382,9 +473,10 @@ export function Navigation() {
                                 item.name === "MyCountry®" ? ["#f59e0b", "#eab308", "#fbbf24"] :
                                 item.name === "ThinkPages" ? ["#3b82f6", "#1d4ed8", "#60a5fa"] :
                                 item.name === "Dashboard" ? ["#10b981", "#059669", "#34d399"] :
-                                item.name === "Countries" ? ["#8b5cf6", "#7c3aed", "#a78bfa"] :
+                                item.name === "Explore" ? ["#8b5cf6", "#7c3aed", "#a78bfa"] :
+                                item.name === "ECI" ? ["#6366f1", "#4f46e5", "#818cf8"] :
+                                item.name === "SDI" ? ["#ef4444", "#dc2626", "#f87171"] :
                                 item.name === "Admin" ? ["#ef4444", "#dc2626", "#f87171"] :
-                                item.name === "Dossier" ? ["#f97316", "#ea580c", "#fb923c"] :
                                 item.name === "Cards" ? ["#06b6d4", "#0891b2", "#22d3ee"] :
                                 ["#3b82f6", "#8b5cf6", "#06b6d4"]
                               }
@@ -401,9 +493,10 @@ export function Navigation() {
                                 item.name === "MyCountry®" ? "text-amber-400" :
                                 item.name === "ThinkPages" ? "text-blue-400" :
                                 item.name === "Dashboard" ? "text-emerald-400" :
-                                item.name === "Countries" ? "text-purple-400" :
+                                item.name === "Explore" ? "text-purple-400" :
+                                item.name === "ECI" ? "text-indigo-400" :
+                                item.name === "SDI" ? "text-red-400" :
                                 item.name === "Admin" ? "text-red-400" :
-                                item.name === "Dossier" ? "text-orange-400" :
                                 item.name === "Cards" ? "text-cyan-400" :
                                 "text-blue-400"
                               }`} />
@@ -531,9 +624,10 @@ export function Navigation() {
                                 item.name === "MyCountry®" ? "text-amber-400" :
                                 item.name === "ThinkPages" ? "text-blue-400" :
                                 item.name === "Dashboard" ? "text-emerald-400" :
-                                item.name === "Countries" ? "text-purple-400" :
+                                item.name === "Explore" ? "text-purple-400" :
+                                item.name === "ECI" ? "text-indigo-400" :
+                                item.name === "SDI" ? "text-red-400" :
                                 item.name === "Admin" ? "text-red-400" :
-                                item.name === "Dossier" ? "text-orange-400" :
                                 item.name === "Cards" ? "text-cyan-400" :
                                 "text-blue-400"
                               }`} />
@@ -572,9 +666,10 @@ export function Navigation() {
                                 item.name === "MyCountry®" ? ["#f59e0b", "#eab308", "#fbbf24"] :
                                 item.name === "ThinkPages" ? ["#3b82f6", "#1d4ed8", "#60a5fa"] :
                                 item.name === "Dashboard" ? ["#10b981", "#059669", "#34d399"] :
-                                item.name === "Countries" ? ["#8b5cf6", "#7c3aed", "#a78bfa"] :
+                                item.name === "Explore" ? ["#8b5cf6", "#7c3aed", "#a78bfa"] :
+                                item.name === "ECI" ? ["#6366f1", "#4f46e5", "#818cf8"] :
+                                item.name === "SDI" ? ["#ef4444", "#dc2626", "#f87171"] :
                                 item.name === "Admin" ? ["#ef4444", "#dc2626", "#f87171"] :
-                                item.name === "Dossier" ? ["#f97316", "#ea580c", "#fb923c"] :
                                 item.name === "Cards" ? ["#06b6d4", "#0891b2", "#22d3ee"] :
                                 ["#3b82f6", "#8b5cf6", "#06b6d4"]
                               }
@@ -591,9 +686,10 @@ export function Navigation() {
                                 item.name === "MyCountry®" ? "text-amber-400" :
                                 item.name === "ThinkPages" ? "text-blue-400" :
                                 item.name === "Dashboard" ? "text-emerald-400" :
-                                item.name === "Countries" ? "text-purple-400" :
+                                item.name === "Explore" ? "text-purple-400" :
+                                item.name === "ECI" ? "text-indigo-400" :
+                                item.name === "SDI" ? "text-red-400" :
                                 item.name === "Admin" ? "text-red-400" :
-                                item.name === "Dossier" ? "text-orange-400" :
                                 item.name === "Cards" ? "text-cyan-400" :
                                 "text-blue-400"
                               }`} />
@@ -686,11 +782,11 @@ export function Navigation() {
       </nav>
 
       {/* Persistent Dynamic Island - Ultra-smooth transitions with physics-based motion */}
-      <div 
+      <div
         className={`fixed z-[10020] will-change-transform ${
           isSticky ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
-        style={{ 
+        style={{
           top: isSticky ? '8px' : '64px',
           left: '50%',
           transform: 'translateX(-50%)', // Perfect horizontal centering

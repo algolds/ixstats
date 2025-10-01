@@ -88,4 +88,11 @@ export interface SettingsViewProps {
 export interface ExpandedViewProps {
   mode: ViewMode;
   onClose: () => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  searchFilter: SearchFilter;
+  setSearchFilter: (filter: SearchFilter) => void;
+  debouncedSearchQuery: string;
+  searchResults: SearchResult[];
+  countriesData?: CountriesData;
 }

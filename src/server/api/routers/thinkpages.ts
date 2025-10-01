@@ -80,8 +80,8 @@ async function getWikiCommonsImageInfo(title: string): Promise<{ url: string; de
     return null;
   }
 
-  const data = await response.json();
-  const page = data.query?.pages?.[0];
+  const data = await response.json() as Record<string, unknown>;
+  const page = (data.query as any)?.pages?.[0];
 
   if (!page || page.missing || !page.imageinfo?.[0]) {
     return null;
@@ -155,10 +155,10 @@ export const thinkpagesRouter = createTRPCRouter({
           });
         }
 
-        const data = await response.json();
-        const searchResults = data.query?.search || [];
+        const data = await response.json() as Record<string, unknown>;
+        const searchResults = ((data.query as any)?.search || []) as Array<{ title: string; pageid: number }>;
 
-        const images = await Promise.all(searchResults.map(async (result: any) => {
+        const images = await Promise.all(searchResults.map(async (result: { title: string; pageid: number }) => {
           const imageInfo = await getWikiCommonsImageInfo(result.title);
           if (imageInfo) {
             return {
@@ -410,6 +410,7 @@ export const thinkpagesRouter = createTRPCRouter({
       // Create the account
       const account = await db.user.create({
         data: {
+          clerkUserId: `thinkpages_${Math.random().toString(36).substring(7)}`,
           countryId: (input as any).countryId,
           // accountType: input.accountType, // Field doesn't exist in User model
           // username: input.username, // Field doesn't exist in User model
@@ -1711,18 +1712,7 @@ export const thinkpagesRouter = createTRPCRouter({
         },
         include: {
           participants: {
-            where: { isActive: true },
-            include: {
-              account: {
-                select: {
-                  id: true,
-                  username: true,
-                  displayName: true,
-                  profileImageUrl: true,
-                  accountType: true
-                }
-              }
-            }
+            where: { isActive: true }
           },
           messages: {
             orderBy: { ixTimeTimestamp: 'desc' },
@@ -1739,13 +1729,13 @@ export const thinkpagesRouter = createTRPCRouter({
       });
 
       return {
-        conversations: conversations.map(conv => {
-          const otherParticipants = conv.participants.filter(p => p.userId !== input.userId);
+        conversations: conversations.map((conv: any) => {
+          const otherParticipants = conv.participants.filter((p: any) => p.userId !== input.userId);
           const lastMessage = conv.messages[0];
-          
+
           // Calculate unread count
-          const participant = conv.participants.find(p => p.userId === input.userId);
-          
+          const participant = conv.participants.find((p: any) => p.userId === input.userId);
+
           return {
             ...conv,
             otherParticipants,
@@ -2002,22 +1992,21 @@ export const thinkpagesRouter = createTRPCRouter({
           throw new Error(`Discord bot responded with status ${response.status}`);
         }
 
-        const data = await response.json();
-        
+        const data = await response.json() as { success: boolean; error?: string; emojis?: Array<{ id: string; name: string; url: string; animated?: boolean }> };
+
         if (!data.success) {
           throw new Error(data.error || 'Failed to fetch Discord emojis');
         }
 
         return {
           success: true,
-          emojis: data.emojis.map((emoji: any) => ({
+          emojis: (data.emojis || []).map((emoji: { id: string; name: string; url: string; animated?: boolean }) => ({
             id: emoji.id,
             name: emoji.name,
             url: emoji.url,
-            animated: emoji.animated,
-            guild: emoji.guild
+            animated: emoji.animated
           })),
-          count: data.count
+          count: data.emojis?.length ?? 0
         };
       } catch (error) {
         console.error('Error fetching Discord emojis:', error);

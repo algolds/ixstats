@@ -16,7 +16,7 @@ const createArchetypeSchema = z.object({
   color: z.string(),
   gradient: z.string(),
   tags: z.array(z.string()),
-  filterRules: z.record(z.string(), z.any()), // JSON object
+  filterRules: z.record(z.string(), z.unknown()), // JSON object
   priority: z.number().default(0),
   isSelectable: z.boolean().default(true),
 });
@@ -30,7 +30,7 @@ const updateArchetypeSchema = z.object({
   color: z.string().optional(),
   gradient: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  filterRules: z.record(z.string(), z.any()).optional(),
+  filterRules: z.record(z.string(), z.unknown()).optional(),
   priority: z.number().optional(),
   isSelectable: z.boolean().optional(),
   isActive: z.boolean().optional(),
@@ -192,7 +192,7 @@ export const archetypesRouter = createTRPCRouter({
             },
           });
 
-          const countryIds = countryMatches.map((match: any) => match.countryId as string);
+          const countryIds = countryMatches.map((match: { countryId: string }) => match.countryId);
           
           const countries = await ctx.db.country.findMany({
             where: { id: { in: countryIds } },
@@ -335,16 +335,16 @@ export const archetypesRouter = createTRPCRouter({
   updateArchetype: protectedProcedure
     .input(updateArchetypeSchema)
     .mutation(async ({ ctx, input }) => {
-      const { id, categoryId, ...updateData } = input;
-      
+      const { id, categoryId, tags, filterRules, ...updateData } = input;
+
       try {
         const archetype = await ctx.db.archetype.update({
           where: { id },
           data: {
             ...updateData,
-            ...(categoryId && { categoryId }),
-            ...(updateData.tags && { tags: JSON.stringify(updateData.tags) }),
-            ...(updateData.filterRules && { filterRules: JSON.stringify(updateData.filterRules) }),
+            ...(categoryId !== undefined && { categoryId }),
+            ...(tags !== undefined && { tags: JSON.stringify(tags) }),
+            ...(filterRules !== undefined && { filterRules: JSON.stringify(filterRules) }),
           },
           include: { category: true },
         });

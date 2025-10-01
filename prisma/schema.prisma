@@ -297,20 +297,22 @@ model CalculationLog {
 }
 
 model User {
-  id          String   @id @default(cuid())
-  clerkUserId String   @unique
-  countryId   String?  @unique
-  roleId      String?  // Foreign key to Role
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  country     Country? @relation(fields: [countryId], references: [id])
-  role        Role?    @relation(fields: [roleId], references: [id])
+  id              String   @id @default(cuid())
+  clerkUserId     String   @unique
+  countryId       String?  @unique
+  roleId          String?  // Foreign key to Role
+  membershipTier  String   @default("basic") // "basic", "mycountry_premium"
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  country         Country? @relation(fields: [countryId], references: [id])
+  role            Role?    @relation(fields: [roleId], references: [id])
   archetypeSelections UserArchetypeSelection[] @relation("UserArchetypes")
 
   @@index([clerkUserId])
   @@index([countryId])
   @@index([roleId])
+  @@index([membershipTier])
   @@index([isActive])
 }
 

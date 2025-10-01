@@ -27,7 +27,7 @@ export function DiplomaticFocus() {
   const router = useRouter();
   const { user } = useUser();
   const { data: profile, isLoading: profileLoading, error: profileError } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id }
   );
   const { data: countryData, isLoading: countryLoading, error: countryError } = api.countries.getByIdWithEconomicData.useQuery(

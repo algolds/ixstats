@@ -96,7 +96,7 @@ export const enhancedEconomicsRouter = createTRPCRouter({
         
         const analysis = await analyzeCountryEconomics(
           countryStats as unknown as CountryStats,
-          economyData as any, 
+          economyData as Record<string, unknown>, 
           historicalData as HistoricalDataPoint[],
           options
         );
@@ -125,7 +125,7 @@ export const enhancedEconomicsRouter = createTRPCRouter({
         
         const healthCheck = getQuickEconomicHealth(
           countryStats as unknown as CountryStats,
-          economyData as any
+          economyData as Record<string, unknown>
         );
         
         return healthCheck;
@@ -152,7 +152,7 @@ export const enhancedEconomicsRouter = createTRPCRouter({
         
         const metrics = getBuilderEconomicMetrics(
           countryStats as unknown as CountryStats,
-          economyData as any
+          economyData as Record<string, unknown>
         );
         
         return metrics;
@@ -179,7 +179,7 @@ export const enhancedEconomicsRouter = createTRPCRouter({
         
         const intelligenceData = getIntelligenceEconomicData(
           countryStats as unknown as CountryStats,
-          economyData as any
+          economyData as Record<string, unknown>
         );
         
         return intelligenceData;
@@ -222,8 +222,8 @@ export const enhancedEconomicsRouter = createTRPCRouter({
           });
         }
 
-        // Convert to required format
-        const countryStats: CountryStats = {
+        // Convert to required format - use Partial to handle missing fields
+        const countryStats = {
           id: country.id,
           name: country.name,
           currentTotalGdp: (country as any).totalGdp || country.currentTotalGdp || 0,
@@ -232,8 +232,17 @@ export const enhancedEconomicsRouter = createTRPCRouter({
           adjustedGdpGrowth: (country as any).growthRate || country.adjustedGdpGrowth || 0,
           economicTier: (country.economicTier || 'Developing') as EconomicTier,
           populationTier: (country.populationTier || '2') as PopulationTier,
-          populationGrowthRate: country.populationGrowthRate || 0.02
-        };
+          populationGrowthRate: country.populationGrowthRate || 0.02,
+          totalGdp: (country as any).totalGdp || country.currentTotalGdp || 0,
+          lastCalculated: Date.now(),
+          baselineDate: Date.now(),
+          localGrowthFactor: 1.0,
+          maxGdpGrowthRate: country.adjustedGdpGrowth || 0.02,
+          actualGdpGrowth: country.adjustedGdpGrowth || 0.02,
+          projected2040Population: country.currentPopulation || 0,
+          projected2040Gdp: (country as any).totalGdp || country.currentTotalGdp || 0,
+          projected2040GdpPerCapita: (country as any).gdpPerCapita || country.currentGdpPerCapita || 0,
+        } as CountryStats;
 
         // Create economy data from country economic data
         const economyData: any = {

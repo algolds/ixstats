@@ -103,14 +103,14 @@ export function NationalSecurityModal({
   // Get security dashboard data
   const { data: securityDashboard, isLoading: dashboardLoading, refetch: refetchDashboard } = 
     api.eci.getSecurityDashboard.useQuery(
-      { userId: user?.id || '' },
+      { userId: user?.id || 'placeholder-disabled' },
       { enabled: !!user?.id && open }
     );
 
   // Get security threats
   const { data: threats, isLoading: threatsLoading, refetch: refetchThreats } = 
     api.eci.getSecurityThreats.useQuery(
-      { userId: user?.id || '' },
+      { userId: user?.id || 'placeholder-disabled' },
       { enabled: !!user?.id && open }
     );
 
@@ -148,7 +148,7 @@ export function NationalSecurityModal({
     }
 
     createThreat.mutate({
-      userId: user?.id || '',
+      userId: user?.id || 'placeholder-disabled',
       title: newThreatForm.title,
       description: newThreatForm.description,
       severity: newThreatForm.severity,

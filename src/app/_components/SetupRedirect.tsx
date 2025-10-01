@@ -30,8 +30,8 @@ export function SetupRedirect() {
 
   // Query user profile to check if setup is needed
   const { data: userProfile, isLoading: profileLoading, error: profileError } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
-    { 
+    undefined,
+    {
       enabled: !!user?.id && !shouldSkipSetup && isLoaded,
       retry: false,
       staleTime: 30000, // Cache for 30 seconds to prevent excessive queries
