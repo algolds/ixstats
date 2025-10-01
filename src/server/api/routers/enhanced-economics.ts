@@ -13,6 +13,7 @@ import {
 import { IxStatsCalculator } from "~/lib/calculations";
 import { getDefaultEconomicConfig } from "~/lib/config-service";
 import type { CountryStats, HistoricalDataPoint, EconomicTier, PopulationTier } from "~/types/ixstats";
+import type { EconomyData } from "~/types/economics";
 
 // Input validation schemas
 const countryStatsSchema = z.object({
@@ -96,7 +97,7 @@ export const enhancedEconomicsRouter = createTRPCRouter({
         
         const analysis = await analyzeCountryEconomics(
           countryStats as unknown as CountryStats,
-          economyData as Record<string, unknown>, 
+          economyData as unknown as EconomyData,
           historicalData as HistoricalDataPoint[],
           options
         );
@@ -125,7 +126,7 @@ export const enhancedEconomicsRouter = createTRPCRouter({
         
         const healthCheck = getQuickEconomicHealth(
           countryStats as unknown as CountryStats,
-          economyData as Record<string, unknown>
+          economyData as unknown as EconomyData
         );
         
         return healthCheck;
@@ -152,7 +153,7 @@ export const enhancedEconomicsRouter = createTRPCRouter({
         
         const metrics = getBuilderEconomicMetrics(
           countryStats as unknown as CountryStats,
-          economyData as Record<string, unknown>
+          economyData as unknown as EconomyData
         );
         
         return metrics;
@@ -179,7 +180,7 @@ export const enhancedEconomicsRouter = createTRPCRouter({
         
         const intelligenceData = getIntelligenceEconomicData(
           countryStats as unknown as CountryStats,
-          economyData as Record<string, unknown>
+          economyData as unknown as EconomyData
         );
         
         return intelligenceData;

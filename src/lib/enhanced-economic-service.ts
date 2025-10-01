@@ -6,14 +6,14 @@ import { IntuitiveEconomicAnalysis } from './intuitive-economic-analysis';
 import { runGroupedAnalysis, EconomicCalculationGroups } from './economic-calculation-groups';
 import { getDefaultEconomicConfig } from './config-service';
 import { IxTime } from './ixtime';
-import type { 
-  CountryStats, 
-  EconomyData, 
-  HistoricalDataPoint,
-  EconomicConfig 
-} from '../types/ixstats';
 import type {
-  ComprehensiveEconomicAnalysis,
+  CountryStats,
+  HistoricalDataPoint,
+  EconomicConfig
+} from '../types/ixstats';
+import type { EconomyData } from '../types/economics';
+import type { ComprehensiveEconomicAnalysis } from './enhanced-economic-calculations';
+import type {
   EconomicHealthSummary,
   ActionableInsights,
   EconomicStory,
@@ -298,23 +298,104 @@ export class EnhancedEconomicService {
     }, 60000); // Clean every minute
   }
 
-  private createEmptyIntuitiveAnalysis() {
+  private createEmptyIntuitiveAnalysis(): {
+    summary: EconomicHealthSummary;
+    insights: ActionableInsights;
+    story: EconomicStory;
+    benchmarking: EconomicBenchmarking;
+    simulation: EconomicSimulation;
+  } {
+    // Return minimal valid objects instead of null
     return {
-      summary: null,
-      insights: null,
-      story: null,
-      benchmarking: null,
-      simulation: null
+      summary: {
+        overallGrade: 'C',
+        score: 0,
+        status: 'Fair',
+        trend: 'Stable',
+        keyMessage: 'Analysis not available',
+        healthIndicators: { growth: 'weak', stability: 'medium', sustainability: 'concerning' },
+        quickStats: { economicSize: 'Unknown', developmentLevel: 'Unknown', globalPosition: 'Unknown', riskLevel: 'Unknown' }
+      } as EconomicHealthSummary,
+      insights: {
+        immediateActions: [],
+        strengths: [],
+        watchAreas: [],
+        strategicOpportunities: []
+      } as ActionableInsights,
+      story: {
+        headline: 'Analysis unavailable',
+        currentSituation: '',
+        recentProgress: '',
+        majorChallenges: [],
+        futurePotential: '',
+        comparativePerspective: '',
+        economicJourney: { past: '', present: '', future: '' },
+        dominantThemes: []
+      } as EconomicStory,
+      benchmarking: {
+        peerComparisons: [],
+        progressTracking: [],
+        globalContext: {
+          economicRank: 0,
+          developmentRank: 0,
+          competitivenessRank: 0,
+          trendDirection: 'Stable' as const
+        }
+      } as EconomicBenchmarking,
+      simulation: {
+        baselineProjection: {
+          gdpGrowth5Year: 0,
+          gdpPerCapita5Year: 0,
+          unemploymentProjection: 0,
+          debtProjection: 0
+        },
+        policyScenarios: [],
+        riskScenarios: []
+      } as EconomicSimulation
     };
   }
 
   private createEmptyGroupedAnalysis(): GroupedAnalysisResult {
     return {
-      growthDynamics: null,
-      financialHealth: null,
-      humanDevelopment: null,
-      economicStructure: null,
-      externalRelations: null,
+      growthDynamics: {
+        group: 'growth_dynamics',
+        overallScore: 0,
+        components: { growthMomentum: 0, growthSustainability: 0, growthQuality: 0, growthStability: 0 },
+        insights: { growthPhase: 'maturation', trendDirection: 'stable', volatilityLevel: 'moderate', sustainabilityRisk: 'medium' },
+        projections: { nextQuarter: 0, nextYear: 0, fiveYear: 0 }
+      },
+      financialHealth: {
+        group: 'financial_health',
+        overallScore: 0,
+        components: { fiscalPosition: 0, monetaryStability: 0, financialSector: 0, externalBalance: 0 },
+        ratingEquivalent: 'BBB',
+        keyRatios: { debtServiceRatio: 0, fiscalBalanceRatio: 0, currentAccountRatio: 0, reservesCoverageRatio: 0 },
+        creditworthinessFactors: []
+      },
+      humanDevelopment: {
+        group: 'human_development',
+        overallScore: 0,
+        components: { healthOutcomes: 0, educationAchievement: 0, livingStandards: 0, socialCohesion: 0 },
+        developmentStage: 'medium',
+        demographicDividend: { stage: 'peak', yearsRemaining: 0, potentialBenefit: 'medium' },
+        humanCapitalIndex: 0
+      },
+      economicStructure: {
+        group: 'economic_structure',
+        overallScore: 0,
+        components: { sectoralBalance: 0, economicComplexity: 0, marketDynamism: 0, infrastructureQuality: 0 },
+        structuralProfile: { primarySectorShare: 0, secondarySectorShare: 0, tertiarySectorShare: 0, quaternarySectorShare: 0 },
+        competitivenessRanking: { globalRank: 0, regionalRank: 0, trendDirection: 'stable' as const },
+        transformationPotential: 'medium' as const
+      },
+      externalRelations: {
+        group: 'external_relations',
+        overallScore: 0,
+        components: { tradeIntegration: 0, investmentAttraction: 0, globalConnectivity: 0, diplomaticEconomics: 0 },
+        tradeProfile: { exportConcentration: 0, importDependence: 0, tradingPartnerDiversification: 0, valueChainPosition: 'integrated' as const },
+        integrationLevel: 'medium' as const,
+        vulnerabilityFactors: []
+      },
       overallScore: 0,
       strengths: [],
       challenges: [],

@@ -59,7 +59,8 @@ export const typescriptToPrisma = {
       'social': 'SOCIAL',
       'governance': 'GOVERNANCE',
       'security': 'SECURITY',
-      'infrastructure': 'INFRASTRUCTURE'
+      'infrastructure': 'INFRASTRUCTURE',
+      'crisis': 'ECONOMIC' // Map crisis to economic as fallback
     };
     return mapping[category];
   },

@@ -177,22 +177,25 @@ export function convertGovernmentStructureToSpending(
 
   // Process department budget allocations
   if (budgetAllocations.length > 0) {
-    budgetAllocations.forEach(allocation => {
-      const department = departments.find(d => 
+    budgetAllocations.forEach((allocation, index) => {
+      const department = departments.find((d, dIndex) =>
         ('id' in d ? d.id === allocation.departmentId : false) ||
-        departments.indexOf(d) === budgetAllocations.indexOf(allocation)
+        dIndex === index
       );
-      
-      if (department) {
-        const categoryInfo = DEPARTMENT_CATEGORY_MAP[department.category];
-        const existingCategory = categoryTotals.get(categoryInfo.spendingCategory);
-        
-        categoryTotals.set(categoryInfo.spendingCategory, {
-          amount: (existingCategory?.amount || 0) + allocation.allocatedAmount,
-          icon: categoryInfo.icon,
-          color: categoryInfo.color,
-          description: categoryInfo.description
-        });
+
+      if (department && 'category' in department && department.category) {
+        const category = department.category as DepartmentCategory;
+        const categoryInfo = DEPARTMENT_CATEGORY_MAP[category];
+        if (categoryInfo) {
+          const existingCategory = categoryTotals.get(categoryInfo.spendingCategory);
+
+          categoryTotals.set(categoryInfo.spendingCategory, {
+            amount: (existingCategory?.amount || 0) + allocation.allocatedAmount,
+            icon: categoryInfo.icon,
+            color: categoryInfo.color,
+            description: categoryInfo.description
+          });
+        }
       }
     });
   } else {
@@ -200,15 +203,18 @@ export function convertGovernmentStructureToSpending(
     const budgetPerDepartment = departments.length > 0 ? totalBudget / departments.length : 0;
     
     departments.forEach(department => {
-      const categoryInfo = DEPARTMENT_CATEGORY_MAP[department.category];
-      const existingCategory = categoryTotals.get(categoryInfo.spendingCategory);
-      
-      categoryTotals.set(categoryInfo.spendingCategory, {
-        amount: (existingCategory?.amount || 0) + budgetPerDepartment,
-        icon: categoryInfo.icon,
-        color: categoryInfo.color,
-        description: categoryInfo.description
-      });
+      if ('category' in department && department.category) {
+        const category = department.category as DepartmentCategory;
+        const categoryInfo = DEPARTMENT_CATEGORY_MAP[category];
+        const existingCategory = categoryTotals.get(categoryInfo.spendingCategory);
+
+        categoryTotals.set(categoryInfo.spendingCategory, {
+          amount: (existingCategory?.amount || 0) + budgetPerDepartment,
+          icon: categoryInfo.icon,
+          color: categoryInfo.color,
+          description: categoryInfo.description
+        });
+      }
     });
   }
 
@@ -280,9 +286,9 @@ export function createHybridSpendingData(
   nominalGDP: number,
   totalPopulation: number
 ): GovernmentSpendingData {
-  if (shouldUseGovernmentStructureData(governmentData)) {
+  if (governmentData && shouldUseGovernmentStructureData(governmentData)) {
     return convertGovernmentStructureToSpending(governmentData, nominalGDP, totalPopulation);
   }
-  
+
   return currentSpendingData;
 }

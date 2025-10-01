@@ -210,8 +210,14 @@ export class CacheInvalidationService {
       // Notify WebSocket clients of cache invalidation if applicable
       if (this.webSocketServer && event.countryId) {
         this.webSocketServer.broadcastIntelligenceUpdate({
+          id: `cache-inv-${Date.now()}`,
           type: 'cache-invalidation',
+          title: 'Cache Invalidated',
           countryId: event.countryId,
+          category: 'system',
+          priority: 'low',
+          severity: 'info',
+          isGlobal: false,
           timestamp: event.timestamp,
           data: { invalidatedEntries: totalInvalidations }
         });

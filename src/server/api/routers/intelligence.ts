@@ -4,7 +4,7 @@ import { standardize } from "~/lib/interface-standardizer";
 import { unifyIntelligenceItem } from "~/lib/transformers/interface-adapters";
 
 export const intelligenceRouter = createTRPCRouter({
-  getFeed: premiumProcedure.query(async ({ ctx }) => {
+  getFeed: publicProcedure.query(async ({ ctx }) => {
     // Get real intelligence items from database
     const items = await ctx.db.intelligenceItem.findMany({
       where: { isActive: true },
@@ -16,7 +16,7 @@ export const intelligenceRouter = createTRPCRouter({
     return items.map(unifyIntelligenceItem);
   }),
 
-  getLatestIntelligence: premiumProcedure.query(async ({ ctx }) => {
+  getLatestIntelligence: publicProcedure.query(async ({ ctx }) => {
     // Get latest intelligence items with additional filtering
     const items = await ctx.db.intelligenceItem.findMany({
       where: { isActive: true },

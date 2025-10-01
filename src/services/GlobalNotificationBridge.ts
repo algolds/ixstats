@@ -10,7 +10,8 @@ import type {
   UnifiedNotification,
   NotificationCategory,
   NotificationPriority,
-  DeliveryMethod
+  DeliveryMethod,
+  NotificationAction
 } from '~/types/unified-notifications';
 import type { IntelligenceItem } from '~/types/intelligence-unified';
 import { useNotificationStore } from '~/stores/notificationStore';
@@ -249,7 +250,7 @@ class GlobalNotificationBridge extends EventEmitter {
       severity: this.getSeverity(rule.priority),
       deliveryMethod: this.getDeliveryMethod(rule.priority),
       actionable: !!rule.actionGenerator,
-      actions: rule.actionGenerator?.(event.data) || [],
+      actions: (rule.actionGenerator?.(event.data) || []) as unknown as NotificationAction[],
       triggers: [{
         type: 'data-change' as const,
         source: event.source,

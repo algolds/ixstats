@@ -69,15 +69,25 @@ export class SocialProfileTransformer {
     return {
       // Basic country data
       ...countryData,
+      lastCalculated: typeof countryData.lastCalculated === 'number'
+        ? new Date(countryData.lastCalculated).toISOString()
+        : countryData.lastCalculated instanceof Date
+          ? countryData.lastCalculated.toISOString()
+          : countryData.lastCalculated,
+      baselineDate: typeof countryData.baselineDate === 'number'
+        ? new Date(countryData.baselineDate).toISOString()
+        : countryData.baselineDate instanceof Date
+          ? countryData.baselineDate.toISOString()
+          : countryData.baselineDate,
       flagUrl,
       unsplashImageUrl,
-      
+
       // Enhanced social features
       socialMetrics,
       achievementConstellation,
       diplomaticRelations,
       recentActivities,
-      
+
       // Social interactions (empty for now, would be populated by real API)
       followers: [],
       recentVisitors: [],
@@ -147,9 +157,9 @@ export class SocialProfileTransformer {
       upcomingTargets,
       totalAchievementScore: totalScore,
       achievementRanking: {
-        global: this.calculateAchievementRanking(totalScore, 'global'),
-        regional: this.calculateAchievementRanking(totalScore, 'regional'),
-        tierBased: this.calculateAchievementRanking(totalScore, 'tier')
+        global: this.calculateAchievementRanking(totalScore, 'global', country.id),
+        regional: this.calculateAchievementRanking(totalScore, 'regional', country.id),
+        tierBased: this.calculateAchievementRanking(totalScore, 'tier', country.id)
       }
     };
   }
@@ -540,10 +550,10 @@ export class SocialProfileTransformer {
     return thresholds[tier] || 100000;
   }
 
-  private static calculateAchievementRanking(score: number, type: 'global' | 'regional' | 'tier'): number {
+  private static calculateAchievementRanking(score: number, type: 'global' | 'regional' | 'tier', countryId: string): number {
     const multiplier = type === 'global' ? 200 : type === 'regional' ? 30 : 15;
     const baseRanking = Math.max(1, multiplier - Math.floor(score / 50));
-    return baseRanking + Math.floor(this.getDeterministicRandom(country.id + type, 7000) * 10);
+    return baseRanking + Math.floor(this.getDeterministicRandom(countryId + type, 7000) * 10);
   }
 
   private static generateMutualBenefits(relationType: DiplomaticRelation['relationType']): string[] {
