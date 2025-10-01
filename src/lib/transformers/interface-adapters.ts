@@ -21,47 +21,55 @@ const URGENCY_TO_IMPACT: Record<string, StandardPriority> = {
   'low': 'low'
 };
 
+// Helper type guards
+const isString = (value: unknown): value is string => typeof value === 'string';
+const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
+const isNumber = (value: unknown): value is number => typeof value === 'number';
+const isArray = (value: unknown): value is unknown[] => Array.isArray(value);
+const isStringArray = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every(item => typeof item === 'string');
+
 // Transform legacy ExecutiveAction to unified ExecutiveAction first, then to QuickAction
 export const adaptLegacyExecutiveAction = (legacyAction: Record<string, unknown>): ExecutiveAction => ({
-  id: legacyAction.id,
+  id: isString(legacyAction.id) ? legacyAction.id : `action-${Date.now()}`,
   type: 'executive',
-  title: legacyAction.title,
-  description: legacyAction.description,
+  title: isString(legacyAction.title) ? legacyAction.title : 'Unknown Action',
+  description: isString(legacyAction.description) ? legacyAction.description : '',
   category: normalizeCategory(legacyAction.category),
-  enabled: legacyAction.enabled,
+  enabled: isBoolean(legacyAction.enabled) ? legacyAction.enabled : true,
   priority: normalizePriority(legacyAction.urgency || 'medium'), // Map urgency to priority
   createdAt: Date.now(), // Default timestamp
   updatedAt: Date.now(),
   urgency: normalizePriority(legacyAction.urgency || 'medium'),
-  estimatedImpact: legacyAction.estimatedImpact || { timeframe: 'unknown' },
-  requirements: legacyAction.requirements || [],
-  cooldownHours: legacyAction.cooldownHours,
-  cost: legacyAction.cost,
-  risks: legacyAction.risks
+  estimatedImpact: legacyAction.estimatedImpact as any || { timeframe: 'unknown' },
+  requirements: isStringArray(legacyAction.requirements) ? legacyAction.requirements : [],
+  cooldownHours: isNumber(legacyAction.cooldownHours) ? legacyAction.cooldownHours : undefined,
+  cost: legacyAction.cost as any,
+  risks: isStringArray(legacyAction.risks) ? legacyAction.risks : undefined
 });
 
 // Transform ExecutiveAction to QuickAction (fixes major type error)
-export const adaptExecutiveToQuick = (action: Record<string, unknown>): QuickAction => {
+export const adaptExecutiveToQuick = (action: Record<string, unknown> | ExecutiveAction): QuickAction => {
   // First convert legacy format to unified format if needed
-  const unifiedAction = action.type ? action : adaptLegacyExecutiveAction(action);
-  
+  const unifiedAction = action.type ? action as ExecutiveAction : adaptLegacyExecutiveAction(action as Record<string, unknown>);
+
   return {
-    id: unifiedAction.id,
+    id: isString(unifiedAction.id) ? unifiedAction.id : `quick-${Date.now()}`,
     type: 'quick',
-    title: unifiedAction.title,
-    description: unifiedAction.description,
-    category: unifiedAction.category,
-    enabled: unifiedAction.enabled,
-    priority: unifiedAction.priority,
-    createdAt: unifiedAction.createdAt,
-    updatedAt: unifiedAction.updatedAt,
+    title: isString(unifiedAction.title) ? unifiedAction.title : 'Unknown',
+    description: isString(unifiedAction.description) ? unifiedAction.description : '',
+    category: normalizeCategory(unifiedAction.category),
+    enabled: isBoolean(unifiedAction.enabled) ? unifiedAction.enabled : true,
+    priority: normalizePriority(unifiedAction.priority),
+    createdAt: isNumber(unifiedAction.createdAt) ? unifiedAction.createdAt : Date.now(),
+    updatedAt: isNumber(unifiedAction.updatedAt) ? unifiedAction.updatedAt : Date.now(),
     icon: {
-      name: CATEGORY_ICONS[unifiedAction.category] || 'Zap',
+      name: CATEGORY_ICONS[String(unifiedAction.category)] || 'Zap',
       variant: 'outline' as const
     },
     estimatedTime: calculateEstimatedTime(unifiedAction),
-    impact: unifiedAction.priority,  // Direct mapping since both use StandardPriority
-    urgency: unifiedAction.urgency || unifiedAction.priority  // Backward compatibility
+    impact: normalizePriority(unifiedAction.priority),  // Direct mapping since both use StandardPriority
+    urgency: normalizePriority(unifiedAction.urgency) || normalizePriority(unifiedAction.priority)  // Backward compatibility
   };
 };
 
@@ -78,32 +86,32 @@ const calculateEstimatedTime = (action: ExecutiveAction): string => {
 };
 
 // Transform legacy IntelligenceItem variants to unified format with backward compatibility
-export const unifyIntelligenceItem = (item: Record<string, unknown>): IntelligenceItem & { 
+export const unifyIntelligenceItem = (item: Record<string, unknown>): IntelligenceItem & {
   // Backward compatibility properties
   priority?: string;
   content?: string;
   relatedCountries?: string[];
 } => ({
-  id: item.id,
-  type: item.type || 'update',
-  title: item.title,
-  description: item.description || item.message || item.content,
+  id: isString(item.id) ? item.id : `intel-${Date.now()}`,
+  type: isString(item.type) ? item.type as any : 'update',
+  title: isString(item.title) ? item.title : 'Unknown',
+  description: isString(item.description) ? item.description : isString(item.message) ? item.message : isString(item.content) ? item.content : '',
   category: normalizeCategory(item.category),
   severity: normalizePriority(item.severity || item.priority || item.urgency),
-  source: item.source || 'system',
-  confidence: item.confidence || 80,
+  source: isString(item.source) ? item.source : 'system',
+  confidence: isNumber(item.confidence) ? item.confidence : 80,
   actionable: Boolean(item.actionable),
   timestamp: normalizeTimestamp(item.timestamp || item.createdAt),
   createdAt: normalizeTimestamp(item.createdAt || item.timestamp),
-  affectedRegions: item.affectedRegions || (item.affectedCountries ? item.affectedCountries.split(',') : []),
-  relatedItems: item.relatedItems,
-  tags: item.tags,
-  metrics: item.metrics?.map(unifyMetric) || [],
-  
+  affectedRegions: isStringArray(item.affectedRegions) ? item.affectedRegions : (typeof item.affectedCountries === 'string' ? item.affectedCountries.split(',') : []),
+  relatedItems: isStringArray(item.relatedItems) ? item.relatedItems : undefined,
+  tags: isStringArray(item.tags) ? item.tags : undefined,
+  metrics: isArray(item.metrics) ? item.metrics.map((m: any) => unifyMetric(m)) : [],
+
   // Backward compatibility mappings
   priority: normalizePriority(item.severity || item.priority || item.urgency),
-  content: item.description || item.message || item.content,
-  relatedCountries: item.affectedRegions || (typeof item.affectedCountries === 'string' ? item.affectedCountries.split(',') : [])
+  content: isString(item.description) ? item.description : isString(item.message) ? item.message : isString(item.content) ? item.content : '',
+  relatedCountries: isStringArray(item.affectedRegions) ? item.affectedRegions : (typeof item.affectedCountries === 'string' ? item.affectedCountries.split(',') : [])
 });
 
 // Normalize timestamp to Unix timestamp
