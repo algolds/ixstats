@@ -749,7 +749,8 @@ export function EnhancedCommandCenter() {
                       governmentType: c.governmentType ?? null,
                       religion: c.religion ?? null,
                       leader: c.leader ?? null,
-                      areaSqMi: c.areaSqMi ?? null
+                      areaSqMi: c.areaSqMi ?? null,
+                      gdpDensity: c.gdpDensity ?? null
                     }))}
                     isLoading={false}
                   />

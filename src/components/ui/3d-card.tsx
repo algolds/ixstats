@@ -95,7 +95,7 @@ export const CardBody = ({
   );
 };
 
-interface CardItemProps {
+interface CardItemProps extends React.HTMLAttributes<HTMLElement> {
   as?: React.ElementType;
   children?: React.ReactNode;
   className?: string;
@@ -105,7 +105,6 @@ interface CardItemProps {
   rotateX?: number | string;
   rotateY?: number | string;
   rotateZ?: number | string;
-  [key: string]: any;
 }
 
 export const CardItem = ({

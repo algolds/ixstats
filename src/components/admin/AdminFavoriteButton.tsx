@@ -15,7 +15,7 @@ interface AdminFavoriteButtonProps {
   url: string;
   category?: string;
   className?: string;
-  size?: "sm" | "md" | "lg";
+  size?: "default" | "sm" | "lg" | "icon";
   variant?: "default" | "ghost" | "outline";
 }
 
@@ -106,16 +106,18 @@ export function AdminFavoriteButton({
         <Star className={cn(
           "transition-all duration-200",
           size === "sm" && "h-4 w-4",
-          size === "md" && "h-5 w-5",
+          size === "default" && "h-5 w-5",
           size === "lg" && "h-6 w-6",
+          size === "icon" && "h-5 w-5",
           "fill-current"
         )} />
       ) : (
         <StarOff className={cn(
           "transition-all duration-200",
           size === "sm" && "h-4 w-4",
-          size === "md" && "h-5 w-5",
+          size === "default" && "h-5 w-5",
           size === "lg" && "h-6 w-6",
+          size === "icon" && "h-5 w-5",
           isHovered && "scale-110"
         )} />
       )}

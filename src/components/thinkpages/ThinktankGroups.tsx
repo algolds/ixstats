@@ -184,13 +184,13 @@ export function ThinktankGroups({ userId, userAccounts, viewOnly = false }: Thin
   const currentUserId = userId;
 
   // Real-time WebSocket functionality
-  const { 
-    clientState, 
-    sendTypingIndicator, 
-    subscribeToGroup, 
-    markMessageAsRead 
+  const {
+    clientState,
+    sendTypingIndicator,
+    subscribeToGroup,
+    markMessageAsRead
   } = useThinkPagesWebSocket({
-    accountId: currentUserId, // Using userId instead of account ID
+    accountId: currentUserId ?? undefined, // Using userId instead of account ID
     autoReconnect: true,
     onMessageUpdate: (update) => {
       if (selectedGroup && (update.groupId === selectedGroup.id)) {

@@ -38,6 +38,9 @@ export function useOptimizedIntelligenceData({
   cacheTime = 300000  // 5 minutes cache time
 }: QueryConfig): OptimizedIntelligenceData {
 
+  // Use tRPC hooks for queries
+  const utils = api.useUtils();
+
   // Batch related queries with optimized caching
   const queries = useQueries({
     queries: [
@@ -45,19 +48,19 @@ export function useOptimizedIntelligenceData({
       {
         queryKey: ['country', countryId],
         queryFn: async () => {
-          const result = await api.countries.getByIdAtTime.query({ id: countryId });
+          const result = await utils.client.countries.getByIdAtTime.query({ id: countryId });
           return result;
         },
         staleTime: staleTime * 2, // Country data stays fresh longer
         gcTime: cacheTime * 2,
         enabled: !!countryId
       },
-      
+
       // Intelligence feed - medium cache since it updates regularly
       {
         queryKey: ['intelligence', countryId],
         queryFn: async () => {
-          const result = await api.intelligence.getFeed.query();
+          const result = await utils.client.intelligence.getFeed.query();
           return result;
         },
         staleTime,

@@ -654,7 +654,7 @@ export default function GlobalOverview() {
             <NationCard
               key={nation.id}
               nation={nation}
-              flagUrl={flagUrls[nation.name] ?? null}
+              flagUrl={(flagUrls[nation.name] !== undefined ? flagUrls[nation.name] : null) as string | null}
               highlightCountryId={highlightCountryId}
               userCountryId={userCountryId}
               router={router}

@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           lastName: clerkUser.user.lastName,
           emailAddresses: clerkUser.user.emailAddresses,
           imageUrl: clerkUser.user.imageUrl,
-          createdAt: clerkUser.user.createdAt,
+          createdAt: clerkUser.user.createdAt instanceof Date ? clerkUser.user.createdAt.getTime() : undefined,
         } : null,
         isLoaded: clerkUser.isLoaded,
         isSignedIn: Boolean(clerkUser.isSignedIn),
