@@ -24,7 +24,7 @@ const DashboardStreamlined = React.memo(function DashboardStreamlined() {
 
   // Consolidated data fetching
   const { data: userProfile } = api.users.getProfile.useQuery(
-    { userId: user?.id || 'placeholder-disabled' },
+    undefined,
     { enabled: !!user?.id }
   );
   const { data: countryData } = api.countries.getByIdAtTime.useQuery(

@@ -86,7 +86,7 @@ export default function ThinkPagesMainPage() {
 
   // Get user profile and country data
   const { data: userProfile } = api.users.getProfile.useQuery(
-    { userId: user?.id || 'placeholder-disabled' },
+    undefined,
     { enabled: !!user?.id }
   );
 

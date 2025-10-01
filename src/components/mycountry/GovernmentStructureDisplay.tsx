@@ -35,7 +35,7 @@ export function GovernmentStructureDisplay({
 }: GovernmentStructureDisplayProps) {
   const { user } = useUser();
   const { data: userProfile } = api.users.getProfile.useQuery(
-    { userId: user?.id || 'placeholder-disabled' },
+    undefined,
     { enabled: !!user?.id }
   );
 

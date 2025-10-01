@@ -13,7 +13,7 @@ export function DemographicsFocus() {
   const router = useRouter();
   const { user } = useUser();
   const { data: profile, isLoading: profileLoading, error: profileError } = api.users.getProfile.useQuery(
-    { userId: user?.id || 'placeholder-disabled' },
+    undefined,
     { enabled: !!user?.id }
   );
   const { data: countryData, isLoading: countryLoading, error: countryError } = api.countries.getByIdWithEconomicData.useQuery(

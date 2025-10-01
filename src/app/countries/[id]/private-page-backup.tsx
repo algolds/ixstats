@@ -140,7 +140,7 @@ export default function CountryDetailPage({ params }: CountryDetailPageProps) {
   // Get current user and their linked countryId
   const { user, isLoaded } = useUser();
   const { data: userProfile } = api.users.getProfile.useQuery(
-    { userId: user?.id || 'placeholder-disabled' },
+    undefined,
     { enabled: !!user?.id }
   );
   const isOwnCountry = userProfile?.countryId && country?.id && userProfile.countryId === country.id;
