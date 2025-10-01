@@ -5,6 +5,7 @@ import { useQueries, useQuery } from '@tanstack/react-query';
 import { useMemo, useEffect } from 'react';
 import { api } from '~/trpc/react';
 import type { Country, IntelligenceItem, VitalityIntelligence } from '~/types/intelligence-unified';
+import type { DeliveryMethod } from '~/types/unified-notifications';
 import { useNotificationStore } from '~/stores/notificationStore';
 import { useUnifiedNotifications } from '~/hooks/useUnifiedNotifications';
 
@@ -106,11 +107,48 @@ export function useOptimizedIntelligenceData({
           severity: 'important' as const,
           deliveryMethod: 'dynamic-island' as const,
           actionable: true,
+          status: 'pending' as const,
+          context: {
+            userId: 'system',
+            countryId: countryId || 'unknown',
+            isExecutiveMode: false,
+            currentRoute: '/sdi',
+            ixTime: Date.now(),
+            realTime: Date.now(),
+            timeMultiplier: 2,
+            activeFeatures: [],
+            recentActions: [],
+            focusMode: false,
+            sessionDuration: 0,
+            isUserActive: true,
+            lastInteraction: Date.now(),
+            deviceType: 'desktop' as const,
+            screenSize: 'large' as const,
+            networkQuality: 'high' as const,
+            batteryLevel: 100,
+            userPreferences: {
+              preferredMethods: ['dynamic-island'] as DeliveryMethod[],
+              quietHours: null,
+              batchingEnabled: false,
+              maxNotificationsPerHour: 10,
+              categories: {} as any,
+              executiveModeFilters: [],
+              publicModeFilters: [],
+              allowMLPersonalization: false,
+              trackEngagement: false
+            },
+            historicalEngagement: [],
+            interactionHistory: [],
+            contextualFactors: {},
+            urgencyFactors: [],
+            contextualRelevance: 0.8
+          },
+          relevanceScore: 0.8,
           actions: [{
             id: 'view-intelligence',
             label: 'View Details',
             type: 'primary' as const,
-            onClick: () => window.location.href = '/sdi'
+            onClick: () => { window.location.href = '/sdi'; }
           }],
           triggers: [{
             type: 'data-change' as const,
@@ -132,9 +170,9 @@ export function useOptimizedIntelligenceData({
 
   const result = useMemo((): OptimizedIntelligenceData => {
     const [countryQuery, intelligenceQuery, vitalityQuery] = queries;
-    
+
     return {
-      country: countryQuery.data || null,
+      country: (countryQuery.data as unknown as Country) || null,
       intelligence: intelligenceQuery.data || null,
       vitality: vitalityQuery.data || null,
       isLoading: queries.some(q => q.isLoading),

@@ -192,6 +192,10 @@ export function generateGovernmentSpendingData(profile: CountryProfile): Governm
     spendingPerCapita: totalSpending / profile.population,
     deficitSurplus: -deficit,
     spendingCategories: spendingCategories,
+    performanceBasedBudgeting: false,
+    universalBasicServices: false,
+    greenInvestmentPriority: false,
+    digitalGovernmentInitiative: false,
   };
 }
 

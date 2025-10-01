@@ -368,8 +368,8 @@ export default function GlobalOverview() {
 
   function NationCard({ nation, flagUrl, highlightCountryId, userCountryId, router }: {
     nation: any;
-    flagUrl: string | null;
-    highlightCountryId: string | null;
+    flagUrl: string | null | undefined;
+    highlightCountryId: string | null | undefined;
     userCountryId: string | null | undefined;
     router: any;
   }) {
@@ -654,7 +654,7 @@ export default function GlobalOverview() {
             <NationCard
               key={nation.id}
               nation={nation}
-              flagUrl={(flagUrls[nation.name] !== undefined ? flagUrls[nation.name] : null) as string | null}
+              flagUrl={(flagUrls[nation.name] ?? null) as (string | null | undefined)}
               highlightCountryId={highlightCountryId}
               userCountryId={userCountryId}
               router={router}

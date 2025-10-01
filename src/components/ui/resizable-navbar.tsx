@@ -247,12 +247,13 @@ export const NavbarLogo = () => {
   );
 };
 
-interface NavbarButtonProps<T extends React.ElementType = "a"> extends Omit<React.ComponentPropsWithoutRef<T>, 'as' | 'variant'> {
+interface NavbarButtonProps<T extends React.ElementType = "a"> {
   href?: string;
   as?: T;
   children: React.ReactNode;
   className?: string;
   variant?: "primary" | "secondary" | "dark" | "gradient";
+  [key: string]: any; // Allow additional props
 }
 
 export const NavbarButton = <T extends React.ElementType = "a">({
@@ -278,13 +279,13 @@ export const NavbarButton = <T extends React.ElementType = "a">({
 
   const tagProps = Tag === "a" && href ? { href } : {};
 
-  return (
-    <Tag
-      className={cn(baseStyles, variantStyles[variant], className)}
-      {...tagProps}
-      {...props}
-    >
-      {children}
-    </Tag>
+  return React.createElement(
+    Tag,
+    {
+      className: cn(baseStyles, variantStyles[variant], className),
+      ...tagProps,
+      ...props
+    },
+    children
   );
 };

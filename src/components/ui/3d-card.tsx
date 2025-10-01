@@ -95,7 +95,7 @@ export const CardBody = ({
   );
 };
 
-interface CardItemProps extends React.HTMLAttributes<HTMLElement> {
+interface CardItemProps {
   as?: React.ElementType;
   children?: React.ReactNode;
   className?: string;
@@ -105,6 +105,7 @@ interface CardItemProps extends React.HTMLAttributes<HTMLElement> {
   rotateX?: number | string;
   rotateY?: number | string;
   rotateZ?: number | string;
+  [key: string]: any; // Allow additional props
 }
 
 export const CardItem = ({
@@ -119,7 +120,7 @@ export const CardItem = ({
   rotateZ = 0,
   ...rest
 }: CardItemProps) => {
-  const ref = useRef<any>(null);
+  const ref = useRef<HTMLDivElement>(null);
   const [isMouseEntered] = useMouseEnter();
 
   useEffect(() => {
@@ -135,14 +136,14 @@ export const CardItem = ({
     }
   };
 
-  return (
-    <Tag
-      ref={ref}
-      className={cn("w-fit transition duration-200 ease-linear", className)}
-      {...rest}
-    >
-      {children}
-    </Tag>
+  return React.createElement(
+    Tag,
+    {
+      ref,
+      className: cn("w-fit transition duration-200 ease-linear", className),
+      ...rest
+    },
+    children
   );
 };
 

@@ -175,10 +175,8 @@ export async function generateAndPostMediaResponse(parentPostId: string, country
     },
   });
 
-  await prisma.user.update({
-    where: { id: postingAccount.id },
-    data: { postCount: { increment: 1 } },
-  });
+  // Note: postCount field doesn't exist on User model
+  // Removed increment operation
 
   // Update parent post's reply count
   await prisma.thinkpagesPost.update({
