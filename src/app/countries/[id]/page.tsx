@@ -39,7 +39,7 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
   
   const { data: country, isLoading, error } = api.countries.getByIdWithEconomicData.useQuery({ id });
   const { data: userProfile } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
+    undefined,
     { enabled: !!user?.id }
   );
   

@@ -47,7 +47,7 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
   );
   const { data: systemStatus, isLoading: systemStatusLoading } = api.admin.getSystemStatus.useQuery();
   const { data: userProfile } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
+    undefined,
     { enabled: !!user?.id }
   );
   

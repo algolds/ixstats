@@ -51,8 +51,9 @@ import { Textarea } from '~/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
 
 interface ThinktankGroupsProps {
-  userId: string; // Changed from countryId to userId (clerkUserId)
+  userId: string | null; // Changed from countryId to userId (clerkUserId), nullable for anonymous users
   userAccounts: any[];
+  viewOnly?: boolean; // Optional view-only mode for anonymous users
 }
 
 interface GroupChatMessage {
@@ -168,10 +169,10 @@ const formatContentEnhanced = (content: string) => {
   return formattedContent;
 };
 
-export function ThinktankGroups({ userId, userAccounts }: ThinktankGroupsProps) {
+export function ThinktankGroups({ userId, userAccounts, viewOnly = false }: ThinktankGroupsProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [activeTab, setActiveTab] = useState<'discover' | 'joined' | 'created'>('discover');
+  const [activeTab, setActiveTab] = useState<'discover' | 'joined' | 'created'>(viewOnly ? 'discover' : 'discover');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<ThinktankGroup | null>(null);
   const [messageText, setMessageText] = useState('');
@@ -228,10 +229,10 @@ export function ThinktankGroups({ userId, userAccounts }: ThinktankGroupsProps) 
   const shouldFetchGroups = hasValidProps && userId && userId.trim() !== '';
   
   const { data: groups, isLoading: isLoadingGroups, refetch: refetchGroups } = api.thinkpages.getThinktanks.useQuery({
-    userId: userId || 'INVALID',
+    userId: userId || 'ANONYMOUS',
     type: activeTab === 'discover' ? 'all' : activeTab
   }, {
-    enabled: false, // NEVER auto-enable
+    enabled: (!viewOnly && shouldFetchGroups) || (viewOnly && activeTab === 'discover'), // Enable discover mode for anonymous users
     retry: 0,
     refetchOnWindowFocus: false,
     staleTime: 30000,
@@ -245,9 +246,9 @@ export function ThinktankGroups({ userId, userAccounts }: ThinktankGroupsProps) 
   }, [shouldFetchGroups, userId, activeTab, refetchGroups]);
 
   const { data: groupMessages, isLoading: isLoadingMessages, refetch: refetchMessages } = api.thinkpages.getThinktankMessages.useQuery(
-    { 
+    {
       groupId: selectedGroup?.id || 'INVALID',
-      userId: currentUserId || 'INVALID'
+      userId: currentUserId || 'ANONYMOUS'
     },
     { 
       enabled: false, // NEVER auto-enable
@@ -646,13 +647,19 @@ export function ThinktankGroups({ userId, userAccounts }: ThinktankGroupsProps) 
                 </p>
               </div>
             </div>
-            <Button 
-              onClick={() => setShowCreateModal(true)}
-              className="bg-gradient-to-r from-orange-600 to-yellow-600 hover:from-orange-700 hover:to-yellow-700 text-white"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create Group
-            </Button>
+            {!viewOnly ? (
+              <Button
+                onClick={() => setShowCreateModal(true)}
+                className="bg-gradient-to-r from-orange-600 to-yellow-600 hover:from-orange-700 hover:to-yellow-700 text-white"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Group
+              </Button>
+            ) : (
+              <Badge variant="secondary" className="text-xs">
+                👁️ View Only Mode
+              </Badge>
+            )}
             <CreateGroupModal 
               isOpen={showCreateModal}
               onClose={() => setShowCreateModal(false)}
@@ -672,18 +679,22 @@ export function ThinktankGroups({ userId, userAccounts }: ThinktankGroupsProps) 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
         <div className="flex items-center justify-between gap-4 mb-6">
           <TabsList className="glass-hierarchy-child p-1">
-            <TabsTrigger value="joined" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Joined Groups
-            </TabsTrigger>
+            {!viewOnly && (
+              <TabsTrigger value="joined" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Joined Groups
+              </TabsTrigger>
+            )}
             <TabsTrigger value="discover" className="flex items-center gap-2">
               <Search className="h-4 w-4" />
               Discover
             </TabsTrigger>
-            <TabsTrigger value="created" className="flex items-center gap-2">
-              <Crown className="h-4 w-4" />
-              Created
-            </TabsTrigger>
+            {!viewOnly && (
+              <TabsTrigger value="created" className="flex items-center gap-2">
+                <Crown className="h-4 w-4" />
+                Created
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Search and Filters */}

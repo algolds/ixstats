@@ -31,6 +31,9 @@ const isUsingTestKeys = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWit
 const isUsingLiveKeys = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith('pk_live_');
 
 // Production environment validation
+// Note: Clerk's built-in "development keys" warning is expected in development
+// and does not indicate an error - it's just Clerk reminding developers
+// not to use development keys in production environments.
 if (typeof window === 'undefined') { // Server-side only
   if (isProductionEnvironment && !isUsingLiveKeys && isClerkConfigured) {
     console.warn('⚠️  PRODUCTION WARNING: Not using live Clerk keys in production environment');
@@ -135,7 +138,7 @@ export function SignInButton({ children, mode, asChild, ...props }: { children?:
     if (asChild && children && React.isValidElement(children)) {
       // Clone the child element and add our click handler, but filter out asChild prop
       // Don't add title to avoid hydration mismatch
-      return React.cloneElement(children as any, {
+      return React.cloneElement(children as React.ReactElement<any>, {
         onClick: handleFallbackClick
       });
     }
@@ -177,6 +180,7 @@ export function SignInButton({ children, mode, asChild, ...props }: { children?:
     // Log success only in development for debugging
     if (isDevEnvironment && isUsingTestKeys) {
       console.log('✅ Development Clerk keys correctly configured');
+      console.log('ℹ️  Note: Clerk development key warnings are expected in development and can be safely ignored');
     }
   }, []); // Only run once
   
@@ -185,7 +189,7 @@ export function SignInButton({ children, mode, asChild, ...props }: { children?:
     // Return a placeholder that matches the final rendered output
     // Don't add title attribute to avoid hydration mismatch with Clerk components
     if (asChild && children && React.isValidElement(children)) {
-      return React.cloneElement(children as any, { 
+      return React.cloneElement(children as React.ReactElement<any>, {
         onClick: () => {}
       });
     }
@@ -208,14 +212,14 @@ export function SignInButton({ children, mode, asChild, ...props }: { children?:
     // For asChild pattern, filter out asChild prop since ClerkSignInButton doesn't support it
     const { asChild: _, ...clerkProps } = props;
     return (
-      <ClerkSignInButton mode={mode as any} {...clerkProps}>
+      <ClerkSignInButton mode={mode as "modal" | "redirect" | undefined} {...clerkProps}>
         {children}
       </ClerkSignInButton>
     );
   } else {
     // For normal button pattern, pass through all props
     return (
-      <ClerkSignInButton mode={mode as any} {...props}>
+      <ClerkSignInButton mode={mode as "modal" | "redirect" | undefined} {...props}>
         {children}
       </ClerkSignInButton>
     );

@@ -87,8 +87,8 @@ export function useOptimizedIntelligenceData({
     
     if (intelligenceQuery.data && Array.isArray(intelligenceQuery.data)) {
       // Check for new high-priority intelligence items
-      const highPriorityItems = intelligenceQuery.data.filter((item: IntelligenceItem) => 
-        ['high', 'critical'].includes((item as any).priority || 'medium')
+      const highPriorityItems = intelligenceQuery.data.filter((item: IntelligenceItem) =>
+        ['high', 'critical'].includes((item as IntelligenceItem & { priority?: string }).priority || 'medium')
       );
 
       // Create notifications for critical intelligence updates
@@ -99,7 +99,7 @@ export function useOptimizedIntelligenceData({
           message: item.content || 'New intelligence information available',
           category: 'security' as const,
           type: 'alert' as const,
-          priority: ((item as any).priority || 'medium') as 'low' | 'medium' | 'high' | 'critical',
+          priority: ((item as IntelligenceItem & { priority?: string }).priority || 'medium') as 'low' | 'medium' | 'high' | 'critical',
           severity: 'important' as const,
           deliveryMethod: 'dynamic-island' as const,
           actionable: true,
@@ -119,7 +119,7 @@ export function useOptimizedIntelligenceData({
         
         // Add to both systems for redundancy
         try {
-          await addNotification(notificationData as any);
+          await addNotification(notificationData);
         } catch (error) {
           console.warn('Failed to add intelligence notification:', error);
         }

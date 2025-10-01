@@ -72,8 +72,7 @@ export function NotificationsAdmin() {
     refetch: refetchNotifications
   } = api.notifications.getUserNotifications.useQuery({
     limit: 100,
-    unreadOnly: false,
-    userId: "system-admin" // System admin user for admin panel notifications
+    unreadOnly: false
   });
 
   const { data: countries } = api.countries.getAll.useQuery();

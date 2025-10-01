@@ -4,7 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '~/lib/utils';
 
-interface GlassButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onDragEnd' | 'onDragStart' | 'onDrag'> {
+interface GlassButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onDragEnd' | 'onDragStart' | 'onDrag' | 'onAnimationStart' | 'onAnimationEnd' | 'onAnimationIteration'> {
   variant?: 'primary' | 'secondary' | 'neutral' | 'danger';
   size?: 'sm' | 'md' | 'lg';
   depth?: 'shallow' | 'medium' | 'deep';

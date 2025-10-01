@@ -40,6 +40,8 @@ function CommandPaletteContent({ isSticky = false, scrollY = 0 }: { isSticky?: b
     searchFilter,
     isUserInteracting,
     timeDisplayMode,
+    searchResults,
+    countriesData,
     setMode,
     setIsExpanded,
     setExpandedMode,
@@ -114,6 +116,13 @@ function CommandPaletteContent({ isSticky = false, scrollY = 0 }: { isSticky?: b
         <ExpandedView
           mode={expandedMode}
           onClose={() => switchMode("compact")}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          searchFilter={searchFilter}
+          setSearchFilter={setSearchFilter}
+          debouncedSearchQuery={debouncedSearchQuery}
+          searchResults={searchResults}
+          countriesData={countriesData}
         />
       )}
     </>

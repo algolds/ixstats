@@ -38,7 +38,7 @@ export default function MyCountryPage() {
   return (
     <MobileOptimized enableTouchGestures={true} className="min-h-screen">
       <AuthenticationGuard redirectPath="/mycountry">
-        <CountryDataProvider userId={user?.id || ''}>
+        <CountryDataProvider userId={user?.id || 'placeholder-disabled'}>
           <MyCountryWithAtomicState />
         </CountryDataProvider>
       </AuthenticationGuard>

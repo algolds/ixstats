@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, premiumProcedure } from "~/server/api/trpc";
 import { standardize } from "~/lib/interface-standardizer";
 import { unifyIntelligenceItem } from "~/lib/transformers/interface-adapters";
 
 export const intelligenceRouter = createTRPCRouter({
-  getFeed: publicProcedure.query(async ({ ctx }) => {
+  getFeed: premiumProcedure.query(async ({ ctx }) => {
     // Get real intelligence items from database
     const items = await ctx.db.intelligenceItem.findMany({
       where: { isActive: true },
@@ -16,7 +16,7 @@ export const intelligenceRouter = createTRPCRouter({
     return items.map(unifyIntelligenceItem);
   }),
 
-  getLatestIntelligence: publicProcedure.query(async ({ ctx }) => {
+  getLatestIntelligence: premiumProcedure.query(async ({ ctx }) => {
     // Get latest intelligence items with additional filtering
     const items = await ctx.db.intelligenceItem.findMany({
       where: { isActive: true },
@@ -54,7 +54,7 @@ export const intelligenceRouter = createTRPCRouter({
       });
     }),
 
-  getSecureMessages: publicProcedure
+  getSecureMessages: premiumProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       // Get secure messages from SystemConfig table (using same pattern as ECI)
@@ -80,7 +80,7 @@ export const intelligenceRouter = createTRPCRouter({
       });
     }),
 
-  sendSecureMessage: publicProcedure
+  sendSecureMessage: premiumProcedure
     .input(z.object({
       recipientUserId: z.string(),
       subject: z.string().min(1).max(200),

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { useIxTime } from "~/contexts/IxTimeContext";
@@ -83,6 +83,7 @@ function GlobalStatsIslandContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [mounted, setMounted] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   
   // Current time state
   const [currentTime, setCurrentTime] = useState<{
@@ -100,7 +101,7 @@ function GlobalStatsIslandContent() {
 
   const { user, isLoaded } = useUser();
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id }
   );
   const [showUserPopover, setShowUserPopover] = useState(false);
@@ -291,7 +292,7 @@ function GlobalStatsIslandContent() {
   // Mode switching with size changes
   const switchMode = useCallback((newMode: typeof mode) => {
     setMode(newMode);
-    
+
     switch (newMode) {
       case "compact":
         setSize(SIZE_PRESETS.COMPACT);
@@ -301,6 +302,13 @@ function GlobalStatsIslandContent() {
         break;
       case "search":
         setSize(SIZE_PRESETS.MEDIUM);
+        // Focus the search input after the component re-renders
+        setTimeout(() => {
+          if (searchInputRef.current) {
+            searchInputRef.current.focus();
+            searchInputRef.current.select();
+          }
+        }, 100);
         break;
       case "notifications":
         setSize(SIZE_PRESETS.TALL);
@@ -312,33 +320,8 @@ function GlobalStatsIslandContent() {
   }, [setSize]);
 
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey) {
-        switch (e.key) {
-          case 'k':
-            e.preventDefault();
-            switchMode(mode === "search" ? "compact" : "search");
-            break;
-          case 'n':
-            e.preventDefault();
-            switchMode(mode === "notifications" ? "compact" : "notifications");
-            break;
-          case ',':
-            e.preventDefault();
-            switchMode(mode === "mycountry" ? "compact" : "mycountry");
-            break;
-        }
-      }
-      if (e.key === 'Escape') {
-        switchMode("compact");
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [mode, switchMode]);
+  // Removed global keyboard shortcuts to prevent conflicts with universal command palette
+  // The DynamicIsland command palette now handles all global keyboard shortcuts
 
   useEffect(() => {
     setMounted(true);
@@ -682,6 +665,7 @@ function GlobalStatsIslandContent() {
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/60" />
               <Input
+                ref={searchInputRef}
                 placeholder="Search countries, commands..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

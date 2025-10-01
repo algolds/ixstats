@@ -9,7 +9,7 @@ export const LoaderOne = () => {
       repeat: Infinity,
       repeatType: "loop" as const,
       delay: x * 0.2,
-      ease: "easeInOut",
+      ease: [0.4, 0, 0.6, 1],
     };
   };
   return (
@@ -26,7 +26,7 @@ export const LoaderOne = () => {
           repeat: Infinity,
           repeatType: "loop" as const,
           delay: 0,
-          ease: "easeInOut",
+          ease: [0.4, 0, 0.6, 1],
         }}
         className="h-4 w-4 rounded-full border border-neutral-300 bg-gradient-to-b from-neutral-400 to-neutral-300"
       />
@@ -42,7 +42,7 @@ export const LoaderOne = () => {
           repeat: Infinity,
           repeatType: "loop" as const,
           delay: 0.2,
-          ease: "easeInOut",
+          ease: [0.4, 0, 0.6, 1],
         }}
         className="h-4 w-4 rounded-full border border-neutral-300 bg-gradient-to-b from-neutral-400 to-neutral-300"
       />
@@ -58,7 +58,7 @@ export const LoaderOne = () => {
           repeat: Infinity,
           repeatType: "loop" as const,
           delay: 0.4,
-          ease: "easeInOut",
+          ease: [0.4, 0, 0.6, 1],
         }}
         className="h-4 w-4 rounded-full border border-neutral-300 bg-gradient-to-b from-neutral-400 to-neutral-300"
       />
@@ -73,7 +73,7 @@ export const LoaderTwo = () => {
       repeat: Infinity,
       repeatType: "loop" as const,
       delay: x * 0.2,
-      ease: "easeInOut",
+      ease: [0.4, 0, 0.6, 1],
     };
   };
   return (
@@ -84,7 +84,7 @@ export const LoaderTwo = () => {
           repeat: Infinity,
           repeatType: "loop" as const,
           delay: 0,
-          ease: "easeInOut",
+          ease: [0.4, 0, 0.6, 1],
         }}
         initial={{
           x: 0,
@@ -138,7 +138,7 @@ export const LoaderThree = () => {
         animate={{ pathLength: 1, fill: "var(--fill-final)" }}
         transition={{
           duration: 2,
-          ease: "easeInOut",
+          ease: [0.4, 0, 0.6, 1],
           repeat: Infinity,
           repeatType: "reverse",
         }}
@@ -228,7 +228,7 @@ export const LoaderFive = ({ text }: { text: string }) => {
             repeat: Infinity,
             repeatType: "loop",
             delay: i * 0.05,
-            ease: "easeInOut",
+            ease: [0.4, 0, 0.6, 1],
             repeatDelay: 2,
           }}
         >

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
@@ -29,6 +29,31 @@ export function SearchView({
   countriesData,
   closeDropdown
 }: SearchViewProps) {
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  // EXTREMELY SIMPLE focus - just focus immediately when mounted
+  useEffect(() => {
+    console.log('[DynamicIsland SearchView] Component mounted');
+
+    // Use a very short delay to ensure DOM is ready
+    setTimeout(() => {
+      if (searchInputRef.current) {
+        console.log('[DynamicIsland SearchView] Focusing input now');
+        searchInputRef.current.focus();
+
+        // Verify focus worked
+        setTimeout(() => {
+          const focused = document.activeElement === searchInputRef.current;
+          console.log('[DynamicIsland SearchView] Focus successful:', focused);
+          if (!focused) {
+            console.log('[DynamicIsland SearchView] Focus failed, active element is:', document.activeElement);
+          }
+        }, 10);
+      }
+    }, 50);
+  }, []);
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
@@ -70,13 +95,116 @@ export function SearchView({
         ))}
       </div>
 
+
       <div className="relative mb-6">
         <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-        <Input
+        <input
+          ref={searchInputRef}
+          type="text"
+          tabIndex={0}
           placeholder={`Search ${searchFilter === 'all' ? 'everything' : searchFilter}...`}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery && setSearchQuery(e.target.value)}
-          className="pl-12 pr-16 py-3 bg-accent/10 border text-foreground placeholder:text-muted-foreground rounded-xl text-base focus:bg-accent/15 focus:border-blue-400 transition-all"
+          value={searchQuery || ''}
+          onChange={(e) => {
+            console.log('[DynamicIsland SearchView] onChange fired, value:', e.target.value);
+            console.log('[DynamicIsland SearchView] setSearchQuery function exists:', !!setSearchQuery);
+            if (setSearchQuery) {
+              console.log('[DynamicIsland SearchView] Calling setSearchQuery with:', e.target.value);
+              setSearchQuery(e.target.value);
+            } else {
+              console.error('[DynamicIsland SearchView] setSearchQuery is undefined!');
+            }
+          }}
+          onKeyDown={(e) => {
+            const input = e.target as HTMLInputElement;
+
+            // Handle typing manually since onChange/onInput aren't working naturally
+            if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+              if (e.key.length === 1) {
+                // Regular character - insert at cursor position
+                const start = input.selectionStart || 0;
+                const end = input.selectionEnd || 0;
+                const currentValue = input.value;
+                const newValue = currentValue.slice(0, start) + e.key + currentValue.slice(end);
+
+                input.value = newValue;
+
+                // Update cursor position
+                const newCursor = start + 1;
+                setTimeout(() => {
+                  input.setSelectionRange(newCursor, newCursor);
+                }, 0);
+
+                // Trigger React onChange
+                if (setSearchQuery) {
+                  setSearchQuery(newValue);
+                }
+
+                e.preventDefault();
+              } else if (e.key === 'Backspace') {
+                // Handle backspace
+                const start = input.selectionStart || 0;
+                const end = input.selectionEnd || 0;
+                const currentValue = input.value;
+
+                let newValue: string;
+                let newCursor: number;
+
+                if (start !== end) {
+                  // Delete selection
+                  newValue = currentValue.slice(0, start) + currentValue.slice(end);
+                  newCursor = start;
+                } else if (start > 0) {
+                  // Delete character before cursor
+                  newValue = currentValue.slice(0, start - 1) + currentValue.slice(start);
+                  newCursor = start - 1;
+                } else {
+                  return; // Nothing to delete
+                }
+
+                input.value = newValue;
+                setTimeout(() => {
+                  input.setSelectionRange(newCursor, newCursor);
+                }, 0);
+
+                if (setSearchQuery) {
+                  setSearchQuery(newValue);
+                }
+
+                e.preventDefault();
+              } else if (e.key === 'Delete') {
+                // Handle delete key
+                const start = input.selectionStart || 0;
+                const end = input.selectionEnd || 0;
+                const currentValue = input.value;
+
+                let newValue: string;
+
+                if (start !== end) {
+                  // Delete selection
+                  newValue = currentValue.slice(0, start) + currentValue.slice(end);
+                } else if (start < currentValue.length) {
+                  // Delete character after cursor
+                  newValue = currentValue.slice(0, start) + currentValue.slice(start + 1);
+                } else {
+                  return; // Nothing to delete
+                }
+
+                input.value = newValue;
+                setTimeout(() => {
+                  input.setSelectionRange(start, start);
+                }, 0);
+
+                if (setSearchQuery) {
+                  setSearchQuery(newValue);
+                }
+
+                e.preventDefault();
+              }
+            }
+          }}
+          onFocus={() => console.log('[DynamicIsland SearchView] Input focused')}
+          onBlur={() => console.log('[DynamicIsland SearchView] Input blurred')}
+          className="pl-12 pr-16 py-3 bg-accent/10 border text-foreground placeholder:text-muted-foreground rounded-xl text-base focus:bg-accent/15 focus:border-blue-400 transition-all w-full"
           data-command-palette-search="true"
           autoFocus
         />

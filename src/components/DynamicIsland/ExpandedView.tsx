@@ -2,23 +2,28 @@ import React from 'react';
 import { SearchView } from './SearchView';
 import { NotificationsView } from './NotificationsView';
 import { SettingsView } from './SettingsView';
-import type { ViewMode } from './types';
+import type { ExpandedViewProps } from './types';
 
-interface ExpandedViewProps {
-  mode: ViewMode;
-  onClose: () => void;
-}
-
-export function ExpandedView({ mode, onClose }: ExpandedViewProps) {
+export function ExpandedView({
+  mode,
+  onClose,
+  searchQuery,
+  setSearchQuery,
+  searchFilter,
+  setSearchFilter,
+  debouncedSearchQuery,
+  searchResults,
+  countriesData
+}: ExpandedViewProps) {
   // Don't render if mode is compact or cycling
   if (mode === 'compact' || mode === 'cycling') {
     return null;
   }
 
   return (
-    <div className="hidden lg:block absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-[10002]">
-      <div 
-        className="command-palette-dropdown border-border dark:border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[500px] max-w-[800px] relative"
+    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-[10002] w-[95vw] max-w-4xl">
+      <div
+        className="command-palette-dropdown border-border dark:border-white/10 rounded-xl shadow-2xl overflow-hidden w-full min-w-[480px] mx-auto relative"
         style={{
           background: "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",
           backdropFilter: "blur(20px) saturate(180%)",
@@ -34,11 +39,14 @@ export function ExpandedView({ mode, onClose }: ExpandedViewProps) {
         </div>
         
         <div className="relative z-10">
-          {mode === 'search' && <SearchView 
-            searchQuery=""
-            searchFilter="all"
-            debouncedSearchQuery=""
-            searchResults={[]}
+          {mode === 'search' && <SearchView
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            searchFilter={searchFilter}
+            setSearchFilter={setSearchFilter}
+            debouncedSearchQuery={debouncedSearchQuery}
+            searchResults={searchResults}
+            countriesData={countriesData}
             closeDropdown={onClose}
           />}
           {mode === 'notifications' && <NotificationsView onClose={onClose} />}

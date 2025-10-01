@@ -32,25 +32,25 @@ export function QuickActionIntegration({ className }: QuickActionIntegrationProp
 
   // Get real-time metrics
   const { data: metrics } = api.eci.getRealTimeMetrics.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id, refetchInterval: 30000 } // Refetch every 30 seconds
   );
 
   // Get policy statistics
   const { data: policies } = api.eci.getEconomicPolicies.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id }
   );
 
   // Get meeting statistics
   const { data: meetings } = api.eci.getCabinetMeetings.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id }
   );
 
   // Get security dashboard
   const { data: securityDashboard } = api.eci.getSecurityDashboard.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id }
   );
 

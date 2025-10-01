@@ -65,7 +65,7 @@ export function CompactView({
   const { user: roleUser, permissions } = usePermissions();
   
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id }
   );
   const { ixTimeTimestamp } = useIxTime();
@@ -100,8 +100,7 @@ export function CompactView({
   } = api.notifications.getUserNotifications.useQuery({
     limit: 5,
     unreadOnly: false,
-    userId: user?.id,
-  }, { 
+  }, {
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,

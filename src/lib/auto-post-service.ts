@@ -161,11 +161,11 @@ export async function generateAndPostMediaResponse(parentPostId: string, country
     return null;
   }
 
-  const content = `ANALYSIS: ${(parentPost as any).account?.displayName || 'Government'}'s claim of ${countryName} GDP growth is significant. While positive, questions remain about long-term sustainability and equitable distribution. #Economy #${countryName.replace(/\s/g, '')}`;
+  const content = `ANALYSIS: Government's claim of ${countryName} GDP growth is significant. While positive, questions remain about long-term sustainability and equitable distribution. #Economy #${countryName.replace(/\s/g, '')}`;
 
   const newMediaPost = await prisma.thinkpagesPost.create({
     data: {
-      userId: postingAccount.id,
+      userId: postingAccount.clerkUserId,
       content: content.substring(0, 280),
       postType: 'reply', // It's a reply to the government post
       parentPostId: parentPost.id,
@@ -186,7 +186,7 @@ export async function generateAndPostMediaResponse(parentPostId: string, country
     data: { replyCount: { increment: 1 } },
   });
 
-  console.log(`Auto-posted media response to ${parentPost.id} from ${(postingAccount as any).username}`);
+  console.log(`Auto-posted media response to ${parentPost.id} from ${postingAccount.id}`);
   return newMediaPost;
 }
 
@@ -245,7 +245,7 @@ export async function generateAndPostCitizenReaction(postId: string) {
       },
       data: { reactionType: randomReactionType },
     });
-    console.log(`Citizen account ${(randomCitizenAccount as any).username} updated reaction to ${randomReactionType} on post ${postId}`);
+    console.log(`Citizen account ${randomCitizenAccount.id} updated reaction to ${randomReactionType} on post ${postId}`);
   } else {
     // Otherwise, create a new reaction
     await prisma.postReaction.create({
@@ -256,7 +256,7 @@ export async function generateAndPostCitizenReaction(postId: string) {
         timestamp: new Date(IxTime.getCurrentIxTime()),
       },
     });
-    console.log(`Citizen account ${(randomCitizenAccount as any).username} reacted with ${randomReactionType} to post ${postId}`);
+    console.log(`Citizen account ${randomCitizenAccount.id} reacted with ${randomReactionType} to post ${postId}`);
   }
 
   // Update reaction counts on the post

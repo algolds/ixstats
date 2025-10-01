@@ -94,7 +94,7 @@ export function UnifiedNotificationProvider({
   const activeFeatures = useRef<string[]>([]);
 
   // Derived state
-  const effectiveUserId = userId || user?.id || '';
+  const effectiveUserId = userId || user?.id || 'placeholder-disabled';
   const effectiveCountryId = countryId || '';
   const unreadCount = notifications.filter(n => n.status !== 'read').length;
 

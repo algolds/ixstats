@@ -451,7 +451,7 @@ export const CacheInvalidationUtils = {
   ): void => {
     cacheInvalidationService.addInvalidationRule({
       pattern: new RegExp(pattern),
-      trigger: dataType as any,
+      trigger: dataType as 'intelligence' | 'economic' | 'population' | 'country' | 'global',
       scope,
       delay: dataType === 'intelligence' ? 0 : 1000
     });

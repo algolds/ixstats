@@ -93,8 +93,8 @@ export class SocialProfileTransformer {
       
       // Temporal context
       lastUpdated: IxTime.getCurrentIxTime().toFixed(2),
-      profileCreated: countryData.createdAt 
-        ? (typeof countryData.createdAt === 'number' ? (IxTime as any).fromTimestamp(countryData.createdAt).toFixed(2) : IxTime.convertToIxTime(countryData.createdAt).toFixed(2))
+      profileCreated: countryData.createdAt
+        ? (typeof countryData.createdAt === 'number' ? IxTime.getCurrentIxTime().toFixed(2) : IxTime.getCurrentIxTime().toFixed(2))
         : "IxTime 2028.1",
       nextMilestoneCheck: (IxTime.getCurrentIxTime() + 0.1).toFixed(2),
       
@@ -304,10 +304,10 @@ export class SocialProfileTransformer {
           category: 'achievement',
           visibilityLevel: 'public',
           engagementMetrics: {
-            views: Math.floor(Math.random() * 200) + 50,
-            reactions: Math.floor(Math.random() * 40) + 10,
-            shares: Math.floor(Math.random() * 15) + 2,
-            comments: Math.floor(Math.random() * 10) + 1
+            views: Math.floor(this.getDeterministicRandom(country.id, index + 1000) * 200) + 50,
+            reactions: Math.floor(this.getDeterministicRandom(country.id, index + 1100) * 40) + 10,
+            shares: Math.floor(this.getDeterministicRandom(country.id, index + 1200) * 15) + 2,
+            comments: Math.floor(this.getDeterministicRandom(country.id, index + 1300) * 10) + 1
           }
         });
       }
@@ -325,10 +325,10 @@ export class SocialProfileTransformer {
         category: 'economy',
         visibilityLevel: 'public',
         engagementMetrics: {
-          views: Math.floor(Math.random() * 150) + 30,
-          reactions: Math.floor(Math.random() * 25) + 8,
-          shares: Math.floor(Math.random() * 10) + 3,
-          comments: Math.floor(Math.random() * 8) + 2
+          views: Math.floor(this.getDeterministicRandom(country.id, 2000) * 150) + 30,
+          reactions: Math.floor(this.getDeterministicRandom(country.id, 2100) * 25) + 8,
+          shares: Math.floor(this.getDeterministicRandom(country.id, 2200) * 10) + 3,
+          comments: Math.floor(this.getDeterministicRandom(country.id, 2300) * 8) + 2
         }
       });
     }
@@ -344,10 +344,10 @@ export class SocialProfileTransformer {
       category: 'diplomacy',
       visibilityLevel: 'public',
       engagementMetrics: {
-        views: Math.floor(Math.random() * 100) + 25,
-        reactions: Math.floor(Math.random() * 20) + 5,
-        shares: Math.floor(Math.random() * 8) + 1,
-        comments: Math.floor(Math.random() * 6) + 1
+        views: Math.floor(this.getDeterministicRandom(country.id, 3000) * 100) + 25,
+        reactions: Math.floor(this.getDeterministicRandom(country.id, 3100) * 20) + 5,
+        shares: Math.floor(this.getDeterministicRandom(country.id, 3200) * 8) + 1,
+        comments: Math.floor(this.getDeterministicRandom(country.id, 3300) * 6) + 1
       }
     });
 
@@ -426,7 +426,7 @@ export class SocialProfileTransformer {
                          (Math.log10(country.currentTotalGdp || 1e9) * 0.4);
     
     // Convert to ranking (lower scores = higher rankings)
-    return Math.max(1, Math.floor((20 - economicScore) * 12) + Math.floor(Math.random() * 10));
+    return Math.max(1, Math.floor((20 - economicScore) * 12) + Math.floor(this.getDeterministicRandom(country.id, 4000) * 10));
   }
 
   private static calculateRegionalRanking(country: CountryDataInput): number {
@@ -442,7 +442,7 @@ export class SocialProfileTransformer {
     
     // Simulate streak based on growth rate
     const baseStreak = Math.floor(country.adjustedGdpGrowth * 200); // Higher growth = longer streaks
-    return Math.max(0, baseStreak + Math.floor(Math.random() * 3));
+    return Math.max(0, baseStreak + Math.floor(this.getDeterministicRandom(country.id, 5000) * 3));
   }
 
   private static determineInfluenceLevel(country: CountryDataInput): 'emerging' | 'regional' | 'major' | 'global' | 'superpower' {
@@ -463,7 +463,7 @@ export class SocialProfileTransformer {
         id: `streak-economic-${country.id}`,
         type: 'economic',
         currentStreak: this.calculateGrowthStreak(country),
-        bestStreak: Math.floor(Math.random() * 8) + this.calculateGrowthStreak(country),
+        bestStreak: Math.floor(this.getDeterministicRandom(country.id, 6000) * 8) + this.calculateGrowthStreak(country),
         lastUpdate: `IxTime ${IxTime.getCurrentIxTime().toFixed(2)}`,
         isActive: true,
         milestones: [
@@ -543,7 +543,7 @@ export class SocialProfileTransformer {
   private static calculateAchievementRanking(score: number, type: 'global' | 'regional' | 'tier'): number {
     const multiplier = type === 'global' ? 200 : type === 'regional' ? 30 : 15;
     const baseRanking = Math.max(1, multiplier - Math.floor(score / 50));
-    return baseRanking + Math.floor(Math.random() * 10);
+    return baseRanking + Math.floor(this.getDeterministicRandom(country.id + type, 7000) * 10);
   }
 
   private static generateMutualBenefits(relationType: DiplomaticRelation['relationType']): string[] {

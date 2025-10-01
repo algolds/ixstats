@@ -8,20 +8,19 @@ const NotificationLevel = z.enum(['low', 'medium', 'high', 'critical']);
 const NotificationType = z.enum(['info', 'warning', 'success', 'error', 'economic', 'crisis', 'diplomatic', 'system']);
 
 export const notificationsRouter = createTRPCRouter({
-  // Get notifications for current user
+  // Get notifications for current user (using auth context)
   getUserNotifications: publicProcedure
     .input(z.object({
       limit: z.number().min(1).max(100).default(50),
       offset: z.number().min(0).default(0),
       unreadOnly: z.boolean().default(false),
       type: NotificationType.optional(),
-      userId: z.string().optional(), // Pass userId from frontend
-    }))
-    .query(async ({ ctx, input }) => {
+    }).optional())
+    .query(async ({ ctx, input = {} }) => {
       const { db } = ctx;
-      const userId = input.userId;
-      
-      // If no userId provided, return empty result
+      const userId = ctx.auth?.userId;
+
+      // If not authenticated, return empty result
       if (!userId) {
         return {
           notifications: [],
@@ -78,7 +77,7 @@ export const notificationsRouter = createTRPCRouter({
         notifications,
         totalCount,
         unreadCount,
-        hasMore: input.offset + notifications.length < totalCount,
+        hasMore: (input.offset ?? 0) + notifications.length < totalCount,
       };
     }),
 

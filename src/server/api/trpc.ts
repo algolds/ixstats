@@ -320,6 +320,36 @@ const auditLogMiddleware = t.middleware(async ({ ctx, next, path, input }) => {
 });
 
 /**
+ * Premium membership middleware - Validates user has premium access
+ */
+const premiumMiddleware = t.middleware(async ({ ctx, next }) => {
+  // First ensure user is authenticated
+  if (!ctx.auth?.userId || !ctx.user) {
+    throw new Error('UNAUTHORIZED: Authentication required');
+  }
+
+  // Check membership tier
+  const membershipTier = (ctx.user as any).membershipTier || 'basic';
+  const isPremium = membershipTier === 'mycountry_premium';
+
+  if (!isPremium) {
+    console.warn(`[PREMIUM_ACCESS_DENIED] User ${ctx.auth.userId} (tier: ${membershipTier}) attempted premium content access`);
+    throw new Error('FORBIDDEN: MyCountry Premium membership required');
+  }
+
+  console.log(`[PREMIUM_ACCESS] Premium user ${ctx.auth.userId} accessing premium content`);
+
+  return next({
+    ctx: {
+      ...ctx,
+      auth: ctx.auth,
+      user: ctx.user,
+      isPremium: true,
+    }
+  });
+});
+
+/**
  * Admin role middleware - Validates user has admin permissions
  */
 const adminMiddleware = t.middleware(async ({ ctx, next }) => {
@@ -410,6 +440,11 @@ const inputValidationMiddleware = t.middleware(async ({ ctx, next, input, path }
 // Export all procedure types with appropriate security layers
 export const publicProcedure = t.procedure.use(timingMiddleware);
 export const protectedProcedure = t.procedure.use(timingMiddleware).use(authMiddleware);
+export const premiumProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(authMiddleware)
+  .use(premiumMiddleware)
+  .use(dataPrivacyMiddleware);
 export const countryOwnerProcedure = t.procedure
   .use(timingMiddleware)
   .use(authMiddleware)

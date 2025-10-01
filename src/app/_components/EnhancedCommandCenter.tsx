@@ -52,6 +52,8 @@ import {
   Bot,
   AlertCircle,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Home,
   BarChart3,
   Shield,
@@ -172,7 +174,11 @@ function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, a
         setContentMode('discover');
       }
     }
-  }, [isAdmin, userCountry, userProfile, hasUserSelectedTab]);
+    // If user was on mycountry tab but no longer has a country, switch to discover
+    if (contentMode === 'mycountry' && !userCountry) {
+      setContentMode('discover');
+    }
+  }, [isAdmin, userCountry, userProfile, hasUserSelectedTab, contentMode]);
 
   // Handle manual tab selection
   const handleTabChange = (mode: 'discover' | 'mycountry' | 'activity' | 'admin') => {
@@ -182,7 +188,7 @@ function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, a
 
   const contentModes = [
     { id: 'discover', label: 'Discover', icon: Globe, description: 'Explore nations & trends' },
-    { id: 'mycountry', label: 'My Country', icon: Home, description: 'Your nation\'s dashboard', disabled: !userCountry },
+    ...(userCountry ? [{ id: 'mycountry' as const, label: 'My Country', icon: Home, description: 'Your nation\'s dashboard' }] : []),
     { id: 'activity', label: 'Activity', icon: Activity, description: 'Social feed & updates' },
     ...(isAdmin ? [{ id: 'admin' as const, label: 'Admin', icon: Shield, description: 'System administration' }] : [])
   ];
@@ -203,7 +209,6 @@ function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, a
                   variant={isActive ? "default" : "outline"}
                   size="sm"
                   onClick={() => handleTabChange(mode.id as 'discover' | 'mycountry' | 'activity' | 'admin')}
-                  disabled={mode.disabled}
                   className="flex items-center gap-2"
                 >
                   <Icon className="h-4 w-4" />
@@ -296,14 +301,6 @@ function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, a
                 </div>
               </div>
 
-              {/* Tier Visualization & Featured Article */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <TierVisualization
-                  countries={countries}
-                  isLoading={false}
-                />
-                <FeaturedArticle />
-              </div>
             </motion.div>
           )}
 
@@ -533,7 +530,10 @@ function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, a
 
 export function EnhancedCommandCenter() {
   const { user } = useUser();
-  
+
+  // Sidebar collapse state
+  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
+
   // Get user permissions for admin check
   const { user: roleUser } = usePermissions();
   const isAdmin = roleUser?.role?.level !== undefined && roleUser.role.level <= 10;
@@ -542,11 +542,11 @@ export function EnhancedCommandCenter() {
   const { data: allData, isLoading: countriesLoading } = api.countries.getAll.useQuery();
   const { data: globalStatsData, isLoading: globalStatsLoading } = api.countries.getGlobalStats.useQuery();
   const { data: userProfile } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
+    undefined,
     { enabled: !!user?.id }
   );
   const { data: socialData } = api.users.getSocialData.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id }
   );
 
@@ -623,54 +623,63 @@ export function EnhancedCommandCenter() {
         width={40}
         height={40}
         squares={[50, 40]}
-        className="opacity-30 dark:opacity-20"
+        className="fixed inset-0 opacity-30 dark:opacity-20 z-0"
         squaresClassName="fill-slate-200/20 dark:fill-slate-700/20 stroke-slate-300/30 dark:stroke-slate-600/30 [&:nth-child(4n+1):hover]:fill-yellow-600/40 [&:nth-child(4n+1):hover]:stroke-yellow-600/60 [&:nth-child(4n+2):hover]:fill-blue-600/40 [&:nth-child(4n+2):hover]:stroke-blue-600/60 [&:nth-child(4n+3):hover]:fill-indigo-600/40 [&:nth-child(4n+3):hover]:stroke-indigo-600/60 [&:nth-child(4n+4):hover]:fill-red-600/40 [&:nth-child(4n+4):hover]:stroke-red-600/60 transition-all duration-200"
       />
       
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 mt-16 relative z-10">
-        {/* Main Layout - Left Sidebar + Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-8">
+        {/* Main Layout - Left Sidebar + Main Content + Right Sidebar */}
+        <div className={cn(
+          "grid grid-cols-1 gap-6 lg:gap-8 transition-all duration-300 ease-in-out",
+          user ? (
+            isRightSidebarCollapsed
+              ? "lg:grid-cols-[320px_1fr_48px]"
+              : "lg:grid-cols-[320px_1fr_350px]"
+          ) : (
+            isRightSidebarCollapsed
+              ? "lg:grid-cols-[1fr_48px]"
+              : "lg:grid-cols-[1fr_350px]"
+          )
+        )}>
           
-          {/* Left Sticky Sidebar - User Profile & Context */}
-          <motion.div 
-            className="lg:sticky lg:top-24 lg:self-start space-y-6"
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.7, delay: 0.1 }}
-          >
-            {user && (
-              <>
-                <SocialUserProfile 
-                  userProfile={{
-                    id: user.id,
-                    countryId: userProfile?.countryId || undefined,
-                    displayName: `${user.firstName} ${user.lastName}`,
-                    joinedAt: user.createdAt ? new Date(user.createdAt) : new Date(),
-                    lastActive: new Date()
-                  }}
-                />
-                
-                {/* Quick Stats Card */}
-                <Card className="glass-hierarchy-child">
-                  <CardContent className="p-4">
-                    <div className="grid grid-cols-2 gap-4 text-center">
-                      <div className="p-3 glass-hierarchy-interactive rounded-lg">
-                        <div className="text-lg font-bold text-blue-500">{socialData?.influence || 0}</div>
-                        <div className="text-xs text-muted-foreground">Influence</div>
-                      </div>
-                      <div className="p-3 glass-hierarchy-interactive rounded-lg">
-                        <div className="text-lg font-bold text-green-500">{socialData?.achievements || 0}</div>
-                        <div className="text-xs text-muted-foreground">Achievements</div>
-                      </div>
+          {/* Left Sticky Sidebar - User Profile & Context - Only show when user is logged in */}
+          {user && (
+            <motion.div
+              className="lg:sticky lg:top-24 lg:self-start space-y-6"
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7, delay: 0.1 }}
+            >
+              <SocialUserProfile
+                userProfile={{
+                  id: user.id,
+                  countryId: userProfile?.countryId || undefined,
+                  displayName: `${user.firstName} ${user.lastName}`,
+                  joinedAt: user.createdAt ? new Date(user.createdAt) : new Date(),
+                  lastActive: new Date()
+                }}
+              />
+
+              {/* Quick Stats Card */}
+              <Card className="glass-hierarchy-child">
+                <CardContent className="p-4">
+                  <div className="grid grid-cols-2 gap-4 text-center">
+                    <div className="p-3 glass-hierarchy-interactive rounded-lg">
+                      <div className="text-lg font-bold text-blue-500">{socialData?.influence || 0}</div>
+                      <div className="text-xs text-muted-foreground">Influence</div>
                     </div>
-                  </CardContent>
-                </Card>
-              </>
-            )}
-          </motion.div>
+                    <div className="p-3 glass-hierarchy-interactive rounded-lg">
+                      <div className="text-lg font-bold text-green-500">{socialData?.achievements || 0}</div>
+                      <div className="text-xs text-muted-foreground">Achievements</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
 
           {/* Main Content Area */}
-          <motion.div 
+          <motion.div
             className="min-h-screen"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -686,7 +695,72 @@ export function EnhancedCommandCenter() {
               user={user}
             />
           </motion.div>
-          
+
+          {/* Right Sidebar - Featured Article & Tier Overview */}
+          <motion.div
+            className={cn(
+              "lg:sticky lg:top-24 lg:self-start order-first lg:order-last relative",
+              isRightSidebarCollapsed ? "w-12" : "space-y-6"
+            )}
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7, delay: 0.3 }}
+          >
+            {/* Collapse/Expand Toggle Button - Only show for logged in users */}
+            {user && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
+                className={cn(
+                  "absolute z-10 bg-background/80 backdrop-blur-sm border shadow-sm hover:bg-background/90 transition-all duration-200",
+                  isRightSidebarCollapsed
+                    ? "top-4 left-1/2 -translate-x-1/2"
+                    : "top-4 right-4"
+                )}
+                title={isRightSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                {isRightSidebarCollapsed ? (
+                  <ChevronRight className="h-4 w-4" />
+                ) : (
+                  <ChevronLeft className="h-4 w-4" />
+                )}
+              </Button>
+            )}
+
+            {/* Sidebar Content */}
+            <AnimatePresence mode="wait">
+              {!isRightSidebarCollapsed ? (
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="space-y-6"
+                >
+                  <FeaturedArticle />
+                  <TierVisualization
+                    countries={countries.map(c => ({ ...c, landArea: c.landArea ?? null }))}
+                    isLoading={false}
+                  />
+                </motion.div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex flex-col items-center gap-2 pt-16"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-background/80 backdrop-blur-sm border flex items-center justify-center">
+                    <Star className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="w-8 h-8 rounded-lg bg-background/80 backdrop-blur-sm border flex items-center justify-center">
+                    <Trophy className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+
         </div>
 
         {/* Floating Actions - Simplified */}

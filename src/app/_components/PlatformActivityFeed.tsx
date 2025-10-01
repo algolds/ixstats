@@ -16,16 +16,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 
 // Icons
-import { 
-  Activity, 
-  Users, 
-  Globe, 
-  TrendingUp, 
-  Trophy, 
+import {
+  Activity,
+  Users,
+  Globe,
+  TrendingUp,
+  Trophy,
   Star,
   Heart,
   MessageSquare,
-  Share2,
+  Repeat,
   Bookmark,
   Crown,
   Zap,
@@ -72,7 +72,7 @@ interface ActivityFeedItem {
   engagement: {
     likes: number;
     comments: number;
-    shares: number;
+    reshares: number;
     views?: number;
   };
   timestamp: Date;
@@ -109,6 +109,7 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
   const [showTrending, setShowTrending] = useState(false);
   const [showComments, setShowComments] = useState<Record<string, boolean>>({});
   const [newComment, setNewComment] = useState<Record<string, string>>({});
+  const [comments, setComments] = useState<Record<string, any[]>>({});
 
   // tRPC mutations for engagement
   const engageWithActivityMutation = api.activities.engageWithActivity.useMutation();
@@ -127,6 +128,8 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
     timeRange: '24h',
   });
 
+  const utils = api.useUtils();
+
   const { data: userCountry } = api.countries.getByIdAtTime.useQuery(
     { id: userProfile?.countryId || '' },
     { enabled: !!userProfile?.countryId }
@@ -137,7 +140,7 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
   const { data: userEngagement } = api.activities.getUserEngagement.useQuery(
     {
       activityIds,
-      userId: user?.id || '',
+      userId: user?.id || 'placeholder-disabled',
     },
     { 
       enabled: !!user?.id && activityIds.length > 0,
@@ -180,7 +183,7 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
       engagement: {
         likes: activity.engagement.likes,
         comments: activity.engagement.comments,
-        shares: activity.engagement.shares,
+        reshares: activity.engagement.shares, // Map shares to reshares for backend compatibility
         views: activity.engagement.views || 0,
       },
       timestamp: new Date(activity.timestamp),
@@ -262,7 +265,7 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
     return date.toLocaleDateString();
   };
 
-  const handleEngagement = async (activityId: string, action: 'like' | 'unlike' | 'share' | 'view') => {
+  const handleEngagement = async (activityId: string, action: 'like' | 'unlike' | 'reshare' | 'view') => {
     if (!user?.id || !activityId) {
       console.error('Missing user ID or activity ID', { userId: user?.id, activityId });
       return;
@@ -294,27 +297,54 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
 
   const handleComment = async (activityId: string) => {
     if (!user?.id || !newComment[activityId]?.trim()) return;
-    
+
     try {
       await addCommentMutation.mutateAsync({
         activityId,
         userId: user.id,
         content: newComment[activityId].trim(),
       });
-      
-      // Clear the comment input and refetch activities
+
+      // Clear the comment input
       setNewComment(prev => ({ ...prev, [activityId]: '' }));
-      await refetchActivities();
+
+      // Refresh comments and activities
+      await Promise.all([
+        refetchActivities(),
+        // Refresh comments if they're currently shown
+        showComments[activityId] ? (async () => {
+          const commentsData = await utils.activities.getComments.fetch({ activityId });
+          setComments(prev => ({
+            ...prev,
+            [activityId]: commentsData.comments,
+          }));
+        })() : Promise.resolve(),
+      ]);
     } catch (error) {
       console.error('Error adding comment:', error);
     }
   };
 
-  const toggleComments = (activityId: string) => {
+  const toggleComments = async (activityId: string) => {
+    const isShowing = showComments[activityId];
+
     setShowComments(prev => ({
       ...prev,
       [activityId]: !prev[activityId],
     }));
+
+    // If we're showing comments and haven't loaded them yet, fetch them
+    if (!isShowing && !comments[activityId]) {
+      try {
+        const commentsData = await utils.activities.getComments.fetch({ activityId });
+        setComments(prev => ({
+          ...prev,
+          [activityId]: commentsData.comments,
+        }));
+      } catch (error) {
+        console.error('Error fetching comments:', error);
+      }
+    }
   };
 
   const testMutationCall = async () => {
@@ -570,23 +600,33 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
                       {/* Engagement Actions - LIVE DATA */}
                       <div className="flex items-center gap-6 text-sm text-muted-foreground">
                         {/* Like Button */}
-                        <button 
+                        <button
                           className={cn(
                             "flex items-center gap-1 transition-colors disabled:opacity-50",
-                            userEngagement?.[activity.id]?.liked 
-                              ? "text-red-500 hover:text-red-600" 
-                              : "hover:text-red-500"
+                            userEngagement?.[activity.id]?.liked
+                              ? "text-red-500 hover:text-red-600"
+                              : "hover:text-red-500",
+                            !user?.id && "cursor-not-allowed opacity-50"
                           )}
                           onClick={() => {
+                            if (!user?.id) {
+                              console.warn('User not authenticated - cannot engage with activity');
+                              return;
+                            }
+                            if (!activity?.id) {
+                              console.error('Activity ID missing:', activity);
+                              return;
+                            }
                             console.log('Button clicked for activity:', activity);
                             console.log('Activity ID:', activity.id);
-                            console.log('User ID:', user?.id);
+                            console.log('User ID:', user.id);
                             handleEngagement(
-                              activity.id, 
+                              activity.id,
                               userEngagement?.[activity.id]?.liked ? 'unlike' : 'like'
                             );
                           }}
-                          disabled={engageWithActivityMutation.isPending}
+                          disabled={engageWithActivityMutation.isPending || !user?.id}
+                          title={!user?.id ? "Please sign in to like posts" : ""}
                         >
                           <Heart className={cn(
                             "h-4 w-4",
@@ -604,19 +644,31 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
                           {activity.engagement.comments}
                         </button>
 
-                        {/* Share Button */}
-                        <button 
+                        {/* Reshare Button */}
+                        <button
                           className={cn(
                             "flex items-center gap-1 transition-colors disabled:opacity-50",
-                            userEngagement?.[activity.id]?.shared 
-                              ? "text-green-500 hover:text-green-600" 
-                              : "hover:text-green-500"
+                            userEngagement?.[activity.id]?.shared
+                              ? "text-green-500 hover:text-green-600"
+                              : "hover:text-green-500",
+                            !user?.id && "cursor-not-allowed opacity-50"
                           )}
-                          onClick={() => handleEngagement(activity.id, 'share')}
-                          disabled={engageWithActivityMutation.isPending}
+                          onClick={() => {
+                            if (!user?.id) {
+                              console.warn('User not authenticated - cannot reshare activity');
+                              return;
+                            }
+                            if (!activity?.id) {
+                              console.error('Activity ID missing:', activity);
+                              return;
+                            }
+                            handleEngagement(activity.id, 'reshare');
+                          }}
+                          disabled={engageWithActivityMutation.isPending || !user?.id}
+                          title={!user?.id ? "Please sign in to reshare posts" : "Reshare to your profile"}
                         >
-                          <Share2 className="h-4 w-4" />
-                          {activity.engagement.shares}
+                          <Repeat className="h-4 w-4" />
+                          {activity.engagement.reshares}
                         </button>
                       </div>
 
@@ -624,39 +676,75 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
                       {showComments[activity.id] && (
                         <div className="mt-4 pt-4 border-t border-border/50">
                           {/* Add Comment */}
-                          <div className="flex gap-3 mb-4">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={user?.imageUrl} />
-                              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm">
-                                {user?.firstName?.[0]}{user?.lastName?.[0]}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                              <textarea
-                                value={newComment[activity.id] || ''}
-                                onChange={(e) => setNewComment(prev => ({
-                                  ...prev,
-                                  [activity.id]: e.target.value
-                                }))}
-                                placeholder="Write a comment..."
-                                className="w-full p-3 glass-hierarchy-interactive rounded-lg resize-none text-sm"
-                                rows={2}
-                              />
-                              <div className="flex justify-end mt-2">
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleComment(activity.id)}
-                                  disabled={addCommentMutation.isPending || !newComment[activity.id]?.trim()}
-                                >
-                                  {addCommentMutation.isPending ? 'Posting...' : 'Comment'}
-                                </Button>
+                          {user?.id ? (
+                            <div className="flex gap-3 mb-4">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src={user?.imageUrl} />
+                                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm">
+                                  {user?.firstName?.[0]}{user?.lastName?.[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1">
+                                <textarea
+                                  value={newComment[activity.id] || ''}
+                                  onChange={(e) => setNewComment(prev => ({
+                                    ...prev,
+                                    [activity.id]: e.target.value
+                                  }))}
+                                  placeholder="Write a comment..."
+                                  className="w-full p-3 glass-hierarchy-interactive rounded-lg resize-none text-sm"
+                                  rows={2}
+                                />
+                                <div className="flex justify-end mt-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleComment(activity.id)}
+                                    disabled={addCommentMutation.isPending || !newComment[activity.id]?.trim()}
+                                  >
+                                    {addCommentMutation.isPending ? 'Posting...' : 'Comment'}
+                                  </Button>
+                                </div>
                               </div>
                             </div>
-                          </div>
+                          ) : (
+                            <div className="text-center py-4 glass-hierarchy-child rounded-lg">
+                              <p className="text-sm text-muted-foreground mb-2">
+                                Please sign in to comment
+                              </p>
+                              <Button size="sm" variant="outline">
+                                Sign In
+                              </Button>
+                            </div>
+                          )}
                           
-                          {/* Comments List Placeholder */}
-                          <div className="text-sm text-muted-foreground text-center py-4">
-                            Comments will appear here
+                          {/* Comments List */}
+                          <div className="space-y-3">
+                            {comments[activity.id]?.map((comment) => (
+                              <div key={comment.id} className="flex gap-3">
+                                <Avatar className="h-6 w-6">
+                                  <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-600 text-white text-xs">
+                                    U
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                  <div className="glass-hierarchy-interactive rounded-lg p-3">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-sm font-medium text-foreground">User</span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {formatTimeAgo(new Date(comment.createdAt))}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">{comment.content}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+
+                            {(!comments[activity.id] || comments[activity.id].length === 0) && (
+                              <div className="text-sm text-muted-foreground text-center py-4">
+                                No comments yet. Be the first to comment!
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}

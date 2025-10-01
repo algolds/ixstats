@@ -49,7 +49,7 @@ function IntelligenceFeedContent(): React.ReactElement {
 
   const { user } = useUser();
   const { data: userProfile } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id }
   );
   const userCountryId = userProfile?.countryId;

@@ -97,7 +97,7 @@ export const CardBody = ({
 
 interface CardItemProps {
   as?: React.ElementType;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   className?: string;
   translateX?: number | string;
   translateY?: number | string;

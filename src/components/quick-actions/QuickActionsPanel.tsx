@@ -70,7 +70,7 @@ export function QuickActionsPanel({ className }: QuickActionsPanelProps) {
 
   // Fetch quick actions
   const { data: quickActions, isLoading, refetch } = api.eci.getQuickActions.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id, refetchInterval: 60000 } // Refetch every minute
   );
 

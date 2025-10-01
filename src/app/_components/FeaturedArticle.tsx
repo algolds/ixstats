@@ -106,6 +106,16 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
               background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
               border-radius: 8px;
               box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+              max-width: 100%;
+              width: 100%;
+              box-sizing: border-box;
+            }
+            .featured-article-fallback * {
+              word-wrap: break-word !important;
+              overflow-wrap: break-word !important;
+              hyphens: auto !important;
+              max-width: 100% !important;
+              box-sizing: border-box !important;
             }
             .featured-article-fallback h3 {
               color: #212529;
@@ -117,9 +127,9 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
               color: #495057;
               line-height: 1.6;
               margin-bottom: 1rem;
-              max-width: 600px;
-              margin-left: auto;
-              margin-right: auto;
+              word-wrap: break-word;
+              overflow-wrap: break-word;
+              hyphens: auto;
             }
             .featured-links {
               display: flex;
@@ -192,25 +202,38 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
               /* Fallback styles if CSS template is not available */
               .featured-article-card {
                 display: flex;
+                flex-direction: column;
                 gap: 1rem;
                 padding: 1rem;
                 border-radius: 8px;
                 background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
                 box-shadow: 0 2px 8px rgba(0,0,0,0.1);
                 margin-bottom: 1rem;
+                max-width: 100%;
+                width: 100%;
+                box-sizing: border-box;
+              }
+              .featured-article-card * {
+                word-wrap: break-word !important;
+                overflow-wrap: break-word !important;
+                hyphens: auto !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
               }
               .featured-article-image {
-                flex-shrink: 0;
-                width: 200px;
+                width: 100%;
+                max-width: 100%;
               }
               .featured-article-image img {
                 width: 100%;
                 height: auto;
+                max-height: 200px;
                 border-radius: 4px;
                 object-fit: cover;
               }
               .featured-article-content {
                 flex: 1;
+                min-width: 0;
               }
               .featured-article-content .byline {
                 font-size: 0.875rem;
@@ -236,6 +259,9 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
                 margin: 0 0 1rem 0;
                 line-height: 1.6;
                 color: #495057;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                hyphens: auto;
               }
               .featured-article-meta {
                 display: flex;
@@ -316,6 +342,16 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
               background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
               border-radius: 8px;
               box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+              max-width: 100%;
+              width: 100%;
+              box-sizing: border-box;
+            }
+            .featured-article-fallback * {
+              word-wrap: break-word !important;
+              overflow-wrap: break-word !important;
+              hyphens: auto !important;
+              max-width: 100% !important;
+              box-sizing: border-box !important;
             }
             .featured-article-fallback h3 {
               color: #212529;
@@ -327,9 +363,9 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
               color: #495057;
               line-height: 1.6;
               margin-bottom: 1rem;
-              max-width: 600px;
-              margin-left: auto;
-              margin-right: auto;
+              word-wrap: break-word;
+              overflow-wrap: break-word;
+              hyphens: auto;
             }
             .featured-links {
               display: flex;
@@ -666,16 +702,78 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
     fetchFeaturedArticle();
   };
 
-  // Don't render anything if there's no real article data - NO PLACEHOLDERS
-  if (isLoading || !articleData || !htmlContent) {
-    return null;
+  // Show loading state
+  if (isLoading) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BookOpen className="h-5 w-5 text-blue-500" />
+            Featured Article
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // If no data, show a simple static featured article
+  if (!articleData || !htmlContent) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BookOpen className="h-5 w-5 text-blue-500" />
+            Featured Article
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="text-sm">
+              <h3 className="font-semibold text-lg mb-2">
+                <a
+                  href="https://ixwiki.com/wiki/Anglasweorċ"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  Anglasweorċ
+                </a>
+              </h3>
+              <p className="text-muted-foreground leading-relaxed">
+                The Anglasweorċ (literally "English Work") is a series of fortifications that were built across the historical western borders of medieval Avonia as protection against various Gothic peoples. While its primary function was as a military defense, the Anglasweorċ more commonly served as a form of border control and customs regulation.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between pt-4 border-t">
+              <Badge variant="outline" className="text-xs">Featured</Badge>
+              <a
+                href="https://ixwiki.com/wiki/Anglasweorċ"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+              >
+                <ExternalLink className="h-3 w-3" />
+                View Article
+              </a>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
 
 
   return (
-    <Card 
-      className={cn("w-full transition-all duration-300 hover:scale-[1.01] hover:shadow-xl group/card", className)}
+    <Card
+      className={cn("w-full min-w-0 transition-all duration-300 hover:scale-[1.01] hover:shadow-xl group/card", className)}
       style={{
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
@@ -684,6 +782,8 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
           0 1px 4px rgba(0, 0, 0, 0.05),
           0 0 0 1px rgba(59, 130, 246, 0.1)
         `,
+        wordWrap: 'break-word',
+        overflowWrap: 'break-word'
       }}
     >
       <CardHeader>
@@ -693,12 +793,19 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
       
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="min-w-0 max-w-full">
         {htmlContent ? (
-          <div className="space-y-4">
+          <div className="space-y-4 min-w-0 max-w-full">
             {/* Display the rendered HTML content */}
-            <div 
-              className="prose prose-sm max-w-none dark:prose-invert"
+            <div
+              className="text-sm leading-relaxed [&_*]:break-words [&_*]:overflow-wrap-break-word [&_*]:hyphens-auto [&_*]:max-w-full"
+              style={{
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word',
+                hyphens: 'auto',
+                maxWidth: '100%',
+                width: '100%'
+              }}
               dangerouslySetInnerHTML={{ __html: htmlContent }}
             />
             

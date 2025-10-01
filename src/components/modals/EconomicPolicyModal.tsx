@@ -95,13 +95,13 @@ export function EconomicPolicyModal({
 
   // Get existing policies for context
   const { data: policies, isLoading: policiesLoading, refetch } = api.eci.getEconomicPolicies.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id && open }
   );
 
   // Get country data for impact calculations
   const { data: userProfile } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id }
   );
 
@@ -150,7 +150,7 @@ export function EconomicPolicyModal({
     }
 
     createPolicy.mutate({
-      userId: user?.id || '',
+      userId: user?.id || 'placeholder-disabled',
       title: formData.title,
       description: formData.description,
       category: formData.category as PolicyCategory,

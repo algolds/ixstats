@@ -43,7 +43,7 @@ export default function SetupPage() {
   // TRPC Queries
   const { data: countries, isLoading: countriesLoading } = api.countries.getAll.useQuery();
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id }
   );
 
@@ -63,7 +63,7 @@ export default function SetupPage() {
 
   // Refetch user profile after successful operations
   const { refetch: refetchProfile } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id }
   );
 

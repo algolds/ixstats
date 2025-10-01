@@ -18,7 +18,7 @@ import { IxTime } from '~/lib/ixtime';
 
 interface DataStreamEvent {
   type: 'intelligence' | 'economic' | 'diplomatic' | 'achievement' | 'crisis';
-  data: any;
+  data: Record<string, unknown>;
   timestamp: number;
   source: string;
   priority?: NotificationPriority;
@@ -27,12 +27,12 @@ interface DataStreamEvent {
 
 interface NotificationRule {
   type: DataStreamEvent['type'];
-  condition: (data: any) => boolean;
+  condition: (data: Record<string, unknown>) => boolean;
   priority: NotificationPriority;
   category: NotificationCategory;
-  titleGenerator: (data: any) => string;
-  messageGenerator: (data: any) => string;
-  actionGenerator?: (data: any) => any[];
+  titleGenerator: (data: Record<string, unknown>) => string;
+  messageGenerator: (data: Record<string, unknown>) => string;
+  actionGenerator?: (data: Record<string, unknown>) => Array<Record<string, unknown>>;
 }
 
 class GlobalNotificationBridge extends EventEmitter {
@@ -58,15 +58,17 @@ class GlobalNotificationBridge extends EventEmitter {
       // Intelligence Feed Rules
       {
         type: 'intelligence',
-        condition: (data: IntelligenceItem) => 
-          ['high', 'critical'].includes((data as any).priority || 'medium'),
+        condition: (data: Record<string, unknown>) => {
+          const priority = this.getDataProperty(data, 'priority') || 'medium';
+          return ['high', 'critical'].includes(String(priority));
+        },
         priority: 'high',
         category: 'security',
-        titleGenerator: (data: IntelligenceItem) => 
-          `🚨 Intelligence Alert: ${data.title}`,
-        messageGenerator: (data: IntelligenceItem) => 
-          data.content || 'Critical intelligence update available',
-        actionGenerator: (data: IntelligenceItem) => [{
+        titleGenerator: (data: Record<string, unknown>) =>
+          `🚨 Intelligence Alert: ${this.getDataProperty(data, 'title') || 'Alert'}`,
+        messageGenerator: (data: Record<string, unknown>) =>
+          this.getDataProperty(data, 'content') || this.getDataProperty(data, 'description') || 'Critical intelligence update available',
+        actionGenerator: (data: Record<string, unknown>) => [{
           id: 'view-intelligence',
           label: 'View in SDI',
           type: 'primary',
@@ -75,15 +77,17 @@ class GlobalNotificationBridge extends EventEmitter {
       },
       {
         type: 'intelligence',
-        condition: (data: IntelligenceItem) => 
-          (data as any).category === 'crisis',
+        condition: (data: Record<string, unknown>) => {
+          const category = this.getDataProperty(data, 'category');
+          return String(category) === 'crisis';
+        },
         priority: 'critical',
         category: 'crisis',
-        titleGenerator: (data: IntelligenceItem) => 
-          `⚠️ Crisis Alert: ${data.title}`,
-        messageGenerator: (data: IntelligenceItem) => 
-          `Crisis detected: ${data.content}`,
-        actionGenerator: (data: IntelligenceItem) => [{
+        titleGenerator: (data: Record<string, unknown>) =>
+          `⚠️ Crisis Alert: ${this.getDataProperty(data, 'title') || 'Crisis'}`,
+        messageGenerator: (data: Record<string, unknown>) =>
+          `Crisis detected: ${this.getDataProperty(data, 'content') || this.getDataProperty(data, 'description') || 'Crisis situation'}`,
+        actionGenerator: (data: Record<string, unknown>) => [{
           id: 'crisis-response',
           label: 'Emergency Response',
           type: 'primary',
@@ -94,15 +98,21 @@ class GlobalNotificationBridge extends EventEmitter {
       // Economic Data Rules
       {
         type: 'economic',
-        condition: (data: any) => 
-          Math.abs(data.changePercent || 0) > 10,
+        condition: (data: Record<string, unknown>) => {
+          const changePercent = this.getNumberProperty(data, 'changePercent') || 0;
+          return Math.abs(changePercent) > 10;
+        },
         priority: 'high',
         category: 'economic',
-        titleGenerator: (data: any) => 
-          `📈 Economic Alert: ${data.metric}`,
-        messageGenerator: (data: any) => 
-          `${data.metric} changed by ${data.changePercent > 0 ? '+' : ''}${data.changePercent.toFixed(2)}% to ${(data.value || 0).toLocaleString()}`,
-        actionGenerator: (data: any) => [{
+        titleGenerator: (data: Record<string, unknown>) =>
+          `📈 Economic Alert: ${this.getDataProperty(data, 'metric') || 'Economic Change'}`,
+        messageGenerator: (data: Record<string, unknown>) => {
+          const metric = this.getDataProperty(data, 'metric') || 'Value';
+          const changePercent = this.getNumberProperty(data, 'changePercent') || 0;
+          const value = this.getNumberProperty(data, 'value') || 0;
+          return `${metric} changed by ${changePercent > 0 ? '+' : ''}${changePercent.toFixed(2)}% to ${value.toLocaleString()}`;
+        },
+        actionGenerator: (data: Record<string, unknown>) => [{
           id: 'view-economics',
           label: 'View Economic Dashboard',
           type: 'primary',
@@ -111,28 +121,43 @@ class GlobalNotificationBridge extends EventEmitter {
       },
       {
         type: 'economic',
-        condition: (data: any) => 
-          data.metric?.toLowerCase().includes('gdp') && Math.abs(data.changePercent || 0) > 5,
+        condition: (data: Record<string, unknown>) => {
+          const metric = this.getDataProperty(data, 'metric') || '';
+          const changePercent = this.getNumberProperty(data, 'changePercent') || 0;
+          return String(metric).toLowerCase().includes('gdp') && Math.abs(changePercent) > 5;
+        },
         priority: 'medium',
         category: 'economic',
-        titleGenerator: (data: any) => 
-          `💰 GDP Update: ${data.changePercent > 0 ? 'Growth' : 'Decline'}`,
-        messageGenerator: (data: any) => 
-          `GDP ${data.changePercent > 0 ? 'increased' : 'decreased'} by ${Math.abs(data.changePercent).toFixed(2)}%`,
+        titleGenerator: (data: Record<string, unknown>) => {
+          const changePercent = this.getNumberProperty(data, 'changePercent') || 0;
+          return `💰 GDP Update: ${changePercent > 0 ? 'Growth' : 'Decline'}`;
+        },
+        messageGenerator: (data: Record<string, unknown>) => {
+          const changePercent = this.getNumberProperty(data, 'changePercent') || 0;
+          return `GDP ${changePercent > 0 ? 'increased' : 'decreased'} by ${Math.abs(changePercent).toFixed(2)}%`;
+        },
       },
 
       // Diplomatic Events
       {
         type: 'diplomatic',
-        condition: (data: any) => 
-          ['agreement', 'treaty', 'conflict'].includes(data.eventType),
+        condition: (data: Record<string, unknown>) => {
+          const eventType = this.getDataProperty(data, 'eventType');
+          return ['agreement', 'treaty', 'conflict'].includes(String(eventType));
+        },
         priority: 'medium',
         category: 'diplomatic',
-        titleGenerator: (data: any) => 
-          `🤝 Diplomatic Update: ${data.title || data.eventType}`,
-        messageGenerator: (data: any) => 
-          data.description || `New diplomatic ${data.eventType} recorded`,
-        actionGenerator: (data: any) => [{
+        titleGenerator: (data: Record<string, unknown>) => {
+          const title = this.getDataProperty(data, 'title');
+          const eventType = this.getDataProperty(data, 'eventType');
+          return `🤝 Diplomatic Update: ${title || eventType || 'Diplomatic Event'}`;
+        },
+        messageGenerator: (data: Record<string, unknown>) => {
+          const description = this.getDataProperty(data, 'description');
+          const eventType = this.getDataProperty(data, 'eventType');
+          return description || `New diplomatic ${eventType || 'event'} recorded`;
+        },
+        actionGenerator: (data: Record<string, unknown>) => [{
           id: 'view-diplomatic',
           label: 'View Diplomatic Relations',
           type: 'primary',
@@ -143,14 +168,21 @@ class GlobalNotificationBridge extends EventEmitter {
       // Achievement System
       {
         type: 'achievement',
-        condition: (data: any) => !!data.unlocked,
+        condition: (data: Record<string, unknown>) => {
+          const unlocked = data.unlocked;
+          return Boolean(unlocked);
+        },
         priority: 'low',
         category: 'achievement',
-        titleGenerator: (data: any) => 
-          `🏆 Achievement Unlocked: ${data.name}`,
-        messageGenerator: (data: any) => 
-          data.description || 'New achievement earned!',
-        actionGenerator: (data: any) => [{
+        titleGenerator: (data: Record<string, unknown>) => {
+          const name = this.getDataProperty(data, 'name');
+          return `🏆 Achievement Unlocked: ${name || 'Achievement'}`;
+        },
+        messageGenerator: (data: Record<string, unknown>) => {
+          const description = this.getDataProperty(data, 'description');
+          return description || 'New achievement earned!';
+        },
+        actionGenerator: (data: Record<string, unknown>) => [{
           id: 'view-achievements',
           label: 'View All Achievements',
           type: 'secondary',
@@ -247,9 +279,19 @@ class GlobalNotificationBridge extends EventEmitter {
           quietHours: null,
           batchingEnabled: true,
           maxNotificationsPerHour: 30,
-          categories: {},
-          executiveModeFilters: ['economic', 'governance', 'security', 'crisis'],
-          publicModeFilters: ['achievement', 'opportunity', 'system'],
+          categories: {
+            economic: { enabled: true, minPriority: 'low' as const, deliveryMethods: ['dynamic-island'] as DeliveryMethod[] },
+            diplomatic: { enabled: true, minPriority: 'low' as const, deliveryMethods: ['dynamic-island'] as DeliveryMethod[] },
+            governance: { enabled: true, minPriority: 'low' as const, deliveryMethods: ['dynamic-island'] as DeliveryMethod[] },
+            social: { enabled: true, minPriority: 'low' as const, deliveryMethods: ['dynamic-island'] as DeliveryMethod[] },
+            security: { enabled: true, minPriority: 'medium' as const, deliveryMethods: ['dynamic-island'] as DeliveryMethod[] },
+            system: { enabled: true, minPriority: 'low' as const, deliveryMethods: ['dynamic-island'] as DeliveryMethod[] },
+            achievement: { enabled: true, minPriority: 'low' as const, deliveryMethods: ['dynamic-island'] as DeliveryMethod[] },
+            crisis: { enabled: true, minPriority: 'high' as const, deliveryMethods: ['dynamic-island', 'toast'] as DeliveryMethod[] },
+            opportunity: { enabled: true, minPriority: 'low' as const, deliveryMethods: ['dynamic-island'] as DeliveryMethod[] }
+          },
+          executiveModeFilters: ['economic', 'governance', 'security', 'crisis'] as NotificationCategory[],
+          publicModeFilters: ['achievement', 'opportunity', 'system'] as NotificationCategory[],
           allowMLPersonalization: true,
           trackEngagement: true
         },
@@ -318,12 +360,17 @@ class GlobalNotificationBridge extends EventEmitter {
    */
   wireIntelligenceStream(intelligenceData: IntelligenceItem[]) {
     intelligenceData.forEach(item => {
+      // Safely extract priority from item properties
+      const itemData = item as unknown as Record<string, unknown>;
+      const rawPriority = this.getDataProperty(itemData, 'priority') || this.getDataProperty(itemData, 'severity') || 'medium';
+      const priority = this.validatePriority(rawPriority);
+
       this.emit('dataStream', {
         type: 'intelligence' as const,
         data: item,
         timestamp: Date.now(),
         source: 'intelligence-feed',
-        priority: ((item as any).priority || 'medium') as NotificationPriority,
+        priority,
         countryId: item.region || undefined
       });
     });
@@ -383,6 +430,39 @@ class GlobalNotificationBridge extends EventEmitter {
    */
   removeRule(ruleIndex: number) {
     this.rules.splice(ruleIndex, 1);
+  }
+
+  /**
+   * Safe data property getter with type checking
+   */
+  private getDataProperty(data: Record<string, unknown>, key: string): string | null {
+    const value = data[key];
+    return value !== null && value !== undefined ? String(value) : null;
+  }
+
+  /**
+   * Safe number property getter with type checking
+   */
+  private getNumberProperty(data: Record<string, unknown>, key: string): number | null {
+    const value = data[key];
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') {
+      const parsed = parseFloat(value);
+      return !isNaN(parsed) ? parsed : null;
+    }
+    return null;
+  }
+
+  /**
+   * Validate and normalize priority values
+   */
+  private validatePriority(priority: string | null): NotificationPriority {
+    if (!priority) return 'medium';
+    const normalized = priority.toLowerCase();
+    if (['critical', 'high', 'medium', 'low'].includes(normalized)) {
+      return normalized as NotificationPriority;
+    }
+    return 'medium';
   }
 
   /**

@@ -165,7 +165,7 @@ export default function DashboardRefactored() {
 
   // Data fetching
   const { data: userProfile } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id }
   );
 
@@ -1403,7 +1403,7 @@ const processedCountries: ProcessedCountryData[] = useMemo(() => {
                     className="mt-6 overflow-hidden"
                   >
                     <div className="glass-hierarchy-child p-6 rounded-lg">
-                      <CountryExecutiveSection countryId={userProfile.countryId} userId={user?.id || ''} />
+                      <CountryExecutiveSection countryId={userProfile.countryId} userId={user?.id || 'placeholder-disabled'} />
                     </div>
                   </motion.div>
                 )}

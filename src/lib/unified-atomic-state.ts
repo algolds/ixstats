@@ -385,7 +385,19 @@ export class UnifiedAtomicStateManager {
     this.state.effectivenessScore = builderState.effectivenessScore;
     this.state.synergies = builderState.synergies;
     this.state.conflicts = builderState.conflicts;
-    this.state.economicModifiers = builderState.economicImpact;
+    // Map AtomicEconomicModifiers to ClientAtomicEconomicModifiers
+    this.state.economicModifiers = {
+      taxCollectionMultiplier: builderState.economicImpact.taxCollectionMultiplier || 1,
+      gdpGrowthModifier: builderState.economicImpact.gdpGrowthModifier || 0,
+      stabilityBonus: builderState.economicImpact.stabilityBonus || 0,
+      innovationMultiplier: builderState.economicImpact.innovationMultiplier || 1,
+      internationalTradeBonus: builderState.economicImpact.internationalTradeBonus || 0,
+      governmentEfficiencyMultiplier: builderState.economicImpact.governmentEfficiencyMultiplier || 1,
+      gdpImpact: builderState.economicImpact.gdpImpact,
+      stabilityIndex: builderState.economicImpact.stabilityIndex,
+      internationalStanding: builderState.economicImpact.internationalStanding,
+      taxEfficiency: builderState.economicImpact.taxEfficiency
+    };
     this.state.traditionalStructure = this.convertToDetailedStructure(builderState.traditionalStructure);
     
     // Trigger additional calculations
@@ -480,16 +492,23 @@ export class UnifiedAtomicStateManager {
 
   private calculateTaxIntegration() {
     const { selectedComponents } = this.state;
-    
+
     // Use atomic tax integration library
-    this.state.taxEffectiveness = calculateAtomicTaxEffectiveness(
+    const taxResult = calculateAtomicTaxEffectiveness(
       selectedComponents,
       {
-        baseCollectionRate: 0.85,
-        baseComplianceRate: 0.75,
-        baseAuditCapacity: 0.3
+        collectionEfficiency: 0.85,
+        complianceRate: 0.75,
+        auditCapacity: 0.3
       }
     );
+
+    this.state.taxEffectiveness = {
+      collectionEfficiency: taxResult.collectionEfficiency,
+      complianceRate: taxResult.complianceRate,
+      auditCapacity: taxResult.auditCapacity,
+      overallMultiplier: taxResult.effectivenessScore
+    };
   }
 
   private generateGovernmentStructure() {

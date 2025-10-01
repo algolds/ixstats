@@ -15,7 +15,7 @@ interface AdminFavoriteButtonProps {
   url: string;
   category?: string;
   className?: string;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "lg";
   variant?: "default" | "ghost" | "outline";
 }
 

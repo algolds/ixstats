@@ -86,7 +86,7 @@ export default function ThinkPagesMainPage() {
 
   // Get user profile and country data
   const { data: userProfile } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id }
   );
 
@@ -99,11 +99,11 @@ export default function ThinkPagesMainPage() {
   // They now work with global user accounts directly
   const accounts: any[] = []; // Empty array for backward compatibility
 
-  // Simplified validation - only need user authentication for global features
-  const isDataReady = user && user.id;
+  // Allow anonymous access for view-only mode
+  const isUserAuthenticated = user && user.id;
 
   // ThinkTanks and ThinkShare work globally, only Feed requires country setup
-  const isCountryDataReady = userProfile && countryData && 
+  const isCountryDataReady = userProfile && countryData &&
                            userProfile.countryId && userProfile.countryId.trim() !== '' &&
                            countryData.id && countryData.id.trim() !== '' &&
                            countryData.name && countryData.name.trim() !== '';
@@ -131,24 +131,7 @@ export default function ThinkPagesMainPage() {
     setSettingsAccount(null);
   };
 
-  if (!isDataReady) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="glass-modal max-w-md w-full text-center p-8">
-          <MessageSquare className="h-16 w-16 mx-auto mb-4 text-blue-500" />
-          <h2 className="text-2xl font-bold mb-4">Welcome to Thinkpages</h2>
-          <p className="text-muted-foreground mb-6">
-            Please complete your profile setup to access the platform.
-          </p>
-          <Link href={createUrl("/setup")}>
-            <Button className="w-full">
-              Complete Setup
-            </Button>
-          </Link>
-        </Card>
-      </div>
-    );
-  }
+  // No authentication gate - allow anonymous access
 
   return (
     <div className="min-h-screen bg-background">
@@ -186,14 +169,29 @@ export default function ThinkPagesMainPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              {countryData?.name && (
-                <Badge variant="outline" className="text-xs">
-                  {countryData.name}
-                </Badge>
+              {isUserAuthenticated ? (
+                <>
+                  {countryData?.name && (
+                    <Badge variant="outline" className="text-xs">
+                      {countryData.name}
+                    </Badge>
+                  )}
+                  <Button variant="ghost" size="sm">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <Badge variant="secondary" className="text-xs">
+                    👁️ View Only
+                  </Badge>
+                  <Link href={createUrl("/setup")}>
+                    <Button size="sm">
+                      Sign In / Sign Up
+                    </Button>
+                  </Link>
+                </div>
               )}
-              <Button variant="ghost" size="sm">
-                <Settings className="h-4 w-4" />
-              </Button>
             </div>
           </div>
 
@@ -233,8 +231,8 @@ export default function ThinkPagesMainPage() {
           animate={{ opacity: 1, y: 0 }}
           className={`grid grid-cols-1 ${activeView === 'feed' ? 'lg:grid-cols-4' : 'lg:grid-cols-1'} gap-6`}
         >
-          {/* Left Sidebar - Account Manager */}
-          {activeView === 'feed' && isCountryDataReady && (
+          {/* Left Sidebar - Account Manager (only for authenticated users) */}
+          {activeView === 'feed' && isUserAuthenticated && isCountryDataReady && (
             <div className="lg:col-span-1 space-y-4">
               <EnhancedAccountManager
                 countryId={countryData.id}
@@ -249,8 +247,10 @@ export default function ThinkPagesMainPage() {
           )}
 
           {/* Main Content Area */}
-          <div className={activeView === 'feed' ? "lg:col-span-3" : "lg:col-span-4"}>
-            {activeView === 'feed' && isCountryDataReady && (
+          <div className={activeView === 'feed' && isUserAuthenticated && isCountryDataReady ? "lg:col-span-3" : "lg:col-span-4"}>
+
+            {/* Feed Content */}
+            {activeView === 'feed' && isUserAuthenticated && isCountryDataReady && (
               <ThinkpagesSocialPlatform
                 countryId={countryData.id}
                 countryName={countryData.name}
@@ -258,7 +258,7 @@ export default function ThinkPagesMainPage() {
               />
             )}
 
-            {activeView === 'feed' && !isCountryDataReady && (
+            {activeView === 'feed' && isUserAuthenticated && !isCountryDataReady && (
               <Card className="glass-hierarchy-parent">
                 <CardContent className="p-8 text-center">
                   <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -275,18 +275,60 @@ export default function ThinkPagesMainPage() {
               </Card>
             )}
 
-            {activeView === 'thinktanks' && user?.id && (
+            {activeView === 'feed' && !isUserAuthenticated && (
+              <Card className="glass-hierarchy-parent">
+                <CardContent className="p-8 text-center">
+                  <MessageSquare className="h-12 w-12 mx-auto text-blue-500 mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Welcome to Thinkpages</h3>
+                  <p className="text-muted-foreground mb-4">
+                    You're viewing Thinkpages in read-only mode. To participate in discussions, create posts, and join groups, please sign in or create an account.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <Link href={createUrl("/setup")}>
+                      <Button>
+                        Sign In / Sign Up
+                      </Button>
+                    </Link>
+                    <Button variant="outline" onClick={() => setActiveView('thinktanks')}>
+                      Browse Groups
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* ThinkTanks - Available to all users (read-only for anonymous) */}
+            {activeView === 'thinktanks' && (
               <ThinktankGroups
+                userId={user?.id || null}
+                userAccounts={accounts || []}
+                viewOnly={!isUserAuthenticated}
+              />
+            )}
+
+            {/* Messages - Only for authenticated users */}
+            {activeView === 'messages' && isUserAuthenticated && (
+              <ThinkshareMessages
                 userId={user.id}
                 userAccounts={accounts || []}
               />
             )}
 
-            {activeView === 'messages' && user?.id && (
-              <ThinkshareMessages
-                userId={user.id}
-                userAccounts={accounts || []}
-              />
+            {activeView === 'messages' && !isUserAuthenticated && (
+              <Card className="glass-hierarchy-parent">
+                <CardContent className="p-8 text-center">
+                  <Send className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Sign In Required</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Messages are private. Please sign in to access your conversations.
+                  </p>
+                  <Link href={createUrl("/setup")}>
+                    <Button>
+                      Sign In / Sign Up
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
             )}
           </div>
         </motion.div>

@@ -348,6 +348,90 @@ export const activitiesRouter = createTRPCRouter({
         return { success: true, message: 'Unliked!' };
       }
 
+      if (input.action === 'reshare') {
+        // Check if already reshared
+        const existingShare = await ctx.db.activityShare.findUnique({
+          where: {
+            activityId_userId: {
+              activityId: input.activityId,
+              userId: input.userId,
+            },
+          },
+        });
+
+        if (existingShare) {
+          return { success: false, message: 'Already reshared' };
+        }
+
+        // Get the original activity for reshare content
+        const originalActivity = await ctx.db.activityFeed.findUnique({
+          where: { id: input.activityId },
+          include: {
+            activityLikes: { where: { userId: input.userId } },
+          },
+        });
+
+        if (!originalActivity) {
+          return { success: false, message: 'Original activity not found' };
+        }
+
+        // Get user's country for context
+        const userProfile = await ctx.db.user.findUnique({
+          where: { clerkUserId: input.userId },
+          include: { country: true },
+        });
+
+        await ctx.db.$transaction(async (tx) => {
+          // 1. Create the share record
+          await tx.activityShare.create({
+            data: {
+              activityId: input.activityId,
+              userId: input.userId,
+            },
+          });
+
+          // 2. Increment share counter on original
+          await tx.activityFeed.update({
+            where: { id: input.activityId },
+            data: { shares: { increment: 1 } },
+          });
+
+          // 3. Create new reshare activity entry under user's profile
+          await tx.activityFeed.create({
+            data: {
+              type: 'social',
+              category: 'social',
+              userId: input.userId,
+              countryId: userProfile?.countryId || null,
+              title: `Reshared: ${originalActivity.title}`,
+              description: `${userProfile?.country?.name || 'User'} reshared: ${originalActivity.description}`,
+              metadata: JSON.stringify({
+                originalActivityId: originalActivity.id,
+                originalType: originalActivity.type,
+                originalUserId: originalActivity.userId,
+                originalCountryId: originalActivity.countryId,
+                reshareType: 'activity_reshare',
+              }),
+              priority: 'MEDIUM',
+              visibility: 'public',
+              relatedCountries: originalActivity.relatedCountries,
+            },
+          });
+        });
+
+        return { success: true, message: 'Reshared to your profile!' };
+      }
+
+      if (input.action === 'view') {
+        // Increment view counter (no user tracking needed)
+        await ctx.db.activityFeed.update({
+          where: { id: input.activityId },
+          data: { views: { increment: 1 } },
+        });
+
+        return { success: true, message: 'View recorded!' };
+      }
+
       return { success: false, message: 'Invalid action' };
     }),
 
@@ -484,26 +568,55 @@ export const activitiesRouter = createTRPCRouter({
             break;
         }
 
-        // Get trending activities (most engaged with)
-        const trendingActivities = await ctx.db.activityFeed.findMany({
+        // Get trending activities with weighted engagement scoring
+        const activities = await ctx.db.activityFeed.findMany({
           where: {
             createdAt: { gte: fromDate },
             visibility: 'public',
           },
-          orderBy: [
-            { likes: 'desc' },
-            { comments: 'desc' },
-            { shares: 'desc' },
-          ],
-          take: input.limit,
+          select: {
+            id: true,
+            title: true,
+            type: true,
+            likes: true,
+            comments: true,
+            shares: true,
+            views: true,
+            createdAt: true,
+          },
         });
 
+        // Calculate engagement score with weighted metrics
+        const trendingActivities = activities
+          .map((activity) => {
+            // Weighted scoring: reshares worth 3x, comments worth 2x, likes worth 1x
+            const engagementScore =
+              (activity.shares * 3) +
+              (activity.comments * 2) +
+              (activity.likes * 1) +
+              (activity.views * 0.1); // Views have minimal weight
+
+            // Time decay factor (newer content gets bonus)
+            const hoursSinceCreated = (Date.now() - activity.createdAt.getTime()) / (1000 * 60 * 60);
+            const timeDecayFactor = Math.max(0.1, 1 - (hoursSinceCreated / 24)); // Decay over 24 hours
+
+            const finalScore = engagementScore * timeDecayFactor;
+
+            return {
+              ...activity,
+              engagementScore: finalScore,
+              participants: activity.likes + activity.comments + activity.shares,
+            };
+          })
+          .sort((a, b) => b.engagementScore - a.engagementScore)
+          .slice(0, input.limit);
+
         // Transform to trending topics format
-        const topics = trendingActivities.map((activity, index) => ({
+        const topics = trendingActivities.map((activity) => ({
           id: activity.id,
           title: activity.title,
           category: activity.type.charAt(0).toUpperCase() + activity.type.slice(1),
-          participants: activity.likes + activity.comments + activity.shares,
+          participants: activity.participants,
           trend: 'up' as const,
         }));
 

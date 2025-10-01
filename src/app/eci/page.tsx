@@ -60,7 +60,7 @@ export default function ExecutiveCommandInterface() {
 
   // Get user profile to check country assignment
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id }
   );
 
@@ -72,27 +72,27 @@ export default function ExecutiveCommandInterface() {
 
   // Get ECI-specific data
   const { data: realTimeMetrics, isLoading: metricsLoading } = api.eci.getRealTimeMetrics.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id && !!userProfile?.countryId }
   );
 
   const { data: cabinetMeetings, isLoading: meetingsLoading } = api.eci.getCabinetMeetings.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id && !!userProfile?.countryId }
   );
 
   const { data: economicPolicies, isLoading: policiesLoading } = api.eci.getEconomicPolicies.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id && !!userProfile?.countryId }
   );
 
   const { data: securityThreats, isLoading: threatsLoading } = api.eci.getSecurityThreats.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id && !!userProfile?.countryId }
   );
 
   const { data: aiRecommendations, isLoading: aiLoading } = api.eci.getAIRecommendations.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id && !!userProfile?.countryId }
   );
 

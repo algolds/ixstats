@@ -26,7 +26,7 @@ export default function HashtagPage() {
             <ThinkpagesPost
               key={post.id}
               post={post}
-              currentUserAccountId={user?.id || ''}
+              currentUserAccountId={user?.id || 'placeholder-disabled'}
             />
           ))
         )}

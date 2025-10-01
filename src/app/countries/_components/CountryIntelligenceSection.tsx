@@ -34,7 +34,7 @@ export function CountryIntelligenceSection({ countryId }: CountryIntelligenceSec
   
   // Get user profile to check access
   const { data: userProfile } = api.users.getProfile.useQuery(
-    { userId: user?.id || '' },
+    { userId: user?.id || 'placeholder-disabled' },
     { enabled: !!user?.id }
   );
 

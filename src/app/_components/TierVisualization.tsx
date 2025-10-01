@@ -46,7 +46,7 @@ const tierConfig = {
     textColor: "text-purple-700 dark:text-purple-300",
     bgColor: "bg-purple-50 dark:bg-purple-950",
     borderColor: "border-purple-200 dark:border-purple-800",
-    description: "GDP per capita $65,000+ • Max growth: 0.5%",
+    description: "GDP per capita $65,000+ • Max growth: 0.5% • Ultra-wealthy nations (like Monaco, Luxembourg)",
     icon: DollarSign,
     threshold: 65000,
   },
@@ -55,7 +55,7 @@ const tierConfig = {
     textColor: "text-blue-700 dark:text-blue-300",
     bgColor: "bg-blue-50 dark:bg-blue-950",
     borderColor: "border-blue-200 dark:border-blue-800",
-    description: "GDP per capita $55,000-$64,999 • Max growth: 1.5%",
+    description: "GDP per capita $55,000-$64,999 • Max growth: 1.5% • Highly developed (like Norway, Switzerland)",
     icon: TrendingUp,
     threshold: 55000,
   },
@@ -64,7 +64,7 @@ const tierConfig = {
     textColor: "text-green-700 dark:text-green-300",
     bgColor: "bg-green-50 dark:bg-green-950",
     borderColor: "border-green-200 dark:border-green-800",
-    description: "GDP per capita $45,000-$54,999 • Max growth: 2.75%",
+    description: "GDP per capita $45,000-$54,999 • Max growth: 2.75% • Advanced economies (like Germany, France)",
     icon: Building2,
     threshold: 45000,
   },
@@ -73,7 +73,7 @@ const tierConfig = {
     textColor: "text-emerald-700 dark:text-emerald-300",
     bgColor: "bg-emerald-50 dark:bg-emerald-950",
     borderColor: "border-emerald-200 dark:border-emerald-800",
-    description: "GDP per capita $35,000-$44,999 • Max growth: 3.5%",
+    description: "GDP per capita $35,000-$44,999 • Max growth: 3.5% • Mature economies (like Japan, South Korea)",
     icon: TrendingUp,
     threshold: 35000,
   },
@@ -82,7 +82,7 @@ const tierConfig = {
     textColor: "text-teal-700 dark:text-teal-300",
     bgColor: "bg-teal-50 dark:bg-teal-950",
     borderColor: "border-teal-200 dark:border-teal-800",
-    description: "GDP per capita $25,000-$34,999 • Max growth: 5%",
+    description: "GDP per capita $25,000-$34,999 • Max growth: 5% • Upper middle income (like Portugal, Poland)",
     icon: Building2,
     threshold: 25000,
   },
@@ -91,7 +91,7 @@ const tierConfig = {
     textColor: "text-yellow-700 dark:text-yellow-300",
     bgColor: "bg-yellow-50 dark:bg-yellow-950",
     borderColor: "border-yellow-200 dark:border-yellow-800",
-    description: "GDP per capita $10,000-$24,999 • Max growth: 7.5%",
+    description: "GDP per capita $10,000-$24,999 • Max growth: 7.5% • Emerging markets (like Brazil, Mexico)",
     icon: TrendingUp,
     threshold: 10000,
   },
@@ -100,21 +100,21 @@ const tierConfig = {
     textColor: "text-red-700 dark:text-red-300",
     bgColor: "bg-red-50 dark:bg-red-950",
     borderColor: "border-red-200 dark:border-red-800",
-    description: "GDP per capita $0-$9,999 • Max growth: 10%",
+    description: "GDP per capita $0-$9,999 • Max growth: 10% • Developing nations with high potential",
     icon: Users,
     threshold: 0,
   },
 };
 
 const populationTierConfig = {
-  "X": { label: "500M+", description: "Superpower population" },
-  "7": { label: "350-499M", description: "Major power population" },
-  "6": { label: "120-349M", description: "Large nation population" },
-  "5": { label: "80-119M", description: "Medium-large population" },
-  "4": { label: "50-79M", description: "Medium population" },
-  "3": { label: "30-49M", description: "Medium-small population" },
-  "2": { label: "10-29M", description: "Small-medium population" },
-  "1": { label: "0-9M", description: "Small population" },
+  "X": { label: "500M+", description: "Superpower population (like China, India)" },
+  "7": { label: "350-499M", description: "Major power population (like United States)" },
+  "6": { label: "120-349M", description: "Large nation population (like Brazil, Indonesia)" },
+  "5": { label: "80-119M", description: "Medium-large population (like Germany, Turkey)" },
+  "4": { label: "50-79M", description: "Medium population (like United Kingdom, France)" },
+  "3": { label: "30-49M", description: "Medium-small population (like Canada, Poland)" },
+  "2": { label: "10-29M", description: "Small-medium population (like Australia, Netherlands)" },
+  "1": { label: "0-9M", description: "Small population (like Switzerland, Singapore)" },
 };
 
 export function TierVisualization({ countries, isLoading }: TierVisualizationProps) {
@@ -126,7 +126,7 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
-            Tier Distribution
+            Tier Breakdown
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -194,8 +194,13 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
     
     return (
       <div className="space-y-4">
-        <div className="text-sm text-muted-foreground mb-4">
-          Economic tiers are based on GDP per capita and determine maximum growth rates
+        <div className="space-y-2 mb-6">
+          <div className="text-sm text-muted-foreground">
+            Economic tiers categorize nations by wealth and determine maximum possible growth rates
+          </div>
+          <div className="text-xs text-muted-foreground/80 bg-muted/50 p-3 rounded-lg">
+            💡 <strong>How it works:</strong> Wealthier nations (higher GDP per capita) have slower max growth because developed economies naturally grow more slowly than developing ones. This reflects real economic principles.
+          </div>
         </div>
         {sortedTiers.map(tier => {
           const config = tierConfig[tier as keyof typeof tierConfig];
@@ -246,8 +251,13 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
     
     return (
       <div className="space-y-4">
-        <div className="text-sm text-muted-foreground mb-4">
-          Population tiers categorize countries by total population size
+        <div className="space-y-2 mb-6">
+          <div className="text-sm text-muted-foreground">
+            Population tiers categorize nations by total population size and influence regional power dynamics
+          </div>
+          <div className="text-xs text-muted-foreground/80 bg-muted/50 p-3 rounded-lg">
+            🌍 <strong>How it works:</strong> Population size affects economic capacity, military potential, and diplomatic influence. Larger populations provide bigger markets and labor forces but require more resources to manage effectively.
+          </div>
         </div>
         {sortedTiers.map(tier => {
           const config = populationTierConfig[tier as keyof typeof populationTierConfig];
@@ -310,7 +320,7 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <BarChart3 className="h-5 w-5 text-purple-500 group-hover/card:text-purple-400 transition-colors" />
-          Tier Distribution
+          Tier Breakdown
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
