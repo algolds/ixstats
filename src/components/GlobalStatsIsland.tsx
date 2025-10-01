@@ -101,7 +101,7 @@ function GlobalStatsIslandContent() {
 
   const { user, isLoaded } = useUser();
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
-    { userId: user?.id || 'placeholder-disabled' },
+    undefined,
     { enabled: !!user?.id }
   );
   const [showUserPopover, setShowUserPopover] = useState(false);

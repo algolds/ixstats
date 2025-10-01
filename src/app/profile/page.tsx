@@ -64,7 +64,7 @@ function ProfileContent() {
 
   // Get user profile
   const { data: userProfile, isLoading: profileLoading, refetch: refetchProfile } = api.users.getProfile.useQuery(
-    { userId: user?.id || 'placeholder-disabled' },
+    undefined,
     { enabled: !!user?.id }
   );
 

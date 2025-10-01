@@ -60,7 +60,7 @@ function generateEconomicDataForCountry(country: any) {
 
 export function CountryDataProvider({ children, userId }: CountryDataProviderProps) {
   const { data: userProfile, isLoading: profileLoading, error: profileError } = api.users.getProfile.useQuery(
-    { userId },
+    undefined,
     { enabled: !!userId }
   );
 

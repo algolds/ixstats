@@ -65,7 +65,7 @@ export function CompactView({
   const { user: roleUser, permissions } = usePermissions();
   
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
-    { userId: user?.id || 'placeholder-disabled' },
+    undefined,
     { enabled: !!user?.id }
   );
   const { ixTimeTimestamp } = useIxTime();

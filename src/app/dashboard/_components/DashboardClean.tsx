@@ -29,7 +29,7 @@ const DashboardClean = React.memo(function DashboardClean() {
   const { data: allData, isLoading: countriesLoading } = api.countries.getAll.useQuery();
   const { data: globalStatsData } = api.countries.getGlobalStats.useQuery();
   const { data: userProfile } = api.users.getProfile.useQuery(
-    { userId: user?.id || 'placeholder-disabled' },
+    undefined,
     { enabled: !!user?.id }
   );
   const { data: countryData } = api.countries.getByIdAtTime.useQuery(

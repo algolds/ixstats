@@ -83,7 +83,7 @@ export function useDynamicIslandState() {
 
   // Get user profile for contextual search
   const { data: userProfile } = api.users.getProfile.useQuery(
-    { userId: user?.id || 'placeholder-disabled' },
+    undefined,
     { enabled: !!user?.id }
   );
   

@@ -379,6 +379,47 @@ export class UnifiedAtomicStateManager {
 
   // Private Methods
 
+  /**
+   * Maps server-side AtomicEconomicModifiers to client-side simplified format.
+   *
+   * Server format has nested projections and trend data.
+   * Client format needs flat numeric multipliers for UI calculations.
+   *
+   * @param server - Complex server-side economic modifiers
+   * @returns Simplified client-side modifiers
+   */
+  private mapServerToClientModifiers(
+    server: AtomicEconomicModifiers
+  ): ClientAtomicEconomicModifiers {
+    return {
+      // Tax system effectiveness → collection multiplier
+      taxCollectionMultiplier: server.taxEfficiency?.currentMultiplier ?? 1.0,
+
+      // Current GDP impact as growth modifier percentage
+      gdpGrowthModifier: (server.gdpImpact?.current ?? 0) / 100,
+
+      // Stability as bonus percentage
+      stabilityBonus: (server.stabilityIndex?.current ?? 0) / 100,
+
+      // 1-year projection delta as innovation multiplier
+      innovationMultiplier: 1.0 + (
+        ((server.gdpImpact?.projected1Year ?? 0) - (server.gdpImpact?.current ?? 0)) / 100
+      ),
+
+      // International trade effectiveness
+      internationalTradeBonus: server.internationalStanding?.tradeBonus ?? 0,
+
+      // Tax collection as government efficiency
+      governmentEfficiencyMultiplier: server.taxEfficiency?.currentMultiplier ?? 1.0,
+
+      // Optional simplified fields (for backward compatibility)
+      gdpImpact: server.gdpImpact?.current,
+      stabilityIndex: server.stabilityIndex?.current,
+      internationalStanding: server.internationalStanding?.tradeBonus,
+      taxEfficiency: server.taxEfficiency?.currentMultiplier
+    };
+  }
+
   private syncFromBuilderState(builderState: AtomicBuilderState) {
     // Sync core state
     this.state.selectedComponents = builderState.selectedComponents;
@@ -386,18 +427,7 @@ export class UnifiedAtomicStateManager {
     this.state.synergies = builderState.synergies;
     this.state.conflicts = builderState.conflicts;
     // Map AtomicEconomicModifiers to ClientAtomicEconomicModifiers
-    this.state.economicModifiers = {
-      taxCollectionMultiplier: builderState.economicImpact.taxCollectionMultiplier || 1,
-      gdpGrowthModifier: builderState.economicImpact.gdpGrowthModifier || 0,
-      stabilityBonus: builderState.economicImpact.stabilityBonus || 0,
-      innovationMultiplier: builderState.economicImpact.innovationMultiplier || 1,
-      internationalTradeBonus: builderState.economicImpact.internationalTradeBonus || 0,
-      governmentEfficiencyMultiplier: builderState.economicImpact.governmentEfficiencyMultiplier || 1,
-      gdpImpact: builderState.economicImpact.gdpImpact,
-      stabilityIndex: builderState.economicImpact.stabilityIndex,
-      internationalStanding: builderState.economicImpact.internationalStanding,
-      taxEfficiency: builderState.economicImpact.taxEfficiency
-    };
+    this.state.economicModifiers = this.mapServerToClientModifiers(builderState.economicImpact);
     this.state.traditionalStructure = this.convertToDetailedStructure(builderState.traditionalStructure);
     
     // Trigger additional calculations

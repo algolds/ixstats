@@ -36,7 +36,7 @@ export function useCountryEditorData() {
   const [flagUrl, setFlagUrl] = useState<string | null>(null);
   
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
-    { userId: user?.id || 'placeholder-disabled' },
+    undefined,
     { enabled: !!user?.id }
   );
 
