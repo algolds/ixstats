@@ -201,7 +201,14 @@ export default function SocialCountryProfilePage({ params }: SocialCountryProfil
     };
 
     return {
-      ...adaptCountryForSocialProfile(country),
+      ...adaptCountryForSocialProfile(country as unknown as Record<string, unknown>),
+      id: country.id,
+      name: country.name,
+      currentPopulation: country.currentPopulation,
+      currentGdpPerCapita: country.currentGdpPerCapita,
+      currentTotalGdp: country.currentTotalGdp,
+      economicTier: country.economicTier,
+      populationTier: country.populationTier,
       continent: country.continent || undefined,
       region: country.region || undefined,
       governmentType: country.governmentType || undefined,

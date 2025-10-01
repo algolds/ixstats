@@ -740,7 +740,17 @@ export function EnhancedCommandCenter() {
                 >
                   <FeaturedArticle />
                   <TierVisualization
-                    countries={countries.map(c => ({ ...c, landArea: c.landArea ?? null }))}
+                    countries={countries.map(c => ({
+                      ...c,
+                      landArea: c.landArea ?? null,
+                      populationDensity: c.populationDensity ?? null,
+                      continent: c.continent ?? null,
+                      region: c.region ?? null,
+                      governmentType: c.governmentType ?? null,
+                      religion: c.religion ?? null,
+                      leader: c.leader ?? null,
+                      areaSqMi: c.areaSqMi ?? null
+                    }))}
                     isLoading={false}
                   />
                 </motion.div>

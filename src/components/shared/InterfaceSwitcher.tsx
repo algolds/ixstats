@@ -15,10 +15,9 @@ const isClerkConfigured = Boolean(
 function InterfaceSwitcherContent({ currentInterface, countryId }: { currentInterface: 'sdi' | 'eci', countryId?: string }) {
   const router = useRouter();
   const { user } = useUser();
-  const userProfileQueryParams = createUserProfileQueryParams(user);
   const { data: profile } = api.users.getProfile.useQuery(
-    userProfileQueryParams.input,
-    { enabled: userProfileQueryParams.enabled }
+    undefined,
+    { enabled: !!user?.id }
   );
 
   if (!profile) return null;
