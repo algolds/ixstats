@@ -112,6 +112,9 @@ export function UnifiedNotificationProvider({
     activeFeatures: activeFeatures.current,
     recentActions: recentActionsRef.current,
     focusMode: false, // Could be enhanced
+    isUserActive: true, // Track based on recent activity
+    interactionHistory: [], // Could track user interactions
+    contextualFactors: {}, // Could add contextual data
     sessionDuration: Date.now() - sessionStartRef.current,
     deviceType: 'desktop', // Could be enhanced
     screenSize: 'large', // Could be enhanced

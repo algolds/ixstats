@@ -50,20 +50,20 @@ export const WavingFlag: React.FC<WavingFlagProps> = ({
     },
     ripple: {
       // Ultra-subtle multi-stage ripple - Apple style
-      rotateY: [0, rippleStrength * 0.8, -rippleStrength * 0.3, rippleStrength * 0.2, 0],
-      rotateX: [0, -rippleStrength * 0.4, rippleStrength * 0.6, -rippleStrength * 0.2, 0],
-      scaleX: [1, 1 + rippleStrength * 0.003, 1 - rippleStrength * 0.002, 1 + rippleStrength * 0.001, 1],
-      scaleY: [1, 1 - rippleStrength * 0.002, 1 + rippleStrength * 0.004, 1 - rippleStrength * 0.001, 1],
-      skewX: [0, rippleStrength * 0.6, -rippleStrength * 0.4, rippleStrength * 0.2, 0],
-      x: [0, rippleStrength * 0.8, -rippleStrength * 0.3, rippleStrength * 0.15, 0],
-      y: [0, -rippleStrength * 0.4, rippleStrength * 0.6, -rippleStrength * 0.2, 0],
+      rotateY: [0, rippleStrength * 0.8, -rippleStrength * 0.3, rippleStrength * 0.2, 0] as number[],
+      rotateX: [0, -rippleStrength * 0.4, rippleStrength * 0.6, -rippleStrength * 0.2, 0] as number[],
+      scaleX: [1, 1 + rippleStrength * 0.003, 1 - rippleStrength * 0.002, 1 + rippleStrength * 0.001, 1] as number[],
+      scaleY: [1, 1 - rippleStrength * 0.002, 1 + rippleStrength * 0.004, 1 - rippleStrength * 0.001, 1] as number[],
+      skewX: [0, rippleStrength * 0.6, -rippleStrength * 0.4, rippleStrength * 0.2, 0] as number[],
+      x: [0, rippleStrength * 0.8, -rippleStrength * 0.3, rippleStrength * 0.15, 0] as number[],
+      y: [0, -rippleStrength * 0.4, rippleStrength * 0.6, -rippleStrength * 0.2, 0] as number[],
       transition: {
         duration: duration,
         ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number], // Apple's signature easing
-        times: [0, 0.25, 0.55, 0.8, 1] // More refined timing
+        times: [0, 0.25, 0.55, 0.8, 1] as number[] // More refined timing
       }
     }
-  } as const;
+  };
 
   return (
     <div 

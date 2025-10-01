@@ -9,7 +9,7 @@ export const LoaderOne = () => {
       repeat: Infinity,
       repeatType: "loop" as const,
       delay: x * 0.2,
-      ease: [0.4, 0, 0.6, 1],
+      ease: [0.4, 0, 0.6, 1] as [number, number, number, number],
     };
   };
   return (
@@ -73,7 +73,7 @@ export const LoaderTwo = () => {
       repeat: Infinity,
       repeatType: "loop" as const,
       delay: x * 0.2,
-      ease: [0.4, 0, 0.6, 1],
+      ease: [0.4, 0, 0.6, 1] as [number, number, number, number],
     };
   };
   return (

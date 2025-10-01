@@ -34,7 +34,7 @@ export function usePremium(): PremiumStatus {
   );
 
   // First, ensure user record exists in database
-  const { mutate: createUserRecord, isLoading: isCreatingUser } = api.users.createUserRecord.useMutation({
+  const { mutate: createUserRecord, isPending: isCreatingUser } = api.users.createUserRecord.useMutation({
     onSuccess: () => {
       console.log('[usePremium] User record created successfully');
       setUserRecordCreated(true);
