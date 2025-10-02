@@ -471,19 +471,20 @@ export function AdvancedBudgetDashboard({
               <CardContent>
                 <div className="space-y-4">
                   {budgetCategories.slice(0, 6).map(category => {
-                    const spendingRate = category.allocatedAmount > 0 ? 
-                      (category.spentAmount / category.allocatedAmount) * 100 : 0;
-                    
+                    const spendingRate = category.allocatedAmount > 0 ?
+                      Math.min(100, (category.spentAmount / category.allocatedAmount) * 100) : 0;
+                    const safeSpendingRate = isNaN(spendingRate) || !isFinite(spendingRate) ? 0 : spendingRate;
+
                     return (
                       <div key={category.id} className="space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium">{category.name}</span>
                           <span className="text-sm text-muted-foreground">
-                            {spendingRate.toFixed(1)}%
+                            {safeSpendingRate.toFixed(1)}%
                           </span>
                         </div>
-                        <Progress 
-                          value={spendingRate} 
+                        <Progress
+                          value={safeSpendingRate}
                           className="h-2"
                         />
                       </div>
@@ -534,8 +535,9 @@ export function AdvancedBudgetDashboard({
           {/* Category Management */}
           <div className="space-y-4">
             {budgetCategories.map(category => {
-              const spendingRate = category.allocatedAmount > 0 ? 
-                (category.spentAmount / category.allocatedAmount) * 100 : 0;
+              const spendingRate = category.allocatedAmount > 0 ?
+                Math.min(100, (category.spentAmount / category.allocatedAmount) * 100) : 0;
+              const safeSpendingRate = isNaN(spendingRate) || !isFinite(spendingRate) ? 0 : spendingRate;
               const IconComponent = iconMap[category.icon] || Building2;
               
               return (
@@ -599,13 +601,13 @@ export function AdvancedBudgetDashboard({
                           <div className="flex justify-between text-sm">
                             <span>Spending Rate:</span>
                             <span className={`font-medium ${
-                              spendingRate > 100 ? 'text-red-600' :
-                              spendingRate > 85 ? 'text-yellow-600' : 'text-green-600'
+                              safeSpendingRate > 100 ? 'text-red-600' :
+                              safeSpendingRate > 85 ? 'text-yellow-600' : 'text-green-600'
                             }`}>
-                              {spendingRate.toFixed(1)}%
+                              {safeSpendingRate.toFixed(1)}%
                             </span>
                           </div>
-                          <Progress value={Math.min(spendingRate, 100)} />
+                          <Progress value={safeSpendingRate} />
                         </div>
                       </div>
                       
@@ -618,15 +620,15 @@ export function AdvancedBudgetDashboard({
                             <div className="flex items-center justify-between">
                               <span className="text-sm">Efficiency Score:</span>
                               <div className="flex items-center gap-2">
-                                <Progress value={category.efficiency || 0} className="w-16" />
+                                <Progress value={Math.min(100, Math.max(0, category.efficiency || 0))} className="w-16" />
                                 <span className="text-sm font-medium">{category.efficiency || 0}%</span>
                               </div>
                             </div>
-                            
+
                             <div className="flex items-center justify-between">
                               <span className="text-sm">Performance Score:</span>
                               <div className="flex items-center gap-2">
-                                <Progress value={category.performance || 0} className="w-16" />
+                                <Progress value={Math.min(100, Math.max(0, category.performance || 0))} className="w-16" />
                                 <span className="text-sm font-medium">{category.performance || 0}%</span>
                               </div>
                             </div>
@@ -701,8 +703,8 @@ export function AdvancedBudgetDashboard({
                           <span>Feasibility:</span>
                           <span className="font-medium">{scenario.feasibility}%</span>
                         </div>
-                        
-                        <Progress value={scenario.feasibility} className="h-2" />
+
+                        <Progress value={Math.min(100, Math.max(0, scenario.feasibility || 0))} className="h-2" />
                         
                         <div className="pt-2">
                           <p className="text-xs font-medium mb-2">Key Assumptions:</p>
@@ -824,7 +826,7 @@ export function AdvancedBudgetDashboard({
                       <div key={category.id} className="flex items-center justify-between">
                         <span className="text-sm">{category.name}</span>
                         <div className="flex items-center gap-2">
-                          <Progress value={category.efficiency || 0} className="w-20" />
+                          <Progress value={Math.min(100, Math.max(0, category.efficiency || 0))} className="w-20" />
                           <span className="text-sm font-medium w-12">
                             {category.efficiency || 0}%
                           </span>
@@ -854,7 +856,7 @@ export function AdvancedBudgetDashboard({
                       <div key={category.id} className="flex items-center justify-between">
                         <span className="text-sm">{category.name}</span>
                         <div className="flex items-center gap-2">
-                          <Progress value={category.performance || 0} className="w-20" />
+                          <Progress value={Math.min(100, Math.max(0, category.performance || 0))} className="w-20" />
                           <span className="text-sm font-medium w-12">
                             {category.performance || 0}%
                           </span>
