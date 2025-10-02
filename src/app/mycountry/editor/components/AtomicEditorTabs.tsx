@@ -254,9 +254,9 @@ export function AtomicEditorTabs({
             className="glass-hierarchy-child rounded-xl p-6 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200/50 dark:border-blue-700/50"
           >
             <div className="flex items-center gap-3 mb-6">
-              <BarChart3 className="h-6 w-6 text-blue-600" />
-              <h3 className="text-xl font-semibold">Core Economic Indicators</h3>
-              <Badge variant="outline" className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+              <BarChart3 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <h3 className="text-xl font-semibold text-foreground">Core Economic Indicators</h3>
+              <Badge variant="outline" className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700">
                 <Target className="h-3 w-3 mr-1" />
                 LIVE EDITING
               </Badge>
@@ -283,8 +283,8 @@ export function AtomicEditorTabs({
             className="glass-hierarchy-child rounded-xl p-6 bg-gradient-to-br from-green-50/50 to-emerald-50/50 dark:from-green-950/20 dark:to-emerald-950/20 border border-green-200/50 dark:border-green-700/50"
           >
             <div className="flex items-center gap-3 mb-6">
-              <Briefcase className="h-6 w-6 text-green-600" />
-              <h3 className="text-xl font-semibold">Labor & Employment</h3>
+              <Briefcase className="h-6 w-6 text-green-600 dark:text-green-400" />
+              <h3 className="text-xl font-semibold text-foreground">Labor & Employment</h3>
             </div>
             <LaborEmploymentComponent
               inputs={economicInputs}
@@ -307,15 +307,15 @@ export function AtomicEditorTabs({
             className="glass-hierarchy-child rounded-xl p-6 bg-gradient-to-br from-purple-50/50 to-violet-50/50 dark:from-purple-950/20 dark:to-violet-950/20 border border-purple-200/50 dark:border-purple-700/50"
           >
             <div className="flex items-center gap-3 mb-6">
-              <Scale className="h-6 w-6 text-purple-600" />
-              <h3 className="text-xl font-semibold">Fiscal System</h3>
+              <Scale className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              <h3 className="text-xl font-semibold text-foreground">Fiscal System</h3>
             </div>
             
             {/* Enhanced with Tax Builder */}
             <Tabs defaultValue="current" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="current">Current System</TabsTrigger>
-                <TabsTrigger value="builder">Tax Builder</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 bg-muted/50">
+                <TabsTrigger value="current" className="data-[state=active]:bg-background data-[state=active]:text-foreground">Current System</TabsTrigger>
+                <TabsTrigger value="builder" className="data-[state=active]:bg-background data-[state=active]:text-foreground">Tax Builder</TabsTrigger>
               </TabsList>
 
               <TabsContent value="current">
@@ -353,8 +353,8 @@ export function AtomicEditorTabs({
             className="glass-hierarchy-child rounded-xl p-6 bg-gradient-to-br from-red-50/50 to-rose-50/50 dark:from-red-950/20 dark:to-rose-950/20 border border-red-200/50 dark:border-red-700/50"
           >
             <div className="flex items-center gap-3 mb-6">
-              <Building className="h-6 w-6 text-red-600" />
-              <h3 className="text-xl font-semibold">Government Spending</h3>
+              <Building className="h-6 w-6 text-red-600 dark:text-red-400" />
+              <h3 className="text-xl font-semibold text-foreground">Government Spending</h3>
             </div>
             <GovernmentSpending
               {...economicInputs.governmentSpending}
@@ -380,8 +380,8 @@ export function AtomicEditorTabs({
             className="glass-hierarchy-child rounded-xl p-6 bg-gradient-to-br from-yellow-50/50 to-amber-50/50 dark:from-yellow-950/20 dark:to-amber-950/20 border border-yellow-200/50 dark:border-yellow-700/50"
           >
             <div className="flex items-center gap-3 mb-6">
-              <Building2 className="h-6 w-6 text-yellow-600" />
-              <h3 className="text-xl font-semibold">Government Structure</h3>
+              <Building2 className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+              <h3 className="text-xl font-semibold text-foreground">Government Structure</h3>
             </div>
             <GovernmentBuilder
               initialData={governmentData || undefined}
@@ -399,9 +399,9 @@ export function AtomicEditorTabs({
             className="glass-hierarchy-child rounded-xl p-6 bg-gradient-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/20 dark:to-purple-950/20 border border-indigo-200/50 dark:border-indigo-700/50"
           >
             <div className="flex items-center gap-3 mb-6">
-              <Settings className="h-6 w-6 text-indigo-600" />
-              <h3 className="text-xl font-semibold">Atomic Government Components</h3>
-              <Badge variant="outline" className="bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-700 border-indigo-200">
+              <Settings className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+              <h3 className="text-xl font-semibold text-foreground">Atomic Government Components</h3>
+              <Badge variant="outline" className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-700">
                 <Crown className="h-3 w-3 mr-1" />
                 Advanced System
               </Badge>
@@ -416,23 +416,23 @@ export function AtomicEditorTabs({
 
             {/* Effectiveness Analysis */}
             {effectivenessAnalysis && (
-              <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-                <h4 className="font-semibold mb-3">System Analysis</h4>
+              <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                <h4 className="font-semibold mb-3 text-foreground">System Analysis</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">
+                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                       {effectivenessAnalysis.overallEffectiveness}%
                     </div>
                     <div className="text-muted-foreground">Effectiveness</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                       {effectivenessAnalysis.totalComponents}
                     </div>
                     <div className="text-muted-foreground">Components</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-purple-600">
+                    <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                       ${Math.round((typeof effectivenessAnalysis.totalCost === 'number' && !isNaN(effectivenessAnalysis.totalCost) ? effectivenessAnalysis.totalCost : 0) / 1000)}k
                     </div>
                     <div className="text-muted-foreground">Total Cost</div>
@@ -440,7 +440,7 @@ export function AtomicEditorTabs({
                 </div>
                 {effectivenessAnalysis.recommendations.length > 0 && (
                   <div className="mt-4">
-                    <h5 className="font-medium mb-2">Recommendations:</h5>
+                    <h5 className="font-medium mb-2 text-foreground">Recommendations:</h5>
                     <ul className="text-sm text-muted-foreground space-y-1">
                       {effectivenessAnalysis.recommendations.map((rec, index) => (
                         <li key={index}>• {rec}</li>
@@ -461,9 +461,9 @@ export function AtomicEditorTabs({
             className="glass-hierarchy-child rounded-xl p-6 bg-gradient-to-br from-emerald-50/50 to-teal-50/50 dark:from-emerald-950/20 dark:to-teal-950/20 border border-emerald-200/50 dark:border-emerald-700/50"
           >
             <div className="flex items-center gap-3 mb-6">
-              <DollarSign className="h-6 w-6 text-emerald-600" />
-              <h3 className="text-xl font-semibold">Advanced Budget Management</h3>
-              <Badge variant="outline" className="bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 border-emerald-200">
+              <DollarSign className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+              <h3 className="text-xl font-semibold text-foreground">Advanced Budget Management</h3>
+              <Badge variant="outline" className="bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700">
                 <Zap className="h-3 w-3 mr-1" />
                 Executive Tools
               </Badge>
@@ -489,8 +489,8 @@ export function AtomicEditorTabs({
             className="glass-hierarchy-child rounded-xl p-6 bg-gradient-to-br from-orange-50/50 to-amber-50/50 dark:from-orange-950/20 dark:to-amber-950/20 border border-orange-200/50 dark:border-orange-700/50"
           >
             <div className="flex items-center gap-3 mb-6">
-              <Users className="h-6 w-6 text-orange-600" />
-              <h3 className="text-xl font-semibold">Demographics</h3>
+              <Users className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+              <h3 className="text-xl font-semibold text-foreground">Demographics</h3>
             </div>
             <Demographics
               inputs={economicInputs}

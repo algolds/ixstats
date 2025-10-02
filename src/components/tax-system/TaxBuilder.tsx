@@ -611,7 +611,7 @@ export function TaxBuilder({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">
+          <h1 className="text-3xl font-bold text-foreground">
             Tax System Builder
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -645,23 +645,23 @@ export function TaxBuilder({
       </div>
 
       {/* Progress Steps */}
-      <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+      <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border">
         {steps.map((step, index) => {
           const StepIcon = step.icon;
           const isActive = step.id === currentStep;
           const isCompleted = index < currentStepIndex;
-          
+
           return (
             <div key={step.id} className="flex items-center">
               <button
                 onClick={() => setCurrentStep(step.id as any)}
                 disabled={isReadOnly}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                  isActive 
+                  isActive
                     ? 'bg-primary text-primary-foreground'
                     : isCompleted
-                      ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                      : 'hover:bg-muted'
+                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
+                      : 'hover:bg-muted text-muted-foreground'
                 }`}
               >
                 <StepIcon className="h-4 w-4" />
@@ -712,7 +712,7 @@ export function TaxBuilder({
         {currentStep === 'categories' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-semibold">
+              <h2 className="text-2xl font-semibold text-foreground">
                 Tax Categories
               </h2>
               {!isReadOnly && (
@@ -769,7 +769,7 @@ export function TaxBuilder({
         {currentStep === 'atomic' && showAtomicIntegration && (
           <div className="space-y-6">
             <div className="text-center space-y-4">
-              <h2 className="text-2xl font-semibold">Atomic Tax Effectiveness</h2>
+              <h2 className="text-2xl font-semibold text-foreground">Atomic Tax Effectiveness</h2>
               <p className="text-muted-foreground">
                 See how your government's atomic components influence tax collection and compliance
               </p>
@@ -815,7 +815,7 @@ export function TaxBuilder({
 
         {currentStep === 'preview' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-semibold">Tax System Preview</h2>
+            <h2 className="text-2xl font-semibold text-foreground">Tax System Preview</h2>
             
             {/* System Overview */}
             <Card>
@@ -929,10 +929,10 @@ export function TaxBuilder({
 
       {/* Template Modal */}
       {showTemplates && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-background border border-border rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto shadow-xl">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-semibold">
+              <h2 className="text-2xl font-semibold text-foreground">
                 Tax System Templates
               </h2>
               <Button variant="outline" onClick={() => setShowTemplates(false)}>
@@ -984,7 +984,7 @@ export function TaxBuilder({
       )}
 
       {/* Navigation */}
-      <div className="flex items-center justify-between pt-6 border-t">
+      <div className="flex items-center justify-between pt-6 border-t border-border">
         <Button
           variant="outline"
           onClick={() => {
@@ -999,7 +999,7 @@ export function TaxBuilder({
 
         <div className="flex items-center gap-2">
           {validation.isValid ? (
-            <Badge variant="default" className="bg-green-100 text-green-700">
+            <Badge variant="default" className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
               <CheckCircle className="h-3 w-3 mr-1" />
               Valid Configuration
             </Badge>

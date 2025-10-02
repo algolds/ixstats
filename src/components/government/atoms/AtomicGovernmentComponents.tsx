@@ -522,25 +522,25 @@ export function AtomicComponentSelector({
       <CardContent className="space-y-6">
         {/* Component Selection Progress */}
         <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-          <span className="text-sm font-medium">
+          <span className="text-sm font-medium text-foreground">
             Components Selected: {selectedComponents.length} / {maxComponents}
           </span>
-          <div className="w-32 bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-blue-600 h-2 rounded-full transition-all"
-              style={{ width: `${(selectedComponents.length / maxComponents) * 100}%` }}
+          <div className="w-32 bg-muted-foreground/20 rounded-full h-2">
+            <div
+              className="bg-primary h-2 rounded-full transition-all"
+              style={{ width: `${maxComponents > 0 ? Math.min(100, (selectedComponents.length / maxComponents) * 100) : 0}%` }}
             />
           </div>
         </div>
         
         {/* Category Tabs */}
         <Tabs value={activeCategory} onValueChange={(value) => setActiveCategory(value as keyof typeof COMPONENT_CATEGORIES)}>
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="powerDistribution" className="text-xs">Power</TabsTrigger>
-            <TabsTrigger value="decisionProcess" className="text-xs">Decisions</TabsTrigger>
-            <TabsTrigger value="legitimacySources" className="text-xs">Legitimacy</TabsTrigger>
-            <TabsTrigger value="institutions" className="text-xs">Institutions</TabsTrigger>
-            <TabsTrigger value="controlMechanisms" className="text-xs">Control</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 bg-muted/50">
+            <TabsTrigger value="powerDistribution" className="text-xs data-[state=active]:bg-background data-[state=active]:text-foreground">Power</TabsTrigger>
+            <TabsTrigger value="decisionProcess" className="text-xs data-[state=active]:bg-background data-[state=active]:text-foreground">Decisions</TabsTrigger>
+            <TabsTrigger value="legitimacySources" className="text-xs data-[state=active]:bg-background data-[state=active]:text-foreground">Legitimacy</TabsTrigger>
+            <TabsTrigger value="institutions" className="text-xs data-[state=active]:bg-background data-[state=active]:text-foreground">Institutions</TabsTrigger>
+            <TabsTrigger value="controlMechanisms" className="text-xs data-[state=active]:bg-background data-[state=active]:text-foreground">Control</TabsTrigger>
           </TabsList>
           
           {Object.entries(COMPONENT_CATEGORIES).map(([categoryKey, components]) => (
@@ -560,33 +560,33 @@ export function AtomicComponentSelector({
                     <div
                       key={componentType}
                       className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                        isSelected 
-                          ? 'border-blue-500 bg-blue-50' 
+                        isSelected
+                          ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-950/30'
                           : hasConflict && !isSelected
-                            ? 'border-red-200 bg-red-50 opacity-60'
+                            ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 opacity-60'
                             : hasSynergy && !isSelected
-                              ? 'border-green-200 bg-green-50'
-                              : 'border-gray-200 hover:border-gray-300'
+                              ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30'
+                              : 'border-border hover:border-foreground/30'
                       } ${isReadOnly ? 'cursor-not-allowed opacity-60' : ''}`}
                       onClick={() => toggleComponent(componentType)}
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <h4 className="font-medium text-sm">{component?.name}</h4>
+                        <h4 className="font-medium text-sm text-foreground">{component?.name}</h4>
                         <div className="flex items-center gap-1">
                           <Badge variant="outline" className="text-xs">
                             {component?.effectiveness}%
                           </Badge>
-                          {isSelected && <CheckCircle className="h-4 w-4 text-green-500" />}
-                          {hasConflict && !isSelected && <AlertCircle className="h-4 w-4 text-red-500" />}
-                          {hasSynergy && !isSelected && <TrendingUp className="h-4 w-4 text-green-500" />}
+                          {isSelected && <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />}
+                          {hasConflict && !isSelected && <AlertCircle className="h-4 w-4 text-red-500 dark:text-red-400" />}
+                          {hasSynergy && !isSelected && <TrendingUp className="h-4 w-4 text-green-500 dark:text-green-400" />}
                         </div>
                       </div>
-                      
+
                       <p className="text-xs text-muted-foreground mb-3">
                         {component?.description}
                       </p>
-                      
-                      <div className="flex items-center justify-between text-xs">
+
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <div className="flex items-center gap-4">
                           <span>Cost: ${((component?.implementationCost || 0) / 1000).toFixed(0)}k</span>
                           <span>Capacity: {component?.requiredCapacity}%</span>
@@ -603,13 +603,13 @@ export function AtomicComponentSelector({
         {/* Selected Components Summary */}
         {selectedComponents.length > 0 && (
           <div className="space-y-4">
-            <h4 className="font-semibold">Selected Components</h4>
+            <h4 className="font-semibold text-foreground">Selected Components</h4>
             <div className="flex flex-wrap gap-2">
               {selectedComponents.map(componentType => (
-                <Badge 
-                  key={componentType} 
-                  variant="default" 
-                  className="flex items-center gap-1"
+                <Badge
+                  key={componentType}
+                  variant="default"
+                  className="flex items-center gap-1 bg-primary text-primary-foreground"
                 >
                   {ATOMIC_COMPONENTS[componentType]?.name}
                   {!isReadOnly && (

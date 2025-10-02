@@ -366,10 +366,10 @@ export function GovernmentBuilder({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">
+          <h1 className="text-3xl font-bold text-foreground">
             Government Builder
           </h1>
-          <p className="text-[var(--color-text-muted)] mt-1">
+          <p className="text-muted-foreground mt-1">
             Design and configure your government structure, departments, and budget
           </p>
         </div>
@@ -400,23 +400,23 @@ export function GovernmentBuilder({
       </div>
 
       {/* Progress Steps */}
-      <div className="flex items-center justify-between p-4 bg-[var(--color-bg-tertiary)] rounded-lg">
+      <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border">
         {steps.map((step, index) => {
           const StepIcon = step.icon;
           const isActive = step.id === currentStep;
           const isCompleted = index < currentStepIndex;
-          
+
           return (
             <div key={step.id} className="flex items-center">
               <button
                 onClick={() => setCurrentStep(step.id as any)}
                 disabled={isReadOnly}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                  isActive 
-                    ? 'bg-[var(--color-brand-primary)] text-white'
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
                     : isCompleted
-                      ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                      : 'hover:bg-[var(--color-bg-secondary)]'
+                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
+                      : 'hover:bg-muted text-muted-foreground'
                 }`}
               >
                 <StepIcon className="h-4 w-4" />
@@ -424,7 +424,7 @@ export function GovernmentBuilder({
                 {isCompleted && <CheckCircle className="h-4 w-4" />}
               </button>
               {index < steps.length - 1 && (
-                <ArrowRight className="h-4 w-4 mx-2 text-[var(--color-text-muted)]" />
+                <ArrowRight className="h-4 w-4 mx-2 text-muted-foreground" />
               )}
             </div>
           );
@@ -465,7 +465,7 @@ export function GovernmentBuilder({
         {currentStep === 'departments' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-semibold text-[var(--color-text-primary)]">
+              <h2 className="text-2xl font-semibold text-foreground">
                 Government Departments
               </h2>
               {!isReadOnly && (
@@ -495,13 +495,13 @@ export function GovernmentBuilder({
               ))}
 
               {builderState.departments.length === 0 && (
-                <Card className="border-2 border-dashed border-[var(--color-border-primary)]">
+                <Card className="border-2 border-dashed border-border">
                   <CardContent className="p-8 text-center">
-                    <Users className="h-12 w-12 mx-auto text-[var(--color-text-muted)] mb-4" />
-                    <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-2">
+                    <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">
                       No Departments Yet
                     </h3>
-                    <p className="text-[var(--color-text-muted)] mb-4">
+                    <p className="text-muted-foreground mb-4">
                       Add government departments to structure your administration
                     </p>
                     {!isReadOnly && (
@@ -519,7 +519,7 @@ export function GovernmentBuilder({
 
         {currentStep === 'budget' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-semibold text-[var(--color-text-primary)]">
+            <h2 className="text-2xl font-semibold text-foreground">
               Budget Allocation
             </h2>
 
@@ -577,7 +577,7 @@ export function GovernmentBuilder({
 
         {currentStep === 'revenue' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-semibold text-[var(--color-text-primary)]">
+            <h2 className="text-2xl font-semibold text-foreground">
               Revenue Sources
             </h2>
 
@@ -594,7 +594,7 @@ export function GovernmentBuilder({
 
         {currentStep === 'preview' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-semibold text-[var(--color-text-primary)]">
+            <h2 className="text-2xl font-semibold text-foreground">
               Government Overview
             </h2>
 
@@ -651,10 +651,10 @@ export function GovernmentBuilder({
 
       {/* Template Modal */}
       {showTemplates && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-[var(--color-bg-primary)] rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-background border border-border rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto shadow-xl">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-semibold text-[var(--color-text-primary)]">
+              <h2 className="text-2xl font-semibold text-foreground">
                 Government Templates
               </h2>
               <Button variant="outline" onClick={() => setShowTemplates(false)}>
@@ -667,7 +667,7 @@ export function GovernmentBuilder({
                 <Card key={index} className="hover:shadow-lg transition-shadow cursor-pointer">
                   <CardHeader>
                     <CardTitle>{template.name}</CardTitle>
-                    <p className="text-sm text-[var(--color-text-muted)]">{template.description}</p>
+                    <p className="text-sm text-muted-foreground">{template.description}</p>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
@@ -677,7 +677,7 @@ export function GovernmentBuilder({
                       </div>
                       <div className="text-sm">
                         <strong>Departments:</strong>
-                        <ul className="mt-1 text-[var(--color-text-muted)]">
+                        <ul className="mt-1 text-muted-foreground">
                           {template.departments.slice(0, 3).map(dept => (
                             <li key={dept.name}>• {dept.name}</li>
                           ))}
@@ -702,7 +702,7 @@ export function GovernmentBuilder({
       )}
 
       {/* Navigation */}
-      <div className="flex items-center justify-between pt-6 border-t border-[var(--color-border-primary)]">
+      <div className="flex items-center justify-between pt-6 border-t border-border">
         <Button
           variant="outline"
           onClick={() => {
@@ -717,7 +717,7 @@ export function GovernmentBuilder({
 
         <div className="flex items-center gap-2">
           {validation.isValid ? (
-            <Badge variant="default" className="bg-green-100 text-green-700">
+            <Badge variant="default" className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
               <CheckCircle className="h-3 w-3 mr-1" />
               Valid Configuration
             </Badge>
