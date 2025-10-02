@@ -47,24 +47,24 @@ export function MyCountryPremium({ profile, userId }: MyCountryPremiumProps) {
 
   // API hooks
   const { data: strategicPlans, refetch: refetchPlans } = api.eci.getStrategicPlans.useQuery(
-    { userId: userId || '' },
-    { enabled: !!userId }
+    { userId: userId || 'disabled' },
+    { enabled: !!userId && !!profile?.countryId }
   );
   const { data: advancedAnalytics } = api.eci.getAdvancedAnalytics.useQuery(
-    { userId: userId || '' },
-    { enabled: !!userId }
+    { userId: userId || 'disabled' },
+    { enabled: !!userId && !!profile?.countryId }
   );
   const { data: aiRecommendations } = api.eci.getAIRecommendations.useQuery(
-    { userId: userId || '' },
-    { enabled: !!userId }
+    { userId: userId || 'disabled' },
+    { enabled: !!userId && !!profile?.countryId }
   );
   const { data: predictiveModels } = api.eci.getPredictiveModels.useQuery(
     {
-      userId: userId || '',
+      userId: userId || 'disabled',
       timeframe: '1_year',
       scenarios: ['realistic', 'optimistic', 'pessimistic']
     },
-    { enabled: !!userId }
+    { enabled: !!userId && !!profile?.countryId }
   );
   
   const createPlanMutation = api.eci.createStrategicPlan.useMutation({

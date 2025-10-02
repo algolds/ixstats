@@ -42,27 +42,27 @@ interface CabinetMeeting {
 export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveSectionProps) {
   // Get ECI data for this country
   const { data: cabinetMeetings, isLoading: meetingsLoading } = api.eci.getCabinetMeetings.useQuery(
-    { userId: userId || '' },
+    { userId: userId || 'disabled' },
     { enabled: !!userId }
   );
   const { data: economicPolicies, isLoading: policiesLoading } = api.eci.getEconomicPolicies.useQuery(
-    { userId: userId || '' },
+    { userId: userId || 'disabled' },
     { enabled: !!userId }
   );
   const { data: strategicPlans, isLoading: plansLoading } = api.eci.getStrategicPlans.useQuery(
-    { userId: userId || '' },
+    { userId: userId || 'disabled' },
     { enabled: !!userId }
   );
   const { data: securityThreats, isLoading: threatsLoading } = api.eci.getSecurityThreats.useQuery(
-    { userId: userId || '' },
+    { userId: userId || 'disabled' },
     { enabled: !!userId }
   );
   const { data: realTimeMetrics, isLoading: metricsLoading } = api.eci.getRealTimeMetrics.useQuery(
-    { userId: userId || '' },
+    { userId: userId || 'disabled' },
     { enabled: !!userId }
   );
   const { data: aiRecommendations, isLoading: aiLoading } = api.eci.getAIRecommendations.useQuery(
-    { userId: userId || '' },
+    { userId: userId || 'disabled' },
     { enabled: !!userId }
   );
 

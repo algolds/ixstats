@@ -58,7 +58,7 @@ export const sdiRouter = createTRPCRouter({
     }),
 
   // Crisis Management
-  getActiveCrises: premiumProcedure.query(async ({ ctx }) => {
+  getActiveCrises: publicProcedure.query(async ({ ctx }) => {
     const crises = await ctx.db.crisisEvent.findMany({
       orderBy: { timestamp: 'desc' },
     });
@@ -79,7 +79,7 @@ export const sdiRouter = createTRPCRouter({
     }));
   }),
 
-  getCrisisEvents: premiumProcedure.query(async ({ ctx }) => {
+  getCrisisEvents: publicProcedure.query(async ({ ctx }) => {
     const crises = await ctx.db.crisisEvent.findMany({
       orderBy: { timestamp: 'desc' },
       take: 50

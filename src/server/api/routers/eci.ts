@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, premiumProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure, premiumProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { triggerNotification } from "./sdi";
 import { PolicyEffectService } from "~/services/PolicyEffectService";
@@ -98,7 +98,7 @@ export const eciRouter = createTRPCRouter({
       return result;
     }),
 
-  getCabinetMeetings: premiumProcedure
+  getCabinetMeetings: protectedProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
@@ -202,7 +202,7 @@ export const eciRouter = createTRPCRouter({
       return result;
     }),
 
-  getEconomicPolicies: premiumProcedure
+  getEconomicPolicies: protectedProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
@@ -266,7 +266,7 @@ export const eciRouter = createTRPCRouter({
       return result;
     }),
 
-  getSecurityThreats: premiumProcedure
+  getSecurityThreats: protectedProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
@@ -291,7 +291,7 @@ export const eciRouter = createTRPCRouter({
       }));
     }),
 
-  getSecurityDashboard: premiumProcedure
+  getSecurityDashboard: protectedProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
@@ -363,7 +363,7 @@ export const eciRouter = createTRPCRouter({
       });
     }),
 
-  getStrategicPlans: premiumProcedure
+  getStrategicPlans: protectedProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
@@ -389,7 +389,7 @@ export const eciRouter = createTRPCRouter({
     }),
 
   // Advanced Analytics
-  getAdvancedAnalytics: premiumProcedure
+  getAdvancedAnalytics: protectedProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
@@ -426,7 +426,7 @@ export const eciRouter = createTRPCRouter({
     }),
 
   // AI Advisor
-  getAIRecommendations: premiumProcedure
+  getAIRecommendations: protectedProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
@@ -456,7 +456,7 @@ export const eciRouter = createTRPCRouter({
     }),
 
   // Predictive Models
-  getPredictiveModels: premiumProcedure
+  getPredictiveModels: protectedProcedure
     .input(z.object({
       userId: z.string(),
       timeframe: z.enum(['6_months', '1_year', '2_years', '5_years']).default('1_year'),
@@ -492,7 +492,7 @@ export const eciRouter = createTRPCRouter({
     }),
 
   // Real-time Metrics (to replace hardcoded values)
-  getRealTimeMetrics: premiumProcedure
+  getRealTimeMetrics: protectedProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
@@ -603,7 +603,7 @@ export const eciRouter = createTRPCRouter({
     }),
 
   // Quick Actions for Executive Command Center
-  getQuickActions: premiumProcedure
+  getQuickActions: protectedProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
@@ -685,7 +685,7 @@ export const eciRouter = createTRPCRouter({
     }),
 
   // Get policy effectiveness analysis
-  getPolicyEffectiveness: premiumProcedure
+  getPolicyEffectiveness: protectedProcedure
     .input(z.object({
       userId: z.string(),
       category: z.string()

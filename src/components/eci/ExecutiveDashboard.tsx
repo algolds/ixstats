@@ -113,19 +113,19 @@ export function ExecutiveDashboard({ countryData, userId }: ExecutiveDashboardPr
 
   // API hooks
   const { data: realTimeMetrics } = api.eci.getRealTimeMetrics.useQuery(
-    { userId: userId || '' },
+    { userId: userId || 'disabled' },
     { enabled: !!userId }
   );
   const { data: cabinetMeetings, refetch: refetchMeetings } = api.eci.getCabinetMeetings.useQuery(
-    { userId: userId || '' },
+    { userId: userId || 'disabled' },
     { enabled: !!userId }
   );
   const { data: economicPolicies, refetch: refetchPolicies } = api.eci.getEconomicPolicies.useQuery(
-    { userId: userId || '' },
+    { userId: userId || 'disabled' },
     { enabled: !!userId }
   );
   const { data: securityDashboard } = api.eci.getSecurityDashboard.useQuery(
-    { userId: userId || '' },
+    { userId: userId || 'disabled' },
     { enabled: !!userId }
   );
   const createMeetingMutation = api.eci.createCabinetMeeting.useMutation({

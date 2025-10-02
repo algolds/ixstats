@@ -121,10 +121,10 @@ export function AdvancedAnalyticsModal({
     );
 
   // Get advanced analytics
-  const { data: advancedAnalytics, isLoading: analyticsLoading } = 
+  const { data: advancedAnalytics, isLoading: analyticsLoading } =
     api.eci.getAdvancedAnalytics.useQuery(
-      { userId: countryId }, // Using countryId as userId for now
-      { enabled: isOpen }
+      { userId: countryId || 'disabled' }, // Using countryId as userId for now
+      { enabled: isOpen && !!countryId }
     );
 
   // Get global comparison data
