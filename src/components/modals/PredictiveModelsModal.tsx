@@ -146,14 +146,14 @@ export function PredictiveModelsModal({
     );
 
   // Get predictive models
-  const { data: predictiveModels, isLoading: modelsLoading } = 
+  const { data: predictiveModels, isLoading: modelsLoading } =
     api.eci.getPredictiveModels.useQuery(
-      { 
-        userId: countryId, // Using countryId as userId for now
+      {
+        userId: countryId || 'disabled', // Using countryId as userId for now
         timeframe: '5_years',
         scenarios: ['optimistic', 'realistic', 'pessimistic']
       },
-      { enabled: isOpen }
+      { enabled: isOpen && !!countryId }
     );
 
   // Get historical data for context
