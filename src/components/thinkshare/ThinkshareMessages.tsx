@@ -107,13 +107,32 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
     staleTime: 30000,
   });
 
-    const { data: conversationMessages, isLoading: isLoadingMessages, refetch: refetchMessages } = api.thinkpages.getConversationMessages.useQuery({
-    conversationId: selectedConversation ?? 'INVALID',
-    userId: currentUserId ?? 'INVALID'
-  }, {
-    enabled: !!selectedConversation,
-    refetchOnWindowFocus: false,
-  });
+  // Only create query input when we have valid data
+  const shouldFetchMessages = Boolean(
+    selectedConversation &&
+    selectedConversation.trim() !== '' &&
+    currentUserId &&
+    currentUserId.trim() !== ''
+  );
+
+  // Use skip pattern instead of enabled to prevent ANY query execution
+  const conversationMessagesQuery = api.thinkpages.getConversationMessages.useQuery(
+    {
+      conversationId: selectedConversation || 'SKIP_QUERY',
+      userId: currentUserId || 'SKIP_QUERY'
+    },
+    {
+      enabled: shouldFetchMessages,
+      refetchOnWindowFocus: false,
+      retry: false,
+      // Add staleTime to prevent unnecessary refetches
+      staleTime: 5000,
+    }
+  );
+
+  const conversationMessages = conversationMessagesQuery.data;
+  const isLoadingMessages = conversationMessagesQuery.isLoading;
+  const refetchMessages = conversationMessagesQuery.refetch;
 
   // Temporarily disable WebSocket to isolate the infinite loop issue
   const clientState = { 

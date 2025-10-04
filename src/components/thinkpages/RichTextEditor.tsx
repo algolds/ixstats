@@ -75,6 +75,14 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(({
   const editorRef = React.useRef<HTMLDivElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+  // Set initial content when component mounts or initialContent changes
+  React.useEffect(() => {
+    if (editorRef.current && initialContent) {
+      editorRef.current.innerHTML = initialContent;
+      setContent(initialContent);
+    }
+  }, [initialContent]);
+
   // Fetch Discord emojis
   const { data: discordEmojis, isLoading: discordEmojisLoading } = api.thinkpages.getDiscordEmojis.useQuery({}, {
     enabled: isEmojiPopoverOpen // Only fetch when emoji picker is open

@@ -3,13 +3,14 @@
 import React from 'react';
 import { useUser } from '@clerk/nextjs';
 import { api } from '~/trpc/react';
-import { QuickActionsPanel } from '~/components/quick-actions/QuickActionsPanel';
+import { useCountryData } from '~/components/mycountry';
+import { QuickActionsPanel } from '~/components/quickactions/QuickActionsPanel';
+import { MeetingScheduler } from '~/components/quickactions/MeetingScheduler';
+import { PolicyCreator } from '~/components/quickactions/PolicyCreator';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
 import { NumberFlowDisplay } from '~/components/ui/number-flow';
-import { EconomicPolicyModal } from '~/components/modals/EconomicPolicyModal';
-import { CabinetMeetingModal } from '~/components/modals/CabinetMeetingModal';
 import { NationalSecurityModal } from '~/components/modals/NationalSecurityModal';
 import { 
   FileText, 
@@ -29,6 +30,9 @@ interface QuickActionIntegrationProps {
 
 export function QuickActionIntegration({ className }: QuickActionIntegrationProps) {
   const { user } = useUser();
+  const { country } = useCountryData();
+  const [showMeetingScheduler, setShowMeetingScheduler] = React.useState(false);
+  const [showPolicyCreator, setShowPolicyCreator] = React.useState(false);
 
   // Get real-time metrics
   const { data: metrics } = api.eci.getRealTimeMetrics.useQuery(
@@ -176,27 +180,35 @@ export function QuickActionIntegration({ className }: QuickActionIntegrationProp
       </Card>
 
       {/* Quick Actions Panel */}
-      <QuickActionsPanel />
+      {user?.id && country?.id && (
+        <QuickActionsPanel
+          countryId={country.id}
+          userId={user.id}
+          variant="full"
+        />
+      )}
 
       {/* Action Buttons */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <EconomicPolicyModal mode="create">
-          <Button className="w-full h-16 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white">
-            <div className="flex flex-col items-center gap-1">
-              <TrendingUp className="h-5 w-5" />
-              <span className="text-sm">Create Economic Policy</span>
-            </div>
-          </Button>
-        </EconomicPolicyModal>
+        <Button
+          className="w-full h-16 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+          onClick={() => setShowPolicyCreator(true)}
+        >
+          <div className="flex flex-col items-center gap-1">
+            <TrendingUp className="h-5 w-5" />
+            <span className="text-sm">Create Policy</span>
+          </div>
+        </Button>
 
-        <CabinetMeetingModal mode="create">
-          <Button className="w-full h-16 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white">
-            <div className="flex flex-col items-center gap-1">
-              <Users className="h-5 w-5" />
-              <span className="text-sm">Schedule Cabinet Meeting</span>
-            </div>
-          </Button>
-        </CabinetMeetingModal>
+        <Button
+          className="w-full h-16 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+          onClick={() => setShowMeetingScheduler(true)}
+        >
+          <div className="flex flex-col items-center gap-1">
+            <Users className="h-5 w-5" />
+            <span className="text-sm">Schedule Cabinet Meeting</span>
+          </div>
+        </Button>
 
         <NationalSecurityModal mode="dashboard">
           <Button className="w-full h-16 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white">
@@ -241,6 +253,23 @@ export function QuickActionIntegration({ className }: QuickActionIntegrationProp
           </div>
         </CardContent>
       </Card>
+
+      {/* New IxTime-enabled Meeting Scheduler */}
+      {country?.id && user?.id && (
+        <>
+          <MeetingScheduler
+            countryId={country.id}
+            open={showMeetingScheduler}
+            onOpenChange={setShowMeetingScheduler}
+          />
+
+          <PolicyCreator
+            countryId={country.id}
+            open={showPolicyCreator}
+            onOpenChange={setShowPolicyCreator}
+          />
+        </>
+      )}
     </div>
   );
 }

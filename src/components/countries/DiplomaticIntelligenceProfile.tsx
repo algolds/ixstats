@@ -136,7 +136,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
 
     try {
       await createConversationMutation.mutateAsync({
-        participantIds: [viewerAccount.id, targetAccount.id]
+        participantIds: [viewerAccount.clerkUserId, targetAccount.clerkUserId]
       });
     } catch (error) {
       // Error is handled in the mutation's onError callback
@@ -769,13 +769,13 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                 {[
                   { id: 'command-center', label: 'Strategic Assessment', icon: RiShieldLine, clearance: 'PUBLIC' },
                   { id: 'intelligence-dossier', label: 'Intelligence Dossier', icon: RiFileTextLine, clearance: 'PUBLIC' },
-                  { id: 'diplomatic-operations', label: 'Diplomatic Operations', icon: RiShakeHandsLine, clearance: 'PUBLIC' },
-                  { id: 'stratcomm-intel', label: 'StratComm Intelligence', icon: RiWifiLine, clearance: 'PUBLIC' },
+                  { id: 'diplomatic-operations', label: 'Diplomatic Operations', icon: RiShakeHandsLine, clearance: 'PUBLIC', hidden: (country as any).hideDiplomaticOps },
+                  { id: 'stratcomm-intel', label: 'StratComm Intelligence', icon: RiWifiLine, clearance: 'PUBLIC', hidden: (country as any).hideStratcommIntel },
                   { id: 'thinkpages-social', label: 'Thinkpages Social', icon: RiTeamLine, clearance: 'PUBLIC' }
-                ].map(section => {
+                ].filter(section => !section.hidden).map(section => {
                   const isRestricted = viewerClearanceLevel === 'PUBLIC' && section.clearance !== 'PUBLIC';
                   const isActive = activeIntelSection === section.id;
-                  
+
                   return (
                     <button
                       key={section.id}

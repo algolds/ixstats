@@ -26,18 +26,19 @@ import type { EnhancedCountryProfileData, SocialActionType } from "~/types/socia
 import { useState, useEffect, useMemo, useCallback, Suspense } from "react";
 
 interface PublicCountryPageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }
 
 export default function PublicCountryPage({ params }: PublicCountryPageProps) {
-  const { id } = use(params);
+  const { slug } = use(params);
   const { user } = useUser();
-  
+
   // Enhanced profile loading state
   const [isEnhancedLoading, setIsEnhancedLoading] = useState(false);
   const [unsplashImageUrl, setUnsplashImageUrl] = useState<string | undefined>();
-  
-  const { data: country, isLoading, error } = api.countries.getByIdWithEconomicData.useQuery({ id });
+
+  // Use slug as the id parameter - the API will handle slug/id/name lookup
+  const { data: country, isLoading, error } = api.countries.getByIdWithEconomicData.useQuery({ id: slug });
   const { data: userProfile } = api.users.getProfile.useQuery(
     undefined,
     { enabled: !!user?.id }
@@ -104,8 +105,22 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
   // Handle social actions for enhanced profile
   const handleSocialAction = useCallback(async (action: SocialActionType, targetId: string) => {
     console.log(`Social action: ${action} for ${targetId}`);
+
     // TODO: Implement actual social action APIs
-    
+    // For now, show a toast notification
+    const { toast } = await import('sonner');
+
+    const actionMessages: Record<SocialActionType, string> = {
+      'follow': 'Follow functionality coming soon!',
+      'message': 'Messaging functionality available via Secure Message button',
+      'propose_alliance': 'Alliance proposals coming soon!',
+      'congratulate': 'Congratulations feature coming soon!',
+      'visit_profile': 'Profile view tracked',
+      'endorse': 'Endorsement feature coming soon!'
+    };
+
+    toast.info(actionMessages[action] || 'Feature coming soon!');
+
     // Simulate API delay for now
     await new Promise(resolve => setTimeout(resolve, 500));
   }, []);

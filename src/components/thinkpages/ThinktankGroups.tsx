@@ -575,8 +575,8 @@ export function ThinktankGroups({ userId, userAccounts, viewOnly = false }: Thin
       <div className="space-y-6">
         {/* Collaboration Header */}
         <Card className="glass-hierarchy-parent overflow-hidden relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 via-transparent to-blue-600/10" />
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-blue-500 to-purple-500" />
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-600/10 via-transparent to-yellow-600/10" />
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 via-yellow-500 to-orange-500" />
           <CardContent className="p-4 relative">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -587,11 +587,11 @@ export function ThinktankGroups({ userId, userAccounts, viewOnly = false }: Thin
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
-                
-                <div className="h-10 w-10 bg-gradient-to-br from-purple-600 to-blue-700 rounded-lg flex items-center justify-center">
+
+                <div className="h-10 w-10 bg-gradient-to-br from-orange-600 to-orange-700 rounded-lg flex items-center justify-center">
                   <File className="h-5 w-5 text-white" />
                 </div>
-                
+
                 <div>
                   <h3 className="font-semibold">
                     {selectedGroup.name} - Collaboration
@@ -601,10 +601,14 @@ export function ThinktankGroups({ userId, userAccounts, viewOnly = false }: Thin
                   </p>
                 </div>
               </div>
-              
-              <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-                <Edit3 className="h-4 w-4 mr-2" />
-                New Document
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setView('list')}
+                className="text-muted-foreground"
+              >
+                Back to Group
               </Button>
             </div>
           </CardContent>
@@ -614,7 +618,7 @@ export function ThinktankGroups({ userId, userAccounts, viewOnly = false }: Thin
         <CollaborativeDocument
           groupId={selectedGroup.id}
           groupName={selectedGroup.name}
-          currentUserAccount={userAccounts?.find(acc => acc.id === currentUserId)}
+          currentUserAccount={currentUserId} // Pass userId directly for OOC system
           userAccounts={userAccounts}
           isOwner={selectedGroup.createdBy === currentUserId}
           members={selectedGroup.members}
