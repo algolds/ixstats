@@ -450,8 +450,8 @@ export const rolesRouter = createTRPCRouter({
         const where: any = {};
         if (search) {
           where.clerkUserId = {
-            contains: search,
-            mode: 'insensitive'
+            contains: search
+            // Note: SQLite doesn't support mode: 'insensitive', search is case-sensitive
           };
         }
         if (roleId) {

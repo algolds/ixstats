@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
+import { IxTime } from "~/lib/ixtime";
 import {
   Dialog,
   DialogContent,
@@ -17,24 +18,25 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { Badge } from "~/components/ui/badge";
-import { Calendar } from "~/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import { IxTimePicker } from "~/components/ui/ixtime-picker";
 import { GlassCard } from "~/components/ui/enhanced-card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Separator } from "~/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { 
-  Calendar as CalendarIcon, 
-  Users, 
-  Plus, 
-  X, 
-  Clock, 
+import { AgendaItemSelector } from "~/components/quickactions/AgendaItemSelector";
+import type { AgendaItemTemplate } from "~/lib/agenda-taxonomy";
+import {
+  Calendar as CalendarIcon,
+  Users,
+  Plus,
+  X,
+  Clock,
   CheckCircle,
   AlertCircle,
   FileText,
-  Video,
-  MapPin
+  Tag,
+  Sparkles
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "~/lib/utils";
@@ -47,25 +49,24 @@ interface CabinetMeetingModalProps {
   meetingId?: string;
 }
 
-export function CabinetMeetingModal({ 
-  children, 
-  mode = "create", 
-  meetingId 
+export function CabinetMeetingModal({
+  children,
+  mode = "create",
+  meetingId
 }: CabinetMeetingModalProps) {
   const { user } = useUser();
   const [open, setOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [selectedTime, setSelectedTime] = useState("10:00");
+  const [scheduledIxTime, setScheduledIxTime] = useState(
+    IxTime.getCurrentIxTime() + (24 * 60 * 60 * 1000) // +1 day in IxTime
+  );
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     attendees: [] as string[],
-    agenda: [] as string[],
-    location: "",
-    meetingType: "in_person" as "in_person" | "virtual" | "hybrid"
+    agenda: [] as AgendaItemTemplate[],
   });
   const [newAttendee, setNewAttendee] = useState("");
-  const [newAgendaItem, setNewAgendaItem] = useState("");
+  const [showAgendaSelector, setShowAgendaSelector] = useState(false);
 
   // Get existing meetings for context
   const { data: meetings, isLoading: meetingsLoading, refetch } = api.eci.getCabinetMeetings.useQuery(
@@ -101,13 +102,9 @@ export function CabinetMeetingModal({
       description: "",
       attendees: [],
       agenda: [],
-      location: "",
-      meetingType: "in_person"
     });
-    setSelectedDate(new Date());
-    setSelectedTime("10:00");
+    setScheduledIxTime(IxTime.getCurrentIxTime() + (24 * 60 * 60 * 1000)); // +1 day in IxTime
     setNewAttendee("");
-    setNewAgendaItem("");
   };
 
   const addAttendee = () => {
@@ -127,42 +124,41 @@ export function CabinetMeetingModal({
     }));
   };
 
-  const addAgendaItem = () => {
-    if (newAgendaItem.trim() && !formData.agenda.includes(newAgendaItem.trim())) {
+  const addAgendaItem = (item: AgendaItemTemplate) => {
+    // Check if item already exists
+    if (!formData.agenda.some(a => a.id === item.id)) {
       setFormData(prev => ({
         ...prev,
-        agenda: [...prev.agenda, newAgendaItem.trim()]
+        agenda: [...prev.agenda, item]
       }));
-      setNewAgendaItem("");
+      toast.success(`Added "${item.label}" to agenda`);
+    } else {
+      toast.info("This item is already in the agenda");
     }
   };
 
-  const removeAgendaItem = (item: string) => {
+  const removeAgendaItem = (itemId: string) => {
     setFormData(prev => ({
       ...prev,
-      agenda: prev.agenda.filter(a => a !== item)
+      agenda: prev.agenda.filter(a => a.id !== itemId)
     }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!selectedDate || !formData.title.trim()) {
+
+    if (!formData.title.trim()) {
       toast.error("Please fill in required fields");
       return;
     }
-
-    const [hours, minutes] = selectedTime.split(':').map(Number);
-    const scheduledDateTime = new Date(selectedDate);
-    scheduledDateTime.setHours(hours!, minutes);
 
     createMeeting.mutate({
       userId: user?.id || 'placeholder-disabled',
       title: formData.title,
       description: formData.description,
-      scheduledDate: scheduledDateTime,
+      scheduledDate: new Date(scheduledIxTime).toISOString(), // IxTime date as ISO string for tRPC
       attendees: formData.attendees,
-      agenda: formData.agenda
+      agenda: formData.agenda.map(item => item.label) // Convert to string array for backend
     });
   };
 
@@ -202,170 +198,188 @@ export function CabinetMeetingModal({
 
           <TabsContent value="schedule" className="mt-6">
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Left Column - Basic Information */}
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="title">Meeting Title *</Label>
+              {/* Basic Information */}
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="title">Meeting Title *</Label>
+                  <Input
+                    id="title"
+                    placeholder="e.g., Weekly Cabinet Meeting"
+                    value={formData.title}
+                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="description">Meeting Purpose & Goals</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="What do you want to accomplish in this meeting? List key objectives..."
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    rows={3}
+                  />
+                </div>
+
+                <IxTimePicker
+                  id="ixtime"
+                  label="Date & Time (IxTime) *"
+                  value={scheduledIxTime}
+                  onChange={setScheduledIxTime}
+                  required
+                  showRealWorldTime={true}
+                />
+              </div>
+
+              <Separator />
+
+              {/* Attendees */}
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Attendees ({formData.attendees.length} selected)
+                </Label>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
                     <Input
-                      id="title"
-                      placeholder="e.g., Weekly Cabinet Meeting"
-                      value={formData.title}
-                      onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                      required
+                      placeholder="Add attendee (name or role)"
+                      value={newAttendee}
+                      onChange={(e) => setNewAttendee(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addAttendee())}
                     />
+                    <Button type="button" size="icon" onClick={addAttendee}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
                   </div>
-
-                  <div>
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Brief description of the meeting purpose..."
-                      value={formData.description}
-                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                      rows={3}
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Date & Time *</Label>
-                    <div className="flex gap-2">
-                      <Popover>
-                        <PopoverTrigger>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "flex-1 justify-start text-left font-normal",
-                              !selectedDate && "text-muted-foreground"
-                            )}
-                            asChild
-                          >
-                            <span>
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
-                            </span>
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto">
-                          <Calendar
-                            mode="single"
-                            selected={selectedDate}
-                            onSelect={setSelectedDate}
-                            initialFocus
+                  {formData.attendees.length > 0 && (
+                    <div className="flex flex-wrap gap-2 p-3 bg-muted/30 rounded-lg border">
+                      {formData.attendees.map((attendee) => (
+                        <Badge key={attendee} variant="secondary" className="flex items-center gap-1">
+                          {attendee}
+                          <X
+                            className="h-3 w-3 cursor-pointer"
+                            onClick={() => removeAttendee(attendee)}
                           />
-                        </PopoverContent>
-                      </Popover>
-                      <Input
-                        type="time"
-                        value={selectedTime}
-                        onChange={(e) => setSelectedTime(e.target.value)}
-                        className="w-32"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label>Meeting Type</Label>
-                    <div className="flex gap-2 mt-2">
-                      {[
-                        { value: "in_person", label: "In Person", icon: MapPin },
-                        { value: "virtual", label: "Virtual", icon: Video },
-                        { value: "hybrid", label: "Hybrid", icon: Users }
-                      ].map(({ value, label, icon: Icon }) => (
-                        <Button
-                          key={value}
-                          type="button"
-                          variant={formData.meetingType === value ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setFormData(prev => ({ ...prev, meetingType: value as any }))}
-                          className="flex items-center gap-1"
-                        >
-                          <Icon className="h-4 w-4" />
-                          {label}
-                        </Button>
+                        </Badge>
                       ))}
-                    </div>
-                  </div>
-
-                  {(formData.meetingType === "in_person" || formData.meetingType === "hybrid") && (
-                    <div>
-                      <Label htmlFor="location">Location</Label>
-                      <Input
-                        id="location"
-                        placeholder="e.g., Cabinet Room, Government Building"
-                        value={formData.location}
-                        onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                      />
                     </div>
                   )}
                 </div>
-
-                {/* Right Column - Attendees and Agenda */}
-                <div className="space-y-4">
-                  <div>
-                    <Label>Attendees</Label>
-                    <div className="space-y-2">
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Add attendee (name or role)"
-                          value={newAttendee}
-                          onChange={(e) => setNewAttendee(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addAttendee())}
-                        />
-                        <Button type="button" size="sm" onClick={addAttendee}>
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {formData.attendees.map((attendee) => (
-                          <Badge key={attendee} variant="secondary" className="flex items-center gap-1">
-                            {attendee}
-                            <X 
-                              className="h-3 w-3 cursor-pointer" 
-                              onClick={() => removeAttendee(attendee)}
-                            />
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label>Agenda Items</Label>
-                    <div className="space-y-2">
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Add agenda item"
-                          value={newAgendaItem}
-                          onChange={(e) => setNewAgendaItem(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addAgendaItem())}
-                        />
-                        <Button type="button" size="sm" onClick={addAgendaItem}>
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="space-y-1">
-                        {formData.agenda.map((item, index) => (
-                          <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded-md">
-                            <span className="text-sm font-medium text-muted-foreground">{index + 1}.</span>
-                            <span className="flex-1 text-sm">{item}</span>
-                            <X 
-                              className="h-3 w-3 cursor-pointer text-muted-foreground hover:text-foreground" 
-                              onClick={() => removeAgendaItem(item)}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
+
+              <Separator />
+
+              {/* Actionable Agenda Items */}
+              <div className="space-y-4">
+                <div>
+                  <Label className="flex items-center gap-2 text-base">
+                    <FileText className="h-5 w-5" />
+                    Actionable Agenda Items ({formData.agenda.length} items) *
+                  </Label>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Select specific topics from our standardized library. Each item maps to your country's economic and government systems.
+                  </p>
+                </div>
+
+                {/* Existing agenda items */}
+                {formData.agenda.length > 0 && (
+                  <div className="space-y-2">
+                    {formData.agenda.map((item, index) => {
+                      const getCategoryColor = (category: string) => {
+                        const colors: Record<string, string> = {
+                          economic: 'bg-blue-500/10 text-blue-700 dark:text-blue-400',
+                          social: 'bg-green-500/10 text-green-700 dark:text-green-400',
+                          infrastructure: 'bg-orange-500/10 text-orange-700 dark:text-orange-400',
+                          diplomatic: 'bg-purple-500/10 text-purple-700 dark:text-purple-400',
+                          governance: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400',
+                          security: 'bg-red-500/10 text-red-700 dark:text-red-400',
+                        };
+                        return colors[category] || 'bg-gray-500/10 text-gray-700 dark:text-gray-400';
+                      };
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="flex items-start gap-3 p-3 bg-card border rounded-lg hover:border-primary/50 transition-colors group"
+                        >
+                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 text-primary font-semibold text-sm flex-shrink-0 mt-0.5">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="text-sm font-medium">{item.label}</p>
+                              <Badge variant="outline" className={cn("text-xs", getCategoryColor(item.category))}>
+                                {item.category}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground mb-1">{item.description}</p>
+                            {item.tags && item.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {item.tags.slice(0, 3).map(tag => (
+                                  <Badge key={tag} variant="secondary" className="text-xs">
+                                    <Tag className="h-2 w-2 mr-1" />
+                                    {tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                            {item.relatedMetrics && item.relatedMetrics.length > 0 && (
+                              <div className="text-xs text-muted-foreground mt-1">
+                                Affects: {item.relatedMetrics.slice(0, 2).join(', ')}
+                                {item.relatedMetrics.length > 2 && ` +${item.relatedMetrics.length - 2} more`}
+                              </div>
+                            )}
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeAgendaItem(item.id)}
+                            className="h-6 w-6 p-0 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Add new agenda item */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowAgendaSelector(true)}
+                  className="w-full h-16 border-2 border-dashed hover:border-primary/50 hover:bg-primary/5"
+                >
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      <span className="font-medium">Browse Agenda Library</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      Select from policy, budget, infrastructure, and more
+                    </span>
+                  </div>
+                </Button>
+              </div>
+
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  After the meeting, you'll be able to record decisions and action items for each agenda topic.
+                </AlertDescription>
+              </Alert>
 
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={createMeeting.isPending}>
+                <Button
+                  type="submit"
+                  disabled={createMeeting.isPending || !formData.title || formData.agenda.length === 0}
+                >
                   {createMeeting.isPending ? "Scheduling..." : "Schedule Meeting"}
                 </Button>
               </DialogFooter>
@@ -531,6 +545,13 @@ export function CabinetMeetingModal({
             </GlassCard>
           </TabsContent>
         </Tabs>
+
+        {/* Agenda Item Selector Modal */}
+        <AgendaItemSelector
+          open={showAgendaSelector}
+          onOpenChange={setShowAgendaSelector}
+          onSelect={addAgendaItem}
+        />
       </DialogContent>
     </Dialog>
   );

@@ -42,6 +42,7 @@ model Post {
 model Country {
   id                          String                @id @default(cuid())
   name                        String                @unique
+  slug                        String?               @unique
   continent                   String?
   region                      String?
   governmentType              String?
@@ -101,6 +102,8 @@ model Country {
   literacyRate                Float?
   localGrowthFactor           Float                 @default(1.0)
   usesAtomicGovernment        Boolean               @default(true)
+  hideDiplomaticOps           Boolean               @default(false)
+  hideStratcommIntel          Boolean               @default(false)
   lastCalculated              DateTime              @default(now())
   baselineDate                DateTime              @default(now())
   createdAt                   DateTime              @default(now())
@@ -1911,7 +1914,8 @@ model GovernmentStructure {
   departments        GovernmentDepartment[]
   budgetAllocations  BudgetAllocation[]
   revenueSources     RevenueSource[]
-  
+  officials          GovernmentOfficial[]
+
   @@index([countryId])
 }
 
@@ -1944,7 +1948,8 @@ model GovernmentDepartment {
   subDepartments        GovernmentDepartment[] @relation("DepartmentHierarchy")
   budgetAllocations     BudgetAllocation[]
   subBudgets            SubBudgetCategory[]
-  
+  officials             GovernmentOfficial[]
+
   @@index([governmentStructureId])
   @@index([category])
   @@index([parentDepartmentId])
@@ -2043,6 +2048,294 @@ model AdminFavorite {
   @@index([category])
   @@index([isActive])
   @@index([order])
+}
+
+// Quick Actions System - Integrated with Government, IxTime, and Economic Systems
+
+model GovernmentOfficial {
+  id                String   @id @default(cuid())
+  governmentStructureId String?
+  departmentId      String?
+  name              String
+  title             String   // e.g., "Minister of Defense", "Secretary of State"
+  role              String   // e.g., "Cabinet Member", "Department Head", "Advisor"
+  email             String?
+  phone             String?
+  bio               String?
+  photoUrl          String?
+  appointedDate     DateTime @default(now())
+  termEndDate       DateTime?
+  isActive          Boolean  @default(true)
+  priority          Int      @default(50) // For sorting/display
+  responsibilities  String?  // JSON array of responsibilities
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  governmentStructure GovernmentStructure? @relation(fields: [governmentStructureId], references: [id], onDelete: Cascade)
+  department          GovernmentDepartment? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  meetingAttendances  MeetingAttendance[]
+
+  @@index([governmentStructureId])
+  @@index([departmentId])
+  @@index([isActive])
+  @@index([role])
+}
+
+model CabinetMeeting {
+  id                String   @id @default(cuid())
+  countryId         String
+  userId            String   // User who created the meeting
+  title             String
+  description       String?
+  scheduledDate     DateTime // Real-world date/time
+  scheduledIxTime   Float?   // IxTime timestamp
+  duration          Int      @default(60) // Duration in minutes
+  status            String   @default("scheduled") // "scheduled", "in_progress", "completed", "cancelled"
+  notes             String?  // Meeting notes/minutes
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  completedAt       DateTime? // When meeting was completed
+
+  // Relations
+  attendances       MeetingAttendance[]
+  agendaItems       MeetingAgendaItem[]
+  decisions         MeetingDecision[]
+  actionItems       MeetingActionItem[]
+
+  @@index([countryId])
+  @@index([userId])
+  @@index([scheduledDate])
+  @@index([scheduledIxTime])
+  @@index([status])
+}
+
+model MeetingAttendance {
+  id              String   @id @default(cuid())
+  meetingId       String
+  officialId      String?  // GovernmentOfficial ID
+  attendeeName    String   // Name if not an official
+  attendeeRole    String?  // Role/title
+  attendanceStatus String  @default("invited") // "invited", "confirmed", "attended", "declined", "absent"
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  // Relations
+  meeting         CabinetMeeting     @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  official        GovernmentOfficial? @relation(fields: [officialId], references: [id])
+
+  @@index([meetingId])
+  @@index([officialId])
+  @@index([attendanceStatus])
+}
+
+model MeetingAgendaItem {
+  id            String   @id @default(cuid())
+  meetingId     String
+  title         String
+  description   String?
+  order         Int      @default(0)
+  duration      Int?     // Estimated duration in minutes
+  category      String?  // Link to economic/government subsystem
+  tags          String?  // JSON array of tags
+  relatedMetrics String? // JSON object linking to stats/metrics
+  presenter     String?
+  status        String   @default("pending") // "pending", "discussed", "deferred", "completed"
+  outcome       String?  // Result/decision from discussion
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  meeting       CabinetMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId])
+  @@index([category])
+  @@index([status])
+}
+
+model MeetingDecision {
+  id              String   @id @default(cuid())
+  meetingId       String
+  agendaItemId    String?  // Optional link to specific agenda item
+  title           String
+  description     String
+  decisionType    String   // "policy_approval", "budget_allocation", "appointment", "directive", "resolution", "other"
+  impact          String?  // "high", "medium", "low"
+  votingResult    String?  // JSON object: { for: 5, against: 2, abstain: 1 }
+  implementationStatus String @default("pending") // "pending", "in_progress", "implemented", "blocked"
+  relatedPolicyId String?  // Link to Policy if this creates/modifies one
+  relatedMetrics  String?  // JSON object of metrics this decision affects
+  estimatedEffect String?  // Description of expected effects
+  decisionMakers  String?  // JSON array of officials who made this decision
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  meeting         CabinetMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId])
+  @@index([agendaItemId])
+  @@index([decisionType])
+  @@index([implementationStatus])
+}
+
+model MeetingActionItem {
+  id              String   @id @default(cuid())
+  meetingId       String
+  agendaItemId    String?  // Optional link to specific agenda item
+  decisionId      String?  // Optional link to decision that created this
+  title           String
+  description     String?
+  assignedTo      String?  // GovernmentOfficial ID or name
+  dueDate         DateTime?
+  dueIxTime       Float?   // IxTime deadline
+  priority        String   @default("normal") // "urgent", "high", "normal", "low"
+  status          String   @default("pending") // "pending", "in_progress", "completed", "blocked", "cancelled"
+  category        String?  // Category for filtering
+  tags            String?  // JSON array
+  completionNotes String?
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  meeting         CabinetMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId])
+  @@index([agendaItemId])
+  @@index([decisionId])
+  @@index([status])
+  @@index([priority])
+  @@index([dueDate])
+}
+
+model Policy {
+  id                String   @id @default(cuid())
+  countryId         String
+  userId            String   // User who created the policy
+  name              String
+  description       String
+  policyType        String   // "economic", "social", "diplomatic", "infrastructure", "governance"
+  category          String   // Specific category within type
+  status            String   @default("draft") // "draft", "proposed", "active", "expired", "repealed"
+  priority          String   @default("medium") // "critical", "high", "medium", "low"
+
+  // Policy Details
+  objectives        String?  // JSON array of objectives
+  targetMetrics     String?  // JSON object of metrics this policy affects
+  implementationCost Float   @default(0)
+  maintenanceCost   Float   @default(0)
+  estimatedBenefit  String?  // Description of expected benefits
+
+  // Country Context Integration
+  recommendedFor    String?  // JSON object of country conditions this is recommended for
+  requiredTier      String?  // Minimum economic tier required
+  requiredComponents String? // JSON array of required atomic government components
+  conflictsWith     String?  // JSON array of policy IDs that conflict
+  prerequisitePolicies String? // JSON array of prerequisite policy IDs
+
+  // Timing
+  proposedDate      DateTime @default(now())
+  effectiveDate     DateTime?
+  expiryDate        DateTime?
+  proposedIxTime    Float?   // IxTime when proposed
+  effectiveIxTime   Float?   // IxTime when it takes effect
+
+  // Impact & Effects
+  gdpEffect         Float    @default(0)
+  employmentEffect  Float    @default(0)
+  inflationEffect   Float    @default(0)
+  taxRevenueEffect  Float    @default(0)
+  customEffects     String?  // JSON object of custom effects
+
+  // Review & Approval
+  approvalRequired  Boolean  @default(false)
+  approvedBy        String?
+  approvedDate      DateTime?
+  reviewNotes       String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  policyEffectLog   PolicyEffectLog[]
+
+  @@index([countryId])
+  @@index([userId])
+  @@index([policyType])
+  @@index([status])
+  @@index([effectiveDate])
+  @@index([effectiveIxTime])
+}
+
+model PolicyEffectLog {
+  id                String   @id @default(cuid())
+  policyId          String
+  appliedAt         DateTime @default(now())
+  appliedIxTime     Float    // IxTime when effect was applied
+  effectType        String   // "initial", "periodic", "final"
+  metricsBefore     String?  // JSON snapshot of metrics before
+  metricsAfter      String?  // JSON snapshot of metrics after
+  actualEffect      String?  // JSON object of actual changes
+  notes             String?
+  createdAt         DateTime @default(now())
+
+  // Relations
+  policy            Policy   @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  @@index([policyId])
+  @@index([appliedIxTime])
+  @@index([effectType])
+}
+
+model ActivitySchedule {
+  id                String   @id @default(cuid())
+  countryId         String
+  userId            String
+  activityType      String   // "meeting", "policy_review", "economic_review", "diplomatic_event", "custom"
+  title             String
+  description       String?
+  scheduledDate     DateTime
+  scheduledIxTime   Float?
+  duration          Int?     // Duration in minutes
+  status            String   @default("scheduled") // "scheduled", "in_progress", "completed", "cancelled"
+  priority          String   @default("normal") // "urgent", "high", "normal", "low"
+  category          String?
+  tags              String?  // JSON array
+  relatedIds        String?  // JSON object linking to meetings, policies, etc.
+  recurrence        String?  // JSON object for recurring activities
+  reminderSettings  String?  // JSON object for reminders
+  completionNotes   String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([countryId])
+  @@index([userId])
+  @@index([scheduledDate])
+  @@index([scheduledIxTime])
+  @@index([activityType])
+  @@index([status])
+  @@index([priority])
+}
+
+model QuickActionTemplate {
+  id                  String   @id @default(cuid())
+  name                String
+  actionType          String   // "meeting", "policy", "economic_adjustment", "diplomatic_action", "custom"
+  category            String
+  description         String
+  defaultSettings     String?  // JSON object with default settings
+  requiredFields      String?  // JSON array of required fields
+  optionalFields      String?  // JSON array of optional fields
+  estimatedDuration   String?
+  recommendedFor      String?  // JSON array of conditions when to recommend
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([actionType])
+  @@index([category])
+  @@index([isActive])
 }
 
 

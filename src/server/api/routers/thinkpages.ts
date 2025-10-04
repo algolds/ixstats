@@ -1448,11 +1448,14 @@ export const thinkpagesRouter = createTRPCRouter({
     .input(z.object({ groupId: z.string() }))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
+
+      // Verify user is a member of the group
       const documents = await db.collaborativeDoc.findMany({
         where: { groupId: input.groupId },
-        // include: { creator: true, lastEditor: true }, // creator field doesn't exist in model
         orderBy: { updatedAt: 'desc' },
+        take: 10 // Limit to 10 documents per group
       });
+
       return documents;
     }),
 
@@ -1460,19 +1463,194 @@ export const thinkpagesRouter = createTRPCRouter({
   createThinktankDocument: publicProcedure
     .input(z.object({
       groupId: z.string(),
-      title: z.string().min(1),
+      title: z.string().min(1).max(200),
       createdBy: z.string(), // userId (clerkUserId)
+      content: z.string().optional(),
+      isPublic: z.boolean().default(false)
     }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
+
+      // Check document count limit (10 per group)
+      const documentCount = await db.collaborativeDoc.count({
+        where: { groupId: input.groupId }
+      });
+
+      if (documentCount >= 10) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Maximum document limit (10) reached for this group'
+        });
+      }
+
+      // Verify user is a member of the group
+      const member = await db.thinktankMember.findUnique({
+        where: {
+          groupId_userId: {
+            groupId: input.groupId,
+            userId: input.createdBy
+          }
+        }
+      });
+
+      if (!member || !member.isActive) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Not a member of this group'
+        });
+      }
+
       const document = await db.collaborativeDoc.create({
         data: {
           groupId: input.groupId,
           title: input.title,
+          content: input.content || '',
+          version: 1,
           createdBy: input.createdBy,
           lastEditBy: input.createdBy,
+          isPublic: input.isPublic
         },
       });
+
+      return document;
+    }),
+
+  // Update a collaborative document
+  updateThinktankDocument: publicProcedure
+    .input(z.object({
+      documentId: z.string(),
+      userId: z.string(),
+      title: z.string().min(1).max(200).optional(),
+      content: z.string().optional(),
+      isPublic: z.boolean().optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      // Get the document to check permissions
+      const document = await db.collaborativeDoc.findUnique({
+        where: { id: input.documentId },
+        include: { group: { include: { members: true } } }
+      });
+
+      if (!document) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Document not found'
+        });
+      }
+
+      // Verify user is a member
+      const isMember = document.group.members.some(
+        m => m.userId === input.userId && m.isActive
+      );
+
+      if (!isMember) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Not a member of this group'
+        });
+      }
+
+      const updateData: any = {
+        lastEditBy: input.userId,
+        version: { increment: 1 }
+      };
+
+      if (input.title !== undefined) updateData.title = input.title;
+      if (input.content !== undefined) updateData.content = input.content;
+      if (input.isPublic !== undefined) updateData.isPublic = input.isPublic;
+
+      const updatedDocument = await db.collaborativeDoc.update({
+        where: { id: input.documentId },
+        data: updateData
+      });
+
+      return updatedDocument;
+    }),
+
+  // Delete a collaborative document
+  deleteThinktankDocument: publicProcedure
+    .input(z.object({
+      documentId: z.string(),
+      userId: z.string()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      const document = await db.collaborativeDoc.findUnique({
+        where: { id: input.documentId },
+        include: { group: true }
+      });
+
+      if (!document) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Document not found'
+        });
+      }
+
+      // Only creator or group owner can delete
+      const isCreator = document.createdBy === input.userId;
+      const isGroupOwner = document.group.createdBy === input.userId;
+
+      if (!isCreator && !isGroupOwner) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Only document creator or group owner can delete documents'
+        });
+      }
+
+      await db.collaborativeDoc.delete({
+        where: { id: input.documentId }
+      });
+
+      return { success: true };
+    }),
+
+  // Get a single document
+  getThinktankDocument: publicProcedure
+    .input(z.object({
+      documentId: z.string(),
+      userId: z.string()
+    }))
+    .query(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      const document = await db.collaborativeDoc.findUnique({
+        where: { id: input.documentId },
+        include: {
+          group: {
+            include: {
+              members: {
+                where: { isActive: true }
+              }
+            }
+          }
+        }
+      });
+
+      if (!document) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Document not found'
+        });
+      }
+
+      // Check permissions
+      if (!document.isPublic) {
+        const isMember = document.group.members.some(
+          m => m.userId === input.userId
+        );
+
+        if (!isMember) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'You do not have access to this document'
+          });
+        }
+      }
+
       return document;
     }),
 
@@ -1759,17 +1937,33 @@ export const thinkpagesRouter = createTRPCRouter({
   // Get messages for a conversation
   getConversationMessages: publicProcedure
     .input(z.object({
-      conversationId: z.string().default(''),
-      userId: z.string().default(''), // Changed to userId (clerkUserId)
+      conversationId: z.string().min(1, "Conversation ID is required").optional(),
+      userId: z.string().min(1, "User ID is required").optional(), // Changed to userId (clerkUserId)
       limit: z.number().min(1).max(100).default(50),
       cursor: z.string().optional()
     }))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
-      // Early return for invalid IDs
-      if (!input.conversationId || input.conversationId.trim() === '' || input.conversationId === 'INVALID' ||
-          !input.userId || input.userId.trim() === '' || input.userId === 'INVALID') {
+      console.log('🔍 getConversationMessages - Input:', {
+        conversationId: input.conversationId,
+        userId: input.userId,
+        limit: input.limit
+      });
+
+      // Validate required fields exist
+      if (!input.conversationId || !input.userId) {
+        console.log('❌ Missing required fields');
+        return {
+          messages: [],
+          nextCursor: null
+        };
+      }
+
+      // Validate IDs are not placeholder values
+      if (input.conversationId === 'INVALID' || input.userId === 'INVALID' ||
+          input.conversationId === 'SKIP_QUERY' || input.userId === 'SKIP_QUERY') {
+        console.log('❌ Placeholder values detected');
         return {
           messages: [],
           nextCursor: null
@@ -1786,7 +1980,13 @@ export const thinkpagesRouter = createTRPCRouter({
         }
       });
 
+      console.log('👤 Participant check:', {
+        found: !!participant,
+        isActive: participant?.isActive
+      });
+
       if (!participant || !participant.isActive) {
+        console.log('❌ Not a participant or inactive');
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'Not a participant in this conversation'
@@ -1808,9 +2008,24 @@ export const thinkpagesRouter = createTRPCRouter({
         skip: input.cursor ? 1 : 0
       });
 
+      // Fetch unique user IDs from messages
+      const userIds = [...new Set(messages.map(msg => msg.userId))];
+
+      // Fetch all accounts in one query
+      const accounts = await db.userAccount.findMany({
+        where: {
+          clerkUserId: { in: userIds }
+        }
+      });
+
+      // Create a map for quick lookup
+      const accountMap = new Map(accounts.map(acc => [acc.clerkUserId, acc]));
+
       return {
         messages: messages.map(msg => ({
           ...msg,
+          account: accountMap.get(msg.userId) || null, // Attach account data
+          accountId: msg.userId, // Keep accountId for compatibility
           reactions: msg.reactions ? JSON.parse(msg.reactions) : {},
           mentions: msg.mentions ? JSON.parse(msg.mentions) : [],
           attachments: msg.attachments ? JSON.parse(msg.attachments) : []
@@ -1895,6 +2110,23 @@ export const thinkpagesRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
+      // Verify participant exists before updating
+      const participant = await db.conversationParticipant.findUnique({
+        where: {
+          conversationId_userId: {
+            conversationId: input.conversationId,
+            userId: input.userId
+          }
+        }
+      });
+
+      if (!participant) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Not a participant in this conversation'
+        });
+      }
+
       // Update participant lastReadAt
       await db.conversationParticipant.update({
         where: {
@@ -1906,15 +2138,30 @@ export const thinkpagesRouter = createTRPCRouter({
         data: { lastReadAt: new Date() }
       });
 
-      // If specific message IDs provided, create read receipts
+      // If specific message IDs provided, create read receipts (skip duplicates)
       if (input.messageIds && input.messageIds.length > 0) {
-        await db.messageReadReceipt.createMany({
-          data: input.messageIds.map(messageId => ({
-            messageId,
-            userId: input.userId,
-            messageType: 'thinkshare'
-          })),
+        // Filter out already-read messages to avoid duplicate key errors
+        const existingReceipts = await db.messageReadReceipt.findMany({
+          where: {
+            messageId: { in: input.messageIds },
+            userId: input.userId
+          },
+          select: { messageId: true }
         });
+
+        const existingMessageIds = new Set(existingReceipts.map(r => r.messageId));
+        const newMessageIds = input.messageIds.filter(id => !existingMessageIds.has(id));
+
+        if (newMessageIds.length > 0) {
+          await db.messageReadReceipt.createMany({
+            data: newMessageIds.map(messageId => ({
+              messageId,
+              userId: input.userId,
+              messageType: 'thinkshare'
+            })),
+            skipDuplicates: true
+          });
+        }
       }
 
       return { success: true };

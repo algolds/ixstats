@@ -97,21 +97,27 @@ const MessageBubble = React.memo(function MessageBubble({
 
   const isMyMessage = message.accountId === currentAccount?.id;
 
+  // Safety check for account
+  if (!message.account) {
+    console.error('Message missing account data:', message);
+    return null;
+  }
+
   return (
     <div className={`flex group ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
       <div className={`max-w-[70%] ${isMyMessage ? 'order-2' : 'order-1'}`}>
         {!isMyMessage && (
           <div className="flex items-center gap-2 mb-1">
             <Avatar className="h-6 w-6">
-              <AvatarImage src={message.account.profileImageUrl || undefined} />
+              <AvatarImage src={message.account?.profileImageUrl || undefined} />
               <AvatarFallback className="text-xs">
-                {message.account.displayName.split(' ').map((n: string) => n[0]).join('')}
+                {message.account?.displayName?.split(' ').map((n: string) => n[0]).join('') || '?'}
               </AvatarFallback>
             </Avatar>
             <span className="text-xs text-muted-foreground font-medium">
-              {message.account.displayName}
+              {message.account?.displayName || 'Unknown'}
             </span>
-            {getAccountTypeIcon(message.account.accountType)}
+            {getAccountTypeIcon(message.account?.accountType || 'user')}
           </div>
         )}
         

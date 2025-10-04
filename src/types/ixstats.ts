@@ -607,6 +607,7 @@ export interface CountryWithEconomicData {
   // Core country properties
   id: string;
   name: string;
+  slug?: string | null;
   continent?: string | null;
   region?: string | null;
   governmentType?: string | null;

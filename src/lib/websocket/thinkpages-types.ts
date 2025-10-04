@@ -19,6 +19,7 @@ export interface TypingIndicator {
 }
 
 export interface MessageUpdate {
+  documentId: string | undefined;
   id: string;
   type: 'message:new' | 'message:updated' | 'message:deleted' | 'message:read';
   conversationId?: string;

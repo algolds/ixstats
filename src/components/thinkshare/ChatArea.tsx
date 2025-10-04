@@ -92,7 +92,7 @@ interface ChatAreaProps {
   };
   sendTypingIndicator: (conversationId: string, accountId: string | undefined, isTyping: boolean) => void;
   markMessagesAsReadMutation: {
-    mutate: (data: { conversationId: string; messageIds: string[] }) => Promise<void>;
+    mutate: (data: { conversationId: string; userId: string; messageIds?: string[] }) => Promise<void>;
     isLoading: boolean;
   };
 }
@@ -139,9 +139,10 @@ export function ChatArea({
   });
 
   useEffect(() => {
-    if (selectedConversation && currentAccount) {
+    if (selectedConversation && currentAccount?.id) {
       markMessagesAsReadMutation.mutate({
         conversationId: selectedConversation.id,
+        userId: currentAccount.id,
         messageIds: [] // Empty array to mark all as read
       });
     }

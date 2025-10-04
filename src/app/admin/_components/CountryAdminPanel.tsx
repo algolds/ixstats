@@ -5,9 +5,11 @@ import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Users, Globe, TrendingUp, Edit3, Save, X, CheckCircle, AlertCircle, Search, RefreshCw } from "lucide-react";
+import { Checkbox } from "~/components/ui/checkbox";
+import { Users, Globe, TrendingUp, Edit3, Save, X, CheckCircle, AlertCircle, Search, RefreshCw, Eye, EyeOff } from "lucide-react";
 import { GlassCard } from "~/components/ui/enhanced-card";
 import { useBulkFlagCache } from "~/hooks/useBulkFlagCache";
+import { toast } from "sonner";
 
 export function CountryAdminPanel() {
   // Fetch all countries
@@ -19,6 +21,7 @@ export function CountryAdminPanel() {
 
   // Mutation for updating country
   const updateMutation = api.countries.updateCountryName.useMutation();
+  const updateVisibilityMutation = api.countries.updateProfileVisibility.useMutation();
 
   // Prepare country list
   const countries = useMemo(() => {
@@ -68,6 +71,19 @@ export function CountryAdminPanel() {
       void refetch();
     } catch (err: any) {
       setSaveStatus({ id: editId, status: "error", error: err?.message || "Failed to save" });
+    }
+  };
+
+  const handleVisibilityToggle = async (countryId: string, field: 'hideDiplomaticOps' | 'hideStratcommIntel', currentValue: boolean) => {
+    try {
+      await updateVisibilityMutation.mutateAsync({
+        countryId,
+        [field]: !currentValue,
+      });
+      toast.success(`Profile visibility updated`);
+      void refetch();
+    } catch (err: any) {
+      toast.error(`Failed to update: ${err?.message || "Unknown error"}`);
     }
   };
 
@@ -143,6 +159,18 @@ export function CountryAdminPanel() {
               <th className="p-2 text-right">GDP p.c.</th>
               <th className="p-2 text-right">Total GDP</th>
               <th className="p-2 text-center">Tier</th>
+              <th className="p-2 text-center" title="Hide Diplomatic Ops Tab">
+                <div className="flex items-center justify-center gap-1">
+                  <EyeOff className="h-3 w-3" />
+                  <span className="text-xs">Dipl</span>
+                </div>
+              </th>
+              <th className="p-2 text-center" title="Hide StratComm Intel Tab">
+                <div className="flex items-center justify-center gap-1">
+                  <EyeOff className="h-3 w-3" />
+                  <span className="text-xs">Strat</span>
+                </div>
+              </th>
               <th className="p-2 text-center">Actions</th>
             </tr>
           </thead>
@@ -205,6 +233,22 @@ export function CountryAdminPanel() {
                   </td>
                   <td className="p-2 text-center">
                     <Badge variant="secondary">{country.economicTier || "—"}</Badge>
+                  </td>
+                  <td className="p-2 text-center">
+                    <Checkbox
+                      checked={country.hideDiplomaticOps || false}
+                      onCheckedChange={() => handleVisibilityToggle(country.id, 'hideDiplomaticOps', country.hideDiplomaticOps || false)}
+                      disabled={updateVisibilityMutation.isPending}
+                      title="Hide Diplomatic Operations tab"
+                    />
+                  </td>
+                  <td className="p-2 text-center">
+                    <Checkbox
+                      checked={country.hideStratcommIntel || false}
+                      onCheckedChange={() => handleVisibilityToggle(country.id, 'hideStratcommIntel', country.hideStratcommIntel || false)}
+                      disabled={updateVisibilityMutation.isPending}
+                      title="Hide StratComm Intelligence tab"
+                    />
                   </td>
                   <td className="p-2 text-center">
                     {isEditing ? (

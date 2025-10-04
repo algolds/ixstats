@@ -239,7 +239,7 @@ const countriesRouter = createTRPCRouter({
         // Ensure critical fields are properly mapped
         currentPopulation: country.currentPopulation ?? country.baselinePopulation ?? 0,
         currentGdpPerCapita: country.currentGdpPerCapita ?? country.baselineGdpPerCapita ?? 0,
-        currentTotalGdp: country.currentTotalGdp ?? (country.currentPopulation * country.currentGdpPerCapita) ?? 0,
+        currentTotalGdp: country.currentTotalGdp ?? ((country.currentPopulation ?? 0) * (country.currentGdpPerCapita ?? 0)),
         economicTier: country.economicTier ?? 'Developing',
         populationTier: country.populationTier ?? '1',
         nominalGDP: country.nominalGDP ?? 0,
@@ -322,9 +322,9 @@ const countriesRouter = createTRPCRouter({
       const targetTime = input.timestamp ?? IxTime.getCurrentIxTime();
       const FIVE_YEARS_MS = 5 * 365 * 24 * 60 * 60 * 1000;
       const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
-      
+
       const availableRelations = await safelyIncludeRelations(ctx.db);
-      
+
       const includeObject: any = {
         dmInputs: {
           where: { isActive: true },
@@ -341,14 +341,29 @@ const countriesRouter = createTRPCRouter({
 
       let country;
       try {
-        country = await ctx.db.country.findUnique({
-          where: { id: input.id },
+        // Try finding by slug first (lowercase for case-insensitive match)
+        const slugLower = input.id.toLowerCase();
+        country = await ctx.db.country.findFirst({
+          where: {
+            OR: [
+              { id: input.id },
+              { slug: slugLower },
+              { name: input.id }
+            ]
+          },
           include: includeObject,
         });
       } catch (dbError) {
         console.warn('[Countries API] Error with complex query, falling back to basic query:', dbError);
-        country = await ctx.db.country.findUnique({
-          where: { id: input.id },
+        const slugLower = input.id.toLowerCase();
+        country = await ctx.db.country.findFirst({
+          where: {
+            OR: [
+              { id: input.id },
+              { slug: slugLower },
+              { name: input.id }
+            ]
+          },
           include: {
             dmInputs: {
               where: { isActive: true },
@@ -357,9 +372,9 @@ const countriesRouter = createTRPCRouter({
           },
         });
       }
-      
+
       if (!country) {
-        throw new Error(`Country with ID ${input.id} not found`);
+        throw new Error(`Country with identifier ${input.id} not found`);
       }
 
       const econCfg = getDefaultEconomicConfig();
@@ -1521,6 +1536,37 @@ const countriesRouter = createTRPCRouter({
       } catch (error) {
         console.error("Failed to update country name:", error);
         throw new Error("Failed to update country name");
+      }
+    }),
+
+  updateProfileVisibility: publicProcedure
+    .input(z.object({
+      countryId: z.string(),
+      hideDiplomaticOps: z.boolean().optional(),
+      hideStratcommIntel: z.boolean().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const updateData: any = {
+          updatedAt: new Date(),
+        };
+
+        if (input.hideDiplomaticOps !== undefined) {
+          updateData.hideDiplomaticOps = input.hideDiplomaticOps;
+        }
+        if (input.hideStratcommIntel !== undefined) {
+          updateData.hideStratcommIntel = input.hideStratcommIntel;
+        }
+
+        const updatedCountry = await ctx.db.country.update({
+          where: { id: input.countryId },
+          data: updateData,
+        });
+
+        return updatedCountry;
+      } catch (error) {
+        console.error("Failed to update profile visibility:", error);
+        throw new Error("Failed to update profile visibility");
       }
     }),
 

@@ -22,10 +22,12 @@ import { FastAverageColor } from 'fast-average-color';
 import { useRef } from 'react';
 import { cn } from '~/lib/utils';
 import { createUrl } from '~/lib/url-utils';
+import { getCountryPath } from '~/lib/slug-utils';
 
 export interface CountryData {
   id: string;
   name: string;
+  slug?: string | null;
   continent?: string | null;
   region?: string | null;
   currentPopulation: number;
@@ -81,7 +83,7 @@ export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: pr
   )}`;
 
   const goToDetail = () => {
-    router.push(createUrl(`/countries/${country.id}`));
+    router.push(createUrl(getCountryPath(country)));
   };
 
   return (

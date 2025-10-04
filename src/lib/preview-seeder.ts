@@ -5,6 +5,7 @@ import { type PrismaClient } from "@prisma/client";
 import { MockDataGenerator, generatePreviewCountries } from "./mock-data-generator";
 import { IxTime } from "./ixtime";
 import { IxStatsCalculator } from "./calculations";
+import { generateSlug } from "./slug-utils";
 
 export interface PreviewSeedOptions {
   countriesCount?: number;
@@ -136,6 +137,7 @@ export class PreviewSeeder {
       const country = await this.db.country.create({
         data: {
           name: mockCountry.name,
+          slug: generateSlug(mockCountry.name),
           continent: mockCountry.continent,
           region: mockCountry.region,
           governmentType: mockCountry.governmentType,

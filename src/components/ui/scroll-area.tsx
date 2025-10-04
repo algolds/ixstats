@@ -46,8 +46,8 @@ const ScrollArea = React.forwardRef<
       className,
       children,
       orientation,
-      scrollHideDelay = 600,
-      type = "hover",
+      scrollHideDelay,
+      type,
       ...props
     },
     ref
@@ -60,17 +60,9 @@ const ScrollArea = React.forwardRef<
       <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">
         {children}
       </ScrollAreaPrimitive.Viewport>
-      <ScrollBar
-        orientation="vertical"
-        type={type}
-        scrollHideDelay={scrollHideDelay}
-      />
+      <ScrollBar orientation="vertical" />
       {(orientation === "horizontal" || orientation === "both") && (
-        <ScrollBar
-          orientation="horizontal"
-          type={type}
-          scrollHideDelay={scrollHideDelay}
-        />
+        <ScrollBar orientation="horizontal" />
       )}
       <ScrollAreaPrimitive.Corner />
     </ScrollAreaPrimitive.Root>
@@ -92,7 +84,7 @@ const ScrollBar = React.forwardRef<
   ScrollBarProps
 >(
   (
-    { className, orientation = "vertical", scrollHideDelay, type, ...props },
+    { className, orientation = "vertical", ...props },
     ref
   ) => {
     return (
@@ -104,8 +96,6 @@ const ScrollBar = React.forwardRef<
           "hover:bg-accent",
           className
         )}
-        {...(scrollHideDelay !== undefined && { scrollHideDelay })}
-        {...(type !== undefined && { type })}
         {...props}
       >
         <ScrollAreaPrimitive.ScrollAreaThumb className="relative flex-1 rounded-full bg-border hover:bg-foreground/30 transition-colors" />

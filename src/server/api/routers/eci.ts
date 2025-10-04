@@ -8,7 +8,9 @@ const cabinetMeetingSchema = z.object({
   userId: z.string(),
   title: z.string().min(1).max(200),
   description: z.string().optional(),
-  scheduledDate: z.date(),
+  scheduledDate: z.union([z.date(), z.string().datetime(), z.string()]).transform(val =>
+    typeof val === 'string' ? new Date(val) : val
+  ),
   attendees: z.array(z.string()).optional(),
   agenda: z.array(z.string()).optional(),
   status: z.enum(['scheduled', 'in_progress', 'completed', 'cancelled']).default('scheduled')
@@ -59,7 +61,7 @@ const strategicPlanSchema = z.object({
 
 export const eciRouter = createTRPCRouter({
   // Cabinet Meeting Management
-  createCabinetMeeting: premiumProcedure
+  createCabinetMeeting: protectedProcedure
     .input(cabinetMeetingSchema)
     .mutation(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({

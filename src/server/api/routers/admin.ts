@@ -2,6 +2,7 @@
 // FIXED: Complete admin router with proper functionality
 
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { getDefaultEconomicConfig, CONFIG_CONSTANTS } from "~/lib/config-service";
@@ -15,7 +16,8 @@ import type {
   CalculationLog,
   EconomicConfig
 } from "~/types/ixstats";
-import { 
+import { generateSlug } from "~/lib/slug-utils";
+import {
   getEconomicTierFromGdpPerCapita, 
   getPopulationTierFromPopulation, 
   EconomicTier, 
@@ -547,6 +549,7 @@ export const adminRouter = createTRPCRouter({
               await ctx.db.country.create({
                 data: {
                   name: country.country,
+                  slug: generateSlug(country.country),
                   continent: country.continent,
                   region: country.region,
                   governmentType: country.governmentType,
@@ -587,6 +590,7 @@ export const adminRouter = createTRPCRouter({
                 where: { id: existing.id },
                 data: {
                   name: country.country,
+                  slug: generateSlug(country.country),
                   continent: country.continent,
                   region: country.region,
                   governmentType: country.governmentType,
@@ -657,7 +661,12 @@ export const adminRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("Failed to import data:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to import data");
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Failed to import data: ${errorMessage}`,
+          cause: error
+        });
       }
     }),
 

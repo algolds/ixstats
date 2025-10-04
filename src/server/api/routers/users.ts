@@ -6,6 +6,7 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import { IxTime } from "~/lib/ixtime";
 import { getDefaultEconomicConfig } from "~/lib/config-service";
 import { IxStatsCalculator } from "~/lib/calculations";
+import { generateSlug } from "~/lib/slug-utils";
 import type {
   Country,
   CountryStats,
@@ -232,6 +233,7 @@ export const usersRouter = createTRPCRouter({
         // Create default country data
         const defaultData = {
           name: input.countryName,
+          slug: generateSlug(input.countryName),
           continent: input.initialData?.continent || "Unknown",
           region: input.initialData?.region || "Unknown",
           baselinePopulation: input.initialData?.baselinePopulation || 1000000,
