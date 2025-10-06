@@ -52,6 +52,10 @@ const config = {
 
   // Webpack optimizations
   webpack: (config, { dev, isServer }) => {
+    if (isServer) {
+      config.output.globalObject = 'this';
+    }
+    
     // Development optimizations - reduce compilation time
     if (dev) {
       config.watchOptions = {
@@ -117,13 +121,17 @@ const config = {
   async rewrites() {
     return [
       {
-        source: '/api/ixwiki-proxy/api.php/:path*',
-        destination: 'https://ixwiki.com/api.php/:path*',
+        source: '/api/ixwiki-proxy/:path*',
+        destination: 'https://ixwiki.com/:path*',
       },
       {
-        source: '/api/iiwiki-proxy/mediawiki/api.php/:path*',
-        destination: 'https://iiwiki.com/mediawiki/api.php/:path*',
+        source: '/api/iiwiki-proxy/:path*',
+        destination: 'https://iiwiki.com/:path*',
       },
+      {
+        source: '/api/althistory-wiki-proxy/:path*',
+        destination: 'https://althistory.fandom.com/:path*',
+      }
     ];
   },
 };

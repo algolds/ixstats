@@ -44,7 +44,7 @@ export function CountrySelectorEnhanced({
 
   // Preload flags for all countries
   const countryNames = useMemo(() => countries?.map(c => c.name) || [], [countries]);
-  const { flagUrls } = useBulkFlags(countryNames);
+  const { flagUrls } = useBulkFlags(countryNames, 'irl');
   const filteredCountries = useMemo(() => {
     return filterCountries(countries || [], searchTerm, selectedArchetypes, archetypes);
   }, [countries, searchTerm, selectedArchetypes]);
