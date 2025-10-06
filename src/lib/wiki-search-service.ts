@@ -1,4 +1,5 @@
 // Wiki search service supporting both ixwiki.com and iiwiki.com
+import { getWikiConfigs, createWikiUrl, getImageUrl } from './wiki-search-service.shared';
 import type { CountryInfoboxWithDynamicProps } from "./mediawiki-service";
 import { unifiedFlagService } from "./unified-flag-service";
 
@@ -8,38 +9,7 @@ interface WikiConfig {
   searchNamespace?: number[];
 }
 
-// Helper function to get the base URL for API requests
-function getApiBaseUrl(): string {
-  // In server-side context (Node.js), we need absolute URLs
-  if (typeof window === 'undefined') {
-    // Server-side: use environment variable or default to localhost
-    return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  }
-  // Client-side: use relative URLs
-  return '';
-}
 
-// Function to get wiki configs with proper URLs
-function getWikiConfigs(): Record<string, WikiConfig> {
-  const baseUrl = getApiBaseUrl();
-  return {
-    ixwiki: {
-      baseUrl: `${baseUrl}/api/ixwiki-proxy/api.php`,
-      apiEndpoint: "", 
-      searchNamespace: [0, 6], // Main and Media namespaces
-    },
-    iiwiki: {
-      baseUrl: `${baseUrl}/api/iiwiki-proxy/mediawiki/api.php`,
-      apiEndpoint: "", 
-      searchNamespace: [0, 6], // Main and Media namespaces
-    },
-    althistory: {
-      baseUrl: `${baseUrl}/api/althistory-wiki-proxy/api.php`,
-      apiEndpoint: "",
-      searchNamespace: [0, 6], // Main and Media namespaces
-    }
-  };
-}
 
 interface SearchResult {
   title: string;
@@ -73,6 +43,10 @@ export async function searchWiki(
   site: 'ixwiki' | 'iiwiki' | 'althistory', 
   categoryFilter?: string
 ): Promise<SearchResult[]> {
+  if (site === 'iiwiki') {
+    const { searchWikiWithPuppeteer } = await import('./wiki-search-service.server');
+    return await searchWikiWithPuppeteer(query, site, categoryFilter);
+  }
   const wikiConfigs = getWikiConfigs();
   const config = wikiConfigs[site];
   if (!config) {
@@ -467,23 +441,7 @@ async function performTargetedSearch(
   }
 }
 
-/**
- * Create appropriate wiki URL for the site
- */
-function createWikiUrl(title: string, _config: WikiConfig, site: 'ixwiki' | 'iiwiki' | 'althistory'): string {
-  // Generate actual external wiki URLs, not API proxy URLs
-  const siteUrls: Record<string, string> = {
-    ixwiki: 'https://ixwiki.com',
-    iiwiki: 'https://iiwiki.com',
-    althistory: 'https://althistory.fandom.com'
-  };
-  
-  const baseUrl = siteUrls[site];
-  const wikiPath = '/wiki';
-  const titleParam = `/${encodeURIComponent(title.replace(/ /g, '_'))}`;
-  
-  return `${baseUrl}${wikiPath}${titleParam}`;
-}
+
 
 /**
  * Calculate string similarity for fuzzy matching
@@ -1180,125 +1138,7 @@ function extractImageFile(value?: string): string | undefined {
   return undefined;
 }
 
-/**
- * Get full image URL from wiki filename
- */
-async function getImageUrl(filename: string, site: 'ixwiki' | 'iiwiki' | 'althistory'): Promise<string | null> {
-  if (!filename) return null;
-  
-  const wikiConfigs = getWikiConfigs();
-  const config = wikiConfigs[site];
-  if (!config) return null;
-  
-  try {
-    const params = new URLSearchParams({
-      action: 'query',
-      format: 'json',
-      titles: `File:${filename}`,
-      prop: 'imageinfo',
-      iiprop: 'url',
-      iilimit: '1'
-    });
 
-    const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${params.toString()}`, {
-      headers: {
-        'User-Agent': 'IxStats-Builder/1.0 (https://ixstats.com) MediaWiki-Search',
-      },
-    });
-
-    if (!response.ok) return null;
-
-    const data = await response.json();
-    const pages = data.query?.pages;
-    
-    if (!pages || typeof pages !== 'object') return null;
-    
-    const pageIds = Object.keys(pages);
-    if (pageIds.length === 0) return null;
-    
-    const page = pages[pageIds[0]!];
-    if (!page || page.missing || !page.imageinfo?.[0]?.url) return null;
-    
-    return page.imageinfo[0].url;
-  } catch (error) {
-    console.error(`Failed to get image URL for ${filename} on ${site}:`, error);
-    return null;
-  }
-}
-
-/**
- * Search for images only in the File namespace
- */
-export async function searchWikiImages(
-  query: string,
-  site: 'ixwiki' | 'iiwiki' | 'althistory'
-): Promise<Array<{ name: string; path: string; url?: string; description?: string; }>> {
-  const wikiConfigs = getWikiConfigs();
-  const config = wikiConfigs[site];
-  if (!config) {
-    throw new Error(`Unsupported wiki site: ${site}`);
-  }
-
-  try {
-    // Search only in File namespace (namespace 6)
-    const searchParams = new URLSearchParams({
-      action: 'query',
-      format: 'json',
-      list: 'search',
-      srsearch: query,
-      srprop: 'snippet',
-      srlimit: '20',
-      srnamespace: '6', // File namespace only
-    });
-
-    const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${searchParams.toString()}`, {
-      headers: {
-        'User-Agent': 'IxStats-Builder/1.0 (https://ixstats.com) MediaWiki-Search',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    
-    if (data.error) {
-      throw new Error(`Wiki API Error: ${data.error.info || data.error.code}`);
-    }
-
-    const searchResults = data.query?.search || [];
-    
-    // Filter for actual image files and get their URLs
-    const imageResults = [];
-    
-    for (const result of searchResults) {
-      // Check if it's an actual image file
-      if (result.title && result.title.startsWith('File:') && 
-          /\.(png|jpg|jpeg|gif|svg|webp)$/i.test(result.title)) {
-        
-        // Get the image URL
-        const filename = result.title.replace('File:', '');
-        const imageUrl = await getImageUrl(filename, site);
-        
-        if (imageUrl) {
-          imageResults.push({
-            name: result.title,
-            path: imageUrl,
-            url: imageUrl,
-            description: result.snippet || '',
-          });
-        }
-      }
-    }
-    
-    return imageResults;
-
-  } catch (error) {
-    console.error(`Wiki image search failed for ${site}:`, error);
-    throw new Error(`Failed to search ${site} images: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-}
 
 /**
  * Parse number from string, handling common formats
