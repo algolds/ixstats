@@ -21,6 +21,7 @@ import { governmentRouter } from "./routers/government";
 import { atomicGovernmentRouter } from "./routers/atomicGovernment";
 import { formulasRouter } from "./routers/formulas";
 import { quickActionsRouter } from "./routers/quickactions";
+import { securityRouter } from "./routers/security";
 
 /**
  * This is the primary router for your server.
@@ -47,6 +48,7 @@ export const appRouter = createTRPCRouter({
   atomicGovernment: atomicGovernmentRouter, // Atomic government component system
   formulas: formulasRouter, // Internal calculation formulas and system monitoring
   quickActions: quickActionsRouter, // Quick Actions system (meetings, policies, officials, activities)
+  security: securityRouter, // Security & Defense system (military, threats, stability, borders)
   system: adminRouter, // Alias for global stats
 });
 

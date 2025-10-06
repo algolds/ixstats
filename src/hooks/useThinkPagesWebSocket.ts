@@ -9,7 +9,42 @@ import type {
   ReadReceipt
 } from '~/lib/websocket/thinkpages-types';
 
+const isServer = typeof window === 'undefined';
+
+// Dummy implementation for SSR
+const useThinkPagesWebSocketSSR = (options: ThinkPagesWebSocketHookOptions) => {
+  const [clientState] = useState<ThinkPagesClientState>({
+    connected: false,
+    authenticated: false,
+    accountId: options.accountId,
+    subscriptions: new Set(),
+    presenceStatus: 'offline',
+    activeConversations: new Set(),
+    activeGroups: new Set(),
+    typingIndicators: new Map(),
+    lastHeartbeat: Date.now()
+  });
+
+  const noOp = useCallback(() => {}, []);
+
+  return {
+    clientState,
+    connect: noOp,
+    disconnect: noOp,
+    updatePresence: noOp,
+    sendTypingIndicator: noOp,
+    subscribeToConversation: noOp,
+    unsubscribeFromConversation: noOp,
+    subscribeToGroup: noOp,
+    markMessageAsRead: noOp,
+  };
+};
+
 export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) {
+  if (isServer) {
+    return useThinkPagesWebSocketSSR(options);
+  }
+
   const [clientState, setClientState] = useState<ThinkPagesClientState>({
     connected: false,
     authenticated: false,
@@ -31,11 +66,6 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
 
   const connect = useCallback(() => {
     if (ws.current?.readyState === WebSocket.OPEN) {
-      return;
-    }
-
-    // Skip WebSocket connection if not available (graceful degradation)
-    if (typeof window === 'undefined') {
       return;
     }
 
@@ -314,6 +344,9 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
 
   // Handle visibility change for presence
   useEffect(() => {
+    if (typeof document === 'undefined') {
+        return;
+    }
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         updatePresence('away');

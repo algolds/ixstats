@@ -24,7 +24,7 @@ import {
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { CabinetMeetingModal } from "~/components/modals/CabinetMeetingModal";
 import { PolicyCreator } from "~/components/quickactions/PolicyCreator";
-import { NationalSecurityModal } from "~/components/modals/NationalSecurityModal";
+import { DefenseModal } from "~/components/quickactions/DefenseModal";
 import { TrendRiskAnalyticsModal } from "~/components/modals/TrendRiskAnalyticsModal";
 
 interface CountryExecutiveSectionProps {
@@ -41,6 +41,7 @@ interface CabinetMeeting {
 
 export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveSectionProps) {
   const [showPolicyCreator, setShowPolicyCreator] = React.useState(false);
+  const [showDefenseModal, setShowDefenseModal] = React.useState(false);
 
   // Get ECI data for this country
   const { data: cabinetMeetings, isLoading: meetingsLoading } = api.eci.getCabinetMeetings.useQuery(
@@ -439,16 +440,15 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
                 <FileText className="h-4 w-4 mr-2 flex-shrink-0" />
                 <span className="truncate">Create Policy</span>
               </Button>
-              <NationalSecurityModal>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start text-left h-auto py-2 px-3 hover:scale-105 transition-all duration-200" 
-                  size="sm"
-                >
-                  <Shield className="h-4 w-4 mr-2 flex-shrink-0" />
-                  <span className="truncate">Security Status</span>
-                </Button>
-              </NationalSecurityModal>
+              <Button
+                variant="outline"
+                className="w-full justify-start text-left h-auto py-2 px-3 hover:scale-105 transition-all duration-200"
+                size="sm"
+                onClick={() => setShowDefenseModal(true)}
+              >
+                <Shield className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span className="truncate">Defense & Security</span>
+              </Button>
               <Button 
                 variant="outline" 
                 className="w-full justify-start text-left h-auto py-2 px-3 hover:scale-105 transition-all duration-200" 
@@ -489,6 +489,13 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
           onOpenChange={setShowPolicyCreator}
         />
       )}
+
+      {/* Defense Modal */}
+      <DefenseModal
+        countryId={countryId}
+        open={showDefenseModal}
+        onOpenChange={setShowDefenseModal}
+      />
     </div>
   );
 }

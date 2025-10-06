@@ -135,7 +135,7 @@ export function EnhancedAccountManager({
             <Avatar className="h-8 w-8">
               <AvatarImage src={account.profileImageUrl} />
               <AvatarFallback className={colorClasses}>
-                {account.displayName.charAt(0)}
+                {account.displayName?.charAt(0) || account.username?.charAt(0) || '?'}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">

@@ -45,10 +45,13 @@ import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '~/components/ui/dialog';
 import { useThinkPagesWebSocket } from '~/hooks/useThinkPagesWebSocket';
 import { Label } from '~/components/ui/label';
-import RichTextEditor, { type RichTextEditorRef } from '~/components/thinkpages/RichTextEditor';
-import { CollaborativeDocument } from './primitives/CollaborativeDocument';
+import { type RichTextEditorRef } from '~/components/thinkpages/RichTextEditor';
 import { Textarea } from '~/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
+import dynamic from 'next/dynamic';
+
+const RichTextEditor = dynamic(() => import('~/components/thinkpages/RichTextEditor'), { ssr: false });
+const CollaborativeDocument = dynamic(() => import('./primitives/CollaborativeDocument').then(mod => mod.CollaborativeDocument), { ssr: false });
 
 interface ThinktankGroupsProps {
   userId: string | null; // Changed from countryId to userId (clerkUserId), nullable for anonymous users

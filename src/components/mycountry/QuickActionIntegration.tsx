@@ -2,20 +2,21 @@
 
 import React from 'react';
 import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 import { api } from '~/trpc/react';
 import { useCountryData } from '~/components/mycountry';
 import { QuickActionsPanel } from '~/components/quickactions/QuickActionsPanel';
 import { MeetingScheduler } from '~/components/quickactions/MeetingScheduler';
 import { PolicyCreator } from '~/components/quickactions/PolicyCreator';
+import { DefenseModal } from '~/components/quickactions/DefenseModal';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
 import { NumberFlowDisplay } from '~/components/ui/number-flow';
-import { NationalSecurityModal } from '~/components/modals/NationalSecurityModal';
-import { 
-  FileText, 
-  Users, 
-  Shield, 
+import {
+  FileText,
+  Users,
+  Shield,
   TrendingUp,
   Activity,
   Zap,
@@ -31,8 +32,10 @@ interface QuickActionIntegrationProps {
 export function QuickActionIntegration({ className }: QuickActionIntegrationProps) {
   const { user } = useUser();
   const { country } = useCountryData();
+  const router = useRouter();
   const [showMeetingScheduler, setShowMeetingScheduler] = React.useState(false);
   const [showPolicyCreator, setShowPolicyCreator] = React.useState(false);
+  const [showDefenseModal, setShowDefenseModal] = React.useState(false);
 
   // Get real-time metrics
   const { data: metrics } = api.eci.getRealTimeMetrics.useQuery(
@@ -52,18 +55,12 @@ export function QuickActionIntegration({ className }: QuickActionIntegrationProp
     { enabled: !!user?.id }
   );
 
-  // Get security dashboard
-  const { data: securityDashboard } = api.eci.getSecurityDashboard.useQuery(
-    { userId: user?.id ?? 'placeholder-disabled' },
-    { enabled: !!user?.id }
-  );
-
   // Implementation status
   const implementationStatus = {
     activePolicies: policies?.filter((p: any) => p.status === 'implemented')?.length || 0,
     pendingPolicies: policies?.filter((p: any) => p.status === 'proposed' || p.status === 'under_review')?.length || 0,
     upcomingMeetings: meetings?.filter((m: any) => new Date(m.scheduledDate) > new Date())?.length || 0,
-    activeThreats: securityDashboard?.activeThreats || 0,
+    activeThreats: 0, // Will be shown in DefenseModal
   };
 
   if (!user) {
@@ -210,14 +207,15 @@ export function QuickActionIntegration({ className }: QuickActionIntegrationProp
           </div>
         </Button>
 
-        <NationalSecurityModal mode="dashboard">
-          <Button className="w-full h-16 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white">
-            <div className="flex flex-col items-center gap-1">
-              <Shield className="h-5 w-5" />
-              <span className="text-sm">Security Assessment</span>
-            </div>
-          </Button>
-        </NationalSecurityModal>
+        <Button
+          className="w-full h-16 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white"
+          onClick={() => setShowDefenseModal(true)}
+        >
+          <div className="flex flex-col items-center gap-1">
+            <Shield className="h-5 w-5" />
+            <span className="text-sm">Defense & Security</span>
+          </div>
+        </Button>
       </div>
 
       {/* System Integration Status */}
@@ -254,7 +252,7 @@ export function QuickActionIntegration({ className }: QuickActionIntegrationProp
         </CardContent>
       </Card>
 
-      {/* New IxTime-enabled Meeting Scheduler */}
+      {/* Modals */}
       {country?.id && user?.id && (
         <>
           <MeetingScheduler
@@ -267,6 +265,12 @@ export function QuickActionIntegration({ className }: QuickActionIntegrationProp
             countryId={country.id}
             open={showPolicyCreator}
             onOpenChange={setShowPolicyCreator}
+          />
+
+          <DefenseModal
+            countryId={country.id}
+            open={showDefenseModal}
+            onOpenChange={setShowDefenseModal}
           />
         </>
       )}

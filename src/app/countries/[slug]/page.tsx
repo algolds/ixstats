@@ -116,7 +116,10 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
       'propose_alliance': 'Alliance proposals coming soon!',
       'congratulate': 'Congratulations feature coming soon!',
       'visit_profile': 'Profile view tracked',
-      'endorse': 'Endorsement feature coming soon!'
+      unfollow: "",
+      propose_trade: "",
+      react_to_achievement: "",
+      invite_collaboration: ""
     };
 
     toast.info(actionMessages[action] || 'Feature coming soon!');

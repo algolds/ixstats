@@ -132,6 +132,12 @@ export function EnhancedMyCountryContent({ variant = 'unified', title }: Enhance
     { enabled: !!country?.id }
   );
 
+  // Fetch Defense overview metrics
+  const { data: defenseOverview } = api.security.getDefenseOverview.useQuery(
+    { countryId: country?.id || '' },
+    { enabled: !!country?.id }
+  );
+
   // Create government component mutation
   const createComponentMutation = api.government.addComponent.useMutation({
     onSuccess: () => {
@@ -242,7 +248,7 @@ export function EnhancedMyCountryContent({ variant = 'unified', title }: Enhance
   if (existingComponents && existingComponents.length > 0) {
     const avgEffectiveness = existingComponents.reduce((sum, c) => sum + c.effectivenessScore, 0) / existingComponents.length;
     const totalComponents = existingComponents.length;
-    
+
     metrics.push({
       label: 'Gov Score',
       value: `${avgEffectiveness.toFixed(0)}%`,
@@ -254,6 +260,29 @@ export function EnhancedMyCountryContent({ variant = 'unified', title }: Enhance
           `Average effectiveness: ${avgEffectiveness.toFixed(1)}%`,
           `${totalComponents} government components active`,
           'Based on atomic component analysis'
+        ]
+      }
+    });
+  }
+
+  // Add Defense metrics
+  if (defenseOverview) {
+    metrics.push({
+      label: 'Security',
+      value: `${defenseOverview.overallScore}`,
+      subtext: defenseOverview.securityLevel.replace('_', ' '),
+      colorClass: defenseOverview.overallScore >= 75 ? 'bg-green-50 dark:bg-green-950/50 text-green-600' :
+                   defenseOverview.overallScore >= 50 ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-600' :
+                   defenseOverview.overallScore >= 25 ? 'bg-yellow-50 dark:bg-yellow-950/50 text-yellow-600' :
+                   'bg-red-50 dark:bg-red-950/50 text-red-600',
+      tooltip: {
+        title: 'National Security Status',
+        details: [
+          `Overall Score: ${defenseOverview.overallScore}/100`,
+          `Security Level: ${defenseOverview.securityLevel.replace('_', ' ').toUpperCase()}`,
+          `Military Strength: ${defenseOverview.militaryStrength}%`,
+          `${defenseOverview.branchCount} military branches`,
+          `${defenseOverview.activeThreats} active threats`
         ]
       }
     });

@@ -13,7 +13,7 @@ import { Navigation } from "~/app/_components/navigation";
 import { GlobalActivityMarquee } from "~/app/_components/GlobalActivityMarquee";
 import { SetupRedirect } from "~/app/_components/SetupRedirect";
 import { WebGLErrorHandler } from "~/components/webgl-error-handler";
-import { ToastProvider } from "~/components/ui/toast";
+import { ToasterProvider } from "~/components/ToasterProvider";
 import { IxTimeProvider } from "~/contexts/IxTimeContext";
 import { ExecutiveNotificationProvider } from "~/contexts/ExecutiveNotificationContext";
 import { GlobalNotificationSystem } from "~/components/notifications/GlobalNotificationSystem";
@@ -47,7 +47,6 @@ const RootLayout = ({
       <ThemeProvider>
         <AuthProvider>
           <IxTimeProvider>
-            <ToastProvider>
               <ExecutiveNotificationProvider>
                 <GlobalNotificationSystem>
                   <WebGLErrorHandler />
@@ -61,7 +60,6 @@ const RootLayout = ({
                   </div>
                 </GlobalNotificationSystem>
               </ExecutiveNotificationProvider>
-            </ToastProvider>
           </IxTimeProvider>
         </AuthProvider>
       </ThemeProvider>
@@ -88,7 +86,7 @@ const RootLayout = ({
         ) : (
           <AppContent />
         )}
-        
+        <ToasterProvider />
       </body>
     </html>
   );

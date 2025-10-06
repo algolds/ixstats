@@ -16,6 +16,9 @@ import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { Switch } from "~/components/ui/switch";
+import { Label } from "~/components/ui/label";
 import { ThinkpagesSocialPlatform } from "~/components/thinkpages/ThinkpagesSocialPlatform";
 import { EnhancedAccountManager } from "~/components/thinkpages/EnhancedAccountManager";
 import { AccountCreationModal } from "~/components/thinkpages/AccountCreationModal";
@@ -68,6 +71,7 @@ export default function ThinkPagesMainPage() {
   const [showAccountCreation, setShowAccountCreation] = useState(false);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [settingsAccount, setSettingsAccount] = useState<any>(null);
+  const [showGlobalSettings, setShowGlobalSettings] = useState(false);
 
   // Handle URL parameters for auto-selecting view and conversation
   useEffect(() => {
@@ -95,9 +99,13 @@ export default function ThinkPagesMainPage() {
     { enabled: !!userProfile?.countryId }
   );
 
-  // No longer need thinkpages accounts for ThinkTanks and ThinkShare
-  // They now work with global user accounts directly
-  const accounts: any[] = []; // Empty array for backward compatibility
+  // Fetch ThinkPages accounts for the feed (still needed for feed posting)
+  const { data: accountsData } = api.thinkpages.getAccountsByCountry.useQuery(
+    { countryId: userProfile?.countryId || '' },
+    { enabled: !!userProfile?.countryId }
+  );
+
+  const accounts = accountsData || [];
 
   // Allow anonymous access for view-only mode
   const isUserAuthenticated = user && user.id;
@@ -176,7 +184,7 @@ export default function ThinkPagesMainPage() {
                       {countryData.name}
                     </Badge>
                   )}
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" onClick={() => setShowGlobalSettings(true)}>
                     <Settings className="h-4 w-4" />
                   </Button>
                 </>
@@ -197,31 +205,63 @@ export default function ThinkPagesMainPage() {
 
           {/* Main Navigation */}
           <div className="flex items-center gap-4 p-2 glass-hierarchy-child rounded-xl">
-            <Button
-              variant={activeView === 'feed' ? 'default' : 'ghost'}
-              onClick={() => setActiveView('feed')}
-              className="flex items-center gap-2"
-            >
-              <Home className="h-4 w-4" />
-               Feed
-            </Button>
-            <Button
-              variant={activeView === 'thinktanks' ? 'default' : 'ghost'}
-              onClick={() => setActiveView('thinktanks')}
-              className="flex items-center gap-2"
-            >
-              <Globe className="h-4 w-4" />
-              Groups
-            </Button>
-            <Button
-              variant={activeView === 'messages' ? 'default' : 'ghost'}
-              onClick={() => setActiveView('messages')}
-              className="flex items-center gap-2"
-            >
-              <Send className="h-4 w-4" />
-              Thinkshare
-            </Button>
-            
+            <Link href="/thinkpages/feed" className="flex-1">
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
+                <Button
+                  variant="ghost"
+                  className={`flex items-center gap-2 w-full transition-all ${
+                    activeView === 'feed'
+                      ? 'bg-[#0050a1] text-white hover:bg-[#003d7a]'
+                      : 'hover:bg-[#0050a1]/10'
+                  }`}
+                >
+                  <Home className="h-4 w-4" />
+                  Feed
+                </Button>
+              </motion.div>
+            </Link>
+            <Link href="/thinkpages/thinktanks" className="flex-1">
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
+                <Button
+                  variant="ghost"
+                  className={`flex items-center gap-2 w-full transition-all ${
+                    activeView === 'thinktanks'
+                      ? 'bg-[#fcc309] text-black hover:bg-[#e5b008]'
+                      : 'hover:bg-[#fcc309]/10'
+                  }`}
+                >
+                  <Globe className="h-4 w-4" />
+                  ThinkTanks
+                </Button>
+              </motion.div>
+            </Link>
+            <Link href="/thinkpages/thinkshare" className="flex-1">
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
+                <Button
+                  variant="ghost"
+                  className={`flex items-center gap-2 w-full transition-all ${
+                    activeView === 'messages'
+                      ? 'bg-[#10b981] text-white hover:bg-[#059669]'
+                      : 'hover:bg-[#10b981]/10'
+                  }`}
+                >
+                  <Send className="h-4 w-4" />
+                  ThinkShare
+                </Button>
+              </motion.div>
+            </Link>
           </div>
           
         </motion.div>
@@ -375,6 +415,72 @@ export default function ThinkPagesMainPage() {
           </div>
         </motion.div>
       </div>
+
+      {/* Global ThinkPages Settings Dialog */}
+      <Dialog open={showGlobalSettings} onOpenChange={setShowGlobalSettings}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>ThinkPages Settings</DialogTitle>
+            <DialogDescription>
+              Manage your global ThinkPages preferences and privacy settings
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold">Privacy & Visibility</h3>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="show-online" className="flex flex-col gap-1">
+                  <span>Show online status</span>
+                  <span className="text-xs text-muted-foreground">Let others see when you're active</span>
+                </Label>
+                <Switch id="show-online" />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="discoverable" className="flex flex-col gap-1">
+                  <span>Discoverable profile</span>
+                  <span className="text-xs text-muted-foreground">Allow others to find you</span>
+                </Label>
+                <Switch id="discoverable" defaultChecked />
+              </div>
+            </div>
+
+            <div className="space-y-4 border-t pt-4">
+              <h3 className="text-sm font-semibold">Notifications</h3>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="post-notif" className="flex flex-col gap-1">
+                  <span>Post reactions</span>
+                  <span className="text-xs text-muted-foreground">Get notified when someone reacts</span>
+                </Label>
+                <Switch id="post-notif" defaultChecked />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="mention-notif" className="flex flex-col gap-1">
+                  <span>Mentions & replies</span>
+                  <span className="text-xs text-muted-foreground">Get notified when mentioned</span>
+                </Label>
+                <Switch id="mention-notif" defaultChecked />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="group-notif" className="flex flex-col gap-1">
+                  <span>ThinkTank activity</span>
+                  <span className="text-xs text-muted-foreground">Group messages and updates</span>
+                </Label>
+                <Switch id="group-notif" defaultChecked />
+              </div>
+            </div>
+
+            <div className="space-y-4 border-t pt-4">
+              <h3 className="text-sm font-semibold">About ThinkPages</h3>
+              <div className="text-xs text-muted-foreground space-y-2">
+                <p><strong>Account Limit:</strong> {accounts.length}/25 accounts</p>
+                <p><strong>Platform:</strong> ThinkPages v1.0</p>
+              
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

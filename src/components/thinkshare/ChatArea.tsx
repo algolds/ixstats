@@ -165,7 +165,7 @@ export function ChatArea({
   }, [selectedConversation, currentAccount, sendMessageMutation]);
 
   return (
-    <Card className="glass-hierarchy-child h-[700px] flex flex-col">
+    <Card className="glass-hierarchy-child flex flex-col">
       {/* Chat Header */}
       <ChatHeader selectedConversation={selectedConversation} currentAccountId={currentAccount?.id} />
 
@@ -182,15 +182,7 @@ export function ChatArea({
         onReply={setReplyingToMessage}
       />
 
-      <Separator />
-
-      {/* Reply Preview */}
-      <ReplyPreview
-        replyingToMessage={replyingToMessage}
-        setReplyingToMessage={setReplyingToMessage}
-      />
-
-      {/* Rich Text Message Input */}
+      {/* Rich Text Message Input (includes reply preview) */}
       <MessageInput
         onSendMessage={handleSendMessage}
         onTyping={(isTyping) => {

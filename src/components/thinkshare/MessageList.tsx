@@ -96,9 +96,8 @@ export function MessageList({
   };
 
   return (
-    <div className="flex-1 p-4">
-      <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
-        <div className="space-y-4">
+    <div className="p-4">
+      <div className="space-y-3">
           {isLoadingMessages ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -155,7 +154,6 @@ export function MessageList({
             })}
           
           <div ref={messagesEndRef} />
-        </div>
       </div>
     </div>
   );
