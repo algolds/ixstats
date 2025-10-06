@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
@@ -84,15 +84,16 @@ export function TaxCalculator({
     };
 
     try {
-      const result = calculatorEngine.calculate(request);
-      onCalculationChange?.(result);
-      return result;
+      return calculatorEngine.calculate(request);
     } catch (error) {
       console.error('Tax calculation error:', error);
-      onCalculationChange?.(null);
       return null;
     }
-  }, [income, taxYear, selectedDeductions, selectedExemptions, calculatorEngine, taxSystem.id, onCalculationChange]);
+  }, [income, taxYear, selectedDeductions, selectedExemptions, calculatorEngine, taxSystem.id]);
+
+  useEffect(() => {
+    onCalculationChange?.(calculationResult);
+  }, [calculationResult, onCalculationChange]);
 
   // Validation
   const validation = useMemo(() => {

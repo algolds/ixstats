@@ -1,5 +1,5 @@
 // Country flag service using Wiki Commons API
-import { searchWikiImages } from './wiki-search-service';
+import { searchWikiImages } from './wiki-search-service.client';
 
 interface CountryFlag {
   country: string;
@@ -66,7 +66,7 @@ class CountryFlagService {
           result = {
             country: countryName,
             flagUrl: iiwikiFlags[0].url,
-            source: 'wikimedia',
+            source: 'iiwiki',
             timestamp: Date.now() // Add timestamp
           };
           this.flagCache.set(normalizedName, result);

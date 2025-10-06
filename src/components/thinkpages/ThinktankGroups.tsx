@@ -172,7 +172,7 @@ const formatContentEnhanced = (content: string) => {
   return formattedContent;
 };
 
-export function ThinktankGroups({ userId, userAccounts, viewOnly = false }: ThinktankGroupsProps) {
+export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }: ThinktankGroupsProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [activeTab, setActiveTab] = useState<'discover' | 'joined' | 'created'>(viewOnly ? 'discover' : 'discover');
@@ -366,9 +366,11 @@ export function ThinktankGroups({ userId, userAccounts, viewOnly = false }: Thin
   };
 
   const filteredGroups = groups?.filter(group => {
-    const matchesSearch = group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         group.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         (group.tags && group.tags.some((tag: string) => tag.toLowerCase().includes(searchQuery.toLowerCase())));
+    if (!group) return false;
+    const query = searchQuery.toLowerCase();
+    const matchesSearch = (group.name?.toLowerCase() || '').includes(query) ||
+                         (group.description?.toLowerCase() || '').includes(query) ||
+                         (Array.isArray(group.tags) && group.tags.some((tag: string) => (tag?.toLowerCase() || '').includes(query)));
     const matchesCategory = selectedCategory === 'All' || group.category === selectedCategory;
     return matchesSearch && matchesCategory;
   }) || [];

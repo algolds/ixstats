@@ -17,6 +17,7 @@ import { ToasterProvider } from "~/components/ToasterProvider";
 import { IxTimeProvider } from "~/contexts/IxTimeContext";
 import { ExecutiveNotificationProvider } from "~/contexts/ExecutiveNotificationContext";
 import { GlobalNotificationSystem } from "~/components/notifications/GlobalNotificationSystem";
+import { ToastProvider } from "~/components/ui/toast";
 
 export const dynamic = 'force-dynamic';
 
@@ -48,17 +49,19 @@ const RootLayout = ({
         <AuthProvider>
           <IxTimeProvider>
               <ExecutiveNotificationProvider>
-                <GlobalNotificationSystem>
-                  <WebGLErrorHandler />
-                  <div className="min-h-screen flex flex-col">
-                    <Navigation />
-                    {/* <GlobalActivityMarquee /> */}
-                    <SetupRedirect />
-                    <main className="flex-1">
-                      {children}
-                    </main>
-                  </div>
-                </GlobalNotificationSystem>
+                <ToastProvider>
+                  <GlobalNotificationSystem>
+                    <WebGLErrorHandler />
+                    <div className="min-h-screen flex flex-col">
+                      <Navigation />
+                      {/* <GlobalActivityMarquee /> */}
+                      <SetupRedirect />
+                      <main className="flex-1">
+                        {children}
+                      </main>
+                    </div>
+                  </GlobalNotificationSystem>
+                </ToastProvider>
               </ExecutiveNotificationProvider>
           </IxTimeProvider>
         </AuthProvider>

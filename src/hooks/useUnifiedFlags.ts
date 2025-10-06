@@ -108,7 +108,7 @@ export function useFlag(countryName?: string): UseFlagResult {
  * @param countryNames - Array of country names
  * @returns Bulk flag data and loading state
  */
-export function useBulkFlags(countryNames: string[]): UseBulkFlagsResult {
+export function useBulkFlags(countryNames: string[], source: 'irl' | 'wiki' = 'wiki'): UseBulkFlagsResult {
   const [flagUrls, setFlagUrls] = useState<Record<string, string | null>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -159,7 +159,7 @@ export function useBulkFlags(countryNames: string[]): UseBulkFlagsResult {
       if (uncachedCountries.length > 0) {
         console.log(`[useBulkFlags] Batch loading ${uncachedCountries.length} uncached flags`);
         
-        const fetchedFlags = await unifiedFlagService.batchGetFlags(uncachedCountries);
+        const fetchedFlags = await unifiedFlagService.batchGetFlags(uncachedCountries, source);
         
         // Merge cached and fetched flags
         const finalFlags = { ...cachedFlags, ...fetchedFlags };
@@ -180,7 +180,7 @@ export function useBulkFlags(countryNames: string[]): UseBulkFlagsResult {
     } finally {
       setIsLoading(false);
     }
-  }, [memoizedCountryNames]);
+  }, [memoizedCountryNames, source]);
 
   // Initial fetch
   useEffect(() => {

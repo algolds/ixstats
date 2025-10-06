@@ -3,15 +3,13 @@ import { getWikiConfigs, createWikiUrl, getImageUrl } from './wiki-search-servic
 import type { CountryInfoboxWithDynamicProps } from "./mediawiki-service";
 import { unifiedFlagService } from "./unified-flag-service";
 
-interface WikiConfig {
+export interface WikiConfig {
   baseUrl: string;
   apiEndpoint: string;
   searchNamespace?: number[];
 }
 
-
-
-interface SearchResult {
+export interface SearchResult {
   title: string;
   snippet: string;
   url: string;

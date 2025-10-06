@@ -55,9 +55,9 @@ class UnifiedFlagService {
 
   // Wiki sources in priority order (highest priority first)
   private readonly wikiSources: WikiSource[] = [
-    { name: 'IxWiki', baseUrl: 'https://ixwiki.com', priority: 1 },
-    { name: 'IiWiki', baseUrl: 'https://iiwiki.com/mediawiki', priority: 2 },
-    { name: 'AlthistoryWiki', baseUrl: 'https://althistory.fandom.com', priority: 3 },
+    { name: 'IxWiki', baseUrl: '/api/ixwiki-proxy', priority: 1 },
+    { name: 'IiWiki', baseUrl: '/api/iiwiki-proxy/mediawiki', priority: 2 },
+    { name: 'AlthistoryWiki', baseUrl: '/api/althistory-wiki-proxy', priority: 3 },
     // Removed WikiCommons due to CORS issues
   ];
 
@@ -86,7 +86,7 @@ class UnifiedFlagService {
   /**
    * Get flag URL - intelligent multi-wiki caching with fallback
    */
-  async getFlagUrl(countryName: string): Promise<string | null> {
+  async getFlagUrl(countryName: string, source: 'irl' | 'wiki' = 'wiki'): Promise<string | null> {
     if (!countryName) return null;
 
     this.stats.totalRequests++;
@@ -114,20 +114,25 @@ class UnifiedFlagService {
       return await this.requestQueue.get(cacheKey)!;
     }
 
-    // 4. Fetch from multiple wiki sources with fallback
-    this.stats.cacheMisses++;
-    const fetchPromise = this.fetchFlagFromMultipleWikis(countryName);
-    this.requestQueue.set(cacheKey, fetchPromise);
+    // 4. Fetch from multiple wiki sources with fallback (only for wiki sources)
+    if (source === 'wiki') {
+      this.stats.cacheMisses++;
+      const fetchPromise = this.fetchFlagFromMultipleWikis(countryName);
+      this.requestQueue.set(cacheKey, fetchPromise);
 
-    try {
-      const result = await fetchPromise;
-      this.requestQueue.delete(cacheKey);
-      return result;
-    } catch (error) {
-      this.requestQueue.delete(cacheKey);
-      console.error(`[UnifiedFlagService] Error fetching flag for ${countryName}:`, error);
-      return null;
+      try {
+        const result = await fetchPromise;
+        this.requestQueue.delete(cacheKey);
+        return result;
+      } catch (error) {
+        this.requestQueue.delete(cacheKey);
+        console.error(`[UnifiedFlagService] Error fetching flag for ${countryName}:`, error);
+        return null;
+      }
     }
+    
+    // For IRL countries, if not in cache, return null without fetching from wikis
+    return null;
   }
 
   /**
@@ -175,7 +180,7 @@ class UnifiedFlagService {
   /**
    * Batch get flags for multiple countries
    */
-  async batchGetFlags(countryNames: string[]): Promise<Record<string, string | null>> {
+  async batchGetFlags(countryNames: string[], source: 'irl' | 'wiki' = 'wiki'): Promise<Record<string, string | null>> {
     const results: Record<string, string | null> = {};
     
     // Process in parallel batches of 10
@@ -183,7 +188,7 @@ class UnifiedFlagService {
     for (let i = 0; i < countryNames.length; i += batchSize) {
       const batch = countryNames.slice(i, i + batchSize);
       const batchPromises = batch.map(async (countryName) => {
-        const flagUrl = await this.getFlagUrl(countryName);
+        const flagUrl = await this.getFlagUrl(countryName, source);
         return { countryName, flagUrl };
       });
 
