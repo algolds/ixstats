@@ -266,9 +266,9 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
                 <p className="text-muted-foreground mb-6">
                   Choose a conversation from the sidebar to start ThinkSharing
                 </p>
-                <Button 
+                <Button
                   onClick={() => setShowNewConversationModal(true)}
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Start New ThinkShare

@@ -142,7 +142,8 @@ export function AccountCreationModal({
     }
   }, [isOpen]);
 
-  const canCreateMoreAccounts = existingAccountCount < maxAccounts;
+  // Always allow account creation - backend will enforce the actual limit
+  const canCreateMoreAccounts = true;
   const accountsRemaining = maxAccounts - existingAccountCount;
 
   const handleUsernameChange = (value: string) => {
@@ -358,10 +359,8 @@ export function AccountCreationModal({
                           </div>
                           <div className="flex flex-col gap-2 relative">
                             <DropdownMenu>
-                              <DropdownMenuTrigger>
-                                <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-9 px-4 py-2">
-                                  Change Source
-                                </button>
+                              <DropdownMenuTrigger className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-9 px-4 py-2">
+                                Change Source
                               </DropdownMenuTrigger>
                               <DropdownMenuContent className="z-[80]">
                                 <DropdownMenuItem onSelect={() => setImageSource('unsplash')}>

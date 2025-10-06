@@ -122,20 +122,15 @@ const MessageBubble = React.memo(function MessageBubble({
         )}
         
         <div
-          className={`p-3 rounded-2xl ${
+          className={`p-3 ${
             isMyMessage
-              ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white ml-4'
-              : 'bg-background/50 border border-blue-200/30 dark:border-blue-800/30 mr-4'
+              ? 'bg-[#10b981] text-white ml-4 rounded-[18px] rounded-br-[4px]'
+              : 'bg-muted/80 dark:bg-muted/60 mr-4 rounded-[18px] rounded-bl-[4px]'
           }`}
         >
-          {message.messageType === 'rich_text' ? (
-            <div 
-              className="text-sm [&_img]:inline-block [&_img]:h-5 [&_img]:w-5 [&_img]:mx-1 [&_img]:align-middle" 
-              dangerouslySetInnerHTML={{ __html: message.content }}
-            />
-          ) : (
-            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-          )}
+          <p className={`text-sm whitespace-pre-wrap ${isMyMessage ? 'text-white' : ''}`}>
+            {message.content.replace(/<[^>]*>/g, '')}
+          </p>
         </div>
         
         {/* Message Actions - Reply, React, etc. */}

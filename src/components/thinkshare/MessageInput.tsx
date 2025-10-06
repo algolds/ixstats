@@ -45,10 +45,10 @@ export function MessageInput({
   const richTextEditorRef = useRef<RichTextEditorRef>(null);
 
   return (
-    <div className="p-4">
+    <div className="p-4 border-t border-border/50 bg-background/50">
       {replyingToMessage && (
-        <div className="px-4 pt-3 pb-0">
-          <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg border-l-4 border-primary">
+        <div className="mb-3">
+          <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg border-l-4 border-[#10b981]">
             <Reply className="h-4 w-4 text-muted-foreground" />
             <div className="flex-1 min-w-0">
               <p className="text-xs text-muted-foreground">

@@ -10,6 +10,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuGroup,
   DropdownMenuGroupLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -157,21 +158,23 @@ export function ChatHeader({ selectedConversation, currentAccountId, onSearchTog
                 <MoreHorizontal className="h-4 w-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuGroupLabel>Conversation Options</DropdownMenuGroupLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleMuteToggle}>
-                  {isMuted ? <Bell className="h-4 w-4 mr-2" /> : <BellOff className="h-4 w-4 mr-2" />}
-                  {isMuted ? 'Unmute notifications' : 'Mute notifications'}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleArchive}>
-                  <Archive className="h-4 w-4 mr-2" />
-                  Archive conversation
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleDelete} variant="destructive">
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete conversation
-                </DropdownMenuItem>
+                <DropdownMenuGroup>
+                  <DropdownMenuGroupLabel>Conversation Options</DropdownMenuGroupLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleMuteToggle}>
+                    {isMuted ? <Bell className="h-4 w-4 mr-2" /> : <BellOff className="h-4 w-4 mr-2" />}
+                    {isMuted ? 'Unmute notifications' : 'Mute notifications'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleArchive}>
+                    <Archive className="h-4 w-4 mr-2" />
+                    Archive conversation
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleDelete} variant="destructive">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete conversation
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
