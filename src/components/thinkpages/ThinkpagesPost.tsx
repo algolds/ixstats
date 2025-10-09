@@ -32,56 +32,7 @@ import { PostActions } from './primitives/PostActions';
 import { AccountIndicator } from './primitives/AccountIndicator';
 import { api } from '~/trpc/react';
 import { toast } from 'sonner';
-// Removed Linkify as we now use formatContentEnhanced
-// import Linkify from 'linkify-react';
-import LinkifyIt from 'linkify-it';
-
-const linkifyIt = new LinkifyIt();
-linkifyIt.add('@', {
-  validate: (text, pos, self) => {
-    const tail = text.slice(pos);
-    if (!self.re.mention) {
-      self.re.mention = new RegExp(
-        '^([a-zA-Z0-9_]){1,15}(?!_)'
-      );
-    }
-    if (self.re.mention.test(tail)) {
-      if (pos > 0 && text[pos - 1] === '@') {
-        return false;
-      }
-      const matchResult = tail.match(self.re.mention);
-      if (matchResult) {
-        return matchResult[0].length;
-      }
-      return 0;
-    }
-    return 0;
-  },
-  normalize: match => {
-    match.url = '/thinkpages/user/' + match.raw.slice(1);
-  }
-});
-linkifyIt.add('#', {
-  validate: (text, pos, self) => {
-    const tail = text.slice(pos);
-    if (!self.re.hashtag) {
-      self.re.hashtag = new RegExp(
-        '^[a-zA-Z0-9_]+(?![_])'
-      );
-    }
-    if (self.re.hashtag.test(tail)) {
-      if (pos > 0 && text[pos - 1] === '#') {
-        return false;
-      }
-      const matchResult = tail.match(self.re.hashtag);
-      return matchResult ? matchResult[0].length : 0;
-    }
-    return 0;
-  },
-  normalize: match => {
-    match.url = '/hashtags/' + match.raw.slice(1);
-  }
-});
+import { formatContentEnhanced, extractHashtags, extractMentions } from '~/lib/text-formatter';
 
 interface ThinkpagesPostProps {
   post: any;
@@ -313,57 +264,6 @@ export function ThinkpagesPost({
     }
   }, [createPostMutation, replyText, currentUserAccountId, post.id]);
 
-  // Legacy format function - replaced by formatContentEnhanced
-  // const formatContent = (content: string) => {
-  //   return (
-  //     <Linkify options={{ 
-  //       validate: linkifyIt.pretest.bind(linkifyIt),
-  //       find: linkifyIt.test.bind(linkifyIt),
-  //       normalize: linkifyIt.normalize.bind(linkifyIt),
-  //       tagName: 'a',
-  //       attributes: (_, type) => ({
-  //         className: type === 'mention' ? 'text-purple-500 hover:underline' : 'text-blue-500 hover:underline',
-  //       })
-  //     }}>
-  //       {content}
-  //     </Linkify>
-  //   );
-  // };
-
-
-  // Enhanced hashtag and mention extraction functions
-  const extractHashtags = (text: string): string[] => {
-    const hashtagRegex = /#([a-zA-Z0-9_]+)/g;
-    const matches = text.match(hashtagRegex);
-    return matches ? matches.map(tag => tag.slice(1)) : [];
-  };
-
-  const extractMentions = (text: string): string[] => {
-    const mentionRegex = /@([a-zA-Z0-9_]+)/g;
-    const matches = text.match(mentionRegex);
-    return matches ? matches.map(mention => mention.slice(1)) : [];
-  };
-
-  // Enhanced text formatting with better mention and hashtag styling
-  const formatContentEnhanced = (content: string) => {
-    // Replace hashtags
-    let formattedContent = content.replace(/#([a-zA-Z0-9_]+)/g, 
-      '<span class="text-blue-500 hover:underline cursor-pointer font-medium">#$1</span>'
-    );
-    
-    // Replace mentions
-    formattedContent = formattedContent.replace(/@([a-zA-Z0-9_]+)/g, 
-      '<span class="text-purple-500 hover:underline cursor-pointer font-medium">@$1</span>'
-    );
-    
-    // Replace URLs
-    formattedContent = formattedContent.replace(
-      /(https?:\/\/[^\s]+)/g,
-      '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">$1</a>'
-    );
-    
-    return formattedContent;
-  };
 
   return (
     <motion.div

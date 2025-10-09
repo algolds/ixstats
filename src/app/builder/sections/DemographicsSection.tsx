@@ -195,7 +195,7 @@ export function DemographicsSection({
 
       {/* Basic visualization */}
       <div className="md:col-span-2 space-y-4">
-        <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+        <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
           <Building2 className="h-4 w-4" />
           Population Distribution
         </h4>
@@ -224,7 +224,7 @@ export function DemographicsSection({
     <>
       {/* View Selector */}
       <div className="md:col-span-2">
-        <div className="flex bg-card/50 rounded-lg p-1 backdrop-blur-sm border border-border">
+        <div className="flex bg-card rounded-lg p-1 border border-border">
           {(['age', 'geographic', 'social'] as const).map((view) => (
             <button
               key={view}
@@ -245,7 +245,7 @@ export function DemographicsSection({
       {selectedView === 'age' && (
         <>
           <div className="md:col-span-2 space-y-4">
-            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+            <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
               <Users className="h-4 w-4" />
               Age Distribution
             </h4>
@@ -288,7 +288,7 @@ export function DemographicsSection({
         <>
           {demographics.regions.map((region, index) => (
             <div key={region.name} className="md:col-span-2 space-y-4">
-              <h5 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <h5 className="text-sm font-bold text-foreground flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
                 {region.name}
               </h5>
@@ -325,7 +325,7 @@ export function DemographicsSection({
       {selectedView === 'social' && (
         <>
           <div className="md:col-span-2 space-y-4">
-            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+            <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
               <GraduationCap className="h-4 w-4" />
               Education Levels
             </h4>
@@ -363,7 +363,7 @@ export function DemographicsSection({
 
           {/* Social Policies */}
           <div className="md:col-span-2 space-y-4">
-            <h5 className="text-sm font-semibold text-foreground flex items-center gap-2">
+            <h5 className="text-sm font-bold text-foreground flex items-center gap-2">
               <Home className="h-4 w-4" />
               Social Policies
             </h5>

@@ -1,10 +1,13 @@
 // Next.js WebSocket Server Integration
 // Integrates WebSocket server with Next.js application
 
+import 'server-only';
 import { Server as HTTPServer } from 'http';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { IntelligenceWebSocketServer } from '~/lib/websocket/intelligence-websocket-server';
-import { IntelligenceBroadcastService } from '~/lib/intelligence-broadcast-service';
+
+// Use any types to avoid importing socket.io during build
+type IntelligenceWebSocketServer = any;
+type IntelligenceBroadcastService = any;
 
 // Global instances
 let wsServer: IntelligenceWebSocketServer | null = null;
@@ -13,18 +16,22 @@ let broadcastService: IntelligenceBroadcastService | null = null;
 /**
  * Initialize WebSocket server with HTTP server
  */
-export function initializeWebSocketServer(httpServer: HTTPServer): void {
+export async function initializeWebSocketServer(httpServer: HTTPServer): Promise<void> {
   if (wsServer) {
     console.warn('WebSocket server already initialized');
     return;
   }
 
   console.log('Initializing Intelligence WebSocket Server...');
-  
+
   try {
+    // Dynamic import to avoid bundling socket.io during build
+    const { IntelligenceWebSocketServer } = await import('~/lib/websocket/intelligence-websocket-server');
+    const { IntelligenceBroadcastService } = await import('~/lib/intelligence-broadcast-service');
+
     // Create WebSocket server
     wsServer = new IntelligenceWebSocketServer(httpServer);
-    
+
     // Create and start broadcast service
     broadcastService = new IntelligenceBroadcastService({
       websocketServer: wsServer,
@@ -35,15 +42,15 @@ export function initializeWebSocketServer(httpServer: HTTPServer): void {
         vitalityDrop: 10.0
       }
     });
-    
+
     broadcastService.start();
-    
+
     console.log('Intelligence WebSocket Server initialized successfully');
-    
+
     // Graceful shutdown handling
     process.on('SIGTERM', handleShutdown);
     process.on('SIGINT', handleShutdown);
-    
+
   } catch (error) {
     console.error('Failed to initialize WebSocket server:', error);
   }

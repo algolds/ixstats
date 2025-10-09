@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
+import { api } from "~/trpc/react";
 import { 
   Users, 
   FileText, 
@@ -24,16 +25,54 @@ interface ThinkPagesStatusCardProps {
 }
 
 export function ThinkPagesStatusCard({ userProfile, className = "", onCollapse }: ThinkPagesStatusCardProps) {
-  // Mock data for now - replace with real tRPC queries
+  // Fetch user's ThinkPages posts
+  const { data: postsData } = api.thinkpages.getAllPosts.useQuery(
+    { limit: 100 },
+    { enabled: !!userProfile }
+  );
+
+  // Fetch user's activities for collaboration count
+  const { data: activitiesData } = api.activities.getUserActivities.useQuery(
+    { userId: userProfile?.id || '', limit: 50 },
+    { enabled: !!userProfile }
+  );
+
+  // Calculate stats from real data
   const thinkPagesStats = {
-    userPosts: 12,
-    totalViews: 1247,
-    activeProjects: 3,
-    weeklyGrowth: 23,
-    lastActivity: "2 hours ago",
-    reputation: 892,
-    collaborations: 7
+    userPosts: postsData?.filter(post => post.authorId === userProfile?.id).length || 0,
+    totalViews: postsData?.reduce((sum, post) => sum + (post.views || 0), 0) || 0,
+    activeProjects: postsData?.filter(post =>
+      post.authorId === userProfile?.id &&
+      post.published
+    ).length || 0,
+    weeklyGrowth: Math.floor(
+      ((postsData?.filter(post => {
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return new Date(post.createdAt) > weekAgo;
+      }).length || 0) / 7) * 100
+    ),
+    lastActivity: activitiesData && activitiesData.length > 0
+      ? getRelativeTime(activitiesData[0]!.createdAt)
+      : "No recent activity",
+    reputation: userProfile?.achievements?.length ? userProfile.achievements.length * 100 : 100,
+    collaborations: activitiesData?.filter(a =>
+      a.type === 'collaboration' || a.type === 'diplomatic_action'
+    ).length || 0
   };
+
+  function getRelativeTime(date: Date | string): string {
+    const now = new Date();
+    const then = new Date(date);
+    const diffMs = now.getTime() - then.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+
+    if (diffHours < 1) return "just now";
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    return then.toLocaleDateString();
+  }
 
   return (
     <div className={className}>

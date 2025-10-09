@@ -19,20 +19,33 @@ import type { EconomyData } from '~/types/economics';
 interface CoreIndicatorsSectionProps extends SectionContentProps {
   inputs: EconomicInputs;
   onInputsChange: (inputs: EconomicInputs) => void;
-  referenceCountry: RealCountryData;
+  referenceCountry?: RealCountryData | null;
   showAdvanced?: boolean;
 }
 
-export function CoreIndicatorsSection({ 
-  inputs, 
+export function CoreIndicatorsSection({
+  inputs,
   onInputsChange,
   referenceCountry,
   showAdvanced = false
 }: CoreIndicatorsSectionProps) {
-  
+
+  // Ensure coreIndicators exists with defaults
+  const coreIndicators = inputs.coreIndicators || {
+    totalPopulation: 10000000,
+    nominalGDP: 250000000000,
+    gdpPerCapita: 25000,
+    realGDPGrowthRate: 3.0,
+    inflationRate: 2.0,
+    currencyExchangeRate: 1.0
+  };
+
   // Calculate derived metrics for overview cards
   const metrics = useMemo(() => {
-    const { totalPopulation, gdpPerCapita, realGDPGrowthRate, inflationRate } = inputs.coreIndicators;
+    const totalPopulation = Number(coreIndicators.totalPopulation) || 0;
+    const gdpPerCapita = Number(coreIndicators.gdpPerCapita) || 0;
+    const realGDPGrowthRate = Number(coreIndicators.realGDPGrowthRate) || 0;
+    const inflationRate = Number(coreIndicators.inflationRate) || 0;
     const nominalGDP = totalPopulation * gdpPerCapita;
     
     return [
@@ -75,26 +88,26 @@ export function CoreIndicatorsSection({
         changeUnit: "pp"
       }
     ];
-  }, [inputs.coreIndicators]);
+  }, [coreIndicators]);
 
   // Prepare comparison data for charts with guaranteed numeric values
   const comparisonData = [
     {
       name: inputs.countryName || 'Your Custom Country',
-      population: Number(inputs.coreIndicators?.totalPopulation) || 1000000,
-      gdpPerCapita: Number(inputs.coreIndicators?.gdpPerCapita) || 25000,
-      growthRate: Number(inputs.coreIndicators?.realGDPGrowthRate) || 2.1,
-      inflationRate: Number(inputs.coreIndicators?.inflationRate) || 2.2,
+      population: Number(coreIndicators.totalPopulation) || 1000000,
+      gdpPerCapita: Number(coreIndicators.gdpPerCapita) || 25000,
+      growthRate: Number(coreIndicators.realGDPGrowthRate) || 2.1,
+      inflationRate: Number(coreIndicators.inflationRate) || 2.2,
       color: 'blue'
     },
-    {
-      name: `${referenceCountry?.name || 'Foundation Country'} (Foundation)`,
-      population: Number(referenceCountry?.population) || 331000000,
-      gdpPerCapita: Number(referenceCountry?.gdpPerCapita) || 63544,
-      growthRate: Number(referenceCountry?.growthRate) || 2.3,
-      inflationRate: Number(referenceCountry?.inflationRate) || 3.1,
+    ...(referenceCountry ? [{
+      name: `${referenceCountry.name} (Foundation)`,
+      population: Number(referenceCountry.population) || 331000000,
+      gdpPerCapita: Number(referenceCountry.gdpPerCapita) || 63544,
+      growthRate: Number(referenceCountry.growthRate) || 2.3,
+      inflationRate: Number(referenceCountry.inflationRate) || 3.1,
       color: 'emerald'
-    }
+    }] : [])
   ];
 
 
@@ -141,11 +154,11 @@ export function CoreIndicatorsSection({
           <EnhancedNumberInput
             label="Total Population"
             description="The total number of people living in your country"
-            value={Number(inputs.coreIndicators?.totalPopulation) || 0}
+            value={Number(coreIndicators.totalPopulation) || 0}
             onChange={(value) => onInputsChange({
               ...inputs,
               coreIndicators: {
-                ...inputs.coreIndicators,
+                ...(inputs.coreIndicators || {}),
                 totalPopulation: Number(value),
                 nominalGDP: Number(value) * Number(inputs.coreIndicators?.gdpPerCapita || 0)
               }
@@ -157,22 +170,22 @@ export function CoreIndicatorsSection({
             sectionId="core"
             icon={Users}
             format={formatPopulation}
-            referenceValue={referenceCountry.population}
-            referenceLabel={referenceCountry.name}
-            showComparison={true}
+            referenceValue={referenceCountry?.population}
+            referenceLabel={referenceCountry?.name}
+            showComparison={!!referenceCountry}
             showButtons={true}
             showReset={true}
-            resetValue={referenceCountry.population}
+            resetValue={referenceCountry?.population}
           />
           
           <EnhancedNumberInput
             label="GDP per Capita"
             description="Average economic output per person (annual income proxy)"
-            value={Number(inputs.coreIndicators?.gdpPerCapita) || 0}
+            value={Number(coreIndicators.gdpPerCapita) || 0}
             onChange={(value) => onInputsChange({
               ...inputs,
               coreIndicators: {
-                ...inputs.coreIndicators,
+                ...(inputs.coreIndicators || {}),
                 gdpPerCapita: Number(value),
                 nominalGDP: Number(inputs.coreIndicators?.totalPopulation || 0) * Number(value)
               }
@@ -184,9 +197,9 @@ export function CoreIndicatorsSection({
             sectionId="core"
             icon={DollarSign}
             format={formatCurrency}
-            referenceValue={referenceCountry.gdpPerCapita}
-            referenceLabel={referenceCountry.name}
-            showComparison={true}
+            referenceValue={referenceCountry?.gdpPerCapita}
+            referenceLabel={referenceCountry?.name}
+            showComparison={!!referenceCountry}
             showButtons={true}
           />
         </div>
@@ -196,11 +209,11 @@ export function CoreIndicatorsSection({
           <EnhancedSlider
             label="Real GDP Growth Rate"
             description="Annual percentage change in economic output (inflation-adjusted)"
-            value={Number(inputs.coreIndicators.realGDPGrowthRate) || 0}
+            value={Number(coreIndicators.realGDPGrowthRate) || 0}
             onChange={(value) => onInputsChange({
               ...inputs,
               coreIndicators: {
-                ...inputs.coreIndicators,
+                ...(inputs.coreIndicators || {}),
                 realGDPGrowthRate: Number(value)
               }
             })}
@@ -215,19 +228,19 @@ export function CoreIndicatorsSection({
             tickCount={6}
             showValue={true}
             showRange={true}
-            referenceValue={referenceCountry.growthRate || 2.5}
-            referenceLabel={referenceCountry.name}
-            showComparison={true}
+            referenceValue={referenceCountry?.growthRate}
+            referenceLabel={referenceCountry?.name}
+            showComparison={!!referenceCountry}
           />
 
           <EnhancedSlider
             label="Inflation Rate"
             description="Annual percentage increase in general price levels"
-            value={Number(inputs.coreIndicators.inflationRate) || 0}
+            value={Number(coreIndicators.inflationRate) || 0}
             onChange={(value) => onInputsChange({
               ...inputs,
               coreIndicators: {
-                ...inputs.coreIndicators,
+                ...(inputs.coreIndicators || {}),
                 inflationRate: Number(value)
               }
             })}
@@ -242,9 +255,9 @@ export function CoreIndicatorsSection({
             tickCount={6}
             showValue={true}
             showRange={true}
-            referenceValue={referenceCountry.inflationRate || 2.0}
-            referenceLabel={referenceCountry.name}
-            showComparison={true}
+            referenceValue={referenceCountry?.inflationRate}
+            referenceLabel={referenceCountry?.name}
+            showComparison={!!referenceCountry}
           />
         </div>
       </div>
@@ -252,7 +265,7 @@ export function CoreIndicatorsSection({
       {/* Advanced Section */}
       {showAdvanced && (
         <div className="space-y-6 pt-6 border-t border-blue-200/30">
-          <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <h4 className="text-lg font-bold text-foreground flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
             Economic Comparison: Custom vs Foundation Country
           </h4>
@@ -267,7 +280,7 @@ export function CoreIndicatorsSection({
               xKey="name"
               yKey="gdpPerCapita"
               title="GDP per Capita Comparison"
-              description={`${inputs.countryName || 'Your Custom Country'} vs ${referenceCountry?.name || 'Foundation Country'}`}
+              description={referenceCountry ? `${inputs.countryName || 'Your Custom Country'} vs ${referenceCountry.name}` : inputs.countryName || 'Your Custom Country'}
               height={300}
               sectionId="core"
               formatValue={formatCurrency}
@@ -286,7 +299,7 @@ export function CoreIndicatorsSection({
               xKey="name"
               yKey={["growthRate", "inflationRate"]}
               title="Growth vs Inflation Rates"
-              description={`${inputs.countryName || 'Your Custom Country'} vs ${referenceCountry?.name || 'Foundation Country'} - Economic Performance Indicators`}
+              description={referenceCountry ? `${inputs.countryName || 'Your Custom Country'} vs ${referenceCountry.name} - Economic Performance Indicators` : `${inputs.countryName || 'Your Custom Country'} - Economic Performance Indicators`}
               height={300}
               sectionId="core"
               formatValue={(value) => `${value.toFixed(1)}%`}

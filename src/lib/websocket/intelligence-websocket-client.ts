@@ -1,14 +1,15 @@
 // WebSocket Client for Real-time Intelligence Updates
 // Frontend client for live intelligence data with automatic reconnection
 
-import * as socketIO from 'socket.io-client';
-const io = socketIO.default || socketIO;
-import type { 
-  IntelligenceUpdate, 
-  WebSocketClientState, 
+import type {
+  IntelligenceUpdate,
+  WebSocketClientState,
   WebSocketIntelligenceEvent,
   IntelligenceWebSocketHookOptions
 } from './types';
+
+// Dynamic import for socket.io-client to avoid SSR issues
+let io: any = null;
 
 export class IntelligenceWebSocketClient {
   private socket: any = null;
@@ -42,7 +43,18 @@ export class IntelligenceWebSocketClient {
   /**
    * Connect to WebSocket server
    */
-  public connect(userId: string, countryId?: string): Promise<void> {
+  public async connect(userId: string, countryId?: string): Promise<void> {
+    // Ensure we're in browser environment
+    if (typeof window === 'undefined') {
+      throw new Error('WebSocket client can only run in browser environment');
+    }
+
+    // Wait for socket.io-client to load
+    if (!io) {
+      const module = await import('socket.io-client');
+      io = module.default || module;
+    }
+
     return new Promise((resolve, reject) => {
       if (this.socket?.connected) {
         resolve();

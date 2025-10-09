@@ -126,7 +126,7 @@ export class PreviewConfigManager {
         "sdi",
         "eci"
       ],
-      mockDataEnabled: true,
+      mockDataEnabled: false, // Disabled - using real API data now
       debugMode: true,
       performanceMonitoring: true
     },

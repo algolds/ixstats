@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { GlassCard, GlassCardContent } from '../glass/GlassCard';
 import { MediaSearchModal } from '~/components/MediaSearchModal';
 import { CountrySymbolsUploader } from '../CountrySymbolsUploader';
 import { EnhancedNumberInput, EnhancedSlider, EnhancedToggle, MetricCard, CurrencySymbolPicker } from '../../primitives/enhanced';
@@ -32,7 +31,7 @@ import { wikiCommonsFlagService } from '~/lib/wiki-commons-flag-service';
 interface NationalIdentitySectionProps {
   inputs: EconomicInputs;
   onInputsChange: (inputs: EconomicInputs) => void;
-  referenceCountry: RealCountryData;
+  referenceCountry?: RealCountryData | null;
 }
 
 // Government type options
@@ -69,16 +68,20 @@ const GOVERNMENT_TYPES = [
 ];
 
 // Get the original foundation country name for Wiki Commons API calls
-function getFoundationCountryName(referenceCountry: RealCountryData): string {
+function getFoundationCountryName(referenceCountry: RealCountryData | null | undefined): string | null {
+  if (!referenceCountry) {
+    return null;
+  }
+
   if (referenceCountry.foundationCountryName) {
     return referenceCountry.foundationCountryName;
   }
-  
+
   const name = referenceCountry.name;
   if (name.startsWith('New ')) {
     return name.substring(4);
   }
-  
+
   return name;
 }
 
@@ -90,7 +93,7 @@ export function NationalIdentitySection({
   const [showFlagImageModal, setShowFlagImageModal] = useState(false);
   const [showCoatOfArmsImageModal, setShowCoatOfArmsImageModal] = useState(false);
   const foundationCountryName = getFoundationCountryName(referenceCountry);
-  const { flag } = useCountryFlag(foundationCountryName);
+  const { flag } = useCountryFlag(foundationCountryName || '');
   const [foundationCoatOfArmsUrl, setFoundationCoatOfArmsUrl] = useState<string | undefined>(undefined);
   const [selectedGovernmentType, setSelectedGovernmentType] = useState('republic');
   const [customOfficialName, setCustomOfficialName] = useState('');
@@ -151,7 +154,7 @@ export function NationalIdentitySection({
     }
   }, [flag?.flagUrl, foundationCoatOfArmsUrl, inputs.flagUrl, inputs.coatOfArmsUrl]);
 
-  const { handleColorsExtracted } = useBuilderTheming(foundationCountryName);
+  const { handleColorsExtracted } = useBuilderTheming(foundationCountryName || '');
 
   const handleIdentityChange = (field: keyof typeof identity, value: any) => {
     const newIdentity = { ...identity, [field]: value };
@@ -204,7 +207,7 @@ export function NationalIdentitySection({
   // Create a selector component for government type
   const GovernmentTypeSelector = () => (
     <div className="space-y-2">
-      <label className="flex items-center gap-2 text-sm font-semibold text-[var(--primitive-text)]">
+      <label className="flex items-center gap-2 text-sm font-medium text-foreground">
         <Crown className="h-4 w-4" />
         Government Type
       </label>
@@ -214,13 +217,13 @@ export function NationalIdentitySection({
           setSelectedGovernmentType(e.target.value);
           handleIdentityChange('governmentType', e.target.value);
         }}
-        className="w-full px-4 py-3 rounded-lg border border-amber-400/50 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-gray-900 dark:text-gray-100 focus:border-amber-400 focus:outline-none transition-all duration-200 hover:bg-white/95 dark:hover:bg-gray-800/95"
+        className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring transition-all duration-200 hover:bg-accent/5"
       >
         {GOVERNMENT_TYPES.map(type => (
-          <option 
-            key={type.value} 
+          <option
+            key={type.value}
             value={type.value}
-            className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+            className="bg-background text-foreground"
           >
             {type.label}
           </option>
@@ -235,7 +238,7 @@ export function NationalIdentitySection({
             handleIdentityChange('officialName', e.target.value);
           }}
           placeholder="Enter custom official name..."
-          className="w-full px-4 py-3 rounded-lg border border-amber-400/50 bg-[var(--primitive-background)]/80 backdrop-blur-sm text-[var(--primitive-text)] focus:border-amber-400 focus:outline-none transition-all duration-200"
+          className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring transition-all duration-200"
         />
       )}
     </div>
@@ -245,26 +248,24 @@ export function NationalIdentitySection({
     <>
       <div className="space-y-8">
         {/* National Symbols */}
-        <GlassCard depth="elevated" blur="medium">
-          <GlassCardContent>
-            <CountrySymbolsUploader
-              flagUrl={inputs.flagUrl ?? ''}
-              coatOfArmsUrl={inputs.coatOfArmsUrl ?? ''}
-              foundationCountry={{
-                name: foundationCountryName,
-                flagUrl: flag?.flagUrl ?? '',
-                coatOfArmsUrl: foundationCoatOfArmsUrl
-              }}
-              onSelectFlag={() => setShowFlagImageModal(true)}
-              onSelectCoatOfArms={() => setShowCoatOfArmsImageModal(true)}
-              onFlagUrlChange={handleFlagUrlChange}
-              onCoatOfArmsUrlChange={handleCoatOfArmsUrlChange}
-              onColorsExtracted={(colors) => {
-                handleColorsExtracted(colors);
-              }}
-            />
-          </GlassCardContent>
-        </GlassCard>
+        <div className="rounded-lg border border-border bg-card p-6">
+          <CountrySymbolsUploader
+            flagUrl={inputs.flagUrl ?? ''}
+            coatOfArmsUrl={inputs.coatOfArmsUrl ?? ''}
+            foundationCountry={foundationCountryName ? {
+              name: foundationCountryName,
+              flagUrl: flag?.flagUrl ?? '',
+              coatOfArmsUrl: foundationCoatOfArmsUrl
+            } : undefined}
+            onSelectFlag={() => setShowFlagImageModal(true)}
+            onSelectCoatOfArms={() => setShowCoatOfArmsImageModal(true)}
+            onFlagUrlChange={handleFlagUrlChange}
+            onCoatOfArmsUrlChange={handleCoatOfArmsUrlChange}
+            onColorsExtracted={(colors) => {
+              handleColorsExtracted(colors);
+            }}
+          />
+        </div>
 
         {/* Basic Identity Information */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -341,7 +342,7 @@ export function NationalIdentitySection({
               acceptText={true}
             />
             <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-semibold text-[var(--primitive-text)]">
+              <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <Coins className="h-4 w-4" />
                 Currency Symbol
               </label>
@@ -356,7 +357,7 @@ export function NationalIdentitySection({
 
         {/* National Mottos */}
         <div className="space-y-4">
-          <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <h4 className="text-xl font-bold text-foreground flex items-center gap-2">
             <Heart className="h-5 w-5" />
             National Mottos
           </h4>
@@ -385,7 +386,7 @@ export function NationalIdentitySection({
 
         {/* Languages and Culture */}
         <div className="space-y-4">
-          <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <h4 className="text-xl font-bold text-foreground flex items-center gap-2">
             <Languages className="h-5 w-5" />
             Languages & Culture
           </h4>
@@ -437,7 +438,7 @@ export function NationalIdentitySection({
 
         {/* Technical Information */}
         <div className="space-y-4">
-          <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <h4 className="text-xl font-bold text-foreground flex items-center gap-2">
             <Landmark className="h-5 w-5" />
             Technical Details
           </h4>
@@ -514,7 +515,7 @@ export function NationalIdentitySection({
             />
 
             <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-semibold text-[var(--primitive-text)]">
+              <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <Car className="h-4 w-4" />
                 Driving Side
               </label>
@@ -530,14 +531,14 @@ export function NationalIdentitySection({
             </div>
 
             <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-semibold text-[var(--primitive-text)]">
+              <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <Calendar className="h-4 w-4" />
                 Week Start Day
               </label>
               <select
                 value={identity.weekStartDay || 'monday'}
                 onChange={(e) => handleIdentityChange('weekStartDay', e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-amber-400/50 bg-[var(--primitive-background)]/80 backdrop-blur-sm text-[var(--primitive-text)] focus:border-amber-400 focus:outline-none transition-all duration-200"
+                className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring transition-all duration-200"
               >
                 <option value="monday">Monday</option>
                 <option value="sunday">Sunday</option>
@@ -559,7 +560,7 @@ export function NationalIdentitySection({
 
           {/* Geographic Coordinates */}
           <div className="mt-6">
-            <h5 className="text-base font-semibold text-foreground flex items-center gap-2 mb-4">
+            <h5 className="text-lg font-bold text-foreground flex items-center gap-2 mb-4">
               <MapIcon className="h-4 w-4" />
               Geographic Coordinates (Capital City)
             </h5>

@@ -17,3 +17,6 @@ export { NationalIdentitySection } from '../components/enhanced/NationalIdentity
 
 // Government Structure section
 export { GovernmentStructureSection } from './GovernmentStructureSection';
+
+// Comprehensive Economy section
+export { EconomySection } from './EconomySection';

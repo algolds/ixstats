@@ -86,14 +86,14 @@ export function EnhancedSelector({
       {(label || description) && (
         <div className="space-y-1">
           {label && (
-            <label className="flex items-center gap-2 text-sm font-semibold text-[var(--primitive-text)]">
+            <label className="flex items-center gap-2 text-sm font-medium text-foreground">
               {Icon && <Icon className="h-4 w-4" />}
               {label}
               {required && <span className="text-red-400">*</span>}
             </label>
           )}
           {description && (
-            <p className="text-xs text-[var(--primitive-muted)]">{description}</p>
+            <p className="text-xs text-muted-foreground">{description}</p>
           )}
         </div>
       )}
@@ -120,7 +120,7 @@ export function EnhancedSelector({
             )}
             <span className={cn(
               'truncate',
-              selectedOption ? 'text-[var(--primitive-text)]' : 'text-[var(--primitive-muted)]'
+              selectedOption ? 'text-foreground' : 'text-muted-foreground'
             )}>
               {selectedOption?.label || placeholder}
             </span>
@@ -130,7 +130,7 @@ export function EnhancedSelector({
             animate={{ rotate: isOpen ? 180 : 0 }}
             transition={{ duration: 0.2 }}
           >
-            <ChevronDown className="h-4 w-4 text-[var(--primitive-muted)]" />
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
           </motion.div>
         </motion.button>
 
@@ -178,11 +178,11 @@ export function EnhancedSelector({
                     {option.icon && <option.icon className="h-4 w-4 flex-shrink-0" />}
                     
                     <div className="flex-1 min-w-0 text-left">
-                      <div className="text-[var(--primitive-text)] truncate">
+                      <div className="text-foreground truncate">
                         {option.label}
                       </div>
                       {option.description && (
-                        <div className="text-xs text-[var(--primitive-muted)] truncate">
+                        <div className="text-xs text-muted-foreground truncate">
                           {option.description}
                         </div>
                       )}
@@ -196,7 +196,7 @@ export function EnhancedSelector({
                 
                 {filteredOptions.length === 0 && (
                   <div className={cn(
-                    'text-center text-[var(--primitive-muted)] py-8',
+                    'text-center text-muted-foreground py-8',
                     config.option
                   )}>
                     No options found

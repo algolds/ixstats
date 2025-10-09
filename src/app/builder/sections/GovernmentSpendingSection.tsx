@@ -98,30 +98,30 @@ export function GovernmentSpendingSection({
   return (
     <div className="space-y-6">
       {/* Budget Balance Indicator */}
-      <div className="bg-[var(--color-bg-secondary)]/50 rounded-lg p-4 border border-[var(--color-border-primary)]">
+      <div className="bg-card rounded-lg p-4 border border-border">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-medium text-[var(--color-text-secondary)]">
+          <span className="text-sm font-medium text-muted-foreground">
             Budget Allocation Total
           </span>
           <div className={cn(
             'text-lg font-bold',
-            isValidBudget 
-              ? 'text-[var(--color-success)]' 
-              : 'text-[var(--color-error)]'
+            isValidBudget
+              ? 'text-green-600 dark:text-green-400'
+              : 'text-red-600 dark:text-red-400'
           )}>
             {totalSpending.toFixed(1)}%
           </div>
         </div>
         <div className="flex items-center justify-between">
-          <div className="flex-1 bg-[var(--color-bg-tertiary)] rounded-full h-2">
+          <div className="flex-1 bg-secondary rounded-full h-2">
             <div
               className={cn(
                 'h-2 rounded-full transition-all duration-300',
-                isValidBudget 
-                  ? 'bg-[var(--color-success)]' 
-                  : totalSpending > 100 
-                    ? 'bg-[var(--color-error)]' 
-                    : 'bg-[var(--color-warning)]'
+                isValidBudget
+                  ? 'bg-green-600 dark:bg-green-400'
+                  : totalSpending > 100
+                    ? 'bg-red-600 dark:bg-red-400'
+                    : 'bg-yellow-600 dark:bg-yellow-400'
               )}
               style={{ width: `${Math.min(100, totalSpending)}%` }}
             />
@@ -244,7 +244,7 @@ export function GovernmentSpendingSection({
 
       {/* Spending Policy Toggles */}
       <div className="space-y-4">
-        <h4 className="text-lg font-semibold text-[var(--color-text-primary)]">Spending Policies</h4>
+        <h4 className="text-xl font-bold text-foreground">Spending Policies</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <EnhancedToggle
             label="Performance-Based Budgeting"

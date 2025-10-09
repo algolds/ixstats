@@ -56,13 +56,13 @@ function ChartTooltip({ active, payload, label, formatValue, colors }: ChartTool
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       className={cn(
-        'backdrop-blur-md bg-white/95 dark:bg-gray-800/95',
+        'bg-white/95 dark:bg-gray-800/95',
         'border border-gray-200/50 dark:border-gray-600/50',
         'rounded-lg p-3 shadow-xl dark:shadow-gray-900/50'
       )}
     >
       {label && (
-        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
+        <p className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-2">
           {label}
         </p>
       )}
@@ -75,7 +75,7 @@ function ChartTooltip({ active, payload, label, formatValue, colors }: ChartTool
             />
             <span className="text-gray-900 dark:text-gray-100">
               {entry.name}: 
-              <span className="font-mono ml-1">
+              <span className="ml-1">
                 {formatValue ? formatValue(entry.value) : entry.value}
               </span>
             </span>
@@ -177,7 +177,7 @@ export function EnhancedBarChart({
       >
         {title && (
           <div className="space-y-1">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{title}</h3>
             {description && (
               <p className="text-sm text-gray-600 dark:text-gray-400">{description}</p>
             )}
@@ -209,7 +209,7 @@ export function EnhancedBarChart({
         style={cssVars as React.CSSProperties}
       >
         {title && (
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{title}</h3>
         )}
         
         <div 
@@ -239,7 +239,7 @@ export function EnhancedBarChart({
       {(title || description) && (
         <div className="space-y-1">
           {title && (
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
               {title}
             </h3>
           )}

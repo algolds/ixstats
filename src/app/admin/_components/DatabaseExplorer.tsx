@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { api } from "~/trpc/react";
 import { 
   Database,
   Table,
@@ -150,36 +151,70 @@ export function DatabaseExplorer() {
     }
   ]);
 
+  // Fetch real data from API for query execution
+  const { data: countriesData } = api.countries.getAll.useQuery(undefined, {
+    enabled: false // Only fetch when needed
+  });
+
+  const { refetch: fetchCountries } = api.countries.getAll.useQuery(undefined, {
+    enabled: false
+  });
+
   const executeQuery = async () => {
     setIsExecuting(true);
     setQueryError(null);
-    
+
     try {
-      // Simulate query execution
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 300));
-      
-      // Mock query results based on query type
-      if (sqlQuery.toLowerCase().includes('select')) {
-        const mockResult: QueryResult = {
-          columns: ["id", "name", "population", "gdpPerCapita"],
+      const startTime = Date.now();
+
+      // Parse the query to determine what data to fetch
+      const queryLower = sqlQuery.toLowerCase();
+
+      if (queryLower.includes('select') && queryLower.includes('country')) {
+        // Fetch real country data
+        const result = await fetchCountries();
+
+        if (result.data) {
+          const queryResult: QueryResult = {
+            columns: ["id", "name", "population", "gdpPerCapita", "economicTier", "diplomaticStanding"],
+            rows: result.data.slice(0, 10).map(country => [
+              country.id,
+              country.name,
+              country.currentPopulation,
+              country.currentGdpPerCapita,
+              country.economicTier,
+              country.diplomaticStanding
+            ]),
+            executionTime: Date.now() - startTime
+          };
+          setQueryResult(queryResult);
+        }
+      } else if (queryLower.includes('select')) {
+        // For other SELECT queries, return schema information
+        const queryResult: QueryResult = {
+          columns: ["table_name", "column_name", "data_type", "is_nullable"],
           rows: [
-            ["1", "United States", 331900000, 63543.58],
-            ["2", "China", 1439323776, 10500.40],
-            ["3", "Japan", 125960000, 39048.68],
-            ["4", "Germany", 83240525, 46258.88],
-            ["5", "United Kingdom", 67220000, 40284.64]
+            ["Country", "id", "String", "NO"],
+            ["Country", "name", "String", "NO"],
+            ["Country", "currentPopulation", "BigInt", "NO"],
+            ["Country", "currentGdpPerCapita", "Float", "NO"],
+            ["User", "id", "String", "NO"],
+            ["User", "clerkUserId", "String", "YES"],
+            ["User", "email", "String", "YES"]
           ],
-          executionTime: Math.random() * 500 + 100
+          executionTime: Date.now() - startTime
         };
-        setQueryResult(mockResult);
+        setQueryResult(queryResult);
       } else {
-        const mockResult: QueryResult = {
+        // For non-SELECT queries (INSERT, UPDATE, DELETE)
+        const queryResult: QueryResult = {
           columns: [],
           rows: [],
-          executionTime: Math.random() * 200 + 50,
-          affectedRows: Math.floor(Math.random() * 10) + 1
+          executionTime: Date.now() - startTime,
+          affectedRows: 0,
+          message: "Read-only mode: Write operations are disabled in this interface"
         };
-        setQueryResult(mockResult);
+        setQueryResult(queryResult);
       }
     } catch (error) {
       setQueryError(error instanceof Error ? error.message : "Query execution failed");

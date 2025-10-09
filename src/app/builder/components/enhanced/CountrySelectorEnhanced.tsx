@@ -18,12 +18,14 @@ interface CountrySelectorEnhancedProps {
   onCountrySelect: (country: RealCountryData) => void;
   onCardHoverChange: (countryId: string | null) => void;
   onBackToIntro?: () => void;
+  onCreateFromScratch?: () => void;
 }
 
 export function CountrySelectorEnhanced({
   countries,
   onCountrySelect,
-  onBackToIntro
+  onBackToIntro,
+  onCreateFromScratch
 }: CountrySelectorEnhancedProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedArchetypes, setSelectedArchetypes] = useState<string[]>([]);
@@ -142,10 +144,7 @@ export function CountrySelectorEnhanced({
         countries={countries || []}
         selectedArchetypes={selectedArchetypes}
         onArchetypeSelect={setSelectedArchetypes}
-        onArchetypeComposer={() => {
-          // TODO: Implement archetype composer functionality
-          console.log('Archetype Composer clicked');
-        }}
+        onCreateFromScratch={onCreateFromScratch}
       />
       
       {/* Header - Full Width Centered */}

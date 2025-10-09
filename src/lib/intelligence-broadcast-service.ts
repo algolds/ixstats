@@ -1,12 +1,15 @@
 // Intelligence Broadcasting Service
 // Orchestrates real-time intelligence updates and notifications
 
+import 'server-only';
 import { IxTime } from './ixtime';
 import { db } from '~/server/db';
-import type { IntelligenceWebSocketServer } from './websocket/intelligence-websocket-server';
 import type { IntelligenceUpdate } from './websocket/types';
 import type { Country } from '@prisma/client';
 import { standardize } from './interface-standardizer';
+
+// Use any type to avoid importing socket.io during build
+type IntelligenceWebSocketServer = any;
 
 interface IntelligenceBroadcastServiceOptions {
   websocketServer?: IntelligenceWebSocketServer;
