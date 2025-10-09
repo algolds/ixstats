@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     console.log(`[FlagDownload] Downloading ${flagUrl} for ${countryName}`);
     const imageResponse = await fetch(flagUrl, {
       headers: {
-        'User-Agent': 'IxStats/1.0 Flag Cache System'
+        'User-Agent': 'IxStats-Builder'
       }
     });
     

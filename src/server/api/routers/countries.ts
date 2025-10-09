@@ -2667,6 +2667,114 @@ const countriesRouter = createTRPCRouter({
       
       return effectiveness;
     }),
+  // Create a new country from builder
+  createCountry: protectedProcedure
+    .input(z.object({
+      name: z.string(),
+      foundationCountry: z.string().nullable(),
+      economicInputs: z.any(), // Economic data from builder
+      governmentComponents: z.array(z.any()).optional(),
+      taxSystemData: z.any().optional(),
+      governmentStructure: z.any().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Get user ID from Clerk
+      const userId = ctx.session?.userId;
+      if (!userId) {
+        throw new Error("User not authenticated");
+      }
+
+      // Check if user already has a country
+      const existingCountry = await ctx.db.country.findFirst({
+        where: { ownerId: userId }
+      });
+
+      if (existingCountry) {
+        // Return the existing country instead of throwing an error
+        return existingCountry;
+      }
+
+      // Get foundation country data if provided
+      let foundationData: any = null;
+      if (input.foundationCountry) {
+        const foundationCountry = await ctx.db.country.findFirst({
+          where: { 
+            OR: [
+              { countryCode: input.foundationCountry },
+              { name: input.foundationCountry }
+            ]
+          }
+        });
+        if (foundationCountry) {
+          foundationData = {
+            baselinePopulation: foundationCountry.baselinePopulation,
+            baselineGdpPerCapita: foundationCountry.baselineGdpPerCapita,
+            continent: foundationCountry.continent,
+            region: foundationCountry.region,
+            landArea: foundationCountry.landArea,
+            areaSqMi: foundationCountry.areaSqMi,
+          };
+        }
+      }
+
+      // Create unique country code
+      const countryCode = `${input.name.substring(0, 3).toUpperCase()}_${Date.now().toString(36).toUpperCase()}`;
+
+      // Create the country
+      const country = await ctx.db.country.create({
+        data: {
+          name: input.name,
+          countryCode: countryCode,
+          ownerId: userId,
+          isPlayerCountry: true,
+          continent: foundationData?.continent || "Unknown",
+          region: foundationData?.region || "Unknown",
+          governmentType: input.governmentStructure?.governmentType || "Republic",
+          religion: input.economicInputs?.religion || "Secular",
+          leader: input.economicInputs?.leaderName || "Unknown",
+          capital: input.economicInputs?.capitalCity || "Capital City",
+          baselinePopulation: foundationData?.baselinePopulation || input.economicInputs?.population || 10000000,
+          baselineGdpPerCapita: foundationData?.baselineGdpPerCapita || input.economicInputs?.gdpPerCapita || 10000,
+          currentPopulation: foundationData?.baselinePopulation || input.economicInputs?.population || 10000000,
+          currentGdpPerCapita: foundationData?.baselineGdpPerCapita || input.economicInputs?.gdpPerCapita || 10000,
+          landArea: foundationData?.landArea || 100000,
+          areaSqMi: foundationData?.areaSqMi || 38610,
+          baselineDate: new Date(),
+          maxGdpGrowthRate: 0.05,
+          adjustedGdpGrowth: 0.03,
+          populationGrowthRate: 0.01,
+          actualGdpGrowth: 0.03,
+          localGrowthFactor: 1.0,
+          economicTier: getEconomicTierFromGdpPerCapita(foundationData?.baselineGdpPerCapita || input.economicInputs?.gdpPerCapita || 10000),
+          populationTier: "2",
+          // Economic data from builder
+          nominalGDP: input.economicInputs?.nominalGDP || 0,
+          realGDPGrowthRate: input.economicInputs?.realGDPGrowthRate || 0,
+          inflationRate: input.economicInputs?.inflationRate || 0,
+          currencyExchangeRate: input.economicInputs?.currencyExchangeRate || 1,
+          laborForceParticipationRate: input.economicInputs?.laborForceParticipationRate || 65,
+          employmentRate: input.economicInputs?.employmentRate || 95,
+          unemploymentRate: input.economicInputs?.unemploymentRate || 5,
+          taxRevenueGDPPercent: input.taxSystemData?.totalTaxRate || 25,
+          governmentBudgetGDPPercent: input.economicInputs?.governmentBudgetGDPPercent || 30,
+          povertyRate: input.economicInputs?.povertyRate || 10,
+          incomeInequalityGini: input.economicInputs?.incomeInequalityGini || 0.35,
+          lifeExpectancy: input.economicInputs?.lifeExpectancy || 75,
+          urbanPopulationPercent: input.economicInputs?.urbanPopulationPercent || 60,
+          literacyRate: input.economicInputs?.literacyRate || 95,
+        }
+      });
+
+      // Generate initial activity
+      try {
+        const activityGenerator = new ActivityGenerator();
+        await activityGenerator.generateCountryCreatedActivity(country);
+      } catch (error) {
+        console.error("Failed to generate activity:", error);
+      }
+
+      return country;
+    }),
 });
 
 export { countriesRouter };

@@ -2,7 +2,6 @@
 // Populates the database with realistic mock data for demonstration
 
 import { type PrismaClient } from "@prisma/client";
-import { MockDataGenerator, generatePreviewCountries } from "./mock-data-generator";
 import { IxTime } from "./ixtime";
 import { IxStatsCalculator } from "./calculations";
 import { generateSlug } from "./slug-utils";

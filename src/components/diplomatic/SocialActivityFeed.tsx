@@ -267,10 +267,10 @@ const SocialActivityFeedComponent: React.FC<SocialActivityFeedProps> = ({
             visibility: 'public'
           },
           interactions: {
-            likes: Math.floor(Math.random() * 50) + 10,
-            comments: Math.floor(Math.random() * 20),
-            shares: Math.floor(Math.random() * 15),
-            bookmarks: Math.floor(Math.random() * 10)
+            likes: item.views || Math.max(10, Math.floor(item.priority === 'critical' ? 100 : item.priority === 'high' ? 50 : 20)),
+            comments: Math.floor((item.views || 20) * 0.2),
+            shares: Math.floor((item.views || 20) * 0.15),
+            bookmarks: Math.floor((item.views || 20) * 0.1)
           },
           tags: [item.type || 'intelligence', item.region || 'global'].filter(Boolean) as string[],
           trend: (item.priority === 'critical' ? 'breaking' : 
@@ -307,10 +307,10 @@ const SocialActivityFeedComponent: React.FC<SocialActivityFeedProps> = ({
                        activity.classification?.toLowerCase() === 'restricted' ? 'restricted' : 'public') as 'public' | 'restricted' | 'confidential'
           },
           interactions: {
-            likes: Math.floor(Math.random() * 30) + 5,
-            comments: Math.floor(Math.random() * 15),
-            shares: Math.floor(Math.random() * 10),
-            bookmarks: Math.floor(Math.random() * 8)
+            likes: Math.max(5, Math.floor(activity.importance === 'high' ? 50 : activity.importance === 'medium' ? 30 : 15)),
+            comments: Math.floor(activity.importance === 'high' ? 10 : activity.importance === 'medium' ? 5 : 2),
+            shares: Math.floor(activity.importance === 'high' ? 8 : activity.importance === 'medium' ? 4 : 1),
+            bookmarks: Math.floor(activity.importance === 'high' ? 6 : activity.importance === 'medium' ? 3 : 1)
           },
           tags: [activity.activityType, activity.classification.toLowerCase()] as string[],
           relatedAchievements: (activity.relatedCountries && activity.relatedCountries.length > 0) ? ['diplomatic_action'] : undefined

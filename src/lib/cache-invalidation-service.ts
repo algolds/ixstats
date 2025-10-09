@@ -4,7 +4,9 @@
 import { intelligenceCache } from '~/lib/intelligence-cache';
 import { optimizedQueryService } from '~/server/services/optimized-query-service';
 import type { IntelligenceUpdate } from '~/lib/websocket/types';
-import type { IntelligenceWebSocketServer } from '~/lib/websocket/intelligence-websocket-server';
+
+// Use any type to avoid importing socket.io during build
+type IntelligenceWebSocketServer = any;
 
 interface InvalidationRule {
   pattern: RegExp | string;
@@ -414,8 +416,22 @@ export class CacheInvalidationService {
   }
 }
 
-// Global cache invalidation service instance
-export const cacheInvalidationService = new CacheInvalidationService();
+// Global cache invalidation service instance - lazy initialization to avoid build-time instantiation
+let _cacheInvalidationServiceInstance: CacheInvalidationService | undefined;
+
+export function getCacheInvalidationService(): CacheInvalidationService {
+  if (!_cacheInvalidationServiceInstance) {
+    _cacheInvalidationServiceInstance = new CacheInvalidationService();
+  }
+  return _cacheInvalidationServiceInstance;
+}
+
+// Backward compatibility - export as const but lazy load
+export const cacheInvalidationService = new Proxy({} as CacheInvalidationService, {
+  get(target, prop) {
+    return getCacheInvalidationService()[prop as keyof CacheInvalidationService];
+  }
+});
 
 /**
  * Integration utilities for connecting with existing systems

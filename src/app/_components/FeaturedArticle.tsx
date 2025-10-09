@@ -590,7 +590,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
           const resp = await fetch(apiUrl, {
             signal: controller.signal,
             headers: {
-              'User-Agent': 'IxStats/1.0 (Featured Article Component)',
+              'User-Agent': 'IxStats-Builder',
               'Accept': 'application/json, text/plain, */*'
             }
           });

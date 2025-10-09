@@ -195,22 +195,22 @@ export function EnhancedSlider({
           {(label || showValue) && (
             <div className="flex items-center justify-between">
               {label && (
-                <label className="flex items-center gap-2 text-sm font-semibold text-[var(--primitive-text)]">
+                <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                   {Icon && <Icon className="h-4 w-4" />}
                   {label}
                   {required && <span className="text-red-400">*</span>}
                 </label>
               )}
               {showValue && (
-                <motion.div className="flex items-center gap-1 text-sm font-mono text-[var(--primitive-text)]">
-                  <motion.span>{Number(animatedPercentage).toFixed(precision)}</motion.span>
-                  {unit && <span className="text-[var(--primitive-muted)]">{unit}</span>}
+                <motion.div className="flex items-center gap-1 text-sm text-foreground">
+                  <motion.span>{!isNaN(numericValue) ? numericValue.toFixed(precision) : '0'}</motion.span>
+                  {unit && <span className="text-muted-foreground">{unit}</span>}
                 </motion.div>
               )}
             </div>
           )}
           {description && (
-            <p className="text-xs text-[var(--primitive-muted)]">{description}</p>
+            <p className="text-xs text-muted-foreground">{description}</p>
           )}
         </div>
       )}
@@ -232,7 +232,7 @@ export function EnhancedSlider({
             'relative cursor-pointer will-change-transform rounded-full overflow-hidden',
             'bg-gray-100/80 dark:bg-gray-800/80',
             'border border-gray-200/40 dark:border-gray-700/40',
-            'backdrop-blur-sm transition-all duration-300 ease-out',
+            'transition-all duration-300 ease-out',
             isHovered && 'shadow-lg',
             orientation === 'horizontal' ? 'w-full' : 'h-40 w-fit mx-auto'
           )}
@@ -252,7 +252,7 @@ export function EnhancedSlider({
             className={cn(
               'absolute rounded-full transition-all duration-200',
               isDragging && 'shadow-lg scale-[1.02]',
-              'bg-gradient-to-r from-[var(--primitive-primary)] to-[var(--primitive-accent)]'
+              'bg-blue-500 dark:bg-blue-600'
             )}
             style={{
               [orientation === 'horizontal' ? 'width' : 'height']: `${percentage}%`,
@@ -260,7 +260,7 @@ export function EnhancedSlider({
               [orientation === 'horizontal' ? 'left' : 'bottom']: 0
             }}
             animate={{
-              opacity: isDragging ? 0.9 : 0.8,
+              opacity: isDragging ? 1 : 0.95,
               scale: isDragging ? 1.02 : 1
             }}
             transition={{ duration: 0.15, ease: "easeOut" }}
@@ -304,14 +304,7 @@ export function EnhancedSlider({
               width: `${config.thumb}px`,
               height: `${config.thumb}px`,
               [orientation === 'horizontal' ? 'top' : 'left']: `${-config.thumb / 2 + config.track / 2}px`,
-              transform: orientation === 'horizontal' ? 'translateX(-50%)' : 'translateX(-50%)',
-              background: `linear-gradient(135deg, color-mix(in srgb, ${colors.primary} 93%, transparent), color-mix(in srgb, ${colors.accent} 80%, transparent))`,
-              borderColor: colors.accent,
-              boxShadow: isDragging 
-                ? `0 12px 40px color-mix(in srgb, ${colors.primary} 25%, transparent), 0 4px 16px color-mix(in srgb, ${colors.primary} 19%, transparent)`
-                : isHovered 
-                ? `0 8px 32px color-mix(in srgb, ${colors.primary} 19%, transparent), 0 2px 12px color-mix(in srgb, ${colors.primary} 13%, transparent)`
-                : `0 4px 16px color-mix(in srgb, ${colors.primary} 13%, transparent), 0 1px 6px color-mix(in srgb, ${colors.primary} 8%, transparent)`
+              transform: orientation === 'horizontal' ? 'translateX(-50%)' : 'translateX(-50%)'
             }}
             onMouseDown={handleMouseDown}
             onTouchStart={handleTouchStart}
@@ -345,19 +338,16 @@ export function EnhancedSlider({
               }
             }}
           >
-            {/* Thumb Inner Glow */}
-            <div 
-              className="absolute inset-1 rounded-full opacity-60"
-              style={{
-                background: `radial-gradient(circle, ${colors.accent}, transparent 70%)`
-              }}
+            {/* Thumb Inner Dot */}
+            <div
+              className="absolute inset-[30%] rounded-full bg-blue-500 dark:bg-blue-400 opacity-80"
             />
           </motion.div>
         </motion.div>
 
         {/* Range Display */}
         {showRange && (
-          <div className="flex justify-between mt-2 text-xs text-[var(--primitive-muted)]">
+          <div className="flex justify-between mt-2 text-xs text-muted-foreground">
             <span>{min}{unit}</span>
             <span>{max}{unit}</span>
           </div>
@@ -368,7 +358,7 @@ export function EnhancedSlider({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="mt-2 text-xs text-[var(--primitive-muted)]"
+            className="mt-2 text-xs text-muted-foreground"
           >
             Reference ({referenceLabel}): {referenceValue.toFixed(precision)}{unit}
           </motion.div>

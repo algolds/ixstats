@@ -1,0 +1,233 @@
+==========================================
+IIWiki API Test - Cloudflare Debugging
+==========================================
+
+Server Information:
+  IP Address: 45.32.6.57
+  Date/Time: 2025-10-08 13:57:24 UTC
+
+Testing direct access to iiwiki.com API...
+
+----------------------------------------
+Test 1: Direct API Request
+----------------------------------------
+URL: https://iiwiki.com/mediawiki/api.php?action=query&format=json&meta=siteinfo
+User-Agent: IxStats-Builder
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0* Host iiwiki.com:443 was resolved.
+* IPv6: 2606:4700:3031::6815:334e, 2606:4700:3033::ac43:b162
+* IPv4: 172.67.177.98, 104.21.51.78
+*   Trying [2606:4700:3031::6815:334e]:443...
+* Connected to iiwiki.com (2606:4700:3031::6815:334e) port 443
+* ALPN: curl offers h2,http/1.1
+} [5 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+} [512 bytes data]
+*  CAfile: /usr/lib/ssl/cert.pem
+*  CApath: /usr/lib/ssl/certs
+{ [5 bytes data]
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+{ [122 bytes data]
+* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+{ [19 bytes data]
+* TLSv1.3 (IN), TLS handshake, Certificate (11):
+{ [2525 bytes data]
+* TLSv1.3 (IN), TLS handshake, CERT verify (15):
+{ [78 bytes data]
+* TLSv1.3 (IN), TLS handshake, Finished (20):
+{ [52 bytes data]
+* TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
+} [1 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Finished (20):
+} [52 bytes data]
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519 / id-ecPublicKey
+* ALPN: server accepted h2
+* Server certificate:
+*  subject: CN=iiwiki.com
+*  start date: Sep 10 03:44:04 2025 GMT
+*  expire date: Dec  9 04:41:16 2025 GMT
+*  subjectAltName: host "iiwiki.com" matched cert's "iiwiki.com"
+*  issuer: C=US; O=Google Trust Services; CN=WE1
+*  SSL certificate verify ok.
+*   Certificate level 0: Public key type EC/prime256v1 (256/128 Bits/secBits), signed using ecdsa-with-SHA256
+*   Certificate level 1: Public key type EC/prime256v1 (256/128 Bits/secBits), signed using ecdsa-with-SHA384
+*   Certificate level 2: Public key type EC/secp384r1 (384/192 Bits/secBits), signed using ecdsa-with-SHA384
+} [5 bytes data]
+* using HTTP/2
+* [HTTP/2] [1] OPENED stream for https://iiwiki.com/mediawiki/api.php?action=query&format=json&meta=siteinfo
+* [HTTP/2] [1] [:method: GET]
+* [HTTP/2] [1] [:scheme: https]
+* [HTTP/2] [1] [:authority: iiwiki.com]
+* [HTTP/2] [1] [:path: /mediawiki/api.php?action=query&format=json&meta=siteinfo]
+* [HTTP/2] [1] [user-agent: IxStats-Builder]
+* [HTTP/2] [1] [accept: application/json]
+* [HTTP/2] [1] [accept-language: en-US,en;q=0.9]
+} [5 bytes data]
+> GET /mediawiki/api.php?action=query&format=json&meta=siteinfo HTTP/2
+> Host: iiwiki.com
+> User-Agent: IxStats-Builder
+> Accept: application/json
+> Accept-Language: en-US,en;q=0.9
+> 
+{ [5 bytes data]
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+{ [230 bytes data]
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+{ [230 bytes data]
+* old SSL session ID is stale, removing
+{ [5 bytes data]
+< HTTP/2 403 
+< date: Wed, 08 Oct 2025 13:57:24 GMT
+< content-type: text/html; charset=UTF-8
+< accept-ch: Sec-CH-UA-Bitness, Sec-CH-UA-Arch, Sec-CH-UA-Full-Version, Sec-CH-UA-Mobile, Sec-CH-UA-Model, Sec-CH-UA-Platform-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Platform, Sec-CH-UA, UA-Bitness, UA-Arch, UA-Full-Version, UA-Mobile, UA-Model, UA-Platform-Version, UA-Platform, UA
+< cf-mitigated: challenge
+< critical-ch: Sec-CH-UA-Bitness, Sec-CH-UA-Arch, Sec-CH-UA-Full-Version, Sec-CH-UA-Mobile, Sec-CH-UA-Model, Sec-CH-UA-Platform-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Platform, Sec-CH-UA, UA-Bitness, UA-Arch, UA-Full-Version, UA-Mobile, UA-Model, UA-Platform-Version, UA-Platform, UA
+< cross-origin-embedder-policy: require-corp
+< cross-origin-opener-policy: same-origin
+< cross-origin-resource-policy: same-origin
+< origin-agent-cluster: ?1
+< permissions-policy: accelerometer=(),autoplay=(),browsing-topics=(),camera=(),clipboard-read=(),clipboard-write=(),geolocation=(),gyroscope=(),hid=(),interest-cohort=(),magnetometer=(),microphone=(),payment=(),publickey-credentials-get=(),screen-wake-lock=(),serial=(),sync-xhr=(),usb=()
+< server-timing: chlray;desc="98b625ac0ec6762c"
+< cache-control: private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0
+< expires: Thu, 01 Jan 1970 00:00:01 GMT
+< report-to: {"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v4?s=ZRO3HJijQusTI1Fuzs8j9A9OCKIGhKXKM57Bxu10OGHW4T0IbPF1oLWgbzsE4FWsmNX8xL%2F3jRQp%2F%2FGIE04le0zRqFuNiMr8jPJY5SGV90bcMw4hCfYCghZ7Rmt1KSu16Lw1i8rQ4eZV"}],"group":"cf-nel","max_age":604800}
+< nel: {"success_fraction":0,"report_to":"cf-nel","max_age":604800}
+< expect-ct: max-age=86400, enforce
+< referrer-policy: same-origin
+< x-content-type-options: nosniff
+< x-frame-options: SAMEORIGIN
+< x-xss-protection: 1; mode=block
+< server: cloudflare
+< cf-ray: 98b625ac0ec6762c-EWR
+< alt-svc: h3=":443"; ma=86400
+< server-timing: cfL4;desc="?proto=TCP&rtt=1522&min_rtt=1454&rtt_var=349&sent=7&recv=10&lost=0&retrans=0&sent_bytes=3404&recv_bytes=838&delivery_rate=2650065&cwnd=254&unsent_bytes=0&cid=489fd6dfffa4eb9f&ts=83&x=0"
+< 
+{ [7147 bytes data]
+<!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=Edge"><meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{box-sizing:border-box;margin:0;padding:0}html{line-height:1.15;-webkit-text-size-adjust:100%;color:#313131;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji"}body{display:flex;flex-direction:column;height:100vh;min-height:100vh}.main-content{margin:8rem auto;padding-left:1.5rem;max-width:60rem}@media (width <= 720px){.main-content{margin-top:4rem}}.h2{line-height:2.25rem;font-size:1.5rem;font-weight:500}@media (width <= 720px){.h2{line-height:1.5rem;font-size:1.25rem}}#challenge-error-text{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgZmlsbD0ibm9uZSI+PHBhdGggZmlsbD0iI0IyMEYwMyIgZD0iTTE2IDNhMTMgMTMgMCAxIDAgMTMgMTNBMTMuMDE1IDEzLjAxNSAwIDAgMCAxNiAzbTAgMjRhMTEgMTEgMCAxIDEgMTEtMTEgMTEuMDEgMTEuMDEgMCAwIDEtMTEgMTEiLz48cGF0aCBmaWxsPSIjQjIwRjAzIiBkPSJNMTcuMDM4IDE4LjYxNUgxNC44N0wxNC41NjMgOS41aDIuNzgzem0tMS4wODQgMS40MjdxLjY2IDAgMS4wNTcuMzg4LjQwNy4zODkuNDA3Ljk5NCAwIC41OTYtLjQwNy45ODQtLjM5Ny4zOS0xLjA1Ny4zODktLjY1IDAtMS4wNTYtLjM4OS0uMzk4LS4zODktLjM5OC0uOTg0IDAtLjU5Ny4zOTgtLjk4NS40MDYtLjM5NyAxLjA1Ni0uMzk3Ii8+PC9zdmc+");background-repeat:no-repeat;background-size:contain;padding-left:34px}@media (prefers-color-scheme: dark){body{background-color:#222;color:#d9d9d9}}</style><meta http-equiv="refresh" content="360"></head><body><div class="main-wrapper" role="main"><div class="main-content"><noscript><div class="h2"><span id="challenge-error-text">Enable JavaScript and cookies to continue</span></div></noscript></div></div><script>(function(){window._cf_chl_opt = {cvId: '3',cZone: 'iiwiki.com',cType: 'managed',cRay: '98b625ac0ec6762c',cH: '1J8oiqG3rzwjapP_sn3Uv3V2uEWrpmkSXSfukXhvl3g-1759931844-1.2.1.1-YGF4aOC7uzWZGgWnlio1hxfWOC_uiptL2oXuMifkNNmuG5AbAvC0xycM2NX3h_rY',cUPMDTk:"\/mediawiki\/api.php?action=query&format=json&meta=siteinfo&__cf_chl_tk=bipP8HdiYtXpmnv3Q8c2IUHjd1rHIa0XEr1rEA06Wek-1759931844-1.0.1.1-xNd7yijaQhEkY8PteK0v6mTh5bIGqn3P_T5HXi.kU_s",cFPWv: 'b',cITimeS: '1759931844',cTplC:0,cTplV:5,cTplB: 'cf',fa:"\/mediawiki\/api.php?action=query&format=json&meta=siteinfo&__cf_chl_f_tk=bipP8HdiYtXpmnv3Q8c2IUHjd1rHIa0XEr1rEA06Wek-1759931844-1.0.1.1-xNd7yijaQhEkY8PteK0v6mTh5bIGqn3P_T5HXi.kU_s",md: 'TSzXVH_7Rz8GX55fjiKe2n04F_sH_C6epNY3RNYxzms-1759931844-1.2.1.1-2qyK.sfLyIvx9Rgixa8MHMGCkiih415NMA5PimwbgTOzWykLv8Nq9HZ.k0re.LuIqEO_7wCRpig0TY0TQgIzy9pAavZD5sh8Yb3_HZVi1huxKmGA4gSSq7cbNtvK9kWPc4WmqijR.cmnJM.p5ZAPSbL_Fvvs0AqORsqoupgWjpGG8mytvKtvTZX4ORNLqDlHxB8q8HyDxrPt0rn28cg_Trl8idtBzZGozZBLn9m7ee03cZV9THO7jo8TskWgn5OAP7zTvrpU.rPW8wDnll_y6SjBzrCgXdCk0l1ZMX3j.rgJKAOzE8KHXUlo6QTVBtpfr_2ROqc1Rw0BYDIUe6JJDeBgJuWzeycrczEDAoDV0Pt5XwgVa4H4crO182j5Zr9k9Zya4Q87RFBUz72QxEZzAV7QBQ2dZipKAYChGgIpXUGvb0KOIVYeUVUEj7oBshkwLGgyy.SqWl4XHAait.aR6ghgZUQuWEu4AtgpXiVu0mUCyUptpuhmVXNdkDZTqW42QzIwgzydnqUlhx6VNKvJePeUkxpNmfaTO7neJ8qtHG3MCOQgsU58cRQ3eFCWlyyyV2cvcqpqSKEF_8S_AEfQ_Br8STwr9nmwFvwo_LbJ8ceqyaCGsLb3ZGaCcSu9J_nNHe1jzGYw_Ko9JBhXnuzTHx9kS9LWa2B5hujU.xGuLLTa_sTAoRZQ2Sr3H3RVsok5Kj5uAXqULyKZw2iiO9R67j0mW4vjAzoljR2p2rl_Pv2LLnvvR_XkwmJlbuEf4qcre2uAIqblWkjC.eVs_pwVJ_v.Bz8I_TpyowgrvYL95MSoEJQdqdPCr1vmFiQqDnXRM_8E8UYApr59NLaxl5wG_6AXsG2km.FSVhL04_tsgbrSIz78zhGI5FCPNkOrOu4j07Ukh8w2N7JVKedUL684mA',mdrd: 'OqZSl7EQnPsKMBfW3vx008B3JoA5QMPDZrr0Few6mIs-1759931844-1.2.1.1-WRqep4NoHTnRxot6DfhN7kzZysoyLyj8wVE8lzKqpW9JM6K28mRstbEjXfoTCyRxVKgYU05AgimWg6enYvmPFf0hWcjJFTEzA38UOO2LprFYkqIQPZNVmb2GQ2qKmwfqoGqgneKvovsGDIwbEjx4cDs3xPeAGZqmFwQjbQCd_RN_8.UVTZthB9IVgnHP9x6lNpvwc5GvDcTHahP7jPpE42HemiILouhFOkRNzjmLVq0MyQFe5RPHQE_NBV7BEMkgMyp2UA2Cj7oop9HEPu2oABHgsOruM40Eo_07jDoVYxZz252jKauqHzVk73IF_CCvfXuBxYgB9ylO2F8I9tonFPTAfQLQO7xqLvOqqwZXooJy.G.BQWf062_o7.lJw9u100  7147    0  7147    0     0  71247      0 --:--:-- --:--:-- --:--:-- 71470
+* Connection #0 to host iiwiki.com left intact
+2lr49g1voPD7_zVXH7wwxenupYQy.UKcO653yk8o7pffhHCCmpVwd54WojxA5LR_WAoSX9qsz5lgbm0RcTT6bT9yVTw9W2CTjt4TXH2IddwGnmjHNaTpYoDm705HE9qU31EH4wZwTk4T9C2OKLcnu8u2OiqCdER34eUFjSkaEE22Aj32BGTPg9TTfAjmLslEWOuC6SzcRX0nyDW.sDoksibw8_qOUHG.Rlm0z2gvMb3zRTCgNdkNnXQ86YZMJuhR1HSeUKOEGfM55zlXEZ26Yrf.SIednxkJsdNsf._qm6w7U292svJSNJBF231Rr4kAB5LSPoZhjNPbxf1ucc0FqBaTwL_gf2c9MAekOGo2wveZ.ddbciPgNLbvQIrXsILrV6yMpNLt7Ut352ufnUAdKMujNi.u7xWQs1JnCZQ_a_AF0L4M65iGXx1i0kkTKmAQHmhJ83SSZi89jAymdnprA_SVXViKlPN18P3Xu8Tr4Gee.Q9MO.OUxOsyd5YS7HAAoRuM5b2o3TJC9VUyzSw6cj2cUeo_Z9cKnpKcdvE_Fa_KXW3pUfEF4OgqfCtNHkNX1y_3gDB0T4wxlawKJjKFCbqnoZqv1NmH_RR7nk_eWLfj01lQdJ8lMXAB7xoDDNs5Gfk8SwQE_MNXZRhDJFInrXOeo.8xfoUEIOxv2c5PtuDxldqHGwIh0Efg2ASOSuThI.w51HRjTnqAwKeBfDQQQrgB_RuihwGCvr9eZGUclqXZAEcibRfmeDI6wA8HYiKjunL3oHnY2Qp0WoOh.9NTtdzOudkWjs7ZichAvjb6TsJqgEfq9rpQTYCa9JnjBUB58CZU3iTsIxKhe.NB3OJpKC6pxg4vBY2752z5_CAVlwxAolK7eRuBwV2RYCBev.cskHs0ioIg8GAt93_oHfjg.zvjaV9uJATPtwochsPYqp71lz141fEIuPdT_FNmJ_.5fhgX2gdw9M98U5if10bqFktPxowX.lFyUFB2MNVlHbzAWzG9rHwAoZHJfhP90qGjtkZd89piFtoKyymsFSfbd4nUL83wapmimaJz1url2_yraDnXJMG7Gzm1Ow9imxWfd3.DNiB15HxaTVuXXSoJxI1s.qEQ5R4ke8aUuTB_HYwRAhcS944_Ma4mFZsoffG_DiFcJN3_H7Lj0OaIl_am3MNzGjf5d1b6U.rAEM_Emxc8AH0nUsNtnX4E5jihUKpgytySKaT8.wIKbv3af.yAVql_1rskZkJl3s_FHkJF2rNjlWrNeV8wPKDtMy8fGBerMcZiUDwOcs3d3okfZ3wK3cCK1wgm3pOE2._dT78RlqsS8L05ouGjyX0wR2EjbvKeNVCtNilyOdQCPdaemHJbZXiqzY7mzrlMCLo2P1h7XMmysZCyovBAWhbtE32pGncW7V_rY15b_F71ebCpVJQov2X5mXjb2iYca31QSz87jx8WAfruJ9.8B_ABlDc9TrSbR4vaa2Xd696gHFtWOVZDsMfUc4oKCeKgy39bf1oRv7abSDSqMOgmo6hcgaMNNGPK5xy5xBGpyswk62mh4JxsLgXeQH4DWvLHN5d8BtKtEimechkDfHNrNUIMSt4Xo523kxGq_XihdXwQG4b8efoUfzpuen5ojxu.BC704w_Vhm309SvmhPrMpFLvkR6fj2dPMLtO8UhFY7ME_SRcgzFV4xw4ISQ8Bt_jZouuRZ00gwra9mSWQoDdKFaHBQ9JQvOYiHbYW5ZQ0ynkS1Y6tGLNAHd2bhE.9lFarhjxf0lIYLYx5DSUE2sWFijjXZUvh.uCvch6VcTFNMW5A5g.tzjlpPa30k.z5bgTatTys9ITTJ8rsgjowQvbCB40wez4sXtLV9ldCqSce4DPBzsIMixuHR1C4AEh44_xRofsB90rKafxVX609ezsIzfASOF0XRasmBHHpUc28ujIhmDfPERm9jfGkQVHmMbfKITeOkLT1vp1L8rLVtuI8RlKeRk1EimQ.AoS0ZUwkibmf9RXZK_.GwVflOjpJ2SUV6T5tTDt.YqPtMiG0negUYtWHKtiiKvcf.2pGv_GGKciyRL7uEC5imG1ZI2yI7ah11.Cm2xGA.VY',};var a = document.createElement('script');a.src = '/cdn-cgi/challenge-platform/h/b/orchestrate/chl_page/v1?ray=98b625ac0ec6762c';window._cf_chl_opt.cOgUHash = location.hash === '' && location.href.indexOf('#') !== -1 ? '#' : location.hash;window._cf_chl_opt.cOgUQuery = location.search === '' && location.href.slice(0, location.href.length - window._cf_chl_opt.cOgUHash.length).indexOf('?') !== -1 ? '?' : location.search;if (window.history && window.history.replaceState) {var ogU = location.pathname + window._cf_chl_opt.cOgUQuery + window._cf_chl_opt.cOgUHash;history.replaceState(null, null,"\/mediawiki\/api.php?action=query&format=json&meta=siteinfo&__cf_chl_rt_tk=bipP8HdiYtXpmnv3Q8c2IUHjd1rHIa0XEr1rEA06Wek-1759931844-1.0.1.1-xNd7yijaQhEkY8PteK0v6mTh5bIGqn3P_T5HXi.kU_s"+ window._cf_chl_opt.cOgUHash);a.onload = function() {history.replaceState(null, null, ogU);}}document.getElementsByTagName('head')[0].appendChild(a);}());</script></body></html>
+
+----------------------------------------
+Test 2: Search Request
+----------------------------------------
+URL: https://iiwiki.com/mediawiki/api.php?action=query&list=search&srsearch=test
+User-Agent: IxStats-Builder
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0* Host iiwiki.com:443 was resolved.
+* IPv6: 2606:4700:3031::6815:334e, 2606:4700:3033::ac43:b162
+* IPv4: 104.21.51.78, 172.67.177.98
+*   Trying [2606:4700:3031::6815:334e]:443...
+* Connected to iiwiki.com (2606:4700:3031::6815:334e) port 443
+* ALPN: curl offers h2,http/1.1
+} [5 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+} [512 bytes data]
+*  CAfile: /usr/lib/ssl/cert.pem
+*  CApath: /usr/lib/ssl/certs
+{ [5 bytes data]
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+{ [122 bytes data]
+* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+{ [19 bytes data]
+* TLSv1.3 (IN), TLS handshake, Certificate (11):
+{ [2525 bytes data]
+* TLSv1.3 (IN), TLS handshake, CERT verify (15):
+{ [79 bytes data]
+* TLSv1.3 (IN), TLS handshake, Finished (20):
+{ [52 bytes data]
+* TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
+} [1 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Finished (20):
+} [52 bytes data]
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519 / id-ecPublicKey
+* ALPN: server accepted h2
+* Server certificate:
+*  subject: CN=iiwiki.com
+*  start date: Sep 10 03:44:04 2025 GMT
+*  expire date: Dec  9 04:41:16 2025 GMT
+*  subjectAltName: host "iiwiki.com" matched cert's "iiwiki.com"
+*  issuer: C=US; O=Google Trust Services; CN=WE1
+*  SSL certificate verify ok.
+*   Certificate level 0: Public key type EC/prime256v1 (256/128 Bits/secBits), signed using ecdsa-with-SHA256
+*   Certificate level 1: Public key type EC/prime256v1 (256/128 Bits/secBits), signed using ecdsa-with-SHA384
+*   Certificate level 2: Public key type EC/secp384r1 (384/192 Bits/secBits), signed using ecdsa-with-SHA384
+} [5 bytes data]
+* using HTTP/2
+* [HTTP/2] [1] OPENED stream for https://iiwiki.com/mediawiki/api.php?action=query&format=json&list=search&srsearch=test&srprop=snippet
+* [HTTP/2] [1] [:method: GET]
+* [HTTP/2] [1] [:scheme: https]
+* [HTTP/2] [1] [:authority: iiwiki.com]
+* [HTTP/2] [1] [:path: /mediawiki/api.php?action=query&format=json&list=search&srsearch=test&srprop=snippet]
+* [HTTP/2] [1] [user-agent: IxStats-Builder]
+* [HTTP/2] [1] [accept: application/json]
+* [HTTP/2] [1] [accept-language: en-US,en;q=0.9]
+} [5 bytes data]
+> GET /mediawiki/api.php?action=query&format=json&list=search&srsearch=test&srprop=snippet HTTP/2
+> Host: iiwiki.com
+> User-Agent: IxStats-Builder
+> Accept: application/json
+> Accept-Language: en-US,en;q=0.9
+> 
+{ [5 bytes data]
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+{ [230 bytes data]
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+{ [230 bytes data]
+* old SSL session ID is stale, removing
+{ [5 bytes data]
+< HTTP/2 403 
+< date: Wed, 08 Oct 2025 13:57:24 GMT
+< content-type: text/html; charset=UTF-8
+< accept-ch: Sec-CH-UA-Bitness, Sec-CH-UA-Arch, Sec-CH-UA-Full-Version, Sec-CH-UA-Mobile, Sec-CH-UA-Model, Sec-CH-UA-Platform-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Platform, Sec-CH-UA, UA-Bitness, UA-Arch, UA-Full-Version, UA-Mobile, UA-Model, UA-Platform-Version, UA-Platform, UA
+< cf-mitigated: challenge
+< critical-ch: Sec-CH-UA-Bitness, Sec-CH-UA-Arch, Sec-CH-UA-Full-Version, Sec-CH-UA-Mobile, Sec-CH-UA-Model, Sec-CH-UA-Platform-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Platform, Sec-CH-UA, UA-Bitness, UA-Arch, UA-Full-Version, UA-Mobile, UA-Model, UA-Platform-Version, UA-Platform, UA
+< cross-origin-embedder-policy: require-corp
+< cross-origin-opener-policy: same-origin
+< cross-origin-resource-policy: same-origin
+< origin-agent-cluster: ?1
+< permissions-policy: accelerometer=(),autoplay=(),browsing-topics=(),camera=(),clipboard-read=(),clipboard-write=(),geolocation=(),gyroscope=(),hid=(),interest-cohort=(),magnetometer=(),microphone=(),payment=(),publickey-credentials-get=(),screen-wake-lock=(),serial=(),sync-xhr=(),usb=()
+< server-timing: chlray;desc="98b625ad5a8e4f0b"
+< cache-control: private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0
+< expires: Thu, 01 Jan 1970 00:00:01 GMT
+< report-to: {"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v4?s=UnY4gnqo98D6DPtJ53rSMhHGuTAJMvlbAWT9zghNXNh84M9XNQTxRzL%2F6dqkjlcNLn87MAIApB4uplETe7zBx0SRerEr6sC5x%2BAeL2qoJOfeOelK5Hc%2B39k9jR97conWQu%2Bz104s62GB"}],"group":"cf-nel","max_age":604800}
+< nel: {"success_fraction":0,"report_to":"cf-nel","max_age":604800}
+< expect-ct: max-age=86400, enforce
+< referrer-policy: same-origin
+< x-content-type-options: nosniff
+< x-frame-options: SAMEORIGIN
+< x-xss-protection: 1; mode=block
+< server: cloudflare
+< cf-ray: 98b625ad5a8e4f0b-EWR
+< alt-svc: h3=":443"; ma=86400
+< server-timing: cfL4;desc="?proto=TCP&rtt=2066&min_rtt=1943&rtt_var=498&sent=7&recv=10&lost=0&retrans=0&sent_bytes=3405&recv_bytes=858&delivery_rate=1900375&cwnd=254&unsent_bytes=0&cid=8ebd403d9598aa67&ts=140&x=0"
+< 
+{ [7270 bytes data]
+<!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=Edge"><meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{box-sizing:border-box;margin:0;padding:0}html{line-height:1.15;-webkit-text-size-adjust:100%;color:#313131;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji"}body{display:flex;flex-direction:column;height:100vh;min-height:100vh}.main-content{margin:8rem auto;padding-left:1.5rem;max-width:60rem}@media (width <= 720px){.main-content{margin-top:4rem}}.h2{line-height:2.25rem;font-size:1.5rem;font-weight:500}@media (width <= 720px){.h2{line-height:1.5rem;font-size:1.25rem}}#challenge-error-text{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgZmlsbD0ibm9uZSI+PHBhdGggZmlsbD0iI0IyMEYwMyIgZD0iTTE2IDNhMTMgMTMgMCAxIDAgMTMgMTNBMTMuMDE1IDEzLjAxNSAwIDAgMCAxNiAzbTAgMjRhMTEgMTEgMCAxIDEgMTEtMTEgMTEuMDEgMTEuMDEgMCAwIDEtMTEgMTEiLz48cGF0aCBmaWxsPSIjQjIwRjAzIiBkPSJNMTcuMDM4IDE4LjYxNUgxNC44N0wxNC41NjMgOS41aDIuNzgzem0tMS4wODQgMS40MjdxLjY2IDAgMS4wNTcuMzg4LjQwNy4zODkuNDA3Ljk5NCAwIC41OTYtLjQwNy45ODQtLjM5Ny4zOS0xLjA1Ny4zODktLjY1IDAtMS4wNTYtLjM4OS0uMzk4LS4zODktLjM5OC0uOTg0IDAtLjU5Ny4zOTgtLjk4NS40MDYtLjM5NyAxLjA1Ni0uMzk3Ii8+PC9zdmc+");background-repeat:no-repeat;background-size:contain;padding-left:34px}@media (prefers-color-scheme: dark){body{background-color:#222;color:#d9d9d9}}</style><meta http-equiv="refresh" content="360"></head><body><div class="main-wrapper" role="main"><div class="main-content"><noscript><div class="h2"><span id="challenge-error-text">Enable JavaScript and cookies to continue</span></div></noscript></div></div><script>(function(){window._cf_chl_opt = {cvId: '3',cZone: 'iiwiki.com',cType: 'managed',cRay: '98b625ad5a8e4f0b',cH: 'WyW8G1FPYObYhz_FtwVlDDvlVcFSuATL5TgBtH85wK4-1759931844-1.2.1.1-Eu3uABBJcpHAyyb9FjQWpYh0nlaPSAIfB5zPqILz_s_.3JD2CjM7WvEEpGF3saev',cUPMDTk:"\/mediawiki\/api.php?action=query&format=json&list=search&srsearch=test&srprop=snippet&__cf_chl_tk=PzvM7_O5tlnmxFgAqKe01O.rGHRNeVTNqH7LZJ8nZC4-1759931844-1.0.1.1-xZCYR7gAbpW0Og_QJV722TNTIdHwA8Q4tWDq0s09RLw",cFPWv: 'b',cITimeS: '1759931844',cTplC:0,cTplV:5,cTplB: 'cf',fa:"\/mediawiki\/api.php?action=query&format=json&list=search&srsearch=test&srprop=snippet&__cf_chl_f_tk=PzvM7_O5tlnmxFgAqKe01O.rGHRNeVTNqH7LZJ8nZC4-1759931844-1.0.1.1-xZCYR7gAbpW0Og_QJV722TNTIdHwA8Q4tWDq0s09RLw",md: 'xTC2qP6JN7FA57FsfBdUVosQ9TlHPTVkpsLWn062IyU-1759931844-1.2.1.1-eDvzuUY8ZaP.gVS1VcBtlHuIa2y0ud.qPk45o7YdLL2UAH72fbV4skLgqReZvNGcbYPWFm8y8g_NjnLLIGXymaRR8d08xHYiNHkvlc6dkc9APDbTfHUdJnGXz1SEsdvE..IcRdn8FV5ug4NbHv.zDvGrvCmb.8TODITLC_ZfmB80za2HSsPrn8bniTLPwgS7NBHTPpPnVyWiViQSFm.pEf0ZXjLcnD3BEgCC.1DrL63FjhnahE1JIGOZJr3wGmF49jXJnyMJ8OBj5WopFPp4J5ADIao3VlpDZ3LpiO1CWYLQSwy8rc1B_UhhkCQqJ7xEAX3b_UeUseA8fUHyug3Rx0ptdb0LgwlhVCd2O0h12xB97Q0yox5DdCjuUg1sK1pO7dyiQnDFAXLEveFk7lKucT6U4B6z5SR9w_Sc7klCwORhD4rx9NAJatRZ3Cc1lSegzxxYuDGJoA5UObbEcVUWMOaNfy5aRw..J76iTQ3jmdsH5Q8DmFvKu3Xnyk59eTa7Za_xWGcapbcEkztmu5x.v973k6xbIIBJvjOiXfbYg1C_R64a509cFcsZtYM1HsBNFRRqjU9L.IVQhhlfjjIx3JwqTwY9USjBL0a5BC9Db0UOGSBQOVsNL.ejbf6LXmE.zcaWeh9E98Kkosz_a5Ln6olIsp.E1QMf08NxAIB9toXq9e6ucouf4Dk5.rZKSvtJlvXzdoy8VPKKoqMePEv0qpsp_3YrUdUa7G14en5UDF4kro.U5J2bQBQ54pDXDTmAnQO3nnXg2WbRd4thJw_AQs2cfchJamzIrnGY2XM1iSCGxuxL.J7PO4cn_gD.VSsAUClaorDaKt0neSp7M0Qlxx4dQfO_W_H9CsSi6adxD75QVJC.UYglRZo6uQ1ofJPHNJ8sNfpJ5FANtzU3QxUFbOF94asnxus_GT1_CVN7e_qVzwZa3Cx_yHm.DKgRGb0Z',mdrd: 'bm8D0vp1uAlBQBcgbY7uTLyexkt9K7hxhWaiTVB15qI-1759931844-1.2.1.1-bOCKpM69eM1ylQ_PJxORmnVBx5KS06PnLqsM_EZB3WVoVsWXSy_.DjOqSMMaCiPfi5G9QXKXxQY7XdhMa7ppfvvV.IDbCZipYO6gH0vbvsEC5tDCi2b2K6KLUmWLZ60YLJR2PWysDDhqZoFuB4IuTgIZq2p6DSednhyQ0jpJTEKryVS8.unQTCxxHt8b5uer_y2y_PRDbVURJt09EfoIMnXhMkxwpu3uy8zxpqPBtrdCjKllPCV6JD8t4WPFXIGAJNIPSTutZVD4JUbLyCIEENAeljOh99p100  7270    0  7270    0     0  45061      0 --:--:-- --:--:-- --:--:-- 45155
+* Connection #0 to host iiwiki.com left intact
+Hd3cqmG6iTKrBY9mD7xTxU1Tv9XHkU5XjQTUyeivXrLLSgJaY36MRZ.LMn9HROXCRku1BexwjO_qvDQZA96vtJvYDKU_cuScjVT6lYRCA9c3.SNmNlaHHjjDhr9YElD_OlXw4z2qs0JlwUQOJiu1u2wtNqpG_GK7CHQQ6Augf7qB23KFBHa7K5Zxvt3TxAif6AXkLsYrtX.0b9Tm.OZovyLR_XIPVDeS9WDQVZ3kxduZ_PWNqqGpVR5xc2Y9aVz5xDXpCz3kqLDSutQRDqRE2v8xqyNOEauv8A_BEC1JZH3AhnnKx2VT0g7MrZrRRWJJIovdf1g7V5KURg734S9ERkWKQT4ygZacyvWo4cYHWo5LsVHKADLR_x3kDaTBJ5gK8a5JyuSElgpzQJ3SeVZKZCqlXGclps5wJrDNxnyf8OhQpuN8WPeGm7hefw4MhDKXi1_JU8tYu2_jYTcRzOUmlRFgZ8eJJOb_KrqmUQO9dhOR55WnlYI4LG8kx5rDnA98E5yYPpAjq2j33oe6YbB_T5GN8sqJEfXLhhJmhiu5nKB3qFDr2mVWzJjPcNt7IliszET68sqD1Wu63y4bhCSufmdBi.Qvza2KSPLrXdxGjUhHj5WuXHaI0cDgbJ.1Ne4sQGd8J2Sr6QsqUBE9OLGwfNIc14W1VASdGUdfpezOFFKHRmN.TWWkVMVxxs.Ij1Auc0dnhx7M2vyY3eMmMUauy0T_M9zvUApj2VUpWoHblwclo3BlzXFOglFJo995KldM3rUx4KAIIrU5D7QQ1PfE1wy07V9nghU4gPM91f2C6d7yBmH5fCfWmVGXw2R8ZjCfXr..k4Vn.TYpT7Jn2EY2RXMOA9il6Y_zpPX2EY0nC_1MPd_JxXrpxtTAnUBvUVjQRIInwfgGJSlOT56bcvRd7GSAP_IqhPzcCj6AbL43HlsOkPyOzop_.VrBPNMKOA6hkcCPy0AXJq9ROuqNbWU.sv1bsVEsj.ZxLpc9sixqQHrUkHPzht8itfdWE8Q4o9mydYlziWCXBjWHyNPB3f4dnYK6.rPA4pDQ8DRizTmxk1QziKgS51RsHTgKqVtVRb.Me8IgMFN2YwBt09dlsRgfi0XmeIN5uxcANAW_GzoQhDn5x_qsDB0k0AZUV7cqSfyut8pwkEsGEjSp2FJhlLO0zPYoLYRa1BOhVc0GzE3S3aSSvivoMwwGjM_Tm.gCkSAYzOcwm6BtnmHeMFf9DKYxdsywuTw8F2OdZgEEI_U9pXm239YncJxwDC1NS6HMcfN5yDMgyUnyUecSwylNITBh.Dv0cIHHFUtP230t_8IJdEHmLNb3S_v1Xx1_q2y3uCT9i1W5oGsDBCULpSmBLTotgh3f7uHMpEmSBRUYmR_6DrrQRfc5eo24.MOuOVHMqqc5KINO3xsb.dTR9Ki.F0k8p58X3ESmf9tCstYmQ3tOdV9Tq_UGNDhm8CxR4r_E24YGB7Smem2rCSyDA5NoniD3bYXc4jCQyNTeS9IZHPejPqKvxZTwT3C8l4catT3T.5K93PZOmN8.bLx8PAtPqBAfcwpQzTTaX2emNy_qnlSEcMQTUbtgyIz7tZgD8.1zxbnEMoavZPdUaCiPnSeWwU2S6LCou9T6d5aGFrAL.2z1oY_BUpG9GHmIpo33jC6eCNmL4jKBKm57tPIcDIo0kbiHo3VNVwNiukPW2Nj8MJO4LUMF2RCqwGE4xzWwsJV3VMfCpVSRmkRKz51.5Mfz1nehhM_r7rxr77kKWjHEnEPW.Xne57ohW8_qNEFmCa5x.TXw7LRzJInfR2gltedW4BHokn.MXoTXPr5k191X5mcqEHk6U0xixIoPd7kW3YKHB0JDE4uayuLs2.T_Fyn5EUNezAvioWqEFTa.AKOhy3dYjlow3Czll0A3OsKz077e9TkZtSG1FuFb4wbsRh7DU_z086DCnSKwi0MyA610.fbHbUDWmjghmtwkq_MUxaOJfu5kSLcuNT8IGF4vHsHSH8qJXazQ._..p7tSY.LSuto8hhWSe8BXkn9Hq9VF5_N4a.rVMNtu1xcqDXoSBHv3cBAFLPcYsXUp172v4yiCu5I_vz.y1xQ0XGD9AVHiIaSCFH1avfB_6e3ySTBsFGX6wIxGmfenl2pfP7SOZJIyaofWp1TTT223TwZUqy0IoIfGTz6I1nfuzP8w4yUQ',};var a = document.createElement('script');a.src = '/cdn-cgi/challenge-platform/h/b/orchestrate/chl_page/v1?ray=98b625ad5a8e4f0b';window._cf_chl_opt.cOgUHash = location.hash === '' && location.href.indexOf('#') !== -1 ? '#' : location.hash;window._cf_chl_opt.cOgUQuery = location.search === '' && location.href.slice(0, location.href.length - window._cf_chl_opt.cOgUHash.length).indexOf('?') !== -1 ? '?' : location.search;if (window.history && window.history.replaceState) {var ogU = location.pathname + window._cf_chl_opt.cOgUQuery + window._cf_chl_opt.cOgUHash;history.replaceState(null, null,"\/mediawiki\/api.php?action=query&format=json&list=search&srsearch=test&srprop=snippet&__cf_chl_rt_tk=PzvM7_O5tlnmxFgAqKe01O.rGHRNeVTNqH7LZJ8nZC4-1759931844-1.0.1.1-xZCYR7gAbpW0Og_QJV722TNTIdHwA8Q4tWDq0s09RLw"+ window._cf_chl_opt.cOgUHash);a.onload = function() {history.replaceState(null, null, ogU);}}document.getElementsByTagName('head')[0].appendChild(a);}());</script></body></html>
+
+==========================================
+Summary for iiwiki Admin
+==========================================
+
+The IxStats application is being blocked by Cloudflare when trying to access:
+  - Path: /mediawiki/api.php
+  - User-Agent: IxStats-Builder
+  - Server IP: 45.32.6.57
+
+Expected Cloudflare Rule Configuration:
+  Expression: (ip.src eq 45.32.6.57 and http.request.uri.path contains "/mediawiki/api.php")
+  Action: Skip
+  Skip: All remaining custom rules, Rate limiting, Zone Lockdown, Security level
+
+Alternative (IP Whitelist):
+  Go to Security > WAF > Tools > IP Access Rules
+  IP: 45.32.6.57
+  Action: Whitelist
+  Zone: iiwiki.com
+
+==========================================

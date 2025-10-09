@@ -141,10 +141,10 @@ export function transformApiDataToVitalityIntelligence(
         }
       },
       comparisons: {
-        peerAverage: 65, // TODO: Calculate from actual peer data
-        regionalAverage: 70,
+        peerAverage: calculatePeerAverage(country, 'economic'),
+        regionalAverage: calculateRegionalAverage(country, 'economic'),
         historicalBest: Math.max(country.economicVitality, 85),
-        rank: 1, // TODO: Calculate from actual rankings
+        rank: calculateCountryRank(country.economicVitality, 'economic'),
         totalCountries: 180
       }
     },
@@ -257,12 +257,16 @@ export function transformApiDataToVitalityIntelligence(
       recommendations: [],
       forecast: {
         shortTerm: {
-          projected: country.diplomaticStanding + Math.floor(Math.random() * 10) - 5,
+          projected: Math.min(100, Math.max(0,
+            country.diplomaticStanding + (country.economicVitality * 0.1) - (100 - country.governmentalEfficiency) * 0.05
+          )),
           confidence: 60,
           factors: ['Regional stability', 'Bilateral relations', 'International engagement']
         },
         longTerm: {
-          projected: country.diplomaticStanding + Math.floor(Math.random() * 20) - 10,
+          projected: Math.min(100, Math.max(0,
+            country.diplomaticStanding + (country.economicVitality * 0.2) + (country.populationWellbeing * 0.1) - (100 - country.governmentalEfficiency) * 0.1
+          )),
           confidence: 50,
           factors: ['Long-term strategic partnerships', 'Global influence trends', 'Regional dynamics']
         }
@@ -471,10 +475,10 @@ export function transformApiDataToExecutiveIntelligence(
     vitalityIntelligence,
     trendingInsights,
     forwardIntelligence: {
-      predictions: [], // TODO: Implement predictions from historical data
-      opportunities: [], // TODO: Transform opportunity intelligence items
-      risks: [], // TODO: Transform risk intelligence items
-      competitiveIntelligence: [] // TODO: Transform competitive intelligence
+      predictions: generatePredictions(country, vitalityIntelligence),
+      opportunities: transformOpportunities(intelligenceItems.filter(i => i.type === 'opportunity')),
+      risks: transformRisks(intelligenceItems.filter(i => i.severity === 'high' || i.severity === 'critical')),
+      competitiveIntelligence: generateCompetitiveIntelligence(country, vitalityIntelligence)
     },
     overallStatus,
     confidenceLevel: Math.round(intelligenceItems.reduce((sum, item) => sum + item.confidence, 0.8) / Math.max(intelligenceItems.length, 1) * 100),
@@ -555,4 +559,192 @@ function getIconForCategory(category: string) {
     case 'diplomatic': return Globe;
     default: return Activity;
   }
+}
+
+/**
+ * Generate predictions based on vitality trends
+ */
+function generatePredictions(country: ApiCountryData, vitalityIntelligence: VitalityIntelligence[]): any[] {
+  const predictions = [];
+
+  for (const vitality of vitalityIntelligence) {
+    if (vitality.forecast.shortTerm.confidence > 60) {
+      predictions.push({
+        id: `prediction-${vitality.area}-${Date.now()}`,
+        category: vitality.area,
+        metric: `${vitality.area} Score`,
+        currentValue: vitality.score,
+        predictedValue: vitality.forecast.shortTerm.projected,
+        timeframe: '30 days',
+        confidence: vitality.forecast.shortTerm.confidence,
+        factors: vitality.forecast.shortTerm.factors,
+        trend: vitality.trend
+      });
+    }
+  }
+
+  // Add GDP growth prediction
+  const gdpGrowth = country.realGDPGrowthRate;
+  if (gdpGrowth !== undefined) {
+    predictions.push({
+      id: `prediction-gdp-growth-${Date.now()}`,
+      category: 'economic',
+      metric: 'GDP Growth Rate',
+      currentValue: gdpGrowth * 100,
+      predictedValue: gdpGrowth * 100 * (1 + country.economicVitality / 500), // Slight improvement based on vitality
+      timeframe: '1 quarter',
+      confidence: 75,
+      factors: ['Economic vitality', 'Global trends', 'Policy effectiveness'],
+      trend: gdpGrowth > 0 ? 'up' : 'down'
+    });
+  }
+
+  return predictions;
+}
+
+/**
+ * Transform opportunity intelligence items
+ */
+function transformOpportunities(opportunityItems: ApiIntelligenceItem[]): any[] {
+  return opportunityItems.slice(0, 5).map(item => ({
+    id: item.id,
+    title: item.title,
+    description: item.description,
+    category: item.category,
+    potentialImpact: {
+      magnitude: item.impact?.magnitude || 'medium',
+      areas: item.impact?.areas || [item.category],
+      timeframe: '3-6 months'
+    },
+    requirements: item.actions || ['Strategic planning', 'Resource allocation'],
+    confidence: Math.round(item.confidence * 100),
+    priority: item.priority || 5,
+    expirationDate: item.timestamp + (30 * 24 * 60 * 60 * 1000) // 30 days
+  }));
+}
+
+/**
+ * Transform risk intelligence items
+ */
+function transformRisks(riskItems: ApiIntelligenceItem[]): any[] {
+  return riskItems.slice(0, 5).map(item => ({
+    id: item.id,
+    type: item.category,
+    severity: item.severity,
+    title: item.title,
+    description: item.description,
+    probability: item.confidence,
+    impact: item.impact || {
+      magnitude: 'medium',
+      areas: [item.category]
+    },
+    mitigation: item.actions || ['Monitor situation', 'Prepare contingency plans'],
+    timeline: item.severity === 'critical' ? 'immediate' : 'short-term',
+    affectedRegions: item.affectedRegions || [],
+    monitoringRequired: item.severity === 'high' || item.severity === 'critical'
+  }));
+}
+
+/**
+ * Generate competitive intelligence based on vitality scores
+ */
+function generateCompetitiveIntelligence(country: ApiCountryData, vitalityIntelligence: VitalityIntelligence[]): any[] {
+  const competitiveData = [];
+
+  // Economic competitiveness
+  const economicVitality = vitalityIntelligence.find(v => v.area === 'economic');
+  if (economicVitality) {
+    competitiveData.push({
+      id: `competitive-economic-${Date.now()}`,
+      category: 'economic',
+      metric: 'Economic Competitiveness',
+      countryScore: economicVitality.score,
+      regionalAverage: economicVitality.comparisons.regionalAverage,
+      globalAverage: economicVitality.comparisons.peerAverage,
+      rank: economicVitality.comparisons.rank,
+      totalCountries: economicVitality.comparisons.totalCountries,
+      strengths: economicVitality.score > 75 ? ['Strong GDP growth', 'Stable economic policies'] : [],
+      weaknesses: economicVitality.score < 50 ? ['Low growth rate', 'Economic instability'] : [],
+      opportunities: ['Market diversification', 'Trade partnerships'],
+      threats: ['Global economic uncertainty', 'Regional competition']
+    });
+  }
+
+  // Population competitiveness
+  const populationVitality = vitalityIntelligence.find(v => v.area === 'population');
+  if (populationVitality) {
+    competitiveData.push({
+      id: `competitive-population-${Date.now()}`,
+      category: 'population',
+      metric: 'Human Capital Index',
+      countryScore: populationVitality.score,
+      regionalAverage: populationVitality.comparisons.regionalAverage,
+      globalAverage: populationVitality.comparisons.peerAverage,
+      rank: populationVitality.comparisons.rank,
+      totalCountries: populationVitality.comparisons.totalCountries,
+      strengths: populationVitality.score > 70 ? ['Growing population', 'Youth demographic'] : [],
+      weaknesses: populationVitality.score < 50 ? ['Aging population', 'Brain drain'] : [],
+      opportunities: ['Education investment', 'Skills development'],
+      threats: ['Demographic transition', 'Migration challenges']
+    });
+  }
+
+  return competitiveData;
+}
+
+/**
+ * Calculate peer average for a specific metric
+ */
+function calculatePeerAverage(country: ApiCountryData, metric: 'economic' | 'population' | 'diplomatic' | 'governance'): number {
+  // In production, this would fetch from actual peer country data
+  // For now, return realistic averages based on the metric
+  const baseAverages = {
+    economic: 65,
+    population: 70,
+    diplomatic: 65,
+    governance: 68
+  };
+
+  // Adjust based on country tier
+  const tierAdjustment = country.economicTier === 'developed' ? 10 :
+                         country.economicTier === 'emerging' ? 5 : 0;
+
+  return Math.min(100, baseAverages[metric] + tierAdjustment);
+}
+
+/**
+ * Calculate regional average for a specific metric
+ */
+function calculateRegionalAverage(country: ApiCountryData, metric: 'economic' | 'population' | 'diplomatic' | 'governance'): number {
+  // In production, this would fetch from actual regional data
+  // For now, return realistic regional averages
+  const regionalAverages = {
+    economic: 70,
+    population: 75,
+    diplomatic: 70,
+    governance: 72
+  };
+
+  // Adjust based on region if available
+  const regionAdjustment = country.region === 'North America' || country.region === 'Europe' ? 5 :
+                           country.region === 'Asia' ? 3 : 0;
+
+  return Math.min(100, regionalAverages[metric] + regionAdjustment);
+}
+
+/**
+ * Calculate country rank based on vitality score
+ */
+function calculateCountryRank(score: number, metric: 'economic' | 'population' | 'diplomatic' | 'governance'): number {
+  // Simple ranking algorithm based on score
+  // In production, this would compare against actual country database
+  const maxCountries = 180;
+
+  // Higher scores get better (lower) rankings
+  if (score >= 90) return Math.floor(maxCountries * 0.05) + 1; // Top 5%
+  if (score >= 80) return Math.floor(maxCountries * 0.15) + 1; // Top 15%
+  if (score >= 70) return Math.floor(maxCountries * 0.30) + 1; // Top 30%
+  if (score >= 60) return Math.floor(maxCountries * 0.50) + 1; // Top 50%
+  if (score >= 50) return Math.floor(maxCountries * 0.70) + 1; // Top 70%
+  return Math.floor(maxCountries * 0.85) + 1; // Lower 30%
 }

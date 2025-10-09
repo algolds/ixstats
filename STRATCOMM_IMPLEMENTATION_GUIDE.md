@@ -1,10 +1,20 @@
 # STRATCOMM Implementation Guide
 ## Strategic Communications Intelligence Platform
 
-**Based on:** STRATCOMM PRD v2.0  
-**Target Platform:** IxStats Next.js Application  
-**Implementation Date:** January 2025  
-**Status:** Ready for Implementation
+## ⚠️ Implementation Status Notice
+
+**Current Phase**: Architecture & Design Complete
+**Implementation Progress**: 30% (Foundation systems ready, UI development pending)
+**Estimated Completion**: Post v1.0 release (8-12 weeks after core platform)
+
+*This guide describes the planned STRATCOMM platform. Core foundation systems (diplomatic, intelligence, embassy) are operational. Full STRATCOMM implementation is scheduled for Phase 2 after v1.0 release.*
+
+---
+
+**Based on:** STRATCOMM PRD v2.0
+**Target Platform:** IxStats Next.js Application
+**Implementation Date:** Planned Q2 2025
+**Status:** Design Complete, Awaiting Implementation
 
 ---
 

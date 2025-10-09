@@ -41,7 +41,7 @@ export function MetricCard({
       case 'down':
         return <TrendingDown className="h-4 w-4 text-red-500" />;
       default:
-        return <Minus className="h-4 w-4 text-gray-400" />;
+        return <Minus className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -52,7 +52,7 @@ export function MetricCard({
       case 'down':
         return 'text-red-500';
       default:
-        return 'text-gray-400';
+        return 'text-muted-foreground';
     }
   };
 
@@ -83,7 +83,7 @@ export function MetricCard({
           )}
           
           <div className="min-w-0 flex-1">
-            <h3 className="text-sm font-semibold text-foreground truncate">
+            <h3 className="text-sm font-bold text-foreground truncate">
               {label}
             </h3>
             {description && (
@@ -111,7 +111,7 @@ export function MetricCard({
       <div className="mb-2">
         <div className="flex items-baseline gap-1 flex-wrap">
           <motion.span 
-            className="text-2xl font-bold font-mono text-foreground"
+            className="text-2xl font-bold text-foreground"
             style={{ color: colors.primary }}
           >
             {isNumeric ? animatedValue : safeValue}
@@ -133,8 +133,8 @@ export function MetricCard({
           transition={{ delay: 0.3 }}
           className="flex items-center gap-1 text-sm"
         >
-          <span className={cn('font-semibold', getTrendColor())}>
-            {change > 0 ? '+' : ''}{change.toFixed(1)}
+          <span className={cn('font-bold', getTrendColor())}>
+            {change > 0 ? '+' : ''}{!isNaN(change) ? change.toFixed(1) : '0'}
             {changeUnit}
           </span>
           <span className="text-muted-foreground">

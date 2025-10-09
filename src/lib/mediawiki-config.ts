@@ -27,7 +27,7 @@ export interface MediaWikiConfig {
 export const MEDIAWIKI_CONFIG: MediaWikiConfig = {
   baseUrl: env.NEXT_PUBLIC_MEDIAWIKI_URL || 'https://ixwiki.com',
   apiEndpoint: '/api.php',
-  userAgent: 'IxStats/1.0 (https://stats.ixwiki.com; contact@ixstats.com)',
+  userAgent: 'IxStats-Builder',
   timeout: 10000, // 10 seconds
   
   rateLimit: {

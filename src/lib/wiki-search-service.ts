@@ -87,19 +87,17 @@ export async function searchWiki(
     }
 
     // Fallback to regular search when no category filter
-    let searchParams = new URLSearchParams({
+    const searchParams = new URLSearchParams({
       action: 'query',
       format: 'json',
       list: 'search',
       srsearch: query,
       srprop: 'snippet',
-      srlimit: '30', // Increased from 20 for better coverage
-      srnamespace: config.searchNamespace?.join('|') || '0',
     });
 
     const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${searchParams.toString()}`, {
       headers: {
-        'User-Agent': 'IxStats-Builder/1.0 (https://ixstats.com) MediaWiki-Search',
+        'User-Agent': 'IxStats-Builder',
       },
     });
 
@@ -285,17 +283,17 @@ async function getAllCategoryMembers(categoryFilter: string, config: WikiConfig)
       format: 'json',
       list: 'categorymembers',
       cmtitle: `Category:${categoryFilter}`,
-      cmlimit: '500', // Maximum allowed
-      cmnamespace: '0', // Main namespace only
+      cmlimit: '500',
+      cmnamespace: '0', // Main namespace
     });
-    
+
     if (cmcontinue) {
       params.set('cmcontinue', cmcontinue);
     }
 
     const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${params.toString()}`, {
       headers: {
-        'User-Agent': 'IxStats-Builder/1.0 (https://ixstats.com) MediaWiki-Search',
+        'User-Agent': 'IxStats-Builder',
       },
     });
 
@@ -343,7 +341,7 @@ async function getCategorySubcategories(categoryFilter: string, config: WikiConf
 
     const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${params.toString()}`, {
       headers: {
-        'User-Agent': 'IxStats-Builder/1.0 (https://ixstats.com) MediaWiki-Search',
+        'User-Agent': 'IxStats-Builder',
       },
     });
 
@@ -430,20 +428,18 @@ async function performTargetedSearch(
   config: WikiConfig
 ): Promise<any[]> {
   try {
-    // Use MediaWiki search API with title restrictions
-    const searchParams = new URLSearchParams({
+    const params = new URLSearchParams({
       action: 'query',
       format: 'json',
       list: 'search',
       srsearch: query,
       srprop: 'snippet',
-      srlimit: '20',
-      srnamespace: '0',
+      srlimit: '50',
     });
 
-    const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${searchParams.toString()}`, {
+    const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${params.toString()}`, {
       headers: {
-        'User-Agent': 'IxStats-Builder/1.0 (https://ixstats.com) MediaWiki-Search',
+        'User-Agent': 'IxStats-Builder',
       },
     });
 
@@ -570,7 +566,7 @@ async function getPageWikitext(pageName: string, config: WikiConfig): Promise<st
 
   const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${params.toString()}`, {
     headers: {
-      'User-Agent': 'IxStats-Builder/1.0 (https://ixstats.com) MediaWiki-Parser',
+      'User-Agent': 'IxStats-Builder',
     },
   });
 
@@ -1197,16 +1193,24 @@ async function getImageUrl(filename: string, site: 'ixwiki' | 'iiwiki' | 'althis
       titles: `File:${filename}`,
       prop: 'imageinfo',
       iiprop: 'url',
-      iilimit: '1'
+      iilimit: '1',
+      origin: '*', // Add CORS origin
     });
 
     const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${params.toString()}`, {
       headers: {
-        'User-Agent': 'IxStats-Builder/1.0 (https://ixstats.com) MediaWiki-Search',
+        'User-Agent': 'IxStats-Builder',
+        'Accept': 'application/json',
       },
+      mode: 'cors',
     });
 
-    if (!response.ok) return null;
+    if (!response.ok) {
+      if (response.status === 403) {
+        console.warn(`[WikiSearch] 403 Forbidden when getting image URL for ${filename} from ${site}`);
+      }
+      return null;
+    }
 
     const data = await response.json();
     const pages = data.query?.pages;
@@ -1249,15 +1253,23 @@ export async function searchWikiImages(
       srprop: 'snippet',
       srlimit: '20',
       srnamespace: '6', // File namespace only
+      origin: '*', // Add CORS origin parameter
     });
 
     const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${searchParams.toString()}`, {
       headers: {
-        'User-Agent': 'IxStats-Builder/1.0 (https://ixstats.com) MediaWiki-Search',
+        'User-Agent': 'IxStats-Builder',
+        'Accept': 'application/json',
       },
+      mode: 'cors', // Explicitly set CORS mode
     });
 
     if (!response.ok) {
+      // Return empty array instead of throwing for 403 errors
+      if (response.status === 403) {
+        console.warn(`[WikiSearch] 403 Forbidden for ${site} - API may be blocking requests. Returning empty results.`);
+        return [];
+      }
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
@@ -1296,6 +1308,11 @@ export async function searchWikiImages(
 
   } catch (error) {
     console.error(`Wiki image search failed for ${site}:`, error);
+    // Return empty array instead of throwing - allows graceful degradation
+    if (error instanceof Error && (error.message.includes('403') || error.message.includes('Forbidden'))) {
+      console.warn(`[WikiSearch] Returning empty results for ${site} due to access restrictions`);
+      return [];
+    }
     throw new Error(`Failed to search ${site} images: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

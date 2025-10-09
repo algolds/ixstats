@@ -348,7 +348,7 @@ export function FiscalSystemSectionModern({
 
           {/* Revenue Efficiency */}
           <div className="space-y-4">
-            <div className="p-4 rounded-lg bg-[var(--primitive-background)]/30 border border-[var(--primitive-border)]">
+            <div className="p-4 rounded-lg bg-secondary border border-border">
               <h5 className="text-sm font-semibold text-foreground mb-3">Revenue Efficiency</h5>
               
               <div className="space-y-3">
@@ -401,7 +401,7 @@ export function FiscalSystemSectionModern({
           />
           
           <div className="space-y-4">
-            <div className="p-4 rounded-lg bg-[var(--primitive-background)]/30 border border-[var(--primitive-border)]">
+            <div className="p-4 rounded-lg bg-secondary border border-border">
               <h5 className="text-sm font-semibold text-foreground mb-3">Debt Sustainability</h5>
               
               <div className="space-y-3">

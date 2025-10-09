@@ -142,7 +142,7 @@ export function EnhancedToggle({
         <div className="flex-1 min-w-0">
           {label && (
             <label className={cn(
-              'flex items-center gap-2 font-semibold text-[var(--primitive-text)] cursor-pointer',
+              'flex items-center gap-2 font-medium text-foreground cursor-pointer',
               config.label,
               disabled && 'cursor-not-allowed'
             )}>
@@ -152,7 +152,7 @@ export function EnhancedToggle({
             </label>
           )}
           {description && (
-            <p className="text-xs text-[var(--primitive-muted)] mt-1">{description}</p>
+            <p className="text-xs text-muted-foreground mt-1">{description}</p>
           )}
         </div>
       )}
@@ -191,7 +191,7 @@ export function EnhancedToggle({
         <div className="flex-1 min-w-0">
           {label && (
             <label className={cn(
-              'flex items-center gap-2 font-semibold text-[var(--primitive-text)] cursor-pointer',
+              'flex items-center gap-2 font-medium text-foreground cursor-pointer',
               config.label,
               disabled && 'cursor-not-allowed'
             )}>
@@ -201,7 +201,7 @@ export function EnhancedToggle({
             </label>
           )}
           {description && (
-            <p className="text-xs text-[var(--primitive-muted)] mt-1">{description}</p>
+            <p className="text-xs text-muted-foreground mt-1">{description}</p>
           )}
         </div>
       )}

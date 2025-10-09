@@ -405,7 +405,7 @@ export function CountryGrid({
         {isAutoScrolling && filteredCountries.length > 0 && (
           <div className="absolute inset-0 pointer-events-none">
             <motion.div
-              className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5"
+              className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-yellow-500/5"
               animate={{
                 backgroundPosition: ["0% 0%", "100% 100%", "0% 0%"],
               }}

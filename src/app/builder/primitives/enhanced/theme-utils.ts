@@ -6,11 +6,12 @@ import type { SectionId, SectionColorScheme, PrimitiveTheme } from './types';
 // Section to theme mapping based on the existing design system
 export const SECTION_THEME_MAP: Record<SectionId, PrimitiveTheme> = {
   symbols: 'gold',      // National Symbols - Gold/Warning theme
-  core: 'blue',         // Core Indicators - Blue/Primary theme  
+  core: 'blue',         // Core Indicators - Blue/Primary theme
   labor: 'emerald',     // Labor & Employment - Green/Success theme
   fiscal: 'gold',       // Fiscal System - Gold/Warning theme
   government: 'purple', // Government Spending - Purple theme
-  demographics: 'red'   // Demographics - Red/Error theme
+  demographics: 'red',  // Demographics - Red/Error theme
+  spending: 'purple'    // Government Spending - Purple theme
 };
 
 // Enhanced color schemes with CSS custom properties and glass effects

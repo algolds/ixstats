@@ -71,7 +71,7 @@ export function FiscalSystemSection({
   // Ensure all required fields exist with proper initialization
   if (!fiscalSystem) {
     console.error('FiscalSystemSection: No fiscal system data provided');
-    return <div className="p-4 text-red-500">Error: No fiscal system data available</div>;
+    return <div className="p-4 text-red-600 dark:text-red-400">Error: No fiscal system data available</div>;
   }
 
   const handleFiscalChange = (key: string, value: any) => {
@@ -275,7 +275,7 @@ export function FiscalSystemSection({
     <>
       {/* View Selector - Always visible at top */}
       <div className="md:col-span-2 mb-6">
-        <div className={`grid ${showAtomicIntegration ? 'grid-cols-6' : 'grid-cols-5'} bg-card/50 rounded-lg p-1 backdrop-blur-sm border border-border gap-1`}>
+        <div className={`grid ${showAtomicIntegration ? 'grid-cols-6' : 'grid-cols-5'} bg-card rounded-lg p-1 border border-border gap-1`}>
           {(['overview', 'revenue', 'spending', 'debt', ...(showAtomicIntegration ? ['atomic'] : []), 'builder'] as const).map((view) => (
             <button
               key={view}
@@ -395,7 +395,7 @@ export function FiscalSystemSection({
                 error={undefined}
               />
             ) : (
-              <div className="h-[250px] flex items-center justify-center border border-border rounded-lg bg-card/50">
+              <div className="h-[250px] flex items-center justify-center border border-border rounded-lg bg-card">
                 <div className="text-center text-muted-foreground">
                   <PieChart className="h-8 w-8 mx-auto mb-2" />
                   <p>No tax revenue data available</p>
@@ -576,14 +576,14 @@ export function FiscalSystemSection({
           {activeComponents.length === 0 && countryId && (
             <div className="mt-6 p-6 rounded-lg bg-gradient-to-br from-yellow-50/50 to-amber-50/50 dark:from-yellow-950/20 dark:to-amber-950/20 border border-yellow-200/50 dark:border-yellow-700/50">
               <div className="text-center space-y-4">
-                <Zap className="h-12 w-12 mx-auto text-yellow-500" />
-                <h4 className="text-lg font-semibold text-foreground">No Government Components</h4>
+                <Zap className="h-12 w-12 mx-auto text-yellow-500 dark:text-yellow-400" />
+                <h4 className="text-lg font-bold text-foreground">No Government Components</h4>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto">
                   Add atomic government components to see their impact on economic effectiveness and policy implementation.
                 </p>
-                <button 
+                <button
                   onClick={() => window.open('/mycountry/editor#government', '_blank')}
-                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg text-sm font-medium transition-colors"
+                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-600 dark:hover:bg-yellow-700 text-white rounded-lg text-sm font-medium transition-colors"
                 >
                   Configure Government Components
                 </button>
@@ -599,13 +599,13 @@ export function FiscalSystemSection({
           <div className="p-6 rounded-lg bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/20 border border-amber-200/50 dark:border-amber-700/50">
             <div className="text-center space-y-4">
               <Building2 className="h-12 w-12 mx-auto text-amber-500" />
-              <h4 className="text-lg font-semibold text-foreground">Advanced Tax System Builder</h4>
+              <h4 className="text-lg font-bold text-foreground">Advanced Tax System Builder</h4>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
                 Create custom tax brackets, deductions, and complex tax policies. 
                 This advanced feature is under development.
               </p>
               <div className="grid grid-cols-2 gap-4 mt-6">
-                <div className="p-3 rounded-lg bg-white/50 dark:bg-gray-800/50 border border-amber-200/30">
+                <div className="p-3 rounded-lg bg-card border border-amber-200/30">
                   <h5 className="font-medium text-sm mb-2">Coming Soon:</h5>
                   <ul className="text-xs text-muted-foreground space-y-1">
                     <li>• Progressive tax brackets</li>
@@ -613,7 +613,7 @@ export function FiscalSystemSection({
                     <li>• Corporate tax tiers</li>
                   </ul>
                 </div>
-                <div className="p-3 rounded-lg bg-white/50 dark:bg-gray-800/50 border border-amber-200/30">
+                <div className="p-3 rounded-lg bg-card border border-amber-200/30">
                   <h5 className="font-medium text-sm mb-2">Advanced Features:</h5>
                   <ul className="text-xs text-muted-foreground space-y-1">
                     <li>• Tax simulation modeling</li>

@@ -71,7 +71,7 @@ async function getWikiCommonsImageInfo(title: string): Promise<{ url: string; de
 
   const response = await fetch(`https://commons.wikimedia.org/w/api.php?${params.toString()}`, {
     headers: {
-      'User-Agent': 'IxStats-Builder/1.0 (https://ixstats.com) Wikimedia-Commons-Search',
+      'User-Agent': 'IxStats-Builder',
     },
   });
 
@@ -144,7 +144,7 @@ export const thinkpagesRouter = createTRPCRouter({
 
         const response = await fetch(`https://commons.wikimedia.org/w/api.php?${searchParams.toString()}`, {
           headers: {
-            'User-Agent': 'IxStats-Builder/1.0 (https://ixstats.com) Wikimedia-Commons-Search',
+            'User-Agent': 'IxStats-Builder',
           },
         });
 
@@ -2012,14 +2012,14 @@ export const thinkpagesRouter = createTRPCRouter({
       const userIds = [...new Set(messages.map(msg => msg.userId))];
 
       // Fetch all accounts in one query
-      const accounts = await db.userAccount.findMany({
+      const accounts = await db.user.findMany({
         where: {
           clerkUserId: { in: userIds }
         }
       });
 
       // Create a map for quick lookup
-      const accountMap = new Map(accounts.map(acc => [acc.clerkUserId, acc]));
+      const accountMap = new Map(accounts.map((acc: { clerkUserId: string }) => [acc.clerkUserId, acc]));
 
       return {
         messages: messages.map(msg => ({
@@ -2157,9 +2157,8 @@ export const thinkpagesRouter = createTRPCRouter({
             data: newMessageIds.map(messageId => ({
               messageId,
               userId: input.userId,
-              messageType: 'thinkshare'
-            })),
-            skipDuplicates: true
+              messageType: 'thinkshare' as const
+            }))
           });
         }
       }

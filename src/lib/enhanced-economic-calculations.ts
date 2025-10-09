@@ -600,7 +600,7 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
       },
       regionalDisparities: economyData.demographics.regions.map(region => ({
         region: region.name,
-        deviation: Math.random() * 20 - 10 // Placeholder
+        deviation: this.calculateRegionalDeviation(region, economyData)
       }))
     };
   }
@@ -850,6 +850,32 @@ export class IntegratedEconomicAnalysis {
     }
 
     return recommendations.slice(0, 5); // Top 5 priorities
+  }
+
+  /**
+   * Calculate regional economic deviation from national average
+   */
+  private calculateRegionalDeviation(region: any, economyData: EconomyData): number {
+    // Get national average GDP per capita
+    const nationalGdpPerCapita = economyData.economicIndicators.gdpPerCapita;
+
+    // Calculate regional GDP per capita based on region characteristics
+    const regionPopulation = region.population || economyData.demographics.totalPopulation / economyData.demographics.regions.length;
+    const regionUrbanization = region.urbanization || economyData.demographics.urbanizationRate;
+    const regionEmployment = region.employment || economyData.laborMarket.employed;
+
+    // Estimate regional economic activity based on urbanization and employment
+    const urbanizationFactor = regionUrbanization / economyData.demographics.urbanizationRate;
+    const employmentFactor = regionEmployment / economyData.laborMarket.employed;
+
+    // Calculate estimated regional GDP per capita
+    const regionalGdpPerCapita = nationalGdpPerCapita * urbanizationFactor * employmentFactor;
+
+    // Calculate deviation as percentage from national average
+    const deviation = ((regionalGdpPerCapita - nationalGdpPerCapita) / nationalGdpPerCapita) * 100;
+
+    // Cap deviation to reasonable range (-20% to +20%)
+    return Math.max(-20, Math.min(20, deviation));
   }
 }
 

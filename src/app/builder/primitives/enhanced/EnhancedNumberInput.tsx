@@ -198,14 +198,14 @@ export function EnhancedNumberInput({
       {(label || description) && (
         <div className="space-y-1">
           {label && (
-            <label className="flex items-center gap-2 text-sm font-semibold text-[var(--primitive-text)]">
+            <label className="flex items-center gap-2 text-sm font-medium text-foreground">
               {Icon && <Icon className="h-4 w-4" />}
               {label}
               {required && <span className="text-red-400">*</span>}
             </label>
           )}
           {description && (
-            <p className="text-xs text-[var(--primitive-muted)]">{description}</p>
+            <p className="text-xs text-muted-foreground">{description}</p>
           )}
         </div>
       )}
@@ -244,7 +244,8 @@ export function EnhancedNumberInput({
               placeholder={isEditing ? (placeholder || '') : ''}
               disabled={disabled}
               className={cn(
-                'w-full bg-transparent border-none outline-none font-mono',
+                'w-full bg-transparent border-none outline-none',
+                acceptText ? 'font-sans' : 'font-mono',
                 'text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400',
                 'font-medium',
                 sizeClasses[size],
@@ -258,7 +259,8 @@ export function EnhancedNumberInput({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className={cn(
-                  'absolute inset-0 flex items-center font-mono pointer-events-none',
+                  'absolute inset-0 flex items-center pointer-events-none',
+                  acceptText ? 'font-sans' : 'font-mono',
                   sizeClasses[size],
                   'text-gray-900 dark:text-gray-100 font-medium'
                 )}
@@ -266,7 +268,7 @@ export function EnhancedNumberInput({
                 <motion.span>
                   {displayValue || (placeholder && !String(value || '').trim() ? placeholder : '')}
                 </motion.span>
-                {unit && displayValue && <span className="ml-1 text-[var(--primitive-muted)]">{unit}</span>}
+                {unit && displayValue && <span className="ml-1 text-muted-foreground">{unit}</span>}
               </motion.div>
             )}
           </div>
@@ -287,7 +289,7 @@ export function EnhancedNumberInput({
                 buttonSizeClasses[size],
                 'hover:bg-[var(--primitive-background)]',
                 'disabled:opacity-50 disabled:cursor-not-allowed',
-                `text-[var(--primitive-text)] hover:text-[${colors.primary}]`
+                `text-foreground hover:text-[${colors.primary}]`
               )}
             >
               <Minus className="h-4 w-4" />
@@ -305,7 +307,7 @@ export function EnhancedNumberInput({
                 buttonSizeClasses[size],
                 'hover:bg-[var(--primitive-background)]',
                 'disabled:opacity-50 disabled:cursor-not-allowed',
-                `text-[var(--primitive-text)] hover:text-[${colors.primary}]`
+                `text-foreground hover:text-[${colors.primary}]`
               )}
             >
               <Plus className="h-4 w-4" />
@@ -324,7 +326,7 @@ export function EnhancedNumberInput({
                   buttonSizeClasses[size],
                   'hover:bg-[var(--primitive-background)]',
                   'disabled:opacity-50 disabled:cursor-not-allowed',
-                  `text-[var(--primitive-text)] hover:text-[${colors.primary}]`
+                  `text-foreground hover:text-[${colors.primary}]`
                 )}
               >
                 <RotateCcw className="h-4 w-4" />
@@ -347,10 +349,10 @@ export function EnhancedNumberInput({
           {comparisonData.trend === 'up' && <TrendingUp className="h-4 w-4 text-green-500" />}
           {comparisonData.trend === 'down' && <TrendingDown className="h-4 w-4 text-red-500" />}
           
-          <span className="text-[var(--primitive-text)]">
+          <span className="text-foreground">
             vs {referenceLabel}: 
             <span className={cn(
-              'ml-1 font-semibold',
+              'ml-1 font-bold',
               comparisonData.trend === 'up' && 'text-green-500',
               comparisonData.trend === 'down' && 'text-red-500'
             )}>
@@ -358,7 +360,7 @@ export function EnhancedNumberInput({
               {format ? format(comparisonData.difference) : comparisonData.difference.toFixed(precision)}
               {unit}
             </span>
-            <span className="text-[var(--primitive-muted)] ml-1">
+            <span className="text-muted-foreground ml-1">
               ({comparisonData.percentage > 0 ? '+' : ''}{comparisonData.percentage.toFixed(1)}%)
             </span>
           </span>
