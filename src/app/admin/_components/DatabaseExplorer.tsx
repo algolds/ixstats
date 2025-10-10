@@ -26,7 +26,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Separator } from "~/components/ui/separator";
-import { api } from "~/trpc/react";
 
 interface DatabaseTable {
   name: string;
@@ -59,6 +58,7 @@ interface QueryResult {
   rows: any[][];
   executionTime: number;
   affectedRows?: number;
+  message?: string;
 }
 
 export function DatabaseExplorer() {
@@ -174,10 +174,11 @@ export function DatabaseExplorer() {
         // Fetch real country data
         const result = await fetchCountries();
 
-        if (result.data) {
+        if (result.data && 'countries' in result.data) {
+          const countries = result.data.countries;
           const queryResult: QueryResult = {
             columns: ["id", "name", "population", "gdpPerCapita", "economicTier", "diplomaticStanding"],
-            rows: result.data.slice(0, 10).map(country => [
+            rows: countries.slice(0, 10).map((country: any) => [
               country.id,
               country.name,
               country.currentPopulation,

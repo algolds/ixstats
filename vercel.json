@@ -1,0 +1,19 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/apply-scheduled-changes",
+      "schedule": "0 0 * * *"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/cron/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
+        }
+      ]
+    }
+  ]
+}

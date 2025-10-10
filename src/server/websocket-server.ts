@@ -122,7 +122,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         .then(() => {
           res.status(200).json({ success: true, message: 'Broadcast triggered' });
         })
-        .catch((error) => {
+        .catch((error: Error) => {
           res.status(500).json({ error: error.message });
         });
         

@@ -31,7 +31,7 @@ interface CountryDataProviderProps {
 // Helper function to generate economic data
 function generateEconomicDataForCountry(country: any) {
   if (!country) return undefined;
-  
+
   const profile: CountryProfile = {
     population: country.currentPopulation || country.baselinePopulation || 0,
     gdpPerCapita: country.currentGdpPerCapita || country.baselineGdpPerCapita || 0,
@@ -44,16 +44,59 @@ function generateEconomicDataForCountry(country: any) {
 
   const economicData = generateCountryEconomicData(profile);
 
-  // Override with real data
-  if (country.realGDPGrowthRate !== undefined) {
-    economicData.core.realGDPGrowthRate = country.realGDPGrowthRate;
-  }
-  if (country.inflationRate !== undefined) {
-    economicData.core.inflationRate = country.inflationRate;
-  }
-  if (country.unemploymentRate !== undefined) {
-    economicData.labor.unemploymentRate = country.unemploymentRate;
-  }
+  // DEBUG LOGGING
+  console.log('=== CountryDataProvider DEBUG ===');
+  console.log('Country from API:', country.name);
+  console.log('API unemploymentRate:', country.unemploymentRate);
+  console.log('API taxRevenueGDPPercent:', country.taxRevenueGDPPercent);
+  console.log('API laborForceParticipationRate:', country.laborForceParticipationRate);
+  console.log('Template labor.unemploymentRate (before override):', economicData.labor.unemploymentRate);
+
+  // CRITICAL FIX: DO NOT use template data! Only use real database values.
+  // If database value is null/undefined, SET IT TO null so UI can show "N/A"
+  // Template data should NEVER be shown as if it's real data!
+
+  // Core economic indicators - use DB value or null
+  economicData.core.realGDPGrowthRate = country.realGDPGrowthRate ?? null;
+  economicData.core.inflationRate = country.inflationRate ?? null;
+  economicData.core.nominalGDP = country.nominalGDP ?? null;
+
+  // Labor market data - use DB value or null (NO TEMPLATE DATA)
+  economicData.labor.unemploymentRate = country.unemploymentRate ?? null;
+  economicData.labor.employmentRate = country.employmentRate ?? (country.unemploymentRate !== null && country.unemploymentRate !== undefined ? 100 - country.unemploymentRate : null);
+  economicData.labor.laborForceParticipationRate = country.laborForceParticipationRate ?? null;
+  economicData.labor.totalWorkforce = country.totalWorkforce ?? null;
+  economicData.labor.averageWorkweekHours = country.averageWorkweekHours ?? null;
+  economicData.labor.minimumWage = country.minimumWage ?? null;
+  economicData.labor.averageAnnualIncome = country.averageAnnualIncome ?? null;
+
+  // Fiscal system data - use DB value or null
+  economicData.fiscal.taxRevenueGDPPercent = country.taxRevenueGDPPercent ?? null;
+  economicData.fiscal.governmentRevenueTotal = country.governmentRevenueTotal ?? null;
+  economicData.fiscal.governmentBudgetGDPPercent = country.governmentBudgetGDPPercent ?? null;
+  economicData.fiscal.budgetDeficitSurplus = country.budgetDeficitSurplus ?? null;
+  economicData.fiscal.totalDebtGDPRatio = country.totalDebtGDPRatio ?? null;
+  economicData.fiscal.internalDebtGDPPercent = country.internalDebtGDPPercent ?? null;
+  economicData.fiscal.externalDebtGDPPercent = country.externalDebtGDPPercent ?? null;
+  economicData.fiscal.interestRates = country.interestRates ?? null;
+  economicData.fiscal.debtServiceCosts = country.debtServiceCosts ?? null;
+
+  // Government spending data - use DB value or null
+  economicData.spending.totalSpending = country.totalGovernmentSpending ?? null;
+  economicData.spending.spendingGDPPercent = country.spendingGDPPercent ?? null;
+
+  // Demographics data - use DB value or defaults
+  economicData.demographics.lifeExpectancy = country.lifeExpectancy ?? null;
+  economicData.demographics.literacyRate = country.literacyRate ?? null;
+  economicData.demographics.urbanRuralSplit = (country.urbanPopulationPercent !== null && country.urbanPopulationPercent !== undefined && country.ruralPopulationPercent !== null && country.ruralPopulationPercent !== undefined) ? {
+    urban: country.urbanPopulationPercent,
+    rural: country.ruralPopulationPercent
+  } : { urban: 60, rural: 40 }; // Default split if not available
+
+  // DEBUG: Log final economicData
+  console.log('Final economicData.labor.unemploymentRate:', economicData.labor.unemploymentRate);
+  console.log('Final economicData.fiscal.taxRevenueGDPPercent:', economicData.fiscal.taxRevenueGDPPercent);
+  console.log('=== END CountryDataProvider DEBUG ===');
 
   return economicData;
 }

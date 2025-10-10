@@ -559,7 +559,7 @@ export function DashboardCommandCenter() {
             user={user}
             globalStats={globalStats}
             allCountries={allCountriesData?.countries || []}
-            notifications={notifications || []}
+            notifications={notifications?.notifications || []}
             economicMilestones={economicMilestones || []}
             forecast={forecast}
           />

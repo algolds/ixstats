@@ -651,6 +651,8 @@ export function GovernmentSpendingSectionEnhanced({
                     value: cat.value,
                     color: cat.color
                   }))}
+                  dataKey="value"
+                  nameKey="name"
                   height={300}
                   sectionId="spending"
                 />
@@ -672,6 +674,8 @@ export function GovernmentSpendingSectionEnhanced({
                       name: cat.name,
                       value: cat.value
                     }))}
+                  xKey="name"
+                  yKey="value"
                   height={300}
                   sectionId="spending"
                 />
@@ -681,33 +685,33 @@ export function GovernmentSpendingSectionEnhanced({
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricCard
-              title="Total Budget"
+              label="Total Budget"
               value={`${inputs.governmentSpending.totalSpending}%`}
-              subtitle="of GDP"
+              description="of GDP"
               icon={DollarSign}
-              trend={5}
+              trend="up"
               sectionId="spending"
             />
             <MetricCard
-              title="Social Spending"
+              label="Social Spending"
               value={`${(spendingData.find(c => c.id === 'Education')?.value || 0) +
                        (spendingData.find(c => c.id === 'Healthcare')?.value || 0) +
                        (spendingData.find(c => c.id === 'Social Security')?.value || 0)}%`}
-              subtitle="Education, Health, Social"
+              description="Education, Health, Social"
               icon={Heart}
               sectionId="spending"
             />
             <MetricCard
-              title="Infrastructure"
+              label="Infrastructure"
               value={`${spendingData.find(c => c.id === 'Infrastructure')?.value || 0}%`}
-              subtitle="Physical infrastructure"
+              description="Physical infrastructure"
               icon={Building2}
               sectionId="spending"
             />
             <MetricCard
-              title="Active Policies"
+              label="Active Policies"
               value={selectedPolicies.size}
-              subtitle="spending policies"
+              description="spending policies"
               icon={Settings}
               sectionId="spending"
             />

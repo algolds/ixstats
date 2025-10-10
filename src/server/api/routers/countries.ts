@@ -14,6 +14,7 @@ import {
 import { type CountryWithAtomicComponents } from "~/lib/atomic-economic-integration";
 import { getAtomicEffectivenessService } from "~/services/AtomicEffectivenessService";
 import { ComponentType } from "@prisma/client";
+import { calculateAllVitalityScores } from "~/lib/vitality-calculator";
 import type { 
   SystemStatus, 
   AdminPageBotStatusView, 
@@ -129,6 +130,7 @@ const safelyIncludeRelations = async (db: any) => {
       { name: 'incomeDistribution', test: () => db.incomeDistribution.findFirst() },
       { name: 'governmentBudget', test: () => db.governmentBudget.findFirst() },
       { name: 'demographics', test: () => db.demographics.findFirst() },
+      { name: 'nationalIdentity', test: () => db.nationalIdentity.findFirst() },
     ];
 
     for (const { name, test } of testQueries) {
@@ -338,6 +340,7 @@ const countriesRouter = createTRPCRouter({
       if (availableRelations.incomeDistribution) includeObject.incomeDistribution = true;
       if (availableRelations.governmentBudget) includeObject.governmentBudget = true;
       if (availableRelations.demographics) includeObject.demographics = true;
+      if (availableRelations.nationalIdentity) includeObject.nationalIdentity = true;
 
       let country;
       try {
@@ -489,9 +492,34 @@ const countriesRouter = createTRPCRouter({
       if (gdpVolatility > 0.05) vulnerabilities.push('gdp_per_capita_volatility');
       if (riskFlags.includes('negative_population_growth')) vulnerabilities.push('population_decline');
       if (riskFlags.includes('negative_gdp_per_capita_growth')) vulnerabilities.push('gdp_per_capita_decline');
+      // CRITICAL FIX: Preserve all database fields, only override calculated population/GDP fields
+      // Do NOT spread result.newStats as it wipes out economic indicators!
+
+      // DEBUG LOGGING
+      console.log('=== getByIdWithEconomicData DEBUG ===');
+      console.log('Country Name:', country.name);
+      console.log('Database unemploymentRate:', country.unemploymentRate);
+      console.log('Database taxRevenueGDPPercent:', country.taxRevenueGDPPercent);
+      console.log('Database totalDebtGDPRatio:', country.totalDebtGDPRatio);
+      console.log('Database laborForceParticipationRate:', country.laborForceParticipationRate);
+      console.log('Database currentPopulation:', country.currentPopulation);
+      console.log('Calculated currentPopulation:', result.newStats.currentPopulation);
+
       const response: CountryWithEconomicData = {
-        ...country,
-        ...result.newStats,
+        ...country,  // All database fields including economic indicators
+
+        // Override ONLY the calculated population and GDP fields from calculation engine
+        currentPopulation: result.newStats.currentPopulation,
+        currentGdpPerCapita: result.newStats.currentGdpPerCapita,
+        currentTotalGdp: result.newStats.currentTotalGdp,
+        adjustedGdpGrowth: result.newStats.adjustedGdpGrowth,
+        populationGrowthRate: result.newStats.populationGrowthRate,
+        populationDensity: result.newStats.populationDensity,
+        gdpDensity: result.newStats.gdpDensity,
+        economicTier: result.newStats.economicTier,
+        populationTier: result.newStats.populationTier,
+
+        // Preserve all economic indicators from database (these are NOT in result.newStats)
         nominalGDP: country.nominalGDP ?? 0,
         realGDPGrowthRate: country.realGDPGrowthRate ?? 0,
         inflationRate: country.inflationRate ?? 0,
@@ -505,6 +533,7 @@ const countriesRouter = createTRPCRouter({
         averageAnnualIncome: country.averageAnnualIncome ?? undefined,
         taxRevenueGDPPercent: country.taxRevenueGDPPercent ?? undefined,
         taxRevenuePerCapita: country.taxRevenuePerCapita ?? undefined,
+        governmentRevenueTotal: country.governmentRevenueTotal ?? undefined,
         governmentBudgetGDPPercent: country.governmentBudgetGDPPercent ?? undefined,
         budgetDeficitSurplus: country.budgetDeficitSurplus ?? undefined,
         internalDebtGDPPercent: country.internalDebtGDPPercent ?? undefined,
@@ -521,6 +550,8 @@ const countriesRouter = createTRPCRouter({
         spendingPerCapita: country.spendingPerCapita ?? undefined,
         lifeExpectancy: country.lifeExpectancy ?? undefined,
         literacyRate: country.literacyRate ?? undefined,
+        urbanPopulationPercent: country.urbanPopulationPercent ?? undefined,
+        ruralPopulationPercent: country.ruralPopulationPercent ?? undefined,
         calculatedStats: {
           gdpGrowth: result.newStats.adjustedGdpGrowth || 0,
           populationGrowth: result.newStats.populationGrowthRate || 0,
@@ -555,9 +586,20 @@ const countriesRouter = createTRPCRouter({
         },
         lastCalculated: typeof country.lastCalculated === 'number' ? country.lastCalculated : (country.lastCalculated ? new Date(country.lastCalculated).getTime() : Date.now()),
       };
+
+      // DEBUG: Log what we're actually returning
+      console.log('Response unemploymentRate:', response.unemploymentRate);
+      console.log('Response taxRevenueGDPPercent:', response.taxRevenueGDPPercent);
+      console.log('Response laborForceParticipationRate:', response.laborForceParticipationRate);
+      console.log('=== END DEBUG ===');
+
       return response;
     }),
 
+  // IMPORTANT: This mutation updates ECONOMIC INDICATORS only.
+  // It does NOT update currentPopulation, currentGdpPerCapita, or currentTotalGdp.
+  // Those fields are calculated and updated by the IxStats calculation engine.
+  // The editor should display current* values but only allow editing of indicators.
   updateEconomicData: protectedProcedure
     .input(z.object({
       countryId: z.string(),
@@ -569,16 +611,17 @@ const countriesRouter = createTRPCRouter({
       if (!ctx.auth?.userId) {
         throw new Error('Not authenticated');
       }
-      
-      const userProfile = await ctx.db.user.findUnique({ 
-        where: { clerkUserId: ctx.auth.userId } 
+
+      const userProfile = await ctx.db.user.findUnique({
+        where: { clerkUserId: ctx.auth.userId }
       });
-      
+
       if (!userProfile || userProfile.countryId !== countryId) {
         throw new Error('You do not have permission to edit this country.');
       }
 
       try {
+        // NOTE: These are economic indicators, not calculated current values
         const basicFields = {
           nominalGDP: economicData.nominalGDP,
           realGDPGrowthRate: economicData.realGDPGrowthRate,
@@ -635,6 +678,103 @@ const countriesRouter = createTRPCRouter({
       }
     }),
 
+  // General update mutation for country fields (used by editor)
+  update: protectedProcedure
+    .input(z.object({
+      id: z.string(),
+    }).passthrough()) // Allow any additional fields
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...updates } = input;
+
+      if (!ctx.auth?.userId) {
+        throw new Error('Not authenticated');
+      }
+
+      // Verify user owns this country
+      const userProfile = await ctx.db.user.findUnique({
+        where: { clerkUserId: ctx.auth.userId }
+      });
+
+      if (!userProfile || userProfile.countryId !== id) {
+        throw new Error('You do not have permission to edit this country.');
+      }
+
+      try {
+        // Filter out undefined values and update
+        const filteredUpdates = Object.fromEntries(
+          Object.entries(updates).filter(([_, value]) => value !== undefined)
+        );
+
+        const updatedCountry = await ctx.db.country.update({
+          where: { id },
+          data: {
+            ...filteredUpdates,
+            updatedAt: new Date(),
+          },
+        });
+
+        return updatedCountry;
+      } catch (error) {
+        console.error('[Countries API] Failed to update country:', error);
+        throw new Error(`Failed to update country: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }),
+
+  updateNationalIdentity: protectedProcedure
+    .input(z.object({
+      countryId: z.string(),
+      officialName: z.string().optional(),
+      motto: z.string().optional(),
+      nationalAnthem: z.string().optional(),
+      capitalCity: z.string().optional(),
+      officialLanguages: z.string().optional(),
+      currency: z.string().optional(),
+      currencySymbol: z.string().optional(),
+      demonym: z.string().optional(),
+      governmentType: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { countryId, ...updates } = input;
+
+      if (!ctx.auth?.userId) {
+        throw new Error('Not authenticated');
+      }
+
+      // Verify user owns this country
+      const userProfile = await ctx.db.user.findUnique({
+        where: { clerkUserId: ctx.auth.userId }
+      });
+
+      if (!userProfile || userProfile.countryId !== countryId) {
+        throw new Error('You do not have permission to edit this country.');
+      }
+
+      try {
+        // Filter out undefined values
+        const filteredUpdates = Object.fromEntries(
+          Object.entries(updates).filter(([_, value]) => value !== undefined)
+        );
+
+        // Update or create national identity
+        const nationalIdentity = await ctx.db.nationalIdentity.upsert({
+          where: { countryId },
+          create: {
+            countryId,
+            ...filteredUpdates,
+          },
+          update: {
+            ...filteredUpdates,
+            updatedAt: new Date(),
+          },
+        });
+
+        return nationalIdentity;
+      } catch (error) {
+        console.error('[Countries API] Failed to update national identity:', error);
+        throw new Error(`Failed to update national identity: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }),
+
   getByIdAtTime: publicProcedure
     .input(z.object({
       id: z.string(),
@@ -649,6 +789,7 @@ const countriesRouter = createTRPCRouter({
             where: { isActive: true },
             orderBy: { ixTimeTimestamp: "desc" },
           },
+          nationalIdentity: true,
         },
       });
       
@@ -663,6 +804,8 @@ const countriesRouter = createTRPCRouter({
       let calculatedStats: CountryStats;
 
       if (isCurrentTime) {
+        // FIXED: Use current values, not baseline values
+        // This ensures editor and frontend display the same data
         calculatedStats = {
           country: countryFromDb.name,
           continent: countryFromDb.continent,
@@ -670,8 +813,8 @@ const countriesRouter = createTRPCRouter({
           governmentType: countryFromDb.governmentType,
           religion: countryFromDb.religion,
           leader: countryFromDb.leader,
-          population: countryFromDb.baselinePopulation,
-          gdpPerCapita: countryFromDb.baselineGdpPerCapita,
+          population: validateNumber(countryFromDb.currentPopulation, 1e11),  // Use current, not baseline
+          gdpPerCapita: validateNumber(countryFromDb.currentGdpPerCapita, 1e7, 1),  // Use current, not baseline
           landArea: countryFromDb.landArea,
           areaSqMi: countryFromDb.areaSqMi,
           maxGdpGrowthRate: validateGrowthRate(countryFromDb.maxGdpGrowthRate),
@@ -778,6 +921,7 @@ const countriesRouter = createTRPCRouter({
           ...dm,
           ixTimeTimestamp: dm.ixTimeTimestamp.getTime()
         })),
+        nationalIdentity: countryFromDb.nationalIdentity,
       };
     }),
 
@@ -1159,19 +1303,40 @@ const countriesRouter = createTRPCRouter({
         const oldGdp = c.currentTotalGdp || 0;
         const oldPopulation = c.currentPopulation || 0;
         
+        // Calculate vitality scores before updating
+        const updatedCountryData = {
+          ...c,
+          currentPopulation: validateNumber(res.newStats.currentPopulation, 1e11),
+          currentGdpPerCapita: validateNumber(res.newStats.currentGdpPerCapita, 1e7, 1),
+          currentTotalGdp: validateNumber(res.newStats.currentTotalGdp, 1e18, 1),
+          economicTier: res.newStats.economicTier.toString(),
+          populationTier: res.newStats.populationTier.toString(),
+          adjustedGdpGrowth: validateGrowthRate(res.newStats.adjustedGdpGrowth),
+          actualGdpGrowth: validateGrowthRate(res.newStats.actualGdpGrowth),
+          populationGrowthRate: validateGrowthRate(res.newStats.populationGrowthRate),
+        };
+
+        const vitalityScores = calculateAllVitalityScores(updatedCountryData);
+
         const updated = await ctx.db.country.update({
           where: { id: c.id },
           data: {
-            currentPopulation: validateNumber(res.newStats.currentPopulation, 1e11),
-            currentGdpPerCapita: validateNumber(res.newStats.currentGdpPerCapita, 1e7, 1),
-            currentTotalGdp: validateNumber(res.newStats.currentTotalGdp, 1e18, 1),
-            economicTier: res.newStats.economicTier.toString(),
-            populationTier: res.newStats.populationTier.toString(),
+            currentPopulation: updatedCountryData.currentPopulation,
+            currentGdpPerCapita: updatedCountryData.currentGdpPerCapita,
+            currentTotalGdp: updatedCountryData.currentTotalGdp,
+            economicTier: updatedCountryData.economicTier,
+            populationTier: updatedCountryData.populationTier,
             populationDensity: res.newStats.populationDensity ? validateNumber(res.newStats.populationDensity, 1e7) : null,
             gdpDensity: res.newStats.gdpDensity ? validateNumber(res.newStats.gdpDensity, 1e12) : null,
-            adjustedGdpGrowth: validateGrowthRate(res.newStats.adjustedGdpGrowth),
-            actualGdpGrowth: validateGrowthRate(res.newStats.actualGdpGrowth),
-            populationGrowthRate: validateGrowthRate(res.newStats.populationGrowthRate),
+            adjustedGdpGrowth: updatedCountryData.adjustedGdpGrowth,
+            actualGdpGrowth: updatedCountryData.actualGdpGrowth,
+            populationGrowthRate: updatedCountryData.populationGrowthRate,
+            // Update vitality scores
+            economicVitality: vitalityScores.economicVitality,
+            populationWellbeing: vitalityScores.populationWellbeing,
+            diplomaticStanding: vitalityScores.diplomaticStanding,
+            governmentalEfficiency: vitalityScores.governmentalEfficiency,
+            overallNationalHealth: vitalityScores.overallNationalHealth,
             lastCalculated: new Date(now),
           },
         });
@@ -1297,20 +1462,41 @@ const countriesRouter = createTRPCRouter({
         const oldGdp = c.currentTotalGdp || 0;
         const oldPopulation = c.currentPopulation || 0;
         
-        const updateData = {
+        // Calculate vitality scores for batch update
+        const updatedCountryData = {
+          ...c,
           currentPopulation: validateNumber(res.newStats.currentPopulation, 1e11),
           currentGdpPerCapita: validateNumber(res.newStats.currentGdpPerCapita, 1e7, 1),
           currentTotalGdp: validateNumber(res.newStats.currentTotalGdp, 1e18, 1),
           economicTier: res.newStats.economicTier.toString(),
           populationTier: res.newStats.populationTier.toString(),
-          populationDensity: res.newStats.populationDensity ? validateNumber(res.newStats.populationDensity, 1e7) : null,
-          gdpDensity: res.newStats.gdpDensity ? validateNumber(res.newStats.gdpDensity, 1e12) : null,
           adjustedGdpGrowth: validateGrowthRate(res.newStats.adjustedGdpGrowth),
           actualGdpGrowth: validateGrowthRate(res.newStats.actualGdpGrowth),
           populationGrowthRate: validateGrowthRate(res.newStats.populationGrowthRate),
+        };
+
+        const vitalityScores = calculateAllVitalityScores(updatedCountryData);
+
+        const updateData = {
+          currentPopulation: updatedCountryData.currentPopulation,
+          currentGdpPerCapita: updatedCountryData.currentGdpPerCapita,
+          currentTotalGdp: updatedCountryData.currentTotalGdp,
+          economicTier: updatedCountryData.economicTier,
+          populationTier: updatedCountryData.populationTier,
+          populationDensity: res.newStats.populationDensity ? validateNumber(res.newStats.populationDensity, 1e7) : null,
+          gdpDensity: res.newStats.gdpDensity ? validateNumber(res.newStats.gdpDensity, 1e12) : null,
+          adjustedGdpGrowth: updatedCountryData.adjustedGdpGrowth,
+          actualGdpGrowth: updatedCountryData.actualGdpGrowth,
+          populationGrowthRate: updatedCountryData.populationGrowthRate,
+          // Update vitality scores
+          economicVitality: vitalityScores.economicVitality,
+          populationWellbeing: vitalityScores.populationWellbeing,
+          diplomaticStanding: vitalityScores.diplomaticStanding,
+          governmentalEfficiency: vitalityScores.governmentalEfficiency,
+          overallNationalHealth: vitalityScores.overallNationalHealth,
           lastCalculated: new Date(now),
         };
-        
+
         const updated = await ctx.db.country.update({
           where: { id: c.id },
           data: updateData
@@ -2141,23 +2327,13 @@ const countriesRouter = createTRPCRouter({
         }));
         const currentStats = calc.calculateTimeProgression(baselineStats, currentTime, dmInputs);
 
-        const economicVitality = Math.min(100, Math.max(0, 
-          (currentStats.newStats.currentGdpPerCapita / 50000) * 100
-        ));
-
+        // Use stored vitality scores from database (calculated by vitality-calculator)
+        // These are automatically updated when countries are recalculated
+        const economicVitality = country.economicVitality ?? 0;
+        const populationWellbeing = country.populationWellbeing ?? 0;
+        const diplomaticStanding = country.diplomaticStanding ?? 0;
+        const governmentalEfficiency = country.governmentalEfficiency ?? 0;
         const popGrowthRate = currentStats.newStats.populationGrowthRate || 0;
-        const populationWellbeing = Math.min(100, Math.max(0,
-          50 + (popGrowthRate * 1000)
-        ));
-
-        const diplomaticStanding = Math.min(100, Math.max(20,
-          ((country as any).globalDiplomaticInfluence || 50) + 
-          ((country as any).allianceStrength || 15) * 0.8
-        ));
-
-        const governmentalEfficiency = Math.min(100, Math.max(30,
-          70 + (currentStats.newStats.adjustedGdpGrowth * 500)
-        ));
 
         return {
           economicVitality: Math.round(economicVitality),
@@ -2661,12 +2837,45 @@ const countriesRouter = createTRPCRouter({
     .input(z.object({ countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const atomicService = getAtomicEffectivenessService(ctx.db);
-      
+
       // Force recalculation by bypassing cache
       const effectiveness = await atomicService.calculateEffectiveness(input.countryId);
-      
+
       return effectiveness;
     }),
+
+  // Get custom geography (continents and regions)
+  getCustomGeography: publicProcedure
+    .query(async ({ ctx }) => {
+      // For now, return empty custom geography
+      // In the future, this could fetch from a CustomGeography table
+      return {
+        continents: [] as string[],
+        regions: {} as Record<string, string[]>
+      };
+    }),
+
+  // Add custom continent
+  addContinent: protectedProcedure
+    .input(z.object({ name: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // For now, just return success
+      // In the future, this could store in a CustomGeography table
+      return { success: true, name: input.name };
+    }),
+
+  // Add custom region to a continent
+  addRegion: protectedProcedure
+    .input(z.object({
+      continent: z.string(),
+      region: z.string()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // For now, just return success
+      // In the future, this could store in a CustomGeography table
+      return { success: true, continent: input.continent, region: input.region };
+    }),
+
   // Create a new country from builder
   createCountry: protectedProcedure
     .input(z.object({
@@ -2678,29 +2887,30 @@ const countriesRouter = createTRPCRouter({
       governmentStructure: z.any().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      // Get user ID from Clerk
-      const userId = ctx.session?.userId;
+      // Get user ID from context
+      const userId = ctx.user?.id;
       if (!userId) {
         throw new Error("User not authenticated");
       }
 
-      // Check if user already has a country
-      const existingCountry = await ctx.db.country.findFirst({
-        where: { ownerId: userId }
+      // Check if user already has a country (via User.countryId relation)
+      const userWithCountry = await ctx.db.user.findUnique({
+        where: { id: userId },
+        include: { country: true }
       });
 
-      if (existingCountry) {
+      if (userWithCountry?.country) {
         // Return the existing country instead of throwing an error
-        return existingCountry;
+        return userWithCountry.country;
       }
 
       // Get foundation country data if provided
       let foundationData: any = null;
       if (input.foundationCountry) {
         const foundationCountry = await ctx.db.country.findFirst({
-          where: { 
+          where: {
             OR: [
-              { countryCode: input.foundationCountry },
+              { slug: input.foundationCountry },
               { name: input.foundationCountry }
             ]
           }
@@ -2717,26 +2927,30 @@ const countriesRouter = createTRPCRouter({
         }
       }
 
-      // Create unique country code
-      const countryCode = `${input.name.substring(0, 3).toUpperCase()}_${Date.now().toString(36).toUpperCase()}`;
+      // Create unique slug for the country
+      const slug = input.name
+        .toLowerCase()
+        .trim()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
 
       // Create the country
       const country = await ctx.db.country.create({
         data: {
           name: input.name,
-          countryCode: countryCode,
-          ownerId: userId,
-          isPlayerCountry: true,
+          slug: slug,
           continent: foundationData?.continent || "Unknown",
           region: foundationData?.region || "Unknown",
           governmentType: input.governmentStructure?.governmentType || "Republic",
           religion: input.economicInputs?.religion || "Secular",
           leader: input.economicInputs?.leaderName || "Unknown",
-          capital: input.economicInputs?.capitalCity || "Capital City",
           baselinePopulation: foundationData?.baselinePopulation || input.economicInputs?.population || 10000000,
           baselineGdpPerCapita: foundationData?.baselineGdpPerCapita || input.economicInputs?.gdpPerCapita || 10000,
           currentPopulation: foundationData?.baselinePopulation || input.economicInputs?.population || 10000000,
           currentGdpPerCapita: foundationData?.baselineGdpPerCapita || input.economicInputs?.gdpPerCapita || 10000,
+          currentTotalGdp: (foundationData?.baselinePopulation || input.economicInputs?.population || 10000000) * (foundationData?.baselineGdpPerCapita || input.economicInputs?.gdpPerCapita || 10000),
           landArea: foundationData?.landArea || 100000,
           areaSqMi: foundationData?.areaSqMi || 38610,
           baselineDate: new Date(),
@@ -2765,13 +2979,13 @@ const countriesRouter = createTRPCRouter({
         }
       });
 
-      // Generate initial activity
-      try {
-        const activityGenerator = new ActivityGenerator();
-        await activityGenerator.generateCountryCreatedActivity(country);
-      } catch (error) {
-        console.error("Failed to generate activity:", error);
-      }
+      // TODO: Generate initial activity when ActivityGenerator is available
+      // try {
+      //   const activityGenerator = new ActivityGenerator();
+      //   await activityGenerator.generateCountryCreatedActivity(country);
+      // } catch (error) {
+      //   console.error("Failed to generate activity:", error);
+      // }
 
       return country;
     }),

@@ -60,6 +60,7 @@ export interface NationalIdentityData {
   officialLanguages: string;
   nationalLanguage: string;
   nationalAnthem: string;
+  nationalReligion?: string;
   nationalDay: string;
   callingCode: string;
   internetTLD: string;
@@ -175,12 +176,18 @@ export interface DemographicData {
   populationGrowthRate: number;
 }
 
+export interface GeographyData {
+  continent?: string;
+  region?: string;
+}
+
 export interface EconomicInputs {
   countryName: string;
   flagUrl?: string;
   coatOfArmsUrl?: string;
   flagExtractedColors?: string[];
   nationalIdentity?: NationalIdentityData;
+  geography?: GeographyData;
   coreIndicators: CoreEconomicIndicators;
   laborEmployment: LaborEmploymentData;
   fiscalSystem: FiscalSystemData;

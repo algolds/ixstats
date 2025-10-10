@@ -384,10 +384,17 @@ export function EconomySection({
 
   return (
     <SectionBase
-      title="Comprehensive Economy"
-      description="Detailed economic analysis covering employment, income, sectors, trade, and productivity"
-      icon={Building2}
-      color="emerald"
+      config={{
+        id: "economy",
+        title: "Comprehensive Economy",
+        subtitle: "Detailed economic analysis covering employment, income, sectors, trade, and productivity",
+        icon: Building2,
+        theme: "neutral"
+      }}
+      inputs={inputs}
+      onInputsChange={onInputsChange}
+      isReadOnly={false}
+      showComparison={false}
       showAdvanced={showAdvanced}
       onToggleAdvanced={onToggleAdvanced}
       className={className}

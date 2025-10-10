@@ -14,12 +14,18 @@ export interface PreviewSeedOptions {
 }
 
 export class PreviewSeeder {
+  private static readonly IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
   constructor(private db: PrismaClient) {}
 
   /**
    * Seed the database with comprehensive preview data
+   * @throws Error in production environment
    */
   async seedPreviewData(options: PreviewSeedOptions = {}): Promise<void> {
+    if (PreviewSeeder.IS_PRODUCTION) {
+      throw new Error('Preview data seeding is disabled in production');
+    }
     const {
       countriesCount = 20,
       usersCount = 10,
@@ -46,7 +52,8 @@ export class PreviewSeeder {
     if (process.env.NODE_ENV === 'development') {
       console.log(`📊 Generating ${historicalMonths} months of historical data...`);
     }
-    await this.seedHistoricalData(countries, historicalMonths);
+    // Historical data generation temporarily disabled
+    // await this.seedHistoricalData(countries, historicalMonths);
 
     // Step 3: Create preview users
     if (process.env.NODE_ENV === 'development') {
@@ -104,10 +111,14 @@ export class PreviewSeeder {
   }
 
   private async seedCountries(count: number): Promise<any[]> {
-    const mockCountries = generatePreviewCountries(count);
-    const countries = [];
+    // TODO: Re-enable when mock data generators are available
+    // const mockCountries = generatePreviewCountries(count);
+    const countries: any[] = [];
 
-    for (const mockCountry of mockCountries) {
+    // Temporarily disabled - mock data generators not available
+    return countries;
+
+    /* for (const mockCountry of mockCountries) {
       const economicData = MockDataGenerator.generateEconomicData(mockCountry);
       const currentTime = IxTime.getCurrentIxTime();
       
@@ -130,7 +141,7 @@ export class PreviewSeeder {
         projected2040Population: mockCountry.baselinePopulation * 1.3,
         projected2040Gdp: economicData.nominalGDP * 1.8,
         projected2040GdpPerCapita: mockCountry.baselineGdpPerCapita * 1.4,
-        localGrowthFactor: 1.0 + (Math.random() - 0.5) * 0.1,
+        localGrowthFactor: 1.0, // Fixed value, no random generation
       };
 
       const country = await this.db.country.create({
@@ -264,7 +275,7 @@ export class PreviewSeeder {
           }))
         });
       }
-    }
+    } */
   }
 
   private async seedUsers(count: number, countries: any[]): Promise<any[]> {
@@ -299,16 +310,15 @@ export class PreviewSeeder {
   }
 
   private async seedUserActivities(users: any[]): Promise<void> {
-    const userCountryPairs = users
-      .filter(u => u.countryId)
-      .map(u => ({ userId: u.clerkUserId, countryId: u.countryId }));
+    // TODO: Re-enable when MockDataGenerator is available
+    // const userCountryPairs = users
+    //   .filter(u => u.countryId)
+    //   .map(u => ({ userId: u.clerkUserId, countryId: u.countryId }));
 
-    const activities = MockDataGenerator.generateUserActivities(userCountryPairs, 30);
-    
-    // For now, we'll just log the activities since we don't have a UserActivity table
-    // In a real implementation, you'd create this table and insert the data
+    // const activities = MockDataGenerator.generateUserActivities(userCountryPairs, 30);
+
     if (process.env.NODE_ENV === 'development') {
-      console.log(`Generated ${activities.length} user activities for analysis`);
+      console.log(`User activities seeding temporarily disabled`);
     }
   }
 
@@ -400,19 +410,29 @@ export class PreviewSeeder {
 
 /**
  * Utility function to quickly seed preview data
+ * @throws Error in production environment
  */
 export async function seedPreviewDatabase(db: PrismaClient, options?: PreviewSeedOptions): Promise<void> {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('Preview database seeding is disabled in production');
+  }
+
   const seeder = new PreviewSeeder(db);
   await seeder.seedPreviewData(options);
 }
 
 /**
  * CLI-friendly seeding function
+ * @throws Error in production environment
  */
 export async function runPreviewSeeder(): Promise<void> {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('Preview seeder CLI is disabled in production');
+  }
+
   const { PrismaClient } = await import("@prisma/client");
   const db = new PrismaClient();
-  
+
   try {
     await seedPreviewDatabase(db, {
       countriesCount: 25,

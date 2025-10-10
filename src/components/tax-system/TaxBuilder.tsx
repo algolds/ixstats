@@ -60,11 +60,13 @@ export interface TaxBuilderState {
 
 interface TaxBuilderProps {
   initialData?: Partial<TaxBuilderState>;
-  onSave: (data: TaxBuilderState) => Promise<void>;
+  onSave?: (data: TaxBuilderState) => Promise<void>;
+  onChange?: (data: TaxBuilderState) => void;
   onPreview?: (data: TaxBuilderState) => void;
   isReadOnly?: boolean;
   countryId?: string;
   showAtomicIntegration?: boolean;
+  hideSaveButton?: boolean;
 }
 
 // Enhanced Tax System Templates with Atomic Components
@@ -298,13 +300,15 @@ const taxSystemTemplates: TaxSystemTemplate[] = [
   }
 ];
 
-export function TaxBuilder({ 
-  initialData, 
-  onSave, 
-  onPreview, 
+export function TaxBuilder({
+  initialData,
+  onSave,
+  onChange,
+  onPreview,
   isReadOnly = false,
   countryId,
-  showAtomicIntegration = true
+  showAtomicIntegration = true,
+  hideSaveButton = false
 }: TaxBuilderProps) {
   const [currentStep, setCurrentStep] = useState<'system' | 'categories' | 'atomic' | 'calculator' | 'preview'>('system');
   const [builderState, setBuilderState] = useState<TaxBuilderState>({
@@ -488,6 +492,13 @@ export function TaxBuilder({
     });
   };
 
+  // Call onChange whenever builderState changes
+  React.useEffect(() => {
+    if (onChange) {
+      onChange(builderState);
+    }
+  }, [builderState, onChange]);
+
   const applyTemplate = (template: TaxSystemTemplate) => {
     const newState: Partial<TaxBuilderState> = {
       taxSystem: {
@@ -537,7 +548,7 @@ export function TaxBuilder({
     const validation = validateState();
     setBuilderState(prev => ({ ...prev, ...validation }));
     
-    if (validation.isValid) {
+    if (validation.isValid && onSave) {
       setIsSaving(true);
       try {
         await onSave({ ...builderState, ...validation });
@@ -634,13 +645,15 @@ export function TaxBuilder({
             <Eye className="h-4 w-4 mr-2" />
             Preview
           </Button>
-          <Button
-            onClick={handleSave}
-            disabled={!validation.isValid || isSaving || isReadOnly}
-          >
-            <Save className="h-4 w-4 mr-2" />
-            {isSaving ? 'Saving...' : 'Save'}
-          </Button>
+          {!hideSaveButton && (
+            <Button
+              onClick={handleSave}
+              disabled={!validation.isValid || isSaving || isReadOnly}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {isSaving ? 'Saving...' : 'Save'}
+            </Button>
+          )}
         </div>
       </div>
 

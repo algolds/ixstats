@@ -241,10 +241,10 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
 
   // Transform API data to ranking format
   const apiRankings = useMemo(() => {
-    if (!countriesData) return [];
+    if (!countriesData || !('countries' in countriesData)) return [];
 
-    return countriesData
-      .map((country, index) => ({
+    return countriesData.countries
+      .map((country: any, index: number) => ({
         id: country.id,
         name: country.name,
         code: country.id.substring(0, 3).toUpperCase(),
@@ -272,8 +272,8 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
         trend: country.diplomaticStanding > 70 ? 'rising' :
                country.diplomaticStanding < 50 ? 'falling' : 'stable'
       }))
-      .sort((a, b) => b.score - a.score)
-      .map((country, index) => ({ ...country, rank: index + 1 }));
+      .sort((a: any, b: any) => b.score - a.score)
+      .map((country: any, index: number) => ({ ...country, rank: index + 1 }));
   }, [countriesData]);
 
   // Get current category configuration
@@ -285,7 +285,7 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
 
     // Apply search filter
     if (searchTerm) {
-      filtered = filtered.filter(country =>
+      filtered = filtered.filter((country: any) =>
         country.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         country.code.toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -293,7 +293,7 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
 
     // Apply tier filter
     if (filterTier) {
-      filtered = filtered.filter(country => country.tier === filterTier);
+      filtered = filtered.filter((country: any) => country.tier === filterTier);
     }
 
     // Sort by selected metric

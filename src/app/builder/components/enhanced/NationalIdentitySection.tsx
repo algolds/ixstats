@@ -98,6 +98,21 @@ export function NationalIdentitySection({
   const [selectedGovernmentType, setSelectedGovernmentType] = useState('republic');
   const [customOfficialName, setCustomOfficialName] = useState('');
 
+  // Sync local state with loaded identity data
+  useEffect(() => {
+    console.log('=== NationalIdentitySection - Received inputs.nationalIdentity ===');
+    console.log(inputs.nationalIdentity);
+
+    if (inputs.nationalIdentity?.governmentType) {
+      console.log('Setting governmentType to:', inputs.nationalIdentity.governmentType);
+      setSelectedGovernmentType(inputs.nationalIdentity.governmentType);
+    }
+    if (inputs.nationalIdentity?.officialName) {
+      console.log('Setting officialName to:', inputs.nationalIdentity.officialName);
+      setCustomOfficialName(inputs.nationalIdentity.officialName);
+    }
+  }, [inputs.nationalIdentity]);
+
   // Initialize identity data structure if it doesn't exist
   const identity = inputs.nationalIdentity || {
     countryName: String(inputs.countryName || ''),
@@ -113,6 +128,7 @@ export function NationalIdentitySection({
     officialLanguages: '',
     nationalLanguage: '',
     nationalAnthem: '',
+    nationalReligion: '',
     nationalDay: '',
     callingCode: '',
     internetTLD: '',
@@ -420,6 +436,18 @@ export function NationalIdentitySection({
               sectionId="symbols"
               showButtons={false}
               placeholder="Name of national anthem"
+              acceptText={true}
+            />
+
+            <EnhancedNumberInput
+              label="National Religion"
+              description="Primary or state religion (if applicable)"
+              value={String(identity.nationalReligion || '')}
+              onChange={(value) => handleIdentityChange('nationalReligion', String(value))}
+              sectionId="symbols"
+              icon={Heart}
+              showButtons={false}
+              placeholder="e.g., Christianity, Islam, Buddhism, Secular..."
               acceptText={true}
             />
 
