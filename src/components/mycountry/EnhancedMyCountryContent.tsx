@@ -301,9 +301,7 @@ export function EnhancedMyCountryContent({ variant = 'unified', title }: Enhance
       <div id="overview">
         <CountryHeader
           countryName={country.name}
-          countryId={country.id}
-          economicTier={country.economicTier}
-          populationTier={country.populationTier}
+          countryId={country.id} 
           variant={variant}
         />
       </div>

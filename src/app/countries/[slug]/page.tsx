@@ -110,16 +110,12 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
     // For now, show a toast notification
     const { toast } = await import('sonner');
 
-    const actionMessages: Record<SocialActionType, string> = {
+    const actionMessages: Partial<Record<SocialActionType, string>> = {
       'follow': 'Follow functionality coming soon!',
       'message': 'Messaging functionality available via Secure Message button',
       'propose_alliance': 'Alliance proposals coming soon!',
       'congratulate': 'Congratulations feature coming soon!',
       'visit_profile': 'Profile view tracked',
-      unfollow: "",
-      propose_trade: "",
-      react_to_achievement: "",
-      invite_collaboration: ""
     };
 
     toast.info(actionMessages[action] || 'Feature coming soon!');

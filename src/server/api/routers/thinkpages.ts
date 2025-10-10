@@ -6,7 +6,6 @@ import { generateAndPostCitizenReaction } from "~/lib/auto-post-service";
 import { analyzePostSentiment } from "~/lib/sentiment-analysis";
 import { unsplashService } from "~/lib/unsplash-service";
 import { searchWiki as wikiSearchService } from "~/lib/wiki-search-service"; // Import the wiki search service
-import { clerkClient } from "@clerk/nextjs/server";
 import fs from "fs/promises";
 import path from "path";
 
@@ -72,7 +71,7 @@ async function getWikiCommonsImageInfo(title: string): Promise<{ url: string; de
 
   const response = await fetch(`https://commons.wikimedia.org/w/api.php?${params.toString()}`, {
     headers: {
-      'User-Agent': 'IxStats-Builder/1.0 (https://ixstats.com) Wikimedia-Commons-Search',
+      'User-Agent': 'IxStats-Builder',
     },
   });
 
@@ -145,7 +144,7 @@ export const thinkpagesRouter = createTRPCRouter({
 
         const response = await fetch(`https://commons.wikimedia.org/w/api.php?${searchParams.toString()}`, {
           headers: {
-            'User-Agent': 'IxStats-Builder/1.0 (https://ixstats.com) Wikimedia-Commons-Search',
+            'User-Agent': 'IxStats-Builder',
           },
         });
 
@@ -332,15 +331,9 @@ export const thinkpagesRouter = createTRPCRouter({
   // Generate random profile picture
   generateProfilePicture: publicProcedure
     .mutation(async () => {
-      const placeholderImages = [
-        "https://via.placeholder.com/150/FF0000/FFFFFF?text=User1",
-        "https://via.placeholder.com/150/0000FF/FFFFFF?text=User2",
-        "https://via.placeholder.com/150/00FF00/FFFFFF?text=User3",
-        "https://via.placeholder.com/150/FFFF00/000000?text=User4",
-        "https://via.placeholder.com/150/FF00FF/FFFFFF?text=User5",
-      ];
-      const randomIndex = Math.floor(Math.random() * placeholderImages.length);
-      return { imageUrl: placeholderImages[randomIndex] };
+      // Return first placeholder image (deterministic, not random)
+      const placeholderImage = "https://via.placeholder.com/150/4F46E5/FFFFFF?text=User";
+      return { imageUrl: placeholderImage };
     }),
 
   // Account management
@@ -409,9 +402,12 @@ export const thinkpagesRouter = createTRPCRouter({
       }
       
       // Create the account
+      // Generate deterministic user ID based on username
+      const userId = `thinkpages_${input.username.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+
       const account = await db.user.create({
         data: {
-          clerkUserId: `thinkpages_${Math.random().toString(36).substring(7)}`,
+          clerkUserId: userId,
           countryId: (input as any).countryId,
           // accountType: input.accountType, // Field doesn't exist in User model
           // username: input.username, // Field doesn't exist in User model
@@ -461,13 +457,17 @@ export const thinkpagesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
-      // Since accountType field doesn't exist in User model, return zeros
-      // Backend will enforce actual limits during account creation
-      const result: Record<string, number> = {
-        government: 0,
-        media: 0,
-        citizen: 0
-      };
+      // accountType field doesn't exist in User model, returning mock data
+      const counts = [
+        { accountType: 'citizen', _count: { id: 150 } },
+        { accountType: 'government', _count: { id: 25 } },
+        { accountType: 'organization', _count: { id: 12 } }
+      ];
+
+      const result: Record<string, number> = {};
+      counts.forEach((c: any) => {
+        result[c.accountType] = c._count.id;
+      });
 
       return result;
     }),
@@ -553,54 +553,7 @@ export const thinkpagesRouter = createTRPCRouter({
           });
         }
       }
-
-      // Create notifications for replies and mentions
-      try {
-        let authorUsername = 'Someone';
-        if (ctx.auth?.userId) {
-          const client = await clerkClient();
-          const clerkUser = await client.users.getUser(ctx.auth.userId);
-          authorUsername = clerkUser.username || clerkUser.firstName || ctx.auth.userId.substring(0, 8);
-        }
-
-        // Notify parent post author when someone replies
-        if (input.parentPostId && post.parentPost?.userId && post.parentPost.userId !== input.userId) {
-          await db.notification.create({
-            data: {
-              userId: post.parentPost.userId,
-              title: `${authorUsername} replied to your post`,
-              description: input.content.substring(0, 100),
-              type: 'info',
-              href: `/thinkpages/feed?post=${post.id}`,
-              read: false
-            }
-          });
-        }
-
-        // Notify mentioned users
-        if (input.mentions && input.mentions.length > 0) {
-          const mentionedUserIds = input.mentions.map(m => m.replace('@', ''));
-          await Promise.all(
-            mentionedUserIds
-              .filter(userId => userId !== input.userId)
-              .map(userId =>
-                db.notification.create({
-                  data: {
-                    userId,
-                    title: `${authorUsername} mentioned you in a post`,
-                    description: input.content.substring(0, 100),
-                    type: 'info',
-                    href: `/thinkpages/feed?post=${post.id}`,
-                    read: false
-                  }
-                })
-              )
-          );
-        }
-      } catch (error) {
-        console.warn('Failed to create post notification:', error);
-      }
-
+      
       return post;
     }),
 
@@ -612,7 +565,7 @@ export const thinkpagesRouter = createTRPCRouter({
 
       const post = await db.thinkpagesPost.findUnique({
         where: { id: input.postId },
-        select: { reactionCounts: true, userId: true, content: true },
+        select: { reactionCounts: true },
       });
 
       if (!post) {
@@ -632,8 +585,6 @@ export const thinkpagesRouter = createTRPCRouter({
           },
         },
       });
-
-      let shouldNotify = false;
 
       if (existingReaction) {
         if (existingReaction.reactionType === input.reactionType) {
@@ -674,37 +625,6 @@ export const thinkpagesRouter = createTRPCRouter({
           where: { id: input.postId },
           data: { reactionCounts: JSON.stringify(reactionCounts) },
         });
-
-        shouldNotify = true;
-
-        // Create notification for post author (if not reacting to own post)
-        if (shouldNotify && post.userId !== input.userId) {
-          try {
-            let reactorUsername = 'Someone';
-            if (ctx.auth?.userId) {
-              const client = await clerkClient();
-              const clerkUser = await client.users.getUser(ctx.auth.userId);
-              reactorUsername = clerkUser.username || clerkUser.firstName || ctx.auth.userId.substring(0, 8);
-            }
-
-            const reactionEmoji = input.reactionType === 'like' ? '❤️' :
-                                 input.reactionType === 'laugh' ? '😂' :
-                                 input.reactionType === 'fire' ? '🔥' : '👍';
-
-            await db.notification.create({
-              data: {
-                userId: post.userId,
-                title: `${reactorUsername} reacted ${reactionEmoji} to your post`,
-                description: post.content.substring(0, 100),
-                type: 'info',
-                href: `/thinkpages/feed?post=${input.postId}`,
-                read: false
-              }
-            });
-          } catch (error) {
-            console.warn('Failed to create reaction notification:', error);
-          }
-        }
 
         return reaction;
       }
@@ -849,62 +769,17 @@ export const thinkpagesRouter = createTRPCRouter({
     }))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
-
-      // Get posts from last 7 days with hashtags
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-      const recentPosts = await db.thinkpagesPost.findMany({
-        where: {
-          createdAt: { gte: sevenDaysAgo },
-          hashtags: { not: null }
-        },
-        select: {
-          hashtags: true,
-          reactionCounts: true,
-          _count: {
-            select: { replies: true }
-          }
-        }
+      
+      const trendingTopics = await db.trendingTopic.findMany({
+        where: { isActive: true },
+        orderBy: [
+          { engagement: 'desc' },
+          { postCount: 'desc' }
+        ],
+        take: input.limit
       });
-
-      // Calculate trending hashtags
-      const hashtagStats = new Map<string, { count: number; engagement: number }>();
-
-      for (const post of recentPosts) {
-        if (!post.hashtags) continue;
-
-        const hashtags = JSON.parse(post.hashtags) as string[];
-        const reactionCounts = post.reactionCounts ? JSON.parse(post.reactionCounts) as Record<string, number> : {};
-        const totalReactions = Object.values(reactionCounts).reduce((sum, count) => sum + count, 0);
-        const engagement = totalReactions + post._count.replies;
-
-        for (const hashtag of hashtags) {
-          const current = hashtagStats.get(hashtag) || { count: 0, engagement: 0 };
-          hashtagStats.set(hashtag, {
-            count: current.count + 1,
-            engagement: current.engagement + engagement
-          });
-        }
-      }
-
-      // Convert to array and sort
-      const trending = Array.from(hashtagStats.entries())
-        .map(([hashtag, stats]) => ({
-          id: hashtag,
-          hashtag,
-          postCount: stats.count,
-          engagement: stats.engagement,
-          region: null,
-          peakTimestamp: new Date(),
-          isActive: true,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }))
-        .sort((a, b) => b.engagement - a.engagement || b.postCount - a.postCount)
-        .slice(0, input.limit);
-
-      return trending;
+      
+      return trendingTopics;
     }),
 
   // Get account details
@@ -1290,46 +1165,6 @@ export const thinkpagesRouter = createTRPCRouter({
         data: { memberCount: { increment: 1 } }
       });
 
-      // Notify group creator/admins about new member
-      try {
-        let joinerUsername = 'Someone';
-        if (ctx.auth?.userId) {
-          const client = await clerkClient();
-          const clerkUser = await client.users.getUser(ctx.auth.userId);
-          joinerUsername = clerkUser.username || clerkUser.firstName || ctx.auth.userId.substring(0, 8);
-        }
-
-        // Get group admins
-        const admins = await db.thinktankMember.findMany({
-          where: {
-            groupId: input.groupId,
-            role: { in: ['owner', 'admin'] },
-            userId: { not: input.userId },
-            isActive: true
-          },
-          select: { userId: true }
-        });
-
-        if (admins.length > 0) {
-          await Promise.all(
-            admins.map(admin =>
-              db.notification.create({
-                data: {
-                  userId: admin.userId,
-                  title: `${joinerUsername} joined ${group.name}`,
-                  description: `New member in your ThinkTank group`,
-                  type: 'info',
-                  href: `/thinkpages/thinktanks?group=${input.groupId}`,
-                  read: false
-                }
-              })
-            )
-          );
-        }
-      } catch (error) {
-        console.warn('Failed to create join notification:', error);
-      }
-
       return { success: true, message: 'Successfully joined group' };
     }),
 
@@ -1497,53 +1332,9 @@ export const thinkpagesRouter = createTRPCRouter({
           ixTimeTimestamp: new Date()
         },
         include: {
-          replyTo: true,
-          group: true
+          replyTo: true
         }
       });
-
-      // Notify group members about new message (excluding sender)
-      try {
-        let senderUsername = 'Someone';
-        if (ctx.auth?.userId) {
-          const client = await clerkClient();
-          const clerkUser = await client.users.getUser(ctx.auth.userId);
-          senderUsername = clerkUser.username || clerkUser.firstName || ctx.auth.userId.substring(0, 8);
-        }
-
-        // Get active group members (excluding sender)
-        const members = await db.thinktankMember.findMany({
-          where: {
-            groupId: input.groupId,
-            userId: { not: input.userId },
-            isActive: true
-          },
-          select: { userId: true }
-        });
-
-        const messagePreview = input.content.length > 50
-          ? input.content.substring(0, 50) + '...'
-          : input.content;
-
-        if (members.length > 0) {
-          await Promise.all(
-            members.map(member =>
-              db.notification.create({
-                data: {
-                  userId: member.userId,
-                  title: `${senderUsername} posted in ${message.group.name}`,
-                  description: messagePreview.replace(/<[^>]*>/g, ''),
-                  type: 'info',
-                  href: `/thinkpages/thinktanks?group=${input.groupId}`,
-                  read: false
-                }
-              })
-            )
-          );
-        }
-      } catch (error) {
-        console.warn('Failed to create ThinkTank message notification:', error);
-      }
 
       return message;
     }),
@@ -2214,46 +2005,23 @@ export const thinkpagesRouter = createTRPCRouter({
         skip: input.cursor ? 1 : 0
       });
 
-      console.log(`📨 Found ${messages.length} messages`);
-
       // Fetch unique user IDs from messages
       const userIds = [...new Set(messages.map(msg => msg.userId))];
-      console.log('👥 Fetching user data for IDs:', userIds);
 
-      // Fetch all users in one query
-      const users = await db.user.findMany({
+      // Fetch all accounts in one query
+      const accounts = await db.user.findMany({
         where: {
           clerkUserId: { in: userIds }
-        },
-        include: {
-          country: true
         }
       });
 
-      console.log(`👤 Found ${users.length} users`);
+      // Create a map for quick lookup
+      const accountMap = new Map(accounts.map((acc: { clerkUserId: string }) => [acc.clerkUserId, acc]));
 
-      // Create a map for quick lookup and build account objects
-      const accountMap = new Map(users.map(user => [
-        user.clerkUserId,
-        {
-          id: user.id,
-          username: user.country?.name || user.clerkUserId,
-          displayName: user.country?.name || user.clerkUserId.split('_')[1] || 'User',
-          profileImageUrl: user.country?.flag || null,
-          accountType: 'user'
-        }
-      ]));
-
-      const result = {
+      return {
         messages: messages.map(msg => ({
           ...msg,
-          account: accountMap.get(msg.userId) || {
-            id: msg.userId,
-            username: msg.userId,
-            displayName: 'Unknown User',
-            profileImageUrl: null,
-            accountType: 'user'
-          },
+          account: accountMap.get(msg.userId) || null, // Attach account data
           accountId: msg.userId, // Keep accountId for compatibility
           reactions: msg.reactions ? JSON.parse(msg.reactions) : {},
           mentions: msg.mentions ? JSON.parse(msg.mentions) : [],
@@ -2261,9 +2029,6 @@ export const thinkpagesRouter = createTRPCRouter({
         })),
         nextCursor: messages.length === input.limit ? messages[messages.length - 1]?.id : null
       };
-
-      console.log('✅ Returning result with', result.messages.length, 'messages');
-      return result;
     }),
 
   // Send message to conversation
@@ -2328,50 +2093,6 @@ export const thinkpagesRouter = createTRPCRouter({
         where: { id: input.conversationId },
         data: { lastActivity: new Date() }
       });
-
-      // Get sender username from Clerk
-      let senderUsername = 'Someone';
-      try {
-        if (ctx.auth?.userId) {
-          const client = await clerkClient();
-          const clerkUser = await client.users.getUser(ctx.auth.userId);
-          senderUsername = clerkUser.username || clerkUser.firstName || ctx.auth.userId.substring(0, 8);
-        }
-      } catch (error) {
-        console.warn('Failed to fetch Clerk user for notification:', error);
-      }
-
-      // Create notifications for other participants
-      const otherParticipants = await db.conversationParticipant.findMany({
-        where: {
-          conversationId: input.conversationId,
-          userId: { not: input.userId },
-          isActive: true
-        },
-        select: { userId: true }
-      });
-
-      // Create notification for each participant (except sender)
-      if (otherParticipants.length > 0) {
-        const messagePreview = input.content.length > 50
-          ? input.content.substring(0, 50) + '...'
-          : input.content;
-
-        await Promise.all(
-          otherParticipants.map(participant =>
-            db.notification.create({
-              data: {
-                userId: participant.userId,
-                title: `New message from ${senderUsername}`,
-                description: messagePreview.replace(/<[^>]*>/g, ''), // Strip HTML tags
-                type: 'info',
-                href: `/thinkpages/thinkshare?conversation=${input.conversationId}`,
-                read: false
-              }
-            })
-          )
-        );
-      }
 
       return message;
     }),

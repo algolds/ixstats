@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Globe, Sparkles, ChevronDown, ChevronRight, Check, Palette } from 'lucide-react';
+import { Globe, Sparkles, ChevronDown, ChevronRight, Check, Plus } from 'lucide-react';
 import { cn } from '~/lib/utils';
 import { EnhancedTooltip, InfoIcon } from '~/components/ui/enhanced-tooltip';
 import { GlassCard as EnhancedGlassCard } from '~/components/ui/enhanced-card';
@@ -13,14 +13,14 @@ interface FoundationArchetypeSelectorProps {
   countries: RealCountryData[];
   selectedArchetypes: string[]; // Changed to array for multi-selection
   onArchetypeSelect: (archetypeIds: string[]) => void; // Changed to handle array
-  onArchetypeComposer?: () => void;
+  onCreateFromScratch?: () => void;
 }
 
 export function FoundationArchetypeSelector({
   countries,
   selectedArchetypes,
   onArchetypeSelect,
-  onArchetypeComposer
+  onCreateFromScratch
 }: FoundationArchetypeSelectorProps) {
   const filteredCountries = countries.filter(c => c.name !== "World");
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(
@@ -184,34 +184,34 @@ export function FoundationArchetypeSelector({
                   </motion.button>
                 </EnhancedTooltip>
 
-                {/* Archetype Composer */}
-                <EnhancedTooltip 
+                {/* Create from Scratch */}
+                <EnhancedTooltip
                   content={
                     <div className="space-y-2">
-                      <div className="font-medium">Archetype Composer</div>
+                      <div className="font-medium">Create from Scratch</div>
                       <div className="text-sm text-[var(--color-text-secondary)]">
-                        Create custom combinations of multiple archetypes to find countries that match specific criteria
+                        Start with a blank slate and build your nation entirely from custom values
                       </div>
                     </div>
-                  } 
+                  }
                   position="right"
                 >
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => onArchetypeComposer?.()}
+                    onClick={() => onCreateFromScratch?.()}
                     className={cn(
                       'w-full p-4 rounded-lg border transition-all duration-300',
-                      'bg-gradient-to-br from-purple-500/20 to-pink-500/10',
-                      'hover:shadow-lg hover:shadow-purple-500/20 hover:backdrop-blur-md',
-                      'border-[var(--color-border-primary)] hover:border-purple-400/50'
+                      'bg-gradient-to-br from-amber-500/20 to-yellow-500/10',
+                      'hover:shadow-lg hover:shadow-amber-500/20 hover:backdrop-blur-md',
+                      'border-[var(--color-border-primary)] hover:border-amber-400/50'
                     )}
                   >
-                    <Palette className="h-8 w-8 text-purple-400 mx-auto mb-3" />
-                    <div className="text-lg font-bold text-purple-400 mb-1">
-                      Compose
+                    <Plus className="h-8 w-8 text-amber-400 mx-auto mb-3" />
+                    <div className="text-lg font-bold text-amber-400 mb-1">
+                      Create New
                     </div>
-                    <div className="text-sm text-[var(--color-text-secondary)]">Archetype Composer</div>
+                    <div className="text-sm text-[var(--color-text-secondary)]">Create a new country</div>
                   </motion.button>
                 </EnhancedTooltip>
               </div>

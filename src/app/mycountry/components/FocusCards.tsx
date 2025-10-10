@@ -74,38 +74,17 @@ interface FocusCard {
   status: 'excellent' | 'good' | 'concerning' | 'critical';
   priority: 'high' | 'medium' | 'low';
   metrics: FocusMetric[];
-  actions: FocusAction[];
-  alerts: CriticalAlert[];
-  trends: {
-    shortTerm: 'improving' | 'declining' | 'stable';
-    longTerm: 'improving' | 'declining' | 'stable';
-  };
-  theme: {
-    primary: string;
-    secondary: string;
-    accent: string;
-    bg: string;
-  };
-}
-
-interface FocusCard {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ElementType;
-  status: 'excellent' | 'good' | 'concerning' | 'critical';
-  theme: {
-    primary: string;
-    secondary: string;
-    accent: string;
-    bg: string;
-  };
-  metrics: FocusMetric[];
   quickActions: FocusAction[];
   alerts: CriticalAlert[];
   trends: {
     shortTerm: 'improving' | 'declining' | 'stable';
     longTerm: 'improving' | 'declining' | 'stable';
+  };
+  theme: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    bg: string;
   };
 }
 
@@ -334,7 +313,7 @@ function FocusCardComponent({
           </div>
 
           {/* Actions */}
-          {expanded && card.actions.length > 0 && (
+          {expanded && card.quickActions.length > 0 && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
@@ -346,7 +325,7 @@ function FocusCardComponent({
                 Quick Actions
               </div>
               <div className="space-y-2">
-                {card.actions.slice(0, 4).map((action, actionIndex) => (
+                {card.quickActions.slice(0, 4).map((action, actionIndex) => (
                   <Button
                     key={`action-${action.id || 'fallback'}-${actionIndex}`}
                     variant="outline"
@@ -518,7 +497,7 @@ export function createDefaultFocusCards(countryData: {
           format: 'text',
         },
       ],
-      actions: [
+      quickActions: [
         {
           id: 'adjust-tax-policy',
           label: 'Adjust Tax Policy',
@@ -537,8 +516,6 @@ export function createDefaultFocusCards(countryData: {
           urgency: 'high',
           estimatedImpact: { economic: '+5%', timeframe: '2 years' },
         },
-      ],
-      quickActions: [
         {
           id: 'economic-boost',
           label: 'Quick Economic Boost',
@@ -601,7 +578,7 @@ export function createDefaultFocusCards(countryData: {
           format: 'text',
         },
       ],
-      actions: [
+      quickActions: [
         {
           id: 'education-reform',
           label: 'Education System Reform',
@@ -620,8 +597,6 @@ export function createDefaultFocusCards(countryData: {
           urgency: 'high',
           estimatedImpact: { social: '+20%', timeframe: '3 years' },
         },
-      ],
-      quickActions: [
         {
           id: 'population-initiative',
           label: 'Population Initiative',
@@ -684,7 +659,7 @@ export function createDefaultFocusCards(countryData: {
           format: 'text',
         },
       ],
-      actions: [
+      quickActions: [
         {
           id: 'new-trade-agreement',
           label: 'Negotiate Trade Agreement',
@@ -703,8 +678,6 @@ export function createDefaultFocusCards(countryData: {
           urgency: 'low',
           estimatedImpact: { diplomatic: '+5%', timeframe: '2 years' },
         },
-      ],
-      quickActions: [
         {
           id: 'diplomatic-outreach',
           label: 'Diplomatic Outreach',
@@ -767,7 +740,7 @@ export function createDefaultFocusCards(countryData: {
           format: 'text',
         },
       ],
-      actions: [
+      quickActions: [
         {
           id: 'policy-review',
           label: 'Comprehensive Policy Review',
@@ -786,8 +759,6 @@ export function createDefaultFocusCards(countryData: {
           urgency: 'low',
           estimatedImpact: { social: '+12%', timeframe: '6 months' },
         },
-      ],
-      quickActions: [
         {
           id: 'government-reform',
           label: 'Quick Reform',

@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const response = await fetch(ixwikiUrl, {
       method: 'GET',
       headers: {
-        'User-Agent': 'IxStats-Builder/1.0 (https://ixstats.com) MediaWiki-Search',
+        'User-Agent': 'IxStats-Builder',
         'Accept': 'application/json',
       },
     });

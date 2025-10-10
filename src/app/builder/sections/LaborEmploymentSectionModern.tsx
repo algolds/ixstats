@@ -264,7 +264,7 @@ export function LaborEmploymentSectionModern({
           <div className="space-y-4">
             <h5 className="text-sm font-semibold text-foreground">Participation Analysis</h5>
             
-            <div className="p-4 rounded-lg bg-[var(--primitive-background)]/30 border border-[var(--primitive-border)]">
+            <div className="p-4 rounded-lg bg-secondary border border-border">
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-muted-foreground">Current Participation</span>
@@ -394,7 +394,7 @@ export function LaborEmploymentSectionModern({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Health Indicators */}
           <div className="space-y-4">
-            <div className="p-4 rounded-lg bg-[var(--primitive-background)]/30 border border-[var(--primitive-border)]">
+            <div className="p-4 rounded-lg bg-secondary border border-border">
               <h5 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4" />
                 Labor Market Alerts
@@ -436,7 +436,7 @@ export function LaborEmploymentSectionModern({
 
           {/* Recommendations */}
           <div className="space-y-4">
-            <div className="p-4 rounded-lg bg-[var(--primitive-background)]/30 border border-[var(--primitive-border)]">
+            <div className="p-4 rounded-lg bg-secondary border border-border">
               <h5 className="text-sm font-semibold text-foreground mb-3">Policy Recommendations</h5>
               
               <div className="space-y-2 text-xs text-muted-foreground">

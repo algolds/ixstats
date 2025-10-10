@@ -154,7 +154,7 @@ export function GovernmentSpendingSectionModern({
           {!spendingAnalysis.isBalanced && (
             <button
               onClick={autoBalance}
-              className="px-3 py-1 text-xs bg-[var(--primitive-primary)]/20 hover:bg-[var(--primitive-primary)]/30 text-[var(--primitive-primary)] rounded-md transition-colors"
+              className="px-3 py-1 text-xs bg-primary/20 hover:bg-primary/30 text-primary rounded-md transition-colors"
             >
               Auto-Balance
             </button>
@@ -244,10 +244,10 @@ export function GovernmentSpendingSectionModern({
         {/* Category Cards with Details */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {spendingAnalysis.categories.map((category) => (
-            <div key={category.name} className="p-4 rounded-lg bg-[var(--primitive-background)]/30 border border-[var(--primitive-border)] space-y-4">
+            <div key={category.name} className="p-4 rounded-lg bg-secondary border border-border space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <category.icon className="h-5 w-5 text-[var(--primitive-primary)]" />
+                  <category.icon className="h-5 w-5 text-primary" />
                   <div>
                     <h5 className="text-sm font-semibold text-foreground">{category.name}</h5>
                     <p className="text-xs text-muted-foreground capitalize">{category.priority} priority</p>
@@ -327,7 +327,7 @@ export function GovernmentSpendingSectionModern({
           <div className="space-y-4">
             <h5 className="text-sm font-semibold text-foreground">Budget Health</h5>
             
-            <div className="p-4 rounded-lg bg-[var(--primitive-background)]/30 border border-[var(--primitive-border)]">
+            <div className="p-4 rounded-lg bg-secondary border border-border">
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   {spendingAnalysis.spendingHealth === 'excellent' && <CheckCircle className="h-5 w-5 text-green-500" />}

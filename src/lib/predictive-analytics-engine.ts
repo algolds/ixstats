@@ -349,18 +349,23 @@ export class PredictiveAnalyticsEngine {
     const currentPopulation = historical[historical.length - 1]?.totalPopulation || 0;
     const gdpGrowthRate = this.calculateGrowthRate(historical, 'totalGdp');
 
-    // Simulated competitive analysis (would use real regional/global data in production)
+    // Calculate competitive rankings based on economic performance
+    const economicPerformanceScore = this.calculateEconomicPerformanceScore(historical, countryData);
+    const gdpPerCapita = currentGdp / currentPopulation;
+
+    // Regional ranking based on GDP per capita and growth rate
     const regionRanking = {
-      current: Math.floor(Math.random() * 20) + 1, // Placeholder
-      projected: Math.floor(Math.random() * 20) + 1,
+      current: this.calculateRanking(economicPerformanceScore, 'regional'),
+      projected: this.calculateProjectedRanking(economicPerformanceScore, gdpGrowthRate, 'regional'),
       total: 25,
       percentile: 0
     };
     regionRanking.percentile = Math.round((1 - (regionRanking.current - 1) / regionRanking.total) * 100);
 
+    // Global ranking with wider range
     const globalRanking = {
-      current: Math.floor(Math.random() * 100) + 1, // Placeholder
-      projected: Math.floor(Math.random() * 100) + 1,
+      current: this.calculateRanking(economicPerformanceScore, 'global'),
+      projected: this.calculateProjectedRanking(economicPerformanceScore, gdpGrowthRate, 'global'),
       total: 150,
       percentile: 0
     };
@@ -384,7 +389,7 @@ export class PredictiveAnalyticsEngine {
           global: 38000
         },
         innovation: {
-          country: Math.round((gdpGrowthRate + Math.random() * 2) * 100) / 100,
+          country: Math.round(this.calculateInnovationScore(historical, gdpGrowthRate, countryData) * 100) / 100,
           regional: 4.1,
           global: 3.7
         }
@@ -862,10 +867,120 @@ export class PredictiveAnalyticsEngine {
   private formatTimeframe(timestamp: number): string {
     const now = Date.now();
     const diffDays = Math.ceil((timestamp - now) / (24 * 60 * 60 * 1000));
-    
+
     if (diffDays < 30) return `${diffDays} days`;
     if (diffDays < 365) return `${Math.round(diffDays / 30)} months`;
     return `${Math.round(diffDays / 365)} years`;
+  }
+
+  /**
+   * Calculate economic performance score based on GDP, growth, and tier
+   */
+  private calculateEconomicPerformanceScore(historical: HistoricalDataPoint[], countryData: any): number {
+    if (historical.length === 0) return 50;
+
+    const latest = historical[historical.length - 1];
+    const gdpPerCapita = latest!.gdpPerCapita || 0;
+    const growthRate = this.calculateGrowthRate(historical, 'totalGdp');
+    const tier = latest!.economicTier || 5;
+
+    // Normalize GDP per capita (0-100 scale)
+    const gdpScore = Math.min(100, (gdpPerCapita / 100000) * 100);
+
+    // Normalize growth rate (-10% to 10% mapped to 0-100)
+    const growthScore = Math.min(100, Math.max(0, ((growthRate + 10) / 20) * 100));
+
+    // Normalize tier (1-10 scale inverted)
+    const tierScore = ((11 - tier) / 10) * 100;
+
+    // Weighted average: GDP (40%), Growth (35%), Tier (25%)
+    return (gdpScore * 0.4) + (growthScore * 0.35) + (tierScore * 0.25);
+  }
+
+  /**
+   * Calculate current ranking based on performance score
+   */
+  private calculateRanking(performanceScore: number, scope: 'regional' | 'global'): number {
+    const maxRanking = scope === 'regional' ? 25 : 150;
+
+    // Map performance score (0-100) to ranking (1-maxRanking)
+    // Higher score = better ranking (lower number)
+    const rankPercentile = 1 - (performanceScore / 100);
+    const ranking = Math.max(1, Math.min(maxRanking, Math.floor(rankPercentile * maxRanking) + 1));
+
+    return ranking;
+  }
+
+  /**
+   * Calculate projected ranking based on current score and growth trends
+   */
+  private calculateProjectedRanking(currentScore: number, growthRate: number, scope: 'regional' | 'global'): number {
+    // Project score improvement based on growth rate
+    const projectedScore = Math.min(100, currentScore + (growthRate * 10));
+    return this.calculateRanking(projectedScore, scope);
+  }
+
+  /**
+   * Calculate innovation score based on economic dynamism
+   */
+  private calculateInnovationScore(historical: HistoricalDataPoint[], gdpGrowthRate: number, countryData: any): number {
+    if (historical.length < 2) return 3.0;
+
+    // Base innovation on growth acceleration and tier progression
+    const growthAcceleration = this.calculateGrowthAcceleration(historical);
+    const tierProgression = this.calculateTierProgression(historical);
+    const economicDynamism = Math.abs(gdpGrowthRate) + Math.abs(growthAcceleration);
+
+    // Map to innovation score (0-10 scale)
+    const baseScore = Math.min(10, economicDynamism * 100);
+    const tierBonus = tierProgression * 2;
+
+    return Math.min(10, Math.max(0, baseScore + tierBonus));
+  }
+
+  /**
+   * Calculate growth acceleration (second derivative)
+   */
+  private calculateGrowthAcceleration(historical: HistoricalDataPoint[]): number {
+    if (historical.length < 3) return 0;
+
+    const recentGrowth = this.calculateGrowthRateBetween(
+      historical[historical.length - 2]!,
+      historical[historical.length - 1]!,
+      'totalGdp'
+    );
+
+    const previousGrowth = this.calculateGrowthRateBetween(
+      historical[historical.length - 3]!,
+      historical[historical.length - 2]!,
+      'totalGdp'
+    );
+
+    return recentGrowth - previousGrowth;
+  }
+
+  /**
+   * Calculate growth rate between two specific points
+   */
+  private calculateGrowthRateBetween(start: HistoricalDataPoint, end: HistoricalDataPoint, field: keyof HistoricalDataPoint): number {
+    const startValue = start[field] as number;
+    const endValue = end[field] as number;
+
+    if (!startValue || !endValue || startValue === 0) return 0;
+    return (endValue - startValue) / startValue;
+  }
+
+  /**
+   * Calculate tier progression trend
+   */
+  private calculateTierProgression(historical: HistoricalDataPoint[]): number {
+    if (historical.length < 2) return 0;
+
+    const startTier = historical[0]!.economicTier || 5;
+    const endTier = historical[historical.length - 1]!.economicTier || 5;
+
+    // Tier improvement (lower is better)
+    return Math.max(0, startTier - endTier);
   }
 }
 

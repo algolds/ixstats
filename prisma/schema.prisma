@@ -101,6 +101,28 @@ model Country {
   ruralPopulationPercent      Float?
   literacyRate                Float?
   localGrowthFactor           Float                 @default(1.0)
+
+  // Vitality & Intelligence Scores (0-100 scale)
+  economicVitality            Float                 @default(0)
+  populationWellbeing         Float                 @default(0)
+  diplomaticStanding          Float                 @default(0)
+  governmentalEfficiency      Float                 @default(0)
+  overallNationalHealth       Float                 @default(0)
+
+  // Diplomatic Relations Data
+  activeAlliances             Int                   @default(0)
+  activeTreaties              Int                   @default(0)
+  diplomaticReputation        String                @default("Neutral")
+
+  // Government Effectiveness Data
+  publicApproval              Float                 @default(50)
+  governmentEfficiency        String                @default("Moderate")
+  politicalStability          String                @default("Stable")
+
+  // Additional calculated fields
+  tradeBalance                Float                 @default(0)
+  infrastructureRating        Float                 @default(50)
+
   usesAtomicGovernment        Boolean               @default(true)
   hideDiplomaticOps           Boolean               @default(false)
   hideStratcommIntel          Boolean               @default(false)
@@ -311,12 +333,38 @@ model User {
   country         Country? @relation(fields: [countryId], references: [id])
   role            Role?    @relation(fields: [roleId], references: [id])
   archetypeSelections UserArchetypeSelection[] @relation("UserArchetypes")
+  scheduledChanges ScheduledChange[] @relation("UserScheduledChanges")
 
   @@index([clerkUserId])
   @@index([countryId])
   @@index([roleId])
   @@index([membershipTier])
   @@index([isActive])
+}
+
+// Scheduled changes for delayed impact system
+model ScheduledChange {
+  id              String   @id @default(cuid())
+  userId          String
+  countryId       String
+  changeType      String   // "instant", "next_day", "short_term", "long_term"
+  impactLevel     String   // "none", "low", "medium", "high"
+  fieldPath       String   // JSON path to the field being changed
+  oldValue        String   // JSON-encoded old value
+  newValue        String   // JSON-encoded new value
+  scheduledFor    DateTime // When the change should take effect
+  appliedAt       DateTime? // When the change was actually applied
+  status          String   @default("pending") // "pending", "applied", "cancelled"
+  warnings        String?  // JSON array of warning messages
+  metadata        String?  // Additional metadata about the change
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation("UserScheduledChanges", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([countryId])
+  @@index([status])
+  @@index([scheduledFor])
 }
 
 model EconomicModel {
@@ -2338,457 +2386,183 @@ model QuickActionTemplate {
   @@index([isActive])
 }
 
-// ==============================================
-// SECURITY & DEFENSE SYSTEM
-// ==============================================
+// ===== INTELLIGENCE SYSTEM MODELS =====
+// Stores pre-calculated intelligence briefings, alerts, and recommendations
 
-// Military Forces Management
-model MilitaryBranch {
-  id                  String   @id @default(cuid())
-  countryId           String
-  branchType          String   // 'army', 'navy', 'air_force', 'space_force', 'marines', 'coast_guard', 'cyber_command', 'special_forces'
-  name                String   // Custom name (e.g., "Imperial Legion", "Royal Navy")
-  description         String?
-  motto               String?
-  established         String?  // Year or date established
-  imageUrl            String?  // Branch emblem/insignia image
+enum BriefingType {
+  HOT_ISSUE
+  OPPORTUNITY
+  RISK_MITIGATION
+  STRATEGIC_INITIATIVE
+}
 
-  // Personnel
-  activeDuty          Int      @default(0)
-  reserves            Int      @default(0)
-  civilianStaff       Int      @default(0)
+enum Urgency {
+  IMMEDIATE
+  THIS_WEEK
+  THIS_MONTH
+  THIS_QUARTER
+}
 
-  // Budget & Resources
-  annualBudget        Float    @default(0)
-  budgetPercent       Float    @default(0) // Percent of total defense budget
+enum Magnitude {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
 
-  // Readiness & Capability
-  readinessLevel      Float    @default(50) // 0-100 scale
-  technologyLevel     Float    @default(50) // 0-100 scale (equipment modernization)
-  trainingLevel       Float    @default(50) // 0-100 scale
-  morale              Float    @default(50) // 0-100 scale
+enum Difficulty {
+  MINOR
+  MODERATE
+  MAJOR
+  TRANSFORMATIONAL
+}
 
-  // Strategic Capability
-  deploymentCapacity  Float    @default(50) // Ability to deploy forces quickly
-  sustainmentCapacity Float    @default(50) // Ability to sustain operations
+model IntelligenceBriefing {
+  id          String        @id @default(cuid())
+  countryId   String
+  title       String
+  description String
+  type        BriefingType
+  priority    Priority
+  area        Category
+  confidence  Float        // 0-100 scale
+  urgency     Urgency
 
-  // Custom Fields
-  customData          String?  // JSON object for branch-specific data
+  // Impact assessment
+  impactMagnitude String    // JSON: magnitude, scope, timeframe
 
-  isActive            Boolean  @default(true)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  // Evidence
+  evidence        String    // JSON: metrics, trends, comparisons
 
-  // Relations
-  units               MilitaryUnit[]
-  assets              MilitaryAsset[]
+  // Related data
+  recommendations IntelligenceRecommendation[]
+  alerts          IntelligenceAlert[]
+
+  // Metadata
+  generatedAt     DateTime  @default(now())
+  expiresAt       DateTime?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@index([countryId])
-  @@index([branchType])
+  @@index([type])
+  @@index([priority])
+  @@index([isActive])
+  @@index([generatedAt])
+}
+
+model IntelligenceRecommendation {
+  id                 String                @id @default(cuid())
+  briefingId         String?
+  countryId          String
+  title              String
+  description        String
+  category           Category
+  urgency            String               // 'urgent', 'important', 'routine'
+  difficulty         Difficulty
+  estimatedDuration  String
+  estimatedCost      String
+  estimatedBenefit   String
+  prerequisites      String               // JSON array
+  risks              String               // JSON array
+  successProbability Float                // 0-100 scale
+
+  // Impact metrics
+  economicImpact     Float                @default(0)
+  socialImpact       Float                @default(0)
+  diplomaticImpact   Float                @default(0)
+
+  // Status tracking
+  isImplemented      Boolean              @default(false)
+  implementedAt      DateTime?
+
+  // Relations
+  briefing           IntelligenceBriefing? @relation(fields: [briefingId], references: [id], onDelete: Cascade)
+
+  // Metadata
+  generatedAt        DateTime             @default(now())
+  isActive           Boolean              @default(true)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  @@index([countryId])
+  @@index([category])
+  @@index([urgency])
   @@index([isActive])
 }
 
-model MilitaryUnit {
-  id                  String   @id @default(cuid())
-  branchId            String
-  name                String   // e.g., "1st Infantry Division", "Pacific Fleet"
-  unitType            String   // 'division', 'brigade', 'regiment', 'fleet', 'squadron', 'battalion'
-  specialization      String?  // 'infantry', 'armor', 'artillery', 'naval', 'air_superiority', 'special_ops'
+model IntelligenceAlert {
+  id            String                @id @default(cuid())
+  briefingId    String?
+  countryId     String
+  title         String
+  description   String
+  severity      Priority
+  category      Category
+  alertType     String               // 'anomaly', 'threshold', 'trend', 'risk', 'opportunity'
 
-  // Unit Composition
-  personnel           Int      @default(0)
-  commanderName       String?
-  commanderRank       String?
+  // Metrics
+  currentValue  Float
+  expectedValue Float
+  deviation     Float
+  zScore        Float
 
-  // Location & Deployment
-  homeBase            String?
-  currentLocation     String?
-  deploymentStatus    String   @default("garrison") // 'garrison', 'training', 'deployed', 'combat', 'reserve'
-
-  // Capability
-  readiness           Float    @default(50) // 0-100
-  effectiveness       Float    @default(50) // Combat effectiveness
-
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-
-  // Relations
-  branch              MilitaryBranch @relation(fields: [branchId], references: [id], onDelete: Cascade)
-
-  @@index([branchId])
-  @@index([unitType])
-  @@index([deploymentStatus])
-}
-
-model MilitaryAsset {
-  id                  String   @id @default(cuid())
-  branchId            String
-  assetType           String   // 'aircraft', 'ship', 'vehicle', 'installation', 'weapon_system'
-  category            String   // Specific category within type
-  name                String   // Asset designation (e.g., "F-35A Lightning II", "USS Enterprise")
-  imageUrl            String?  // Wikimedia Commons image URL
-
-  quantity            Int      @default(1)
-  operational         Int      @default(1) // How many are operational
-
-  // Capability
-  capability          String?  // Description of capabilities
-  range               Float?   // Operational range
-  payload             Float?   // Payload capacity
+  // Context
+  factors       String               // JSON array
+  confidence    Float                // 0-100 scale
 
   // Status
-  status              String   @default("operational") // 'operational', 'maintenance', 'reserve', 'retired'
-  modernizationLevel  Float    @default(50) // 0-100 (how modern/updated)
-
-  // Cost
-  acquisitionCost     Float    @default(0)
-  maintenanceCost     Float    @default(0)
-
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  isResolved    Boolean              @default(false)
+  resolvedAt    DateTime?
 
   // Relations
-  branch              MilitaryBranch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  briefing      IntelligenceBriefing? @relation(fields: [briefingId], references: [id], onDelete: Cascade)
 
-  @@index([branchId])
-  @@index([assetType])
-  @@index([status])
-}
-
-model DefenseBudget {
-  id                  String   @id @default(cuid())
-  countryId           String
-
-  // Total Defense Spending
-  totalBudget         Float    @default(0)
-  gdpPercent          Float    @default(0) // Defense spending as % of GDP
-  perCapita           Float    @default(0)
-
-  // Budget Allocation by Category
-  personnelCosts      Float    @default(0)
-  operationsMaintenance Float  @default(0)
-  procurement         Float    @default(0)
-  rdteCosts           Float    @default(0) // Research, Development, Test & Evaluation
-  militaryConstruction Float   @default(0)
-
-  // Strategic Priorities
-  priorityAreas       String?  // JSON array of priority investment areas
-
-  fiscalYear          Int
-
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-
-  @@unique([countryId, fiscalYear])
-  @@index([countryId])
-  @@index([fiscalYear])
-}
-
-// Internal Security & Stability Events
-model SecurityEvent {
-  id                  String   @id @default(cuid())
-  countryId           String
-
-  eventType           String   // 'civil_unrest', 'crime_wave', 'terrorism', 'protest', 'riot', 'strike', 'gang_activity', 'corruption_scandal'
-  severity            String   // 'low', 'moderate', 'high', 'critical'
-  title               String
-  description         String
-
-  // Location
-  region              String?  // Affected region/province
-  city                String?
-
-  // Impact Metrics
-  casualties          Int      @default(0)
-  arrested            Int      @default(0)
-  economicImpact      Float    @default(0) // Economic damage
-  stabilityImpact     Float    @default(0) // Impact on stability score (-100 to 100)
-  publicOpinion       Float    @default(0) // Impact on public opinion
-
-  // Event Generation Data (for algorithm)
-  triggerFactors      String?  // JSON object of factors that triggered this event
-  rngSeed             String?  // Random seed for reproducibility
-
-  // Status & Resolution
-  status              String   @default("active") // 'active', 'contained', 'resolved', 'escalated'
-  responseActions     String?  // JSON array of response actions taken
-  resolutionNotes     String?
-
-  // Timing
-  startDate           DateTime @default(now())
-  endDate             DateTime?
-  duration            Int?     // Duration in days
-  ixTimeTimestamp     Float?
-
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  // Metadata
+  detectedAt    DateTime             @default(now())
+  isActive      Boolean              @default(true)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
 
   @@index([countryId])
-  @@index([eventType])
   @@index([severity])
-  @@index([status])
-  @@index([startDate])
-}
-
-model InternalStabilityMetrics {
-  id                  String   @id @default(cuid())
-  countryId           String   @unique
-
-  // Overall Stability Score
-  stabilityScore      Float    @default(75) // 0-100 scale
-  stabilityTrend      String   @default("stable") // 'improving', 'stable', 'declining', 'critical'
-
-  // Crime & Law Enforcement
-  crimeRate           Float    @default(5) // Per 100,000 population
-  violentCrimeRate    Float    @default(2)
-  propertyCrimeRate   Float    @default(10)
-  organizedCrimeLevel Float    @default(3) // 0-100 scale
-
-  // Public Order
-  protestFrequency    Float    @default(5) // Events per year
-  riotRisk            Float    @default(10) // 0-100 risk score
-  civilDisobedience   Float    @default(5) // 0-100 scale
-
-  // Social Cohesion
-  socialCohesion      Float    @default(70) // 0-100 scale
-  ethnicTension       Float    @default(20) // 0-100 risk
-  politicalPolarization Float  @default(40) // 0-100 scale
-
-  // Security Forces
-  policingEffectiveness Float  @default(60) // 0-100
-  justiceSystemEfficiency Float @default(50) // 0-100
-  corruptionIndex     Float    @default(40) // 0-100, higher = more corrupt
-
-  // Public Confidence
-  trustInGovernment   Float    @default(50) // 0-100
-  trustInPolice       Float    @default(55) // 0-100
-  fearOfCrime         Float    @default(35) // 0-100
-
-  lastCalculated      DateTime @default(now())
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-
-  @@index([countryId])
-  @@index([stabilityScore])
-}
-
-// Border Security System
-model BorderSecurity {
-  id                  String   @id @default(cuid())
-  countryId           String   @unique
-
-  // Overall Border Security
-  overallSecurityLevel Float   @default(60) // 0-100 scale
-  securityStatus      String   @default("moderate") // 'weak', 'moderate', 'strong', 'maximum'
-
-  // Border Control Metrics
-  borderLength        Float?   // Total border length (km)
-  landBorders         Int      @default(0) // Number of land borders
-  maritimeBorders     Int      @default(0)
-
-  // Personnel & Resources
-  borderAgents        Int      @default(0)
-  checkpoints         Int      @default(0)
-  surveillanceSystems Int      @default(0)
-
-  // Effectiveness
-  interceptionRate    Float    @default(50) // % of illegal crossings intercepted
-  processingEfficiency Float   @default(60) // How efficiently legitimate traffic is processed
-
-  // Threats & Issues
-  illegalCrossings    Int      @default(0) // Annual estimate
-  smugglingActivity   Float    @default(30) // 0-100 risk level
-  traffickingRisk     Float    @default(25) // 0-100 risk level
-  refugeePresure      Float    @default(20) // 0-100 pressure level
-
-  // Technology & Infrastructure
-  technologyLevel     Float    @default(50) // 0-100 modernization
-  infrastructureQuality Float  @default(60) // 0-100 quality
-
-  lastAssessed        DateTime @default(now())
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-
-  // Relations
-  neighborThreats     NeighborThreatAssessment[]
-
-  @@index([countryId])
-  @@index([securityStatus])
-}
-
-model NeighborThreatAssessment {
-  id                  String   @id @default(cuid())
-  borderSecurityId    String
-
-  // Neighbor Identification (placeholder data for now)
-  neighborCountryId   String?  // Actual country ID if exists
-  neighborName        String   // Name or placeholder
-  borderType          String   // 'land', 'maritime', 'both'
-  borderLength        Float?   // Length of shared border
-
-  // Threat Assessment
-  threatLevel         String   @default("low") // 'minimal', 'low', 'moderate', 'high', 'critical'
-  threatScore         Float    @default(20) // 0-100 threat score
-
-  // Threat Factors
-  militaryThreat      Float    @default(10) // 0-100
-  terrorismRisk       Float    @default(15) // 0-100
-  smugglingRisk       Float    @default(25) // 0-100
-  refugeeFlow         Float    @default(20) // 0-100
-  politicalStability  Float    @default(60) // Neighbor's stability (0-100)
-
-  // Relationship Factors
-  diplomaticRelations String   @default("neutral") // 'hostile', 'tense', 'neutral', 'friendly', 'allied'
-  tradeVolume         Float    @default(0)
-  treatyStatus        String?  // Any relevant treaties
-
-  // Notes
-  notes               String?
-
-  lastAssessed        DateTime @default(now())
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-
-  // Relations
-  borderSecurity      BorderSecurity @relation(fields: [borderSecurityId], references: [id], onDelete: Cascade)
-
-  @@index([borderSecurityId])
-  @@index([neighborCountryId])
-  @@index([threatLevel])
-}
-
-// User-Generated Security Threats
-model SecurityThreat {
-  id                  String   @id @default(cuid())
-  countryId           String
-  userId              String   // User who created the threat
-
-  // Threat Identification
-  threatName          String
-  threatType          String   // 'terrorism', 'insurgency', 'cyber_attack', 'espionage', 'military_conflict', 'organized_crime', 'wmd_proliferation'
-  description         String
-
-  // Threat Characteristics
-  severity            String   // 'low', 'moderate', 'high', 'critical', 'existential'
-  likelihood          Float    @default(50) // 0-100 probability
-  urgency             String   @default("medium") // 'low', 'medium', 'high', 'immediate'
-
-  // Threat Actor
-  actorType           String?  // 'state', 'non-state', 'terrorist', 'criminal', 'unknown'
-  actorName           String?
-  actorLocation       String?
-  actorCapability     Float    @default(50) // 0-100
-
-  // Impact Assessment
-  potentialCasualties Int      @default(0)
-  economicImpact      Float    @default(0)
-  politicalImpact     String?  // Description
-  infrastructureRisk  Float    @default(0) // 0-100
-
-  // Response & Mitigation
-  status              String   @default("identified") // 'identified', 'monitoring', 'responding', 'contained', 'neutralized'
-  responseLevel       String   @default("standard") // 'minimal', 'standard', 'elevated', 'maximum'
-  mitigationActions   String?  // JSON array of mitigation actions
-  resourcesAllocated  Float    @default(0) // Budget allocated to counter threat
-
-  // Intelligence
-  intelligenceSource  String?  // Source of intelligence
-  confidenceLevel     Float    @default(50) // 0-100 confidence in assessment
-  lastUpdated         DateTime @default(now())
-
-  // Timeline
-  identifiedDate      DateTime @default(now())
-  estimatedTimeline   String?  // When threat might materialize
-  expiryDate          DateTime? // When threat assessment expires
-
-  // Tags & Categorization
-  tags                String?  // JSON array
-  relatedThreats      String?  // JSON array of related threat IDs
-
-  isActive            Boolean  @default(true)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-
-  // Relations
-  incidents           ThreatIncident[]
-
-  @@index([countryId])
-  @@index([userId])
-  @@index([threatType])
-  @@index([severity])
-  @@index([status])
+  @@index([category])
   @@index([isActive])
+  @@index([detectedAt])
 }
 
-model ThreatIncident {
-  id                  String   @id @default(cuid())
-  threatId            String
+model VitalitySnapshot {
+  id                     String   @id @default(cuid())
+  countryId              String
+  area                   Category
+  score                  Float    // 0-100 scale
+  trend                  Trend
+  changeValue            Float
+  changePeriod           String
 
-  title               String
-  description         String
-  incidentType        String   // 'attack', 'attempt', 'intelligence', 'warning', 'activity'
+  // Key metrics (JSON)
+  keyMetrics             String
 
-  // Impact
-  casualties          Int      @default(0)
-  damage              Float    @default(0)
+  // Comparisons
+  peerAverage            Float
+  regionalAverage        Float
+  historicalBest         Float
+  rank                   Int
+  totalCountries         Int
 
-  // Location
-  location            String?
-  coordinates         String?  // Lat/Long if applicable
+  // Critical alerts count
+  criticalAlertsCount    Int      @default(0)
 
-  // Response
-  responseActions     String?  // JSON array
-  effectiveness       Float?   // 0-100 how effective was response
-
-  occurredAt          DateTime @default(now())
-  createdAt           DateTime @default(now())
-
-  // Relations
-  threat              SecurityThreat @relation(fields: [threatId], references: [id], onDelete: Cascade)
-
-  @@index([threatId])
-  @@index([occurredAt])
-}
-
-// Security Overall Assessment
-model SecurityAssessment {
-  id                  String   @id @default(cuid())
-  countryId           String   @unique
-
-  // Overall Security Score
-  overallSecurityScore Float   @default(60) // 0-100 composite score
-  securityLevel       String   @default("moderate") // 'critical', 'high_risk', 'moderate', 'secure', 'very_secure'
-  securityTrend       String   @default("stable") // 'improving', 'stable', 'declining', 'deteriorating'
-
-  // Component Scores
-  militaryStrength    Float    @default(60) // 0-100
-  internalStability   Float    @default(60) // 0-100
-  borderSecurity      Float    @default(60) // 0-100
-  cybersecurity       Float    @default(50) // 0-100
-  counterTerrorism    Float    @default(55) // 0-100
-
-  // Threat Environment
-  activeThreatCount   Int      @default(0)
-  highSeverityThreats Int      @default(0)
-  emergingThreats     Int      @default(0)
-
-  // Readiness Indicators
-  militaryReadiness   Float    @default(65) // 0-100
-  emergencyResponse   Float    @default(60) // 0-100
-  disasterPreparedness Float   @default(55) // 0-100
-
-  // Recommendations
-  topConcerns         String?  // JSON array of top security concerns
-  recommendations     String?  // JSON array of recommended actions
-
-  lastAssessed        DateTime @default(now())
-  nextReview          DateTime?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  // Metadata
+  calculatedAt           DateTime @default(now())
+  ixTime                 Float    // IxTime timestamp when calculated
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
   @@index([countryId])
-  @@index([securityLevel])
-  @@index([lastAssessed])
+  @@index([area])
+  @@index([calculatedAt])
+  @@index([ixTime])
 }
-
 

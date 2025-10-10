@@ -42,6 +42,9 @@ export interface DemoUser {
 }
 
 export class PreviewConfigManager {
+  // Production safety check
+  private static readonly IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
   private static readonly DEFAULT_CONFIG: PreviewConfig = {
     isPreviewMode: true,
     demoUsers: [
@@ -126,7 +129,7 @@ export class PreviewConfigManager {
         "sdi",
         "eci"
       ],
-      mockDataEnabled: true,
+      mockDataEnabled: false, // Disabled - using real API data now
       debugMode: true,
       performanceMonitoring: true
     },
@@ -146,8 +149,13 @@ export class PreviewConfigManager {
 
   /**
    * Get current preview configuration
+   * @throws Error in production environment
    */
   public static getConfig(): PreviewConfig {
+    if (this.IS_PRODUCTION) {
+      throw new Error('Preview configuration system is disabled in production');
+    }
+
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('ixstats_preview_config');
       if (saved) {
@@ -163,8 +171,13 @@ export class PreviewConfigManager {
 
   /**
    * Update preview configuration
+   * @throws Error in production environment
    */
   public static updateConfig(updates: Partial<PreviewConfig>): void {
+    if (this.IS_PRODUCTION) {
+      throw new Error('Preview configuration system is disabled in production');
+    }
+
     if (typeof window !== 'undefined') {
       const current = this.getConfig();
       const updated = { ...current, ...updates };
@@ -193,10 +206,15 @@ export class PreviewConfigManager {
 
   /**
    * Initialize preview environment
+   * @throws Error in production environment
    */
   public static async initializePreview(): Promise<void> {
+    if (this.IS_PRODUCTION) {
+      throw new Error('Preview initialization is disabled in production');
+    }
+
     console.log("🚀 Initializing IxStats Private Preview...");
-    
+
     const config = this.getConfig();
     
     // Show preview banner

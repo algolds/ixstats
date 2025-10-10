@@ -259,7 +259,7 @@ export function DemographicsSectionModern({
         </div>
 
         {/* Dependency Ratio Insight */}
-        <div className="p-4 rounded-lg bg-[var(--primitive-background)]/50 border border-[var(--primitive-border)]">
+        <div className="p-4 rounded-lg bg-secondary border border-border">
           <p className="text-sm text-foreground">
             <strong>Dependency Ratio:</strong> {totalDependency.toFixed(1)}% 
             (Youth: {youthDependency.toFixed(1)}%, Elderly: {elderlyDependency.toFixed(1)}%)
@@ -324,7 +324,7 @@ export function DemographicsSectionModern({
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {demographics.regions.map((region, index) => (
-            <div key={region.name} className="space-y-4 p-4 rounded-lg bg-[var(--primitive-background)]/30 border border-[var(--primitive-border)]">
+            <div key={region.name} className="space-y-4 p-4 rounded-lg bg-secondary border border-border">
               <h5 className="text-sm font-semibold text-foreground flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
                 {region.name}

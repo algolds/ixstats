@@ -89,12 +89,12 @@ export function SectionBase({
 
   // Auto-validate based on config rules
   const validateInputs = () => {
-    if (!config.validation) return { errors: [], warnings: [], info: [] };
-    
+    if (!config?.validation?.rules) return { errors: [], warnings: [], info: [] };
+
     const errors: string[] = [];
     const warnings: string[] = [];
     const info: string[] = [];
-    
+
     config.validation.rules.forEach(rule => {
       // This is a simplified validation - you'd implement actual field checking
       // based on the rule.field and rule.condition
@@ -117,7 +117,7 @@ export function SectionBase({
     return { errors, warnings, info };
   };
 
-  const autoValidation = config.validation ? validateInputs() : undefined;
+  const autoValidation = config?.validation ? validateInputs() : undefined;
   const finalValidation = validation || autoValidation;
 
   return (
@@ -128,16 +128,16 @@ export function SectionBase({
       className={className}
     >
       <SectionContainer
-        title={config.title}
-        subtitle={config.subtitle}
-        icon={config.icon}
+        title={config?.title || 'Section'}
+        subtitle={config?.subtitle}
+        icon={config?.icon}
         showAdvanced={showAdvanced}
         onToggleAdvanced={handleToggleAdvanced}
-        theme={config.theme}
+        theme={config?.theme || 'neutral'}
         headerActions={headerActions}
       >
         {/* Metric Overview */}
-        {config.showMetricOverview && metrics.length > 0 && (
+        {config?.showMetricOverview && metrics.length > 0 && (
           <MetricOverview metrics={metrics} className="mb-6" />
         )}
 

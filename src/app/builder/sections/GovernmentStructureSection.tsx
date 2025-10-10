@@ -105,10 +105,10 @@ export function GovernmentStructureSection({
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-semibold text-[var(--color-text-primary)]">
+            <h2 className="text-2xl font-bold text-foreground">
               Government Structure Builder
             </h2>
-            <p className="text-[var(--color-text-muted)] mt-1">
+            <p className="text-muted-foreground mt-1">
               Design your nation's government structure and budget allocation
             </p>
           </div>
@@ -134,12 +134,12 @@ export function GovernmentStructureSection({
       {/* Section Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Building2 className="h-8 w-8 text-[var(--color-brand-primary)]" />
+          <Building2 className="h-8 w-8 text-primary" />
           <div>
-            <h2 className="text-2xl font-semibold text-[var(--color-text-primary)]">
+            <h2 className="text-2xl font-bold text-foreground">
               Government Structure
             </h2>
-            <p className="text-[var(--color-text-muted)]">
+            <p className="text-muted-foreground">
               Configure your nation's government departments and budget allocation
             </p>
           </div>
@@ -147,7 +147,7 @@ export function GovernmentStructureSection({
         
         <div className="flex items-center gap-3">
           {hasGovernment && (
-            <Badge variant="default" className="bg-green-100 text-green-700">
+            <Badge variant="default" className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
               {stats.totalDepartments} Departments Configured
             </Badge>
           )}
@@ -175,25 +175,25 @@ export function GovernmentStructureSection({
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <div className="text-sm text-[var(--color-text-muted)]">Government Type</div>
-                  <div className="font-semibold text-[var(--color-text-primary)]">
+                  <div className="text-sm text-muted-foreground">Government Type</div>
+                  <div className="font-bold text-foreground">
                     {governmentData.structure.governmentType}
                   </div>
                   {governmentData.structure.headOfState && (
-                    <div className="text-sm text-[var(--color-text-muted)]">
+                    <div className="text-sm text-muted-foreground">
                       Head of State: {governmentData.structure.headOfState}
                     </div>
                   )}
                   {governmentData.structure.headOfGovernment && (
-                    <div className="text-sm text-[var(--color-text-muted)]">
+                    <div className="text-sm text-muted-foreground">
                       Head of Government: {governmentData.structure.headOfGovernment}
                     </div>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <div className="text-sm text-[var(--color-text-muted)]">Budget Information</div>
-                  <div className="font-semibold text-[var(--color-text-primary)]">
+                  <div className="text-sm text-muted-foreground">Budget Information</div>
+                  <div className="font-bold text-foreground">
                     {new Intl.NumberFormat('en-US', {
                       style: 'currency',
                       currency: governmentData.structure.budgetCurrency,
@@ -201,20 +201,20 @@ export function GovernmentStructureSection({
                       maximumFractionDigits: 0
                     }).format(governmentData.structure.totalBudget)}
                   </div>
-                  <div className="text-sm text-[var(--color-text-muted)]">
+                  <div className="text-sm text-muted-foreground">
                     {((governmentData.structure.totalBudget / inputs.coreIndicators.nominalGDP) * 100).toFixed(1)}% of GDP
                   </div>
-                  <div className="text-sm text-[var(--color-text-muted)]">
+                  <div className="text-sm text-muted-foreground">
                     {governmentData.structure.fiscalYear} • {governmentData.structure.budgetCurrency}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <div className="text-sm text-[var(--color-text-muted)]">Allocation Status</div>
-                  <div className="font-semibold text-[var(--color-text-primary)]">
+                  <div className="text-sm text-muted-foreground">Allocation Status</div>
+                  <div className="font-bold text-foreground">
                     {stats.budgetUtilization.toFixed(1)}% Allocated
                   </div>
-                  <div className="text-sm text-[var(--color-text-muted)]">
+                  <div className="text-sm text-muted-foreground">
                     {stats.totalDepartments} Active Departments
                   </div>
                 </div>
@@ -228,12 +228,12 @@ export function GovernmentStructureSection({
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-[var(--color-text-muted)]">Departments</p>
-                    <p className="text-2xl font-bold text-[var(--color-text-primary)]">
+                    <p className="text-sm text-muted-foreground">Departments</p>
+                    <p className="text-2xl font-bold text-foreground">
                       {stats.totalDepartments}
                     </p>
                   </div>
-                  <Users className="h-8 w-8 text-blue-600" />
+                  <Users className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                 </div>
               </CardContent>
             </Card>
@@ -242,12 +242,12 @@ export function GovernmentStructureSection({
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-[var(--color-text-muted)]">Budget Allocated</p>
-                    <p className="text-2xl font-bold text-[var(--color-text-primary)]">
+                    <p className="text-sm text-muted-foreground">Budget Allocated</p>
+                    <p className="text-2xl font-bold text-foreground">
                       {((stats.totalBudgetAllocated / 1e9)).toFixed(1)}B
                     </p>
                   </div>
-                  <DollarSign className="h-8 w-8 text-green-600" />
+                  <DollarSign className="h-8 w-8 text-green-600 dark:text-green-400" />
                 </div>
               </CardContent>
             </Card>
@@ -256,12 +256,12 @@ export function GovernmentStructureSection({
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-[var(--color-text-muted)]">Revenue Sources</p>
-                    <p className="text-2xl font-bold text-[var(--color-text-primary)]">
+                    <p className="text-sm text-muted-foreground">Revenue Sources</p>
+                    <p className="text-2xl font-bold text-foreground">
                       {governmentData.revenueSources.length}
                     </p>
                   </div>
-                  <Building2 className="h-8 w-8 text-purple-600" />
+                  <Building2 className="h-8 w-8 text-purple-600 dark:text-purple-400" />
                 </div>
               </CardContent>
             </Card>
@@ -270,19 +270,19 @@ export function GovernmentStructureSection({
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-[var(--color-text-muted)]">Fiscal Health</p>
+                    <p className="text-sm text-muted-foreground">Fiscal Health</p>
                     <p className={`text-2xl font-bold ${
-                      stats.totalRevenueProjected >= stats.totalBudgetAllocated 
-                        ? 'text-green-600' 
-                        : 'text-red-600'
+                      stats.totalRevenueProjected >= stats.totalBudgetAllocated
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-red-600 dark:text-red-400'
                     }`}>
                       {stats.totalRevenueProjected >= stats.totalBudgetAllocated ? 'Surplus' : 'Deficit'}
                     </p>
                   </div>
                   <div className={`h-8 w-8 rounded ${
-                    stats.totalRevenueProjected >= stats.totalBudgetAllocated 
-                      ? 'bg-green-100 text-green-600' 
-                      : 'bg-red-100 text-red-600'
+                    stats.totalRevenueProjected >= stats.totalBudgetAllocated
+                      ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+                      : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
                   } flex items-center justify-center`}>
                     {stats.totalRevenueProjected >= stats.totalBudgetAllocated ? '↑' : '↓'}
                   </div>
@@ -304,26 +304,26 @@ export function GovernmentStructureSection({
                   );
                   
                   return (
-                    <div key={index} className="flex items-center justify-between p-3 bg-[var(--color-bg-tertiary)] rounded-lg">
+                    <div key={index} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
                       <div className="flex items-center gap-3">
                         <div
                           className="w-4 h-4 rounded"
                           style={{ backgroundColor: dept.color }}
                         />
                         <div>
-                          <div className="font-medium text-[var(--color-text-primary)]">
+                          <div className="font-medium text-foreground">
                             {dept.name}
                           </div>
-                          <div className="text-sm text-[var(--color-text-muted)]">
+                          <div className="text-sm text-muted-foreground">
                             {dept.category} • {dept.ministerTitle}: {dept.minister || 'Vacant'}
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-semibold text-[var(--color-text-primary)]">
+                        <div className="font-bold text-foreground">
                           {allocation ? `${allocation.allocatedPercent.toFixed(1)}%` : '0%'}
                         </div>
-                        <div className="text-sm text-[var(--color-text-muted)]">
+                        <div className="text-sm text-muted-foreground">
                           {allocation 
                             ? new Intl.NumberFormat('en-US', { 
                                 notation: 'compact', 
@@ -338,7 +338,7 @@ export function GovernmentStructureSection({
                 })}
                 
                 {governmentData.departments.length > 5 && (
-                  <div className="text-center py-2 text-[var(--color-text-muted)]">
+                  <div className="text-center py-2 text-muted-foreground">
                     +{governmentData.departments.length - 5} more departments
                   </div>
                 )}
@@ -357,13 +357,13 @@ export function GovernmentStructureSection({
         </div>
       ) : (
         /* No Government Setup */
-        <Card className="border-2 border-dashed border-[var(--color-border-primary)]">
+        <Card className="border-2 border-dashed border-border">
           <CardContent className="p-12 text-center">
-            <Building2 className="h-16 w-16 mx-auto text-[var(--color-text-muted)] mb-6" />
-            <h3 className="text-xl font-semibold text-[var(--color-text-primary)] mb-3">
+            <Building2 className="h-16 w-16 mx-auto text-muted-foreground mb-6" />
+            <h3 className="text-xl font-bold text-foreground mb-3">
               No Government Structure Configured
             </h3>
-            <p className="text-[var(--color-text-muted)] mb-6 max-w-md mx-auto">
+            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
               Set up your nation's government structure including departments, budget allocation, 
               and revenue sources to create a comprehensive economic simulation.
             </p>
@@ -376,7 +376,7 @@ export function GovernmentStructureSection({
                 <Building2 className="h-5 w-5" />
                 Build Government Structure
               </Button>
-              <p className="text-sm text-[var(--color-text-muted)]">
+              <p className="text-sm text-muted-foreground">
                 Create departments • Set budgets • Configure revenue sources
               </p>
             </div>

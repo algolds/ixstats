@@ -154,14 +154,14 @@ export function GlassSelectBox({
       {(label || description) && (
         <div className="space-y-1">
           {label && (
-            <label className="flex items-center gap-2 text-sm font-semibold text-[var(--primitive-text)]">
+            <label className="flex items-center gap-2 text-sm font-medium text-foreground">
               {Icon && <Icon className="h-4 w-4" />}
               {label}
               {required && <span className="text-red-400">*</span>}
             </label>
           )}
           {description && (
-            <p className="text-xs text-[var(--primitive-muted)]">{description}</p>
+            <p className="text-xs text-muted-foreground">{description}</p>
           )}
         </div>
       )}
@@ -204,17 +204,17 @@ export function GlassSelectBox({
           <div className="flex-1 min-w-0">
             {selectedOption ? (
               <div>
-                <span className="text-[var(--primitive-text)] font-medium">
+                <span className="text-foreground font-medium">
                   {selectedOption.label}
                 </span>
                 {selectedOption.description && (
-                  <p className="text-xs text-[var(--primitive-muted)] truncate">
+                  <p className="text-xs text-muted-foreground truncate">
                     {selectedOption.description}
                   </p>
                 )}
               </div>
             ) : (
-              <span className="text-[var(--primitive-muted)]">{placeholder}</span>
+              <span className="text-muted-foreground">{placeholder}</span>
             )}
           </div>
         </div>
@@ -224,7 +224,7 @@ export function GlassSelectBox({
           transition={{ duration: 0.2 }}
           className="ml-2 flex-shrink-0"
         >
-          <ChevronDown className="h-4 w-4 text-[var(--primitive-muted)]" />
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
         </motion.div>
       </motion.button>
 
@@ -241,7 +241,7 @@ export function GlassSelectBox({
               getGlassClasses('modal', resolvedTheme, sectionId),
               'bg-white/95 dark:bg-gray-800/95',
               'border border-gray-200/50 dark:border-gray-600/50',
-              'shadow-xl backdrop-blur-md rounded-lg overflow-hidden'
+              'shadow-xl rounded-lg overflow-hidden'
             )}
             style={{ maxHeight }}
           >
@@ -249,14 +249,14 @@ export function GlassSelectBox({
             {searchable && (
               <div className="p-3 border-b border-gray-200/50 dark:border-gray-600/50">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[var(--primitive-muted)]" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <input
                     ref={inputRef}
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search options..."
-                    className="w-full pl-10 pr-3 py-2 bg-transparent border border-gray-200/50 dark:border-gray-600/50 rounded-md text-sm text-[var(--primitive-text)] placeholder:text-[var(--primitive-muted)] focus:border-[var(--primitive-primary)] focus:outline-none"
+                    className="w-full pl-10 pr-3 py-2 bg-transparent border border-gray-200/50 dark:border-gray-600/50 rounded-md text-sm text-foreground placeholder:text-muted-foreground focus:border-[var(--primitive-primary)] focus:outline-none"
                   />
                 </div>
               </div>
@@ -265,7 +265,7 @@ export function GlassSelectBox({
             {/* Options List */}
             <div className="max-h-48 overflow-y-auto">
               {filteredOptions.length === 0 ? (
-                <div className="px-4 py-3 text-sm text-[var(--primitive-muted)] text-center">
+                <div className="px-4 py-3 text-sm text-muted-foreground text-center">
                   No options found
                 </div>
               ) : (
@@ -289,11 +289,11 @@ export function GlassSelectBox({
                     )}
                     
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-[var(--primitive-text)]">
+                      <div className="text-sm font-medium text-foreground">
                         {option.label}
                       </div>
                       {option.description && (
-                        <div className="text-xs text-[var(--primitive-muted)] truncate">
+                        <div className="text-xs text-muted-foreground truncate">
                           {option.description}
                         </div>
                       )}

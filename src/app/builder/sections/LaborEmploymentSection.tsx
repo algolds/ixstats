@@ -267,7 +267,7 @@ export function LaborEmploymentSection({
 
       {/* Labor Policy Toggles */}
       <div className="md:col-span-2 space-y-4">
-        <h5 className="text-sm font-semibold text-foreground flex items-center gap-2">
+        <h5 className="text-sm font-bold text-foreground flex items-center gap-2">
           <Shield className="h-4 w-4" />
           Labor Policies
         </h5>
