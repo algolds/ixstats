@@ -57,7 +57,7 @@ export default function ThinkTanksPage() {
         <div className="w-32" /> {/* Spacer for centering */}
       </div>
 
-      <ThinktankGroups userId={user.id} />
+      <ThinktankGroups userId={user.id} userAccounts={[]} />
     </div>
   );
 }

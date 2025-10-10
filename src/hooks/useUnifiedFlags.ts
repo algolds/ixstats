@@ -159,7 +159,7 @@ export function useBulkFlags(countryNames: string[], source: 'irl' | 'wiki' = 'w
       if (uncachedCountries.length > 0) {
         console.log(`[useBulkFlags] Batch loading ${uncachedCountries.length} uncached flags`);
         
-        const fetchedFlags = await unifiedFlagService.batchGetFlags(uncachedCountries, source);
+        const fetchedFlags = await unifiedFlagService.batchGetFlags(uncachedCountries);
         
         // Merge cached and fetched flags
         const finalFlags = { ...cachedFlags, ...fetchedFlags };
