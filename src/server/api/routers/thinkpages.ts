@@ -331,15 +331,9 @@ export const thinkpagesRouter = createTRPCRouter({
   // Generate random profile picture
   generateProfilePicture: publicProcedure
     .mutation(async () => {
-      const placeholderImages = [
-        "https://via.placeholder.com/150/FF0000/FFFFFF?text=User1",
-        "https://via.placeholder.com/150/0000FF/FFFFFF?text=User2",
-        "https://via.placeholder.com/150/00FF00/FFFFFF?text=User3",
-        "https://via.placeholder.com/150/FFFF00/000000?text=User4",
-        "https://via.placeholder.com/150/FF00FF/FFFFFF?text=User5",
-      ];
-      const randomIndex = Math.floor(Math.random() * placeholderImages.length);
-      return { imageUrl: placeholderImages[randomIndex] };
+      // Return first placeholder image (deterministic, not random)
+      const placeholderImage = "https://via.placeholder.com/150/4F46E5/FFFFFF?text=User";
+      return { imageUrl: placeholderImage };
     }),
 
   // Account management
@@ -408,9 +402,12 @@ export const thinkpagesRouter = createTRPCRouter({
       }
       
       // Create the account
+      // Generate deterministic user ID based on username
+      const userId = `thinkpages_${input.username.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+
       const account = await db.user.create({
         data: {
-          clerkUserId: `thinkpages_${Math.random().toString(36).substring(7)}`,
+          clerkUserId: userId,
           countryId: (input as any).countryId,
           // accountType: input.accountType, // Field doesn't exist in User model
           // username: input.username, // Field doesn't exist in User model

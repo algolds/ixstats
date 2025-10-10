@@ -194,10 +194,11 @@ const AdvancedSearchDiscoveryComponent: React.FC<AdvancedSearchDiscoveryProps> =
     enabled: filters.query.length > 0 || filters.types.includes('country')
   });
 
-  // Fetch achievements from API
-  const { data: achievementsData } = api.achievements.getAll.useQuery(undefined, {
-    enabled: filters.query.length > 0 || filters.types.includes('achievement')
-  });
+  // TODO: Re-enable when achievements router is available
+  // const { data: achievementsData } = api.achievements.getAll.useQuery(undefined, {
+  //   enabled: filters.query.length > 0 || filters.types.includes('achievement')
+  // });
+  const achievementsData: any[] | undefined = undefined;
 
   // Update filters based on viewer clearance level
   useEffect(() => {
@@ -209,8 +210,8 @@ const AdvancedSearchDiscoveryComponent: React.FC<AdvancedSearchDiscoveryProps> =
     const results: SearchResult[] = [];
 
     // Add countries as search results
-    if (countriesData) {
-      countriesData.forEach((country) => {
+    if (countriesData && 'countries' in countriesData) {
+      countriesData.countries.forEach((country: any) => {
         results.push({
           id: country.id,
           type: 'country' as const,
@@ -235,27 +236,28 @@ const AdvancedSearchDiscoveryComponent: React.FC<AdvancedSearchDiscoveryProps> =
     }
 
     // Add achievements as search results
-    if (achievementsData) {
-      achievementsData.forEach((achievement) => {
-        results.push({
-          id: achievement.id,
-          type: 'achievement' as const,
-          title: achievement.name,
-          subtitle: achievement.category,
-          description: achievement.description,
-          relevanceScore: achievement.unlockedCount ? 0.5 + (achievement.unlockedCount / 100) : 0.5,
-          metadata: {
-            date: achievement.createdAt ? new Date(achievement.createdAt).toISOString() : new Date().toISOString(),
-            tags: [achievement.tier, achievement.category],
-            clearanceLevel: 'PUBLIC' as const
-          },
-          metrics: {
-            popularity: achievement.unlockedCount || 0,
-            activity: 50
-          }
-        });
-      });
-    }
+    // TODO: Re-enable when achievements router is available
+    // if (achievementsData && Array.isArray(achievementsData)) {
+    //   achievementsData.forEach((achievement: any) => {
+    //     results.push({
+    //       id: achievement.id,
+    //       type: 'achievement' as const,
+    //       title: achievement.name,
+    //       subtitle: achievement.category,
+    //       description: achievement.description,
+    //       relevanceScore: achievement.unlockedCount ? 0.5 + (achievement.unlockedCount / 100) : 0.5,
+    //       metadata: {
+    //         date: achievement.createdAt ? new Date(achievement.createdAt).toISOString() : new Date().toISOString(),
+    //         tags: [achievement.tier, achievement.category],
+    //         clearanceLevel: 'PUBLIC' as const
+    //       },
+    //       metrics: {
+    //         popularity: achievement.unlockedCount || 0,
+    //         activity: 50
+    //       }
+    //     });
+    //   });
+    // }
 
     return results;
   }, [countriesData, achievementsData]);

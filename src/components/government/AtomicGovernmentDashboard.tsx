@@ -49,13 +49,15 @@ export const AtomicGovernmentDashboard: React.FC<AtomicGovernmentDashboardProps>
   const [selectedComponents, setSelectedComponents] = useState<Set<ComponentType>>(new Set());
   const [showComponentSelector, setShowComponentSelector] = useState(false);
 
-  // Fetch government data
-  const { data: governmentData, isLoading } = api.atomicGovernment.getGovernmentStructure.useQuery(
-    { countryId },
-    { enabled: !!countryId }
-  );
+  // TODO: Re-enable when atomicGovernment router is available
+  // const { data: governmentData, isLoading } = api.atomicGovernment.getGovernmentStructure.useQuery(
+  //   { countryId },
+  //   { enabled: !!countryId }
+  // );
+  const governmentData = undefined;
+  const isLoading = false;
 
-  const { data: countryData } = api.countries.getById.useQuery(
+  const { data: countryData } = api.countries.getByIdWithEconomicData.useQuery(
     { id: countryId },
     { enabled: !!countryId }
   );
@@ -329,8 +331,8 @@ export const AtomicGovernmentDashboard: React.FC<AtomicGovernmentDashboardProps>
                         cost={component.maintenanceCost}
                         isActive={selectedComponents.has(component.type)}
                         onToggle={() => toggleComponent(component.type)}
-                        synergies={component.synergies?.map(s => ATOMIC_COMPONENTS[s]?.name || s)}
-                        conflicts={component.conflicts?.map(c => ATOMIC_COMPONENTS[c]?.name || c)}
+                        synergies={component.synergies?.map(s => ATOMIC_COMPONENTS[s as ComponentType]?.name || s)}
+                        conflicts={component.conflicts?.map(c => ATOMIC_COMPONENTS[c as ComponentType]?.name || c)}
                       />
                     ))}
                   </div>
@@ -349,8 +351,8 @@ export const AtomicGovernmentDashboard: React.FC<AtomicGovernmentDashboardProps>
                     cost={component.maintenanceCost}
                     isActive={true}
                     onToggle={() => toggleComponent(component.type)}
-                    synergies={component.synergies?.map(s => ATOMIC_COMPONENTS[s]?.name || s)}
-                    conflicts={component.conflicts?.map(c => ATOMIC_COMPONENTS[c]?.name || c)}
+                    synergies={component.synergies?.map(s => ATOMIC_COMPONENTS[s as ComponentType]?.name || s)}
+                    conflicts={component.conflicts?.map(c => ATOMIC_COMPONENTS[c as ComponentType]?.name || c)}
                   />
                 ))}
               </div>

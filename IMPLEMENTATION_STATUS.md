@@ -5,7 +5,9 @@
 
 **Overall Project Completion: 80% (Grade A-)**
 
-IxStats has a production-ready core platform with advanced features in active development. The foundation is solid and fully operational, while sophisticated features are being refined for the v1.0 release.
+IxStats is a comprehensive nation simulation and worldbuilding platform with a production-ready core. The foundation is solid and fully operational, while advanced features are being refined for the v1.0 release.
+
+**Note**: For detailed system documentation, see [SYSTEMS_GUIDE.md](./docs/SYSTEMS_GUIDE.md)
 
 ---
 

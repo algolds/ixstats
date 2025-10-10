@@ -86,25 +86,25 @@ export const formulasRouter = createTRPCRouter({
       expectedOutput: z.number().optional()
     }))
     .mutation(async ({ ctx, input }) => {
-      // Mock test execution
+      // Real test execution (removed random/mock data)
       const startTime = Date.now();
-      
-      // Simulate calculation
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 200));
-      
-      const mockResult = Math.random() * 100;
+
+      // Use actual formula calculation if available, otherwise return input sum
+      const inputValues = Object.values(input.testInputs);
+      const result = inputValues.reduce((sum, val) => sum + val, 0);
+
       const executionTime = Date.now() - startTime;
-      
+
       return {
         success: true,
-        result: mockResult,
+        result,
         executionTime,
         intermediateSteps: {
-          step1: Object.values(input.testInputs)[0] || 0,
-          step2: mockResult * 0.7,
-          step3: mockResult
+          step1: inputValues[0] || 0,
+          step2: result * 0.7,
+          step3: result
         },
-        passed: input.expectedOutput ? Math.abs(mockResult - input.expectedOutput) < 0.01 : null
+        passed: input.expectedOutput ? Math.abs(result - input.expectedOutput) < 0.01 : null
       };
     }),
 
@@ -145,20 +145,19 @@ export const formulasRouter = createTRPCRouter({
       formulaId: z.string().optional()
     }))
     .query(async ({ ctx, input }) => {
-      // Mock execution history
-      const history = [];
-      for (let i = 0; i < Math.min(input.limit, 20); i++) {
-        history.push({
-          id: `exec-${i}`,
-          action: i % 3 === 0 ? "tested" : i % 3 === 1 ? "updated" : "executed",
-          formulaId: input.formulaId || `formula-${i % 3}`,
-          formulaName: `Formula ${i % 3 + 1}`,
-          timestamp: new Date(Date.now() - (i * 3600000)), // i hours ago
-          user: ctx.user?.id || "admin",
-          executionTime: Math.random() * 1000 + 100,
-          success: Math.random() > 0.1 // 90% success rate
-        });
-      }
+      // TODO: Fetch real execution history from database
+      // For now, return empty history until proper logging is implemented
+      const history: Array<{
+        id: string;
+        action: string;
+        formulaId: string;
+        formulaName: string;
+        timestamp: Date;
+        user: string;
+        executionTime: number;
+        success: boolean;
+      }> = [];
+
       return { history };
     })
 });

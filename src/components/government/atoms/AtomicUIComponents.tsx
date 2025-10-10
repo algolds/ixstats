@@ -32,7 +32,7 @@ interface AtomicMetricProps {
   trend?: 'up' | 'down' | 'stable';
   trendValue?: number;
   status?: 'success' | 'warning' | 'error' | 'neutral';
-  icon?: React.ElementType;
+  icon?: React.ComponentType<{ className?: string }>;
   className?: string;
 }
 
@@ -410,7 +410,7 @@ export const AtomicEffectiveness: React.FC<AtomicEffectivenessProps> = ({
 interface AtomicComponentCardProps {
   title: string;
   description: string;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
   effectiveness: number;
   cost: number;
   isActive: boolean;

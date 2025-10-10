@@ -101,6 +101,28 @@ model Country {
   ruralPopulationPercent      Float?
   literacyRate                Float?
   localGrowthFactor           Float                 @default(1.0)
+
+  // Vitality & Intelligence Scores (0-100 scale)
+  economicVitality            Float                 @default(0)
+  populationWellbeing         Float                 @default(0)
+  diplomaticStanding          Float                 @default(0)
+  governmentalEfficiency      Float                 @default(0)
+  overallNationalHealth       Float                 @default(0)
+
+  // Diplomatic Relations Data
+  activeAlliances             Int                   @default(0)
+  activeTreaties              Int                   @default(0)
+  diplomaticReputation        String                @default("Neutral")
+
+  // Government Effectiveness Data
+  publicApproval              Float                 @default(50)
+  governmentEfficiency        String                @default("Moderate")
+  politicalStability          String                @default("Stable")
+
+  // Additional calculated fields
+  tradeBalance                Float                 @default(0)
+  infrastructureRating        Float                 @default(50)
+
   usesAtomicGovernment        Boolean               @default(true)
   hideDiplomaticOps           Boolean               @default(false)
   hideStratcommIntel          Boolean               @default(false)
@@ -311,12 +333,38 @@ model User {
   country         Country? @relation(fields: [countryId], references: [id])
   role            Role?    @relation(fields: [roleId], references: [id])
   archetypeSelections UserArchetypeSelection[] @relation("UserArchetypes")
+  scheduledChanges ScheduledChange[] @relation("UserScheduledChanges")
 
   @@index([clerkUserId])
   @@index([countryId])
   @@index([roleId])
   @@index([membershipTier])
   @@index([isActive])
+}
+
+// Scheduled changes for delayed impact system
+model ScheduledChange {
+  id              String   @id @default(cuid())
+  userId          String
+  countryId       String
+  changeType      String   // "instant", "next_day", "short_term", "long_term"
+  impactLevel     String   // "none", "low", "medium", "high"
+  fieldPath       String   // JSON path to the field being changed
+  oldValue        String   // JSON-encoded old value
+  newValue        String   // JSON-encoded new value
+  scheduledFor    DateTime // When the change should take effect
+  appliedAt       DateTime? // When the change was actually applied
+  status          String   @default("pending") // "pending", "applied", "cancelled"
+  warnings        String?  // JSON array of warning messages
+  metadata        String?  // Additional metadata about the change
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation("UserScheduledChanges", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([countryId])
+  @@index([status])
+  @@index([scheduledFor])
 }
 
 model EconomicModel {
@@ -2338,4 +2386,183 @@ model QuickActionTemplate {
   @@index([isActive])
 }
 
+// ===== INTELLIGENCE SYSTEM MODELS =====
+// Stores pre-calculated intelligence briefings, alerts, and recommendations
+
+enum BriefingType {
+  HOT_ISSUE
+  OPPORTUNITY
+  RISK_MITIGATION
+  STRATEGIC_INITIATIVE
+}
+
+enum Urgency {
+  IMMEDIATE
+  THIS_WEEK
+  THIS_MONTH
+  THIS_QUARTER
+}
+
+enum Magnitude {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum Difficulty {
+  MINOR
+  MODERATE
+  MAJOR
+  TRANSFORMATIONAL
+}
+
+model IntelligenceBriefing {
+  id          String        @id @default(cuid())
+  countryId   String
+  title       String
+  description String
+  type        BriefingType
+  priority    Priority
+  area        Category
+  confidence  Float        // 0-100 scale
+  urgency     Urgency
+
+  // Impact assessment
+  impactMagnitude String    // JSON: magnitude, scope, timeframe
+
+  // Evidence
+  evidence        String    // JSON: metrics, trends, comparisons
+
+  // Related data
+  recommendations IntelligenceRecommendation[]
+  alerts          IntelligenceAlert[]
+
+  // Metadata
+  generatedAt     DateTime  @default(now())
+  expiresAt       DateTime?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([countryId])
+  @@index([type])
+  @@index([priority])
+  @@index([isActive])
+  @@index([generatedAt])
+}
+
+model IntelligenceRecommendation {
+  id                 String                @id @default(cuid())
+  briefingId         String?
+  countryId          String
+  title              String
+  description        String
+  category           Category
+  urgency            String               // 'urgent', 'important', 'routine'
+  difficulty         Difficulty
+  estimatedDuration  String
+  estimatedCost      String
+  estimatedBenefit   String
+  prerequisites      String               // JSON array
+  risks              String               // JSON array
+  successProbability Float                // 0-100 scale
+
+  // Impact metrics
+  economicImpact     Float                @default(0)
+  socialImpact       Float                @default(0)
+  diplomaticImpact   Float                @default(0)
+
+  // Status tracking
+  isImplemented      Boolean              @default(false)
+  implementedAt      DateTime?
+
+  // Relations
+  briefing           IntelligenceBriefing? @relation(fields: [briefingId], references: [id], onDelete: Cascade)
+
+  // Metadata
+  generatedAt        DateTime             @default(now())
+  isActive           Boolean              @default(true)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  @@index([countryId])
+  @@index([category])
+  @@index([urgency])
+  @@index([isActive])
+}
+
+model IntelligenceAlert {
+  id            String                @id @default(cuid())
+  briefingId    String?
+  countryId     String
+  title         String
+  description   String
+  severity      Priority
+  category      Category
+  alertType     String               // 'anomaly', 'threshold', 'trend', 'risk', 'opportunity'
+
+  // Metrics
+  currentValue  Float
+  expectedValue Float
+  deviation     Float
+  zScore        Float
+
+  // Context
+  factors       String               // JSON array
+  confidence    Float                // 0-100 scale
+
+  // Status
+  isResolved    Boolean              @default(false)
+  resolvedAt    DateTime?
+
+  // Relations
+  briefing      IntelligenceBriefing? @relation(fields: [briefingId], references: [id], onDelete: Cascade)
+
+  // Metadata
+  detectedAt    DateTime             @default(now())
+  isActive      Boolean              @default(true)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  @@index([countryId])
+  @@index([severity])
+  @@index([category])
+  @@index([isActive])
+  @@index([detectedAt])
+}
+
+model VitalitySnapshot {
+  id                     String   @id @default(cuid())
+  countryId              String
+  area                   Category
+  score                  Float    // 0-100 scale
+  trend                  Trend
+  changeValue            Float
+  changePeriod           String
+
+  // Key metrics (JSON)
+  keyMetrics             String
+
+  // Comparisons
+  peerAverage            Float
+  regionalAverage        Float
+  historicalBest         Float
+  rank                   Int
+  totalCountries         Int
+
+  // Critical alerts count
+  criticalAlertsCount    Int      @default(0)
+
+  // Metadata
+  calculatedAt           DateTime @default(now())
+  ixTime                 Float    // IxTime timestamp when calculated
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@index([countryId])
+  @@index([area])
+  @@index([calculatedAt])
+  @@index([ixTime])
+}
 

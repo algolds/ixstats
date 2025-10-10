@@ -25,40 +25,26 @@ interface ThinkPagesStatusCardProps {
 }
 
 export function ThinkPagesStatusCard({ userProfile, className = "", onCollapse }: ThinkPagesStatusCardProps) {
-  // Fetch user's ThinkPages posts
-  const { data: postsData } = api.thinkpages.getAllPosts.useQuery(
-    { limit: 100 },
-    { enabled: !!userProfile }
-  );
+  // TODO: Re-enable when thinkpages and activities routers are available
+  // const { data: postsData } = api.thinkpages.getAllPosts.useQuery(
+  //   { limit: 100 },
+  //   { enabled: !!userProfile }
+  // );
 
-  // Fetch user's activities for collaboration count
-  const { data: activitiesData } = api.activities.getUserActivities.useQuery(
-    { userId: userProfile?.id || '', limit: 50 },
-    { enabled: !!userProfile }
-  );
+  // const { data: activitiesData } = api.activities.getUserActivities.useQuery(
+  //   { userId: userProfile?.id || '', limit: 50 },
+  //   { enabled: !!userProfile }
+  // );
 
-  // Calculate stats from real data
+  // Use placeholder stats until APIs are available
   const thinkPagesStats = {
-    userPosts: postsData?.filter(post => post.authorId === userProfile?.id).length || 0,
-    totalViews: postsData?.reduce((sum, post) => sum + (post.views || 0), 0) || 0,
-    activeProjects: postsData?.filter(post =>
-      post.authorId === userProfile?.id &&
-      post.published
-    ).length || 0,
-    weeklyGrowth: Math.floor(
-      ((postsData?.filter(post => {
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        return new Date(post.createdAt) > weekAgo;
-      }).length || 0) / 7) * 100
-    ),
-    lastActivity: activitiesData && activitiesData.length > 0
-      ? getRelativeTime(activitiesData[0]!.createdAt)
-      : "No recent activity",
-    reputation: userProfile?.achievements?.length ? userProfile.achievements.length * 100 : 100,
-    collaborations: activitiesData?.filter(a =>
-      a.type === 'collaboration' || a.type === 'diplomatic_action'
-    ).length || 0
+    userPosts: 0,
+    totalViews: 0,
+    activeProjects: 0,
+    weeklyGrowth: 0,
+    lastActivity: "No recent activity",
+    reputation: 100,
+    collaborations: 0
   };
 
   function getRelativeTime(date: Date | string): string {

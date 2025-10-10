@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, premiumProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, premiumProcedure, adminProcedure } from "~/server/api/trpc";
 import { standardize } from "~/lib/interface-standardizer";
 import { unifyIntelligenceItem } from "~/lib/transformers/interface-adapters";
+import { calculateIntelligence } from "~/lib/intelligence-calculator";
 
 export const intelligenceRouter = createTRPCRouter({
   getFeed: publicProcedure.query(async ({ ctx }) => {
@@ -107,8 +108,8 @@ export const intelligenceRouter = createTRPCRouter({
       });
     }),
 
-  // Initialize some sample intelligence data if database is empty
-  initializeSampleData: publicProcedure.mutation(async ({ ctx }) => {
+  // Initialize some sample intelligence data if database is empty (development only)
+  initializeSampleData: adminProcedure.mutation(async ({ ctx }) => {
     const count = await ctx.db.intelligenceItem.count();
     
     if (count === 0) {
@@ -209,3 +210,91 @@ if (process.env.NODE_ENV === 'development') {
     return { message: "Intelligence data already exists", count };
   });
 }
+
+// ===== NEW INTELLIGENCE SYSTEM ENDPOINTS =====
+
+export const intelligenceBriefingRouter = createTRPCRouter({
+  // Get briefings for a country
+  getForCountry: publicProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.intelligenceBriefing.findMany({
+        where: {
+          countryId: input.countryId,
+          isActive: true
+        },
+        include: {
+          recommendations: {
+            where: { isActive: true },
+            orderBy: { urgency: 'asc' }
+          },
+          alerts: {
+            where: { isActive: true },
+            orderBy: { severity: 'desc' }
+          }
+        },
+        orderBy: [
+          { priority: 'desc' },
+          { generatedAt: 'desc' }
+        ]
+      });
+    }),
+
+  // Get vitality snapshots for a country
+  getVitalitySnapshots: publicProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.vitalitySnapshot.findMany({
+        where: {
+          countryId: input.countryId
+        },
+        orderBy: { calculatedAt: 'desc' },
+        take: 4 // Latest snapshot for each area
+      });
+    }),
+
+  // Get all active recommendations for a country
+  getRecommendations: publicProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.intelligenceRecommendation.findMany({
+        where: {
+          countryId: input.countryId,
+          isActive: true,
+          isImplemented: false
+        },
+        orderBy: [
+          { urgency: 'asc' },
+          { successProbability: 'desc' }
+        ]
+      });
+    }),
+
+  // Mark recommendation as implemented
+  implementRecommendation: publicProcedure
+    .input(z.object({ recommendationId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      return ctx.db.intelligenceRecommendation.update({
+        where: { id: input.recommendationId },
+        data: {
+          isImplemented: true,
+          implementedAt: new Date()
+        }
+      });
+    }),
+
+  // Recalculate intelligence for a country
+  recalculateForCountry: publicProcedure
+    .input(z.object({ countryId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await calculateIntelligence({ countryId: input.countryId, forceRecalculate: true });
+      return { success: true, message: `Intelligence recalculated for country ${input.countryId}` };
+    }),
+
+  // Recalculate intelligence for all countries (admin only)
+  recalculateAll: publicProcedure
+    .mutation(async ({ ctx }) => {
+      await calculateIntelligence({ forceRecalculate: true });
+      return { success: true, message: 'Intelligence recalculated for all countries' };
+    })
+});

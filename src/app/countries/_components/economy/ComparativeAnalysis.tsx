@@ -56,6 +56,7 @@ import {
   PolarRadiusAxis,
   Radar,
   Cell,
+  LabelList,
 } from 'recharts';
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 
@@ -93,25 +94,22 @@ interface ComparativeAnalysisProps {
   onCountrySelect?: (countryId: string) => void;
 }
 
-const regions = [
-  'North America',
-  'South America', 
-  'Europe',
-  'Asia Pacific',
-  'Middle East',
-  'Africa',
-  'Global Average'
-];
+// Dynamic regions will be built from actual country data
+
+const safeFormat = (formatter: (v: number) => string) => (v: number) => {
+  if (!isFinite(v) || isNaN(v)) return 'N/A';
+  return formatter(v);
+};
 
 const metrics = [
-  { key: 'gdpPerCapita', label: 'GDP per Capita', format: formatCurrency },
-  { key: 'growthRate', label: 'Growth Rate', format: (v: number) => `${v.toFixed(1)}%` },
-  { key: 'unemployment', label: 'Unemployment', format: (v: number) => `${v.toFixed(1)}%` },
-  { key: 'inflation', label: 'Inflation', format: (v: number) => `${v.toFixed(1)}%` },
-  { key: 'taxRevenue', label: 'Tax Revenue', format: (v: number) => `${v.toFixed(1)}%` },
-  { key: 'debtToGdp', label: 'Debt to GDP', format: (v: number) => `${v.toFixed(1)}%` },
-  { key: 'competitivenessIndex', label: 'Competitiveness', format: (v: number) => v.toFixed(1) },
-  { key: 'innovationIndex', label: 'Innovation', format: (v: number) => v.toFixed(1) },
+  { key: 'gdpPerCapita', label: 'GDP per Capita', format: (v: number) => isFinite(v) && !isNaN(v) ? formatCurrency(v) : 'N/A' },
+  { key: 'growthRate', label: 'Growth Rate', format: safeFormat((v: number) => `${v.toFixed(4)}%`) },
+  { key: 'unemployment', label: 'Unemployment', format: safeFormat((v: number) => `${v.toFixed(2)}%`) },
+  { key: 'inflation', label: 'Inflation', format: safeFormat((v: number) => `${v.toFixed(2)}%`) },
+  { key: 'taxRevenue', label: 'Tax Revenue', format: safeFormat((v: number) => `${v.toFixed(2)}%`) },
+  { key: 'debtToGdp', label: 'Debt to GDP', format: safeFormat((v: number) => `${v.toFixed(2)}%`) },
+  { key: 'competitivenessIndex', label: 'Competitiveness', format: safeFormat((v: number) => v.toFixed(1)) },
+  { key: 'innovationIndex', label: 'Innovation', format: safeFormat((v: number) => v.toFixed(1)) },
 ];
 
 export function ComparativeAnalysis({
@@ -119,6 +117,12 @@ export function ComparativeAnalysis({
   allCountries,
   onCountrySelect,
 }: ComparativeAnalysisProps) {
+  // Extract unique regions from actual country data
+  const regions = useMemo(() => {
+    const uniqueRegions = Array.from(new Set(allCountries.map(c => c.region).filter(Boolean)));
+    return [...uniqueRegions.sort(), 'Global Average'];
+  }, [allCountries]);
+
   const [selectedRegions, setSelectedRegions] = useState<string[]>(['Global Average']);
   const [selectedMetricX, setSelectedMetricX] = useState('gdpPerCapita');
   const [selectedMetricY, setSelectedMetricY] = useState('growthRate');
@@ -130,32 +134,52 @@ export function ComparativeAnalysis({
   const regionalData = useMemo(() => {
     const grouped = regions.reduce((acc, region) => {
       if (region === 'Global Average') {
+        const validGdpPerCapita = allCountries.filter(c => isFinite(c.gdpPerCapita));
+        const validGrowthRate = allCountries.filter(c => isFinite(c.growthRate));
+        const validUnemployment = allCountries.filter(c => isFinite(c.unemployment));
+
         acc[region] = {
           region,
           countries: allCountries,
-          avgGdpPerCapita: allCountries.reduce((sum, c) => sum + c.gdpPerCapita, 0) / allCountries.length,
-          avgGrowthRate: allCountries.reduce((sum, c) => sum + c.growthRate, 0) / allCountries.length,
-          avgUnemployment: allCountries.reduce((sum, c) => sum + c.unemployment, 0) / allCountries.length,
-          totalGdp: allCountries.reduce((sum, c) => sum + c.gdp, 0),
-          totalPopulation: allCountries.reduce((sum, c) => sum + c.population, 0),
+          avgGdpPerCapita: validGdpPerCapita.length > 0
+            ? validGdpPerCapita.reduce((sum, c) => sum + c.gdpPerCapita, 0) / validGdpPerCapita.length
+            : 0,
+          avgGrowthRate: validGrowthRate.length > 0
+            ? validGrowthRate.reduce((sum, c) => sum + c.growthRate, 0) / validGrowthRate.length
+            : 0,
+          avgUnemployment: validUnemployment.length > 0
+            ? validUnemployment.reduce((sum, c) => sum + c.unemployment, 0) / validUnemployment.length
+            : 0,
+          totalGdp: allCountries.reduce((sum, c) => sum + (isFinite(c.gdp) ? c.gdp : 0), 0),
+          totalPopulation: allCountries.reduce((sum, c) => sum + (isFinite(c.population) ? c.population : 0), 0),
         };
       } else {
         const regionCountries = allCountries.filter(c => c.region === region);
         if (regionCountries.length > 0) {
+          const validGdpPerCapita = regionCountries.filter(c => isFinite(c.gdpPerCapita));
+          const validGrowthRate = regionCountries.filter(c => isFinite(c.growthRate));
+          const validUnemployment = regionCountries.filter(c => isFinite(c.unemployment));
+
           acc[region] = {
             region,
             countries: regionCountries,
-            avgGdpPerCapita: regionCountries.reduce((sum, c) => sum + c.gdpPerCapita, 0) / regionCountries.length,
-            avgGrowthRate: regionCountries.reduce((sum, c) => sum + c.growthRate, 0) / regionCountries.length,
-            avgUnemployment: regionCountries.reduce((sum, c) => sum + c.unemployment, 0) / regionCountries.length,
-            totalGdp: regionCountries.reduce((sum, c) => sum + c.gdp, 0),
-            totalPopulation: regionCountries.reduce((sum, c) => sum + c.population, 0),
+            avgGdpPerCapita: validGdpPerCapita.length > 0
+              ? validGdpPerCapita.reduce((sum, c) => sum + c.gdpPerCapita, 0) / validGdpPerCapita.length
+              : 0,
+            avgGrowthRate: validGrowthRate.length > 0
+              ? validGrowthRate.reduce((sum, c) => sum + c.growthRate, 0) / validGrowthRate.length
+              : 0,
+            avgUnemployment: validUnemployment.length > 0
+              ? validUnemployment.reduce((sum, c) => sum + c.unemployment, 0) / validUnemployment.length
+              : 0,
+            totalGdp: regionCountries.reduce((sum, c) => sum + (isFinite(c.gdp) ? c.gdp : 0), 0),
+            totalPopulation: regionCountries.reduce((sum, c) => sum + (isFinite(c.population) ? c.population : 0), 0),
           };
         }
       }
       return acc;
     }, {} as Record<string, RegionalData>);
-    
+
     return Object.values(grouped);
   }, [allCountries]);
 
@@ -274,17 +298,27 @@ export function ComparativeAnalysis({
               <DropdownMenuGroup>
                 <DropdownMenuGroupLabel>Select Regions</DropdownMenuGroupLabel>
                 <DropdownMenuSeparator />
-              {regions.map(region => (
-                <DropdownMenuItem key={region}>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={selectedRegions.includes(region)}
-                      onCheckedChange={() => handleRegionToggle(region)}
-                    />
-                    <Label className="text-sm">{region}</Label>
-                  </div>
-                </DropdownMenuItem>
-              ))}
+              {regions.map(region => {
+                const regionCount = region === 'Global Average'
+                  ? allCountries.length
+                  : allCountries.filter(c => c.region === region).length;
+                return (
+                  <DropdownMenuItem key={region}>
+                    <div className="flex items-center justify-between w-full space-x-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={selectedRegions.includes(region)}
+                          onCheckedChange={() => handleRegionToggle(region)}
+                        />
+                        <Label className="text-sm cursor-pointer">{region}</Label>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        {regionCount}
+                      </Badge>
+                    </div>
+                  </DropdownMenuItem>
+                );
+              })}
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -299,9 +333,16 @@ export function ComparativeAnalysis({
           />
         </div>
 
-        <Badge variant="outline">
-          {filteredCountries.length} countries
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline">
+            {filteredCountries.length} of {allCountries.length} countries
+          </Badge>
+          {selectedRegions.length > 0 && !selectedRegions.includes('Global Average') && (
+            <Badge variant="secondary" className="text-xs">
+              Showing: {selectedRegions.join(', ')}
+            </Badge>
+          )}
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)}>
@@ -372,21 +413,51 @@ export function ComparativeAnalysis({
                       dataKey={selectedMetricY}
                       name={metrics.find(m => m.key === selectedMetricY)?.label}
                     />
-                    <Tooltip 
+                    <Tooltip
                       cursor={{ strokeDasharray: '3 3' }}
-                      formatter={(value: number, name: string, props: any) => [
-                        metrics.find(m => m.key === name)?.format(value) || value,
-                        metrics.find(m => m.key === name)?.label
-                      ]}
-                      labelFormatter={(label, payload) => payload?.[0]?.payload?.name || ''}
+                      content={({ active, payload }) => {
+                        if (!active || !payload || !payload.length) return null;
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-background border border-border rounded-lg p-3 shadow-lg">
+                            <p className="font-semibold mb-2">{data.name}</p>
+                            <div className="space-y-1 text-sm">
+                              <p className="flex justify-between gap-4">
+                                <span className="text-muted-foreground">
+                                  {metrics.find(m => m.key === selectedMetricX)?.label}:
+                                </span>
+                                <span className="font-medium">
+                                  {metrics.find(m => m.key === selectedMetricX)?.format(data[selectedMetricX])}
+                                </span>
+                              </p>
+                              <p className="flex justify-between gap-4">
+                                <span className="text-muted-foreground">
+                                  {metrics.find(m => m.key === selectedMetricY)?.label}:
+                                </span>
+                                <span className="font-medium">
+                                  {metrics.find(m => m.key === selectedMetricY)?.format(data[selectedMetricY])}
+                                </span>
+                              </p>
+                              <p className="flex justify-between gap-4">
+                                <span className="text-muted-foreground">Region:</span>
+                                <span className="font-medium">{data.region}</span>
+                              </p>
+                              <p className="flex justify-between gap-4">
+                                <span className="text-muted-foreground">Tier:</span>
+                                <span className="font-medium">{data.tier}</span>
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      }}
                     />
-                    <Scatter 
-                      data={filteredCountries} 
+                    <Scatter
+                      data={filteredCountries}
                       fill="#8884d8"
                     >
                       {filteredCountries.map((country, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
+                        <Cell
+                          key={`cell-${index}`}
                           fill={country.id === userCountry.id ? "#FF6B6B" : country.color}
                           stroke={country.id === userCountry.id ? "#FF4757" : "none"}
                           strokeWidth={country.id === userCountry.id ? 2 : 0}
@@ -544,61 +615,178 @@ export function ComparativeAnalysis({
         </TabsContent>
 
         <TabsContent value="trends" className="space-y-6">
-          {/* Regional Averages */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Regional Economic Overview</CardTitle>
-              <CardDescription>
-                Compare regional economic performance
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={regionalData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="region" />
-                    <YAxis />
-                    <Tooltip 
-                      formatter={(value: number) => [formatCurrency(value), 'Avg GDP per Capita']}
-                    />
-                    <Bar dataKey="avgGdpPerCapita" fill="#3B82F6" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Regional Averages - Multiple Metrics */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Regional GDP per Capita</CardTitle>
+                <CardDescription>
+                  Average GDP per capita by region
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={regionalData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="region" angle={-45} textAnchor="end" height={100} tick={{ fontSize: 11 }} />
+                      <YAxis />
+                      <Tooltip
+                        formatter={(value: number) => [formatCurrency(value), 'Avg GDP per Capita']}
+                      />
+                      <Bar dataKey="avgGdpPerCapita" fill="#3B82F6">
+                        {regionalData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={entry.region === userCountry.region ? "#FF6B6B" : "#3B82F6"}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Regional Growth Rates</CardTitle>
+                <CardDescription>
+                  Average economic growth by region
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={regionalData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="region" angle={-45} textAnchor="end" height={100} tick={{ fontSize: 11 }} />
+                      <YAxis />
+                      <Tooltip
+                        formatter={(value: number) => [`${value.toFixed(4)}%`, 'Avg Growth Rate']}
+                      />
+                      <Bar dataKey="avgGrowthRate" fill="#10B981">
+                        {regionalData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={entry.region === userCountry.region ? "#FF6B6B" : "#10B981"}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Regional Unemployment</CardTitle>
+                <CardDescription>
+                  Average unemployment rates by region
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={regionalData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="region" angle={-45} textAnchor="end" height={100} tick={{ fontSize: 11 }} />
+                      <YAxis />
+                      <Tooltip
+                        formatter={(value: number) => [`${value.toFixed(1)}%`, 'Avg Unemployment']}
+                      />
+                      <Bar dataKey="avgUnemployment" fill="#F59E0B">
+                        {regionalData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={entry.region === userCountry.region ? "#FF6B6B" : "#F59E0B"}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Regional Total GDP</CardTitle>
+                <CardDescription>
+                  Combined economic output by region
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={regionalData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="region" angle={-45} textAnchor="end" height={100} tick={{ fontSize: 11 }} />
+                      <YAxis />
+                      <Tooltip
+                        formatter={(value: number) => [formatCurrency(value / 1e9) + 'B', 'Total GDP']}
+                      />
+                      <Bar dataKey="totalGdp" fill="#8B5CF6">
+                        {regionalData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={entry.region === userCountry.region ? "#FF6B6B" : "#8B5CF6"}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Regional Statistics */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {regionalData.map(region => (
-              <Card key={region.region}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">{region.region}</CardTitle>
-                  <CardDescription>{region.countries.length} countries</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Avg GDP/capita:</span>
-                      <span className="font-medium">{formatCurrency(region.avgGdpPerCapita)}</span>
+            {regionalData.map(region => {
+              const isUserRegion = region.region === userCountry.region;
+              return (
+                <Card
+                  key={region.region}
+                  className={isUserRegion ? 'ring-2 ring-primary' : ''}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base">{region.region}</CardTitle>
+                      {isUserRegion && (
+                        <Badge variant="default" className="text-xs">Your Region</Badge>
+                      )}
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Avg Growth:</span>
-                      <span className="font-medium">{region.avgGrowthRate.toFixed(1)}%</span>
+                    <CardDescription>{region.countries.length} countries</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Avg GDP/capita:</span>
+                        <span className="font-medium">{formatCurrency(region.avgGdpPerCapita)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Avg Growth:</span>
+                        <span className="font-medium">{region.avgGrowthRate.toFixed(4)}%</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Avg Unemployment:</span>
+                        <span className="font-medium">{region.avgUnemployment.toFixed(2)}%</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Total GDP:</span>
+                        <span className="font-medium">{formatCurrency(region.totalGdp / 1e9)}B</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Population:</span>
+                        <span className="font-medium">{formatPopulation(region.totalPopulation)}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Total GDP:</span>
-                      <span className="font-medium">{formatCurrency(region.totalGdp / 1e9)}B</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Population:</span>
-                      <span className="font-medium">{formatPopulation(region.totalPopulation)}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </TabsContent>
       </Tabs>

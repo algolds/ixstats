@@ -300,19 +300,34 @@ const auditLogMiddleware = t.middleware(async ({ ctx, next, path, input }) => {
       // Log based on security level
       if (auditEntry.securityLevel === 'HIGH' || error) {
         console.error('[SECURITY_AUDIT]', auditEntry);
-      } else {
+
+        // Persist high-security events to database
+        try {
+          await ctx.db.auditLog.create({
+            data: {
+              userId: auditEntry.userId || 'anonymous',
+              action: auditEntry.action,
+              details: JSON.stringify({
+                method: auditEntry.method,
+                duration: auditEntry.duration,
+                securityLevel: auditEntry.securityLevel,
+                ip: auditEntry.ip,
+                userAgent: auditEntry.userAgent,
+                inputSummary: auditEntry.inputSummary
+              }),
+              success: auditEntry.success,
+              error: auditEntry.errorMessage,
+              timestamp: new Date()
+            }
+          });
+        } catch (dbError) {
+          // Don't fail the request if audit logging fails
+          console.error('[AUDIT_DB] Failed to persist audit log:', dbError);
+        }
+      } else if (process.env.NODE_ENV === 'development') {
+        // Development: Log all actions to console for debugging
         console.log('[AUDIT]', auditEntry);
       }
-      
-      // Note: Database audit logging available when security audit table is implemented
-      // For production deployment, implement security audit table in schema if needed
-      if (process.env.NODE_ENV === 'development') {
-        // Development: Log to console for debugging
-        console.log('[AUDIT]', auditEntry);
-      }
-      // Production: Audit logs are handled by external monitoring systems
-      //   console.error('[AUDIT_DB] Failed to log audit entry:', dbError);
-      // }
     }
   }
   

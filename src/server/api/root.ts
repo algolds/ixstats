@@ -6,7 +6,7 @@ import { countriesRouter } from "./routers/countries";
 import { adminRouter } from "./routers/admin";
 import { usersRouter } from "./routers/users";
 import { sdiRouter } from "./routers/sdi";
-import { intelligenceRouter } from "./routers/intelligence";
+import { intelligenceRouter, intelligenceBriefingRouter } from "./routers/intelligence";
 import { eciRouter } from "./routers/eci";
 import { notificationsRouter } from "./routers/notifications";
 import { myCountryRouter } from "./routers/mycountry";
@@ -21,6 +21,9 @@ import { governmentRouter } from "./routers/government";
 import { atomicGovernmentRouter } from "./routers/atomicGovernment";
 import { formulasRouter } from "./routers/formulas";
 import { quickActionsRouter } from "./routers/quickactions";
+import { scheduledChangesRouter } from "./routers/scheduledChanges";
+import { taxSystemRouter } from "./routers/taxSystem";
+import { wikiImporterRouter } from "./routers/wikiImporter";
 
 /**
  * This is the primary router for your server.
@@ -34,6 +37,7 @@ export const appRouter = createTRPCRouter({
   roles: rolesRouter, // Role and permission management
   sdi: sdiRouter,
   intelligence: intelligenceRouter,
+  intelligenceBriefing: intelligenceBriefingRouter, // Intelligence Briefing system (stored in database)
   eci: eciRouter, // ECI router for Executive Command Interface
   notifications: notificationsRouter, // Notifications router
   mycountry: myCountryRouter, // MyCountry specialized endpoints
@@ -47,6 +51,9 @@ export const appRouter = createTRPCRouter({
   atomicGovernment: atomicGovernmentRouter, // Atomic government component system
   formulas: formulasRouter, // Internal calculation formulas and system monitoring
   quickActions: quickActionsRouter, // Quick Actions system (meetings, policies, officials, activities)
+  scheduledChanges: scheduledChangesRouter, // Scheduled changes system for delayed impact
+  taxSystem: taxSystemRouter, // Tax system management
+  wikiImporter: wikiImporterRouter, // MediaWiki infobox importer for country data
   system: adminRouter, // Alias for global stats
 });
 
