@@ -66,7 +66,7 @@ class CountryFlagService {
           result = {
             country: countryName,
             flagUrl: iiwikiFlags[0].url,
-            source: 'iiwiki',
+            source: 'ixwiki',
             timestamp: Date.now() // Add timestamp
           };
           this.flagCache.set(normalizedName, result);

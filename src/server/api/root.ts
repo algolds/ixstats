@@ -24,6 +24,7 @@ import { quickActionsRouter } from "./routers/quickactions";
 import { scheduledChangesRouter } from "./routers/scheduledChanges";
 import { taxSystemRouter } from "./routers/taxSystem";
 import { wikiImporterRouter } from "./routers/wikiImporter";
+import { securityRouter } from "./routers/security";
 
 /**
  * This is the primary router for your server.
@@ -54,6 +55,7 @@ export const appRouter = createTRPCRouter({
   scheduledChanges: scheduledChangesRouter, // Scheduled changes system for delayed impact
   taxSystem: taxSystemRouter, // Tax system management
   wikiImporter: wikiImporterRouter, // MediaWiki infobox importer for country data
+  security: securityRouter, // Security & Defense system
   system: adminRouter, // Alias for global stats
 });
 
