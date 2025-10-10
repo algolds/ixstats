@@ -133,6 +133,9 @@ export default function ImportFromWikiPage() {
   const searchWikiMutation = api.countries.searchWiki.useMutation();
   const parseInfoboxMutation = api.countries.parseInfobox.useMutation();
 
+  // Wiki importer procedures (some are queries, not mutations)
+  const importCountryMutation = api.wikiImporter.importCountry.useMutation();
+
   // Use refs to store the latest values without causing re-renders
   const searchTermRef = useRef(searchTerm);
   const selectedSiteRef = useRef(selectedSite);
@@ -324,11 +327,32 @@ export default function ImportFromWikiPage() {
     setError(null);
   };
 
-  const handleContinueWithData = () => {
-    if (parsedData) {
+  const handleContinueWithData = async () => {
+    if (!parsedData) return;
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // For now, just use the existing parsed data
+      // The wiki importer query procedures can be integrated later if needed
+      const wikiSource = selectedSite.name.toLowerCase();
+
       // Store the parsed data and navigate to the customizer
-      localStorage.setItem('builder_imported_data', JSON.stringify(parsedData));
+      const enhancedData = {
+        ...parsedData,
+        _wikiSource: wikiSource,
+        _wikiSourceName: selectedSite.name,
+      };
+
+      localStorage.setItem('builder_imported_data', JSON.stringify(enhancedData));
       router.push(createUrl('/builder?import=true'));
+
+    } catch (error) {
+      console.error('Wiki import failed:', error);
+      setError(`Failed to process wiki import: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 

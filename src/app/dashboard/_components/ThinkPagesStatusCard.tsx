@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
+import { api } from "~/trpc/react";
 import { 
   Users, 
   FileText, 
@@ -24,16 +25,40 @@ interface ThinkPagesStatusCardProps {
 }
 
 export function ThinkPagesStatusCard({ userProfile, className = "", onCollapse }: ThinkPagesStatusCardProps) {
-  // Mock data for now - replace with real tRPC queries
+  // TODO: Re-enable when thinkpages and activities routers are available
+  // const { data: postsData } = api.thinkpages.getAllPosts.useQuery(
+  //   { limit: 100 },
+  //   { enabled: !!userProfile }
+  // );
+
+  // const { data: activitiesData } = api.activities.getUserActivities.useQuery(
+  //   { userId: userProfile?.id || '', limit: 50 },
+  //   { enabled: !!userProfile }
+  // );
+
+  // Use placeholder stats until APIs are available
   const thinkPagesStats = {
-    userPosts: 12,
-    totalViews: 1247,
-    activeProjects: 3,
-    weeklyGrowth: 23,
-    lastActivity: "2 hours ago",
-    reputation: 892,
-    collaborations: 7
+    userPosts: 0,
+    totalViews: 0,
+    activeProjects: 0,
+    weeklyGrowth: 0,
+    lastActivity: "No recent activity",
+    reputation: 100,
+    collaborations: 0
   };
+
+  function getRelativeTime(date: Date | string): string {
+    const now = new Date();
+    const then = new Date(date);
+    const diffMs = now.getTime() - then.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+
+    if (diffHours < 1) return "just now";
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    return then.toLocaleDateString();
+  }
 
   return (
     <div className={className}>

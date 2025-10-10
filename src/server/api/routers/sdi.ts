@@ -7,8 +7,8 @@ import type { IntelligenceItem, CrisisEvent, DiplomaticRelation, Treaty, Economi
 import { generateAndPostCrisisEvent } from "~/lib/auto-post-service";
 
 export const sdiRouter = createTRPCRouter({
-  // Intelligence Feed
-  getIntelligenceFeed: premiumProcedure
+  // Intelligence Feed - Changed to protectedProcedure for MyCountry Intelligence integration
+  getIntelligenceFeed: protectedProcedure
     .input(z.object({
       category: z.enum(['all', 'economic', 'crisis', 'diplomatic', 'security', 'technology', 'environment']).optional(),
       priority: z.enum(['all', 'low', 'medium', 'high', 'critical']).optional(),

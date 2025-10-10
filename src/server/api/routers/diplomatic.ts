@@ -771,7 +771,9 @@ export const diplomaticRouter = createTRPCRouter({
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Mission not yet completed' });
       }
 
-      const success = Math.random() * 100 < mission.successChance;
+      // Deterministic success based on successChance (no random)
+      // Success if successChance >= 50%, otherwise failure
+      const success = mission.successChance >= 50;
       const finalStatus = success ? 'completed' : 'failed';
       const rewardMultiplier = success ? 1.0 : 0.3;
 
@@ -785,7 +787,7 @@ export const diplomaticRouter = createTRPCRouter({
       });
 
       // Apply rewards to embassy
-      const experienceGained = Math.round(mission.experienceReward * rewardMultiplier);
+      const experienceGained = Math.floor(mission.experienceReward * rewardMultiplier);
       const influenceGained = mission.influenceReward * rewardMultiplier;
       const reputationGained = mission.reputationReward * rewardMultiplier;
       const economicGained = mission.economicReward * rewardMultiplier;

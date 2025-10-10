@@ -1,0 +1,47 @@
+Hi IIWiki Admin,
+
+I'm reaching out regarding the IxStats-Builder application that needs access to the IIWiki MediaWiki API. Despite our earlier discussion about whitelisting, we're still encountering Cloudflare 403 challenges.
+
+Here are the specific details:
+
+SERVER INFORMATION:
+- Server IP: 45.32.6.57
+- User-Agent: IxStats-Builder
+- Target API: https://iiwiki.com/mediawiki/api.php
+
+CURRENT ISSUE:
+All API requests are returning HTTP 403 with Cloudflare JavaScript challenge pages, which cannot be completed by automated systems.
+
+REQUESTED CLOUDFLARE CONFIGURATION:
+Please create a WAF Skip Rule with these exact settings:
+
+Rule Name: Allow IxStats Builder API Access
+Expression: (ip.src eq 45.32.6.57 and http.request.uri.path contains "/mediawiki/api.php")
+Action: Skip
+Skip Options: [Select All] - All remaining custom rules, Rate limiting, Zone Lockdown, Security level
+Priority: 1 (must run before any blocking rules)
+Status: Enabled
+
+ALTERNATIVE (if WAF rule doesn't work):
+Go to Security > WAF > Tools > IP Access Rules
+Add: IP 45.32.6.57, Action: Whitelist, Zone: iiwiki.com
+
+TESTING:
+After configuration, I can verify with:
+curl -A "IxStats-Builder" "https://iiwiki.com/mediawiki/api.php?action=query&format=json&meta=siteinfo"
+
+Expected: HTTP 200 with JSON response (not a challenge page)
+
+IMPORTANT CHECKLIST:
+✓ IP is exactly: 45.32.6.57
+✓ Path contains: /mediawiki/api.php (using "contains", not "equals")
+✓ Action is "Skip" not just "Allow"
+✓ Rule is "Enabled" not just saved
+✓ Rule priority is higher than blocking rules
+
+I've attached detailed documentation (IIWIKI_CLOUDFLARE_DEBUG.md) with complete configuration steps and troubleshooting information.
+
+Let me know if you need any additional information or if you see different IP addresses in your logs.
+
+Thanks for your help!
+

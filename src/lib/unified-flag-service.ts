@@ -53,21 +53,33 @@ class UnifiedFlagService {
     cacheMisses: 0,
   };
 
-  // Wiki sources in priority order (highest priority first)
+  // Rate limiting - VERY AGGRESSIVE to stop spam
+  private requestsSinceLastReset = 0;
+  private lastRateLimitReset = Date.now();
+  private readonly MAX_REQUESTS_PER_MINUTE = 5; // VERY LOW LIMIT
+  private readonly RATE_LIMIT_WINDOW = 60000; // 1 minute in ms
+  private apiErrorCount = 0;
+  private lastApiError: number | null = null;
+  private globalFetchDisabled = false; // Kill switch for all fetching
+
+  // Debouncing for save operations
+  private saveDebounceTimer: NodeJS.Timeout | null = null;
+  private pendingSave = false;
+  private readonly SAVE_DEBOUNCE_DELAY = 5000; // 5 seconds
+
+  // Wiki sources - ONLY Wikimedia Commons for real country flags
+  // Fictional wikis should only be used for fictional nations
   private readonly wikiSources: WikiSource[] = [
-    { name: 'IxWiki', baseUrl: '/api/ixwiki-proxy', priority: 1 },
-    { name: 'IiWiki', baseUrl: '/api/iiwiki-proxy/mediawiki', priority: 2 },
-    { name: 'AlthistoryWiki', baseUrl: '/api/althistory-wiki-proxy', priority: 3 },
-    // Removed WikiCommons due to CORS issues
+    { name: 'WikiCommons', baseUrl: 'https://commons.wikimedia.org', priority: 1 },
   ];
 
   private sourceStats: Record<string, { found: number; failed: number; cached: number }> = {};
 
-  // Cache TTL settings
+  // Cache TTL settings - PERMANENT caching to prevent API spam
   private readonly CACHE_TTL = {
-    memory: 24 * 60 * 60 * 1000,     // 24 hours in memory
-    localStorage: 7 * 24 * 60 * 60 * 1000, // 7 days in localStorage
-    failed: 2 * 60 * 60 * 1000,      // 2 hours for failed attempts
+    memory: Infinity,     // Never expire cached flags in memory
+    localStorage: Infinity, // Never expire cached flags in localStorage
+    failed: 24 * 60 * 60 * 1000,      // 24 hours for failed attempts
   };
 
   constructor() {
@@ -86,13 +98,13 @@ class UnifiedFlagService {
   /**
    * Get flag URL - intelligent multi-wiki caching with fallback
    */
-  async getFlagUrl(countryName: string, source: 'irl' | 'wiki' = 'wiki'): Promise<string | null> {
+  async getFlagUrl(countryName: string): Promise<string | null> {
     if (!countryName) return null;
 
     this.stats.totalRequests++;
     const cacheKey = countryName.toLowerCase();
 
-    // 1. Check local file first (fastest)
+    // 1. Check local file first (fastest) - for fictional nations
     const localUrl = this.getLocalFlagUrl(countryName);
     if (localUrl) {
       this.stats.cacheHits++;
@@ -100,9 +112,9 @@ class UnifiedFlagService {
       return localUrl;
     }
 
-    // 2. Check memory cache with TTL validation
+    // 2. Check memory cache - NO TTL validation, cache is permanent
     const cachedFlag = this.memoryCache[cacheKey];
-    if (cachedFlag && this.isCacheValid(cachedFlag)) {
+    if (cachedFlag && cachedFlag.url) {
       this.stats.cacheHits++;
       this.updateAccessTime(cacheKey);
       if (cachedFlag.source?.name && this.sourceStats[cachedFlag.source.name]) {
@@ -110,29 +122,45 @@ class UnifiedFlagService {
       }
       return cachedFlag.url;
     }
+
+    // 3. Check if already failed (null cached) - return placeholder immediately
+    if (cachedFlag === null || this.failedCountries.has(countryName)) {
+      // Silent fail - no logging
+      return this.PLACEHOLDER_FLAG;
+    }
+
+    // 4. Check if request already in progress
     if (this.requestQueue.has(cacheKey)) {
       return await this.requestQueue.get(cacheKey)!;
     }
 
-    // 4. Fetch from multiple wiki sources with fallback (only for wiki sources)
-    if (source === 'wiki') {
-      this.stats.cacheMisses++;
-      const fetchPromise = this.fetchFlagFromMultipleWikis(countryName);
-      this.requestQueue.set(cacheKey, fetchPromise);
+    // 5. ONLY fetch if truly never attempted before - no logging
+    this.stats.cacheMisses++;
+    const fetchPromise = this.fetchFlagFromMultipleWikis(countryName);
+    this.requestQueue.set(cacheKey, fetchPromise);
 
-      try {
-        const result = await fetchPromise;
-        this.requestQueue.delete(cacheKey);
-        return result;
-      } catch (error) {
-        this.requestQueue.delete(cacheKey);
-        console.error(`[UnifiedFlagService] Error fetching flag for ${countryName}:`, error);
-        return null;
+    try {
+      const result = await fetchPromise;
+      this.requestQueue.delete(cacheKey);
+
+      // If fetch failed, cache null to prevent retries
+      if (!result) {
+        this.memoryCache[cacheKey] = null;
+        this.failedCountries.add(countryName);
+        this.saveLocalMetadata(); // Save the failure
+        return this.PLACEHOLDER_FLAG;
       }
+
+      return result;
+    } catch (error) {
+      this.requestQueue.delete(cacheKey);
+      console.error(`[UnifiedFlagService] Error fetching flag for ${countryName}:`, error);
+      // Cache the failure
+      this.memoryCache[cacheKey] = null;
+      this.failedCountries.add(countryName);
+      this.saveLocalMetadata(); // Save the failure
+      return this.PLACEHOLDER_FLAG;
     }
-    
-    // For IRL countries, if not in cache, return null without fetching from wikis
-    return null;
   }
 
   /**
@@ -145,11 +173,11 @@ class UnifiedFlagService {
     const localUrl = this.getLocalFlagUrl(countryName);
     if (localUrl) return localUrl;
 
-    // Check memory cache with TTL validation
+    // Check memory cache - NO TTL validation, cache is permanent
     const cacheKey = countryName.toLowerCase();
     const cachedFlag = this.memoryCache[cacheKey];
-    
-    if (cachedFlag && this.isCacheValid(cachedFlag)) {
+
+    if (cachedFlag && cachedFlag.url) {
       this.updateAccessTime(cacheKey);
       return cachedFlag.url;
     }
@@ -180,15 +208,44 @@ class UnifiedFlagService {
   /**
    * Batch get flags for multiple countries
    */
-  async batchGetFlags(countryNames: string[], source: 'irl' | 'wiki' = 'wiki'): Promise<Record<string, string | null>> {
+  async batchGetFlags(countryNames: string[]): Promise<Record<string, string | null>> {
     const results: Record<string, string | null> = {};
-    
-    // Process in parallel batches of 10
-    const batchSize = 10;
-    for (let i = 0; i < countryNames.length; i += batchSize) {
-      const batch = countryNames.slice(i, i + batchSize);
+
+    // First, check all cached flags synchronously
+    const uncachedCountries: string[] = [];
+    for (const countryName of countryNames) {
+      const cachedUrl = this.getCachedFlagUrl(countryName);
+      if (cachedUrl) {
+        results[countryName] = cachedUrl;
+      } else {
+        uncachedCountries.push(countryName);
+      }
+    }
+
+    // Only fetch uncached countries
+    if (uncachedCountries.length === 0) {
+      return results;
+    }
+
+    // Silent operation - no logging
+
+    // Process in TINY batches of 1 to avoid ANY spam
+    const batchSize = 1;
+    for (let i = 0; i < uncachedCountries.length; i += batchSize) {
+      // Check if we should stop due to rate limiting or global disable
+      if (this.shouldThrottle() || this.globalFetchDisabled) {
+        // Return placeholder for ALL remaining countries immediately
+        for (let j = i; j < uncachedCountries.length; j++) {
+          results[uncachedCountries[j]!] = null;
+          this.failedCountries.add(uncachedCountries[j]!);
+        }
+        this.globalFetchDisabled = true; // Ensure fetching is disabled
+        break;
+      }
+
+      const batch = uncachedCountries.slice(i, i + batchSize);
       const batchPromises = batch.map(async (countryName) => {
-        const flagUrl = await this.getFlagUrl(countryName, source);
+        const flagUrl = await this.getFlagUrl(countryName);
         return { countryName, flagUrl };
       });
 
@@ -202,9 +259,9 @@ class UnifiedFlagService {
         }
       });
 
-      // Small delay between batches to avoid overwhelming the server
-      if (i + batchSize < countryNames.length) {
-        await this.delay(100);
+      // MUCH longer delay between batches to avoid ANY server load
+      if (i + batchSize < uncachedCountries.length) {
+        await this.delay(2000); // 2 seconds between each flag fetch
       }
     }
 
@@ -212,56 +269,89 @@ class UnifiedFlagService {
   }
 
   /**
+   * Check if we should throttle requests due to rate limiting
+   */
+  private shouldThrottle(): boolean {
+    const now = Date.now();
+
+    // Reset counter if window has passed
+    if (now - this.lastRateLimitReset > this.RATE_LIMIT_WINDOW) {
+      this.requestsSinceLastReset = 0;
+      this.lastRateLimitReset = now;
+    }
+
+    // Check if we've hit the rate limit
+    if (this.requestsSinceLastReset >= this.MAX_REQUESTS_PER_MINUTE) {
+      console.warn('[UnifiedFlagService] Rate limit reached, throttling requests');
+      return true;
+    }
+
+    // If we've had recent API errors, back off
+    if (this.apiErrorCount > 5 && this.lastApiError && (now - this.lastApiError) < 30000) {
+      console.warn('[UnifiedFlagService] Too many recent API errors, backing off');
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
    * Fetch flag from multiple wiki sources with intelligent fallback
    */
   private async fetchFlagFromMultipleWikis(countryName: string): Promise<string | null> {
     const cacheKey = countryName.toLowerCase();
-    
-    // Try each wiki source in priority order
-    for (const source of this.wikiSources) {
-      try {
-        console.log(`[UnifiedFlagService] Trying ${source.name} for ${countryName}`);
-        
-        let flagUrl: string | null = null;
-        
-        if (source.name === 'WikiCommons') {
-          flagUrl = await this.fetchFromWikiCommons(countryName);
-        } else {
-          flagUrl = await this.fetchFromMediaWiki(countryName, source);
-        }
-        
-        if (flagUrl) {
-          // Cache the successful result
-          const cachedFlag: CachedFlag = {
-            url: flagUrl,
-            source: source,
-            cachedAt: Date.now(),
-            lastAccessed: Date.now(),
-          };
-          
-          this.memoryCache[cacheKey] = cachedFlag;
-          if (source.name && this.sourceStats[source.name]) {
-            this.sourceStats[source.name]!.found++;
-          }
-          
-          // Try to download and store the flag file locally (non-blocking)
-          this.downloadFlagToLocal(countryName, flagUrl, source).catch(error => {
-            console.warn(`[UnifiedFlagService] Failed to download flag for ${countryName}:`, error);
-          });
-          
-          console.log(`[UnifiedFlagService] Found flag for ${countryName} from ${source.name}: ${flagUrl}`);
-          return flagUrl;
-        } else {
-          if (source.name && this.sourceStats[source.name]) {
-            this.sourceStats[source.name]!.failed++;
-          }
-        }
-      } catch (error) {
-        console.warn(`[UnifiedFlagService] Error fetching from ${source.name} for ${countryName}:`, error);
-        if (source.name && this.sourceStats[source.name]) {
-          this.sourceStats[source.name]!.failed++;
-        }
+
+    // GLOBAL KILL SWITCH - stop all fetching if we hit too many errors
+    if (this.globalFetchDisabled) {
+      console.log(`[UnifiedFlagService] Fetching disabled globally - returning null`);
+      this.failedCountries.add(countryName);
+      return null;
+    }
+
+    // Check if we've already failed for this country recently
+    if (this.failedCountries.has(countryName)) {
+      return null; // Silent fail - no logging to reduce spam
+    }
+
+    // Check rate limiting
+    if (this.shouldThrottle()) {
+      console.warn(`[UnifiedFlagService] Rate limited - disabling all fetching`);
+      this.globalFetchDisabled = true; // DISABLE ALL FUTURE FETCHING
+      this.failedCountries.add(countryName);
+      return null;
+    }
+
+    // FOR REAL COUNTRIES - ONLY TRY WIKIMEDIA COMMONS
+    // Removed verbose logging to reduce console spam
+    this.requestsSinceLastReset++;
+
+    try {
+      const flagUrl = await this.fetchFromWikiCommons(countryName);
+
+      if (flagUrl) {
+        // Reset error counter on success
+        this.apiErrorCount = 0;
+        // Cache the successful result
+        const cachedFlag: CachedFlag = {
+          url: flagUrl,
+          source: { name: 'WikiCommons', baseUrl: 'https://commons.wikimedia.org', priority: 1 },
+          cachedAt: Date.now(),
+          lastAccessed: Date.now(),
+        };
+
+        this.memoryCache[cacheKey] = cachedFlag;
+        // Silent success - no logging
+
+        // Schedule save (debounced to prevent spam)
+        this.saveLocalMetadata();
+
+        return flagUrl;
       }
+    } catch (error) {
+      // Track API errors
+      this.apiErrorCount++;
+      this.lastApiError = Date.now();
+      console.warn(`[UnifiedFlagService] Error fetching from Wikimedia Commons for ${countryName}:`, error);
     }
     
     // Cache null result to avoid repeated failures (with shorter TTL)
@@ -337,27 +427,62 @@ class UnifiedFlagService {
    */
   private async fetchFromWikiCommons(countryName: string): Promise<string | null> {
     try {
+      // Handle special country name mappings
+      const countryMappings: Record<string, string> = {
+        'korea, dem. people\'s rep.': 'North Korea',
+        'korea, rep.': 'South Korea',
+        'czech republic': 'the Czech Republic',
+        'bahamas, the': 'the Bahamas',
+        'gambia, the': 'the Gambia',
+        'congo, dem. rep.': 'the Democratic Republic of the Congo',
+        'congo, rep.': 'the Republic of the Congo',
+        'egypt, arab rep.': 'Egypt',
+        'iran, islamic rep.': 'Iran',
+        'venezuela, rb': 'Venezuela',
+        'yemen, rep.': 'Yemen',
+        'syria': 'Syria',
+        'lao pdr': 'Laos',
+        'vietnam': 'Vietnam',
+        'bolivia': 'Bolivia',
+        'russia': 'Russia',
+        'moldova': 'Moldova',
+        'tanzania': 'Tanzania',
+        'united states': 'the United States',
+        'united kingdom': 'the United Kingdom',
+        'netherlands': 'the Netherlands',
+        'philippines': 'the Philippines',
+        'maldives': 'the Maldives',
+        'solomon islands': 'the Solomon Islands',
+        'marshall islands': 'the Marshall Islands',
+        'central african republic': 'the Central African Republic',
+        'dominican republic': 'the Dominican Republic',
+        'united arab emirates': 'the United Arab Emirates',
+      };
+
+      // Check if we need to use a mapped name
+      const searchName = countryMappings[countryName.toLowerCase()] || countryName;
+
       // Try different flag filename patterns for Commons
       const flagPatterns = [
-        `Flag of ${countryName}.svg`,
-        `Flag of ${countryName}.png`,
-        `${countryName} flag.svg`,
-        `${countryName} flag.png`,
-        `Flag_of_${countryName}.svg`,
-        `Flag_of_${countryName}.png`,
+        `Flag of ${searchName}.svg`,
+        `Flag of ${searchName}.png`,
+        `Flag_of_${searchName.replace(/ /g, '_')}.svg`,
+        `${searchName} flag.svg`,
+        `${searchName.replace(/ /g, '_')}_flag.svg`,
       ];
-      
+
       for (const filename of flagPatterns) {
         try {
-          const fileInfoUrl = `https://commons.wikimedia.org/api.php?action=query&format=json&formatversion=2&origin=*&titles=File:${encodeURIComponent(filename)}&prop=imageinfo&iiprop=url`;
-          
+          const fileInfoUrl = `https://commons.wikimedia.org/w/api.php?action=query&format=json&formatversion=2&origin=*&titles=File:${encodeURIComponent(filename)}&prop=imageinfo&iiprop=url`;
+
           const response = await fetch(fileInfoUrl, {
-            signal: AbortSignal.timeout(8000),
+            signal: AbortSignal.timeout(5000),
           });
-          
+
           if (response.ok) {
             const data = await response.json();
             if (data.query?.pages?.[0]?.imageinfo?.[0]?.url) {
+              // Silent success - no logging to reduce spam
               return data.query.pages[0].imageinfo[0].url;
             }
           }
@@ -365,22 +490,23 @@ class UnifiedFlagService {
           continue; // Try next pattern
         }
       }
-      
+
+      // Silent fail - no logging
       return null;
     } catch (error) {
-      console.warn(`[UnifiedFlagService] WikiCommons fetch error for ${countryName}:`, error);
+      // Silent error - no logging
       return null;
     }
   }
 
   /**
    * Check if cached flag is still valid based on TTL
+   * With permanent caching, this always returns true for valid cached flags
    */
   private isCacheValid(cachedFlag: CachedFlag): boolean {
     if (!cachedFlag) return false;
-    const now = Date.now();
-    const age = now - cachedFlag.cachedAt;
-    return age < this.CACHE_TTL.memory;
+    // Always valid with permanent caching
+    return true;
   }
 
   /**
@@ -395,23 +521,16 @@ class UnifiedFlagService {
 
   /**
    * Clean up expired cache entries
+   * With permanent caching, this only removes failed attempts after TTL
    */
   private cleanupExpiredCache(): void {
+    // With permanent caching, we don't clean up successful entries
+    // Only clear the failed countries set periodically
     const now = Date.now();
-    const expiredKeys: string[] = [];
-    
-    Object.entries(this.memoryCache).forEach(([key, cachedFlag]) => {
-      if (cachedFlag && (now - cachedFlag.cachedAt) > this.CACHE_TTL.memory) {
-        expiredKeys.push(key);
-      }
-    });
-    
-    expiredKeys.forEach(key => {
-      delete this.memoryCache[key];
-    });
-    
-    if (expiredKeys.length > 0) {
-      console.log(`[UnifiedFlagService] Cleaned up ${expiredKeys.length} expired cache entries`);
+    if (this.lastApiError && (now - this.lastApiError) > this.CACHE_TTL.failed) {
+      this.failedCountries.clear();
+      this.apiErrorCount = 0;
+      console.log('[UnifiedFlagService] Cleared failed countries list for retry');
     }
   }
 
@@ -463,7 +582,7 @@ class UnifiedFlagService {
       }
 
       this.lastUpdateTime = Date.now();
-      await this.saveLocalMetadata();
+      this.saveLocalMetadata(); // Debounced save
       
       const successfulFlags = Object.values(this.memoryCache).filter(f => f && f.url).length;
       console.log(`[UnifiedFlagService] Background prefetch completed. Cached flags: ${successfulFlags}`);
@@ -536,16 +655,22 @@ class UnifiedFlagService {
           this.localMetadata = parsed.flags || {};
           this.lastUpdateTime = parsed.lastUpdateTime || null;
           
-          // Load memory cache from localStorage (with TTL validation)
+          // Load memory cache from localStorage (no TTL validation - permanent cache)
           if (parsed.memoryCache) {
-            const now = Date.now();
             Object.entries(parsed.memoryCache).forEach(([key, cachedFlag]: [string, any]) => {
-              if (cachedFlag && cachedFlag.url && cachedFlag.cachedAt) {
-                const age = now - cachedFlag.cachedAt;
-                if (age < this.CACHE_TTL.localStorage) {
-                  this.memoryCache[key] = cachedFlag;
-                }
+              // Load both successful flags AND failures (null)
+              this.memoryCache[key] = cachedFlag;
+              if (cachedFlag === null) {
+                // Also mark as failed
+                this.failedCountries.add(key);
               }
+            });
+          }
+
+          // Load failed countries set
+          if (parsed.failedCountries) {
+            parsed.failedCountries.forEach((country: string) => {
+              this.failedCountries.add(country);
             });
           }
           
@@ -601,7 +726,14 @@ class UnifiedFlagService {
   }
 
   private async saveLocalMetadata(): Promise<void> {
-    // Save to localStorage in browser
+    // Debounce save operations to prevent spam
+    if (this.saveDebounceTimer) {
+      clearTimeout(this.saveDebounceTimer);
+    }
+
+    this.pendingSave = true;
+
+    // Save to localStorage immediately (cheap operation)
     if (typeof window !== 'undefined') {
       try {
         const metadata = {
@@ -609,11 +741,22 @@ class UnifiedFlagService {
           flags: this.localMetadata,
           memoryCache: this.memoryCache,
           sourceStats: this.sourceStats,
-          version: '2.0', // Version for future compatibility
+          failedCountries: Array.from(this.failedCountries), // Save failed attempts too
+          version: '2.1',
         };
         localStorage.setItem('flag-service-metadata', JSON.stringify(metadata));
-        
-        // Also save to server if possible
+      } catch (error) {
+        console.warn('[UnifiedFlagService] Failed to save to localStorage:', error);
+      }
+    }
+
+    // Debounce server save (expensive operation)
+    this.saveDebounceTimer = setTimeout(async () => {
+      if (!this.pendingSave) return;
+
+      this.pendingSave = false;
+
+      if (typeof window !== 'undefined') {
         try {
           await fetch('/api/flags/save-metadata', {
             method: 'POST',
@@ -623,15 +766,12 @@ class UnifiedFlagService {
               lastUpdateTime: this.lastUpdateTime
             })
           });
-          console.log('[UnifiedFlagService] Metadata saved to server');
+          console.log('[UnifiedFlagService] Metadata batch saved to server');
         } catch (serverError) {
-          // Server save failed, but localStorage succeeded
-          console.warn('[UnifiedFlagService] Failed to save metadata to server, but localStorage succeeded');
+          console.warn('[UnifiedFlagService] Failed to save metadata to server:', serverError);
         }
-      } catch (error) {
-        console.warn('[UnifiedFlagService] Failed to save metadata to localStorage:', error);
       }
-    }
+    }, this.SAVE_DEBOUNCE_DELAY);
   }
 
   private delay(ms: number): Promise<void> {
@@ -684,9 +824,9 @@ class UnifiedFlagService {
           };
           
           console.log(`[UnifiedFlagService] Downloaded flag for ${countryName} to ${result.fileName}`);
-          
-          // Save metadata after successful download
-          await this.saveLocalMetadata();
+
+          // Schedule metadata save (debounced)
+          this.saveLocalMetadata();
         }
       }
     } catch (error) {

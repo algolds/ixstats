@@ -409,16 +409,26 @@ function calculatePeerAverages(peerData: ExistingCountryData[]): {
 // Create mock historical data for trends (in real implementation, this would come from database)
 export function createMockHistoricalData(country: ExistingCountryData): ExistingCountryData {
   const variance = 0.1; // 10% variance for mock previous data
-  
+
+  // Use deterministic variations based on country characteristics
+  const economicFactor = country.economicTier === 'developed' ? 0.95 : country.economicTier === 'emerging' ? 1.05 : 1.0;
+  const populationFactor = country.populationTier === 'large' ? 0.98 : country.populationTier === 'medium' ? 1.0 : 1.02;
+
+  // Calculate deterministic variations based on current values
+  const economicVariation = ((country.economicVitality % 10) - 5) * 2; // -10 to +10
+  const populationVariation = ((country.populationWellbeing % 8) - 4) * 1.5; // -6 to +6
+  const diplomaticVariation = ((country.diplomaticStanding % 7) - 3.5) * 2; // -7 to +7
+  const governmentVariation = ((country.governmentalEfficiency % 9) - 4.5) * 2; // -9 to +9
+
   return {
     ...country,
-    economicVitality: Math.max(0, Math.min(100, country.economicVitality + (Math.random() - 0.5) * 20)),
-    populationWellbeing: Math.max(0, Math.min(100, country.populationWellbeing + (Math.random() - 0.5) * 15)),
-    diplomaticStanding: Math.max(0, Math.min(100, country.diplomaticStanding + (Math.random() - 0.5) * 12)),
-    governmentalEfficiency: Math.max(0, Math.min(100, country.governmentalEfficiency + (Math.random() - 0.5) * 18)),
-    currentGdpPerCapita: Math.max(1000, country.currentGdpPerCapita * (1 + (Math.random() - 0.5) * variance)),
-    currentPopulation: Math.max(10000, country.currentPopulation * (1 + (Math.random() - 0.5) * variance * 0.5)),
-    realGDPGrowthRate: Math.max(-0.1, Math.min(0.15, country.realGDPGrowthRate + (Math.random() - 0.5) * 0.02)),
-    populationGrowthRate: Math.max(-0.05, Math.min(0.1, country.populationGrowthRate + (Math.random() - 0.5) * 0.01))
+    economicVitality: Math.max(0, Math.min(100, country.economicVitality + economicVariation)),
+    populationWellbeing: Math.max(0, Math.min(100, country.populationWellbeing + populationVariation)),
+    diplomaticStanding: Math.max(0, Math.min(100, country.diplomaticStanding + diplomaticVariation)),
+    governmentalEfficiency: Math.max(0, Math.min(100, country.governmentalEfficiency + governmentVariation)),
+    currentGdpPerCapita: Math.max(1000, country.currentGdpPerCapita * economicFactor),
+    currentPopulation: Math.max(10000, country.currentPopulation * populationFactor),
+    realGDPGrowthRate: Math.max(-0.1, Math.min(0.15, country.realGDPGrowthRate * economicFactor)),
+    populationGrowthRate: Math.max(-0.05, Math.min(0.1, country.populationGrowthRate * populationFactor))
   };
 }

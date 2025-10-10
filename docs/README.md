@@ -1,62 +1,80 @@
 # IxStats Documentation Index
-*January 2025 - Post-Cleanup Organization*
+*January 2025 - Documentation Structure*
 
 ## 📁 **Documentation Structure**
 
-### **Root Level**
-- [`README.md`](../README.md) - Main project overview and quick start guide
-- [`CLAUDE.md`](../CLAUDE.md) - Development instructions for Claude Code
+### **Essential Documentation** (Root Level)
+- [`README.md`](../README.md) - Main project overview, setup instructions, and commands
+- [`CLAUDE.md`](../CLAUDE.md) - Development instructions for Claude Code AI assistance
+- [`IMPLEMENTATION_STATUS.md`](../IMPLEMENTATION_STATUS.md) - Detailed feature completion matrix (80% complete)
+- [`COMPREHENSIVE_PROGRESS_REPORT.md`](../COMPREHENSIVE_PROGRESS_REPORT.md) - In-depth project analysis
+- [`DOCUMENTATION_INDEX.md`](../DOCUMENTATION_INDEX.md) - Main documentation navigation guide
 
-### **📈 Current Status & Planning** (`/docs/current/`)
-- [`IMPLEMENTATION_STATUS.md`](./current/IMPLEMENTATION_STATUS.md) - Realistic project completion status
-- [`PROGRESS_REPORT.md`](./current/PROGRESS_REPORT.md) - Comprehensive project analysis  
-- [`FUTURE_ROADMAP.md`](./current/FUTURE_ROADMAP.md) - Development roadmap and priorities
+### **Core System Documentation** (Root Level)
+- [`ATOMIC_SYSTEM_ARCHITECTURE.md`](../ATOMIC_SYSTEM_ARCHITECTURE.md) - Revolutionary government system design
+- [`ECONOMY_BUILDER_ARCHITECTURE.md`](../ECONOMY_BUILDER_ARCHITECTURE.md) - Economic builder system architecture
+- [`ECONOMIC_SYSTEMS_README.md`](../ECONOMIC_SYSTEMS_README.md) - Economic calculation engines
+- [`DIPLOMATIC_SYSTEMS_GUIDE.md`](../DIPLOMATIC_SYSTEMS_GUIDE.md) - Diplomatic operations platform
+- [`STRATCOMM_IMPLEMENTATION_GUIDE.md`](../STRATCOMM_IMPLEMENTATION_GUIDE.md) - Strategic communications (planned)
+- [`COMPREHENSIVE_COUNTRY_BUILDER_PRD.md`](../COMPREHENSIVE_COUNTRY_BUILDER_PRD.md) - Country builder requirements
+- [`ADMIN_DASHBOARD_OVERVIEW.md`](../ADMIN_DASHBOARD_OVERVIEW.md) - Admin god-mode features
+- [`PRODUCTION_DEPLOYMENT.md`](../PRODUCTION_DEPLOYMENT.md) - Deployment and configuration guide
 
 ### **🔧 Technical Architecture** (`/docs/technical/`)
-- [`DIPLOMATIC_INTELLIGENCE_SYSTEM_ARCHITECTURE.md`](./technical/DIPLOMATIC_INTELLIGENCE_SYSTEM_ARCHITECTURE.md) - Advanced diplomatic features architecture
-- [`WIKI_INTEGRATION_ARCHITECTURE.md`](./technical/WIKI_INTEGRATION_ARCHITECTURE.md) - MediaWiki integration systems
-- [`THINKPAGES_META_EXPERIENCE_DESIGN.md`](./technical/THINKPAGES_META_EXPERIENCE_DESIGN.md) - Social platform design specifications
+- [`DIPLOMATIC_INTELLIGENCE_SYSTEM_ARCHITECTURE.md`](./technical/DIPLOMATIC_INTELLIGENCE_SYSTEM_ARCHITECTURE.md) - Diplomatic intelligence design
+- [`WIKI_INTEGRATION_ARCHITECTURE.md`](./technical/WIKI_INTEGRATION_ARCHITECTURE.md) - MediaWiki integration
+- [`THINKPAGES_META_EXPERIENCE_DESIGN.md`](./technical/THINKPAGES_META_EXPERIENCE_DESIGN.md) - Social platform UX
+- [`QUICK_ACTIONS_SYSTEM.md`](./technical/QUICK_ACTIONS_SYSTEM.md) - Quick actions framework
+- [`QUICK_ACTIONS_IMPLEMENTATION.md`](./technical/QUICK_ACTIONS_IMPLEMENTATION.md) - Quick actions implementation
+
+### **🚀 Future Features** (`/docs/future-features/`)
+- [`labs/vexel/`](./future-features/labs/vexel/) - Heraldic design system (planned feature)
 
 ### **🗂️ Archived Documentation** (`/docs/archived/`)
-- Completed implementation guides and legacy documentation
-- Historical design decisions and migration guides
-- Previous roadmaps and completed feature specifications
+- Completed implementation summaries
+- Debug and troubleshooting files
+- Historical cleanup reports
+- IIWiki integration testing files
 
-## 🎯 **Key Documentation Priorities**
+## 🎯 **Quick Start Guide**
 
 ### **For New Developers**
-1. Start with [`README.md`](../README.md) for project overview
-2. Review [`CLAUDE.md`](../CLAUDE.md) for development setup
-3. Check [`IMPLEMENTATION_STATUS.md`](./current/IMPLEMENTATION_STATUS.md) for current completion status
+1. Start with [`README.md`](../README.md) for project setup
+2. Review [`CLAUDE.md`](../CLAUDE.md) for AI-assisted development
+3. Check [`IMPLEMENTATION_STATUS.md`](../IMPLEMENTATION_STATUS.md) for feature status (80% complete)
 
-### **For Feature Planning**
-1. Review [`FUTURE_ROADMAP.md`](./current/FUTURE_ROADMAP.md) for planned features
-2. Check [`PROGRESS_REPORT.md`](./current/PROGRESS_REPORT.md) for detailed analysis
-3. Reference technical architecture docs for system design
+### **For Understanding the System**
+1. [`ATOMIC_SYSTEM_ARCHITECTURE.md`](../ATOMIC_SYSTEM_ARCHITECTURE.md) - Revolutionary government design
+2. [`ECONOMY_BUILDER_ARCHITECTURE.md`](../ECONOMY_BUILDER_ARCHITECTURE.md) - Economic systems
+3. [`DIPLOMATIC_SYSTEMS_GUIDE.md`](../DIPLOMATIC_SYSTEMS_GUIDE.md) - Diplomatic features
 
-### **For Understanding Architecture**  
-- All technical specifications are in `/docs/technical/`
-- Component-level documentation is in respective `/src/` directories
-- Database schema documentation is in `/prisma/schema.prisma`
+### **For Deployment**
+- [`PRODUCTION_DEPLOYMENT.md`](../PRODUCTION_DEPLOYMENT.md) - Complete deployment guide
+- Base path: `/projects/ixstats`
+- Port: 3550 (production), 3000 (development)
 
-## 🚀 **Current Development Focus**
+## 🚀 **Current Status (v0.9.0 Beta)**
 
-Based on [`IMPLEMENTATION_STATUS.md`](./current/IMPLEMENTATION_STATUS.md):
+**Overall Completion: 80%**
+- ✅ Production-ready core (100%)
+- ⚠️ Advanced features in development (70%)
+- 🔧 Mobile optimization ongoing (65%)
 
-1. **Phase 2**: Live data integration for intelligence components
-2. **Real-time Updates**: WebSocket infrastructure implementation
-3. **Mobile Optimization**: Intelligence system responsive design
-4. **Advanced Features**: SDI/ECI module completion
+**Remaining Work for v1.0:**
+1. Replace Math.random() placeholders (67 files)
+2. Complete ECI/SDI UI implementation
+3. Finish live data integration
+4. Mobile experience optimization
 
 ## 📝 **Documentation Maintenance**
 
-**Last Cleanup**: January 2025
-- Archived completed implementation guides
-- Reorganized documentation structure
-- Updated project status to reflect realistic completion levels
-- Consolidated redundant documentation
+**Last Major Cleanup**: January 2025
+- Corrected inflated completion claims (100% → 80%)
+- Archived 9+ outdated implementation files
+- Consolidated duplicate documentation
+- Created accurate feature completion matrix
 
-**Next Review**: After Phase 2 completion (live data integration)
+**Next Review**: At v1.0 release (estimated 8-10 weeks)
 
 ---
 

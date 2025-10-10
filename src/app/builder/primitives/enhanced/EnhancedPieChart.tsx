@@ -37,7 +37,7 @@ function ChartTooltip({ active, payload, formatValue, colors }: ChartTooltipProp
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       className={cn(
-        'backdrop-blur-md bg-white/95 dark:bg-gray-800/95',
+        'bg-white/95 dark:bg-gray-800/95',
         'border border-gray-200/50 dark:border-gray-600/50',
         'rounded-lg p-3 shadow-xl dark:shadow-gray-900/50'
       )}
@@ -52,7 +52,7 @@ function ChartTooltip({ active, payload, formatValue, colors }: ChartTooltipProp
         </span>
       </div>
       <div className="text-sm text-gray-900 dark:text-gray-100 mt-1">
-        Value: <span className="font-mono">
+        Value: <span className="">
           {formatValue ? formatValue(data.value) : data.value}
         </span>
       </div>
@@ -208,7 +208,7 @@ export function EnhancedPieChart({
       >
         {title && (
           <div className="space-y-1">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{title}</h3>
             {description && (
               <p className="text-sm text-gray-600 dark:text-gray-400">{description}</p>
             )}
@@ -240,7 +240,7 @@ export function EnhancedPieChart({
         style={cssVars as React.CSSProperties}
       >
         {title && (
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{title}</h3>
         )}
         
         <div 
@@ -270,7 +270,7 @@ export function EnhancedPieChart({
       {(title || description) && (
         <div className="space-y-1">
           {title && (
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
               {title}
             </h3>
           )}
@@ -353,7 +353,7 @@ export function EnhancedPieChart({
                   </div>
                   
                   <div className="text-right flex-shrink-0 ml-2">
-                    <div className="text-sm font-mono text-gray-900 dark:text-gray-100">
+                    <div className="text-sm text-gray-900 dark:text-gray-100">
                       {formatValue ? formatValue(entry.value) : entry.value}
                     </div>
                     <div className="text-xs text-gray-600 dark:text-gray-400">

@@ -207,7 +207,7 @@ export const adminRouter = createTRPCRouter({
     }),
 
   // Save system configuration
-  saveConfig: publicProcedure
+  saveConfig: adminProcedure
     .input(z.object({
       globalGrowthFactor: z.number().min(0.5).max(2.0),
       autoUpdate: z.boolean(),
@@ -243,7 +243,7 @@ export const adminRouter = createTRPCRouter({
     }),
 
   // Set custom time via bot or local override
-  setCustomTime: publicProcedure
+  setCustomTime: adminProcedure
     .input(z.object({
       ixTime: z.number(),
       multiplier: z.number().optional(),
@@ -279,7 +279,7 @@ export const adminRouter = createTRPCRouter({
     }),
 
   // Bot control operations
-  syncBot: publicProcedure
+  syncBot: adminProcedure
     .mutation(async ({ ctx }) => {
       try {
         const result = await IxTime.syncWithBot();
@@ -290,7 +290,7 @@ export const adminRouter = createTRPCRouter({
       }
     }),
 
-  pauseBot: publicProcedure
+  pauseBot: adminProcedure
     .mutation(async ({ ctx }) => {
       try {
         const result = await IxTime.pauseBotTime();
@@ -301,7 +301,7 @@ export const adminRouter = createTRPCRouter({
       }
     }),
 
-  resumeBot: publicProcedure
+  resumeBot: adminProcedure
     .mutation(async ({ ctx }) => {
       try {
         const result = await IxTime.resumeBotTime();
@@ -312,7 +312,7 @@ export const adminRouter = createTRPCRouter({
       }
     }),
 
-  clearBotOverrides: publicProcedure
+  clearBotOverrides: adminProcedure
     .mutation(async ({ ctx }) => {
       try {
         const result = await IxTime.clearBotOverrides();
@@ -357,7 +357,7 @@ export const adminRouter = createTRPCRouter({
     }),
 
   // Analyze import file
-  analyzeImport: publicProcedure
+  analyzeImport: adminProcedure
     .input(z.object({
       fileData: z.array(z.number()), // Uint8Array as number array
       fileName: z.string(),
@@ -504,7 +504,7 @@ export const adminRouter = createTRPCRouter({
     }),
 
   // Import roster data
-  importRosterData: publicProcedure
+  importRosterData: adminProcedure
     .input(z.object({
       analysisId: z.string(),
       replaceExisting: z.boolean(),

@@ -598,10 +598,16 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
         bottom50Percent: economyData.income.economicClasses.slice(-2)
           .reduce((sum, c) => sum + c.wealthPercent, 0)
       },
-      regionalDisparities: economyData.demographics.regions.map(region => ({
-        region: region.name,
-        deviation: Math.random() * 20 - 10 // Placeholder
-      }))
+      regionalDisparities: economyData.demographics.regions.map(region => {
+        const totalPop = economyData.demographics.regions.reduce((sum, r) => sum + r.population, 0) || 10000000;
+        const expectedShare = 100 / (economyData.demographics.regions?.length || 1);
+        const actualShare = (region.population / totalPop) * 100;
+        const deviation = actualShare - expectedShare;
+        return {
+          region: region.name,
+          deviation: Math.max(-20, Math.min(20, deviation))
+        };
+      })
     };
   }
 
@@ -850,6 +856,24 @@ export class IntegratedEconomicAnalysis {
     }
 
     return recommendations.slice(0, 5); // Top 5 priorities
+  }
+
+  /**
+   * Calculate regional economic deviation from national average
+   */
+  private calculateRegionalDeviation(region: any, economyData: EconomyData): number {
+    // Placeholder calculation since the exact data structure varies
+    // Use region population as a proxy for economic weight
+    const regionPopulation = region.population || 1000000;
+    const totalPopulation = economyData.demographics.regions.reduce((sum, r) => sum + r.population, 0) || 10000000;
+
+    // Simple deviation based on population distribution
+    const expectedShare = 100 / (economyData.demographics.regions?.length || 1);
+    const actualShare = (regionPopulation / totalPopulation) * 100;
+    const deviation = actualShare - expectedShare;
+
+    // Cap deviation to reasonable range (-20% to +20%)
+    return Math.max(-20, Math.min(20, deviation));
   }
 }
 

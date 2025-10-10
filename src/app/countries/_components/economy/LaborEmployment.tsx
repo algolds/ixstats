@@ -104,6 +104,9 @@ export function LaborEmployment({
   const unemployed = lf - employed;
 
   function getEmploymentHealth() {
+    if (laborData.unemploymentRate === null || laborData.unemploymentRate === undefined) {
+      return { label: "No Data", color: "text-gray-500", variant: "outline" as const };
+    }
     if (laborData.unemploymentRate <= 4) {
       return { label: "Full Employment", color: "text-green-600", variant: "default" as const };
     }
@@ -235,7 +238,11 @@ export function LaborEmployment({
                 </span>
               )}
             </span>
-            <Badge variant={health.variant}>{formatPercentage(laborData.unemploymentRate)} Unemployed</Badge>
+            <Badge variant={health.variant}>
+              {laborData.unemploymentRate !== null && laborData.unemploymentRate !== undefined
+                ? `${formatPercentage(laborData.unemploymentRate)} Unemployed`
+                : 'Missing data'}
+            </Badge>
           </AlertDescription>
         </Alert>
 
@@ -398,9 +405,17 @@ export function LaborEmployment({
                     <div className="flex justify-between text-sm">
                       <span>Unemployment Rate:</span>
                       <div className="space-x-2">
-                        <span className="font-medium">{formatPercentage(laborData.unemploymentRate)}</span>
-                        <span className="text-muted-foreground">vs</span>
-                        <span>{formatPercentage(referenceCountry.unemploymentRate)}</span>
+                        <span className="font-medium">
+                          {laborData.unemploymentRate !== null && laborData.unemploymentRate !== undefined
+                            ? formatPercentage(laborData.unemploymentRate)
+                            : 'Missing data'}
+                        </span>
+                        {referenceCountry && (
+                          <>
+                            <span className="text-muted-foreground">vs</span>
+                            <span>{formatPercentage(referenceCountry.unemploymentRate)}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

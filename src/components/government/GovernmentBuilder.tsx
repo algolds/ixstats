@@ -40,9 +40,11 @@ import type {
 
 interface GovernmentBuilderProps {
   initialData?: Partial<GovernmentBuilderState>;
-  onSave: (data: GovernmentBuilderState) => Promise<void>;
+  onSave?: (data: GovernmentBuilderState) => Promise<void>;
+  onChange?: (data: GovernmentBuilderState) => void;
   onPreview?: (data: GovernmentBuilderState) => void;
   isReadOnly?: boolean;
+  hideSaveButton?: boolean;
 }
 
 // Enhanced Government Templates with Atomic Components
@@ -193,11 +195,13 @@ const governmentTemplates: GovernmentTemplate[] = [
   }
 ];
 
-export function GovernmentBuilder({ 
-  initialData, 
-  onSave, 
-  onPreview, 
-  isReadOnly = false 
+export function GovernmentBuilder({
+  initialData,
+  onSave,
+  onChange,
+  onPreview,
+  isReadOnly = false,
+  hideSaveButton = false
 }: GovernmentBuilderProps) {
   const [currentStep, setCurrentStep] = useState<'structure' | 'departments' | 'budget' | 'revenue' | 'preview'>('structure');
   const [builderState, setBuilderState] = useState<GovernmentBuilderState>({
@@ -251,6 +255,13 @@ export function GovernmentBuilder({
     const isValid = Object.keys(errors).length === 0;
     return { isValid, errors };
   }, [builderState]);
+
+  // Call onChange whenever builderState changes
+  React.useEffect(() => {
+    if (onChange) {
+      onChange(builderState);
+    }
+  }, [builderState, onChange]);
 
   const handleStructureChange = (structure: GovernmentStructureInput) => {
     setBuilderState(prev => ({ ...prev, structure }));
@@ -328,7 +339,7 @@ export function GovernmentBuilder({
     const validation = validateState();
     setBuilderState(prev => ({ ...prev, ...validation }));
     
-    if (validation.isValid) {
+    if (validation.isValid && onSave) {
       setIsSaving(true);
       try {
         await onSave({ ...builderState, ...validation });
@@ -389,13 +400,15 @@ export function GovernmentBuilder({
             <Eye className="h-4 w-4 mr-2" />
             Preview
           </Button>
-          <Button
-            onClick={handleSave}
-            disabled={!validation.isValid || isSaving || isReadOnly}
-          >
-            <Save className="h-4 w-4 mr-2" />
-            {isSaving ? 'Saving...' : 'Save'}
-          </Button>
+          {!hideSaveButton && (
+            <Button
+              onClick={handleSave}
+              disabled={!validation.isValid || isSaving || isReadOnly}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {isSaving ? 'Saving...' : 'Save'}
+            </Button>
+          )}
         </div>
       </div>
 

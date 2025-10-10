@@ -74,7 +74,7 @@ export function GlassProgressIndicator({
       >
         {/* Label */}
         {label && (
-          <label className="flex items-center gap-2 text-sm font-semibold text-[var(--primitive-text)]">
+          <label className="flex items-center gap-2 text-sm font-medium text-foreground">
             {Icon && <Icon className="h-4 w-4" />}
             {label}
           </label>
@@ -125,7 +125,7 @@ export function GlassProgressIndicator({
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             {showPercentage && (
               <motion.span 
-                className="text-lg font-bold text-[var(--primitive-text)]"
+                className="text-lg font-bold text-foreground"
                 animate={{ scale: [1, 1.05, 1] }}
                 transition={{ duration: 0.3 }}
               >
@@ -133,7 +133,7 @@ export function GlassProgressIndicator({
               </motion.span>
             )}
             {showValue && (
-              <span className="text-sm text-[var(--primitive-muted)]">
+              <span className="text-sm text-muted-foreground">
                 {value}{unit}
               </span>
             )}
@@ -142,7 +142,7 @@ export function GlassProgressIndicator({
 
         {/* Description */}
         {description && (
-          <p className="text-xs text-[var(--primitive-muted)] text-center">{description}</p>
+          <p className="text-xs text-muted-foreground text-center">{description}</p>
         )}
       </div>
     );
@@ -158,7 +158,7 @@ export function GlassProgressIndicator({
       {(label || showPercentage || showValue) && (
         <div className="flex items-center justify-between">
           {label && (
-            <label className="flex items-center gap-2 text-sm font-semibold text-[var(--primitive-text)]">
+            <label className="flex items-center gap-2 text-sm font-medium text-foreground">
               {Icon && <Icon className="h-4 w-4" />}
               {label}
             </label>
@@ -167,12 +167,12 @@ export function GlassProgressIndicator({
           {(showPercentage || showValue) && (
             <div className="flex items-center gap-2 text-sm">
               {showPercentage && (
-                <motion.span className="font-mono text-[var(--primitive-text)]">
+                <motion.span className="text-foreground">
                   {Math.round(percentage)}%
                 </motion.span>
               )}
               {showValue && (
-                <span className="text-[var(--primitive-muted)]">
+                <span className="text-muted-foreground">
                   {value}{unit}
                 </span>
               )}
@@ -231,7 +231,7 @@ export function GlassProgressIndicator({
 
       {/* Description */}
       {description && (
-        <p className="text-xs text-[var(--primitive-muted)]">{description}</p>
+        <p className="text-xs text-muted-foreground">{description}</p>
       )}
     </div>
   );

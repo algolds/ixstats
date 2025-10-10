@@ -289,7 +289,7 @@ export function CoreIndicatorsSectionModern({
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Economic Tier Analysis */}
-          <div className="p-4 rounded-lg bg-[var(--primitive-background)]/30 border border-[var(--primitive-border)]">
+          <div className="p-4 rounded-lg bg-secondary border border-border">
             <h5 className="text-sm font-semibold text-foreground mb-3">Economic Development Tier</h5>
             
             <div className="space-y-3">
@@ -322,7 +322,7 @@ export function CoreIndicatorsSectionModern({
           </div>
 
           {/* Population Scale Analysis */}
-          <div className="p-4 rounded-lg bg-[var(--primitive-background)]/30 border border-[var(--primitive-border)]">
+          <div className="p-4 rounded-lg bg-secondary border border-border">
             <h5 className="text-sm font-semibold text-foreground mb-3">Population Scale</h5>
             
             <div className="space-y-3">
@@ -403,9 +403,9 @@ export function CoreIndicatorsSectionModern({
           </h4>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-lg bg-[var(--primitive-background)]/30 border border-[var(--primitive-border)]">
+            <div className="p-4 rounded-lg bg-secondary border border-border">
               <div className="flex items-center gap-2 mb-2">
-                <DollarSign className="h-4 w-4 text-[var(--primitive-primary)]" />
+                <DollarSign className="h-4 w-4 text-primary" />
                 <span className="text-sm font-semibold text-foreground">GDP per Capita</span>
               </div>
               <div className="text-lg font-bold text-foreground">
@@ -418,9 +418,9 @@ export function CoreIndicatorsSectionModern({
               </div>
             </div>
 
-            <div className="p-4 rounded-lg bg-[var(--primitive-background)]/30 border border-[var(--primitive-border)]">
+            <div className="p-4 rounded-lg bg-secondary border border-border">
               <div className="flex items-center gap-2 mb-2">
-                <Users className="h-4 w-4 text-[var(--primitive-primary)]" />
+                <Users className="h-4 w-4 text-primary" />
                 <span className="text-sm font-semibold text-foreground">Population</span>
               </div>
               <div className="text-lg font-bold text-foreground">
@@ -433,9 +433,9 @@ export function CoreIndicatorsSectionModern({
               </div>
             </div>
 
-            <div className="p-4 rounded-lg bg-[var(--primitive-background)]/30 border border-[var(--primitive-border)]">
+            <div className="p-4 rounded-lg bg-secondary border border-border">
               <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="h-4 w-4 text-[var(--primitive-primary)]" />
+                <TrendingUp className="h-4 w-4 text-primary" />
                 <span className="text-sm font-semibold text-foreground">Growth Rate</span>
               </div>
               <div className="text-lg font-bold text-foreground">

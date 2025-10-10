@@ -47,6 +47,7 @@ import { GdpDetailsModal } from "~/components/modals/GdpDetailsModal";
 import { GdpPerCapitaDetailsModal } from "~/components/modals/GdpPerCapitaDetailsModal";
 import { PopulationDetailsModal } from "~/components/modals/PopulationDetailsModal";
 import { PopulationTierDetailsModal } from "~/components/modals/PopulationTierDetailsModal";
+import { useFlag } from "~/hooks/useFlag";
 
 interface CountryAtGlanceData {
   id: string;
@@ -71,6 +72,16 @@ interface CountryAtGlanceData {
   lastCalculated: number;
   baselineDate: number;
   localGrowthFactor: number;
+  nationalIdentity?: {
+    officialName?: string | null;
+    motto?: string | null;
+    nationalAnthem?: string | null;
+    capitalCity?: string | null;
+    officialLanguages?: string | null;
+    currency?: string | null;
+    currencySymbol?: string | null;
+    demonym?: string | null;
+  } | null;
 }
 
 interface CountryAtGlanceProps {
@@ -88,6 +99,7 @@ export function CountryAtGlance({
   const [isGdpPerCapitaModalOpen, setIsGdpPerCapitaModalOpen] = useState(false);
   const [isPopulationModalOpen, setIsPopulationModalOpen] = useState(false);
   const [isPopulationTierModalOpen, setIsPopulationTierModalOpen] = useState(false);
+  const { flagUrl } = useFlag(country?.name);
   const formatted = useMemo(() => {
     // FIXED: Icons for growth arrows based on decimal values
     const getGrowthIconComponent = (rate: number) => {
@@ -189,16 +201,32 @@ export function CountryAtGlance({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Activity className="h-5 w-5 mr-2 text-primary" />
-              Country Overview
+            <div className="flex items-center gap-3">
+              {flagUrl ? (
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 rounded-md blur-sm group-hover:blur-md transition-all" />
+                  <div className="relative w-12 h-8 rounded-md overflow-hidden border-2 border-border shadow-md group-hover:shadow-lg transition-all">
+                    <img
+                      src={flagUrl}
+                      alt={`${country.name} flag`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <Activity className="h-5 w-5 text-primary" />
+              )}
+              <span>Country Overview</span>
             </div>
             <div className="flex gap-2">
               <Badge variant={formatted.getTierBadgeVariant(country.economicTier)}>
                 {country.economicTier}
               </Badge>
-              <Badge 
-                variant="outline" 
+              <Badge
+                variant="outline"
                 className="cursor-pointer hover:bg-muted/70 transition-colors"
                 onClick={() => setIsPopulationTierModalOpen(true)}
               >
@@ -209,58 +237,86 @@ export function CountryAtGlance({
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {/* Basic Info */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {country.continent && (
-              <div className="flex items-center space-x-3">
-                <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-sm text-muted-foreground">Location</p>
-                  <p className="text-sm font-medium truncate">
-                    {country.region
-                      ? `${country.region}, ${country.continent}`
-                      : country.continent}
-                  </p>
+          {/* National Identity Section */}
+          {country.nationalIdentity && (
+            <>
+              <Separator />
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-muted-foreground flex items-center">
+                  <Crown className="h-4 w-4 mr-2" />
+                  National Identity
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {country.nationalIdentity.officialName && (
+                    <div className="flex items-start space-x-3">
+                      <Building className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-sm text-muted-foreground">Official Name</p>
+                        <p className="text-sm font-medium">{country.nationalIdentity.officialName}</p>
+                      </div>
+                    </div>
+                  )}
+                  {country.nationalIdentity.capitalCity && (
+                    <div className="flex items-start space-x-3">
+                      <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-sm text-muted-foreground">Capital</p>
+                        <p className="text-sm font-medium">{country.nationalIdentity.capitalCity}</p>
+                      </div>
+                    </div>
+                  )}
+                  {country.nationalIdentity.demonym && (
+                    <div className="flex items-start space-x-3">
+                      <Users className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-sm text-muted-foreground">Demonym</p>
+                        <p className="text-sm font-medium">{country.nationalIdentity.demonym}</p>
+                      </div>
+                    </div>
+                  )}
+                  {country.nationalIdentity.officialLanguages && (
+                    <div className="flex items-start space-x-3">
+                      <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-sm text-muted-foreground">Languages</p>
+                        <p className="text-sm font-medium">{country.nationalIdentity.officialLanguages}</p>
+                      </div>
+                    </div>
+                  )}
+                  {country.nationalIdentity.currency && (
+                    <div className="flex items-start space-x-3">
+                      <DollarSign className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-sm text-muted-foreground">Currency</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.currency}
+                          {country.nationalIdentity.currencySymbol && ` (${country.nationalIdentity.currencySymbol})`}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {country.nationalIdentity.motto && (
+                    <div className="flex items-start space-x-3 sm:col-span-2">
+                      <Crown className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-sm text-muted-foreground">National Motto</p>
+                        <p className="text-sm font-medium italic">&quot;{country.nationalIdentity.motto}&quot;</p>
+                      </div>
+                    </div>
+                  )}
+                  {country.nationalIdentity.nationalAnthem && (
+                    <div className="flex items-start space-x-3 sm:col-span-2">
+                      <Activity className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-sm text-muted-foreground">National Anthem</p>
+                        <p className="text-sm font-medium">{country.nationalIdentity.nationalAnthem}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
-
-            {country.governmentType && (
-              <div className="flex items-center space-x-3">
-                <Building className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-sm text-muted-foreground">Government</p>
-                  <p className="text-sm font-medium truncate">
-                    {country.governmentType}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {country.leader && (
-              <div className="flex items-center space-x-3">
-                <Crown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-sm text-muted-foreground">Leader</p>
-                  <p className="text-sm font-medium truncate">
-                    {country.leader}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {country.religion && (
-              <div className="flex items-center space-x-3">
-                <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-sm text-muted-foreground">Religion</p>
-                  <p className="text-sm font-medium truncate">
-                    {country.religion}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
+            </>
+          )}
 
           <Separator />
 

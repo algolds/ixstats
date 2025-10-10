@@ -4,6 +4,8 @@ import React, { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
+import Link from "next/link";
+import { createUrl } from "~/lib/url-utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -312,6 +314,31 @@ export function LiveIntelligenceSection({ countryId, country }: LiveIntelligence
           LIVE DATA
         </Badge>
       </div>
+
+      {/* Full Intelligence Center CTA */}
+      <Card className="border-2 border-indigo-200 dark:border-indigo-800 bg-gradient-to-r from-indigo-50 via-purple-50 to-blue-50 dark:from-indigo-950/40 dark:via-purple-950/40 dark:to-blue-950/40">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500">
+                <Brain className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-1">Unified Intelligence Center</h3>
+                <p className="text-sm text-muted-foreground">
+                  Access AI recommendations, global intelligence feed, and advanced analysis in one place
+                </p>
+              </div>
+            </div>
+            <Link href={createUrl("/mycountry/intelligence")}>
+              <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white">
+                <Brain className="h-4 w-4 mr-2" />
+                Open Intelligence Center
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3">

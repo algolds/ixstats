@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "~/lib/utils";
+import { api } from "~/trpc/react";
 import {
   RiSearchLine,
   RiFilterLine,
@@ -188,14 +189,82 @@ const AdvancedSearchDiscoveryComponent: React.FC<AdvancedSearchDiscoveryProps> =
   const [savedSearches, setSavedSearches] = useState<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
+  // Fetch countries from API for search results
+  const { data: countriesData } = api.countries.getAll.useQuery(undefined, {
+    enabled: filters.query.length > 0 || filters.types.includes('country')
+  });
+
+  // TODO: Re-enable when achievements router is available
+  // const { data: achievementsData } = api.achievements.getAll.useQuery(undefined, {
+  //   enabled: filters.query.length > 0 || filters.types.includes('achievement')
+  // });
+  const achievementsData: any[] | undefined = undefined;
+
   // Update filters based on viewer clearance level
   useEffect(() => {
     setFilters(prev => ({ ...prev, clearanceLevel: viewerClearanceLevel }));
   }, [viewerClearanceLevel]);
 
+  // Transform API data to search results
+  const apiResults = useMemo(() => {
+    const results: SearchResult[] = [];
+
+    // Add countries as search results
+    if (countriesData && 'countries' in countriesData) {
+      countriesData.countries.forEach((country: any) => {
+        results.push({
+          id: country.id,
+          type: 'country' as const,
+          title: country.name,
+          subtitle: `Leader: ${country.leader}`,
+          description: `Economic Tier: ${country.economicTier}, Population: ${country.currentPopulation.toLocaleString()}`,
+          relevanceScore: country.diplomaticStanding / 100,
+          metadata: {
+            country: country.name,
+            region: country.continent || 'Unknown',
+            date: new Date(country.lastCalculated).toISOString(),
+            tags: [country.economicTier, country.populationTier],
+            clearanceLevel: 'PUBLIC' as const
+          },
+          metrics: {
+            influence: country.diplomaticStanding * 30,
+            popularity: country.populationWellbeing,
+            activity: country.economicVitality
+          }
+        });
+      });
+    }
+
+    // Add achievements as search results
+    // TODO: Re-enable when achievements router is available
+    // if (achievementsData && Array.isArray(achievementsData)) {
+    //   achievementsData.forEach((achievement: any) => {
+    //     results.push({
+    //       id: achievement.id,
+    //       type: 'achievement' as const,
+    //       title: achievement.name,
+    //       subtitle: achievement.category,
+    //       description: achievement.description,
+    //       relevanceScore: achievement.unlockedCount ? 0.5 + (achievement.unlockedCount / 100) : 0.5,
+    //       metadata: {
+    //         date: achievement.createdAt ? new Date(achievement.createdAt).toISOString() : new Date().toISOString(),
+    //         tags: [achievement.tier, achievement.category],
+    //         clearanceLevel: 'PUBLIC' as const
+    //       },
+    //       metrics: {
+    //         popularity: achievement.unlockedCount || 0,
+    //         activity: 50
+    //       }
+    //     });
+    //   });
+    // }
+
+    return results;
+  }, [countriesData, achievementsData]);
+
   // Filter and sort results
   const filteredResults = useMemo(() => {
-    let results = MOCK_RESULTS;
+    let results = apiResults.length > 0 ? apiResults : MOCK_RESULTS;
 
     // Apply query filter
     if (filters.query.trim()) {

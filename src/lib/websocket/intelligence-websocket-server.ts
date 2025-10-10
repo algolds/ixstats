@@ -1,6 +1,7 @@
 // WebSocket Server for Real-time Intelligence Updates
 // Handles live intelligence broadcasting with channel-based subscriptions
 
+import 'server-only';
 import { Server as HTTPServer } from 'http';
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { IxTime } from '~/lib/ixtime';

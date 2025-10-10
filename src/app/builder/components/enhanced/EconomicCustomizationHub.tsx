@@ -2,34 +2,30 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings } from 'lucide-react';
+import { Settings, ArrowLeft, ArrowRight, CheckCircle, BarChart3, Users, Coins, Building2, Heart, Crown, TrendingUp, Flag } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
+import { Button } from '~/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
+import { Badge } from '~/components/ui/badge';
+import { Alert, AlertDescription } from '~/components/ui/alert';
 import { cn } from '~/lib/utils';
-import { GlassCard, GlassCardContent, GlassCardHeader } from '../glass/GlassCard';
-import { LiveFeedback } from '../glass/LiveFeedback';
 import type { EconomicInputs, RealCountryData } from '../../lib/economy-data-service';
-import type { BuilderStyle, BuilderMode } from '../glass/BuilderStyleToggle';
 
-// Import new modular components
-import { EconomicHubHeader } from '../../primitives/EconomicHubHeader';
-import { SectionNavigator } from '../../primitives/SectionNavigator';
-import { PolicyAdvisor } from '../../primitives/PolicyAdvisor';
-import { SectionHeader } from '../../primitives/SectionHeader';
-
-// Import section components (using modern versions)
+// Import section components (using clean versions without glass)
 import {
   NationalIdentitySection,
-  CoreIndicatorsSectionModern as CoreIndicatorsSection,
-  LaborEmploymentSectionModern as LaborEmploymentSection,
-  FiscalSystemSectionModern as FiscalSystemSection,
-  GovernmentSpendingSectionModern as GovernmentSpendingSection,
-  DemographicsSectionModern as DemographicsSection,
-  GovernmentStructureSection
+  CoreIndicatorsSection,
+  LaborEmploymentSection,
+  FiscalSystemSection,
+  GovernmentSpendingSection,
+  DemographicsSection,
+  GovernmentStructureSection,
+  EconomySection
 } from '../../sections';
 
 // Import utilities
 import { sections } from '../../utils/sectionData';
-import { generatePolicyAdvisorTips } from '../../utils/policyAdvisorUtils';
-import type { Section, PolicyAdvisorTip } from '../../types/builder';
+import type { Section } from '../../types/builder';
 
 interface EconomicCustomizationHubProps {
   inputs: EconomicInputs;
@@ -38,8 +34,6 @@ interface EconomicCustomizationHubProps {
   onPreview: () => void;
   onBack: () => void;
   onFoundationFlagUrlChange?: (url: string | undefined) => void;
-  builderStyle?: BuilderStyle;
-  builderMode?: BuilderMode;
 }
 
 export function EconomicCustomizationHub({
@@ -47,24 +41,10 @@ export function EconomicCustomizationHub({
   referenceCountry,
   onInputsChange,
   onPreview,
-  onBack,
-  onFoundationFlagUrlChange
+  onBack
 }: EconomicCustomizationHubProps) {
-  const [activeSection, setActiveSection] = useState('symbols');
+  const [activeSection, setActiveSection] = useState('core'); // Start with Core Indicators
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [builderMode, setBuilderMode] = useState<BuilderMode>('basic');
-  const [builderStyle, setBuilderStyle] = useState<BuilderStyle>('modern');
-  const [advisorTips, setAdvisorTips] = useState<PolicyAdvisorTip[]>([]);
-
-  // Sync builder mode with showAdvanced
-  useEffect(() => {
-    setBuilderMode(showAdvanced ? 'advanced' : 'basic');
-  }, [showAdvanced]);
-
-  // Generate policy advisor tips using utility function - context-aware
-  useEffect(() => {
-    setAdvisorTips(generatePolicyAdvisorTips(inputs, activeSection));
-  }, [inputs, activeSection]);
 
   const activeSectionData = sections.find(s => s.id === activeSection);
 
@@ -73,7 +53,6 @@ export function EconomicCustomizationHub({
   };
 
   const handleToggleAdvanced = () => {
-    console.log('Toggling advanced view from EconomicCustomizationHub');
     setShowAdvanced(!showAdvanced);
   };
 
@@ -86,7 +65,9 @@ export function EconomicCustomizationHub({
       referenceCountry,
       totalPopulation: inputs.coreIndicators.totalPopulation,
       nominalGDP: inputs.coreIndicators.nominalGDP,
-      gdpPerCapita: inputs.coreIndicators.gdpPerCapita
+      gdpPerCapita: inputs.coreIndicators.gdpPerCapita,
+      isReadOnly: false,
+      showComparison: true
     };
 
     switch (activeSection) {
@@ -94,131 +75,124 @@ export function EconomicCustomizationHub({
         return <NationalIdentitySection {...commonProps} />;
       case 'core':
         return <CoreIndicatorsSection {...commonProps} />;
+      case 'economy':
+        return <EconomySection {...commonProps} />;
       case 'labor':
         return <LaborEmploymentSection {...commonProps} />;
       case 'fiscal':
         return <FiscalSystemSection {...commonProps} />;
       case 'government':
-        return (
-          <GovernmentSpendingSection
-            {...commonProps}
-          />
-        );
+        return <GovernmentSpendingSection {...commonProps} />;
       case 'structure':
         return <GovernmentStructureSection {...commonProps} />;
       case 'demographics':
         return <DemographicsSection {...commonProps} />;
       default:
-        return null;
+        return <CoreIndicatorsSection {...commonProps} />;
     }
   };
 
-  // Check if current section is a modern section (has its own header)
-  const isModernSection = ['core', 'labor', 'fiscal', 'government', 'demographics'].includes(activeSection);
+  const getSectionIcon = (sectionId: string) => {
+    switch (sectionId) {
+      case 'symbols': return Flag;
+      case 'core': return BarChart3;
+      case 'economy': return TrendingUp;
+      case 'labor': return Users;
+      case 'fiscal': return Coins;
+      case 'government': return Building2;
+      case 'structure': return Crown;
+      case 'demographics': return Heart;
+      default: return BarChart3;
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4 md:p-6">
-      <div className="max-w-[1600px] mx-auto">
-        {/* Header - Using modular component */}
-        <EconomicHubHeader
-          inputs={inputs}
-          referenceCountry={referenceCountry}
-          onBack={onBack}
-        />
-
-        <div className={cn(
-          "grid gap-6",
-          builderStyle === 'classic' 
-            ? "grid-cols-1 lg:grid-cols-6" // More compact layout for classic
-            : "grid-cols-1 lg:grid-cols-5"  // Wider layout: 1.5 columns + 2.5 columns + 1 column
-        )}>
-          {/* Sidebar Navigation */}
-          <div className={cn(
-            "space-y-4 md:space-y-6 sticky top-6 self-start",
-            builderStyle === 'classic' ? "lg:col-span-1" : "lg:col-span-1"
-          )}>
-            {/* Section Navigation - Using modular component */}
-            <SectionNavigator
-              sections={sections}
-              activeSection={activeSection}
-              onSectionChange={handleSectionChange}
-            />
-
-            {/* Policy Advisor - Using modular component */}
-            <PolicyAdvisor tips={advisorTips} maxTips={3} activeSection={activeSection} />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          <div>
+            <h2 className="text-2xl font-bold">Economic Configuration</h2>
+            <p className="text-muted-foreground">
+              Configure {referenceCountry.name}'s economic parameters
+            </p>
           </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant={showAdvanced ? "default" : "outline"}
+            onClick={handleToggleAdvanced}
+            size="sm"
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            {showAdvanced ? 'Advanced' : 'Basic'}
+          </Button>
+          <Button onClick={onPreview} className="flex items-center gap-2">
+            Preview
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
 
-          {/* Main Content */}
-          <div className={cn(
-            builderStyle === 'classic' 
-              ? "lg:col-span-4" // More space for content in classic mode
-              : "lg:col-span-3"  // Wider content area for modern
-          )}>
-{isModernSection ? (
-              // Modern sections have their own glass cards and headers
+      {/* Section Navigation */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Configuration Sections
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeSection} onValueChange={handleSectionChange}>
+            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
+              {sections.map((section) => {
+                const Icon = getSectionIcon(section.id);
+                return (
+                  <TabsTrigger key={section.id} value={section.id} className="flex flex-col items-center gap-1 p-3">
+                    <Icon className="h-4 w-4" />
+                    <span className="text-xs">{section.name}</span>
+                    <Badge variant="outline" className="text-xs">
+                      {section.completeness}%
+                    </Badge>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+
+            <TabsContent value={activeSection} className="mt-6">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeSection}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.2 }}
                 >
                   {renderSectionContent()}
                 </motion.div>
               </AnimatePresence>
-            ) : (
-              // Legacy sections use the hub's glass card wrapper
-              <GlassCard depth="elevated" blur="medium" motionPreset="slide">
-                <GlassCardHeader>
-                  {/* Section Header - Using modular component */}
-                  <SectionHeader
-                    section={activeSectionData || { 
-                      id: activeSection, 
-                      name: 'Section', 
-                      description: '',
-                      icon: Settings,
-                      color: 'text-gray-500',
-                      completeness: 0
-                    }}
-                    showAdvanced={showAdvanced}
-                    onToggleAdvanced={handleToggleAdvanced}
-                  />
-                </GlassCardHeader>
-                <GlassCardContent>
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={activeSection}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      {renderSectionContent()}
-                    </motion.div>
-                  </AnimatePresence>
-                </GlassCardContent>
-              </GlassCard>
-            )}
-          </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
 
-          {/* Live Feedback Panel */}
-          <div className={cn(
-            "sticky top-6 self-start",
-            builderStyle === 'classic' 
-              ? "lg:col-span-1" // Smaller feedback panel in classic mode
-              : "lg:col-span-1"  // Full width on mobile/tablet, sidebar on desktop
-          )}>
-            <LiveFeedback 
-              inputs={inputs} 
-              activeSection={activeSection}
-              extractedColors={null}
-              flagUrl={inputs.flagUrl}
-              coatOfArmsUrl={inputs.coatOfArmsUrl}
-            />
-          </div>
-        </div>
-      </div>
+      {/* Section Info */}
+      {activeSectionData && (
+        <Alert>
+          <CheckCircle className="h-4 w-4" />
+          <AlertDescription>
+            <strong>{activeSectionData.name}:</strong> {activeSectionData.description}
+            <br />
+            <span className="text-sm text-muted-foreground">
+              Completeness: {activeSectionData.completeness}%
+            </span>
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 }

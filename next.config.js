@@ -3,7 +3,11 @@
  * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially useful
  * for Docker builds.
  */
+
 await import("./src/env.js");
+
+// Import polyfill plugin
+import NodePolyfillPlugin from 'node-polyfill-webpack-plugin';
 
 // Define basePath from an environment variable to allow for dynamic deployment paths.
 // It defaults to an empty string, which works for local development or root deployments.
@@ -51,11 +55,59 @@ const config = {
   },
 
   // Webpack optimizations
-  webpack: (config, { dev, isServer }) => {
-    if (isServer) {
-      config.output.globalObject = 'this';
+  webpack: (config, { dev, isServer, webpack }) => {
+    // Fix for 'self is not defined' error - set globalObject to 'this'
+    // This is the most reliable solution according to webpack documentation
+    config.output.globalObject = 'this';
+
+    // Additional polyfills for client-side only
+    if (!isServer) {
+      config.plugins.push(new NodePolyfillPlugin({
+        includeAliases: ['global', 'Buffer', 'process']
+      }));
     }
-    
+
+    // Server-side: externalize socket.io packages and prevent bundling
+    if (isServer) {
+      // Add to externals
+      const externals = Array.isArray(config.externals)
+        ? config.externals
+        : [config.externals].filter(Boolean);
+
+      config.externals = [
+        ...externals,
+        ({ request }, callback) => {
+          // Externalize all socket.io related packages
+          if (
+            request === 'socket.io' ||
+            request === 'socket.io-client' ||
+            request?.startsWith('socket.io/') ||
+            request?.startsWith('socket.io-client/') ||
+            request === 'engine.io' ||
+            request === 'engine.io-client' ||
+            request === 'ws'
+          ) {
+            return callback(null, `commonjs ${request}`);
+          }
+          callback();
+        }
+      ];
+    }
+
+    // Client-side: exclude server-only packages from bundle
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        'socket.io': false,
+        'socket.io-client': false,
+        'http': false,
+        'https': false,
+        'net': false,
+        'tls': false,
+        'fs': false,
+      };
+    }
+
     // Development optimizations - reduce compilation time
     if (dev) {
       config.watchOptions = {
@@ -74,35 +126,11 @@ const config = {
       config.optimization.removeEmptyChunks = false;
       config.optimization.splitChunks = false;
     } else {
-      // Production build optimizations
+      // Production build optimizations - keep it simple to avoid chunk loading issues
       config.optimization = {
         ...config.optimization,
         usedExports: true,
         sideEffects: false,
-        // Better chunk splitting for large apps
-        splitChunks: {
-          chunks: 'all',
-          cacheGroups: {
-            vendor: {
-              test: /[\\/]node_modules[\\/]/,
-              name: 'vendors',
-              chunks: 'all',
-              maxSize: 244000, // ~244kb chunks
-            },
-            common: {
-              minChunks: 2,
-              chunks: 'all',
-              enforce: true,
-              maxSize: 244000,
-            },
-          },
-        },
-      };
-      
-      // Resolve webpack cache warning
-      config.cache = {
-        ...config.cache,
-        maxMemoryGenerations: 1, // Reduce memory usage
       };
     }
 

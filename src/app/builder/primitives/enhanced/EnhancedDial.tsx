@@ -179,14 +179,14 @@ export function EnhancedDial({
       {(label || description) && (
         <div className="space-y-1 text-center">
           {label && (
-            <label className="flex items-center justify-center gap-2 text-sm font-semibold text-[var(--primitive-text)]">
+            <label className="flex items-center justify-center gap-2 text-sm font-medium text-foreground">
               {Icon && <Icon className="h-4 w-4" />}
               {label}
               {required && <span className="text-red-400">*</span>}
             </label>
           )}
           {description && (
-            <p className="text-xs text-[var(--primitive-muted)]">{description}</p>
+            <p className="text-xs text-muted-foreground">{description}</p>
           )}
         </div>
       )}
@@ -271,11 +271,11 @@ export function EnhancedDial({
           {showValue && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
-                <motion.div className="text-2xl font-bold font-mono text-[var(--primitive-text)]">
-                  {animatedValue}
+                <motion.div className="text-2xl font-bold text-foreground">
+                  {!isNaN(value) ? Number(value).toFixed(precision) : '0'}
                 </motion.div>
                 {unit && (
-                  <div className="text-sm text-[var(--primitive-muted)]">{unit}</div>
+                  <div className="text-sm text-muted-foreground">{unit}</div>
                 )}
               </div>
             </div>
@@ -319,7 +319,7 @@ export function EnhancedDial({
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-center text-xs text-[var(--primitive-muted)]"
+          className="text-center text-xs text-muted-foreground"
         >
           Reference ({referenceLabel}): {referenceValue.toFixed(precision)}{unit}
         </motion.div>

@@ -127,6 +127,9 @@ export class AccessControlManager {
     ]
   };
 
+  // Production safety check
+  private static readonly IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
   private static readonly PREVIEW_USERS: Record<string, UserAccessProfile> = {
     // Super Admin for full system access
     "admin_preview": {
@@ -194,11 +197,11 @@ export class AccessControlManager {
    * Get user access profile (checks preview users first, then database)
    */
   public static async getUserAccessProfile(
-    userId: string, 
+    userId: string,
     countryId?: string
   ): Promise<UserAccessProfile> {
-    // Check if this is a preview user
-    if (this.PREVIEW_USERS[userId]) {
+    // Check if this is a preview user (disabled in production)
+    if (!this.IS_PRODUCTION && this.PREVIEW_USERS[userId]) {
       const profile = this.PREVIEW_USERS[userId];
       return {
         ...profile,

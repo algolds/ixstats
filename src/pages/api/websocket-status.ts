@@ -66,8 +66,8 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
               timestamp: Date.now()
             });
           })
-          .catch((error) => {
-            res.status(500).json({ 
+          .catch((error: Error) => {
+            res.status(500).json({
               error: error.message,
               action: 'trigger_broadcast',
               timestamp: Date.now()

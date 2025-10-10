@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "~/lib/utils";
+import { api } from "~/trpc/react";
 import {
   RiTrophyLine,
   RiMedalLine,
@@ -233,16 +234,58 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
   const [showTrends, setShowTrends] = useState(true);
   const [filterTier, setFilterTier] = useState<string>('');
 
+  // Fetch country rankings from API
+  const { data: countriesData, isLoading } = api.countries.getAll.useQuery(undefined, {
+    refetchInterval: 60000 // Refresh every minute
+  });
+
+  // Transform API data to ranking format
+  const apiRankings = useMemo(() => {
+    if (!countriesData || !('countries' in countriesData)) return [];
+
+    return countriesData.countries
+      .map((country: any, index: number) => ({
+        id: country.id,
+        name: country.name,
+        code: country.id.substring(0, 3).toUpperCase(),
+        rank: index + 1,
+        previousRank: index + 2, // Would need historical data for real previous rank
+        score: country.diplomaticStanding * 30 + (country.economicVitality * 10),
+        previousScore: (country.diplomaticStanding * 30 + (country.economicVitality * 10)) - 50,
+        metrics: {
+          diplomaticRelations: Math.floor(country.diplomaticStanding * 0.5),
+          tradeAgreements: Math.floor(country.economicVitality * 0.3),
+          culturalExchanges: Math.floor(country.populationWellbeing * 0.2),
+          achievements: Math.floor((country.diplomaticStanding + country.economicVitality) * 0.2),
+          influenceScore: country.diplomaticStanding * 30 + (country.economicVitality * 10),
+          stabilityIndex: country.governmentalEfficiency / 100,
+          cooperationRating: country.diplomaticStanding / 100,
+          trustworthiness: (country.governmentalEfficiency + country.diplomaticStanding) / 200
+        },
+        badges: country.diplomaticStanding > 80 ? ['Peace Architect', 'Trade Pioneer'] :
+                country.diplomaticStanding > 60 ? ['Alliance Builder'] : [],
+        tier: country.diplomaticStanding > 85 ? 'legendary' :
+              country.diplomaticStanding > 75 ? 'platinum' :
+              country.diplomaticStanding > 65 ? 'gold' :
+              country.diplomaticStanding > 55 ? 'silver' : 'bronze',
+        lastActivity: '1 hour ago', // Would need real activity data
+        trend: country.diplomaticStanding > 70 ? 'rising' :
+               country.diplomaticStanding < 50 ? 'falling' : 'stable'
+      }))
+      .sort((a: any, b: any) => b.score - a.score)
+      .map((country: any, index: number) => ({ ...country, rank: index + 1 }));
+  }, [countriesData]);
+
   // Get current category configuration
   const currentCategory = LEADERBOARD_CATEGORIES.find(cat => cat.id === activeCategory);
 
   // Sort and filter rankings
   const sortedRankings = useMemo(() => {
-    let filtered = MOCK_RANKINGS;
+    let filtered = apiRankings.length > 0 ? apiRankings : MOCK_RANKINGS;
 
     // Apply search filter
     if (searchTerm) {
-      filtered = filtered.filter(country =>
+      filtered = filtered.filter((country: any) =>
         country.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         country.code.toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -250,7 +293,7 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
 
     // Apply tier filter
     if (filterTier) {
-      filtered = filtered.filter(country => country.tier === filterTier);
+      filtered = filtered.filter((country: any) => country.tier === filterTier);
     }
 
     // Sort by selected metric
