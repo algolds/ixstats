@@ -148,79 +148,7 @@ const TIER_CONFIG = {
   bronze: { color: 'from-amber-600 to-amber-800', label: 'Bronze', minRank: 31 }
 };
 
-// Mock data - in production this would come from tRPC APIs
-const MOCK_RANKINGS: CountryRanking[] = [
-  {
-    id: '1',
-    name: 'Federal Republic of Astoria',
-    code: 'AST',
-    rank: 1,
-    previousRank: 2,
-    score: 2847,
-    previousScore: 2756,
-    metrics: {
-      diplomaticRelations: 47,
-      tradeAgreements: 23,
-      culturalExchanges: 15,
-      achievements: 34,
-      influenceScore: 2847,
-      stabilityIndex: 0.94,
-      cooperationRating: 0.91,
-      trustworthiness: 0.96
-    },
-    badges: ['Peace Architect', 'Trade Pioneer', 'Cultural Bridge'],
-    tier: 'legendary',
-    lastActivity: '2 hours ago',
-    trend: 'rising'
-  },
-  {
-    id: '2',
-    name: 'Kingdom of Valoria',
-    code: 'VAL',
-    rank: 2,
-    previousRank: 1,
-    score: 2743,
-    previousScore: 2821,
-    metrics: {
-      diplomaticRelations: 43,
-      tradeAgreements: 28,
-      culturalExchanges: 12,
-      achievements: 31,
-      influenceScore: 2743,
-      stabilityIndex: 0.89,
-      cooperationRating: 0.87,
-      trustworthiness: 0.93
-    },
-    badges: ['Economic Powerhouse', 'Alliance Architect'],
-    tier: 'platinum',
-    lastActivity: '5 hours ago',
-    trend: 'falling'
-  },
-  {
-    id: '3',
-    name: 'United Provinces of Meridia',
-    code: 'MER',
-    rank: 3,
-    previousRank: 4,
-    score: 2698,
-    previousScore: 2634,
-    metrics: {
-      diplomaticRelations: 38,
-      tradeAgreements: 19,
-      culturalExchanges: 22,
-      achievements: 28,
-      influenceScore: 2698,
-      stabilityIndex: 0.92,
-      cooperationRating: 0.94,
-      trustworthiness: 0.88
-    },
-    badges: ['Cultural Ambassador', 'Peace Keeper'],
-    tier: 'platinum',
-    lastActivity: '1 hour ago',
-    trend: 'rising'
-  }
-  // Add more mock data as needed
-];
+// All data now comes from live tRPC APIs - no mock data fallbacks
 
 const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = ({
   viewerCountryId,
@@ -281,7 +209,7 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
 
   // Sort and filter rankings
   const sortedRankings = useMemo(() => {
-    let filtered = apiRankings.length > 0 ? apiRankings : MOCK_RANKINGS;
+    let filtered = apiRankings;
 
     // Apply search filter
     if (searchTerm) {

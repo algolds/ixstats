@@ -1,0 +1,83 @@
+# Automated Dependency Scanning and Updates
+# See https://docs.github.com/en/code-security/dependabot
+
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/New_York"
+
+    # Automatically open pull requests for security updates
+    open-pull-requests-limit: 10
+
+    # Reviewers for dependency PRs
+    reviewers:
+      - "security-team"  # Replace with actual team/user
+
+    # Labels for dependency PRs
+    labels:
+      - "dependencies"
+      - "automated"
+
+    # Security updates only (recommended for production)
+    # Remove this to get all dependency updates
+    open-pull-requests-limit: 5
+
+    # Group updates by type
+    groups:
+      development-dependencies:
+        dependency-type: "development"
+        patterns:
+          - "@types/*"
+          - "eslint*"
+          - "prettier*"
+          - "@testing-library/*"
+          - "jest*"
+          - "typescript"
+        update-types:
+          - "minor"
+          - "patch"
+
+      production-dependencies:
+        dependency-type: "production"
+        update-types:
+          - "patch"
+
+    # Ignore specific dependencies
+    ignore:
+      # Ignore major version updates for these (breaking changes)
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+
+    # Commit message prefix
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+      include: "scope"
+
+    # Allow Dependabot to rebase PRs
+    rebase-strategy: "auto"
+
+    # Target branch
+    target-branch: "main"
+
+  # GitHub Actions workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "github-actions"
+      - "automated"
+    commit-message:
+      prefix: "ci"

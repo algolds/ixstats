@@ -18,6 +18,7 @@ import { IxTimeProvider } from "~/contexts/IxTimeContext";
 import { ExecutiveNotificationProvider } from "~/contexts/ExecutiveNotificationContext";
 import { GlobalNotificationSystem } from "~/components/notifications/GlobalNotificationSystem";
 import { ToastProvider } from "~/components/ui/toast";
+import { NotificationBadgeProvider } from "~/components/notifications/NotificationBadgeProvider";
 
 export const dynamic = 'force-dynamic';
 
@@ -50,17 +51,19 @@ const RootLayout = ({
           <IxTimeProvider>
               <ExecutiveNotificationProvider>
                 <ToastProvider>
-                  <GlobalNotificationSystem>
-                    <WebGLErrorHandler />
-                    <div className="min-h-screen flex flex-col">
-                      <Navigation />
-                      {/* <GlobalActivityMarquee /> */}
-                      <SetupRedirect />
-                      <main className="flex-1">
-                        {children}
-                      </main>
-                    </div>
-                  </GlobalNotificationSystem>
+                  <NotificationBadgeProvider>
+                    <GlobalNotificationSystem>
+                      <WebGLErrorHandler />
+                      <div className="min-h-screen flex flex-col">
+                        <Navigation />
+                        {/* <GlobalActivityMarquee /> */}
+                        <SetupRedirect />
+                        <main className="flex-1">
+                          {children}
+                        </main>
+                      </div>
+                    </GlobalNotificationSystem>
+                  </NotificationBadgeProvider>
                 </ToastProvider>
               </ExecutiveNotificationProvider>
           </IxTimeProvider>

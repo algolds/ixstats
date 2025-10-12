@@ -505,9 +505,13 @@ interface BuilderPageEnhancedProps {
 
 // Main Export Component
 export default function BuilderPageEnhanced({ onBackToIntro }: BuilderPageEnhancedProps = {}) {
+  // Note: Page title is now managed by NotificationBadgeProvider in layout
+  // It will automatically show: "(N) Country Builder - IxStats" when there are unread notifications
   useEffect(() => {
-    // Set page title
-    document.title = "Country Builder - IxStats";
+    // Store base title for notification badge
+    if (typeof document !== 'undefined') {
+      document.title = "Country Builder - IxStats";
+    }
     // Theme handling is now managed by ThemeProvider - no manual intervention needed
   }, []);
 

@@ -1,0 +1,485 @@
+// src/server/api/routers/economics.ts
+// Core economic data management router for EconomicProfile, LaborMarket, FiscalSystem, etc.
+
+import { z } from "zod";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+
+export const economicsRouter = createTRPCRouter({
+  // ==================== ECONOMIC PROFILE ====================
+
+  getEconomicProfile: publicProcedure
+    .input(z.object({
+      countryId: z.string()
+    }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.economicProfile.findFirst({
+        where: { countryId: input.countryId },
+        orderBy: { createdAt: 'desc' }
+      });
+    }),
+
+  createEconomicProfile: protectedProcedure
+    .input(z.object({
+      countryId: z.string(),
+      gdp: z.number(),
+      gdpPerCapita: z.number(),
+      gdpGrowthRate: z.number(),
+      inflationRate: z.number(),
+      unemploymentRate: z.number(),
+      tradeBalance: z.number(),
+      publicDebt: z.number(),
+      debtToGdpRatio: z.number(),
+      foreignReserves: z.number().optional(),
+      currentAccountBalance: z.number().optional(),
+      economicTier: z.string().optional(),
+      economicComplexity: z.number().optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.economicProfile.create({
+        data: input
+      });
+    }),
+
+  updateEconomicProfile: protectedProcedure
+    .input(z.object({
+      id: z.string(),
+      gdp: z.number().optional(),
+      gdpPerCapita: z.number().optional(),
+      gdpGrowthRate: z.number().optional(),
+      inflationRate: z.number().optional(),
+      unemploymentRate: z.number().optional(),
+      tradeBalance: z.number().optional(),
+      publicDebt: z.number().optional(),
+      debtToGdpRatio: z.number().optional(),
+      foreignReserves: z.number().optional(),
+      currentAccountBalance: z.number().optional(),
+      economicTier: z.string().optional(),
+      economicComplexity: z.number().optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...data } = input;
+      return await ctx.db.economicProfile.update({
+        where: { id },
+        data
+      });
+    }),
+
+  listEconomicProfiles: publicProcedure
+    .input(z.object({
+      countryId: z.string(),
+      limit: z.number().min(1).max(100).default(10)
+    }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.economicProfile.findMany({
+        where: { countryId: input.countryId },
+        orderBy: { createdAt: 'desc' },
+        take: input.limit
+      });
+    }),
+
+  // ==================== LABOR MARKET ====================
+
+  getLaborMarket: publicProcedure
+    .input(z.object({
+      countryId: z.string()
+    }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.laborMarket.findFirst({
+        where: { countryId: input.countryId },
+        orderBy: { createdAt: 'desc' }
+      });
+    }),
+
+  createLaborMarket: protectedProcedure
+    .input(z.object({
+      countryId: z.string(),
+      laborForce: z.number(),
+      employmentRate: z.number(),
+      unemploymentRate: z.number(),
+      averageWage: z.number(),
+      minimumWage: z.number().optional(),
+      laborProductivity: z.number().optional(),
+      participationRate: z.number().optional(),
+      informalEmployment: z.number().optional(),
+      skillLevel: z.string().optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.laborMarket.create({
+        data: input
+      });
+    }),
+
+  updateLaborMarket: protectedProcedure
+    .input(z.object({
+      id: z.string(),
+      laborForce: z.number().optional(),
+      employmentRate: z.number().optional(),
+      unemploymentRate: z.number().optional(),
+      averageWage: z.number().optional(),
+      minimumWage: z.number().optional(),
+      laborProductivity: z.number().optional(),
+      participationRate: z.number().optional(),
+      informalEmployment: z.number().optional(),
+      skillLevel: z.string().optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...data } = input;
+      return await ctx.db.laborMarket.update({
+        where: { id },
+        data
+      });
+    }),
+
+  listLaborMarkets: publicProcedure
+    .input(z.object({
+      countryId: z.string(),
+      limit: z.number().min(1).max(100).default(10)
+    }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.laborMarket.findMany({
+        where: { countryId: input.countryId },
+        orderBy: { createdAt: 'desc' },
+        take: input.limit
+      });
+    }),
+
+  // ==================== FISCAL SYSTEM ====================
+
+  getFiscalSystem: publicProcedure
+    .input(z.object({
+      countryId: z.string()
+    }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.fiscalSystem.findFirst({
+        where: { countryId: input.countryId },
+        orderBy: { createdAt: 'desc' }
+      });
+    }),
+
+  createFiscalSystem: protectedProcedure
+    .input(z.object({
+      countryId: z.string(),
+      totalRevenue: z.number(),
+      totalExpenditure: z.number(),
+      fiscalBalance: z.number(),
+      taxRevenue: z.number(),
+      nonTaxRevenue: z.number().optional(),
+      capitalExpenditure: z.number().optional(),
+      currentExpenditure: z.number().optional(),
+      primaryBalance: z.number().optional(),
+      fiscalPolicyStance: z.string().optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.fiscalSystem.create({
+        data: input
+      });
+    }),
+
+  updateFiscalSystem: protectedProcedure
+    .input(z.object({
+      id: z.string(),
+      totalRevenue: z.number().optional(),
+      totalExpenditure: z.number().optional(),
+      fiscalBalance: z.number().optional(),
+      taxRevenue: z.number().optional(),
+      nonTaxRevenue: z.number().optional(),
+      capitalExpenditure: z.number().optional(),
+      currentExpenditure: z.number().optional(),
+      primaryBalance: z.number().optional(),
+      fiscalPolicyStance: z.string().optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...data } = input;
+      return await ctx.db.fiscalSystem.update({
+        where: { id },
+        data
+      });
+    }),
+
+  listFiscalSystems: publicProcedure
+    .input(z.object({
+      countryId: z.string(),
+      limit: z.number().min(1).max(100).default(10)
+    }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.fiscalSystem.findMany({
+        where: { countryId: input.countryId },
+        orderBy: { createdAt: 'desc' },
+        take: input.limit
+      });
+    }),
+
+  // ==================== INCOME DISTRIBUTION ====================
+
+  getIncomeDistribution: publicProcedure
+    .input(z.object({
+      countryId: z.string()
+    }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.incomeDistribution.findFirst({
+        where: { countryId: input.countryId },
+        orderBy: { createdAt: 'desc' }
+      });
+    }),
+
+  createIncomeDistribution: protectedProcedure
+    .input(z.object({
+      countryId: z.string(),
+      giniCoefficient: z.number(),
+      top10Share: z.number(),
+      bottom10Share: z.number(),
+      top1Share: z.number().optional(),
+      medianIncome: z.number().optional(),
+      povertyRate: z.number().optional(),
+      inequalityIndex: z.string().optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.incomeDistribution.create({
+        data: input
+      });
+    }),
+
+  updateIncomeDistribution: protectedProcedure
+    .input(z.object({
+      id: z.string(),
+      giniCoefficient: z.number().optional(),
+      top10Share: z.number().optional(),
+      bottom10Share: z.number().optional(),
+      top1Share: z.number().optional(),
+      medianIncome: z.number().optional(),
+      povertyRate: z.number().optional(),
+      inequalityIndex: z.string().optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...data } = input;
+      return await ctx.db.incomeDistribution.update({
+        where: { id },
+        data
+      });
+    }),
+
+  listIncomeDistributions: publicProcedure
+    .input(z.object({
+      countryId: z.string(),
+      limit: z.number().min(1).max(100).default(10)
+    }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.incomeDistribution.findMany({
+        where: { countryId: input.countryId },
+        orderBy: { createdAt: 'desc' },
+        take: input.limit
+      });
+    }),
+
+  // ==================== GOVERNMENT BUDGET ====================
+
+  getGovernmentBudget: publicProcedure
+    .input(z.object({
+      countryId: z.string()
+    }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.governmentBudget.findFirst({
+        where: { countryId: input.countryId },
+        orderBy: { createdAt: 'desc' }
+      });
+    }),
+
+  createGovernmentBudget: protectedProcedure
+    .input(z.object({
+      countryId: z.string(),
+      totalBudget: z.number(),
+      educationBudget: z.number().optional(),
+      healthcareBudget: z.number().optional(),
+      defenseBudget: z.number().optional(),
+      infrastructureBudget: z.number().optional(),
+      socialWelfareBudget: z.number().optional(),
+      researchBudget: z.number().optional(),
+      otherBudget: z.number().optional(),
+      budgetDeficit: z.number().optional(),
+      budgetSurplus: z.number().optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.governmentBudget.create({
+        data: input
+      });
+    }),
+
+  updateGovernmentBudget: protectedProcedure
+    .input(z.object({
+      id: z.string(),
+      totalBudget: z.number().optional(),
+      educationBudget: z.number().optional(),
+      healthcareBudget: z.number().optional(),
+      defenseBudget: z.number().optional(),
+      infrastructureBudget: z.number().optional(),
+      socialWelfareBudget: z.number().optional(),
+      researchBudget: z.number().optional(),
+      otherBudget: z.number().optional(),
+      budgetDeficit: z.number().optional(),
+      budgetSurplus: z.number().optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...data } = input;
+      return await ctx.db.governmentBudget.update({
+        where: { id },
+        data
+      });
+    }),
+
+  deleteGovernmentBudget: protectedProcedure
+    .input(z.object({
+      id: z.string()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.governmentBudget.delete({
+        where: { id: input.id }
+      });
+    }),
+
+  listGovernmentBudgets: publicProcedure
+    .input(z.object({
+      countryId: z.string(),
+      limit: z.number().min(1).max(100).default(10)
+    }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.governmentBudget.findMany({
+        where: { countryId: input.countryId },
+        orderBy: { createdAt: 'desc' },
+        take: input.limit
+      });
+    }),
+
+  // ==================== DEMOGRAPHICS ====================
+
+  getDemographics: publicProcedure
+    .input(z.object({
+      countryId: z.string()
+    }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.demographics.findFirst({
+        where: { countryId: input.countryId },
+        orderBy: { createdAt: 'desc' }
+      });
+    }),
+
+  createDemographics: protectedProcedure
+    .input(z.object({
+      countryId: z.string(),
+      population: z.number(),
+      populationGrowthRate: z.number(),
+      medianAge: z.number(),
+      birthRate: z.number().optional(),
+      deathRate: z.number().optional(),
+      fertilityRate: z.number().optional(),
+      lifeExpectancy: z.number().optional(),
+      urbanizationRate: z.number().optional(),
+      populationDensity: z.number().optional(),
+      dependencyRatio: z.number().optional(),
+      ageDistribution: z.string().optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.demographics.create({
+        data: input
+      });
+    }),
+
+  updateDemographics: protectedProcedure
+    .input(z.object({
+      id: z.string(),
+      population: z.number().optional(),
+      populationGrowthRate: z.number().optional(),
+      medianAge: z.number().optional(),
+      birthRate: z.number().optional(),
+      deathRate: z.number().optional(),
+      fertilityRate: z.number().optional(),
+      lifeExpectancy: z.number().optional(),
+      urbanizationRate: z.number().optional(),
+      populationDensity: z.number().optional(),
+      dependencyRatio: z.number().optional(),
+      ageDistribution: z.string().optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...data } = input;
+      return await ctx.db.demographics.update({
+        where: { id },
+        data
+      });
+    }),
+
+  listDemographics: publicProcedure
+    .input(z.object({
+      countryId: z.string(),
+      limit: z.number().min(1).max(100).default(10)
+    }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.demographics.findMany({
+        where: { countryId: input.countryId },
+        orderBy: { createdAt: 'desc' },
+        take: input.limit
+      });
+    }),
+
+  // ==================== SECTORAL OUTPUT ====================
+
+  getSectoralOutput: publicProcedure
+    .input(z.object({
+      economicModelId: z.string()
+    }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.sectoralOutput.findMany({
+        where: { economicModelId: input.economicModelId }
+      });
+    }),
+
+  createSectoralOutput: protectedProcedure
+    .input(z.object({
+      economicModelId: z.string(),
+      sectorName: z.string(),
+      output: z.number(),
+      growthRate: z.number().optional(),
+      employment: z.number().optional(),
+      productivity: z.number().optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.sectoralOutput.create({
+        data: input
+      });
+    }),
+
+  updateSectoralOutput: protectedProcedure
+    .input(z.object({
+      id: z.string(),
+      output: z.number().optional(),
+      growthRate: z.number().optional(),
+      employment: z.number().optional(),
+      productivity: z.number().optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...data } = input;
+      return await ctx.db.sectoralOutput.update({
+        where: { id },
+        data
+      });
+    }),
+
+  deleteSectoralOutput: protectedProcedure
+    .input(z.object({
+      id: z.string()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.sectoralOutput.delete({
+        where: { id: input.id }
+      });
+    }),
+
+  listSectoralOutputs: publicProcedure
+    .input(z.object({
+      economicModelId: z.string()
+    }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.sectoralOutput.findMany({
+        where: { economicModelId: input.economicModelId },
+        orderBy: { sectorName: 'asc' }
+      });
+    }),
+});

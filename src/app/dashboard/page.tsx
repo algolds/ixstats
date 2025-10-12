@@ -1,14 +1,14 @@
-export const dynamic = 'force-dynamic';
+"use client";
 
-import { HydrateClient } from "~/trpc/server";
-import { DashboardCommandCenter } from "./_components/DashboardCommandCenter";
+import { useEffect } from "react";
+import { EnhancedCommandCenter } from "../_components/EnhancedCommandCenter";
 
 export default function DashboardPage() {
-  // MyCountry Activity Center - Main hub for user engagement
-  // Full-width experience with MyCountry and Activity tabs only
-  return (
-    <HydrateClient>
-      <DashboardCommandCenter />
-    </HydrateClient>
-  );
+  useEffect(() => {
+    document.title = "Dashboard - IxStats";
+  }, []);
+
+  // Enhanced home page with social activity feed and platform-wide engagement
+  // Combines the best of the original CommandCenter with new social features
+  return <EnhancedCommandCenter />;
 }

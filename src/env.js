@@ -23,9 +23,23 @@ export const env = createEnv({
     DISCORD_CLIENT_ID: z.string().optional(),
     DISCORD_GUILD_ID: z.string().optional(),
     // Clerk Authentication Configuration - Required in production
-    CLERK_SECRET_KEY: process.env.NODE_ENV === "production" 
+    CLERK_SECRET_KEY: process.env.NODE_ENV === "production"
       ? z.string().min(1, "CLERK_SECRET_KEY is required in production")
       : z.string().optional(),
+    // Discord Webhook Configuration (optional)
+    DISCORD_WEBHOOK_URL: z.string().url().optional(),
+    DISCORD_WEBHOOK_ENABLED: z.string().optional().default("false"),
+    // Redis Configuration (optional - for production rate limiting)
+    REDIS_URL: z.string().url().optional(),
+    REDIS_ENABLED: z.string().optional().default("false"),
+    // Rate Limiting Configuration
+    RATE_LIMIT_ENABLED: z.string().optional().default("true"),
+    RATE_LIMIT_MAX_REQUESTS: z.string().optional().default("100"),
+    RATE_LIMIT_WINDOW_MS: z.string().optional().default("60000"),
+    // Performance & Optimization
+    ENABLE_COMPRESSION: z.string().optional().default("true"),
+    ENABLE_CACHING: z.string().optional().default("true"),
+    CACHE_TTL_SECONDS: z.string().optional().default("3600"),
   },
 
   /**
@@ -69,6 +83,20 @@ export const env = createEnv({
     // Clerk Authentication Configuration
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    // Discord Webhook
+    DISCORD_WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL,
+    DISCORD_WEBHOOK_ENABLED: process.env.DISCORD_WEBHOOK_ENABLED,
+    // Redis
+    REDIS_URL: process.env.REDIS_URL,
+    REDIS_ENABLED: process.env.REDIS_ENABLED,
+    // Rate Limiting
+    RATE_LIMIT_ENABLED: process.env.RATE_LIMIT_ENABLED,
+    RATE_LIMIT_MAX_REQUESTS: process.env.RATE_LIMIT_MAX_REQUESTS,
+    RATE_LIMIT_WINDOW_MS: process.env.RATE_LIMIT_WINDOW_MS,
+    // Performance
+    ENABLE_COMPRESSION: process.env.ENABLE_COMPRESSION,
+    ENABLE_CACHING: process.env.ENABLE_CACHING,
+    CACHE_TTL_SECONDS: process.env.CACHE_TTL_SECONDS,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   /**

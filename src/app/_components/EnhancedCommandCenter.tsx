@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
@@ -22,18 +22,19 @@ import { SDICard } from "~/app/dashboard/_components/SDICard";
 import { StrategicOperationsSuite } from "~/app/dashboard/_components/StrategicOperationsSuite";
 
 // UI Components
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
+import { Progress } from "~/components/ui/progress";
 
 // Icons
-import { 
-  Activity, 
-  Users, 
-  Globe, 
-  TrendingUp, 
+import {
+  Activity,
+  Users,
+  Globe,
+  TrendingUp,
   Trophy,
   Crown,
   Zap,
@@ -57,7 +58,9 @@ import {
   Home,
   BarChart3,
   Shield,
-  Map
+  Map,
+  FileText,
+  Building2
 } from "lucide-react";
 
 // Utils
@@ -66,6 +69,7 @@ import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { createUrl } from "~/lib/url-utils";
 import { usePermissions } from "~/hooks/usePermissions";
 import { useFlag } from "~/hooks/useUnifiedFlags";
+import { SectionHelpIcon } from "~/components/ui/help-icon";
 
 // Country Card Component - separate to handle hooks properly
 interface CountryCardProps {
@@ -159,7 +163,34 @@ interface SmartDashboardContentProps {
 function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, adaptedGlobalStats, activityRingsData, user }: SmartDashboardContentProps) {
   const [contentMode, setContentMode] = useState<'discover' | 'mycountry' | 'activity' | 'admin'>('discover');
   const [hasUserSelectedTab, setHasUserSelectedTab] = useState(false);
-  const [myCountryTab, setMyCountryTab] = useState<'overview' | 'intelligence' | 'operations'>('overview');
+  const [myCountryTab, setMyCountryTab] = useState<'overview' | 'diplomacy' | 'executive'>('overview');
+
+  // Fetch diplomatic data
+  const { data: diplomaticRelations } = api.diplomatic.getRelationships.useQuery(
+    { countryId: userCountry?.id || '' },
+    { enabled: !!userCountry?.id && contentMode === 'mycountry' && myCountryTab === 'diplomacy' }
+  );
+
+  const { data: embassies } = api.diplomatic.getEmbassies.useQuery(
+    { countryId: userCountry?.id || '' },
+    { enabled: !!userCountry?.id && contentMode === 'mycountry' && myCountryTab === 'diplomacy' }
+  );
+
+  const { data: recentDiplomaticActivity } = api.diplomatic.getRecentChanges.useQuery(
+    { countryId: userCountry?.id || '', hours: 72 },
+    { enabled: !!userCountry?.id && contentMode === 'mycountry' && myCountryTab === 'diplomacy' }
+  );
+
+  // Fetch executive data
+  const { data: upcomingMeetings } = api.quickActions.getMeetings.useQuery(
+    { countryId: userCountry?.id || '' },
+    { enabled: !!userCountry?.id && contentMode === 'mycountry' && myCountryTab === 'executive' }
+  );
+
+  const { data: policies } = api.quickActions.getPolicies.useQuery(
+    { countryId: userCountry?.id || '' },
+    { enabled: !!userCountry?.id && contentMode === 'mycountry' && myCountryTab === 'executive' }
+  );
 
   // Auto-select content mode based on user context (only on initial load, not after user selection)
   React.useEffect(() => {
@@ -243,6 +274,10 @@ function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, a
                     <Globe className="h-4 w-4 text-white" />
                   </div>
                   Global Statistics
+                  <SectionHelpIcon
+                    title="Global Overview"
+                    content="View aggregate statistics across all nations in IxStats, including total population, combined GDP, and global economic growth rates."
+                  />
                 </h3>
                 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -280,6 +315,10 @@ function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, a
                     <Trophy className="h-4 w-4 text-white" />
                   </div>
                   Global Leaderboard
+                  <SectionHelpIcon
+                    title="Top Nations"
+                    content="Rankings of the highest-performing countries by total GDP. Click on any country to view detailed economic data and statistics."
+                  />
                 </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -314,62 +353,77 @@ function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, a
               className="space-y-6"
             >
               {/* Command Center Header */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-foreground flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center shadow-lg">
                     <Crown className="h-5 w-5 text-white" />
                   </div>
                   MyCountry Command Center
                 </h2>
-                <Badge variant="secondary" className="px-3 py-1 text-sm">
-                  {userCountry.name} • {userCountry.calculatedStats?.economicTier}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="px-3 py-1 text-sm bg-yellow-500/20 text-yellow-800 dark:text-yellow-200 border-yellow-400/50">
+                    {userCountry.name.replace(/_/g, ' ')}
+                  </Badge>
+                  <Badge variant="secondary" className="px-3 py-1 text-sm">
+                    {userCountry.economicTier || userCountry.calculatedStats?.economicTier}
+                  </Badge>
+                </div>
               </div>
 
               {/* MyCountry Sub-Tabs */}
-              <Tabs value={myCountryTab} onValueChange={(value) => setMyCountryTab(value as 'overview' | 'intelligence' | 'operations')} className="w-full">
+              <Tabs value={myCountryTab} onValueChange={(value) => setMyCountryTab(value as 'overview' | 'diplomacy' | 'executive')} className="w-full">
                 <TabsList className="grid w-full grid-cols-3 bg-muted/50 dark:bg-muted/20">
                   <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground">
                     <Home className="h-4 w-4" />
                     Overview
                   </TabsTrigger>
-                  <TabsTrigger value="intelligence" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground">
-                    <Star className="h-4 w-4" />
-                    Intelligence
+                  <TabsTrigger value="diplomacy" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground">
+                    <Globe className="h-4 w-4" />
+                    Diplomacy
                   </TabsTrigger>
-                  <TabsTrigger value="operations" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground">
-                    <Target className="h-4 w-4" />
-                    Operations
+                  <TabsTrigger value="executive" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground">
+                    <Crown className="h-4 w-4" />
+                    Executive
                   </TabsTrigger>
                 </TabsList>
 
                 {/* Overview Tab */}
-                <TabsContent value="overview" className="space-y-8 mt-6">
-                  <MyCountryCard
-                    countryData={userCountry ? {
-                      id: userCountry.id,
-                      name: userCountry.name,
-                      currentPopulation: userCountry.calculatedStats?.currentPopulation || 0,
-                      currentGdpPerCapita: userCountry.calculatedStats?.currentGdpPerCapita || 0,
-                      currentTotalGdp: userCountry.calculatedStats?.currentTotalGdp || 0,
-                      economicTier: userCountry.calculatedStats?.economicTier || 'Unknown',
-                      populationTier: userCountry.calculatedStats?.populationTier || 'Medium',
-                      adjustedGdpGrowth: userCountry.calculatedStats?.adjustedGdpGrowth || 0,
-                      populationGrowthRate: userCountry.calculatedStats?.populationGrowthRate || 0,
-                      populationDensity: userCountry.calculatedStats?.populationDensity,
-                      continent: userCountry.continent,
-                      region: userCountry.region,
-                      governmentType: userCountry.governmentType,
-                      religion: userCountry.religion,
-                      leader: userCountry.leader
-                    } : undefined}
-                    activityRingsData={activityRingsData}
-                    expandedCards={new Set()}
-                    setExpandedCards={() => {}}
-                    setActivityPopoverOpen={() => {}}
-                    isRippleActive={false}
-                    isGlobalCardSlid={false}
-                  />
+                <TabsContent value="overview" className="space-y-6 mt-6">
+                  {/* National Performance Dashboard */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-bold text-foreground flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                        <BarChart3 className="h-4 w-4 text-white" />
+                      </div>
+                      National Performance Overview
+                    </h3>
+
+                    <MyCountryCard
+                      countryData={userCountry ? {
+                        id: userCountry.id,
+                        name: userCountry.name,
+                        currentPopulation: userCountry.currentPopulation || userCountry.calculatedStats?.currentPopulation || 0,
+                        currentGdpPerCapita: userCountry.currentGdpPerCapita || userCountry.calculatedStats?.currentGdpPerCapita || 0,
+                        currentTotalGdp: userCountry.currentTotalGdp || userCountry.calculatedStats?.currentTotalGdp || 0,
+                        economicTier: userCountry.economicTier || userCountry.calculatedStats?.economicTier || 'Unknown',
+                        populationTier: userCountry.populationTier || userCountry.calculatedStats?.populationTier || 'Medium',
+                        adjustedGdpGrowth: userCountry.adjustedGdpGrowth || userCountry.calculatedStats?.adjustedGdpGrowth || 0,
+                        populationGrowthRate: userCountry.populationGrowthRate || userCountry.calculatedStats?.populationGrowthRate || 0,
+                        populationDensity: userCountry.populationDensity || userCountry.calculatedStats?.populationDensity,
+                        continent: userCountry.continent,
+                        region: userCountry.region,
+                        governmentType: userCountry.governmentType,
+                        religion: userCountry.religion,
+                        leader: userCountry.leader
+                      } : undefined}
+                      activityRingsData={activityRingsData}
+                      expandedCards={new Set()}
+                      setExpandedCards={() => {}}
+                      setActivityPopoverOpen={() => {}}
+                      isRippleActive={false}
+                      isGlobalCardSlid={false}
+                    />
+                  </div>
 
                   {/* Quick Actions */}
                   <div className="space-y-4">
@@ -382,22 +436,22 @@ function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, a
 
                     <div className="grid grid-cols-2 lg:grid-cols-5 gap-6">
                       <button
-                        onClick={() => setMyCountryTab('intelligence')}
+                        onClick={() => setMyCountryTab('diplomacy')}
                         className="glass-hierarchy-child hover:glass-hierarchy-interactive h-32 rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.02] group cursor-pointer"
                       >
                         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <Activity className="h-6 w-6 text-white" />
+                          <Globe className="h-6 w-6 text-white" />
                         </div>
-                        <span className="font-semibold text-foreground">Intelligence</span>
+                        <span className="font-semibold text-foreground">Diplomacy</span>
                       </button>
                       <button
-                        onClick={() => setMyCountryTab('operations')}
+                        onClick={() => setMyCountryTab('executive')}
                         className="glass-hierarchy-child hover:glass-hierarchy-interactive h-32 rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.02] group cursor-pointer"
                       >
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <Target className="h-6 w-6 text-white" />
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Crown className="h-6 w-6 text-white" />
                         </div>
-                        <span className="font-semibold text-foreground">Operations</span>
+                        <span className="font-semibold text-foreground">Executive</span>
                       </button>
                       <Link href="/mycountry#economy">
                         <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-32 rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
@@ -407,12 +461,12 @@ function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, a
                           <span className="font-semibold text-foreground">Economics</span>
                         </div>
                       </Link>
-                      <Link href="/sdi/diplomatic">
+                      <Link href="/mycountry#intelligence">
                         <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-32 rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-violet-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <Users className="h-6 w-6 text-white" />
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Activity className="h-6 w-6 text-white" />
                           </div>
-                          <span className="font-semibold text-foreground">Diplomacy</span>
+                          <span className="font-semibold text-foreground">Intelligence</span>
                         </div>
                       </Link>
                       <Link href="/countries">
@@ -427,69 +481,444 @@ function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, a
                   </div>
                 </TabsContent>
 
-                {/* Intelligence Tab */}
-                <TabsContent value="intelligence" className="space-y-8 mt-6">
+                {/* Diplomacy Tab */}
+                <TabsContent value="diplomacy" className="space-y-8 mt-6">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xl font-bold text-foreground flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+                          <Globe className="h-4 w-4 text-white" />
+                        </div>
+                        Diplomatic Overview
+                      </h3>
+                      <Link href="/sdi/diplomatic">
+                        <Button variant="outline" size="sm" className="flex items-center gap-2">
+                          View Full Network
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </div>
+
+                    {/* Quick Diplomatic Stats */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      <Card className="glass-hierarchy-child">
+                        <CardContent className="p-4 text-center">
+                          <div className="text-2xl font-bold text-blue-500 mb-1">
+                            {activityRingsData?.diplomaticStanding.toFixed(0) || 0}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Diplomatic Score</div>
+                        </CardContent>
+                      </Card>
+                      <Card className="glass-hierarchy-child">
+                        <CardContent className="p-4 text-center">
+                          <div className="text-2xl font-bold text-purple-500 mb-1">
+                            {diplomaticRelations?.filter(r => r.relationship === 'alliance' || r.relationship === 'friendly').length || 0}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Active Allies</div>
+                        </CardContent>
+                      </Card>
+                      <Card className="glass-hierarchy-child">
+                        <CardContent className="p-4 text-center">
+                          <div className="text-2xl font-bold text-green-500 mb-1">
+                            {diplomaticRelations?.reduce((sum, r) => sum + (r.treaties?.length || 0), 0) || 0}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Active Treaties</div>
+                        </CardContent>
+                      </Card>
+                      <Card className="glass-hierarchy-child">
+                        <CardContent className="p-4 text-center">
+                          <div className="text-2xl font-bold text-amber-500 mb-1">
+                            {activityRingsData?.diplomaticStanding >= 75 ? 'Excellent' :
+                             activityRingsData?.diplomaticStanding >= 60 ? 'Good' :
+                             activityRingsData?.diplomaticStanding >= 40 ? 'Neutral' : 'Declining'}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Reputation</div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Diplomatic Actions */}
+                    <div className="space-y-4">
+                      <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                        <Users className="h-5 w-5 text-purple-400" />
+                        Diplomatic Actions
+                      </h4>
+                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                        <Link href="/sdi/diplomatic#embassies">
+                          <Card className="glass-hierarchy-interactive hover:scale-[1.02] transition-all cursor-pointer">
+                            <CardContent className="p-4 flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                                <Building2 className="h-5 w-5 text-white" />
+                              </div>
+                              <div>
+                                <div className="font-semibold text-foreground">Embassy Network</div>
+                                <div className="text-xs text-muted-foreground">Manage embassies</div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </Link>
+                        <Link href="/sdi/diplomatic#missions">
+                          <Card className="glass-hierarchy-interactive hover:scale-[1.02] transition-all cursor-pointer">
+                            <CardContent className="p-4 flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                                <Target className="h-5 w-5 text-white" />
+                              </div>
+                              <div>
+                                <div className="font-semibold text-foreground">Missions</div>
+                                <div className="text-xs text-muted-foreground">Diplomatic missions</div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </Link>
+                        <Link href="/sdi/diplomatic#cultural">
+                          <Card className="glass-hierarchy-interactive hover:scale-[1.02] transition-all cursor-pointer">
+                            <CardContent className="p-4 flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                                <Star className="h-5 w-5 text-white" />
+                              </div>
+                              <div>
+                                <div className="font-semibold text-foreground">Cultural Exchange</div>
+                                <div className="text-xs text-muted-foreground">Programs & events</div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </Link>
+                      </div>
+                    </div>
+
+                    {/* Recent Diplomatic Activity */}
+                    <Card className="glass-hierarchy-child">
+                      <CardHeader>
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Activity className="h-4 w-4" />
+                          Recent Diplomatic Activity
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {recentDiplomaticActivity && recentDiplomaticActivity.length > 0 ? (
+                          <div className="space-y-3">
+                            {recentDiplomaticActivity.map((activity) => {
+                              const isUpgrade = activity.changeType === 'status_upgrade';
+                              const color = isUpgrade ? 'green' : activity.changeType === 'status_downgrade' ? 'red' : 'blue';
+                              const timeDiff = Date.now() - new Date(activity.updatedAt).getTime();
+                              const hoursAgo = Math.floor(timeDiff / (1000 * 60 * 60));
+                              const timeText = hoursAgo < 1 ? 'Less than an hour ago' :
+                                              hoursAgo < 24 ? `${hoursAgo} hour${hoursAgo > 1 ? 's' : ''} ago` :
+                                              `${Math.floor(hoursAgo / 24)} day${Math.floor(hoursAgo / 24) > 1 ? 's' : ''} ago`;
+
+                              return (
+                                <div key={activity.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                                  <div className={`w-2 h-2 rounded-full bg-${color}-500`} />
+                                  <div className="flex-1">
+                                    <div className="text-sm font-medium">
+                                      {activity.changeType === 'status_upgrade' && `Relations improved with ${activity.targetCountry}`}
+                                      {activity.changeType === 'status_downgrade' && `Tensions rising with ${activity.targetCountry}`}
+                                      {activity.changeType === 'new_treaty' && `Treaty signed with ${activity.targetCountry}`}
+                                      {activity.changeType === 'embassy_opened' && `Embassy established in ${activity.targetCountry}`}
+                                      {!['status_upgrade', 'status_downgrade', 'new_treaty', 'embassy_opened'].includes(activity.changeType) && `Diplomatic activity with ${activity.targetCountry}`}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">{timeText}</div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <Globe className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">No recent diplomatic activity</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+
+                {/* Executive Tab */}
+                <TabsContent value="executive" className="space-y-8 mt-6">
                   <div className="space-y-6">
                     <div className="flex items-center justify-between">
                       <h3 className="text-xl font-bold text-foreground flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center">
-                          <Star className="h-4 w-4 text-white" />
+                          <Crown className="h-4 w-4 text-white" />
                         </div>
-                        Intelligence Suite
+                        Executive Brief
                       </h3>
                       <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs px-3 py-1">
-                        Premium
+                        Leadership
                       </Badge>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                      <ECICard
-                        countryData={userCountry ? {
-                          id: userCountry.id,
-                          name: userCountry.name,
-                          currentPopulation: userCountry.calculatedStats?.currentPopulation || 0,
-                          currentGdpPerCapita: userCountry.calculatedStats?.currentGdpPerCapita || 0,
-                          currentTotalGdp: userCountry.calculatedStats?.currentTotalGdp || 0,
-                          economicTier: userCountry.calculatedStats?.economicTier || 'Unknown',
-                          populationTier: userCountry.calculatedStats?.populationTier || 'Medium',
-                          populationDensity: userCountry.calculatedStats?.populationDensity,
-                          landArea: userCountry.landArea
-                        } : undefined}
-                        userProfile={userProfile}
-                        userId={user?.id}
-                        isEciExpanded={false}
-                        toggleEciExpansion={() => {}}
-                        focusedCard={null}
-                        setFocusedCard={() => {}}
-                      />
+                    {/* Executive Summary Cards */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Scheduler & Meetings */}
+                      <Card className="glass-hierarchy-child">
+                        <CardHeader>
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-blue-500" />
+                            Upcoming Meetings
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          {upcomingMeetings && upcomingMeetings.length > 0 ? (
+                            <>
+                              {upcomingMeetings
+                                .filter((m: any) => m.status !== 'completed' && m.status !== 'cancelled')
+                                .slice(0, 3)
+                                .map((meeting: any, idx: number) => {
+                                  const colors = ['blue', 'purple', 'green'];
+                                  const color = colors[idx % colors.length];
+                                  const meetingDate = new Date(meeting.scheduledDate);
+                                  const timeStr = meetingDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
 
-                      <SDICard
-                        userProfile={userProfile}
-                        isSdiExpanded={false}
-                        toggleSdiExpansion={() => {}}
-                        focusedCard={null}
-                        setFocusedCard={() => {}}
-                      />
+                                  return (
+                                    <div key={meeting.id} className={`flex items-start gap-3 p-3 rounded-lg bg-${color}-500/10 border border-${color}-500/20`}>
+                                      <div className={`text-sm font-medium text-${color}-600 dark:text-${color}-400 min-w-[60px]`}>{timeStr}</div>
+                                      <div className="flex-1">
+                                        <div className="text-sm font-semibold">{meeting.title}</div>
+                                        {meeting.description && (
+                                          <div className="text-xs text-muted-foreground truncate">{meeting.description}</div>
+                                        )}
+                                      </div>
+                                      <Link href="/mycountry/meetings">
+                                        <Button size="sm" variant="ghost" className="h-6 px-2">
+                                          <ChevronRight className="h-3 w-3" />
+                                        </Button>
+                                      </Link>
+                                    </div>
+                                  );
+                                })}
+                              <Link href="/mycountry/meetings">
+                                <Button variant="outline" size="sm" className="w-full mt-2">
+                                  View Full Calendar
+                                </Button>
+                              </Link>
+                            </>
+                          ) : (
+                            <div className="text-center py-8 text-muted-foreground">
+                              <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                              <p className="text-sm">No upcoming meetings scheduled</p>
+                              <Link href="/mycountry/meetings">
+                                <Button variant="outline" size="sm" className="mt-3">
+                                  Schedule Meeting
+                                </Button>
+                              </Link>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {/* Policy Status */}
+                      <Card className="glass-hierarchy-child">
+                        <CardHeader>
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-green-500" />
+                            Policy Status
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          {policies ? (
+                            <>
+                              <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="text-sm font-semibold">Active Policies</div>
+                                  <Badge variant="secondary" className="bg-green-500/20 text-green-700 dark:text-green-300">
+                                    {policies.filter((p: any) => p.status === 'active').length} Active
+                                  </Badge>
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {policies.filter((p: any) => p.status === 'active').length > 0
+                                    ? `Latest: ${policies.filter((p: any) => p.status === 'active')[0]?.name || 'Policy active'}`
+                                    : 'No active policies'}
+                                </div>
+                                <Link href="/mycountry#government">
+                                  <Button size="sm" variant="ghost" className="w-full mt-2 text-xs">
+                                    Review Policies
+                                  </Button>
+                                </Link>
+                              </div>
+                              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="text-sm font-semibold">Pending Approval</div>
+                                  <Badge variant="secondary" className="bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                                    {policies.filter((p: any) => p.status === 'draft').length} Pending
+                                  </Badge>
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {policies.filter((p: any) => p.status === 'draft').length > 0
+                                    ? `Awaiting: ${policies.filter((p: any) => p.status === 'draft')[0]?.name || 'Policy draft'}`
+                                    : 'No pending policies'}
+                                </div>
+                                <Link href="/mycountry#government">
+                                  <Button size="sm" variant="ghost" className="w-full mt-2 text-xs">
+                                    Review Pending
+                                  </Button>
+                                </Link>
+                              </div>
+                              <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="text-sm font-semibold">All Policies</div>
+                                  <Badge variant="secondary" className="bg-blue-500/20 text-blue-700 dark:text-blue-300">
+                                    {policies.length} Total
+                                  </Badge>
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  Across all categories and statuses
+                                </div>
+                                <Link href="/mycountry#government">
+                                  <Button size="sm" variant="ghost" className="w-full mt-2 text-xs">
+                                    View All
+                                  </Button>
+                                </Link>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="text-center py-8 text-muted-foreground">
+                              <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                              <p className="text-sm">No policies found</p>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {/* Security Status */}
+                      <Card className="glass-hierarchy-child">
+                        <CardHeader>
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <Shield className="h-4 w-4 text-red-500" />
+                            Security Overview
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                                <Shield className="h-4 w-4 text-green-600 dark:text-green-400" />
+                              </div>
+                              <div>
+                                <div className="text-sm font-semibold">Threat Level</div>
+                                <div className="text-xs text-muted-foreground">Low - All Clear</div>
+                              </div>
+                            </div>
+                            <Badge variant="secondary" className="bg-green-500/20 text-green-700 dark:text-green-300">
+                              Safe
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                                <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                              </div>
+                              <div>
+                                <div className="text-sm font-semibold">Border Security</div>
+                                <div className="text-xs text-muted-foreground">Normal operations</div>
+                              </div>
+                            </div>
+                            <Badge variant="secondary" className="bg-blue-500/20 text-blue-700 dark:text-blue-300">
+                              Nominal
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between p-3 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                                <Eye className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                              </div>
+                              <div>
+                                <div className="text-sm font-semibold">Intelligence</div>
+                                <div className="text-xs text-muted-foreground">Monitoring active</div>
+                              </div>
+                            </div>
+                            <Badge variant="secondary" className="bg-purple-500/20 text-purple-700 dark:text-purple-300">
+                              Active
+                            </Badge>
+                          </div>
+                          <Link href="/mycountry#defense">
+                            <Button variant="outline" size="sm" className="w-full mt-2">
+                              Full Security Report
+                            </Button>
+                          </Link>
+                        </CardContent>
+                      </Card>
+
+                      {/* National Agenda */}
+                      <Card className="glass-hierarchy-child">
+                        <CardHeader>
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <Target className="h-4 w-4 text-orange-500" />
+                            National Agenda
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="text-sm font-semibold">Economic Growth</div>
+                              <div className="text-xs text-orange-600 dark:text-orange-400">85% Complete</div>
+                            </div>
+                            <Progress value={85} className="h-1.5 mb-2" />
+                            <div className="text-xs text-muted-foreground">Q4 targets on track</div>
+                          </div>
+                          <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="text-sm font-semibold">Infrastructure Development</div>
+                              <div className="text-xs text-blue-600 dark:text-blue-400">62% Complete</div>
+                            </div>
+                            <Progress value={62} className="h-1.5 mb-2" />
+                            <div className="text-xs text-muted-foreground">Highway project Phase 2</div>
+                          </div>
+                          <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="text-sm font-semibold">Education Reform</div>
+                              <div className="text-xs text-purple-600 dark:text-purple-400">40% Complete</div>
+                            </div>
+                            <Progress value={40} className="h-1.5 mb-2" />
+                            <div className="text-xs text-muted-foreground">Curriculum updates rollout</div>
+                          </div>
+                          <Link href="/mycountry#government">
+                            <Button variant="outline" size="sm" className="w-full mt-2">
+                              View Full Agenda
+                            </Button>
+                          </Link>
+                        </CardContent>
+                      </Card>
                     </div>
-                  </div>
-                </TabsContent>
 
-                {/* Operations Tab */}
-                <TabsContent value="operations" className="space-y-8 mt-6">
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-xl font-bold text-foreground flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center">
-                          <Target className="h-4 w-4 text-white" />
+                    {/* Quick Executive Actions */}
+                    <Card className="glass-hierarchy-child bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-yellow-500/20">
+                      <CardHeader>
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Zap className="h-4 w-4 text-yellow-500" />
+                          Quick Executive Actions
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                          <Link href="/mycountry/meetings">
+                            <Button variant="outline" className="w-full flex items-center gap-2 justify-start">
+                              <Clock className="h-4 w-4" />
+                              Schedule
+                            </Button>
+                          </Link>
+                          <Link href="/mycountry#government">
+                            <Button variant="outline" className="w-full flex items-center gap-2 justify-start">
+                              <FileText className="h-4 w-4" />
+                              Policies
+                            </Button>
+                          </Link>
+                          <Link href="/mycountry#defense">
+                            <Button variant="outline" className="w-full flex items-center gap-2 justify-start">
+                              <Shield className="h-4 w-4" />
+                              Security
+                            </Button>
+                          </Link>
+                          <Link href="/mycountry#intelligence">
+                            <Button variant="outline" className="w-full flex items-center gap-2 justify-start">
+                              <Activity className="h-4 w-4" />
+                              Intelligence
+                            </Button>
+                          </Link>
                         </div>
-                        Strategic Operations
-                      </h3>
-                      <Badge className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-3 py-1">
-                        Advanced
-                      </Badge>
-                    </div>
-
-                    <StrategicOperationsSuite userProfile={userProfile} />
+                      </CardContent>
+                    </Card>
                   </div>
                 </TabsContent>
               </Tabs>
@@ -530,6 +959,13 @@ function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, a
 
 export function EnhancedCommandCenter() {
   const { user } = useUser();
+
+  // Set page title (notification badge will auto-update)
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.title = "IxStats - Worldbuilding Platform";
+    }
+  }, []);
 
   // Sidebar collapse state
   const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);

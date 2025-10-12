@@ -23,6 +23,7 @@ import { getTierStyle } from "~/lib/theme-utils";
 import { GlassCard } from "~/components/ui/enhanced-card";
 import type { VariantProps } from "class-variance-authority";
 import { type badgeVariants } from "@/components/ui/badge";
+import { InlineHelpIcon } from "~/components/ui/help-icon";
 
 interface EconomicSummaryData {
   // Core metrics
@@ -266,6 +267,10 @@ export function EconomicSummaryWidget({
               <BarChart3 className="h-5 w-5" />
               Economic Summary
               <Badge variant={safeMainBadgeVariant} className={tierStyle.className}>{data.economicTier}</Badge>
+              <InlineHelpIcon
+                title="Economic Summary"
+                content="Comprehensive overview of key economic indicators including population, GDP, employment rates, and overall economic health score. Metrics are color-coded based on performance thresholds."
+              />
             </CardTitle>
             <CardDescription>Key economic indicators for {countryName}</CardDescription>
           </div>
@@ -342,6 +347,10 @@ export function EconomicSummaryWidget({
           <h4 className="text-sm font-semibold flex items-center gap-2">
             <Info className="h-4 w-4" />
             Economic Health Indicators
+            <InlineHelpIcon
+              title="Health Indicators"
+              content="Progress bars showing key economic metrics against optimal ranges. Green indicates optimal performance, yellow shows acceptable levels, and red highlights areas needing attention."
+            />
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <HealthIndicator

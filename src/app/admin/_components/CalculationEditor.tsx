@@ -35,7 +35,7 @@ interface CalculationModule {
   description: string;
   category: "economic" | "demographic" | "stability" | "governance";
   formula: string;
-  variables: Record<string, number>;
+  variables: Record<string, number | string | string[]>;
   constants: Record<string, number>;
   dependencies: string[];
   testCases: TestCase[];
@@ -48,7 +48,7 @@ interface CalculationModule {
 interface TestCase {
   id: string;
   name: string;
-  inputs: Record<string, number>;
+  inputs: Record<string, number | string | string[]>;
   expectedOutput: number;
   actualOutput?: number;
   status: "passed" | "failed" | "pending";
@@ -265,6 +265,245 @@ function calculateStabilityIndex(economic, political, social, atomicComponents) 
       modifiedBy: "admin",
       isActive: true,
       version: "3.0.2"
+    },
+    {
+      id: "population-growth",
+      name: "Population Growth Dynamics",
+      description: "Calculates population growth with demographic transition, healthcare, and urbanization factors",
+      category: "demographic",
+      formula: `
+function calculatePopulationGrowth(currentPop, birthRate, deathRate, tier, healthcare, urbanization) {
+  // Base natural increase
+  let naturalIncrease = birthRate - deathRate;
+
+  // Demographic transition model
+  const transitionFactors = {
+    1: 1.0,   // Pre-transition: high birth/death
+    2: 1.15,  // Early transition: high birth, falling death
+    3: 0.85,  // Late transition: falling birth/death
+    4: 0.65,  // Post-transition: low birth/death
+  };
+
+  naturalIncrease *= (transitionFactors[Math.min(tier, 4)] || 1.0);
+
+  // Healthcare impact on death rate
+  const healthcareFactor = (1 - (healthcare * 0.003));
+  naturalIncrease -= deathRate * healthcareFactor;
+
+  // Urbanization effect (tends to reduce birth rates)
+  const urbanEffect = Math.pow(urbanization / 100, 1.2) * -0.008;
+  naturalIncrease += urbanEffect;
+
+  return Math.max(naturalIncrease, -0.02); // Min -2% (crisis scenarios)
+}`,
+      variables: {
+        currentPop: 50000000,
+        birthRate: 0.018,
+        deathRate: 0.009,
+        tier: 3,
+        healthcare: 75,
+        urbanization: 65
+      },
+      constants: {
+        maxGrowth: 0.05,
+        minGrowth: -0.02,
+        urbanizationFactor: 0.008
+      },
+      dependencies: ["economic-tiers", "healthcare-system"],
+      testCases: [
+        {
+          id: "test-5",
+          name: "Developing Country High Growth",
+          inputs: { birthRate: 0.025, deathRate: 0.008, tier: 2, healthcare: 60, urbanization: 40 },
+          expectedOutput: 0.0195,
+          status: "pending"
+        }
+      ],
+      lastModified: new Date(Date.now() - 259200000),
+      modifiedBy: "admin",
+      isActive: true,
+      version: "2.5.0"
+    },
+    {
+      id: "military-strength",
+      name: "Military Strength Calculation",
+      description: "Calculates effective military power with technology, training, and logistics factors",
+      category: "governance",
+      formula: `
+function calculateMilitaryStrength(personnel, equipment, technology, training, logistics, budget) {
+  // Base strength from personnel and equipment
+  let baseStrength = Math.sqrt(personnel * equipment);
+
+  // Technology multiplier (1.0 to 3.0)
+  const techMultiplier = 1.0 + (technology / 50);
+
+  // Training effectiveness (0.5 to 1.5)
+  const trainingFactor = 0.5 + (training / 100);
+
+  // Logistics efficiency (critical for sustained operations)
+  const logisticsFactor = Math.pow(logistics / 100, 0.8);
+
+  // Budget sustainability factor
+  const budgetAdequacy = Math.min(budget / (personnel * 50000), 1.5);
+
+  // Combined military power
+  const strength = baseStrength *
+                   techMultiplier *
+                   trainingFactor *
+                   logisticsFactor *
+                   budgetAdequacy;
+
+  return Math.round(strength);
+}`,
+      variables: {
+        personnel: 500000,
+        equipment: 15000,
+        technology: 75,
+        training: 85,
+        logistics: 70,
+        budget: 50000000000
+      },
+      constants: {
+        basePersonnelCost: 50000,
+        techScalingFactor: 50,
+        logisticsPower: 0.8
+      },
+      dependencies: ["military-units", "defense-budget"],
+      testCases: [
+        {
+          id: "test-6",
+          name: "Modern Professional Military",
+          inputs: { personnel: 400000, equipment: 12000, technology: 85, training: 90, logistics: 80, budget: 60000000000 },
+          expectedOutput: 3500000,
+          status: "pending"
+        }
+      ],
+      lastModified: new Date(Date.now() - 345600000),
+      modifiedBy: "admin",
+      isActive: true,
+      version: "1.6.4"
+    },
+    {
+      id: "trade-balance",
+      name: "Trade Balance & Current Account",
+      description: "Calculates trade balance considering exports, imports, services, and financial flows",
+      category: "economic",
+      formula: `
+function calculateTradeBalance(exports, imports, services, fdi, remittances, tourism) {
+  // Goods trade balance
+  const goodsBalance = exports - imports;
+
+  // Services balance (net)
+  const servicesBalance = services;
+
+  // Income from FDI and financial assets
+  const incomeBalance = fdi * 0.07; // 7% return on FDI
+
+  // Transfers (remittances, tourism)
+  const transfersBalance = remittances + tourism;
+
+  // Current account = Goods + Services + Income + Transfers
+  const currentAccount = goodsBalance + servicesBalance + incomeBalance + transfersBalance;
+
+  // Trade balance as % of GDP
+  const tradeIntensity = (exports + imports) / 2;
+
+  return {
+    currentAccount,
+    goodsBalance,
+    servicesBalance,
+    tradeIntensity
+  };
+}`,
+      variables: {
+        exports: 450000000000,
+        imports: 380000000000,
+        services: 25000000000,
+        fdi: 150000000000,
+        remittances: 8000000000,
+        tourism: 12000000000
+      },
+      constants: {
+        fdiReturnRate: 0.07,
+        goodsWeight: 0.7,
+        servicesWeight: 0.3
+      },
+      dependencies: ["trade-partners", "exchange-rates"],
+      testCases: [
+        {
+          id: "test-7",
+          name: "Trade Surplus Economy",
+          inputs: { exports: 500000000000, imports: 350000000000, services: 30000000000, fdi: 180000000000, remittances: 10000000000, tourism: 15000000000 },
+          expectedOutput: 205600000000,
+          status: "pending"
+        }
+      ],
+      lastModified: new Date(Date.now() - 432000000),
+      modifiedBy: "admin",
+      isActive: true,
+      version: "2.3.1"
+    },
+    {
+      id: "atomic-synergy",
+      name: "Atomic Government Synergy Calculator",
+      description: "Calculates synergy bonuses from atomic government component combinations",
+      category: "governance",
+      formula: `
+function calculateAtomicSynergy(components) {
+  let totalSynergy = 0;
+  const synergyPairs = {
+    'PROFESSIONAL_BUREAUCRACY+RULE_OF_LAW': 1.25,
+    'DEMOCRATIC_PROCESS+INDEPENDENT_JUDICIARY': 1.30,
+    'SURVEILLANCE_SYSTEM+RULE_OF_LAW': 1.15,
+    'UNIVERSAL_EDUCATION+PROFESSIONAL_BUREAUCRACY': 1.20,
+    'SOCIAL_SAFETY_NET+UNIVERSAL_HEALTHCARE': 1.35,
+    'MILITARY_INDUSTRIAL_COMPLEX+PROFESSIONAL_BUREAUCRACY': 1.18,
+    'FREE_PRESS+DEMOCRATIC_PROCESS': 1.22,
+    'DIGITAL_GOVERNANCE+PROFESSIONAL_BUREAUCRACY': 1.28
+  };
+
+  // Check all component pairs for synergies
+  for (let i = 0; i < components.length; i++) {
+    for (let j = i + 1; j < components.length; j++) {
+      const pairKey = \`\${components[i]}+\${components[j]}\`;
+      const reversePair = \`\${components[j]}+\${components[i]}\`;
+
+      if (synergyPairs[pairKey]) {
+        totalSynergy += (synergyPairs[pairKey] - 1.0);
+      } else if (synergyPairs[reversePair]) {
+        totalSynergy += (synergyPairs[reversePair] - 1.0);
+      }
+    }
+  }
+
+  // Diminishing returns for many components
+  const componentCount = components.length;
+  const scalingFactor = Math.min(1.0, 5.0 / componentCount);
+
+  return 1.0 + (totalSynergy * scalingFactor);
+}`,
+      variables: {
+        components: ['PROFESSIONAL_BUREAUCRACY', 'RULE_OF_LAW', 'DEMOCRATIC_PROCESS'] as string[]
+      },
+      constants: {
+        maxSynergy: 2.0,
+        scalingThreshold: 5,
+        baseMultiplier: 1.0
+      },
+      dependencies: ["atomic-government"],
+      testCases: [
+        {
+          id: "test-8",
+          name: "Democratic Rule of Law Synergy",
+          inputs: { components: ['PROFESSIONAL_BUREAUCRACY', 'RULE_OF_LAW', 'DEMOCRATIC_PROCESS', 'INDEPENDENT_JUDICIARY'] as string[] },
+          expectedOutput: 1.65,
+          status: "pending"
+        }
+      ],
+      lastModified: new Date(Date.now() - 518400000),
+      modifiedBy: "admin",
+      isActive: true,
+      version: "3.2.0"
     }
   ]);
 
@@ -288,7 +527,7 @@ function calculateStabilityIndex(economic, political, social, atomicComponents) 
         result: mockResult,
         executionTime,
         intermediateSteps: {
-          step1: testCase.inputs.baseGDP || testCase.inputs.economic || 0,
+          step1: (typeof testCase.inputs.baseGDP === 'number' ? testCase.inputs.baseGDP : typeof testCase.inputs.economic === 'number' ? testCase.inputs.economic : 0),
           step2: mockResult * 0.7,
           step3: mockResult
         }

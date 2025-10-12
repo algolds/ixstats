@@ -16,7 +16,6 @@ import {
   DataImportSection,
   WarningPanel,
   ImportPreviewDialog,
-  SdiAdminPanel,
   CountryAdminPanel,
   NotificationsAdmin,
   UserManagement,
@@ -26,7 +25,7 @@ import { AdminDashboardSafe } from "./_components/AdminDashboardSafe";
 // Complex components loaded on-demand to prevent API errors
 import { SystemOverview } from "./_components/SystemOverview";
 import { CalculationEditor } from "./_components/CalculationEditor";
-import { DMControlPanel } from "./_components/DMControlPanel";
+import { StorytellerControlPanel } from "./_components/StorytellerControlPanel";
 import { IxTimeVisualizer } from "./_components/IxTimeVisualizer";
 import { GlassCard, EnhancedCard } from "~/components/ui/enhanced-card";
 import { BentoGrid } from "~/components/ui/bento-grid";
@@ -592,7 +591,7 @@ export default function AdminPage() {
                     {[
                       { value: "system", icon: <Monitor className="h-5 w-5" />, label: "System Monitor" },
                       { value: "formulas", icon: <Code className="h-5 w-5" />, label: "Formula Editor" },
-                      { value: "dm-controls", icon: <Gamepad2 className="h-5 w-5" />, label: "DM Controls" },
+                      { value: "storyteller", icon: <Gamepad2 className="h-5 w-5" />, label: "Storyteller (God Mode)" },
                       { value: "time", icon: <Clock className="h-5 w-5" />, label: "Time Controls" },
                       { value: "navigation", icon: <Settings className="h-5 w-5" />, label: "Navigation Settings" }
                     ].map((item) => (
@@ -674,7 +673,6 @@ export default function AdminPage() {
                   <div className="space-y-1">
                     {[
                       { value: "logs", icon: <List className="h-5 w-5" />, label: "System Logs" },
-                      { value: "sdi", icon: <Shield className="h-5 w-5" />, label: "SDI Admin" },
                       { value: "economic", icon: <TrendingUp className="h-5 w-5" />, label: "Economic Monitor" }
                     ].map((item) => (
                       <button
@@ -744,7 +742,7 @@ export default function AdminPage() {
                             {[
                               { icon: Monitor, label: "System Monitor", section: "system", color: "indigo" },
                               { icon: Code, label: "Formula Editor", section: "formulas", color: "emerald" },
-                              { icon: Gamepad2, label: "DM Controls", section: "dm-controls", color: "amber" },
+                              { icon: Gamepad2, label: "Storyteller", section: "storyteller", color: "purple" },
                               { icon: Upload, label: "Data Import", section: "import", color: "rose" }
                             ].map((item) => (
                               <button
@@ -1002,9 +1000,9 @@ export default function AdminPage() {
                   <CalculationEditor />
                 </div>
               )}
-              {selectedSection === "dm-controls" && (
+              {selectedSection === "storyteller" && (
                 <div className="mb-8">
-                  <DMControlPanel />
+                  <StorytellerControlPanel />
                 </div>
               )}
               {selectedSection === "ixtime-visualizer" && (
@@ -1083,11 +1081,6 @@ export default function AdminPage() {
                 <EnhancedCard variant="glass" className="mb-8">
                   {/* CountryAdminPanel will be implemented here */}
                   <CountryAdminPanel />
-                </EnhancedCard>
-              )}
-              {selectedSection === "sdi" && (
-                <EnhancedCard variant="glass" className="mb-8">
-                  <SdiAdminPanel />
                 </EnhancedCard>
               )}
               {selectedSection === "notifications" && (

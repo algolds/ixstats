@@ -39,6 +39,7 @@ import type {
   UserNotificationPreferences,
 } from '~/types/unified-notifications';
 import { generateSafeKey } from '~/app/mycountry/utils/keyValidation';
+import { useLiveNotifications } from '~/hooks/useLiveNotifications';
 
 // Notification center configuration
 interface NotificationCenterConfig {
@@ -255,8 +256,6 @@ export function UnifiedNotificationCenter({
   const config = { ...defaultConfig, ...userConfig };
   
   // State management
-  const [notifications, setNotifications] = useState<UnifiedNotification[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'priority'>('all');
   const [filters, setFilters] = useState<NotificationFilters>({
     categories: [],
@@ -265,10 +264,41 @@ export function UnifiedNotificationCenter({
     timeRange: 'day'
   });
 
-  // Mock notifications for demonstration
-  useEffect(() => {
-    // In real implementation, this would fetch from the notification store
-    const mockNotifications: UnifiedNotification[] = [
+  // Import live notifications hook
+  const { notifications: liveNotifications, unreadCount: liveUnreadCount, isLoading, markAsRead: liveMarkAsRead, markAllAsRead: liveMarkAllAsRead, dismiss: liveDismiss } = useLiveNotifications();
+
+  // Convert live notifications to UnifiedNotification format
+  const notifications = React.useMemo(() => {
+    return liveNotifications.map(n => ({
+      id: n.id,
+      source: (n.source as 'intelligence' | 'realtime' | 'system') || 'system',
+      timestamp: new Date(n.createdAt).getTime(),
+      title: n.title,
+      message: n.message || n.description || '',
+      category: (n.category as NotificationCategory) || 'system',
+      type: (n.type as any) || 'info',
+      priority: (n.priority as NotificationPriority) || 'medium',
+      severity: (n.severity as any) || 'informational',
+      context: {} as any, // Not needed for display
+      triggers: [],
+      relevanceScore: n.relevanceScore || 0,
+      deliveryMethod: (n.deliveryMethod as any) || 'toast',
+      status: n.read ? 'read' as const : n.dismissed ? 'dismissed' as const : 'delivered' as const,
+      actionable: n.actionable,
+      actions: n.href ? [{
+        id: 'view',
+        label: 'View Details',
+        type: 'primary' as const,
+        onClick: () => {
+          if (n.href) window.location.href = n.href;
+        }
+      }] : undefined,
+      metadata: n.metadata ? JSON.parse(n.metadata) : undefined,
+    }));
+  }, [liveNotifications]);
+
+  // Legacy mock notifications (kept for fallback)
+  const mockNotifications: UnifiedNotification[] = React.useMemo(() => [
       {
         id: 'notif-1',
         source: 'intelligence',
@@ -327,10 +357,7 @@ export function UnifiedNotificationCenter({
           { id: 'celebrate', label: 'Share Achievement', type: 'primary', onClick: () => console.log('Celebrate') }
         ]
       }
-    ];
-
-    setNotifications(mockNotifications);
-  }, []);
+    ], []);
 
   // Calculate stats
   const stats = useMemo((): NotificationStats => {
@@ -379,34 +406,19 @@ export function UnifiedNotificationCenter({
   }, [notifications, activeTab, filters]);
 
   // Handlers
-  const handleNotificationAction = useCallback((notification: UnifiedNotification, action: string) => {
+  const handleNotificationAction = useCallback(async (notification: UnifiedNotification, action: string) => {
     // Mark as read if action taken
-    setNotifications(prev => 
-      prev.map(n => 
-        n.id === notification.id 
-          ? { ...n, status: 'read' as const }
-          : n
-      )
-    );
-
+    await liveMarkAsRead(notification.id);
     onNotificationAction?.(notification, action);
-  }, [onNotificationAction]);
+  }, [liveMarkAsRead, onNotificationAction]);
 
-  const handleDismiss = useCallback((notificationId: string) => {
-    setNotifications(prev => 
-      prev.map(n => 
-        n.id === notificationId 
-          ? { ...n, status: 'dismissed' as const }
-          : n
-      )
-    );
-  }, []);
+  const handleDismiss = useCallback(async (notificationId: string) => {
+    await liveDismiss(notificationId);
+  }, [liveDismiss]);
 
-  const markAllAsRead = useCallback(() => {
-    setNotifications(prev => 
-      prev.map(n => ({ ...n, status: 'read' as const }))
-    );
-  }, []);
+  const markAllAsRead = useCallback(async () => {
+    await liveMarkAllAsRead();
+  }, [liveMarkAllAsRead]);
 
   return (
     <div className={`w-full max-w-2xl ${className}`}>

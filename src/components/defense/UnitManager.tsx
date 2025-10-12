@@ -26,6 +26,7 @@ import { Progress } from '~/components/ui/progress';
 import { NumberFlowDisplay } from '~/components/ui/number-flow';
 import { toast } from 'sonner';
 import { UNIT_TEMPLATES } from '~/lib/military-equipment';
+import { InlineHelpIcon } from '~/components/ui/help-icon';
 
 interface UnitManagerProps {
   branchId: string;
@@ -124,6 +125,10 @@ export function UnitManager({ branchId, branchType, units, onRefetch }: UnitMana
         <h4 className="font-semibold text-sm flex items-center gap-2">
           <Shield className="h-4 w-4" />
           Units ({units.length})
+          <InlineHelpIcon
+            title="Military Units"
+            content="Manage your military units including divisions, brigades, regiments, and specialized formations. Each unit can be assigned personnel, equipment, and deployment status."
+          />
         </h4>
         <Button size="sm" onClick={handleCreate}>
           <Plus className="h-3 w-3 mr-1" />
