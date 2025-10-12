@@ -8,7 +8,7 @@ import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { TextReveal, FadeIn, CountUp } from "~/components/ui/text-reveal";
 import { Spotlight } from "~/components/ui/spotlight-new";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
-import { createUrl } from "~/lib/url-utils";
+import { createAbsoluteUrl } from "~/lib/url-utils";
 import { UsersIcon } from "~/components/ui/users";
 import { TrendingUpIcon } from "~/components/ui/trending-up";
 import { ActivityIcon } from "~/components/ui/activity";
@@ -49,7 +49,7 @@ interface CountryFocusCardProps {
   setHovered: React.Dispatch<React.SetStateAction<number | null>>;
   expanded: number | null;
   setExpanded: React.Dispatch<React.SetStateAction<number | null>>;
-  onCountryClick?: (countryId: string) => void;
+  onCountryClick?: (countryId: string, countryName: string) => void;
   size?: 'default' | 'small';
 }
 
@@ -94,7 +94,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(({
 
   const handleCountryVisit = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onCountryClick?.(country.id);
+    onCountryClick?.(country.id, country.name);
   };
 
   return (

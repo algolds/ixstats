@@ -31,8 +31,8 @@ const isClerkConfigured = Boolean(
 );
 
 export const metadata: Metadata = {
-  title: "IxStats - Alpha version",
-  description: "IxStats - Automated Economic Statistics for Ixnay",
+  title: "IxStats - Nation Simulation Platform",
+  description: "Build your country from the ground up. Design government systems, shape culture and identity, manage diplomacy, and watch your nation evolve",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
@@ -77,14 +77,18 @@ const RootLayout = ({
       <body className="min-h-screen transition-colors duration-200">
         {isClerkConfigured ? (
           <ClerkProvider
+            publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
             {...(process.env.NODE_ENV === "production" ? {
               signInUrl: "https://accounts.ixwiki.com/sign-in",
               signUpUrl: "https://accounts.ixwiki.com/sign-up",
-              fallbackRedirectUrl: "/projects/ixstats/dashboard",
-              redirectUrl: "/projects/ixstats/dashboard"
+              signInFallbackRedirectUrl: "https://ixwiki.com/projects/ixstats/dashboard",
+              signUpFallbackRedirectUrl: "https://ixwiki.com/projects/ixstats/dashboard",
+              afterSignInUrl: "https://ixwiki.com/projects/ixstats/dashboard",
+              afterSignUpUrl: "https://ixwiki.com/projects/ixstats/dashboard"
             } : {
               fallbackRedirectUrl: "/dashboard",
-              redirectUrl: "/dashboard"
+              afterSignInUrl: "/dashboard",
+              afterSignUpUrl: "/dashboard"
             })}
           >
             <AppContent />

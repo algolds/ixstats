@@ -13,7 +13,7 @@ interface CountriesFocusGridModularProps {
   setHovered: React.Dispatch<React.SetStateAction<number | null>>;
   expanded: number | null;
   setExpanded: React.Dispatch<React.SetStateAction<number | null>>;
-  onCountryClick: (countryId: string) => void;
+  onCountryClick: (countryId: string, countryName: string) => void;
   isLoading?: boolean;
   hasMore?: boolean;
   onLoadMore?: () => void;
