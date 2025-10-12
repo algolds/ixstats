@@ -2,7 +2,7 @@
 // Activities router for live activity feed system
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 
@@ -23,7 +23,7 @@ const createActivitySchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().min(1).max(1000),
   metadata: z.record(z.string(), z.any()).optional(),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).default('MEDIUM'),
+  priority: z.enum(['low', 'medium', 'high', 'critical']).default('medium'),
   visibility: z.enum(['public', 'followers', 'friends']).default('public'),
   relatedCountries: z.array(z.string()).optional(),
 });
@@ -252,7 +252,7 @@ export const activitiesRouter = createTRPCRouter({
     }),
 
   // Create new activity
-  createActivity: publicProcedure
+  createActivity: protectedProcedure
     .input(createActivitySchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -279,7 +279,7 @@ export const activitiesRouter = createTRPCRouter({
     }),
 
   // Handle engagement actions (like, unlike, share, view)  
-  engageWithActivity: publicProcedure
+  engageWithActivity: protectedProcedure
     .input(z.object({
       activityId: z.string(),
       action: z.string(),
@@ -412,7 +412,7 @@ export const activitiesRouter = createTRPCRouter({
                 originalCountryId: originalActivity.countryId,
                 reshareType: 'activity_reshare',
               }),
-              priority: 'MEDIUM',
+              priority: 'medium',
               visibility: 'public',
               relatedCountries: originalActivity.relatedCountries,
             },
@@ -436,7 +436,7 @@ export const activitiesRouter = createTRPCRouter({
     }),
 
   // Add comment to activity
-  addComment: publicProcedure
+  addComment: protectedProcedure
     .input(commentActionSchema)
     .mutation(async ({ ctx, input }) => {
       try {

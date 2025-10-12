@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { ActivityHooks } from "~/lib/activity-hooks";
 
@@ -136,7 +136,7 @@ export const achievementsRouter = createTRPCRouter({
     }),
 
   // Unlock achievement (internal use)
-  unlock: publicProcedure
+  unlock: protectedProcedure
     .input(z.object({
       userId: z.string(),
       achievementId: z.string(),

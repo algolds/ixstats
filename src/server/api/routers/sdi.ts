@@ -44,7 +44,7 @@ export const sdiRouter = createTRPCRouter({
         content: item.content || undefined,
         region: item.region || undefined,
         isActive: item.isActive,
-        actionable: item.priority === 'CRITICAL' || item.priority === 'HIGH'
+        actionable: item.priority === 'critical' || item.priority === 'high'
       }));
 
       return {
@@ -239,9 +239,9 @@ export const sdiRouter = createTRPCRouter({
     };
     
     crises.forEach(crisis => {
-      const severity = crisis.severity === 'CRITICAL' ? 0.15 : 
-                     crisis.severity === 'HIGH' ? 0.10 : 
-                     crisis.severity === 'MEDIUM' ? 0.05 : 0.02;
+      const severity = crisis.severity === 'critical' ? 0.15 : 
+                     crisis.severity === 'high' ? 0.10 : 
+                     crisis.severity === 'medium' ? 0.05 : 0.02;
       
       if (crisis.type === 'economic_crisis') {
         crisisImpact.gold += severity; // Safe haven demand
@@ -414,7 +414,7 @@ export const sdiRouter = createTRPCRouter({
         ctx.db.intelligenceItem.findMany({
           where: {
             ...whereClause,
-            category: 'DIPLOMATIC'
+            category: 'diplomatic'
           },
           orderBy: { timestamp: 'desc' },
           take: 10
@@ -475,8 +475,8 @@ export const sdiRouter = createTRPCRouter({
       }
     });
     
-    const criticalCrises = recentCrises.filter(c => c.severity === 'CRITICAL').length;
-    const highCrises = recentCrises.filter(c => c.severity === 'HIGH').length;
+    const criticalCrises = recentCrises.filter(c => c.severity === 'critical').length;
+    const highCrises = recentCrises.filter(c => c.severity === 'high').length;
     
     let systemHealth: 'operational' | 'warning' | 'critical' = 'operational';
     let systemHealthScore = 100;

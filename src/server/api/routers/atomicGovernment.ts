@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { ComponentType } from "@prisma/client";
 
 export const atomicGovernmentRouter = createTRPCRouter({
@@ -19,7 +19,7 @@ export const atomicGovernmentRouter = createTRPCRouter({
     }),
 
   // Create a new government component
-  createComponent: publicProcedure
+  createComponent: protectedProcedure
     .input(z.object({
       countryId: z.string(),
       componentType: z.nativeEnum(ComponentType),
@@ -57,7 +57,7 @@ export const atomicGovernmentRouter = createTRPCRouter({
     }),
 
   // Update government component
-  updateComponent: publicProcedure
+  updateComponent: protectedProcedure
     .input(z.object({
       id: z.string(),
       effectivenessScore: z.number().min(0).max(100).optional(),
@@ -77,7 +77,7 @@ export const atomicGovernmentRouter = createTRPCRouter({
     }),
 
   // Remove/deactivate government component
-  removeComponent: publicProcedure
+  removeComponent: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       return ctx.db.governmentComponent.update({
@@ -102,7 +102,7 @@ export const atomicGovernmentRouter = createTRPCRouter({
     }),
 
   // Create component synergy
-  createSynergy: publicProcedure
+  createSynergy: protectedProcedure
     .input(z.object({
       countryId: z.string(),
       primaryComponentId: z.string(),
@@ -250,20 +250,20 @@ export const atomicGovernmentRouter = createTRPCRouter({
     }),
 
   // Create budget scenario
-  createBudgetScenario: publicProcedure
+  createBudgetScenario: protectedProcedure
     .input(z.object({
       countryId: z.string(),
       name: z.string(),
       description: z.string().optional(),
       totalBudget: z.number(),
       assumptions: z.string().optional(),
-      riskLevel: z.enum(['LOW', 'MEDIUM', 'HIGH']),
+      riskLevel: z.enum(['low', 'medium', 'high']),
       feasibility: z.number().min(0).max(100).default(50),
       categories: z.array(z.object({
         categoryName: z.string(),
         allocatedAmount: z.number(),
         allocatedPercent: z.number(),
-        priority: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']),
+        priority: z.enum(['critical', 'high', 'medium', 'low']),
         efficiency: z.number().min(0).max(100).default(50),
         performance: z.number().min(0).max(100).default(50),
       })),
@@ -302,7 +302,7 @@ export const atomicGovernmentRouter = createTRPCRouter({
     }),
 
   // Create fiscal policy
-  createFiscalPolicy: publicProcedure
+  createFiscalPolicy: protectedProcedure
     .input(z.object({
       countryId: z.string(),
       name: z.string(),
@@ -322,7 +322,7 @@ export const atomicGovernmentRouter = createTRPCRouter({
     }),
 
   // Apply fiscal policy
-  applyFiscalPolicy: publicProcedure
+  applyFiscalPolicy: protectedProcedure
     .input(z.object({ 
       policyId: z.string(),
       measuredImpact: z.number().optional(),

@@ -13,6 +13,10 @@ enum Priority {
   HIGH
   MEDIUM
   LOW
+  critical
+  high
+  medium
+  low
 }
 
 enum Category {
@@ -22,12 +26,20 @@ enum Category {
   GOVERNANCE
   SECURITY
   INFRASTRUCTURE
+  CRISIS
+  economic
+  diplomatic
+  social
+  governance
+  security
+  infrastructure
+  crisis
 }
 
 enum Trend {
-  UP
-  DOWN
-  STABLE
+  up
+  down
+  stable
 }
 
 model Post {
@@ -453,7 +465,7 @@ model IntelligenceItem {
   title             String
   content           String
   category          Category // Use enum
-  priority          Priority @default(MEDIUM) // Use enum with default
+  priority          Priority @default(medium) // Use enum with default
   source            String
   timestamp         DateTime
   region            String?
@@ -462,7 +474,7 @@ model IntelligenceItem {
   actionable        Boolean  @default(false) // Add missing field
   confidence        Int?     // 0-100 scale
   itemType          String   @default("update") // type field (renamed to avoid conflicts)
-  severity          Priority @default(MEDIUM) // Align with TypeScript interfaces
+  severity          Priority @default(medium) // Align with TypeScript interfaces
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
@@ -479,7 +491,7 @@ model CrisisEvent {
   timestamp         DateTime
   description       String?
   location          String?
-  category          Category @default(GOVERNANCE) // Add category field
+  category          Category @default(governance) // Add category field
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
@@ -855,10 +867,10 @@ enum BudgetCategoryType {
 }
 
 enum BudgetPriorityLevel {
-  CRITICAL
-  HIGH
-  MEDIUM
-  LOW
+  critical
+  high
+  medium
+  low
 }
 
 model BudgetScenario {
@@ -888,7 +900,7 @@ model BudgetScenarioCategory {
   categoryName      String
   allocatedAmount   Float
   allocatedPercent  Float
-  priority          BudgetPriorityLevel @default(MEDIUM)
+  priority          BudgetPriorityLevel @default(medium)
   efficiency        Float           @default(50)
   performance       Float           @default(50)
   createdAt         DateTime        @default(now())
@@ -1441,7 +1453,7 @@ model ActivityFeed {
   title       String
   description String
   metadata    String?  // JSON object with additional data
-  priority    Priority @default(MEDIUM)
+  priority    Priority @default(medium)
   visibility  String   @default("public") // 'public', 'followers', 'friends'
   relatedCountries String? // JSON array of country IDs
   

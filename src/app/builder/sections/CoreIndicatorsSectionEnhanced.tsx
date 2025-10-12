@@ -153,7 +153,7 @@ export function CoreIndicatorsSectionEnhanced({
                 nominalGDP: Number(value) * Number(coreIndicators.gdpPerCapita)
               }
             })}
-            min={100000}
+            min={1000}
             max={2000000000}
             step={100000}
             unit=" people"
@@ -180,9 +180,9 @@ export function CoreIndicatorsSectionEnhanced({
                 nominalGDP: Number(coreIndicators.totalPopulation) * Number(value)
               }
             })}
-            min={500}
-            max={150000}
-            step={1000}
+            min={100}
+            max={200000}
+            step={500}
             unit=" $"
             sectionId="core"
             icon={DollarSign}

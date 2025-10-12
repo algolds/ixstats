@@ -27,12 +27,16 @@ function mapBriefingType(type: string): BriefingType {
 
 function mapPriority(priority: string): Priority {
   const mapping: Record<string, Priority> = {
-    'critical': 'CRITICAL',
-    'high': 'HIGH',
-    'medium': 'MEDIUM',
-    'low': 'LOW'
+    'critical': 'critical',
+    'high': 'high',
+    'medium': 'medium',
+    'low': 'low',
+    'CRITICAL': 'critical',
+    'HIGH': 'high',
+    'MEDIUM': 'medium',
+    'LOW': 'low'
   };
-  return mapping[priority] || 'MEDIUM';
+  return mapping[priority] || 'medium';
 }
 
 function mapUrgency(urgency: string): Urgency {
@@ -47,12 +51,16 @@ function mapUrgency(urgency: string): Urgency {
 
 function mapCategory(category: string): Category {
   const mapping: Record<string, Category> = {
-    'economic': 'ECONOMIC',
-    'population': 'SOCIAL',
-    'diplomatic': 'DIPLOMATIC',
-    'governance': 'GOVERNANCE'
+    'economic': 'economic',
+    'population': 'social',
+    'diplomatic': 'diplomatic',
+    'governance': 'governance',
+    'ECONOMIC': 'economic',
+    'SOCIAL': 'social',
+    'DIPLOMATIC': 'diplomatic',
+    'GOVERNANCE': 'governance'
   };
-  return mapping[category] || 'GOVERNANCE';
+  return mapping[category] || 'governance';
 }
 
 function mapDifficulty(difficulty: string): Difficulty {
@@ -67,11 +75,14 @@ function mapDifficulty(difficulty: string): Difficulty {
 
 function mapTrend(trend: string): Trend {
   const mapping: Record<string, Trend> = {
-    'up': 'UP',
-    'down': 'DOWN',
-    'stable': 'STABLE'
+    'up': 'up',
+    'down': 'down',
+    'stable': 'stable',
+    'UP': 'up',
+    'DOWN': 'down',
+    'STABLE': 'stable'
   };
-  return mapping[trend] || 'STABLE';
+  return mapping[trend] || 'stable';
 }
 
 // Helper to get quarter info from IxTime
@@ -306,7 +317,7 @@ async function calculateCountryIntelligence(countryId: string) {
             title: `Critical ${vitality.area.charAt(0).toUpperCase() + vitality.area.slice(1)} Issues`,
             description: `${vitality.criticalAlerts.length} critical alert${vitality.criticalAlerts.length !== 1 ? 's' : ''} requiring immediate action`,
             type: 'HOT_ISSUE',
-            priority: 'CRITICAL',
+            priority: 'critical',
             area: mapCategory(vitality.area),
             confidence: 95,
             urgency: 'IMMEDIATE',
@@ -362,7 +373,7 @@ async function calculateCountryIntelligence(countryId: string) {
               title: `${vitality.area.charAt(0).toUpperCase() + vitality.area.slice(1)} Growth Opportunity`,
               description: `Strong performance and positive trends create favorable conditions for strategic advancement`,
               type: 'OPPORTUNITY',
-              priority: 'HIGH',
+              priority: 'high',
               area: mapCategory(vitality.area),
               confidence: 85,
               urgency: 'THIS_WEEK',
@@ -413,7 +424,7 @@ async function calculateCountryIntelligence(countryId: string) {
             title: `${vitality.area.charAt(0).toUpperCase() + vitality.area.slice(1)} Risk Assessment`,
             description: `Declining performance indicators suggest preventive measures are needed`,
             type: 'RISK_MITIGATION',
-            priority: 'HIGH',
+            priority: 'high',
             area: mapCategory(vitality.area),
             confidence: 80,
             urgency: 'THIS_WEEK',

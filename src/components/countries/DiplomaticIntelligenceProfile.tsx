@@ -114,35 +114,15 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
 
   // Handle ThinkShare messaging
   const handleStartThinkshareConversation = useCallback(async () => {
-    // Check if viewer has accounts
-    if (!viewerAccounts || viewerAccounts.length === 0) {
-      toast.error('You need a ThinkPages account to send messages. Please create one first.');
-      return;
-    }
+    // Note: getAccountsByCountry is deprecated and returns empty array
+    // ThinkPages now uses real User accounts directly
+    // This functionality needs to be refactored to use the new User-based system
+    toast.error('Direct messaging is being updated. Please use diplomatic channels for now.');
+    return;
 
-    // Check if target country has accounts
-    if (!targetCountryAccounts || targetCountryAccounts.length === 0) {
-      toast.error(`${country.name} does not have any ThinkPages accounts to message.`);
-      return;
-    }
-
-    // Use the viewer's primary account and target country's first government account (or first account)
-    const viewerAccount = viewerAccounts[0];
-    const targetAccount = targetCountryAccounts.find((acc: any) => acc.accountType === 'government') || targetCountryAccounts[0];
-
-    if (!viewerAccount || !targetAccount) {
-      toast.error('Unable to find suitable accounts for messaging.');
-      return;
-    }
-
-    try {
-      await createConversationMutation.mutateAsync({
-        participantIds: [viewerAccount.clerkUserId, targetAccount.clerkUserId]
-      });
-    } catch (error) {
-      // Error is handled in the mutation's onError callback
-    }
-  }, [viewerAccounts, targetCountryAccounts, country.name, createConversationMutation]);
+    // TODO: Refactor this to work with new User-based ThinkPages system
+    // The old character account system has been deprecated
+  }, [country.name, createConversationMutation]);
 
   // Toggle card expansion
   const toggleCard = useCallback((cardId: string) => {
