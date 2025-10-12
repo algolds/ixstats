@@ -36,6 +36,7 @@ import { api } from "~/trpc/react";
 import { standardize } from '~/lib/interface-standardizer';
 import { ensureCountryData } from '~/lib/type-guards';
 import { adaptExecutiveToQuick } from '~/lib/transformers/interface-adapters';
+import { createAbsoluteUrl } from "~/lib/url-utils";
 
 // Executive actions now come from real API - no mock data needed
 
@@ -341,7 +342,7 @@ export function MyCountryDataWrapper({
                 label: 'View Achievement',
                 type: 'primary',
                 onClick: () => {
-                  window.location.href = '/mycountry/achievements';
+                  window.location.href = createAbsoluteUrl('/mycountry/achievements');
                 }
               }],
             });

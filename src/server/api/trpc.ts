@@ -59,21 +59,32 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
 
     // Get user from database if we have a userId
     if (auth?.userId) {
-      user = await db.user.findUnique({
-        where: { clerkUserId: auth.userId },
-        include: {
-          country: true,
-          role: {
-            include: {
-              rolePermissions: {
-                include: {
-                  permission: true
+      try {
+        user = await db.user.findUnique({
+          where: { clerkUserId: auth.userId },
+          include: {
+            country: true,
+            role: {
+              include: {
+                rolePermissions: {
+                  include: {
+                    permission: true
+                  }
                 }
               }
             }
           }
+        });
+
+        if (user) {
+          console.log(`[TRPC Context] User loaded: ${auth.userId}, role: ${(user as any).role?.name || 'NO_ROLE'}, roleId: ${(user as any).roleId || 'NULL'}`);
+        } else {
+          console.warn(`[TRPC Context] User ${auth.userId} authenticated but not found in database`);
         }
-      });
+      } catch (dbError) {
+        console.error('[TRPC Context] Database user lookup failed:', dbError);
+        // Continue without user rather than failing - auth is still valid
+      }
     }
   } catch (error) {
     console.warn('[TRPC Context] Auth extraction failed:', error);
@@ -362,31 +373,99 @@ const premiumMiddleware = t.middleware(async ({ ctx, next }) => {
  */
 const adminMiddleware = t.middleware(async ({ ctx, next }) => {
   // First ensure user is authenticated
-  if (!ctx.auth?.userId || !ctx.user) {
+  if (!ctx.auth?.userId) {
     throw new Error('UNAUTHORIZED: Authentication required');
   }
 
-  // Check if user has admin role
-  if (!(ctx.user as any).role) {
-    throw new Error('FORBIDDEN: No role assigned');
+  // If user wasn't loaded in context, try to load it here
+  let user = ctx.user;
+  if (!user) {
+    console.log(`[ADMIN_MIDDLEWARE] User not in context, loading for ${ctx.auth.userId}`);
+    try {
+      user = await db.user.findUnique({
+        where: { clerkUserId: ctx.auth.userId },
+        include: {
+          country: true,
+          role: {
+            include: {
+              rolePermissions: {
+                include: {
+                  permission: true
+                }
+              }
+            }
+          }
+        }
+      });
+    } catch (error) {
+      console.error(`[ADMIN_MIDDLEWARE] Failed to load user:`, error);
+      throw new Error('UNAUTHORIZED: Failed to load user');
+    }
+  }
+
+  if (!user) {
+    console.error(`[ADMIN_MIDDLEWARE] User ${ctx.auth.userId} not found in database`);
+    throw new Error('UNAUTHORIZED: User not found');
+  }
+
+  // Check if user has admin role - if not, try to assign default role
+  if (!(user as any).role) {
+    console.warn(`[ADMIN_MIDDLEWARE] User ${ctx.auth.userId} has no role assigned (roleId: ${(user as any).roleId}), attempting to assign default role`);
+
+    // Try to get the default user role
+    try {
+      const defaultRole = await db.role.findFirst({
+        where: { name: 'user' }
+      });
+
+      if (defaultRole && !(user as any).roleId) {
+        // User has no roleId at all - assign default role
+        user = await db.user.update({
+          where: { clerkUserId: ctx.auth.userId },
+          data: { roleId: defaultRole.id },
+          include: {
+            country: true,
+            role: {
+              include: {
+                rolePermissions: {
+                  include: {
+                    permission: true
+                  }
+                }
+              }
+            }
+          }
+        });
+        console.log(`[ADMIN_MIDDLEWARE] Assigned default role to user ${ctx.auth.userId}`);
+      }
+
+      // After attempting to assign role, check again
+      if (!(user as any).role) {
+        console.error(`[ADMIN_MIDDLEWARE] User ${ctx.auth.userId} still has no role after attempted assignment`);
+        throw new Error('FORBIDDEN: No role assigned and unable to assign default role');
+      }
+    } catch (roleError) {
+      console.error(`[ADMIN_MIDDLEWARE] Failed to assign default role:`, roleError);
+      throw new Error('FORBIDDEN: No role assigned');
+    }
   }
 
   // Check for admin roles (level 0-20 are considered admin levels)
   const adminRoles = ['owner', 'admin', 'staff'];
-  const isAdmin = adminRoles.includes((ctx.user as any).role.name) || (ctx.user as any).role.level <= 20;
+  const isAdmin = adminRoles.includes((user as any).role.name) || (user as any).role.level <= 20;
 
   if (!isAdmin) {
-    console.warn(`[ADMIN_ACCESS_DENIED] User ${ctx.auth.userId} (role: ${(ctx.user as any).role.name}) attempted admin access`);
+    console.warn(`[ADMIN_ACCESS_DENIED] User ${ctx.auth.userId} (role: ${(user as any).role.name}) attempted admin access`);
     throw new Error('FORBIDDEN: Admin privileges required');
   }
 
-  console.log(`[ADMIN_ACCESS] Admin ${ctx.auth.userId} (role: ${(ctx.user as any).role.name}) accessing admin functions`);
+  console.log(`[ADMIN_ACCESS] Admin ${ctx.auth.userId} (role: ${(user as any).role.name}) accessing admin functions`);
 
   return next({
     ctx: {
       ...ctx,
       auth: ctx.auth,
-      user: ctx.user,
+      user: user,
       isAdmin: true,
     }
   });

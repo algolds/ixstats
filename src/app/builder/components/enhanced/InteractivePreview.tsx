@@ -34,6 +34,7 @@ import { GlassTooltip } from '../glass/GlassTooltip';
 import { Button } from '~/components/ui/button';
 import { BuilderVitalityRings } from '../BuilderVitalityRings';
 import { useBuilderTheming } from '~/hooks/useBuilderTheming';
+import { withBasePath } from '~/lib/base-path';
 import type { EconomicInputs, RealCountryData } from '../../lib/economy-data-service';
 import type { ExtractedColors } from '~/lib/image-color-extractor';
 import type { BuilderStyle, BuilderMode } from '../glass/BuilderStyleToggle';
@@ -41,7 +42,7 @@ import { EnhancedCountryFlag } from '~/components/ui/enhanced-country-flag';
 
 // Placeholder for MyCountryLogo (assuming it's an image or simple text)
 const MyCountryLogo = () => (
-  <img src="/images/ix-logo.svg" alt="MyCountry Logo" className="h-8 w-auto" />
+  <img src={withBasePath("/images/ix-logo.svg")} alt="MyCountry Logo" className="h-8 w-auto" />
 );
 
 // Placeholder for SectionHeader (assuming it's a simple text)

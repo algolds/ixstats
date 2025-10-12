@@ -81,9 +81,9 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
 }
 
 function getBaseUrl() {
-  // Use basePath only in production, root path in development
-  const basePath = process.env.NODE_ENV === "production" ? "/projects/ixstats" : "";
-  
+  // Use NEXT_PUBLIC_BASE_PATH from environment or BASE_PATH, fallback to empty string
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || "";
+
   if (typeof window !== "undefined") return window.location.origin + basePath;
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}${basePath}`;
   if (process.env.NODE_ENV === "production") return `https://ixwiki.com${basePath}`;

@@ -33,6 +33,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { cn } from '~/lib/utils';
+import { createUrl } from "~/lib/url-utils";
 
 interface DefenseModalProps {
   countryId: string;
@@ -91,7 +92,7 @@ export function DefenseModal({ countryId, open, onOpenChange }: DefenseModalProp
 
   const handleViewFullDashboard = () => {
     onOpenChange(false);
-    router.push('/mycountry/defense');
+    router.push(createUrl('/mycountry/defense'));
   };
 
   return (

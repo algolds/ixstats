@@ -28,6 +28,7 @@ import { CalculationEditor } from "./_components/CalculationEditor";
 import { StorytellerControlPanel } from "./_components/StorytellerControlPanel";
 import { IxTimeVisualizer } from "./_components/IxTimeVisualizer";
 import { GlassCard, EnhancedCard } from "~/components/ui/enhanced-card";
+import { withBasePath } from "~/lib/base-path";
 import { BentoGrid } from "~/components/ui/bento-grid";
 import { AnimatedNumber } from "~/components/ui/animated-number";
 import { TrendIndicator } from "~/components/ui/trend-indicator";
@@ -178,7 +179,7 @@ export default function AdminPage() {
       setActionState(prev => ({ ...prev, autoSyncPending: true }));
       
       // Sync from bot to admin panel
-      fetch('/api/ixtime/sync-from-bot', { method: 'POST' })
+      fetch(withBasePath('/api/ixtime/sync-from-bot'), { method: 'POST' })
         .then(response => response.json())
         .then(result => {
           if (result.success) {
@@ -278,7 +279,7 @@ export default function AdminPage() {
     try {
       // Use natural time setting if available, fallback to custom time
       try {
-        const naturalResponse = await fetch('/api/ixtime/set-natural', {
+        const naturalResponse = await fetch(withBasePath('/api/ixtime/set-natural'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ multiplier: value })
@@ -301,7 +302,7 @@ export default function AdminPage() {
         
         // Auto-sync with Discord bot
         try {
-          const syncResponse = await fetch('/api/ixtime/sync-bot', { method: 'POST' });
+          const syncResponse = await fetch(withBasePath('/api/ixtime/sync-bot'), { method: 'POST' });
           if (syncResponse.ok) {
             console.log('Discord bot automatically synced with new time settings');
           } else {
@@ -356,7 +357,7 @@ export default function AdminPage() {
   const handleSyncFromBot = useCallback(async () => {
     setActionState(prev => ({ ...prev, autoSyncPending: true }));
     try {
-      const response = await fetch('/api/ixtime/sync-from-bot', { method: 'POST' });
+      const response = await fetch(withBasePath('/api/ixtime/sync-from-bot'), { method: 'POST' });
       const result = await response.json();
       
       if (result.success) {

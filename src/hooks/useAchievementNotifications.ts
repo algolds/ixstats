@@ -54,7 +54,43 @@ export function useAchievementNotifications(config: AchievementNotificationConfi
   );
 
   // tRPC mutation for creating notifications
-  const createNotificationMutation = api.notifications.create.useMutation();
+  const createNotificationMutation = api.notifications.createNotification.useMutation();
+
+  // Play achievement sound effect
+  const playAchievementSound = useCallback((tier: AchievementNotification['tier']) => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+      const frequencies = {
+        bronze: [440, 550],
+        silver: [523, 659],
+        gold: [659, 784],
+        platinum: [784, 932],
+        legendary: [932, 1109]
+      };
+
+      const [freq1, freq2] = frequencies[tier];
+
+      [freq1, freq2].forEach((freq, index) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.frequency.value = freq!;
+        oscillator.type = 'sine';
+
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+        oscillator.start(audioContext.currentTime + index * 0.1);
+        oscillator.stop(audioContext.currentTime + 0.5 + index * 0.1);
+      });
+    } catch (error) {
+      console.warn('[Achievement] Sound playback failed:', error);
+    }
+  }, []);
 
   // Process achievement events and dispatch to notification systems
   useEffect(() => {
@@ -105,8 +141,9 @@ export function useAchievementNotifications(config: AchievementNotificationConfi
             message: achievement.description,
             category: 'achievement',
             type: 'success',
-            priority: achievement.tier === 'legendary' ? 'high' : achievement.tier === 'platinum' ? 'medium' : 'low',
-          }).catch(err => console.error('[Achievement] Failed to create notification:', err));
+            level: achievement.tier === 'legendary' ? 'high' : achievement.tier === 'platinum' ? 'medium' : 'low',
+            adminUserId: 'system', // System-generated achievement
+          }).catch((err: Error) => console.error('[Achievement] Failed to create notification:', err));
         }
 
         // Show toast notification if enabled
@@ -133,43 +170,6 @@ export function useAchievementNotifications(config: AchievementNotificationConfi
       }
     });
   }, [recentEvents, enableNotificationCenter, enableDynamicIsland, enableToast, actions, createNotificationMutation, playAchievementSound]);
-
-  // Play achievement sound effect
-  const playAchievementSound = useCallback((tier: AchievementNotification['tier']) => {
-    try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-
-      const frequencies = {
-        bronze: [440, 550],
-        silver: [523, 659],
-        gold: [659, 784],
-        platinum: [784, 932],
-        legendary: [932, 1109]
-      };
-
-      const [freq1, freq2] = frequencies[tier];
-
-      [freq1, freq2].forEach((freq, index) => {
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-
-        oscillator.frequency.value = freq;
-        oscillator.type = 'sine';
-
-        const currentTime = audioContext.currentTime || 0;
-        gainNode.gain.setValueAtTime(0.1, currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + 0.3);
-
-        oscillator.start(currentTime + index * 0.15);
-        oscillator.stop(currentTime + 0.3 + index * 0.15);
-      });
-    } catch (error) {
-      console.warn('Could not play achievement sound:', error);
-    }
-  }, []);
 
   // Manual trigger for unlocking achievements
   const unlockAchievement = useCallback((achievement: Omit<AchievementNotification, 'id' | 'unlockedAt'>) => {

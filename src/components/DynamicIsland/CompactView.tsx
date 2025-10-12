@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
+import { createAbsoluteUrl } from "~/lib/url-utils";
+import {
   DynamicContainer,
 } from "../ui/dynamic-island";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
-import { 
-  Clock, 
-  Calendar, 
+import {
+  Clock,
+  Calendar,
   Search,
   Bell,
   Settings,
@@ -28,6 +29,7 @@ import { useNotificationStore } from "~/stores/notificationStore";
 import { useExecutiveNotifications } from "~/contexts/ExecutiveNotificationContext";
 import { useGlobalNotificationBridge } from "~/services/GlobalNotificationBridge";
 import { usePermissions } from "~/hooks/usePermissions";
+import { withBasePath } from "~/lib/base-path";
 import type { CompactViewProps } from './types';
 
 // Helper functions
@@ -206,7 +208,7 @@ export function CompactView({
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                onClick={() => window.location.href = '/'}
+                onClick={() => window.location.href = createAbsoluteUrl('/')}
                 className={`relative group flex items-center justify-center rounded-xl transition-all duration-300 hover:scale-110 active:scale-95 ${ 
                   isSticky ? 'w-8 h-8' : 'w-10 h-10'
                 }`}
@@ -215,8 +217,8 @@ export function CompactView({
             <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/20 via-purple-500/30 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-400/10 via-indigo-500/20 to-purple-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm" />
             
-            <img 
-              src="/images/ix-logo.svg" 
+            <img
+              src={withBasePath("/images/ix-logo.svg")}
               alt="IxLogo"
               className={`relative z-10 ${isSticky ? 'w-6 h-6' : 'w-8 h-8'} transition-all duration-300 group-hover:scale-110 filter dark:brightness-0 dark:invert brightness-100 opacity-80 group-hover:opacity-100 group-hover:drop-shadow-lg`}
             />
@@ -389,7 +391,7 @@ export function CompactView({
                       <div className="grid grid-cols-2 gap-3">
                         <Button
                           size="sm"
-                          onClick={() => userProfile?.country && (window.location.href = `/countries/${userProfile.country.id}`)}
+                          onClick={() => userProfile?.country && (window.location.href = createAbsoluteUrl(`/countries/${userProfile.country.id}`))}
                           className="group relative overflow-hidden bg-gradient-to-r from-amber-500/30 to-orange-500/25 dark:from-amber-500/20 dark:to-orange-500/20 hover:from-amber-500/40 hover:to-orange-500/35 dark:hover:from-amber-500/30 dark:hover:to-orange-500/30 border border-amber-400/50 dark:border-amber-300/30 hover:border-amber-500/70 dark:hover:border-amber-300/50 text-amber-800 dark:text-amber-200 hover:text-amber-900 dark:hover:text-amber-100 transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm"
                         >
                           <Crown className="h-4 w-4 mr-2 relative z-10" />
@@ -397,7 +399,7 @@ export function CompactView({
                         </Button>
                         <Button
                           size="sm"
-                          onClick={() => window.location.href = "/eci"}
+                          onClick={() => window.location.href = createAbsoluteUrl('/eci')}
                           className="group relative overflow-hidden bg-gradient-to-r from-blue-500/30 to-cyan-500/25 dark:from-blue-500/20 dark:to-cyan-500/20 hover:from-blue-500/40 hover:to-cyan-500/35 dark:hover:from-blue-500/30 dark:hover:to-cyan-500/30 border border-blue-400/50 dark:border-blue-300/30 hover:border-blue-500/70 dark:hover:border-blue-300/50 text-blue-800 dark:text-blue-200 hover:text-blue-900 dark:hover:text-blue-100 transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm"
                         >
                           <Target className="h-4 w-4 mr-2 relative z-10" />
@@ -414,7 +416,7 @@ export function CompactView({
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => window.location.href = "/setup"}
+                          onClick={() => window.location.href = createAbsoluteUrl('/setup')}
                           className="text-muted-foreground hover:text-foreground border-border hover:border-accent hover:bg-accent/10"
                         >
                           Complete Setup

@@ -510,8 +510,9 @@ export class IxnayWikiService {
       if (isLongContent) {
         // Use POST for long content to avoid URI too long errors
         console.log(`[MediaWiki] Using POST for long wikitext (${wikitext.length} chars)`);
-        
-        response = await fetch('/api/mediawiki', {
+
+        const basePath = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || '';
+        response = await fetch(`${basePath}/api/mediawiki`, {
           method: 'POST',
           headers: {
             'Accept': 'application/json',

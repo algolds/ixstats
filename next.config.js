@@ -60,6 +60,12 @@ const config = {
     // This is the most reliable solution according to webpack documentation
     config.output.globalObject = 'this';
 
+    // Fix webpack cache warning - optimize serialization
+    if (config.cache && !dev) {
+      config.cache.compression = 'gzip';
+      config.cache.maxMemoryGenerations = 1;
+    }
+
     // Additional polyfills for client-side only
     if (!isServer) {
       config.plugins.push(new NodePolyfillPlugin({

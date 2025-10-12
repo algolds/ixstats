@@ -4,6 +4,7 @@ import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { useState } from "react";
+import { createAbsoluteUrl } from "~/lib/url-utils";
 
 export default function TestUserCreation() {
   const setupDatabaseMutation = api.users.setupDatabase.useMutation();
@@ -29,7 +30,7 @@ export default function TestUserCreation() {
       alert(`User ${result.created ? 'created' : 'already exists'}!`);
       setStep('complete');
       // Reload page to refresh role data
-      setTimeout(() => window.location.href = '/', 2000);
+      setTimeout(() => window.location.href = createAbsoluteUrl('/'), 2000);
     } catch (error) {
       console.error("Error creating user:", error);
       alert("Error creating user: " + (error as Error).message);
@@ -79,7 +80,7 @@ export default function TestUserCreation() {
                 ✅ Setup complete! Redirecting to homepage...
               </p>
               <Button
-                onClick={() => window.location.href = '/'}
+                onClick={() => window.location.href = createAbsoluteUrl('/')}
                 className="w-full"
               >
                 Go to Homepage

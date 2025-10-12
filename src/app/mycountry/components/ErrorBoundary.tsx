@@ -5,6 +5,7 @@ import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Button } from '~/components/ui/button';
 import { Alert, AlertDescription } from '~/components/ui/alert';
+import { createAbsoluteUrl } from "~/lib/url-utils";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -130,7 +131,7 @@ export class MyCountryErrorBoundary extends React.Component<ErrorBoundaryProps, 
                 
                 <Button 
                   variant="outline"
-                  onClick={() => window.location.href = '/dashboard'}
+                  onClick={() => window.location.href = createAbsoluteUrl('/dashboard')}
                   className="flex items-center gap-2"
                 >
                   <Home className="h-4 w-4" />

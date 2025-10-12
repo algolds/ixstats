@@ -49,6 +49,7 @@ import { GiCardRandom, GiFamilyTree } from "react-icons/gi";
 import { GiSoapExperiment } from "react-icons/gi";
 import { GiVibratingShield } from "react-icons/gi";
 import { FaTreeCity } from "react-icons/fa6";
+import { withBasePath, stripBasePath } from "~/lib/base-path";
 
 interface NavigationItem {
   name: string;
@@ -279,7 +280,9 @@ export function Navigation() {
   ];
 
   const isCurrentPage = (href: string) => {
-    return pathname === href || (href !== "/" && pathname?.startsWith(href + "/"));
+    // Strip base path from pathname for comparison
+    const normalizedPathname = stripBasePath(pathname || '/');
+    return normalizedPathname === href || (href !== "/" && normalizedPathname?.startsWith(href + "/"));
   };
 
   const getSetupStatus = () => {
@@ -395,7 +398,7 @@ export function Navigation() {
                               return (
                                 <div key={subItem.name}>
                                   <DropdownMenuItem>
-                                    <Link href={subItem.href} className="flex items-center gap-3 px-3 py-3 cursor-pointer">
+                                    <Link href={withBasePath(subItem.href)} className="flex items-center gap-3 px-3 py-3 cursor-pointer">
                                       <SubIcon className="h-4 w-4 text-muted-foreground" />
                                       <div className="flex flex-col">
                                         <span className="font-medium">{subItem.name}</span>
@@ -588,7 +591,7 @@ export function Navigation() {
                               return (
                                 <div key={subItem.name}>
                                   <DropdownMenuItem>
-                                    <Link href={subItem.href} className="flex items-center gap-3 px-3 py-3 cursor-pointer">
+                                    <Link href={withBasePath(subItem.href)} className="flex items-center gap-3 px-3 py-3 cursor-pointer">
                                       <SubIcon className="h-4 w-4 text-muted-foreground" />
                                       <div className="flex flex-col">
                                         <span className="font-medium">{subItem.name}</span>
