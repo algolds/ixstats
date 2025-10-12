@@ -14,6 +14,7 @@ import { verifyToken } from "@clerk/nextjs/server";
 import type { NextRequest } from "next/server";
 
 import { db } from "~/server/db";
+import { rateLimiter } from "~/lib/rate-limiter";
 
 /**
  * 1. CONTEXT
@@ -79,10 +80,14 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
     // Continue without auth rather than failing
   }
 
+  // Get rate limit identifier from headers (set by middleware)
+  const rateLimitIdentifier = opts.headers.get("x-ratelimit-identifier") || "anonymous";
+
   return {
     db,
     auth,
     user,
+    rateLimitIdentifier,
     ...opts,
   };
 };
@@ -207,50 +212,38 @@ const countryOwnerMiddleware = t.middleware(async ({ ctx, next }) => {
   });
 });
 
-// In-memory rate limiting store (replace with Redis in production)
-const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
-
 /**
- * Rate limiting middleware for sensitive operations
+ * Rate limiting middleware - Uses Redis or in-memory store
  */
 const rateLimitMiddleware = t.middleware(async ({ ctx, next, path }) => {
-  const userId = ctx.auth?.userId;
-  if (!userId) {
-    return next(); // Skip rate limiting for unauthenticated requests
+  if (!rateLimiter.isEnabled()) {
+    return next();
   }
 
-  const now = Date.now();
-  const windowMs = 60000; // 1 minute window
-  const maxRequests = path.includes('execute') ? 5 : 30; // 5 executions or 30 queries per minute
-  
-  const key = `${userId}:${path}`;
-  const record = rateLimitStore.get(key);
-  
-  if (!record || now > record.resetTime) {
-    // Create new or reset expired record
-    rateLimitStore.set(key, { count: 1, resetTime: now + windowMs });
-  } else {
-    // Check if limit exceeded
-    if (record.count >= maxRequests) {
-      console.warn(`[RATE_LIMIT] User ${userId} exceeded rate limit for ${path}`);
-      throw new Error('RATE_LIMITED: Too many requests - please wait before trying again');
-    }
-    
-    // Increment counter
-    record.count++;
+  // Use rate limit identifier from context (set by middleware)
+  const identifier = ctx.rateLimitIdentifier;
+
+  // Different limits for different types of operations
+  const namespace = path.includes('execute') || path.includes('create') || path.includes('update')
+    ? 'mutations'
+    : 'queries';
+
+  const result = await rateLimiter.check(identifier, namespace);
+
+  if (!result.success) {
+    console.warn(`[RATE_LIMIT] ${identifier} exceeded rate limit for ${path}`);
+    throw new Error(
+      `RATE_LIMITED: Too many requests. Try again at ${result.resetAt.toISOString()}`
+    );
   }
-  
-  // Clean up old entries periodically
-  if (Math.random() < 0.01) { // 1% chance to cleanup
-    const cutoff = now - windowMs;
-    for (const [key, record] of rateLimitStore.entries()) {
-      if (record.resetTime < cutoff) {
-        rateLimitStore.delete(key);
-      }
-    }
+
+  // Warn when close to limit
+  if (result.remaining < 10) {
+    console.warn(
+      `[RATE_LIMIT] ${identifier} on ${path}: ${result.remaining} requests remaining`
+    );
   }
-  
-  console.log(`[RATE_LIMIT] ${userId} accessing ${path} (${record?.count || 1}/${maxRequests})`);
+
   return next();
 });
 

@@ -16,6 +16,7 @@ import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pa
 import { BorderBeam } from "~/components/magicui/border-beam";
 import { PathGlareCard } from "~/components/ui/path-glare-card";
 import { MyCountryLogo } from '~/components/ui/mycountry-logo';
+import { SectionHelpIcon } from '~/components/ui/help-icon';
 // Tutorial data now imported by main builder page
 
 type OnboardingFlow = 'welcome' | 'tutorial' | 'quick-start' | 'import-guide' | 'advanced';
@@ -42,8 +43,8 @@ const pathOptions = [
   {
     id: 'quick-start',
     title: 'Quick Start',
-    description: 'Essential steps to get building immediately',
-    duration: '3 steps • 2-3 minutes',
+    description: 'Brief tutorial explaining how the builder works',
+    duration: 'Interactive guide • Start at Core Identity',
     icon: Zap,
     color: 'emerald',
     gradient: 'from-emerald-500/20 to-teal-600/20 hover:from-emerald-500/30 hover:to-teal-600/30',
@@ -64,8 +65,8 @@ const pathOptions = [
   {
     id: 'skip',
     title: 'Jump In',
-    description: 'Skip intro and start building immediately',
-    duration: 'No guidance',
+    description: 'Start building from scratch without any tutorial',
+    duration: 'Begin at Core Identity section',
     icon: Rocket,
     color: 'purple',
     gradient: 'from-purple-500/60 to-pink-600/60 hover:from-purple-600/70 hover:to-pink-700/70',
@@ -95,8 +96,9 @@ export const BuilderOnboardingWizard = ({ onStartBuilding, onSkipToImport }: Bui
   };
 
   const handleStartQuickStart = () => {
-    // Set quick start flag and navigate to builder
+    // Set quick start flag with core identity focus and navigate to builder
     localStorage.setItem('builder_tutorial_mode', 'quick');
+    localStorage.setItem('builder_quick_start_section', 'core'); // Start at Core Identity
     localStorage.setItem('builder_onboarding_completed', 'true');
     onStartBuilding();
   };
@@ -204,8 +206,12 @@ export const BuilderOnboardingWizard = ({ onStartBuilding, onSkipToImport }: Bui
                     />
                     <GlassCardHeader>
                       <div className="text-center">
-                        <h2 className="text-2xl font-bold text-foreground mb-2">
+                        <h2 className="text-2xl font-bold text-foreground mb-2 flex items-center justify-center gap-2">
                           Choose Your Path
+                          <SectionHelpIcon
+                            title="Builder Modes"
+                            content="Select your preferred way to create your country. The Complete Tutorial provides step-by-step guidance, Quick Start gives you a brief overview, Import allows you to bring in existing data from IIWiki, and Jump In lets you build freely."
+                          />
                         </h2>
                         <p className="text-muted-foreground">
                           How would you like to begin building your country?

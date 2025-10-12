@@ -165,15 +165,29 @@ class CountryFlagService {
         iiurlwidth: '2800'
       });
 
-      const response = await fetch(`${this.WIKIMEDIA_COMMONS_API}?${params.toString()}`);
-      
-      if (!response.ok) {
+      const response = await fetch(`${this.WIKIMEDIA_COMMONS_API}?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+        mode: 'cors',
+        cache: 'default'
+      }).catch((fetchError) => {
+        console.warn(`[CountryFlag] Network error for ${filename}:`, fetchError);
+        return null;
+      });
+
+      if (!response || !response.ok) {
         return null;
       }
 
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
+      if (!data) {
+        return null;
+      }
+
       const pages = data.query?.pages;
-      
+
       if (!pages || typeof pages !== 'object') {
         return null;
       }
@@ -194,7 +208,7 @@ class CountryFlagService {
 
       return page.imageinfo[0].url;
     } catch (error) {
-      console.error(`[CountryFlag] Error getting Wikimedia file URL for ${filename}:`, error);
+      console.warn(`[CountryFlag] Error getting Wikimedia file URL for ${filename}:`, error);
       return null;
     }
   }
@@ -215,24 +229,38 @@ class CountryFlagService {
         origin: '*'
       });
 
-      const response = await fetch(`${this.WIKIMEDIA_COMMONS_API}?${params.toString()}`);
-      
-      if (!response.ok) {
+      const response = await fetch(`${this.WIKIMEDIA_COMMONS_API}?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+        mode: 'cors',
+        cache: 'default'
+      }).catch((fetchError) => {
+        console.warn(`[CountryFlag] Network error during search:`, fetchError);
+        return null;
+      });
+
+      if (!response || !response.ok) {
         return [];
       }
 
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
+      if (!data) {
+        return [];
+      }
+
       const searchResults = data.query?.search || [];
-      
+
       const results: FlagSearchResult[] = [];
-      
+
       for (const result of searchResults) {
-        if (result.title?.startsWith('File:') && 
+        if (result.title?.startsWith('File:') &&
             /\.(svg|png|jpg|jpeg)$/i.test(result.title)) {
-          
+
           const filename = result.title.replace('File:', '');
           const fileUrl = await this.getWikimediaFileUrl(filename);
-          
+
           if (fileUrl) {
             results.push({
               name: result.title,
@@ -243,10 +271,10 @@ class CountryFlagService {
           }
         }
       }
-      
+
       return results;
     } catch (error) {
-      console.error(`[CountryFlag] Wikimedia search error:`, error);
+      console.warn(`[CountryFlag] Wikimedia search error:`, error);
       return [];
     }
   }

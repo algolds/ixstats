@@ -154,6 +154,18 @@ model Country {
   fiscalPolicies              FiscalPolicy[]          @relation("CountryFiscalPolicies")
   atomicEconomicImpacts       AtomicEconomicImpact[]  @relation("AtomicEconomicImpacts")
 
+  // Military & Defense Relations
+  militaryBranches            MilitaryBranch[]        @relation("CountryMilitaryBranches")
+  securityThreats             SecurityThreat[]        @relation("CountrySecurityThreats")
+
+  // Social Relations
+  following                   CountryFollow[]         @relation("CountryFollowers")
+  followers                   CountryFollow[]         @relation("CountryFollowing")
+
+  // Diplomatic Relations - Embassies
+  embassiesHosting            Embassy[]               @relation("HostCountryEmbassies")
+  embassiesGuest              Embassy[]               @relation("GuestCountryEmbassies")
+
   @@index([name])
   @@index([economicTier])
   @@index([populationTier])
@@ -305,6 +317,25 @@ model SystemConfig {
   updatedAt   DateTime @updatedAt
 
   @@index([key])
+}
+
+// Admin audit log for god-mode and storyteller actions
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  action      String   // Action type (e.g., "GOD_MODE_COUNTRY_UPDATE", "CUSTOM_SCENARIO_CREATED")
+  targetType  String   // Type of target (e.g., "country", "scenario", "intervention")
+  targetId    String   // ID of the target
+  targetName  String   // Name of the target for easy reference
+  changes     String   // JSON string of changes made
+  adminId     String   // ID of admin who performed action
+  adminName   String   // Name of admin for easy reference
+  timestamp   DateTime @default(now())
+  ipAddress   String?  // IP address of admin (for security)
+
+  @@index([action])
+  @@index([targetId])
+  @@index([adminId])
+  @@index([timestamp])
 }
 
 model CalculationLog {
@@ -512,11 +543,26 @@ model Notification {
   countryId   String?  // Country id for country-wide notifications
   title       String
   description String?
+  message     String?  // Full notification message
   read        Boolean  @default(false)
+  dismissed   Boolean  @default(false)
   href        String?
-  type        String?  // e.g., 'crisis', 'economic', 'diplomatic', etc.
+  type        String?  // e.g., 'info', 'success', 'warning', 'error', 'alert', 'update'
+  category    String?  // e.g., 'economic', 'diplomatic', 'governance', 'social', 'security', 'achievement', 'crisis', 'opportunity'
+  priority    String   @default("medium") // critical, high, medium, low
+  severity    String   @default("informational") // urgent, important, informational
+  source      String?  // realtime, intelligence, system, user
+  actionable  Boolean  @default(false)
+  metadata    String?  // JSON string for additional data
+  relevanceScore Float?
+  deliveryMethod String? // toast, dynamic-island, modal, command-palette
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([userId, read, dismissed])
+  @@index([countryId, read, dismissed])
+  @@index([createdAt])
+  @@index([priority, read])
 }
 
 model UserPreferences {
@@ -1600,11 +1646,13 @@ model Embassy {
   
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
-  
+
   // Relations
+  hostCountry        Country          @relation("HostCountryEmbassies", fields: [hostCountryId], references: [id], onDelete: Cascade)
+  guestCountry       Country          @relation("GuestCountryEmbassies", fields: [guestCountryId], references: [id], onDelete: Cascade)
   missions           EmbassyMission[]
   upgrades           EmbassyUpgrade[]
-  
+
   @@unique([hostCountryId, guestCountryId])
   @@index([hostCountryId])
   @@index([guestCountryId])
@@ -2566,3 +2614,255 @@ model VitalitySnapshot {
   @@index([ixTime])
 }
 
+
+// ===================================
+// Military & Defense System
+// ===================================
+
+enum BranchType {
+  army
+  navy
+  air_force
+  space_force
+  marines
+  cyber_command
+  special_forces
+  coast_guard
+}
+
+model MilitaryBranch {
+  id                    String       @id @default(cuid())
+  countryId             String
+  branchType            BranchType
+  name                  String
+  motto                 String?
+  imageUrl              String?
+  description           String?
+  established           String?
+
+  // Personnel
+  activeDuty            Int          @default(0)
+  reserves              Int          @default(0)
+  civilianStaff         Int          @default(0)
+
+  // Budget
+  annualBudget          Float        @default(0)
+  budgetPercent         Float        @default(0)
+
+  // Readiness & Capability
+  readinessLevel        Float        @default(50)
+  technologyLevel       Float        @default(50)
+  trainingLevel         Float        @default(50)
+  morale                Float        @default(50)
+  deploymentCapacity    Float        @default(50)
+  sustainmentCapacity   Float        @default(50)
+
+  // Metadata
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  // Relations
+  country               Country      @relation("CountryMilitaryBranches", fields: [countryId], references: [id], onDelete: Cascade)
+  units                 MilitaryUnit[]
+  assets                MilitaryAsset[]
+
+  @@index([countryId])
+  @@index([branchType])
+}
+
+model MilitaryUnit {
+  id                    String          @id @default(cuid())
+  branchId              String
+  name                  String
+  unitType              String
+  designation           String?
+  description           String?
+
+  // Personnel & Status
+  personnel             Int             @default(0)
+  commanderName         String?
+  commanderRank         String?
+  headquarters          String?
+  readiness             Float           @default(50)
+
+  // Media
+  imageUrl              String?
+
+  // Metadata
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  // Relations
+  branch                MilitaryBranch  @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  assets                MilitaryAsset[]
+
+  @@index([branchId])
+}
+
+enum AssetType {
+  aircraft
+  ship
+  vehicle
+  weapon_system
+  installation
+}
+
+enum AssetStatus {
+  operational
+  maintenance
+  reserve
+  retired
+}
+
+model MilitaryAsset {
+  id                    String          @id @default(cuid())
+  branchId              String
+  unitId                String?
+  name                  String
+  assetType             AssetType
+  category              String
+  status                AssetStatus     @default(operational)
+
+  // Quantities
+  quantity              Int             @default(1)
+  operational           Int             @default(1)
+
+  // Costs
+  acquisitionCost       Float           @default(0)
+  maintenanceCost       Float           @default(0)
+  modernizationLevel    Float           @default(50)
+
+  // Capability
+  capability            String?
+
+  // Media
+  imageUrl              String?
+
+  // Metadata
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  // Relations
+  branch                MilitaryBranch  @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  unit                  MilitaryUnit?   @relation(fields: [unitId], references: [id], onDelete: SetNull)
+
+  @@index([branchId])
+  @@index([unitId])
+  @@index([assetType])
+  @@index([status])
+}
+
+enum ThreatType {
+  military
+  terrorism
+  insurgency
+  cyber
+  organized_crime
+  espionage
+  nuclear
+  biological
+  natural_disaster
+}
+
+enum ThreatSeverity {
+  existential
+  critical
+  high
+  moderate
+  low
+}
+
+enum ThreatStatus {
+  monitoring
+  responding
+  contained
+  resolved
+}
+
+model SecurityThreat {
+  id                    String          @id @default(cuid())
+  countryId             String
+  threatName            String
+  threatType            ThreatType
+  severity              ThreatSeverity
+  status                ThreatStatus    @default(monitoring)
+  description           String?
+
+  // Assessment
+  likelihood            Float           @default(50)
+  impact                Float           @default(50)
+
+  // Metadata
+  detectedAt            DateTime        @default(now())
+  isActive              Boolean         @default(true)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  // Relations
+  country               Country         @relation("CountrySecurityThreats", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([threatType])
+  @@index([severity])
+  @@index([isActive])
+}
+
+// Country Following System
+model CountryFollow {
+  id                String   @id @default(cuid())
+  followerCountryId String
+  followedCountryId String
+  createdAt         DateTime @default(now())
+
+  // Relations
+  followerCountry   Country  @relation("CountryFollowers", fields: [followerCountryId], references: [id], onDelete: Cascade)
+  followedCountry   Country  @relation("CountryFollowing", fields: [followedCountryId], references: [id], onDelete: Cascade)
+
+  @@unique([followerCountryId, followedCountryId])
+  @@index([followerCountryId])
+  @@index([followedCountryId])
+}
+
+// Comprehensive System Logging
+model SystemLog {
+  id           String   @id @default(cuid())
+  level        String   // DEBUG, INFO, WARN, ERROR, CRITICAL
+  category     String   // AUTH, API, DATABASE, SECURITY, PERFORMANCE, etc.
+  message      String
+  userId       String?
+  countryId    String?
+  requestId    String?
+  traceId      String?
+  duration     Int?     // Milliseconds
+  errorName    String?
+  errorMessage String?
+  errorStack   String?  // Stack trace (text field)
+  metadata     String?  // JSON metadata
+  component    String?  // Component/module name
+  ip           String?
+  userAgent    String?  // Limited to 500 chars
+  endpoint     String?
+  method       String?  // HTTP method
+  timestamp    DateTime @default(now())
+
+  @@index([level])
+  @@index([category])
+  @@index([userId])
+  @@index([countryId])
+  @@index([timestamp])
+  @@index([requestId])
+}
+
+// Log Retention Policy
+model LogRetentionPolicy {
+  id                String   @id @default(cuid())
+  logLevel          String   // Which log level this applies to
+  retentionDays     Int      // How many days to retain
+  archiveAfterDays  Int?     // Archive after N days (optional)
+  deleteAfterDays   Int      // Delete after N days
+  enabled           Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([logLevel])
+}

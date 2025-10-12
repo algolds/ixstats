@@ -420,6 +420,35 @@ class GlobalNotificationBridge extends EventEmitter {
   }
 
   /**
+   * Direct notification interface for manual triggering
+   */
+  async notify(params: {
+    type: 'achievement' | 'economic' | 'diplomatic' | 'intelligence' | 'crisis';
+    title: string;
+    message: string;
+    priority: NotificationPriority;
+    category: NotificationCategory;
+    deliveryMethod?: DeliveryMethod;
+    metadata?: Record<string, unknown>;
+  }) {
+    // Use the existing data stream mechanism
+    this.emit('dataStream', {
+      type: params.type,
+      data: {
+        name: params.title,
+        title: params.title,
+        description: params.message,
+        unlocked: params.type === 'achievement',
+        category: params.category,
+        ...params.metadata
+      },
+      timestamp: Date.now(),
+      source: 'manual-trigger',
+      priority: params.priority
+    });
+  }
+
+  /**
    * Add custom notification rule
    */
   addRule(rule: NotificationRule) {

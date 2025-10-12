@@ -30,6 +30,7 @@ import Link from 'next/link';
 import { createUrl } from '~/lib/url-utils';
 import { GovernmentStructureDisplay } from './GovernmentStructureDisplay';
 import { IntelligenceOverview } from './IntelligenceOverview';
+import { InlineHelpIcon } from '~/components/ui/help-icon';
 
 interface MyCountryTabSystemProps {
   variant?: 'unified' | 'standard' | 'premium';
@@ -356,6 +357,10 @@ export function MyCountryTabSystem({ variant = 'unified' }: MyCountryTabSystemPr
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                 Comprehensive Economic Analysis
+                <InlineHelpIcon
+                  title="Economic Analysis"
+                  content="View detailed breakdowns of economic sectors, trade relationships, productivity metrics, income distribution, and business climate indicators for comprehensive economic planning."
+                />
               </CardTitle>
               <CardDescription>
                 Detailed breakdown of {country.name}'s economic structure, trade, and productivity

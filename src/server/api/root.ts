@@ -25,6 +25,7 @@ import { scheduledChangesRouter } from "./routers/scheduledChanges";
 import { taxSystemRouter } from "./routers/taxSystem";
 import { wikiImporterRouter } from "./routers/wikiImporter";
 import { securityRouter } from "./routers/security";
+import { achievementsRouter } from "./routers/achievements";
 
 /**
  * This is the primary router for your server.
@@ -56,6 +57,7 @@ export const appRouter = createTRPCRouter({
   taxSystem: taxSystemRouter, // Tax system management
   wikiImporter: wikiImporterRouter, // MediaWiki infobox importer for country data
   security: securityRouter, // Security & Defense system
+  achievements: achievementsRouter, // Achievement system for country milestones
   system: adminRouter, // Alias for global stats
 });
 

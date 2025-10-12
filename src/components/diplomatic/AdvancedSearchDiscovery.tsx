@@ -106,65 +106,7 @@ const TIERS = [
   'Bronze'
 ];
 
-// Mock search results - in production this would come from tRPC APIs
-const MOCK_RESULTS: SearchResult[] = [
-  {
-    id: '1',
-    type: 'country',
-    title: 'Federal Republic of Astoria',
-    subtitle: 'Leading Diplomatic Power',
-    description: 'Premier nation in international relations with extensive embassy network and trade agreements.',
-    relevanceScore: 0.95,
-    metadata: {
-      country: 'Federal Republic of Astoria',
-      region: 'Northern Continent',
-      date: '2024-01-15',
-      tags: ['diplomatic', 'trade', 'influential'],
-      clearanceLevel: 'PUBLIC'
-    },
-    metrics: {
-      influence: 2847,
-      popularity: 89,
-      activity: 76
-    }
-  },
-  {
-    id: '2',
-    type: 'achievement',
-    title: 'Peace Architect',
-    subtitle: 'Diplomatic Excellence Award',
-    description: 'Prestigious recognition for outstanding contribution to international peace and stability.',
-    relevanceScore: 0.87,
-    metadata: {
-      date: '2024-01-10',
-      tags: ['peace', 'diplomacy', 'achievement'],
-      clearanceLevel: 'PUBLIC'
-    },
-    metrics: {
-      popularity: 94,
-      activity: 45
-    }
-  },
-  {
-    id: '3',
-    type: 'agreement',
-    title: 'Astoria-Valoria Trade Pact',
-    subtitle: 'Comprehensive Economic Partnership',
-    description: 'Major bilateral trade agreement covering energy, technology, and cultural exchange sectors.',
-    relevanceScore: 0.82,
-    metadata: {
-      date: '2024-01-08',
-      participants: ['Federal Republic of Astoria', 'Kingdom of Valoria'],
-      tags: ['trade', 'bilateral', 'energy'],
-      clearanceLevel: 'PUBLIC'
-    },
-    metrics: {
-      influence: 1250,
-      popularity: 67,
-      activity: 89
-    }
-  }
-];
+// All data now comes from live tRPC APIs - no mock data fallbacks
 
 const AdvancedSearchDiscoveryComponent: React.FC<AdvancedSearchDiscoveryProps> = ({
   viewerCountryId,
@@ -264,7 +206,7 @@ const AdvancedSearchDiscoveryComponent: React.FC<AdvancedSearchDiscoveryProps> =
 
   // Filter and sort results
   const filteredResults = useMemo(() => {
-    let results = apiResults.length > 0 ? apiResults : MOCK_RESULTS;
+    let results = apiResults;
 
     // Apply query filter
     if (filters.query.trim()) {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
@@ -73,7 +73,8 @@ function DashboardContent({
   forecast
 }: DashboardContentProps) {
   const [contentMode, setContentMode] = useState<'mycountry' | 'activity'>(userCountry ? 'mycountry' : 'activity');
-  const [myCountryTab, setMyCountryTab] = useState<'overview' | 'intelligence' | 'operations'>('overview');
+  const [myCountryTab, setMyCountryTab] = useState<'overview' | 'systems' | 'global'>('overview');
+  const [expandedOverview, setExpandedOverview] = useState(false);
 
   const contentModes = [
     ...(userCountry ? [{ id: 'mycountry' as const, label: 'My Country', icon: Home, description: 'Your nation\'s command center' }] : []),
@@ -136,20 +137,23 @@ function DashboardContent({
                 </Badge>
               </div>
 
-              {/* MyCountry Sub-Tabs */}
-              <Tabs value={myCountryTab} onValueChange={(value) => setMyCountryTab(value as 'overview' | 'intelligence' | 'operations')} className="w-full">
+              {/* Reimagined Tab Navigation */}
+              <Tabs value={myCountryTab} onValueChange={(value) => setMyCountryTab(value as 'overview' | 'systems' | 'global')} className="w-full">
                 <TabsList className="grid w-full grid-cols-3 bg-muted/50 dark:bg-muted/20">
                   <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground">
                     <Home className="h-4 w-4" />
-                    Overview
+                    <span className="hidden sm:inline">Nation Overview</span>
+                    <span className="sm:hidden">Overview</span>
                   </TabsTrigger>
-                  <TabsTrigger value="intelligence" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground">
-                    <Star className="h-4 w-4" />
-                    Intelligence
+                  <TabsTrigger value="systems" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground">
+                    <Zap className="h-4 w-4" />
+                    <span className="hidden sm:inline">Core Systems</span>
+                    <span className="sm:hidden">Systems</span>
                   </TabsTrigger>
-                  <TabsTrigger value="operations" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground">
-                    <Target className="h-4 w-4" />
-                    Operations
+                  <TabsTrigger value="global" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground">
+                    <Globe className="h-4 w-4" />
+                    <span className="hidden sm:inline">Global Stage</span>
+                    <span className="sm:hidden">Global</span>
                   </TabsTrigger>
                 </TabsList>
 
@@ -340,56 +344,197 @@ function DashboardContent({
                     </div>
                   )}
 
-                  {/* Quick Actions */}
+                  {/* MyCountry Sections */}
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-bold text-foreground flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-500 to-amber-500 flex items-center justify-center">
+                        <Crown className="h-4 w-4 text-white" />
+                      </div>
+                      MyCountry Sections
+                    </h3>
+
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      <Link href="/mycountry#executive">
+                        <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-28 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Crown className="h-5 w-5 text-white" />
+                          </div>
+                          <span className="font-semibold text-foreground text-sm">Executive</span>
+                          <Badge variant="secondary" className="text-xs px-2 py-0.5">Command</Badge>
+                        </div>
+                      </Link>
+
+                      <Link href="/mycountry#intelligence">
+                        <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-28 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Activity className="h-5 w-5 text-white" />
+                          </div>
+                          <span className="font-semibold text-foreground text-sm">Intelligence</span>
+                          <Badge variant="secondary" className="text-xs px-2 py-0.5">ECI/SDI</Badge>
+                        </div>
+                      </Link>
+
+                      <Link href="/mycountry#overview">
+                        <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-28 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-500 to-gray-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <BarChart3 className="h-5 w-5 text-white" />
+                          </div>
+                          <span className="font-semibold text-foreground text-sm">Overview</span>
+                          <Badge variant="secondary" className="text-xs px-2 py-0.5">At Glance</Badge>
+                        </div>
+                      </Link>
+
+                      <Link href="/mycountry#economy">
+                        <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-28 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <TrendingUp className="h-5 w-5 text-white" />
+                          </div>
+                          <span className="font-semibold text-foreground text-sm">Economy</span>
+                          <Badge variant="secondary" className="text-xs px-2 py-0.5">Tier-Based</Badge>
+                        </div>
+                      </Link>
+
+                      <Link href="/mycountry#labor">
+                        <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-28 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Users className="h-5 w-5 text-white" />
+                          </div>
+                          <span className="font-semibold text-foreground text-sm">Labor</span>
+                          <Badge variant="secondary" className="text-xs px-2 py-0.5">Employment</Badge>
+                        </div>
+                      </Link>
+
+                      <Link href="/mycountry#government">
+                        <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-28 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Star className="h-5 w-5 text-white" />
+                          </div>
+                          <span className="font-semibold text-foreground text-sm">Government</span>
+                          <Badge variant="secondary" className="text-xs px-2 py-0.5">Structure</Badge>
+                        </div>
+                      </Link>
+
+                      <Link href="/mycountry#demographics">
+                        <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-28 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Users className="h-5 w-5 text-white" />
+                          </div>
+                          <span className="font-semibold text-foreground text-sm">Demographics</span>
+                          <Badge variant="secondary" className="text-xs px-2 py-0.5">Population</Badge>
+                        </div>
+                      </Link>
+
+                      <Link href="/mycountry#analytics">
+                        <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-28 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Target className="h-5 w-5 text-white" />
+                          </div>
+                          <span className="font-semibold text-foreground text-sm">Analytics</span>
+                          <Badge variant="secondary" className="text-xs px-2 py-0.5">Forecasts</Badge>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Management & Systems */}
                   <div className="space-y-4">
                     <h3 className="text-xl font-bold text-foreground flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                         <Zap className="h-4 w-4 text-white" />
                       </div>
-                      Quick Actions
+                      Management & Systems
                     </h3>
 
-                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-6">
-                      <button
-                        onClick={() => setMyCountryTab('intelligence')}
-                        className="glass-hierarchy-child hover:glass-hierarchy-interactive h-32 rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.02] group cursor-pointer"
-                      >
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <Activity className="h-6 w-6 text-white" />
-                        </div>
-                        <span className="font-semibold text-foreground">Intelligence</span>
-                      </button>
-                      <button
-                        onClick={() => setMyCountryTab('operations')}
-                        className="glass-hierarchy-child hover:glass-hierarchy-interactive h-32 rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.02] group cursor-pointer"
-                      >
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <Target className="h-6 w-6 text-white" />
-                        </div>
-                        <span className="font-semibold text-foreground">Operations</span>
-                      </button>
-                      <Link href="/mycountry#economy">
-                        <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-32 rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <TrendingUp className="h-6 w-6 text-white" />
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      <Link href="/builder">
+                        <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-28 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Star className="h-5 w-5 text-white" />
                           </div>
-                          <span className="font-semibold text-foreground">Economics</span>
+                          <span className="font-semibold text-foreground text-sm">Builder</span>
+                          <Badge variant="secondary" className="text-xs px-2 py-0.5">Atomic Gov</Badge>
                         </div>
                       </Link>
+
+                      <Link href="/mycountry/editor">
+                        <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-28 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Activity className="h-5 w-5 text-white" />
+                          </div>
+                          <span className="font-semibold text-foreground text-sm">Editor</span>
+                          <Badge variant="secondary" className="text-xs px-2 py-0.5">Data Entry</Badge>
+                        </div>
+                      </Link>
+
+                      <Link href="/mycountry/defense">
+                        <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-28 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Target className="h-5 w-5 text-white" />
+                          </div>
+                          <span className="font-semibold text-foreground text-sm">Defense</span>
+                          <Badge variant="secondary" className="text-xs px-2 py-0.5">Military</Badge>
+                        </div>
+                      </Link>
+
                       <Link href="/sdi/diplomatic">
-                        <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-32 rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-violet-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <Users className="h-6 w-6 text-white" />
+                        <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-28 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-violet-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Users className="h-5 w-5 text-white" />
                           </div>
-                          <span className="font-semibold text-foreground">Diplomacy</span>
+                          <span className="font-semibold text-foreground text-sm">Diplomacy</span>
+                          <Badge variant="secondary" className="text-xs px-2 py-0.5">Embassies</Badge>
                         </div>
                       </Link>
-                      <Link href="/countries">
-                        <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-32 rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <BarChart3 className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+
+                  {/* Global Engagement */}
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-bold text-foreground flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
+                        <Globe className="h-4 w-4 text-white" />
+                      </div>
+                      Global Engagement
+                    </h3>
+
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      <Link href="/thinkpages">
+                        <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-28 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Users className="h-5 w-5 text-white" />
                           </div>
-                          <span className="font-semibold text-foreground">Rankings</span>
+                          <span className="font-semibold text-foreground text-sm">ThinkPages</span>
+                          <Badge variant="secondary" className="text-xs px-2 py-0.5">Social</Badge>
+                        </div>
+                      </Link>
+
+                      <Link href="/countries">
+                        <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-28 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <BarChart3 className="h-5 w-5 text-white" />
+                          </div>
+                          <span className="font-semibold text-foreground text-sm">Countries</span>
+                          <Badge variant="secondary" className="text-xs px-2 py-0.5">Rankings</Badge>
+                        </div>
+                      </Link>
+
+                      <Link href="/leaderboards">
+                        <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-28 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Trophy className="h-5 w-5 text-white" />
+                          </div>
+                          <span className="font-semibold text-foreground text-sm">Leaderboards</span>
+                          <Badge variant="secondary" className="text-xs px-2 py-0.5">Compete</Badge>
+                        </div>
+                      </Link>
+
+                      <Link href="/achievements">
+                        <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-28 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500 to-amber-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Star className="h-5 w-5 text-white" />
+                          </div>
+                          <span className="font-semibold text-foreground text-sm">Achievements</span>
+                          <Badge variant="secondary" className="text-xs px-2 py-0.5">Unlocks</Badge>
                         </div>
                       </Link>
                     </div>
@@ -493,6 +638,13 @@ function DashboardContent({
 
 export function DashboardCommandCenter() {
   const { user } = useUser();
+
+  // Set page title (notification badge will auto-update)
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.title = "Dashboard - IxStats";
+    }
+  }, []);
 
   // Fetch necessary data
   const { data: userProfile } = api.users.getProfile.useQuery(

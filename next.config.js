@@ -140,6 +140,15 @@ const config = {
   // Build performance
   productionBrowserSourceMaps: false,
 
+  // Compression (if enabled via env)
+  compress: process.env.ENABLE_COMPRESSION === "true",
+
+  // Production optimizations
+  poweredByHeader: false, // Remove X-Powered-By header
+
+  // Output standalone for Docker/production deployment
+  output: process.env.NODE_ENV === "production" ? "standalone" : undefined,
+
   // It's good practice to keep your image domains defined.
   images: {
     domains: ['localhost', 'lh3.googleusercontent.com', 'upload.wikimedia.org', 'images.unsplash.com'],

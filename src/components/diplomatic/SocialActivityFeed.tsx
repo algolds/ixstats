@@ -153,62 +153,7 @@ const ACTIVITY_TYPES = {
   }
 } as const;
 
-// Mock data - in production this would come from tRPC APIs
-const MOCK_ACTIVITIES: ActivityItem[] = [
-  {
-    id: '1',
-    type: 'embassy_established',
-    timestamp: '2024-01-15T14:30:00Z',
-    primaryCountry: { id: '1', name: 'Federal Republic of Astoria', code: 'AST' },
-    secondaryCountry: { id: '2', name: 'Kingdom of Valoria', code: 'VAL' },
-    title: 'Astoria establishes embassy in Valoria',
-    description: 'First diplomatic mission established to strengthen bilateral relations',
-    details: 'The embassy will focus on trade cooperation and cultural exchange programs.',
-    metrics: {
-      impact: 85,
-      significance: 'high',
-      visibility: 'public'
-    },
-    interactions: { likes: 142, comments: 23, shares: 31, bookmarks: 18 },
-    tags: ['diplomacy', 'bilateral', 'embassy'],
-    trend: 'trending'
-  },
-  {
-    id: '2',
-    type: 'achievement_unlocked',
-    timestamp: '2024-01-15T12:15:00Z',
-    primaryCountry: { id: '3', name: 'United Provinces of Meridia', code: 'MER' },
-    title: 'Meridia unlocks "Peace Architect" achievement',
-    description: 'Successfully mediated 10 international disputes',
-    metrics: {
-      impact: 70,
-      significance: 'medium',
-      visibility: 'public'
-    },
-    interactions: { likes: 89, comments: 12, shares: 15, bookmarks: 7 },
-    tags: ['achievement', 'peace', 'mediation'],
-    relatedAchievements: ['peace_architect'],
-    trend: 'breaking'
-  },
-  {
-    id: '3',
-    type: 'trade_agreement',
-    timestamp: '2024-01-15T10:45:00Z',
-    primaryCountry: { id: '4', name: 'Republic of Nordica', code: 'NOR' },
-    secondaryCountry: { id: '5', name: 'Empire of Solaris', code: 'SOL' },
-    title: 'Major trade pact signed between Nordica and Solaris',
-    description: 'Comprehensive agreement covering energy, technology, and agricultural sectors',
-    details: 'Expected to increase bilateral trade by 40% over the next three years.',
-    metrics: {
-      impact: 92,
-      significance: 'critical',
-      visibility: 'public'
-    },
-    interactions: { likes: 267, comments: 45, shares: 78, bookmarks: 34 },
-    tags: ['trade', 'economy', 'bilateral', 'energy'],
-    trend: 'trending'
-  }
-];
+// All data now comes from live tRPC APIs - no mock data fallbacks
 
 const SocialActivityFeedComponent: React.FC<SocialActivityFeedProps> = ({
   countryId,
@@ -323,7 +268,7 @@ const SocialActivityFeedComponent: React.FC<SocialActivityFeedProps> = ({
 
   // Filter and sort activities
   const filteredActivities = useMemo((): ActivityItem[] => {
-    let filtered = transformedActivities.length > 0 ? transformedActivities : MOCK_ACTIVITIES;
+    let filtered = transformedActivities;
 
     // Apply type filter
     if (filter !== 'all') {

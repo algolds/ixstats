@@ -23,6 +23,7 @@ import { transformApiDataToVitalityIntelligence } from '~/app/mycountry/utils/li
 import { generateIntelligenceReport } from '~/lib/intelligence-engine';
 import type { VitalityIntelligence, ActionableRecommendation } from '~/app/mycountry/types/intelligence';
 import { IxTime } from '~/lib/ixtime';
+import { SectionHelpIcon } from '~/components/ui/help-icon';
 
 const briefingTypeConfig = {
   hot_issue: { icon: AlertTriangle, label: 'Hot Issue', color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-950/20' },
@@ -324,6 +325,10 @@ export function IntelligenceOverview({ countryData }: IntelligenceOverviewProps)
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-purple-600" />
             Priority Intelligence Briefings
+            <SectionHelpIcon
+              title="Intelligence Briefings"
+              content="AI-generated strategic briefings analyzing your country's performance trends, identifying risks, opportunities, and providing actionable recommendations with confidence scores."
+            />
           </CardTitle>
         </CardHeader>
         <CardContent>

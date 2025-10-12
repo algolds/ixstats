@@ -3,9 +3,15 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { observable } from '@trpc/server/observable';
+import { EventEmitter } from 'events';
+
+// Event emitter for real-time notifications
+const notificationEmitter = new EventEmitter();
 
 const NotificationLevel = z.enum(['low', 'medium', 'high', 'critical']);
-const NotificationType = z.enum(['info', 'warning', 'success', 'error', 'economic', 'crisis', 'diplomatic', 'system']);
+const NotificationType = z.enum(['info', 'warning', 'success', 'error', 'alert', 'update', 'economic', 'crisis', 'diplomatic', 'system']);
+const NotificationCategory = z.enum(['economic', 'diplomatic', 'governance', 'social', 'security', 'system', 'achievement', 'crisis', 'opportunity']);
 
 export const notificationsRouter = createTRPCRouter({
   // Get notifications for current user (using auth context)
@@ -160,12 +166,16 @@ export const notificationsRouter = createTRPCRouter({
     .input(z.object({
       title: z.string().min(1).max(200),
       description: z.string().max(1000).optional(),
+      message: z.string().max(2000).optional(),
       type: NotificationType,
+      category: NotificationCategory.optional(),
       level: NotificationLevel.default('medium'),
-      href: z.string().url().optional(),
+      href: z.string().optional(),
       userId: z.string().optional(), // For direct user notifications
       countryId: z.string().optional(), // For country-wide notifications
       adminUserId: z.string(), // Admin user ID for verification
+      actionable: z.boolean().default(false),
+      metadata: z.string().optional(), // JSON string
       // If both userId and countryId are null, it's a global notification
     }))
     .mutation(async ({ ctx, input }) => {
@@ -177,12 +187,20 @@ export const notificationsRouter = createTRPCRouter({
         data: {
           title: input.title,
           description: input.description,
+          message: input.message,
           type: input.type,
+          category: input.category,
+          priority: input.level,
           href: input.href,
           userId: input.userId,
           countryId: input.countryId,
+          actionable: input.actionable,
+          metadata: input.metadata,
         },
       });
+
+      // Emit real-time event
+      emitNotificationEvent(notification);
 
       return notification;
     }),
@@ -341,4 +359,96 @@ export const notificationsRouter = createTRPCRouter({
         })),
       };
     }),
+
+  // Real-time subscription for new notifications
+  onNotificationAdded: publicProcedure
+    .input(z.object({
+      userId: z.string().optional(),
+    }))
+    .subscription(({ input }) => {
+      return observable<{
+        id: string;
+        userId: string | null;
+        countryId: string | null;
+        title: string;
+        description: string | null;
+        message: string | null;
+        read: boolean;
+        dismissed: boolean;
+        href: string | null;
+        type: string | null;
+        category: string | null;
+        priority: string;
+        severity: string;
+        source: string | null;
+        actionable: boolean;
+        metadata: string | null;
+        relevanceScore: number | null;
+        deliveryMethod: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+      }>((emit) => {
+        const onNotification = (data: any) => {
+          // Filter by userId if provided
+          if (input.userId && data.userId !== input.userId) {
+            return;
+          }
+          emit.next(data);
+        };
+
+        notificationEmitter.on('notification', onNotification);
+
+        return () => {
+          notificationEmitter.off('notification', onNotification);
+        };
+      });
+    }),
+
+  // Get unread count (for badge display)
+  getUnreadCount: publicProcedure
+    .input(z.object({
+      userId: z.string().optional(),
+    }).optional())
+    .query(async ({ ctx, input }) => {
+      const { db } = ctx;
+      const userId = input?.userId || ctx.auth?.userId;
+
+      if (!userId) {
+        return { count: 0 };
+      }
+
+      // Get user profile to find their country
+      const userProfile = await db.user.findFirst({
+        where: { clerkUserId: userId },
+        include: { country: true }
+      });
+
+      const count = await db.notification.count({
+        where: {
+          AND: [
+            {
+              OR: [
+                { userId },
+                { countryId: userProfile?.countryId },
+                {
+                  AND: [
+                    { userId: null },
+                    { countryId: null }
+                  ]
+                }
+              ]
+            },
+            { read: false },
+            { dismissed: false }
+          ]
+        }
+      });
+
+      return { count };
+    }),
 });
+
+// Helper function to emit notification events (to be called when creating notifications)
+export function emitNotificationEvent(notification: any) {
+  notificationEmitter.emit('notification', notification);
+}

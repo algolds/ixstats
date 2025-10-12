@@ -1026,6 +1026,64 @@ export const diplomaticRouter = createTRPCRouter({
       .slice(0, 20); // Top 20
 
       return leaderboard;
+    }),
+
+  // Follow/Unfollow system for countries
+  getFollowStatus: publicProcedure
+    .input(z.object({
+      viewerCountryId: z.string(),
+      targetCountryId: z.string()
+    }))
+    .query(async ({ ctx, input }) => {
+      const follow = await ctx.db.countryFollow.findUnique({
+        where: {
+          followerCountryId_followedCountryId: {
+            followerCountryId: input.viewerCountryId,
+            followedCountryId: input.targetCountryId
+          }
+        }
+      });
+
+      return {
+        isFollowing: !!follow,
+        followedAt: follow?.createdAt || null
+      };
+    }),
+
+  followCountry: publicProcedure
+    .input(z.object({
+      followerCountryId: z.string(),
+      followedCountryId: z.string()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Create follow relationship
+      const follow = await ctx.db.countryFollow.create({
+        data: {
+          followerCountryId: input.followerCountryId,
+          followedCountryId: input.followedCountryId
+        }
+      });
+
+      return { success: true, follow };
+    }),
+
+  unfollowCountry: publicProcedure
+    .input(z.object({
+      followerCountryId: z.string(),
+      followedCountryId: z.string()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Delete follow relationship
+      await ctx.db.countryFollow.delete({
+        where: {
+          followerCountryId_followedCountryId: {
+            followerCountryId: input.followerCountryId,
+            followedCountryId: input.followedCountryId
+          }
+        }
+      });
+
+      return { success: true };
     })
 });
 

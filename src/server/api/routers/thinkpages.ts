@@ -6,6 +6,7 @@ import { generateAndPostCitizenReaction } from "~/lib/auto-post-service";
 import { analyzePostSentiment } from "~/lib/sentiment-analysis";
 import { unsplashService } from "~/lib/unsplash-service";
 import { searchWiki as wikiSearchService } from "~/lib/wiki-search-service"; // Import the wiki search service
+import { notificationHooks } from "~/lib/notification-hooks";
 import fs from "fs/promises";
 import path from "path";
 
@@ -551,9 +552,38 @@ export const thinkpagesRouter = createTRPCRouter({
           await db.postMention.createMany({
             data: mentionData
           });
+
+          // 🔔 Notify mentioned users
+          for (const mentioned of mentionedAccounts) {
+            await notificationHooks.onSocialActivity({
+              activityType: 'mention',
+              fromUserId: input.userId,
+              toUserId: mentioned.id,
+              contentTitle: input.content.substring(0, 50),
+              contentId: post.id,
+            }).catch(err => console.error('[ThinkPages] Failed to send mention notification:', err));
+          }
         }
       }
-      
+
+      // 🔔 Notify if this is a reply
+      if (input.parentPostId && post.parentPost) {
+        const parentPost = await db.thinkpagesPost.findUnique({
+          where: { id: input.parentPostId },
+          select: { userId: true }
+        });
+
+        if (parentPost && parentPost.userId !== input.userId) {
+          await notificationHooks.onThinkPageActivity({
+            thinkpageId: post.id,
+            title: input.content.substring(0, 50),
+            action: 'commented',
+            authorId: input.userId,
+            targetUserId: parentPost.userId,
+          }).catch(err => console.error('[ThinkPages] Failed to send reply notification:', err));
+        }
+      }
+
       return post;
     }),
 
@@ -625,6 +655,24 @@ export const thinkpagesRouter = createTRPCRouter({
           where: { id: input.postId },
           data: { reactionCounts: JSON.stringify(reactionCounts) },
         });
+
+        // 🔔 Notify post author of new reaction (likes only)
+        if (!existingReaction && input.reactionType === 'like') {
+          const postWithAuthor = await db.thinkpagesPost.findUnique({
+            where: { id: input.postId },
+            select: { userId: true, content: true }
+          });
+
+          if (postWithAuthor && postWithAuthor.userId !== input.userId) {
+            await notificationHooks.onThinkPageActivity({
+              thinkpageId: input.postId,
+              title: postWithAuthor.content.substring(0, 50),
+              action: 'liked',
+              authorId: input.userId,
+              targetUserId: postWithAuthor.userId,
+            }).catch(err => console.error('[ThinkPages] Failed to send like notification:', err));
+          }
+        }
 
         return reaction;
       }
@@ -2455,5 +2503,65 @@ export const thinkpagesRouter = createTRPCRouter({
       });
       
       return { success: true };
+    }),
+
+  // Create a conversation between two countries' official accounts
+  createConversationByCountries: publicProcedure
+    .input(z.object({
+      fromCountryId: z.string(),
+      toCountryId: z.string(),
+      initialMessage: z.string().optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Get users for both countries
+      const fromUsers = await ctx.db.user.findMany({
+        where: { countryId: input.fromCountryId },
+        take: 1
+      });
+
+      const toUsers = await ctx.db.user.findMany({
+        where: { countryId: input.toCountryId },
+        take: 1
+      });
+
+      if (fromUsers.length === 0) {
+        throw new Error("Sender country has no users");
+      }
+
+      if (toUsers.length === 0) {
+        throw new Error("Recipient country has no users");
+      }
+
+      const fromUser = fromUsers[0]!;
+      const toUser = toUsers[0]!;
+
+      // Create a conversation
+      const conversation = await ctx.db.thinkshareConversation.create({
+        data: {
+          type: 'direct',
+          name: `Diplomatic Channel`
+        }
+      });
+
+      // Add participants
+      await ctx.db.conversationParticipant.createMany({
+        data: [
+          { conversationId: conversation.id, userId: fromUser.clerkUserId },
+          { conversationId: conversation.id, userId: toUser.clerkUserId }
+        ]
+      });
+
+      // Send initial message if provided
+      if (input.initialMessage) {
+        await ctx.db.thinkshareMessage.create({
+          data: {
+            conversationId: conversation.id,
+            userId: fromUser.clerkUserId,
+            content: input.initialMessage
+          }
+        });
+      }
+
+      return conversation;
     })
 });
