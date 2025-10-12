@@ -27,7 +27,6 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
   const [wikiCommonsSearchQuery, setWikiCommonsSearchQuery] = useState('');
   const [wikiSearchQuery, setWikiSearchQuery] = useState('');
   const [wikiSource, setWikiSource] = useState<'ixwiki' | 'iiwiki'>('ixwiki');
-  const [wikiSearchResults, setWikiSearchResults] = useState<{ path: string; name: string; url?: string; description?: string; }[]>([]);
 
   // Debounced search queries to reduce API calls
   const [debouncedRepoQuery, setDebouncedRepoQuery] = useState('');
@@ -46,6 +45,7 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
 
   const { ref: repoRef, inView: repoInView } = useInView();
   const { ref: commonsRef, inView: commonsInView } = useInView();
+  const { ref: wikiRef, inView: wikiInView } = useInView();
 
   const { 
     data: imagesData,
@@ -77,17 +77,24 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
     }
   ) as any; // TODO: Fix type properly
 
-  const searchWikiMutation = api.thinkpages.searchWiki.useMutation({
-    onSuccess: (data: any) => {
-      setWikiSearchResults(data);
-      if (data.length === 0) {
-        toast.info('No images found.');
-      }
-    },
-    onError: (error: any) => {
-      toast.error(error.message);
-    },
-  });
+  const { 
+    data: wikiData,
+    isLoading: isLoadingWiki,
+    fetchNextPage: fetchNextWikiPage,
+    hasNextPage: hasNextWikiPage,
+    isFetchingNextPage: isFetchingNextWikiPage,
+    refetch: refetchWiki,
+  } = api.thinkpages.searchWiki.useInfiniteQuery(
+    { query: wikiSearchQuery, wiki: wikiSource, limit: 30 },
+    {
+      enabled: activeTab === 'wiki' && !!wikiSearchQuery,
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+      staleTime: 5 * 60 * 1000, // 5 minutes cache
+      refetchOnWindowFocus: false
+    }
+  );
+
+  const wikiImages = wikiData?.pages.flatMap(page => page.images) || [];
 
   // Throttled infinite scroll to prevent excessive API calls
   useEffect(() => {
@@ -109,13 +116,21 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
   }, [commonsInView, hasNextCommonsPage, isFetchingNextCommonsPage, fetchNextCommonsPage]);
 
   useEffect(() => {
+    if (wikiInView && hasNextWikiPage && !isFetchingNextWikiPage) {
+      const timer = setTimeout(() => {
+        fetchNextWikiPage();
+      }, 300); // 300ms throttle
+      return () => clearTimeout(timer);
+    }
+  }, [wikiInView, hasNextWikiPage, isFetchingNextWikiPage, fetchNextWikiPage]);
+
+  useEffect(() => {
     if (isOpen) {
       // Reset state when modal opens
       setSearchQuery('');
       setSelectedImage(null);
       setWikiCommonsSearchQuery('');
       setWikiSearchQuery('');
-      setWikiSearchResults([]);
       setWikiSource('ixwiki');
       setDebouncedRepoQuery('');
       setDebouncedCommonsQuery('');
@@ -345,59 +360,81 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
                                 <Check className="h-4 w-4" />
                               </SelectPrimitive.ItemIndicator>
                             </span>
-                            <SelectPrimitive.ItemText>iiwiki</SelectPrimitive.ItemText>
+                            <SelectPrimitive.ItemText>
+                              <span>iiwiki</span>
+                              <span className="text-xs text-yellow-500 ml-2">(Limited - Cloudflare protected)</span>
+                            </SelectPrimitive.ItemText>
                           </SelectPrimitive.Item>
                         </SelectPrimitive.Viewport>
                       </SelectPrimitive.Content>
                     </SelectPrimitive.Portal>
                   </SelectPrimitive.Root>
                   <Input
-                    placeholder="Search for images (e.g., 'flag', 'coat of arms')..."
+                    placeholder="Search for images (e.g., 'flag', 'coat of arms', 'juan kerr')..."
                     value={wikiSearchQuery}
                     onChange={(e) => setWikiSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && searchWikiMutation.mutate({ query: wikiSearchQuery, wiki: wikiSource })}
+                    onKeyDown={(e) => e.key === 'Enter' && refetchWiki()}
                     className="flex-1"
                   />
-                  <Button onClick={() => searchWikiMutation.mutate({ query: wikiSearchQuery, wiki: wikiSource })} disabled={searchWikiMutation.isPending || !wikiSearchQuery.trim()}>
-                    {searchWikiMutation.isPending ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Search className="h-4 w-4 mr-2" />}Search
+                  <Button onClick={() => refetchWiki()} disabled={isLoadingWiki || !wikiSearchQuery.trim()}>
+                    {isLoadingWiki ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Search className="h-4 w-4 mr-2" />}Search
                   </Button>
                 </div>
                 <div className="flex-1 p-4 overflow-y-auto max-h-[60vh]">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {searchWikiMutation.isPending ? (
+                  {isLoadingWiki ? (
                     <div className="col-span-2 md:col-span-3 flex justify-center items-center h-48">
                       <Loader2 className="animate-spin h-8 w-8 text-blue-400" />
                     </div>
-                  ) : wikiSearchResults.length > 0 ? (
-                    wikiSearchResults.map((image: { path: string; name: string; url?: string; description?: string; }, index: number) => (
-                      <div
-                        key={`wiki-${image.path}-${index}`}
-                        className={cn(
-                          "relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all",
-                          selectedImage === image.path ? "border-blue-500" : "border-transparent hover:border-blue-400"
-                        )}
-                        onClick={() => setSelectedImage(image.path)}
-                      >
-                        <img 
-                          src={image.url ?? image.path} 
-                          alt={image.name ?? "Wiki Image"} 
-                          className="w-full h-32 object-cover"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-sm font-medium p-2 text-center">
-                          {image.name?.replace('File:', '') ?? 'Wiki Image'}
-                        </div>
-                        {selectedImage === image.path && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-blue-500/50">
-                            <Check className="h-8 w-8 text-white" />
+                  ) : wikiImages.length > 0 ? (
+                    <>
+                      {wikiImages.map((image: { path: string; name: string; url?: string; description?: string; }, index: number) => (
+                        <div
+                          key={`wiki-${image.path}-${index}`}
+                          className={cn(
+                            "relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all",
+                            selectedImage === image.path ? "border-blue-500" : "border-transparent hover:border-blue-400"
+                          )}
+                          onClick={() => setSelectedImage(image.path)}
+                        >
+                          <img 
+                            src={image.url ?? image.path} 
+                            alt={image.name ?? "Wiki Image"} 
+                            className="w-full h-32 object-cover"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-sm font-medium p-2 text-center">
+                            {image.name?.replace('File:', '') ?? 'Wiki Image'}
                           </div>
-                        )}
-                      </div>
-                    ))
+                          {selectedImage === image.path && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-blue-500/50">
+                              <Check className="h-8 w-8 text-white" />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      
+                      {/* Infinite Scroll Trigger */}
+                      {hasNextWikiPage && (
+                        <div ref={wikiRef} className="col-span-2 md:col-span-3 flex justify-center py-4">
+                          {isFetchingNextWikiPage ? (
+                            <Loader2 className="animate-spin h-6 w-6 text-blue-400" />
+                          ) : (
+                            <Button variant="outline" size="sm" onClick={() => fetchNextWikiPage()}>
+                              Load More Images
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  ) : wikiSearchQuery ? (
+                    <div className="col-span-2 md:col-span-3 text-center text-muted-foreground p-8">
+                      No images found for "{wikiSearchQuery}". Try a different search query.
+                    </div>
                   ) : (
                     <div className="col-span-2 md:col-span-3 text-center text-muted-foreground p-8">
-                      No images found. Try a different search query.
+                      Enter a search query to find images from {wikiSource}.
                     </div>
                   )}
                   </div>

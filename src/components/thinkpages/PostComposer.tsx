@@ -82,7 +82,7 @@ export function PostComposer({
 
     try {
       const newPost = await createPostMutation.mutateAsync({
-        userId: account.id,
+        accountId: account.id,
         content: content.trim(),
         visibility,
         parentPostId: replyTo?.id,

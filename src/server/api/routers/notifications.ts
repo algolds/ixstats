@@ -42,20 +42,25 @@ export const notificationsRouter = createTRPCRouter({
         include: { country: true }
       });
 
+      // Build OR conditions - only include countryId if user has a country
+      const orConditions: any[] = [
+        { userId }, // Direct user notifications
+        { 
+          AND: [
+            { userId: null },
+            { countryId: null }
+          ]
+        } // Global notifications
+      ];
+      
+      // Only add country-wide notifications if user has a country
+      if (userProfile?.countryId) {
+        orConditions.push({ countryId: userProfile.countryId });
+      }
+
       const whereConditions = {
         AND: [
-          {
-            OR: [
-              { userId }, // Direct user notifications
-              { countryId: userProfile?.countryId }, // Country-wide notifications
-              { 
-                AND: [
-                  { userId: null },
-                  { countryId: null }
-                ]
-              } // Global notifications
-            ]
-          },
+          { OR: orConditions },
           input.unreadOnly ? { read: false } : {},
           input.type ? { type: input.type } : {}
         ]
@@ -111,15 +116,21 @@ export const notificationsRouter = createTRPCRouter({
         include: { country: true }
       });
 
+      // Build OR conditions - only include countryId if user has a country
+      const orConditions: any[] = [
+        { userId: userId },
+        { userId: null, countryId: null } // Global notifications
+      ];
+      
+      if (userProfile?.countryId) {
+        orConditions.push({ countryId: userProfile.countryId });
+      }
+
       // Verify the notification belongs to the user
       const notification = await db.notification.findFirst({
         where: {
           id: input.notificationId,
-          OR: [
-            { userId: userId },
-            { countryId: userProfile?.countryId },
-            { userId: null, countryId: null } // Global notifications
-          ]
+          OR: orConditions
         }
       });
 
@@ -160,15 +171,21 @@ export const notificationsRouter = createTRPCRouter({
         include: { country: true }
       });
 
+      // Build OR conditions - only include countryId if user has a country
+      const orConditions: any[] = [
+        { userId: userId },
+        { userId: null, countryId: null } // Global notifications
+      ];
+      
+      if (userProfile?.countryId) {
+        orConditions.push({ countryId: userProfile.countryId });
+      }
+
       // Verify the notification belongs to the user
       const notification = await db.notification.findFirst({
         where: {
           id: input.notificationId,
-          OR: [
-            { userId: userId },
-            { countryId: userProfile?.countryId },
-            { userId: null, countryId: null } // Global notifications
-          ]
+          OR: orConditions
         }
       });
 
@@ -200,18 +217,24 @@ export const notificationsRouter = createTRPCRouter({
         include: { country: true }
       });
 
+      // Build OR conditions - only include countryId if user has a country
+      const orConditions: any[] = [
+        { userId },
+        { 
+          AND: [
+            { userId: null },
+            { countryId: null }
+          ]
+        }
+      ];
+      
+      if (userProfile?.countryId) {
+        orConditions.push({ countryId: userProfile.countryId });
+      }
+
       await db.notification.updateMany({
         where: {
-          OR: [
-            { userId },
-            { countryId: userProfile?.countryId },
-            { 
-              AND: [
-                { userId: null },
-                { countryId: null }
-              ]
-            }
-          ]
+          OR: orConditions
         },
         data: { read: true },
       });
@@ -481,21 +504,25 @@ export const notificationsRouter = createTRPCRouter({
         include: { country: true }
       });
 
+      // Build OR conditions - only include countryId if user has a country
+      const orConditions: any[] = [
+        { userId },
+        {
+          AND: [
+            { userId: null },
+            { countryId: null }
+          ]
+        }
+      ];
+      
+      if (userProfile?.countryId) {
+        orConditions.push({ countryId: userProfile.countryId });
+      }
+
       const count = await db.notification.count({
         where: {
           AND: [
-            {
-              OR: [
-                { userId },
-                { countryId: userProfile?.countryId },
-                {
-                  AND: [
-                    { userId: null },
-                    { countryId: null }
-                  ]
-                }
-              ]
-            },
+            { OR: orConditions },
             { read: false },
             { dismissed: false }
           ]

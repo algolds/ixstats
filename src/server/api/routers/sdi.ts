@@ -908,12 +908,20 @@ export const sdiRouter = createTRPCRouter({
       // Fetch notifications for the user or their country
       const user = await ctx.db.user.findUnique({ where: { clerkUserId: input.userId } });
       const countryId = user?.countryId;
+      
+      // Build OR conditions - only include countryId if user has a country
+      const orConditions: any[] = [
+        { userId: input.userId },
+        { userId: null, countryId: null } // Global notifications
+      ];
+      
+      if (countryId) {
+        orConditions.push({ countryId: countryId });
+      }
+      
       const notifications = await ctx.db.notification.findMany({
         where: {
-          OR: [
-            { userId: input.userId },
-            { countryId: countryId }
-          ]
+          OR: orConditions
         },
         orderBy: { createdAt: 'desc' },
         take: 20
@@ -926,13 +934,21 @@ export const sdiRouter = createTRPCRouter({
       // Count unread notifications for the user or their country
       const user = await ctx.db.user.findUnique({ where: { clerkUserId: input.userId } });
       const countryId = user?.countryId;
+      
+      // Build OR conditions - only include countryId if user has a country
+      const orConditions: any[] = [
+        { userId: input.userId },
+        { userId: null, countryId: null } // Global notifications
+      ];
+      
+      if (countryId) {
+        orConditions.push({ countryId: countryId });
+      }
+      
       const count = await ctx.db.notification.count({
         where: {
           read: false,
-          OR: [
-            { userId: input.userId },
-            { countryId: countryId }
-          ]
+          OR: orConditions
         }
       });
       return count;

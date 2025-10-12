@@ -35,7 +35,7 @@ const CreateAccountSchema = z.object({
 });
 
 const CreatePostSchema = z.object({
-  userId: z.string(), // Changed to userId (clerkUserId)
+  accountId: z.string(), // ThinkpagesAccount ID for feed posts
   content: z.string().min(1).max(280),
   hashtags: z.array(z.string()).optional(),
   mentions: z.array(z.string()).optional(),
@@ -46,12 +46,12 @@ const CreatePostSchema = z.object({
 
 const AddReactionSchema = z.object({
   postId: z.string(),
-  userId: z.string(), // Changed to userId (clerkUserId)
+  accountId: z.string(), // ThinkpagesAccount ID for reactions
   reactionType: z.enum(['like', 'laugh', 'angry', 'sad', 'fire', 'thumbsup', 'thumbsdown']),
 });
 
 const GetFeedSchema = z.object({
-  userId: z.string().optional(), // Changed from countryId to userId
+  countryId: z.string().optional(), // Feed filtered by country
   hashtag: z.string().optional(),
   filter: z.enum(['recent', 'trending', 'hot']).default('recent'),
   limit: z.number().min(1).max(50).default(20),
@@ -183,26 +183,37 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   searchWiki: publicProcedure
-    .input(z.object({ query: z.string(), wiki: z.enum(['iiwiki', 'ixwiki']) }))
-    .mutation(async ({ input, ctx }) => {
-      const { query, wiki } = input;
+    .input(z.object({ 
+      query: z.string(), 
+      wiki: z.enum(['iiwiki', 'ixwiki']),
+      cursor: z.string().optional(),
+      limit: z.number().min(1).max(100).default(30)
+    }))
+    .query(async ({ input, ctx }) => {
+      const { query, wiki, cursor, limit } = input;
       const startTime = Date.now();
 
       try {
-        console.log(`[WikiSearch] Starting search - Wiki: ${wiki}, Query: "${query}"`);
+        console.log(`[WikiImageSearch] Starting image search - Wiki: ${wiki}, Query: "${query}", Cursor: ${cursor || 'none'}`);
 
-        const results = await wikiSearchService(query, wiki);
+        // Import searchWikiImages function for image-specific search
+        const { searchWikiImagesWithPagination } = await import('~/lib/wiki-search-service');
+        const results = await searchWikiImagesWithPagination(query, wiki, cursor, limit);
 
         const duration = Date.now() - startTime;
-        console.log(`[WikiSearch] Success - Found ${results.length} results in ${duration}ms`);
+        console.log(`[WikiImageSearch] Success - Found ${results.images.length} images in ${duration}ms, hasMore: ${results.hasMore}`);
 
-        return results;
+        return {
+          images: results.images,
+          nextCursor: results.nextCursor,
+          hasMore: results.hasMore,
+        };
       } catch (error) {
         const duration = Date.now() - startTime;
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-        console.error(`[WikiSearch] Failed after ${duration}ms - Wiki: ${wiki}, Query: "${query}"`);
-        console.error(`[WikiSearch] Error:`, error);
+        console.error(`[WikiImageSearch] Failed after ${duration}ms - Wiki: ${wiki}, Query: "${query}"`);
+        console.error(`[WikiImageSearch] Error:`, error);
 
         // Log to database for monitoring
         try {
@@ -210,9 +221,9 @@ export const thinkpagesRouter = createTRPCRouter({
             data: {
               level: 'ERROR',
               category: 'WIKI_SEARCH',
-              message: `Wiki search failed: ${wiki} - ${errorMessage}`,
+              message: `Wiki image search failed: ${wiki} - ${errorMessage}`,
               endpoint: `/api/trpc/thinkpages.searchWiki`,
-              component: 'WikiSearch',
+              component: 'WikiImageSearch',
               duration,
               metadata: JSON.stringify({
                 wiki,
@@ -223,13 +234,13 @@ export const thinkpagesRouter = createTRPCRouter({
             }
           });
         } catch (logError) {
-          console.error('[WikiSearch] Failed to log error to database:', logError);
+          console.error('[WikiImageSearch] Failed to log error to database:', logError);
         }
 
         // Return graceful error to client
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: `Failed to search ${wiki}: ${errorMessage}. Please try again or select a different wiki.`,
+          message: `Failed to search ${wiki} images: ${errorMessage}. Please try again or select a different wiki.`,
         });
       }
     }),
@@ -324,10 +335,10 @@ export const thinkpagesRouter = createTRPCRouter({
       return users;
     }),
 
-  // Update account
+  // Update ThinkPages Feed Account
   updateAccount: protectedProcedure
     .input(z.object({
-      userId: z.string(),
+      accountId: z.string(),
       verified: z.boolean().optional(),
       profileImageUrl: z.string().url().optional(),
       postingFrequency: z.enum(['active', 'moderate', 'low']).optional(),
@@ -337,33 +348,55 @@ export const thinkpagesRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
+      const clerkUserId = ctx.auth?.userId;
 
-      const account = await db.user.update({
-        where: { id: input.userId },
+      if (!clerkUserId) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'You must be logged in to update accounts'
+        });
+      }
+
+      // Verify the account belongs to the current user
+      const existingAccount = await db.thinkpagesAccount.findUnique({
+        where: { id: input.accountId }
+      });
+
+      if (!existingAccount || existingAccount.clerkUserId !== clerkUserId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to update this account'
+        });
+      }
+
+      const account = await db.thinkpagesAccount.update({
+        where: { id: input.accountId },
         data: {
-          // verified: input.verified,
-          // postingFrequency: input.postingFrequency, // Field doesn't exist in User model
-          // politicalLean: input.politicalLean, // Field doesn't exist in User model
-          // personality: input.personality, // Field doesn't exist in User model
-          // profileImageUrl: input.profileImageUrl, // Field doesn't exist in User model
+          verified: input.verified,
+          postingFrequency: input.postingFrequency,
+          politicalLean: input.politicalLean,
+          personality: input.personality,
+          profileImageUrl: input.profileImageUrl,
           isActive: input.isActive,
         },
       });
 
       return account;
     }),
-  // Username availability check for ThinkPages
-  // Note: ThinkPages now uses real User accounts (Clerk usernames)
-  // This endpoint checks if a display name/handle is available
+  // Username availability check for ThinkPages Feed Accounts
   checkUsernameAvailability: publicProcedure
     .input(z.object({
       username: z.string().min(3).max(20).regex(/^[a-zA-Z][a-zA-Z0-9_]*$/),
     }))
     .query(async ({ ctx, input }) => {
-      // Since ThinkPages uses Clerk user accounts, all usernames are technically available
-      // Users post with their actual Clerk identity, not custom usernames
-      // Return available=true to allow users to proceed
-      return { isAvailable: true };
+      const { db } = ctx;
+      
+      // Check if username is already taken in ThinkpagesAccount table
+      const existingAccount = await db.thinkpagesAccount.findUnique({
+        where: { username: input.username }
+      });
+      
+      return { isAvailable: !existingAccount };
     }),
 
   // Generate random profile picture
@@ -374,40 +407,126 @@ export const thinkpagesRouter = createTRPCRouter({
       return { imageUrl: placeholderImage };
     }),
 
-  // DEPRECATED: Legacy endpoint - ThinkPages now uses real User accounts
-  // This endpoint is kept for backwards compatibility but should not be used
+  // Create ThinkPages Feed Account - For Feed only (not ThinkTanks/ThinkShare)
   createAccount: protectedProcedure
     .input(CreateAccountSchema)
     .mutation(async ({ ctx, input }) => {
-      // This endpoint is deprecated - ThinkPages uses real user accounts
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        message: 'ThinkPages account creation is deprecated. Posts are now made using your main user account.'
+      const { db } = ctx;
+      const clerkUserId = ctx.auth?.userId;
+
+      if (!clerkUserId) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'You must be logged in to create accounts'
+        });
+      }
+
+      // Check account limit - 25 accounts per clerk user
+      const existingAccounts = await db.thinkpagesAccount.findMany({
+        where: { clerkUserId }
       });
+
+      if (existingAccounts.length >= 25) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'You have reached the maximum of 25 ThinkPages accounts per user'
+        });
+      }
+
+      // Check username availability
+      const existingUsername = await db.thinkpagesAccount.findUnique({
+        where: { username: input.username }
+      });
+
+      if (existingUsername) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Username is already taken'
+        });
+      }
+
+      // Verify country exists
+      const country = await db.country.findUnique({
+        where: { id: input.countryId }
+      });
+
+      if (!country) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Country not found'
+        });
+      }
+
+      // Create the account
+      const displayName = `${input.firstName} ${input.lastName}`;
+      const account = await db.thinkpagesAccount.create({
+        data: {
+          clerkUserId,
+          countryId: input.countryId,
+          accountType: input.accountType,
+          username: input.username,
+          displayName,
+          firstName: input.firstName,
+          lastName: input.lastName,
+          bio: input.bio,
+          verified: input.verified,
+          postingFrequency: input.postingFrequency,
+          politicalLean: input.politicalLean,
+          personality: input.personality,
+          profileImageUrl: input.profileImageUrl,
+        }
+      });
+
+      return account;
     }),
 
-  // DEPRECATED: Legacy endpoint - returns empty array
-  // ThinkPages now uses real User accounts, not separate character accounts
+  // Get ThinkPages Feed Accounts by Country - For Feed only
   getAccountsByCountry: publicProcedure
     .input(z.object({ countryId: z.string().optional().default('') }).default({ countryId: '' }))
     .query(async ({ ctx, input }) => {
-      // This endpoint is deprecated - ThinkPages uses real user accounts
-      // Return empty array for backwards compatibility
-      return [];
+      const { db } = ctx;
+      
+      if (!input.countryId || input.countryId.trim() === '') {
+        return [];
+      }
+
+      const accounts = await db.thinkpagesAccount.findMany({
+        where: { 
+          countryId: input.countryId,
+          isActive: true
+        },
+        orderBy: [
+          { verified: 'desc' },
+          { followerCount: 'desc' },
+          { createdAt: 'asc' }
+        ]
+      });
+
+      return accounts;
     }),
 
-  // DEPRECATED: Legacy endpoint - returns zero counts
-  // ThinkPages now uses real User accounts, not separate character accounts
+  // Get Account Counts by Type - For Feed only
   getAccountCountsByType: publicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      // This endpoint is deprecated - return zero counts for all types
-      return {
-        citizen: 0,
-        government: 0,
-        media: 0,
-        organization: 0
+      const { db } = ctx;
+
+      const accounts = await db.thinkpagesAccount.findMany({
+        where: { 
+          countryId: input.countryId,
+          isActive: true
+        },
+        select: { accountType: true }
+      });
+
+      const counts = {
+        citizen: accounts.filter(a => a.accountType === 'citizen').length,
+        government: accounts.filter(a => a.accountType === 'government').length,
+        media: accounts.filter(a => a.accountType === 'media').length,
+        organization: 0 // Not used currently
       };
+
+      return counts;
     }),
 
   // Post creation
@@ -417,14 +536,29 @@ export const thinkpagesRouter = createTRPCRouter({
       const { db } = ctx;
       
       // Verify account exists and is active
-      const account = await db.user.findUnique({
-        where: { id: input.userId }
+      const clerkUserId = ctx.auth?.userId;
+      if (!clerkUserId) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'You must be logged in to create posts'
+        });
+      }
+
+      const account = await db.thinkpagesAccount.findUnique({
+        where: { id: input.accountId }
       });
       
       if (!account || !account.isActive) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Account not found or inactive'
+        });
+      }
+
+      if (account.clerkUserId !== clerkUserId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to post from this account'
         });
       }
       
@@ -436,7 +570,7 @@ export const thinkpagesRouter = createTRPCRouter({
       // Create the post
       const post = await db.thinkpagesPost.create({
         data: {
-          userId: input.userId,
+          accountId: input.accountId,
           content: input.content,
           hashtags: input.hashtags ? JSON.stringify(input.hashtags) : null,
           postType,
@@ -446,43 +580,43 @@ export const thinkpagesRouter = createTRPCRouter({
           ixTimeTimestamp: new Date() // Store real-world time for social media timestamps
         },
         include: {
-          // account: true, // Relation doesn't exist in ThinkpagesPost
+          account: true,
           parentPost: {
             include: { 
-              // account: true // Relation doesn't exist
+              account: true
             }
           },
           repostOf: {
             include: { 
-              // account: true // Relation doesn't exist
+              account: true
             }
           }
         }
       });
       
       // Update account post count
-      await db.user.update({
-        where: { id: input.userId },
+      await db.thinkpagesAccount.update({
+        where: { id: input.accountId },
         data: { 
-          // postCount: { increment: 1 } // Field doesn't exist in User model
+          postCount: { increment: 1 }
         }
       });
       
       // Create mentions if any
       if (input.mentions && input.mentions.length > 0) {
-        const mentionedAccounts = await db.user.findMany({
+        const mentionedAccounts = await db.thinkpagesAccount.findMany({
           where: {
-            id: {
-              in: input.mentions.map(m => m.replace('@', '')) // Remove @ for lookup, using id instead of username
+            username: {
+              in: input.mentions.map(m => m.replace('@', ''))
             }
           },
-          select: { id: true }
+          select: { id: true, username: true, clerkUserId: true }
         });
 
-        const mentionData = mentionedAccounts.map((account: any) => ({
+        const mentionData = mentionedAccounts.map((mentionedAccount: any) => ({
           postId: post.id,
-          mentionedUserId: account.id,
-          position: input.content.indexOf(`@${account.username}`)
+          mentionedAccountId: mentionedAccount.id,
+          position: input.content.indexOf(`@${mentionedAccount.username}`)
         }));
 
         if (mentionData.length > 0) {
@@ -494,8 +628,8 @@ export const thinkpagesRouter = createTRPCRouter({
           for (const mentioned of mentionedAccounts) {
             await notificationHooks.onSocialActivity({
               activityType: 'mention',
-              fromUserId: input.userId,
-              toUserId: mentioned.id,
+              fromUserId: account.clerkUserId,
+              toUserId: mentioned.clerkUserId,
               contentTitle: input.content.substring(0, 50),
               contentId: post.id,
             }).catch(err => console.error('[ThinkPages] Failed to send mention notification:', err));
@@ -507,16 +641,16 @@ export const thinkpagesRouter = createTRPCRouter({
       if (input.parentPostId && post.parentPost) {
         const parentPost = await db.thinkpagesPost.findUnique({
           where: { id: input.parentPostId },
-          select: { userId: true }
+          include: { account: true }
         });
 
-        if (parentPost && parentPost.userId !== input.userId) {
+        if (parentPost && parentPost.accountId !== input.accountId) {
           await notificationHooks.onThinkPageActivity({
             thinkpageId: post.id,
             title: input.content.substring(0, 50),
             action: 'commented',
-            authorId: input.userId,
-            targetUserId: parentPost.userId,
+            authorId: account.clerkUserId,
+            targetUserId: parentPost.account.clerkUserId,
           }).catch(err => console.error('[ThinkPages] Failed to send reply notification:', err));
         }
       }
@@ -529,6 +663,26 @@ export const thinkpagesRouter = createTRPCRouter({
     .input(AddReactionSchema)
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
+      const clerkUserId = ctx.auth?.userId;
+
+      if (!clerkUserId) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'You must be logged in to react to posts'
+        });
+      }
+
+      // Verify the account belongs to the current user
+      const account = await db.thinkpagesAccount.findUnique({
+        where: { id: input.accountId }
+      });
+
+      if (!account || account.clerkUserId !== clerkUserId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to use this account'
+        });
+      }
 
       const post = await db.thinkpagesPost.findUnique({
         where: { id: input.postId },
@@ -546,9 +700,9 @@ export const thinkpagesRouter = createTRPCRouter({
 
       const existingReaction = await db.postReaction.findUnique({
         where: {
-          postId_userId: {
+          postId_accountId: {
             postId: input.postId,
-            userId: input.userId,
+            accountId: input.accountId,
           },
         },
       });
@@ -563,9 +717,9 @@ export const thinkpagesRouter = createTRPCRouter({
 
         const reaction = await db.postReaction.update({
           where: {
-            postId_userId: {
+            postId_accountId: {
               postId: input.postId,
-              userId: input.userId,
+              accountId: input.accountId,
             },
           },
           data: { reactionType: input.reactionType },
@@ -583,7 +737,7 @@ export const thinkpagesRouter = createTRPCRouter({
         const reaction = await db.postReaction.create({
           data: {
             postId: input.postId,
-            userId: input.userId,
+            accountId: input.accountId,
             reactionType: input.reactionType,
           },
         });
@@ -597,16 +751,16 @@ export const thinkpagesRouter = createTRPCRouter({
         if (!existingReaction && input.reactionType === 'like') {
           const postWithAuthor = await db.thinkpagesPost.findUnique({
             where: { id: input.postId },
-            select: { userId: true, content: true }
+            select: { accountId: true, content: true }
           });
 
-          if (postWithAuthor && postWithAuthor.userId !== input.userId) {
+          if (postWithAuthor && postWithAuthor.accountId !== input.accountId) {
             await notificationHooks.onThinkPageActivity({
               thinkpageId: input.postId,
               title: postWithAuthor.content.substring(0, 50),
               action: 'liked',
-              authorId: input.userId,
-              targetUserId: postWithAuthor.userId,
+              authorId: input.accountId,
+              targetUserId: postWithAuthor.accountId,
             }).catch(err => console.error('[ThinkPages] Failed to send like notification:', err));
           }
         }
@@ -619,7 +773,7 @@ export const thinkpagesRouter = createTRPCRouter({
   removeReaction: protectedProcedure
     .input(z.object({
       postId: z.string(),
-      userId: z.string(),
+      accountId: z.string(),
     }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
@@ -640,9 +794,9 @@ export const thinkpagesRouter = createTRPCRouter({
 
       const existingReaction = await db.postReaction.findUnique({
         where: {
-          postId_userId: {
+          postId_accountId: {
             postId: input.postId,
-            userId: input.userId,
+            accountId: input.accountId,
           },
         },
       });
@@ -652,9 +806,9 @@ export const thinkpagesRouter = createTRPCRouter({
 
         await db.postReaction.delete({
           where: {
-            postId_userId: {
+            postId_accountId: {
               postId: input.postId,
-              userId: input.userId,
+              accountId: input.accountId,
             },
           },
         });
@@ -898,7 +1052,7 @@ export const thinkpagesRouter = createTRPCRouter({
 
         const recentCitizenPosts = await db.thinkpagesPost.findMany({
           where: {
-            userId: { in: citizenAccountIds },
+            accountId: { in: citizenAccountIds },
             ixTimeTimestamp: { gte: twentyFourHoursAgo },
           },
           include: { reactions: true }, // Include reactions for sentiment analysis
@@ -2246,7 +2400,7 @@ export const thinkpagesRouter = createTRPCRouter({
     .input(z.object({
       postId: z.string(),
       content: z.string().min(1).max(1000),
-      userId: z.string(),
+      accountId: z.string(),
     }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
@@ -2254,7 +2408,7 @@ export const thinkpagesRouter = createTRPCRouter({
       // Verify ownership
       const post = await db.thinkpagesPost.findUnique({
         where: { id: input.postId },
-        select: { userId: true }
+        select: { accountId: true }
       });
       
       if (!post) {
@@ -2264,7 +2418,7 @@ export const thinkpagesRouter = createTRPCRouter({
         });
       }
       
-      if (post.userId !== input.userId) {
+      if (post.accountId !== input.accountId) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You can only edit your own posts'
@@ -2290,7 +2444,7 @@ export const thinkpagesRouter = createTRPCRouter({
   deletePost: protectedProcedure
     .input(z.object({
       postId: z.string(),
-      userId: z.string(),
+      accountId: z.string(),
     }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
@@ -2298,7 +2452,7 @@ export const thinkpagesRouter = createTRPCRouter({
       // Verify ownership
       const post = await db.thinkpagesPost.findUnique({
         where: { id: input.postId },
-        select: { userId: true }
+        select: { accountId: true }
       });
       
       if (!post) {
@@ -2308,7 +2462,7 @@ export const thinkpagesRouter = createTRPCRouter({
         });
       }
       
-      if (post.userId !== input.userId) {
+      if (post.accountId !== input.accountId) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You can only delete your own posts'
@@ -2326,7 +2480,7 @@ export const thinkpagesRouter = createTRPCRouter({
   pinPost: protectedProcedure
     .input(z.object({
       postId: z.string(),
-      userId: z.string(),
+      accountId: z.string(),
       pinned: z.boolean(),
     }))
     .mutation(async ({ ctx, input }) => {
@@ -2335,7 +2489,7 @@ export const thinkpagesRouter = createTRPCRouter({
       // Verify ownership
       const post = await db.thinkpagesPost.findUnique({
         where: { id: input.postId },
-        select: { userId: true }
+        select: { accountId: true }
       });
       
       if (!post) {
@@ -2345,7 +2499,7 @@ export const thinkpagesRouter = createTRPCRouter({
         });
       }
       
-      if (post.userId !== input.userId) {
+      if (post.accountId !== input.accountId) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You can only pin your own posts'

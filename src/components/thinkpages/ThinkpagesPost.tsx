@@ -135,7 +135,7 @@ export function ThinkpagesPost({
     try {
       await pinPostMutation.mutateAsync({
         postId: post.id,
-        userId: currentUserAccountId,
+        accountId: currentUserAccountId,
         pinned: !post.pinned
       });
       toast.success(post.pinned ? 'Post unpinned' : 'Post pinned');
@@ -197,7 +197,7 @@ export function ThinkpagesPost({
     try {
       await updatePostMutation.mutateAsync({
         postId: post.id,
-        userId: currentUserAccountId,
+        accountId: currentUserAccountId,
         content: editText
       });
       toast.success('Post updated');
@@ -217,7 +217,7 @@ export function ThinkpagesPost({
     try {
       await deletePostMutation.mutateAsync({
         postId: post.id,
-        userId: currentUserAccountId
+        accountId: currentUserAccountId
       });
       toast.success('Post deleted');
       setShowDeleteConfirm(false);
@@ -249,7 +249,7 @@ export function ThinkpagesPost({
     try {
       // Enhanced reply with hashtag and mention extraction
       await createPostMutation.mutateAsync({
-        userId: currentUserAccountId,
+        accountId: currentUserAccountId,
         content: replyText,
         parentPostId: post.id,
         visibility: 'public',

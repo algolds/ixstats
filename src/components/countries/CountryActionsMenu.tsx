@@ -167,7 +167,7 @@ export function CountryActionsMenu({
     // Note: getAccountsByCountry is deprecated and returns empty array
     // ThinkPages now uses real User accounts directly
     congratulateMutation.mutate({
-      userId: viewerCountryId, // Use viewer's country ID directly
+      accountId: viewerCountryId, // Use viewer's country ID directly
       content: `🎉 Congratulations to ${targetCountryName} on achieving: ${achievement.title}! ${achievement.description || "A remarkable accomplishment!"}`,
       visibility: "public" as const,
       hashtags: ["achievement", targetCountryName.replace(/\s/g, "")]

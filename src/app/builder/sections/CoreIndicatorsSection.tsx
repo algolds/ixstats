@@ -21,13 +21,15 @@ interface CoreIndicatorsSectionProps extends SectionContentProps {
   onInputsChange: (inputs: EconomicInputs) => void;
   referenceCountry?: RealCountryData | null;
   showAdvanced?: boolean;
+  isReadOnly?: boolean; // When true, population/GDP/gdpPerCapita are read-only (calculated values)
 }
 
 export function CoreIndicatorsSection({
   inputs,
   onInputsChange,
   referenceCountry,
-  showAdvanced = false
+  showAdvanced = false,
+  isReadOnly = false
 }: CoreIndicatorsSectionProps) {
 
   // Ensure coreIndicators exists with defaults
@@ -151,57 +153,73 @@ export function CoreIndicatorsSection({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left Column - Population and GDP */}
         <div className="space-y-6">
-          <EnhancedNumberInput
-            label="Total Population"
-            description="The total number of people living in your country"
-            value={Number(coreIndicators.totalPopulation) || 0}
-            onChange={(value) => onInputsChange({
-              ...inputs,
-              coreIndicators: {
-                ...(inputs.coreIndicators || {}),
-                totalPopulation: Number(value),
-                nominalGDP: Number(value) * Number(inputs.coreIndicators?.gdpPerCapita || 0)
-              }
-            })}
-            min={100000}
-            max={2000000000}
-            step={100000}
-            unit=" people"
-            sectionId="core"
-            icon={Users}
-            format={formatPopulation}
-            referenceValue={referenceCountry?.population}
-            referenceLabel={referenceCountry?.name}
-            showComparison={!!referenceCountry}
-            showButtons={true}
-            showReset={true}
-            resetValue={referenceCountry?.population}
-          />
+          <div className="relative">
+            {isReadOnly && Number(coreIndicators.totalPopulation) === 0 && (
+              <Badge variant="destructive" className="absolute -top-2 right-0 z-10">
+                ⚠️ Missing Data
+              </Badge>
+            )}
+            <EnhancedNumberInput
+              label="Total Population"
+              description={isReadOnly ? "🔒 Calculated by IxStats engine based on baseline + growth over time (read-only)" : "The total number of people living in your country"}
+              value={Number(coreIndicators.totalPopulation) || 0}
+              onChange={(value) => onInputsChange({
+                ...inputs,
+                coreIndicators: {
+                  ...(inputs.coreIndicators || {}),
+                  totalPopulation: Number(value),
+                  nominalGDP: Number(value) * Number(inputs.coreIndicators?.gdpPerCapita || 0)
+                }
+              })}
+              min={100000}
+              max={2000000000}
+              step={100000}
+              unit=" people"
+              sectionId="core"
+              icon={Users}
+              format={formatPopulation}
+              referenceValue={referenceCountry?.population}
+              referenceLabel={referenceCountry?.name}
+              showComparison={!!referenceCountry}
+              showButtons={!isReadOnly}
+              showReset={!isReadOnly}
+              resetValue={referenceCountry?.population}
+              disabled={isReadOnly}
+            />
+          </div>
           
-          <EnhancedNumberInput
-            label="GDP per Capita"
-            description="Average economic output per person (annual income proxy)"
-            value={Number(coreIndicators.gdpPerCapita) || 0}
-            onChange={(value) => onInputsChange({
-              ...inputs,
-              coreIndicators: {
-                ...(inputs.coreIndicators || {}),
-                gdpPerCapita: Number(value),
-                nominalGDP: Number(inputs.coreIndicators?.totalPopulation || 0) * Number(value)
-              }
-            })}
-            min={500}
-            max={150000}
-            step={1000}
-            unit=""
-            sectionId="core"
-            icon={DollarSign}
-            format={formatCurrency}
-            referenceValue={referenceCountry?.gdpPerCapita}
-            referenceLabel={referenceCountry?.name}
-            showComparison={!!referenceCountry}
-            showButtons={true}
-          />
+          <div className="relative">
+            {isReadOnly && Number(coreIndicators.gdpPerCapita) === 0 && (
+              <Badge variant="destructive" className="absolute -top-2 right-0 z-10">
+                ⚠️ Missing Data
+              </Badge>
+            )}
+            <EnhancedNumberInput
+              label="GDP per Capita"
+              description={isReadOnly ? "🔒 Calculated by IxStats engine based on baseline + growth over time (read-only)" : "Average economic output per person (annual income proxy)"}
+              value={Number(coreIndicators.gdpPerCapita) || 0}
+              onChange={(value) => onInputsChange({
+                ...inputs,
+                coreIndicators: {
+                  ...(inputs.coreIndicators || {}),
+                  gdpPerCapita: Number(value),
+                  nominalGDP: Number(inputs.coreIndicators?.totalPopulation || 0) * Number(value)
+                }
+              })}
+              min={500}
+              max={150000}
+              step={1000}
+              unit=""
+              sectionId="core"
+              icon={DollarSign}
+              format={formatCurrency}
+              referenceValue={referenceCountry?.gdpPerCapita}
+              referenceLabel={referenceCountry?.name}
+              showComparison={!!referenceCountry}
+              showButtons={!isReadOnly}
+              disabled={isReadOnly}
+            />
+          </div>
         </div>
 
         {/* Right Column - Growth and Inflation */}
