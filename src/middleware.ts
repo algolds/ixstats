@@ -52,6 +52,7 @@ function generateCSP(nonce: string): string {
     `font-src 'self' https://fonts.gstatic.com data:`,
     `connect-src 'self' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev https://ixwiki.com https://commons.wikimedia.org wss: ws:`,
     `frame-src 'self' https://clerk.ixwiki.com https://accounts.ixwiki.com`,
+    `worker-src 'self' blob:`, // Allow workers from same origin and blob URLs
     `object-src 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,
