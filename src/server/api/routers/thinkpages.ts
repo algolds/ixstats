@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { generateAndPostCitizenReaction } from "~/lib/auto-post-service";
@@ -184,16 +184,52 @@ export const thinkpagesRouter = createTRPCRouter({
 
   searchWiki: publicProcedure
     .input(z.object({ query: z.string(), wiki: z.enum(['iiwiki', 'ixwiki']) }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { query, wiki } = input;
+      const startTime = Date.now();
+
       try {
+        console.log(`[WikiSearch] Starting search - Wiki: ${wiki}, Query: "${query}"`);
+
         const results = await wikiSearchService(query, wiki);
+
+        const duration = Date.now() - startTime;
+        console.log(`[WikiSearch] Success - Found ${results.length} results in ${duration}ms`);
+
         return results;
       } catch (error) {
-        console.error(`Failed to search wiki images for query "${query}" in ${wiki}:`, error);
+        const duration = Date.now() - startTime;
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+        console.error(`[WikiSearch] Failed after ${duration}ms - Wiki: ${wiki}, Query: "${query}"`);
+        console.error(`[WikiSearch] Error:`, error);
+
+        // Log to database for monitoring
+        try {
+          await ctx.db.systemLog.create({
+            data: {
+              level: 'ERROR',
+              category: 'WIKI_SEARCH',
+              message: `Wiki search failed: ${wiki} - ${errorMessage}`,
+              endpoint: `/api/trpc/thinkpages.searchWiki`,
+              component: 'WikiSearch',
+              duration,
+              metadata: JSON.stringify({
+                wiki,
+                query: query.substring(0, 100), // Limit query length in logs
+                error: errorMessage,
+              }),
+              timestamp: new Date(),
+            }
+          });
+        } catch (logError) {
+          console.error('[WikiSearch] Failed to log error to database:', logError);
+        }
+
+        // Return graceful error to client
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: `Failed to search ${wiki} images: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          message: `Failed to search ${wiki}: ${errorMessage}. Please try again or select a different wiki.`,
         });
       }
     }),
@@ -289,7 +325,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Update account
-  updateAccount: publicProcedure
+  updateAccount: protectedProcedure
     .input(z.object({
       userId: z.string(),
       verified: z.boolean().optional(),
@@ -338,7 +374,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Account management
-  createAccount: publicProcedure
+  createAccount: protectedProcedure
     .input(CreateAccountSchema)
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
@@ -474,7 +510,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Post creation
-  createPost: publicProcedure
+  createPost: protectedProcedure
     .input(CreatePostSchema)
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
@@ -588,7 +624,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Add reaction to post
-  addReaction: publicProcedure
+  addReaction: protectedProcedure
     .input(AddReactionSchema)
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
@@ -679,7 +715,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Remove reaction
-  removeReaction: publicProcedure
+  removeReaction: protectedProcedure
     .input(z.object({
       postId: z.string(),
       userId: z.string(),
@@ -1016,7 +1052,7 @@ export const thinkpagesRouter = createTRPCRouter({
   // ===== THINKTANKS (GROUPS) ENDPOINTS =====
 
   // Create a new ThinkTank group
-  createThinktank: publicProcedure
+  createThinktank: protectedProcedure
     .input(z.object({
       name: z.string().min(1).max(100),
       description: z.string().max(500).optional(),
@@ -1141,7 +1177,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Join a ThinkTank group
-  joinThinktank: publicProcedure
+  joinThinktank: protectedProcedure
     .input(z.object({
       groupId: z.string(),
       userId: z.string() // Changed to userId (clerkUserId)
@@ -1217,7 +1253,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Leave a ThinkTank group
-  leaveThinktank: publicProcedure
+  leaveThinktank: protectedProcedure
     .input(z.object({
       groupId: z.string(),
       userId: z.string() // Changed to userId (clerkUserId)
@@ -1332,7 +1368,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Send message to ThinkTank
-  sendThinktankMessage: publicProcedure
+  sendThinktankMessage: protectedProcedure
     .input(z.object({
       groupId: z.string(),
       userId: z.string(), // Changed to userId (clerkUserId)
@@ -1388,7 +1424,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Update a ThinkTank group
-  updateThinktank: publicProcedure
+  updateThinktank: protectedProcedure
     .input(z.object({
       groupId: z.string(),
       name: z.string().min(1).max(100).optional(),
@@ -1413,7 +1449,7 @@ export const thinkpagesRouter = createTRPCRouter({
       return group;
     }),
 
-  deleteThinktank: publicProcedure
+  deleteThinktank: protectedProcedure
     .input(z.object({ groupId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
@@ -1424,7 +1460,7 @@ export const thinkpagesRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  updateMemberRole: publicProcedure
+  updateMemberRole: protectedProcedure
     .input(z.object({
       groupId: z.string(),
       userId: z.string(), // Changed to userId (clerkUserId)
@@ -1444,7 +1480,7 @@ export const thinkpagesRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  removeMemberFromThinktank: publicProcedure
+  removeMemberFromThinktank: protectedProcedure
     .input(z.object({
       groupId: z.string(),
       userId: z.string(), // Changed to userId (clerkUserId)
@@ -1505,7 +1541,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Create a collaborative document
-  createThinktankDocument: publicProcedure
+  createThinktankDocument: protectedProcedure
     .input(z.object({
       groupId: z.string(),
       title: z.string().min(1).max(200),
@@ -1561,7 +1597,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Update a collaborative document
-  updateThinktankDocument: publicProcedure
+  updateThinktankDocument: protectedProcedure
     .input(z.object({
       documentId: z.string(),
       userId: z.string(),
@@ -1615,7 +1651,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Delete a collaborative document
-  deleteThinktankDocument: publicProcedure
+  deleteThinktankDocument: protectedProcedure
     .input(z.object({
       documentId: z.string(),
       userId: z.string()

@@ -2,7 +2,7 @@
 // FIXED: Complete countries router with proper functionality and optimizations
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure, executiveProcedure, countryOwnerProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { getDefaultEconomicConfig, CONFIG_CONSTANTS } from "~/lib/config-service";
 import { parseRosterFile } from "~/lib/data-parser";
@@ -1624,7 +1624,7 @@ const countriesRouter = createTRPCRouter({
       }
     }),
 
-  addDmInput: publicProcedure
+  addDmInput: executiveProcedure
     .input(z.object({
       countryId: z.string().optional(),
       inputType: z.string(),
@@ -1654,7 +1654,7 @@ const countriesRouter = createTRPCRouter({
       }
     }),
 
-  updateDmInput: publicProcedure
+  updateDmInput: executiveProcedure
     .input(z.object({
       id: z.string(),
       inputType: z.string(),
@@ -1682,7 +1682,7 @@ const countriesRouter = createTRPCRouter({
       }
     }),
 
-  deleteDmInput: publicProcedure
+  deleteDmInput: executiveProcedure
     .input(z.object({
       id: z.string(),
     }))
@@ -1703,13 +1703,18 @@ const countriesRouter = createTRPCRouter({
       }
     }),
 
-  updateCountryName: publicProcedure
+  updateCountryName: countryOwnerProcedure
     .input(z.object({
       countryId: z.string(),
       name: z.string().min(1).max(100),
     }))
     .mutation(async ({ ctx, input }) => {
       try {
+        // Verify user owns this country
+        if (ctx.user?.countryId !== input.countryId) {
+          throw new Error('You do not have permission to update this country.');
+        }
+
         const updatedCountry = await ctx.db.country.update({
           where: { id: input.countryId },
           data: {
@@ -1725,7 +1730,7 @@ const countriesRouter = createTRPCRouter({
       }
     }),
 
-  updateProfileVisibility: publicProcedure
+  updateProfileVisibility: countryOwnerProcedure
     .input(z.object({
       countryId: z.string(),
       hideDiplomaticOps: z.boolean().optional(),
@@ -1733,6 +1738,11 @@ const countriesRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx, input }) => {
       try {
+        // Verify user owns this country
+        if (ctx.user?.countryId !== input.countryId) {
+          throw new Error('You do not have permission to update this country.');
+        }
+
         const updateData: any = {
           updatedAt: new Date(),
         };

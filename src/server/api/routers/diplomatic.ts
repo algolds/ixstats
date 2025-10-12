@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 
@@ -121,7 +121,7 @@ export const diplomaticRouter = createTRPCRouter({
     }),
 
   // Update diplomatic relationship
-  updateRelationship: publicProcedure
+  updateRelationship: protectedProcedure
     .input(z.object({
       relationId: z.string(),
       relationship: z.string().optional(),
@@ -131,6 +131,19 @@ export const diplomaticRouter = createTRPCRouter({
       diplomaticChannels: z.array(z.string()).optional()
     }))
     .mutation(async ({ ctx, input }) => {
+      if (!ctx.user?.countryId) {
+        throw new Error('You must be associated with a country to update diplomatic relationships.');
+      }
+
+      // Verify user owns one of the countries in this relation
+      const relation = await ctx.db.diplomaticRelation.findUnique({
+        where: { id: input.relationId }
+      });
+
+      if (!relation || (relation.countryId1 !== ctx.user.countryId && relation.countryId2 !== ctx.user.countryId)) {
+        throw new Error('You do not have permission to update this relationship.');
+      }
+
       const updateData: any = {};
 
       if (input.relationship) updateData.relationship = input.relationship;
@@ -184,7 +197,7 @@ export const diplomaticRouter = createTRPCRouter({
       }
     }),
 
-  establishEmbassy: publicProcedure
+  establishEmbassy: protectedProcedure
     .input(z.object({
       hostCountryId: z.string(),
       guestCountryId: z.string(),
@@ -193,6 +206,15 @@ export const diplomaticRouter = createTRPCRouter({
       ambassadorName: z.string().optional()
     }))
     .mutation(async ({ ctx, input }) => {
+      if (!ctx.user?.countryId) {
+        throw new Error('You must be associated with a country to establish embassies.');
+      }
+
+      // Verify user owns the guest country (the one establishing the embassy)
+      if (ctx.user.countryId !== input.guestCountryId) {
+        throw new Error('You can only establish embassies for your own country.');
+      }
+
       return await ctx.db.embassy.create({
         data: {
           hostCountryId: input.hostCountryId,
@@ -309,7 +331,7 @@ export const diplomaticRouter = createTRPCRouter({
       }
     }),
 
-  sendMessage: publicProcedure
+  sendMessage: protectedProcedure
     .input(z.object({
       channelId: z.string(),
       fromCountryId: z.string(),
@@ -323,6 +345,15 @@ export const diplomaticRouter = createTRPCRouter({
       encrypted: z.boolean().default(false)
     }))
     .mutation(async ({ ctx, input }) => {
+      if (!ctx.user?.countryId) {
+        throw new Error('You must be associated with a country to send diplomatic messages.');
+      }
+
+      // Verify user owns the country sending the message
+      if (ctx.user.countryId !== input.fromCountryId) {
+        throw new Error('You can only send messages from your own country.');
+      }
+
       const message = await ctx.db.diplomaticMessage.create({
         data: {
           channelId: input.channelId,
@@ -423,7 +454,7 @@ export const diplomaticRouter = createTRPCRouter({
       }
     }),
 
-  createCulturalExchange: publicProcedure
+  createCulturalExchange: protectedProcedure
     .input(z.object({
       title: z.string(),
       type: z.enum(['festival', 'exhibition', 'education', 'cuisine', 'arts', 'sports', 'technology', 'diplomacy']),
@@ -435,6 +466,10 @@ export const diplomaticRouter = createTRPCRouter({
       endDate: z.string()
     }))
     .mutation(async ({ ctx, input }) => {
+      if (!ctx.user?.countryId || ctx.user.countryId !== input.hostCountryId) {
+        throw new Error('You can only create cultural exchanges for your own country.');
+      }
+
       return await ctx.db.culturalExchange.create({
         data: {
           title: input.title,
@@ -451,7 +486,7 @@ export const diplomaticRouter = createTRPCRouter({
       });
     }),
 
-  joinCulturalExchange: publicProcedure
+  joinCulturalExchange: protectedProcedure
     .input(z.object({
       exchangeId: z.string(),
       countryId: z.string(),
@@ -460,6 +495,10 @@ export const diplomaticRouter = createTRPCRouter({
       role: z.enum(['co-host', 'participant', 'observer']).default('participant')
     }))
     .mutation(async ({ ctx, input }) => {
+      if (!ctx.user?.countryId || ctx.user.countryId !== input.countryId) {
+        throw new Error('You can only join cultural exchanges with your own country.');
+      }
+
       const participant = await ctx.db.culturalExchangeParticipant.create({
         data: {
           exchangeId: input.exchangeId,
@@ -567,7 +606,7 @@ export const diplomaticRouter = createTRPCRouter({
     }),
 
 
-  upgradeEmbassy: publicProcedure
+  upgradeEmbassy: protectedProcedure
     .input(z.object({
       embassyId: z.string(),
       upgradeType: z.enum(['staff_expansion', 'security_enhancement', 'tech_upgrade', 'facility_expansion', 'specialization_improvement']),
@@ -579,6 +618,10 @@ export const diplomaticRouter = createTRPCRouter({
       });
 
       if (!embassy) throw new TRPCError({ code: 'NOT_FOUND', message: 'Embassy not found' });
+
+      if (!ctx.user?.countryId || ctx.user.countryId !== embassy.guestCountryId) {
+        throw new Error('You can only upgrade your own embassies.');
+      }
 
       const upgradeCosts = {
         staff_expansion: [10000, 25000, 50000],
@@ -702,7 +745,7 @@ export const diplomaticRouter = createTRPCRouter({
       return missions;
     }),
 
-  startMission: publicProcedure
+  startMission: protectedProcedure
     .input(z.object({
       embassyId: z.string(),
       missionType: z.enum(['trade_negotiation', 'intelligence_gathering', 'cultural_outreach', 'security_cooperation', 'research_collaboration']),
@@ -715,6 +758,10 @@ export const diplomaticRouter = createTRPCRouter({
       });
 
       if (!embassy) throw new TRPCError({ code: 'NOT_FOUND', message: 'Embassy not found' });
+
+      if (!ctx.user?.countryId || ctx.user.countryId !== embassy.guestCountryId) {
+        throw new Error('You can only start missions for your own embassies.');
+      }
       if (embassy.currentMissions >= embassy.maxMissions) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Embassy has reached maximum mission capacity' });
       }
@@ -758,7 +805,7 @@ export const diplomaticRouter = createTRPCRouter({
       return mission;
     }),
 
-  completeMission: publicProcedure
+  completeMission: protectedProcedure
     .input(z.object({ missionId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const mission = await ctx.db.embassyMission.findUnique({
@@ -767,6 +814,10 @@ export const diplomaticRouter = createTRPCRouter({
       });
 
       if (!mission) throw new TRPCError({ code: 'NOT_FOUND', message: 'Mission not found' });
+
+      if (!ctx.user?.countryId || ctx.user.countryId !== mission.embassy.guestCountryId) {
+        throw new Error('You can only complete missions for your own embassies.');
+      }
       if (mission.completesAt > new Date()) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Mission not yet completed' });
       }
@@ -837,7 +888,7 @@ export const diplomaticRouter = createTRPCRouter({
     }),
 
   // Embassy Economics
-  payMaintenance: publicProcedure
+  payMaintenance: protectedProcedure
     .input(z.object({ embassyId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const embassy = await ctx.db.embassy.findUnique({
@@ -845,6 +896,10 @@ export const diplomaticRouter = createTRPCRouter({
       });
 
       if (!embassy) throw new TRPCError({ code: 'NOT_FOUND', message: 'Embassy not found' });
+
+      if (!ctx.user?.countryId || ctx.user.countryId !== embassy.guestCountryId) {
+        throw new Error('You can only pay maintenance for your own embassies.');
+      }
       if (embassy.budget < embassy.maintenanceCost) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Insufficient funds for maintenance' });
       }
@@ -861,20 +916,30 @@ export const diplomaticRouter = createTRPCRouter({
       return { success: true, amountPaid: embassy.maintenanceCost };
     }),
 
-  allocateBudget: publicProcedure
+  allocateBudget: protectedProcedure
     .input(z.object({
       embassyId: z.string(),
       additionalBudget: z.number().min(1000).max(1000000)
     }))
     .mutation(async ({ ctx, input }) => {
-      const embassy = await ctx.db.embassy.update({
+      const embassy = await ctx.db.embassy.findUnique({
+        where: { id: input.embassyId }
+      });
+
+      if (!embassy) throw new TRPCError({ code: 'NOT_FOUND', message: 'Embassy not found' });
+
+      if (!ctx.user?.countryId || ctx.user.countryId !== embassy.guestCountryId) {
+        throw new Error('You can only allocate budget to your own embassies.');
+      }
+
+      const updatedEmbassy = await ctx.db.embassy.update({
         where: { id: input.embassyId },
         data: {
           budget: { increment: input.additionalBudget }
         }
       });
 
-      return embassy;
+      return updatedEmbassy;
     }),
 
   // Influence and Relationship Management Procedures
@@ -922,7 +987,7 @@ export const diplomaticRouter = createTRPCRouter({
       };
     }),
 
-  updateRelationshipStrength: publicProcedure
+  updateRelationshipStrength: protectedProcedure
     .input(z.object({
       relationshipId: z.string(),
       influenceChange: z.number(),
@@ -935,6 +1000,11 @@ export const diplomaticRouter = createTRPCRouter({
 
       if (!relationship) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Diplomatic relationship not found' });
+      }
+
+      // Verify user owns one of the countries in this relationship
+      if (!ctx.user?.countryId || (relationship.countryId1 !== ctx.user.countryId && relationship.countryId2 !== ctx.user.countryId)) {
+        throw new Error('You can only update relationships for your own country.');
       }
 
       const relationshipImpact = calculateRelationshipImpact(
@@ -1050,12 +1120,17 @@ export const diplomaticRouter = createTRPCRouter({
       };
     }),
 
-  followCountry: publicProcedure
+  followCountry: protectedProcedure
     .input(z.object({
       followerCountryId: z.string(),
       followedCountryId: z.string()
     }))
     .mutation(async ({ ctx, input }) => {
+      // Verify user owns the follower country
+      if (!ctx.user?.countryId || ctx.user.countryId !== input.followerCountryId) {
+        throw new Error('You can only follow countries with your own country.');
+      }
+
       // Create follow relationship
       const follow = await ctx.db.countryFollow.create({
         data: {
@@ -1067,12 +1142,17 @@ export const diplomaticRouter = createTRPCRouter({
       return { success: true, follow };
     }),
 
-  unfollowCountry: publicProcedure
+  unfollowCountry: protectedProcedure
     .input(z.object({
       followerCountryId: z.string(),
       followedCountryId: z.string()
     }))
     .mutation(async ({ ctx, input }) => {
+      // Verify user owns the follower country
+      if (!ctx.user?.countryId || ctx.user.countryId !== input.followerCountryId) {
+        throw new Error('You can only unfollow countries with your own country.');
+      }
+
       // Delete follow relationship
       await ctx.db.countryFollow.delete({
         where: {
