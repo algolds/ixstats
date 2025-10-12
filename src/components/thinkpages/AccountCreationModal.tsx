@@ -102,9 +102,20 @@ export function AccountCreationModal({
 
   const createAccountMutation = api.thinkpages.createAccount.useMutation();
 
-  const { data: usernameAvailability, isLoading: isLoadingUsernameAvailability } = api.thinkpages.checkUsernameAvailability.useQuery(
+  // Username validation regex (must match backend)
+  const usernameRegex = /^[a-zA-Z][a-zA-Z0-9_]*$/;
+  const isValidUsernameFormat = formData.username.length >= 3 && 
+                                formData.username.length <= 20 && 
+                                usernameRegex.test(formData.username);
+
+  const { data: usernameAvailability, isLoading: isLoadingUsernameAvailability, error: usernameCheckError } = api.thinkpages.checkUsernameAvailability.useQuery(
     { username: formData.username },
-    { enabled: formData.username.length >= 3, staleTime: 500, refetchOnWindowFocus: false }
+    { 
+      enabled: isValidUsernameFormat, 
+      staleTime: 500, 
+      refetchOnWindowFocus: false,
+      retry: false // Don't retry on validation errors
+    }
   );
 
   const { data: accountCountsByType, isLoading: isLoadingAccountCountsByType } = api.thinkpages.getAccountCountsByType.useQuery(
@@ -114,13 +125,21 @@ export function AccountCreationModal({
 
   useEffect(() => {
     if (formData.username.length >= 3) {
-      setIsUsernameAvailable(usernameAvailability?.isAvailable ?? null);
-      setIsCheckingUsername(isLoadingUsernameAvailability);
+      if (!isValidUsernameFormat) {
+        setIsUsernameAvailable(false);
+        setIsCheckingUsername(false);
+      } else if (usernameCheckError) {
+        setIsUsernameAvailable(false);
+        setIsCheckingUsername(false);
+      } else {
+        setIsUsernameAvailable(usernameAvailability?.isAvailable ?? null);
+        setIsCheckingUsername(isLoadingUsernameAvailability);
+      }
     } else {
       setIsUsernameAvailable(null);
       setIsCheckingUsername(false);
     }
-  }, [usernameAvailability, isLoadingUsernameAvailability, formData.username]);
+  }, [usernameAvailability, isLoadingUsernameAvailability, usernameCheckError, formData.username, isValidUsernameFormat]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -336,8 +355,12 @@ export function AccountCreationModal({
                         </div>
                         {errors.username ? <p className="text-xs text-red-400 mt-1">{errors.username}</p> :
                          isUsernameAvailable === true ? <p className="text-xs text-green-400 mt-1">Username is available</p> :
-                         isUsernameAvailable === false ? <p className="text-xs text-red-400 mt-1">Username is invalid or already taken</p> :
-                         <p className="text-xs text-neutral-500 mt-1">3-24 characters, letters, numbers, and underscores only.</p>
+                         isUsernameAvailable === false && formData.username.length >= 3 ? (
+                           !isValidUsernameFormat ? 
+                             <p className="text-xs text-red-400 mt-1">Username must start with a letter and contain only letters, numbers, and underscores</p> :
+                             <p className="text-xs text-red-400 mt-1">Username is already taken</p>
+                         ) :
+                         <p className="text-xs text-neutral-500 mt-1">3-20 characters, must start with a letter, letters/numbers/underscores only</p>
                         }
                       </div>
                       <div>
