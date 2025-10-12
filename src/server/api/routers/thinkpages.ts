@@ -352,17 +352,18 @@ export const thinkpagesRouter = createTRPCRouter({
 
       return account;
     }),
-  // Check username availability
+  // Username availability check for ThinkPages
+  // Note: ThinkPages now uses real User accounts (Clerk usernames)
+  // This endpoint checks if a display name/handle is available
   checkUsernameAvailability: publicProcedure
     .input(z.object({
       username: z.string().min(3).max(20).regex(/^[a-zA-Z][a-zA-Z0-9_]*$/),
     }))
     .query(async ({ ctx, input }) => {
-      const { db } = ctx;
-      const existingAccount = await db.user.findUnique({
-        where: { id: input.username }, // Using id instead of username
-      });
-      return { isAvailable: !existingAccount };
+      // Since ThinkPages uses Clerk user accounts, all usernames are technically available
+      // Users post with their actual Clerk identity, not custom usernames
+      // Return available=true to allow users to proceed
+      return { isAvailable: true };
     }),
 
   // Generate random profile picture
@@ -373,140 +374,40 @@ export const thinkpagesRouter = createTRPCRouter({
       return { imageUrl: placeholderImage };
     }),
 
-  // Account management
+  // DEPRECATED: Legacy endpoint - ThinkPages now uses real User accounts
+  // This endpoint is kept for backwards compatibility but should not be used
   createAccount: protectedProcedure
     .input(CreateAccountSchema)
     .mutation(async ({ ctx, input }) => {
-      const { db } = ctx;
-      
-      // Check if username is already taken
-      const existingAccount = await db.user.findUnique({
-        where: { id: input.username } // Using id instead of username
+      // This endpoint is deprecated - ThinkPages uses real user accounts
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'ThinkPages account creation is deprecated. Posts are now made using your main user account.'
       });
-      
-      if (existingAccount) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message: 'Username is already taken'
-        });
-      }
-      
-      // Check if country exists
-      const country = await db.country.findUnique({
-        where: { id: (input as any).countryId }
-      });
-      
-      if (!country) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Country not found'
-        });
-      }
-      
-      // Count existing accounts for this country
-      const accountCount = await db.user.count({
-        where: { countryId: (input as any).countryId }
-      });
-      
-      if (accountCount >= 25) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Maximum account limit (25) reached for this country'
-        });
-      }
-
-      // Define max accounts per type
-      const MAX_ACCOUNTS_PER_TYPE = {
-        government: 5,
-        media: 10,
-        citizen: 17,
-      };
-
-      const currentAccountTypeCount = await db.user.count({
-        where: {
-          countryId: (input as any).countryId,
-          // accountType: input.accountType, // Field doesn't exist in User model
-        },
-      });
-
-      const maxForType = MAX_ACCOUNTS_PER_TYPE[input.accountType];
-
-      if (currentAccountTypeCount >= maxForType) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: `Maximum ${input.accountType} account limit (${maxForType}) reached for this country`,
-        });
-      }
-      
-      // Create the account
-      // Generate deterministic user ID based on username
-      const userId = `thinkpages_${input.username.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
-
-      const account = await db.user.create({
-        data: {
-          clerkUserId: userId,
-          countryId: (input as any).countryId,
-          // accountType: input.accountType, // Field doesn't exist in User model
-          // username: input.username, // Field doesn't exist in User model
-          // displayName: `${input.firstName} ${input.lastName}`, // Field doesn't exist in User model
-          // firstName: input.firstName, // Field doesn't exist in User model
-          // lastName: input.lastName, // Field doesn't exist in User model
-          // bio: input.bio, // Field doesn't exist in User model
-          // verified: input.verified, // Field doesn't exist in User model
-          // postingFrequency: input.postingFrequency, // Field doesn't exist in User model
-          // politicalLean: input.politicalLean, // Field doesn't exist in User model
-          // personality: input.personality, // Field doesn't exist in User model
-          // profileImageUrl: input.profileImageUrl // Field doesn't exist in User model
-        }
-      });
-      
-      return account;
     }),
 
-  // Get accounts by country
+  // DEPRECATED: Legacy endpoint - returns empty array
+  // ThinkPages now uses real User accounts, not separate character accounts
   getAccountsByCountry: publicProcedure
     .input(z.object({ countryId: z.string().optional().default('') }).default({ countryId: '' }))
     .query(async ({ ctx, input }) => {
-      const { db } = ctx;
-      
-      // Early return for invalid country ID
-      if (!input || !(input as any).countryId || (input as any).countryId.trim() === '' || (input as any).countryId === 'INVALID') {
-        return [];
-      }
-      
-      const accounts = await db.user.findMany({
-        where: { 
-          countryId: (input as any).countryId,
-          isActive: true
-        },
-        orderBy: [
-          // { accountType: 'asc' }, // Field doesn't exist in User model
-          { createdAt: 'desc' }
-        ]
-      });
-      
-      return accounts;
+      // This endpoint is deprecated - ThinkPages uses real user accounts
+      // Return empty array for backwards compatibility
+      return [];
     }),
 
-  // Get account counts by type for a country
+  // DEPRECATED: Legacy endpoint - returns zero counts
+  // ThinkPages now uses real User accounts, not separate character accounts
   getAccountCountsByType: publicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const { db } = ctx;
-
-      // accountType field doesn't exist in User model, returning mock data
-      const counts = [
-        { accountType: 'citizen', _count: { id: 150 } },
-        { accountType: 'government', _count: { id: 25 } },
-        { accountType: 'organization', _count: { id: 12 } }
-      ];
-
-      const result: Record<string, number> = {};
-      counts.forEach((c: any) => {
-        result[c.accountType] = c._count.id;
-      });
-
-      return result;
+      // This endpoint is deprecated - return zero counts for all types
+      return {
+        citizen: 0,
+        government: 0,
+        media: 0,
+        organization: 0
+      };
     }),
 
   // Post creation
@@ -904,13 +805,7 @@ export const thinkpagesRouter = createTRPCRouter({
       const account = await db.user.findFirst({
         where: { country: { user: { clerkUserId: input.clerkUserId } } },
         include: {
-          country: true,
-          _count: {
-            select: {
-              // posts: true, // Relation doesn't exist
-              // reactions: true // Relation doesn't exist
-            }
-          }
+          country: true
         }
       });
 
@@ -1504,7 +1399,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Invite users to a ThinkTank group
-  inviteToThinktank: publicProcedure
+  inviteToThinktank: protectedProcedure
     .input(z.object({
       groupId: z.string(),
       userIds: z.array(z.string()), // Changed to userIds (clerkUserIds)
@@ -1736,7 +1631,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Add reaction to a Thinkshare message
-  addReactionToMessage: publicProcedure
+  addReactionToMessage: protectedProcedure
     .input(z.object({
       messageId: z.string(),
       userId: z.string(), // Changed to userId (clerkUserId)
@@ -1767,7 +1662,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Remove reaction from a Thinkshare message
-  removeReactionFromMessage: publicProcedure
+  removeReactionFromMessage: protectedProcedure
     .input(z.object({
       messageId: z.string(),
       reaction: z.string(),
@@ -1802,7 +1697,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Edit a Thinkshare message
-  editMessage: publicProcedure
+  editMessage: protectedProcedure
     .input(z.object({
       messageId: z.string(),
       content: z.string().min(1),
@@ -1820,7 +1715,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Delete a Thinkshare message
-  deleteMessage: publicProcedure
+  deleteMessage: protectedProcedure
     .input(z.object({ messageId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
@@ -1837,7 +1732,7 @@ export const thinkpagesRouter = createTRPCRouter({
   // ===== THINKSHARE (MESSAGING) ENDPOINTS =====
 
   // Create a new conversation
-  createConversation: publicProcedure
+  createConversation: protectedProcedure
     .input(z.object({
       participantIds: z.array(z.string().min(1)) // Now expects userIds (clerkUserIds)
     }))
@@ -2116,7 +2011,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Send message to conversation
-  sendMessage: publicProcedure
+  sendMessage: protectedProcedure
     .input(z.object({
       conversationId: z.string(),
       userId: z.string(), // Changed to userId (clerkUserId)
@@ -2182,7 +2077,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Mark messages as read
-  markMessagesAsRead: publicProcedure
+  markMessagesAsRead: protectedProcedure
     .input(z.object({
       conversationId: z.string(),
       userId: z.string(), // Changed to userId (clerkUserId)
@@ -2248,7 +2143,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Update user presence/online status
-  updatePresence: publicProcedure
+  updatePresence: protectedProcedure
     .input(z.object({
       userId: z.string(), // Changed to userId (clerkUserId)
       isOnline: z.boolean(),
@@ -2347,7 +2242,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Update a post
-  updatePost: publicProcedure
+  updatePost: protectedProcedure
     .input(z.object({
       postId: z.string(),
       content: z.string().min(1).max(1000),
@@ -2392,7 +2287,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Delete a post
-  deletePost: publicProcedure
+  deletePost: protectedProcedure
     .input(z.object({
       postId: z.string(),
       userId: z.string(),
@@ -2428,7 +2323,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Pin/unpin a post
-  pinPost: publicProcedure
+  pinPost: protectedProcedure
     .input(z.object({
       postId: z.string(),
       userId: z.string(),
@@ -2466,7 +2361,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Bookmark/unbookmark a post
-  bookmarkPost: publicProcedure
+  bookmarkPost: protectedProcedure
     .input(z.object({
       postId: z.string(),
       userId: z.string(),
@@ -2504,7 +2399,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Flag a post
-  flagPost: publicProcedure
+  flagPost: protectedProcedure
     .input(z.object({
       postId: z.string(),
       userId: z.string(),
@@ -2542,7 +2437,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Create a conversation between two countries' official accounts
-  createConversationByCountries: publicProcedure
+  createConversationByCountries: protectedProcedure
     .input(z.object({
       fromCountryId: z.string(),
       toCountryId: z.string(),

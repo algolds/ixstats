@@ -95,21 +95,30 @@ export const notificationsRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
-      
-      if (!input.userId) {
+
+      const userId = input.userId || ctx.auth?.userId;
+
+      if (!userId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
           message: 'User ID required',
         });
       }
-      
+
+      // Get user profile to find their country
+      const userProfile = await db.user.findFirst({
+        where: { clerkUserId: userId },
+        include: { country: true }
+      });
+
       // Verify the notification belongs to the user
       const notification = await db.notification.findFirst({
         where: {
           id: input.notificationId,
           OR: [
-            { userId: input.userId },
-            { userId: null } // Global notifications can be marked as read by anyone
+            { userId: userId },
+            { countryId: userProfile?.countryId },
+            { userId: null, countryId: null } // Global notifications
           ]
         }
       });
@@ -117,13 +126,62 @@ export const notificationsRouter = createTRPCRouter({
       if (!notification) {
         throw new TRPCError({
           code: 'NOT_FOUND',
-          message: 'Notification not found',
+          message: 'Notification not found or no access',
         });
       }
 
       return await db.notification.update({
         where: { id: input.notificationId },
         data: { read: true },
+      });
+    }),
+
+  // Dismiss notification (hides it from view)
+  dismissNotification: publicProcedure
+    .input(z.object({
+      notificationId: z.string(),
+      userId: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      const userId = input.userId || ctx.auth?.userId;
+
+      if (!userId) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'User ID required',
+        });
+      }
+
+      // Get user profile to find their country
+      const userProfile = await db.user.findFirst({
+        where: { clerkUserId: userId },
+        include: { country: true }
+      });
+
+      // Verify the notification belongs to the user
+      const notification = await db.notification.findFirst({
+        where: {
+          id: input.notificationId,
+          OR: [
+            { userId: userId },
+            { countryId: userProfile?.countryId },
+            { userId: null, countryId: null } // Global notifications
+          ]
+        }
+      });
+
+      if (!notification) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Notification not found or no access',
+        });
+      }
+
+      return await db.notification.update({
+        where: { id: input.notificationId },
+        data: { dismissed: true, read: true },
       });
     }),
 

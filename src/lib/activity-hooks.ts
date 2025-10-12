@@ -41,7 +41,7 @@ export class DiplomaticActivityHooks {
             country2: country2.name,
             embassyTier,
           }),
-          priority: 'MEDIUM',
+          priority: 'medium',
           visibility: 'public',
           relatedCountries: JSON.stringify([country1Id, country2Id]),
         },
@@ -92,7 +92,7 @@ export class DiplomaticActivityHooks {
             country: country.name,
             targetCountry: targetCountry.name,
           }),
-          priority: success ? 'MEDIUM' : 'LOW',
+          priority: success ? 'medium' : 'low',
           visibility: 'public',
           relatedCountries: JSON.stringify([countryId, targetCountryId]),
         },
@@ -131,7 +131,7 @@ export class DiplomaticActivityHooks {
             countries: [country1.name, country2.name],
             allianceName,
           }),
-          priority: 'HIGH',
+          priority: 'high',
           visibility: 'public',
           relatedCountries: JSON.stringify([country1Id, country2Id]),
         },
@@ -158,7 +158,7 @@ export class DiplomaticActivityHooks {
 
       if (!country1 || !country2) return;
 
-      const priority = tradeValue && tradeValue > 50000000000 ? 'HIGH' : 'MEDIUM';
+      const priority = tradeValue && tradeValue > 50000000000 ? 'high' : 'medium';
 
       await db.activityFeed.create({
         data: {
@@ -218,7 +218,7 @@ export class GovernmentActivityHooks {
             componentType,
             country: country.name,
           }),
-          priority: 'MEDIUM',
+          priority: 'medium',
           visibility: 'public',
           relatedCountries: JSON.stringify([countryId]),
         },
@@ -248,7 +248,7 @@ export class GovernmentActivityHooks {
       if (!country) return;
 
       const isImprovement = newEffectiveness > oldEffectiveness;
-      const priority = Math.abs(newEffectiveness - oldEffectiveness) > 20 ? 'HIGH' : 'MEDIUM';
+      const priority = Math.abs(newEffectiveness - oldEffectiveness) > 20 ? 'high' : 'medium';
 
       await db.activityFeed.create({
         data: {
@@ -304,7 +304,7 @@ export class GovernmentActivityHooks {
             reformType,
             reformDescription,
           }),
-          priority: 'HIGH',
+          priority: 'high',
           visibility: 'public',
           relatedCountries: JSON.stringify([countryId]),
         },
@@ -349,7 +349,7 @@ export class EconomicActivityHooks {
             totalBudget,
             majorChanges,
           }),
-          priority: totalBudget > 1000000000000 ? 'HIGH' : 'MEDIUM',
+          priority: totalBudget > 1000000000000 ? 'high' : 'medium',
           visibility: 'public',
           relatedCountries: JSON.stringify([countryId]),
         },
@@ -391,7 +391,7 @@ export class EconomicActivityHooks {
             policyDescription,
             impactedPopulation,
           }),
-          priority: 'MEDIUM',
+          priority: 'medium',
           visibility: 'public',
           relatedCountries: JSON.stringify([countryId]),
         },
@@ -419,7 +419,7 @@ export class EconomicActivityHooks {
 
       if (!country) return;
 
-      const priority = projectValue > 10000000000 ? 'HIGH' : 'MEDIUM';
+      const priority = projectValue > 10000000000 ? 'high' : 'medium';
 
       await db.activityFeed.create({
         data: {
@@ -482,7 +482,7 @@ export class SecurityActivityHooks {
             action,
             newLevel,
           }),
-          priority: 'MEDIUM',
+          priority: 'medium',
           visibility: 'public',
           relatedCountries: JSON.stringify([countryId]),
         },
@@ -510,7 +510,7 @@ export class SecurityActivityHooks {
 
       if (!country) return;
 
-      const priority = severity === 'critical' ? 'CRITICAL' : severity === 'high' ? 'HIGH' : 'MEDIUM';
+      const priority = severity === 'critical' ? 'critical' : severity === 'high' ? 'high' : 'medium';
 
       await db.activityFeed.create({
         data: {
@@ -571,7 +571,7 @@ export class SocialActivityHooks {
             eventType: 'thinkpage_post',
             postType,
           }),
-          priority: 'LOW',
+          priority: 'low',
           visibility,
           relatedCountries: JSON.stringify([countryId]),
         },
@@ -609,7 +609,7 @@ export class SocialActivityHooks {
             eventType: 'follow_country',
             followedCountry: country.name,
           }),
-          priority: 'LOW',
+          priority: 'low',
           visibility: 'friends',
           relatedCountries: JSON.stringify([countryId, ...(userCountryId ? [userCountryId] : [])]),
         },
@@ -644,7 +644,7 @@ export class SocialActivityHooks {
             eventType: 'user_joined',
             countryName: country?.name,
           }),
-          priority: 'LOW',
+          priority: 'low',
           visibility: 'public',
           relatedCountries: countryId ? JSON.stringify([countryId]) : null,
         },
@@ -699,7 +699,7 @@ export class UserActivityHooks {
             eventType: 'achievement_unlocked',
             achievementName,
           }),
-          priority: 'MEDIUM',
+          priority: 'medium',
           visibility: 'public',
           relatedCountries: JSON.stringify([countryId]),
         },

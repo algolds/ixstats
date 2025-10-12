@@ -9,69 +9,37 @@ import type { StandardPriority, StandardCategory, StandardTrend } from '~/types/
 // Prisma to TypeScript transformations
 export const prismaToTypescript = {
   priority: (priority: Priority): StandardPriority => {
-    const mapping: Record<Priority, StandardPriority> = {
-      CRITICAL: 'critical',
-      HIGH: 'high',
-      MEDIUM: 'medium',
-      LOW: 'low'
-    };
-    return mapping[priority];
+    // Priority enum in Prisma is already lowercase, so just return it
+    return priority as StandardPriority;
   },
 
   category: (category: Category): StandardCategory => {
-    const mapping: Record<Category, StandardCategory> = {
-      ECONOMIC: 'economic',
-      DIPLOMATIC: 'diplomatic',
-      SOCIAL: 'social',
-      GOVERNANCE: 'governance',
-      SECURITY: 'security',
-      INFRASTRUCTURE: 'infrastructure'
-    };
-    return mapping[category];
+    // Category enum in Prisma is already lowercase, so just return it
+    return category as StandardCategory;
   },
 
   trend: (trend: Trend): StandardTrend => {
-    const mapping: Record<Trend, StandardTrend> = {
-      UP: 'up',
-      DOWN: 'down',
-      STABLE: 'stable'
-    };
-    return mapping[trend];
+    // Trend enum in Prisma is already lowercase, so just return it
+    return trend as StandardTrend;
   }
 };
 
 // TypeScript to Prisma transformations
 export const typescriptToPrisma = {
   priority: (priority: StandardPriority): Priority => {
-    const mapping: Record<StandardPriority, Priority> = {
-      'critical': 'CRITICAL',
-      'high': 'HIGH',
-      'medium': 'MEDIUM',
-      'low': 'LOW'
-    };
-    return mapping[priority];
+    // Priority enum in Prisma is already lowercase, so just return it
+    return priority as Priority;
   },
 
   category: (category: StandardCategory): Category => {
-    const mapping: Record<StandardCategory, Category> = {
-      'economic': 'ECONOMIC',
-      'diplomatic': 'DIPLOMATIC',
-      'social': 'SOCIAL',
-      'governance': 'GOVERNANCE',
-      'security': 'SECURITY',
-      'infrastructure': 'INFRASTRUCTURE',
-      'crisis': 'ECONOMIC' // Map crisis to economic as fallback
-    };
-    return mapping[category];
+    // Category enum in Prisma is already lowercase, so just return it
+    // Map 'crisis' to 'economic' as fallback
+    return (category === 'crisis' ? 'economic' : category) as Category;
   },
 
   trend: (trend: StandardTrend): Trend => {
-    const mapping: Record<StandardTrend, Trend> = {
-      'up': 'UP',
-      'down': 'DOWN',
-      'stable': 'STABLE'
-    };
-    return mapping[trend];
+    // Trend enum in Prisma is already lowercase, so just return it
+    return trend as Trend;
   }
 };
 

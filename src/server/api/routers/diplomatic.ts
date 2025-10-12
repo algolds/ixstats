@@ -140,7 +140,7 @@ export const diplomaticRouter = createTRPCRouter({
         where: { id: input.relationId }
       });
 
-      if (!relation || (relation.countryId1 !== ctx.user.countryId && relation.countryId2 !== ctx.user.countryId)) {
+      if (!relation || (relation.country1 !== ctx.user.countryId && relation.country2 !== ctx.user.countryId)) {
         throw new Error('You do not have permission to update this relationship.');
       }
 
@@ -1003,7 +1003,7 @@ export const diplomaticRouter = createTRPCRouter({
       }
 
       // Verify user owns one of the countries in this relationship
-      if (!ctx.user?.countryId || (relationship.countryId1 !== ctx.user.countryId && relationship.countryId2 !== ctx.user.countryId)) {
+      if (!ctx.user?.countryId || (relationship.country1 !== ctx.user.countryId && relationship.country2 !== ctx.user.countryId)) {
         throw new Error('You can only update relationships for your own country.');
       }
 

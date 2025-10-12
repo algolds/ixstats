@@ -1,7 +1,7 @@
 // src/server/api/routers/government.ts
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { COMPONENT_TYPE_VALUES } from "~/types/government";
 
@@ -126,7 +126,7 @@ export const governmentRouter = createTRPCRouter({
     }),
 
   // Create complete government structure
-  create: publicProcedure
+  create: protectedProcedure
     .input(z.object({ 
       countryId: z.string(),
       data: governmentBuilderStateSchema 
@@ -249,7 +249,7 @@ export const governmentRouter = createTRPCRouter({
     }),
 
   // Update government structure
-  update: publicProcedure
+  update: protectedProcedure
     .input(z.object({
       countryId: z.string(),
       data: governmentBuilderStateSchema
@@ -366,7 +366,7 @@ export const governmentRouter = createTRPCRouter({
     }),
 
   // Delete government structure
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const deleted = await ctx.db.governmentStructure.delete({
@@ -475,7 +475,7 @@ export const governmentRouter = createTRPCRouter({
     }),
 
   // Update budget allocation
-  updateBudgetAllocation: publicProcedure
+  updateBudgetAllocation: protectedProcedure
     .input(z.object({
       allocationId: z.string(),
       data: z.object({
@@ -502,7 +502,7 @@ export const governmentRouter = createTRPCRouter({
     }),
 
   // Add sub-budget categories
-  addSubBudget: publicProcedure
+  addSubBudget: protectedProcedure
     .input(z.object({
       departmentId: z.string(),
       data: subBudgetInputSchema
@@ -587,7 +587,7 @@ export const governmentRouter = createTRPCRouter({
     }),
 
   // Add atomic government component
-  addComponent: publicProcedure
+  addComponent: protectedProcedure
     .input(z.object({
       countryId: z.string(),
       componentType: z.enum(COMPONENT_TYPE_VALUES),
@@ -621,7 +621,7 @@ export const governmentRouter = createTRPCRouter({
     }),
 
   // Remove atomic government component
-  removeComponent: publicProcedure
+  removeComponent: protectedProcedure
     .input(z.object({
       countryId: z.string(),
       componentType: z.enum(COMPONENT_TYPE_VALUES)

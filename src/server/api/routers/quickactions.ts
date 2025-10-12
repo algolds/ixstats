@@ -2,7 +2,7 @@
 // Comprehensive Quick Actions tRPC router with government integration, IxTime sync, and economic system integration
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 
@@ -165,7 +165,7 @@ export const quickActionsRouter = createTRPCRouter({
   /**
    * Create a new government official
    */
-  createOfficial: publicProcedure
+  createOfficial: protectedProcedure
     .input(z.object({
       countryId: z.string(),
       official: governmentOfficialInputSchema,
@@ -207,7 +207,7 @@ export const quickActionsRouter = createTRPCRouter({
   /**
    * Update a government official
    */
-  updateOfficial: publicProcedure
+  updateOfficial: protectedProcedure
     .input(z.object({
       officialId: z.string(),
       updates: governmentOfficialInputSchema.partial(),
@@ -231,7 +231,7 @@ export const quickActionsRouter = createTRPCRouter({
   /**
    * Delete a government official (soft delete by marking inactive)
    */
-  deleteOfficial: publicProcedure
+  deleteOfficial: protectedProcedure
     .input(z.object({
       officialId: z.string(),
       hardDelete: z.boolean().default(false),
@@ -313,7 +313,7 @@ export const quickActionsRouter = createTRPCRouter({
   /**
    * Create a new cabinet meeting with IxTime sync
    */
-  createMeeting: publicProcedure
+  createMeeting: protectedProcedure
     .input(z.object({
       countryId: z.string(),
       userId: z.string(),
@@ -406,7 +406,7 @@ export const quickActionsRouter = createTRPCRouter({
   /**
    * Update meeting status and add notes
    */
-  updateMeeting: publicProcedure
+  updateMeeting: protectedProcedure
     .input(z.object({
       meetingId: z.string(),
       updates: z.object({
@@ -444,7 +444,7 @@ export const quickActionsRouter = createTRPCRouter({
   /**
    * Update agenda item status
    */
-  updateAgendaItem: publicProcedure
+  updateAgendaItem: protectedProcedure
     .input(z.object({
       agendaItemId: z.string(),
       status: z.enum(['pending', 'discussed', 'deferred', 'completed']),
@@ -514,7 +514,7 @@ export const quickActionsRouter = createTRPCRouter({
   /**
    * Create a new policy with economic effect tracking
    */
-  createPolicy: publicProcedure
+  createPolicy: protectedProcedure
     .input(z.object({
       countryId: z.string(),
       userId: z.string(),
@@ -597,7 +597,7 @@ export const quickActionsRouter = createTRPCRouter({
   /**
    * Activate a policy and apply its effects
    */
-  activatePolicy: publicProcedure
+  activatePolicy: protectedProcedure
     .input(z.object({
       policyId: z.string(),
       applyEffects: z.boolean().default(true),
@@ -711,7 +711,7 @@ export const quickActionsRouter = createTRPCRouter({
   /**
    * Update policy status
    */
-  updatePolicy: publicProcedure
+  updatePolicy: protectedProcedure
     .input(z.object({
       policyId: z.string(),
       updates: policyInputSchema.partial().extend({
@@ -783,7 +783,7 @@ export const quickActionsRouter = createTRPCRouter({
   /**
    * Create activity schedule entry
    */
-  createActivity: publicProcedure
+  createActivity: protectedProcedure
     .input(z.object({
       countryId: z.string(),
       userId: z.string(),
@@ -948,7 +948,7 @@ export const quickActionsRouter = createTRPCRouter({
   /**
    * Complete a meeting and trigger decision/action prompts
    */
-  completeMeeting: publicProcedure
+  completeMeeting: protectedProcedure
     .input(z.object({
       meetingId: z.string(),
       notes: z.string().optional(),
@@ -1045,7 +1045,7 @@ export const quickActionsRouter = createTRPCRouter({
   /**
    * Create a meeting decision
    */
-  createDecision: publicProcedure
+  createDecision: protectedProcedure
     .input(z.object({
       meetingId: z.string(),
       agendaItemId: z.string().optional(),
@@ -1131,7 +1131,7 @@ export const quickActionsRouter = createTRPCRouter({
   /**
    * Create action items from a meeting
    */
-  createActionItems: publicProcedure
+  createActionItems: protectedProcedure
     .input(z.object({
       meetingId: z.string(),
       items: z.array(z.object({

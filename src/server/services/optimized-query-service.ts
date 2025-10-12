@@ -129,10 +129,10 @@ export class OptimizedQueryService {
 
       // Execute optimized query with proper indexing
       const intelligence = await db.intelligenceItem.findMany({
-        where: { 
+        where: {
           OR: [
             { affectedCountries: { contains: countryId } },
-            { category: 'ECONOMIC' }
+            { category: 'economic' }
           ]
         },
         orderBy: [

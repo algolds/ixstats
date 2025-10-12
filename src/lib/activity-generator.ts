@@ -13,9 +13,19 @@ export interface ActivityData {
   title: string;
   description: string;
   metadata?: Record<string, any>;
-  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  priority?: 'low' | 'medium' | 'high' | 'critical' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   visibility?: 'public' | 'followers' | 'friends';
   relatedCountries?: string[];
+}
+
+// Helper to convert priority to lowercase
+function normalizePriority(priority?: string): 'low' | 'medium' | 'high' | 'critical' {
+  if (!priority) return 'medium';
+  const lower = priority.toLowerCase();
+  if (lower === 'low' || lower === 'medium' || lower === 'high' || lower === 'critical') {
+    return lower as 'low' | 'medium' | 'high' | 'critical';
+  }
+  return 'medium';
 }
 
 export class ActivityGenerator {
@@ -350,7 +360,7 @@ export class ActivityGenerator {
           title: activityData.title,
           description: activityData.description,
           metadata: activityData.metadata ? JSON.stringify(activityData.metadata) : null,
-          priority: activityData.priority || 'MEDIUM',
+          priority: normalizePriority(activityData.priority),
           visibility: activityData.visibility || 'public',
           relatedCountries: activityData.relatedCountries ? JSON.stringify(activityData.relatedCountries) : null,
         },

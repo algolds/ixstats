@@ -209,7 +209,7 @@ export function CoreIndicatorsSectionModern({
           description="Total number of people in the country"
           value={coreIndicators.totalPopulation}
           onChange={(value) => handleCoreChange('totalPopulation', Number(value))}
-          min={50000}
+          min={1000}
           max={2000000000}
           step={10000}
           unit=" people"
@@ -226,7 +226,7 @@ export function CoreIndicatorsSectionModern({
           description="Average economic output per person"
           value={coreIndicators.gdpPerCapita}
           onChange={(value) => handleCoreChange('gdpPerCapita', Number(value))}
-          min={500}
+          min={100}
           max={200000}
           step={100}
           unit=""

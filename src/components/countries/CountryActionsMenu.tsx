@@ -151,8 +151,8 @@ export function CountryActionsMenu({
 
   // Handle congratulate
   const handleCongratulate = useCallback(() => {
-    if (!viewerCountryId || !viewerAccounts || viewerAccounts.length === 0) {
-      toast.error("You need a ThinkPages account to send congratulations");
+    if (!viewerCountryId) {
+      toast.error("You need to sign in to send congratulations");
       return;
     }
 
@@ -164,15 +164,15 @@ export function CountryActionsMenu({
     const achievement = recentAchievements?.find((a: { id: string }) => a.id === selectedAchievement);
     if (!achievement) return;
 
-    const viewerAccount = viewerAccounts[0];
-
+    // Note: getAccountsByCountry is deprecated and returns empty array
+    // ThinkPages now uses real User accounts directly
     congratulateMutation.mutate({
-      userId: viewerAccount.clerkUserId,
+      userId: viewerCountryId, // Use viewer's country ID directly
       content: `🎉 Congratulations to ${targetCountryName} on achieving: ${achievement.title}! ${achievement.description || "A remarkable accomplishment!"}`,
       visibility: "public" as const,
       hashtags: ["achievement", targetCountryName.replace(/\s/g, "")]
     });
-  }, [viewerCountryId, viewerAccounts, targetCountryId, targetCountryName, selectedAchievement, recentAchievements, congratulateMutation]);
+  }, [viewerCountryId, targetCountryId, targetCountryName, selectedAchievement, recentAchievements, congratulateMutation]);
 
   const isLoading = followMutation.isPending ||
                     unfollowMutation.isPending ||
