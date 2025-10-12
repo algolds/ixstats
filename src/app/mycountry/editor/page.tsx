@@ -122,9 +122,20 @@ export default function MyCountryEditor() {
   const createScheduledChangeMutation = api.scheduledChanges.createScheduledChange.useMutation();
   const updateGovernmentMutation = api.government.update.useMutation();
   const createGovernmentMutation = api.government.create.useMutation();
+  const updateTaxSystemMutation = api.taxSystem.update.useMutation();
+  const createTaxSystemMutation = api.taxSystem.create.useMutation();
+  
+  // Query to check if tax system exists
+  const { data: existingTaxSystem } = api.taxSystem.getByCountryId.useQuery(
+    { countryId: userProfile?.countryId || '' },
+    { enabled: !!userProfile?.countryId }
+  );
 
   const [hasGovernmentChanges, setHasGovernmentChanges] = useState(false);
   const [pendingGovernmentData, setPendingGovernmentData] = useState<any>(null);
+  const [hasEconomicChanges, setHasEconomicChanges] = useState(false);
+  const [hasTaxSystemChanges, setHasTaxSystemChanges] = useState(false);
+  const [pendingTaxSystemData, setPendingTaxSystemData] = useState<any>(null);
 
   function handleCountryFieldChange(field: keyof Country, value: unknown) {
     const metadata = getFieldMetadata(field);
@@ -134,7 +145,23 @@ export default function MyCountryEditor() {
   function handleEconomicInputsChange(newInputs: typeof economicInputs) {
     setEconomicInputs(newInputs);
 
-    // Track changes in economic inputs as Country field changes
+    // Mark that economic data has changed (labor, fiscal, demographics, etc.)
+    // These changes will be saved in bulk when user clicks Save
+    if (originalInputs && newInputs) {
+      // Check if any economic data changed (labor, fiscal, demographics, income/wealth, spending)
+      const hasChanges = 
+        JSON.stringify(newInputs.laborEmployment) !== JSON.stringify(originalInputs.laborEmployment) ||
+        JSON.stringify(newInputs.fiscalSystem) !== JSON.stringify(originalInputs.fiscalSystem) ||
+        JSON.stringify(newInputs.demographics) !== JSON.stringify(originalInputs.demographics) ||
+        JSON.stringify(newInputs.incomeWealth) !== JSON.stringify(originalInputs.incomeWealth) ||
+        JSON.stringify(newInputs.governmentSpending) !== JSON.stringify(originalInputs.governmentSpending) ||
+        JSON.stringify(newInputs.coreIndicators.realGDPGrowthRate) !== JSON.stringify(originalInputs.coreIndicators.realGDPGrowthRate) ||
+        JSON.stringify(newInputs.coreIndicators.inflationRate) !== JSON.stringify(originalInputs.coreIndicators.inflationRate);
+      
+      setHasEconomicChanges(hasChanges);
+    }
+
+    // Track National Identity changes for instant updates
     if (originalInputs && newInputs && newInputs.nationalIdentity && originalInputs.nationalIdentity) {
       console.log('Tracking changes - Original:', originalInputs.nationalIdentity);
       console.log('Tracking changes - New:', newInputs.nationalIdentity);
@@ -175,24 +202,11 @@ export default function MyCountryEditor() {
         changeTracking.trackChange('religion' as keyof Country, newInputs.nationalIdentity.nationalReligion, 'National Religion', 'National Identity');
       }
     }
-
-    // Core Indicators changes
-    if (originalInputs && newInputs && newInputs.coreIndicators && originalInputs.coreIndicators) {
-      if (newInputs.coreIndicators.totalPopulation !== originalInputs.coreIndicators.totalPopulation) {
-        changeTracking.trackChange('totalPopulation' as keyof Country, newInputs.coreIndicators.totalPopulation, 'Total Population', 'Core Indicators');
-      }
-      if (newInputs.coreIndicators.nominalGDP !== originalInputs.coreIndicators.nominalGDP) {
-        changeTracking.trackChange('nominalGDP' as keyof Country, newInputs.coreIndicators.nominalGDP, 'Nominal GDP', 'Core Indicators');
-      }
-      if (newInputs.coreIndicators.gdpPerCapita !== originalInputs.coreIndicators.gdpPerCapita) {
-        changeTracking.trackChange('gdpPerCapita' as keyof Country, newInputs.coreIndicators.gdpPerCapita, 'GDP per Capita', 'Core Indicators');
-      }
-    }
   }
 
   async function handleSaveWithPreview() {
-    // Check if there are ANY changes (country fields or government)
-    const hasAnyChanges = changeTracking.changes.length > 0 || hasGovernmentChanges;
+    // Check if there are ANY changes (country fields, government, economic data, or tax system)
+    const hasAnyChanges = changeTracking.changes.length > 0 || hasGovernmentChanges || hasEconomicChanges || hasTaxSystemChanges;
 
     if (!hasAnyChanges) {
       alert("No changes to save");
@@ -268,6 +282,7 @@ export default function MyCountryEditor() {
 
       // Save government structure if changed
       if (hasGovernmentChanges && pendingGovernmentData) {
+        console.log('Saving government structure:', pendingGovernmentData);
         if (existingGovernment) {
           await updateGovernmentMutation.mutateAsync({
             countryId: country.id,
@@ -283,6 +298,81 @@ export default function MyCountryEditor() {
         setPendingGovernmentData(null);
       }
 
+      // Save tax system if changed
+      if (hasTaxSystemChanges && pendingTaxSystemData) {
+        console.log('Saving tax system:', pendingTaxSystemData);
+        if (existingTaxSystem) {
+          await updateTaxSystemMutation.mutateAsync({
+            countryId: country.id,
+            data: pendingTaxSystemData
+          });
+        } else {
+          await createTaxSystemMutation.mutateAsync({
+            countryId: country.id,
+            data: pendingTaxSystemData
+          });
+        }
+        setHasTaxSystemChanges(false);
+        setPendingTaxSystemData(null);
+      }
+
+      // Save economic data if changed (Labor, Fiscal, Demographics, Income/Wealth, Spending)
+      if (hasEconomicChanges && economicInputs) {
+        console.log('Saving economic data changes:', economicInputs);
+        
+        const economicData = {
+          // Core indicators (growth rates only - population/GDP are read-only)
+          realGDPGrowthRate: economicInputs.coreIndicators.realGDPGrowthRate || 0,
+          inflationRate: economicInputs.coreIndicators.inflationRate || 0,
+          currencyExchangeRate: economicInputs.coreIndicators.currencyExchangeRate || 1.0,
+
+          // Labor & Employment
+          laborForceParticipationRate: economicInputs.laborEmployment.laborForceParticipationRate || 0,
+          employmentRate: economicInputs.laborEmployment.employmentRate || 0,
+          unemploymentRate: economicInputs.laborEmployment.unemploymentRate || 0,
+          totalWorkforce: economicInputs.laborEmployment.totalWorkforce || 0,
+          averageWorkweekHours: economicInputs.laborEmployment.averageWorkweekHours || 0,
+          minimumWage: economicInputs.laborEmployment.minimumWage || 0,
+          averageAnnualIncome: economicInputs.laborEmployment.averageAnnualIncome || 0,
+
+          // Fiscal System
+          taxRevenueGDPPercent: economicInputs.fiscalSystem.taxRevenueGDPPercent || 0,
+          governmentRevenueTotal: economicInputs.fiscalSystem.governmentRevenueTotal || 0,
+          taxRevenuePerCapita: economicInputs.fiscalSystem.taxRevenuePerCapita || 0,
+          governmentBudgetGDPPercent: economicInputs.fiscalSystem.governmentBudgetGDPPercent || 0,
+          budgetDeficitSurplus: economicInputs.fiscalSystem.budgetDeficitSurplus || 0,
+          internalDebtGDPPercent: economicInputs.fiscalSystem.internalDebtGDPPercent || 0,
+          externalDebtGDPPercent: economicInputs.fiscalSystem.externalDebtGDPPercent || 0,
+          totalDebtGDPRatio: economicInputs.fiscalSystem.totalDebtGDPRatio || 0,
+          debtPerCapita: economicInputs.fiscalSystem.debtPerCapita || 0,
+          interestRates: economicInputs.fiscalSystem.interestRates || 0,
+          debtServiceCosts: economicInputs.fiscalSystem.debtServiceCosts || 0,
+
+          // Income & Wealth Distribution
+          povertyRate: economicInputs.incomeWealth.povertyRate || 0,
+          incomeInequalityGini: economicInputs.incomeWealth.incomeInequalityGini || 0,
+          socialMobilityIndex: economicInputs.incomeWealth.socialMobilityIndex || 0,
+
+          // Government Spending
+          totalGovernmentSpending: economicInputs.governmentSpending.totalSpending || 0,
+          spendingGDPPercent: economicInputs.governmentSpending.spendingGDPPercent || 0,
+          spendingPerCapita: economicInputs.governmentSpending.spendingPerCapita || 0,
+
+          // Demographics
+          lifeExpectancy: economicInputs.demographics.lifeExpectancy || 0,
+          urbanPopulationPercent: economicInputs.demographics.urbanRuralSplit?.urban || 0,
+          ruralPopulationPercent: economicInputs.demographics.urbanRuralSplit?.rural || 0,
+          literacyRate: economicInputs.demographics.literacyRate || 0,
+        };
+
+        await updateCountryMutation.mutateAsync({ 
+          id: country.id, 
+          ...economicData 
+        });
+        
+        setHasEconomicChanges(false);
+      }
+
       changeTracking.clearChanges();
       await refetchCountry();
 
@@ -291,8 +381,19 @@ export default function MyCountryEditor() {
       await utils.government.invalidate();
       await utils.taxSystem.invalidate();
 
-      const totalChanges = instantChanges.length + delayedChanges.length + (hasGovernmentChanges ? 1 : 0);
-      alert(`Success! ${totalChanges} change${totalChanges !== 1 ? 's' : ''} saved (${instantChanges.length} instant, ${delayedChanges.length} scheduled).`);
+      const economicChangeCount = hasEconomicChanges ? 1 : 0;
+      const govChangeCount = hasGovernmentChanges ? 1 : 0;
+      const taxChangeCount = hasTaxSystemChanges ? 1 : 0;
+      const totalChanges = instantChanges.length + delayedChanges.length + govChangeCount + economicChangeCount + taxChangeCount;
+      
+      const saveParts = [];
+      if (instantChanges.length > 0) saveParts.push(`${instantChanges.length} instant`);
+      if (delayedChanges.length > 0) saveParts.push(`${delayedChanges.length} scheduled`);
+      if (economicChangeCount > 0) saveParts.push('1 economic update');
+      if (govChangeCount > 0) saveParts.push('1 government update');
+      if (taxChangeCount > 0) saveParts.push('1 tax system update');
+      
+      alert(`Success! ${totalChanges} change${totalChanges !== 1 ? 's' : ''} saved (${saveParts.join(', ')}).`);
     } catch (error) {
       console.error("Save failed:", error);
       alert("Failed to save changes.");
@@ -462,6 +563,7 @@ export default function MyCountryEditor() {
                       <CoreIndicatorsSection
                         inputs={economicInputs}
                         onInputsChange={handleEconomicInputsChange}
+                        isReadOnly={true}
                       />
                     </TabsContent>
                     <TabsContent value="demographics">
@@ -536,12 +638,16 @@ export default function MyCountryEditor() {
                           showAdvanced={showAdvanced}
                           countryId={country.id}
                           onTaxSystemChange={(taxData) => {
-                            // Tax data is tracked but saved via TaxBuilder's internal mutation
+                            // Track tax system changes for bulk save
                             console.log('Tax system changed:', taxData);
+                            setPendingTaxSystemData(taxData);
+                            setHasTaxSystemChanges(true);
                           }}
                           onTaxSystemSave={(taxData) => {
-                            console.log('Tax system saved:', taxData);
-                            // Tax data is saved via TaxBuilder's internal mutation
+                            // Note: When hideSaveButton=true, this is handled by main save
+                            console.log('Tax system save requested:', taxData);
+                            setPendingTaxSystemData(taxData);
+                            setHasTaxSystemChanges(true);
                           }}
                         />
                       )}

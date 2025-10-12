@@ -1,5 +1,5 @@
 # IxStats - Comprehensive Nation Simulation & Worldbuilding Platform
-*Version 1.0.0 - Production Ready* 🚀
+*Version 1.0.5* 
 
 IxStats is a sophisticated Next.js 15 worldbuilding and nation simulation platform featuring comprehensive economic modeling, diplomatic systems, intelligence operations, and social collaboration tools. Built for tabletop RPG campaigns, alternate history scenarios, and advanced strategic simulation.
 

@@ -98,19 +98,19 @@ export function PostActions({
     }
 
     const existingReaction = reactions.find((r: any) => 
-      r.userId === currentUserAccountId && r.reactionType === 'like'
+      r.accountId === currentUserAccountId && r.reactionType === 'like'
     );
 
     try {
       if (existingReaction) {
         await removeReactionMutation.mutateAsync({ 
           postId, 
-          userId: currentUserAccountId 
+          accountId: currentUserAccountId 
         });
       } else {
         await addReactionMutation.mutateAsync({ 
           postId, 
-          userId: currentUserAccountId,
+          accountId: currentUserAccountId,
           reactionType: 'like' 
         });
       }
@@ -130,7 +130,7 @@ export function PostActions({
     
     try {
       await createPostMutation.mutateAsync({
-        userId: currentUserAccountId,
+        accountId: currentUserAccountId,
         content: comment || '',
         repostOfId: postId,
         hashtags: comment ? extractHashtags(comment) : [],
@@ -159,18 +159,18 @@ export function PostActions({
       return;
     }
 
-    const existingReaction = reactions.find((r: any) => r.userId === currentUserAccountId);
+    const existingReaction = reactions.find((r: any) => r.accountId === currentUserAccountId);
 
     try {
       if (existingReaction && existingReaction.reactionType === reactionType) {
         await removeReactionMutation.mutateAsync({ 
           postId, 
-          userId: currentUserAccountId 
+          accountId: currentUserAccountId 
         });
       } else {
         await addReactionMutation.mutateAsync({ 
           postId, 
-          userId: currentUserAccountId,
+          accountId: currentUserAccountId,
           reactionType: reactionType as "like" | "laugh" | "angry" | "sad" | "fire" | "thumbsup" | "thumbsdown"
         });
       }

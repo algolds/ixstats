@@ -73,7 +73,7 @@ export function GlassCanvasComposer({
 
     // Create post with embedded visualizations
     const postData = {
-      userId: account.id,
+      accountId: account.id,
       content: content.trim(),
       hashtags: extractHashtags(content),
       mentions: extractMentions(content),

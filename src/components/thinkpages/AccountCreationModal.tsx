@@ -98,6 +98,7 @@ export function AccountCreationModal({
   const [imageSource, setImageSource] = useState<'unsplash' | 'upload' | 'wiki'>('unsplash');
   const [isUsernameAvailable, setIsUsernameAvailable] = useState<boolean | null>(null);
   const [isCheckingUsername, setIsCheckingUsername] = useState<boolean>(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const createAccountMutation = api.thinkpages.createAccount.useMutation();
 
@@ -385,13 +386,67 @@ export function AccountCreationModal({
                               </button>
                             )}
                             {imageSource === 'upload' && (
-                              <button
-                                type="button"
-                                onClick={() => toast.info('File upload not implemented yet.')}
-                                className="py-2 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-neutral-700 bg-neutral-800 text-white hover:bg-neutral-700 disabled:opacity-50 disabled:pointer-events-none"
-                              >
-                                Upload Image
-                              </button>
+                              <div className="space-y-3">
+                                <input
+                                  type="file"
+                                  accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/svg+xml"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    
+                                    // Validate file size (max 5MB)
+                                    if (file.size > 5 * 1024 * 1024) {
+                                      toast.error('Image must be smaller than 5MB');
+                                      return;
+                                    }
+                                    
+                                    // Validate file type
+                                    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp', 'image/svg+xml'];
+                                    if (!validTypes.includes(file.type)) {
+                                      toast.error('Please upload a valid image file (PNG, JPG, GIF, WEBP, or SVG)');
+                                      return;
+                                    }
+                                    
+                                    setIsUploadingImage(true);
+                                    
+                                    try {
+                                      // Convert to base64 data URL
+                                      const reader = new FileReader();
+                                      reader.onload = (event) => {
+                                        const dataUrl = event.target?.result as string;
+                                        handleImageSelected(dataUrl);
+                                        toast.success('Image uploaded successfully!');
+                                        setIsUploadingImage(false);
+                                      };
+                                      reader.onerror = () => {
+                                        toast.error('Failed to read image file');
+                                        setIsUploadingImage(false);
+                                      };
+                                      reader.readAsDataURL(file);
+                                    } catch (error) {
+                                      toast.error('Failed to upload image');
+                                      setIsUploadingImage(false);
+                                    }
+                                  }}
+                                  className="block w-full text-sm text-gray-400
+                                    file:mr-4 file:py-2 file:px-4
+                                    file:rounded-lg file:border-0
+                                    file:text-sm file:font-semibold
+                                    file:bg-blue-600 file:text-white
+                                    hover:file:bg-blue-700
+                                    file:cursor-pointer cursor-pointer"
+                                  disabled={isUploadingImage}
+                                />
+                                {isUploadingImage && (
+                                  <div className="flex items-center gap-2 text-sm text-blue-400">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Uploading image...
+                                  </div>
+                                )}
+                                <p className="text-xs text-gray-400">
+                                  Max file size: 5MB. Supported formats: PNG, JPG, GIF, WEBP, SVG
+                                </p>
+                              </div>
                             )}
                             {imageSource === 'wiki' && (
                               <WikiSearch onImageSelect={handleImageSelected} />

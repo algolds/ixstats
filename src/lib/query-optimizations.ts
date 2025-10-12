@@ -150,12 +150,18 @@ export async function getOptimizedUserNotifications(db: PrismaClient, params: {
   const cached = getCachedResult(cacheKey);
   if (cached) return cached;
 
+  // Build OR conditions - only include countryId if it's provided
+  const orConditions: any[] = [
+    { userId: params.userId },
+    { AND: [{ userId: null }, { countryId: null }] } // Global notifications
+  ];
+  
+  if (params.countryId) {
+    orConditions.push({ countryId: params.countryId });
+  }
+
   const where: any = {
-    OR: [
-      { userId: params.userId },
-      { countryId: params.countryId },
-      { AND: [{ userId: null }, { countryId: null }] } // Global notifications
-    ]
+    OR: orConditions
   };
 
   if (params.unreadOnly) {

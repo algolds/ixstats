@@ -59,7 +59,7 @@ export async function generateAndPostCrisisEvent(crisisEventId: string) {
   // Create the post
   const newPost = await prisma.thinkpagesPost.create({
     data: {
-      userId: postingUser.clerkUserId,
+      accountId: postingUser.clerkUserId,
       content: content,
       postType: 'original',
       visibility: 'public',
@@ -110,7 +110,7 @@ export async function detectEconomicMilestoneAndTriggerNarrative() {
 
       const newGovernmentPost = await prisma.thinkpagesPost.create({
         data: {
-          userId: governmentUser.clerkUserId,
+          accountId: governmentUser.clerkUserId,
           content: content.substring(0, 280),
           postType: 'original',
           visibility: 'public',
@@ -165,7 +165,7 @@ export async function generateAndPostMediaResponse(parentPostId: string, country
 
   const newMediaPost = await prisma.thinkpagesPost.create({
     data: {
-      userId: postingAccount.clerkUserId,
+      accountId: postingAccount.clerkUserId,
       content: content.substring(0, 280),
       postType: 'reply', // It's a reply to the government post
       parentPostId: parentPost.id,
@@ -225,9 +225,9 @@ export async function generateAndPostCitizenReaction(postId: string) {
   // Check if this account already reacted to this post
   const existingReaction = await prisma.postReaction.findUnique({
     where: {
-      postId_userId: {
+      postId_accountId: {
         postId: postId,
-        userId: randomCitizenAccount.id,
+        accountId: randomCitizenAccount.id,
       },
     },
   });
@@ -236,9 +236,9 @@ export async function generateAndPostCitizenReaction(postId: string) {
     // If already reacted, update the reaction type
     await prisma.postReaction.update({
       where: {
-        postId_userId: {
+        postId_accountId: {
           postId: postId,
-          userId: randomCitizenAccount.id,
+          accountId: randomCitizenAccount.id,
         },
       },
       data: { reactionType: randomReactionType },
@@ -249,7 +249,7 @@ export async function generateAndPostCitizenReaction(postId: string) {
     await prisma.postReaction.create({
       data: {
         postId: postId,
-        userId: randomCitizenAccount.id,
+        accountId: randomCitizenAccount.id,
         reactionType: randomReactionType,
         timestamp: new Date(IxTime.getCurrentIxTime()),
       },

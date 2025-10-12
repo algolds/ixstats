@@ -178,6 +178,9 @@ model Country {
   embassiesHosting            Embassy[]               @relation("HostCountryEmbassies")
   embassiesGuest              Embassy[]               @relation("GuestCountryEmbassies")
 
+  // ThinkPages Feed Accounts
+  thinkpagesAccounts          ThinkpagesAccount[]     @relation("ThinkpagesAccounts")
+
   @@index([name])
   @@index([economicTier])
   @@index([populationTier])
@@ -982,13 +985,49 @@ model AtomicEconomicImpact {
 }
 
 // Global User-based Social Platform Models - No Country Restrictions
-// ThinkTanks and ThinkShare now use global User accounts instead of country-specific ThinkpagesAccounts
+// ThinkTanks and ThinkShare use global User accounts (no separate accounts needed)
+// ThinkPages Feed uses separate ThinkpagesAccount for role-playing accounts
 
-// Legacy ThinkPages model - kept for in-universe social media posts only
-// ThinkTanks and ThinkShare no longer use this model
+// ThinkPages Account Model - For Feed only (not ThinkTanks/ThinkShare)
+// Allows users to create up to 25 persona accounts for in-universe posting
+model ThinkpagesAccount {
+  id                String   @id @default(cuid())
+  clerkUserId       String   // The Clerk user who owns this account
+  countryId         String   // The country this account belongs to
+  accountType       String   // 'government' | 'media' | 'citizen'
+  username          String   @unique
+  displayName       String
+  firstName         String
+  lastName          String
+  bio               String?
+  profileImageUrl   String?
+  verified          Boolean  @default(false)
+  followerCount     Int      @default(0)
+  followingCount    Int      @default(0)
+  postCount         Int      @default(0)
+  postingFrequency  String   @default("moderate") // 'active' | 'moderate' | 'low'
+  politicalLean     String   @default("center") // 'left' | 'center' | 'right'
+  personality       String   @default("casual") // 'serious' | 'casual' | 'satirical'
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  country           Country  @relation("ThinkpagesAccounts", fields: [countryId], references: [id], onDelete: Cascade)
+  posts             ThinkpagesPost[]
+  reactions         PostReaction[]
+  mentions          PostMention[]
+  
+  @@index([clerkUserId])
+  @@index([countryId])
+  @@index([accountType])
+  @@index([username])
+}
+
+// ThinkPages Post Model - For Feed only (not ThinkTanks/ThinkShare)
 model ThinkpagesPost {
   id                String   @id @default(cuid())
-  userId            String   // Changed to use User.clerkUserId instead of ThinkpagesAccount
+  accountId         String   // References ThinkpagesAccount for feed posts
   content           String   // 280 character limit enforced in frontend
   hashtags          String?  // JSON array of hashtag strings
   postType          String   @default("original") // 'original' | 'repost' | 'reply'
@@ -1006,7 +1045,8 @@ model ThinkpagesPost {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   
-  // Relations - only for in-universe ThinkPages component
+  // Relations - only for in-universe ThinkPages Feed
+  account           ThinkpagesAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
   parentPost        ThinkpagesPost?   @relation("PostReplies", fields: [parentPostId], references: [id])
   replies           ThinkpagesPost[]  @relation("PostReplies")
   repostOf          ThinkpagesPost?   @relation("PostReposts", fields: [repostOfId], references: [id])
@@ -1015,7 +1055,7 @@ model ThinkpagesPost {
   mentions          PostMention[]
   mediaAttachments  MediaAttachment[]
   
-  @@index([userId])
+  @@index([accountId])
   @@index([ixTimeTimestamp])
   @@index([trending])
   @@index([visibility])
@@ -1026,30 +1066,32 @@ model ThinkpagesPost {
 model PostReaction {
   id           String   @id @default(cuid())
   postId       String
-  userId       String   // Changed to use User.clerkUserId
+  accountId    String   // References ThinkpagesAccount
   reactionType String   // 'like' | 'laugh' | 'angry' | 'sad' | 'fire' | 'thumbsup' | 'thumbsdown'
   timestamp    DateTime @default(now())
   
   // Relations
-  post         ThinkpagesPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post         ThinkpagesPost    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  account      ThinkpagesAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
   
-  @@unique([postId, userId]) // One reaction per user per post
+  @@unique([postId, accountId]) // One reaction per account per post
   @@index([postId])
-  @@index([userId])
+  @@index([accountId])
   @@index([reactionType])
 }
 
 model PostMention {
-  id              String   @id @default(cuid())
-  postId          String
-  mentionedUserId String   // Changed to use User.clerkUserId
-  position        Int      // Character position in the post content
+  id                 String   @id @default(cuid())
+  postId             String
+  mentionedAccountId String   // References ThinkpagesAccount
+  position           Int      // Character position in the post content
   
   // Relations
-  post            ThinkpagesPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post               ThinkpagesPost    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  mentionedAccount   ThinkpagesAccount @relation(fields: [mentionedAccountId], references: [id], onDelete: Cascade)
   
   @@index([postId])
-  @@index([mentionedUserId])
+  @@index([mentionedAccountId])
 }
 
 model MediaAttachment {

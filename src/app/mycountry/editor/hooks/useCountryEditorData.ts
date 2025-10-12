@@ -59,8 +59,20 @@ export function useCountryEditorData() {
   useEffect(() => {
     if (country && !economicInputs) {
       console.log('=== useCountryEditorData - FULL COUNTRY DATA ===');
-      console.log('Country:', JSON.stringify(country, null, 2));
+      console.log('Country name:', country.name);
       console.log('Has nationalIdentity?:', !!(country as any).nationalIdentity);
+      console.log('Has calculatedStats?:', !!(country as any).calculatedStats);
+      
+      // Log the data structure to understand what we're getting
+      const calculatedStats = (country as any).calculatedStats;
+      console.log('calculatedStats object:', calculatedStats);
+      console.log('baselinePopulation:', (country as any).baselinePopulation);
+      console.log('baselineGdpPerCapita:', (country as any).baselineGdpPerCapita);
+      console.log('currentPopulation (direct):', (country as any).currentPopulation);
+      console.log('currentGdpPerCapita (direct):', (country as any).currentGdpPerCapita);
+      console.log('calculatedStats.currentPopulation:', calculatedStats?.currentPopulation);
+      console.log('calculatedStats.currentGdpPerCapita:', calculatedStats?.currentGdpPerCapita);
+      console.log('calculatedStats.currentTotalGdp:', calculatedStats?.currentTotalGdp);
 
       const inputs = createDefaultEconomicInputs();
       console.log('useCountryEditorData - Default inputs created:', inputs.fiscalSystem);
@@ -68,59 +80,63 @@ export function useCountryEditorData() {
       // Populate with LIVE country data (current values, not baseline)
       inputs.countryName = country.name;
 
-      // FIXED: Use current values directly - these come from calculations
-      // Editor shows what users see on frontend (current state)
-      // No fallback to baseline - current values are the source of truth
-      const currentPop = Number((country as any).currentPopulation) || Number((country as any).population) || 10000000;
-      const currentGdpPerCap = Number((country as any).currentGdpPerCapita) || Number((country as any).gdpPerCapita) || 25000;
-      const currentTotalGdp = Number((country as any).currentTotalGdp) || (currentPop * currentGdpPerCap);
+      // FIXED: Access current values from calculatedStats (returned by getByIdAtTime)
+      // The query returns: { ...fields, calculatedStats: { currentPopulation, currentGdpPerCapita, currentTotalGdp } }
+      // NO DEFAULTS - Show actual data or 0 if missing (makes missing data obvious in prod)
+      const currentPop = Number(calculatedStats?.currentPopulation) || Number((country as any).baselinePopulation) || 0;
+      const currentGdpPerCap = Number(calculatedStats?.currentGdpPerCapita) || Number((country as any).baselineGdpPerCapita) || 0;
+      const currentTotalGdp = Number(calculatedStats?.currentTotalGdp) || 0;
+      
+      console.log('FINAL VALUES TO USE (0 means missing data):');
+      console.log('currentPop:', currentPop);
+      console.log('currentGdpPerCap:', currentGdpPerCap);
+      console.log('currentTotalGdp:', currentTotalGdp);
 
       inputs.coreIndicators = {
-        totalPopulation: !isNaN(currentPop) && currentPop > 0 ? currentPop : 10000000,
-        gdpPerCapita: !isNaN(currentGdpPerCap) && currentGdpPerCap > 0 ? currentGdpPerCap : 25000,
-        nominalGDP: !isNaN(currentTotalGdp) && currentTotalGdp > 0 ? currentTotalGdp : 250000000000,
-        realGDPGrowthRate: 3.0,
-        inflationRate: 2.0,
-        currencyExchangeRate: 1.0,
+        totalPopulation: !isNaN(currentPop) ? currentPop : 0,
+        gdpPerCapita: !isNaN(currentGdpPerCap) ? currentGdpPerCap : 0,
+        nominalGDP: !isNaN(currentTotalGdp) ? currentTotalGdp : 0,
+        realGDPGrowthRate: (country as any).realGDPGrowthRate ?? 0,
+        inflationRate: (country as any).inflationRate ?? 0,
+        currencyExchangeRate: (country as any).currencyExchangeRate ?? 1.0,
       };
 
-      // VALIDATE core indicators are never NaN
-      if (isNaN(inputs.coreIndicators.totalPopulation)) inputs.coreIndicators.totalPopulation = 10000000;
-      if (isNaN(inputs.coreIndicators.gdpPerCapita)) inputs.coreIndicators.gdpPerCapita = 25000;
-      if (isNaN(inputs.coreIndicators.nominalGDP)) inputs.coreIndicators.nominalGDP = inputs.coreIndicators.totalPopulation * inputs.coreIndicators.gdpPerCapita;
+      // VALIDATE core indicators are never NaN (convert to 0 to make missing data obvious)
+      if (isNaN(inputs.coreIndicators.totalPopulation)) inputs.coreIndicators.totalPopulation = 0;
+      if (isNaN(inputs.coreIndicators.gdpPerCapita)) inputs.coreIndicators.gdpPerCapita = 0;
+      if (isNaN(inputs.coreIndicators.nominalGDP)) inputs.coreIndicators.nominalGDP = 0;
       
-      // Labor & Employment - use database values or keep defaults as placeholders
-      // If DB has null, the form will show default which acts as a placeholder
-      inputs.laborEmployment.unemploymentRate = (country as any).unemploymentRate ?? inputs.laborEmployment.unemploymentRate;
-      inputs.laborEmployment.laborForceParticipationRate = (country as any).laborForceParticipationRate ?? inputs.laborEmployment.laborForceParticipationRate;
-      inputs.laborEmployment.employmentRate = (country as any).employmentRate ?? inputs.laborEmployment.employmentRate;
-      inputs.laborEmployment.totalWorkforce = (country as any).totalWorkforce ?? inputs.laborEmployment.totalWorkforce;
-      inputs.laborEmployment.averageWorkweekHours = (country as any).averageWorkweekHours ?? inputs.laborEmployment.averageWorkweekHours;
-      inputs.laborEmployment.minimumWage = (country as any).minimumWage ?? inputs.laborEmployment.minimumWage;
-      inputs.laborEmployment.averageAnnualIncome = (country as any).averageAnnualIncome ?? inputs.laborEmployment.averageAnnualIncome;
+      // Labor & Employment - use database values or 0 if missing (no fake placeholders)
+      inputs.laborEmployment.unemploymentRate = (country as any).unemploymentRate ?? 0;
+      inputs.laborEmployment.laborForceParticipationRate = (country as any).laborForceParticipationRate ?? 0;
+      inputs.laborEmployment.employmentRate = (country as any).employmentRate ?? 0;
+      inputs.laborEmployment.totalWorkforce = (country as any).totalWorkforce ?? 0;
+      inputs.laborEmployment.averageWorkweekHours = (country as any).averageWorkweekHours ?? 0;
+      inputs.laborEmployment.minimumWage = (country as any).minimumWage ?? 0;
+      inputs.laborEmployment.averageAnnualIncome = (country as any).averageAnnualIncome ?? 0;
 
-      // Fiscal system - use database values or keep defaults as placeholders
-      inputs.fiscalSystem.taxRevenueGDPPercent = (country as any).taxRevenueGDPPercent ?? inputs.fiscalSystem.taxRevenueGDPPercent;
-      inputs.fiscalSystem.governmentRevenueTotal = (country as any).governmentRevenueTotal ?? inputs.fiscalSystem.governmentRevenueTotal;
-      inputs.fiscalSystem.totalDebtGDPRatio = (country as any).totalDebtGDPRatio ?? inputs.fiscalSystem.totalDebtGDPRatio;
-      inputs.fiscalSystem.budgetDeficitSurplus = (country as any).budgetDeficitSurplus ?? inputs.fiscalSystem.budgetDeficitSurplus;
-      inputs.fiscalSystem.governmentBudgetGDPPercent = (country as any).governmentBudgetGDPPercent ?? inputs.fiscalSystem.governmentBudgetGDPPercent;
-      inputs.fiscalSystem.internalDebtGDPPercent = (country as any).internalDebtGDPPercent ?? inputs.fiscalSystem.internalDebtGDPPercent;
-      inputs.fiscalSystem.externalDebtGDPPercent = (country as any).externalDebtGDPPercent ?? inputs.fiscalSystem.externalDebtGDPPercent;
-      inputs.fiscalSystem.interestRates = (country as any).interestRates ?? inputs.fiscalSystem.interestRates;
-      inputs.fiscalSystem.debtServiceCosts = (country as any).debtServiceCosts ?? inputs.fiscalSystem.debtServiceCosts;
+      // Fiscal system - use database values or 0 if missing (no fake placeholders)
+      inputs.fiscalSystem.taxRevenueGDPPercent = (country as any).taxRevenueGDPPercent ?? 0;
+      inputs.fiscalSystem.governmentRevenueTotal = (country as any).governmentRevenueTotal ?? 0;
+      inputs.fiscalSystem.totalDebtGDPRatio = (country as any).totalDebtGDPRatio ?? 0;
+      inputs.fiscalSystem.budgetDeficitSurplus = (country as any).budgetDeficitSurplus ?? 0;
+      inputs.fiscalSystem.governmentBudgetGDPPercent = (country as any).governmentBudgetGDPPercent ?? 0;
+      inputs.fiscalSystem.internalDebtGDPPercent = (country as any).internalDebtGDPPercent ?? 0;
+      inputs.fiscalSystem.externalDebtGDPPercent = (country as any).externalDebtGDPPercent ?? 0;
+      inputs.fiscalSystem.interestRates = (country as any).interestRates ?? 0;
+      inputs.fiscalSystem.debtServiceCosts = (country as any).debtServiceCosts ?? 0;
       
       // Recalculate government revenue total with valid data
       inputs.fiscalSystem.governmentRevenueTotal = 
         inputs.coreIndicators.nominalGDP * (inputs.fiscalSystem.taxRevenueGDPPercent / 100);
       
-      // FINAL VALIDATION - Replace any remaining NaN with safe defaults
-      if (isNaN(inputs.fiscalSystem.taxRevenueGDPPercent)) inputs.fiscalSystem.taxRevenueGDPPercent = 20;
-      if (isNaN(inputs.fiscalSystem.governmentBudgetGDPPercent)) inputs.fiscalSystem.governmentBudgetGDPPercent = 25;
-      if (isNaN(inputs.fiscalSystem.totalDebtGDPRatio)) inputs.fiscalSystem.totalDebtGDPRatio = 60;
-      if (isNaN(inputs.fiscalSystem.budgetDeficitSurplus)) inputs.fiscalSystem.budgetDeficitSurplus = -inputs.coreIndicators.nominalGDP * 0.03;
-      if (isNaN(inputs.fiscalSystem.governmentRevenueTotal)) inputs.fiscalSystem.governmentRevenueTotal = inputs.coreIndicators.nominalGDP * 0.20;
-      if (isNaN(inputs.fiscalSystem.debtServiceCosts)) inputs.fiscalSystem.debtServiceCosts = inputs.coreIndicators.nominalGDP * 0.05;
+      // FINAL VALIDATION - Replace any remaining NaN with 0 (no fake defaults in prod)
+      if (isNaN(inputs.fiscalSystem.taxRevenueGDPPercent)) inputs.fiscalSystem.taxRevenueGDPPercent = 0;
+      if (isNaN(inputs.fiscalSystem.governmentBudgetGDPPercent)) inputs.fiscalSystem.governmentBudgetGDPPercent = 0;
+      if (isNaN(inputs.fiscalSystem.totalDebtGDPRatio)) inputs.fiscalSystem.totalDebtGDPRatio = 0;
+      if (isNaN(inputs.fiscalSystem.budgetDeficitSurplus)) inputs.fiscalSystem.budgetDeficitSurplus = 0;
+      if (isNaN(inputs.fiscalSystem.governmentRevenueTotal)) inputs.fiscalSystem.governmentRevenueTotal = 0;
+      if (isNaN(inputs.fiscalSystem.debtServiceCosts)) inputs.fiscalSystem.debtServiceCosts = 0;
       
       console.log('useCountryEditorData - GUARANTEED VALID fiscal system:', inputs.fiscalSystem);
       
@@ -138,19 +154,31 @@ export function useCountryEditorData() {
         isNaN_gdp: isNaN(inputs.coreIndicators.nominalGDP)
       });
       
-      // Demographics - use live data
-      if ((country as any).lifeExpectancy !== undefined) {
-        inputs.demographics.lifeExpectancy = (country as any).lifeExpectancy;
-      }
-      if ((country as any).literacyRate !== undefined) {
-        inputs.demographics.literacyRate = (country as any).literacyRate;
-      }
-      if ((country as any).urbanPopulationPercent !== undefined) {
+      // Demographics - use database values or 0 if missing (no fake placeholders)
+      inputs.demographics.lifeExpectancy = (country as any).lifeExpectancy ?? 0;
+      inputs.demographics.literacyRate = (country as any).literacyRate ?? 0;
+      if ((country as any).urbanPopulationPercent !== undefined && (country as any).urbanPopulationPercent !== null) {
         inputs.demographics.urbanRuralSplit = {
           urban: (country as any).urbanPopulationPercent,
           rural: 100 - (country as any).urbanPopulationPercent
         };
+      } else {
+        inputs.demographics.urbanRuralSplit = {
+          urban: 0,
+          rural: 0
+        };
       }
+
+      // Income & Wealth Distribution - use database values or 0 if missing (no fake placeholders)
+      inputs.incomeWealth.povertyRate = (country as any).povertyRate ?? 0;
+      inputs.incomeWealth.incomeInequalityGini = (country as any).incomeInequalityGini ?? 0;
+      inputs.incomeWealth.socialMobilityIndex = (country as any).socialMobilityIndex ?? 0;
+
+      // Government Spending - use database values or 0 if missing (no fake placeholders)
+      inputs.governmentSpending.totalSpending = (country as any).totalGovernmentSpending ?? 0;
+      inputs.governmentSpending.spendingGDPPercent = (country as any).spendingGDPPercent ?? 0;
+      inputs.governmentSpending.spendingPerCapita = (country as any).spendingPerCapita ?? 0;
+      inputs.governmentSpending.deficitSurplus = (country as any).budgetDeficitSurplus ?? 0;
 
       // National Identity - populate from saved nationalIdentity relation or country fields
       const nationalIdentity = (country as any).nationalIdentity;
@@ -328,28 +356,28 @@ export function useCountryEditorData() {
     // VALIDATE that fiscal system values are not NaN before setting
     console.log('handleInputsChange - incoming fiscal data:', newInputs.fiscalSystem);
     
-    // Fix any NaN values before setting
+    // Fix any NaN values before setting (use 0 to make missing data obvious)
     if (isNaN(newInputs.fiscalSystem.taxRevenueGDPPercent)) {
       console.warn('handleInputsChange - fixing NaN taxRevenueGDPPercent');
-      newInputs.fiscalSystem.taxRevenueGDPPercent = 20;
+      newInputs.fiscalSystem.taxRevenueGDPPercent = 0;
     }
     if (isNaN(newInputs.fiscalSystem.governmentBudgetGDPPercent)) {
       console.warn('handleInputsChange - fixing NaN governmentBudgetGDPPercent');
-      newInputs.fiscalSystem.governmentBudgetGDPPercent = 25;
+      newInputs.fiscalSystem.governmentBudgetGDPPercent = 0;
     }
     if (isNaN(newInputs.fiscalSystem.totalDebtGDPRatio)) {
       console.warn('handleInputsChange - fixing NaN totalDebtGDPRatio');
-      newInputs.fiscalSystem.totalDebtGDPRatio = 60;
+      newInputs.fiscalSystem.totalDebtGDPRatio = 0;
     }
     if (isNaN(newInputs.fiscalSystem.budgetDeficitSurplus)) {
       console.warn('handleInputsChange - fixing NaN budgetDeficitSurplus');
-      newInputs.fiscalSystem.budgetDeficitSurplus = -newInputs.coreIndicators.nominalGDP * 0.03;
+      newInputs.fiscalSystem.budgetDeficitSurplus = 0;
     }
     
     // Ensure governmentSpending.deficitSurplus is also valid
     if (isNaN(newInputs.governmentSpending.deficitSurplus)) {
       console.warn('handleInputsChange - fixing NaN governmentSpending.deficitSurplus');
-      newInputs.governmentSpending.deficitSurplus = newInputs.fiscalSystem.budgetDeficitSurplus; // Sync with fiscal system
+      newInputs.governmentSpending.deficitSurplus = 0;
     }
     
     setEconomicInputs(newInputs);

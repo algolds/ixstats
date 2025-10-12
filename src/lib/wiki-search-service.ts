@@ -1194,38 +1194,63 @@ async function getImageUrl(filename: string, site: 'ixwiki' | 'iiwiki' | 'althis
       prop: 'imageinfo',
       iiprop: 'url',
       iilimit: '1',
-      origin: '*', // Add CORS origin
     });
 
-    const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${params.toString()}`, {
+    const url = `${config.baseUrl}${config.apiEndpoint}?${params.toString()}`;
+    console.log(`[WikiImageSearch] Getting image URL from: ${url}`);
+
+    const response = await fetch(url, {
       headers: {
-        'User-Agent': 'IxStats-Builder',
-        'Accept': 'application/json',
+        'User-Agent': 'IxStats-Builder/1.0 (https://ixwiki.com/wiki/IxStats; stats@ixwiki.com) MediaWiki-API/1.0',
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'no-cache',
+        'Referer': site === 'ixwiki' ? 'https://ixwiki.com/' : 'https://iiwiki.com/',
+        'Connection': 'keep-alive',
       },
-      mode: 'cors',
     });
 
     if (!response.ok) {
       if (response.status === 403) {
         console.warn(`[WikiSearch] 403 Forbidden when getting image URL for ${filename} from ${site}`);
+      } else {
+        console.warn(`[WikiSearch] Failed to get image URL: ${response.status} ${response.statusText}`);
       }
       return null;
     }
 
     const data = await response.json();
+    console.log(`[WikiImageSearch] Image info response for ${filename}:`, JSON.stringify(data).substring(0, 300));
+    
     const pages = data.query?.pages;
     
-    if (!pages || typeof pages !== 'object') return null;
+    if (!pages || typeof pages !== 'object') {
+      console.warn(`[WikiImageSearch] No pages data for ${filename}`);
+      return null;
+    }
     
     const pageIds = Object.keys(pages);
-    if (pageIds.length === 0) return null;
+    if (pageIds.length === 0) {
+      console.warn(`[WikiImageSearch] No page IDs for ${filename}`);
+      return null;
+    }
     
     const page = pages[pageIds[0]!];
-    if (!page || page.missing || !page.imageinfo?.[0]?.url) return null;
+    if (!page || page.missing) {
+      console.warn(`[WikiImageSearch] Page missing for ${filename}`);
+      return null;
+    }
     
-    return page.imageinfo[0].url;
+    if (!page.imageinfo?.[0]?.url) {
+      console.warn(`[WikiImageSearch] No image URL in response for ${filename}`);
+      return null;
+    }
+    
+    const imageUrl = page.imageinfo[0].url;
+    console.log(`[WikiImageSearch] Found image URL for ${filename}: ${imageUrl}`);
+    return imageUrl;
   } catch (error) {
-    console.error(`Failed to get image URL for ${filename} on ${site}:`, error);
+    console.error(`[WikiImageSearch] Failed to get image URL for ${filename} on ${site}:`, error);
     return null;
   }
 }
@@ -1237,6 +1262,20 @@ export async function searchWikiImages(
   query: string,
   site: 'ixwiki' | 'iiwiki' | 'althistory'
 ): Promise<Array<{ name: string; path: string; url?: string; description?: string; }>> {
+  const result = await searchWikiImagesWithPagination(query, site, undefined, 20);
+  return result.images;
+}
+
+export async function searchWikiImagesWithPagination(
+  query: string,
+  site: 'ixwiki' | 'iiwiki' | 'althistory',
+  cursor?: string,
+  limit: number = 30
+): Promise<{ 
+  images: Array<{ name: string; path: string; url?: string; description?: string; }>; 
+  nextCursor?: string;
+  hasMore: boolean;
+}> {
   const wikiConfigs = getWikiConfigs();
   const config = wikiConfigs[site];
   if (!config) {
@@ -1244,74 +1283,139 @@ export async function searchWikiImages(
   }
 
   try {
-    // Search only in File namespace (namespace 6)
+    console.log(`[WikiImageSearch] Searching ${site} for images matching: "${query}"`);
+    
+    // Define valid image extensions
+    const validExtensions = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'];
+    
+    // Normalize query for prefix search - remove spaces, capitalize first letter
+    const queryWords = query.trim().split(/\s+/);
+    const prefixQuery = queryWords.map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    ).join('');
+    
+    console.log(`[WikiImageSearch] Using prefix: "${prefixQuery}"`);
+    
+    // Use allimages with aiprefix to find files starting with the query
     const searchParams = new URLSearchParams({
       action: 'query',
       format: 'json',
-      list: 'search',
-      srsearch: query,
-      srprop: 'snippet',
-      srlimit: '20',
-      srnamespace: '6', // File namespace only
-      origin: '*', // Add CORS origin parameter
+      list: 'allimages',
+      aiprefix: prefixQuery, // Search for files starting with this prefix
+      aiprop: 'url|timestamp|size|mime',
+      ailimit: '50', // Get up to 50 results
+      aisort: 'name',
     });
 
-    const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${searchParams.toString()}`, {
+    // Add continuation if provided
+    if (cursor) {
+      searchParams.set('aicontinue', cursor);
+    }
+
+    const url = `${config.baseUrl}${config.apiEndpoint}?${searchParams.toString()}`;
+    console.log(`[WikiImageSearch] Prefix search URL: ${url}`);
+
+    const response = await fetch(url, {
       headers: {
-        'User-Agent': 'IxStats-Builder',
-        'Accept': 'application/json',
+        'User-Agent': 'IxStats-Builder/1.0 (https://ixwiki.com/wiki/IxStats; stats@ixwiki.com) MediaWiki-API/1.0',
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'Referer': site === 'ixwiki' ? 'https://ixwiki.com/' : 'https://iiwiki.com/',
+        'Origin': site === 'ixwiki' ? 'https://ixwiki.com' : 'https://iiwiki.com',
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'same-origin',
       },
-      mode: 'cors', // Explicitly set CORS mode
     });
+
+    console.log(`[WikiImageSearch] Response status: ${response.status}`);
 
     if (!response.ok) {
-      // Return empty array instead of throwing for 403 errors
-      if (response.status === 403) {
-        console.warn(`[WikiSearch] 403 Forbidden for ${site} - API may be blocking requests. Returning empty results.`);
-        return [];
+      const errorText = await response.text();
+      console.error(`[WikiImageSearch] Error response: ${errorText.substring(0, 200)}`);
+      
+      // Cloudflare protection or other blocking
+      if (response.status === 403 || response.status === 503 || errorText.includes('cloudflare')) {
+        console.warn(`[WikiSearch] ${site} blocked request (possibly Cloudflare). Returning empty results.`);
+        return { images: [], hasMore: false };
       }
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const contentType = response.headers.get('content-type');
+    
+    // Check if we got HTML instead of JSON (Cloudflare challenge page)
+    if (contentType?.includes('text/html')) {
+      console.warn(`[WikiSearch] ${site} returned HTML (Cloudflare challenge). Returning empty results.`);
+      return { images: [], hasMore: false };
     }
 
     const data = await response.json();
     
     if (data.error) {
+      console.error(`[WikiImageSearch] API error:`, data.error);
       throw new Error(`Wiki API Error: ${data.error.info || data.error.code}`);
     }
 
-    const searchResults = data.query?.search || [];
+    const allImages = data.query?.allimages || [];
+    const continuationToken = data.continue?.aicontinue;
     
-    // Filter for actual image files and get their URLs
+    console.log(`[WikiImageSearch] Found ${allImages.length} images with prefix "${prefixQuery}", continuation: ${continuationToken || 'none'}`);
+    
+    // Filter for valid image extensions and convert to our format
     const imageResults = [];
     
-    for (const result of searchResults) {
-      // Check if it's an actual image file
-      if (result.title && result.title.startsWith('File:') && 
-          /\.(png|jpg|jpeg|gif|svg|webp)$/i.test(result.title)) {
+    for (const image of allImages) {
+      const imageName = image.name || '';
+      const imageNameLower = imageName.toLowerCase();
+      
+      // Check if file has valid image extension (png, jpg, jpeg, gif, svg, webp)
+      const hasValidExtension = validExtensions.some(ext => 
+        imageNameLower.endsWith(`.${ext}`)
+      );
+      
+      if (!hasValidExtension) {
+        console.log(`[WikiImageSearch] Skipping ${imageName} - not a valid image extension`);
+        continue;
+      }
+      
+      if (image.url) {
+        imageResults.push({
+          name: `File:${imageName}`,
+          path: image.url,
+          url: image.url,
+          description: imageName,
+        });
         
-        // Get the image URL
-        const filename = result.title.replace('File:', '');
-        const imageUrl = await getImageUrl(filename, site);
-        
-        if (imageUrl) {
-          imageResults.push({
-            name: result.title,
-            path: imageUrl,
-            url: imageUrl,
-            description: result.snippet || '',
-          });
-        }
+        console.log(`[WikiImageSearch] Added: File:${imageName} -> ${image.url}`);
+      }
+      
+      if (imageResults.length >= limit) {
+        break;
       }
     }
     
-    return imageResults;
+    // Determine if there are more results
+    const hasMore = imageResults.length >= limit && !!continuationToken;
+    
+    console.log(`[WikiImageSearch] Returning ${imageResults.length} image results, hasMore: ${hasMore}, nextCursor: ${continuationToken || 'none'}`);
+    
+    return {
+      images: imageResults,
+      nextCursor: continuationToken,
+      hasMore,
+    };
 
   } catch (error) {
-    console.error(`Wiki image search failed for ${site}:`, error);
-    // Return empty array instead of throwing - allows graceful degradation
+    console.error(`[WikiImageSearch] Search failed for ${site}:`, error);
     if (error instanceof Error && (error.message.includes('403') || error.message.includes('Forbidden'))) {
       console.warn(`[WikiSearch] Returning empty results for ${site} due to access restrictions`);
-      return [];
+      return { images: [], hasMore: false };
     }
     throw new Error(`Failed to search ${site} images: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }

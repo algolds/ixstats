@@ -164,7 +164,14 @@ const config = {
 
   // It's good practice to keep your image domains defined.
   images: {
-    domains: ['localhost', 'lh3.googleusercontent.com', 'upload.wikimedia.org', 'images.unsplash.com'],
+    domains: [
+      'localhost', 
+      'lh3.googleusercontent.com', 
+      'upload.wikimedia.org', 
+      'images.unsplash.com',
+      'ixwiki.com',
+      'iiwiki.com'
+    ],
     formats: ['image/avif', 'image/webp'],
   },
 

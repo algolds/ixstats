@@ -167,7 +167,7 @@ export function EnhancedAccountManager({
               <DropdownMenuSeparator />
               <DropdownMenuItem 
                 onClick={() => updateAccountMutation.mutate({ 
-                  userId: account.id, 
+                  accountId: account.id, 
                   isActive: !account.isActive 
                 })}
               >
