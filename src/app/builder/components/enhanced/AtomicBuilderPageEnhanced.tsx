@@ -644,7 +644,7 @@ export function AtomicBuilderPageEnhanced({ onBackToIntro }: AtomicBuilderPageEn
               </motion.div>
               <Badge variant="outline" className="hidden md:flex items-center gap-1 border-amber-500/20">
                 <Zap className="h-3 w-3 text-amber-500" />
-                 v0.88 Preview
+                 v1.0.0 Preview
               </Badge>
             </div>
             <div className="flex items-center gap-3">

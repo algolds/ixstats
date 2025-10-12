@@ -8,7 +8,7 @@ import { AlertTriangle, Crown } from 'lucide-react';
 import { Alert, AlertDescription } from '~/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Button } from '~/components/ui/button';
-import { createUrl } from '~/lib/url-utils';
+import { createAbsoluteUrl } from '~/lib/url-utils';
 
 interface CountryDataContextValue {
   userProfile: any;
@@ -181,10 +181,10 @@ export function CountryDataProvider({ children, userId }: CountryDataProviderPro
               or browse available countries to request ownership.
             </p>
             <div className="flex gap-4 justify-center">
-              <Button onClick={() => window.location.href = createUrl("/countries")}>
+              <Button onClick={() => window.location.href = createAbsoluteUrl("/countries")}>
                 Browse Countries
               </Button>
-              <Button variant="outline" onClick={() => window.location.href = createUrl("/admin")}>
+              <Button variant="outline" onClick={() => window.location.href = createAbsoluteUrl("/admin")}>
                 Contact Admin
               </Button>
             </div>

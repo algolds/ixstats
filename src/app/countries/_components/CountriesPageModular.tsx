@@ -6,7 +6,7 @@ import { CountriesFocusGridModular } from "./CountriesFocusGridModular";
 import { CountriesStats } from "./CountriesStats";
 import { CountriesCommandPalette } from "./CountriesCommandPalette";
 import { type CountryCardData } from "~/components/countries/CountryFocusCard";
-import { createUrl } from "~/lib/url-utils";
+import { createAbsoluteUrl } from "~/lib/url-utils";
 
 interface CountriesPageModularProps {
   countries: CountryCardData[];
@@ -115,7 +115,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
       const randomIndex = Math.floor(Math.random() * processedCountries.length);
       const randomCountry = processedCountries[randomIndex];
       if (randomCountry) {
-        handleCountryClick(randomCountry.id);
+        handleCountryClick(randomCountry.id, randomCountry.name);
       }
     }
   };
@@ -181,8 +181,10 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loadMore]);
 
-  const handleCountryClick = (countryId: string) => {
-    window.location.href = createUrl(`/countries/${countryId}`);
+  const handleCountryClick = (countryId: string, countryName: string) => {
+    // Use country name for pretty URLs, replace spaces with underscores
+    const slug = countryName.replace(/\s+/g, '_');
+    window.location.href = createAbsoluteUrl(`/countries/${slug}`);
   };
 
   const handleClearFilters = () => {

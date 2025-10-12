@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
-import { createUrl } from "~/lib/url-utils";
+import { createAbsoluteUrl } from "~/lib/url-utils";
 
 // UI Components
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "~/components/ui/command";
@@ -257,11 +257,11 @@ const processedCountries: ProcessedCountryData[] = useMemo(() => {
   const commandItems = useMemo(() => {
     const baseItems = [
       { 
-        group: "Navigation", 
+        group: "Navigation",
         items: [
-          { title: "Go to Countries", icon: <Globe className="h-4 w-4" />, action: () => window.location.href = createUrl("/countries/new") },
-          { title: "View Analytics", icon: <BarChart3 className="h-4 w-4" />, action: () => window.location.href = createUrl("/analytics") },
-          { title: "Open Settings", icon: <Settings className="h-4 w-4" />, action: () => window.location.href = createUrl("/settings") },
+          { title: "Go to Countries", icon: <Globe className="h-4 w-4" />, action: () => window.location.href = createAbsoluteUrl("/countries/new") },
+          { title: "View Analytics", icon: <BarChart3 className="h-4 w-4" />, action: () => window.location.href = createAbsoluteUrl("/analytics") },
+          { title: "Open Settings", icon: <Settings className="h-4 w-4" />, action: () => window.location.href = createAbsoluteUrl("/settings") },
         ]
       },
       {
@@ -278,9 +278,9 @@ const processedCountries: ProcessedCountryData[] = useMemo(() => {
       baseItems.splice(1, 0, {
         group: "Dashboard Sections",
         items: [
-          { title: "Go to MyCountry", icon: <Crown className="h-4 w-4" />, action: () => window.location.href = createUrl("/mycountry") },
-          { title: "Open ECI Suite", icon: <Gauge className="h-4 w-4" />, action: () => window.location.href = createUrl("/eci") },
-          { title: "Access SDI Intelligence", icon: <Eye className="h-4 w-4" />, action: () => window.location.href = createUrl("/sdi") },
+          { title: "Go to MyCountry", icon: <Crown className="h-4 w-4" />, action: () => window.location.href = createAbsoluteUrl("/mycountry") },
+          { title: "Open ECI Suite", icon: <Gauge className="h-4 w-4" />, action: () => window.location.href = createAbsoluteUrl("/eci") },
+          { title: "Access SDI Intelligence", icon: <Eye className="h-4 w-4" />, action: () => window.location.href = createAbsoluteUrl("/sdi") },
         ]
       });
     } else {
@@ -288,8 +288,8 @@ const processedCountries: ProcessedCountryData[] = useMemo(() => {
       baseItems.splice(1, 0, {
         group: "Setup Required",
         items: [
-          { title: "Complete Setup", icon: <Target className="h-4 w-4" />, action: () => window.location.href = createUrl("/setup") },
-          { title: "Configure Profile", icon: <Settings className="h-4 w-4" />, action: () => window.location.href = createUrl("/profile") },
+          { title: "Complete Setup", icon: <Target className="h-4 w-4" />, action: () => window.location.href = createAbsoluteUrl("/setup") },
+          { title: "Configure Profile", icon: <Settings className="h-4 w-4" />, action: () => window.location.href = createAbsoluteUrl("/profile") },
         ]
       });
     }
@@ -398,7 +398,7 @@ const processedCountries: ProcessedCountryData[] = useMemo(() => {
               Configure your country profile to unlock MyCountry®, ECI, and SDI intelligence modules.
             </p>
             <Link
-              href={createUrl("/setup")}
+              href={createAbsoluteUrl("/setup")}
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-medium rounded-lg transition-all duration-200"
             >
               <Target className="h-4 w-4" />
@@ -1261,7 +1261,7 @@ const processedCountries: ProcessedCountryData[] = useMemo(() => {
                     className="glass-hierarchy-interactive"
                     onClick={(e) => {
                       e.stopPropagation();
-                      window.open(createUrl("/eci"), "_blank");
+                      window.open(createAbsoluteUrl("/eci"), "_blank");
                     }}
                   >
                     → Open ECI
@@ -1456,7 +1456,7 @@ const processedCountries: ProcessedCountryData[] = useMemo(() => {
                     className="glass-hierarchy-interactive"
                     onClick={(e) => {
                       e.stopPropagation();
-                      window.open(createUrl("/sdi"), "_blank");
+                      window.open(createAbsoluteUrl("/sdi"), "_blank");
                     }}
                   >
                     → Open SDI

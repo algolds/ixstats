@@ -9,7 +9,7 @@ import { Button } from '~/components/ui/button';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Alert, AlertDescription } from '~/components/ui/alert';
 import Link from 'next/link';
-import { createUrl } from '~/lib/url-utils';
+import { createAbsoluteUrl } from '~/lib/url-utils';
 
 interface AuthenticationGuardProps {
   children: React.ReactNode;
@@ -29,7 +29,7 @@ export function AuthenticationGuard({
 
   useEffect(() => {
     if (isLoaded && !user && isClerkConfigured) {
-      const returnUrl = encodeURIComponent(createUrl(redirectPath));
+      const returnUrl = encodeURIComponent(createAbsoluteUrl(redirectPath));
       window.location.href = `https://accounts.ixwiki.com/sign-in?redirect_url=${returnUrl}`;
     }
   }, [isLoaded, user, redirectPath]);
@@ -49,11 +49,11 @@ export function AuthenticationGuard({
               to configure authentication or browse countries without signing in.
             </p>
             <div className="flex gap-4 justify-center">
-              <Button onClick={() => window.location.href = createUrl("/countries")}>
+              <Button onClick={() => window.location.href = createAbsoluteUrl("/countries")}>
                 <Globe className="h-4 w-4 mr-2" />
                 Browse Countries
               </Button>
-              <Button variant="outline" onClick={() => window.location.href = createUrl("/dashboard")}>
+              <Button variant="outline" onClick={() => window.location.href = createAbsoluteUrl("/dashboard")}>
                 <Activity className="h-4 w-4 mr-2" />
                 View Dashboard
               </Button>

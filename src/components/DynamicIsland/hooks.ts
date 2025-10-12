@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Globe, BarChart3, Settings, Activity, TrendingUp, Crown, Gauge, Eye, Target, Plus, Home, LogIn, LogOut } from 'lucide-react';
-import { createUrl } from '~/lib/url-utils';
+import { createAbsoluteUrl } from '~/lib/url-utils';
 import { api } from "~/trpc/react";
 import { useUser } from "@clerk/nextjs";
 import { usePathname } from "next/navigation";
@@ -28,9 +28,9 @@ export function useCommandItems(userProfile?: UserProfile) {
       {
         group: 'Navigation',
         items: [
-          { title: 'Go to Countries', icon: Globe, action: () => window.location.href = createUrl('/countries/new') },
-          { title: 'View Analytics', icon: BarChart3, action: () => window.location.href = createUrl('/analytics') },
-          { title: 'Open Settings', icon: Settings, action: () => window.location.href = createUrl('/settings') },
+          { title: 'Go to Countries', icon: Globe, action: () => window.location.href = createAbsoluteUrl('/countries/new') },
+          { title: 'View Analytics', icon: BarChart3, action: () => window.location.href = createAbsoluteUrl('/analytics') },
+          { title: 'Open Settings', icon: Settings, action: () => window.location.href = createAbsoluteUrl('/settings') },
         ],
       },
       {
@@ -46,17 +46,17 @@ export function useCommandItems(userProfile?: UserProfile) {
       baseItems.splice(1, 0, {
         group: 'Dashboard Sections',
         items: [
-          { title: 'Go to MyCountry', icon: Crown, action: () => window.location.href = createUrl('/mycountry') },
-          { title: 'Open ECI Suite', icon: Gauge, action: () => window.location.href = createUrl('/eci') },
-          { title: 'Access SDI Intelligence', icon: Eye, action: () => window.location.href = createUrl('/sdi') },
+          { title: 'Go to MyCountry', icon: Crown, action: () => window.location.href = createAbsoluteUrl('/mycountry') },
+          { title: 'Open ECI Suite', icon: Gauge, action: () => window.location.href = createAbsoluteUrl('/eci') },
+          { title: 'Access SDI Intelligence', icon: Eye, action: () => window.location.href = createAbsoluteUrl('/sdi') },
         ]
       });
     } else {
       baseItems.splice(1, 0, {
         group: 'Setup Required',
         items: [
-          { title: 'Complete Setup', icon: Target, action: () => window.location.href = createUrl('/setup') },
-          { title: 'Configure Profile', icon: Settings, action: () => window.location.href = createUrl('/profile') },
+          { title: 'Complete Setup', icon: Target, action: () => window.location.href = createAbsoluteUrl('/setup') },
+          { title: 'Configure Profile', icon: Settings, action: () => window.location.href = createAbsoluteUrl('/profile') },
         ]
       });
     }
@@ -147,7 +147,7 @@ export function useDynamicIslandState() {
               gdpPerCapita: country.currentGdpPerCapita,
               economicTier: country.economicTier
             },
-            action: () => window.location.href = createUrl(`/countries/${country.id}`)
+            action: () => window.location.href = createAbsoluteUrl(`/countries/${country.id}`)
           });
         }
       });
@@ -200,9 +200,9 @@ export function useDynamicIslandState() {
             action: () => {
               if (command.path === '/sign-out') {
                 // Handle sign out
-                window.location.href = createUrl('/');
+                window.location.href = createAbsoluteUrl('/');
               } else {
-                window.location.href = createUrl(command.path);
+                window.location.href = createAbsoluteUrl(command.path);
               }
             }
           });
@@ -234,7 +234,7 @@ export function useDynamicIslandState() {
                 switchMode('notifications');
               } else {
                 // Normal navigation
-                window.location.href = createUrl(feature.path);
+                window.location.href = createAbsoluteUrl(feature.path);
               }
             }
           });

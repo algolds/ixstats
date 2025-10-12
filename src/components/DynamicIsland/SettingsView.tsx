@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { Button } from "~/components/ui/button";
-import { createUrl } from "~/lib/url-utils";
+import { createAbsoluteUrl } from "~/lib/url-utils";
 import { useTheme } from "~/context/theme-context";
 import { SignOutButton } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
@@ -123,7 +123,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
         {/* Profile Settings */}
         <Button
           size="sm"
-          onClick={() => window.location.href = createUrl("/profile")}
+          onClick={() => window.location.href = createAbsoluteUrl("/profile")}
           className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-accent/10 transition-all border-border w-full justify-start"
         >
           <div className="p-1.5 bg-blue-500/20 rounded flex-shrink-0">

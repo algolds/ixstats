@@ -384,7 +384,8 @@ export async function parseEconomyData(): Promise<RealCountryData[]> {
   }
 
   try {
-    const response = await fetch('/IxEconomy.xlsx');
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+    const response = await fetch(`${basePath}/IxEconomy.xlsx`);
     if (!response.ok) {
       throw new Error(`Failed to fetch Excel file: ${response.status} ${response.statusText}`);
     }

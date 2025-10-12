@@ -8,7 +8,7 @@ import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pa
 import { CharacterBlurReveal } from "~/components/ui/character-blur-reveal";
 import { RainbowButton } from "~/components/magicui/rainbow-button";
 import { TextAnimate } from "~/components/magicui/text-animate";
-import { createUrl } from "~/lib/url-utils";
+import { createAbsoluteUrl } from "~/lib/url-utils";
 import { 
   RiSearchLine, 
   RiFilterLine, 
@@ -195,7 +195,7 @@ export const CountriesFocusGrid: React.FC<CountriesFocusGridProps> = ({
   }, [loadMore]);
 
   const handleCountryClick = (countryId: string) => {
-    window.location.href = createUrl(`/countries/${countryId}`);
+    window.location.href = createAbsoluteUrl(`/countries/${countryId}`);
   };
 
   const onCountryClick = handleCountryClick;

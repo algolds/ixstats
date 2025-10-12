@@ -102,8 +102,10 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
     setIsMounted(true);
   }, []);
 
-  // Data fetching
-  const { data: country, isLoading, error } = api.countries.getByIdWithEconomicData.useQuery({ id: slug });
+  // Data fetching - the API already handles both names and IDs
+  // Just pass the slug as-is, replacing underscores with spaces for pretty URLs
+  const querySlug = slug.replace(/_/g, ' ');
+  const { data: country, isLoading, error } = api.countries.getByIdWithEconomicData.useQuery({ id: querySlug });
   const { data: userProfile } = api.users.getProfile.useQuery(
     undefined,
     { enabled: !!user?.id }

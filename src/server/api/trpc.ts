@@ -79,7 +79,40 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
         if (user) {
           console.log(`[TRPC Context] User loaded: ${auth.userId}, role: ${(user as any).role?.name || 'NO_ROLE'}, roleId: ${(user as any).roleId || 'NULL'}`);
         } else {
-          console.warn(`[TRPC Context] User ${auth.userId} authenticated but not found in database`);
+          // Auto-create user if authenticated but not in database
+          console.warn(`[TRPC Context] User ${auth.userId} authenticated but not found in database - auto-creating`);
+
+          try {
+            // Get default user role
+            const defaultRole = await db.role.findFirst({
+              where: { name: 'user' }
+            });
+
+            // Create user with default role
+            user = await db.user.create({
+              data: {
+                clerkUserId: auth.userId,
+                roleId: defaultRole?.id || null,
+              },
+              include: {
+                country: true,
+                role: {
+                  include: {
+                    rolePermissions: {
+                      include: {
+                        permission: true
+                      }
+                    }
+                  }
+                }
+              }
+            });
+
+            console.log(`[TRPC Context] Auto-created user ${auth.userId} with role: ${(user as any).role?.name || 'NO_ROLE'}`);
+          } catch (createError) {
+            console.error('[TRPC Context] Failed to auto-create user:', createError);
+            // Continue without user rather than failing
+          }
         }
       } catch (dbError) {
         console.error('[TRPC Context] Database user lookup failed:', dbError);
@@ -112,7 +145,32 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
  */
 const t = initTRPC.context<typeof createTRPCContext>().create({
   transformer: superjson,
-  errorFormatter({ shape, error }) {
+  errorFormatter({ shape, error, path, ctx }) {
+    // Log all tRPC errors in production (except validation errors)
+    if (process.env.NODE_ENV === 'production' && error.code !== 'BAD_REQUEST') {
+      // Import ErrorLogger dynamically to avoid circular dependencies
+      import('~/lib/error-logger').then(({ ErrorLogger }) => {
+        ErrorLogger.logAPIError(
+          path || 'unknown',
+          error as Error,
+          {
+            userId: ctx?.auth?.userId ?? undefined,
+            countryId: ctx?.user?.countryId ?? undefined,
+            path: path || 'unknown',
+            action: 'TRPC_ERROR',
+            metadata: {
+              code: error.code,
+              httpStatus: shape.data.httpStatus,
+            }
+          }
+        ).catch(logError => {
+          console.error('[TRPC] Failed to log error:', logError);
+        });
+      }).catch(() => {
+        // Silent fail if ErrorLogger import fails
+      });
+    }
+
     return {
       ...shape,
       data: {
