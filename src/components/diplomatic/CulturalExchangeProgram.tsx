@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
+import { withBasePath } from '~/lib/base-path';
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { IxTime } from "~/lib/ixtime";
@@ -798,11 +799,11 @@ const CreateExchangeForm: React.FC<CreateExchangeFormProps> = ({ onSubmit, onCan
   
   const [showInvitePanel, setShowInvitePanel] = useState(false);
   const [availableCountries] = useState([
-    { id: 'caphiria', name: 'Caphiria', flagUrl: '/flags/caphiria.png' },
-    { id: 'urcea', name: 'Urcea', flagUrl: '/flags/urcea.png' },
-    { id: 'burgundie', name: 'Burgundie', flagUrl: '/flags/burgundie.png' },
-    { id: 'kiravia', name: 'Kiravia', flagUrl: '/flags/kiravia.png' },
-    { id: 'varshan', name: 'Varshan', flagUrl: '/flags/varshan.png' },
+    { id: 'caphiria', name: 'Caphiria', flagUrl: withBasePath("/flags/caphiria.png") },
+    { id: 'urcea', name: 'Urcea', flagUrl: withBasePath("/flags/urcea.png") },
+    { id: 'burgundie', name: 'Burgundie', flagUrl: withBasePath("/flags/burgundie.png") },
+    { id: 'kiravia', name: 'Kiravia', flagUrl: withBasePath("/flags/kiravia.png") },
+    { id: 'varshan', name: 'Varshan', flagUrl: withBasePath("/flags/varshan.png") },
   ]);
 
   const handleSubmit = (e: React.FormEvent) => {

@@ -38,14 +38,25 @@ interface FlagServiceStats {
   sourceStats: Record<string, { found: number; failed: number; cached: number }>;
 }
 
+// Get base path for production deployments
+const getBasePath = () => {
+  if (typeof window !== 'undefined') {
+    return (window as any).__NEXT_DATA__?.props?.pageProps?.basePath ||
+           process.env.NEXT_PUBLIC_BASE_PATH ||
+           process.env.BASE_PATH ||
+           '';
+  }
+  return process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || '';
+};
+
 class UnifiedFlagService {
   private memoryCache: FlagCache = {};
   private localMetadata: Record<string, LocalFlagMetadata> = {};
   private failedCountries = new Set<string>();
   private isUpdating = false;
   private lastUpdateTime: number | null = null;
-  private readonly PLACEHOLDER_FLAG = '/placeholder-flag.svg';
-  private readonly FLAGS_BASE_URL = '/flags';
+  private readonly PLACEHOLDER_FLAG: string;
+  private readonly FLAGS_BASE_URL: string;
   private requestQueue = new Map<string, Promise<string | null>>();
   private stats = {
     totalRequests: 0,
@@ -53,14 +64,20 @@ class UnifiedFlagService {
     cacheMisses: 0,
   };
 
-  // Rate limiting - VERY AGGRESSIVE to stop spam
+  // Rate limiting - More graceful approach with exponential backoff
   private requestsSinceLastReset = 0;
   private lastRateLimitReset = Date.now();
-  private readonly MAX_REQUESTS_PER_MINUTE = 5; // VERY LOW LIMIT
+  private readonly MAX_REQUESTS_PER_MINUTE = 30; // More reasonable limit for Wikimedia Commons
   private readonly RATE_LIMIT_WINDOW = 60000; // 1 minute in ms
   private apiErrorCount = 0;
   private lastApiError: number | null = null;
-  private globalFetchDisabled = false; // Kill switch for all fetching
+  private globalFetchDisabled = false; // Temporary throttle for all fetching
+  private globalFetchReenableTime: number | null = null; // When to re-enable fetching
+
+  // Request queue management for graceful batching
+  private pendingRequests: Set<string> = new Set();
+  private lastRequestTime = 0;
+  private readonly MIN_REQUEST_INTERVAL = 100; // Minimum 100ms between requests
 
   // Debouncing for save operations
   private saveDebounceTimer: NodeJS.Timeout | null = null;
@@ -83,6 +100,11 @@ class UnifiedFlagService {
   };
 
   constructor() {
+    // Initialize paths with base path support
+    const basePath = getBasePath();
+    this.PLACEHOLDER_FLAG = `${basePath}/placeholder-flag.svg`;
+    this.FLAGS_BASE_URL = `${basePath}/flags`;
+
     // Initialize source statistics
     this.wikiSources.forEach(source => {
       this.sourceStats[source.name] = { found: 0, failed: 0, cached: 0 };
@@ -206,7 +228,7 @@ class UnifiedFlagService {
   }
 
   /**
-   * Batch get flags for multiple countries
+   * Batch get flags for multiple countries with graceful rate limiting
    */
   async batchGetFlags(countryNames: string[]): Promise<Record<string, string | null>> {
     const results: Record<string, string | null> = {};
@@ -227,23 +249,37 @@ class UnifiedFlagService {
       return results;
     }
 
-    // Silent operation - no logging
+    // If we have too many uncached countries, prioritize and defer the rest
+    const MAX_IMMEDIATE_FETCH = 10;
+    if (uncachedCountries.length > MAX_IMMEDIATE_FETCH) {
+      console.log(`[UnifiedFlagService] Batch request for ${uncachedCountries.length} flags - fetching top ${MAX_IMMEDIATE_FETCH} now, deferring rest`);
 
-    // Process in TINY batches of 1 to avoid ANY spam
-    const batchSize = 1;
+      // Return placeholders for the rest, they'll be loaded lazily
+      for (let i = MAX_IMMEDIATE_FETCH; i < uncachedCountries.length; i++) {
+        results[uncachedCountries[i]!] = null;
+      }
+
+      // Only process the first batch immediately
+      uncachedCountries.splice(MAX_IMMEDIATE_FETCH);
+    }
+
+    // Process with graceful rate limiting
+    const batchSize = 3; // Small batches to respect rate limits
     for (let i = 0; i < uncachedCountries.length; i += batchSize) {
-      // Check if we should stop due to rate limiting or global disable
+      // Check if we should stop due to rate limiting
       if (this.shouldThrottle() || this.globalFetchDisabled) {
-        // Return placeholder for ALL remaining countries immediately
+        // Return null for remaining countries
         for (let j = i; j < uncachedCountries.length; j++) {
           results[uncachedCountries[j]!] = null;
-          this.failedCountries.add(uncachedCountries[j]!);
         }
-        this.globalFetchDisabled = true; // Ensure fetching is disabled
         break;
       }
 
       const batch = uncachedCountries.slice(i, i + batchSize);
+
+      // Add graceful spacing between requests
+      await this.waitForRateLimit();
+
       const batchPromises = batch.map(async (countryName) => {
         const flagUrl = await this.getFlagUrl(countryName);
         return { countryName, flagUrl };
@@ -258,18 +294,27 @@ class UnifiedFlagService {
           results[countryName!] = null;
         }
       });
-
-      // MUCH longer delay between batches to avoid ANY server load
-      if (i + batchSize < uncachedCountries.length) {
-        await this.delay(2000); // 2 seconds between each flag fetch
-      }
     }
 
     return results;
   }
 
   /**
-   * Check if we should throttle requests due to rate limiting
+   * Wait for rate limit window before making next request
+   */
+  private async waitForRateLimit(): Promise<void> {
+    const now = Date.now();
+    const timeSinceLastRequest = now - this.lastRequestTime;
+
+    if (timeSinceLastRequest < this.MIN_REQUEST_INTERVAL) {
+      await this.delay(this.MIN_REQUEST_INTERVAL - timeSinceLastRequest);
+    }
+
+    this.lastRequestTime = Date.now();
+  }
+
+  /**
+   * Check if we should throttle requests due to rate limiting - more graceful approach
    */
   private shouldThrottle(): boolean {
     const now = Date.now();
@@ -278,18 +323,33 @@ class UnifiedFlagService {
     if (now - this.lastRateLimitReset > this.RATE_LIMIT_WINDOW) {
       this.requestsSinceLastReset = 0;
       this.lastRateLimitReset = now;
+      // Also reset error count if it's been a while
+      if (this.apiErrorCount > 0 && this.lastApiError && (now - this.lastApiError) > 120000) {
+        this.apiErrorCount = 0;
+      }
     }
 
     // Check if we've hit the rate limit
     if (this.requestsSinceLastReset >= this.MAX_REQUESTS_PER_MINUTE) {
-      console.warn('[UnifiedFlagService] Rate limit reached, throttling requests');
+      // Only log occasionally to avoid console spam
+      if (this.requestsSinceLastReset === this.MAX_REQUESTS_PER_MINUTE) {
+        console.log('[UnifiedFlagService] Rate limit reached, throttling new requests for 1 minute');
+      }
       return true;
     }
 
-    // If we've had recent API errors, back off
-    if (this.apiErrorCount > 5 && this.lastApiError && (now - this.lastApiError) < 30000) {
-      console.warn('[UnifiedFlagService] Too many recent API errors, backing off');
-      return true;
+    // Exponential backoff for API errors - be more forgiving
+    if (this.apiErrorCount > 0 && this.lastApiError) {
+      const timeSinceError = now - this.lastApiError;
+      const backoffTime = Math.min(30000, 2000 * Math.pow(2, this.apiErrorCount - 1)); // Max 30 seconds
+
+      if (timeSinceError < backoffTime) {
+        // Only log the first throttle event
+        if (timeSinceError < 1000) {
+          console.log(`[UnifiedFlagService] Backing off for ${backoffTime / 1000}s due to ${this.apiErrorCount} recent errors`);
+        }
+        return true;
+      }
     }
 
     return false;
@@ -300,29 +360,36 @@ class UnifiedFlagService {
    */
   private async fetchFlagFromMultipleWikis(countryName: string): Promise<string | null> {
     const cacheKey = countryName.toLowerCase();
+    const now = Date.now();
 
-    // GLOBAL KILL SWITCH - stop all fetching if we hit too many errors
+    // Check if global fetch is disabled but should be re-enabled
+    if (this.globalFetchDisabled && this.globalFetchReenableTime && now >= this.globalFetchReenableTime) {
+      console.log(`[UnifiedFlagService] Re-enabling fetch after cooldown period`);
+      this.globalFetchDisabled = false;
+      this.globalFetchReenableTime = null;
+      this.requestsSinceLastReset = 0;
+      this.lastRateLimitReset = now;
+    }
+
+    // If still disabled, return null silently
     if (this.globalFetchDisabled) {
-      console.log(`[UnifiedFlagService] Fetching disabled globally - returning null`);
       this.failedCountries.add(countryName);
       return null;
     }
 
     // Check if we've already failed for this country recently
     if (this.failedCountries.has(countryName)) {
-      return null; // Silent fail - no logging to reduce spam
+      return null; // Silent fail - already tried
     }
 
-    // Check rate limiting
+    // Check rate limiting before making request
     if (this.shouldThrottle()) {
-      console.warn(`[UnifiedFlagService] Rate limited - disabling all fetching`);
-      this.globalFetchDisabled = true; // DISABLE ALL FUTURE FETCHING
+      // Don't set global disable - just defer this request
       this.failedCountries.add(countryName);
       return null;
     }
 
-    // FOR REAL COUNTRIES - ONLY TRY WIKIMEDIA COMMONS
-    // Removed verbose logging to reduce console spam
+    // Track the request
     this.requestsSinceLastReset++;
 
     try {
@@ -330,7 +397,10 @@ class UnifiedFlagService {
 
       if (flagUrl) {
         // Reset error counter on success
-        this.apiErrorCount = 0;
+        if (this.apiErrorCount > 0) {
+          this.apiErrorCount = Math.max(0, this.apiErrorCount - 1);
+        }
+
         // Cache the successful result
         const cachedFlag: CachedFlag = {
           url: flagUrl,
@@ -340,7 +410,6 @@ class UnifiedFlagService {
         };
 
         this.memoryCache[cacheKey] = cachedFlag;
-        // Silent success - no logging
 
         // Schedule save (debounced to prevent spam)
         this.saveLocalMetadata();
@@ -348,13 +417,19 @@ class UnifiedFlagService {
         return flagUrl;
       }
     } catch (error) {
-      // Track API errors
+      // Track API errors with graceful handling
       this.apiErrorCount++;
       this.lastApiError = Date.now();
-      console.warn(`[UnifiedFlagService] Error fetching from Wikimedia Commons for ${countryName}:`, error);
+
+      // Only enable global disable for severe error bursts
+      if (this.apiErrorCount >= 10) {
+        console.warn(`[UnifiedFlagService] Too many errors (${this.apiErrorCount}), pausing fetches for 2 minutes`);
+        this.globalFetchDisabled = true;
+        this.globalFetchReenableTime = now + (2 * 60 * 1000);
+      }
     }
-    
-    // Cache null result to avoid repeated failures (with shorter TTL)
+
+    // Cache null result to avoid repeated failures
     this.memoryCache[cacheKey] = null;
     this.failedCountries.add(countryName);
     return null;
@@ -423,7 +498,7 @@ class UnifiedFlagService {
   }
 
   /**
-   * Fetch flag from Wikimedia Commons
+   * Fetch flag from Wikimedia Commons - optimized with batch API calls
    */
   private async fetchFromWikiCommons(countryName: string): Promise<string | null> {
     try {
@@ -462,39 +537,42 @@ class UnifiedFlagService {
       // Check if we need to use a mapped name
       const searchName = countryMappings[countryName.toLowerCase()] || countryName;
 
-      // Try different flag filename patterns for Commons
+      // Build all possible flag filename patterns
       const flagPatterns = [
         `Flag of ${searchName}.svg`,
         `Flag of ${searchName}.png`,
         `Flag_of_${searchName.replace(/ /g, '_')}.svg`,
-        `${searchName} flag.svg`,
-        `${searchName.replace(/ /g, '_')}_flag.svg`,
       ];
 
-      for (const filename of flagPatterns) {
-        try {
-          const fileInfoUrl = `https://commons.wikimedia.org/w/api.php?action=query&format=json&formatversion=2&origin=*&titles=File:${encodeURIComponent(filename)}&prop=imageinfo&iiprop=url`;
+      // OPTIMIZATION: Query all patterns in ONE API call using the pipe separator
+      // This reduces 5 API calls to 1 call per country
+      const titlesParam = flagPatterns.map(f => `File:${f}`).join('|');
+      const batchUrl = `https://commons.wikimedia.org/w/api.php?action=query&format=json&formatversion=2&origin=*&titles=${encodeURIComponent(titlesParam)}&prop=imageinfo&iiprop=url`;
 
-          const response = await fetch(fileInfoUrl, {
-            signal: AbortSignal.timeout(5000),
-          });
+      const response = await fetch(batchUrl, {
+        signal: AbortSignal.timeout(8000), // Slightly longer timeout for batch request
+      });
 
-          if (response.ok) {
-            const data = await response.json();
-            if (data.query?.pages?.[0]?.imageinfo?.[0]?.url) {
-              // Silent success - no logging to reduce spam
-              return data.query.pages[0].imageinfo[0].url;
-            }
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = await response.json();
+
+      // Check all pages returned for a valid image
+      if (data.query?.pages) {
+        for (const page of data.query.pages) {
+          if (page.imageinfo?.[0]?.url && !page.missing) {
+            // Found a valid flag!
+            return page.imageinfo[0].url;
           }
-        } catch (error) {
-          continue; // Try next pattern
         }
       }
 
-      // Silent fail - no logging
+      // No flag found in any pattern
       return null;
     } catch (error) {
-      // Silent error - no logging
+      // Silent error handling
       return null;
     }
   }
@@ -564,20 +642,33 @@ class UnifiedFlagService {
         return !this.hasLocalFlag(name) && (!cachedFlag || !this.isCacheValid(cachedFlag));
       });
 
+      // Don't prefetch if there are too many uncached - this indicates we're hitting rate limits
+      if (uncachedCountries.length > 50) {
+        console.log(`[UnifiedFlagService] Skipping prefetch of ${uncachedCountries.length} flags - too many to fetch safely`);
+        this.isUpdating = false;
+        return;
+      }
+
       console.log(`[UnifiedFlagService] Prefetching ${uncachedCountries.length} uncached flags from multiple wikis`);
 
       // Process in small batches to avoid overwhelming APIs
-      const batchSize = 3; // Smaller batches since we're hitting multiple APIs
+      const batchSize = 2; // Very small batches to stay under rate limits
       for (let i = 0; i < uncachedCountries.length; i += batchSize) {
+        // Check if we've been rate limited during this run
+        if (this.globalFetchDisabled) {
+          console.log(`[UnifiedFlagService] Stopping prefetch - rate limited after ${i} countries`);
+          break;
+        }
+
         const batch = uncachedCountries.slice(i, i + batchSize);
-        
+
         await Promise.allSettled(
           batch.map(countryName => this.fetchFlagFromMultipleWikis(countryName))
         );
 
-        // Delay between batches
+        // Longer delay between batches to respect rate limits
         if (i + batchSize < uncachedCountries.length) {
-          await this.delay(1000); // Longer delay for multi-wiki requests
+          await this.delay(2000); // 2 second delay between batches
         }
       }
 
@@ -692,8 +783,9 @@ class UnifiedFlagService {
     try {
       let metadataPath;
       if (typeof window !== 'undefined') {
-        // Client-side: fetch from public URL
-        metadataPath = '/flags/metadata.json';
+        // Client-side: fetch from public URL with base path
+        const basePath = getBasePath();
+        metadataPath = `${basePath}/flags/metadata.json`;
         const metadataResponse = await fetch(metadataPath);
         if (metadataResponse.ok) {
           const serverMetadata = await metadataResponse.json();
@@ -758,7 +850,8 @@ class UnifiedFlagService {
 
       if (typeof window !== 'undefined') {
         try {
-          await fetch('/api/flags/save-metadata', {
+          const basePath = getBasePath();
+          await fetch(`${basePath}/api/flags/save-metadata`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -798,9 +891,10 @@ class UnifiedFlagService {
       // Generate safe filename
       const safeCountryName = countryName.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '_').toLowerCase();
       const fileName = `${safeCountryName}.${safeExtension}`;
-      
+
       // Download the image via our API endpoint
-      const downloadResponse = await fetch('/api/flags/download', {
+      const basePath = getBasePath();
+      const downloadResponse = await fetch(`${basePath}/api/flags/download`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

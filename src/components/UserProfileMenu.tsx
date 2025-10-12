@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { SignInButton } from "~/context/auth-context";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
+import { createAbsoluteUrl } from "~/lib/url-utils";
 
 interface UserProfileMenuProps {
   user: any;
@@ -142,7 +143,7 @@ export function UserProfileMenu({ user, userProfile, setupStatus, userCountryFla
             <button
               onClick={() => {
                 if (typeof window !== 'undefined') {
-                  window.location.href = '/sign-out';
+                  window.location.href = createAbsoluteUrl('/sign-out');
                 }
               }}
               className="w-full flex items-center gap-3 px-0 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/10 rounded-md transition-colors"

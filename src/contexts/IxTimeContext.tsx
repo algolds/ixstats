@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { IxTime } from '~/lib/ixtime';
+import { withBasePath } from '~/lib/base-path';
 
 interface IxTimeState {
   ixTimeTimestamp: number;
@@ -44,7 +45,7 @@ export function IxTimeProvider({ children, updateInterval = 100 }: IxTimeProvide
 
   const fetchTimeFromAPI = async (): Promise<Partial<IxTimeState>> => {
     try {
-      const response = await fetch('/api/ixtime/current');
+      const response = await fetch(withBasePath('/api/ixtime/current'));
       if (response.ok) {
         const data = await response.json();
         const now = Date.now();

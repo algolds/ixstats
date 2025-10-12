@@ -13,6 +13,7 @@ import { getNotificationOrchestrator } from '~/services/NotificationOrchestrator
 import { getContextIntelligenceEngine } from '~/services/ContextIntelligenceEngine';
 import { getGlobalNotificationStore } from '~/services/GlobalNotificationStore';
 import { getDeliveryHandlerRegistry } from '~/services/DeliveryHandlers';
+import { createAbsoluteUrl } from "~/lib/url-utils";
 import type {
   UnifiedNotification,
   NotificationContext,
@@ -474,7 +475,7 @@ export function useDataNotifications() {
         label: 'View Details',
         type: 'primary',
         onClick: () => {
-          window.location.href = '/mycountry/new?tab=economy';
+          window.location.href = createAbsoluteUrl('/mycountry/new?tab=economy');
         }
       }],
     });
@@ -507,7 +508,7 @@ export function useDataNotifications() {
         label: 'View All Achievements',
         type: 'secondary',
         onClick: () => {
-          window.location.href = '/mycountry/achievements';
+          window.location.href = createAbsoluteUrl('/mycountry/achievements');
         }
       }],
     });

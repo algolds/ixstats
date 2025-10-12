@@ -610,7 +610,7 @@ export function AtomicBuilderPageEnhanced({ onBackToIntro }: AtomicBuilderPageEn
                 </p>
               </div>
               <Button
-                onClick={() => router.push('/sign-in')}
+                onClick={() => router.push(createUrl('/sign-in'))}
                 size="lg"
                 className={cn("w-full bg-gradient-to-r", BUILDER_GOLD, BUILDER_GOLD_HOVER)}
               >

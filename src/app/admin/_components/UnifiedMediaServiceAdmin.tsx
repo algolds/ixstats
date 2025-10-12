@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/com
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Loader2, RefreshCw, Database, Zap, AlertTriangle } from "lucide-react";
+import { withBasePath } from "~/lib/base-path";
 
 interface CacheStats {
   totalRequests: number;
@@ -29,7 +30,7 @@ export function UnifiedMediaServiceAdmin() {
   const fetchStats = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/flag-cache?action=stats');
+      const response = await fetch(withBasePath('/api/flag-cache?action=stats'));
       const data = await response.json();
       
       if (data.success) {
@@ -46,7 +47,7 @@ export function UnifiedMediaServiceAdmin() {
   const initializeCache = async () => {
     try {
       setIsInitializing(true);
-      const response = await fetch('/api/flag-cache?action=flags', {
+      const response = await fetch(withBasePath('/api/flag-cache?action=flags'), {
         method: 'GET',
       });
       const data = await response.json();
@@ -69,7 +70,7 @@ export function UnifiedMediaServiceAdmin() {
     try {
       setIsLoading(true);
       // Call the unified service clear method
-      const response = await fetch('/api/flag-cache?action=clear', {
+      const response = await fetch(withBasePath('/api/flag-cache?action=clear'), {
         method: 'DELETE',
       });
       const data = await response.json();

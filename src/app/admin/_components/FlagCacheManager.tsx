@@ -6,6 +6,7 @@ import { CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Loader2, RefreshCw, Trash2, Database, AlertCircle, CheckCircle, Clock } from "lucide-react";
+import { withBasePath } from "~/lib/base-path";
 
 interface FlagStats {
   totalCountries: number;
@@ -62,7 +63,7 @@ export function FlagCacheManager() {
   const fetchStatus = async () => {
     try {
       setError(null);
-      const response = await fetch('/api/flag-cache?action=status');
+      const response = await fetch(withBasePath('/api/flag-cache?action=status'));
       const data = await response.json();
       
       if (!response.ok) {
@@ -87,7 +88,7 @@ export function FlagCacheManager() {
       setUpdating(true);
       setError(null);
       
-      const response = await fetch('/api/flag-cache?action=update', {
+      const response = await fetch(withBasePath('/api/flag-cache?action=update'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ countries: [] })
@@ -118,7 +119,7 @@ export function FlagCacheManager() {
       setClearing(true);
       setError(null);
       
-      const response = await fetch('/api/flag-cache?action=clear', {
+      const response = await fetch(withBasePath('/api/flag-cache?action=clear'), {
         method: 'DELETE'
       });
       

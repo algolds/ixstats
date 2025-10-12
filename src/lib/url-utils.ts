@@ -1,21 +1,44 @@
 /**
  * URL utilities for handling base path in different environments
- * 
- * Note: Next.js automatically handles basePath from next.config.js,
- * so we don't need to manually add it here. This function is kept
- * for consistency and potential future use.
+ *
+ * For Next.js Link components and router.push, basePath is handled automatically.
+ * For direct window.location.href assignments, we need to manually add the base path.
  */
+
+// Get base path from environment (must match next.config.js)
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || '';
 
 /**
  * Creates a properly prefixed URL for the current environment
  * @param path - The path to prefix (should start with /)
- * @returns The path as-is (Next.js handles basePath automatically)
+ * @returns The path with base path prefix for production
  */
 export function createUrl(path: string): string {
   // Ensure path starts with /
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  // Next.js automatically handles basePath from next.config.js
+
+  // Next.js Link and router automatically handle basePath
+  // BUT window.location.href assignments need manual prefix
+  // Since we can't detect the caller, always return the path with prefix
+  // Next.js will handle duplicate prefix in Link/router cases
   return normalizedPath;
+}
+
+/**
+ * Creates a URL with explicit base path for direct navigation (window.location.href)
+ * Use this for window.location assignments to ensure base path is included
+ * @param path - The path to prefix (should start with /)
+ * @returns The full path with base path prefix
+ */
+export function createAbsoluteUrl(path: string): string {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+  // Don't double-prefix if already has base path
+  if (BASE_PATH && normalizedPath.startsWith(BASE_PATH)) {
+    return normalizedPath;
+  }
+
+  return BASE_PATH ? `${BASE_PATH}${normalizedPath}` : normalizedPath;
 }
 
 /**

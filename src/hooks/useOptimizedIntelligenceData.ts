@@ -8,6 +8,7 @@ import type { Country, IntelligenceItem, VitalityIntelligence } from '~/types/in
 import type { DeliveryMethod } from '~/types/unified-notifications';
 import { useNotificationStore } from '~/stores/notificationStore';
 import { useUnifiedNotifications } from '~/hooks/useUnifiedNotifications';
+import { createAbsoluteUrl } from "~/lib/url-utils";
 
 interface OptimizedIntelligenceData {
   country: Country | null;
@@ -148,7 +149,7 @@ export function useOptimizedIntelligenceData({
             id: 'view-intelligence',
             label: 'View Details',
             type: 'primary' as const,
-            onClick: () => { window.location.href = '/sdi'; }
+            onClick: () => { window.location.href = createAbsoluteUrl('/sdi'); }
           }],
           triggers: [{
             type: 'data-change' as const,

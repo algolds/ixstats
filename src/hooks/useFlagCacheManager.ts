@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { withBasePath } from "~/lib/base-path";
 
 export interface FlagCacheStats {
   totalCountries: number;
@@ -47,7 +48,7 @@ export function useFlagCacheManager(): FlagCacheManagerHook {
   // Refresh stats from the API
   const refreshStats = useCallback(async () => {
     try {
-      const response = await fetch('/api/flag-cache?action=status');
+      const response = await fetch(withBasePath('/api/flag-cache?action=status'));
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.flagCache) {
@@ -69,7 +70,7 @@ export function useFlagCacheManager(): FlagCacheManagerHook {
     setError(null);
     
     try {
-      const response = await fetch('/api/flag-cache?action=update', {
+      const response = await fetch(withBasePath('/api/flag-cache?action=update'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ countries: [] }), // Empty array means all countries
@@ -100,7 +101,7 @@ export function useFlagCacheManager(): FlagCacheManagerHook {
     setError(null);
     
     try {
-      const response = await fetch('/api/flag-cache?action=initialize', {
+      const response = await fetch(withBasePath('/api/flag-cache?action=initialize'), {
         method: 'POST',
       });
 
@@ -129,7 +130,7 @@ export function useFlagCacheManager(): FlagCacheManagerHook {
     setError(null);
     
     try {
-      const response = await fetch('/api/flag-cache?action=clear', {
+      const response = await fetch(withBasePath('/api/flag-cache?action=clear'), {
         method: 'DELETE',
       });
 
@@ -206,7 +207,7 @@ export function useFlagCacheStats(): FlagCacheStats {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch('/api/flag-cache?action=status');
+        const response = await fetch(withBasePath('/api/flag-cache?action=status'));
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.flagCache) {

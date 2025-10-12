@@ -54,6 +54,7 @@ import { cn } from "~/lib/utils";
 import { ATOMIC_COMPONENTS, ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
 import { PublicVitalityRings } from "~/components/countries/PublicVitalityRings";
 import { ExternalLink } from "lucide-react";
+import { createUrl } from "~/lib/url-utils";
 
 // Country showcase card for carousel with vitality rings and wiki intro
 function CountryShowcaseCard({ country }: { country: any }) {
@@ -306,7 +307,7 @@ export function IxStatsSplashPage() {
   // Redirect authenticated users to dashboard
   useEffect(() => {
     if (user) {
-      router.push("/dashboard");
+      router.push(createUrl('/dashboard'));
     }
   }, [user, router]);
 

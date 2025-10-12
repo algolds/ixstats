@@ -4,6 +4,7 @@ import { Globe, ExternalLink } from "lucide-react";
 import { GlassCard, GlassCardContent, GlassCardHeader } from "~/app/builder/components/glass/GlassCard";
 import { BorderBeam } from "~/components/magicui/border-beam";
 import { cn } from "~/lib/utils";
+import { withBasePath } from "~/lib/base-path";
 
 interface WikiSite {
   name: string;
@@ -108,21 +109,21 @@ export const WikiSourceSelector: React.FC<WikiSourceSelectorProps> = ({
                     >
                       {site.name === 'althistory' && (
                         <img
-                          src="/images/althistory-logo.webp"
+                          src={withBasePath("/images/althistory-logo.webp")}
                           alt="AltHistory"
                           className="absolute inset-0 m-auto w-2/3 h-2/3 object-contain opacity-50"
                         />
                       )}
                       {site.name === 'iiwiki' && (
                         <img
-                          src="/images/IIWikiLogo.png"
+                          src={withBasePath("/images/IIWikiLogo.png")}
                           alt="IIWiki"
                           className="absolute inset-0 m-auto w-2/3 h-2/3 object-contain opacity-50"
                         />
                       )}
                       {site.name === 'ixwiki' && (
                         <img
-                          src="/images/ix-logo.svg"
+                          src={withBasePath("/images/ix-logo.svg")}
                           alt="IXWiki"
                           className="absolute inset-0 m-auto w-3/3 h-3/3 object-contain opacity-50"
                         />

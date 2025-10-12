@@ -19,7 +19,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl, createAbsoluteUrl } from "~/lib/url-utils";
 import { 
   Clock, 
   Globe, 
@@ -201,7 +201,7 @@ function GlobalStatsIslandContent() {
             subtitle: `${formatCurrency(country.currentGdpPerCapita || 0)} per capita`,
             icon: Globe,
             action: () => {
-              window.location.href = `/countries/${country.id}`;
+              window.location.href = createAbsoluteUrl(`/countries/${country.id}`);
             }
           });
         });
@@ -396,7 +396,7 @@ function GlobalStatsIslandContent() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => userProfile?.country && (window.location.href = `/countries/${userProfile.country.id}`)}
+                          onClick={() => userProfile?.country && (window.location.href = createAbsoluteUrl(`/countries/${userProfile.country.id}`))}
                           className="flex-1 text-white/80 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/10"
                         >
                           <Crown className="h-4 w-4 mr-2" />
@@ -405,7 +405,7 @@ function GlobalStatsIslandContent() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => window.location.href = "/eci"}
+                          onClick={() => window.location.href = createAbsoluteUrl('/eci')}
                           className="flex-1 text-white/80 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/10"
                         >
                           <Target className="h-4 w-4 mr-2" />
@@ -422,7 +422,7 @@ function GlobalStatsIslandContent() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => window.location.href = "/setup"}
+                          onClick={() => window.location.href = createAbsoluteUrl('/setup')}
                           className="text-white/80 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/10"
                         >
                           Complete Setup
@@ -551,7 +551,7 @@ function GlobalStatsIslandContent() {
                       <button
                         onClick={() => {
                           if (typeof window !== 'undefined') {
-                            window.location.href = '/sign-out';
+                            window.location.href = createAbsoluteUrl('/sign-out');
                           }
                         }}
                         className="w-full flex items-center gap-3 px-0 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
@@ -829,7 +829,7 @@ function GlobalStatsIslandContent() {
                 <div className="grid grid-cols-2 gap-3">
                   <Button
                     variant="outline"
-                    onClick={() => userProfile?.country && (window.location.href = `/countries/${userProfile.country.id}`)}
+                    onClick={() => userProfile?.country && (window.location.href = createAbsoluteUrl(`/countries/${userProfile.country.id}`))}
                     className="flex items-center gap-2 text-white/80 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/10"
                   >
                     <Crown className="h-4 w-4" />
@@ -837,7 +837,7 @@ function GlobalStatsIslandContent() {
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => window.location.href = "/eci"}
+                    onClick={() => window.location.href = createAbsoluteUrl('/eci')}
                     className="flex items-center gap-2 text-white/80 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/10"
                   >
                     <Target className="h-4 w-4" />
@@ -845,7 +845,7 @@ function GlobalStatsIslandContent() {
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => window.location.href = "/builder"}
+                    onClick={() => window.location.href = createAbsoluteUrl('/builder')}
                     className="flex items-center gap-2 text-white/80 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/10"
                   >
                     <Plus className="h-4 w-4" />
@@ -853,7 +853,7 @@ function GlobalStatsIslandContent() {
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => window.location.href = "/profile"}
+                    onClick={() => window.location.href = createAbsoluteUrl('/profile')}
                     className="flex items-center gap-2 text-white/80 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/10"
                   >
                     <User className="h-4 w-4" />
@@ -870,7 +870,7 @@ function GlobalStatsIslandContent() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => window.location.href = "/setup"}
+                    onClick={() => window.location.href = createAbsoluteUrl('/setup')}
                     className="text-white/80 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/10"
                   >
                     Complete Setup

@@ -16,6 +16,7 @@ import type {
 import type { IntelligenceItem } from '~/types/intelligence-unified';
 import { useNotificationStore } from '~/stores/notificationStore';
 import { IxTime } from '~/lib/ixtime';
+import { createAbsoluteUrl } from "~/lib/url-utils";
 
 interface DataStreamEvent {
   type: 'intelligence' | 'economic' | 'diplomatic' | 'achievement' | 'crisis';
@@ -73,7 +74,7 @@ class GlobalNotificationBridge extends EventEmitter {
           id: 'view-intelligence',
           label: 'View in SDI',
           type: 'primary',
-          onClick: () => window.location.href = '/sdi'
+          onClick: () => window.location.href = createAbsoluteUrl('/sdi')
         }]
       },
       {
@@ -92,7 +93,7 @@ class GlobalNotificationBridge extends EventEmitter {
           id: 'crisis-response',
           label: 'Emergency Response',
           type: 'primary',
-          onClick: () => window.location.href = '/crisis-management'
+          onClick: () => window.location.href = createAbsoluteUrl('/crisis-management')
         }]
       },
 
@@ -117,7 +118,7 @@ class GlobalNotificationBridge extends EventEmitter {
           id: 'view-economics',
           label: 'View Economic Dashboard',
           type: 'primary',
-          onClick: () => window.location.href = '/mycountry/new?tab=economy'
+          onClick: () => window.location.href = createAbsoluteUrl('/mycountry/new?tab=economy')
         }]
       },
       {
@@ -162,7 +163,7 @@ class GlobalNotificationBridge extends EventEmitter {
           id: 'view-diplomatic',
           label: 'View Diplomatic Relations',
           type: 'primary',
-          onClick: () => window.location.href = '/diplomatic'
+          onClick: () => window.location.href = createAbsoluteUrl('/diplomatic')
         }]
       },
 
@@ -187,7 +188,7 @@ class GlobalNotificationBridge extends EventEmitter {
           id: 'view-achievements',
           label: 'View All Achievements',
           type: 'secondary',
-          onClick: () => window.location.href = '/achievements'
+          onClick: () => window.location.href = createAbsoluteUrl('/achievements')
         }]
       }
     ];
