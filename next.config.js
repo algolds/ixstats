@@ -69,9 +69,7 @@ const config = {
         maxMemoryGenerations: dev ? Infinity : 1,
         // Optimize serialization for large strings by using buffers
         store: 'pack',
-        buildDependencies: {
-          config: [import.meta.url],
-        },
+        // Remove buildDependencies to prevent ESM resolution issues during cache serialization
       };
     }
 
