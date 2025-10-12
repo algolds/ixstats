@@ -40,6 +40,14 @@ prisma/*.sqlite
 prisma/*.sqlite-journal
 *.sqlite
 *.sqlite-journal
+*.db
+*.db-shm
+*.db-wal
+prisma/**/*.db
+prisma/**/*.db-shm
+prisma/**/*.db-wal
+*.backup-*
+prisma/*.backup-*
 
 # --------------------------------------------------------------------------------
 # TypeScript
