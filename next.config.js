@@ -60,10 +60,19 @@ const config = {
     // This is the most reliable solution according to webpack documentation
     config.output.globalObject = 'this';
 
-    // Fix webpack cache warning - optimize serialization
-    if (config.cache && !dev) {
-      config.cache.compression = 'gzip';
-      config.cache.maxMemoryGenerations = 1;
+    // Fix webpack cache warning - optimize serialization for large strings
+    if (config.cache) {
+      config.cache = {
+        ...config.cache,
+        type: 'filesystem',
+        compression: 'gzip',
+        maxMemoryGenerations: dev ? Infinity : 1,
+        // Optimize serialization for large strings by using buffers
+        store: 'pack',
+        buildDependencies: {
+          config: [import.meta.url],
+        },
+      };
     }
 
     // Additional polyfills for client-side only
