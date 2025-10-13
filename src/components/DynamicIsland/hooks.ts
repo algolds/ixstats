@@ -6,6 +6,13 @@ import { useUser } from "@clerk/nextjs";
 import { usePathname } from "next/navigation";
 import type { ViewMode, SearchFilter, SearchResult } from './types';
 
+// Development-only logger to suppress Dynamic Island logs in production
+const devLog = (...args: any[]) => {
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(...args);
+  }
+};
+
 // UserProfile interface for command items hook
 interface UserProfile {
   countryId: string | null;
@@ -282,43 +289,43 @@ export function useDynamicIslandState() {
       const isInputFocused = activeElement?.tagName === 'INPUT' || activeElement?.tagName === 'TEXTAREA' || activeElement?.getAttribute('contenteditable') === 'true';
 
       // Debug active element
-      console.log('[DynamicIsland] Key event - key:', e.key, 'activeElement:', activeElement?.tagName, 'id:', activeElement?.id, 'data-attr:', activeElement?.getAttribute('data-command-palette-search'));
+      devLog('[DynamicIsland] Key event - key:', e.key, 'activeElement:', activeElement?.tagName, 'id:', activeElement?.id, 'data-attr:', activeElement?.getAttribute('data-command-palette-search'));
 
       // Allow typing in our search inputs or command palette - DO NOT INTERCEPT REGULAR KEYS
       const isOurSearchInput = activeElement?.closest('[data-command-palette-search]') || activeElement?.closest('[data-command-palette]');
       const hasSearchAttribute = activeElement?.hasAttribute('data-command-palette-search');
 
-      console.log('[DynamicIsland] Search input detection - isOurSearchInput:', isOurSearchInput, 'hasSearchAttribute:', hasSearchAttribute);
+      devLog('[DynamicIsland] Search input detection - isOurSearchInput:', isOurSearchInput, 'hasSearchAttribute:', hasSearchAttribute);
 
       // If we're typing in our search input and it's NOT a shortcut key, let it through
       if ((isOurSearchInput || hasSearchAttribute) && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        console.log('[DynamicIsland] ALLOWING typing in search input, key:', e.key);
+        devLog('[DynamicIsland] ALLOWING typing in search input, key:', e.key);
         return; // Don't intercept regular typing
       }
 
-      console.log('[DynamicIsland] INTERCEPTING key:', e.key);
+      devLog('[DynamicIsland] INTERCEPTING key:', e.key);
 
       // GLOBAL SHORTCUT: Cmd+K / Ctrl+K - Always works unless typing in other inputs
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        console.log('[DynamicIsland] Cmd+K detected, mode:', mode);
+        devLog('[DynamicIsland] Cmd+K detected, mode:', mode);
         if (!isInputFocused || isOurSearchInput) {
-          console.log('[DynamicIsland] Processing Cmd+K shortcut');
+          devLog('[DynamicIsland] Processing Cmd+K shortcut');
           e.preventDefault();
           e.stopPropagation();
 
           // Don't prevent further processing if we're already processing
           if (isProcessingShortcut) {
-            console.log('[DynamicIsland] Already processing, ignoring');
+            devLog('[DynamicIsland] Already processing, ignoring');
             return;
           }
           setIsProcessingShortcut(true);
 
           if (mode === "search") {
-            console.log('[DynamicIsland] Closing search mode');
+            devLog('[DynamicIsland] Closing search mode');
             // Already in search mode, close it
             switchMode("compact");
           } else {
-            console.log('[DynamicIsland] Opening search mode');
+            devLog('[DynamicIsland] Opening search mode');
             // Switch to search mode - focus will be handled by SearchView component
             switchMode("search");
           }
@@ -329,7 +336,7 @@ export function useDynamicIslandState() {
             setIsProcessingShortcut(false);
           }, 300);
         } else {
-          console.log('[DynamicIsland] Input focused, ignoring Cmd+K');
+          devLog('[DynamicIsland] Input focused, ignoring Cmd+K');
         }
         return;
       }

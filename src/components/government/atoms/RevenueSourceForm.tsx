@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { usePendingLocks } from '~/app/mycountry/editor/hooks/usePendingLocks';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
@@ -102,6 +103,7 @@ export function RevenueSourceForm({
   isReadOnly = false,
   availableDepartments = []
 }: RevenueSourceFormProps) {
+  const { isLocked } = usePendingLocks();
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<RevenueCategory>('Direct Tax');
   const [newRevenue, setNewRevenue] = useState<RevenueSourceInput>({
@@ -361,7 +363,7 @@ export function RevenueSourceForm({
                           type="number"
                           value={item.revenueAmount}
                           onChange={(e) => handleUpdate(index, 'revenueAmount', parseFloat(e.target.value) || 0)}
-                          disabled={isReadOnly}
+                          disabled={isReadOnly || isLocked('revenueSources')}
                           min="0"
                           step="1000000"
                         />

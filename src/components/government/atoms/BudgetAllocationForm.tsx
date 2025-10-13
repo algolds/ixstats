@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import { usePendingLocks } from '~/app/mycountry/editor/hooks/usePendingLocks';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
@@ -46,6 +47,7 @@ export function BudgetAllocationForm({
   currency = 'USD',
   isReadOnly = false 
 }: BudgetAllocationFormProps) {
+  const { isLocked } = usePendingLocks();
   const handleChange = (field: keyof BudgetAllocationInput, value: any) => {
     let updatedData = {
       ...data,
@@ -140,7 +142,7 @@ export function BudgetAllocationForm({
               type="number"
               value={data.allocatedAmount}
               onChange={(e) => handleChange('allocatedAmount', parseFloat(e.target.value) || 0)}
-              disabled={isReadOnly}
+              disabled={isReadOnly || isLocked('budgetAllocations')}
               min="0"
               step="1000000"
             />
@@ -161,7 +163,7 @@ export function BudgetAllocationForm({
                 min={0}
                 max={50}
                 step={0.1}
-                disabled={isReadOnly}
+                disabled={isReadOnly || isLocked('budgetAllocations')}
                 className="w-full"
               />
               <div className="flex justify-between text-xs text-[var(--color-text-muted)]">

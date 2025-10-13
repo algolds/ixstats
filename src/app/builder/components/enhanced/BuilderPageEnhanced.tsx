@@ -266,6 +266,16 @@ function BuilderContent() {
     }
   }, []);
 
+  // Respect quick-start section preference to land on Core Identity immediately
+  useEffect(() => {
+    const quickSection = localStorage.getItem('builder_quick_start_section');
+    if (quickSection === 'core') {
+      // Ensure customize phase and identity tab
+      setCurrentPhase('customize');
+      // Downstream components default to identity for core anyway; nothing else required here
+    }
+  }, []);
+
   // Update economic inputs when country changes
   useEffect(() => {
     if (selectedCountry) {

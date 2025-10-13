@@ -197,8 +197,8 @@ export class EnhancedEconomicService {
         { label: 'GDP per Capita', value: `$${countryStats.currentGdpPerCapita.toLocaleString()}` },
         { label: 'Economic Tier', value: countryStats.economicTier },
         { label: 'Population', value: countryStats.currentPopulation.toLocaleString() },
-        { label: 'Unemployment', value: `${economyData.labor.unemploymentRate.toFixed(1)}%` },
-        { label: 'Inflation', value: `${(economyData.core.inflationRate * 100).toFixed(1)}%` }
+        { label: 'Unemployment', value: `${Number(economyData.labor.unemploymentRate ?? 0).toFixed(1)}%` },
+        { label: 'Inflation', value: `${Number((economyData.core.inflationRate ?? 0) * 100).toFixed(1)}%` }
       ],
       
       // Enhanced metrics

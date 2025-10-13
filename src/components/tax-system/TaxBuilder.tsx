@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
+import { Badge as UIBadge } from '~/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { Alert, AlertDescription } from '~/components/ui/alert';
 import { 
@@ -24,6 +24,13 @@ import {
 } from 'lucide-react';
 import { useTaxBuilderAutoSync } from '~/hooks/useBuilderAutoSync';
 import { ConflictWarningDialog, SyncStatusIndicator } from '~/components/builders/ConflictWarningDialog';
+// Dev-only logger to avoid noisy logs in production
+const devLog = (...args: any[]) => {
+  if (process.env.NODE_ENV !== 'production') {
+    // eslint-disable-next-line no-console
+    console.log(...args);
+  }
+};
 
 // Import atomic components
 import { TaxSystemForm } from './atoms/TaxSystemForm';
@@ -358,10 +365,13 @@ export function TaxBuilder({
         }
       },
       onSyncSuccess: (result) => {
-        console.log('Auto-sync successful:', result);
+        devLog('Auto-sync successful:', result);
       },
       onSyncError: (error) => {
-        console.error('Auto-sync error:', error);
+        if (process.env.NODE_ENV !== 'production') {
+          // eslint-disable-next-line no-console
+          console.error('Auto-sync error:', error);
+        }
       }
     }
   );
@@ -690,7 +700,19 @@ export function TaxBuilder({
             Design and configure your country's taxation system
           </p>
         </div>
-        <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3">
+        {enableAutoSync && countryId && (
+          <SyncStatusIndicator
+            isSyncing={syncState.isSyncing}
+            lastSyncTime={syncState.lastSyncTime}
+            pendingChanges={syncState.pendingChanges}
+            hasError={!!syncState.syncError}
+            errorMessage={syncState.syncError?.message}
+          />
+        )}
+        {!enableAutoSync && (
+          <UIBadge variant="secondary" className="text-xs">Manual mode</UIBadge>
+        )}
           <Button
             variant="outline"
             onClick={() => setShowTemplates(true)}
@@ -949,9 +971,9 @@ export function TaxBuilder({
                         </div>
                       </div>
                       <div className="text-right">
-                        <Badge variant="outline">
+                        <UIBadge variant="outline">
                           {category.baseRate}% base rate
-                        </Badge>
+                        </UIBadge>
                         {builderState.brackets[index.toString()]?.length > 0 && (
                           <div className="text-xs text-muted-foreground mt-1">
                             {builderState.brackets[index.toString()].length} brackets
@@ -1024,12 +1046,12 @@ export function TaxBuilder({
                   <CardContent>
                     <div className="space-y-3">
                       <div>
-                        <Badge variant="secondary">
+                        <UIBadge variant="secondary">
                           {template.progressiveTax ? 'Progressive' : 'Flat'} Tax
-                        </Badge>
-                        <Badge variant="outline" className="ml-2">
+                        </UIBadge>
+                        <UIBadge variant="outline" className="ml-2">
                           {template.categories.length} Categories
-                        </Badge>
+                        </UIBadge>
                       </div>
                       <div className="text-sm">
                         <strong>Categories:</strong>
@@ -1073,15 +1095,15 @@ export function TaxBuilder({
 
         <div className="flex items-center gap-2">
           {validation.isValid ? (
-            <Badge variant="default" className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+            <UIBadge variant="default" className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
               <CheckCircle className="h-3 w-3 mr-1" />
               Valid Configuration
-            </Badge>
+            </UIBadge>
           ) : (
-            <Badge variant="destructive">
+            <UIBadge variant="destructive">
               <AlertTriangle className="h-3 w-3 mr-1" />
               {Object.keys(validation.errors).length} Issues
-            </Badge>
+            </UIBadge>
           )}
         </div>
 

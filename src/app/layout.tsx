@@ -81,14 +81,11 @@ const RootLayout = ({
             {...(process.env.NODE_ENV === "production" ? {
               signInUrl: "https://accounts.ixwiki.com/sign-in",
               signUpUrl: "https://accounts.ixwiki.com/sign-up",
-              signInFallbackRedirectUrl: "https://ixwiki.com/projects/ixstats/dashboard",
-              signUpFallbackRedirectUrl: "https://ixwiki.com/projects/ixstats/dashboard",
-              afterSignInUrl: "https://ixwiki.com/projects/ixstats/dashboard",
-              afterSignUpUrl: "https://ixwiki.com/projects/ixstats/dashboard"
+              fallbackRedirectUrl: "https://ixwiki.com/projects/ixstats/dashboard",
+              forceRedirectUrl: "https://ixwiki.com/projects/ixstats/dashboard"
             } : {
               fallbackRedirectUrl: "/dashboard",
-              afterSignInUrl: "/dashboard",
-              afterSignUpUrl: "/dashboard"
+              forceRedirectUrl: "/dashboard"
             })}
           >
             <AppContent />

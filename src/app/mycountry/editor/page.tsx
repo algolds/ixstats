@@ -115,6 +115,7 @@ export default function MyCountryEditor() {
   const changeTracking = useChangeTracking(country || {});
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const { econSaveState } = useCountryEditorData();
 
   const utils = api.useUtils();
   const updateCountryMutation = api.countries.update.useMutation();
@@ -124,6 +125,7 @@ export default function MyCountryEditor() {
   const createGovernmentMutation = api.government.create.useMutation();
   const updateTaxSystemMutation = api.taxSystem.update.useMutation();
   const createTaxSystemMutation = api.taxSystem.create.useMutation();
+  const { data: pendingChanges } = api.scheduledChanges.getPendingChanges.useQuery();
   
   // Query to check if tax system exists
   const { data: existingTaxSystem } = api.taxSystem.getByCountryId.useQuery(
@@ -415,6 +417,20 @@ export default function MyCountryEditor() {
     <div className="min-h-screen bg-gradient-to-b from-amber-50/30 via-background to-background dark:from-amber-950/10">
       <div className="container mx-auto px-4 py-8 space-y-6">
 
+        {/* Pending Changes Banner */}
+        {pendingChanges && pendingChanges.length > 0 && (
+          <Card className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20">
+            <CardContent className="py-3 flex items-center justify-between">
+              <div className="text-sm text-amber-800 dark:text-amber-200">
+                {pendingChanges.length} change{pendingChanges.length !== 1 ? 's' : ''} pending application. Affected values are locked until applied.
+              </div>
+              <Button variant="outline" size="sm" onClick={() => setCurrentStep('preview')}>
+                Review
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -438,11 +454,21 @@ export default function MyCountryEditor() {
                 <CardDescription>Configure your country's settings</CardDescription>
               </div>
               <div className="flex items-center gap-3">
-                {changeTracking.hasChanges && (
+                {(changeTracking.hasChanges || hasGovernmentChanges || hasEconomicChanges || hasTaxSystemChanges) && (
                   <Badge className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
-                    {summary.total} Change{summary.total !== 1 ? 's' : ''}
+                    {(summary.total + (hasGovernmentChanges ? 1 : 0) + (hasEconomicChanges ? 1 : 0) + (hasTaxSystemChanges ? 1 : 0))} Change{(summary.total + (hasGovernmentChanges ? 1 : 0) + (hasEconomicChanges ? 1 : 0) + (hasTaxSystemChanges ? 1 : 0)) !== 1 ? 's' : ''}
                   </Badge>
                 )}
+                {/* Econ autosave status */}
+                <Badge variant="secondary" className="text-xs">
+                  {econSaveState.isSaving
+                    ? 'Saving economic data…'
+                    : econSaveState.pendingChanges
+                      ? 'Unsaved economic changes'
+                      : econSaveState.lastSavedAt
+                        ? `Saved ${Math.max(0, Math.floor((Date.now() - econSaveState.lastSavedAt.getTime()) / 1000))}s ago`
+                        : 'Not saved yet'}
+                </Badge>
                 <Button
                   onClick={() => setShowAdvanced(!showAdvanced)}
                   variant="outline"
@@ -453,7 +479,7 @@ export default function MyCountryEditor() {
                 </Button>
                 <Button
                   onClick={handleSaveWithPreview}
-                  disabled={!changeTracking.hasChanges || isSaving}
+                  disabled={!(changeTracking.hasChanges || hasGovernmentChanges || hasEconomicChanges || hasTaxSystemChanges) || isSaving}
                   size="default"
                   className="bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700"
                 >
@@ -598,6 +624,8 @@ export default function MyCountryEditor() {
                       }}
                       hideSaveButton={true}
                       isReadOnly={false}
+                      countryId={country.id}
+                      enableAutoSync={true}
                     />
                   ) : (
                     <div className="text-center py-8">
@@ -639,7 +667,9 @@ export default function MyCountryEditor() {
                           countryId={country.id}
                           onTaxSystemChange={(taxData) => {
                             // Track tax system changes for bulk save
-                            console.log('Tax system changed:', taxData);
+                            if (process.env.NODE_ENV !== 'production') {
+                              console.log('Tax system changed:', taxData);
+                            }
                             setPendingTaxSystemData(taxData);
                             setHasTaxSystemChanges(true);
                           }}

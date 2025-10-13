@@ -108,6 +108,14 @@ class DiplomaticNotificationService extends EventEmitter {
         category: 'diplomatic' as const,
         titleTemplate: 'Diplomatic Meeting: {title}',
         messageTemplate: '{description}'
+      },
+      // Gracefully handle generic update events from streams
+      update: {
+        priority: 'low' as NotificationPriority,
+        emoji: '🔔',
+        category: 'diplomatic' as const,
+        titleTemplate: 'Diplomatic Update: {title}',
+        messageTemplate: '{description}'
       }
     };
   }

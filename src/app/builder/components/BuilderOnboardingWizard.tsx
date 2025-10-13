@@ -113,6 +113,8 @@ export const BuilderOnboardingWizard = ({ onStartBuilding, onSkipToImport }: Bui
   const handleSkipOnboarding = () => {
     // Skip all tutorials and go straight to builder
     localStorage.setItem('builder_onboarding_completed', 'true');
+    // Ensure we start at Core Identity when jumping in
+    localStorage.setItem('builder_quick_start_section', 'core');
     localStorage.removeItem('builder_tutorial_mode');
     onStartBuilding();
   };

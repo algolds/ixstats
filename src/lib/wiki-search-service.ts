@@ -128,6 +128,112 @@ export async function searchWiki(
   }
 }
 
+// --- Intelligent ranking and fallback helpers ---
+function normalizeForMatch(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/^file:/i, '')
+    .replace(/_/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function tokenize(value: string): string[] {
+  return normalizeForMatch(value)
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+}
+
+function scoreImageRelevance(candidate: string, rawQuery: string): number {
+  const title = normalizeForMatch(candidate);
+  const query = normalizeForMatch(rawQuery);
+
+  if (!title || !query) return 0;
+
+  // Exact and prefix boosts
+  let score = 0;
+  if (title === query) score += 10;
+  if (title.startsWith(query)) score += 6;
+  if (title.includes(query)) score += 4;
+
+  // Token-based scoring
+  const tTokens = tokenize(title);
+  const qTokens = tokenize(query);
+
+  // All query tokens present boost
+  const allPresent = qTokens.every(qt => tTokens.some(tt => tt === qt || tt.startsWith(qt) || qt.startsWith(tt)));
+  if (allPresent) score += 5;
+
+  // Partial token matches
+  for (const qt of qTokens) {
+    for (const tt of tTokens) {
+      if (tt === qt) score += 2;
+      else if (tt.startsWith(qt) || qt.startsWith(tt)) score += 1.5;
+      else {
+        const sim = calculateSimilarity(tt, qt);
+        if (sim >= 0.8) score += 1.25;
+        else if (sim >= 0.65) score += 0.6;
+      }
+    }
+  }
+
+  // Shorter names slight preference
+  score += Math.max(0, 2 - Math.log2(Math.max(1, candidate.length / 12)));
+
+  return score;
+}
+
+async function searchFilesFulltext(
+  query: string,
+  site: 'ixwiki' | 'iiwiki' | 'althistory',
+  limit: number,
+  config: WikiConfig
+): Promise<Array<{ name: string; path: string; url?: string; description?: string }>> {
+  try {
+    const params = new URLSearchParams({
+      action: 'query',
+      format: 'json',
+      list: 'search',
+      srsearch: query,
+      srlimit: String(Math.min(limit * 2, 50)),
+      srnamespace: '6', // File namespace
+      srwhat: 'text',
+      srprop: 'snippet|titlesnippet',
+    });
+
+    const url = `${config.baseUrl}${config.apiEndpoint}?${params.toString()}`;
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'IxStats-Builder/1.0',
+      },
+    });
+
+    if (!response.ok) return [];
+    const data = await response.json();
+    const results: Array<{ title: string }> = (data.query?.search || [])
+      .map((r: { title: string }) => ({ title: r.title }))
+      .filter((r: { title: string }) => /^File:/i.test(r.title));
+
+    const files: Array<{ name: string; path: string; url?: string; description?: string }> = [];
+    for (const r of results) {
+      const name = r.title.replace(/^File:/i, '');
+      // try to resolve URL quickly via imageinfo
+      const url = await getImageUrl(name, site);
+      if (url) {
+        files.push({ name: r.title, path: url, url, description: name });
+      }
+      if (files.length >= limit) break;
+    }
+    // Rank these as well
+    return files
+      .map((img) => ({ img, score: scoreImageRelevance(img.description || img.name, query) }))
+      .sort((a, b) => b.score - a.score)
+      .map((r) => r.img);
+  } catch (e) {
+    return [];
+  }
+}
+
 /**
  * Search wiki with comprehensive category filtering
  * This function works for both IxWiki and IIWiki by getting all category members first
@@ -1288,11 +1394,20 @@ export async function searchWikiImagesWithPagination(
     // Define valid image extensions
     const validExtensions = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'];
     
-    // Normalize query for prefix search - remove spaces, capitalize first letter
-    const queryWords = query.trim().split(/\s+/);
-    const prefixQuery = queryWords.map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-    ).join('');
+    // Normalize query for prefix search
+    // - Replace spaces with underscores (MediaWiki stores titles with underscores)
+    // - Strip any leading "File:" prefix if user included it
+    // - Capitalize first character to match MediaWiki's first-letter normalization
+    const normalizedInput = query
+      .trim()
+      .replace(/^File:/i, '')
+      .replace(/\s+/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_+|_+$/g, '');
+
+    const prefixQuery = normalizedInput.length > 0
+      ? normalizedInput.charAt(0).toUpperCase() + normalizedInput.slice(1)
+      : '';
     
     console.log(`[WikiImageSearch] Using prefix: "${prefixQuery}"`);
     
@@ -1368,7 +1483,7 @@ export async function searchWikiImagesWithPagination(
     console.log(`[WikiImageSearch] Found ${allImages.length} images with prefix "${prefixQuery}", continuation: ${continuationToken || 'none'}`);
     
     // Filter for valid image extensions and convert to our format
-    const imageResults = [];
+    const imageResults = [] as Array<{ name: string; path: string; url?: string; description?: string }>;
     
     for (const image of allImages) {
       const imageName = image.name || '';
@@ -1400,13 +1515,45 @@ export async function searchWikiImagesWithPagination(
       }
     }
     
-    // Determine if there are more results
-    const hasMore = imageResults.length >= limit && !!continuationToken;
-    
-    console.log(`[WikiImageSearch] Returning ${imageResults.length} image results, hasMore: ${hasMore}, nextCursor: ${continuationToken || 'none'}`);
-    
+    // Rank results with case-insensitive, context-aware scoring
+    const ranked = imageResults
+      .map((img) => ({ img, score: scoreImageRelevance(img.description || img.name, query) }))
+      .sort((a, b) => b.score - a.score)
+      .map((r) => r.img);
+
+    // Deduplicate by name, preserve order
+    const uniqueByName = new Map<string, { name: string; path: string; url?: string; description?: string }>();
+    for (const r of ranked) {
+      if (!uniqueByName.has(r.name)) uniqueByName.set(r.name, r);
+      if (uniqueByName.size >= limit) break;
+    }
+
+    let finalResults = Array.from(uniqueByName.values());
+
+    // Fallback: if not enough, do fulltext search in File namespace and merge
+    if (finalResults.length < limit) {
+      const needed = limit - finalResults.length;
+      try {
+        const fallback = await searchFilesFulltext(query, site, needed, config);
+        for (const fb of fallback) {
+          if (!uniqueByName.has(fb.name)) {
+            uniqueByName.set(fb.name, fb);
+            finalResults.push(fb);
+            if (finalResults.length >= limit) break;
+          }
+        }
+      } catch (fallbackErr) {
+        console.warn('[WikiImageSearch] Fallback fulltext search failed:', fallbackErr);
+      }
+    }
+
+    // Determine if there are more results (based on prefix continuation)
+    const hasMore = finalResults.length >= limit && !!continuationToken;
+
+    console.log(`[WikiImageSearch] Returning ${finalResults.length} image results (ranked), hasMore: ${hasMore}, nextCursor: ${continuationToken || 'none'}`);
+
     return {
-      images: imageResults,
+      images: finalResults,
       nextCursor: continuationToken,
       hasMore,
     };

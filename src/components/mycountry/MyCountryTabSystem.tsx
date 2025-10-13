@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import {
   Crown, Brain, BarChart3, TrendingUp, Briefcase,
-  Building, PieChart, Target, Sparkles, ArrowUp, Lock, Activity, DollarSign, Users, Globe,
+  Building, PieChart, Target, Sparkles, ArrowUp, Lock, Activity, DollarSign, Users, Globe, Calendar,
   TrendingDown
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
@@ -324,6 +324,109 @@ export function MyCountryTabSystem({ variant = 'unified' }: MyCountryTabSystemPr
           currentIxTime={currentIxTime} 
           isLoading={false} 
         />
+
+        {governmentStructure && (
+          <Card className="glass-surface glass-refraction border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Crown className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                Government Overview
+              </CardTitle>
+              <CardDescription>
+                Official structure and leadership
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {governmentStructure.governmentName && (
+                  <div className="flex items-start space-x-3">
+                    <Building className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="text-sm text-muted-foreground">Government</p>
+                      <p className="text-sm font-medium">{governmentStructure.governmentName}</p>
+                    </div>
+                  </div>
+                )}
+                {governmentStructure.governmentType && (
+                  <div className="flex items-start space-x-3">
+                    <Crown className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="text-sm text-muted-foreground">Government Type</p>
+                      <p className="text-sm font-medium">{governmentStructure.governmentType}</p>
+                    </div>
+                  </div>
+                )}
+                {governmentStructure.headOfState && (
+                  <div className="flex items-start space-x-3">
+                    <Users className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="text-sm text-muted-foreground">Head of State</p>
+                      <p className="text-sm font-medium">{governmentStructure.headOfState}</p>
+                    </div>
+                  </div>
+                )}
+                {governmentStructure.headOfGovernment && (
+                  <div className="flex items-start space-x-3">
+                    <Users className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="text-sm text-muted-foreground">Head of Government</p>
+                      <p className="text-sm font-medium">{governmentStructure.headOfGovernment}</p>
+                    </div>
+                  </div>
+                )}
+                {governmentStructure.legislatureName && (
+                  <div className="flex items-start space-x-3">
+                    <Building className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="text-sm text-muted-foreground">Legislature</p>
+                      <p className="text-sm font-medium">{governmentStructure.legislatureName}</p>
+                    </div>
+                  </div>
+                )}
+                {governmentStructure.executiveName && (
+                  <div className="flex items-start space-x-3">
+                    <Building className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="text-sm text-muted-foreground">Executive</p>
+                      <p className="text-sm font-medium">{governmentStructure.executiveName}</p>
+                    </div>
+                  </div>
+                )}
+                {governmentStructure.judicialName && (
+                  <div className="flex items-start space-x-3">
+                    <Building className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="text-sm text-muted-foreground">Judiciary</p>
+                      <p className="text-sm font-medium">{governmentStructure.judicialName}</p>
+                    </div>
+                  </div>
+                )}
+                {(governmentStructure.totalBudget != null || governmentStructure.budgetCurrency) && (
+                  <div className="flex items-start space-x-3">
+                    <DollarSign className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="text-sm text-muted-foreground">Total Budget</p>
+                      <p className="text-sm font-medium">
+                        {typeof governmentStructure.totalBudget === 'number'
+                          ? governmentStructure.totalBudget.toLocaleString('en-US', { style: 'currency', currency: (governmentStructure.budgetCurrency || 'USD') as any, maximumFractionDigits: 0 })
+                          : governmentStructure.totalBudget}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {governmentStructure.fiscalYear && (
+                  <div className="flex items-start space-x-3">
+                    <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="text-sm text-muted-foreground">Fiscal Year</p>
+                      <p className="text-sm font-medium">{governmentStructure.fiscalYear}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </TabsContent>
 
       {/* Economy Tab */}

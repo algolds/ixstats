@@ -67,6 +67,10 @@ export function useGovernmentBuilderAutoSync(
   const createMutation = api.government.create.useMutation();
   const updateMutation = api.government.update.useMutation();
   const checkConflictsMutation = api.government.checkConflicts.useMutation();
+  const existingGovernmentQuery = api.government.getByCountryId.useQuery(
+    { countryId: countryId || '' },
+    { enabled: !!countryId, staleTime: 30000 }
+  );
 
   // Track changes
   useEffect(() => {
@@ -124,22 +128,39 @@ export function useGovernmentBuilderAutoSync(
         }
       }
 
-      // Determine if we need to create or update
-      const isNewGovernment = !previousStateRef.current?.structure?.governmentName;
+      // Determine if we need to create or update based on DB existence
+      const hasExistingGovernment = !!existingGovernmentQuery.data;
 
       let result;
-      if (isNewGovernment) {
-        result = await createMutation.mutateAsync({
-          countryId,
-          data: builderState,
-          skipConflictCheck: true, // Already checked above
-        });
-      } else {
-        result = await updateMutation.mutateAsync({
-          countryId,
-          data: builderState,
-          skipConflictCheck: true, // Already checked above
-        });
+      let attemptedUpdate = false;
+      try {
+        if (hasExistingGovernment) {
+          attemptedUpdate = true;
+          result = await updateMutation.mutateAsync({
+            countryId,
+            data: builderState,
+            skipConflictCheck: true, // Already checked above
+          });
+        } else {
+          result = await createMutation.mutateAsync({
+            countryId,
+            data: builderState,
+            skipConflictCheck: true, // Already checked above
+          });
+        }
+      } catch (err) {
+        // If update failed due to missing record, fall back to create
+        const message = err instanceof Error ? err.message : String(err);
+        const looksLikeNotFound = message.includes('No record was found') || message.includes('Record to update not found') || message.includes('P2025');
+        if (attemptedUpdate && looksLikeNotFound) {
+          result = await createMutation.mutateAsync({
+            countryId,
+            data: builderState,
+            skipConflictCheck: true,
+          });
+        } else {
+          throw err;
+        }
       }
 
       // Update state on success
@@ -243,6 +264,10 @@ export function useTaxBuilderAutoSync(
   const createMutation = api.taxSystem.create.useMutation();
   const updateMutation = api.taxSystem.update.useMutation();
   const checkConflictsMutation = api.taxSystem.checkConflicts.useMutation();
+  const existingTaxQuery = api.taxSystem.getByCountryId.useQuery(
+    { countryId: countryId || '' },
+    { enabled: !!countryId, staleTime: 30000 }
+  );
 
   // Track changes
   useEffect(() => {
@@ -300,22 +325,43 @@ export function useTaxBuilderAutoSync(
         }
       }
 
-      // Determine if we need to create or update
-      const isNewTaxSystem = !previousStateRef.current?.taxSystem?.taxSystemName;
-
+      // Prefer update-first to avoid unique constraint races; fall back accordingly
       let result;
-      if (isNewTaxSystem) {
-        result = await createMutation.mutateAsync({
-          countryId,
-          data: builderState,
-          skipConflictCheck: true, // Already checked above
-        });
-      } else {
+      try {
+        // Try update first (handles existing records and avoids P2002 on create)
         result = await updateMutation.mutateAsync({
           countryId,
           data: builderState,
-          skipConflictCheck: true, // Already checked above
+          skipConflictCheck: true,
         });
+      } catch (updateErr) {
+        const updateMsg = updateErr instanceof Error ? updateErr.message : String(updateErr);
+        const notFound = updateMsg.includes('No record was found') || updateMsg.includes('Record to update not found') || updateMsg.includes('P2025');
+        if (notFound) {
+          try {
+            // Create if no existing record
+            result = await createMutation.mutateAsync({
+              countryId,
+              data: builderState,
+              skipConflictCheck: true,
+            });
+          } catch (createErr) {
+            const createMsg = createErr instanceof Error ? createErr.message : String(createErr);
+            const uniqueViolation = createMsg.includes('Unique constraint failed') || createMsg.includes('P2002');
+            if (uniqueViolation) {
+              // Another writer created it between our check and create; retry update
+              result = await updateMutation.mutateAsync({
+                countryId,
+                data: builderState,
+                skipConflictCheck: true,
+              });
+            } else {
+              throw createErr;
+            }
+          }
+        } else {
+          throw updateErr;
+        }
       }
 
       // Update state on success
