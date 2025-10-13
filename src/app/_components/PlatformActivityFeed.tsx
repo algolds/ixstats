@@ -44,6 +44,7 @@ import {
 import { formatCurrency, formatPopulation, formatGrowthRateFromDecimal } from "~/lib/chart-utils";
 import { cn } from "~/lib/utils";
 import { unifiedFlagService } from "~/lib/unified-flag-service";
+import type { RouterOutputs } from "~/trpc/react";
 
 interface TrendingTopic {
   id: string;
@@ -112,7 +113,8 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
   const [comments, setComments] = useState<Record<string, any[]>>({});
 
   // tRPC mutations for engagement
-  const engageWithActivityMutation = api.activities.engageWithActivity.useMutation();
+  type EngageWithActivityMutation = ReturnType<typeof api.activities.engageWithActivity.useMutation>;
+  const engageWithActivityMutation: EngageWithActivityMutation = api.activities.engageWithActivity.useMutation();
   const addCommentMutation = api.activities.addComment.useMutation();
   const testMutation = api.activities.testMutation.useMutation();
 
@@ -121,6 +123,12 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
     limit: 20,
     filter: activeTab === 'achievements' ? 'achievements' : 'all',
     category: filterType,
+  });
+
+  // Fetch ThinkPages posts to integrate into activity feed
+  const { data: thinkpagesFeed, isLoading: thinkpagesLoading } = api.thinkpages.getFeed.useQuery({
+    filter: 'recent',
+    limit: 10
   });
 
   const { data: trendingData, isLoading: trendingLoading } = api.activities.getTrendingTopics.useQuery({
@@ -136,7 +144,7 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
   );
 
   // Get user engagement state for like/share buttons
-  const activityIds = activitiesData?.activities?.map(a => a.id) || [];
+  const activityIds = activitiesData?.activities?.map((a: { id: string }) => a.id) || [];
   const { data: userEngagement } = api.activities.getUserEngagement.useQuery(
     {
       activityIds,
@@ -151,7 +159,7 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
   // Transform trending data
   const trendingTopics: TrendingTopic[] = useMemo(() => {
     if (!trendingData) return [];
-    return trendingData.map(topic => ({
+    return trendingData.map((topic: RouterOutputs['activities']['getTrendingTopics'][number]) => ({
       id: topic.id,
       title: topic.title,
       category: topic.category,
@@ -162,9 +170,8 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
 
   // Transform activity feed data
   const activityFeed = useMemo((): ActivityFeedItem[] => {
-    if (!activitiesData?.activities) return [];
-
-    return activitiesData.activities.map((activity) => ({
+    type ActivityAPIItem = RouterOutputs['activities']['getGlobalFeed']['activities'][number];
+    const regularActivities: ActivityFeedItem[] = activitiesData?.activities ? activitiesData.activities.map((activity: ActivityAPIItem) => ({
       id: activity.id,
       type: activity.type as ActivityFeedItem['type'],
       category: activity.category as ActivityFeedItem['category'],
@@ -190,8 +197,46 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
       priority: activity.priority as ActivityFeedItem['priority'],
       visibility: activity.visibility as ActivityFeedItem['visibility'],
       relatedCountries: activity.relatedCountries || [],
-    }));
-  }, [activitiesData, flagUrls]);
+    })) : [];
+
+    // Add ThinkPages posts as social activities
+    type ThinkpagesFeedPostItem = RouterOutputs['thinkpages']['getFeed']['posts'][number];
+    const thinkpagesActivities: ActivityFeedItem[] = thinkpagesFeed?.posts ? thinkpagesFeed.posts.map((post: ThinkpagesFeedPostItem) => ({
+      id: `thinkpages-${post.id}`,
+      type: 'social' as const,
+      category: 'social' as const,
+      user: {
+        id: post.account?.id || post.accountId,
+        name: post.account?.displayName || 'ThinkPages User',
+        avatar: post.account?.profileImageUrl ? post.account.profileImageUrl : undefined,
+        countryName: post.account?.username, // Use username for @ display
+        countryFlag: undefined,
+      },
+      content: {
+        title: 'Posted on ThinkPages',
+        description: post.content,
+        metadata: {
+          postId: post.id,
+          hashtags: post.hashtags,
+        },
+      },
+      engagement: {
+        likes: post.reactions.length,
+        comments: post._count.replies,
+        reshares: post._count.reposts || 0,
+        views: 0, // View tracking not implemented yet
+      },
+      timestamp: new Date(post.createdAt),
+      priority: 'low' as const,
+      visibility: 'public' as const,
+      relatedCountries: [],
+    })) : [];
+
+    // Merge and sort by timestamp
+    return [...regularActivities, ...thinkpagesActivities].sort((a, b) => 
+      b.timestamp.getTime() - a.timestamp.getTime()
+    );
+  }, [activitiesData, thinkpagesFeed, flagUrls]);
 
   // Load flags for countries mentioned in activities
   useEffect(() => {
