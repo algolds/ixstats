@@ -1,8 +1,24 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import type { TaxBuilderState } from "~/components/tax-system/TaxBuilder";
+import { 
+  detectTaxConflicts, 
+  syncTaxData,
+  type ConflictWarning
+} from "~/server/services/builderIntegrationService";
 
 export const taxSystemRouter = createTRPCRouter({
+  // Check for conflicts before creating/updating
+  checkConflicts: protectedProcedure
+    .input(z.object({
+      countryId: z.string(),
+      data: z.any() // TaxBuilderState
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const warnings = await detectTaxConflicts(ctx.db, input.countryId, input.data as TaxBuilderState);
+      return { warnings };
+    }),
+
   // Get tax system by country ID
   getByCountryId: publicProcedure
     .input(z.object({ countryId: z.string() }))
@@ -49,7 +65,7 @@ export const taxSystemRouter = createTRPCRouter({
           deductionAllowed: true,
           priority: 1,
         })),
-        brackets: taxSystem.taxCategories.reduce((acc, cat, idx) => {
+        brackets: taxSystem.taxCategories.reduce((acc: Record<string, any[]>, cat, idx) => {
           acc[idx.toString()] = cat.taxBrackets.map((bracket) => ({
             minIncome: bracket.minIncome,
             maxIncome: bracket.maxIncome || undefined,
@@ -72,7 +88,7 @@ export const taxSystemRouter = createTRPCRouter({
             isActive: true,
           }))
         ),
-        deductions: taxSystem.taxCategories.reduce((acc, cat, idx) => {
+        deductions: taxSystem.taxCategories.reduce((acc: Record<string, any[]>, cat, idx) => {
           acc[idx.toString()] = cat.taxDeductions.map((deduction) => ({
             deductionName: deduction.deductionName,
             deductionType: deduction.deductionType,
@@ -97,10 +113,18 @@ export const taxSystemRouter = createTRPCRouter({
       z.object({
         countryId: z.string(),
         data: z.any(), // TaxBuilderState
+        skipConflictCheck: z.boolean().optional().default(false)
       })
     )
     .mutation(async ({ ctx, input }) => {
       const data = input.data as TaxBuilderState;
+      const { skipConflictCheck } = input;
+
+      // Detect conflicts if not skipped
+      let warnings: ConflictWarning[] = [];
+      if (!skipConflictCheck) {
+        warnings = await detectTaxConflicts(ctx.db, input.countryId, data);
+      }
 
       // Create tax system with categories
       const taxSystem = await ctx.db.taxSystem.create({
@@ -173,7 +197,14 @@ export const taxSystemRouter = createTRPCRouter({
         },
       });
 
-      return taxSystem;
+      // Sync with FiscalSystem table
+      const syncResult = await syncTaxData(ctx.db, input.countryId, data);
+
+      return {
+        taxSystem,
+        syncResult,
+        warnings
+      };
     }),
 
   // Update tax system
@@ -182,10 +213,18 @@ export const taxSystemRouter = createTRPCRouter({
       z.object({
         countryId: z.string(),
         data: z.any(), // TaxBuilderState
+        skipConflictCheck: z.boolean().optional().default(false)
       })
     )
     .mutation(async ({ ctx, input }) => {
       const data = input.data as TaxBuilderState;
+      const { skipConflictCheck } = input;
+
+      // Detect conflicts if not skipped
+      let warnings: ConflictWarning[] = [];
+      if (!skipConflictCheck) {
+        warnings = await detectTaxConflicts(ctx.db, input.countryId, data);
+      }
 
       // Delete existing categories and recreate (easier than updating)
       await ctx.db.taxCategory.deleteMany({
@@ -270,7 +309,14 @@ export const taxSystemRouter = createTRPCRouter({
         },
       });
 
-      return taxSystem;
+      // Sync with FiscalSystem table
+      const syncResult = await syncTaxData(ctx.db, input.countryId, data);
+
+      return {
+        taxSystem,
+        syncResult,
+        warnings
+      };
     }),
 
   // Delete tax system
