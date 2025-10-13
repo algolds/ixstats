@@ -84,9 +84,9 @@ export function ConversationCard({
                 </AvatarFallback>
               ) : (
                 <>
-                  <AvatarImage src={otherParticipant.account.profileImageUrl || undefined} />
+                  <AvatarImage src={otherParticipant.account?.profileImageUrl || undefined} />
                   <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold">
-                    {otherParticipant.account.displayName?.split(' ').map((n: string) => n[0]).join('')}
+                    {(otherParticipant.account?.displayName || '??').split(' ').map((n: string) => n[0]).join('')}
                   </AvatarFallback>
                 </>
               )}
@@ -119,13 +119,14 @@ export function ConversationCard({
           <div className="flex items-center justify-between gap-2 mb-1">
             <div className="flex items-center gap-2 min-w-0">
               <h4 className="font-medium text-sm truncate">
-                    {conversation.type === 'direct' && otherParticipant
-                      ? (otherParticipant.accountId === currentAccountId ? otherParticipant.account.displayName + ' (You)' : otherParticipant.account.displayName)
-                      : conversation.name || 'Group Chat'
-                    }
-                  </h4>
+                {conversation.type === 'direct' && otherParticipant
+                  ? (otherParticipant.accountId === currentAccountId
+                      ? `${otherParticipant.account?.displayName || 'You'} (You)`
+                      : otherParticipant.account?.displayName || 'Unknown')
+                  : conversation.name || 'Group Chat'}
+              </h4>
               {conversation.type === 'direct' && otherParticipant && 
-                getAccountTypeIcon(otherParticipant.account.accountType)
+                getAccountTypeIcon(otherParticipant.account?.accountType || 'country')
               }
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">

@@ -173,7 +173,7 @@ export const usersRouter = createTRPCRouter({
       }
     }),
 
-  // Create new country for user
+  // Create new country for user (LEGACY - Use countries.createCountry for new builder)
   createCountry: publicProcedure
     .input(
       z.object({
@@ -192,6 +192,14 @@ export const usersRouter = createTRPCRouter({
           currency: z.string().optional(),
           languages: z.string().optional(),
           capital: z.string().optional(),
+          // Additional fields for better data persistence
+          nominalGDP: z.number().optional(),
+          realGDPGrowthRate: z.number().optional(),
+          inflationRate: z.number().optional(),
+          unemploymentRate: z.number().optional(),
+          taxRevenueGDPPercent: z.number().optional(),
+          literacyRate: z.number().optional(),
+          lifeExpectancy: z.number().optional(),
         }).optional(),
         // National Identity data from builder
         nationalIdentity: z.object({
@@ -267,7 +275,7 @@ export const usersRouter = createTRPCRouter({
         };
         const initialStats = calculator.initializeCountryStats(baseCountryData);
         const currentStats = calculator.calculateTimeProgression(initialStats);
-        // Create the country record
+        // Create the country record with all available data
         const newCountry = await ctx.db.country.create({
           data: {
             ...defaultData,
@@ -281,6 +289,14 @@ export const usersRouter = createTRPCRouter({
             maxGdpGrowthRate: currentStats.newStats.maxGdpGrowthRate,
             populationDensity: currentStats.newStats.populationDensity,
             gdpDensity: currentStats.newStats.gdpDensity,
+            // Additional economic fields from initialData
+            nominalGDP: input.initialData?.nominalGDP || defaultData.baselinePopulation * defaultData.baselineGdpPerCapita,
+            realGDPGrowthRate: input.initialData?.realGDPGrowthRate || 3.0,
+            inflationRate: input.initialData?.inflationRate || 2.0,
+            unemploymentRate: input.initialData?.unemploymentRate || 5.0,
+            taxRevenueGDPPercent: input.initialData?.taxRevenueGDPPercent || 20.0,
+            literacyRate: input.initialData?.literacyRate || 95.0,
+            lifeExpectancy: input.initialData?.lifeExpectancy || 75.0,
           },
           include: {
             dmInputs: {

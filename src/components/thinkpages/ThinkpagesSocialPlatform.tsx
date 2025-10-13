@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { ThinkpagesPost } from './ThinkpagesPost';
 import { LiveEventsFeed } from './LiveEventsFeed';
 import { ThinkPagesGuide } from './ThinkPagesGuide';
+import { GlassCanvasComposer } from './GlassCanvasComposer';
 import { api } from '~/trpc/react';
 import { toast } from 'sonner';
 import { BlurFade } from '~/components/magicui/blur-fade';
@@ -24,16 +25,19 @@ interface ThinkpagesSocialPlatformProps {
   countryId: string;
   countryName: string;
   isOwner: boolean;
+  selectedAccount?: any;
 }
 
 export function ThinkpagesSocialPlatform({
   countryId,
   countryName,
-  isOwner
+  isOwner,
+  selectedAccount
 }: ThinkpagesSocialPlatformProps) {
   const [feedFilter, setFeedFilter] = useState<'recent' | 'trending' | 'hot'>('recent');
   const [searchQuery, setSearchQuery] = useState('');
-  const { data: feed, isLoading: isLoadingFeed, refetch: refetchFeed } = api.thinkpages.getFeed.useQuery({ countryId: countryId, filter: feedFilter });
+  // Show all posts from all countries, not filtered by countryId
+  const { data: feed, isLoading: isLoadingFeed, refetch: refetchFeed } = api.thinkpages.getFeed.useQuery({ filter: feedFilter });
   const { data: trendingTopics, isLoading: isLoadingTrending, refetch: refetchTrending } = api.thinkpages.getTrendingTopics.useQuery({ limit: 5 });
   const calculateTrendingMutation = api.thinkpages.calculateTrendingTopics.useMutation({
     onSuccess: () => {
@@ -45,28 +49,29 @@ export function ThinkpagesSocialPlatform({
     }
   });
 
+  // Reaction mutation
+  const addReactionMutation = api.thinkpages.addReaction.useMutation({
+    onSuccess: () => {
+      refetchFeed();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to add reaction");
+    }
+  });
+
 
   const filteredPosts = feed?.posts.filter(post => {
-    // Only show posts from this country's accounts (account relation not available)
-    // const isFromThisCountry = post.account?.countryId === countryId;
-    
-    // if (!isFromThisCountry) {
-    //   return false;
-    // }
-    
+    // Show all posts globally, only filter by search query if provided
     if (searchQuery) {
       return post.content.toLowerCase().includes(searchQuery.toLowerCase());
-      // account properties not available: post.account.displayName, post.account.username
     }
     return true;
   });
 
   return (
     <div className="space-y-6">
-      {/* Country Feed Header */}
-      <div className="text-center space-y-2">
-        <h3 className="text-xl font-bold text-[--intel-gold]">{countryName} ThinkPages</h3>
-      </div>
+      {/* ThinkPages Global Feed Header */}
+      
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Feed - Takes up most space */}
@@ -79,7 +84,7 @@ export function ThinkpagesSocialPlatform({
                   <Input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={`Search ${countryName} posts and accounts...`}
+                    placeholder="Search posts across all nations..."
                     className="pl-10"
                   />
                 </div>
@@ -118,6 +123,30 @@ export function ThinkpagesSocialPlatform({
             </CardContent>
           </Card>
 
+          {/* Glass Canvas Composer - Only show when account is selected */}
+          {selectedAccount && (
+            <GlassCanvasComposer
+              account={selectedAccount}
+              onPost={() => {
+                toast.success('Posted successfully!');
+                refetchFeed();
+              }}
+              placeholder="What's happening across the nations?"
+              countryId={countryId}
+            />
+          )}
+
+          {/* Prompt to select account if none selected */}
+          {!selectedAccount && isOwner && (
+            <Card className="glass-hierarchy-child border-dashed">
+              <CardContent className="p-6 text-center">
+                <Users className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  Select an account from the sidebar to start posting
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           <div className="space-y-4">
             <AnimatePresence>
@@ -125,26 +154,59 @@ export function ThinkpagesSocialPlatform({
                 <BlurFade key={post.id} delay={0.05 * index} inView={true}>
                   <ThinkpagesPost
                     post={post}
-                    currentUserAccountId={''}
+                    currentUserAccountId={selectedAccount?.id || ''}
                     onLike={(postId) => {
-                      refetchFeed();
+                      if (selectedAccount) {
+                        addReactionMutation.mutate({ postId, accountId: selectedAccount.id, reactionType: 'like' });
+                      } else {
+                        toast.error('Please select an account first');
+                      }
                     }}
                     onRepost={(postId) => {
-                      refetchFeed();
+                      if (selectedAccount) {
+                        toast.info('Repost functionality coming soon!');
+                      } else {
+                        toast.error('Please select an account first');
+                      }
                     }}
                     onReply={(postId) => {
-                      console.log('Reply to:', postId);
-                      refetchFeed();
+                      if (selectedAccount) {
+                        toast.info('Reply functionality coming soon!');
+                      } else {
+                        toast.error('Please select an account first');
+                      }
                     }}
                     onShare={(postId) => {
-                      console.log('Shared post:', postId);
+                      if (navigator.share) {
+                        navigator.share({
+                          title: 'ThinkPages Post',
+                          text: 'Check out this post on ThinkPages',
+                          url: window.location.href
+                        });
+                      } else {
+                        navigator.clipboard.writeText(window.location.href);
+                        toast.success('Link copied to clipboard!');
+                      }
                     }}
                     onReaction={(postId, reactionType) => {
-                      console.log('Reaction:', reactionType, 'on post:', postId);
-                      refetchFeed();
+                      if (selectedAccount) {
+                        // Validate and cast reaction type to enum
+                        const validReactions = ['like', 'laugh', 'angry', 'sad', 'fire', 'thumbsup', 'thumbsdown'] as const;
+                        type ValidReaction = typeof validReactions[number];
+                        
+                        if (validReactions.includes(reactionType as ValidReaction)) {
+                          addReactionMutation.mutate({ 
+                            postId, 
+                            accountId: selectedAccount.id, 
+                            reactionType: reactionType as ValidReaction
+                          });
+                        }
+                      } else {
+                        toast.error('Please select an account first');
+                      }
                     }}
                     onAccountClick={(accountId) => {
-                      console.log('View account:', accountId);
+                      toast.info('Account profile view coming soon!');
                     }}
                     showThread={true}
                   />
@@ -156,12 +218,11 @@ export function ThinkpagesSocialPlatform({
               <Card className="glass-hierarchy-child">
                 <CardContent className="p-8 text-center">
                   <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No Posts from {countryName}</h3>
+                  <h3 className="text-lg font-semibold mb-2">No Posts Yet</h3>
                   <p className="text-muted-foreground">
                     {searchQuery 
-                      ? "No posts from this country match your search criteria." 
-                      : `This country hasn't posted anything on ThinkPages yet.`
-                    }
+                      ? "No posts match your search criteria." 
+                      : "Be the first to share something on ThinkPages!"}
                   </p>
                 </CardContent>
               </Card>

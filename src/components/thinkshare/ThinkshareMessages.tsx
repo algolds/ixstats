@@ -134,14 +134,24 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
   const isLoadingMessages = conversationMessagesQuery.isLoading;
   const refetchMessages = conversationMessagesQuery.refetch;
 
-  // Temporarily disable WebSocket to isolate the infinite loop issue
-  const clientState = { 
-    connected: false, 
-    typingIndicators: new Map() 
-  };
-  const sendTypingIndicator = () => {};
-  const subscribeToConversation = () => {};
-  const markMessageAsRead = () => {};
+  // Re-enable WebSocket for real-time ThinkShare
+  const {
+    clientState,
+    sendTypingIndicator,
+    subscribeToConversation,
+    markMessageAsRead
+  } = useThinkPagesWebSocket({
+    accountId: currentUserId,
+    autoReconnect: true,
+    onMessageUpdate: (update) => {
+      if (selectedConversation && update.conversationId === selectedConversation) {
+        void refetchMessages();
+      }
+    },
+    onConversationUpdate: () => {
+      void refetchConversations();
+    }
+  });
 
   // Search for other users to message
   const { data: allUsers, isLoading: isLoadingUsers } = api.thinkpages.searchUsers.useQuery({
@@ -152,12 +162,11 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
     refetchOnWindowFocus: false
   });
 
-  // Temporarily disable WebSocket subscription useEffect to isolate infinite loop
-  // useEffect(() => {
-  //   if (selectedConversation && selectedConversation.trim() !== '' && currentAccount?.id && currentAccount.id.trim() !== '') {
-  //     subscribeToConversation(selectedConversation);
-  //   }
-  // }, [selectedConversation, currentAccount?.id]);
+  useEffect(() => {
+    if (selectedConversation && selectedConversation.trim() !== '' && currentAccount?.id && currentAccount.id.trim() !== '') {
+      subscribeToConversation(selectedConversation);
+    }
+  }, [selectedConversation, currentAccount?.id, subscribeToConversation]);
 
   // Mutations
   const createConversationMutation = api.thinkpages.createConversation.useMutation();

@@ -92,23 +92,23 @@ export function ChatHeader({ selectedConversation, currentAccountId, onSearchTog
             {selectedConversation.type === 'direct' && selectedConversation.otherParticipants.length > 0 && selectedConversation.otherParticipants[0] ? (
               <>
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={selectedConversation.otherParticipants[0].account.profileImageUrl || undefined} />
+                  <AvatarImage src={selectedConversation.otherParticipants[0].account?.profileImageUrl || undefined} />
                   <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold">
-                    {selectedConversation.otherParticipants[0].account.displayName?.split(' ').map((n: string) => n[0]).join('') || '??'}
+                    {(selectedConversation.otherParticipants[0].account?.displayName || '??').split(' ').map((n: string) => n[0]).join('') || '??'}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <h3 className="font-semibold flex items-center gap-2">
                     {selectedConversation.otherParticipants[0].accountId === currentAccountId
-                      ? selectedConversation.otherParticipants[0].account.displayName + " (You)"
-                      : selectedConversation.otherParticipants[0].account.displayName
+                      ? `${selectedConversation.otherParticipants[0].account?.displayName || 'You'} (You)`
+                      : selectedConversation.otherParticipants[0].account?.displayName || 'Unknown'
                     }
-                    {getAccountTypeIcon(selectedConversation.otherParticipants[0].account.accountType)}
+                    {getAccountTypeIcon(selectedConversation.otherParticipants[0].account?.accountType || 'country')}
                   </h3>
                   <p className="text-sm text-muted-foreground">
                     {selectedConversation.otherParticipants[0].accountId === currentAccountId
                       ? "Your personal notes"
-                      : "@" + selectedConversation.otherParticipants[0].account.username
+                      : selectedConversation.otherParticipants[0].account?.username
                     }
                   </p>
                 </div>

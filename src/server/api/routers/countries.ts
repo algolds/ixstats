@@ -39,7 +39,7 @@ import type {
   EconomicTier,
   PopulationTier
 } from "~/types/ixstats";
-import { getEconomicTierFromGdpPerCapita } from "~/types/ixstats";
+import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { detectEconomicMilestoneAndTriggerNarrative } from "~/lib/auto-post-service";
 import { ActivityGenerator } from "~/lib/activity-generator";
 
@@ -2933,9 +2933,28 @@ const countriesRouter = createTRPCRouter({
             region: foundationCountry.region,
             landArea: foundationCountry.landArea,
             areaSqMi: foundationCountry.areaSqMi,
+            flag: foundationCountry.flag,
+            coatOfArms: foundationCountry.coatOfArms,
           };
         }
       }
+
+      // Extract economic inputs with proper nested structure access
+      const econ = input.economicInputs || {};
+      const coreIndicators = econ.coreIndicators || {};
+      const laborEmployment = econ.laborEmployment || {};
+      const fiscalSystem = econ.fiscalSystem || {};
+      const demographics = econ.demographics || {};
+      const incomeWealth = econ.incomeWealth || {};
+      const governmentSpending = econ.governmentSpending || {};
+      const nationalIdentity = econ.nationalIdentity || {};
+      const geography = econ.geography || {};
+      
+      // Calculate derived values
+      const population = coreIndicators.totalPopulation || foundationData?.baselinePopulation || 10000000;
+      const gdpPerCapita = coreIndicators.gdpPerCapita || foundationData?.baselineGdpPerCapita || 25000;
+      const nominalGDP = coreIndicators.nominalGDP || (population * gdpPerCapita);
+      const totalGdp = population * gdpPerCapita;
 
       // Create unique slug for the country
       const slug = input.name
@@ -2946,58 +2965,238 @@ const countriesRouter = createTRPCRouter({
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '');
 
-      // Create the country
-      const country = await ctx.db.country.create({
-        data: {
-          name: input.name,
-          slug: slug,
-          continent: foundationData?.continent || "Unknown",
-          region: foundationData?.region || "Unknown",
-          governmentType: input.governmentStructure?.governmentType || "Republic",
-          religion: input.economicInputs?.religion || "Secular",
-          leader: input.economicInputs?.leaderName || "Unknown",
-          baselinePopulation: foundationData?.baselinePopulation || input.economicInputs?.population || 10000000,
-          baselineGdpPerCapita: foundationData?.baselineGdpPerCapita || input.economicInputs?.gdpPerCapita || 10000,
-          currentPopulation: foundationData?.baselinePopulation || input.economicInputs?.population || 10000000,
-          currentGdpPerCapita: foundationData?.baselineGdpPerCapita || input.economicInputs?.gdpPerCapita || 10000,
-          currentTotalGdp: (foundationData?.baselinePopulation || input.economicInputs?.population || 10000000) * (foundationData?.baselineGdpPerCapita || input.economicInputs?.gdpPerCapita || 10000),
-          landArea: foundationData?.landArea || 100000,
-          areaSqMi: foundationData?.areaSqMi || 38610,
-          baselineDate: new Date(),
-          maxGdpGrowthRate: 0.05,
-          adjustedGdpGrowth: 0.03,
-          populationGrowthRate: 0.01,
-          actualGdpGrowth: 0.03,
-          localGrowthFactor: 1.0,
-          economicTier: getEconomicTierFromGdpPerCapita(foundationData?.baselineGdpPerCapita || input.economicInputs?.gdpPerCapita || 10000),
-          populationTier: "2",
-          // Economic data from builder
-          nominalGDP: input.economicInputs?.nominalGDP || 0,
-          realGDPGrowthRate: input.economicInputs?.realGDPGrowthRate || 0,
-          inflationRate: input.economicInputs?.inflationRate || 0,
-          currencyExchangeRate: input.economicInputs?.currencyExchangeRate || 1,
-          laborForceParticipationRate: input.economicInputs?.laborForceParticipationRate || 65,
-          employmentRate: input.economicInputs?.employmentRate || 95,
-          unemploymentRate: input.economicInputs?.unemploymentRate || 5,
-          taxRevenueGDPPercent: input.taxSystemData?.totalTaxRate || 25,
-          governmentBudgetGDPPercent: input.economicInputs?.governmentBudgetGDPPercent || 30,
-          povertyRate: input.economicInputs?.povertyRate || 10,
-          incomeInequalityGini: input.economicInputs?.incomeInequalityGini || 0.35,
-          lifeExpectancy: input.economicInputs?.lifeExpectancy || 75,
-          urbanPopulationPercent: input.economicInputs?.urbanPopulationPercent || 60,
-          literacyRate: input.economicInputs?.literacyRate || 95,
+      // Use transaction to create country and related records atomically
+      const result = await ctx.db.$transaction(async (tx) => {
+        // Create the country with ALL fields from builder
+        const country = await tx.country.create({
+          data: {
+            name: input.name,
+            slug: slug,
+            continent: geography.continent || foundationData?.continent || "Unknown",
+            region: geography.region || foundationData?.region || "Unknown",
+            governmentType: nationalIdentity.governmentType || input.governmentStructure?.governmentType || "Republic",
+            religion: nationalIdentity.nationalReligion || "Secular",
+            leader: nationalIdentity.leader || "Unknown",
+            flag: econ.flagUrl || foundationData?.flag || undefined,
+            coatOfArms: econ.coatOfArmsUrl || foundationData?.coatOfArms || undefined,
+            landArea: foundationData?.landArea || 100000,
+            areaSqMi: foundationData?.areaSqMi || 38610,
+            
+            // Baseline values (initial snapshot)
+            baselinePopulation: population,
+            baselineGdpPerCapita: gdpPerCapita,
+            baselineDate: new Date(),
+            
+            // Current values (same as baseline at creation)
+            currentPopulation: population,
+            currentGdpPerCapita: gdpPerCapita,
+            currentTotalGdp: totalGdp,
+            
+            // Growth rates
+            maxGdpGrowthRate: 0.05,
+            adjustedGdpGrowth: coreIndicators.realGDPGrowthRate || 0.03,
+            populationGrowthRate: demographics.populationGrowthRate || 0.01,
+            actualGdpGrowth: coreIndicators.realGDPGrowthRate || 0.03,
+            localGrowthFactor: 1.0,
+            
+            // Tiers
+            economicTier: getEconomicTierFromGdpPerCapita(gdpPerCapita),
+            populationTier: getPopulationTierFromPopulation(population),
+            
+            // Core Economic Indicators
+            nominalGDP: nominalGDP,
+            realGDPGrowthRate: coreIndicators.realGDPGrowthRate || 3.0,
+            inflationRate: coreIndicators.inflationRate || 2.0,
+            currencyExchangeRate: coreIndicators.currencyExchangeRate || 1.0,
+            
+            // Labor & Employment
+            laborForceParticipationRate: laborEmployment.laborForceParticipationRate || 65,
+            employmentRate: laborEmployment.employmentRate || 95,
+            unemploymentRate: laborEmployment.unemploymentRate || 5,
+            totalWorkforce: laborEmployment.totalWorkforce || Math.round(population * 0.65),
+            averageWorkweekHours: laborEmployment.averageWorkweekHours || 40,
+            minimumWage: laborEmployment.minimumWage || Math.round(gdpPerCapita * 0.02),
+            averageAnnualIncome: laborEmployment.averageAnnualIncome || Math.round(gdpPerCapita * 0.8),
+            
+            // Fiscal System
+            taxRevenueGDPPercent: fiscalSystem.taxRevenueGDPPercent || input.taxSystemData?.totalTaxRate || 20,
+            governmentRevenueTotal: fiscalSystem.governmentRevenueTotal || (nominalGDP * 0.20),
+            taxRevenuePerCapita: fiscalSystem.taxRevenuePerCapita || ((nominalGDP * 0.20) / population),
+            governmentBudgetGDPPercent: fiscalSystem.governmentBudgetGDPPercent || 22,
+            budgetDeficitSurplus: fiscalSystem.budgetDeficitSurplus || 0,
+            internalDebtGDPPercent: fiscalSystem.internalDebtGDPPercent || 45,
+            externalDebtGDPPercent: fiscalSystem.externalDebtGDPPercent || 25,
+            totalDebtGDPRatio: fiscalSystem.totalDebtGDPRatio || 70,
+            debtPerCapita: fiscalSystem.debtPerCapita || ((nominalGDP * 0.70) / population),
+            interestRates: fiscalSystem.interestRates || 3.5,
+            debtServiceCosts: fiscalSystem.debtServiceCosts || (nominalGDP * 0.70 * 0.035),
+            
+            // Income & Wealth
+            povertyRate: incomeWealth.povertyRate || 15,
+            incomeInequalityGini: incomeWealth.incomeInequalityGini || 0.38,
+            socialMobilityIndex: incomeWealth.socialMobilityIndex || 60,
+            
+            // Government Spending
+            totalGovernmentSpending: governmentSpending.totalSpending || (nominalGDP * 0.22),
+            spendingGDPPercent: governmentSpending.spendingGDPPercent || 22,
+            spendingPerCapita: governmentSpending.spendingPerCapita || ((nominalGDP * 0.22) / population),
+            
+            // Demographics
+            lifeExpectancy: demographics.lifeExpectancy || 78.5,
+            urbanPopulationPercent: demographics.urbanRuralSplit?.urban || 65,
+            ruralPopulationPercent: demographics.urbanRuralSplit?.rural || 35,
+            literacyRate: demographics.literacyRate || 95,
+            
+            // Calculate density if we have land area
+            populationDensity: foundationData?.landArea ? population / foundationData.landArea : undefined,
+            gdpDensity: foundationData?.landArea ? totalGdp / foundationData.landArea : undefined,
+            
+            lastCalculated: new Date(),
+          }
+        });
+
+        // Create National Identity record if provided
+        if (nationalIdentity && Object.keys(nationalIdentity).length > 0) {
+          await tx.nationalIdentity.create({
+            data: {
+              countryId: country.id,
+              countryName: nationalIdentity.countryName || input.name,
+              officialName: nationalIdentity.officialName,
+              governmentType: nationalIdentity.governmentType,
+              motto: nationalIdentity.motto,
+              mottoNative: nationalIdentity.mottoNative,
+              capitalCity: nationalIdentity.capitalCity,
+              largestCity: nationalIdentity.largestCity,
+              demonym: nationalIdentity.demonym,
+              currency: nationalIdentity.currency,
+              currencySymbol: nationalIdentity.currencySymbol,
+              officialLanguages: nationalIdentity.officialLanguages,
+              nationalLanguage: nationalIdentity.nationalLanguage,
+              nationalAnthem: nationalIdentity.nationalAnthem,
+              nationalDay: nationalIdentity.nationalDay,
+              callingCode: nationalIdentity.callingCode,
+              internetTLD: nationalIdentity.internetTLD,
+              drivingSide: nationalIdentity.drivingSide,
+              timeZone: nationalIdentity.timeZone,
+              isoCode: nationalIdentity.isoCode,
+              coordinatesLatitude: nationalIdentity.coordinatesLatitude,
+              coordinatesLongitude: nationalIdentity.coordinatesLongitude,
+              emergencyNumber: nationalIdentity.emergencyNumber,
+              postalCodeFormat: nationalIdentity.postalCodeFormat,
+              nationalSport: nationalIdentity.nationalSport,
+              weekStartDay: nationalIdentity.weekStartDay,
+            }
+          });
         }
+
+        // Create Demographics record
+        if (demographics && Object.keys(demographics).length > 0) {
+          await tx.demographics.create({
+            data: {
+              countryId: country.id,
+              ageDistribution: JSON.stringify(demographics.ageDistribution || []),
+              educationLevels: JSON.stringify(demographics.educationLevels || []),
+              birthRate: demographics.birthRate,
+              deathRate: demographics.deathRate,
+              migrationRate: demographics.migrationRate,
+              dependencyRatio: demographics.dependencyRatio,
+              medianAge: demographics.medianAge,
+              populationGrowthProjection: demographics.populationGrowthRate,
+            }
+          });
+        }
+
+        // Create Fiscal System record (separate from Country table fields)
+        if (fiscalSystem && Object.keys(fiscalSystem).length > 0) {
+          await tx.fiscalSystem.create({
+            data: {
+              countryId: country.id,
+              personalIncomeTaxRates: fiscalSystem.personalIncomeTaxRates,
+              corporateTaxRates: fiscalSystem.corporateTaxRates,
+              salesTaxRate: fiscalSystem.salesTaxRate,
+              propertyTaxRate: fiscalSystem.propertyTaxRate,
+              payrollTaxRate: fiscalSystem.payrollTaxRate,
+              exciseTaxRates: fiscalSystem.exciseTaxRates,
+              wealthTaxRate: fiscalSystem.wealthTaxRate,
+              spendingByCategory: fiscalSystem.spendingByCategory,
+              fiscalBalanceGDPPercent: fiscalSystem.fiscalBalanceGDPPercent,
+              primaryBalanceGDPPercent: fiscalSystem.primaryBalanceGDPPercent,
+              taxEfficiency: fiscalSystem.taxEfficiency,
+            }
+          });
+        }
+
+        // Create Labor Market record
+        if (laborEmployment && Object.keys(laborEmployment).length > 0) {
+          await tx.laborMarket.create({
+            data: {
+              countryId: country.id,
+              employmentBySector: laborEmployment.employmentBySector,
+              youthUnemploymentRate: laborEmployment.youthUnemploymentRate,
+              femaleParticipationRate: laborEmployment.femaleParticipationRate,
+              informalEmploymentRate: laborEmployment.informalEmploymentRate,
+              medianWage: laborEmployment.medianWage,
+              wageGrowthRate: laborEmployment.wageGrowthRate,
+              wageBySector: laborEmployment.wageBySector,
+            }
+          });
+        }
+
+        // Create Income Distribution record
+        if (incomeWealth && Object.keys(incomeWealth).length > 0) {
+          await tx.incomeDistribution.create({
+            data: {
+              countryId: country.id,
+              economicClasses: JSON.stringify(incomeWealth.economicClasses || []),
+              top10PercentWealth: incomeWealth.top10PercentWealth,
+              bottom50PercentWealth: incomeWealth.bottom50PercentWealth,
+              middleClassPercent: incomeWealth.middleClassPercent,
+              intergenerationalMobility: incomeWealth.intergenerationalMobility,
+              educationMobility: incomeWealth.educationMobility,
+            }
+          });
+        }
+
+        // Create Government Budget record
+        if (governmentSpending && Object.keys(governmentSpending).length > 0) {
+          await tx.governmentBudget.create({
+            data: {
+              countryId: country.id,
+              spendingCategories: JSON.stringify(governmentSpending.spendingCategories || []),
+              spendingEfficiency: governmentSpending.spendingEfficiency,
+              publicInvestmentRate: governmentSpending.publicInvestmentRate,
+              socialSpendingPercent: governmentSpending.socialSpendingPercent,
+            }
+          });
+        }
+
+        // Create initial historical data point
+        await tx.historicalDataPoint.create({
+          data: {
+            countryId: country.id,
+            ixTimeTimestamp: new Date(),
+            population: population,
+            gdpPerCapita: gdpPerCapita,
+            totalGdp: totalGdp,
+            populationGrowthRate: demographics.populationGrowthRate || 0.5,
+            gdpGrowthRate: coreIndicators.realGDPGrowthRate || 3.0,
+            landArea: foundationData?.landArea || 100000,
+            populationDensity: foundationData?.landArea ? population / foundationData.landArea : undefined,
+            gdpDensity: foundationData?.landArea ? totalGdp / foundationData.landArea : undefined,
+          }
+        });
+
+        // Link user to country
+        await tx.user.update({
+          where: { clerkUserId: userId },
+          data: { countryId: country.id },
+        });
+
+        return country;
       });
 
-      // TODO: Generate initial activity when ActivityGenerator is available
-      // try {
-      //   const activityGenerator = new ActivityGenerator();
-      //   await activityGenerator.generateCountryCreatedActivity(country);
-      // } catch (error) {
-      //   console.error("Failed to generate activity:", error);
-      // }
-
-      return country;
+      console.log(`✅ Country created successfully: ${result.name} (ID: ${result.id})`);
+      return result;
     }),
 });
 

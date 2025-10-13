@@ -295,6 +295,7 @@ export default function ThinkPagesMainPage() {
                 countryId={countryData.id}
                 countryName={countryData.name}
                 isOwner={true}
+                selectedAccount={selectedAccount}
               />
             )}
 
@@ -316,25 +317,35 @@ export default function ThinkPagesMainPage() {
             )}
 
             {activeView === 'feed' && !isUserAuthenticated && (
-              <Card className="glass-hierarchy-parent">
-                <CardContent className="p-8 text-center">
-                  <MessageSquare className="h-12 w-12 mx-auto text-blue-500 mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Welcome to Thinkpages</h3>
-                  <p className="text-muted-foreground mb-4">
-                    You're viewing Thinkpages in read-only mode. To participate in discussions, create posts, and join groups, please sign in or create an account.
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <Link href={createUrl("/setup")}>
-                      <Button>
-                        Sign In / Sign Up
-                      </Button>
-                    </Link>
-                    <Button variant="outline" onClick={() => setActiveView('thinktanks')}>
-                      Browse Groups
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="space-y-6">
+                <Card className="glass-hierarchy-parent">
+                  <CardContent className="p-6 flex items-start gap-4">
+                    <MessageSquare className="h-8 w-8 text-blue-500 flex-shrink-0 mt-1" />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg mb-2">Welcome to Thinkpages</h3>
+                      <p className="text-muted-foreground mb-3">
+                        You're viewing Thinkpages in read-only mode. To participate in discussions, create posts, and join groups, please sign in or create an account.
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <Link href={createUrl("/setup")}>
+                          <Button size="sm">
+                            Sign In / Sign Up
+                          </Button>
+                        </Link>
+                        <Button variant="outline" size="sm" onClick={() => setActiveView('thinktanks')}>
+                          Browse Groups
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                {/* Show the global feed to anonymous users */}
+                <ThinkpagesSocialPlatform
+                  countryId="global"
+                  countryName="Global Community"
+                  isOwner={false}
+                />
+              </div>
             )}
 
             {/* ThinkTanks - Available to all users (read-only for anonymous) */}

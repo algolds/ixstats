@@ -1030,6 +1030,7 @@ model ThinkpagesPost {
   accountId         String   // References ThinkpagesAccount for feed posts
   content           String   // 280 character limit enforced in frontend
   hashtags          String?  // JSON array of hashtag strings
+  visualizations    String?  // JSON array of embedded data visualizations
   postType          String   @default("original") // 'original' | 'repost' | 'reply'
   parentPostId      String?  // For replies
   repostOfId        String?  // For reposts

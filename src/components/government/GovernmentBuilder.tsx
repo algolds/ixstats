@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
@@ -19,6 +19,8 @@ import {
   ArrowLeft,
   ArrowRight
 } from 'lucide-react';
+import { useGovernmentBuilderAutoSync } from '~/hooks/useBuilderAutoSync';
+import { ConflictWarningDialog, SyncStatusIndicator } from '~/components/builders/ConflictWarningDialog';
 
 // Import atomic components
 import { GovernmentStructureForm } from './atoms/GovernmentStructureForm';
@@ -45,6 +47,8 @@ interface GovernmentBuilderProps {
   onPreview?: (data: GovernmentBuilderState) => void;
   isReadOnly?: boolean;
   hideSaveButton?: boolean;
+  countryId?: string;
+  enableAutoSync?: boolean;
 }
 
 // Enhanced Government Templates with Atomic Components
@@ -201,10 +205,12 @@ export function GovernmentBuilder({
   onChange,
   onPreview,
   isReadOnly = false,
-  hideSaveButton = false
+  hideSaveButton = false,
+  countryId,
+  enableAutoSync = false
 }: GovernmentBuilderProps) {
   const [currentStep, setCurrentStep] = useState<'structure' | 'departments' | 'budget' | 'revenue' | 'preview'>('structure');
-  const [builderState, setBuilderState] = useState<GovernmentBuilderState>({
+  const [localBuilderState, setLocalBuilderState] = useState<GovernmentBuilderState>({
     structure: {
       governmentName: '',
       governmentType: 'Constitutional Monarchy',
@@ -221,6 +227,45 @@ export function GovernmentBuilder({
   });
   const [isSaving, setIsSaving] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showConflictDialog, setShowConflictDialog] = useState(false);
+  const [pendingSaveCallback, setPendingSaveCallback] = useState<(() => void) | null>(null);
+
+  // Use auto-sync hook if enabled
+  const {
+    builderState: autoSyncState,
+    setBuilderState: setAutoSyncState,
+    syncState,
+    triggerSync,
+    clearConflicts
+  } = useGovernmentBuilderAutoSync(
+    countryId,
+    localBuilderState,
+    {
+      enabled: enableAutoSync && !!countryId,
+      showConflictWarnings: true,
+      onConflictDetected: (warnings) => {
+        if (warnings.some(w => w.severity === 'critical' || w.severity === 'warning')) {
+          setShowConflictDialog(true);
+        }
+      },
+      onSyncSuccess: (result) => {
+        console.log('Auto-sync successful:', result);
+      },
+      onSyncError: (error) => {
+        console.error('Auto-sync error:', error);
+      }
+    }
+  );
+
+  // Use auto-sync state if enabled, otherwise use local state
+  const builderState = enableAutoSync && countryId ? autoSyncState : localBuilderState;
+  const setBuilderState = useCallback((update: React.SetStateAction<GovernmentBuilderState>) => {
+    if (enableAutoSync && countryId) {
+      setAutoSyncState(update);
+    } else {
+      setLocalBuilderState(update);
+    }
+  }, [enableAutoSync, countryId, setAutoSyncState, setLocalBuilderState]);
 
   // Validation
   const validateState = useCallback((): { isValid: boolean; errors: any } => {
@@ -264,19 +309,19 @@ export function GovernmentBuilder({
   }, [builderState, onChange]);
 
   const handleStructureChange = (structure: GovernmentStructureInput) => {
-    setBuilderState(prev => ({ ...prev, structure }));
+    setBuilderState((prev: GovernmentBuilderState) => ({ ...prev, structure }));
   };
 
   const handleDepartmentsChange = (departments: DepartmentInput[]) => {
-    setBuilderState(prev => ({ ...prev, departments }));
+    setBuilderState((prev: GovernmentBuilderState) => ({ ...prev, departments }));
   };
 
   const handleBudgetChange = (budgetAllocations: BudgetAllocationInput[]) => {
-    setBuilderState(prev => ({ ...prev, budgetAllocations }));
+    setBuilderState((prev: GovernmentBuilderState) => ({ ...prev, budgetAllocations }));
   };
 
   const handleRevenueChange = (revenueSources: RevenueSourceInput[]) => {
-    setBuilderState(prev => ({ ...prev, revenueSources }));
+    setBuilderState((prev: GovernmentBuilderState) => ({ ...prev, revenueSources }));
   };
 
   const addDepartment = () => {
@@ -290,21 +335,21 @@ export function GovernmentBuilder({
       priority: 50,
       functions: []
     };
-    setBuilderState(prev => ({
+    setBuilderState((prev: GovernmentBuilderState) => ({
       ...prev,
       departments: [...prev.departments, newDepartment]
     }));
   };
 
   const removeDepartment = (index: number) => {
-    setBuilderState(prev => ({
+    setBuilderState((prev: GovernmentBuilderState) => ({
       ...prev,
-      departments: prev.departments.filter((_, i) => i !== index)
+      departments: prev.departments.filter((_: DepartmentInput, i: number) => i !== index)
     }));
   };
 
   const applyTemplate = (template: GovernmentTemplate) => {
-    setBuilderState(prev => ({
+    setBuilderState((prev: GovernmentBuilderState) => ({
       ...prev,
       structure: {
         ...prev.structure,
@@ -337,23 +382,55 @@ export function GovernmentBuilder({
 
   const handleSave = async () => {
     const validation = validateState();
-    setBuilderState(prev => ({ ...prev, ...validation }));
+    setBuilderState((prev: GovernmentBuilderState) => ({ ...prev, ...validation }));
     
-    if (validation.isValid && onSave) {
-      setIsSaving(true);
-      try {
-        await onSave({ ...builderState, ...validation });
-      } catch (error) {
-        console.error('Save failed:', error);
-      } finally {
-        setIsSaving(false);
+    if (validation.isValid) {
+      // Check for conflicts if auto-sync is enabled
+      if (enableAutoSync && countryId && syncState.conflictWarnings.length > 0) {
+        setPendingSaveCallback(() => async () => {
+          if (onSave) {
+            setIsSaving(true);
+            try {
+              await onSave({ ...builderState, ...validation });
+              clearConflicts();
+            } catch (error) {
+              console.error('Save failed:', error);
+            } finally {
+              setIsSaving(false);
+            }
+          }
+        });
+        setShowConflictDialog(true);
+      } else if (onSave) {
+        setIsSaving(true);
+        try {
+          await onSave({ ...builderState, ...validation });
+        } catch (error) {
+          console.error('Save failed:', error);
+        } finally {
+          setIsSaving(false);
+        }
       }
     }
   };
 
+  const handleConfirmConflicts = () => {
+    setShowConflictDialog(false);
+    if (pendingSaveCallback) {
+      pendingSaveCallback();
+      setPendingSaveCallback(null);
+    }
+    clearConflicts();
+  };
+
+  const handleCancelConflicts = () => {
+    setShowConflictDialog(false);
+    setPendingSaveCallback(null);
+  };
+
   const handlePreview = () => {
     const validation = validateState();
-    setBuilderState(prev => ({ ...prev, ...validation }));
+    setBuilderState((prev: GovernmentBuilderState) => ({ ...prev, ...validation }));
     
     if (onPreview) {
       onPreview({ ...builderState, ...validation });
@@ -374,6 +451,16 @@ export function GovernmentBuilder({
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
+      {/* Conflict Warning Dialog */}
+      <ConflictWarningDialog
+        open={showConflictDialog}
+        onOpenChange={setShowConflictDialog}
+        warnings={syncState.conflictWarnings}
+        onConfirm={handleConfirmConflicts}
+        onCancel={handleCancelConflicts}
+        builderType="government"
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -385,6 +472,15 @@ export function GovernmentBuilder({
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {enableAutoSync && countryId && (
+            <SyncStatusIndicator
+              isSyncing={syncState.isSyncing}
+              lastSyncTime={syncState.lastSyncTime}
+              pendingChanges={syncState.pendingChanges}
+              hasError={!!syncState.syncError}
+              errorMessage={syncState.syncError?.message}
+            />
+          )}
           <Button
             variant="outline"
             onClick={() => setShowTemplates(true)}
