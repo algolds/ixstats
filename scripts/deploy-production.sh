@@ -82,6 +82,18 @@ npm ci --production=false
 echo "🗄️ Generating Prisma client..."
 npm run db:generate
 
+# Sync production database with schema
+echo "🔄 Syncing production database schema..."
+npm run db:sync
+
+# Check if sync was successful
+if [ $? -eq 0 ]; then
+    echo "✅ Database sync completed successfully"
+else
+    echo "❌ Database sync failed"
+    exit 1
+fi
+
 # Build the application
 echo "🔨 Building application..."
 npm run build

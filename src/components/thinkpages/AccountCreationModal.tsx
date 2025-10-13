@@ -124,19 +124,26 @@ export function AccountCreationModal({
   );
 
   useEffect(() => {
-    if (formData.username.length >= 3) {
-      if (!isValidUsernameFormat) {
-        setIsUsernameAvailable(false);
-        setIsCheckingUsername(false);
-      } else if (usernameCheckError) {
-        setIsUsernameAvailable(false);
-        setIsCheckingUsername(false);
-      } else {
-        setIsUsernameAvailable(usernameAvailability?.isAvailable ?? null);
-        setIsCheckingUsername(isLoadingUsernameAvailability);
-      }
-    } else {
+    if (formData.username.length < 3) {
+      // Too short to check
       setIsUsernameAvailable(null);
+      setIsCheckingUsername(false);
+    } else if (!isValidUsernameFormat) {
+      // Invalid format (doesn't start with letter, or has invalid characters)
+      setIsUsernameAvailable(false);
+      setIsCheckingUsername(false);
+    } else if (isLoadingUsernameAvailability) {
+      // Currently checking availability
+      setIsCheckingUsername(true);
+      // Don't change isUsernameAvailable yet
+    } else if (usernameCheckError) {
+      // Network or server error - don't set to false, keep as null to show neutral state
+      setIsUsernameAvailable(null);
+      setIsCheckingUsername(false);
+      console.error('[Username Check] Error checking username:', usernameCheckError);
+    } else if (usernameAvailability !== undefined) {
+      // Got a response from the server
+      setIsUsernameAvailable(usernameAvailability.isAvailable);
       setIsCheckingUsername(false);
     }
   }, [usernameAvailability, isLoadingUsernameAvailability, usernameCheckError, formData.username, isValidUsernameFormat]);

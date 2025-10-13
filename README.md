@@ -267,8 +267,16 @@ npm run typecheck        # TypeScript type checking
 ```bash
 npm run db:setup         # Full database setup (generate + push + init)
 npm run db:generate      # Generate Prisma client
-npm run db:studio        # Open Prisma Studio
+npm run db:studio        # Open Prisma Studio (dev database)
+npm run db:studio:prod   # Open Prisma Studio (prod database)
+
+# Production database synchronization
+npm run db:sync          # Sync prod database with schema (automatic on deploy)
+npm run db:watch         # Watch schema and auto-sync prod database
+npm run db:sync:check    # Verify prod database is in sync
 ```
+
+**📚 See [DATABASE_MANAGEMENT.md](./docs/DATABASE_MANAGEMENT.md) for complete database sync documentation**
 
 ## 🏗️ Architecture
 

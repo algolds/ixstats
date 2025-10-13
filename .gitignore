@@ -96,3 +96,5 @@ cypress/videos/
 
 # clerk configuration (can include secrets)
 /.clerk/
+prisma/backups/prod.db.backup.20251012_185935
+prisma/backups/prod.db.backup.20251012_181159

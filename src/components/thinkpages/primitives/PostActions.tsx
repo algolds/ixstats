@@ -183,8 +183,20 @@ export function PostActions({
 
   const handleShare = useCallback(() => {
     const postUrl = `${window.location.origin}/thinkpages/post/${postId}`;
-    navigator.clipboard.writeText(postUrl);
-    toast.success('Post URL copied to clipboard!');
+    if (navigator.share) {
+      navigator.share({
+        title: 'ThinkPages Post',
+        text: 'Check out this post on ThinkPages',
+        url: postUrl
+      }).catch(() => {
+        // Fallback to clipboard if share fails
+        navigator.clipboard.writeText(postUrl);
+        toast.success('Post link copied to clipboard!');
+      });
+    } else {
+      navigator.clipboard.writeText(postUrl);
+      toast.success('Post link copied to clipboard!');
+    }
     onShare?.(postId);
   }, [postId, onShare]);
 

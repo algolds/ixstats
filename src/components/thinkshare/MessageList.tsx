@@ -123,8 +123,8 @@ export function MessageList({
           {getTypingIndicators().map((indicator: any) => {
               // Find the participant info from the conversation
               const participant = selectedConversation.otherParticipants.find((p: any) => p.accountId === indicator.accountId);
-              const displayName = participant?.account.displayName || 'Someone';
-              const profileImage = participant?.account.profileImageUrl;
+              const displayName = participant?.account?.displayName || 'Someone';
+              const profileImage = participant?.account?.profileImageUrl;
               
               return (
                 <div key={indicator.id} className="flex justify-start">
@@ -139,7 +139,7 @@ export function MessageList({
                       <span className="text-xs text-muted-foreground font-medium">
                         {displayName} is typing...
                       </span>
-                      {participant && getAccountTypeIcon(participant.account.accountType)}
+                      {participant && getAccountTypeIcon(participant.account?.accountType || 'country')}
                     </div>
                     <div className="bg-muted mr-4 p-3 rounded-2xl">
                       <div className="flex gap-1">

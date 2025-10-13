@@ -7,11 +7,11 @@ import { Button } from '~/components/ui/button';
 import { Search, Send, UserPlus, Crown, Hash, Globe, Loader2 } from 'lucide-react';
 
 interface Account {
-  id: string;
-  username: string;
-  displayName: string;
-  profileImageUrl?: string | null;
-  accountType: string;
+  id: string; // Clerk userId
+  username: string; // country slug/code
+  displayName: string; // country name
+  profileImageUrl?: string | null; // flag url
+  accountType: string; // always 'country' for ThinkShare UI
 }
 
 interface NewConversationModalProps {

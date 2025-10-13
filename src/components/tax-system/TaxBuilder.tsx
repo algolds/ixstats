@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
@@ -22,6 +22,8 @@ import {
   FileText,
   Zap
 } from 'lucide-react';
+import { useTaxBuilderAutoSync } from '~/hooks/useBuilderAutoSync';
+import { ConflictWarningDialog, SyncStatusIndicator } from '~/components/builders/ConflictWarningDialog';
 
 // Import atomic components
 import { TaxSystemForm } from './atoms/TaxSystemForm';
@@ -67,6 +69,7 @@ interface TaxBuilderProps {
   countryId?: string;
   showAtomicIntegration?: boolean;
   hideSaveButton?: boolean;
+  enableAutoSync?: boolean;
 }
 
 // Enhanced Tax System Templates with Atomic Components
@@ -308,10 +311,11 @@ export function TaxBuilder({
   isReadOnly = false,
   countryId,
   showAtomicIntegration = true,
-  hideSaveButton = false
+  hideSaveButton = false,
+  enableAutoSync = false
 }: TaxBuilderProps) {
   const [currentStep, setCurrentStep] = useState<'system' | 'categories' | 'atomic' | 'calculator' | 'preview'>('system');
-  const [builderState, setBuilderState] = useState<TaxBuilderState>({
+  const [localBuilderState, setLocalBuilderState] = useState<TaxBuilderState>({
     taxSystem: {
       taxSystemName: '',
       fiscalYear: 'calendar',
@@ -332,6 +336,45 @@ export function TaxBuilder({
   const [isSaving, setIsSaving] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [calculationResult, setCalculationResult] = useState<TaxCalculationResult | null>(null);
+  const [showConflictDialog, setShowConflictDialog] = useState(false);
+  const [pendingSaveCallback, setPendingSaveCallback] = useState<(() => void) | null>(null);
+
+  // Use auto-sync hook if enabled
+  const {
+    builderState: autoSyncState,
+    setBuilderState: setAutoSyncState,
+    syncState,
+    triggerSync,
+    clearConflicts
+  } = useTaxBuilderAutoSync(
+    countryId,
+    localBuilderState,
+    {
+      enabled: enableAutoSync && !!countryId,
+      showConflictWarnings: true,
+      onConflictDetected: (warnings) => {
+        if (warnings.some(w => w.severity === 'critical' || w.severity === 'warning')) {
+          setShowConflictDialog(true);
+        }
+      },
+      onSyncSuccess: (result) => {
+        console.log('Auto-sync successful:', result);
+      },
+      onSyncError: (error) => {
+        console.error('Auto-sync error:', error);
+      }
+    }
+  );
+
+  // Use auto-sync state if enabled, otherwise use local state
+  const builderState = enableAutoSync && countryId ? autoSyncState : localBuilderState;
+  const setBuilderState = useCallback((update: React.SetStateAction<TaxBuilderState>) => {
+    if (enableAutoSync && countryId) {
+      setAutoSyncState(update);
+    } else {
+      setLocalBuilderState(update);
+    }
+  }, [enableAutoSync, countryId, setAutoSyncState, setLocalBuilderState]);
 
   // Atomic component integration
   const { data: atomicComponents } = api.government.getComponents.useQuery(
@@ -407,26 +450,26 @@ export function TaxBuilder({
   }, [builderState]);
 
   const handleTaxSystemChange = (taxSystem: TaxSystemInput) => {
-    setBuilderState(prev => ({ ...prev, taxSystem }));
+    setBuilderState((prev: TaxBuilderState) => ({ ...prev, taxSystem }));
   };
 
   const handleCategoriesChange = (categories: TaxCategoryInput[]) => {
-    setBuilderState(prev => ({ ...prev, categories }));
+    setBuilderState((prev: TaxBuilderState) => ({ ...prev, categories }));
   };
 
   const handleBracketsChange = (categoryIndex: string, brackets: TaxBracketInput[]) => {
-    setBuilderState(prev => ({
+    setBuilderState((prev: TaxBuilderState) => ({
       ...prev,
       brackets: { ...prev.brackets, [categoryIndex]: brackets }
     }));
   };
 
   const handleExemptionsChange = (exemptions: TaxExemptionInput[]) => {
-    setBuilderState(prev => ({ ...prev, exemptions }));
+    setBuilderState((prev: TaxBuilderState) => ({ ...prev, exemptions }));
   };
 
   const handleDeductionsChange = (categoryIndex: string, deductions: TaxDeductionInput[]) => {
-    setBuilderState(prev => ({
+    setBuilderState((prev: TaxBuilderState) => ({
       ...prev,
       deductions: { ...prev.deductions, [categoryIndex]: deductions }
     }));
@@ -445,15 +488,15 @@ export function TaxBuilder({
       color: '#3b82f6'
     };
 
-    setBuilderState(prev => ({
+    setBuilderState((prev: TaxBuilderState) => ({
       ...prev,
       categories: [...prev.categories, newCategory]
     }));
   };
 
   const removeCategory = (index: number) => {
-    setBuilderState(prev => {
-      const newCategories = prev.categories.filter((_, i) => i !== index);
+    setBuilderState((prev: TaxBuilderState) => {
+      const newCategories = prev.categories.filter((_: TaxCategoryInput, i: number) => i !== index);
       const newBrackets = { ...prev.brackets };
       const newDeductions = { ...prev.deductions };
       
@@ -468,18 +511,18 @@ export function TaxBuilder({
       Object.entries(newBrackets).forEach(([oldIndex, brackets]) => {
         const numIndex = parseInt(oldIndex);
         if (numIndex > index) {
-          reindexedBrackets[(numIndex - 1).toString()] = brackets;
+          reindexedBrackets[(numIndex - 1).toString()] = brackets as TaxBracketInput[];
         } else if (numIndex < index) {
-          reindexedBrackets[oldIndex] = brackets;
+          reindexedBrackets[oldIndex] = brackets as TaxBracketInput[];
         }
       });
 
       Object.entries(newDeductions).forEach(([oldIndex, deductions]) => {
         const numIndex = parseInt(oldIndex);
         if (numIndex > index) {
-          reindexedDeductions[(numIndex - 1).toString()] = deductions;
+          reindexedDeductions[(numIndex - 1).toString()] = deductions as TaxDeductionInput[];
         } else if (numIndex < index) {
-          reindexedDeductions[oldIndex] = deductions;
+          reindexedDeductions[oldIndex] = deductions as TaxDeductionInput[];
         }
       });
 
@@ -540,29 +583,47 @@ export function TaxBuilder({
       }
     });
 
-    setBuilderState(prev => ({ ...prev, ...newState }));
+    setBuilderState((prev: TaxBuilderState) => ({ ...prev, ...newState }));
     setShowTemplates(false);
   };
 
   const handleSave = async () => {
     const validation = validateState();
-    setBuilderState(prev => ({ ...prev, ...validation }));
+    setBuilderState((prev: TaxBuilderState) => ({ ...prev, ...validation }));
     
-    if (validation.isValid && onSave) {
-      setIsSaving(true);
-      try {
-        await onSave({ ...builderState, ...validation });
-      } catch (error) {
-        console.error('Save failed:', error);
-      } finally {
-        setIsSaving(false);
+    if (validation.isValid) {
+      // Check for conflicts if auto-sync is enabled
+      if (enableAutoSync && countryId && syncState.conflictWarnings.length > 0) {
+        setPendingSaveCallback(() => async () => {
+          if (onSave) {
+            setIsSaving(true);
+            try {
+              await onSave({ ...builderState, ...validation });
+              clearConflicts();
+            } catch (error) {
+              console.error('Save failed:', error);
+            } finally {
+              setIsSaving(false);
+            }
+          }
+        });
+        setShowConflictDialog(true);
+      } else if (onSave) {
+        setIsSaving(true);
+        try {
+          await onSave({ ...builderState, ...validation });
+        } catch (error) {
+          console.error('Save failed:', error);
+        } finally {
+          setIsSaving(false);
+        }
       }
     }
   };
 
   const handlePreview = () => {
     const validation = validateState();
-    setBuilderState(prev => ({ ...prev, ...validation }));
+    setBuilderState((prev: TaxBuilderState) => ({ ...prev, ...validation }));
     
     if (onPreview) {
       onPreview({ ...builderState, ...validation });

@@ -4,6 +4,11 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { COMPONENT_TYPE_VALUES } from "~/types/government";
+import { 
+  detectGovernmentConflicts, 
+  syncGovernmentData,
+  type ConflictWarning
+} from "~/server/services/builderIntegrationService";
 
 // Input validation schemas
 const governmentStructureInputSchema = z.object({
@@ -125,14 +130,26 @@ export const governmentRouter = createTRPCRouter({
       return governmentStructure;
     }),
 
+  // Check for conflicts before creating/updating
+  checkConflicts: protectedProcedure
+    .input(z.object({
+      countryId: z.string(),
+      data: governmentBuilderStateSchema
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const warnings = await detectGovernmentConflicts(ctx.db, input.countryId, input.data);
+      return { warnings };
+    }),
+
   // Create complete government structure
   create: protectedProcedure
     .input(z.object({ 
       countryId: z.string(),
-      data: governmentBuilderStateSchema 
+      data: governmentBuilderStateSchema,
+      skipConflictCheck: z.boolean().optional().default(false)
     }))
     .mutation(async ({ ctx, input }) => {
-      const { countryId, data } = input;
+      const { countryId, data, skipConflictCheck } = input;
 
       // Check if government structure already exists
       const existing = await ctx.db.governmentStructure.findUnique({
@@ -142,8 +159,14 @@ export const governmentRouter = createTRPCRouter({
       if (existing) {
         throw new TRPCError({
           code: 'CONFLICT',
-          message: 'Government structure already exists for this country'
+          message: 'Government structure already exists for this country. Use update instead.'
         });
+      }
+
+      // Detect conflicts if not skipped
+      let warnings: ConflictWarning[] = [];
+      if (!skipConflictCheck) {
+        warnings = await detectGovernmentConflicts(ctx.db, countryId, data);
       }
 
       // Create in transaction
@@ -245,17 +268,31 @@ export const governmentRouter = createTRPCRouter({
         return governmentStructure;
       });
 
-      return result;
+      // Sync with other tables (Country, GovernmentBudget, etc.)
+      const syncResult = await syncGovernmentData(ctx.db, countryId, data);
+
+      return {
+        governmentStructure: result,
+        syncResult,
+        warnings
+      };
     }),
 
   // Update government structure
   update: protectedProcedure
     .input(z.object({
       countryId: z.string(),
-      data: governmentBuilderStateSchema
+      data: governmentBuilderStateSchema,
+      skipConflictCheck: z.boolean().optional().default(false)
     }))
     .mutation(async ({ ctx, input }) => {
-      const { countryId, data } = input;
+      const { countryId, data, skipConflictCheck } = input;
+
+      // Detect conflicts if not skipped
+      let warnings: ConflictWarning[] = [];
+      if (!skipConflictCheck) {
+        warnings = await detectGovernmentConflicts(ctx.db, countryId, data);
+      }
 
       const result = await ctx.db.$transaction(async (tx) => {
         // Update government structure
@@ -362,7 +399,14 @@ export const governmentRouter = createTRPCRouter({
         return governmentStructure;
       });
 
-      return result;
+      // Sync with other tables (Country, GovernmentBudget, etc.)
+      const syncResult = await syncGovernmentData(ctx.db, countryId, data);
+
+      return {
+        governmentStructure: result,
+        syncResult,
+        warnings
+      };
     }),
 
   // Delete government structure

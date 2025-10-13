@@ -42,6 +42,11 @@ const CreatePostSchema = z.object({
   visibility: z.enum(['public', 'private', 'unlisted']).default('public'),
   parentPostId: z.string().optional(), // For replies
   repostOfId: z.string().optional(), // For reposts
+  visualizations: z.array(z.object({
+    type: z.enum(['economic_chart', 'diplomatic_map', 'trade_flow', 'gdp_growth']),
+    title: z.string(),
+    config: z.any(),
+  })).optional(), // Data visualizations embedded in post
 });
 
 const AddReactionSchema = z.object({
@@ -332,7 +337,14 @@ export const thinkpagesRouter = createTRPCRouter({
         take: 5,
       });
 
-      return users;
+      // Return sanitized account-like objects for frontend (id is Clerk userId, display shows country)
+      return users.map((u) => ({
+        id: u.clerkUserId,
+        username: u.country?.slug || '',
+        displayName: u.country?.name || 'Unknown Country',
+        profileImageUrl: u.country?.flag || null,
+        accountType: 'country',
+      }));
     }),
 
   // Update ThinkPages Feed Account
@@ -573,6 +585,7 @@ export const thinkpagesRouter = createTRPCRouter({
           accountId: input.accountId,
           content: input.content,
           hashtags: input.hashtags ? JSON.stringify(input.hashtags) : null,
+          visualizations: input.visualizations ? JSON.stringify(input.visualizations) : null,
           postType,
           parentPostId: input.parentPostId,
           repostOfId: input.repostOfId,
@@ -855,15 +868,42 @@ export const thinkpagesRouter = createTRPCRouter({
       const posts = await db.thinkpagesPost.findMany({
         where: whereClause,
         include: {
-          // account: true, // Relation doesn't exist
+          account: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              profileImageUrl: true,
+              accountType: true,
+              verified: true,
+            }
+          },
           parentPost: {
-            include: { 
-              // account: true // Relation doesn't exist
+            include: {
+              account: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayName: true,
+                  profileImageUrl: true,
+                  accountType: true,
+                  verified: true,
+                }
+              }
             }
           },
           repostOf: {
-            include: { 
-              // account: true // Relation doesn't exist
+            include: {
+              account: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayName: true,
+                  profileImageUrl: true,
+                  accountType: true,
+                  verified: true,
+                }
+              }
             }
           },
           reactions: true,
@@ -2035,21 +2075,61 @@ export const thinkpagesRouter = createTRPCRouter({
         cursor: input.cursor ? { id: input.cursor } : undefined,
         skip: input.cursor ? 1 : 0
       });
+      // Fetch user profiles for all participants and last messages in a single batch
+      const participantUserIds = new Set<string>();
+      for (const conv of conversations as any[]) {
+        for (const p of conv.participants) participantUserIds.add(p.userId);
+        if (conv.messages[0]?.userId) participantUserIds.add(conv.messages[0].userId);
+      }
+
+      const users = await db.user.findMany({
+        where: { clerkUserId: { in: Array.from(participantUserIds) } },
+        include: { country: true },
+      });
+      const userMap = new Map(users.map(u => [u.clerkUserId, u]));
 
       return {
         conversations: conversations.map((conv: any) => {
-          const otherParticipants = conv.participants.filter((p: any) => p.userId !== input.userId);
-          const lastMessage = conv.messages[0];
+          const participantWithAccount = conv.participants.map((p: any) => {
+            const u = userMap.get(p.userId);
+            return {
+              ...p,
+              accountId: p.userId,
+              account: u ? {
+                id: u.clerkUserId,
+                username: u.country?.slug || '',
+                displayName: u.country?.name || 'Unknown Country',
+                profileImageUrl: u.country?.flag || null,
+                accountType: 'country',
+              } : null,
+            };
+          });
 
-          // Calculate unread count
+          const otherParticipants = participantWithAccount.filter((p: any) => p.userId !== input.userId);
+          const lastMessageRaw = conv.messages[0];
+          const lastMessageUser = lastMessageRaw ? userMap.get(lastMessageRaw.userId) : null;
+          const lastMessage = lastMessageRaw ? {
+            ...lastMessageRaw,
+            accountId: lastMessageRaw.userId,
+            account: lastMessageUser ? {
+              id: lastMessageUser.clerkUserId,
+              username: lastMessageUser.country?.slug || '',
+              displayName: lastMessageUser.country?.name || 'Unknown Country',
+              profileImageUrl: lastMessageUser.country?.flag || null,
+              accountType: 'country',
+            } : null,
+          } : undefined;
+
+          // Calculate unread count placeholder (0 for now)
           const participant = conv.participants.find((p: any) => p.userId === input.userId);
 
           return {
             ...conv,
+            participants: participantWithAccount,
             otherParticipants,
             lastMessage,
             lastReadAt: participant?.lastReadAt,
-            unreadCount: 0 // Will be calculated based on lastReadAt vs message timestamps
+            unreadCount: 0,
           };
         }),
         nextCursor: conversations.length === input.limit ? conversations[conversations.length - 1]?.id : null
@@ -2145,16 +2225,26 @@ export const thinkpagesRouter = createTRPCRouter({
       const accounts = await db.user.findMany({
         where: {
           clerkUserId: { in: userIds }
-        }
+        },
+        include: { country: true }
       });
 
       // Create a map for quick lookup
-      const accountMap = new Map(accounts.map((acc: { clerkUserId: string }) => [acc.clerkUserId, acc]));
+      const accountMap = new Map(accounts.map((acc: any) => [acc.clerkUserId, acc]));
 
       return {
         messages: messages.map(msg => ({
           ...msg,
-          account: accountMap.get(msg.userId) || null, // Attach account data
+          account: (() => {
+            const u = accountMap.get(msg.userId);
+            return u ? {
+              id: u.clerkUserId,
+              username: u.country?.slug || '',
+              displayName: u.country?.name || 'Unknown Country',
+              profileImageUrl: u.country?.flag || null,
+              accountType: 'country',
+            } : null;
+          })(),
           accountId: msg.userId, // Keep accountId for compatibility
           reactions: msg.reactions ? JSON.parse(msg.reactions) : {},
           mentions: msg.mentions ? JSON.parse(msg.mentions) : [],
@@ -2185,6 +2275,11 @@ export const thinkpagesRouter = createTRPCRouter({
       console.log('🔍 messageType:', input.messageType);
       
       const { db } = ctx;
+
+      // Enforce authenticated user matches input userId
+      if (!ctx.user?.clerkUserId || ctx.user.clerkUserId !== input.userId) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'User mismatch' });
+      }
 
       // Verify user is participant
       const participant = await db.conversationParticipant.findUnique({
@@ -2239,6 +2334,11 @@ export const thinkpagesRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
+
+      // Enforce authenticated user matches input userId
+      if (!ctx.user?.clerkUserId || ctx.user.clerkUserId !== input.userId) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'User mismatch' });
+      }
 
       // Verify participant exists before updating
       const participant = await db.conversationParticipant.findUnique({
@@ -2648,5 +2748,44 @@ export const thinkpagesRouter = createTRPCRouter({
       }
 
       return conversation;
+    }),
+
+  // Get post reactions with account details
+  getPostReactions: publicProcedure
+    .input(z.object({ 
+      postId: z.string(),
+      reactionType: z.string().optional() // Filter by specific reaction type
+    }))
+    .query(async ({ ctx, input }) => {
+      const { db } = ctx;
+      
+      const whereClause: any = {
+        postId: input.postId
+      };
+
+      if (input.reactionType) {
+        whereClause.reactionType = input.reactionType;
+      }
+      
+      const reactions = await db.postReaction.findMany({
+        where: whereClause,
+        include: {
+          account: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              profileImageUrl: true,
+              accountType: true,
+              verified: true,
+            }
+          }
+        },
+        orderBy: {
+          timestamp: 'desc'
+        }
+      });
+      
+      return reactions;
     })
 });

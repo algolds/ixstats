@@ -47,11 +47,29 @@ export function GlassCanvasComposer({
   const [showVisualizationPanel, setShowVisualizationPanel] = useState(false);
   const [isGeneratingVisualization, setIsGeneratingVisualization] = useState(false);
 
-  // Get latest economic data for visualizations
-  const { data: economicData } = api.countries.getEconomicData.useQuery({ countryId });
-  const { data: gdpHistoryData } = api.countries.getHistoricalData.useQuery({ countryId });
-  const { data: diplomaticData } = api.diplomatic.getRelationships.useQuery({ countryId });
-  const { data: tradeData } = api.countries.getTradeData.useQuery({ countryId });
+  // Get latest economic data for visualizations - live wired
+  const { data: economicData, isLoading: isLoadingEconomic } = api.countries.getEconomicData.useQuery(
+    { countryId },
+    { enabled: !!countryId, refetchOnWindowFocus: false }
+  );
+  const { data: gdpHistoryData, isLoading: isLoadingHistory } = api.countries.getHistoricalData.useQuery(
+    { countryId, limit: 30 },
+    { enabled: !!countryId, refetchOnWindowFocus: false }
+  );
+  const { data: diplomaticData, isLoading: isLoadingDiplomatic } = api.diplomatic.getRelationships.useQuery(
+    { countryId },
+    { enabled: !!countryId, refetchOnWindowFocus: false }
+  );
+  const { data: tradeData, isLoading: isLoadingTrade } = api.countries.getTradeData.useQuery(
+    { countryId },
+    { enabled: !!countryId, refetchOnWindowFocus: false }
+  );
+
+  // Check if we have data available for visualizations
+  const hasEconomicData = !!economicData;
+  const hasHistoricalData = !!gdpHistoryData && gdpHistoryData.length > 0;
+  const hasDiplomaticData = !!diplomaticData && diplomaticData.length > 0;
+  const hasTradeData = !!tradeData;
 
   const createPostMutation = api.thinkpages.createPost.useMutation({
     onSuccess: () => {
@@ -99,9 +117,37 @@ export function GlassCanvasComposer({
   };
 
   const addVisualization = (type: DataVisualization['type']) => {
+    // Validate data availability before adding visualization
+    let hasRequiredData = false;
+    let errorMessage = '';
+
+    switch (type) {
+      case 'economic_chart':
+        hasRequiredData = hasHistoricalData;
+        errorMessage = 'No historical GDP data available for this country';
+        break;
+      case 'diplomatic_map':
+        hasRequiredData = hasDiplomaticData;
+        errorMessage = 'No diplomatic relationships data available';
+        break;
+      case 'trade_flow':
+        hasRequiredData = hasTradeData;
+        errorMessage = 'No trade data available for this country';
+        break;
+      case 'gdp_growth':
+        hasRequiredData = hasEconomicData;
+        errorMessage = 'No economic data available for this country';
+        break;
+    }
+
+    if (!hasRequiredData) {
+      toast.error(errorMessage);
+      return;
+    }
+
     setIsGeneratingVisualization(true);
     
-    // Simulate creating a visualization based on live data
+    // Create visualization based on live data
     setTimeout(() => {
       let newVisualization: DataVisualization;
       
@@ -111,7 +157,7 @@ export function GlassCanvasComposer({
             id: `econ-${Date.now()}`,
             type: 'economic_chart',
             title: 'GDP Growth Trajectory',
-            data: gdpHistoryData || [],
+            data: gdpHistoryData!,
             config: {
               chartType: 'line',
               colors: ['#3B82F6', '#10B981'],
@@ -125,7 +171,7 @@ export function GlassCanvasComposer({
             id: `diplo-${Date.now()}`,
             type: 'diplomatic_map',
             title: 'Diplomatic Relations Map',
-            data: diplomaticData || [],
+            data: diplomaticData!,
             config: {
               mapType: 'world',
               showRelationStrength: true,
@@ -138,7 +184,7 @@ export function GlassCanvasComposer({
             id: `trade-${Date.now()}`,
             type: 'trade_flow',
             title: 'Trade Flow Analysis',
-            data: tradeData || [],
+            data: tradeData!,
             config: {
               flowType: 'sankey',
               showVolumes: true,
@@ -151,7 +197,7 @@ export function GlassCanvasComposer({
             id: `gdp-${Date.now()}`,
             type: 'gdp_growth',
             title: 'Economic Performance Overview',
-            data: economicData || {},
+            data: economicData!,
             config: {
               metrics: ['gdp', 'inflation', 'unemployment'],
               displayType: 'dashboard',
@@ -160,13 +206,14 @@ export function GlassCanvasComposer({
           };
           break;
         default:
+          setIsGeneratingVisualization(false);
           return;
       }
 
       setSelectedVisualizations(prev => [...prev, newVisualization]);
       setIsGeneratingVisualization(false);
       toast.success(`${newVisualization.title} added to post`);
-    }, 1000);
+    }, 800);
   };
 
   const removeVisualization = (id: string) => {
@@ -251,9 +298,16 @@ export function GlassCanvasComposer({
               maxLength={characterLimit}
             />
             <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">
-                Enhanced with live economic data
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">
+                  Enhanced with live data
+                </span>
+                {(hasEconomicData || hasHistoricalData || hasDiplomaticData || hasTradeData) && (
+                  <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 bg-green-500/10 text-green-400 border-green-500/30">
+                    Live
+                  </Badge>
+                )}
+              </div>
               <span className={cn(
                 "font-medium",
                 remainingChars < 20 ? "text-red-400" : remainingChars < 50 ? "text-orange-400" : "text-muted-foreground"
@@ -305,50 +359,86 @@ export function GlassCanvasComposer({
                 exit={{ opacity: 0, height: 0 }}
                 className="border border-white/10 rounded-lg p-3 bg-white/5"
               >
-                <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="h-4 w-4 text-blue-400" />
-                  <span className="font-medium text-sm">Add Live Data Visualization</span>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-blue-400" />
+                    <span className="font-medium text-sm">Add Live Data Visualization</span>
+                  </div>
+                  {(isLoadingEconomic || isLoadingHistory || isLoadingDiplomatic || isLoadingTrade) && (
+                    <div className="flex items-center gap-1 text-xs text-blue-400">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <span>Loading data...</span>
+                    </div>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => addVisualization('economic_chart')}
-                    disabled={isGeneratingVisualization}
+                    disabled={isGeneratingVisualization || isLoadingHistory || !hasHistoricalData}
                     className="h-auto flex-col p-3"
                   >
-                    <TrendingUp className="h-6 w-6 mb-1" />
+                    {isLoadingHistory ? (
+                      <Loader2 className="h-6 w-6 mb-1 animate-spin" />
+                    ) : (
+                      <TrendingUp className="h-6 w-6 mb-1" />
+                    )}
                     <span className="text-xs">Economic Chart</span>
+                    {!hasHistoricalData && !isLoadingHistory && (
+                      <span className="text-[10px] text-red-400">No data</span>
+                    )}
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => addVisualization('diplomatic_map')}
-                    disabled={isGeneratingVisualization}
+                    disabled={isGeneratingVisualization || isLoadingDiplomatic || !hasDiplomaticData}
                     className="h-auto flex-col p-3"
                   >
-                    <Globe className="h-6 w-6 mb-1" />
+                    {isLoadingDiplomatic ? (
+                      <Loader2 className="h-6 w-6 mb-1 animate-spin" />
+                    ) : (
+                      <Globe className="h-6 w-6 mb-1" />
+                    )}
                     <span className="text-xs">Diplomatic Map</span>
+                    {!hasDiplomaticData && !isLoadingDiplomatic && (
+                      <span className="text-[10px] text-red-400">No data</span>
+                    )}
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => addVisualization('trade_flow')}
-                    disabled={isGeneratingVisualization}
+                    disabled={isGeneratingVisualization || isLoadingTrade || !hasTradeData}
                     className="h-auto flex-col p-3"
                   >
-                    <BarChart3 className="h-6 w-6 mb-1" />
+                    {isLoadingTrade ? (
+                      <Loader2 className="h-6 w-6 mb-1 animate-spin" />
+                    ) : (
+                      <BarChart3 className="h-6 w-6 mb-1" />
+                    )}
                     <span className="text-xs">Trade Flows</span>
+                    {!hasTradeData && !isLoadingTrade && (
+                      <span className="text-[10px] text-red-400">No data</span>
+                    )}
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => addVisualization('gdp_growth')}
-                    disabled={isGeneratingVisualization}
+                    disabled={isGeneratingVisualization || isLoadingEconomic || !hasEconomicData}
                     className="h-auto flex-col p-3"
                   >
-                    <BarChart3 className="h-6 w-6 mb-1" />
+                    {isLoadingEconomic ? (
+                      <Loader2 className="h-6 w-6 mb-1 animate-spin" />
+                    ) : (
+                      <BarChart3 className="h-6 w-6 mb-1" />
+                    )}
                     <span className="text-xs">GDP Dashboard</span>
+                    {!hasEconomicData && !isLoadingEconomic && (
+                      <span className="text-[10px] text-red-400">No data</span>
+                    )}
                   </Button>
                 </div>
               </motion.div>

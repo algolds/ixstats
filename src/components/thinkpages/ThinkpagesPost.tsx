@@ -30,6 +30,7 @@ import { Button } from '~/components/ui/button';
 import { Textarea } from '~/components/ui/textarea';
 import { PostActions } from './primitives/PostActions';
 import { AccountIndicator } from './primitives/AccountIndicator';
+import { ReactionsDialog } from './ReactionsDialog';
 import { api } from '~/trpc/react';
 import { toast } from 'sonner';
 import { formatContentEnhanced, extractHashtags, extractMentions } from '~/lib/text-formatter';
@@ -105,6 +106,7 @@ export function ThinkpagesPost({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showFlagDialog, setShowFlagDialog] = useState(false);
   const [flagReason, setFlagReason] = useState('');
+  const [showReactionsDialog, setShowReactionsDialog] = useState(false);
 
   // Close more options when clicking outside
   useEffect(() => {
@@ -290,9 +292,32 @@ export function ThinkpagesPost({
       )}
 
       {post.postType === 'reply' && post.parentPost && (
-        <div className="flex items-center gap-2 mb-3 text-blue-500 text-sm">
-          <MessageCircle className="h-4 w-4" />
-          <span>Replying to @{post.parentPost.account.username}</span>
+        <div className="mb-3">
+          <div className="flex items-center gap-2 mb-2 text-blue-500 text-sm">
+            <MessageCircle className="h-4 w-4" />
+            <span>Replying to @{post.parentPost.account.username}</span>
+          </div>
+          {/* Twitter-style parent post context */}
+          <div className="ml-4 pl-4 border-l-2 border-blue-500/30 space-y-2">
+            <div className="flex items-center gap-2">
+              <Avatar className="h-6 w-6">
+                <AvatarImage src={post.parentPost.account.profileImageUrl} />
+                <AvatarFallback className={`text-xs font-semibold ${ACCOUNT_TYPE_COLORS[post.parentPost.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || 'text-gray-500 bg-gray-500/20'}`}>
+                  {post.parentPost.account.displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <span className="font-semibold text-sm">
+                {post.parentPost.account.displayName}
+              </span>
+              <span className="text-muted-foreground text-xs">
+                @{post.parentPost.account.username}
+              </span>
+            </div>
+            <div 
+              className="text-sm text-muted-foreground line-clamp-3"
+              dangerouslySetInnerHTML={{ __html: formatContentEnhanced(post.parentPost.content) }}
+            />
+          </div>
         </div>
       )}
 
@@ -382,8 +407,20 @@ export function ThinkpagesPost({
             onReply={() => handleReply()}
             onShare={() => {
               const postUrl = `${window.location.origin}/thinkpages/post/${post.id}`;
-              navigator.clipboard.writeText(postUrl);
-              toast.success('Post URL copied to clipboard!');
+              if (navigator.share) {
+                navigator.share({
+                  title: `Post by @${post.account.username}`,
+                  text: post.content.substring(0, 100),
+                  url: postUrl
+                }).catch(() => {
+                  // Fallback to clipboard if share fails
+                  navigator.clipboard.writeText(postUrl);
+                  toast.success('Post link copied to clipboard!');
+                });
+              } else {
+                navigator.clipboard.writeText(postUrl);
+                toast.success('Post link copied to clipboard!');
+              }
               onShare?.(post.id);
             }}
             onReaction={onReaction}
@@ -440,7 +477,10 @@ export function ThinkpagesPost({
           </div>
 
           {post.reactionCounts && Object.keys(post.reactionCounts).length > 0 && (
-            <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/10">
+            <button
+              onClick={() => setShowReactionsDialog(true)}
+              className="flex items-center gap-2 mt-2 pt-2 border-t border-white/10 hover:bg-muted/30 w-full rounded px-2 py-1 transition-colors"
+            >
               {Object.entries(post.reactionCounts).map(([type, count]) => {
                 const Icon = REACTION_ICONS[type];
                 if (!Icon || (count as number) === 0) return null;
@@ -451,7 +491,7 @@ export function ThinkpagesPost({
                   </div>
                 );
               })}
-            </div>
+            </button>
           )}
 
           {/* Edit Composer */}
@@ -677,6 +717,14 @@ export function ThinkpagesPost({
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Reactions Dialog */}
+          <ReactionsDialog
+            postId={post.id}
+            isOpen={showReactionsDialog}
+            onClose={() => setShowReactionsDialog(false)}
+            onAccountClick={onAccountClick}
+          />
         </div>
       </div>
     </motion.div>
