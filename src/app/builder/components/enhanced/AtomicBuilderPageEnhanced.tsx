@@ -393,6 +393,21 @@ export function AtomicBuilderPageEnhanced({ onBackToIntro }: AtomicBuilderPageEn
     loadCountries();
   }, []);
 
+  // Open directly to Core Identity for quick start or jump-in flows
+  useEffect(() => {
+    try {
+      const quickSection = localStorage.getItem('builder_quick_start_section');
+      if (quickSection === 'core') {
+        setBuilderState(prev => ({
+          ...prev,
+          step: 'core',
+          activeCoreTab: 'identity'
+        }));
+        // Do not clear immediately so Complete Tutorial can still read flags if set elsewhere
+      }
+    } catch {}
+  }, []);
+
   // Update economic inputs when government components change
   useEffect(() => {
     if (builderState.economicInputs && builderState.governmentComponents.length > 0) {

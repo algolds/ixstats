@@ -38,6 +38,7 @@ import { SecureDiplomaticChannels } from "~/components/diplomatic/SecureDiplomat
 import { CulturalExchangeProgram } from "~/components/diplomatic/CulturalExchangeProgram";
 import { InlineDiplomaticActions } from "~/components/diplomatic/InlineDiplomaticActions";
 import dynamic from "next/dynamic";
+import { IxTime } from "~/lib/ixtime";
 
 
 
@@ -101,6 +102,7 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+  const currentIxTime = IxTime.getCurrentIxTime();
 
   // Data fetching - the API already handles both names and IDs
   // Just pass the slug as-is, replacing underscores with spaces for pretty URLs
@@ -109,6 +111,10 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
   const { data: userProfile } = api.users.getProfile.useQuery(
     undefined,
     { enabled: !!user?.id }
+  );
+  const { data: governmentStructure } = api.government.getByCountryId.useQuery(
+    { countryId: country?.id || '' },
+    { enabled: !!country?.id }
   );
 
   // Flag loading
@@ -896,48 +902,68 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
                     </Card>
                   )}
 
-                  {/* Government & National Identity */}
+                  {/* Government & National Identity (DB-backed with graceful fallbacks) */}
                   <Card className="backdrop-blur-sm bg-card/50">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Building className="h-5 w-5" />
-                        National Identity
+                        Government & National Identity
                       </CardTitle>
-                      <CardDescription>Government structure and cultural heritage</CardDescription>
+                      <CardDescription>Live government structure (builder) and identity from the database</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {country.governmentType && (
+                        {(governmentStructure?.governmentName || country?.nationalIdentity?.officialName) && (
                           <div className="flex items-start gap-3">
                             <Building className="h-5 w-5 text-primary mt-0.5" />
                             <div>
                               <p className="text-xs text-muted-foreground mb-1">Government</p>
-                              <p className="font-semibold">{country.governmentType}</p>
+                              <p className="font-semibold">{governmentStructure?.governmentName || country?.nationalIdentity?.officialName}</p>
                             </div>
                           </div>
                         )}
 
-                        {country.leader && (
+                        {(governmentStructure?.governmentType || country?.governmentType || country?.nationalIdentity?.governmentType) && (
+                          <div className="flex items-start gap-3">
+                            <Crown className="h-5 w-5 text-primary mt-0.5" />
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">Government Type</p>
+                              <p className="font-semibold">{governmentStructure?.governmentType || country?.governmentType || country?.nationalIdentity?.governmentType}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {(governmentStructure?.headOfState || country?.leader) && (
                           <div className="flex items-start gap-3">
                             <Users className="h-5 w-5 text-primary mt-0.5" />
                             <div>
-                              <p className="text-xs text-muted-foreground mb-1">Leadership</p>
-                              <p className="font-semibold">{country.leader}</p>
+                              <p className="text-xs text-muted-foreground mb-1">Head of State</p>
+                              <p className="font-semibold">{governmentStructure?.headOfState || country?.leader}</p>
                             </div>
                           </div>
                         )}
 
-                        {wikiInfobox?.capital && (
+                        {governmentStructure?.headOfGovernment && (
+                          <div className="flex items-start gap-3">
+                            <Users className="h-5 w-5 text-primary mt-0.5" />
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">Head of Government</p>
+                              <p className="font-semibold">{governmentStructure.headOfGovernment}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {(country?.nationalIdentity?.capitalCity || wikiInfobox?.capital) && (
                           <div className="flex items-start gap-3">
                             <MapPin className="h-5 w-5 text-primary mt-0.5" />
                             <div>
                               <p className="text-xs text-muted-foreground mb-1">Capital</p>
-                              <p className="font-semibold">{wikiInfobox.capital}</p>
+                              <p className="font-semibold">{country?.nationalIdentity?.capitalCity || wikiInfobox?.capital}</p>
                             </div>
                           </div>
                         )}
 
-                        {country.religion && (
+                        {country?.religion && (
                           <div className="flex items-start gap-3">
                             <Heart className="h-5 w-5 text-primary mt-0.5" />
                             <div>
@@ -947,24 +973,69 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
                           </div>
                         )}
 
-                        {wikiInfobox?.currency && (
+                        {(country?.nationalIdentity?.currency || wikiInfobox?.currency) && (
                           <div className="flex items-start gap-3">
                             <Globe className="h-5 w-5 text-primary mt-0.5" />
                             <div>
                               <p className="text-xs text-muted-foreground mb-1">Currency</p>
-                              <p className="font-semibold">{wikiInfobox.currency}</p>
+                              <p className="font-semibold">
+                                {country?.nationalIdentity?.currency || wikiInfobox?.currency}
+                                {country?.nationalIdentity?.currencySymbol ? ` (${country.nationalIdentity.currencySymbol})` : ''}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {governmentStructure?.legislatureName && (
+                          <div className="flex items-start gap-3">
+                            <Building className="h-5 w-5 text-primary mt-0.5" />
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">Legislature</p>
+                              <p className="font-semibold">{governmentStructure.legislatureName}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {governmentStructure?.executiveName && (
+                          <div className="flex items-start gap-3">
+                            <Building className="h-5 w-5 text-primary mt-0.5" />
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">Executive</p>
+                              <p className="font-semibold">{governmentStructure.executiveName}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {governmentStructure?.judicialName && (
+                          <div className="flex items-start gap-3">
+                            <Building className="h-5 w-5 text-primary mt-0.5" />
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">Judiciary</p>
+                              <p className="font-semibold">{governmentStructure.judicialName}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {(typeof governmentStructure?.totalBudget === 'number') && (
+                          <div className="flex items-start gap-3">
+                            <TrendingUp className="h-5 w-5 text-primary mt-0.5" />
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">Total Budget</p>
+                              <p className="font-semibold">
+                                {governmentStructure!.totalBudget!.toLocaleString('en-US', { style: 'currency', currency: (governmentStructure?.budgetCurrency || 'USD') as any, maximumFractionDigits: 0 })}
+                              </p>
                             </div>
                           </div>
                         )}
                       </div>
 
-                      {wikiInfobox?.motto && (
+                      {(country?.nationalIdentity?.motto || wikiInfobox?.motto) && (
                         <div className="mt-6 pt-6 border-t">
                           <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
                             National Motto
                           </p>
                           <p className="text-base italic text-muted-foreground border-l-4 border-primary/30 pl-4">
-                            &ldquo;{wikiInfobox.motto}&rdquo;
+                            &ldquo;{country?.nationalIdentity?.motto || wikiInfobox?.motto}&rdquo;
                           </p>
                         </div>
                       )}
@@ -1087,15 +1158,171 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
               )}
             </div>
 
-          
+            {/* Overview (At a Glance) */}
+            <div>
+              <CountryAtGlance
+                country={{
+                  id: country.id,
+                  name: country.name,
+                  continent: country.continent ?? null,
+                  region: country.region ?? null,
+                  governmentType: country.governmentType ?? null,
+                  religion: country.religion ?? null,
+                  leader: country.leader ?? null,
+                  landArea: country.landArea ?? null,
+                  currentPopulation: country.currentPopulation,
+                  currentGdpPerCapita: country.currentGdpPerCapita,
+                  currentTotalGdp: country.currentTotalGdp,
+                  populationGrowthRate: country.populationGrowthRate ?? 0,
+                  adjustedGdpGrowth: country.adjustedGdpGrowth ?? 0,
+                  maxGdpGrowthRate: 0.05,
+                  populationDensity: country.populationDensity ?? null,
+                  gdpDensity: country.gdpDensity ?? null,
+                  economicTier: country.economicTier,
+                  populationTier: country.populationTier,
+                  lastCalculated: (country as any).lastCalculated instanceof Date ? (country as any).lastCalculated.getTime() : ((country as any).lastCalculated ?? Date.now()),
+                  baselineDate: (country as any).baselineDate instanceof Date ? (country as any).baselineDate.getTime() : ((country as any).baselineDate ?? Date.now()),
+                  localGrowthFactor: 1.0,
+                  nationalIdentity: (country as any).nationalIdentity || null,
+                }}
+                currentIxTime={currentIxTime}
+                isLoading={false}
+              />
+            </div>
+
+            {/* Government Overview (public, read-only) */}
+            <Card className="backdrop-blur-sm bg-card/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building className="h-5 w-5" />
+                  Government & National Identity
+                </CardTitle>
+                <CardDescription>Live government structure and identity</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {(governmentStructure?.governmentName || country?.nationalIdentity?.officialName) && (
+                    <div className="flex items-start gap-3">
+                      <Building className="h-5 w-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Government</p>
+                        <p className="font-semibold">{governmentStructure?.governmentName || country?.nationalIdentity?.officialName}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {(governmentStructure?.governmentType || country?.governmentType || country?.nationalIdentity?.governmentType) && (
+                    <div className="flex items-start gap-3">
+                      <Crown className="h-5 w-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Government Type</p>
+                        <p className="font-semibold">{governmentStructure?.governmentType || country?.governmentType || country?.nationalIdentity?.governmentType}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {(governmentStructure?.headOfState || country?.leader) && (
+                    <div className="flex items-start gap-3">
+                      <Users className="h-5 w-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Head of State</p>
+                        <p className="font-semibold">{governmentStructure?.headOfState || country?.leader}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {governmentStructure?.headOfGovernment && (
+                    <div className="flex items-start gap-3">
+                      <Users className="h-5 w-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Head of Government</p>
+                        <p className="font-semibold">{governmentStructure.headOfGovernment}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {(country?.nationalIdentity?.capitalCity || wikiInfobox?.capital) && (
+                    <div className="flex items-start gap-3">
+                      <MapPin className="h-5 w-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Capital</p>
+                        <p className="font-semibold">{country?.nationalIdentity?.capitalCity || wikiInfobox?.capital}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {country?.religion && (
+                    <div className="flex items-start gap-3">
+                      <Heart className="h-5 w-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Religion</p>
+                        <p className="font-semibold">{country.religion}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {(country?.nationalIdentity?.currency || wikiInfobox?.currency) && (
+                    <div className="flex items-start gap-3">
+                      <Globe className="h-5 w-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Currency</p>
+                        <p className="font-semibold">
+                          {country?.nationalIdentity?.currency || wikiInfobox?.currency}
+                          {country?.nationalIdentity?.currencySymbol ? ` (${country.nationalIdentity.currencySymbol})` : ''}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {governmentStructure?.legislatureName && (
+                    <div className="flex items-start gap-3">
+                      <Building className="h-5 w-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Legislature</p>
+                        <p className="font-semibold">{governmentStructure.legislatureName}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {governmentStructure?.executiveName && (
+                    <div className="flex items-start gap-3">
+                      <Building className="h-5 w-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Executive</p>
+                        <p className="font-semibold">{governmentStructure.executiveName}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {governmentStructure?.judicialName && (
+                    <div className="flex items-start gap-3">
+                      <Building className="h-5 w-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Judiciary</p>
+                        <p className="font-semibold">{governmentStructure.judicialName}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {(country?.nationalIdentity?.motto || wikiInfobox?.motto) && (
+                  <div className="mt-6 pt-6 border-t">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
+                      National Motto
+                    </p>
+                    <p className="text-base italic text-muted-foreground border-l-4 border-primary/30 pl-4">
+                      &ldquo;{country?.nationalIdentity?.motto || wikiInfobox?.motto}&rdquo;
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Public Economic Data */}
             {!isMounted ? (
               <Card className="backdrop-blur-sm bg-card/50">
                 <CardContent className="py-12">
-                  <div className="text-center text-muted-foreground">
-                    Loading economic analysis...
-                  </div>
+                  <div className="text-center text-muted-foreground">Loading economic analysis...</div>
                 </CardContent>
               </Card>
             ) : (

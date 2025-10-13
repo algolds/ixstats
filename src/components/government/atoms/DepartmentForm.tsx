@@ -419,7 +419,7 @@ export function DepartmentForm({
           )}
 
           <div className="flex flex-wrap gap-2">
-            {(data.functions || []).map((func, index) => (
+            {(Array.isArray(data.functions) ? data.functions : []).map((func, index) => (
               <Badge
                 key={index}
                 variant="secondary"

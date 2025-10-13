@@ -126,76 +126,166 @@ export const taxSystemRouter = createTRPCRouter({
         warnings = await detectTaxConflicts(ctx.db, input.countryId, data);
       }
 
-      // Create tax system with categories
-      const taxSystem = await ctx.db.taxSystem.create({
-        data: {
-          countryId: input.countryId,
-          taxSystemName: data.taxSystem.taxSystemName,
-          taxAuthority: data.taxSystem.taxAuthority,
-          fiscalYear: data.taxSystem.fiscalYear,
-          taxCode: data.taxSystem.taxCode,
-          baseRate: data.taxSystem.baseRate,
-          progressiveTax: data.taxSystem.progressiveTax,
-          flatTaxRate: data.taxSystem.flatTaxRate,
-          alternativeMinTax: data.taxSystem.alternativeMinTax,
-          alternativeMinRate: data.taxSystem.alternativeMinRate,
-          complianceRate: data.taxSystem.complianceRate,
-          collectionEfficiency: data.taxSystem.collectionEfficiency,
-          taxCategories: {
-            create: data.categories.map((cat, catIdx) => ({
-              categoryName: cat.categoryName,
-              categoryType: cat.categoryType,
-              description: cat.description,
-              baseRate: cat.baseRate,
-              calculationMethod: cat.calculationMethod,
-              taxBrackets: {
-                create: (data.brackets[catIdx.toString()] || []).map((bracket) => ({
-                  minIncome: bracket.minIncome,
-                  maxIncome: bracket.maxIncome,
-                  rate: bracket.rate,
-                  flatAmount: bracket.flatAmount,
-                  marginalRate: bracket.marginalRate,
-                  taxSystem: {
-                    connect: { countryId: input.countryId }
-                  }
-                })),
-              },
-              taxExemptions: {
-                create: data.exemptions
-                  .filter((ex) => ex.exemptionName)
-                  .map((exemption) => ({
-                    exemptionName: exemption.exemptionName,
-                    exemptionType: exemption.exemptionType,
-                    description: exemption.description,
-                    exemptionAmount: exemption.exemptionAmount,
-                    exemptionRate: exemption.exemptionRate,
-                    qualifications: exemption.qualifications,
-                    endDate: exemption.endDate,
-                    taxSystemId: '', // Will be set by relation
+      // Create tax system with categories; fallback to update on unique constraint
+      let taxSystem;
+      try {
+        taxSystem = await ctx.db.taxSystem.create({
+          data: {
+            countryId: input.countryId,
+            taxSystemName: data.taxSystem.taxSystemName,
+            taxAuthority: data.taxSystem.taxAuthority,
+            fiscalYear: data.taxSystem.fiscalYear,
+            taxCode: data.taxSystem.taxCode,
+            baseRate: data.taxSystem.baseRate,
+            progressiveTax: data.taxSystem.progressiveTax,
+            flatTaxRate: data.taxSystem.flatTaxRate,
+            alternativeMinTax: data.taxSystem.alternativeMinTax,
+            alternativeMinRate: data.taxSystem.alternativeMinRate,
+            complianceRate: data.taxSystem.complianceRate,
+            collectionEfficiency: data.taxSystem.collectionEfficiency,
+            taxCategories: {
+              create: data.categories.map((cat, catIdx) => ({
+                categoryName: cat.categoryName,
+                categoryType: cat.categoryType,
+                description: cat.description,
+                baseRate: cat.baseRate,
+                calculationMethod: cat.calculationMethod,
+                taxBrackets: {
+                  create: (data.brackets[catIdx.toString()] || []).map((bracket) => ({
+                    minIncome: bracket.minIncome,
+                    maxIncome: bracket.maxIncome,
+                    rate: bracket.rate,
+                    flatAmount: bracket.flatAmount,
+                    marginalRate: bracket.marginalRate,
+                    taxSystem: {
+                      connect: { countryId: input.countryId }
+                    }
                   })),
-              },
-              taxDeductions: {
-                create: (data.deductions[catIdx.toString()] || []).map((deduction) => ({
-                  deductionName: deduction.deductionName,
-                  deductionType: deduction.deductionType,
-                  description: deduction.description,
-                  maximumAmount: deduction.maximumAmount,
-                  percentage: deduction.percentage,
-                })),
-              },
-            })),
-          },
-        },
-        include: {
-          taxCategories: {
-            include: {
-              taxBrackets: true,
-              taxExemptions: true,
-              taxDeductions: true,
+                },
+                taxExemptions: {
+                  create: data.exemptions
+                    .filter((ex) => ex.exemptionName)
+                    .map((exemption) => ({
+                      exemptionName: exemption.exemptionName,
+                      exemptionType: exemption.exemptionType,
+                      description: exemption.description,
+                      exemptionAmount: exemption.exemptionAmount,
+                      exemptionRate: exemption.exemptionRate,
+                      qualifications: exemption.qualifications,
+                      endDate: exemption.endDate,
+                      taxSystemId: '', // Will be set by relation
+                    })),
+                },
+                taxDeductions: {
+                  create: (data.deductions[catIdx.toString()] || []).map((deduction) => ({
+                    deductionName: deduction.deductionName,
+                    deductionType: deduction.deductionType,
+                    description: deduction.description,
+                    maximumAmount: deduction.maximumAmount,
+                    percentage: deduction.percentage,
+                  })),
+                },
+              })),
             },
           },
-        },
-      });
+          include: {
+            taxCategories: {
+              include: {
+                taxBrackets: true,
+                taxExemptions: true,
+                taxDeductions: true,
+              },
+            },
+          },
+        });
+      } catch (e: any) {
+        const message = typeof e?.message === 'string' ? e.message : '';
+        const uniqueViolation = message.includes('Unique constraint failed') || message.includes('P2002');
+        if (!uniqueViolation) {
+          throw e;
+        }
+        // Unique on countryId exists already: perform update path
+        await ctx.db.taxCategory.deleteMany({
+          where: {
+            taxSystemId: {
+              in: (await ctx.db.taxSystem.findMany({
+                where: { countryId: input.countryId },
+                select: { id: true }
+              })).map(ts => ts.id)
+            },
+          },
+        });
+
+        taxSystem = await ctx.db.taxSystem.update({
+          where: { countryId: input.countryId },
+          data: {
+            taxSystemName: data.taxSystem.taxSystemName,
+            taxAuthority: data.taxSystem.taxAuthority,
+            fiscalYear: data.taxSystem.fiscalYear,
+            taxCode: data.taxSystem.taxCode,
+            baseRate: data.taxSystem.baseRate,
+            progressiveTax: data.taxSystem.progressiveTax,
+            flatTaxRate: data.taxSystem.flatTaxRate,
+            alternativeMinTax: data.taxSystem.alternativeMinTax,
+            alternativeMinRate: data.taxSystem.alternativeMinRate,
+            complianceRate: data.taxSystem.complianceRate,
+            collectionEfficiency: data.taxSystem.collectionEfficiency,
+            taxCategories: {
+              create: data.categories.map((cat, catIdx) => ({
+                categoryName: cat.categoryName,
+                categoryType: cat.categoryType,
+                description: cat.description,
+                baseRate: cat.baseRate,
+                calculationMethod: cat.calculationMethod,
+                taxBrackets: {
+                  create: (data.brackets[catIdx.toString()] || []).map((bracket) => ({
+                    minIncome: bracket.minIncome,
+                    maxIncome: bracket.maxIncome,
+                    rate: bracket.rate,
+                    flatAmount: bracket.flatAmount,
+                    marginalRate: bracket.marginalRate,
+                    taxSystem: {
+                      connect: { countryId: input.countryId }
+                    }
+                  })),
+                },
+                taxExemptions: {
+                  create: data.exemptions
+                    .filter((ex) => ex.exemptionName)
+                    .map((exemption) => ({
+                      exemptionName: exemption.exemptionName,
+                      exemptionType: exemption.exemptionType,
+                      description: exemption.description,
+                      exemptionAmount: exemption.exemptionAmount,
+                      exemptionRate: exemption.exemptionRate,
+                      qualifications: exemption.qualifications,
+                      endDate: exemption.endDate,
+                      taxSystemId: '',
+                    })),
+                },
+                taxDeductions: {
+                  create: (data.deductions[catIdx.toString()] || []).map((deduction) => ({
+                    deductionName: deduction.deductionName,
+                    deductionType: deduction.deductionType,
+                    description: deduction.description,
+                    maximumAmount: deduction.maximumAmount,
+                    percentage: deduction.percentage,
+                  })),
+                },
+              })),
+            },
+          },
+          include: {
+            taxCategories: {
+              include: {
+                taxBrackets: true,
+                taxExemptions: true,
+                taxDeductions: true,
+              },
+            },
+          },
+        });
+      }
 
       // Sync with FiscalSystem table
       const syncResult = await syncTaxData(ctx.db, input.countryId, data);

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
 import { createDefaultEconomicInputs, type EconomicInputs } from "~/app/builder/lib/economy-data-service";
@@ -34,6 +34,8 @@ export function useCountryEditorData() {
   const [feedback, setFeedback] = useState<any>(null); // TODO: Define a proper type for feedback
   const [isCalculating, setIsCalculating] = useState(false);
   const [flagUrl, setFlagUrl] = useState<string | null>(null);
+  const [econSaveState, setEconSaveState] = useState<{ isSaving: boolean; lastSavedAt: Date | null; pendingChanges: boolean; error: Error | null }>({ isSaving: false, lastSavedAt: null, pendingChanges: false, error: null });
+  const econDebounceRef = useRef<NodeJS.Timeout | null>(null);
   
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
     undefined,
@@ -274,6 +276,12 @@ export function useCountryEditorData() {
   // Initialize government data when it loads
   useEffect(() => {
     if (existingGovernment && !governmentData && country) {
+      // Build helper map from DB department id -> index string for builder expectations
+      // The builder uses index-based ids ("0", "1", ...) for allocations/relations
+      const departmentIdToIndex = new Map<string, string>(
+        (existingGovernment.departments as any[]).map((d: any, idx: number) => [d.id, idx.toString()])
+      );
+
       // Convert existing government data to builder format
       const builderData: GovernmentBuilderState = {
         structure: {
@@ -288,7 +296,7 @@ export function useCountryEditorData() {
           fiscalYear: existingGovernment.fiscalYear,
           budgetCurrency: existingGovernment.budgetCurrency
         },
-        departments: existingGovernment.departments.map((dept: any) => ({
+        departments: (existingGovernment.departments as any[]).map((dept: any) => ({
           name: dept.name,
           shortName: dept.shortName ?? undefined,
           category: dept.category,
@@ -303,10 +311,16 @@ export function useCountryEditorData() {
           priority: dept.priority ?? undefined,
           parentDepartmentId: dept.parentDepartmentId ?? undefined,
           organizationalLevel: dept.organizationalLevel ?? undefined,
-          functions: dept.functions || []
+          // Prisma stores functions as a JSON string; coerce to string[] safely
+          functions: Array.isArray(dept.functions)
+            ? (dept.functions as string[])
+            : (typeof dept.functions === 'string'
+              ? (() => { try { const parsed = JSON.parse(dept.functions as string); return Array.isArray(parsed) ? parsed as string[] : []; } catch { return []; } })()
+              : [])
         })),
-        budgetAllocations: existingGovernment.budgetAllocations.map((alloc: any) => ({
-          departmentId: alloc.departmentId,
+        budgetAllocations: (existingGovernment.budgetAllocations as any[]).map((alloc: any) => ({
+          // Map DB department id to index-based id expected by the builder
+          departmentId: departmentIdToIndex.get(alloc.departmentId) ?? '0',
           budgetYear: alloc.budgetYear,
           allocatedAmount: alloc.allocatedAmount,
           allocatedPercent: alloc.allocatedPercent,
@@ -383,6 +397,93 @@ export function useCountryEditorData() {
     setEconomicInputs(newInputs);
     setHasChanges(true);
   };
+
+  // Debounced autosave for economic/demographic inputs
+  useEffect(() => {
+    if (!economicInputs || !originalInputs || !country?.id) return;
+
+    // Determine if any autosave-relevant sections changed
+    const changed =
+      JSON.stringify(economicInputs.laborEmployment) !== JSON.stringify(originalInputs.laborEmployment) ||
+      JSON.stringify(economicInputs.fiscalSystem) !== JSON.stringify(originalInputs.fiscalSystem) ||
+      JSON.stringify(economicInputs.demographics) !== JSON.stringify(originalInputs.demographics) ||
+      JSON.stringify(economicInputs.incomeWealth) !== JSON.stringify(originalInputs.incomeWealth) ||
+      JSON.stringify(economicInputs.governmentSpending) !== JSON.stringify(originalInputs.governmentSpending) ||
+      economicInputs.coreIndicators.realGDPGrowthRate !== originalInputs.coreIndicators.realGDPGrowthRate ||
+      economicInputs.coreIndicators.inflationRate !== originalInputs.coreIndicators.inflationRate ||
+      economicInputs.coreIndicators.currencyExchangeRate !== originalInputs.coreIndicators.currencyExchangeRate;
+
+    if (!changed) return;
+
+    setEconSaveState(prev => ({ ...prev, pendingChanges: true }));
+
+    if (econDebounceRef.current) {
+      clearTimeout(econDebounceRef.current);
+    }
+
+    econDebounceRef.current = setTimeout(async () => {
+      try {
+        setEconSaveState(prev => ({ ...prev, isSaving: true, error: null }));
+
+        const economicData = {
+          nominalGDP: economicInputs.coreIndicators.nominalGDP,
+          realGDPGrowthRate: economicInputs.coreIndicators.realGDPGrowthRate,
+          inflationRate: economicInputs.coreIndicators.inflationRate,
+          currencyExchangeRate: economicInputs.coreIndicators.currencyExchangeRate ?? 1.0,
+
+          laborForceParticipationRate: economicInputs.laborEmployment.laborForceParticipationRate,
+          employmentRate: 100 - economicInputs.laborEmployment.unemploymentRate,
+          unemploymentRate: economicInputs.laborEmployment.unemploymentRate,
+          totalWorkforce: Math.round(economicInputs.coreIndicators.totalPopulation * (economicInputs.laborEmployment.laborForceParticipationRate / 100)),
+          averageWorkweekHours: economicInputs.laborEmployment.averageWorkweekHours,
+          minimumWage: economicInputs.laborEmployment.minimumWage,
+          averageAnnualIncome: (economicInputs.laborEmployment.minimumWage || 15) * (economicInputs.laborEmployment.averageWorkweekHours || 40) * 52,
+
+          taxRevenueGDPPercent: economicInputs.fiscalSystem.taxRevenueGDPPercent,
+          governmentRevenueTotal: economicInputs.fiscalSystem.governmentRevenueTotal,
+          taxRevenuePerCapita: economicInputs.coreIndicators.totalPopulation > 0 ? (economicInputs.fiscalSystem.governmentRevenueTotal / economicInputs.coreIndicators.totalPopulation) : 0,
+          governmentBudgetGDPPercent: economicInputs.fiscalSystem.governmentBudgetGDPPercent,
+          budgetDeficitSurplus: economicInputs.fiscalSystem.budgetDeficitSurplus,
+          internalDebtGDPPercent: economicInputs.fiscalSystem.internalDebtGDPPercent,
+          externalDebtGDPPercent: economicInputs.fiscalSystem.externalDebtGDPPercent,
+          totalDebtGDPRatio: economicInputs.fiscalSystem.totalDebtGDPRatio,
+          debtPerCapita: economicInputs.coreIndicators.totalPopulation > 0 ? ((economicInputs.fiscalSystem.totalDebtGDPRatio / 100) * economicInputs.coreIndicators.nominalGDP / economicInputs.coreIndicators.totalPopulation) : 0,
+          interestRates: economicInputs.fiscalSystem.interestRates,
+          debtServiceCosts: economicInputs.fiscalSystem.debtServiceCosts,
+
+          povertyRate: economicInputs.incomeWealth.povertyRate,
+          incomeInequalityGini: economicInputs.incomeWealth.incomeInequalityGini,
+          socialMobilityIndex: economicInputs.incomeWealth.socialMobilityIndex,
+
+          totalGovernmentSpending: economicInputs.governmentSpending.totalSpending,
+          spendingGDPPercent: economicInputs.coreIndicators.nominalGDP > 0 ? ((economicInputs.governmentSpending.totalSpending / economicInputs.coreIndicators.nominalGDP) * 100) : 0,
+          spendingPerCapita: economicInputs.coreIndicators.totalPopulation > 0 ? (economicInputs.governmentSpending.totalSpending / economicInputs.coreIndicators.totalPopulation) : 0,
+
+          lifeExpectancy: economicInputs.demographics.lifeExpectancy,
+          urbanPopulationPercent: economicInputs.demographics.urbanRuralSplit?.urban || 50,
+          ruralPopulationPercent: economicInputs.demographics.urbanRuralSplit?.rural || 50,
+          literacyRate: economicInputs.demographics.literacyRate,
+        };
+
+        await updateCountryMutation.mutateAsync({
+          countryId: country.id,
+          economicData,
+        });
+
+        // Update original inputs to current so subsequent changes are detected accurately
+        setOriginalInputs(JSON.parse(JSON.stringify(economicInputs)));
+        setEconSaveState({ isSaving: false, lastSavedAt: new Date(), pendingChanges: false, error: null });
+      } catch (err) {
+        setEconSaveState(prev => ({ ...prev, isSaving: false, error: err instanceof Error ? err : new Error('Autosave failed') }));
+      }
+    }, 2000);
+
+    return () => {
+      if (econDebounceRef.current) {
+        clearTimeout(econDebounceRef.current);
+      }
+    };
+  }, [economicInputs, originalInputs, country, updateCountryMutation]);
 
   const validateInputs = (inputs: EconomicInputs) => {
     const newErrors: ValidationError[] = [];
@@ -544,6 +645,7 @@ export function useCountryEditorData() {
     feedback, isCalculating, userProfile, profileLoading, country, countryLoading, refetchCountry, flagUrl,
     updateCountryMutation, existingGovernment, governmentLoading, createGovernmentMutation, updateGovernmentMutation,
     handleInputsChange, validateInputs, handleSave, handleReset, handleGovernmentSave, errorCount, warningCount,
+    econSaveState,
     populationTier: economicInputs?.coreIndicators?.totalPopulation ? calculatePopulationTier(economicInputs.coreIndicators.totalPopulation) : 'Unknown' // Add populationTier
   };
 }

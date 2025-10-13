@@ -212,7 +212,7 @@ export function transformToVitalityIntelligence(
         {
           id: 'unemployment',
           label: 'Unemployment',
-          value: economyData.labor.unemploymentRate.toFixed(1),
+          value: Number(economyData.labor.unemploymentRate ?? 0).toFixed(1),
           unit: '%',
           trend: 'stable' as any,
           changeValue: 0,

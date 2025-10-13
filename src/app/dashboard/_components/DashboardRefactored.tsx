@@ -79,6 +79,9 @@ export default function DashboardRefactored() {
   const [isGlobalCollapsing, setIsGlobalCollapsing] = useState(false);
   const [isRippleActive, setIsRippleActive] = useState(false);
 
+  // Unified activity rings data (same source as other dashboard variants)
+  let activityRingsData: { economicVitality: number; populationWellbeing: number; diplomaticStanding: number; governmentalEfficiency: number } | undefined;
+
   // Load expanded cards from cookie on mount
   useEffect(() => {
     const savedExpanded = document.cookie
@@ -163,11 +166,18 @@ export default function DashboardRefactored() {
   //   return () => window.removeEventListener('scroll', handleScroll);
   // }, [hasAnimated]);
 
-  // Data fetching
+  // Data fetching (single userProfile used throughout)
   const { data: userProfile } = api.users.getProfile.useQuery(
     undefined,
     { enabled: !!user?.id }
   );
+
+  // Use centralized activity rings source
+  const { data: activityRingsDataQuery } = api.countries.getActivityRingsData.useQuery(
+    { countryId: userProfile?.countryId || '' },
+    { enabled: !!userProfile?.countryId }
+  );
+  activityRingsData = activityRingsDataQuery;
 
 
 
@@ -543,10 +553,13 @@ const processedCountries: ProcessedCountryData[] = useMemo(() => {
           <Settings className="h-4 w-4 text-blue-400" />
           <span>Policy Management</span>
         </DropdownMenuItem>
-        <DropdownMenuItem className="flex items-center gap-2 glass-hierarchy-interactive">
-          <Users className="h-4 w-4 text-purple-400" />
-          <span>Demographics</span>
-        </DropdownMenuItem>
+        <Link href="/mycountry#demographics">
+          <DropdownMenuItem className="flex items-center gap-2 glass-hierarchy-interactive">
+            <Users className="h-4 w-4 text-purple-400" />
+            <span>Demographics</span>
+            <ExternalLink className="h-3 w-3 ml-auto" />
+          </DropdownMenuItem>
+        </Link>
         <DropdownMenuItem className="flex items-center gap-2 glass-hierarchy-interactive">
           <Brain className="h-4 w-4 text-indigo-400" />
           <span>Intelligence Center</span>
@@ -565,40 +578,38 @@ const processedCountries: ProcessedCountryData[] = useMemo(() => {
         </h4>
         
         <div className="grid grid-cols-3 gap-3">
-          {/* Economic Performance */}
+          {/* Economic Performance (unified with activity rings) */}
           <div className="glass-hierarchy-child p-4 rounded-lg text-center cursor-pointer hover:scale-105 transition-transform"
                onClick={() => setActivityPopoverOpen(0)}>
             <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-green-400/20 flex items-center justify-center">
               <TrendingUp className="h-6 w-6 text-green-400" />
             </div>
             <div className="text-lg font-bold text-green-400 mb-1">
-              {Math.min(100, Math.round((countryData.currentGdpPerCapita / 70000) * 100))}%
+              {Math.round((activityRingsData?.economicVitality ?? 0))}%
             </div>
             <div className="text-xs text-muted-foreground">Economic Index</div>
           </div>
           
-          {/* Social Performance */}
+          {/* Social Performance (unified with activity rings) */}
           <div className="glass-hierarchy-child p-4 rounded-lg text-center cursor-pointer hover:scale-105 transition-transform"
                onClick={() => setActivityPopoverOpen(1)}>
             <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-blue-400/20 flex items-center justify-center">
               <Users className="h-6 w-6 text-blue-400" />
             </div>
             <div className="text-lg font-bold text-blue-400 mb-1">
-              {Math.min(100, Math.round(85 + (countryData.populationGrowthRate * 1000)))}%
+              {Math.round((activityRingsData?.populationWellbeing ?? 0))}%
             </div>
             <div className="text-xs text-muted-foreground">Social Index</div>
           </div>
           
-          {/* Governance Performance */}
+          {/* Governance Performance (unified with activity rings) */}
           <div className="glass-hierarchy-child p-4 rounded-lg text-center cursor-pointer hover:scale-105 transition-transform"
                onClick={() => setActivityPopoverOpen(2)}>
             <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-purple-400/20 flex items-center justify-center">
               <Crown className="h-6 w-6 text-purple-400" />
             </div>
             <div className="text-lg font-bold text-purple-400 mb-1">
-              {countryData.economicTier === 'Extravagant' ? '95' : 
-               countryData.economicTier === 'Very Strong' ? '88' : 
-               countryData.economicTier === 'Strong' ? '82' : '75'}%
+              {Math.round((activityRingsData?.governmentalEfficiency ?? 0))}%
             </div>
             <div className="text-xs text-muted-foreground">Governance Index</div>
           </div>

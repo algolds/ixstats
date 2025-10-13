@@ -588,6 +588,37 @@ export interface GovernmentBudget {
   // Add more fields as needed
 }
 
+// National Identity (database relation)
+export interface NationalIdentity {
+  countryName?: string | null;
+  officialName?: string | null;
+  governmentType?: string | null;
+  motto?: string | null;
+  mottoNative?: string | null;
+  capitalCity?: string | null;
+  largestCity?: string | null;
+  demonym?: string | null;
+  currency?: string | null;
+  currencySymbol?: string | null;
+  officialLanguages?: string | null;
+  nationalLanguage?: string | null;
+  nationalAnthem?: string | null;
+  nationalDay?: string | null;
+  callingCode?: string | null;
+  internetTLD?: string | null;
+  drivingSide?: string | null;
+  timeZone?: string | null;
+  isoCode?: string | null;
+  coordinatesLatitude?: string | null;
+  coordinatesLongitude?: string | null;
+  emergencyNumber?: string | null;
+  postalCodeFormat?: string | null;
+  nationalSport?: string | null;
+  weekStartDay?: string | null;
+  flagUrl?: string | null;
+  coatOfArmsUrl?: string | null;
+}
+
 export interface Demographics {
   ageDistribution: Record<string, number>;
   regions?: string | any[];
@@ -688,6 +719,8 @@ export interface CountryWithEconomicData {
   incomeDistribution?: IncomeDistribution;
   governmentBudget?: GovernmentBudget;
   demographics?: Demographics;
+  // National identity relation (if included by API)
+  nationalIdentity?: NationalIdentity | null;
   
   // Analytics
   analytics: {

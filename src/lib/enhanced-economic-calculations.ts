@@ -503,7 +503,7 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
       risks.push({
         factor: 'High Government Debt',
         impact: 'high' as const,
-        description: `Debt-to-GDP ratio of ${economyData.fiscal.totalDebtGDPRatio.toFixed(1)}% may limit fiscal flexibility`
+        description: `Debt-to-GDP ratio of ${Number(economyData.fiscal.totalDebtGDPRatio ?? 0).toFixed(1)}% may limit fiscal flexibility`
       });
     }
 
@@ -512,7 +512,7 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
       risks.push({
         factor: 'High Unemployment',
         impact: 'medium' as const,
-        description: `Unemployment rate of ${economyData.labor.unemploymentRate.toFixed(1)}% indicates structural issues`
+        description: `Unemployment rate of ${Number(economyData.labor.unemploymentRate ?? 0).toFixed(1)}% indicates structural issues`
       });
     }
 
@@ -521,7 +521,7 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
       risks.push({
         factor: 'High Inflation',
         impact: 'high' as const,
-        description: `Inflation rate of ${(economyData.core.inflationRate * 100).toFixed(1)}% erodes purchasing power`
+        description: `Inflation rate of ${Number((economyData.core.inflationRate ?? 0) * 100).toFixed(1)}% erodes purchasing power`
       });
     }
 

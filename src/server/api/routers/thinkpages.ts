@@ -7,6 +7,8 @@ import { analyzePostSentiment } from "~/lib/sentiment-analysis";
 import { unsplashService } from "~/lib/unsplash-service";
 import { searchWiki as wikiSearchService } from "~/lib/wiki-search-service"; // Import the wiki search service
 import { notificationHooks } from "~/lib/notification-hooks";
+import { getThinkPagesServer } from "~/server/websocket-server";
+import { notificationAPI } from "~/lib/notification-api";
 import fs from "fs/promises";
 import path from "path";
 
@@ -2321,6 +2323,51 @@ export const thinkpagesRouter = createTRPCRouter({
         where: { id: input.conversationId },
         data: { lastActivity: new Date() }
       });
+
+      // Broadcast real-time event to conversation subscribers
+      try {
+        const thinkpages = getThinkPagesServer();
+        thinkpages?.broadcastMessage({
+          type: 'message:new',
+          conversationId: input.conversationId,
+          messageId: message.id,
+          accountId: input.userId,
+          content: input.content,
+          timestamp: Date.now()
+        });
+      } catch (e) {
+        console.warn('[ThinkPages] Failed to broadcast message update (non-fatal):', e);
+      }
+
+      // Create notifications for other participants
+      try {
+        const participants = await db.conversationParticipant.findMany({
+          where: { conversationId: input.conversationId, isActive: true },
+          select: { userId: true }
+        });
+
+        const recipientIds = participants
+          .map(p => p.userId)
+          .filter(uid => uid !== input.userId);
+
+        // Create one notification per recipient
+        for (const recipientId of recipientIds) {
+          await notificationAPI.create({
+            title: 'New ThinkShare message',
+            message: input.content.replace(/<[^>]*>/g, '').slice(0, 140) || 'You have a new message',
+            userId: recipientId,
+            category: 'social',
+            type: 'update',
+            priority: 'medium',
+            href: `/thinkpages/thinkshare?conversation=${input.conversationId}`,
+            source: 'thinkshare',
+            actionable: true,
+            metadata: { conversationId: input.conversationId, messageId: message.id, fromUserId: input.userId }
+          }).catch(() => {});
+        }
+      } catch (e) {
+        console.warn('[ThinkPages] Failed to create notifications (non-fatal):', e);
+      }
 
       return message;
     }),

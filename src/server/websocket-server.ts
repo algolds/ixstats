@@ -8,10 +8,12 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 // Use any types to avoid importing socket.io during build
 type IntelligenceWebSocketServer = any;
 type IntelligenceBroadcastService = any;
+type ThinkPagesWebSocketServer = any;
 
 // Global instances
 let wsServer: IntelligenceWebSocketServer | null = null;
 let broadcastService: IntelligenceBroadcastService | null = null;
+let thinkPagesServer: ThinkPagesWebSocketServer | null = null;
 
 /**
  * Initialize WebSocket server with HTTP server
@@ -22,15 +24,17 @@ export async function initializeWebSocketServer(httpServer: HTTPServer): Promise
     return;
   }
 
-  console.log('Initializing Intelligence WebSocket Server...');
+  console.log('Initializing WebSocket Servers (Intelligence + ThinkPages)...');
 
   try {
     // Dynamic import to avoid bundling socket.io during build
     const { IntelligenceWebSocketServer } = await import('~/lib/websocket/intelligence-websocket-server');
     const { IntelligenceBroadcastService } = await import('~/lib/intelligence-broadcast-service');
+    const { ThinkPagesWebSocketServer } = await import('~/lib/websocket/thinkpages-websocket-server');
 
     // Create WebSocket server
     wsServer = new IntelligenceWebSocketServer(httpServer);
+    thinkPagesServer = new ThinkPagesWebSocketServer(httpServer);
 
     // Create and start broadcast service
     broadcastService = new IntelligenceBroadcastService({
@@ -45,7 +49,7 @@ export async function initializeWebSocketServer(httpServer: HTTPServer): Promise
 
     broadcastService.start();
 
-    console.log('Intelligence WebSocket Server initialized successfully');
+    console.log('WebSocket Servers initialized successfully');
 
     // Graceful shutdown handling
     process.on('SIGTERM', handleShutdown);
@@ -70,6 +74,10 @@ export function getBroadcastService(): IntelligenceBroadcastService | null {
   return broadcastService;
 }
 
+export function getThinkPagesServer(): ThinkPagesWebSocketServer | null {
+  return thinkPagesServer;
+}
+
 /**
  * Handle graceful shutdown
  */
@@ -84,6 +92,10 @@ async function handleShutdown(): Promise<void> {
   if (wsServer) {
     await wsServer.shutdown();
     wsServer = null;
+  }
+  if (thinkPagesServer) {
+    await thinkPagesServer.shutdown();
+    thinkPagesServer = null;
   }
   
   console.log('WebSocket services shutdown complete');

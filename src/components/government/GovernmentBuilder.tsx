@@ -229,6 +229,7 @@ export function GovernmentBuilder({
   const [showTemplates, setShowTemplates] = useState(false);
   const [showConflictDialog, setShowConflictDialog] = useState(false);
   const [pendingSaveCallback, setPendingSaveCallback] = useState<(() => void) | null>(null);
+  const [allCollapsed, setAllCollapsed] = useState(true); // default collapsed
 
   // Use auto-sync hook if enabled
   const {
@@ -586,21 +587,36 @@ export function GovernmentBuilder({
             </div>
 
             <div className="space-y-4">
+              <div className="flex items-center justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => setAllCollapsed(true)}>
+                  Collapse all
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setAllCollapsed(false)}>
+                  Expand all
+                </Button>
+              </div>
               {builderState.departments.map((department, index) => (
-                <DepartmentForm
-                  key={index}
-                  data={department}
-                  onChange={(updated) => {
-                    const newDepartments = [...builderState.departments];
-                    newDepartments[index] = updated;
-                    handleDepartmentsChange(newDepartments);
-                  }}
-                  onDelete={() => removeDepartment(index)}
-                  isReadOnly={isReadOnly}
-                  availableParents={builderState.departments
-                    .map((d, i) => ({ id: i.toString(), name: d.name }))
-                    .filter((d, i) => i !== index)}
-                />
+                <details key={index} open={!allCollapsed} className="rounded-lg border">
+                  <summary className="cursor-pointer px-4 py-2 flex items-center justify-between">
+                    <span className="font-medium">{department.name || `Department ${index + 1}`}</span>
+                    <span className="text-xs text-muted-foreground">Click to {allCollapsed ? 'expand' : 'collapse'}</span>
+                  </summary>
+                  <div className="p-4">
+                    <DepartmentForm
+                      data={department}
+                      onChange={(updated) => {
+                        const newDepartments = [...builderState.departments];
+                        newDepartments[index] = updated;
+                        handleDepartmentsChange(newDepartments);
+                      }}
+                      onDelete={() => removeDepartment(index)}
+                      isReadOnly={isReadOnly}
+                      availableParents={builderState.departments
+                        .map((d, i) => ({ id: i.toString(), name: d.name }))
+                        .filter((d, i) => i !== index)}
+                    />
+                  </div>
+                </details>
               ))}
 
               {builderState.departments.length === 0 && (
@@ -641,6 +657,31 @@ export function GovernmentBuilder({
               </Alert>
             ) : (
               <div className="space-y-4">
+                {/* Budget remaining meter */}
+                {(() => {
+                  const totalPercent = builderState.budgetAllocations.reduce((s, a) => s + (a.allocatedPercent || 0), 0);
+                  const remaining = 100 - totalPercent;
+                  const over = totalPercent > 100;
+                  return (
+                    <div className="p-4 rounded-lg border bg-muted/40">
+                      <div className="flex items-center justify-between text-sm mb-2">
+                        <span className="font-medium">Allocation</span>
+                        <span className={over ? 'text-red-600' : 'text-muted-foreground'}>
+                          {totalPercent.toFixed(1)}% allocated • {remaining.toFixed(1)}% remaining
+                        </span>
+                      </div>
+                      <div className="w-full h-2 rounded bg-muted overflow-hidden">
+                        <div
+                          className={`h-2 ${over ? 'bg-red-500' : 'bg-green-500'}`}
+                          style={{ width: `${Math.min(100, Math.max(0, totalPercent))}%` }}
+                        />
+                      </div>
+                      {over && (
+                        <div className="mt-2 text-xs text-red-600">Total exceeds 100%. Reduce allocations to proceed.</div>
+                      )}
+                    </div>
+                  );
+                })()}
                 {builderState.departments.map((department, index) => {
                   const existingAllocation = builderState.budgetAllocations.find(
                     a => a.departmentId === index.toString()

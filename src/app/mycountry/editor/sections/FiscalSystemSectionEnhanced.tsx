@@ -10,6 +10,7 @@ import { EnhancedSlider } from '~/app/builder/primitives/enhanced';
 import { TaxBuilder, type TaxBuilderState } from '~/components/tax-system/TaxBuilder';
 import type { EconomicInputs } from '~/app/builder/lib/economy-data-service';
 import { api } from '~/trpc/react';
+import { usePendingLocks } from "../hooks/usePendingLocks";
 
 interface FiscalSystemSectionEnhancedProps {
   inputs: EconomicInputs;
@@ -32,6 +33,7 @@ export function FiscalSystemSectionEnhanced({
   const fiscal = inputs.fiscalSystem;
   const nominalGDP = inputs.coreIndicators.nominalGDP;
   const totalPopulation = inputs.coreIndicators.totalPopulation;
+  const { isLocked } = usePendingLocks();
 
   // Fetch tax system data
   const { data: taxSystemData, refetch: refetchTaxSystem } = api.taxSystem.getByCountryId.useQuery(
@@ -183,7 +185,9 @@ export function FiscalSystemSectionEnhanced({
           <Card className="glass-surface">
             <CardHeader>
               <CardTitle className="text-base">Tax Revenue</CardTitle>
-              <CardDescription>Total government revenue as % of GDP</CardDescription>
+              <CardDescription>
+                Total government revenue as % of GDP. This is the high-level revenue mix; detailed tax rules are configured under the Tax System tab.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <EnhancedSlider
@@ -195,6 +199,7 @@ export function FiscalSystemSectionEnhanced({
                 step={0.5}
                 unit="%"
                 description={`${formatCurrency(taxRevenue)} total revenue`}
+                disabled={isLocked('taxRevenueGDPPercent')}
               />
               <Alert className="mt-4">
                 <Info className="h-4 w-4" />
@@ -210,7 +215,9 @@ export function FiscalSystemSectionEnhanced({
           <Card className="glass-surface">
             <CardHeader>
               <CardTitle className="text-base">Government Budget</CardTitle>
-              <CardDescription>Total government spending as % of GDP</CardDescription>
+              <CardDescription>
+                Total government spending as % of GDP. The allocations to departments are managed in the Government builder.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <EnhancedSlider
@@ -222,6 +229,7 @@ export function FiscalSystemSectionEnhanced({
                 step={0.5}
                 unit="%"
                 description={`${formatCurrency(govBudget)} total spending`}
+                disabled={isLocked('governmentBudgetGDPPercent')}
               />
               {budgetBalance < 0 && (
                 <Alert className="mt-4" variant="destructive">
@@ -252,6 +260,7 @@ export function FiscalSystemSectionEnhanced({
                 step={1}
                 unit="%"
                 description={`${formatCurrency(totalDebt)} total debt • ${formatCurrency(perCapitaDebt)} per capita`}
+                disabled={isLocked('totalDebtGDPRatio')}
               />
               <Alert className="mt-4" variant={debtStatus === 'critical' ? 'destructive' : debtStatus === 'warning' ? 'default' : 'default'}>
                 <Info className="h-4 w-4" />
@@ -300,14 +309,18 @@ export function FiscalSystemSectionEnhanced({
                 <Scale className="h-5 w-5" />
                 Tax System Configuration
               </CardTitle>
-              <CardDescription>Design your comprehensive tax structure with brackets, exemptions, and deductions</CardDescription>
+              <CardDescription>
+                Design your comprehensive tax structure with brackets, exemptions, and deductions. These mechanics feed into your overall revenue but are distinct from the simple revenue % slider above.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <TaxBuilder
                 initialData={taxSystemData || undefined}
                 onChange={(data) => {
                   // Tax system changes will be tracked in the parent editor
-                  console.log('Tax system changed:', data);
+                  if (process.env.NODE_ENV !== 'production') {
+                    console.log('Tax system changed:', data);
+                  }
                   if (onTaxSystemChange) {
                     onTaxSystemChange(data);
                   }
@@ -316,6 +329,7 @@ export function FiscalSystemSectionEnhanced({
                 isReadOnly={false}
                 countryId={countryId}
                 showAtomicIntegration={true}
+                enableAutoSync={true}
               />
             </CardContent>
           </Card>
