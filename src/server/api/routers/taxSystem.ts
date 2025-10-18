@@ -1,18 +1,133 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import type { TaxBuilderState } from "~/components/tax-system/TaxBuilder";
-import { 
-  detectTaxConflicts, 
+import {
+  detectTaxConflicts,
   syncTaxData,
   type ConflictWarning
 } from "~/server/services/builderIntegrationService";
+import { TaxBuilderStateSchema } from "~/types/validation/tax";
+import { parseEconomicDataForTaxSystem, calculateRecommendedTaxRevenue } from "~/lib/tax-data-parser";
+import { getUnifiedTaxEffectiveness, getTaxEconomyImpact } from "~/lib/unified-atomic-tax-integration";
+import { ComponentType } from "@prisma/client";
+
+// Validation helpers for brackets
+function validateBracketsState(state: TaxBuilderState): { ok: true } | { ok: false; errors: Array<{ categoryIndex: number; message: string }> } {
+  const errors: Array<{ categoryIndex: number; message: string }> = [];
+  Object.entries(state.brackets).forEach(([key, brackets]) => {
+    const idx = parseInt(key);
+    if (!Array.isArray(brackets) || brackets.length === 0) return;
+
+    // Sort a copy by minIncome for deterministic checks
+    const sorted = [...brackets].sort((a, b) => a.minIncome - b.minIncome);
+
+    for (let i = 0; i < sorted.length; i++) {
+      const b = sorted[i];
+      if (b.rate < 0 || b.rate > 100) {
+        errors.push({ categoryIndex: idx, message: `Bracket ${i + 1}: rate must be between 0 and 100` });
+      }
+      if (b.maxIncome !== undefined && b.minIncome >= b.maxIncome) {
+        errors.push({ categoryIndex: idx, message: `Bracket ${i + 1}: maxIncome must be greater than minIncome` });
+      }
+      if (i > 0) {
+        const prev = sorted[i - 1];
+        const prevEnd = prev.maxIncome ?? Number.POSITIVE_INFINITY;
+        // Overlap check
+        if (b.minIncome < prevEnd) {
+          errors.push({ categoryIndex: idx, message: `Bracket ${i + 1}: overlaps previous bracket (min ${b.minIncome} < previous max ${prev.maxIncome ?? '∞'})` });
+        }
+      }
+    }
+  });
+
+  return errors.length === 0 ? { ok: true } : { ok: false, errors };
+}
 
 export const taxSystemRouter = createTRPCRouter({
+  // Parse economic data for tax system
+  parseEconomicDataForTax: publicProcedure
+    .input(z.object({
+      coreIndicators: z.object({
+        gdpPerCapita: z.number(),
+        nominalGDP: z.number(),
+        population: z.number(),
+      }),
+      governmentData: z.any().optional(),
+      options: z.object({
+        useAggressiveParsing: z.boolean().optional(),
+        includeGovernmentPolicies: z.boolean().optional(),
+        autoGenerateBrackets: z.boolean().optional(),
+        targetRevenueMatch: z.boolean().optional(),
+      }).optional()
+    }))
+    .mutation(async ({ input }) => {
+      const parsedData = parseEconomicDataForTaxSystem(
+        input.coreIndicators as any,
+        input.governmentData,
+        input.options
+      );
+
+      let revenueRecommendations = null;
+      if (input.governmentData) {
+        revenueRecommendations = calculateRecommendedTaxRevenue(
+          input.governmentData,
+          input.coreIndicators as any
+        );
+      }
+
+      return {
+        parsedData,
+        revenueRecommendations
+      };
+    }),
+
+  // Calculate tax effectiveness with government components
+  calculateTaxEffectiveness: publicProcedure
+    .input(z.object({
+      taxComponents: z.array(z.string()),
+      governmentComponents: z.array(z.string()),
+      economicData: z.object({
+        gdpPerCapita: z.number(),
+        nominalGDP: z.number(),
+        population: z.number(),
+      }),
+      baseTaxSystem: z.object({
+        collectionEfficiency: z.number(),
+        complianceRate: z.number(),
+        auditCapacity: z.number().optional(),
+      })
+    }))
+    .mutation(async ({ input }) => {
+      // Calculate synergies between tax and government components
+      const governmentBonus = input.governmentComponents.length * 2; // +2% per component
+      const taxComponentBonus = input.taxComponents.length * 1.5; // +1.5% per tax component
+
+      // Calculate effectiveness modifiers based on economic tier
+      const gdpPerCapita = input.economicData.gdpPerCapita;
+      const economicTierMultiplier = gdpPerCapita > 50000 ? 1.1 : gdpPerCapita > 25000 ? 1.05 : 1.0;
+
+      const enhancedEffectiveness = {
+        collectionEfficiency: Math.min(100,
+          (input.baseTaxSystem.collectionEfficiency + governmentBonus + taxComponentBonus) * economicTierMultiplier
+        ),
+        complianceRate: Math.min(100,
+          (input.baseTaxSystem.complianceRate + governmentBonus + taxComponentBonus) * economicTierMultiplier
+        ),
+        auditCapacity: Math.min(100,
+          ((input.baseTaxSystem.auditCapacity || 60) + governmentBonus + taxComponentBonus) * economicTierMultiplier
+        ),
+        netBonus: governmentBonus + taxComponentBonus,
+        economicTierMultiplier,
+      };
+
+      return enhancedEffectiveness;
+    }),
+
   // Check for conflicts before creating/updating
   checkConflicts: protectedProcedure
     .input(z.object({
       countryId: z.string(),
-      data: z.any() // TaxBuilderState
+      data: TaxBuilderStateSchema
     }))
     .mutation(async ({ ctx, input }) => {
       const warnings = await detectTaxConflicts(ctx.db, input.countryId, input.data as TaxBuilderState);
@@ -60,7 +175,7 @@ export const taxSystemRouter = createTRPCRouter({
           categoryType: cat.categoryType,
           description: cat.description || undefined,
           baseRate: cat.baseRate || undefined,
-          calculationMethod: cat.calculationMethod,
+          calculationMethod: cat.calculationMethod as any,
           isActive: true,
           deductionAllowed: true,
           priority: 1,
@@ -112,13 +227,24 @@ export const taxSystemRouter = createTRPCRouter({
     .input(
       z.object({
         countryId: z.string(),
-        data: z.any(), // TaxBuilderState
+        data: TaxBuilderStateSchema,
         skipConflictCheck: z.boolean().optional().default(false)
       })
     )
     .mutation(async ({ ctx, input }) => {
       const data = input.data as TaxBuilderState;
       const { skipConflictCheck } = input;
+
+      // Server-side validation for bracket continuity/overlaps
+      const bracketValidation = validateBracketsState(data);
+      if (bracketValidation.ok === false) {
+        return {
+          taxSystem: null,
+          syncResult: null,
+          warnings: [],
+          errors: bracketValidation.errors,
+        } as any;
+      }
 
       // Detect conflicts if not skipped
       let warnings: ConflictWarning[] = [];
@@ -173,7 +299,7 @@ export const taxSystemRouter = createTRPCRouter({
                       exemptionRate: exemption.exemptionRate,
                       qualifications: exemption.qualifications,
                       endDate: exemption.endDate,
-                      taxSystemId: '', // Will be set by relation
+                      taxSystem: { connect: { countryId: input.countryId } },
                     })),
                 },
                 taxDeductions: {
@@ -260,7 +386,7 @@ export const taxSystemRouter = createTRPCRouter({
                       exemptionRate: exemption.exemptionRate,
                       qualifications: exemption.qualifications,
                       endDate: exemption.endDate,
-                      taxSystemId: '',
+                      taxSystem: { connect: { countryId: input.countryId } },
                     })),
                 },
                 taxDeductions: {
@@ -302,13 +428,24 @@ export const taxSystemRouter = createTRPCRouter({
     .input(
       z.object({
         countryId: z.string(),
-        data: z.any(), // TaxBuilderState
+        data: TaxBuilderStateSchema,
         skipConflictCheck: z.boolean().optional().default(false)
       })
     )
     .mutation(async ({ ctx, input }) => {
       const data = input.data as TaxBuilderState;
       const { skipConflictCheck } = input;
+
+      // Server-side validation for bracket continuity/overlaps
+      const bracketValidation = validateBracketsState(data);
+      if (bracketValidation.ok === false) {
+        return {
+          taxSystem: null,
+          syncResult: null,
+          warnings: [],
+          errors: bracketValidation.errors,
+        } as any;
+      }
 
       // Detect conflicts if not skipped
       let warnings: ConflictWarning[] = [];
@@ -373,7 +510,7 @@ export const taxSystemRouter = createTRPCRouter({
                     exemptionRate: exemption.exemptionRate,
                     qualifications: exemption.qualifications,
                     endDate: exemption.endDate,
-                    taxSystemId: '', // Will be set by relation
+                    taxSystem: { connect: { countryId: input.countryId } },
                   })),
               },
               taxDeductions: {
@@ -417,5 +554,214 @@ export const taxSystemRouter = createTRPCRouter({
         where: { countryId: input.countryId },
       });
       return { success: true };
+    }),
+
+  // Parse economic data for tax system with advanced intelligence
+  parseEconomicData: protectedProcedure
+    .input(z.object({
+      economicData: z.object({
+        gdpPerCapita: z.number(),
+        nominalGDP: z.number(),
+        population: z.number(),
+      }),
+      governmentData: z.any().optional(),
+      options: z.object({
+        useAggressiveParsing: z.boolean().optional(),
+        includeGovernmentPolicies: z.boolean().optional(),
+        autoGenerateBrackets: z.boolean().optional(),
+        targetRevenueMatch: z.boolean().optional(),
+      }).optional()
+    }))
+    .mutation(async ({ input }) => {
+      // Call the parser function from tax-data-parser
+      const parsedData = parseEconomicDataForTaxSystem(
+        input.economicData as any,
+        input.governmentData,
+        input.options
+      );
+
+      // Calculate revenue recommendations if government data provided
+      let revenueRecommendations = null;
+      if (input.governmentData) {
+        revenueRecommendations = calculateRecommendedTaxRevenue(
+          input.governmentData,
+          input.economicData as any
+        );
+      }
+
+      return {
+        parsedData,
+        revenueRecommendations
+      };
+    }),
+
+  // Calculate unified tax effectiveness with government components
+  calculateUnifiedEffectiveness: protectedProcedure
+    .input(z.object({
+      taxSystemId: z.string(),
+    }))
+    .query(async ({ ctx, input }) => {
+      // Fetch tax system with all categories
+      const taxSystem = await ctx.db.taxSystem.findUnique({
+        where: { id: input.taxSystemId },
+        include: {
+          taxCategories: true,
+          country: true
+        }
+      });
+
+      if (!taxSystem) {
+        throw new Error('Tax system not found');
+      }
+
+      // Fetch user's government components
+      const governmentComponents = await ctx.db.governmentComponent.findMany({
+        where: { countryId: taxSystem.countryId },
+        select: { componentType: true }
+      });
+
+      const componentTypes = governmentComponents.map(gc => gc.componentType);
+
+      // Get latest economic data
+      const coreIndicator = taxSystem.country;
+      if (!coreIndicator) {
+        throw new Error('No economic data found for country');
+      }
+
+      // Prepare economic data object
+      const economicData = {
+        gdpPerCapita: taxSystem.country.currentGdpPerCapita,
+        giniCoefficient: 0.35, // Default value since not available in Country model
+        gdpGrowthRate: taxSystem.country.realGDPGrowthRate || 0.03,
+        formalEconomyShare: 0.80, // Default, could be calculated
+        consumptionGDPPercent: 60, // Default value since not available in Country model
+        exportsGDPPercent: 30 // Default value since not available in Country model
+      };
+
+      // Calculate unified effectiveness
+      const effectiveness = getUnifiedTaxEffectiveness(
+        {
+          ...taxSystem,
+          taxAuthority: taxSystem.taxAuthority ?? undefined,
+          taxCode: taxSystem.taxCode ?? undefined,
+          baseRate: taxSystem.baseRate ?? undefined,
+          flatTaxRate: taxSystem.flatTaxRate ?? undefined,
+          alternativeMinRate: taxSystem.alternativeMinRate ?? undefined,
+          taxHolidays: taxSystem.taxHolidays ?? undefined,
+          complianceRate: taxSystem.complianceRate ?? undefined,
+          collectionEfficiency: taxSystem.collectionEfficiency ?? undefined,
+          lastReform: taxSystem.lastReform ?? undefined,
+          taxCategories: taxSystem.taxCategories?.map(cat => ({
+            ...cat,
+            description: cat.description ?? undefined,
+            baseRate: cat.baseRate ?? undefined,
+            color: cat.color ?? undefined,
+            icon: cat.icon ?? undefined,
+            maximumAmount: cat.maximumAmount ?? undefined,
+            exemptionAmount: cat.exemptionAmount ?? undefined,
+            standardDeduction: cat.standardDeduction ?? undefined,
+            minimumAmount: cat.minimumAmount ?? undefined
+          }))
+        },
+        componentTypes,
+        economicData
+      );
+
+      return effectiveness;
+    }),
+
+  // Get tier-based tax recommendations for a country
+  getTaxRecommendations: protectedProcedure
+    .input(z.object({
+      countryId: z.string(),
+    }))
+    .query(async ({ ctx, input }) => {
+      // Fetch country's economic data
+      const country = await ctx.db.country.findUnique({
+        where: { id: input.countryId },
+        include: {
+          taxSystem: {
+            include: {
+              taxCategories: true
+            }
+          }
+        }
+      });
+
+      if (!country) {
+        throw new Error('Country not found');
+      }
+
+      // Determine economic tier using country's economic data
+      const gdpPerCapita = country.currentGdpPerCapita;
+      let tier: string;
+      if (gdpPerCapita >= 50000) {
+        tier = 'Advanced';
+      } else if (gdpPerCapita >= 25000) {
+        tier = 'Developed';
+      } else if (gdpPerCapita >= 10000) {
+        tier = 'Emerging';
+      } else {
+        tier = 'Developing';
+      }
+
+      // Get tax economy impacts for existing or recommended categories
+      let taxCategories = country.taxSystem?.taxCategories || [];
+
+      // If no tax system exists, generate recommended categories
+      if (taxCategories.length === 0) {
+        // Generate basic recommended categories based on tier
+        const recommendedTypes = tier === 'Advanced' || tier === 'Developed'
+          ? ['INCOME', 'CORPORATE', 'SALES', 'PROPERTY']
+          : ['INCOME', 'SALES', 'EXCISE'];
+
+        taxCategories = recommendedTypes.map((type, idx) => ({
+          id: `recommended-${idx}`,
+          taxSystemId: 'recommended',
+          categoryName: type,
+          categoryType: type,
+          description: `Recommended ${type} tax for ${tier} economy`,
+          isActive: true,
+          baseRate: tier === 'Advanced' ? 25 : tier === 'Developed' ? 20 : 15,
+          calculationMethod: 'percentage',
+          minimumAmount: 0,
+          maximumAmount: null,
+          exemptionAmount: null,
+          deductionAllowed: true,
+          standardDeduction: null,
+          priority: 100 - (idx * 10),
+          color: '#3b82f6',
+          icon: null,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }));
+      }
+
+      // Get economic impacts for recommendations
+      const recommendations = getTaxEconomyImpact(
+        taxCategories.map(cat => ({
+          ...cat,
+          description: cat.description ?? undefined,
+          baseRate: cat.baseRate ?? undefined,
+          color: cat.color ?? undefined,
+          icon: cat.icon ?? undefined,
+          maximumAmount: cat.maximumAmount ?? undefined,
+          exemptionAmount: cat.exemptionAmount ?? undefined,
+          standardDeduction: cat.standardDeduction ?? undefined,
+          minimumAmount: cat.minimumAmount ?? undefined
+        }))
+      );
+
+      return {
+        tier,
+        gdpPerCapita,
+        recommendations,
+        analysis: {
+          currentTaxCount: country.taxSystem?.taxCategories?.length || 0,
+          recommendedTaxCount: tier === 'Advanced' || tier === 'Developed' ? 5 : 3,
+          complianceRate: country.taxSystem?.complianceRate || (tier === 'Advanced' ? 85 : tier === 'Developed' ? 75 : 65),
+          collectionEfficiency: country.taxSystem?.collectionEfficiency || (tier === 'Advanced' ? 90 : tier === 'Developed' ? 80 : 70)
+        }
+      };
     }),
 });

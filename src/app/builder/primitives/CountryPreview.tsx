@@ -95,6 +95,12 @@ export function CountryPreview({ country, size = 'large' }: CountryPreviewProps)
         <h5 className="text-sm font-medium text-[var(--color-text-secondary)] mb-2">Quick Stats</h5>
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div>
+            <span className="text-[var(--color-text-muted)]">Total Population:</span>
+            <div className="text-[var(--color-text-primary)] font-medium">
+              {formatNumber(country.population)}
+            </div>
+          </div>
+          <div>
             <span className="text-[var(--color-text-muted)]">GDP Total:</span>
             <div className="text-[var(--color-text-primary)] font-medium">
               {formatNumber(country.gdp)}
@@ -104,6 +110,12 @@ export function CountryPreview({ country, size = 'large' }: CountryPreviewProps)
             <span className="text-[var(--color-text-muted)]">Tax Revenue:</span>
             <div className="text-[var(--color-text-primary)] font-medium">
               {(country.taxRevenuePercent || 0).toFixed(1)}%
+            </div>
+          </div>
+          <div>
+            <span className="text-[var(--color-text-muted)]">GDP/Capita:</span>
+            <div className="text-[var(--color-text-primary)] font-medium">
+              {formatNumber(country.gdpPerCapita)}
             </div>
           </div>
         </div>

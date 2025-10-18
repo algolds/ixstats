@@ -1,0 +1,43 @@
+name: Verify Prod-Clone
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      TEST_TENANT_PREFIX: __e2e__
+      ENABLE_RATE_LIMITING: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Export prod-clone secrets to env
+        shell: bash
+        run: |
+          echo "PROD_CLONE_BASE_URL=${{ secrets.PROD_CLONE_BASE_URL }}" >> $GITHUB_ENV
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL_PROD_CLONE }}" >> $GITHUB_ENV
+          echo "E2E_USER_EMAIL=${{ secrets.E2E_USER_EMAIL }}" >> $GITHUB_ENV
+          echo "E2E_USER_PASSWORD=${{ secrets.E2E_USER_PASSWORD }}" >> $GITHUB_ENV
+      - run: npm ci
+      - run: npx playwright install --with-deps
+      - name: Run verification pipeline
+        run: npm run verify:prodclone
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+      - name: Upload audit reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-reports
+          path: scripts/audit/reports
+
+

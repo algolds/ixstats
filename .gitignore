@@ -93,8 +93,20 @@ cypress/videos/
 *.log
 *.bak
 *.old
-
+*.claude.md
 # clerk configuration (can include secrets)
 /.clerk/
 prisma/backups/prod.db.backup.20251012_185935
 prisma/backups/prod.db.backup.20251012_181159
+scripts/audit/reports/consolidated-2025-10-13T21-58-00-601Z.json
+scripts/audit/reports/consolidated-2025-10-13T22-02-22-892Z.json
+scripts/audit/reports/consolidated-2025-10-13T22-09-25-899Z.json
+scripts/audit/reports/consolidated-2025-10-13T22-26-29-713Z.json
+scripts/audit/reports/consolidated-2025-10-13T22-27-58-224Z.json
+scripts/audit/reports/live-wiring-report-1760379482076.json
+scripts/audit/reports/live-wiring-report-1760379580191.json
+scripts/audit/reports/prod-issues-2025-10-13T22-02-21-821Z.json
+.gitignore
+scripts/audit/reports/prod-issues-2025-10-13T22-09-24-386Z.json
+scripts/audit/reports/prod-issues-2025-10-13T22-26-27-773Z.json
+scripts/audit/reports/prod-issues-2025-10-13T22-27-56-954Z.json

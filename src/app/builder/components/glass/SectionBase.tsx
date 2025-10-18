@@ -17,6 +17,7 @@ export interface BaseSectionProps {
   referenceCountry?: RealCountryData;
   theme?: 'gold' | 'blue' | 'indigo' | 'red' | 'neutral';
   className?: string;
+  hideViewToggle?: boolean;
 }
 
 // Extended props for sections that need additional data
@@ -79,7 +80,8 @@ export function SectionBase({
   metrics = [],
   validation,
   headerActions,
-  className
+  className,
+  hideViewToggle = false
 }: SectionBaseProps) {
   const handleToggleAdvanced = () => {
     if (onToggleAdvanced) {
@@ -135,6 +137,7 @@ export function SectionBase({
         onToggleAdvanced={handleToggleAdvanced}
         theme={config?.theme || 'neutral'}
         headerActions={headerActions}
+        hideViewToggle={hideViewToggle}
       >
         {/* Metric Overview */}
         {config?.showMetricOverview && metrics.length > 0 && (

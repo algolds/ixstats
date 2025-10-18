@@ -234,8 +234,10 @@ export default function GlobalOverview() {
   const { data: countriesResult, isLoading: loadingCountries, error: errorCountries } = api.countries.getAll.useQuery({ limit: 1000 });
   const countries = countriesResult?.countries ?? [];
   // Fetch achievements from backend
-  const { data: achievements = [], isLoading: loadingAchievements } =
-    (api.sdi.getAchievements?.useQuery?.() as { data?: any[]; isLoading?: boolean } | undefined) ?? { data: [], isLoading: false };
+  const { data: achievements = [], isLoading: loadingAchievements } = api.sdi.getAchievements.useQuery(
+    { userId: user?.id || undefined, countryId: userCountryId || undefined, limit: 20 },
+    { enabled: !!(user?.id || userCountryId) }
+  );
 
   // Health metrics calculated from real data
   const healthMetrics = {

@@ -2,6 +2,7 @@
 
 import type { GovernmentSpendingData } from '~/types/economics';
 import type { GovernmentBuilderState, GovernmentStructure, DepartmentCategory } from '~/types/government';
+import { createDefaultGovernmentSpendingData } from '~/lib/government-spending-defaults';
 
 /**
  * Maps department categories to spending category icons and colors
@@ -247,7 +248,7 @@ export function convertGovernmentStructureToSpending(
   // Assume balanced budget for now - could be enhanced to include revenue data
   const deficitSurplus = 0; // totalRevenue - totalBudget (would need revenue calculation)
 
-  return {
+  return createDefaultGovernmentSpendingData({
     education,
     healthcare,
     socialSafety,
@@ -256,11 +257,7 @@ export function convertGovernmentStructureToSpending(
     spendingPerCapita,
     deficitSurplus,
     spendingCategories,
-    performanceBasedBudgeting: false, // Could be derived from government structure metadata
-    universalBasicServices: false,
-    greenInvestmentPriority: false,
-    digitalGovernmentInitiative: false
-  };
+  });
 }
 
 /**

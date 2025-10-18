@@ -52,9 +52,9 @@ model Post {
 }
 
 model Country {
-  id                          String                @id @default(cuid())
-  name                        String                @unique
-  slug                        String?               @unique
+  id                          String  @id @default(cuid())
+  name                        String  @unique
+  slug                        String? @unique
   continent                   String?
   region                      String?
   governmentType              String?
@@ -76,10 +76,10 @@ model Country {
   gdpDensity                  Float?
   economicTier                String
   populationTier              String
-  projected2040Population     Float                 @default(0)
-  projected2040Gdp            Float                 @default(0)
-  projected2040GdpPerCapita   Float                 @default(0)
-  actualGdpGrowth             Float                 @default(0)
+  projected2040Population     Float   @default(0)
+  projected2040Gdp            Float   @default(0)
+  projected2040GdpPerCapita   Float   @default(0)
+  actualGdpGrowth             Float   @default(0)
   nominalGDP                  Float?
   realGDPGrowthRate           Float?
   inflationRate               Float?
@@ -112,74 +112,79 @@ model Country {
   urbanPopulationPercent      Float?
   ruralPopulationPercent      Float?
   literacyRate                Float?
-  localGrowthFactor           Float                 @default(1.0)
+  localGrowthFactor           Float   @default(1.0)
 
   // Vitality & Intelligence Scores (0-100 scale)
-  economicVitality            Float                 @default(0)
-  populationWellbeing         Float                 @default(0)
-  diplomaticStanding          Float                 @default(0)
-  governmentalEfficiency      Float                 @default(0)
-  overallNationalHealth       Float                 @default(0)
+  economicVitality       Float @default(0)
+  populationWellbeing    Float @default(0)
+  diplomaticStanding     Float @default(0)
+  governmentalEfficiency Float @default(0)
+  overallNationalHealth  Float @default(0)
 
   // Diplomatic Relations Data
-  activeAlliances             Int                   @default(0)
-  activeTreaties              Int                   @default(0)
-  diplomaticReputation        String                @default("Neutral")
+  activeAlliances      Int    @default(0)
+  activeTreaties       Int    @default(0)
+  diplomaticReputation String @default("Neutral")
 
   // Government Effectiveness Data
-  publicApproval              Float                 @default(50)
-  governmentEfficiency        String                @default("Moderate")
-  politicalStability          String                @default("Stable")
+  publicApproval       Float  @default(50)
+  governmentEfficiency String @default("Moderate")
+  politicalStability   String @default("Stable")
 
   // Additional calculated fields
-  tradeBalance                Float                 @default(0)
-  infrastructureRating        Float                 @default(50)
+  tradeBalance         Float @default(0)
+  infrastructureRating Float @default(50)
 
-  usesAtomicGovernment        Boolean               @default(true)
-  hideDiplomaticOps           Boolean               @default(false)
-  hideStratcommIntel          Boolean               @default(false)
-  lastCalculated              DateTime              @default(now())
-  baselineDate                DateTime              @default(now())
-  createdAt                   DateTime              @default(now())
-  updatedAt                   DateTime              @updatedAt
-  demographics                Demographics?
-  dmInputs                    DmInputs[]
-  economicModel               EconomicModel?
-  economicProfile             EconomicProfile?
-  fiscalSystem                FiscalSystem?
-  governmentBudget            GovernmentBudget?
-  historicalData              HistoricalDataPoint[]
-  incomeDistribution          IncomeDistribution?
-  laborMarket                 LaborMarket?
-  nationalIdentity            NationalIdentity?
-  user                        User?
-  moodMetrics                 CountryMoodMetric[]
-  archetypeMatches            CountryArchetypeMatch[] @relation("CountryArchetypes")
-  governmentStructure         GovernmentStructure?
-  taxSystem                   TaxSystem?
-  atomicEffectiveness         AtomicEffectiveness?
-  
+  usesAtomicGovernment Boolean                 @default(true)
+  hideDiplomaticOps    Boolean                 @default(false)
+  hideStratcommIntel   Boolean                 @default(false)
+  lastCalculated       DateTime                @default(now())
+  baselineDate         DateTime                @default(now())
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+  demographics         Demographics?
+  dmInputs             DmInputs[]
+  economicModel        EconomicModel?
+  economicProfile      EconomicProfile?
+  fiscalSystem         FiscalSystem?
+  governmentBudget     GovernmentBudget?
+  historicalData       HistoricalDataPoint[]
+  incomeDistribution   IncomeDistribution?
+  laborMarket          LaborMarket?
+  nationalIdentity     NationalIdentity?
+  user                 User?
+  moodMetrics          CountryMoodMetric[]
+  archetypeMatches     CountryArchetypeMatch[] @relation("CountryArchetypes")
+  governmentStructure  GovernmentStructure?
+  taxSystem            TaxSystem?
+  atomicEffectiveness  AtomicEffectiveness?
+
   // Atomic Government Components
-  governmentComponents        GovernmentComponent[]   @relation("CountryComponents")
-  componentSynergies          ComponentSynergy[]      @relation("CountrySynergies")
-  budgetScenarios             BudgetScenario[]        @relation("CountryBudgetScenarios")
-  fiscalPolicies              FiscalPolicy[]          @relation("CountryFiscalPolicies")
-  atomicEconomicImpacts       AtomicEconomicImpact[]  @relation("AtomicEconomicImpacts")
+  governmentComponents  GovernmentComponent[]  @relation("CountryComponents")
+  componentSynergies    ComponentSynergy[]     @relation("CountrySynergies")
+  budgetScenarios       BudgetScenario[]       @relation("CountryBudgetScenarios")
+  fiscalPolicies        FiscalPolicy[]         @relation("CountryFiscalPolicies")
+  atomicEconomicImpacts AtomicEconomicImpact[] @relation("AtomicEconomicImpacts")
 
   // Military & Defense Relations
-  militaryBranches            MilitaryBranch[]        @relation("CountryMilitaryBranches")
-  securityThreats             SecurityThreat[]        @relation("CountrySecurityThreats")
+  militaryBranches   MilitaryBranch[]          @relation("CountryMilitaryBranches")
+  securityThreats    SecurityThreat[]          @relation("CountrySecurityThreats")
+  defenseBudget      DefenseBudget?            @relation("CountryDefenseBudget")
+  securityAssessment SecurityAssessment?       @relation("CountrySecurityAssessment")
+  stabilityMetrics   InternalStabilityMetrics? @relation("CountryStabilityMetrics")
+  borderSecurity     BorderSecurity?           @relation("CountryBorderSecurity")
+  securityEvents     SecurityEvent[]           @relation("CountrySecurityEvents")
 
   // Social Relations
-  following                   CountryFollow[]         @relation("CountryFollowers")
-  followers                   CountryFollow[]         @relation("CountryFollowing")
+  following CountryFollow[] @relation("CountryFollowers")
+  followers CountryFollow[] @relation("CountryFollowing")
 
   // Diplomatic Relations - Embassies
-  embassiesHosting            Embassy[]               @relation("HostCountryEmbassies")
-  embassiesGuest              Embassy[]               @relation("GuestCountryEmbassies")
+  embassiesHosting Embassy[] @relation("HostCountryEmbassies")
+  embassiesGuest   Embassy[] @relation("GuestCountryEmbassies")
 
   // ThinkPages Feed Accounts
-  thinkpagesAccounts          ThinkpagesAccount[]     @relation("ThinkpagesAccounts")
+  thinkpagesAccounts ThinkpagesAccount[] @relation("ThinkpagesAccounts")
 
   @@index([name])
   @@index([economicTier])
@@ -336,16 +341,16 @@ model SystemConfig {
 
 // Admin audit log for god-mode and storyteller actions
 model AdminAuditLog {
-  id          String   @id @default(cuid())
-  action      String   // Action type (e.g., "GOD_MODE_COUNTRY_UPDATE", "CUSTOM_SCENARIO_CREATED")
-  targetType  String   // Type of target (e.g., "country", "scenario", "intervention")
-  targetId    String   // ID of the target
-  targetName  String   // Name of the target for easy reference
-  changes     String   // JSON string of changes made
-  adminId     String   // ID of admin who performed action
-  adminName   String   // Name of admin for easy reference
-  timestamp   DateTime @default(now())
-  ipAddress   String?  // IP address of admin (for security)
+  id         String   @id @default(cuid())
+  action     String // Action type (e.g., "GOD_MODE_COUNTRY_UPDATE", "CUSTOM_SCENARIO_CREATED")
+  targetType String // Type of target (e.g., "country", "scenario", "intervention")
+  targetId   String // ID of the target
+  targetName String // Name of the target for easy reference
+  changes    String // JSON string of changes made
+  adminId    String // ID of admin who performed action
+  adminName  String // Name of admin for easy reference
+  timestamp  DateTime @default(now())
+  ipAddress  String? // IP address of admin (for security)
 
   @@index([action])
   @@index([targetId])
@@ -368,18 +373,18 @@ model CalculationLog {
 }
 
 model User {
-  id              String   @id @default(cuid())
-  clerkUserId     String   @unique
-  countryId       String?  @unique
-  roleId          String?  // Foreign key to Role
-  membershipTier  String   @default("basic") // "basic", "mycountry_premium"
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  country         Country? @relation(fields: [countryId], references: [id])
-  role            Role?    @relation(fields: [roleId], references: [id])
+  id                  String                   @id @default(cuid())
+  clerkUserId         String                   @unique
+  countryId           String?                  @unique
+  roleId              String? // Foreign key to Role
+  membershipTier      String                   @default("basic") // "basic", "mycountry_premium"
+  isActive            Boolean                  @default(true)
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  country             Country?                 @relation(fields: [countryId], references: [id])
+  role                Role?                    @relation(fields: [roleId], references: [id])
   archetypeSelections UserArchetypeSelection[] @relation("UserArchetypes")
-  scheduledChanges ScheduledChange[] @relation("UserScheduledChanges")
+  scheduledChanges    ScheduledChange[]        @relation("UserScheduledChanges")
 
   @@index([clerkUserId])
   @@index([countryId])
@@ -390,22 +395,22 @@ model User {
 
 // Scheduled changes for delayed impact system
 model ScheduledChange {
-  id              String   @id @default(cuid())
-  userId          String
-  countryId       String
-  changeType      String   // "instant", "next_day", "short_term", "long_term"
-  impactLevel     String   // "none", "low", "medium", "high"
-  fieldPath       String   // JSON path to the field being changed
-  oldValue        String   // JSON-encoded old value
-  newValue        String   // JSON-encoded new value
-  scheduledFor    DateTime // When the change should take effect
-  appliedAt       DateTime? // When the change was actually applied
-  status          String   @default("pending") // "pending", "applied", "cancelled"
-  warnings        String?  // JSON array of warning messages
-  metadata        String?  // Additional metadata about the change
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  user            User     @relation("UserScheduledChanges", fields: [userId], references: [id], onDelete: Cascade)
+  id           String    @id @default(cuid())
+  userId       String
+  countryId    String
+  changeType   String // "instant", "next_day", "short_term", "long_term"
+  impactLevel  String // "none", "low", "medium", "high"
+  fieldPath    String // JSON path to the field being changed
+  oldValue     String // JSON-encoded old value
+  newValue     String // JSON-encoded new value
+  scheduledFor DateTime // When the change should take effect
+  appliedAt    DateTime? // When the change was actually applied
+  status       String    @default("pending") // "pending", "applied", "cancelled"
+  warnings     String? // JSON array of warning messages
+  metadata     String? // Additional metadata about the change
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user         User      @relation("UserScheduledChanges", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([countryId])
@@ -475,7 +480,7 @@ model IntelligenceItem {
   affectedCountries String?
   isActive          Boolean  @default(true)
   actionable        Boolean  @default(false) // Add missing field
-  confidence        Int?     // 0-100 scale
+  confidence        Int? // 0-100 scale
   itemType          String   @default("update") // type field (renamed to avoid conflicts)
   severity          Priority @default(medium) // Align with TypeScript interfaces
   createdAt         DateTime @default(now())
@@ -509,15 +514,15 @@ model DiplomaticRelation {
   lastContact        DateTime
   status             String
   diplomaticChannels String?
-  recentActivity     String?  // Latest diplomatic activity
-  tradeVolume        Float?   // Annual trade volume
-  culturalExchange   String?  // 'High', 'Medium', 'Low'
-  economicTier       String?  // Target country's economic tier
-  flagUrl            String?  // Target country's flag
+  recentActivity     String? // Latest diplomatic activity
+  tradeVolume        Float? // Annual trade volume
+  culturalExchange   String? // 'High', 'Medium', 'Low'
+  economicTier       String? // Target country's economic tier
+  flagUrl            String? // Target country's flag
   establishedAt      DateTime @default(now())
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
-  
+
   @@unique([country1, country2])
   @@index([country1])
   @@index([country2])
@@ -553,26 +558,26 @@ model EconomicIndicator {
 }
 
 model Notification {
-  id          String   @id @default(cuid())
-  userId      String?  // Clerk userId (nullable for country-wide notifications)
-  countryId   String?  // Country id for country-wide notifications
-  title       String
-  description String?
-  message     String?  // Full notification message
-  read        Boolean  @default(false)
-  dismissed   Boolean  @default(false)
-  href        String?
-  type        String?  // e.g., 'info', 'success', 'warning', 'error', 'alert', 'update'
-  category    String?  // e.g., 'economic', 'diplomatic', 'governance', 'social', 'security', 'achievement', 'crisis', 'opportunity'
-  priority    String   @default("medium") // critical, high, medium, low
-  severity    String   @default("informational") // urgent, important, informational
-  source      String?  // realtime, intelligence, system, user
-  actionable  Boolean  @default(false)
-  metadata    String?  // JSON string for additional data
+  id             String   @id @default(cuid())
+  userId         String? // Clerk userId (nullable for country-wide notifications)
+  countryId      String? // Country id for country-wide notifications
+  title          String
+  description    String?
+  message        String? // Full notification message
+  read           Boolean  @default(false)
+  dismissed      Boolean  @default(false)
+  href           String?
+  type           String? // e.g., 'info', 'success', 'warning', 'error', 'alert', 'update'
+  category       String? // e.g., 'economic', 'diplomatic', 'governance', 'social', 'security', 'achievement', 'crisis', 'opportunity'
+  priority       String   @default("medium") // critical, high, medium, low
+  severity       String   @default("informational") // urgent, important, informational
+  source         String? // realtime, intelligence, system, user
+  actionable     Boolean  @default(false)
+  metadata       String? // JSON string for additional data
   relevanceScore Float?
   deliveryMethod String? // toast, dynamic-island, modal, command-palette
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([userId, read, dismissed])
   @@index([countryId, read, dismissed])
@@ -581,198 +586,198 @@ model Notification {
 }
 
 model UserPreferences {
-  id                   String  @id @default(cuid())
-  userId               String  @unique // Clerk user ID
-  emailNotifications   Boolean @default(true)
-  pushNotifications    Boolean @default(true)
-  economicAlerts       Boolean @default(true)
-  crisisAlerts         Boolean @default(true)
-  diplomaticAlerts     Boolean @default(false)
-  systemAlerts         Boolean @default(true)
-  notificationLevel    String  @default("medium") // low, medium, high, critical
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-  
+  id                 String   @id @default(cuid())
+  userId             String   @unique // Clerk user ID
+  emailNotifications Boolean  @default(true)
+  pushNotifications  Boolean  @default(true)
+  economicAlerts     Boolean  @default(true)
+  crisisAlerts       Boolean  @default(true)
+  diplomaticAlerts   Boolean  @default(false)
+  systemAlerts       Boolean  @default(true)
+  notificationLevel  String   @default("medium") // low, medium, high, critical
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
   @@index([userId])
 }
 
 // Tax System Models
 model TaxSystem {
-  id                    String          @id @default(cuid())
-  countryId             String          @unique
-  taxSystemName         String
-  taxAuthority          String?         // Name of tax authority
-  fiscalYear            String          @default("calendar")
-  taxCode               String?         // International tax code
-  baseRate              Float?          // Base tax rate for calculations
-  progressiveTax        Boolean         @default(true)
-  flatTaxRate           Float?          // If not progressive
-  alternativeMinTax     Boolean         @default(false)
-  alternativeMinRate    Float?
-  taxHolidays           String?         // JSON array of tax holidays
-  complianceRate        Float?          // 0-100%
-  collectionEfficiency  Float?          // 0-100%
-  lastReform            DateTime?
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
-  
+  id                   String    @id @default(cuid())
+  countryId            String    @unique
+  taxSystemName        String
+  taxAuthority         String? // Name of tax authority
+  fiscalYear           String    @default("calendar")
+  taxCode              String? // International tax code
+  baseRate             Float? // Base tax rate for calculations
+  progressiveTax       Boolean   @default(true)
+  flatTaxRate          Float? // If not progressive
+  alternativeMinTax    Boolean   @default(false)
+  alternativeMinRate   Float?
+  taxHolidays          String? // JSON array of tax holidays
+  complianceRate       Float? // 0-100%
+  collectionEfficiency Float? // 0-100%
+  lastReform           DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
   // Relations
-  country               Country         @relation(fields: [countryId], references: [id], onDelete: Cascade)
-  taxCategories         TaxCategory[]
-  taxBrackets           TaxBracket[]
-  taxPolicy             TaxPolicy[]
-  taxExemptions         TaxExemption[]
-  taxCalculations       TaxCalculation[]
-  
+  country         Country          @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  taxCategories   TaxCategory[]
+  taxBrackets     TaxBracket[]
+  taxPolicy       TaxPolicy[]
+  taxExemptions   TaxExemption[]
+  taxCalculations TaxCalculation[]
+
   @@index([countryId])
 }
 
 model TaxCategory {
-  id                String          @id @default(cuid())
+  id                String   @id @default(cuid())
   taxSystemId       String
-  categoryName      String          // Income, Corporate, Sales, Property, etc.
-  categoryType      String          // Direct, Indirect
+  categoryName      String // Income, Corporate, Sales, Property, etc.
+  categoryType      String // Direct, Indirect
   description       String?
-  isActive          Boolean         @default(true)
+  isActive          Boolean  @default(true)
   baseRate          Float?
-  calculationMethod String          @default("percentage") // percentage, fixed, tiered
+  calculationMethod String   @default("percentage") // percentage, fixed, tiered
   minimumAmount     Float?
   maximumAmount     Float?
-  exemptionAmount   Float?          // Standard exemption
-  deductionAllowed  Boolean         @default(true)
+  exemptionAmount   Float? // Standard exemption
+  deductionAllowed  Boolean  @default(true)
   standardDeduction Float?
-  priority          Int             @default(50)
-  color             String?         // For UI
-  icon              String?         // Icon name for UI
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-  
+  priority          Int      @default(50)
+  color             String? // For UI
+  icon              String? // Icon name for UI
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
   // Relations
-  taxSystem         TaxSystem       @relation(fields: [taxSystemId], references: [id], onDelete: Cascade)
-  taxBrackets       TaxBracket[]
-  taxExemptions     TaxExemption[]
-  taxDeductions     TaxDeduction[]
-  
+  taxSystem     TaxSystem      @relation(fields: [taxSystemId], references: [id], onDelete: Cascade)
+  taxBrackets   TaxBracket[]
+  taxExemptions TaxExemption[]
+  taxDeductions TaxDeduction[]
+
   @@index([taxSystemId])
   @@index([categoryName])
 }
 
 model TaxBracket {
-  id            String      @id @default(cuid())
-  taxSystemId   String
-  categoryId    String
-  bracketName   String?     // E.g., "Low Income", "Middle Income"
-  minIncome     Float       // Minimum income for this bracket
-  maxIncome     Float?      // Maximum income (null for highest bracket)
-  rate          Float       // Tax rate as percentage
-  flatAmount    Float?      // Fixed amount if applicable
-  marginalRate  Boolean     @default(true) // True for marginal, false for flat
-  isActive      Boolean     @default(true)
-  priority      Int         @default(50)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  
+  id           String   @id @default(cuid())
+  taxSystemId  String
+  categoryId   String
+  bracketName  String? // E.g., "Low Income", "Middle Income"
+  minIncome    Float // Minimum income for this bracket
+  maxIncome    Float? // Maximum income (null for highest bracket)
+  rate         Float // Tax rate as percentage
+  flatAmount   Float? // Fixed amount if applicable
+  marginalRate Boolean  @default(true) // True for marginal, false for flat
+  isActive     Boolean  @default(true)
+  priority     Int      @default(50)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
   // Relations
-  taxSystem     TaxSystem   @relation(fields: [taxSystemId], references: [id], onDelete: Cascade)
-  category      TaxCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  
+  taxSystem TaxSystem   @relation(fields: [taxSystemId], references: [id], onDelete: Cascade)
+  category  TaxCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
   @@index([taxSystemId])
   @@index([categoryId])
   @@index([minIncome, maxIncome])
 }
 
 model TaxExemption {
-  id              String      @id @default(cuid())
+  id              String    @id @default(cuid())
   taxSystemId     String
-  categoryId      String?     // Null for system-wide exemptions
-  exemptionName   String      // Name of exemption
-  exemptionType   String      // Individual, Corporate, Sector, Geographic
+  categoryId      String? // Null for system-wide exemptions
+  exemptionName   String // Name of exemption
+  exemptionType   String // Individual, Corporate, Sector, Geographic
   description     String?
-  exemptionAmount Float?      // Fixed exemption amount
-  exemptionRate   Float?      // Percentage exemption
-  qualifications  String?     // JSON criteria for qualification
-  isActive        Boolean     @default(true)
+  exemptionAmount Float? // Fixed exemption amount
+  exemptionRate   Float? // Percentage exemption
+  qualifications  String? // JSON criteria for qualification
+  isActive        Boolean   @default(true)
   startDate       DateTime?
   endDate         DateTime?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
   // Relations
-  taxSystem       TaxSystem   @relation(fields: [taxSystemId], references: [id], onDelete: Cascade)
-  category        TaxCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  
+  taxSystem TaxSystem    @relation(fields: [taxSystemId], references: [id], onDelete: Cascade)
+  category  TaxCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
   @@index([taxSystemId])
   @@index([categoryId])
   @@index([exemptionType])
 }
 
 model TaxDeduction {
-  id              String      @id @default(cuid())
-  categoryId      String
-  deductionName   String      // Mortgage, Education, Charity, etc.
-  deductionType   String      // Standard, Itemized
-  description     String?
-  maximumAmount   Float?      // Max deductible amount
-  percentage      Float?      // Percentage of income/expense
-  qualifications  String?     // JSON criteria
-  isActive        Boolean     @default(true)
-  priority        Int         @default(50)
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  
+  id             String   @id @default(cuid())
+  categoryId     String
+  deductionName  String // Mortgage, Education, Charity, etc.
+  deductionType  String // Standard, Itemized
+  description    String?
+  maximumAmount  Float? // Max deductible amount
+  percentage     Float? // Percentage of income/expense
+  qualifications String? // JSON criteria
+  isActive       Boolean  @default(true)
+  priority       Int      @default(50)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
   // Relations
-  category        TaxCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  
+  category TaxCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
   @@index([categoryId])
   @@index([deductionType])
 }
 
 model TaxPolicy {
-  id              String      @id @default(cuid())
-  taxSystemId     String
-  policyName      String      // E.g., "Economic Stimulus Tax Relief"
-  policyType      String      // Rate Change, Exemption, Deduction
-  description     String?
-  targetCategory  String?     // Which tax category this affects
-  impactType      String      // Increase, Decrease, Neutral
-  rateChange      Float?      // Change in rate (+ or -)
-  effectiveDate   DateTime
-  expiryDate      DateTime?
-  isActive        Boolean     @default(true)
-  estimatedRevenue Float?     // Estimated revenue impact
-  affectedPopulation Float?   // Number of taxpayers affected
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  
+  id                 String    @id @default(cuid())
+  taxSystemId        String
+  policyName         String // E.g., "Economic Stimulus Tax Relief"
+  policyType         String // Rate Change, Exemption, Deduction
+  description        String?
+  targetCategory     String? // Which tax category this affects
+  impactType         String // Increase, Decrease, Neutral
+  rateChange         Float? // Change in rate (+ or -)
+  effectiveDate      DateTime
+  expiryDate         DateTime?
+  isActive           Boolean   @default(true)
+  estimatedRevenue   Float? // Estimated revenue impact
+  affectedPopulation Float? // Number of taxpayers affected
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
   // Relations
-  taxSystem       TaxSystem   @relation(fields: [taxSystemId], references: [id], onDelete: Cascade)
-  
+  taxSystem TaxSystem @relation(fields: [taxSystemId], references: [id], onDelete: Cascade)
+
   @@index([taxSystemId])
   @@index([effectiveDate])
   @@index([isActive])
 }
 
 model TaxCalculation {
-  id                  String      @id @default(cuid())
+  id                  String   @id @default(cuid())
   taxSystemId         String
-  calculationName     String      // E.g., "2024 Tax Year Calculation"
+  calculationName     String // E.g., "2024 Tax Year Calculation"
   taxableIncome       Float
-  totalDeductions     Float       @default(0)
-  totalExemptions     Float       @default(0)
+  totalDeductions     Float    @default(0)
+  totalExemptions     Float    @default(0)
   adjustedGrossIncome Float
   taxOwed             Float
-  effectiveRate       Float       // Overall tax rate
-  marginalRate        Float       // Highest bracket rate
-  breakdown           String?     // JSON breakdown by category
-  calculationDate     DateTime    @default(now())
+  effectiveRate       Float // Overall tax rate
+  marginalRate        Float // Highest bracket rate
+  breakdown           String? // JSON breakdown by category
+  calculationDate     DateTime @default(now())
   taxYear             Int
-  isActive            Boolean     @default(true)
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
-  
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
   // Relations
-  taxSystem           TaxSystem   @relation(fields: [taxSystemId], references: [id], onDelete: Cascade)
-  
+  taxSystem TaxSystem @relation(fields: [taxSystemId], references: [id], onDelete: Cascade)
+
   @@index([taxSystemId])
   @@index([taxYear])
   @@index([calculationDate])
@@ -785,79 +790,94 @@ enum ComponentType {
   FEDERAL_SYSTEM
   CONFEDERATE_SYSTEM
   UNITARY_SYSTEM
-  
+
   // Decision Process
   DEMOCRATIC_PROCESS
   AUTOCRATIC_PROCESS
   TECHNOCRATIC_PROCESS
   CONSENSUS_PROCESS
   OLIGARCHIC_PROCESS
-  
+
   // Legitimacy Sources
   ELECTORAL_LEGITIMACY
   TRADITIONAL_LEGITIMACY
   PERFORMANCE_LEGITIMACY
   CHARISMATIC_LEGITIMACY
   RELIGIOUS_LEGITIMACY
-  
+  INSTITUTIONAL_LEGITIMACY
+
   // Institution Types
   PROFESSIONAL_BUREAUCRACY
   MILITARY_ADMINISTRATION
   INDEPENDENT_JUDICIARY
   PARTISAN_INSTITUTIONS
   TECHNOCRATIC_AGENCIES
-  
+  DIGITAL_GOVERNMENT
+
   // Control Mechanisms
   RULE_OF_LAW
   SURVEILLANCE_SYSTEM
   ECONOMIC_INCENTIVES
   SOCIAL_PRESSURE
   MILITARY_ENFORCEMENT
+
+  // Government Systems
+  MINIMAL_GOVERNMENT
+  PRIVATE_SECTOR_LEADERSHIP
+  SOCIAL_DEMOCRACY
+  COMPREHENSIVE_WELFARE
+  PUBLIC_SECTOR_LEADERSHIP
+  ENVIRONMENTAL_FOCUS
+  ECONOMIC_PLANNING
+  DEVELOPMENTAL_STATE
+  WORKER_PROTECTION
+  REGIONAL_DEVELOPMENT
+  MERITOCRATIC_SYSTEM
 }
 
 model GovernmentComponent {
-  id                  String        @id @default(cuid())
-  countryId           String
-  componentType       ComponentType
-  effectivenessScore  Float         @default(50)
-  implementationDate  DateTime      @default(now())
-  implementationCost  Float         @default(0)
-  maintenanceCost     Float         @default(0)
-  requiredCapacity    Float         @default(50)
-  isActive            Boolean       @default(true)
-  notes               String?
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
-  
+  id                 String        @id @default(cuid())
+  countryId          String
+  componentType      ComponentType
+  effectivenessScore Float         @default(50)
+  implementationDate DateTime      @default(now())
+  implementationCost Float         @default(0)
+  maintenanceCost    Float         @default(0)
+  requiredCapacity   Float         @default(50)
+  isActive           Boolean       @default(true)
+  notes              String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
   // Relations
-  country             Country       @relation("CountryComponents", fields: [countryId], references: [id], onDelete: Cascade)
-  synergies           ComponentSynergy[] @relation("PrimaryComponent")
-  conflictsWith       ComponentSynergy[] @relation("SecondaryComponent")
-  
+  country       Country            @relation("CountryComponents", fields: [countryId], references: [id], onDelete: Cascade)
+  synergies     ComponentSynergy[] @relation("PrimaryComponent")
+  conflictsWith ComponentSynergy[] @relation("SecondaryComponent")
+
   @@index([countryId])
   @@index([componentType])
   @@index([isActive])
 }
 
 model ComponentSynergy {
-  id                    String             @id @default(cuid())
-  countryId             String
-  primaryComponentId    String
-  secondaryComponentId  String
-  synergyType           String             // 'MULTIPLICATIVE' | 'ADDITIVE' | 'CONFLICTING'
-  effectMultiplier      Float              @default(1.0)
-  description           String?
-  discoveredAt          DateTime           @default(now())
-  createdAt             DateTime           @default(now())
-  
+  id                   String   @id @default(cuid())
+  countryId            String
+  primaryComponentId   String
+  secondaryComponentId String
+  synergyType          String // 'MULTIPLICATIVE' | 'ADDITIVE' | 'CONFLICTING'
+  effectMultiplier     Float    @default(1.0)
+  description          String?
+  discoveredAt         DateTime @default(now())
+  createdAt            DateTime @default(now())
+
   // Relations
-  country               Country            @relation("CountrySynergies", fields: [countryId], references: [id], onDelete: Cascade)
-  primaryComponent      GovernmentComponent @relation("PrimaryComponent", fields: [primaryComponentId], references: [id], onDelete: Cascade)
-  secondaryComponent    GovernmentComponent @relation("SecondaryComponent", fields: [secondaryComponentId], references: [id], onDelete: Cascade)
-  
+  country            Country             @relation("CountrySynergies", fields: [countryId], references: [id], onDelete: Cascade)
+  primaryComponent   GovernmentComponent @relation("PrimaryComponent", fields: [primaryComponentId], references: [id], onDelete: Cascade)
+  secondaryComponent GovernmentComponent @relation("SecondaryComponent", fields: [secondaryComponentId], references: [id], onDelete: Cascade)
+
+  @@unique([primaryComponentId, secondaryComponentId])
   @@index([countryId])
   @@index([synergyType])
-  @@unique([primaryComponentId, secondaryComponentId])
 }
 
 // Note: PolicyEffect already exists in the schema, using existing model
@@ -865,7 +885,7 @@ model ComponentSynergy {
 // Enhanced Budget System
 enum BudgetCategoryType {
   MANDATORY
-  DISCRETIONARY  
+  DISCRETIONARY
   EMERGENCY
 }
 
@@ -877,63 +897,63 @@ enum BudgetPriorityLevel {
 }
 
 model BudgetScenario {
-  id              String        @id @default(cuid())
-  countryId       String
-  name            String
-  description     String?
-  totalBudget     Float
-  assumptions     String?       // JSON array of assumptions
-  riskLevel       String        // 'LOW' | 'MEDIUM' | 'HIGH'
-  feasibility     Float         @default(50)
-  isActive        Boolean       @default(true)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  
+  id          String   @id @default(cuid())
+  countryId   String
+  name        String
+  description String?
+  totalBudget Float
+  assumptions String? // JSON array of assumptions
+  riskLevel   String // 'LOW' | 'MEDIUM' | 'HIGH'
+  feasibility Float    @default(50)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   // Relations
-  country         Country       @relation("CountryBudgetScenarios", fields: [countryId], references: [id], onDelete: Cascade)
-  categories      BudgetScenarioCategory[]
-  
+  country    Country                  @relation("CountryBudgetScenarios", fields: [countryId], references: [id], onDelete: Cascade)
+  categories BudgetScenarioCategory[]
+
   @@index([countryId])
   @@index([isActive])
 }
 
 model BudgetScenarioCategory {
-  id                String          @id @default(cuid())
-  scenarioId        String
-  categoryName      String
-  allocatedAmount   Float
-  allocatedPercent  Float
-  priority          BudgetPriorityLevel @default(medium)
-  efficiency        Float           @default(50)
-  performance       Float           @default(50)
-  createdAt         DateTime        @default(now())
-  
+  id               String              @id @default(cuid())
+  scenarioId       String
+  categoryName     String
+  allocatedAmount  Float
+  allocatedPercent Float
+  priority         BudgetPriorityLevel @default(medium)
+  efficiency       Float               @default(50)
+  performance      Float               @default(50)
+  createdAt        DateTime            @default(now())
+
   // Relations
-  scenario          BudgetScenario  @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
-  
+  scenario BudgetScenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
   @@index([scenarioId])
 }
 
 model FiscalPolicy {
-  id                String      @id @default(cuid())
-  countryId         String
-  name              String
-  policyType        String      // 'TAX_POLICY' | 'SPENDING_POLICY' | 'DEBT_POLICY'
-  impact            Float
-  implementation    String      // 'IMMEDIATE' | 'SHORT_TERM' | 'LONG_TERM'
-  cost              Float
-  benefits          Float
-  description       String?
-  isActive          Boolean     @default(true)
-  appliedDate       DateTime?
-  expiryDate        DateTime?
-  measuredImpact    Float?      // Actual measured impact
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  
+  id             String    @id @default(cuid())
+  countryId      String
+  name           String
+  policyType     String // 'TAX_POLICY' | 'SPENDING_POLICY' | 'DEBT_POLICY'
+  impact         Float
+  implementation String // 'IMMEDIATE' | 'SHORT_TERM' | 'LONG_TERM'
+  cost           Float
+  benefits       Float
+  description    String?
+  isActive       Boolean   @default(true)
+  appliedDate    DateTime?
+  expiryDate     DateTime?
+  measuredImpact Float? // Actual measured impact
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
   // Relations
-  country           Country     @relation("CountryFiscalPolicies", fields: [countryId], references: [id], onDelete: Cascade)
-  
+  country Country @relation("CountryFiscalPolicies", fields: [countryId], references: [id], onDelete: Cascade)
+
   @@index([countryId])
   @@index([policyType])
   @@index([isActive])
@@ -954,10 +974,10 @@ model AtomicEffectiveness {
   lastCalculated      DateTime @default(now())
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
-  
+
   // Relations
-  country             Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
-  
+  country Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
   @@index([countryId])
   @@index([overallScore])
   @@index([lastCalculated])
@@ -965,18 +985,18 @@ model AtomicEffectiveness {
 
 // Atomic Economic Impact Tracking
 model AtomicEconomicImpact {
-  id              String        @id @default(cuid())
-  countryId       String
-  componentType   ComponentType
-  economicMetric  String        // 'gdp_growth', 'tax_efficiency', 'stability_index'
+  id               String        @id @default(cuid())
+  countryId        String
+  componentType    ComponentType
+  economicMetric   String // 'gdp_growth', 'tax_efficiency', 'stability_index'
   impactMultiplier Float
-  effectiveDate   DateTime      @default(now())
-  isActive        Boolean       @default(true)
-  createdAt       DateTime      @default(now())
-  
+  effectiveDate    DateTime      @default(now())
+  isActive         Boolean       @default(true)
+  createdAt        DateTime      @default(now())
+
   // Relations
-  country         Country       @relation("AtomicEconomicImpacts", fields: [countryId], references: [id], onDelete: Cascade)
-  
+  country Country @relation("AtomicEconomicImpacts", fields: [countryId], references: [id], onDelete: Cascade)
+
   @@index([countryId])
   @@index([componentType])
   @@index([economicMetric])
@@ -991,33 +1011,33 @@ model AtomicEconomicImpact {
 // ThinkPages Account Model - For Feed only (not ThinkTanks/ThinkShare)
 // Allows users to create up to 25 persona accounts for in-universe posting
 model ThinkpagesAccount {
-  id                String   @id @default(cuid())
-  clerkUserId       String   // The Clerk user who owns this account
-  countryId         String   // The country this account belongs to
-  accountType       String   // 'government' | 'media' | 'citizen'
-  username          String   @unique
-  displayName       String
-  firstName         String
-  lastName          String
-  bio               String?
-  profileImageUrl   String?
-  verified          Boolean  @default(false)
-  followerCount     Int      @default(0)
-  followingCount    Int      @default(0)
-  postCount         Int      @default(0)
-  postingFrequency  String   @default("moderate") // 'active' | 'moderate' | 'low'
-  politicalLean     String   @default("center") // 'left' | 'center' | 'right'
-  personality       String   @default("casual") // 'serious' | 'casual' | 'satirical'
-  isActive          Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
+  id               String   @id @default(cuid())
+  clerkUserId      String // The Clerk user who owns this account
+  countryId        String // The country this account belongs to
+  accountType      String // 'government' | 'media' | 'citizen'
+  username         String   @unique
+  displayName      String
+  firstName        String
+  lastName         String
+  bio              String?
+  profileImageUrl  String?
+  verified         Boolean  @default(false)
+  followerCount    Int      @default(0)
+  followingCount   Int      @default(0)
+  postCount        Int      @default(0)
+  postingFrequency String   @default("moderate") // 'active' | 'moderate' | 'low'
+  politicalLean    String   @default("center") // 'left' | 'center' | 'right'
+  personality      String   @default("casual") // 'serious' | 'casual' | 'satirical'
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
   // Relations
-  country           Country  @relation("ThinkpagesAccounts", fields: [countryId], references: [id], onDelete: Cascade)
-  posts             ThinkpagesPost[]
-  reactions         PostReaction[]
-  mentions          PostMention[]
-  
+  country   Country          @relation("ThinkpagesAccounts", fields: [countryId], references: [id], onDelete: Cascade)
+  posts     ThinkpagesPost[]
+  reactions PostReaction[]
+  mentions  PostMention[]
+
   @@index([clerkUserId])
   @@index([countryId])
   @@index([accountType])
@@ -1026,36 +1046,36 @@ model ThinkpagesAccount {
 
 // ThinkPages Post Model - For Feed only (not ThinkTanks/ThinkShare)
 model ThinkpagesPost {
-  id                String   @id @default(cuid())
-  accountId         String   // References ThinkpagesAccount for feed posts
-  content           String   // 280 character limit enforced in frontend
-  hashtags          String?  // JSON array of hashtag strings
-  visualizations    String?  // JSON array of embedded data visualizations
-  postType          String   @default("original") // 'original' | 'repost' | 'reply'
-  parentPostId      String?  // For replies
-  repostOfId        String?  // For reposts
-  likeCount         Int      @default(0)
-  repostCount       Int      @default(0)
-  replyCount        Int      @default(0)
-  impressions       Int      @default(0)
-  reactionCounts    String?  // JSON object of reaction counts
-  trending          Boolean  @default(false)
-  pinned            Boolean  @default(false)
-  visibility        String   @default("public") // 'public' | 'followers' | 'mentioned'
-  ixTimeTimestamp   DateTime
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
+  id              String   @id @default(cuid())
+  accountId       String // References ThinkpagesAccount for feed posts
+  content         String // 280 character limit enforced in frontend
+  hashtags        String? // JSON array of hashtag strings
+  visualizations  String? // JSON array of embedded data visualizations
+  postType        String   @default("original") // 'original' | 'repost' | 'reply'
+  parentPostId    String? // For replies
+  repostOfId      String? // For reposts
+  likeCount       Int      @default(0)
+  repostCount     Int      @default(0)
+  replyCount      Int      @default(0)
+  impressions     Int      @default(0)
+  reactionCounts  String? // JSON object of reaction counts
+  trending        Boolean  @default(false)
+  pinned          Boolean  @default(false)
+  visibility      String   @default("public") // 'public' | 'followers' | 'mentioned'
+  ixTimeTimestamp DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
   // Relations - only for in-universe ThinkPages Feed
-  account           ThinkpagesAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  parentPost        ThinkpagesPost?   @relation("PostReplies", fields: [parentPostId], references: [id])
-  replies           ThinkpagesPost[]  @relation("PostReplies")
-  repostOf          ThinkpagesPost?   @relation("PostReposts", fields: [repostOfId], references: [id])
-  reposts           ThinkpagesPost[]  @relation("PostReposts")
-  reactions         PostReaction[]
-  mentions          PostMention[]
-  mediaAttachments  MediaAttachment[]
-  
+  account          ThinkpagesAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  parentPost       ThinkpagesPost?   @relation("PostReplies", fields: [parentPostId], references: [id])
+  replies          ThinkpagesPost[]  @relation("PostReplies")
+  repostOf         ThinkpagesPost?   @relation("PostReposts", fields: [repostOfId], references: [id])
+  reposts          ThinkpagesPost[]  @relation("PostReposts")
+  reactions        PostReaction[]
+  mentions         PostMention[]
+  mediaAttachments MediaAttachment[]
+
   @@index([accountId])
   @@index([ixTimeTimestamp])
   @@index([trending])
@@ -1067,14 +1087,14 @@ model ThinkpagesPost {
 model PostReaction {
   id           String   @id @default(cuid())
   postId       String
-  accountId    String   // References ThinkpagesAccount
-  reactionType String   // 'like' | 'laugh' | 'angry' | 'sad' | 'fire' | 'thumbsup' | 'thumbsdown'
+  accountId    String // References ThinkpagesAccount
+  reactionType String // 'like' | 'laugh' | 'angry' | 'sad' | 'fire' | 'thumbsup' | 'thumbsdown'
   timestamp    DateTime @default(now())
-  
+
   // Relations
-  post         ThinkpagesPost    @relation(fields: [postId], references: [id], onDelete: Cascade)
-  account      ThinkpagesAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  
+  post    ThinkpagesPost    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  account ThinkpagesAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
   @@unique([postId, accountId]) // One reaction per account per post
   @@index([postId])
   @@index([accountId])
@@ -1082,15 +1102,15 @@ model PostReaction {
 }
 
 model PostMention {
-  id                 String   @id @default(cuid())
+  id                 String @id @default(cuid())
   postId             String
-  mentionedAccountId String   // References ThinkpagesAccount
-  position           Int      // Character position in the post content
-  
+  mentionedAccountId String // References ThinkpagesAccount
+  position           Int // Character position in the post content
+
   // Relations
-  post               ThinkpagesPost    @relation(fields: [postId], references: [id], onDelete: Cascade)
-  mentionedAccount   ThinkpagesAccount @relation(fields: [mentionedAccountId], references: [id], onDelete: Cascade)
-  
+  post             ThinkpagesPost    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  mentionedAccount ThinkpagesAccount @relation(fields: [mentionedAccountId], references: [id], onDelete: Cascade)
+
   @@index([postId])
   @@index([mentionedAccountId])
 }
@@ -1098,16 +1118,16 @@ model PostMention {
 model MediaAttachment {
   id        String   @id @default(cuid())
   postId    String
-  type      String   // 'image' | 'video' | 'document'
+  type      String // 'image' | 'video' | 'document'
   url       String
   filename  String?
   fileSize  Int?
   mimeType  String?
   createdAt DateTime @default(now())
-  
+
   // Relations
-  post      ThinkpagesPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-  
+  post ThinkpagesPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
   @@index([postId])
   @@index([type])
 }
@@ -1117,12 +1137,12 @@ model TrendingTopic {
   hashtag       String   @unique
   postCount     Int      @default(0)
   engagement    Int      @default(0) // Combined likes, reposts, replies
-  region        String?  // Optional geographic filter
+  region        String? // Optional geographic filter
   peakTimestamp DateTime
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  
+
   @@index([hashtag])
   @@index([postCount])
   @@index([engagement])
@@ -1131,13 +1151,13 @@ model TrendingTopic {
 
 // Legacy model - kept for in-universe sentiment analysis only
 model CountryMoodMetric {
-  id            String   @id @default(cuid())
-  countryId     String
-  timestamp     DateTime // Daily or weekly timestamp
-  sentimentScore Float    // -1.0 to 1.0
-  postCount     Int      @default(0)
-  
-  country       Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  id             String   @id @default(cuid())
+  countryId      String
+  timestamp      DateTime // Daily or weekly timestamp
+  sentimentScore Float // -1.0 to 1.0
+  postCount      Int      @default(0)
+
+  country Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
 
   @@unique([countryId, timestamp])
   @@index([countryId])
@@ -1146,26 +1166,26 @@ model CountryMoodMetric {
 
 // Global ThinkTanks (Groups) Models - Now uses global User accounts
 model ThinktankGroup {
-  id                String   @id @default(cuid())
-  name              String
-  description       String?
-  avatar            String?
-  type              String   @default("public") // 'public' | 'private' | 'invite_only'
-  category          String?  // 'Environment' | 'Technology' | 'Business' | etc.
-  tags              String?  // JSON array of tag strings
-  memberCount       Int      @default(0)
-  createdBy         String   // User.clerkUserId of creator
-  isActive          Boolean  @default(true)
-  settings          String?  // JSON object for group settings
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  avatar      String?
+  type        String   @default("public") // 'public' | 'private' | 'invite_only'
+  category    String? // 'Environment' | 'Technology' | 'Business' | etc.
+  tags        String? // JSON array of tag strings
+  memberCount Int      @default(0)
+  createdBy   String // User.clerkUserId of creator
+  isActive    Boolean  @default(true)
+  settings    String? // JSON object for group settings
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   // Relations - now use global Users instead of ThinkpagesAccounts
   members           ThinktankMember[]
   messages          ThinktankMessage[]
   invites           ThinktankInvite[]
   collaborativeDocs CollaborativeDoc[]
-  
+
   @@index([type])
   @@index([category])
   @@index([createdBy])
@@ -1175,15 +1195,15 @@ model ThinktankGroup {
 model ThinktankMember {
   id          String   @id @default(cuid())
   groupId     String
-  userId      String   // Changed to use User.clerkUserId
+  userId      String // Changed to use User.clerkUserId
   role        String   @default("member") // 'owner' | 'admin' | 'moderator' | 'member'
   joinedAt    DateTime @default(now())
   isActive    Boolean  @default(true)
-  permissions String?  // JSON object for member permissions
-  
+  permissions String? // JSON object for member permissions
+
   // Relations
-  group       ThinktankGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  
+  group ThinktankGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
   @@unique([groupId, userId])
   @@index([groupId])
   @@index([userId])
@@ -1191,25 +1211,25 @@ model ThinktankMember {
 }
 
 model ThinktankMessage {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   groupId         String
-  userId          String   // Changed to use User.clerkUserId
-  content         String   // Rich text content from echo-editor
-  messageType     String   @default("text") // 'text' | 'image' | 'file' | 'system'
-  replyToId       String?  // For threaded conversations
+  userId          String // Changed to use User.clerkUserId
+  content         String // Rich text content from echo-editor
+  messageType     String    @default("text") // 'text' | 'image' | 'file' | 'system'
+  replyToId       String? // For threaded conversations
   editedAt        DateTime?
   deletedAt       DateTime?
-  reactions       String?  // JSON object of reaction counts
-  mentions        String?  // JSON array of mentioned user IDs
-  attachments     String?  // JSON array of attachment objects
-  ixTimeTimestamp DateTime @default(now())
-  
+  reactions       String? // JSON object of reaction counts
+  mentions        String? // JSON array of mentioned user IDs
+  attachments     String? // JSON array of attachment objects
+  ixTimeTimestamp DateTime  @default(now())
+
   // Relations
-  group           ThinktankGroup     @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  replyTo         ThinktankMessage?  @relation("MessageReplies", fields: [replyToId], references: [id])
-  replies         ThinktankMessage[] @relation("MessageReplies")
-  readReceipts    MessageReadReceipt[]
-  
+  group        ThinktankGroup       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  replyTo      ThinktankMessage?    @relation("MessageReplies", fields: [replyToId], references: [id])
+  replies      ThinktankMessage[]   @relation("MessageReplies")
+  readReceipts MessageReadReceipt[]
+
   @@index([groupId])
   @@index([userId])
   @@index([ixTimeTimestamp])
@@ -1217,38 +1237,38 @@ model ThinktankMessage {
 }
 
 model ThinktankInvite {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   groupId     String
-  invitedBy   String   // User.clerkUserId
-  invitedUser String?  // username or email
-  inviteCode  String?  // For invite links
+  invitedBy   String // User.clerkUserId
+  invitedUser String? // username or email
+  inviteCode  String? // For invite links
   expiresAt   DateTime?
-  isUsed      Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  
+  isUsed      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
   // Relations
-  group       ThinktankGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  
+  group ThinktankGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
   @@index([groupId])
   @@index([invitedBy])
   @@index([inviteCode])
 }
 
 model CollaborativeDoc {
-  id          String   @id @default(cuid())
-  groupId     String
-  title       String
-  content     String?  // Rich text content for lore writing/planning
-  version     Int      @default(1)
-  createdBy   String   // User.clerkUserId
-  lastEditBy  String?  // User.clerkUserId
-  isPublic    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  id         String   @id @default(cuid())
+  groupId    String
+  title      String
+  content    String? // Rich text content for lore writing/planning
+  version    Int      @default(1)
+  createdBy  String // User.clerkUserId
+  lastEditBy String? // User.clerkUserId
+  isPublic   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
   // Relations
-  group       ThinktankGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  
+  group ThinktankGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
   @@index([groupId])
   @@index([createdBy])
   @@index([isPublic])
@@ -1258,62 +1278,62 @@ model CollaborativeDoc {
 model ThinkshareConversation {
   id           String   @id @default(cuid())
   type         String   @default("direct") // 'direct' | 'group'
-  name         String?  // For group conversations
-  avatar       String?  // For group conversations
+  name         String? // For group conversations
+  avatar       String? // For group conversations
   isActive     Boolean  @default(true)
   lastActivity DateTime @default(now())
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  
+
   // Relations - now use global Users instead of ThinkpagesAccounts
   participants ConversationParticipant[]
   messages     ThinkshareMessage[]
-  
+
   @@index([type])
   @@index([lastActivity])
   @@index([isActive])
 }
 
 model ConversationParticipant {
-  id              String   @id @default(cuid())
-  conversationId  String
-  userId          String   // Changed to use User.clerkUserId
-  joinedAt        DateTime @default(now())
-  leftAt          DateTime?
-  isActive        Boolean  @default(true)
-  role            String   @default("participant") // 'admin' | 'participant'
-  lastReadAt      DateTime @default(now())
+  id                   String    @id @default(cuid())
+  conversationId       String
+  userId               String // Changed to use User.clerkUserId
+  joinedAt             DateTime  @default(now())
+  leftAt               DateTime?
+  isActive             Boolean   @default(true)
+  role                 String    @default("participant") // 'admin' | 'participant'
+  lastReadAt           DateTime  @default(now())
   notificationSettings String? // JSON object for notification preferences
-  
+
   // Relations
-  conversation    ThinkshareConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  
+  conversation ThinkshareConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
   @@unique([conversationId, userId])
   @@index([conversationId])
   @@index([userId])
 }
 
 model ThinkshareMessage {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   conversationId  String
-  userId          String   // Changed to use User.clerkUserId
-  content         String   // Rich text content from echo-editor
-  messageType     String   @default("text") // 'text' | 'image' | 'file' | 'system'
-  replyToId       String?  // For threaded conversations
+  userId          String // Changed to use User.clerkUserId
+  content         String // Rich text content from echo-editor
+  messageType     String    @default("text") // 'text' | 'image' | 'file' | 'system'
+  replyToId       String? // For threaded conversations
   editedAt        DateTime?
   deletedAt       DateTime?
-  reactions       String?  // JSON object of reaction counts
-  mentions        String?  // JSON array of mentioned user IDs
-  attachments     String?  // JSON array of attachment objects
-  isSystem        Boolean  @default(false)
-  ixTimeTimestamp DateTime @default(now())
-  
+  reactions       String? // JSON object of reaction counts
+  mentions        String? // JSON array of mentioned user IDs
+  attachments     String? // JSON array of attachment objects
+  isSystem        Boolean   @default(false)
+  ixTimeTimestamp DateTime  @default(now())
+
   // Relations
-  conversation    ThinkshareConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  replyTo         ThinkshareMessage?     @relation("ThinkshareReplies", fields: [replyToId], references: [id])
-  replies         ThinkshareMessage[]    @relation("ThinkshareReplies")
-  readReceipts    MessageReadReceipt[]
-  
+  conversation ThinkshareConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  replyTo      ThinkshareMessage?     @relation("ThinkshareReplies", fields: [replyToId], references: [id])
+  replies      ThinkshareMessage[]    @relation("ThinkshareReplies")
+  readReceipts MessageReadReceipt[]
+
   @@index([conversationId])
   @@index([userId])
   @@index([ixTimeTimestamp])
@@ -1321,16 +1341,16 @@ model ThinkshareMessage {
 }
 
 model MessageReadReceipt {
-  id              String   @id @default(cuid())
-  messageId       String
-  userId          String   // Changed to use User.clerkUserId
-  readAt          DateTime @default(now())
-  messageType     String   // 'thinktank' | 'thinkshare'
-  
+  id          String   @id @default(cuid())
+  messageId   String
+  userId      String // Changed to use User.clerkUserId
+  readAt      DateTime @default(now())
+  messageType String // 'thinktank' | 'thinkshare'
+
   // Relations for polymorphic association
   thinktankMessage  ThinktankMessage?  @relation(fields: [messageId], references: [id], onDelete: Cascade)
   thinkshareMessage ThinkshareMessage? @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  
+
   @@unique([messageId, userId])
   @@index([messageId])
   @@index([userId])
@@ -1339,58 +1359,58 @@ model MessageReadReceipt {
 
 // Global User Presence - No longer tied to ThinkpagesAccounts
 model UserPresence {
-  id          String   @id @default(cuid())
-  userId      String   @unique // Changed to use User.clerkUserId
-  isOnline    Boolean  @default(false)
-  lastSeen    DateTime @default(now())
-  status      String   @default("available") // 'available' | 'busy' | 'away' | 'invisible'
+  id           String   @id @default(cuid())
+  userId       String   @unique // Changed to use User.clerkUserId
+  isOnline     Boolean  @default(false)
+  lastSeen     DateTime @default(now())
+  status       String   @default("available") // 'available' | 'busy' | 'away' | 'invisible'
   customStatus String?
-  updatedAt   DateTime @updatedAt
-  
+  updatedAt    DateTime @updatedAt
+
   @@index([isOnline])
   @@index([lastSeen])
 }
 
 // Enhanced Archetype System
 model ArchetypeCategory {
-  id            String      @id @default(cuid())
-  name          String      @unique
+  id            String   @id @default(cuid())
+  name          String   @unique
   description   String
   color         String
-  maxSelectable Int         @default(2)
-  priority      Int         @default(0)
-  isActive      Boolean     @default(true)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  
+  maxSelectable Int      @default(2)
+  priority      Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
   // Relations
-  archetypes    Archetype[]
-  
+  archetypes Archetype[]
+
   @@index([priority])
   @@index([isActive])
 }
 
 model Archetype {
-  id           String            @id @default(cuid())
-  name         String            @unique
+  id           String   @id @default(cuid())
+  name         String   @unique
   description  String
   categoryId   String
   iconName     String
   color        String
   gradient     String
-  priority     Int               @default(0)
-  isSelectable Boolean           @default(true)
-  isActive     Boolean           @default(true)
-  tags         String?           // JSON array of tags
-  filterRules  String            // JSON object with filter rules
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-  
+  priority     Int      @default(0)
+  isSelectable Boolean  @default(true)
+  isActive     Boolean  @default(true)
+  tags         String? // JSON array of tags
+  filterRules  String // JSON object with filter rules
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
   // Relations
-  category     ArchetypeCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  category       ArchetypeCategory        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   userSelections UserArchetypeSelection[]
   countryMatches CountryArchetypeMatch[]
-  
+
   @@index([categoryId])
   @@index([priority])
   @@index([isSelectable])
@@ -1398,31 +1418,31 @@ model Archetype {
 }
 
 model UserArchetypeSelection {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   userId      String
   archetypeId String
-  selectedAt  DateTime  @default(now())
-  
+  selectedAt  DateTime @default(now())
+
   // Relations
-  user        User      @relation("UserArchetypes", fields: [userId], references: [id], onDelete: Cascade)
-  archetype   Archetype @relation(fields: [archetypeId], references: [id], onDelete: Cascade)
-  
+  user      User      @relation("UserArchetypes", fields: [userId], references: [id], onDelete: Cascade)
+  archetype Archetype @relation(fields: [archetypeId], references: [id], onDelete: Cascade)
+
   @@unique([userId, archetypeId])
   @@index([userId])
   @@index([archetypeId])
 }
 
 model CountryArchetypeMatch {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   countryId   String
   archetypeId String
-  matchScore  Float     @default(1.0) // 0.0 to 1.0 confidence score
-  lastChecked DateTime  @default(now())
-  
+  matchScore  Float    @default(1.0) // 0.0 to 1.0 confidence score
+  lastChecked DateTime @default(now())
+
   // Relations
-  country     Country   @relation("CountryArchetypes", fields: [countryId], references: [id], onDelete: Cascade)
-  archetype   Archetype @relation(fields: [archetypeId], references: [id], onDelete: Cascade)
-  
+  country   Country   @relation("CountryArchetypes", fields: [countryId], references: [id], onDelete: Cascade)
+  archetype Archetype @relation(fields: [archetypeId], references: [id], onDelete: Cascade)
+
   @@unique([countryId, archetypeId])
   @@index([countryId])
   @@index([archetypeId])
@@ -1430,90 +1450,90 @@ model CountryArchetypeMatch {
 }
 
 model NationalIdentity {
-  id                      String   @id @default(cuid())
-  countryId               String   @unique
-  countryName             String?
-  officialName            String?
-  governmentType          String?
-  motto                   String?
-  mottoNative             String?
-  capitalCity             String?
-  largestCity             String?
-  demonym                 String?
-  currency                String?
-  currencySymbol          String?
-  officialLanguages       String?
-  nationalLanguage        String?
-  nationalAnthem          String?
-  nationalDay             String?
-  callingCode             String?
-  internetTLD             String?
-  drivingSide             String?
-  timeZone                String?
-  isoCode                 String?
-  coordinatesLatitude     String?
-  coordinatesLongitude    String?
-  emergencyNumber         String?
-  postalCodeFormat        String?
-  nationalSport           String?
-  weekStartDay            String?
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
-  
+  id                   String   @id @default(cuid())
+  countryId            String   @unique
+  countryName          String?
+  officialName         String?
+  governmentType       String?
+  motto                String?
+  mottoNative          String?
+  capitalCity          String?
+  largestCity          String?
+  demonym              String?
+  currency             String?
+  currencySymbol       String?
+  officialLanguages    String?
+  nationalLanguage     String?
+  nationalAnthem       String?
+  nationalDay          String?
+  callingCode          String?
+  internetTLD          String?
+  drivingSide          String?
+  timeZone             String?
+  isoCode              String?
+  coordinatesLatitude  String?
+  coordinatesLongitude String?
+  emergencyNumber      String?
+  postalCodeFormat     String?
+  nationalSport        String?
+  weekStartDay         String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
   // Relations
-  country                 Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
-  
+  country Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
   @@index([countryId])
 }
 
 // Legacy models for backward compatibility (using PascalCase naming)
 model PostBookmark {
-  id     String @id @default(cuid())
-  userId String
-  postId String
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
   createdAt DateTime @default(now())
-  
+
   @@unique([userId, postId])
 }
 
 model PostFlag {
-  id     String @id @default(cuid())
-  userId String
-  postId String
-  reason String?
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  reason    String?
   createdAt DateTime @default(now())
-  
+
   @@unique([userId, postId])
 }
 
 // Activity Feed System
 model ActivityFeed {
-  id          String   @id @default(cuid())
-  type        String   // 'achievement', 'diplomatic', 'economic', 'social', 'meta'
-  category    String   @default("game") // 'game', 'platform', 'social'  
-  userId      String?  // Clerk user ID (optional for system activities)
-  countryId   String?  // Country ID (optional for user activities)
-  title       String
-  description String
-  metadata    String?  // JSON object with additional data
-  priority    Priority @default(medium)
-  visibility  String   @default("public") // 'public', 'followers', 'friends'
+  id               String   @id @default(cuid())
+  type             String // 'achievement', 'diplomatic', 'economic', 'social', 'meta'
+  category         String   @default("game") // 'game', 'platform', 'social'  
+  userId           String? // Clerk user ID (optional for system activities)
+  countryId        String? // Country ID (optional for user activities)
+  title            String
+  description      String
+  metadata         String? // JSON object with additional data
+  priority         Priority @default(medium)
+  visibility       String   @default("public") // 'public', 'followers', 'friends'
   relatedCountries String? // JSON array of country IDs
-  
+
   // Engagement metrics
-  likes       Int      @default(0)
-  comments    Int      @default(0)
-  shares      Int      @default(0)
-  views       Int      @default(0)
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  likes    Int @default(0)
+  comments Int @default(0)
+  shares   Int @default(0)
+  views    Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
   activityLikes    ActivityLike[]
   activityComments ActivityComment[]
   activityShares   ActivityShare[]
-  
+
   @@index([type])
   @@index([category])
   @@index([userId])
@@ -1526,10 +1546,10 @@ model ActivityFeed {
 model ActivityLike {
   id         String       @id @default(cuid())
   activityId String
-  userId     String       // Clerk user ID
+  userId     String // Clerk user ID
   createdAt  DateTime     @default(now())
   activity   ActivityFeed @relation(fields: [activityId], references: [id], onDelete: Cascade)
-  
+
   @@unique([activityId, userId]) // Prevent duplicate likes
   @@index([activityId])
   @@index([userId])
@@ -1538,12 +1558,12 @@ model ActivityLike {
 model ActivityComment {
   id         String       @id @default(cuid())
   activityId String
-  userId     String       // Clerk user ID
-  content    String       // Rich text content from echo editor
+  userId     String // Clerk user ID
+  content    String // Rich text content from echo editor
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
   activity   ActivityFeed @relation(fields: [activityId], references: [id], onDelete: Cascade)
-  
+
   @@index([activityId])
   @@index([userId])
   @@index([createdAt])
@@ -1552,38 +1572,38 @@ model ActivityComment {
 model ActivityShare {
   id         String       @id @default(cuid())
   activityId String
-  userId     String       // Clerk user ID
+  userId     String // Clerk user ID
   createdAt  DateTime     @default(now())
   activity   ActivityFeed @relation(fields: [activityId], references: [id], onDelete: Cascade)
-  
+
   @@unique([activityId, userId]) // Prevent duplicate shares from same user
   @@index([activityId])
   @@index([userId])
 }
 
 model DiplomaticEvent {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   country1Id  String
-  country2Id  String?  // Made optional for embassy-related events
-  eventType   String   // 'trade_agreement', 'alliance', 'conflict', 'treaty', 'embassy_established', 'mission_completed', 'embassy_upgraded'
+  country2Id  String? // Made optional for embassy-related events
+  eventType   String // 'trade_agreement', 'alliance', 'conflict', 'treaty', 'embassy_established', 'mission_completed', 'embassy_upgraded'
   title       String
   description String
-  tradeValue  Float?   // For trade agreements
-  status      String   @default("active") // 'active', 'expired', 'cancelled'
-  metadata    String?  // JSON object with additional event data
-  
+  tradeValue  Float? // For trade agreements
+  status      String  @default("active") // 'active', 'expired', 'cancelled'
+  metadata    String? // JSON object with additional event data
+
   // Embassy game system fields
-  embassyId          String?  // Related embassy
-  missionId          String?  // Related mission
-  severity          String   @default("info") // 'info', 'warning', 'critical', 'positive'
+  embassyId          String? // Related embassy
+  missionId          String? // Related mission
+  severity           String  @default("info") // 'info', 'warning', 'critical', 'positive'
   relationshipImpact Float   @default(0) // Impact on relationship strength
   reputationImpact   Float   @default(0) // Impact on reputation
   economicImpact     Float   @default(0) // Economic impact
-  ixTimeTimestamp    Float?  // IxTime context
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  ixTimeTimestamp    Float? // IxTime context
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([country1Id])
   @@index([country2Id])
   @@index([eventType])
@@ -1592,15 +1612,15 @@ model DiplomaticEvent {
 }
 
 model UserConnection {
-  id               String   @id @default(cuid())
-  userId           String   // Clerk user ID
-  targetUserId     String?  // Target user (for friend connections)
-  targetCountryId  String?  // Target country (for following countries)
-  connectionType   String   // 'friend', 'following_user', 'following_country'
-  status           String   @default("active") // 'active', 'pending', 'blocked'
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  
+  id              String   @id @default(cuid())
+  userId          String // Clerk user ID
+  targetUserId    String? // Target user (for friend connections)
+  targetCountryId String? // Target country (for following countries)
+  connectionType  String // 'friend', 'following_user', 'following_country'
+  status          String   @default("active") // 'active', 'pending', 'blocked'
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
   @@unique([userId, targetUserId, connectionType])
   @@unique([userId, targetCountryId, connectionType])
   @@index([userId])
@@ -1611,16 +1631,16 @@ model UserConnection {
 
 model UserAchievement {
   id            String   @id @default(cuid())
-  userId        String   // Clerk user ID
-  achievementId String   
+  userId        String // Clerk user ID
+  achievementId String
   title         String
   description   String
-  category      String   // 'economic', 'diplomatic', 'social', 'growth', 'milestone'
-  rarity        String   // 'common', 'uncommon', 'rare', 'epic', 'legendary'
+  category      String // 'economic', 'diplomatic', 'social', 'growth', 'milestone'
+  rarity        String // 'common', 'uncommon', 'rare', 'epic', 'legendary'
   iconUrl       String?
-  metadata      String?  // JSON object with achievement data
+  metadata      String? // JSON object with achievement data
   unlockedAt    DateTime @default(now())
-  
+
   @@index([userId])
   @@index([category])
   @@index([rarity])
@@ -1632,24 +1652,24 @@ model CountryActivity {
   id        String   @id @default(cuid())
   countryId String
   type      String
-  data      String   // JSON string
+  data      String // JSON string
   timestamp DateTime @default(now())
-  
+
   @@index([countryId])
   @@index([type])
   @@index([timestamp])
 }
 
 model DiplomaticAction {
-  id               String   @id @default(cuid())
-  fromCountryId    String
-  toCountryId      String
-  actionType       String
-  description      String?
-  status           String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  
+  id            String   @id @default(cuid())
+  fromCountryId String
+  toCountryId   String
+  actionType    String
+  description   String?
+  status        String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
   @@index([fromCountryId])
   @@index([toCountryId])
 }
@@ -1657,56 +1677,56 @@ model DiplomaticAction {
 // Enhanced Diplomatic Relations System
 
 model Embassy {
-  id              String   @id @default(cuid())
-  hostCountryId   String   // Country hosting the embassy
-  guestCountryId  String   // Country that owns the embassy
-  name            String   // Embassy name/title
-  location        String?  // City/region location
-  ambassadorName  String?
-  staffCount      Int      @default(1)
-  establishedAt   DateTime @default(now())
-  status          String   @default("active") // 'active', 'suspended', 'closed', 'under_construction'
-  services        String?  // JSON array of embassy services
-  securityLevel   String   @default("STANDARD") // 'BASIC', 'STANDARD', 'HIGH', 'MAXIMUM'
-  
+  id             String   @id @default(cuid())
+  hostCountryId  String // Country hosting the embassy
+  guestCountryId String // Country that owns the embassy
+  name           String // Embassy name/title
+  location       String? // City/region location
+  ambassadorName String?
+  staffCount     Int      @default(1)
+  establishedAt  DateTime @default(now())
+  status         String   @default("active") // 'active', 'suspended', 'closed', 'under_construction'
+  services       String? // JSON array of embassy services
+  securityLevel  String   @default("STANDARD") // 'BASIC', 'STANDARD', 'HIGH', 'MAXIMUM'
+
   // Game Mechanics - Economic
-  establishmentCost    Float    @default(0) // Cost to establish
-  maintenanceCost      Float    @default(1000) // Monthly maintenance
-  lastMaintenancePaid  DateTime @default(now())
+  establishmentCost   Float    @default(0) // Cost to establish
+  maintenanceCost     Float    @default(1000) // Monthly maintenance
+  lastMaintenancePaid DateTime @default(now())
   budget              Float    @default(50000) // Embassy budget
-  
+
   // Game Mechanics - Levels & Upgrades
-  level               Int      @default(1) // Embassy level (1-5)
-  experience          Int      @default(0) // Embassy experience points
-  upgradeProgress     Float    @default(0) // 0-100 upgrade progress
-  
+  level           Int   @default(1) // Embassy level (1-5)
+  experience      Int   @default(0) // Embassy experience points
+  upgradeProgress Float @default(0) // 0-100 upgrade progress
+
   // Game Mechanics - Influence & Effectiveness
-  influence           Float    @default(10) // Local influence (0-100)
-  effectiveness       Float    @default(50) // Overall effectiveness (0-100)
-  reputation          Float    @default(50) // Local reputation (0-100)
-  
+  influence     Float @default(10) // Local influence (0-100)
+  effectiveness Float @default(50) // Overall effectiveness (0-100)
+  reputation    Float @default(50) // Local reputation (0-100)
+
   // Game Mechanics - Capacity & Resources
-  maxStaff            Int      @default(5) // Maximum staff capacity
-  currentMissions     Int      @default(0) // Active missions count
-  maxMissions         Int      @default(2) // Maximum concurrent missions
-  
+  maxStaff        Int @default(5) // Maximum staff capacity
+  currentMissions Int @default(0) // Active missions count
+  maxMissions     Int @default(2) // Maximum concurrent missions
+
   // Game Mechanics - Specializations
-  specialization      String?  // 'trade', 'intelligence', 'cultural', 'military', 'research'
-  specializationLevel Int      @default(0) // Specialization level (0-3)
-  
+  specialization      String? // 'trade', 'intelligence', 'cultural', 'military', 'research'
+  specializationLevel Int     @default(0) // Specialization level (0-3)
+
   // Game Mechanics - Status Effects
-  buffs               String?  // JSON array of active buffs
-  debuffs             String?  // JSON array of active debuffs
-  lastActivity        DateTime @default(now())
-  
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  buffs        String? // JSON array of active buffs
+  debuffs      String? // JSON array of active debuffs
+  lastActivity DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  hostCountry        Country          @relation("HostCountryEmbassies", fields: [hostCountryId], references: [id], onDelete: Cascade)
-  guestCountry       Country          @relation("GuestCountryEmbassies", fields: [guestCountryId], references: [id], onDelete: Cascade)
-  missions           EmbassyMission[]
-  upgrades           EmbassyUpgrade[]
+  hostCountry  Country          @relation("HostCountryEmbassies", fields: [hostCountryId], references: [id], onDelete: Cascade)
+  guestCountry Country          @relation("GuestCountryEmbassies", fields: [guestCountryId], references: [id], onDelete: Cascade)
+  missions     EmbassyMission[]
+  upgrades     EmbassyUpgrade[]
 
   @@unique([hostCountryId, guestCountryId])
   @@index([hostCountryId])
@@ -1717,19 +1737,19 @@ model Embassy {
 }
 
 model DiplomaticChannel {
-  id              String   @id @default(cuid())
-  name            String
-  type            String   // 'BILATERAL', 'MULTILATERAL', 'EMERGENCY'
-  classification  String   @default("PUBLIC") // 'PUBLIC', 'RESTRICTED', 'CONFIDENTIAL'
-  encrypted       Boolean  @default(false)
-  lastActivity    DateTime @default(now())
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  id             String   @id @default(cuid())
+  name           String
+  type           String // 'BILATERAL', 'MULTILATERAL', 'EMERGENCY'
+  classification String   @default("PUBLIC") // 'PUBLIC', 'RESTRICTED', 'CONFIDENTIAL'
+  encrypted      Boolean  @default(false)
+  lastActivity   DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
   // Relations
-  participants    DiplomaticChannelParticipant[]
-  messages        DiplomaticMessage[]
-  
+  participants DiplomaticChannelParticipant[]
+  messages     DiplomaticMessage[]
+
   @@index([type])
   @@index([classification])
   @@index([lastActivity])
@@ -1743,10 +1763,10 @@ model DiplomaticChannelParticipant {
   flagUrl     String?
   role        String   @default("MEMBER") // 'MEMBER', 'MODERATOR', 'OBSERVER'
   joinedAt    DateTime @default(now())
-  
+
   // Relations
-  channel     DiplomaticChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
-  
+  channel DiplomaticChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
   @@unique([channelId, countryId])
   @@index([channelId])
   @@index([countryId])
@@ -1757,7 +1777,7 @@ model DiplomaticMessage {
   channelId       String
   fromCountryId   String
   fromCountryName String
-  toCountryId     String?  // Optional for broadcast messages
+  toCountryId     String? // Optional for broadcast messages
   toCountryName   String?
   subject         String?
   content         String
@@ -1765,13 +1785,13 @@ model DiplomaticMessage {
   priority        String   @default("NORMAL") // 'LOW', 'NORMAL', 'HIGH', 'URGENT'
   status          String   @default("SENT") // 'SENT', 'DELIVERED', 'READ', 'ARCHIVED'
   encrypted       Boolean  @default(false)
-  ixTimeTimestamp Float    // IxTime timestamp for game context
+  ixTimeTimestamp Float // IxTime timestamp for game context
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  
+
   // Relations
-  channel         DiplomaticChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
-  
+  channel DiplomaticChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
   @@index([channelId])
   @@index([fromCountryId])
   @@index([toCountryId])
@@ -1782,29 +1802,29 @@ model DiplomaticMessage {
 }
 
 model CulturalExchange {
-  id                    String   @id @default(cuid())
-  title                 String
-  type                  String   // 'festival', 'exhibition', 'education', 'cuisine', 'arts', 'sports', 'technology', 'diplomacy'
-  description           String
-  hostCountryId         String
-  hostCountryName       String
-  hostCountryFlag       String?
-  status                String   @default("planning") // 'planning', 'active', 'completed', 'cancelled'
-  startDate             DateTime
-  endDate               DateTime
-  ixTimeContext         Float    // IxTime context for the exchange
-  participants          Int      @default(0)
-  culturalImpact        Float    @default(0) // 0-100 score
-  diplomaticValue       Float    @default(0) // 0-100 score
-  socialEngagement      Int      @default(0)
-  achievements          String?  // JSON array of achievements
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  
+  id               String   @id @default(cuid())
+  title            String
+  type             String // 'festival', 'exhibition', 'education', 'cuisine', 'arts', 'sports', 'technology', 'diplomacy'
+  description      String
+  hostCountryId    String
+  hostCountryName  String
+  hostCountryFlag  String?
+  status           String   @default("planning") // 'planning', 'active', 'completed', 'cancelled'
+  startDate        DateTime
+  endDate          DateTime
+  ixTimeContext    Float // IxTime context for the exchange
+  participants     Int      @default(0)
+  culturalImpact   Float    @default(0) // 0-100 score
+  diplomaticValue  Float    @default(0) // 0-100 score
+  socialEngagement Int      @default(0)
+  achievements     String? // JSON array of achievements
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
   // Relations
   participatingCountries CulturalExchangeParticipant[]
   culturalArtifacts      CulturalArtifact[]
-  
+
   @@index([hostCountryId])
   @@index([type])
   @@index([status])
@@ -1817,32 +1837,32 @@ model CulturalExchangeParticipant {
   countryId   String
   countryName String
   flagUrl     String?
-  role        String   // 'co-host', 'participant', 'observer'
+  role        String // 'co-host', 'participant', 'observer'
   joinedAt    DateTime @default(now())
-  
+
   // Relations
-  exchange    CulturalExchange @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
-  
+  exchange CulturalExchange @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
+
   @@unique([exchangeId, countryId])
   @@index([exchangeId])
   @@index([countryId])
 }
 
 model CulturalArtifact {
-  id            String   @id @default(cuid())
-  exchangeId    String
-  type          String   // 'photo', 'video', 'document', 'artwork', 'recipe', 'music'
-  title         String
-  description   String?
-  thumbnailUrl  String?
-  fileUrl       String?
-  contributor   String   // Name/title of contributor
-  countryId     String   // Contributing country
-  uploadedAt    DateTime @default(now())
-  
+  id           String   @id @default(cuid())
+  exchangeId   String
+  type         String // 'photo', 'video', 'document', 'artwork', 'recipe', 'music'
+  title        String
+  description  String?
+  thumbnailUrl String?
+  fileUrl      String?
+  contributor  String // Name/title of contributor
+  countryId    String // Contributing country
+  uploadedAt   DateTime @default(now())
+
   // Relations
-  exchange      CulturalExchange @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
-  
+  exchange CulturalExchange @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
+
   @@index([exchangeId])
   @@index([countryId])
   @@index([type])
@@ -1851,46 +1871,46 @@ model CulturalArtifact {
 // Embassy Game System Models
 
 model EmbassyMission {
-  id              String   @id @default(cuid())
-  embassyId       String
-  name            String
-  type            String   // 'trade_negotiation', 'intelligence_gathering', 'cultural_outreach', 'security_cooperation', 'research_collaboration'
-  description     String
-  difficulty      String   // 'easy', 'medium', 'hard', 'expert'
-  status          String   @default("active") // 'active', 'completed', 'failed', 'cancelled'
-  
+  id          String @id @default(cuid())
+  embassyId   String
+  name        String
+  type        String // 'trade_negotiation', 'intelligence_gathering', 'cultural_outreach', 'security_cooperation', 'research_collaboration'
+  description String
+  difficulty  String // 'easy', 'medium', 'hard', 'expert'
+  status      String @default("active") // 'active', 'completed', 'failed', 'cancelled'
+
   // Mission Requirements
-  requiredStaff       Int      @default(1)
-  requiredLevel       Int      @default(1)
+  requiredStaff          Int     @default(1)
+  requiredLevel          Int     @default(1)
   requiredSpecialization String? // Required embassy specialization
-  
+
   // Mission Costs & Duration
-  cost                Float    @default(0)
-  duration            Int      @default(7) // Duration in days
-  startedAt           DateTime @default(now())
-  completesAt         DateTime
-  
+  cost        Float    @default(0)
+  duration    Int      @default(7) // Duration in days
+  startedAt   DateTime @default(now())
+  completesAt DateTime
+
   // Mission Rewards
-  experienceReward    Int      @default(0)
-  influenceReward     Float    @default(0)
-  reputationReward    Float    @default(0)
-  economicReward      Float    @default(0)
-  
+  experienceReward Int   @default(0)
+  influenceReward  Float @default(0)
+  reputationReward Float @default(0)
+  economicReward   Float @default(0)
+
   // Mission Progress
-  progress            Float    @default(0) // 0-100
-  successChance       Float    @default(50) // 0-100
-  complications       String?  // JSON array of complications
-  
+  progress      Float   @default(0) // 0-100
+  successChance Float   @default(50) // 0-100
+  complications String? // JSON array of complications
+
   // IxTime Integration
-  ixTimeStarted       Float
-  ixTimeCompletes     Float
-  
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  
+  ixTimeStarted   Float
+  ixTimeCompletes Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
-  embassy            Embassy  @relation(fields: [embassyId], references: [id], onDelete: Cascade)
-  
+  embassy Embassy @relation(fields: [embassyId], references: [id], onDelete: Cascade)
+
   @@index([embassyId])
   @@index([type])
   @@index([status])
@@ -1898,53 +1918,53 @@ model EmbassyMission {
 }
 
 model EmbassyUpgrade {
-  id              String   @id @default(cuid())
-  embassyId       String
-  upgradeType     String   // 'staff_expansion', 'security_enhancement', 'tech_upgrade', 'facility_expansion', 'specialization_improvement'
-  name            String
-  description     String
-  level           Int      @default(1) // Upgrade level
-  
+  id          String @id @default(cuid())
+  embassyId   String
+  upgradeType String // 'staff_expansion', 'security_enhancement', 'tech_upgrade', 'facility_expansion', 'specialization_improvement'
+  name        String
+  description String
+  level       Int    @default(1) // Upgrade level
+
   // Upgrade Costs
-  cost            Float
-  duration        Int      // Duration in days
-  requiredLevel   Int      @default(1) // Required embassy level
-  
+  cost          Float
+  duration      Int // Duration in days
+  requiredLevel Int   @default(1) // Required embassy level
+
   // Upgrade Status
-  status          String   @default("available") // 'available', 'in_progress', 'completed'
-  startedAt       DateTime?
-  completesAt     DateTime?
-  progress        Float    @default(0) // 0-100
-  
+  status      String    @default("available") // 'available', 'in_progress', 'completed'
+  startedAt   DateTime?
+  completesAt DateTime?
+  progress    Float     @default(0) // 0-100
+
   // Upgrade Effects (JSON)
-  effects         String?  // JSON object with upgrade effects
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  effects String? // JSON object with upgrade effects
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
-  embassy         Embassy  @relation(fields: [embassyId], references: [id], onDelete: Cascade)
-  
+  embassy Embassy @relation(fields: [embassyId], references: [id], onDelete: Cascade)
+
   @@index([embassyId])
   @@index([upgradeType])
   @@index([status])
 }
 
 model EmbassyRequirement {
-  id                  String   @id @default(cuid())
-  hostCountryId       String   // Country where embassy will be established
+  id                   String  @id @default(cuid())
+  hostCountryId        String // Country where embassy will be established
   requiredRelationship String  @default("neutral") // 'ally', 'friendly', 'neutral'
-  minRelationStrength Int     @default(25) // Minimum relationship strength
-  establishmentCost   Float   @default(100000) // Base cost to establish
-  approvalTime        Int     @default(30) // Days for approval
-  specialRequirements String? // JSON array of special requirements
-  
+  minRelationStrength  Int     @default(25) // Minimum relationship strength
+  establishmentCost    Float   @default(100000) // Base cost to establish
+  approvalTime         Int     @default(30) // Days for approval
+  specialRequirements  String? // JSON array of special requirements
+
   // Economic factors
   economicTierMultiplier Float @default(1.0) // Cost multiplier based on target country's economic tier
-  
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([hostCountryId])
   @@index([hostCountryId])
 }
@@ -1954,18 +1974,18 @@ model EmbassyRequirement {
 model Role {
   id          String   @id @default(cuid())
   name        String   @unique // 'owner', 'admin', 'staff', 'moderator', 'user'
-  displayName String   // 'System Owner', 'Administrator', etc.
+  displayName String // 'System Owner', 'Administrator', etc.
   description String?
   level       Int      @unique // Hierarchy level (0=highest, 100=lowest)
   isSystem    Boolean  @default(false) // System roles cannot be deleted
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   // Relations
-  users       User[]
+  users           User[]
   rolePermissions RolePermission[]
-  
+
   @@index([name])
   @@index([level])
   @@index([isActive])
@@ -1975,48 +1995,48 @@ model Role {
 model Permission {
   id          String   @id @default(cuid())
   name        String   @unique // 'user.manage', 'system.config', etc.
-  displayName String   // 'Manage Users', 'System Configuration'
+  displayName String // 'Manage Users', 'System Configuration'
   description String?
-  category    String   // 'system', 'user', 'content', 'moderation', 'analytics'
+  category    String // 'system', 'user', 'content', 'moderation', 'analytics'
   isSystem    Boolean  @default(false) // System permissions cannot be deleted
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   // Relations
   rolePermissions RolePermission[]
-  
+
   @@index([name])
   @@index([category])
   @@index([isSystem])
 }
 
 model RolePermission {
-  id           String     @id @default(cuid())
+  id           String   @id @default(cuid())
   roleId       String
   permissionId String
-  createdAt    DateTime   @default(now())
-  
+  createdAt    DateTime @default(now())
+
   // Relations
-  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-  
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
   @@unique([roleId, permissionId])
   @@index([roleId])
   @@index([permissionId])
 }
 
 model UserSession {
-  id          String   @id @default(cuid())
-  clerkUserId String   
-  roleId      String?  // Role at time of session
-  permissions String?  // JSON array of permissions for quick access
-  ipAddress   String?
-  userAgent   String?
+  id           String   @id @default(cuid())
+  clerkUserId  String
+  roleId       String? // Role at time of session
+  permissions  String? // JSON array of permissions for quick access
+  ipAddress    String?
+  userAgent    String?
   lastActivity DateTime @default(now())
-  expiresAt   DateTime
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  
+  expiresAt    DateTime
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
   @@index([clerkUserId])
   @@index([roleId])
   @@index([lastActivity])
@@ -2025,17 +2045,17 @@ model UserSession {
 }
 
 model AuditLog {
-  id          String   @id @default(cuid())
-  userId      String?  // Clerk user ID
-  action      String   // 'role.assign', 'permission.grant', etc.
-  target      String?  // Target user/resource ID
-  details     String?  // JSON object with action details
-  ipAddress   String?
-  userAgent   String?
-  success     Boolean  @default(true)
-  error       String?  // Error message if action failed
-  timestamp   DateTime @default(now())
-  
+  id        String   @id @default(cuid())
+  userId    String? // Clerk user ID
+  action    String // 'role.assign', 'permission.grant', etc.
+  target    String? // Target user/resource ID
+  details   String? // JSON object with action details
+  ipAddress String?
+  userAgent String?
+  success   Boolean  @default(true)
+  error     String? // Error message if action failed
+  timestamp DateTime @default(now())
+
   @@index([userId])
   @@index([action])
   @@index([timestamp])
@@ -2045,27 +2065,27 @@ model AuditLog {
 // Government Structure Models
 
 model GovernmentStructure {
-  id                 String   @id @default(cuid())
-  countryId          String   @unique
-  governmentName     String   // e.g., "Imperial Government", "Federal Administration"
-  governmentType     String   // e.g., "Constitutional Monarchy", "Federal Republic"
-  headOfState        String?  // e.g., "Emperor", "President"
-  headOfGovernment   String?  // e.g., "Prime Minister", "Chancellor"
-  legislatureName    String?  // e.g., "Imperial Senate", "Parliament"
-  executiveName      String?  // e.g., "Imperial Cabinet", "Executive Council"
-  judicialName       String?  // e.g., "Supreme Court", "High Court"
-  totalBudget        Float    @default(0)
-  fiscalYear         String   @default("Calendar Year") // "Calendar Year", "April-March", etc.
-  budgetCurrency     String   @default("USD")
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  
+  id               String   @id @default(cuid())
+  countryId        String   @unique
+  governmentName   String // e.g., "Imperial Government", "Federal Administration"
+  governmentType   String // e.g., "Constitutional Monarchy", "Federal Republic"
+  headOfState      String? // e.g., "Emperor", "President"
+  headOfGovernment String? // e.g., "Prime Minister", "Chancellor"
+  legislatureName  String? // e.g., "Imperial Senate", "Parliament"
+  executiveName    String? // e.g., "Imperial Cabinet", "Executive Council"
+  judicialName     String? // e.g., "Supreme Court", "High Court"
+  totalBudget      Float    @default(0)
+  fiscalYear       String   @default("Calendar Year") // "Calendar Year", "April-March", etc.
+  budgetCurrency   String   @default("USD")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
   // Relations
-  country            Country              @relation(fields: [countryId], references: [id], onDelete: Cascade)
-  departments        GovernmentDepartment[]
-  budgetAllocations  BudgetAllocation[]
-  revenueSources     RevenueSource[]
-  officials          GovernmentOfficial[]
+  country           Country                @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  departments       GovernmentDepartment[]
+  budgetAllocations BudgetAllocation[]
+  revenueSources    RevenueSource[]
+  officials         GovernmentOfficial[]
 
   @@index([countryId])
 }
@@ -2073,33 +2093,33 @@ model GovernmentStructure {
 model GovernmentDepartment {
   id                    String   @id @default(cuid())
   governmentStructureId String
-  name                  String   // e.g., "Ministry of Defense", "Department of Education"
-  shortName             String?  // e.g., "MoD", "DoE"
-  category              String   // e.g., "Defense", "Education", "Health", "Infrastructure"
+  name                  String // e.g., "Ministry of Defense", "Department of Education"
+  shortName             String? // e.g., "MoD", "DoE"
+  category              String // e.g., "Defense", "Education", "Health", "Infrastructure"
   description           String?
-  minister              String?  // Name of the minister/secretary
+  minister              String? // Name of the minister/secretary
   ministerTitle         String   @default("Minister") // "Minister", "Secretary", "Director General"
-  headquarters          String?  // Location/building
-  established           String?  // Year established
-  employeeCount         Int?     // Number of employees
-  icon                  String?  // Icon name for UI
+  headquarters          String? // Location/building
+  established           String? // Year established
+  employeeCount         Int? // Number of employees
+  icon                  String? // Icon name for UI
   color                 String   @default("#6366f1") // Theme color
   priority              Int      @default(50) // 1-100, higher = more important
   isActive              Boolean  @default(true)
-  parentDepartmentId    String?  // For sub-departments
+  parentDepartmentId    String? // For sub-departments
   organizationalLevel   String   @default("Ministry") // "Ministry", "Department", "Agency", "Bureau"
-  functions             String?  // JSON array of functions/responsibilities
-  kpis                  String?  // JSON array of Key Performance Indicators
+  functions             String? // JSON array of functions/responsibilities
+  kpis                  String? // JSON array of Key Performance Indicators
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
-  
+
   // Relations
-  governmentStructure   GovernmentStructure @relation(fields: [governmentStructureId], references: [id], onDelete: Cascade)
-  parentDepartment      GovernmentDepartment? @relation("DepartmentHierarchy", fields: [parentDepartmentId], references: [id])
-  subDepartments        GovernmentDepartment[] @relation("DepartmentHierarchy")
-  budgetAllocations     BudgetAllocation[]
-  subBudgets            SubBudgetCategory[]
-  officials             GovernmentOfficial[]
+  governmentStructure GovernmentStructure    @relation(fields: [governmentStructureId], references: [id], onDelete: Cascade)
+  parentDepartment    GovernmentDepartment?  @relation("DepartmentHierarchy", fields: [parentDepartmentId], references: [id])
+  subDepartments      GovernmentDepartment[] @relation("DepartmentHierarchy")
+  budgetAllocations   BudgetAllocation[]
+  subBudgets          SubBudgetCategory[]
+  officials           GovernmentOfficial[]
 
   @@index([governmentStructureId])
   @@index([category])
@@ -2111,9 +2131,9 @@ model BudgetAllocation {
   id                    String   @id @default(cuid())
   governmentStructureId String
   departmentId          String
-  budgetYear            Int      // e.g., 2024
+  budgetYear            Int // e.g., 2024
   allocatedAmount       Float
-  allocatedPercent      Float    // Percentage of total budget
+  allocatedPercent      Float // Percentage of total budget
   spentAmount           Float    @default(0)
   encumberedAmount      Float    @default(0) // Committed but not spent
   availableAmount       Float    @default(0) // Calculated field
@@ -2122,11 +2142,11 @@ model BudgetAllocation {
   notes                 String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
-  
+
   // Relations
-  governmentStructure   GovernmentStructure @relation(fields: [governmentStructureId], references: [id], onDelete: Cascade)
-  department            GovernmentDepartment @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  
+  governmentStructure GovernmentStructure  @relation(fields: [governmentStructureId], references: [id], onDelete: Cascade)
+  department          GovernmentDepartment @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
   @@unique([departmentId, budgetYear])
   @@index([governmentStructureId])
   @@index([departmentId])
@@ -2136,19 +2156,19 @@ model BudgetAllocation {
 model SubBudgetCategory {
   id           String   @id @default(cuid())
   departmentId String
-  name         String   // e.g., "Personnel", "Operations", "Capital Expenditure"
+  name         String // e.g., "Personnel", "Operations", "Capital Expenditure"
   description  String?
   amount       Float
-  percent      Float    // Percentage of department budget
-  budgetType   String   // "Personnel", "Operations", "Capital", "Research", "Other"
+  percent      Float // Percentage of department budget
+  budgetType   String // "Personnel", "Operations", "Capital", "Research", "Other"
   isRecurring  Boolean  @default(true) // Annual recurring expense
   priority     String   @default("Medium") // "Critical", "High", "Medium", "Low"
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  
+
   // Relations
-  department   GovernmentDepartment @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  
+  department GovernmentDepartment @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
   @@index([departmentId])
   @@index([budgetType])
 }
@@ -2158,21 +2178,21 @@ model SubBudgetCategory {
 model RevenueSource {
   id                    String   @id @default(cuid())
   governmentStructureId String
-  name                  String   // e.g., "Income Tax", "Corporate Tax", "VAT"
-  category              String   // e.g., "Direct Tax", "Indirect Tax", "Non-Tax Revenue"
+  name                  String // e.g., "Income Tax", "Corporate Tax", "VAT"
+  category              String // e.g., "Direct Tax", "Indirect Tax", "Non-Tax Revenue"
   description           String?
-  rate                  Float?   // Tax rate if applicable
+  rate                  Float? // Tax rate if applicable
   revenueAmount         Float    @default(0) // Annual revenue
   revenuePercent        Float    @default(0) // Percentage of total revenue
   isActive              Boolean  @default(true)
-  collectionMethod      String?  // How it's collected
-  administeredBy        String?  // Which department administers it
+  collectionMethod      String? // How it's collected
+  administeredBy        String? // Which department administers it
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
-  
+
   // Relations
-  governmentStructure   GovernmentStructure @relation(fields: [governmentStructureId], references: [id], onDelete: Cascade)
-  
+  governmentStructure GovernmentStructure @relation(fields: [governmentStructureId], references: [id], onDelete: Cascade)
+
   @@index([governmentStructureId])
   @@index([category])
   @@index([isActive])
@@ -2181,13 +2201,13 @@ model RevenueSource {
 // Admin Panel Favorites System
 model AdminFavorite {
   id          String   @id @default(cuid())
-  userId      String   // Clerk user ID
-  panelType   String   // 'dashboard', 'users', 'countries', 'analytics', 'system', etc.
-  panelId     String   // Specific panel identifier (e.g., 'user-management', 'system-logs')
-  displayName String   // Human readable name for the panel
-  description String?  // Optional description
-  iconName    String?  // Icon identifier (lucide icon name)
-  url         String   // URL/route to the panel
+  userId      String // Clerk user ID
+  panelType   String // 'dashboard', 'users', 'countries', 'analytics', 'system', etc.
+  panelId     String // Specific panel identifier (e.g., 'user-management', 'system-logs')
+  displayName String // Human readable name for the panel
+  description String? // Optional description
+  iconName    String? // Icon identifier (lucide icon name)
+  url         String // URL/route to the panel
   category    String   @default("general") // 'system', 'content', 'users', 'analytics', 'tools'
   order       Int      @default(0) // Custom ordering
   isActive    Boolean  @default(true)
@@ -2204,26 +2224,26 @@ model AdminFavorite {
 // Quick Actions System - Integrated with Government, IxTime, and Economic Systems
 
 model GovernmentOfficial {
-  id                String   @id @default(cuid())
+  id                    String    @id @default(cuid())
   governmentStructureId String?
-  departmentId      String?
-  name              String
-  title             String   // e.g., "Minister of Defense", "Secretary of State"
-  role              String   // e.g., "Cabinet Member", "Department Head", "Advisor"
-  email             String?
-  phone             String?
-  bio               String?
-  photoUrl          String?
-  appointedDate     DateTime @default(now())
-  termEndDate       DateTime?
-  isActive          Boolean  @default(true)
-  priority          Int      @default(50) // For sorting/display
-  responsibilities  String?  // JSON array of responsibilities
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  departmentId          String?
+  name                  String
+  title                 String // e.g., "Minister of Defense", "Secretary of State"
+  role                  String // e.g., "Cabinet Member", "Department Head", "Advisor"
+  email                 String?
+  phone                 String?
+  bio                   String?
+  photoUrl              String?
+  appointedDate         DateTime  @default(now())
+  termEndDate           DateTime?
+  isActive              Boolean   @default(true)
+  priority              Int       @default(50) // For sorting/display
+  responsibilities      String? // JSON array of responsibilities
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   // Relations
-  governmentStructure GovernmentStructure? @relation(fields: [governmentStructureId], references: [id], onDelete: Cascade)
+  governmentStructure GovernmentStructure?  @relation(fields: [governmentStructureId], references: [id], onDelete: Cascade)
   department          GovernmentDepartment? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
   meetingAttendances  MeetingAttendance[]
 
@@ -2234,25 +2254,25 @@ model GovernmentOfficial {
 }
 
 model CabinetMeeting {
-  id                String   @id @default(cuid())
-  countryId         String
-  userId            String   // User who created the meeting
-  title             String
-  description       String?
-  scheduledDate     DateTime // Real-world date/time
-  scheduledIxTime   Float?   // IxTime timestamp
-  duration          Int      @default(60) // Duration in minutes
-  status            String   @default("scheduled") // "scheduled", "in_progress", "completed", "cancelled"
-  notes             String?  // Meeting notes/minutes
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  completedAt       DateTime? // When meeting was completed
+  id              String    @id @default(cuid())
+  countryId       String
+  userId          String // User who created the meeting
+  title           String
+  description     String?
+  scheduledDate   DateTime // Real-world date/time
+  scheduledIxTime Float? // IxTime timestamp
+  duration        Int       @default(60) // Duration in minutes
+  status          String    @default("scheduled") // "scheduled", "in_progress", "completed", "cancelled"
+  notes           String? // Meeting notes/minutes
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  completedAt     DateTime? // When meeting was completed
 
   // Relations
-  attendances       MeetingAttendance[]
-  agendaItems       MeetingAgendaItem[]
-  decisions         MeetingDecision[]
-  actionItems       MeetingActionItem[]
+  attendances MeetingAttendance[]
+  agendaItems MeetingAgendaItem[]
+  decisions   MeetingDecision[]
+  actionItems MeetingActionItem[]
 
   @@index([countryId])
   @@index([userId])
@@ -2262,18 +2282,18 @@ model CabinetMeeting {
 }
 
 model MeetingAttendance {
-  id              String   @id @default(cuid())
-  meetingId       String
-  officialId      String?  // GovernmentOfficial ID
-  attendeeName    String   // Name if not an official
-  attendeeRole    String?  // Role/title
-  attendanceStatus String  @default("invited") // "invited", "confirmed", "attended", "declined", "absent"
-  notes           String?
-  createdAt       DateTime @default(now())
+  id               String   @id @default(cuid())
+  meetingId        String
+  officialId       String? // GovernmentOfficial ID
+  attendeeName     String // Name if not an official
+  attendeeRole     String? // Role/title
+  attendanceStatus String   @default("invited") // "invited", "confirmed", "attended", "declined", "absent"
+  notes            String?
+  createdAt        DateTime @default(now())
 
   // Relations
-  meeting         CabinetMeeting     @relation(fields: [meetingId], references: [id], onDelete: Cascade)
-  official        GovernmentOfficial? @relation(fields: [officialId], references: [id])
+  meeting  CabinetMeeting      @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  official GovernmentOfficial? @relation(fields: [officialId], references: [id])
 
   @@index([meetingId])
   @@index([officialId])
@@ -2281,23 +2301,23 @@ model MeetingAttendance {
 }
 
 model MeetingAgendaItem {
-  id            String   @id @default(cuid())
-  meetingId     String
-  title         String
-  description   String?
-  order         Int      @default(0)
-  duration      Int?     // Estimated duration in minutes
-  category      String?  // Link to economic/government subsystem
-  tags          String?  // JSON array of tags
+  id             String   @id @default(cuid())
+  meetingId      String
+  title          String
+  description    String?
+  order          Int      @default(0)
+  duration       Int? // Estimated duration in minutes
+  category       String? // Link to economic/government subsystem
+  tags           String? // JSON array of tags
   relatedMetrics String? // JSON object linking to stats/metrics
-  presenter     String?
-  status        String   @default("pending") // "pending", "discussed", "deferred", "completed"
-  outcome       String?  // Result/decision from discussion
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  presenter      String?
+  status         String   @default("pending") // "pending", "discussed", "deferred", "completed"
+  outcome        String? // Result/decision from discussion
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   // Relations
-  meeting       CabinetMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  meeting CabinetMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
 
   @@index([meetingId])
   @@index([category])
@@ -2305,24 +2325,24 @@ model MeetingAgendaItem {
 }
 
 model MeetingDecision {
-  id              String   @id @default(cuid())
-  meetingId       String
-  agendaItemId    String?  // Optional link to specific agenda item
-  title           String
-  description     String
-  decisionType    String   // "policy_approval", "budget_allocation", "appointment", "directive", "resolution", "other"
-  impact          String?  // "high", "medium", "low"
-  votingResult    String?  // JSON object: { for: 5, against: 2, abstain: 1 }
-  implementationStatus String @default("pending") // "pending", "in_progress", "implemented", "blocked"
-  relatedPolicyId String?  // Link to Policy if this creates/modifies one
-  relatedMetrics  String?  // JSON object of metrics this decision affects
-  estimatedEffect String?  // Description of expected effects
-  decisionMakers  String?  // JSON array of officials who made this decision
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                   String   @id @default(cuid())
+  meetingId            String
+  agendaItemId         String? // Optional link to specific agenda item
+  title                String
+  description          String
+  decisionType         String // "policy_approval", "budget_allocation", "appointment", "directive", "resolution", "other"
+  impact               String? // "high", "medium", "low"
+  votingResult         String? // JSON object: { for: 5, against: 2, abstain: 1 }
+  implementationStatus String   @default("pending") // "pending", "in_progress", "implemented", "blocked"
+  relatedPolicyId      String? // Link to Policy if this creates/modifies one
+  relatedMetrics       String? // JSON object of metrics this decision affects
+  estimatedEffect      String? // Description of expected effects
+  decisionMakers       String? // JSON array of officials who made this decision
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   // Relations
-  meeting         CabinetMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  meeting CabinetMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
 
   @@index([meetingId])
   @@index([agendaItemId])
@@ -2331,26 +2351,26 @@ model MeetingDecision {
 }
 
 model MeetingActionItem {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   meetingId       String
-  agendaItemId    String?  // Optional link to specific agenda item
-  decisionId      String?  // Optional link to decision that created this
+  agendaItemId    String? // Optional link to specific agenda item
+  decisionId      String? // Optional link to decision that created this
   title           String
   description     String?
-  assignedTo      String?  // GovernmentOfficial ID or name
+  assignedTo      String? // GovernmentOfficial ID or name
   dueDate         DateTime?
-  dueIxTime       Float?   // IxTime deadline
-  priority        String   @default("normal") // "urgent", "high", "normal", "low"
-  status          String   @default("pending") // "pending", "in_progress", "completed", "blocked", "cancelled"
-  category        String?  // Category for filtering
-  tags            String?  // JSON array
+  dueIxTime       Float? // IxTime deadline
+  priority        String    @default("normal") // "urgent", "high", "normal", "low"
+  status          String    @default("pending") // "pending", "in_progress", "completed", "blocked", "cancelled"
+  category        String? // Category for filtering
+  tags            String? // JSON array
   completionNotes String?
   completedAt     DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   // Relations
-  meeting         CabinetMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  meeting CabinetMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
 
   @@index([meetingId])
   @@index([agendaItemId])
@@ -2361,55 +2381,55 @@ model MeetingActionItem {
 }
 
 model Policy {
-  id                String   @id @default(cuid())
-  countryId         String
-  userId            String   // User who created the policy
-  name              String
-  description       String
-  policyType        String   // "economic", "social", "diplomatic", "infrastructure", "governance"
-  category          String   // Specific category within type
-  status            String   @default("draft") // "draft", "proposed", "active", "expired", "repealed"
-  priority          String   @default("medium") // "critical", "high", "medium", "low"
+  id          String @id @default(cuid())
+  countryId   String
+  userId      String // User who created the policy
+  name        String
+  description String
+  policyType  String // "economic", "social", "diplomatic", "infrastructure", "governance"
+  category    String // Specific category within type
+  status      String @default("draft") // "draft", "proposed", "active", "expired", "repealed"
+  priority    String @default("medium") // "critical", "high", "medium", "low"
 
   // Policy Details
-  objectives        String?  // JSON array of objectives
-  targetMetrics     String?  // JSON object of metrics this policy affects
+  objectives         String? // JSON array of objectives
+  targetMetrics      String? // JSON object of metrics this policy affects
   implementationCost Float   @default(0)
-  maintenanceCost   Float   @default(0)
-  estimatedBenefit  String?  // Description of expected benefits
+  maintenanceCost    Float   @default(0)
+  estimatedBenefit   String? // Description of expected benefits
 
   // Country Context Integration
-  recommendedFor    String?  // JSON object of country conditions this is recommended for
-  requiredTier      String?  // Minimum economic tier required
-  requiredComponents String? // JSON array of required atomic government components
-  conflictsWith     String?  // JSON array of policy IDs that conflict
+  recommendedFor       String? // JSON object of country conditions this is recommended for
+  requiredTier         String? // Minimum economic tier required
+  requiredComponents   String? // JSON array of required atomic government components
+  conflictsWith        String? // JSON array of policy IDs that conflict
   prerequisitePolicies String? // JSON array of prerequisite policy IDs
 
   // Timing
-  proposedDate      DateTime @default(now())
-  effectiveDate     DateTime?
-  expiryDate        DateTime?
-  proposedIxTime    Float?   // IxTime when proposed
-  effectiveIxTime   Float?   // IxTime when it takes effect
+  proposedDate    DateTime  @default(now())
+  effectiveDate   DateTime?
+  expiryDate      DateTime?
+  proposedIxTime  Float? // IxTime when proposed
+  effectiveIxTime Float? // IxTime when it takes effect
 
   // Impact & Effects
-  gdpEffect         Float    @default(0)
-  employmentEffect  Float    @default(0)
-  inflationEffect   Float    @default(0)
-  taxRevenueEffect  Float    @default(0)
-  customEffects     String?  // JSON object of custom effects
+  gdpEffect        Float   @default(0)
+  employmentEffect Float   @default(0)
+  inflationEffect  Float   @default(0)
+  taxRevenueEffect Float   @default(0)
+  customEffects    String? // JSON object of custom effects
 
   // Review & Approval
-  approvalRequired  Boolean  @default(false)
-  approvedBy        String?
-  approvedDate      DateTime?
-  reviewNotes       String?
+  approvalRequired Boolean   @default(false)
+  approvedBy       String?
+  approvedDate     DateTime?
+  reviewNotes      String?
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  policyEffectLog   PolicyEffectLog[]
+  policyEffectLog PolicyEffectLog[]
 
   @@index([countryId])
   @@index([userId])
@@ -2420,19 +2440,19 @@ model Policy {
 }
 
 model PolicyEffectLog {
-  id                String   @id @default(cuid())
-  policyId          String
-  appliedAt         DateTime @default(now())
-  appliedIxTime     Float    // IxTime when effect was applied
-  effectType        String   // "initial", "periodic", "final"
-  metricsBefore     String?  // JSON snapshot of metrics before
-  metricsAfter      String?  // JSON snapshot of metrics after
-  actualEffect      String?  // JSON object of actual changes
-  notes             String?
-  createdAt         DateTime @default(now())
+  id            String   @id @default(cuid())
+  policyId      String
+  appliedAt     DateTime @default(now())
+  appliedIxTime Float // IxTime when effect was applied
+  effectType    String // "initial", "periodic", "final"
+  metricsBefore String? // JSON snapshot of metrics before
+  metricsAfter  String? // JSON snapshot of metrics after
+  actualEffect  String? // JSON object of actual changes
+  notes         String?
+  createdAt     DateTime @default(now())
 
   // Relations
-  policy            Policy   @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  policy Policy @relation(fields: [policyId], references: [id], onDelete: Cascade)
 
   @@index([policyId])
   @@index([appliedIxTime])
@@ -2440,25 +2460,25 @@ model PolicyEffectLog {
 }
 
 model ActivitySchedule {
-  id                String   @id @default(cuid())
-  countryId         String
-  userId            String
-  activityType      String   // "meeting", "policy_review", "economic_review", "diplomatic_event", "custom"
-  title             String
-  description       String?
-  scheduledDate     DateTime
-  scheduledIxTime   Float?
-  duration          Int?     // Duration in minutes
-  status            String   @default("scheduled") // "scheduled", "in_progress", "completed", "cancelled"
-  priority          String   @default("normal") // "urgent", "high", "normal", "low"
-  category          String?
-  tags              String?  // JSON array
-  relatedIds        String?  // JSON object linking to meetings, policies, etc.
-  recurrence        String?  // JSON object for recurring activities
-  reminderSettings  String?  // JSON object for reminders
-  completionNotes   String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id               String   @id @default(cuid())
+  countryId        String
+  userId           String
+  activityType     String // "meeting", "policy_review", "economic_review", "diplomatic_event", "custom"
+  title            String
+  description      String?
+  scheduledDate    DateTime
+  scheduledIxTime  Float?
+  duration         Int? // Duration in minutes
+  status           String   @default("scheduled") // "scheduled", "in_progress", "completed", "cancelled"
+  priority         String   @default("normal") // "urgent", "high", "normal", "low"
+  category         String?
+  tags             String? // JSON array
+  relatedIds       String? // JSON object linking to meetings, policies, etc.
+  recurrence       String? // JSON object for recurring activities
+  reminderSettings String? // JSON object for reminders
+  completionNotes  String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@index([countryId])
   @@index([userId])
@@ -2470,19 +2490,19 @@ model ActivitySchedule {
 }
 
 model QuickActionTemplate {
-  id                  String   @id @default(cuid())
-  name                String
-  actionType          String   // "meeting", "policy", "economic_adjustment", "diplomatic_action", "custom"
-  category            String
-  description         String
-  defaultSettings     String?  // JSON object with default settings
-  requiredFields      String?  // JSON array of required fields
-  optionalFields      String?  // JSON array of optional fields
-  estimatedDuration   String?
-  recommendedFor      String?  // JSON array of conditions when to recommend
-  isActive            Boolean  @default(true)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                String   @id @default(cuid())
+  name              String
+  actionType        String // "meeting", "policy", "economic_adjustment", "diplomatic_action", "custom"
+  category          String
+  description       String
+  defaultSettings   String? // JSON object with default settings
+  requiredFields    String? // JSON array of required fields
+  optionalFields    String? // JSON array of optional fields
+  estimatedDuration String?
+  recommendedFor    String? // JSON array of conditions when to recommend
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@index([actionType])
   @@index([category])
@@ -2521,32 +2541,32 @@ enum Difficulty {
 }
 
 model IntelligenceBriefing {
-  id          String        @id @default(cuid())
+  id          String       @id @default(cuid())
   countryId   String
   title       String
   description String
   type        BriefingType
   priority    Priority
   area        Category
-  confidence  Float        // 0-100 scale
+  confidence  Float // 0-100 scale
   urgency     Urgency
 
   // Impact assessment
-  impactMagnitude String    // JSON: magnitude, scope, timeframe
+  impactMagnitude String // JSON: magnitude, scope, timeframe
 
   // Evidence
-  evidence        String    // JSON: metrics, trends, comparisons
+  evidence String // JSON: metrics, trends, comparisons
 
   // Related data
   recommendations IntelligenceRecommendation[]
   alerts          IntelligenceAlert[]
 
   // Metadata
-  generatedAt     DateTime  @default(now())
-  expiresAt       DateTime?
-  isActive        Boolean   @default(true)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  generatedAt DateTime  @default(now())
+  expiresAt   DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([countryId])
   @@index([type])
@@ -2556,38 +2576,38 @@ model IntelligenceBriefing {
 }
 
 model IntelligenceRecommendation {
-  id                 String                @id @default(cuid())
+  id                 String     @id @default(cuid())
   briefingId         String?
   countryId          String
   title              String
   description        String
   category           Category
-  urgency            String               // 'urgent', 'important', 'routine'
+  urgency            String // 'urgent', 'important', 'routine'
   difficulty         Difficulty
   estimatedDuration  String
   estimatedCost      String
   estimatedBenefit   String
-  prerequisites      String               // JSON array
-  risks              String               // JSON array
-  successProbability Float                // 0-100 scale
+  prerequisites      String // JSON array
+  risks              String // JSON array
+  successProbability Float // 0-100 scale
 
   // Impact metrics
-  economicImpact     Float                @default(0)
-  socialImpact       Float                @default(0)
-  diplomaticImpact   Float                @default(0)
+  economicImpact   Float @default(0)
+  socialImpact     Float @default(0)
+  diplomaticImpact Float @default(0)
 
   // Status tracking
-  isImplemented      Boolean              @default(false)
-  implementedAt      DateTime?
+  isImplemented Boolean   @default(false)
+  implementedAt DateTime?
 
   // Relations
-  briefing           IntelligenceBriefing? @relation(fields: [briefingId], references: [id], onDelete: Cascade)
+  briefing IntelligenceBriefing? @relation(fields: [briefingId], references: [id], onDelete: Cascade)
 
   // Metadata
-  generatedAt        DateTime             @default(now())
-  isActive           Boolean              @default(true)
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
+  generatedAt DateTime @default(now())
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([countryId])
   @@index([category])
@@ -2596,14 +2616,14 @@ model IntelligenceRecommendation {
 }
 
 model IntelligenceAlert {
-  id            String                @id @default(cuid())
-  briefingId    String?
-  countryId     String
-  title         String
-  description   String
-  severity      Priority
-  category      Category
-  alertType     String               // 'anomaly', 'threshold', 'trend', 'risk', 'opportunity'
+  id          String   @id @default(cuid())
+  briefingId  String?
+  countryId   String
+  title       String
+  description String
+  severity    Priority
+  category    Category
+  alertType   String // 'anomaly', 'threshold', 'trend', 'risk', 'opportunity'
 
   // Metrics
   currentValue  Float
@@ -2612,21 +2632,21 @@ model IntelligenceAlert {
   zScore        Float
 
   // Context
-  factors       String               // JSON array
-  confidence    Float                // 0-100 scale
+  factors    String // JSON array
+  confidence Float // 0-100 scale
 
   // Status
-  isResolved    Boolean              @default(false)
-  resolvedAt    DateTime?
+  isResolved Boolean   @default(false)
+  resolvedAt DateTime?
 
   // Relations
-  briefing      IntelligenceBriefing? @relation(fields: [briefingId], references: [id], onDelete: Cascade)
+  briefing IntelligenceBriefing? @relation(fields: [briefingId], references: [id], onDelete: Cascade)
 
   // Metadata
-  detectedAt    DateTime             @default(now())
-  isActive      Boolean              @default(true)
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
+  detectedAt DateTime @default(now())
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([countryId])
   @@index([severity])
@@ -2636,39 +2656,38 @@ model IntelligenceAlert {
 }
 
 model VitalitySnapshot {
-  id                     String   @id @default(cuid())
-  countryId              String
-  area                   Category
-  score                  Float    // 0-100 scale
-  trend                  Trend
-  changeValue            Float
-  changePeriod           String
+  id           String   @id @default(cuid())
+  countryId    String
+  area         Category
+  score        Float // 0-100 scale
+  trend        Trend
+  changeValue  Float
+  changePeriod String
 
   // Key metrics (JSON)
-  keyMetrics             String
+  keyMetrics String
 
   // Comparisons
-  peerAverage            Float
-  regionalAverage        Float
-  historicalBest         Float
-  rank                   Int
-  totalCountries         Int
+  peerAverage     Float
+  regionalAverage Float
+  historicalBest  Float
+  rank            Int
+  totalCountries  Int
 
   // Critical alerts count
-  criticalAlertsCount    Int      @default(0)
+  criticalAlertsCount Int @default(0)
 
   // Metadata
-  calculatedAt           DateTime @default(now())
-  ixTime                 Float    // IxTime timestamp when calculated
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  calculatedAt DateTime @default(now())
+  ixTime       Float // IxTime timestamp when calculated
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([countryId])
   @@index([area])
   @@index([calculatedAt])
   @@index([ixTime])
 }
-
 
 // ===================================
 // Military & Defense System
@@ -2686,70 +2705,72 @@ enum BranchType {
 }
 
 model MilitaryBranch {
-  id                    String       @id @default(cuid())
-  countryId             String
-  branchType            BranchType
-  name                  String
-  motto                 String?
-  imageUrl              String?
-  description           String?
-  established           String?
+  id          String     @id @default(cuid())
+  countryId   String
+  branchType  BranchType
+  name        String
+  motto       String?
+  imageUrl    String?
+  description String?
+  established String?
 
   // Personnel
-  activeDuty            Int          @default(0)
-  reserves              Int          @default(0)
-  civilianStaff         Int          @default(0)
+  activeDuty    Int @default(0)
+  reserves      Int @default(0)
+  civilianStaff Int @default(0)
 
   // Budget
-  annualBudget          Float        @default(0)
-  budgetPercent         Float        @default(0)
+  annualBudget  Float @default(0)
+  budgetPercent Float @default(0)
 
   // Readiness & Capability
-  readinessLevel        Float        @default(50)
-  technologyLevel       Float        @default(50)
-  trainingLevel         Float        @default(50)
-  morale                Float        @default(50)
-  deploymentCapacity    Float        @default(50)
-  sustainmentCapacity   Float        @default(50)
+  readinessLevel      Float @default(50)
+  technologyLevel     Float @default(50)
+  trainingLevel       Float @default(50)
+  morale              Float @default(50)
+  deploymentCapacity  Float @default(50)
+  sustainmentCapacity Float @default(50)
 
   // Metadata
-  createdAt             DateTime     @default(now())
-  updatedAt             DateTime     @updatedAt
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  country               Country      @relation("CountryMilitaryBranches", fields: [countryId], references: [id], onDelete: Cascade)
-  units                 MilitaryUnit[]
-  assets                MilitaryAsset[]
+  country Country         @relation("CountryMilitaryBranches", fields: [countryId], references: [id], onDelete: Cascade)
+  units   MilitaryUnit[]
+  assets  MilitaryAsset[]
 
   @@index([countryId])
   @@index([branchType])
+  @@index([isActive])
 }
 
 model MilitaryUnit {
-  id                    String          @id @default(cuid())
-  branchId              String
-  name                  String
-  unitType              String
-  designation           String?
-  description           String?
+  id          String  @id @default(cuid())
+  branchId    String
+  name        String
+  unitType    String
+  designation String?
+  description String?
 
   // Personnel & Status
-  personnel             Int             @default(0)
-  commanderName         String?
-  commanderRank         String?
-  headquarters          String?
-  readiness             Float           @default(50)
+  personnel     Int     @default(0)
+  commanderName String?
+  commanderRank String?
+  headquarters  String?
+  readiness     Float   @default(50)
 
   // Media
-  imageUrl              String?
+  imageUrl String?
 
   // Metadata
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  branch                MilitaryBranch  @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  assets                MilitaryAsset[]
+  branch MilitaryBranch  @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  assets MilitaryAsset[]
 
   @@index([branchId])
 }
@@ -2770,36 +2791,36 @@ enum AssetStatus {
 }
 
 model MilitaryAsset {
-  id                    String          @id @default(cuid())
-  branchId              String
-  unitId                String?
-  name                  String
-  assetType             AssetType
-  category              String
-  status                AssetStatus     @default(operational)
+  id        String      @id @default(cuid())
+  branchId  String
+  unitId    String?
+  name      String
+  assetType AssetType
+  category  String
+  status    AssetStatus @default(operational)
 
   // Quantities
-  quantity              Int             @default(1)
-  operational           Int             @default(1)
+  quantity    Int @default(1)
+  operational Int @default(1)
 
   // Costs
-  acquisitionCost       Float           @default(0)
-  maintenanceCost       Float           @default(0)
-  modernizationLevel    Float           @default(50)
+  acquisitionCost    Float @default(0)
+  maintenanceCost    Float @default(0)
+  modernizationLevel Float @default(50)
 
   // Capability
-  capability            String?
+  capability String?
 
   // Media
-  imageUrl              String?
+  imageUrl String?
 
   // Metadata
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  branch                MilitaryBranch  @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  unit                  MilitaryUnit?   @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  branch MilitaryBranch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  unit   MilitaryUnit?  @relation(fields: [unitId], references: [id], onDelete: SetNull)
 
   @@index([branchId])
   @@index([unitId])
@@ -2835,31 +2856,311 @@ enum ThreatStatus {
 }
 
 model SecurityThreat {
-  id                    String          @id @default(cuid())
-  countryId             String
-  threatName            String
-  threatType            ThreatType
-  severity              ThreatSeverity
-  status                ThreatStatus    @default(monitoring)
-  description           String?
+  id          String         @id @default(cuid())
+  countryId   String
+  userId      String?
+  threatName  String
+  threatType  ThreatType
+  severity    ThreatSeverity
+  status      ThreatStatus   @default(monitoring)
+  description String?
 
   // Assessment
-  likelihood            Float           @default(50)
-  impact                Float           @default(50)
+  likelihood Float   @default(50)
+  impact     Float   @default(50)
+  urgency    String? // low, medium, high, immediate
+
+  // Actor Information
+  actorType       String? // state, non-state, terrorist, criminal, unknown
+  actorName       String?
+  actorLocation   String?
+  actorCapability Float   @default(50)
+
+  // Impact Assessment
+  potentialCasualties Int     @default(0)
+  economicImpact      Float   @default(0)
+  politicalImpact     String?
+  infrastructureRisk  Float   @default(0)
+
+  // Response
+  responseLevel      String? // minimal, standard, elevated, maximum
+  mitigationActions  String? // JSON array
+  resourcesAllocated Float   @default(0)
+
+  // Intelligence
+  intelligenceSource String?
+  confidenceLevel    Float   @default(50)
+  estimatedTimeline  String?
+  tags               String? // JSON array
 
   // Metadata
-  detectedAt            DateTime        @default(now())
-  isActive              Boolean         @default(true)
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
+  lastUpdated DateTime @updatedAt
+  detectedAt  DateTime @default(now())
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relations
-  country               Country         @relation("CountrySecurityThreats", fields: [countryId], references: [id], onDelete: Cascade)
+  country   Country          @relation("CountrySecurityThreats", fields: [countryId], references: [id], onDelete: Cascade)
+  incidents ThreatIncident[]
 
   @@index([countryId])
   @@index([threatType])
   @@index([severity])
   @@index([isActive])
+  @@index([userId])
+}
+
+model ThreatIncident {
+  id           String @id @default(cuid())
+  threatId     String
+  title        String
+  description  String
+  incidentType String // attack, attempt, intelligence, warning, activity
+
+  // Impact
+  casualties Int     @default(0)
+  damage     Float   @default(0)
+  location   String?
+
+  // Response
+  responseActions String? // JSON array
+  effectiveness   Float?
+
+  // Metadata
+  occurredAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  threat SecurityThreat @relation(fields: [threatId], references: [id], onDelete: Cascade)
+
+  @@index([threatId])
+  @@index([occurredAt])
+}
+
+model DefenseBudget {
+  id         String @id @default(cuid())
+  countryId  String @unique
+  fiscalYear Int
+
+  // Budget Breakdown
+  totalBudget Float @default(0)
+  gdpPercent  Float @default(0)
+  perCapita   Float @default(0)
+
+  // Allocations
+  personnelCosts        Float @default(0)
+  operationsMaintenance Float @default(0)
+  procurement           Float @default(0)
+  rdteCosts             Float @default(0)
+  militaryConstruction  Float @default(0)
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  country Country @relation("CountryDefenseBudget", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([fiscalYear])
+}
+
+model SecurityAssessment {
+  id        String @id @default(cuid())
+  countryId String @unique
+
+  // Overall Assessment
+  overallSecurityScore Float  @default(60)
+  securityLevel        String @default("moderate") // very_secure, secure, moderate, high_risk, critical
+  securityTrend        String @default("stable") // improving, stable, declining
+
+  // Component Scores
+  militaryStrength     Float @default(60)
+  internalStability    Float @default(60)
+  borderSecurity       Float @default(60)
+  cybersecurity        Float @default(50)
+  counterTerrorism     Float @default(55)
+  militaryReadiness    Float @default(65)
+  emergencyResponse    Float @default(60)
+  disasterPreparedness Float @default(55)
+
+  // Threat Metrics
+  activeThreatCount   Int @default(0)
+  highSeverityThreats Int @default(0)
+
+  // Metadata
+  lastAssessed DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  country Country @relation("CountrySecurityAssessment", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([securityLevel])
+}
+
+model InternalStabilityMetrics {
+  id        String @id @default(cuid())
+  countryId String @unique
+
+  // Overall Stability
+  stabilityScore Float  @default(75)
+  stabilityTrend String @default("stable") // improving, stable, declining
+
+  // Crime Metrics
+  crimeRate           Float @default(5)
+  violentCrimeRate    Float @default(2)
+  propertyCrimeRate   Float @default(10)
+  organizedCrimeLevel Float @default(3)
+
+  // Law Enforcement
+  policingEffectiveness   Float @default(60)
+  justiceSystemEfficiency Float @default(50)
+
+  // Civil Unrest
+  protestFrequency  Float @default(5)
+  riotRisk          Float @default(10)
+  civilDisobedience Float @default(5)
+
+  // Social Cohesion
+  socialCohesion        Float @default(70)
+  ethnicTension         Float @default(20)
+  politicalPolarization Float @default(40)
+
+  // Public Trust
+  trustInGovernment Float @default(50)
+  trustInPolice     Float @default(55)
+  fearOfCrime       Float @default(35)
+
+  // Metadata
+  lastCalculated DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  country Country @relation("CountryStabilityMetrics", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+}
+
+model SecurityEvent {
+  id        String @id @default(cuid())
+  countryId String
+  eventType String
+  severity  String
+  status    String @default("active") // active, resolved
+
+  title       String
+  description String?
+
+  // Impact
+  casualties      Int   @default(0)
+  arrested        Int   @default(0)
+  economicImpact  Float @default(0)
+  stabilityImpact Float @default(0)
+
+  // Location
+  region String?
+  city   String?
+
+  // Metadata
+  triggerFactors  String? // JSON
+  rngSeed         String?
+  resolutionNotes String?
+
+  startDate DateTime  @default(now())
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  country Country @relation("CountrySecurityEvents", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([status])
+  @@index([severity])
+}
+
+model BorderSecurity {
+  id        String @id @default(cuid())
+  countryId String @unique
+
+  // Overall Assessment
+  overallSecurityLevel Float  @default(70)
+  securityStatus       String @default("moderate") // weak, moderate, strong, maximum
+  borderIntegrity      Float  @default(85)
+
+  // Infrastructure
+  borderLength        Float?
+  landBorders         Int    @default(0)
+  maritimeBorders     Int    @default(0)
+  borderAgents        Int    @default(0)
+  checkpoints         Int    @default(0)
+  surveillanceSystems Int    @default(0)
+
+  // Performance
+  interceptionRate     Float @default(60)
+  processingEfficiency Float @default(70)
+
+  // Threats
+  illegalCrossings  Int   @default(0)
+  smugglingActivity Float @default(20)
+  traffickingRisk   Float @default(15)
+  refugeePresure    Float @default(10)
+
+  // Capability
+  technologyLevel       Float @default(50)
+  infrastructureQuality Float @default(60)
+
+  // Metadata
+  lastAssessed DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  country         Country                    @relation("CountryBorderSecurity", fields: [countryId], references: [id], onDelete: Cascade)
+  neighborThreats NeighborThreatAssessment[]
+
+  @@index([countryId])
+}
+
+model NeighborThreatAssessment {
+  id               String @id @default(cuid())
+  borderSecurityId String
+
+  neighborName      String
+  neighborCountryId String?
+  borderType        String // land, maritime, both
+  borderLength      Float?
+
+  // Threat Assessment
+  threatLevel        String @default("low") // minimal, low, moderate, high, critical
+  threatScore        Float  @default(20)
+  militaryThreat     Float  @default(10)
+  terrorismRisk      Float  @default(15)
+  smugglingRisk      Float  @default(25)
+  refugeeFlow        Float  @default(20)
+  politicalStability Float  @default(60)
+
+  // Relations
+  diplomaticRelations String  @default("neutral") // hostile, tense, neutral, friendly, allied
+  tradeVolume         Float   @default(0)
+  treatyStatus        String?
+
+  notes String?
+
+  // Metadata
+  lastAssessed DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  borderSecurity BorderSecurity @relation(fields: [borderSecurityId], references: [id], onDelete: Cascade)
+
+  @@index([borderSecurityId])
 }
 
 // Country Following System
@@ -2870,8 +3171,8 @@ model CountryFollow {
   createdAt         DateTime @default(now())
 
   // Relations
-  followerCountry   Country  @relation("CountryFollowers", fields: [followerCountryId], references: [id], onDelete: Cascade)
-  followedCountry   Country  @relation("CountryFollowing", fields: [followedCountryId], references: [id], onDelete: Cascade)
+  followerCountry Country @relation("CountryFollowers", fields: [followerCountryId], references: [id], onDelete: Cascade)
+  followedCountry Country @relation("CountryFollowing", fields: [followedCountryId], references: [id], onDelete: Cascade)
 
   @@unique([followerCountryId, followedCountryId])
   @@index([followerCountryId])
@@ -2881,23 +3182,23 @@ model CountryFollow {
 // Comprehensive System Logging
 model SystemLog {
   id           String   @id @default(cuid())
-  level        String   // DEBUG, INFO, WARN, ERROR, CRITICAL
-  category     String   // AUTH, API, DATABASE, SECURITY, PERFORMANCE, etc.
+  level        String // DEBUG, INFO, WARN, ERROR, CRITICAL
+  category     String // AUTH, API, DATABASE, SECURITY, PERFORMANCE, etc.
   message      String
   userId       String?
   countryId    String?
   requestId    String?
   traceId      String?
-  duration     Int?     // Milliseconds
+  duration     Int? // Milliseconds
   errorName    String?
   errorMessage String?
-  errorStack   String?  // Stack trace (text field)
-  metadata     String?  // JSON metadata
-  component    String?  // Component/module name
+  errorStack   String? // Stack trace (text field)
+  metadata     String? // JSON metadata
+  component    String? // Component/module name
   ip           String?
-  userAgent    String?  // Limited to 500 chars
+  userAgent    String? // Limited to 500 chars
   endpoint     String?
-  method       String?  // HTTP method
+  method       String? // HTTP method
   timestamp    DateTime @default(now())
 
   @@index([level])
@@ -2910,14 +3211,66 @@ model SystemLog {
 
 // Log Retention Policy
 model LogRetentionPolicy {
-  id                String   @id @default(cuid())
-  logLevel          String   // Which log level this applies to
-  retentionDays     Int      // How many days to retain
-  archiveAfterDays  Int?     // Archive after N days (optional)
-  deleteAfterDays   Int      // Delete after N days
-  enabled           Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id               String   @id @default(cuid())
+  logLevel         String // Which log level this applies to
+  retentionDays    Int // How many days to retain
+  archiveAfterDays Int? // Archive after N days (optional)
+  deleteAfterDays  Int // Delete after N days
+  enabled          Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@unique([logLevel])
+}
+
+// Wiki Data Cache - Persistent storage for MediaWiki API responses
+model WikiCache {
+  id          String   @id @default(cuid())
+  key         String   @unique // e.g., "infobox:Burgundie", "flag:Caphiria", "page:Economy_of_Burgundie"
+  type        String // "infobox", "flag", "page", "template", "section"
+  data        String // JSON-serialized cached content (text to avoid SQLite JSON limitations)
+  countryName String? // Associated country name for easier querying
+  metadata    String? // JSON metadata: { lastFetched, wikitextLength, apiCallCount, source, etc. }
+  hitCount    Int      @default(0) // Track cache popularity for prioritizing refreshes
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  expiresAt   DateTime // When this cache entry expires
+
+  @@index([key])
+  @@index([type, countryName])
+  @@index([expiresAt])
+  @@index([countryName])
+}
+
+// Custom Government Types - User-defined government type names
+model CustomGovernmentType {
+  id             String   @id @default(cuid())
+  userId         String // Clerk user ID
+  customTypeName String // e.g., "Constitutional Technocracy", "Parliamentary Monarchy"
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  usageCount     Int      @default(1) // Track how often this user uses this type
+  lastUsedAt     DateTime @default(now())
+
+  @@unique([userId, customTypeName]) // Prevent duplicates per user
+  @@index([userId])
+  @@index([usageCount]) // For sorting by popularity
+}
+
+// Custom Field Values - Autocomplete suggestions for various identity fields
+model CustomFieldValue {
+  id         String   @id @default(cuid())
+  fieldName  String // 'language', 'culture', 'capitalCity', 'largestCity', 'demonym', 'motto', etc.
+  value      String // The actual custom value
+  userId     String? // If NULL, it's a global/common value; if set, user-specific
+  usageCount Int      @default(1)
+  isGlobal   Boolean  @default(false) // Admin-approved common values
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  lastUsedAt DateTime @default(now())
+
+  @@unique([fieldName, value, userId]) // Prevent duplicates
+  @@index([fieldName, isGlobal]) // Quick lookup for autocomplete
+  @@index([userId])
+  @@index([usageCount])
 }

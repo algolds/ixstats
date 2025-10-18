@@ -281,15 +281,11 @@ export function LaborEmploymentSection({
             variant="switch"
             showIcons={true}
           />
-          <EnhancedToggle
-            label="Collective Bargaining"
-            description="Support for union organizing and negotiations"
-            checked={false} // TODO: Add to data model
-            onChange={(checked) => {/* TODO: Implement */}}
-            sectionId="labor"
-            variant="switch"
-            showIcons={true}
-          />
+          {/* Future Enhancement: Collective Bargaining Toggle
+              This feature will be implemented when the collective bargaining
+              data model is added to the labor market schema. For now, this
+              information can be captured via the unionization rate and
+              collective bargaining coverage percentage fields above. */}
         </FormGrid>
       </div>
 
@@ -390,6 +386,7 @@ export function LaborEmploymentSection({
         ]
       }}
       className={className}
+      hideViewToggle={true}
     >
       <SectionLayout
         basicContent={basicContent}

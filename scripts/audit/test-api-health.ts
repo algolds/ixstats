@@ -6,7 +6,7 @@
  * Usage: npx tsx scripts/audit/test-api-health.ts
  */
 
-import { db } from "~/server/db";
+import { db } from "../../src/server/db";
 
 interface HealthCheck {
   router: string;
@@ -63,7 +63,7 @@ async function testCountriesEndpoints() {
     await checkEndpoint(router, "getBySlug", async () => {
       const country = await db.country.findFirst();
       if (country) {
-        await db.country.findUnique({ where: { slug: country.slug } });
+        await db.country.findUnique({ where: { slug: country.slug as string } });
       }
     })
   );
@@ -177,7 +177,7 @@ async function testThinkPagesEndpoints() {
       const user = await db.user.findFirst();
       if (user) {
         await db.thinkpagesPost.findMany({
-          where: { userId: user.id },
+          where: { account: { clerkUserId: user.clerkUserId } },
           take: 10,
         });
       }

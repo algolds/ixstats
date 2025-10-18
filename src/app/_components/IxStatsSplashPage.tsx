@@ -358,7 +358,7 @@ export function IxStatsSplashPage() {
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
             <span className="text-sm font-medium text-foreground">{isValidGlobalStats(globalStats) ? globalStats.totalCountries : 0} Nations Active</span>
             <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs px-2 py-0.5">
-              v1.0.0 Beta
+              v1.0.9 Beta
             </Badge>
           </motion.div>
 

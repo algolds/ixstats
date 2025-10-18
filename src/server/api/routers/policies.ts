@@ -4,6 +4,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { ActivityHooks } from "~/lib/activity-hooks";
+import { notificationAPI } from "~/lib/notification-api";
 
 export const policiesRouter = createTRPCRouter({
   // ==================== POLICY CRUD ====================
@@ -128,6 +129,31 @@ export const policiesRouter = createTRPCRouter({
         ).catch(err => console.error('Failed to create policy activity:', err));
       }
 
+      // 🔔 Notify country about policy activation
+      try {
+        const priorityMap: Record<string, 'high' | 'medium' | 'low'> = {
+          'critical': 'high',
+          'high': 'high',
+          'medium': 'medium',
+          'low': 'low'
+        };
+
+        await notificationAPI.create({
+          title: '📜 Policy Activated',
+          message: `"${policy.name}" has been activated and is now in effect`,
+          countryId: policy.countryId,
+          category: 'policy',
+          priority: priorityMap[policy.priority] || 'medium',
+          type: 'success',
+          href: '/mycountry/policies',
+          source: 'policy-system',
+          actionable: false,
+          metadata: { policyId: policy.id, policyType: policy.policyType },
+        });
+      } catch (error) {
+        console.error('[Policies] Failed to send policy activation notification:', error);
+      }
+
       return policy;
     }),
 
@@ -137,12 +163,32 @@ export const policiesRouter = createTRPCRouter({
       reason: z.string().optional()
     }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.policy.update({
+      const policy = await ctx.db.policy.update({
         where: { id: input.id },
         data: {
           status: 'suspended'
         }
       });
+
+      // 🔔 Notify country about policy suspension
+      try {
+        await notificationAPI.create({
+          title: '⚠️ Policy Suspended',
+          message: `"${policy.name}" has been suspended${input.reason ? `: ${input.reason}` : ''}`,
+          countryId: policy.countryId,
+          category: 'policy',
+          priority: 'medium',
+          type: 'warning',
+          href: '/mycountry/policies',
+          source: 'policy-system',
+          actionable: true,
+          metadata: { policyId: policy.id, reason: input.reason },
+        });
+      } catch (error) {
+        console.error('[Policies] Failed to send policy suspension notification:', error);
+      }
+
+      return policy;
     }),
 
   repealPolicy: protectedProcedure
@@ -151,13 +197,33 @@ export const policiesRouter = createTRPCRouter({
       reason: z.string().optional()
     }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.policy.update({
+      const policy = await ctx.db.policy.update({
         where: { id: input.id },
         data: {
           status: 'repealed',
           expiryDate: new Date()
         }
       });
+
+      // 🔔 Notify country about policy repeal
+      try {
+        await notificationAPI.create({
+          title: '❌ Policy Repealed',
+          message: `"${policy.name}" has been repealed and is no longer in effect${input.reason ? `: ${input.reason}` : ''}`,
+          countryId: policy.countryId,
+          category: 'policy',
+          priority: 'high',
+          type: 'error',
+          href: '/mycountry/policies',
+          source: 'policy-system',
+          actionable: false,
+          metadata: { policyId: policy.id, reason: input.reason },
+        });
+      } catch (error) {
+        console.error('[Policies] Failed to send policy repeal notification:', error);
+      }
+
+      return policy;
     }),
 
   // ==================== POLICY EFFECT LOGS ====================

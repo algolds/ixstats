@@ -107,12 +107,12 @@ export function LiveFeedback({ inputs, className, extractedColors, flagUrl, coat
         },
         {
           id: 'population',
-          label: 'Population',
+          label: 'Total Population',
           value: inputs.coreIndicators.totalPopulation,
           change: 0.8, // Population growth
           trend: 'up',
           icon: Users,
-          unit: '',
+          unit: 'people',
           category: 'economic'
         },
         {
@@ -199,7 +199,7 @@ export function LiveFeedback({ inputs, className, extractedColors, flagUrl, coat
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       <NumberFlowDisplay
                         value={metric.value}
-                        format={metric.unit === '$' ? 'currency' : metric.unit === '%' ? 'percentage' : 'default'}
+                        format={metric.unit === '$' ? 'currency' : metric.unit === '%' ? 'percentage' : metric.unit === 'people' ? 'population' : 'default'}
                         className="text-xs font-semibold text-foreground"
                         duration={800}
                       />

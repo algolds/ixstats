@@ -402,14 +402,18 @@ export class ContextIntelligenceEngine {
   private calculateRouteRelevance(category: NotificationCategory, route: string): number {
     const routeMatches: Record<NotificationCategory, string[]> = {
       economic: ['mycountry', 'executive', 'economy', 'trade'],
-      governance: ['mycountry', 'executive', 'admin', 'government'],
+      governance: ['mycountry-new', 'executive', 'admin', 'government'],
       diplomatic: ['executive', 'diplomatic', 'relations'],
-      security: ['executive', 'security', 'crisis'],
+      security: ['executive', 'security', 'crisis', 'military'],
       achievement: ['mycountry', 'achievements', 'rankings'],
-      system: ['admin', 'settings'],
+      system: ['admin', 'settings', 'global'],
       social: ['mycountry', 'social', 'demographics'],
       crisis: ['executive', 'crisis', 'emergency'],
       opportunity: ['mycountry', 'opportunities', 'growth'],
+      policy: ['mycountry', 'policies', 'governance'],
+      intelligence: ['executive', 'intelligence', 'security'],
+      global: ['global', 'world', 'system'],
+      military: ['mycountry', 'military', 'security', 'defense'],
     };
 
     const relevantRoutes = routeMatches[category] || [];

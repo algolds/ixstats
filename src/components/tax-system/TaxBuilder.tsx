@@ -6,12 +6,13 @@ import { Button } from '~/components/ui/button';
 import { Badge as UIBadge } from '~/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { Alert, AlertDescription } from '~/components/ui/alert';
-import { 
-  Calculator, 
-  Plus, 
-  Save, 
-  Eye, 
-  AlertTriangle, 
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
+import { Separator } from '~/components/ui/separator';
+import {
+  Calculator,
+  Plus,
+  Eye,
+  AlertTriangle,
   CheckCircle,
   ArrowLeft,
   ArrowRight,
@@ -20,10 +21,15 @@ import {
   DollarSign,
   Lightbulb,
   FileText,
-  Zap
+  Zap,
+  Info,
+  ChevronDown,
+  ChevronRight,
+  ChevronsUpDown
 } from 'lucide-react';
 import { useTaxBuilderAutoSync } from '~/hooks/useBuilderAutoSync';
 import { ConflictWarningDialog, SyncStatusIndicator } from '~/components/builders/ConflictWarningDialog';
+import { GlobalBuilderNavigation, type BuilderStep } from '~/components/builders/GlobalBuilderNavigation';
 // Dev-only logger to avoid noisy logs in production
 const devLog = (...args: any[]) => {
   if (process.env.NODE_ENV !== 'production') {
@@ -37,9 +43,18 @@ import { TaxSystemForm } from './atoms/TaxSystemForm';
 import { TaxCategoryForm } from './atoms/TaxCategoryForm';
 import { TaxCalculator } from './atoms/TaxCalculator';
 import { AtomicTaxEffectivenessPanel } from './AtomicTaxEffectivenessPanel';
+import { SuggestionsPanel, type SuggestionItem } from '~/components/builders/SuggestionsPanel';
+import { computeTaxSuggestions } from '~/components/builders/suggestions/utils';
+import { useIntelligenceWebSocket } from '~/hooks/useIntelligenceWebSocket';
+import { parseEconomicDataForTaxSystem } from '~/lib/tax-data-parser';
+import { AtomicComponentSelector } from '~/components/government/atoms/AtomicGovernmentComponents';
+import { AtomicTaxComponentSelector } from './atoms/AtomicTaxComponents';
+import { TaxEconomySyncDisplay } from './TaxEconomySyncDisplay';
+import { UnifiedTaxEffectivenessDisplay } from './UnifiedTaxEffectivenessDisplay';
 
 // Import API integration
 import { api } from '~/trpc/react';
+import { toast } from 'sonner';
 import type { ComponentType } from '~/types/government';
 
 import type { 
@@ -56,6 +71,7 @@ import type {
   TaxCalculationResult,
   TaxSystemTemplate
 } from '~/types/tax-system';
+import { CALCULATION_METHODS } from '~/types/tax-system';
 
 export interface TaxBuilderState {
   taxSystem: TaxSystemInput;
@@ -77,6 +93,12 @@ interface TaxBuilderProps {
   showAtomicIntegration?: boolean;
   hideSaveButton?: boolean;
   enableAutoSync?: boolean;
+  economicData?: {
+    gdp: number;
+    sectors: any;
+    population: number;
+  };
+  governmentData?: any;
 }
 
 // Enhanced Tax System Templates with Atomic Components
@@ -92,7 +114,7 @@ const taxSystemTemplates: TaxSystemTemplate[] = [
         categoryType: 'Direct Tax',
         description: 'Progressive tax on individual income with imperial service benefits',
         baseRate: 5,
-        calculationMethod: 'progressive',
+        calculationMethod: CALCULATION_METHODS.PROGRESSIVE,
         brackets: [
           { minIncome: 0, maxIncome: 15000, rate: 0, marginalRate: true },
           { minIncome: 15000, maxIncome: 40000, rate: 8, marginalRate: true },
@@ -115,7 +137,7 @@ const taxSystemTemplates: TaxSystemTemplate[] = [
         categoryType: 'Direct Tax',
         description: 'Tiered corporate tax with sector-specific rates',
         baseRate: 22,
-        calculationMethod: 'tiered',
+        calculationMethod: CALCULATION_METHODS.TIERED,
         brackets: [
           { minIncome: 0, maxIncome: 100000, rate: 15, marginalRate: false },
           { minIncome: 100000, maxIncome: 1000000, rate: 22, marginalRate: false },
@@ -131,7 +153,7 @@ const taxSystemTemplates: TaxSystemTemplate[] = [
         categoryType: 'Indirect Tax',
         description: 'Comprehensive VAT with luxury surcharges',
         baseRate: 18,
-        calculationMethod: 'percentage',
+        calculationMethod: CALCULATION_METHODS.PERCENTAGE,
         brackets: [
           { minIncome: 0, maxIncome: 1000, rate: 8, marginalRate: false }, // Essential goods
           { minIncome: 1000, maxIncome: 10000, rate: 18, marginalRate: false }, // Standard goods
@@ -143,7 +165,7 @@ const taxSystemTemplates: TaxSystemTemplate[] = [
         categoryType: 'Direct Tax',
         description: 'Progressive wealth transfer tax',
         baseRate: 25,
-        calculationMethod: 'progressive',
+        calculationMethod: CALCULATION_METHODS.PROGRESSIVE,
         brackets: [
           { minIncome: 0, maxIncome: 500000, rate: 0, marginalRate: true },
           { minIncome: 500000, maxIncome: 2000000, rate: 25, marginalRate: true },
@@ -156,7 +178,7 @@ const taxSystemTemplates: TaxSystemTemplate[] = [
         categoryType: 'Direct Tax',
         description: 'Regional infrastructure and development funding',
         baseRate: 2,
-        calculationMethod: 'percentage'
+        calculationMethod: CALCULATION_METHODS.PERCENTAGE
       }
     ]
   },
@@ -171,7 +193,7 @@ const taxSystemTemplates: TaxSystemTemplate[] = [
         categoryType: 'Direct Tax',
         description: 'Tax on individual income',
         baseRate: 10,
-        calculationMethod: 'progressive',
+        calculationMethod: CALCULATION_METHODS.PROGRESSIVE,
         brackets: [
           { minIncome: 0, maxIncome: 25000, rate: 10, marginalRate: true },
           { minIncome: 25000, maxIncome: 75000, rate: 22, marginalRate: true },
@@ -190,7 +212,7 @@ const taxSystemTemplates: TaxSystemTemplate[] = [
         categoryType: 'Direct Tax',
         description: 'Tax on corporate profits',
         baseRate: 21,
-        calculationMethod: 'percentage',
+        calculationMethod: CALCULATION_METHODS.PERCENTAGE,
         exemptions: [
           { exemptionName: 'Small Business Exemption', exemptionType: 'Corporate', description: 'Exemption for small businesses', exemptionAmount: 50000 }
         ]
@@ -200,7 +222,7 @@ const taxSystemTemplates: TaxSystemTemplate[] = [
         categoryType: 'Indirect Tax',
         description: 'Tax on goods and services',
         baseRate: 15,
-        calculationMethod: 'percentage'
+        calculationMethod: CALCULATION_METHODS.PERCENTAGE
       }
     ]
   },
@@ -215,7 +237,7 @@ const taxSystemTemplates: TaxSystemTemplate[] = [
         categoryType: 'Direct Tax',
         description: 'Flat rate tax on all income',
         baseRate: 17,
-        calculationMethod: 'percentage',
+        calculationMethod: CALCULATION_METHODS.PERCENTAGE,
         exemptions: [
           { exemptionName: 'Personal Exemption', exemptionType: 'Individual', description: 'Basic personal exemption', exemptionAmount: 15000 }
         ]
@@ -225,7 +247,7 @@ const taxSystemTemplates: TaxSystemTemplate[] = [
         categoryType: 'Direct Tax',
         description: 'Flat rate corporate tax',
         baseRate: 17,
-        calculationMethod: 'percentage'
+        calculationMethod: CALCULATION_METHODS.PERCENTAGE
       }
     ]
   },
@@ -240,7 +262,7 @@ const taxSystemTemplates: TaxSystemTemplate[] = [
         categoryType: 'Direct Tax',
         description: 'Highly progressive with extensive social benefits',
         baseRate: 15,
-        calculationMethod: 'progressive',
+        calculationMethod: CALCULATION_METHODS.PROGRESSIVE,
         brackets: [
           { minIncome: 0, maxIncome: 20000, rate: 15, marginalRate: true },
           { minIncome: 20000, maxIncome: 50000, rate: 28, marginalRate: true },
@@ -253,14 +275,14 @@ const taxSystemTemplates: TaxSystemTemplate[] = [
         categoryType: 'Direct Tax',
         description: 'Comprehensive social insurance contributions',
         baseRate: 25,
-        calculationMethod: 'percentage'
+        calculationMethod: CALCULATION_METHODS.PERCENTAGE
       },
       {
         categoryName: 'Value Added Tax',
         categoryType: 'Indirect Tax',
         description: 'High VAT with reduced rates for necessities',
         baseRate: 25,
-        calculationMethod: 'tiered',
+        calculationMethod: CALCULATION_METHODS.TIERED,
         brackets: [
           { minIncome: 0, maxIncome: 1000, rate: 6, marginalRate: false }, // Food, books
           { minIncome: 1000, maxIncome: 5000, rate: 12, marginalRate: false }, // Public transport
@@ -280,7 +302,7 @@ const taxSystemTemplates: TaxSystemTemplate[] = [
         categoryType: 'Direct Tax',
         description: 'Moderate progressive rates with high thresholds',
         baseRate: 8,
-        calculationMethod: 'progressive',
+        calculationMethod: CALCULATION_METHODS.PROGRESSIVE,
         brackets: [
           { minIncome: 0, maxIncome: 30000, rate: 8, marginalRate: true },
           { minIncome: 30000, maxIncome: 80000, rate: 18, marginalRate: true },
@@ -293,7 +315,7 @@ const taxSystemTemplates: TaxSystemTemplate[] = [
         categoryType: 'Direct Tax',
         description: 'Low corporate rates with generous incentives',
         baseRate: 17,
-        calculationMethod: 'percentage',
+        calculationMethod: CALCULATION_METHODS.PERCENTAGE,
         exemptions: [
           { exemptionName: 'High-Tech Industry Incentive', exemptionType: 'Sector', description: 'Reduced rates for technology companies', exemptionRate: 50 },
           { exemptionName: 'Export Business Credit', exemptionType: 'Corporate', description: 'Credits for export-oriented businesses', exemptionRate: 25 }
@@ -304,7 +326,7 @@ const taxSystemTemplates: TaxSystemTemplate[] = [
         categoryType: 'Indirect Tax',
         description: 'Moderate consumption tax to encourage savings',
         baseRate: 10,
-        calculationMethod: 'percentage'
+        calculationMethod: CALCULATION_METHODS.PERCENTAGE
       }
     ]
   }
@@ -319,9 +341,11 @@ export function TaxBuilder({
   countryId,
   showAtomicIntegration = true,
   hideSaveButton = false,
-  enableAutoSync = false
+  enableAutoSync = false,
+  economicData,
+  governmentData
 }: TaxBuilderProps) {
-  const [currentStep, setCurrentStep] = useState<'system' | 'categories' | 'atomic' | 'calculator' | 'preview'>('system');
+  const [currentStep, setCurrentStep] = useState<'system' | 'categories' | 'calculator' | 'preview'>('system');
   const [localBuilderState, setLocalBuilderState] = useState<TaxBuilderState>({
     taxSystem: {
       taxSystemName: '',
@@ -345,6 +369,21 @@ export function TaxBuilder({
   const [calculationResult, setCalculationResult] = useState<TaxCalculationResult | null>(null);
   const [showConflictDialog, setShowConflictDialog] = useState(false);
   const [pendingSaveCallback, setPendingSaveCallback] = useState<(() => void) | null>(null);
+  const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
+  const [selectedTaxComponents, setSelectedTaxComponents] = useState<ComponentType[]>([]);
+  const [selectedAtomicTaxComponents, setSelectedAtomicTaxComponents] = useState<string[]>([]);
+  const [parsedDataApplied, setParsedDataApplied] = useState(false);
+  const [currentInternalTab, setCurrentInternalTab] = useState<string>('basic');
+
+  // Collapsible state for preview sections
+  const [isSystemDetailsOpen, setIsSystemDetailsOpen] = useState(true);
+  const [isCategoriesOpen, setIsCategoriesOpen] = useState(true);
+  const [isCalculationOpen, setIsCalculationOpen] = useState(false);
+  const [openCategoryDetails, setOpenCategoryDetails] = useState<Record<string, boolean>>({});
+
+  // Local save mutations (fallback when onSave is not provided)
+  const createMutation = api.taxSystem.create.useMutation();
+  const updateMutation = api.taxSystem.update.useMutation();
 
   // Use auto-sync hook if enabled
   const {
@@ -395,64 +434,87 @@ export function TaxBuilder({
     }
   );
 
-  const activeComponents = atomicComponents?.filter(c => c.isActive).map(c => c.componentType as ComponentType) || [];
+  const activeComponents = atomicComponents?.filter(c => c.isActive).map(c => c.componentType) || [];
 
-  // Validation
+  // Validation (expanded)
   const validateState = useCallback((): { isValid: boolean; errors: any } => {
     const errors: any = {};
+    const taxSystemFieldErrors: Record<string, string[]> = {};
 
-    // Validate tax system
-    if (!builderState.taxSystem.taxSystemName.trim()) {
-      errors.taxSystem = errors.taxSystem || [];
-      errors.taxSystem.push('Tax system name is required');
+    // Tax system
+    if (!builderState.taxSystem.taxSystemName?.trim()) {
+      taxSystemFieldErrors.taxSystemName = ['Tax system name is required'];
+    }
+    if (!builderState.taxSystem.fiscalYear) {
+      taxSystemFieldErrors.fiscalYear = ['Fiscal year is required'];
+    }
+    if (
+      !builderState.taxSystem.progressiveTax &&
+      (builderState.taxSystem.flatTaxRate === undefined || builderState.taxSystem.flatTaxRate === null)
+    ) {
+      taxSystemFieldErrors.flatTaxRate = ['Flat tax rate is required when not using progressive taxation'];
+    }
+    if (
+      builderState.taxSystem.flatTaxRate !== undefined &&
+      (builderState.taxSystem.flatTaxRate < 0 || builderState.taxSystem.flatTaxRate > 100)
+    ) {
+      taxSystemFieldErrors.flatTaxRate = ['Flat tax rate must be between 0 and 100'];
+    }
+    if (
+      builderState.taxSystem.alternativeMinTax &&
+      (builderState.taxSystem.alternativeMinRate === undefined || builderState.taxSystem.alternativeMinRate === null)
+    ) {
+      taxSystemFieldErrors.alternativeMinRate = ['AMT rate is required when AMT is enabled'];
+    }
+    if (Object.keys(taxSystemFieldErrors).length > 0) {
+      errors.taxSystem = taxSystemFieldErrors;
     }
 
-    if (!builderState.taxSystem.progressiveTax && !builderState.taxSystem.flatTaxRate) {
-      errors.taxSystem = errors.taxSystem || [];
-      errors.taxSystem.push('Flat tax rate is required when not using progressive taxation');
-    }
-
-    // Validate categories
+    // Categories
     builderState.categories.forEach((category, index) => {
-      if (!category.categoryName.trim()) {
-        errors.categories = errors.categories || {};
-        errors.categories[index] = errors.categories[index] || [];
-        errors.categories[index].push('Category name is required');
-      }
-
-      if (!category.categoryType) {
-        errors.categories = errors.categories || {};
-        errors.categories[index] = errors.categories[index] || [];
-        errors.categories[index].push('Category type is required');
-      }
-
+      const catErrors: string[] = [];
+      if (!category.categoryName?.trim()) catErrors.push('Category name is required');
+      if (!category.categoryType) catErrors.push('Category type is required');
+      if (!category.calculationMethod) catErrors.push('Calculation method is required');
+      if (category.baseRate !== undefined && (category.baseRate < 0 || category.baseRate > 100)) catErrors.push('Base rate must be between 0 and 100');
       if (category.calculationMethod === 'progressive') {
         const brackets = builderState.brackets[index.toString()] || [];
-        if (brackets.length === 0) {
-          errors.categories = errors.categories || {};
-          errors.categories[index] = errors.categories[index] || [];
-          errors.categories[index].push('Progressive categories need at least one bracket');
-        }
+        if (brackets.length === 0) catErrors.push('Progressive categories need at least one bracket');
+      }
+      if (catErrors.length > 0) {
+        errors.categories = errors.categories || {};
+        errors.categories[index] = catErrors;
       }
     });
 
-    // Validate brackets
+    // Brackets
     Object.entries(builderState.brackets).forEach(([categoryIndex, brackets]) => {
-      brackets.forEach((bracket, bracketIndex) => {
+      const sorted = [...brackets].sort((a, b) => a.minIncome - b.minIncome);
+      for (let i = 0; i < sorted.length; i++) {
+        const bracket = sorted[i]!;
         if (bracket.rate < 0 || bracket.rate > 100) {
           errors.brackets = errors.brackets || {};
           errors.brackets[categoryIndex] = errors.brackets[categoryIndex] || {};
-          errors.brackets[categoryIndex][bracketIndex] = errors.brackets[categoryIndex][bracketIndex] || [];
-          errors.brackets[categoryIndex][bracketIndex].push('Tax rate must be between 0 and 100');
+          errors.brackets[categoryIndex][i] = errors.brackets[categoryIndex][i] || [];
+          errors.brackets[categoryIndex][i].push('Tax rate must be between 0 and 100');
         }
-
-        if (bracket.maxIncome && bracket.minIncome >= bracket.maxIncome) {
+        if (bracket.maxIncome !== undefined && bracket.minIncome >= bracket.maxIncome) {
           errors.brackets = errors.brackets || {};
           errors.brackets[categoryIndex] = errors.brackets[categoryIndex] || {};
-          errors.brackets[categoryIndex][bracketIndex] = errors.brackets[categoryIndex][bracketIndex] || [];
-          errors.brackets[categoryIndex][bracketIndex].push('Maximum income must be greater than minimum income');
+          errors.brackets[categoryIndex][i] = errors.brackets[categoryIndex][i] || [];
+          errors.brackets[categoryIndex][i].push('Maximum income must be greater than minimum income');
         }
-      });
+        if (i > 0) {
+          const prev = sorted[i - 1]!;
+          const prevEnd = prev.maxIncome ?? Number.POSITIVE_INFINITY;
+          if (bracket.minIncome < prevEnd) {
+            errors.brackets = errors.brackets || {};
+            errors.brackets[categoryIndex] = errors.brackets[categoryIndex] || {};
+            errors.brackets[categoryIndex][i] = errors.brackets[categoryIndex][i] || [];
+            errors.brackets[categoryIndex][i].push('Bracket overlaps previous bracket');
+          }
+        }
+      }
     });
 
     const isValid = Object.keys(errors).length === 0;
@@ -491,7 +553,7 @@ export function TaxBuilder({
       categoryType: 'Direct Tax',
       description: '',
       isActive: true,
-      calculationMethod: 'percentage',
+      calculationMethod: CALCULATION_METHODS.PERCENTAGE,
       baseRate: 10,
       deductionAllowed: true,
       priority: 50,
@@ -602,13 +664,27 @@ export function TaxBuilder({
     setBuilderState((prev: TaxBuilderState) => ({ ...prev, ...validation }));
     
     if (validation.isValid) {
+      // Normalize payload to server schema (omit UI flags; fix literal unions)
+      type ServerCalculationMethod = 'percentage' | 'fixed' | 'tiered' | 'progressive';
+      const normalizedCategories = builderState.categories.map((cat) => ({
+        ...cat,
+        calculationMethod: (cat.calculationMethod as ServerCalculationMethod),
+      }));
+      const submitState = {
+        taxSystem: builderState.taxSystem,
+        categories: normalizedCategories,
+        brackets: builderState.brackets,
+        exemptions: builderState.exemptions,
+        deductions: builderState.deductions,
+        atomicComponents: selectedAtomicTaxComponents,
+      };
       // Check for conflicts if auto-sync is enabled
       if (enableAutoSync && countryId && syncState.conflictWarnings.length > 0) {
         setPendingSaveCallback(() => async () => {
           if (onSave) {
             setIsSaving(true);
             try {
-              await onSave({ ...builderState, ...validation });
+              await onSave(submitState as any);
               clearConflicts();
             } catch (error) {
               console.error('Save failed:', error);
@@ -621,9 +697,67 @@ export function TaxBuilder({
       } else if (onSave) {
         setIsSaving(true);
         try {
-          await onSave({ ...builderState, ...validation });
+          const result = await onSave(submitState as any);
+          // If server returned structured bracket validation errors, surface them inline
+          if ((result as any)?.errors && Array.isArray((result as any).errors)) {
+            const serverErrors = (result as any).errors as Array<{ categoryIndex: number; message: string }>;
+            const errorMap: any = { ...validation.errors };
+            serverErrors.forEach(({ categoryIndex, message }) => {
+              errorMap.categories = errorMap.categories || {};
+              errorMap.categories[categoryIndex] = errorMap.categories[categoryIndex] || [];
+              errorMap.categories[categoryIndex].push(message);
+            });
+            setBuilderState((prev: TaxBuilderState) => ({ ...prev, isValid: false, errors: errorMap }));
+            return;
+          }
+          toast.success('Tax system saved');
         } catch (error) {
           console.error('Save failed:', error);
+          toast.error('Failed to save tax system');
+        } finally {
+          setIsSaving(false);
+        }
+      } else if (countryId) {
+        // Fallback: direct API save (update-first, then create)
+        setIsSaving(true);
+        try {
+          let result: any;
+          try {
+            result = await updateMutation.mutateAsync({
+              countryId,
+              data: submitState as any,
+              skipConflictCheck: true,
+            });
+          } catch (updateErr) {
+            const msg = updateErr instanceof Error ? updateErr.message : String(updateErr);
+            const notFound = msg.includes('No record was found') || msg.includes('P2025');
+            if (notFound) {
+              result = await createMutation.mutateAsync({
+                countryId,
+                data: submitState as any,
+                skipConflictCheck: true,
+              });
+            } else {
+              throw updateErr;
+            }
+          }
+
+          if (result?.errors && Array.isArray(result.errors)) {
+            const errorMap: any = { ...validation.errors };
+            (result.errors as Array<{ categoryIndex: number; message: string }>).forEach(({ categoryIndex, message }) => {
+              errorMap.categories = errorMap.categories || {};
+              errorMap.categories[categoryIndex] = errorMap.categories[categoryIndex] || [];
+              errorMap.categories[categoryIndex].push(message);
+            });
+            setBuilderState((prev: TaxBuilderState) => ({ ...prev, isValid: false, errors: errorMap }));
+            toast.error('Please fix bracket errors');
+            return;
+          }
+
+          toast.success('Tax system saved');
+        } catch (err) {
+          console.error('Save failed:', err);
+          toast.error('Failed to save tax system');
         } finally {
           setIsSaving(false);
         }
@@ -677,16 +811,70 @@ export function TaxBuilder({
     return brackets;
   }, [builderState.brackets]);
 
-  const steps = [
-    { id: 'system', label: 'Tax System', icon: Settings },
+  const steps: BuilderStep[] = [
+    {
+      id: 'system',
+      label: 'Tax System',
+      icon: Settings,
+      internalTabs: [
+        { id: 'basic', label: 'Basic Settings' },
+        { id: 'components', label: 'Tax Components' },
+        { id: 'analysis', label: 'Analysis' }
+      ]
+    },
     { id: 'categories', label: 'Tax Categories', icon: Receipt },
-    ...(showAtomicIntegration ? [{ id: 'atomic', label: 'Atomic Integration', icon: Zap }] : []),
     { id: 'calculator', label: 'Calculator', icon: Calculator },
-    { id: 'preview', label: 'Preview & Save', icon: Eye }
+    { id: 'preview', label: 'Preview', icon: Eye }
   ];
 
   const currentStepIndex = steps.findIndex(step => step.id === currentStep);
   const validation = validateState();
+
+  // Basic, non-destructive suggestions (behind flag)
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS !== 'true') return;
+    setSuggestions(computeTaxSuggestions(builderState as any));
+  }, [builderState]);
+
+  const intel = useIntelligenceWebSocket({ countryId });
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS !== 'true') return;
+    if (!intel.latestUpdate) return;
+    setSuggestions(computeTaxSuggestions(builderState as any));
+  }, [intel.latestUpdate, builderState]);
+
+  // Parse and pre-populate economic/government data on mount
+  useEffect(() => {
+    if (parsedDataApplied || !economicData || !governmentData) return;
+    if (builderState.categories.length > 0) return; // Don't overwrite existing data
+
+    try {
+      const parsedData = parseEconomicDataForTaxSystem(
+        economicData as any,
+        governmentData,
+        {
+          useAggressiveParsing: true,
+          includeGovernmentPolicies: true,
+          autoGenerateBrackets: true,
+          targetRevenueMatch: true
+        }
+      );
+
+      setBuilderState((prev: TaxBuilderState) => ({
+        ...prev,
+        taxSystem: { ...prev.taxSystem, ...parsedData.taxSystem },
+        categories: parsedData.categories,
+        brackets: parsedData.brackets,
+        exemptions: parsedData.exemptions,
+        deductions: parsedData.deductions
+      }));
+
+      setParsedDataApplied(true);
+      toast.success('Tax data pre-populated from economic indicators');
+    } catch (error) {
+      console.error('Failed to parse economic data:', error);
+    }
+  }, [economicData, governmentData, parsedDataApplied, builderState.categories.length, setBuilderState]);
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -728,49 +916,20 @@ export function TaxBuilder({
             <Eye className="h-4 w-4 mr-2" />
             Preview
           </Button>
-          {!hideSaveButton && (
-            <Button
-              onClick={handleSave}
-              disabled={!validation.isValid || isSaving || isReadOnly}
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {isSaving ? 'Saving...' : 'Save'}
-            </Button>
-          )}
         </div>
       </div>
 
-      {/* Progress Steps */}
-      <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border">
-        {steps.map((step, index) => {
-          const StepIcon = step.icon;
-          const isActive = step.id === currentStep;
-          const isCompleted = index < currentStepIndex;
-
-          return (
-            <div key={step.id} className="flex items-center">
-              <button
-                onClick={() => setCurrentStep(step.id as any)}
-                disabled={isReadOnly}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : isCompleted
-                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
-                      : 'hover:bg-muted text-muted-foreground'
-                }`}
-              >
-                <StepIcon className="h-4 w-4" />
-                <span className="text-sm font-medium">{step.label}</span>
-                {isCompleted && <CheckCircle className="h-4 w-4" />}
-              </button>
-              {index < steps.length - 1 && (
-                <ArrowRight className="h-4 w-4 mx-2 text-muted-foreground" />
-              )}
-            </div>
-          );
-        })}
-      </div>
+      {/* Global Builder Navigation */}
+      <GlobalBuilderNavigation
+        steps={steps}
+        currentStep={currentStep}
+        currentInternalTab={currentInternalTab}
+        onStepChange={(stepId) => setCurrentStep(stepId as any)}
+        onInternalTabChange={setCurrentInternalTab}
+        isValid={validation.isValid}
+        validationErrors={validation.errors}
+        isReadOnly={isReadOnly}
+      />
 
       {/* Validation Errors */}
       {!validation.isValid && Object.keys(validation.errors).length > 0 && (
@@ -794,15 +953,128 @@ export function TaxBuilder({
         </Alert>
       )}
 
+      {process.env.NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS === 'true' && suggestions.length > 0 && (
+        <SuggestionsPanel
+          suggestions={suggestions}
+          onApply={(s) => {
+            if (s.id === 'income-amt-nudge') {
+              const idx = builderState.categories.findIndex(c => c.categoryType.toLowerCase().includes('income'));
+              if (idx >= 0) {
+                const updated = [...builderState.categories];
+                updated[idx] = { ...updated[idx], baseRate: Math.max(updated[idx].baseRate || 0, 5) };
+                handleCategoriesChange(updated);
+              }
+            }
+            if (s.id === 'corp-amt-nudge') {
+              const idx = builderState.categories.findIndex(c => c.categoryType.toLowerCase().includes('corporate'));
+              if (idx >= 0) {
+                const updated = [...builderState.categories];
+                updated[idx] = { ...updated[idx], baseRate: Math.max(updated[idx].baseRate || 0, 10) };
+                handleCategoriesChange(updated);
+              }
+            }
+            setSuggestions(prev => prev.filter(x => x.id !== s.id));
+          }}
+          onDismiss={(id) => setSuggestions(prev => prev.filter(x => x.id !== id))}
+          isReadOnly={isReadOnly}
+        />
+      )}
+
       {/* Step Content */}
       <div className="space-y-6">
         {currentStep === 'system' && (
-          <TaxSystemForm
-            data={builderState.taxSystem}
-            onChange={handleTaxSystemChange}
-            isReadOnly={isReadOnly}
-            errors={validation.errors.taxSystem ? { taxSystem: validation.errors.taxSystem } : {}}
-          />
+          <Tabs value={currentInternalTab} onValueChange={setCurrentInternalTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="basic">Basic Settings</TabsTrigger>
+              <TabsTrigger value="components">Tax Components</TabsTrigger>
+              <TabsTrigger value="analysis">Analysis</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="basic" className="space-y-6 mt-6">
+              <TaxSystemForm
+                data={builderState.taxSystem}
+                onChange={handleTaxSystemChange}
+                isReadOnly={isReadOnly}
+                errors={validation.errors.taxSystem || {}}
+                countryId={countryId}
+              />
+            </TabsContent>
+
+            <TabsContent value="components" className="space-y-6 mt-6">
+              {showAtomicIntegration ? (
+                <>
+                  <div className="text-center space-y-4">
+                    <h2 className="text-2xl font-semibold text-foreground">Atomic Tax Components</h2>
+                    <p className="text-muted-foreground">
+                      Build your tax system using modular components with synergies and conflicts
+                    </p>
+                  </div>
+
+                  <AtomicTaxComponentSelector
+                    selectedComponents={selectedAtomicTaxComponents}
+                    onComponentChange={setSelectedAtomicTaxComponents}
+                    maxComponents={15}
+                    isReadOnly={isReadOnly}
+                  />
+
+                  {selectedAtomicTaxComponents.length > 0 && economicData && governmentData && (
+                    <div className="space-y-6">
+                      <UnifiedTaxEffectivenessDisplay
+                        taxComponents={selectedAtomicTaxComponents.map(id => ({ id, type: id, name: id, effectiveness: 80 }))}
+                        governmentComponents={activeComponents.map(type => ({ 
+                          id: type, 
+                          type, 
+                          name: type, 
+                          effectiveness: 80,
+                          countryId: countryId || '',
+                          effectivenessScore: 80,
+                          implementationDate: new Date(),
+                          implementationCost: 0,
+                          maintenanceCost: 0,
+                          requiredCapacity: 50,
+                          isActive: true,
+                          notes: null,
+                          createdAt: new Date(),
+                          updatedAt: new Date()
+                        }))}
+                        economicData={economicData as any}
+                        taxSystem={mockTaxSystem}
+                      />
+                    </div>
+                  )}
+                </>
+              ) : (
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    Atomic integration is disabled. Enable it to access modular tax components.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </TabsContent>
+
+            <TabsContent value="analysis" className="space-y-6 mt-6">
+              {economicData && (
+                <TaxEconomySyncDisplay
+                  taxSystem={mockTaxSystem}
+                  economicData={{ core: economicData as any }}
+                  onOptimize={() => {
+                    toast.info('Tax optimization recommendations applied');
+                  }}
+                />
+              )}
+
+              {!economicData && (
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    Economic data is required to show tax system analysis.
+                    Configure your economy builder first.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </TabsContent>
+          </Tabs>
         )}
 
         {currentStep === 'categories' && (
@@ -862,42 +1134,6 @@ export function TaxBuilder({
           </div>
         )}
 
-        {currentStep === 'atomic' && showAtomicIntegration && (
-          <div className="space-y-6">
-            <div className="text-center space-y-4">
-              <h2 className="text-2xl font-semibold text-foreground">Atomic Tax Effectiveness</h2>
-              <p className="text-muted-foreground">
-                See how your government's atomic components influence tax collection and compliance
-              </p>
-            </div>
-
-            <AtomicTaxEffectivenessPanel
-              components={activeComponents}
-              baseTaxSystem={{
-                collectionEfficiency: builderState.taxSystem.collectionEfficiency || 90,
-                complianceRate: builderState.taxSystem.complianceRate || 85,
-                auditCapacity: 60
-              }}
-              showDetailedBreakdown={true}
-            />
-
-            {activeComponents.length === 0 && countryId && (
-              <Card className="border-yellow-200 bg-yellow-50">
-                <CardContent className="p-6 text-center">
-                  <AlertTriangle className="h-12 w-12 mx-auto text-yellow-600 mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No Government Components</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Add atomic government components to see their impact on tax effectiveness.
-                  </p>
-                  <Button variant="outline" onClick={() => window.open('/mycountry/editor#government', '_blank')}>
-                    Configure Government Components
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        )}
-
         {currentStep === 'calculator' && (
           <TaxCalculator
             taxSystem={mockTaxSystem}
@@ -906,21 +1142,53 @@ export function TaxBuilder({
             exemptions={[]}
             deductions={[]}
             onCalculationChange={setCalculationResult}
+            economicData={economicData ? {
+              totalPopulation: economicData.population,
+              nominalGDP: economicData.gdp,
+              gdpPerCapita: economicData.gdp / economicData.population,
+              realGDPGrowthRate: 0.03, // Default value
+              inflationRate: 0.02, // Default value
+              currencyExchangeRate: 1.0 // Default value
+            } : undefined}
+            governmentData={governmentData}
           />
         )}
 
         {currentStep === 'preview' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-semibold text-foreground">Tax System Preview</h2>
-            
-            {/* System Overview */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  {builderState.taxSystem.taxSystemName || 'Untitled Tax System'}
-                </CardTitle>
-              </CardHeader>
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-semibold text-foreground">Tax System Preview</h2>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const allOpen = isSystemDetailsOpen && isCategoriesOpen && isCalculationOpen;
+                  setIsSystemDetailsOpen(!allOpen);
+                  setIsCategoriesOpen(!allOpen);
+                  setIsCalculationOpen(!allOpen);
+                  setOpenCategoryDetails({});
+                }}
+              >
+                <ChevronsUpDown className="h-4 w-4 mr-2" />
+                {(isSystemDetailsOpen && isCategoriesOpen && isCalculationOpen) ? 'Collapse All' : 'Expand All'}
+              </Button>
+            </div>
+
+            {/* System Overview - Collapsible */}
+            <Collapsible open={isSystemDetailsOpen} onOpenChange={setIsSystemDetailsOpen}>
+              <Card>
+                <CollapsibleTrigger className="w-full">
+                  <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Settings className="h-5 w-5" />
+                        {builderState.taxSystem.taxSystemName || 'Untitled Tax System'}
+                      </div>
+                      {isSystemDetailsOpen ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+                    </CardTitle>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
@@ -950,74 +1218,133 @@ export function TaxBuilder({
                   </Alert>
                 )}
               </CardContent>
+                </CollapsibleContent>
             </Card>
+            </Collapsible>
 
-            {/* Categories Overview */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Receipt className="h-5 w-5" />
-                  Tax Categories Overview
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {builderState.categories.map((category, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                      <div>
-                        <div className="font-medium">{category.categoryName}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {category.categoryType} • {category.calculationMethod}
+            {/* Categories Overview - Collapsible */}
+            <Collapsible open={isCategoriesOpen} onOpenChange={setIsCategoriesOpen}>
+              <Card>
+                <CollapsibleTrigger className="w-full">
+                  <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Receipt className="h-5 w-5" />
+                        Tax Categories Overview ({builderState.categories.length})
+                      </div>
+                      {isCategoriesOpen ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+                    </CardTitle>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {builderState.categories.map((category, index) => (
+                        <Collapsible
+                          key={index}
+                          open={openCategoryDetails[index.toString()]}
+                          onOpenChange={(open) => setOpenCategoryDetails(prev => ({ ...prev, [index.toString()]: open }))}
+                        >
+                          <Card className="border">
+                            <CollapsibleTrigger className="w-full">
+                              <div className="flex items-center justify-between p-3 hover:bg-muted/30 transition-colors cursor-pointer">
+                                <div>
+                                  <div className="font-medium flex items-center gap-2">
+                                    {category.categoryName}
+                                    {openCategoryDetails[index.toString()] ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {category.categoryType} • {category.calculationMethod}
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <UIBadge variant="outline">
+                                    {category.baseRate}% base rate
+                                  </UIBadge>
+                                  {builderState.brackets[index.toString()]?.length > 0 && (
+                                    <div className="text-xs text-muted-foreground mt-1">
+                                      {builderState.brackets[index.toString()].length} brackets
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <Separator />
+                              <div className="p-3 space-y-3">
+                                {category.description && (
+                                  <div>
+                                    <div className="text-xs text-muted-foreground">Description</div>
+                                    <div className="text-sm">{category.description}</div>
+                                  </div>
+                                )}
+                                {builderState.brackets[index.toString()]?.length > 0 && (
+                                  <div>
+                                    <div className="text-xs text-muted-foreground mb-2">Tax Brackets</div>
+                                    <div className="space-y-2">
+                                      {builderState.brackets[index.toString()].map((bracket, bIndex) => (
+                                        <div key={bIndex} className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded">
+                                          <span>
+                                            ${bracket.minIncome.toLocaleString()} - {bracket.maxIncome ? `$${bracket.maxIncome.toLocaleString()}` : 'and above'}
+                                          </span>
+                                          <UIBadge variant="secondary">{bracket.rate}%</UIBadge>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </CollapsibleContent>
+                          </Card>
+                        </Collapsible>
+                      ))}
+                    </div>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+
+            {/* Tax Calculator Preview - Collapsible */}
+            {calculationResult && (
+              <Collapsible open={isCalculationOpen} onOpenChange={setIsCalculationOpen}>
+                <Card>
+                  <CollapsibleTrigger className="w-full">
+                    <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                      <CardTitle className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Calculator className="h-5 w-5" />
+                          Sample Calculation
+                        </div>
+                        {isCalculationOpen ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+                      </CardTitle>
+                    </CardHeader>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <div className="text-sm text-muted-foreground">Effective Rate</div>
+                          <div className="text-2xl font-semibold">
+                            {calculationResult.effectiveRate.toFixed(2)}%
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground">Marginal Rate</div>
+                          <div className="text-2xl font-semibold">
+                            {calculationResult.marginalRate.toFixed(2)}%
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground">Tax Categories</div>
+                          <div className="text-2xl font-semibold">
+                            {calculationResult.breakdown.length}
+                          </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <UIBadge variant="outline">
-                          {category.baseRate}% base rate
-                        </UIBadge>
-                        {builderState.brackets[index.toString()]?.length > 0 && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {builderState.brackets[index.toString()].length} brackets
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Tax Calculator Preview */}
-            {calculationResult && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calculator className="h-5 w-5" />
-                    Sample Calculation
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <div className="text-sm text-muted-foreground">Effective Rate</div>
-                      <div className="text-2xl font-semibold">
-                        {calculationResult.effectiveRate.toFixed(2)}%
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">Marginal Rate</div>
-                      <div className="text-2xl font-semibold">
-                        {calculationResult.marginalRate.toFixed(2)}%
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">Tax Categories</div>
-                      <div className="text-2xl font-semibold">
-                        {calculationResult.breakdown.length}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
             )}
           </div>
         )}
@@ -1078,46 +1405,6 @@ export function TaxBuilder({
           </div>
         </div>
       )}
-
-      {/* Navigation */}
-      <div className="flex items-center justify-between pt-6 border-t border-border">
-        <Button
-          variant="outline"
-          onClick={() => {
-            const prevIndex = Math.max(0, currentStepIndex - 1);
-            setCurrentStep(steps[prevIndex].id as any);
-          }}
-          disabled={currentStepIndex === 0 || isReadOnly}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Previous
-        </Button>
-
-        <div className="flex items-center gap-2">
-          {validation.isValid ? (
-            <UIBadge variant="default" className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-              <CheckCircle className="h-3 w-3 mr-1" />
-              Valid Configuration
-            </UIBadge>
-          ) : (
-            <UIBadge variant="destructive">
-              <AlertTriangle className="h-3 w-3 mr-1" />
-              {Object.keys(validation.errors).length} Issues
-            </UIBadge>
-          )}
-        </div>
-
-        <Button
-          onClick={() => {
-            const nextIndex = Math.min(steps.length - 1, currentStepIndex + 1);
-            setCurrentStep(steps[nextIndex].id as any);
-          }}
-          disabled={currentStepIndex === steps.length - 1 || isReadOnly}
-        >
-          Next
-          <ArrowRight className="h-4 w-4 ml-2" />
-        </Button>
-      </div>
     </div>
   );
 }

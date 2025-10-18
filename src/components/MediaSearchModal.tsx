@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '~/lib/utils';
-import { X, Search, Loader2, Check } from 'lucide-react';
+import { X, Search, Loader2, Check, Download } from 'lucide-react';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
 import * as SelectPrimitive from '@radix-ui/react-select';
@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { api } from '~/trpc/react';
 import { toast } from 'sonner';
 import { useInView } from 'react-intersection-observer';
+import { processImageSelection, isExternalImageUrl } from '~/lib/image-download-service';
 
 interface MediaSearchModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'repository' | 'wiki-commons' | 'wiki'>('repository');
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const [wikiCommonsSearchQuery, setWikiCommonsSearchQuery] = useState('');
   const [wikiSearchQuery, setWikiSearchQuery] = useState('');
@@ -147,11 +149,36 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
     };
   }, [isOpen]);
 
-  const handleSelectImage = () => {
-    if (selectedImage) {
-      onImageSelect(selectedImage);
-    } else {
+  const handleSelectImage = async () => {
+    if (!selectedImage) {
       toast.error('Please select an image first.');
+      return;
+    }
+
+    try {
+      // Check if image needs to be downloaded
+      if (isExternalImageUrl(selectedImage)) {
+        setIsDownloading(true);
+        toast.info('Downloading image...');
+
+        const processedUrl = await processImageSelection(selectedImage, {
+          onProgress: (message) => console.log('[MediaSearchModal]', message),
+          onError: (error) => console.error('[MediaSearchModal]', error),
+        });
+
+        toast.success('Image downloaded and ready to use!');
+        onImageSelect(processedUrl);
+      } else {
+        // Already a data URL or local path
+        onImageSelect(selectedImage);
+      }
+      
+      onClose();
+    } catch (error) {
+      console.error('[MediaSearchModal] Failed to process image:', error);
+      toast.error('Failed to download image. Please try again.');
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -443,9 +470,25 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
             </Tabs>
 
             {/* Always visible Select Image button */}
-            <div className="p-4 border-t border-white/10 flex justify-end items-center">
-              <Button onClick={handleSelectImage} disabled={!selectedImage}>
-                Select Image
+            <div className="p-4 border-t border-white/10 flex justify-end items-center gap-3">
+              {isDownloading && (
+                <div className="flex items-center gap-2 text-sm text-blue-400">
+                  <Download className="h-4 w-4 animate-bounce" />
+                  <span>Downloading image...</span>
+                </div>
+              )}
+              <Button 
+                onClick={handleSelectImage} 
+                disabled={!selectedImage || isDownloading}
+              >
+                {isDownloading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Downloading...
+                  </>
+                ) : (
+                  'Select Image'
+                )}
               </Button>
             </div>
           </motion.div>

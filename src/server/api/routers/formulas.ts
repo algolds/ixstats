@@ -1,64 +1,125 @@
 // src/server/api/routers/formulas.ts
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
+import { calculateEffectiveGrowthRate, CONFIG_CONSTANTS } from "~/lib/config-service";
+
+type FormulaMeta = {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  formula: string;
+  variables: Record<string, unknown>;
+  constants: Record<string, unknown>;
+  isActive: boolean;
+  version: string;
+  lastModified: Date;
+  modifiedBy: string;
+};
 
 export const formulasRouter = createTRPCRouter({
   getAll: adminProcedure
     .query(async ({ ctx }) => {
-      // Mock formulas for now - replace with actual database queries
-      return {
-        formulas: [
-          {
-            id: "gdp-growth",
-            name: "GDP Growth Calculation",
-            description: "Core GDP growth formula with tier-based constraints",
-            category: "economic",
-            formula: "function calculateGDPGrowth(baseGDP, population, tier, globalFactor, dmModifiers) { ... }",
-            variables: {
-              globalFactor: 1.0321,
-              baseInflationRate: 0.025,
-              tierMultiplierMax: 0.10,
-              populationGrowthWeight: 0.3
-            },
-            constants: {
-              minGrowthRate: -0.05,
-              maxTierMultipliers: [0.10, 0.075, 0.05, 0.035, 0.0275, 0.015, 0.005]
-            },
-            isActive: true,
-            version: "2.1.3",
-            lastModified: new Date(),
-            modifiedBy: ctx.user?.id || "system"
+      // Build live metadata from real config/services and last calculation log
+      const lastCalc = await ctx.db.calculationLog.findFirst({ orderBy: { timestamp: "desc" } });
+      const lastModified = lastCalc?.timestamp ?? new Date();
+
+      const formulas: FormulaMeta[] = [
+        {
+          id: "gdp-growth",
+          name: "GDP Effective Growth Rate",
+          description: "Computes effective GDP growth applying global/local factors and tier caps",
+          category: "economic",
+          formula: "calculateEffectiveGrowthRate(baseGrowthRate, gdpPerCapita, globalGrowthFactor, localGrowthFactor)",
+          variables: {
+            baseGrowthRate: 0.02,
+            gdpPerCapita: 20000,
+            globalGrowthFactor: Number(CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR),
+            localGrowthFactor: 1.0
           },
-          {
-            id: "tax-efficiency",
-            name: "Tax Collection Efficiency",
-            description: "Government tax collection effectiveness calculation",
-            category: "economic",
-            formula: "function calculateTaxEfficiency(baseTaxRate, governmentType, atomicComponents, corruption) { ... }",
-            variables: {
-              baseTaxRate: 0.25,
-              corruption: 0.12,
-              professionalBureaucracyBonus: 1.30,
-              ruleOfLawBonus: 1.20
-            },
-            constants: {
-              maxEfficiency: 0.98,
-              governmentTypeMultipliers: { democracy: 0.85, autocracy: 0.75, technocracy: 0.95 }
-            },
-            isActive: true,
-            version: "1.8.1",
-            lastModified: new Date(Date.now() - 86400000),
-            modifiedBy: ctx.user?.id || "system"
-          }
-        ]
-      };
+          constants: {
+            minGrowthRate: -0.5,
+            globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR
+          },
+          isActive: true,
+          version: "1.0.0",
+          lastModified,
+          modifiedBy: ctx.user?.id || "system"
+        },
+        {
+          id: "gdp-per-capita-progression",
+          name: "GDP Per Capita Progression (descriptive)",
+          description: "Progression computed inside IxStatsCalculator using config tier caps and factors",
+          category: "economic",
+          formula: "IxStatsCalculator.calculateGdpPerCapitaProgression(...) (internal)",
+          variables: {
+            adjustedGrowthRate: 0.02,
+            maxGrowthRate: 0.05,
+            yearsFromBaseline: 1
+          },
+          constants: {
+            globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR
+          },
+          isActive: true,
+          version: "1.0.0",
+          lastModified,
+          modifiedBy: ctx.user?.id || "system"
+        }
+      ];
+
+      return { formulas };
     }),
 
   getById: adminProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      // Mock implementation
-      return null;
+      // Avoid self-referential call: reconstruct the same data as getAll
+      const lastCalc = await ctx.db.calculationLog.findFirst({ orderBy: { timestamp: "desc" } });
+      const lastModified = lastCalc?.timestamp ?? new Date();
+      const formulas: FormulaMeta[] = [
+        {
+          id: "gdp-growth",
+          name: "GDP Effective Growth Rate",
+          description: "Computes effective GDP growth applying global/local factors and tier caps",
+          category: "economic",
+          formula: "calculateEffectiveGrowthRate(baseGrowthRate, gdpPerCapita, globalGrowthFactor, localGrowthFactor)",
+          variables: {
+            baseGrowthRate: 0.02,
+            gdpPerCapita: 20000,
+            globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR,
+            localGrowthFactor: 1.0
+          },
+          constants: {
+            minGrowthRate: -0.5,
+            globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR
+          },
+          isActive: true,
+          version: "1.0.0",
+          lastModified,
+          modifiedBy: ctx.user?.id || "system"
+        },
+        {
+          id: "gdp-per-capita-progression",
+          name: "GDP Per Capita Progression (descriptive)",
+          description: "Progression computed inside IxStatsCalculator using config tier caps and factors",
+          category: "economic",
+          formula: "IxStatsCalculator.calculateGdpPerCapitaProgression(...) (internal)",
+          variables: {
+            adjustedGrowthRate: 0.02,
+            maxGrowthRate: 0.05,
+            yearsFromBaseline: 1
+          },
+          constants: {
+            globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR
+          },
+          isActive: true,
+          version: "1.0.0",
+          lastModified,
+          modifiedBy: ctx.user?.id || "system"
+        }
+      ];
+      const found = formulas.find(f => f.id === input.id) || null;
+      return found;
     }),
 
   update: adminProcedure
@@ -72,10 +133,23 @@ export const formulasRouter = createTRPCRouter({
       isActive: z.boolean().optional()
     }))
     .mutation(async ({ ctx, input }) => {
-      // Mock implementation
+      // Persist an audit log entry for transparency; formulas metadata is derived from code
+      const audit = await ctx.db.adminAuditLog.create({
+        data: {
+          action: "FORMULA_UPDATE_REQUEST",
+          targetType: "formula",
+          targetId: input.id,
+          targetName: input.name || input.id,
+          changes: JSON.stringify(input),
+          adminId: ctx.user?.id || "system",
+          adminName: ctx.user?.id || "system"
+        }
+      });
+
       return {
         success: true,
-        message: `Formula ${input.id} updated successfully`
+        message: `Recorded update request for formula ${input.id}`,
+        auditId: audit.id
       };
     }),
 
@@ -86,12 +160,36 @@ export const formulasRouter = createTRPCRouter({
       expectedOutput: z.number().optional()
     }))
     .mutation(async ({ ctx, input }) => {
-      // Real test execution (removed random/mock data)
       const startTime = Date.now();
 
-      // Use actual formula calculation if available, otherwise return input sum
-      const inputValues = Object.values(input.testInputs);
-      const result = inputValues.reduce((sum, val) => sum + val, 0);
+      let result = 0;
+      let intermediateSteps: Record<string, number> = {};
+
+      if (input.formulaId === "gdp-growth") {
+        const baseGrowthRate = input.testInputs.baseGrowthRate ?? 0.02;
+        const gdpPerCapita = input.testInputs.gdpPerCapita ?? 20000;
+        const globalGrowthFactor = input.testInputs.globalGrowthFactor ?? CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR;
+        const localGrowthFactor = input.testInputs.localGrowthFactor ?? 1.0;
+
+        result = calculateEffectiveGrowthRate(
+          baseGrowthRate,
+          gdpPerCapita,
+          globalGrowthFactor,
+          localGrowthFactor
+        );
+
+        intermediateSteps = {
+          baseGrowthRate,
+          gdpPerCapita,
+          globalGrowthFactor,
+          localGrowthFactor
+        };
+      } else {
+        // Fallback: sum inputs deterministically
+        const inputValues = Object.values(input.testInputs);
+        result = inputValues.reduce((sum, val) => sum + val, 0);
+        intermediateSteps = { inputs: inputValues.length } as any;
+      }
 
       const executionTime = Date.now() - startTime;
 
@@ -99,44 +197,34 @@ export const formulasRouter = createTRPCRouter({
         success: true,
         result,
         executionTime,
-        intermediateSteps: {
-          step1: inputValues[0] || 0,
-          step2: result * 0.7,
-          step3: result
-        },
-        passed: input.expectedOutput ? Math.abs(result - input.expectedOutput) < 0.01 : null
+        intermediateSteps,
+        passed: input.expectedOutput != null ? Math.abs(result - input.expectedOutput) < 0.0001 : null
       };
     }),
 
   getSystemMetrics: adminProcedure
     .query(async ({ ctx }) => {
-      // Mock system metrics
+      const [countries, users, notifications, calcCount, lastCalc] = await Promise.all([
+        ctx.db.country.count(),
+        ctx.db.user.count(),
+        ctx.db.notification.count(),
+        ctx.db.calculationLog.count(),
+        ctx.db.calculationLog.findFirst({ orderBy: { timestamp: "desc" } })
+      ]);
+
       return {
         database: {
-          connectionCount: 12,
-          queryCount: 1543,
-          averageResponseTime: 23.5,
-          tableCount: 47,
-          totalRecords: 89234,
-          diskUsage: 67.8
-        },
-        server: {
-          uptime: Date.now() - (24 * 60 * 60 * 1000),
-          memoryUsage: 72.3,
-          cpuUsage: 34.7,
-          diskUsage: 45.2,
-          requestCount: 5678,
-          errorRate: 0.12
+          tableCount: undefined,
+          totalRecords: undefined
         },
         application: {
-          activeUsers: 8,
-          totalCalculations: 234567,
-          cacheHitRate: 94.6,
-          botConnectionStatus: true,
-          lastBackup: new Date(Date.now() - (2 * 60 * 60 * 1000)),
-          configVersion: "1.0.0"
+          countries,
+          users,
+          notifications,
+          totalCalculations: calcCount,
+          lastCalculationAt: lastCalc?.timestamp ?? null
         }
-      };
+      } as any;
     }),
 
   getExecutionHistory: adminProcedure
@@ -145,18 +233,21 @@ export const formulasRouter = createTRPCRouter({
       formulaId: z.string().optional()
     }))
     .query(async ({ ctx, input }) => {
-      // TODO: Fetch real execution history from database
-      // For now, return empty history until proper logging is implemented
-      const history: Array<{
-        id: string;
-        action: string;
-        formulaId: string;
-        formulaName: string;
-        timestamp: Date;
-        user: string;
-        executionTime: number;
-        success: boolean;
-      }> = [];
+      const logs = await ctx.db.calculationLog.findMany({
+        orderBy: { timestamp: "desc" },
+        take: input.limit
+      });
+
+      const history = logs.map(l => ({
+        id: l.id,
+        action: "CALCULATION_RUN",
+        formulaId: "system",
+        formulaName: "Scheduled calculation",
+        timestamp: l.timestamp,
+        user: "system",
+        executionTime: l.executionTimeMs,
+        success: true
+      }));
 
       return { history };
     })

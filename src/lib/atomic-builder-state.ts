@@ -484,9 +484,22 @@ export class AtomicBuilderStateManager {
       [ComponentType.SURVEILLANCE_SYSTEM]: { effectiveness: 78 },
       [ComponentType.ECONOMIC_INCENTIVES]: { effectiveness: 73 },
       [ComponentType.SOCIAL_PRESSURE]: { effectiveness: 68 },
-      [ComponentType.MILITARY_ENFORCEMENT]: { effectiveness: 80 }
+      [ComponentType.MILITARY_ENFORCEMENT]: { effectiveness: 80 },
+      [ComponentType.DIGITAL_GOVERNMENT]: { effectiveness: 82 },
+      [ComponentType.MINIMAL_GOVERNMENT]: { effectiveness: 65 },
+      [ComponentType.PRIVATE_SECTOR_LEADERSHIP]: { effectiveness: 75 },
+      [ComponentType.SOCIAL_DEMOCRACY]: { effectiveness: 78 },
+      [ComponentType.COMPREHENSIVE_WELFARE]: { effectiveness: 72 },
+      [ComponentType.PUBLIC_SECTOR_LEADERSHIP]: { effectiveness: 70 },
+      [ComponentType.ENVIRONMENTAL_FOCUS]: { effectiveness: 68 },
+      [ComponentType.ECONOMIC_PLANNING]: { effectiveness: 80 },
+      [ComponentType.DEVELOPMENTAL_STATE]: { effectiveness: 82 },
+      [ComponentType.WORKER_PROTECTION]: { effectiveness: 65 },
+      [ComponentType.MERITOCRATIC_SYSTEM]: { effectiveness: 88 },
+      [ComponentType.REGIONAL_DEVELOPMENT]: { effectiveness: 68 },
+      [ComponentType.INSTITUTIONAL_LEGITIMACY]: { effectiveness: 78 }
     };
-    
+
     return info;
   }
 

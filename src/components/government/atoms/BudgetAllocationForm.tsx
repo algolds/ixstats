@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { usePendingLocks } from '~/app/mycountry/editor/hooks/usePendingLocks';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Input } from '~/components/ui/input';
@@ -9,6 +9,7 @@ import { Slider } from '~/components/ui/slider';
 import { Badge } from '~/components/ui/badge';
 import { Progress } from '~/components/ui/progress';
 import { Button } from '~/components/ui/button';
+import { IxTime } from '~/lib/ixtime';
 import { 
   DollarSign, 
   TrendingUp, 
@@ -16,7 +17,9 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
-  Calculator
+  Calculator,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import type { BudgetAllocationInput, BudgetStatus } from '~/types/government';
 
@@ -28,6 +31,8 @@ interface BudgetAllocationFormProps {
   totalBudget: number;
   currency: string;
   isReadOnly?: boolean;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 const budgetStatusConfig = {
@@ -45,27 +50,36 @@ export function BudgetAllocationForm({
   departmentColor,
   totalBudget,
   currency = 'USD',
-  isReadOnly = false 
+  isReadOnly = false,
+  isCollapsed = false,
+  onToggleCollapse
 }: BudgetAllocationFormProps) {
   const { isLocked } = usePendingLocks();
-  const handleChange = (field: keyof BudgetAllocationInput, value: any) => {
+
+  // Use a ref to access latest data without causing re-renders
+  const dataRef = useRef(data);
+  dataRef.current = data;
+  const totalBudgetRef = useRef(totalBudget);
+  totalBudgetRef.current = totalBudget;
+
+  const handleChange = useCallback((field: keyof BudgetAllocationInput, value: any) => {
     let updatedData = {
-      ...data,
+      ...dataRef.current,
       [field]: value
     };
 
     // Auto-calculate percentage when amount changes
-    if (field === 'allocatedAmount' && totalBudget > 0) {
-      updatedData.allocatedPercent = (value / totalBudget) * 100;
+    if (field === 'allocatedAmount' && totalBudgetRef.current > 0) {
+      updatedData.allocatedPercent = Math.round((value / totalBudgetRef.current) * 100 * 1000) / 1000; // Round to 3 decimal places
     }
 
     // Auto-calculate amount when percentage changes
     if (field === 'allocatedPercent') {
-      updatedData.allocatedAmount = (totalBudget * value) / 100;
+      updatedData.allocatedAmount = Math.round((totalBudgetRef.current * value) / 100); // Round to nearest dollar
     }
 
     onChange(updatedData);
-  };
+  }, [onChange]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -102,19 +116,43 @@ export function BudgetAllocationForm({
     <Card className="w-full">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center text-lg font-semibold text-[var(--color-text-primary)]">
-            <DollarSign className="h-5 w-5 mr-2" style={{ color: departmentColor }} />
-            {departmentName} - Budget {data.budgetYear}
-          </CardTitle>
-          <Badge 
-            className={`${statusConfig.color} text-white`}
-          >
-            <StatusIcon className="h-3 w-3 mr-1" />
-            {statusConfig.label}
-          </Badge>
+          <div className="flex items-center gap-2">
+            {onToggleCollapse && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onToggleCollapse}
+                className="p-1 h-6 w-6 hover:bg-muted"
+              >
+                {isCollapsed ? (
+                  <ChevronRight className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </Button>
+            )}
+            <CardTitle className="flex items-center text-lg font-semibold text-[var(--color-text-primary)]">
+              <DollarSign className="h-5 w-5 mr-2" style={{ color: departmentColor }} />
+              {departmentName} - Budget {data.budgetYear}
+            </CardTitle>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge 
+              className={`${statusConfig.color} text-white`}
+            >
+              <StatusIcon className="h-3 w-3 mr-1" />
+              {statusConfig.label}
+            </Badge>
+            {!isCollapsed && (
+              <div className="text-sm text-[var(--color-text-muted)]">
+                {formatCurrency(data.allocatedAmount)}
+              </div>
+            )}
+          </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
+      {!isCollapsed && (
+        <CardContent className="space-y-6">
         {/* Budget Year */}
         <div className="space-y-2">
           <Label htmlFor="budgetYear" className="text-sm font-medium text-[var(--color-text-secondary)]">
@@ -124,7 +162,7 @@ export function BudgetAllocationForm({
             id="budgetYear"
             type="number"
             value={data.budgetYear}
-            onChange={(e) => handleChange('budgetYear', parseInt(e.target.value) || new Date().getFullYear())}
+            onChange={(e) => handleChange('budgetYear', parseInt(e.target.value) || new Date(IxTime.getCurrentIxTime()).getFullYear())}
             disabled={isReadOnly}
             min="2020"
             max="2030"
@@ -294,6 +332,7 @@ export function BudgetAllocationForm({
           </div>
         )}
       </CardContent>
+      )}
     </Card>
   );
 }

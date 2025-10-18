@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
@@ -12,6 +12,10 @@ interface GovernmentStructureFormProps {
   data: GovernmentStructureInput;
   onChange: (data: GovernmentStructureInput) => void;
   isReadOnly?: boolean;
+  gdpData?: {
+    nominalGDP: number;
+    countryName?: string;
+  };
 }
 
 const governmentTypes: GovernmentType[] = [
@@ -39,17 +43,22 @@ const currencyOptions = [
   'USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'SEK', 'NOK', 'DKK'
 ];
 
-export function GovernmentStructureForm({ 
-  data, 
-  onChange, 
-  isReadOnly = false 
+export function GovernmentStructureForm({
+  data,
+  onChange,
+  isReadOnly = false,
+  gdpData
 }: GovernmentStructureFormProps) {
-  const handleChange = (field: keyof GovernmentStructureInput, value: string | number) => {
+  // Use a ref to access latest data without causing re-renders
+  const dataRef = useRef(data);
+  dataRef.current = data;
+
+  const handleChange = useCallback((field: keyof GovernmentStructureInput, value: string | number) => {
     onChange({
-      ...data,
+      ...dataRef.current,
       [field]: value
     });
-  };
+  }, [onChange]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -205,6 +214,14 @@ export function GovernmentStructureForm({
               />
               <p className="text-xs text-[var(--color-text-muted)]">
                 {formatCurrency(data.totalBudget || 0)}
+                {gdpData?.nominalGDP && gdpData.nominalGDP > 0 && (
+                  <span className="block mt-1 text-blue-600 font-medium">
+                    {(data.totalBudget && gdpData.nominalGDP > 0 
+                      ? ((data.totalBudget / gdpData.nominalGDP) * 100).toFixed(1)
+                      : '0'
+                    )}% of GDP
+                  </span>
+                )}
               </p>
             </div>
 

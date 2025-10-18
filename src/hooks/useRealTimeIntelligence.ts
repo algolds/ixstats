@@ -213,14 +213,14 @@ export function useRealTimeIntelligence(
     return () => {
       disconnect();
     };
-  }, [countryId, user?.id]);
+  }, [countryId, user?.id, connect, disconnect]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       disconnect();
     };
-  }, [disconnect]);
+  }, []);
 
   return {
     connectionState,

@@ -60,7 +60,11 @@ export type NotificationCategory =
   | 'system'          // Technical system events
   | 'achievement'     // Milestones, awards
   | 'crisis'          // Emergency situations
-  | 'opportunity';    // Growth opportunities
+  | 'opportunity'     // Growth opportunities
+  | 'intelligence'
+  | 'policy'
+  | 'global'
+  | 'military' | string;
 
 // Notification types
 export type NotificationType = 
@@ -84,7 +88,7 @@ export type NotificationPriority =
 export type NotificationSeverity = 
   | 'urgent'          // Time-sensitive, disruptive
   | 'important'       // Significant but not time-critical
-  | 'informational';  // Nice to know
+  | 'informational' | 'info';  // Nice to know
 
 // Delivery methods
 export type DeliveryMethod = 
@@ -348,7 +352,11 @@ export const DEFAULT_USER_PREFERENCES: UserNotificationPreferences = {
     achievement: { enabled: true, minPriority: 'low', deliveryMethods: ['toast'] },
     crisis: { enabled: true, minPriority: 'critical', deliveryMethods: ['modal', 'dynamic-island'] },
     opportunity: { enabled: true, minPriority: 'medium', deliveryMethods: ['dynamic-island'] },
-  },
+    policy: { enabled: true, minPriority: 'medium', deliveryMethods: ['toast'] },
+    intelligence: { enabled: true, minPriority: 'high', deliveryMethods: ['dynamic-island'] },
+    global: { enabled: true, minPriority: 'medium', deliveryMethods: ['toast'] },
+    military: { enabled: true, minPriority: 'high', deliveryMethods: ['dynamic-island'] },
+  } as Record<NotificationCategory, { enabled: boolean, minPriority: NotificationPriority, deliveryMethods: DeliveryMethod[] }>,
   executiveModeFilters: ['economic', 'governance', 'security', 'crisis'],
   publicModeFilters: ['achievement', 'opportunity', 'system'],
   allowMLPersonalization: true,

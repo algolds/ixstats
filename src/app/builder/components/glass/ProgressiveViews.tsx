@@ -139,6 +139,7 @@ interface SectionContainerProps {
   theme?: 'gold' | 'blue' | 'indigo' | 'red' | 'neutral';
   className?: string;
   headerActions?: React.ReactNode;
+  hideViewToggle?: boolean;
 }
 
 export function SectionContainer({
@@ -150,7 +151,8 @@ export function SectionContainer({
   children,
   theme = 'neutral',
   className,
-  headerActions
+  headerActions,
+  hideViewToggle = false
 }: SectionContainerProps) {
   return (
     <div className={cn("space-y-6", className)}>
@@ -175,15 +177,17 @@ export function SectionContainer({
           </div>
           {headerActions}
         </div>
-        
+
         {/* View Toggle */}
-        <ViewToggle
-          showAdvanced={showAdvanced}
-          onToggle={onToggleAdvanced}
-          theme={theme}
-        />
+        {!hideViewToggle && (
+          <ViewToggle
+            showAdvanced={showAdvanced}
+            onToggle={onToggleAdvanced}
+            theme={theme}
+          />
+        )}
       </div>
-      
+
       {/* Section Content */}
       <div className="space-y-6">
         {children}

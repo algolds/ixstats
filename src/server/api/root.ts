@@ -8,8 +8,10 @@ import { usersRouter } from "./routers/users";
 import { sdiRouter } from "./routers/sdi";
 import { intelligenceRouter, intelligenceBriefingRouter } from "./routers/intelligence";
 import { eciRouter } from "./routers/eci";
+import { meetingsRouter } from "./routers/meetings";
 import { notificationsRouter } from "./routers/notifications";
 import { myCountryRouter } from "./routers/mycountry";
+import { policiesRouter } from "./routers/policies";
 import { diplomaticIntelligenceRouter } from "./routers/diplomatic-intelligence";
 import { diplomaticRouter } from "./routers/diplomatic";
 import { thinkpagesRouter } from "./routers/thinkpages";
@@ -24,8 +26,12 @@ import { quickActionsRouter } from "./routers/quickactions";
 import { scheduledChangesRouter } from "./routers/scheduledChanges";
 import { taxSystemRouter } from "./routers/taxSystem";
 import { wikiImporterRouter } from "./routers/wikiImporter";
+import { wikiCacheRouter } from "./routers/wikiCache";
 import { securityRouter } from "./routers/security";
 import { achievementsRouter } from "./routers/achievements";
+import { userLoggingRouter } from "./routers/user-logging";
+import { customTypesRouter } from "./routers/customTypes";
+import { economicsRouter } from "./routers/economics";
 
 /**
  * This is the primary router for your server.
@@ -41,8 +47,10 @@ export const appRouter = createTRPCRouter({
   intelligence: intelligenceRouter,
   intelligenceBriefing: intelligenceBriefingRouter, // Intelligence Briefing system (stored in database)
   eci: eciRouter, // ECI router for Executive Command Interface
+  meetings: meetingsRouter, // Cabinet meetings, government officials, and meeting management
   notifications: notificationsRouter, // Notifications router
   mycountry: myCountryRouter, // MyCountry specialized endpoints
+  policies: policiesRouter, // Policy management and tracking system
   diplomaticIntelligence: diplomaticIntelligenceRouter, // Diplomatic Intelligence system
   diplomatic: diplomaticRouter, // Diplomatic relations management
   thinkpages: thinkpagesRouter, // Thinkpages social platform
@@ -56,8 +64,12 @@ export const appRouter = createTRPCRouter({
   scheduledChanges: scheduledChangesRouter, // Scheduled changes system for delayed impact
   taxSystem: taxSystemRouter, // Tax system management
   wikiImporter: wikiImporterRouter, // MediaWiki infobox importer for country data
+  wikiCache: wikiCacheRouter, // Wiki data caching system (Redis + Database + API)
   security: securityRouter, // Security & Defense system
   achievements: achievementsRouter, // Achievement system for country milestones
+  userLogging: userLoggingRouter, // User activity logging and analytics
+  customTypes: customTypesRouter, // Custom government types and field autocomplete system
+  economics: economicsRouter, // Economy builder and economic data management
   system: adminRouter, // Alias for global stats
 });
 

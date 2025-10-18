@@ -206,6 +206,99 @@ const COMPONENT_EFFECTIVENESS: Record<ComponentType, ComponentEffectivenessData>
     taxImpact: 1.25,
     stabilityImpact: -8,
     legitimacyImpact: -15
+  },
+
+  // Additional Government Systems
+  [ComponentType.DIGITAL_GOVERNMENT]: {
+    baseEffectiveness: 82,
+    economicImpact: 1.12,
+    taxImpact: 1.18,
+    stabilityImpact: 10,
+    legitimacyImpact: 8
+  },
+  [ComponentType.MINIMAL_GOVERNMENT]: {
+    baseEffectiveness: 65,
+    economicImpact: 1.15,
+    taxImpact: 0.85,
+    stabilityImpact: -5,
+    legitimacyImpact: 5
+  },
+  [ComponentType.PRIVATE_SECTOR_LEADERSHIP]: {
+    baseEffectiveness: 75,
+    economicImpact: 1.18,
+    taxImpact: 0.95,
+    stabilityImpact: 0,
+    legitimacyImpact: 5
+  },
+  [ComponentType.SOCIAL_DEMOCRACY]: {
+    baseEffectiveness: 78,
+    economicImpact: 1.05,
+    taxImpact: 1.12,
+    stabilityImpact: 12,
+    legitimacyImpact: 12
+  },
+  [ComponentType.COMPREHENSIVE_WELFARE]: {
+    baseEffectiveness: 72,
+    economicImpact: 1.02,
+    taxImpact: 1.08,
+    stabilityImpact: 10,
+    legitimacyImpact: 10
+  },
+  [ComponentType.PUBLIC_SECTOR_LEADERSHIP]: {
+    baseEffectiveness: 70,
+    economicImpact: 1.08,
+    taxImpact: 1.10,
+    stabilityImpact: 5,
+    legitimacyImpact: 5
+  },
+  [ComponentType.ENVIRONMENTAL_FOCUS]: {
+    baseEffectiveness: 68,
+    economicImpact: 1.00,
+    taxImpact: 1.05,
+    stabilityImpact: 8,
+    legitimacyImpact: 10
+  },
+  [ComponentType.ECONOMIC_PLANNING]: {
+    baseEffectiveness: 80,
+    economicImpact: 1.12,
+    taxImpact: 1.15,
+    stabilityImpact: 5,
+    legitimacyImpact: 5
+  },
+  [ComponentType.DEVELOPMENTAL_STATE]: {
+    baseEffectiveness: 82,
+    economicImpact: 1.20,
+    taxImpact: 1.15,
+    stabilityImpact: 8,
+    legitimacyImpact: 8
+  },
+  [ComponentType.WORKER_PROTECTION]: {
+    baseEffectiveness: 65,
+    economicImpact: 0.98,
+    taxImpact: 1.05,
+    stabilityImpact: 8,
+    legitimacyImpact: 10
+  },
+  [ComponentType.MERITOCRATIC_SYSTEM]: {
+    baseEffectiveness: 88,
+    economicImpact: 1.18,
+    taxImpact: 1.20,
+    stabilityImpact: 12,
+    legitimacyImpact: 12
+  },
+  [ComponentType.REGIONAL_DEVELOPMENT]: {
+    baseEffectiveness: 68,
+    economicImpact: 1.05,
+    taxImpact: 1.02,
+    stabilityImpact: 10,
+    legitimacyImpact: 5
+  },
+  [ComponentType.INSTITUTIONAL_LEGITIMACY]: {
+    baseEffectiveness: 78,
+    economicImpact: 1.08,
+    taxImpact: 1.10,
+    stabilityImpact: 15,
+    legitimacyImpact: 18
   }
 };
 

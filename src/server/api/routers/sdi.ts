@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure, premiumProcedure } from "../trpc";
 import type { IntelligenceItem, CrisisEvent, DiplomaticRelation, Treaty, EconomicIndicator } from "~/types/sdi";
 import { generateAndPostCrisisEvent } from "~/lib/auto-post-service";
+import { notificationAPI } from "~/lib/notification-api";
 
 export const sdiRouter = createTRPCRouter({
   // Intelligence Feed - Changed to protectedProcedure for MyCountry Intelligence integration
@@ -580,6 +581,59 @@ export const sdiRouter = createTRPCRouter({
           timestamp: new Date(),
         },
       });
+
+      // 🔔 Notify affected countries about crisis
+      try {
+        const priorityMap: Record<string, 'high' | 'medium' | 'low'> = {
+          'critical': 'high',
+          'high': 'high',
+          'medium': 'medium',
+          'low': 'low'
+        };
+
+        const typeEmoji: Record<string, string> = {
+          'natural_disaster': '🌪️',
+          'economic_crisis': '📉',
+          'political_crisis': '⚖️',
+          'security_threat': '🚨',
+          'pandemic': '🦠',
+          'environmental': '🌍'
+        };
+
+        // Notify affected countries
+        for (const countryId of input.affectedCountries) {
+          await notificationAPI.create({
+            title: `${typeEmoji[input.type] || '⚠️'} Crisis Event: ${input.title}`,
+            message: `${input.severity.toUpperCase()} ${input.type.replace('_', ' ')}${input.casualties > 0 ? ` - ${input.casualties.toLocaleString()} casualties` : ''}${input.economicImpact > 0 ? ` - $${(input.economicImpact / 1e9).toFixed(1)}B impact` : ''}`,
+            countryId,
+            category: 'global',
+            priority: priorityMap[input.severity] || 'high',
+            type: input.severity === 'critical' ? 'error' : input.severity === 'high' ? 'warning' : 'info',
+            href: '/global/crises',
+            source: 'crisis-system',
+            actionable: true,
+            metadata: { crisisId: newCrisis.id, crisisType: input.type, severity: input.severity, casualties: input.casualties, economicImpact: input.economicImpact },
+          });
+        }
+
+        // If no affected countries specified, send global notification
+        if (input.affectedCountries.length === 0) {
+          await notificationAPI.create({
+            title: `${typeEmoji[input.type] || '⚠️'} Global Crisis: ${input.title}`,
+            message: `${input.severity.toUpperCase()} ${input.type.replace('_', ' ')} affecting multiple regions`,
+            category: 'global',
+            priority: priorityMap[input.severity] || 'high',
+            type: input.severity === 'critical' ? 'error' : input.severity === 'high' ? 'warning' : 'info',
+            href: '/global/crises',
+            source: 'crisis-system',
+            actionable: true,
+            metadata: { crisisId: newCrisis.id, crisisType: input.type, severity: input.severity },
+          });
+        }
+      } catch (error) {
+        console.error('[SDI] Failed to send crisis event notifications:', error);
+      }
+
       return { success: true, data: newCrisis };
     }),
 
@@ -744,6 +798,36 @@ export const sdiRouter = createTRPCRouter({
           parties: JSON.stringify(input.parties),
         },
       });
+
+      // 🔔 Notify all parties involved in the treaty
+      try {
+        const typeEmoji: Record<string, string> = {
+          'economic': '💰',
+          'military': '🛡️',
+          'cultural': '🎭',
+          'environmental': '🌍',
+          'scientific': '🔬',
+          'security': '🔒'
+        };
+
+        for (const countryId of input.parties) {
+          await notificationAPI.create({
+            title: `${typeEmoji[input.type] || '📜'} ${input.status === 'active' ? 'Treaty Signed' : 'Treaty Proposed'}`,
+            message: `${input.name} - ${input.type} treaty (${input.parties.length} ${input.parties.length === 1 ? 'party' : 'parties'})`,
+            countryId,
+            category: input.type === 'economic' ? 'economic' : 'diplomatic',
+            priority: input.type === 'military' || input.type === 'security' ? 'high' : 'medium',
+            type: input.status === 'active' ? 'success' : 'info',
+            href: '/diplomatic',
+            source: 'treaty-system',
+            actionable: input.status === 'pending',
+            metadata: { treatyId: newTreaty.id, treatyType: input.type, parties: input.parties },
+          });
+        }
+      } catch (error) {
+        console.error('[SDI] Failed to send treaty notifications:', error);
+      }
+
       return { success: true, data: newTreaty };
     }),
 
@@ -975,37 +1059,50 @@ export const sdiRouter = createTRPCRouter({
       });
       return notification;
     }),
-  // --- BEGIN: getAchievements mock implementation ---
-  getAchievements: publicProcedure.query(async () => {
-    // TODO: Replace with real achievement logic
-    return [
-      {
-        id: '1',
-        title: 'First Crisis Resolved',
-        description: 'Successfully resolved your first crisis event.',
-        badge: '🏅',
-        time: new Date().toISOString(),
-        unlocked: true
-      },
-      {
-        id: '2',
-        title: 'Economic Boom',
-        description: 'Achieved 5%+ GDP growth in a single year.',
-        badge: '📈',
-        time: new Date(Date.now() - 86400000).toISOString(),
-        unlocked: false
-      },
-      {
-        id: '3',
-        title: 'Diplomatic Master',
-        description: 'Formed 3+ active alliances.',
-        badge: '🤝',
-        time: new Date(Date.now() - 2 * 86400000).toISOString(),
-        unlocked: true
+  // Live: getAchievements for a user or their country
+  getAchievements: publicProcedure
+    .input(z.object({
+      userId: z.string().optional(),
+      countryId: z.string().optional(),
+      limit: z.number().optional().default(20)
+    }).optional())
+    .query(async ({ ctx, input }) => {
+      const user = input?.userId
+        ? await ctx.db.user.findUnique({ where: { clerkUserId: input.userId } })
+        : null;
+
+      const countryId = input?.countryId ?? user?.countryId ?? null;
+
+      let userIds: string[] = [];
+      if (input?.userId) userIds.push(input.userId);
+      if (countryId) {
+        const users = await ctx.db.user.findMany({
+          where: { countryId },
+          select: { clerkUserId: true }
+        });
+        userIds.push(...users.map(u => u.clerkUserId));
       }
-    ];
-  }),
-  // --- END: getAchievements mock implementation ---
+
+      // Deduplicate
+      userIds = Array.from(new Set(userIds));
+
+      const achievements = await ctx.db.userAchievement.findMany({
+        where: userIds.length > 0 ? { userId: { in: userIds } } : {},
+        orderBy: { unlockedAt: 'desc' },
+        take: input?.limit ?? 20
+      });
+
+      return achievements.map(a => ({
+        id: a.id,
+        title: a.title,
+        description: a.description,
+        badge: a.iconUrl || '🏆',
+        time: a.unlockedAt.toISOString(),
+        unlocked: true,
+        category: a.category,
+        rarity: a.rarity
+      }));
+    }),
 });
 
 // Helper function to trigger a notification (for use in other routers)

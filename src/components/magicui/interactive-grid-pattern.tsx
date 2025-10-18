@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "~/lib/utils";
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 /**
  * InteractiveGridPattern is a component that renders a grid pattern with interactive squares.
@@ -34,15 +34,30 @@ export function InteractiveGridPattern({
   squaresClassName,
   ...props
 }: InteractiveGridPatternProps) {
-  const [horizontal, vertical] = squares;
+  const [horizontalDefault, verticalDefault] = squares;
+  const [viewport, setViewport] = useState<{ w: number; h: number } | null>(null);
   const [hoveredSquare, setHoveredSquare] = useState<number | null>(null);
+
+  useEffect(() => {
+    const update = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  const { horizontal, vertical } = useMemo(() => {
+    if (!viewport) return { horizontal: horizontalDefault, vertical: verticalDefault };
+    const cols = Math.ceil(viewport.w / width) + 2;
+    const rows = Math.ceil(viewport.h / height) + 2;
+    return { horizontal: cols, vertical: rows };
+  }, [viewport, width, height, horizontalDefault, verticalDefault]);
 
   return (
     <svg
       width={width * horizontal}
       height={height * vertical}
       className={cn(
-        "absolute inset-0 h-full w-full border border-gray-400/30",
+        "absolute inset-0 h-full w-full",
         className,
       )}
       {...props}
