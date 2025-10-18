@@ -31,6 +31,7 @@ import { Separator } from '~/components/ui/separator';
 import { AtomicIntelligenceFeed } from '~/components/intelligence/AtomicIntelligenceFeed';
 
 import type { ComponentType } from '~/types/government';
+import { ComponentType as PrismaComponentType, EconomicComponentType, TaxComponentType } from '@prisma/client';
 import { api } from '~/trpc/react';
 
 // Enhanced types for atomic integration
@@ -101,8 +102,8 @@ export function AtomicExecutiveSummary({
   showAtomicIntelligence = true
 }: AtomicExecutiveSummaryProps) {
   
-  // Fetch atomic components
-  const { data: atomicComponents, isLoading: componentsLoading } = api.government.getComponents.useQuery(
+  // Fetch unified atomic components
+  const { data: allComponents, isLoading: componentsLoading } = api.unifiedAtomic.getAll.useQuery(
     { countryId },
     { 
       enabled: !!countryId && showAtomicIntelligence,
@@ -110,7 +111,26 @@ export function AtomicExecutiveSummary({
     }
   );
 
-  const activeComponents = atomicComponents?.filter(c => c.isActive).map(c => c.componentType as ComponentType) || [];
+  const { data: synergies, isLoading: synergiesLoading } = api.unifiedAtomic.detectSynergies.useQuery(
+    { countryId },
+    { 
+      enabled: !!countryId && showAtomicIntelligence,
+      staleTime: 30000 
+    }
+  );
+
+  const { data: effectiveness, isLoading: effectivenessLoading } = api.unifiedAtomic.calculateCombinedEffectiveness.useQuery(
+    { countryId },
+    { 
+      enabled: !!countryId && showAtomicIntelligence,
+      staleTime: 30000 
+    }
+  );
+
+  const activeGovernmentComponents = allComponents?.government?.filter(c => c.isActive).map(c => c.componentType) || [];
+  const activeEconomicComponents = allComponents?.economic?.filter(c => c.isActive).map(c => c.componentType) || [];
+  const activeTaxComponents = allComponents?.tax?.filter(c => c.isActive).map(c => c.componentType) || [];
+  const totalActiveComponents = activeGovernmentComponents.length + activeEconomicComponents.length + activeTaxComponents.length;
   const healthStatus = getHealthStatus(nationalHealth.overallScore);
 
   const taxData = {
@@ -144,7 +164,10 @@ export function AtomicExecutiveSummary({
                   </Badge>
                 </CardTitle>
                 <p className="text-muted-foreground mt-1">
-                  Government Composition: {activeComponents.length} Components Active
+                  Atomic System: {totalActiveComponents} Components Active
+                  {activeGovernmentComponents.length > 0 && ` (${activeGovernmentComponents.length} Gov)`}
+                  {activeEconomicComponents.length > 0 && ` (${activeEconomicComponents.length} Econ)`}
+                  {activeTaxComponents.length > 0 && ` (${activeTaxComponents.length} Tax)`}
                 </p>
               </div>
             </div>
@@ -196,11 +219,88 @@ export function AtomicExecutiveSummary({
             <div className="text-center p-3 rounded-lg bg-orange-50/50 dark:bg-orange-950/20">
               <Shield className="h-5 w-5 mx-auto text-orange-600 mb-2" />
               <div className="text-lg font-semibold text-orange-600">
-                {activeComponents.length}
+                {effectiveness?.combinedScore?.toFixed(1) || 'N/A'}%
               </div>
-              <div className="text-xs text-muted-foreground">Active Components</div>
+              <div className="text-xs text-muted-foreground">System Effectiveness</div>
             </div>
           </div>
+
+          {/* Atomic System Breakdown */}
+          {showAtomicIntelligence && (activeGovernmentComponents.length > 0 || activeEconomicComponents.length > 0 || activeTaxComponents.length > 0) && (
+            <div>
+              <h4 className="flex items-center gap-2 text-sm font-medium text-blue-600 mb-3">
+                <Activity className="h-4 w-4" />
+                Atomic System Status
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Government Components */}
+                {activeGovernmentComponents.length > 0 && (
+                  <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Building2 className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-800">Government</span>
+                      <Badge variant="outline" className="text-xs">{activeGovernmentComponents.length}</Badge>
+                    </div>
+                    <div className="text-xs text-blue-700">
+                      Effectiveness: {effectiveness?.governmentScore?.toFixed(1) || 'N/A'}%
+                    </div>
+                  </div>
+                )}
+
+                {/* Economic Components */}
+                {activeEconomicComponents.length > 0 && (
+                  <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingUp className="h-4 w-4 text-green-600" />
+                      <span className="text-sm font-medium text-green-800">Economic</span>
+                      <Badge variant="outline" className="text-xs">{activeEconomicComponents.length}</Badge>
+                    </div>
+                    <div className="text-xs text-green-700">
+                      Effectiveness: {effectiveness?.economicScore?.toFixed(1) || 'N/A'}%
+                    </div>
+                  </div>
+                )}
+
+                {/* Tax Components */}
+                {activeTaxComponents.length > 0 && (
+                  <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <DollarSign className="h-4 w-4 text-purple-600" />
+                      <span className="text-sm font-medium text-purple-800">Tax</span>
+                      <Badge variant="outline" className="text-xs">{activeTaxComponents.length}</Badge>
+                    </div>
+                    <div className="text-xs text-purple-700">
+                      Effectiveness: {effectiveness?.taxScore?.toFixed(1) || 'N/A'}%
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Synergies Display */}
+              {synergies && synergies.length > 0 && (
+                <div className="mt-4">
+                  <h5 className="flex items-center gap-2 text-sm font-medium text-emerald-600 mb-2">
+                    <Zap className="h-4 w-4" />
+                    Active Synergies ({synergies.length})
+                  </h5>
+                  <div className="space-y-2">
+                    {synergies.slice(0, 5).map((synergy: { type: string; description: string; bonus: number }, index: number) => (
+                      <div key={index} className="p-2 rounded bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200">
+                        <div className="text-xs font-medium text-emerald-800">
+                          {synergy.type === 'GOV_ECON' ? 'Government-Economic Synergy' :
+                           synergy.type === 'GOV_TAX' ? 'Government-Tax Synergy' :
+                           synergy.type === 'ECON_TAX' ? 'Economic-Tax Synergy' :
+                           synergy.type === 'ALL_THREE' ? 'Comprehensive Framework' : 'Cross-System Synergy'}
+                        </div>
+                        <div className="text-xs text-emerald-700">{synergy.description}</div>
+                        <div className="text-xs text-emerald-600">Bonus: +{synergy.bonus}%</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Critical Alerts Section */}
           {nationalHealth.criticalAlerts.length > 0 && (
@@ -275,12 +375,26 @@ export function AtomicExecutiveSummary({
             </Card>
           ) : (
             <AtomicIntelligenceFeed
-              components={activeComponents}
+              components={activeGovernmentComponents}
+              economicComponents={activeEconomicComponents}
+              taxComponents={activeTaxComponents}
               economicData={economicData}
               taxData={taxData}
               countryName={countryName}
               showDetailedAnalysis={true}
               maxItems={8}
+              synergies={{
+                governmentSynergies: synergies?.filter(s => s.type === 'GOV_ECON' || s.type === 'GOV_TAX').map(s => ({
+                  name: s.type === 'GOV_ECON' ? 'Government-Economic Synergy' : 'Government-Tax Synergy',
+                  description: s.description
+                })) || [],
+                crossBuilderSynergies: synergies?.filter(s => s.type === 'ECON_TAX' || s.type === 'ALL_THREE').map((s, idx) => ({
+                  id: `synergy-${idx}`,
+                  description: s.description,
+                  effectivenessBonus: s.bonus
+                })) || []
+              }}
+              effectiveness={effectiveness}
             />
           )}
         </div>

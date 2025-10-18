@@ -48,6 +48,7 @@ import { toast } from 'sonner';
 import RichTextEditor, { type RichTextEditorRef } from '../RichTextEditor';
 import { useThinkPagesWebSocket } from '~/hooks/useThinkPagesWebSocket';
 import { WikiTextImporter } from './WikiTextImporter';
+import { sanitizeUserContent } from '~/lib/sanitize-html';
 
 interface CollaborativeDocumentProps {
   groupId: string;
@@ -740,7 +741,14 @@ export function CollaborativeDocument({
           <div>
             <div
               className="prose prose-sm max-w-none min-h-[500px]"
-              dangerouslySetInnerHTML={{ __html: currentDocument?.content || selectedDocument?.content || '<p class="text-muted-foreground">No content yet. Click Edit to start writing.</p>' }}
+              // SECURITY: Sanitize collaborative document content to prevent XSS
+              dangerouslySetInnerHTML={{
+                __html: sanitizeUserContent(
+                  currentDocument?.content ||
+                  selectedDocument?.content ||
+                  '<p class="text-muted-foreground">No content yet. Click Edit to start writing.</p>'
+                )
+              }}
             />
           </div>
         )}

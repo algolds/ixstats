@@ -19,6 +19,7 @@ import {
 import { ExecutiveActivityRings } from "~/components/ui/executive-activity-rings";
 import { RubiksCubeFlags } from "~/components/ui/rubiks-cube-flags";
 import { cn } from "~/lib/utils";
+import { api } from "~/trpc/react";
 
 interface CountryData {
   id: string;
@@ -56,9 +57,6 @@ interface GlobalStatsCardProps {
   processedCountries: CountryData[];
   globalStats?: GlobalStats;
   powerGrouped: PowerGrouped;
-  activeCrises?: any[];
-  intelligenceFeed?: { total?: number };
-  economicIndicators?: { globalGrowth?: number; inflationRate?: number };
   isGlobalCardHovered: boolean;
   setIsGlobalCardHovered: (value: boolean) => void;
   isGlobalCollapsing: boolean;
@@ -71,9 +69,6 @@ export function GlobalStatsCard({
   processedCountries,
   globalStats,
   powerGrouped,
-  activeCrises,
-  intelligenceFeed,
-  economicIndicators,
   isGlobalCardHovered,
   setIsGlobalCardHovered,
   isGlobalCollapsing,
@@ -81,6 +76,15 @@ export function GlobalStatsCard({
   collapseGlobalCard,
   className
 }: GlobalStatsCardProps) {
+  // Wire to live data via tRPC
+  const { data: activeCrises, isLoading: crisesLoading } = api.sdi.getActiveCrises.useQuery();
+  const { data: intelligenceFeed, isLoading: intelLoading } = api.sdi.getIntelligenceFeed.useQuery({
+    limit: 10,
+    offset: 0
+  });
+  const { data: economicIndicators, isLoading: economicLoading } = api.sdi.getEconomicIndicators.useQuery();
+
+  const isLoading = crisesLoading || intelLoading || economicLoading;
   return (
     <AnimatePresence>
       {!isGlobalCardSlid && (
@@ -249,40 +253,46 @@ export function GlobalStatsCard({
 
               {/* SDI Overview */}
               <div className="space-y-3">
-                {/* Active Crises and Intel Items */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="glass-hierarchy-child p-3 rounded text-center">
-                    <div className="text-lg font-bold text-red-400">
-                      {activeCrises?.length || 0}
+                {isLoading ? (
+                  <div className="text-center text-muted-foreground">Loading...</div>
+                ) : (
+                  <>
+                    {/* Active Crises and Intel Items */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="glass-hierarchy-child p-3 rounded text-center">
+                        <div className="text-lg font-bold text-red-400">
+                          {activeCrises?.length || 0}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Active Crises</div>
+                      </div>
+                      <div className="glass-hierarchy-child p-3 rounded text-center">
+                        <div className="text-lg font-bold text-blue-400">
+                          {intelligenceFeed?.total || 0}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Intel Items</div>
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground">Active Crises</div>
-                  </div>
-                  <div className="glass-hierarchy-child p-3 rounded text-center">
-                    <div className="text-lg font-bold text-blue-400">
-                      {intelligenceFeed?.total || 0}
-                    </div>
-                    <div className="text-xs text-muted-foreground">Intel Items</div>
-                  </div>
-                </div>
 
-                {/* Economic Intelligence */}
-                {economicIndicators && (
-                  <div className="glass-hierarchy-child p-3 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <TrendingUp className="h-4 w-4 text-green-400" />
-                      <span className="text-sm font-medium text-foreground">Economic Intelligence</span>
-                    </div>
-                    <div className="space-y-1 text-xs">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Global Growth:</span>
-                        <span className="text-green-400">+{(economicIndicators.globalGrowth || 0).toFixed(3)}%</span>
+                    {/* Economic Intelligence */}
+                    {economicIndicators && (
+                      <div className="glass-hierarchy-child p-3 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <TrendingUp className="h-4 w-4 text-green-400" />
+                          <span className="text-sm font-medium text-foreground">Economic Intelligence</span>
+                        </div>
+                        <div className="space-y-1 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Global Growth:</span>
+                            <span className="text-green-400">+{((economicIndicators.globalGrowth || 0) * 100).toFixed(2)}%</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Inflation Rate:</span>
+                            <span className="text-yellow-400">{((economicIndicators.inflationRate || 0) * 100).toFixed(2)}%</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Inflation Rate:</span>
-                        <span className="text-yellow-400">{(economicIndicators.inflationRate || 0).toFixed(3)}%</span>
-                      </div>
-                    </div>
-                  </div>
+                    )}
+                  </>
                 )}
               </div>
 

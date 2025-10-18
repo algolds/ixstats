@@ -1,5 +1,5 @@
 // Economics Step - Economic configuration for Atomic Builder
-// Extracted from AtomicBuilderPageEnhanced.tsx for modularity
+// Extracted from AtomicBuilderPage.tsx for modularity
 
 "use client";
 
@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '~/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/components/ui/tooltip';
 import { stepConfig } from '../builderConfig';
 import { EconomyBuilderPage } from '../EconomyBuilderPage';
+import { BuilderStepLoading } from '../../GlobalBuilderLoading';
 import type { EconomicInputs, RealCountryData } from '~/app/builder/lib/economy-data-service';
 import type { ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
 import type { TaxBuilderState } from '~/components/tax-system/TaxBuilder';
@@ -49,12 +50,7 @@ export function EconomicsStep({
 }: EconomicsStepProps) {
   if (!economicInputs) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading economic data...</p>
-        </div>
-      </div>
+      <BuilderStepLoading message="Loading economic data..." />
     );
   }
 

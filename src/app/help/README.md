@@ -55,10 +55,6 @@ The Help System provides comprehensive, contextual documentation for all major I
 │   ├── thinkpages/
 │   ├── thinktanks/
 │   └── meetings/
-├── eci-sdi/                  # ECI/SDI admin guides
-│   ├── overview/
-│   ├── eci-dashboard/
-│   └── sdi-modules/
 └── technical/                # Technical guides
     ├── ixtime/
     ├── calculations/

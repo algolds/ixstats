@@ -43,14 +43,12 @@ export function useCountryFlags(options: UseCountryFlagsOptions): UseCountryFlag
     setError(null);
 
     try {
-      console.log(`[useCountryFlags] Fetching flags for ${countryList.length} countries`);
       
       const flagResults = await countryFlagService.batchGetCountryFlags(countryList);
       
       setFlags(flagResults);
       
       const stats = countryFlagService.getCacheStats();
-      console.log(`[useCountryFlags] Completed: ${stats.successful}/${stats.total} flags loaded`);
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch country flags';
@@ -66,7 +64,6 @@ export function useCountryFlags(options: UseCountryFlagsOptions): UseCountryFlag
    */
   const refetchFlag = useCallback(async (countryName: string) => {
     try {
-      console.log(`[useCountryFlags] Refetching flag for ${countryName}`);
       const flag = await countryFlagService.getCountryFlag(countryName);
       
       setFlags(prev => new Map(prev).set(countryName, flag));

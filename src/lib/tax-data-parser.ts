@@ -393,14 +393,14 @@ function mapRevenueSourceToTaxCategory(
   totalBudget: number,
   nominalGDP: number
 ): TaxCategoryInput | null {
-  // Defensive check: ensure sourceName exists
-  if (!source.sourceName || typeof source.sourceName !== 'string') {
+  // Defensive check: ensure name exists
+  if (!source.name || typeof source.name !== 'string') {
     return null;
   }
 
-  const sourceName = source.sourceName.toLowerCase();
-  const revenuePercent = totalBudget > 0 ? (source.amount / totalBudget) * 100 : 0;
-  const gdpPercent = nominalGDP > 0 ? (source.amount / nominalGDP) * 100 : 0;
+  const sourceName = source.name.toLowerCase();
+  const revenuePercent = totalBudget > 0 ? (source.revenueAmount / totalBudget) * 100 : 0;
+  const gdpPercent = nominalGDP > 0 ? (source.revenueAmount / nominalGDP) * 100 : 0;
 
   // Map common revenue sources to tax categories
   if (sourceName.includes('property') || sourceName.includes('real estate')) {
@@ -554,7 +554,7 @@ export function calculateRecommendedTaxRevenue(
   recommendations: string[];
 } {
   const totalBudget = governmentData.structure.totalBudget;
-  const totalRevenue = governmentData.revenueSources.reduce((sum: number, source: RevenueSourceInput) => sum + source.amount, 0);
+  const totalRevenue = governmentData.revenueSources.reduce((sum: number, source: RevenueSourceInput) => sum + source.revenueAmount, 0);
   const nominalGDP = coreIndicators.nominalGDP;
 
   const surplusDeficit = totalRevenue - totalBudget;

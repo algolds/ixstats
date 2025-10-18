@@ -1773,14 +1773,12 @@ export class IxnayWikiService {
   async preloadCountryFlags(countryNames: string[]): Promise<void> {
     if (countryNames.length === 0) return;
     if (this.isPreloading) {
-      console.log(`[MediaWiki] Preloading already in progress, skipping`);
       return;
     }
 
     this.isPreloading = true;
     
     try {
-      console.log(`[MediaWiki] Starting intelligent preload for ${countryNames.length} countries`);
       
       // Filter out countries that are already cached and valid
       const uncachedCountries = countryNames.filter(countryName => {

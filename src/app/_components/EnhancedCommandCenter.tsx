@@ -17,8 +17,6 @@ import { MyCountryCard } from "~/app/dashboard/_components/MyCountryCard";
 import { AdminQuickAccess } from "./AdminQuickAccess";
 
 // Dashboard Components - Only the essential ones for MyCountry
-import { ECICard } from "~/app/dashboard/_components/ECICard";
-import { SDICard } from "~/app/dashboard/_components/SDICard";
 import { StrategicOperationsSuite } from "~/app/dashboard/_components/StrategicOperationsSuite";
 
 // UI Components

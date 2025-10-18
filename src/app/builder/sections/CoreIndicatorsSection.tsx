@@ -19,12 +19,18 @@ import type { SectionContentProps } from '../types/builder';
 import type { CountryStats } from '~/types/ixstats';
 import type { EconomyData } from '~/types/economics';
 
+// Help System
+import { EconomicsHelpSystem } from '../components/help/GovernmentHelpSystem';
+import { EconomicsHelpContent } from '../components/help/EconomicsHelpContent';
+
 interface CoreIndicatorsSectionProps extends SectionContentProps {
   inputs: EconomicInputs;
   onInputsChange: (inputs: EconomicInputs) => void;
   referenceCountry?: RealCountryData | null;
   showAdvanced?: boolean;
   isReadOnly?: boolean; // When true, population/GDP/gdpPerCapita are read-only (calculated values)
+  mode?: 'create' | 'edit'; // Edit mode shows field locks
+  fieldLocks?: Record<string, import('../components/enhanced/builderConfig').FieldLockConfig>;
 }
 
 export function CoreIndicatorsSection({
@@ -32,8 +38,16 @@ export function CoreIndicatorsSection({
   onInputsChange,
   referenceCountry,
   showAdvanced = false,
-  isReadOnly = false
+  isReadOnly = false,
+  mode = 'create',
+  fieldLocks
 }: CoreIndicatorsSectionProps) {
+
+  const isEditMode = mode === 'edit';
+
+  // Import field locks if not provided
+  const { EDIT_MODE_FIELD_LOCKS } = require('../components/enhanced/builderConfig');
+  const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
 
   // Guard against null inputs
   if (!inputs) {
@@ -265,6 +279,8 @@ export function CoreIndicatorsSection({
               showReset={!isReadOnly}
               resetValue={referenceCountry?.population}
               disabled={isReadOnly}
+              helpContent={EconomicsHelpContent.coreIndicators.content}
+              helpTitle="Total Population"
             />
           </div>
           

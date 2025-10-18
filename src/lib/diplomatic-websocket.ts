@@ -90,7 +90,6 @@ export class DiplomaticWebSocket {
 
         this.ws.onopen = () => {
           clearTimeout(connectionTimeout);
-          console.log('Diplomatic WebSocket connected successfully');
           this.isConnected = true;
           this.reconnectAttempts = 0;
           this.onStatusChange('connected');
@@ -118,7 +117,6 @@ export class DiplomaticWebSocket {
         this.ws.onclose = (event) => {
           clearTimeout(connectionTimeout);
           const reason = this.getCloseReason(event.code);
-          console.log(`Diplomatic WebSocket disconnected: ${reason} (code: ${event.code})`);
           this.isConnected = false;
           this.onStatusChange('disconnected');
           this.stopHeartbeat();

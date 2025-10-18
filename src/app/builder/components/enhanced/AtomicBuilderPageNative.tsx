@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ComponentType } from '@prisma/client';
 import { 
@@ -19,7 +19,7 @@ import { cn } from '~/lib/utils';
 import { GlassCard, GlassCardContent, GlassCardHeader } from '../glass/GlassCard';
 
 // Import atomic components
-import { AtomicComponentSelector } from '~/components/atomic/AtomicComponentSelector';
+import { AtomicComponentSelector } from '~/components/government/atoms/AtomicGovernmentComponents';
 import { AtomicImpactPreview } from '~/components/atomic/AtomicImpactPreview';
 import { SmartRecommendations } from '~/components/atomic/SmartRecommendations';
 
@@ -78,11 +78,17 @@ export function AtomicBuilderPageNative({
   const [builderState, setBuilderState] = useState<AtomicBuilderState>(stateManager.getState());
   const [isRealTimeUpdates, setIsRealTimeUpdates] = useState(true);
   
-  // Subscribe to state changes
+  // Track initialization to prevent re-subscription loops
+  const isInitializedRef = useRef(false);
+
+  // Subscribe to state changes once
   useEffect(() => {
-    const unsubscribe = stateManager.subscribe(setBuilderState);
-    return unsubscribe;
-  }, [stateManager]);
+    if (!isInitializedRef.current) {
+      isInitializedRef.current = true;
+      const unsubscribe = stateManager.subscribe(setBuilderState);
+      return unsubscribe;
+    }
+  }, []); // Empty deps - subscribe once only
 
   // Generate country profile from inputs and reference country
   const countryProfile: CountryProfile = useMemo(() => {
@@ -275,7 +281,6 @@ export function AtomicBuilderPageNative({
                 <AtomicComponentSelector
                   selectedComponents={selectedComponents}
                   onComponentChange={handleComponentChange}
-                  className="h-[600px] overflow-y-auto"
                 />
               </GlassCardContent>
             </GlassCard>

@@ -76,6 +76,7 @@ export class EconomyIntegrationService {
   private updateQueue: EconomyUpdateEvent[] = [];
   private isProcessingQueue = false;
   private updateTimeout: NodeJS.Timeout | null = null;
+  private lastNotifiedState: EconomyIntegrationState | null = null;
 
   constructor() {
     this.state = {
@@ -153,7 +154,7 @@ export class EconomyIntegrationService {
 
         // Sync with government and tax systems
         await this.syncWithGovernmentSystem();
-        await this.syncWithTaxSystem();
+        await this.syncWithTaxSystemInternal();
       }
 
       // Update cross-builder synergies and conflicts
@@ -201,7 +202,7 @@ export class EconomyIntegrationService {
     try {
       // Sync with other systems
       await this.syncWithGovernmentSystem();
-      await this.syncWithTaxSystem();
+      await this.syncWithTaxSystemInternal();
       
       // Update cross-builder analysis
       this.updateCrossBuilderAnalysis();
@@ -621,9 +622,9 @@ export class EconomyIntegrationService {
   }
 
   /**
-   * Sync with tax system
+   * Sync with tax system (internal)
    */
-  private async syncWithTaxSystem(): Promise<void> {
+  private async syncWithTaxSystemInternal(): Promise<void> {
     if (!this.state.economyBuilder) return;
 
     // Calculate optimal tax rates based on economic structure
@@ -1128,9 +1129,9 @@ export class EconomyIntegrationService {
   }
 
   /**
-   * Save economy configuration
+   * Save economy configuration with live-wired tRPC integration
    */
-  async saveEconomyConfiguration(): Promise<{ success: boolean; countryId?: string; error?: string }> {
+  async saveEconomyConfiguration(countryId: string, trpcClient: any): Promise<{ success: boolean; countryId?: string; error?: string }> {
     try {
       // Validate that we have the necessary data
       if (!this.state.economyBuilder) {
@@ -1140,27 +1141,178 @@ export class EconomyIntegrationService {
         };
       }
 
-      // In a real implementation, this would call a tRPC mutation to persist the data
-      // For now, we'll simulate a successful save
-      // TODO: Integrate with tRPC mutation when ready
-      // const result = await trpc.economy.saveConfiguration.mutate({
-      //   economyBuilder: this.state.economyBuilder,
-      //   economicInputs: this.state.economicInputs,
-      //   timestamp: new Date()
-      // });
+      // Validate economy builder before saving
+      const validation = this.validateEconomyBuilder(this.state.economyBuilder);
+      if (!validation.isValid) {
+        return {
+          success: false,
+          error: `Validation failed: ${validation.errors.join(', ')}`
+        };
+      }
 
-      this.state.lastUpdate = Date.now();
+      // Prepare economy builder state for save
+      const economyBuilderState = {
+        structure: this.state.economyBuilder.structure,
+        sectors: this.state.economyBuilder.sectors,
+        laborMarket: this.state.economyBuilder.laborMarket,
+        demographics: this.state.economyBuilder.demographics,
+        selectedAtomicComponents: this.state.economyBuilder.selectedAtomicComponents || this.state.selectedAtomicComponents,
+        lastUpdated: new Date(),
+        version: this.state.economyBuilder.version || '1.0.0'
+      };
+
+      // Call new tRPC mutation for comprehensive save
+      const result = await trpcClient.economics.saveEconomyBuilderState.mutate({
+        countryId,
+        economyBuilder: economyBuilderState
+      });
+
+      if (result.success) {
+        this.state.lastUpdate = Date.now();
+        this.state.errors = [];
+        this.notifyListeners();
+
+        return {
+          success: true,
+          countryId: result.countryId
+        };
+      }
+
+      return {
+        success: false,
+        error: result.message || 'Failed to save economy configuration'
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save economy configuration';
+      this.state.errors.push(errorMessage);
       this.notifyListeners();
 
       return {
-        success: true,
-        countryId: 'temp-id' // This would come from the database save
+        success: false,
+        error: errorMessage
       };
-    } catch (error) {
+    }
+  }
+
+  /**
+   * Auto-save economy builder changes with debouncing
+   */
+  async autoSaveEconomyBuilder(countryId: string, trpcClient: any, changes: Record<string, any>): Promise<{ success: boolean; error?: string }> {
+    try {
+      const result = await trpcClient.economics.autoSaveEconomyBuilder.mutate({
+        countryId,
+        changes
+      });
+
+      if (result.success) {
+        this.state.lastUpdate = Date.now();
+        this.notifyListeners();
+        return { success: true };
+      }
+
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to save economy configuration'
+        error: result.message || 'Auto-save failed'
       };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Auto-save failed';
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+  }
+
+  /**
+   * Sync economy with government components
+   */
+  async syncWithGovernmentComponents(countryId: string, trpcClient: any, governmentComponents: string[]): Promise<{ success: boolean; error?: string }> {
+    try {
+      const result = await trpcClient.economics.syncEconomyWithGovernment.mutate({
+        countryId,
+        governmentComponents
+      });
+
+      if (result.success) {
+        // Update cross-builder analysis after sync
+        this.updateCrossBuilderAnalysis();
+        this.notifyListeners();
+        return { success: true };
+      }
+
+      return {
+        success: false,
+        error: result.message || 'Government sync failed'
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Government sync failed';
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+  }
+
+  /**
+   * Sync economy with tax system
+   */
+  async syncWithTaxSystem(countryId: string, trpcClient: any, taxData: Record<string, any>): Promise<{ success: boolean; error?: string }> {
+    try {
+      const result = await trpcClient.economics.syncEconomyWithTax.mutate({
+        countryId,
+        taxData
+      });
+
+      if (result.success) {
+        this.notifyListeners();
+        return { success: true };
+      }
+
+      return {
+        success: false,
+        error: result.message || 'Tax sync failed'
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Tax sync failed';
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+  }
+
+  /**
+   * Load economy configuration from database
+   */
+  async loadEconomyConfiguration(countryId: string, trpcClient: any): Promise<boolean> {
+    try {
+      const configuration = await trpcClient.economics.getEconomyConfiguration.query({
+        countryId
+      });
+
+      if (!configuration) {
+        return false;
+      }
+
+      // Update state with loaded configuration
+      this.state.economyBuilder = {
+        ...configuration,
+        isValid: true,
+        errors: {}
+      };
+
+      this.state.selectedAtomicComponents = configuration.selectedAtomicComponents || [];
+      this.state.lastUpdate = Date.now();
+      this.state.errors = [];
+      this.notifyListeners();
+
+      return true;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load economy configuration';
+      this.state.errors.push(errorMessage);
+      this.notifyListeners();
+
+      return false;
     }
   }
 
@@ -1168,7 +1320,19 @@ export class EconomyIntegrationService {
    * Notify listeners of state changes
    */
   private notifyListeners(): void {
-    this.listeners.forEach(listener => listener(this.state));
+    const newState = { ...this.state };
+    
+    // Only notify if state actually changed (deep equality check)
+    if (!this.lastNotifiedState || JSON.stringify(newState) !== JSON.stringify(this.lastNotifiedState)) {
+      this.lastNotifiedState = newState;
+      this.listeners.forEach(listener => {
+        try {
+          listener(newState);
+        } catch (error) {
+          console.error('Error in economy integration listener:', error);
+        }
+      });
+    }
   }
 }
 

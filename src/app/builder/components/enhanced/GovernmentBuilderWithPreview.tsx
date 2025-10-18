@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/components/ui/tooltip';
 import { 
   Building2, 
   Users,
@@ -13,13 +14,30 @@ import {
   Eye,
   Save,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  HelpCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { GovernmentBuilder } from '~/components/government';
 import { BudgetManagementDashboard } from '~/components/government/BudgetManagementDashboard';
 import { GovernmentStructurePreview } from './GovernmentStructurePreview';
+
+// Help tooltip component
+function HelpTooltip({ text }: { text: string }) {
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
+        </TooltipTrigger>
+        <TooltipContent>
+          <p className="max-w-xs">{text}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
 import { IxTime } from '~/lib/ixtime';
 import type { GovernmentBuilderState } from '~/types/government';
 
@@ -149,9 +167,12 @@ export function GovernmentBuilderWithPreview({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">
-            Design Government Structure
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-foreground">
+               MyGovernment Builder
+            </h2>
+            <HelpTooltip text="Configure your government structure, departments, and budget allocation. Use atomic components to build a modern government system with real-time impact analysis." />
+          </div>
           <p className="text-muted-foreground mt-1">
             Build your nation's government system and preview the results
           </p>
@@ -290,10 +311,10 @@ export function GovernmentBuilderWithPreview({
                   id: a.departmentId,
                   governmentStructureId: 'preview',
                   ...a,
-                  spentAmount: a.allocatedAmount * 0.8, // Mock spent amount
-                  encumberedAmount: a.allocatedAmount * 0.1,
-                  availableAmount: a.allocatedAmount * 0.1,
-                  budgetStatus: 'In Use' as const,
+                  spentAmount: 0, // No spending data in preview mode
+                  encumberedAmount: 0,
+                  availableAmount: a.allocatedAmount,
+                  budgetStatus: 'Allocated' as const,
                   lastReviewed: new Date(),
                   createdAt: new Date(),
                   updatedAt: new Date(),

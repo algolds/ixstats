@@ -1,5 +1,5 @@
 // Foundation Step - Country selection for Atomic Builder
-// Extracted from AtomicBuilderPageEnhanced.tsx for modularity
+// Extracted from AtomicBuilderPage.tsx for modularity
 
 "use client";
 
@@ -7,7 +7,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Globe } from 'lucide-react';
 import { Alert, AlertDescription } from '~/components/ui/alert';
-import { CountrySelectorEnhanced } from '../CountrySelectorEnhanced';
+import { CountrySelector } from '../CountrySelector';
 import type { RealCountryData } from '~/app/builder/lib/economy-data-service';
 
 interface FoundationStepProps {
@@ -60,7 +60,7 @@ export function FoundationStep({
   }
 
   return (
-    <CountrySelectorEnhanced
+    <CountrySelector
       countries={countries}
       onCountrySelect={onCountrySelect}
       onCardHoverChange={() => {}}

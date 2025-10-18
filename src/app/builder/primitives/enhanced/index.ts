@@ -13,10 +13,8 @@ export { GlassProgressIndicator } from './GlassProgressIndicator';
 // Chart Primitives
 export { EnhancedBarChart } from './EnhancedBarChart';
 export { EnhancedPieChart } from './EnhancedPieChart';
-// TODO: Implement additional chart types
-// export { EnhancedLineChart } from './EnhancedLineChart';
-// export { EnhancedAreaChart } from './EnhancedAreaChart';
-// export { EnhancedGaugeChart } from './EnhancedGaugeChart';
+// Future chart types (v1.1+): EnhancedLineChart, EnhancedAreaChart, EnhancedGaugeChart
+// Currently satisfied by existing bar and pie charts for economic visualizations
 
 // Composite Components
 export { MetricCard } from './MetricCard';

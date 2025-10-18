@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '~/components/ui/dialog';
 import { Button } from '~/components/ui/button';
@@ -123,7 +123,12 @@ export function EconomyBuilderModal({
     }
   }, [isOpen, initialData, economicInputs]);
 
-  // Subscribe to economy integration service
+  // Track last sent values to prevent redundant updates
+  const lastSentComponentsRef = useRef<EconomicComponentType[]>([]);
+  const lastSentBuilderRef = useRef<EconomyBuilderState | null>(null);
+  const lastSentInputsRef = useRef<EconomicInputs | null>(null);
+
+  // Subscribe to economy integration service once
   useEffect(() => {
     const unsubscribe = economyIntegrationService.subscribe((state) => {
       if (state.economyBuilder) {
@@ -136,24 +141,30 @@ export function EconomyBuilderModal({
     return unsubscribe;
   }, []);
 
-  // Update economy integration service when components change
+  // Consolidated effect for updating service with guards
   useEffect(() => {
-    if (selectedComponents.length > 0) {
+    // Update components if changed
+    if (selectedComponents.length > 0 && 
+        JSON.stringify(selectedComponents) !== JSON.stringify(lastSentComponentsRef.current)) {
+      lastSentComponentsRef.current = [...selectedComponents];
       economyIntegrationService.updateEconomicComponents(selectedComponents);
     }
-  }, [selectedComponents]);
 
-  // Update economy integration service when builder changes
-  useEffect(() => {
-    if (economyBuilder && economyBuilder !== initialData) {
+    // Update builder if changed
+    if (economyBuilder && 
+        economyBuilder !== initialData && 
+        JSON.stringify(economyBuilder) !== JSON.stringify(lastSentBuilderRef.current)) {
+      lastSentBuilderRef.current = economyBuilder;
       economyIntegrationService.updateEconomyBuilder(economyBuilder);
     }
-  }, [economyBuilder]);
 
-  // Update economic inputs in service
-  useEffect(() => {
-    economyIntegrationService.updateEconomicInputs(economicInputs);
-  }, [economicInputs]);
+    // Update inputs if changed
+    if (economicInputs && 
+        JSON.stringify(economicInputs) !== JSON.stringify(lastSentInputsRef.current)) {
+      lastSentInputsRef.current = economicInputs;
+      economyIntegrationService.updateEconomicInputs(economicInputs);
+    }
+  }, [selectedComponents, economyBuilder, economicInputs, initialData]);
 
   const generateInitialEconomyBuilder = async () => {
     try {
@@ -331,7 +342,10 @@ export function EconomyBuilderModal({
         inflationVolatility: 2,
         exchangeRateStability: 75,
         fiscalStability: 70,
-        economicRiskLevel: 'Medium',
+        unemploymentRate: 5,
+        innovationIndex: 50,
+        productivityIndex: 50,
+        economicRiskLevel: 'Medium' as const,
         externalVulnerability: 50,
         domesticVulnerability: 50,
         systemicRisk: 50
@@ -356,7 +370,14 @@ export function EconomyBuilderModal({
       inflationVolatility: 2,
       exchangeRateStability: 75,
       fiscalStability: 70,
-      economicRiskLevel: baseScore > 80 ? 'Low' : baseScore > 60 ? 'Medium' : 'High',
+      unemploymentRate: 5,
+      innovationIndex: 50 + innovationBonus,
+      productivityIndex: 60 + (innovationBonus / 2),
+      economicRiskLevel: (() => {
+        if (baseScore > 80) return 'Low' as const;
+        if (baseScore > 60) return 'Medium' as const;
+        return 'High' as const;
+      })(),
       externalVulnerability: 50,
       domesticVulnerability: 50,
       systemicRisk: 50

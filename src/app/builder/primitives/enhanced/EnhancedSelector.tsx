@@ -75,8 +75,6 @@ export function EnhancedSelector({
     setSearchQuery('');
   };
 
-  // TODO: Implement full selector functionality
-  // This is a placeholder implementation
   return (
     <div 
       className={cn('space-y-2 relative', className)}

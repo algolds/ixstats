@@ -4,7 +4,7 @@ import React, { useState, useCallback, useEffect, useMemo, useRef, Suspense } fr
 import { motion } from 'framer-motion';
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { Lock, Unlock } from 'lucide-react';
+import { Lock, Unlock as UnlockIcon } from 'lucide-react';
 import { Card, CardContent } from '~/components/ui/card';
 import { Button } from '~/components/ui/button';
 import { api } from "~/trpc/react";
@@ -18,7 +18,7 @@ import { builderTutorialSteps, quickStartSteps } from '../../data/onboarding-tut
 import { safeGetItemSync, safeRemoveItemSync } from '~/lib/localStorageMutex';
 import { unifiedBuilderService } from '../../services/UnifiedBuilderIntegrationService';
 import type { ComponentType as GovComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
-import type { ComponentType as PrismaComponentType } from '@prisma/client';
+import { ComponentType as PrismaComponentType } from '@prisma/client';
 
 // Import modular architecture
 import { BuilderStateProvider, useBuilderContext } from './context/BuilderStateContext';
@@ -26,6 +26,7 @@ import { BuilderHeader, StepContent, BuilderFooter } from './sections';
 import { StepRenderer } from './sections/StepRenderer';
 import { StepIndicator } from './StepIndicator';
 import { SectionLoadingFallback } from '../LoadingFallback';
+import { GlobalBuilderLoading, BuilderStepLoading } from '../GlobalBuilderLoading';
 import { BUILDER_GOLD, BUILDER_GOLD_HOVER } from './builderConfig';
 import type { BuilderStep } from './builderConfig';
 
@@ -34,9 +35,13 @@ import type { BuilderStep } from './builderConfig';
  *
  * @interface AtomicBuilderPageProps
  * @property {function} [onBackToIntro] - Optional callback to return to the intro/welcome screen
+ * @property {'create' | 'edit'} [mode] - Builder mode: 'create' for new countries, 'edit' for existing
+ * @property {string} [countryId] - Required when mode='edit' - ID of country to edit
  */
 interface AtomicBuilderPageProps {
   onBackToIntro?: () => void;
+  mode?: 'create' | 'edit';
+  countryId?: string;
 }
 
 /**
@@ -70,10 +75,11 @@ interface AtomicBuilderPageProps {
  *
  * @returns {JSX.Element} Rendered builder wizard or authentication prompt
  */
-function AtomicBuilderPageInner({ onBackToIntro }: AtomicBuilderPageProps) {
+function AtomicBuilderPageInner({ onBackToIntro, mode = 'create', countryId }: AtomicBuilderPageProps) {
   const { user } = useUser();
   const router = useRouter();
   const { builderState, setBuilderState, clearDraft } = useBuilderContext();
+  const isEditMode = mode === 'edit';
 
   // Country data state
   const [countries, setCountries] = useState<RealCountryData[]>([]);
@@ -115,109 +121,94 @@ function AtomicBuilderPageInner({ onBackToIntro }: AtomicBuilderPageProps) {
     loadCountries();
   }, []);
 
+  // Track last processed government components to prevent loops
+  const lastProcessedGovComponentsRef = useRef<string>('');
+
   // Update economic inputs when government components change
   useEffect(() => {
     if (builderState.economicInputs && builderState.governmentComponents.length > 0) {
-      const updatedInputs = { ...builderState.economicInputs };
+      const componentsKey = JSON.stringify(builderState.governmentComponents);
+      
+      // Only update if government components actually changed
+      if (componentsKey !== lastProcessedGovComponentsRef.current) {
+        lastProcessedGovComponentsRef.current = componentsKey;
+        
+        const updatedInputs = { ...builderState.economicInputs };
 
-      // Adjust tax rates based on government type
-      if (builderState.governmentComponents.includes('SOCIAL_DEMOCRACY' as PrismaComponentType)) {
-        updatedInputs.fiscalSystem.taxRevenueGDPPercent = Math.min(
-          updatedInputs.fiscalSystem.taxRevenueGDPPercent * 1.2,
-          60
-        );
-        updatedInputs.governmentSpending.totalSpending = Math.max(
-          updatedInputs.governmentSpending.totalSpending,
-          25
-        );
+        // Adjust tax rates based on government type
+        if (builderState.governmentComponents.includes('SOCIAL_DEMOCRACY' as PrismaComponentType)) {
+          updatedInputs.fiscalSystem.taxRevenueGDPPercent = Math.min(
+            updatedInputs.fiscalSystem.taxRevenueGDPPercent * 1.2,
+            60
+          );
+          updatedInputs.governmentSpending.totalSpending = Math.max(
+            updatedInputs.governmentSpending.totalSpending,
+            25
+          );
+        }
+
+        if (builderState.governmentComponents.includes('FREE_MARKET_SYSTEM' as PrismaComponentType)) {
+          updatedInputs.fiscalSystem.taxRevenueGDPPercent = Math.max(
+            updatedInputs.fiscalSystem.taxRevenueGDPPercent * 0.8,
+            15
+          );
+        }
+
+        setBuilderState(prev => ({ ...prev, economicInputs: updatedInputs }));
       }
-
-      if (builderState.governmentComponents.includes('FREE_MARKET' as PrismaComponentType)) {
-        updatedInputs.fiscalSystem.taxRevenueGDPPercent = Math.max(
-          updatedInputs.fiscalSystem.taxRevenueGDPPercent * 0.8,
-          15
-        );
-      }
-
-      setBuilderState(prev => ({ ...prev, economicInputs: updatedInputs }));
     }
-  }, [builderState.governmentComponents, builderState.economicInputs, setBuilderState]);
+  }, [builderState.governmentComponents, setBuilderState]);
+
+  // Track last processed government structure to prevent loops
+  const lastProcessedGovStructureRef = useRef<string>('');
 
   // Sync government structure to economic inputs
   useEffect(() => {
     if (builderState.governmentStructure && builderState.economicInputs) {
-      const updatedInputs = { ...builderState.economicInputs };
+      const structureKey = JSON.stringify(builderState.governmentStructure);
+      
+      // Only update if government structure actually changed
+      if (structureKey !== lastProcessedGovStructureRef.current) {
+        lastProcessedGovStructureRef.current = structureKey;
+        
+        const updatedInputs = { ...builderState.economicInputs };
 
-      if (builderState.governmentStructure.structure?.totalBudget) {
-        const totalBudget = builderState.governmentStructure.structure.totalBudget;
-        const gdp = builderState.economicInputs.coreIndicators.nominalGDP;
+        if (builderState.governmentStructure.structure?.totalBudget) {
+          const totalBudget = builderState.governmentStructure.structure.totalBudget;
+          const gdp = builderState.economicInputs.coreIndicators.nominalGDP;
 
-        updatedInputs.governmentSpending = {
-          ...updatedInputs.governmentSpending,
-          totalSpending: totalBudget,
-          spendingGDPPercent: gdp > 0 ? (totalBudget / gdp) * 100 : 35,
-        };
+          updatedInputs.governmentSpending = {
+            ...updatedInputs.governmentSpending,
+            totalSpending: totalBudget,
+            spendingGDPPercent: gdp > 0 ? (totalBudget / gdp) * 100 : 35,
+          };
+        }
+
+        if (builderState.governmentStructure.departments && builderState.governmentStructure.budgetAllocations) {
+          updatedInputs.governmentSpending.spendingCategories = builderState.governmentStructure.departments.map(
+            (dept: DepartmentInput, index: number) => {
+              const allocation = builderState.governmentStructure.budgetAllocations.find(
+                (a: BudgetAllocationInput) => a.departmentId === index.toString()
+              );
+              return {
+                category: dept.name,
+                amount: allocation?.allocatedAmount || 0,
+                percent: allocation?.allocatedPercent || 0,
+                icon: dept.icon,
+                color: dept.color,
+                description: dept.description,
+              };
+            }
+          );
+        }
+
+        setBuilderState(prev => ({ ...prev, economicInputs: updatedInputs }));
       }
-
-      if (builderState.governmentStructure.departments && builderState.governmentStructure.budgetAllocations) {
-        updatedInputs.governmentSpending.spendingCategories = builderState.governmentStructure.departments.map(
-          (dept: DepartmentInput, index: number) => {
-            const allocation = builderState.governmentStructure.budgetAllocations.find(
-              (a: BudgetAllocationInput) => a.departmentId === index.toString()
-            );
-            return {
-              category: dept.name,
-              amount: allocation?.allocatedAmount || 0,
-              percent: allocation?.allocatedPercent || 0,
-              icon: dept.icon,
-              color: dept.color,
-              description: dept.description,
-            };
-          }
-        );
-      }
-
-      setBuilderState(prev => ({ ...prev, economicInputs: updatedInputs }));
     }
-  }, [builderState.governmentStructure, builderState.economicInputs, setBuilderState]);
+  }, [builderState.governmentStructure, setBuilderState]);
 
-  // Unified Builder Integration - Sync all data across subsystems
-  useEffect(() => {
-    if (builderState.economicInputs?.nationalIdentity) {
-      unifiedBuilderService.updateNationalIdentity({
-        countryName: builderState.economicInputs.nationalIdentity.countryName,
-        capital: builderState.economicInputs.nationalIdentity.capitalCity,
-        currency: builderState.economicInputs.nationalIdentity.currency,
-        language: builderState.economicInputs.nationalIdentity.officialLanguages || '',
-        flag: undefined,
-        anthem: builderState.economicInputs.nationalIdentity.nationalAnthem,
-        motto: builderState.economicInputs.nationalIdentity.motto,
-      });
-    }
-
-    if (builderState.governmentComponents.length > 0) {
-      unifiedBuilderService.updateGovernmentComponents(
-        builderState.governmentComponents as unknown as GovComponentType[]
-      );
-      const suggested = unifiedBuilderService.getSuggestedEconomicComponents();
-      console.log(
-        `[UnifiedBuilder] Auto-selected ${suggested.length} economic components based on ${builderState.governmentComponents.length} government components`
-      );
-    }
-
-    if (builderState.governmentStructure) {
-      unifiedBuilderService.updateGovernmentBuilder(builderState.governmentStructure);
-    }
-
-    if (builderState.taxSystemData) {
-      unifiedBuilderService.updateTaxBuilder(builderState.taxSystemData);
-    }
-  }, [
-    builderState.economicInputs?.nationalIdentity,
-    builderState.governmentComponents,
-    builderState.governmentStructure,
-    builderState.taxSystemData,
-  ]);
+  // Note: Unified Builder Integration is handled by useBuilderState hook
+  // This prevents duplicate service updates and ensures consistent state management
 
   // Check for tutorial mode on mount
   useEffect(() => {
@@ -362,7 +353,7 @@ function AtomicBuilderPageInner({ onBackToIntro }: AtomicBuilderPageProps) {
                 size="lg"
                 className={cn('w-full bg-gradient-to-r', BUILDER_GOLD, BUILDER_GOLD_HOVER)}
               >
-                <Unlock className="h-4 w-4 mr-2" />
+                <UnlockIcon className="h-4 w-4 mr-2" />
                 Sign In to Continue
               </Button>
             </CardContent>
@@ -396,7 +387,7 @@ function AtomicBuilderPageInner({ onBackToIntro }: AtomicBuilderPageProps) {
             transition={{ duration: 0.3 }}
             className="space-y-6"
           >
-            <Suspense fallback={<SectionLoadingFallback />}>
+            <Suspense fallback={<BuilderStepLoading message="Loading builder step..." />}>
               <StepRenderer
                 countries={countries}
                 isLoadingCountries={isLoadingCountries}
@@ -410,7 +401,7 @@ function AtomicBuilderPageInner({ onBackToIntro }: AtomicBuilderPageProps) {
         ) : (
           // All other steps are wrapped in StepContent
           <StepContent>
-            <Suspense fallback={<SectionLoadingFallback />}>
+            <Suspense fallback={<BuilderStepLoading message="Loading builder step..." />}>
               <StepRenderer
                 countries={countries}
                 isLoadingCountries={isLoadingCountries}
@@ -459,8 +450,7 @@ function AtomicBuilderPageInner({ onBackToIntro }: AtomicBuilderPageProps) {
  *
  * This is the top-level component for the MyCountry Builder wizard that wraps the entire
  * builder flow with the BuilderStateProvider context. It serves as the entry point for
- * the multi-step country creation process, providing centralized state management and
- * ensuring all child components have access to builder state via React Context.
+ * both creating new countries and editing existing ones.
  *
  * The BuilderStateProvider handles:
  * - Centralized state for all builder steps (foundation, core, components, economics, government, tax, preview)
@@ -471,20 +461,31 @@ function AtomicBuilderPageInner({ onBackToIntro }: AtomicBuilderPageProps) {
  * @component
  * @param {AtomicBuilderPageProps} props - Component props
  * @param {function} [props.onBackToIntro] - Optional callback to return to the welcome/intro screen
+ * @param {'create' | 'edit'} [props.mode='create'] - Builder mode for creating or editing
+ * @param {string} [props.countryId] - Country ID when editing (required if mode='edit')
  *
  * @returns {JSX.Element} Rendered builder wizard wrapped in BuilderStateProvider context
  *
  * @example
  * ```tsx
+ * // Create mode
  * <AtomicBuilderPage
+ *   mode="create"
  *   onBackToIntro={() => router.push('/builder')}
+ * />
+ *
+ * // Edit mode
+ * <AtomicBuilderPage
+ *   mode="edit"
+ *   countryId="country-123"
+ *   onBackToIntro={() => router.push('/mycountry')}
  * />
  * ```
  */
-export function AtomicBuilderPage({ onBackToIntro }: AtomicBuilderPageProps) {
+export function AtomicBuilderPage({ onBackToIntro, mode = 'create', countryId }: AtomicBuilderPageProps) {
   return (
-    <BuilderStateProvider>
-      <AtomicBuilderPageInner onBackToIntro={onBackToIntro} />
+    <BuilderStateProvider mode={mode} countryId={countryId}>
+      <AtomicBuilderPageInner onBackToIntro={onBackToIntro} mode={mode} countryId={countryId} />
     </BuilderStateProvider>
   );
 }

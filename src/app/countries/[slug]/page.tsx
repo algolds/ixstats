@@ -17,6 +17,7 @@ import { AlertTriangle } from "lucide-react";
 import { createUrl } from "~/lib/url-utils";
 import { useUser } from "@clerk/nextjs";
 import { useFlag } from "~/hooks/useUnifiedFlags";
+import { useUserCountry } from "~/hooks/useUserCountry";
 import { IxTime } from "~/lib/ixtime";
 import { WikiIntelligenceTab } from "~/components/countries/WikiIntelligenceTab";
 import { ThinkpagesSocialPlatform } from "~/components/thinkpages/ThinkpagesSocialPlatform";
@@ -48,7 +49,7 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
   }, []);
 
   const { slug } = use(params);
-  const { user } = useUser();
+  const { user, userProfile } = useUserCountry();
 
   // Replace underscores with spaces for pretty URLs
   const querySlug = slug.replace(/_/g, " ");
@@ -57,7 +58,6 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
   const { data: country, isLoading, error } = api.countries.getByIdWithEconomicData.useQuery({
     id: querySlug,
   });
-  const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
   const { data: governmentStructure } = api.government.getByCountryId.useQuery(
     { countryId: country?.id || "" },
     { enabled: !!country?.id }

@@ -25,7 +25,7 @@ export class AtomicEffectivenessService {
   constructor(private db: PrismaClient) {}
 
   // Component effectiveness mappings based on the atomic design document
-  private componentEffectiveness: Record<ComponentType, ComponentEffectiveness> = {
+  private componentEffectiveness: Partial<Record<ComponentType, ComponentEffectiveness>> = {
     // Power Distribution Components
     [ComponentType.CENTRALIZED_POWER]: {
       type: ComponentType.CENTRALIZED_POWER,
@@ -586,7 +586,7 @@ export class AtomicEffectivenessService {
 
   // Helper method to get component effectiveness breakdown
   getComponentBreakdown(componentTypes: ComponentType[]): ComponentEffectiveness[] {
-    return componentTypes.map(type => this.componentEffectiveness[type]).filter(Boolean);
+    return componentTypes.map(type => this.componentEffectiveness[type]).filter((item): item is ComponentEffectiveness => item !== undefined);
   }
 
   // Helper method to detect potential synergies for a given set of components

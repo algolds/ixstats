@@ -1,3 +1,14 @@
+/**
+ * @deprecated This router is deprecated. Use unifiedIntelligence router instead.
+ * Maintained for backward compatibility only.
+ * Will be removed in v2.0.0
+ *
+ * Migration Guide:
+ * - Replace api.eci.* calls with api.unifiedIntelligence.*
+ * - The unified intelligence router provides all ECI functionality with improved performance
+ * - See /docs/API_REFERENCE.md for updated endpoint documentation
+ */
+
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure, premiumProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
@@ -707,7 +718,68 @@ export const eciRouter = createTRPCRouter({
       const recommendations = await policyService.getPolicyRecommendations(user.country.id);
 
       return { effectiveness, recommendations };
-    })
+    }),
+
+  // Get ECI Overview for dashboard
+  getOverview: publicProcedure.query(async ({ ctx }) => {
+    // Aggregate ECI data across all countries
+    const countries = await ctx.db.country.findMany({
+      select: {
+        id: true,
+        currentTotalGdp: true,
+        currentGdpPerCapita: true,
+        currentPopulation: true,
+        economicTier: true
+      }
+    });
+
+    // Calculate aggregate metrics
+    const totalCountries = countries.length;
+    const avgGdpPerCapita = countries.reduce((sum, c) => sum + (c.currentGdpPerCapita || 0), 0) / (totalCountries || 1);
+
+    // Calculate economic tier distribution
+    const tierCounts: Record<string, number> = {};
+    countries.forEach(c => {
+      const tier = c.economicTier || 'Unknown';
+      tierCounts[tier] = (tierCounts[tier] || 0) + 1;
+    });
+
+    // Get social stability based on economic performance
+    const socialStability = Math.min(100, Math.max(0,
+      50 + (avgGdpPerCapita / 1000) // Base calculation
+    ));
+
+    // Get recent security threats
+    const recentThreats = await ctx.db.systemConfig.count({
+      where: {
+        key: { contains: 'eci_security_threat' }
+      }
+    });
+
+    const securityIndex = Math.max(0, 100 - (recentThreats * 5));
+
+    // Get active policies
+    const activePolicies = await ctx.db.systemConfig.count({
+      where: {
+        key: { contains: 'eci_economic_policy' }
+      }
+    });
+
+    const politicalStability = Math.min(100, 60 + (activePolicies * 2));
+
+    return {
+      eciScore: Math.round((socialStability + securityIndex + politicalStability) / 3),
+      socialStability: Math.round(socialStability),
+      securityIndex: Math.round(securityIndex),
+      politicalStability: Math.round(politicalStability),
+      totalCountries,
+      avgGdpPerCapita: Math.round(avgGdpPerCapita),
+      tierDistribution: tierCounts,
+      activePolicies,
+      activeThreats: recentThreats,
+      timestamp: new Date()
+    };
+  })
 });
 
 // Helper functions for calculations
