@@ -50,7 +50,6 @@ export class IntelligenceWebSocketServer {
    */
   private setupIntelligenceChannels(): void {
     this.io.on('connection', (socket: Socket) => {
-      console.log(`Intelligence WebSocket connected: ${socket.id}`);
       
       // Store connection info
       this.connectedUsers.set(socket.id, {
@@ -114,7 +113,6 @@ export class IntelligenceWebSocketServer {
 
       // Handle disconnection
       socket.on('disconnect', () => {
-        console.log(`Intelligence WebSocket disconnected: ${socket.id}`);
         this.connectedUsers.delete(socket.id);
         this.updateConnectionStats();
       });

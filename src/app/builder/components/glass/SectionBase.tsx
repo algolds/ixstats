@@ -67,6 +67,7 @@ interface SectionBaseProps extends BaseSectionProps {
     info: string[];
   };
   headerActions?: React.ReactNode;
+  helpContent?: React.ReactNode;
 }
 
 export function SectionBase({
@@ -80,6 +81,7 @@ export function SectionBase({
   metrics = [],
   validation,
   headerActions,
+  helpContent,
   className,
   hideViewToggle = false
 }: SectionBaseProps) {
@@ -138,6 +140,7 @@ export function SectionBase({
         theme={config?.theme || 'neutral'}
         headerActions={headerActions}
         hideViewToggle={hideViewToggle}
+        helpContent={helpContent}
       >
         {/* Metric Overview */}
         {config?.showMetricOverview && metrics.length > 0 && (

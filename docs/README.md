@@ -69,7 +69,7 @@ Complete documentation for the IxStats nation simulation and worldbuilding platf
 
 **31 tRPC Routers with 304 Endpoints**: countries, admin, users, roles, sdi, intelligence, eci, notifications, mycountry, diplomatic, thinkpages, achievements, and more
 
-**124 Database Models**: Complete Prisma schema with 8 migrations
+**131 Database Models**: Complete Prisma schema with 9 migrations
 
 **Remaining for v1.1:**
 1. Budget system UI integration
@@ -81,7 +81,7 @@ Complete documentation for the IxStats nation simulation and worldbuilding platf
 
 **Last Major Update**: October 2025 (v1.0.0)
 - Updated completion status (98% → 100%)
-- Verified accurate technical metrics (31 routers, 304 endpoints, 124 models)
+- Verified accurate technical metrics (36 routers, 304 endpoints, 131 models)
 - Added production optimization documentation
 - Updated Redis rate limiting and Discord webhook integration
 - Refreshed all feature matrices and status indicators

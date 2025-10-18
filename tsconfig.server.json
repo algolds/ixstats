@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "noEmit": true
+  },
+  "include": [
+    "src/server/**/*.ts",
+    "src/lib/**/*.ts"
+  ],
+  "exclude": [
+    "**/*.test.ts"
+  ]
+}

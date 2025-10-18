@@ -1,8 +1,19 @@
 # MyCountry Dashboard System
 
+**Version**: 1.1.0 | Last Updated: October 2025
+
 ## 📋 Overview
 
 The MyCountry system provides a unified, comprehensive dashboard for country management and intelligence. This refactored system consolidates premium and standard features into a single, intuitive interface with advanced real-time capabilities.
+
+## 📚 Documentation (v1.1.0)
+
+### Comprehensive MyCountry Documentation
+- **[MYCOUNTRY_SYSTEM.md](../../docs/MYCOUNTRY_SYSTEM.md)** - Complete executive intelligence system guide (8 tabs) ✨ NEW
+- **[INTELLIGENCE_SYSTEM.md](../../docs/INTELLIGENCE_SYSTEM.md)** - Intelligence operations and analytics ✨ NEW
+- **[DESIGN_SYSTEM.md](../../docs/DESIGN_SYSTEM.md)** - Glass physics framework and theming ✨ NEW
+- **[API_REFERENCE.md](../../docs/API_REFERENCE.md)** - MyCountry API endpoints documentation ✨ NEW
+- **[FORMULAS_AND_CALCULATIONS.md](../../docs/FORMULAS_AND_CALCULATIONS.md)** - Vitality score calculations ✨ NEW
 
 ## 🏗️ Architecture
 

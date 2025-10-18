@@ -83,7 +83,6 @@ export function useCountryFlagsRouteAware(countries: string[], preload = true, b
     setError(null);
 
     try {
-      console.log(`[useCountryFlagsRouteAware] Fetching flags for ${countryList.length} countries using ${pathname?.includes('/builder/import') ? 'full service' : 'Commons-only service'}`);
       
       const service = getService();
       const flagResults = await service.batchGetCountryFlags(countryList);
@@ -91,7 +90,6 @@ export function useCountryFlagsRouteAware(countries: string[], preload = true, b
       setFlags(flagResults);
       
       const stats = service.getCacheStats();
-      console.log(`[useCountryFlagsRouteAware] Completed: ${stats.successful}/${stats.total} flags loaded`);
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch country flags';
@@ -107,7 +105,6 @@ export function useCountryFlagsRouteAware(countries: string[], preload = true, b
    */
   const refetchFlag = useCallback(async (countryName: string) => {
     try {
-      console.log(`[useCountryFlagsRouteAware] Refetching flag for ${countryName}`);
       const service = getService();
       const flag = await service.getCountryFlag(countryName);
       

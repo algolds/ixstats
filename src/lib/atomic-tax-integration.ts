@@ -6,12 +6,12 @@
 import { ComponentType } from '~/types/government';
 
 // Tax collection effectiveness multipliers based on atomic components
-export const TAX_EFFECTIVENESS_MODIFIERS: Record<ComponentType, {
+export const TAX_EFFECTIVENESS_MODIFIERS: Partial<Record<ComponentType, {
   collectionEfficiency: number;
   complianceRate: number;
   auditCapacity: number;
   description: string;
-}> = {
+}>> = {
   // Power Distribution Components
   [ComponentType.CENTRALIZED_POWER]: {
     collectionEfficiency: 1.15,

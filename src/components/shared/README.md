@@ -1,6 +1,26 @@
 # Shared Component Library
 
+**Version**: 1.1.0 | Last Updated: October 2025
+
 Centralized, reusable components for the IxStats platform. This library provides modular, well-tested components that eliminate code duplication and ensure consistency across the application.
+
+## ⚠️ Adoption Crisis Notice
+
+**Current Status**: Only **2% adoption** of shared component library despite excellent documentation and comprehensive feature set.
+
+**Issue**: The vast majority of the codebase (86%) uses builder-specific primitives instead of the centralized shared library, leading to:
+- ~1,605 lines of duplicate code
+- 3 different ErrorBoundary implementations
+- 2 different MetricCard components
+- Multiple duplicate input components
+- Inconsistent styling and behavior
+
+**Solution**: See migration guidance below and comprehensive refactoring plan:
+- **[COMPONENT_CONSOLIDATION_GUIDE.md](../../docs/COMPONENT_CONSOLIDATION_GUIDE.md)** - Complete migration guide ✨ NEW
+- **[REFACTORING_PLAN_V1.1.md](../../docs/REFACTORING_PLAN_V1.1.md)** - 12-week consolidation roadmap ✨ NEW
+- **[SINGLE_SOURCE_OF_TRUTH.md](../../docs/SINGLE_SOURCE_OF_TRUTH.md)** - Architecture governance ✨ NEW
+
+**Target**: Increase shared adoption from 2% to 80% within 12 weeks (v1.2 release).
 
 ## 📁 Structure
 
@@ -433,7 +453,20 @@ When adding new shared components:
 5. Document in this README
 6. Test with multiple use cases
 
-## 🔄 Migration Guide
+## 🔄 Migration Guide (v1.1.0)
+
+### Quick Migration Steps
+
+1. **Identify Duplicate Components**: Use the Component Consolidation Guide to find duplicates
+2. **Review Import Mappings**: Check the migration guide for exact import path replacements
+3. **Test Functionality**: Ensure shared components meet feature requirements
+4. **Refactor Incrementally**: Migrate one component type at a time
+5. **Update Tests**: Verify all tests pass after migration
+
+### Detailed Migration Resources
+- **[COMPONENT_CONSOLIDATION_GUIDE.md](../../docs/COMPONENT_CONSOLIDATION_GUIDE.md)** - Step-by-step migration instructions
+- **[REFACTORING_PLAN_V1.1.md](../../docs/REFACTORING_PLAN_V1.1.md)** - Weekly breakdown of consolidation tasks
+- **[CODE_STANDARDS.md](../../docs/CODE_STANDARDS.md)** - Component quality standards
 
 ### From Old Patterns to Shared Components
 

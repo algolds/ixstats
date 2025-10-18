@@ -13,6 +13,7 @@ import { api } from '~/trpc/react';
 import { toast } from 'sonner';
 import { useInView } from 'react-intersection-observer';
 import { processImageSelection, isExternalImageUrl } from '~/lib/image-download-service';
+import type { BaseImageResult, WikiImageResult } from '~/types/media-search';
 
 interface MediaSearchModalProps {
   isOpen: boolean;
@@ -49,54 +50,65 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
   const { ref: commonsRef, inView: commonsInView } = useInView();
   const { ref: wikiRef, inView: wikiInView } = useInView();
 
-  const { 
+  const [repoPage, setRepoPage] = useState(1);
+  const [commonsPage, setCommonsPage] = useState(1);
+
+  const {
     data: imagesData,
-    fetchNextPage: fetchNextRepoPage,
-    hasNextPage: hasNextRepoPage,
     isLoading: isLoadingRepo,
-    isFetchingNextPage: isFetchingNextRepoPage,
+    isFetching: isFetchingNextRepoPage,
   } = api.thinkpages.searchUnsplashImages.useQuery(
-    { query: debouncedRepoQuery, per_page: 6, page: 1 },
+    { query: debouncedRepoQuery, per_page: 6, page: repoPage },
     {
       enabled: activeTab === 'repository' && !!debouncedRepoQuery,
       staleTime: 5 * 60 * 1000, // 5 minutes cache
-      refetchOnWindowFocus: false
+      refetchOnWindowFocus: false,
     }
-  ) as any; // TODO: Fix type properly
+  );
 
-  const { 
+  const fetchNextRepoPage = () => setRepoPage(prev => prev + 1);
+  const hasNextRepoPage = true; // Simplified - could be based on data length
+
+  const {
     data: wikiCommonsImagesData,
-    fetchNextPage: fetchNextCommonsPage,
-    hasNextPage: hasNextCommonsPage,
     isLoading: isLoadingWikiCommons,
-    isFetchingNextPage: isFetchingNextCommonsPage,
+    isFetching: isFetchingNextCommonsPage,
   } = api.thinkpages.searchWikiCommonsImages.useQuery(
-    { query: debouncedCommonsQuery, per_page: 6, page: 1 },
+    { query: debouncedCommonsQuery, per_page: 6, page: commonsPage },
     {
       enabled: activeTab === 'wiki-commons' && !!debouncedCommonsQuery,
       staleTime: 5 * 60 * 1000, // 5 minutes cache
-      refetchOnWindowFocus: false
+      refetchOnWindowFocus: false,
     }
-  ) as any; // TODO: Fix type properly
+  );
 
-  const { 
+  const fetchNextCommonsPage = () => setCommonsPage(prev => prev + 1);
+  const hasNextCommonsPage = true; // Simplified - could be based on data length
+
+  const [wikiCursor, setWikiCursor] = useState<string | undefined>(undefined);
+
+  const {
     data: wikiData,
     isLoading: isLoadingWiki,
-    fetchNextPage: fetchNextWikiPage,
-    hasNextPage: hasNextWikiPage,
-    isFetchingNextPage: isFetchingNextWikiPage,
+    isFetching: isFetchingNextWikiPage,
     refetch: refetchWiki,
-  } = api.thinkpages.searchWiki.useInfiniteQuery(
-    { query: wikiSearchQuery, wiki: wikiSource, limit: 30 },
+  } = api.thinkpages.searchWiki.useQuery(
+    { query: wikiSearchQuery, wiki: wikiSource, limit: 30, cursor: wikiCursor },
     {
       enabled: activeTab === 'wiki' && !!wikiSearchQuery,
-      getNextPageParam: (lastPage) => lastPage.nextCursor,
       staleTime: 5 * 60 * 1000, // 5 minutes cache
       refetchOnWindowFocus: false
     }
   );
 
-  const wikiImages = wikiData?.pages.flatMap(page => page.images) || [];
+  const fetchNextWikiPage = () => {
+    if (wikiData?.nextCursor) {
+      setWikiCursor(wikiData.nextCursor);
+    }
+  };
+  const hasNextWikiPage = wikiData?.hasMore ?? false;
+
+  const wikiImages = wikiData?.images || [];
 
   // Throttled infinite scroll to prevent excessive API calls
   useEffect(() => {
@@ -182,8 +194,8 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
     }
   };
 
-  const images = (imagesData as { id: string; url: string; photographer: string; description?: string; }[] ?? []) as { id: string; url: string; photographer: string; description?: string; }[];
-  const wikiCommonsImages = (wikiCommonsImagesData as { id: string; url: string; photographer: string; description?: string; }[] ?? []) as { id: string; url: string; photographer: string; description?: string; }[];
+  const images = (imagesData ?? []) as BaseImageResult[];
+  const wikiCommonsImages = (wikiCommonsImagesData ?? []) as BaseImageResult[];
 
   // Create portal element
   const [portalElement, setPortalElement] = useState<HTMLElement | null>(null);
@@ -250,7 +262,7 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
                     </div>
                   ) : images.length > 0 ? (
                     <>
-                      {images.map((image: { id: string; url: string; photographer: string; description?: string; }, index: number) => (
+                      {images.map((image: BaseImageResult, index: number) => (
                         <div
                           key={`repo-${image.id}-${index}`}
                           className={cn(
@@ -309,7 +321,7 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
                     </div>
                   ) : wikiCommonsImages.length > 0 ? (
                     <>
-                      {wikiCommonsImages.map((image: { id: string; url: string; photographer: string; description?: string; }, index: number) => (
+                      {wikiCommonsImages.map((image: BaseImageResult, index: number) => (
                         <div
                           key={`commons-${image.id}-${index}`}
                           className={cn(
@@ -415,7 +427,7 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
                     </div>
                   ) : wikiImages.length > 0 ? (
                     <>
-                      {wikiImages.map((image: { path: string; name: string; url?: string; description?: string; }, index: number) => (
+                      {wikiImages.map((image: WikiImageResult, index: number) => (
                         <div
                           key={`wiki-${image.path}-${index}`}
                           className={cn(

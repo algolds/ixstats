@@ -18,7 +18,7 @@ import type { TaxBuilderState } from '~/components/tax-system/TaxBuilder';
  * Government → Economy Component Mapping
  * Maps government atomic components to their corresponding economic components
  */
-export const GOVERNMENT_TO_ECONOMY_MAPPING: Record<ComponentType, EconomicComponentType[]> = {
+export const GOVERNMENT_TO_ECONOMY_MAPPING: Partial<Record<ComponentType, EconomicComponentType[]>> = {
   // Economic System Components (Direct Mapping)
   [ComponentType.FREE_MARKET_SYSTEM]: [
     EconomicComponentType.FREE_MARKET_SYSTEM,

@@ -11,6 +11,7 @@ import { CountryProfileInfoBox } from "./CountryProfileInfoBox";
 import { IxTime } from "~/lib/ixtime";
 import { IxnayWikiService, type CountryInfobox } from "~/lib/mediawiki-service";
 import { api } from "~/trpc/react";
+import { sanitizeWikiContent } from "~/lib/sanitize-html";
 import {
   // Wiki Icons
   RiBookOpenLine,
@@ -338,12 +339,15 @@ const parseWikiContent = (content: string, handleWikiLinkClick: (page: string) =
         return (
           <span
             key={index}
+            // SECURITY: Sanitize wiki content to prevent XSS from external data
             dangerouslySetInnerHTML={{
-              __html: part
-                .replace(/'''([^']*)'''/g, '<strong class="font-semibold text-foreground">$1</strong>')
-                .replace(/''([^']*)''/g, '<em class="italic text-muted-foreground">$1</em>')
-                .replace(/^\*\s+(.+)$/gm, '<li class="ml-4">• $1</li>')
-                .replace(/^==\s+([^=]+)\s+==/gm, '<h3 class="text-lg font-semibold text-foreground mt-4 mb-2">$1</h3>')
+              __html: sanitizeWikiContent(
+                part
+                  .replace(/'''([^']*)'''/g, '<strong class="font-semibold text-foreground">$1</strong>')
+                  .replace(/''([^']*)''/g, '<em class="italic text-muted-foreground">$1</em>')
+                  .replace(/^\*\s+(.+)$/gm, '<li class="ml-4">• $1</li>')
+                  .replace(/^==\s+([^=]+)\s+==/gm, '<h3 class="text-lg font-semibold text-foreground mt-4 mb-2">$1</h3>')
+              )
             }}
           />
         );

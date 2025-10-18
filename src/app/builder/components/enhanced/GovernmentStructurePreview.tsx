@@ -4,52 +4,94 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
 import { Progress } from '~/components/ui/progress';
-import { Separator } from '~/components/ui/separator';
 import { Button } from '~/components/ui/button';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '~/components/ui/collapsible';
 import {
   Building2,
   Crown,
   Users,
   DollarSign,
   Scale,
-  Gavel,
   Landmark,
-  TrendingUp,
-  TrendingDown,
   Target,
-  Calendar,
-  MapPin,
-  User,
   Briefcase,
-  Receipt,
-  PieChart,
   BarChart3,
   Eye,
-  CheckCircle,
-  AlertTriangle,
-  Info,
-  ChevronDown,
-  ChevronRight,
   ChevronsDownUp,
   ChevronsUpDown
 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import type { GovernmentStructure, GovernmentDepartment, BudgetAllocation, RevenueSource, GovernmentBuilderState } from '~/types/government';
-import { ComponentType, ATOMIC_COMPONENTS } from '~/components/government/atoms/AtomicGovernmentComponents';
-import { cn } from '~/lib/utils';
-import { formatCurrency, formatNumber, formatPercent } from '~/lib/format-utils';
+import type { GovernmentStructure, GovernmentBuilderState } from '~/types/government';
+import { ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
+import { formatCurrency } from '~/lib/format-utils';
+import { StructureOverview } from './government-preview/StructureOverview';
+import { ComponentsList } from './government-preview/ComponentsList';
+import { DepartmentsList } from './government-preview/DepartmentsList';
+import { BudgetAllocationList } from './government-preview/BudgetAllocationList';
+import { RevenueSourcesList } from './government-preview/RevenueSourcesList';
 
+const getBudgetStatus = (allocated: number, total: number) => {
+  const percentage = total > 0 ? (allocated / total) * 100 : 0;
+  if (percentage >= 95) return { status: 'critical', color: 'text-red-600' };
+  if (percentage >= 85) return { status: 'warning', color: 'text-orange-600' };
+  if (percentage >= 70) return { status: 'good', color: 'text-green-600' };
+  return { status: 'low', color: 'text-blue-600' };
+};
+
+/**
+ * Props for the GovernmentStructurePreview component
+ *
+ * @interface GovernmentStructurePreviewProps
+ * @property {GovernmentStructure | GovernmentBuilderState | null} governmentStructure - Government configuration to preview
+ * @property {ComponentType[]} governmentComponents - Array of selected atomic government components
+ * @property {string} [className] - Optional CSS classes for styling
+ */
 interface GovernmentStructurePreviewProps {
   governmentStructure: GovernmentStructure | GovernmentBuilderState | null;
   governmentComponents: ComponentType[];
   className?: string;
 }
 
+/**
+ * GovernmentStructurePreview - Comprehensive read-only preview of government configuration
+ *
+ * This component provides a complete, collapsible preview of a nation's government structure including
+ * the organizational hierarchy, budget allocations, revenue sources, and atomic components. It normalizes
+ * both saved GovernmentStructure entities and in-progress GovernmentBuilderState for consistent display.
+ *
+ * The preview organizes government data into collapsible sections:
+ * - Structure Overview: Government name, type, heads of state/government, legislature/executive/judicial names
+ * - Budget Overview: Total budget, allocated amounts, projected revenue, utilization percentage with progress bar
+ * - Atomic Components: Selected government components with descriptions and effectiveness indicators
+ * - Departments: All government departments with hierarchy, employees, functions, KPIs, and budget links
+ * - Budget Allocations: Department-by-department budget breakdown with spending status and percentages
+ * - Revenue Sources: Tax and non-tax revenue sources with collection methods and administered-by departments
+ * - Summary Statistics: Aggregate counts and totals for departments, components, allocations, and revenue
+ *
+ * Key features:
+ * - Expand/collapse all functionality for quick navigation
+ * - Individual collapsible sections for focused review
+ * - Currency formatting using global utilities with dynamic currency codes
+ * - Budget utilization visualization with progress bars and color-coded status
+ * - Department hierarchy display with parent/child relationships
+ * - Icon mapping for government types and department categories
+ * - Empty state handling when no government structure is configured
+ *
+ * @component
+ * @param {GovernmentStructurePreviewProps} props - Component props
+ * @param {GovernmentStructure | GovernmentBuilderState | null} props.governmentStructure - Government data to preview
+ * @param {ComponentType[]} props.governmentComponents - Atomic components selected for this government
+ * @param {string} [props.className] - Additional CSS classes for custom styling
+ *
+ * @returns {JSX.Element} Rendered government preview with collapsible sections and summary statistics
+ *
+ * @example
+ * ```tsx
+ * <GovernmentStructurePreview
+ *   governmentStructure={governmentBuilderState}
+ *   governmentComponents={['DEMOCRACY', 'FEDERAL_SYSTEM', 'BICAMERAL_LEGISLATURE']}
+ *   className="mt-6"
+ * />
+ * ```
+ */
 export function GovernmentStructurePreview({
   governmentStructure,
   governmentComponents,
@@ -239,14 +281,6 @@ export function GovernmentStructurePreview({
     }
   };
 
-  const getBudgetStatus = (allocated: number, total: number) => {
-    const percentage = total > 0 ? (allocated / total) * 100 : 0;
-    if (percentage >= 95) return { status: 'critical', color: 'text-red-600', icon: AlertTriangle };
-    if (percentage >= 85) return { status: 'warning', color: 'text-orange-600', icon: AlertTriangle };
-    if (percentage >= 70) return { status: 'good', color: 'text-green-600', icon: CheckCircle };
-    return { status: 'low', color: 'text-blue-600', icon: Info };
-  };
-
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Header */}
@@ -287,95 +321,10 @@ export function GovernmentStructurePreview({
       </div>
 
       {/* Government Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Crown className="h-5 w-5" />
-            Government Overview
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Basic Information */}
-            <div className="space-y-4">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  {getGovernmentTypeIcon(normalizedStructure.governmentType)}
-                  <span className="text-sm font-medium text-muted-foreground">Government Details</span>
-                </div>
-                <div className="space-y-2">
-                  <div>
-                    <span className="text-sm text-muted-foreground">Name:</span>
-                    <p className="font-semibold">{normalizedStructure.governmentName}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm text-muted-foreground">Type:</span>
-                    <p className="font-semibold">{normalizedStructure.governmentType}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm text-muted-foreground">Fiscal Year:</span>
-                    <p className="font-semibold">{normalizedStructure.fiscalYear}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Leadership */}
-            <div className="space-y-4">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <User className="h-4 w-4" />
-                  <span className="text-sm font-medium text-muted-foreground">Leadership</span>
-                </div>
-                <div className="space-y-2">
-                  {normalizedStructure.headOfState && (
-                    <div>
-                      <span className="text-sm text-muted-foreground">Head of State:</span>
-                      <p className="font-semibold">{normalizedStructure.headOfState}</p>
-                    </div>
-                  )}
-                  {normalizedStructure.headOfGovernment && (
-                    <div>
-                      <span className="text-sm text-muted-foreground">Head of Government:</span>
-                      <p className="font-semibold">{normalizedStructure.headOfGovernment}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Branches of Government */}
-            <div className="space-y-4">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Building2 className="h-4 w-4" />
-                  <span className="text-sm font-medium text-muted-foreground">Branches</span>
-                </div>
-                <div className="space-y-2">
-                  {normalizedStructure.legislatureName && (
-                    <div>
-                      <span className="text-sm text-muted-foreground">Legislature:</span>
-                      <p className="font-semibold">{normalizedStructure.legislatureName}</p>
-                    </div>
-                  )}
-                  {normalizedStructure.executiveName && (
-                    <div>
-                      <span className="text-sm text-muted-foreground">Executive:</span>
-                      <p className="font-semibold">{normalizedStructure.executiveName}</p>
-                    </div>
-                  )}
-                  {normalizedStructure.judicialName && (
-                    <div>
-                      <span className="text-sm text-muted-foreground">Judiciary:</span>
-                      <p className="font-semibold">{normalizedStructure.judicialName}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <StructureOverview
+        structure={normalizedStructure}
+        getGovernmentTypeIcon={getGovernmentTypeIcon}
+      />
 
       {/* Budget Overview */}
       <Card>
@@ -423,387 +372,47 @@ export function GovernmentStructurePreview({
       </Card>
 
       {/* Selected Atomic Components */}
-      {governmentComponents.length > 0 && (
-        <Collapsible open={isComponentsOpen} onOpenChange={setIsComponentsOpen}>
-          <Card>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Target className="h-5 w-5" />
-                    Selected Atomic Components
-                    <Badge variant="secondary" className="ml-2">
-                      {governmentComponents.length}
-                    </Badge>
-                  </div>
-                  {isComponentsOpen ? (
-                    <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform" />
-                  ) : (
-                    <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform" />
-                  )}
-                </CardTitle>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent>
-                <div className="grid grid-cols-1 gap-3">
-                  {governmentComponents.map(componentType => {
-                    const metadata = ATOMIC_COMPONENTS[componentType];
-                    if (!metadata) return null;
-
-                    return (
-                      <motion.div
-                        key={componentType}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg border border-muted hover:border-primary/30 transition-colors"
-                      >
-                        <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
-                          <Crown className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-semibold text-sm">{metadata.name}</p>
-                            <Badge variant="outline" className="text-xs">
-                              <Target className="h-3 w-3 mr-1" />
-                              Component
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground leading-relaxed">
-                            {metadata.description}
-                          </p>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-      )}
+      <ComponentsList
+        components={governmentComponents}
+        isOpen={isComponentsOpen}
+        onOpenChange={setIsComponentsOpen}
+      />
 
       {/* Departments */}
-      {normalizedStructure.departments.length > 0 && (
-        <Collapsible open={isDepartmentsOpen} onOpenChange={setIsDepartmentsOpen}>
-          <Card>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    Government Departments
-                    <Badge variant="secondary" className="ml-2">
-                      {stats.totalDepartments}
-                    </Badge>
-                  </div>
-                  {isDepartmentsOpen ? (
-                    <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform" />
-                  ) : (
-                    <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform" />
-                  )}
-                </CardTitle>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent>
-                <div className="space-y-3">
-              {normalizedStructure.departments.map((department, index) => {
-                const departmentBudget = normalizedStructure.budgetAllocations
-                  .find(a => a.departmentId === department.id);
-                const budgetAmount = departmentBudget?.allocatedAmount || 0;
-                const budgetStatus = getBudgetStatus(budgetAmount, stats.totalBudget);
-                const isDeptOpen = openDepartments[department.id] || false;
-
-                return (
-                  <Collapsible
-                    key={department.id}
-                    open={isDeptOpen}
-                    onOpenChange={() => toggleDepartment(department.id)}
-                  >
-                    <motion.div
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="border rounded-lg overflow-hidden"
-                    >
-                      <CollapsibleTrigger asChild>
-                        <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg" style={{ backgroundColor: department.color + '20' }}>
-                              {getDepartmentIcon(department.category)}
-                            </div>
-                            <div>
-                              <h4 className="font-semibold flex items-center gap-2">
-                                {department.name}
-                                {isDeptOpen ? (
-                                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                                ) : (
-                                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                                )}
-                              </h4>
-                              <p className="text-sm text-muted-foreground">{department.category}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold">{formatCurrencyLocal(budgetAmount)}</p>
-                            <div className="flex items-center gap-1 justify-end">
-                              <budgetStatus.icon className={`h-3 w-3 ${budgetStatus.color}`} />
-                              <span className={`text-xs ${budgetStatus.color}`}>
-                                {budgetAmount > 0 ? 'Allocated' : 'No Budget'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </CollapsibleTrigger>
-
-                      <CollapsibleContent>
-                        <div className="px-4 pb-4 space-y-3 border-t bg-muted/20">
-                          {department.description && (
-                            <p className="text-sm text-muted-foreground pt-3">{department.description}</p>
-                          )}
-
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            {department.minister && (
-                              <div>
-                                <span className="text-muted-foreground">Minister:</span>
-                                <p className="font-medium">{department.minister}</p>
-                              </div>
-                            )}
-                            {department.headquarters && (
-                              <div>
-                                <span className="text-muted-foreground">Headquarters:</span>
-                                <p className="font-medium">{department.headquarters}</p>
-                              </div>
-                            )}
-                            {department.employeeCount && (
-                              <div>
-                                <span className="text-muted-foreground">Employees:</span>
-                                <p className="font-medium">{formatNumber(department.employeeCount)}</p>
-                              </div>
-                            )}
-                            {department.established && (
-                              <div>
-                                <span className="text-muted-foreground">Established:</span>
-                                <p className="font-medium">{department.established}</p>
-                              </div>
-                            )}
-                          </div>
-
-                          {budgetAmount > 0 && (
-                            <div className="space-y-2">
-                              <div className="flex justify-between text-sm">
-                                <span>Budget Allocation</span>
-                                <span>{((budgetAmount / stats.totalBudget) * 100).toFixed(1)}% of total budget</span>
-                              </div>
-                              <Progress
-                                value={(budgetAmount / stats.totalBudget) * 100}
-                                className="h-2"
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </CollapsibleContent>
-                    </motion.div>
-                  </Collapsible>
-                );
-              })}
-                </div>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-      )}
+      <DepartmentsList
+        departments={normalizedStructure.departments}
+        budgetAllocations={normalizedStructure.budgetAllocations}
+        totalBudget={stats.totalBudget}
+        currency={normalizedStructure.budgetCurrency}
+        isOpen={isDepartmentsOpen}
+        onOpenChange={setIsDepartmentsOpen}
+        openDepartments={openDepartments}
+        onToggleDepartment={toggleDepartment}
+        getDepartmentIcon={getDepartmentIcon}
+      />
 
       {/* Budget Allocations Breakdown */}
-      {normalizedStructure.budgetAllocations.length > 0 && (
-        <Collapsible open={isBudgetOpen} onOpenChange={setIsBudgetOpen}>
-          <Card>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <PieChart className="h-5 w-5" />
-                    Budget Allocations Breakdown
-                    <Badge variant="secondary" className="ml-2">
-                      {normalizedStructure.budgetAllocations.length}
-                    </Badge>
-                  </div>
-                  {isBudgetOpen ? (
-                    <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform" />
-                  ) : (
-                    <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform" />
-                  )}
-                </CardTitle>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent>
-                <div className="space-y-2">
-              {normalizedStructure.budgetAllocations
-                .sort((a, b) => b.allocatedAmount - a.allocatedAmount)
-                .map((allocation, index) => {
-                  const department = normalizedStructure.departments.find(d => d.id === allocation.departmentId);
-                  if (!department) return null;
-
-                  const percentage = (allocation.allocatedAmount / stats.totalBudget) * 100;
-                  const isAllocOpen = openAllocations[allocation.id] || false;
-
-                  return (
-                    <Collapsible
-                      key={allocation.id}
-                      open={isAllocOpen}
-                      onOpenChange={() => toggleAllocation(allocation.id)}
-                    >
-                      <div className="border rounded-lg overflow-hidden">
-                        <CollapsibleTrigger asChild>
-                          <div className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 transition-colors">
-                            <div className="flex items-center gap-2">
-                              <div
-                                className="w-3 h-3 rounded-full"
-                                style={{ backgroundColor: department.color }}
-                              />
-                              <span className="font-medium">{department.name}</span>
-                              {isAllocOpen ? (
-                                <ChevronDown className="h-3 w-3 text-muted-foreground ml-1" />
-                              ) : (
-                                <ChevronRight className="h-3 w-3 text-muted-foreground ml-1" />
-                              )}
-                            </div>
-                            <div className="text-right">
-                              <span className="font-semibold">{formatCurrencyLocal(allocation.allocatedAmount)}</span>
-                              <span className="text-sm text-muted-foreground ml-2">({percentage.toFixed(1)}%)</span>
-                            </div>
-                          </div>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <div className="px-3 pb-3 border-t bg-muted/20">
-                            <div className="pt-3 space-y-2">
-                              <Progress value={percentage} className="h-2" />
-                              <div className="grid grid-cols-2 gap-3 text-sm">
-                                <div>
-                                  <span className="text-muted-foreground">Department ID:</span>
-                                  <p className="font-medium">{allocation.departmentId}</p>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Allocation ID:</span>
-                                  <p className="font-medium text-xs truncate">{allocation.id}</p>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Percentage:</span>
-                                  <p className="font-medium">{allocation.allocatedPercent?.toFixed(2)}%</p>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Amount:</span>
-                                  <p className="font-medium">{formatCurrencyLocal(allocation.allocatedAmount)}</p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </CollapsibleContent>
-                      </div>
-                    </Collapsible>
-                  );
-                })}
-                </div>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-      )}
+      <BudgetAllocationList
+        allocations={normalizedStructure.budgetAllocations}
+        departments={normalizedStructure.departments}
+        totalBudget={stats.totalBudget}
+        currency={normalizedStructure.budgetCurrency}
+        isOpen={isBudgetOpen}
+        onOpenChange={setIsBudgetOpen}
+        openAllocations={openAllocations}
+        onToggleAllocation={toggleAllocation}
+      />
 
       {/* Revenue Sources */}
-      {normalizedStructure.revenueSources.length > 0 && (
-        <Collapsible open={isRevenueOpen} onOpenChange={setIsRevenueOpen}>
-          <Card>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Receipt className="h-5 w-5" />
-                    Revenue Sources
-                    <Badge variant="secondary" className="ml-2">
-                      {normalizedStructure.revenueSources.length}
-                    </Badge>
-                  </div>
-                  {isRevenueOpen ? (
-                    <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform" />
-                  ) : (
-                    <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform" />
-                  )}
-                </CardTitle>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent>
-                <div className="space-y-2">
-              {normalizedStructure.revenueSources
-                .sort((a, b) => b.revenueAmount - a.revenueAmount)
-                .map((source, index) => {
-                  const percentage = (source.revenueAmount / stats.totalRevenue) * 100;
-                  const isRevOpen = openRevenues[source.id] || false;
-
-                  return (
-                    <Collapsible
-                      key={source.id}
-                      open={isRevOpen}
-                      onOpenChange={() => toggleRevenue(source.id)}
-                    >
-                      <div className="border rounded-lg overflow-hidden">
-                        <CollapsibleTrigger asChild>
-                          <div className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 transition-colors">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{source.name}</span>
-                              {isRevOpen ? (
-                                <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                              ) : (
-                                <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                              )}
-                            </div>
-                            <div className="text-right">
-                              <span className="font-semibold">{formatCurrencyLocal(source.revenueAmount)}</span>
-                              <span className="text-sm text-muted-foreground ml-2">({percentage.toFixed(1)}%)</span>
-                            </div>
-                          </div>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <div className="px-3 pb-3 border-t bg-muted/20">
-                            <div className="pt-3 space-y-2">
-                              {source.description && (
-                                <p className="text-sm text-muted-foreground">{source.description}</p>
-                              )}
-                              <Progress value={percentage} className="h-2" />
-                              <div className="grid grid-cols-2 gap-3 text-sm">
-                                <div>
-                                  <span className="text-muted-foreground">Source ID:</span>
-                                  <p className="font-medium text-xs truncate">{source.id}</p>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Percentage:</span>
-                                  <p className="font-medium">{percentage.toFixed(2)}%</p>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Revenue Amount:</span>
-                                  <p className="font-medium">{formatCurrencyLocal(source.revenueAmount)}</p>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Source Type:</span>
-                                  <p className="font-medium capitalize">{source.name.split(' ')[0]}</p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </CollapsibleContent>
-                      </div>
-                    </Collapsible>
-                  );
-                })}
-                </div>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-      )}
+      <RevenueSourcesList
+        sources={normalizedStructure.revenueSources}
+        totalRevenue={stats.totalRevenue}
+        currency={normalizedStructure.budgetCurrency}
+        isOpen={isRevenueOpen}
+        onOpenChange={setIsRevenueOpen}
+        openRevenues={openRevenues}
+        onToggleRevenue={toggleRevenue}
+      />
 
       {/* Summary Statistics */}
       <Card>

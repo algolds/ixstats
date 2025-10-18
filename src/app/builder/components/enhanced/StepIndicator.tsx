@@ -1,9 +1,9 @@
 // Enhanced step indicator component with minimize/expand functionality
-// Extracted from AtomicBuilderPageEnhanced.tsx for modularity
+// Extracted from AtomicBuilderPage.tsx for modularity
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle } from 'lucide-react';
 import { cn } from '~/lib/utils';
@@ -16,14 +16,16 @@ interface StepIndicatorProps {
   onStepClick: (step: BuilderStep) => void;
 }
 
-export function StepIndicator({
+export const StepIndicator = React.memo(function StepIndicator({
   currentStep,
   completedSteps,
   onStepClick
 }: StepIndicatorProps) {
   const [isMinimized, setIsMinimized] = useState(false);
-  const steps = Object.entries(stepConfig) as [BuilderStep, typeof stepConfig[BuilderStep]][];
-  const currentIndex = steps.findIndex(([step]) => step === currentStep);
+  
+  // Memoize steps and currentIndex to prevent unnecessary recalculations
+  const steps = useMemo(() => Object.entries(stepConfig) as [BuilderStep, typeof stepConfig[BuilderStep]][], []);
+  const currentIndex = useMemo(() => steps.findIndex(([step]) => step === currentStep), [steps, currentStep]);
 
   // Auto-minimize after initial animation
   useEffect(() => {
@@ -33,17 +35,28 @@ export function StepIndicator({
     return () => clearTimeout(timer);
   }, []);
 
+  // Memoize event handlers to prevent unnecessary re-renders
+  const handleMouseEnter = useCallback(() => setIsMinimized(false), []);
+  const handleMouseLeave = useCallback(() => setIsMinimized(true), []);
+
+  // Memoize animation props to prevent recreation on every render
+  const containerAnimateProps = useMemo(() => ({
+    maxWidth: isMinimized ? '400px' : '1024px',
+    marginBottom: isMinimized ? '1.5rem' : '3rem'
+  }), [isMinimized]);
+
+  const progressAnimateProps = useMemo(() => ({
+    width: `${(currentIndex / (steps.length - 1)) * 100}%`
+  }), [currentIndex, steps.length]);
+
   return (
     <TooltipProvider>
       <motion.div
         className="relative w-full mx-auto mb-6"
-        animate={{
-          maxWidth: isMinimized ? '400px' : '1024px',
-          marginBottom: isMinimized ? '1.5rem' : '3rem'
-        }}
+        animate={containerAnimateProps}
         transition={{ duration: 0.3, ease: "easeInOut" }}
-        onMouseEnter={() => setIsMinimized(false)}
-        onMouseLeave={() => setIsMinimized(true)}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
         {/* Progress Line */}
         <AnimatePresence>
@@ -57,7 +70,7 @@ export function StepIndicator({
               <motion.div
                 className="h-full bg-gradient-to-r from-amber-500 via-amber-500 to-yellow-600"
                 initial={{ width: '0%' }}
-                animate={{ width: `${(currentIndex / (steps.length - 1)) * 100}%` }}
+                animate={progressAnimateProps}
                 transition={{ duration: 0.5, ease: "easeInOut" }}
               />
             </motion.div>
@@ -173,4 +186,4 @@ export function StepIndicator({
       </motion.div>
     </TooltipProvider>
   );
-}
+});

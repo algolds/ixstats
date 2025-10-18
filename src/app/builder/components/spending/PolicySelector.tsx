@@ -5,14 +5,21 @@
 "use client";
 
 import React from 'react';
-import { Card, CardContent } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
 import { cn } from '~/lib/utils';
-import { CheckCircle2 } from 'lucide-react';
+import { 
+  CheckCircle, 
+  AlertCircle, 
+  TrendingUp, 
+  Clock, 
+  Users, 
+  Zap,
+  Shield,
+  Info,
+  DollarSign
+} from 'lucide-react';
 import { ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
 import { getApplicablePolicies, type SpendingPolicy } from '../../data/government-spending-policies';
-import { BlurFade } from '~/components/magicui/blur-fade';
-import { ProgressiveBlur } from '~/components/ui/progressive-blur';
 
 interface PolicySelectorProps {
   selectedPolicies: Set<string>;
@@ -32,109 +39,46 @@ export function PolicySelector({
   className
 }: PolicySelectorProps) {
   const applicablePolicies = getApplicablePolicies(selectedAtomicComponents);
-  const visibleCount = 3; // Show first 3 policies
-  const visiblePolicies = applicablePolicies.slice(0, visibleCount);
-  const hiddenPolicies = applicablePolicies.slice(visibleCount);
 
   if (applicablePolicies.length === 0) {
     return (
-      <div className={cn("grid gap-3", className)}>
-        <Card className="border-dashed">
-          <CardContent className="p-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              No applicable policies found. Select atomic components to see recommended policies.
-            </p>
-          </CardContent>
-        </Card>
+      <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", className)}>
+        <div className="col-span-full p-8 text-center border-2 border-dashed border-border rounded-lg bg-muted/30">
+          <div className="flex flex-col items-center gap-3">
+            <div className="p-3 rounded-full bg-muted">
+              <Info className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground mb-1">No Applicable Policies</h3>
+              <p className="text-sm text-muted-foreground">
+                Select atomic components to see recommended policies that align with your government structure.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className={cn("grid gap-3", className)}>
-      {/* Show first 5 policies with progressive reveal if there are more */}
-      {hiddenPolicies.length > 0 ? (
-        <ProgressiveBlur
-          blurIntensity={10}
-          gradientHeight={150}
-          arrowPosition="center"
-          revealContent={
-            <div className="grid gap-3">
-              {hiddenPolicies.map((policy, index) => {
-                const isSelected = selectedPolicies.has(policy.id);
-                return (
-                  <BlurFade
-                    key={policy.id}
-                    delay={index * 0.05}
-                    duration={0.4}
-                    offset={8}
-                    direction="up"
-                  >
-                    <PolicyCard
-                      policy={policy}
-                      isSelected={isSelected}
-                      onClick={() => onTogglePolicy(policy.id)}
-                    />
-                  </BlurFade>
-                );
-              })}
-            </div>
-          }
-        >
-          <div className="grid gap-3">
-            {visiblePolicies.map((policy, index) => {
-              const isSelected = selectedPolicies.has(policy.id);
-              return (
-                <BlurFade
-                  key={policy.id}
-                  delay={index * 0.08}
-                  duration={0.5}
-                  offset={10}
-                  direction="up"
-                  inView
-                  inViewMargin="-50px"
-                >
-                  <PolicyCard
-                    policy={policy}
-                    isSelected={isSelected}
-                    onClick={() => onTogglePolicy(policy.id)}
-                  />
-                </BlurFade>
-              );
-            })}
-          </div>
-        </ProgressiveBlur>
-      ) : (
-        // If 3 or fewer policies, just show them with blur-fade
-        <>
-          {applicablePolicies.map((policy, index) => {
-            const isSelected = selectedPolicies.has(policy.id);
-            return (
-              <BlurFade
-                key={policy.id}
-                delay={index * 0.08}
-                duration={0.5}
-                offset={10}
-                direction="up"
-                inView
-                inViewMargin="-50px"
-              >
-                <PolicyCard
-                  policy={policy}
-                  isSelected={isSelected}
-                  onClick={() => onTogglePolicy(policy.id)}
-                />
-              </BlurFade>
-            );
-          })}
-        </>
-      )}
+    <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", className)}>
+      {applicablePolicies.map((policy) => {
+        const isSelected = selectedPolicies.has(policy.id);
+        return (
+          <PolicyCard
+            key={policy.id}
+            policy={policy}
+            isSelected={isSelected}
+            onClick={() => onTogglePolicy(policy.id)}
+          />
+        );
+      })}
     </div>
   );
 }
 
 /**
- * PolicyCard - Individual policy display card
+ * PolicyCard - Individual policy display card using atomic component design
  */
 function PolicyCard({
   policy,
@@ -146,54 +90,106 @@ function PolicyCard({
   onClick: () => void;
 }) {
   const Icon = policy.icon;
+  
+  // Calculate total impact for effectiveness display
+  const totalImpact = Object.values(policy.impact).reduce((sum, value) => sum + Math.abs(value), 0);
+  const effectiveness = Math.min(100, Math.max(0, 50 + (totalImpact / 2))); // Convert impact to 0-100 scale
+  
+  const getCardClasses = () => {
+    if (isSelected) {
+      return 'border-2 border-blue-500 bg-blue-500/5 dark:bg-blue-500/10 shadow-lg';
+    }
+    return 'border-2 border-border hover:border-blue-500/50 hover:shadow-md';
+  };
+
+  const getIconColor = () => {
+    if (isSelected) {
+      return 'text-blue-600';
+    }
+    return 'text-muted-foreground';
+  };
+
+  const getEffectivenessBgColor = (eff: number) => {
+    if (eff >= 80) return 'bg-green-500/10';
+    if (eff >= 60) return 'bg-yellow-500/10';
+    return 'bg-red-500/10';
+  };
+
+  const getEffectivenessColor = (eff: number) => {
+    if (eff >= 80) return 'text-green-600';
+    if (eff >= 60) return 'text-yellow-600';
+    return 'text-red-600';
+  };
 
   return (
-    <Card
+    <div
       className={cn(
-        "cursor-pointer transition-all",
-        isSelected && "ring-2 ring-blue-500"
+        "p-4 rounded-lg cursor-pointer transition-all hover:shadow-md",
+        getCardClasses()
       )}
       onClick={onClick}
     >
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3">
-            <div
-              className={cn(
-                "p-2 rounded-lg transition-colors",
-                isSelected ? "bg-blue-500/10" : "bg-muted"
-              )}
-            >
-              <Icon
-                className={cn(
-                  "h-5 w-5 transition-colors",
-                  isSelected ? "text-blue-600" : "text-muted-foreground"
-                )}
-              />
-            </div>
-            <div className="space-y-1">
-              <h4 className="font-medium">{policy.name}</h4>
-              <p className="text-xs text-muted-foreground">
-                {policy.description}
-              </p>
-              <div className="flex gap-2 mt-2 flex-wrap">
-                {Object.entries(policy.impact).map(([key, value]) => (
-                  <Badge key={key} variant="outline" className="text-xs">
-                    {key}: {value > 0 ? '+' : ''}{value}%
-                  </Badge>
-                ))}
-              </div>
-            </div>
+      {/* Header */}
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div className={cn(
+            "p-2 rounded-lg",
+            isSelected 
+              ? `${getEffectivenessBgColor(effectiveness)} ${getIconColor()}` 
+              : 'bg-muted'
+          )}>
+            {Icon ? <Icon className="h-4 w-4" /> : <Info className="h-4 w-4" />}
           </div>
-          <div className="mt-1">
-            {isSelected ? (
-              <CheckCircle2 className="h-5 w-5 text-blue-500" />
-            ) : (
-              <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30" />
-            )}
-          </div>
+          <h4 className="font-semibold text-sm text-foreground">{policy.name}</h4>
         </div>
-      </CardContent>
-    </Card>
+        
+        <div className="flex items-center gap-1">
+          <Badge variant="outline" className="text-xs">
+            {Math.round(effectiveness)}%
+          </Badge>
+          {isSelected && <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />}
+        </div>
+      </div>
+
+      {/* Description */}
+      <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
+        {policy.description}
+      </p>
+
+      {/* Impact Metrics */}
+      <div className="space-y-2">
+        {Object.entries(policy.impact).map(([key, value]) => (
+          <div key={key} className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground capitalize">{key}:</span>
+            <Badge 
+              variant={value > 0 ? "default" : "destructive"}
+              className="text-xs"
+            >
+              {value > 0 ? '+' : ''}{value}%
+            </Badge>
+          </div>
+        ))}
+      </div>
+
+      {/* Policy Metadata */}
+      <div className="mt-2 pt-2 border-t border-border/50 space-y-1">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-muted-foreground flex items-center gap-1">
+            <TrendingUp className="h-3 w-3" />
+            Impact:
+          </span>
+          <span className="font-medium">{Object.keys(policy.impact).length} areas</span>
+        </div>
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-muted-foreground flex items-center gap-1">
+            <Zap className="h-3 w-3" />
+            Max Effect:
+          </span>
+          <span className="font-medium">
+            {Math.max(...Object.values(policy.impact))}%
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }

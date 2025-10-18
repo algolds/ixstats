@@ -8,6 +8,7 @@ import { useSectionTheme, getGlassClasses } from './theme-utils';
 import { useFormattedAnimatedValue, DEFAULT_ANIMATIONS } from './animation-utils';
 import { parseNumberInput } from '~/lib/format-utils';
 import type { EnhancedInputProps } from './types';
+import { FieldHelpTooltip } from '../../components/help/GovernmentHelpSystem';
 
 interface EnhancedNumberInputProps extends Omit<EnhancedInputProps, 'value' | 'onChange'> {
   value: number | string;
@@ -19,6 +20,8 @@ interface EnhancedNumberInputProps extends Omit<EnhancedInputProps, 'value' | 'o
   placeholder?: string;
   icon?: React.ComponentType<any>;
   acceptText?: boolean; // Allow text input for names, etc.
+  helpContent?: React.ReactNode;
+  helpTitle?: string;
 }
 
 export function EnhancedNumberInput({
@@ -47,7 +50,9 @@ export function EnhancedNumberInput({
   resetValue,
   placeholder,
   icon: Icon,
-  acceptText = false
+  acceptText = false,
+  helpContent,
+  helpTitle
 }: EnhancedNumberInputProps) {
   const [displayValue, setDisplayValue] = useState(value.toString());
   const [isEditing, setIsEditing] = useState(false);
@@ -237,6 +242,12 @@ export function EnhancedNumberInput({
               {Icon && <Icon className="h-4 w-4" />}
               {label}
               {required && <span className="text-red-400">*</span>}
+              {helpContent && (
+                <FieldHelpTooltip 
+                  content={helpContent} 
+                  title={helpTitle || label}
+                />
+              )}
             </label>
           )}
           {description && (

@@ -38,6 +38,10 @@ import {
   MetricCard
 } from '../primitives/enhanced';
 
+// Help System
+import { EconomicsHelpSystem, FieldHelpTooltip } from '../components/help/GovernmentHelpSystem';
+import { EconomicsHelpContent } from '../components/help/EconomicsHelpContent';
+
 // Glass Design System
 import { 
   SectionBase, 
@@ -68,6 +72,8 @@ import { EconomicComponentType, ATOMIC_ECONOMIC_COMPONENTS } from '~/components/
 interface EconomySectionComponentProps extends ExtendedSectionProps {
   onToggleAdvanced?: () => void;
   countryId?: string;
+  mode?: 'create' | 'edit';
+  fieldLocks?: Record<string, import('../components/enhanced/builderConfig').FieldLockConfig>;
 }
 
 interface Metric {
@@ -85,9 +91,14 @@ export function EconomySection({
   onToggleAdvanced,
   referenceCountry,
   className,
-  countryId
+  countryId,
+  mode = 'create',
+  fieldLocks
 }: EconomySectionComponentProps) {
-  
+  const isEditMode = mode === 'edit';
+  const { EDIT_MODE_FIELD_LOCKS } = require('../components/enhanced/builderConfig');
+  const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
+
   // Economy Builder State
   const [isEconomyBuilderOpen, setIsEconomyBuilderOpen] = useState(false);
   const [economyBuilderState, setEconomyBuilderState] = useState<EconomyBuilderState | null>(null);
@@ -400,6 +411,8 @@ export function EconomySection({
         icon={BarChart3}
         showButtons={true}
         format={(value) => Number(value).toFixed(2)}
+        helpContent={EconomicsHelpContent.coreIndicators.content}
+        helpTitle="Gini Coefficient"
       />
 
       <EnhancedSlider
@@ -417,6 +430,8 @@ export function EconomySection({
         tickCount={5}
         showValue={true}
         showRange={true}
+        helpContent={EconomicsHelpContent.fiscalSystem.content}
+        helpTitle="Public Debt Ratio"
       />
 
       {/* Economic Structure Visualization */}
@@ -554,6 +569,7 @@ export function EconomySection({
           ]
         }}
         className={className}
+        helpContent={<EconomicsHelpSystem />}
       >
         <SectionLayout
           basicContent={basicContent}

@@ -189,6 +189,9 @@ export class UserActivityAnalytics {
       // Get country interactions
       const countryInteractions = Array.from(new Set(logs.map(l => l.countryId).filter(Boolean))) as string[];
 
+      // Calculate session-based metrics
+      const sessionMetrics = await this.calculateSessionMetrics(userId, startDate, endDate);
+
       return {
         userId,
         period,
@@ -196,7 +199,7 @@ export class UserActivityAnalytics {
         endDate,
         totalActions,
         uniqueSessions,
-        averageSessionDuration: 0, // TODO: Calculate from session data
+        averageSessionDuration: sessionMetrics.averageSessionDuration,
         peakActivityHour,
         mostActiveDay,
         categoryBreakdown,
@@ -209,7 +212,7 @@ export class UserActivityAnalytics {
         securityEvents,
         suspiciousActivity,
         failedAuthAttempts,
-        dailyActiveMinutes: 0, // TODO: Calculate from session data
+        dailyActiveMinutes: sessionMetrics.dailyActiveMinutes,
         featureUsage,
         countryInteractions,
         activityTrend,
@@ -363,6 +366,88 @@ export class UserActivityAnalytics {
         userId
       });
       throw error;
+    }
+  }
+
+  /**
+   * Calculate session-based metrics
+   */
+  private static async calculateSessionMetrics(
+    userId: string,
+    startDate: Date,
+    endDate: Date
+  ): Promise<{ averageSessionDuration: number; dailyActiveMinutes: number }> {
+    try {
+      // Get all sessions for the user in the period
+      const sessions = await db.userSession.findMany({
+        where: {
+          clerkUserId: userId,
+          createdAt: {
+            gte: startDate,
+            lte: endDate
+          }
+        },
+        orderBy: { createdAt: 'asc' }
+      });
+
+      if (sessions.length === 0) {
+        return {
+          averageSessionDuration: 0,
+          dailyActiveMinutes: 0
+        };
+      }
+
+      // Calculate session durations
+      const sessionDurations: number[] = [];
+      const dailyMinutes: Record<string, number> = {};
+
+      for (const session of sessions) {
+        // Calculate session duration (from createdAt to expiresAt or lastActivity)
+        const sessionStart = session.createdAt.getTime();
+        const sessionEnd = session.expiresAt.getTime();
+        const lastActivityTime = session.lastActivity.getTime();
+
+        // Use the earlier of expiresAt and lastActivity + 30 minutes as session end
+        const effectiveEnd = Math.min(sessionEnd, lastActivityTime + (30 * 60 * 1000));
+        const duration = (effectiveEnd - sessionStart) / 1000 / 60; // Convert to minutes
+
+        // Only count sessions that lasted at least 1 minute
+        if (duration >= 1) {
+          sessionDurations.push(duration);
+
+          // Track daily active minutes
+          const dayKey = session.createdAt.toISOString().split('T')[0];
+          dailyMinutes[dayKey] = (dailyMinutes[dayKey] || 0) + duration;
+        }
+      }
+
+      // Calculate average session duration
+      const averageSessionDuration = sessionDurations.length > 0
+        ? sessionDurations.reduce((sum, d) => sum + d, 0) / sessionDurations.length
+        : 0;
+
+      // Calculate average daily active minutes
+      const totalDays = Object.keys(dailyMinutes).length;
+      const totalMinutes = Object.values(dailyMinutes).reduce((sum, m) => sum + m, 0);
+      const dailyActiveMinutes = totalDays > 0 ? totalMinutes / totalDays : 0;
+
+      return {
+        averageSessionDuration: Math.round(averageSessionDuration),
+        dailyActiveMinutes: Math.round(dailyActiveMinutes)
+      };
+
+    } catch (error) {
+      ErrorLogger.logError(error as Error, {
+        component: 'UserActivityAnalytics',
+        action: 'CALCULATE_SESSION_METRICS',
+        userId
+      });
+
+      // Return zeros on error
+      return {
+        averageSessionDuration: 0,
+        dailyActiveMinutes: 0
+      };
     }
   }
 

@@ -3,7 +3,7 @@
 import React from 'react';
 import { TaxBuilder } from '~/components/tax-system/TaxBuilder';
 import { toast } from 'sonner';
-import type { TaxBuilderState } from '~/types/tax-system';
+import type { TaxBuilderState } from '~/components/tax-system/TaxBuilder';
 import type { EconomicComponentType } from '~/components/economy/atoms/AtomicEconomicComponents';
 import type { EconomicInputs, EconomyBuilderState } from '~/types/economy-builder';
 
@@ -13,6 +13,7 @@ interface TaxSystemStepProps {
   economicInputs: EconomicInputs;
   economyBuilder: EconomyBuilderState;
   selectedComponents: EconomicComponentType[];
+  governmentBuilderData?: any;
   onUpdate: (taxSystem: TaxBuilderState) => Promise<void>;
   onCreate: (taxSystem: TaxBuilderState) => Promise<void>;
   onRefetch: () => Promise<void>;
@@ -24,6 +25,7 @@ export function TaxSystemStep({
   economicInputs,
   economyBuilder,
   selectedComponents,
+  governmentBuilderData,
   onUpdate,
   onCreate,
   onRefetch,
@@ -74,8 +76,10 @@ export function TaxSystemStep({
         economicData={{
           gdp: economicInputs.coreIndicators?.nominalGDP || 0,
           sectors: economyBuilder.structure.sectors ?? economyBuilder.sectors,
-          components: selectedComponents,
+          population: economicInputs.coreIndicators?.totalPopulation || 1000000,
         }}
+        governmentData={governmentBuilderData}
+        enableAutoSync={true}
       />
     </div>
   );

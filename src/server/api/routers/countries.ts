@@ -3433,6 +3433,48 @@ const countriesRouter = createTRPCRouter({
       console.log(`✅ Country created successfully: ${result.name} (ID: ${result.id})`);
       return result;
     }),
+
+  // Get global analytics for dashboard
+  getGlobalAnalytics: publicProcedure.query(async ({ ctx }) => {
+    // Get all countries
+    const countries = await ctx.db.country.findMany({
+      select: {
+        id: true,
+        currentTotalGdp: true,
+        currentGdpPerCapita: true,
+        currentPopulation: true,
+        economicTier: true,
+        adjustedGdpGrowth: true,
+        populationGrowthRate: true
+      }
+    });
+
+    const totalCountries = countries.length;
+    const totalGdp = countries.reduce((sum, c) => sum + (c.currentTotalGdp || 0), 0);
+    const totalPopulation = countries.reduce((sum, c) => sum + (c.currentPopulation || 0), 0);
+    const avgGdpPerCapita = totalPopulation > 0 ? totalGdp / totalPopulation : 0;
+
+    // Calculate average growth rate
+    const totalGrowth = countries.reduce((sum, c) => sum + (c.adjustedGdpGrowth || 0), 0);
+    const avgGrowthRate = totalCountries > 0 ? totalGrowth / totalCountries : 0;
+
+    // Calculate tier distribution
+    const tierDistribution: Record<string, number> = {};
+    countries.forEach(c => {
+      const tier = c.economicTier || 'Unknown';
+      tierDistribution[tier] = (tierDistribution[tier] || 0) + 1;
+    });
+
+    return {
+      totalCountries,
+      totalGdp,
+      totalPopulation,
+      avgGdpPerCapita,
+      avgGrowthRate,
+      tierDistribution,
+      timestamp: new Date()
+    };
+  })
 });
 
 export { countriesRouter };

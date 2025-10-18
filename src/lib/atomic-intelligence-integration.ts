@@ -38,7 +38,7 @@ export interface AtomicGovernmentStability {
 }
 
 // Component stability contributions
-const STABILITY_MODIFIERS: Record<ComponentType, { stability: number; legitimacy: number; capacity: number; policy: number }> = {
+const STABILITY_MODIFIERS: Partial<Record<ComponentType, { stability: number; legitimacy: number; capacity: number; policy: number }>> = {
   // Power Distribution
   [ComponentType.CENTRALIZED_POWER]: { stability: 0.8, legitimacy: 0.7, capacity: 0.9, policy: 0.9 },
   [ComponentType.FEDERAL_SYSTEM]: { stability: 0.7, legitimacy: 0.8, capacity: 0.6, policy: 0.6 },

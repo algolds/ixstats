@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useUser, SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { navigateTo } from "~/lib/url-utils";
+import { useUserCountry } from "~/hooks/useUserCountry";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Globe, 
@@ -79,7 +80,7 @@ const setupIntroSteps = [
 ];
 
 export default function SetupPage() {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded, userProfile, isLoading: profileLoading } = useUserCountry();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<SetupStep>('welcome');
   const [showIntro, setShowIntro] = useState(true);
@@ -91,10 +92,6 @@ export default function SetupPage() {
 
   // TRPC Queries
   const { data: countries, isLoading: countriesLoading } = api.countries.getAll.useQuery();
-  const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
-    undefined,
-    { enabled: !!user?.id }
-  );
 
   // TRPC Mutations
   const linkCountryMutation = api.users.linkCountry.useMutation();

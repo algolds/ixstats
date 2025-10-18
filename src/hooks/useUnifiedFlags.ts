@@ -149,7 +149,6 @@ export function useBulkFlags(countryNames: string[], source: 'irl' | 'wiki' = 'w
         }
         
         // Set cached flags immediately for instant display
-        console.log(`[useBulkFlags] Setting ${Object.keys(cachedFlags).length} cached flags`);
         setFlagUrls(cachedFlags);
       } else {
         uncachedCountries.push(...memoizedCountryNames);
@@ -157,13 +156,11 @@ export function useBulkFlags(countryNames: string[], source: 'irl' | 'wiki' = 'w
       
       // Step 2: Batch fetch uncached flags only if needed
       if (uncachedCountries.length > 0) {
-        console.log(`[useBulkFlags] Batch loading ${uncachedCountries.length} uncached flags`);
         
         const fetchedFlags = await unifiedFlagService.batchGetFlags(uncachedCountries);
         
         // Merge cached and fetched flags
         const finalFlags = { ...cachedFlags, ...fetchedFlags };
-        console.log(`[useBulkFlags] Final flags for ${memoizedCountryNames.length} countries`);
         setFlagUrls(finalFlags);
       }
     } catch (error) {
@@ -233,13 +230,11 @@ export function useFlagPreloader(): UseFlagPreloaderResult {
     setPreloadedCount(0);
 
     try {
-      console.log(`[useFlagPreloader] Preloading ${countryNames.length} flags`);
       
       // Initialize the flag service with these countries (will trigger background downloading)
       unifiedFlagService.prefetchFlags(countryNames);
       
       setPreloadedCount(countryNames.length);
-      console.log(`[useFlagPreloader] Preloading completed for ${countryNames.length} countries`);
     } catch (error) {
       console.error('[useFlagPreloader] Preloading failed:', error);
     } finally {

@@ -1,14 +1,14 @@
 # IxStats Documentation Index
 
-**Version**: 1.1.0 Production Release
-**Last Updated**: October 2025
+**Version**: 1.1.1 Production Release
+**Last Updated**: October 17, 2025
 
 Welcome to the IxStats comprehensive documentation. This index provides quick access to all technical documentation, guides, and architectural specifications.
 
 ## 📚 Documentation Structure
 
 ### Essential Documentation
-- **[Main README](../README.md)** - Project overview, quick start, and commands (v1.1.0)
+- **[Main README](../README.md)** - Project overview, quick start, and commands (v1.1.1)
 - **[CHANGELOG.md](../CHANGELOG.md)** - Version history and release notes (v1.0.0 → v1.1.0) ✨ NEW
 - **[CLAUDE.md](../CLAUDE.md)** - Development guidelines for AI assistance (v1.1.0)
 - **[IMPLEMENTATION_STATUS.md](../IMPLEMENTATION_STATUS.md)** - Feature completion matrix (100% complete) ✨ NEW
@@ -17,7 +17,7 @@ Welcome to the IxStats comprehensive documentation. This index provides quick ac
 - **[DOCUMENTATION_SUMMARY_V1.1.md](./DOCUMENTATION_SUMMARY_V1.1.md)** - Complete documentation overview ✨ NEW
 
 ### Master Documentation (v1.1.0)
-- **[API_REFERENCE.md](./API_REFERENCE.md)** - Complete tRPC API catalog (304 endpoints, 31 routers) ✨ NEW
+- **[API_REFERENCE.md](./API_REFERENCE.md)** - Complete tRPC API catalog (304 endpoints, 36 routers) ✨ NEW
 - **[ATOMIC_COMPONENTS_GUIDE.md](./ATOMIC_COMPONENTS_GUIDE.md)** - Atomic government system guide (106 components) ✨ NEW
 - **[FORMULAS_AND_CALCULATIONS.md](./FORMULAS_AND_CALCULATIONS.md)** - Economic calculation engine (15+ systems) ✨ NEW
 - **[DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md)** - Glass physics UI framework and component library ✨ NEW
@@ -72,7 +72,14 @@ Welcome to the IxStats comprehensive documentation. This index provides quick ac
 
 #### Integration & Security
 - [WIKI_INTEGRATION_ARCHITECTURE.md](./technical/WIKI_INTEGRATION_ARCHITECTURE.md) - MediaWiki integration
+- [WIKI_CACHE_OPTIMIZATION.md](./technical/WIKI_CACHE_OPTIMIZATION.md) - Wiki cache performance optimization
 - [SECURITY_SYSTEM_IMPLEMENTATION.md](./technical/SECURITY_SYSTEM_IMPLEMENTATION.md) - Defense system
+
+#### Infrastructure & Performance
+- [IMAGE_REPOSITORY_INTEGRATION.md](./technical/IMAGE_REPOSITORY_INTEGRATION.md) - Image repository architecture
+- [IMAGE_UPLOAD_IMPLEMENTATION.md](./technical/IMAGE_UPLOAD_IMPLEMENTATION.md) - Image upload system
+- [LAZY_LOADING_IMPLEMENTATION.md](./technical/LAZY_LOADING_IMPLEMENTATION.md) - Lazy loading optimization
+- [LOG_CLEANUP_SYSTEM.md](./technical/LOG_CLEANUP_SYSTEM.md) - Automated log cleanup
 
 ### Root-Level Docs (`/docs/technical/` and `/docs/`)
 - [EMBASSY_NETWORK_SYSTEM.md](./technical/EMBASSY_NETWORK_SYSTEM.md) - Embassy management
@@ -119,13 +126,13 @@ Historical implementation summaries and completed fixes (reference only)
 
 ---
 
-## 🚀 Current Status (v1.1.0)
+## 🚀 Current Status (v1.1.1)
 
-**Overall Completion: 100% (Grade A+ - Documentation Complete)**
+**Overall Completion: 100% (Grade A+ - v1.1.1 Complete)**
 
 ### Production-Ready Infrastructure
-- ✅ 22 tRPC routers with 304 endpoints (162 queries, 142 mutations)
-- ✅ 110 database models across 6 migrations
+- ✅ 36 tRPC routers with 304 endpoints (162 queries, 142 mutations)
+- ✅ 131 database models across 9 migrations
 - ✅ Authentication with 13 security fixes applied
 - ✅ 62.9% live data integration (all critical paths operational)
 - ✅ 100+ UI components with glass physics design
@@ -152,7 +159,7 @@ Historical implementation summaries and completed fixes (reference only)
 
 ## 📝 Documentation Maintenance
 
-**Last Major Update**: October 2025 (v1.1.0)
+**Last Major Update**: October 17, 2025 (v1.1.1)
 - ✅ Added 22 comprehensive documentation guides (8,000+ lines)
 - ✅ Complete API reference for all 304 endpoints
 - ✅ Atomic component guide for 106 components

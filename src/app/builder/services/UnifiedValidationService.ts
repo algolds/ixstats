@@ -696,93 +696,561 @@ export class UnifiedValidationService {
   // For brevity, I'll include placeholder implementations for the remaining methods
 
   private validateTaxEconomicImpact(context: ValidationContext): ValidationResult {
+    const { taxSystem, economyBuilder } = context;
+
+    if (!taxSystem || !economyBuilder) {
+      return {
+        ruleId: 'tax-economic-impact',
+        passed: true,
+        severity: 'low',
+        message: 'Insufficient data for tax impact validation',
+        details: ['Either tax or economy system is not configured'],
+        suggestions: ['Configure both systems for impact validation'],
+        impact: { tax: 0, economic: 0 }
+      };
+    }
+
+    const issues: string[] = [];
+    const positives: string[] = [];
+
+    // Calculate total tax burden
+    const totalTaxRate = taxSystem.taxCategories?.reduce((sum, cat) => sum + (cat.baseRate || 0), 0) || 0;
+    const avgTaxRate = totalTaxRate / (taxSystem.taxCategories?.length || 1);
+
+    // Check if tax rates support economic growth
+    if (avgTaxRate > 40) {
+      issues.push(`Average tax rate (${avgTaxRate.toFixed(1)}%) is high and may hinder growth`);
+    } else if (avgTaxRate >= 25 && avgTaxRate <= 35) {
+      positives.push(`Average tax rate (${avgTaxRate.toFixed(1)}%) is in optimal range for balanced growth`);
+    }
+
+    // Check progressive tax alignment with economy
+    const hasProgressiveTax = taxSystem.progressiveTax;
+    const hasSocialMarket = economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.SOCIAL_MARKET_ECONOMY);
+
+    if (hasSocialMarket && !hasProgressiveTax) {
+      issues.push('Social market economy would benefit from progressive taxation');
+    } else if (hasSocialMarket && hasProgressiveTax) {
+      positives.push('Progressive tax system aligns well with social market economy');
+    }
+
+    const passed = issues.length === 0;
+    const severity: 'low' | 'medium' | 'high' = issues.length > 2 ? 'high' : issues.length > 0 ? 'medium' : 'low';
+
     return {
       ruleId: 'tax-economic-impact',
-      passed: true,
-      severity: 'low',
-      message: 'Tax economic impact validation not implemented',
-      details: ['Placeholder implementation'],
-      suggestions: ['Implement detailed tax impact analysis'],
-      impact: { tax: 0, economic: 0 }
+      passed,
+      severity,
+      message: passed ?
+        `Tax system supports economic objectives (${positives.length} alignments)` :
+        `${issues.length} tax-economic alignment issues found`,
+      details: [...issues, ...positives],
+      suggestions: issues.length > 0 ? [
+        'Adjust tax rates to support economic growth',
+        'Align tax structure with economic model',
+        'Consider phased tax policy changes'
+      ] : [
+        'Maintain current tax-economic alignment',
+        'Monitor tax efficiency and compliance'
+      ],
+      impact: {
+        tax: passed ? 5 : -issues.length * 3,
+        economic: passed ? 8 : -issues.length * 4,
+        overall: passed ? 6 : -issues.length * 3
+      }
     };
   }
 
   private validateCrossSystemSynergy(context: ValidationContext): ValidationResult {
+    const { economyBuilder, governmentComponents, taxSystem } = context;
+
+    if (!economyBuilder || governmentComponents.length === 0 || !taxSystem) {
+      return {
+        ruleId: 'cross-system-synergy',
+        passed: true,
+        severity: 'low',
+        message: 'Insufficient data for synergy validation',
+        details: ['All systems must be configured for synergy analysis'],
+        suggestions: ['Complete all system configurations'],
+        impact: { overall: 0 }
+      };
+    }
+
+    const synergies: string[] = [];
+    const missed: string[] = [];
+
+    // Check economy-government synergies
+    if (economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.INNOVATION_ECONOMY) &&
+        governmentComponents.includes(ComponentType.TECHNOCRATIC_PROCESS)) {
+      synergies.push('Innovation economy + technocratic government creates strong R&D synergy');
+    }
+
+    if (economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.FREE_MARKET_SYSTEM) &&
+        governmentComponents.includes(ComponentType.DEMOCRATIC_PROCESS)) {
+      synergies.push('Free market + democratic process creates optimal stability synergy');
+    }
+
+    // Check economy-tax synergies
+    const corporateTax = taxSystem.taxCategories?.find(cat => cat.categoryName.includes('Corporate'));
+    if (economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.INNOVATION_ECONOMY) &&
+        corporateTax && corporateTax.baseRate && corporateTax.baseRate <= 20) {
+      synergies.push('Innovation economy + low corporate tax creates investment synergy');
+    }
+
+    // Check for missed synergies
+    if (economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.SOCIAL_MARKET_ECONOMY) &&
+        !taxSystem.progressiveTax) {
+      missed.push('Social market economy without progressive tax misses equity synergy');
+    }
+
+    const passed = synergies.length >= 2 && missed.length === 0;
+    const severity: 'low' | 'medium' | 'high' = missed.length > 2 ? 'high' : missed.length > 0 ? 'medium' : 'low';
+
     return {
       ruleId: 'cross-system-synergy',
-      passed: true,
-      severity: 'low',
-      message: 'Cross-system synergy validation not implemented',
-      details: ['Placeholder implementation'],
-      suggestions: ['Implement comprehensive synergy analysis'],
-      impact: { overall: 0 }
+      passed,
+      severity,
+      message: `Found ${synergies.length} synergies and ${missed.length} missed opportunities`,
+      details: [...synergies, ...missed],
+      suggestions: missed.length > 0 ? [
+        'Optimize system combinations for better synergies',
+        'Review component selections across all systems',
+        'Consider adding synergistic components'
+      ] : [
+        'Excellent synergy optimization',
+        'Maintain current system alignment'
+      ],
+      impact: {
+        overall: synergies.length * 5 - missed.length * 3
+      }
     };
   }
 
   private validatePolicyCoherence(context: ValidationContext): ValidationResult {
+    const { economyBuilder, governmentComponents, taxSystem } = context;
+
+    if (!economyBuilder || !taxSystem) {
+      return {
+        ruleId: 'policy-coherence',
+        passed: true,
+        severity: 'low',
+        message: 'Insufficient data for policy coherence validation',
+        details: ['Economy and tax systems must be configured'],
+        suggestions: ['Complete system configurations'],
+        impact: { overall: 0 }
+      };
+    }
+
+    const coherent: string[] = [];
+    const incoherent: string[] = [];
+
+    // Check free market coherence
+    const hasFreeMarket = economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.FREE_MARKET_SYSTEM);
+    const hasFlexibleLabor = economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.FLEXIBLE_LABOR);
+    const hasMinimalGov = governmentComponents.includes(ComponentType.MINIMAL_GOVERNMENT);
+
+    if (hasFreeMarket && hasFlexibleLabor) {
+      coherent.push('Free market and flexible labor policies are coherent');
+    }
+
+    if (hasFreeMarket && !hasMinimalGov && governmentComponents.length > 0) {
+      incoherent.push('Free market economy with extensive government intervention lacks coherence');
+    }
+
+    // Check social market coherence
+    const hasSocialMarket = economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.SOCIAL_MARKET_ECONOMY);
+    const hasProtectedWorkers = economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.PROTECTED_WORKERS);
+    const hasSocialDemocracy = governmentComponents.includes(ComponentType.SOCIAL_DEMOCRACY);
+
+    if (hasSocialMarket && hasProtectedWorkers && hasSocialDemocracy) {
+      coherent.push('Social market economy with worker protections and social democracy is highly coherent');
+    }
+
+    if (hasSocialMarket && !taxSystem.progressiveTax) {
+      incoherent.push('Social market economy without progressive taxation lacks policy coherence');
+    }
+
+    // Check innovation economy coherence
+    const hasInnovation = economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.INNOVATION_ECONOMY);
+    const hasRnD = economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.RD_INVESTMENT);
+    const corporateTax = taxSystem.taxCategories?.find(cat => cat.categoryName.includes('Corporate'));
+
+    if (hasInnovation && hasRnD && corporateTax && corporateTax.baseRate && corporateTax.baseRate <= 20) {
+      coherent.push('Innovation economy with R&D investment and low corporate tax is coherent');
+    }
+
+    if (hasInnovation && corporateTax && corporateTax.baseRate && corporateTax.baseRate > 30) {
+      incoherent.push('Innovation economy with high corporate tax lacks coherence');
+    }
+
+    const passed = incoherent.length === 0;
+    const severity: 'low' | 'medium' | 'high' = incoherent.length > 2 ? 'high' : incoherent.length > 0 ? 'medium' : 'low';
+
     return {
       ruleId: 'policy-coherence',
-      passed: true,
-      severity: 'low',
-      message: 'Policy coherence validation not implemented',
-      details: ['Placeholder implementation'],
-      suggestions: ['Implement policy coherence analysis'],
-      impact: { overall: 0 }
+      passed,
+      severity,
+      message: passed ?
+        `Policy coherence is strong (${coherent.length} coherent policies)` :
+        `${incoherent.length} policy incoherence issues detected`,
+      details: [...coherent, ...incoherent],
+      suggestions: incoherent.length > 0 ? [
+        'Align economic, government, and tax policies',
+        'Review conflicting policy choices',
+        'Consider phased policy alignment'
+      ] : [
+        'Maintain excellent policy coherence',
+        'Continue coherent policy development'
+      ],
+      impact: {
+        overall: coherent.length * 4 - incoherent.length * 6
+      }
     };
   }
 
   private validateImplementationComplexity(context: ValidationContext): ValidationResult {
+    const { economyBuilder, governmentComponents, taxSystem, userPreferences } = context;
+
+    // Calculate overall complexity score
+    let complexityScore = 0;
+    const complexityFactors: string[] = [];
+
+    // Economy complexity
+    const economicComponents = economyBuilder?.selectedAtomicComponents.length || 0;
+    complexityScore += economicComponents * 5;
+    if (economicComponents > 8) {
+      complexityFactors.push(`High number of economic components (${economicComponents}) increases complexity`);
+    } else if (economicComponents >= 4 && economicComponents <= 6) {
+      complexityFactors.push(`Optimal number of economic components (${economicComponents})`);
+    }
+
+    // Government complexity
+    const govComponents = governmentComponents.length;
+    complexityScore += govComponents * 6;
+    if (govComponents > 10) {
+      complexityFactors.push(`High number of government components (${govComponents}) increases complexity`);
+    } else if (govComponents >= 5 && govComponents <= 8) {
+      complexityFactors.push(`Balanced government structure (${govComponents} components)`);
+    }
+
+    // Tax complexity
+    const taxCategories = taxSystem?.taxCategories?.length || 0;
+    complexityScore += taxCategories * 8;
+    if (taxCategories > 7) {
+      complexityFactors.push(`Complex tax structure (${taxCategories} categories) may reduce efficiency`);
+    } else if (taxCategories >= 3 && taxCategories <= 5) {
+      complexityFactors.push(`Well-structured tax system (${taxCategories} categories)`);
+    }
+
+    // Check user preference for complexity
+    const desiredComplexity = userPreferences?.complexity || 'medium';
+    const thresholds = {
+      low: 50,
+      medium: 100,
+      high: 150
+    };
+
+    const passed = complexityScore <= thresholds[desiredComplexity];
+    const severity: 'low' | 'medium' | 'high' = complexityScore > thresholds.high ? 'high' :
+                                                 complexityScore > thresholds.medium ? 'medium' : 'low';
+
     return {
       ruleId: 'implementation-complexity',
-      passed: true,
-      severity: 'low',
-      message: 'Implementation complexity validation not implemented',
-      details: ['Placeholder implementation'],
-      suggestions: ['Implement complexity analysis'],
-      impact: { overall: 0 }
+      passed,
+      severity,
+      message: passed ?
+        `Implementation complexity (${complexityScore}) is manageable for ${desiredComplexity} complexity preference` :
+        `Implementation complexity (${complexityScore}) exceeds ${desiredComplexity} complexity threshold (${thresholds[desiredComplexity]})`,
+      details: complexityFactors,
+      suggestions: !passed ? [
+        'Simplify system by reducing number of components',
+        'Focus on core essential components first',
+        'Consider phased implementation approach',
+        'Consolidate overlapping components'
+      ] : [
+        'Complexity is well-managed',
+        'Current structure is sustainable'
+      ],
+      impact: {
+        overall: passed ? 5 : -((complexityScore - thresholds[desiredComplexity]) / 10)
+      }
     };
   }
 
   private validateEconomicGrowthPotential(context: ValidationContext): ValidationResult {
+    const { economyBuilder, governmentComponents, taxSystem, userPreferences } = context;
+
+    if (!economyBuilder) {
+      return {
+        ruleId: 'economic-growth-potential',
+        passed: true,
+        severity: 'low',
+        message: 'Insufficient data for growth potential validation',
+        details: ['Economy builder must be configured'],
+        suggestions: ['Configure economy builder'],
+        impact: { economic: 0 }
+      };
+    }
+
+    let growthScore = 50; // Base growth potential
+    const growthFactors: string[] = [];
+
+    // Check for growth-oriented components
+    if (economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.INNOVATION_ECONOMY)) {
+      growthScore += 15;
+      growthFactors.push('Innovation economy provides strong growth foundation (+15)');
+    }
+
+    if (economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.RD_INVESTMENT)) {
+      growthScore += 10;
+      growthFactors.push('R&D investment supports long-term growth (+10)');
+    }
+
+    if (economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.EXPORT_ORIENTED)) {
+      growthScore += 12;
+      growthFactors.push('Export orientation drives growth through international markets (+12)');
+    }
+
+    if (economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.FREE_MARKET_SYSTEM)) {
+      growthScore += 8;
+      growthFactors.push('Free market system enables dynamic growth (+8)');
+    }
+
+    // Check for government support
+    if (governmentComponents.includes(ComponentType.TECHNOCRATIC_PROCESS)) {
+      growthScore += 10;
+      growthFactors.push('Technocratic government supports efficient growth policies (+10)');
+    }
+
+    if (governmentComponents.includes(ComponentType.DIGITAL_GOVERNMENT)) {
+      growthScore += 8;
+      growthFactors.push('Digital government infrastructure enables modern growth (+8)');
+    }
+
+    // Check tax environment
+    const corporateTax = taxSystem?.taxCategories?.find(cat => cat.categoryName.includes('Corporate'));
+    if (corporateTax && corporateTax.baseRate && corporateTax.baseRate <= 20) {
+      growthScore += 12;
+      growthFactors.push('Competitive corporate tax rate attracts investment (+12)');
+    } else if (corporateTax && corporateTax.baseRate && corporateTax.baseRate > 35) {
+      growthScore -= 10;
+      growthFactors.push('High corporate tax rate may hinder growth (-10)');
+    }
+
+    // Check if growth focus is desired
+    const wantsGrowth = userPreferences?.growthFocus ?? true;
+    const passed = wantsGrowth ? growthScore >= 70 : growthScore >= 50;
+    const severity: 'low' | 'medium' | 'high' = growthScore < 50 ? 'high' : growthScore < 70 ? 'medium' : 'low';
+
     return {
       ruleId: 'economic-growth-potential',
-      passed: true,
-      severity: 'low',
-      message: 'Economic growth potential validation not implemented',
-      details: ['Placeholder implementation'],
-      suggestions: ['Implement growth potential analysis'],
-      impact: { economic: 0 }
+      passed,
+      severity,
+      message: `Economic growth potential: ${growthScore}/100`,
+      details: growthFactors,
+      suggestions: !passed ? [
+        'Add growth-oriented economic components',
+        'Implement pro-growth tax policies',
+        'Strengthen innovation and R&D support',
+        'Consider export-oriented strategies'
+      ] : [
+        'Strong growth potential established',
+        'Maintain growth-supporting policies'
+      ],
+      impact: {
+        economic: growthScore - 50 // Impact relative to baseline
+      }
     };
   }
 
   private validateSocialEquityBalance(context: ValidationContext): ValidationResult {
+    const { economyBuilder, governmentComponents, taxSystem, userPreferences } = context;
+
+    if (!economyBuilder || !taxSystem) {
+      return {
+        ruleId: 'social-equity-balance',
+        passed: true,
+        severity: 'low',
+        message: 'Insufficient data for equity balance validation',
+        details: ['Economy and tax systems must be configured'],
+        suggestions: ['Complete system configurations'],
+        impact: { overall: 0 }
+      };
+    }
+
+    let equityScore = 50; // Base equity score
+    const equityFactors: string[] = [];
+
+    // Check for equity-oriented components
+    if (economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.SOCIAL_MARKET_ECONOMY)) {
+      equityScore += 15;
+      equityFactors.push('Social market economy promotes equity (+15)');
+    }
+
+    if (economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.PROTECTED_WORKERS)) {
+      equityScore += 12;
+      equityFactors.push('Worker protections support social equity (+12)');
+    }
+
+    if (economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.UNION_BASED)) {
+      equityScore += 10;
+      equityFactors.push('Union-based labor supports worker rights and equity (+10)');
+    }
+
+    // Check government support for equity
+    if (governmentComponents.includes(ComponentType.SOCIAL_DEMOCRACY)) {
+      equityScore += 15;
+      equityFactors.push('Social democracy framework prioritizes equity (+15)');
+    }
+
+    if (governmentComponents.includes(ComponentType.WELFARE_STATE)) {
+      equityScore += 12;
+      equityFactors.push('Welfare state provides safety net for equity (+12)');
+    }
+
+    if (governmentComponents.includes(ComponentType.UNIVERSAL_HEALTHCARE)) {
+      equityScore += 10;
+      equityFactors.push('Universal healthcare reduces inequality (+10)');
+    }
+
+    // Check tax progressivity
+    if (taxSystem.progressiveTax) {
+      equityScore += 15;
+      equityFactors.push('Progressive tax system promotes income equity (+15)');
+    } else {
+      equityScore -= 10;
+      equityFactors.push('Lack of progressive taxation reduces equity (-10)');
+    }
+
+    // Balance with growth
+    const hasGrowthComponents = economyBuilder.selectedAtomicComponents.some(c =>
+      [EconomicComponentType.INNOVATION_ECONOMY, EconomicComponentType.FREE_MARKET_SYSTEM].includes(c)
+    );
+
+    if (equityScore > 80 && !hasGrowthComponents) {
+      equityFactors.push('Warning: High equity focus without growth components may limit economic dynamism');
+    }
+
+    const wantsEquity = userPreferences?.equityFocus ?? true;
+    const passed = wantsEquity ? equityScore >= 65 : equityScore >= 40;
+    const severity: 'low' | 'medium' | 'high' = equityScore < 40 ? 'high' : equityScore < 60 ? 'medium' : 'low';
+
     return {
       ruleId: 'social-equity-balance',
-      passed: true,
-      severity: 'low',
-      message: 'Social equity balance validation not implemented',
-      details: ['Placeholder implementation'],
-      suggestions: ['Implement equity balance analysis'],
-      impact: { overall: 0 }
+      passed,
+      severity,
+      message: `Social equity balance score: ${equityScore}/100`,
+      details: equityFactors,
+      suggestions: !passed ? [
+        'Strengthen social safety nets',
+        'Implement progressive taxation',
+        'Add worker protection policies',
+        'Balance equity with economic growth'
+      ] : [
+        'Good equity-growth balance achieved',
+        'Maintain current social policies'
+      ],
+      impact: {
+        overall: (equityScore - 50) / 2
+      }
     };
   }
 
   private validateEnvironmentalSustainability(context: ValidationContext): ValidationResult {
+    const { economyBuilder, governmentComponents } = context;
+
+    if (!economyBuilder) {
+      return {
+        ruleId: 'environmental-sustainability',
+        passed: true,
+        severity: 'low',
+        message: 'Insufficient data for environmental validation',
+        details: ['Economy builder must be configured'],
+        suggestions: ['Configure economy builder'],
+        impact: { overall: 0 }
+      };
+    }
+
+    let sustainabilityScore = 40; // Base sustainability
+    const sustainabilityFactors: string[] = [];
+
+    // Check for sustainability-oriented components
+    if (economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.SUSTAINABLE_DEVELOPMENT)) {
+      sustainabilityScore += 20;
+      sustainabilityFactors.push('Sustainable development commitment (+20)');
+    }
+
+    if (economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.RENEWABLE_ENERGY)) {
+      sustainabilityScore += 15;
+      sustainabilityFactors.push('Renewable energy focus reduces carbon footprint (+15)');
+    }
+
+    if (economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.GREEN_TECHNOLOGY)) {
+      sustainabilityScore += 12;
+      sustainabilityFactors.push('Green technology innovation (+12)');
+    }
+
+    if (economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.CIRCULAR_ECONOMY)) {
+      sustainabilityScore += 10;
+      sustainabilityFactors.push('Circular economy reduces waste (+10)');
+    }
+
+    // Check government environmental policies
+    if (governmentComponents.includes(ComponentType.ENVIRONMENTAL_PROTECTION)) {
+      sustainabilityScore += 15;
+      sustainabilityFactors.push('Environmental protection policies (+15)');
+    }
+
+    if (governmentComponents.includes(ComponentType.ENVIRONMENTAL_FOCUS)) {
+      sustainabilityScore += 12;
+      sustainabilityFactors.push('Environmental focus in governance (+12)');
+    }
+
+    // Check for conflicting components
+    if (economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.EXTRACTION_FOCUSED)) {
+      sustainabilityScore -= 15;
+      sustainabilityFactors.push('Extraction-focused economy has environmental costs (-15)');
+    }
+
+    if (economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.MANUFACTURING_LED) &&
+        !economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.GREEN_TECHNOLOGY)) {
+      sustainabilityScore -= 8;
+      sustainabilityFactors.push('Manufacturing without green tech may impact environment (-8)');
+    }
+
+    const passed = sustainabilityScore >= 60;
+    const severity: 'low' | 'medium' | 'high' = sustainabilityScore < 40 ? 'high' : sustainabilityScore < 60 ? 'medium' : 'low';
+
     return {
       ruleId: 'environmental-sustainability',
-      passed: true,
-      severity: 'low',
-      message: 'Environmental sustainability validation not implemented',
-      details: ['Placeholder implementation'],
-      suggestions: ['Implement environmental analysis'],
-      impact: { overall: 0 }
+      passed,
+      severity,
+      message: `Environmental sustainability score: ${sustainabilityScore}/100`,
+      details: sustainabilityFactors,
+      suggestions: !passed ? [
+        'Add sustainable development components',
+        'Transition to renewable energy',
+        'Implement circular economy practices',
+        'Strengthen environmental regulations'
+      ] : [
+        'Good environmental sustainability established',
+        'Continue green economy development'
+      ],
+      impact: {
+        overall: (sustainabilityScore - 40) / 3
+      }
     };
   }
 
   // Helper methods
-  private getEconomicComponentDefinition(componentType: EconomicComponentType): any {
-    // This would reference the actual component definitions
-    return null; // Placeholder
+  private getEconomicComponentDefinition(componentType: EconomicComponentType) {
+    try {
+      const { ATOMIC_ECONOMIC_COMPONENTS } = require('~/components/economy/atoms/AtomicEconomicComponents');
+      return ATOMIC_ECONOMIC_COMPONENTS[componentType] || null;
+    } catch (error) {
+      console.error('Failed to load economic component definitions:', error);
+      return null;
+    }
   }
 
   private assessGovernmentComponentFeasibility(component: ComponentType): { isFeasible: boolean; reason: string } {

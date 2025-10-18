@@ -21,8 +21,14 @@ import {
 } from '../components/glass/SectionBase';
 import { FormGrid } from '../components/glass/ProgressiveViews';
 
+// Help System
+import { EconomicsHelpSystem } from '../components/help/GovernmentHelpSystem';
+import { EconomicsHelpContent } from '../components/help/EconomicsHelpContent';
+
 interface LaborEmploymentSectionProps extends ExtendedSectionProps {
   onToggleAdvanced?: () => void;
+  mode?: 'create' | 'edit';
+  fieldLocks?: Record<string, import('../components/enhanced/builderConfig').FieldLockConfig>;
 }
 
 interface Metric {
@@ -39,8 +45,15 @@ export function LaborEmploymentSection({
   showAdvanced,
   onToggleAdvanced,
   referenceCountry,
-  className
+  className,
+  mode = 'create',
+  fieldLocks
 }: LaborEmploymentSectionProps) {
+  const isEditMode = mode === 'edit';
+  const { EDIT_MODE_FIELD_LOCKS } = require('../components/enhanced/builderConfig');
+  const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
+  const { FieldLockIndicator } = require('../components/FieldLockIndicator');
+
   const laborEmployment = inputs.laborEmployment;
   const totalPopulation = inputs.coreIndicators.totalPopulation;
   
@@ -118,59 +131,77 @@ export function LaborEmploymentSection({
   // Basic view content - Essential labor metrics
   const basicContent = (
     <>
-      <EnhancedSlider
-        label="Unemployment Rate"
-        description="Percentage of labor force without employment"
-        value={Number(laborEmployment.unemploymentRate) || 0}
-        onChange={(value) => handleLaborChange('unemploymentRate', Number(value))}
-        min={0}
-        max={25}
-        step={0.1}
-        precision={1}
-        unit="%"
-        sectionId="labor"
-        icon={Briefcase}
-        showTicks={true}
-        tickCount={6}
-        showValue={true}
-        showRange={true}
-        referenceValue={referenceCountry?.unemploymentRate}
-        referenceLabel={referenceCountry?.name}
-        showComparison={true}
-      />
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <EnhancedSlider
+            label="Unemployment Rate"
+            description={locks.unemploymentRate?.isLocked ? `🔒 ${locks.unemploymentRate.reason}` : "Percentage of labor force without employment"}
+            value={Number(laborEmployment.unemploymentRate) || 0}
+            onChange={(value) => handleLaborChange('unemploymentRate', Number(value))}
+            min={0}
+            max={25}
+            step={0.1}
+            precision={1}
+            unit="%"
+            sectionId="labor"
+            icon={Briefcase}
+            showTicks={true}
+            tickCount={6}
+            showValue={true}
+            showRange={true}
+            referenceValue={referenceCountry?.unemploymentRate}
+            referenceLabel={referenceCountry?.name}
+            showComparison={true}
+            disabled={locks.unemploymentRate?.isLocked ?? false}
+          />
+          {isEditMode && <FieldLockIndicator fieldLock={locks.unemploymentRate} />}
+        </div>
+      </div>
 
-      <EnhancedSlider
-        label="Labor Force Participation"
-        description="Percentage of working-age population in labor force"
-        value={Number(laborEmployment.laborForceParticipationRate) || 0}
-        onChange={(value) => handleLaborChange('laborForceParticipationRate', Number(value))}
-        min={30}
-        max={90}
-        step={0.5}
-        precision={1}
-        unit="%"
-        sectionId="labor"
-        icon={Users}
-        showTicks={true}
-        tickCount={7}
-        showValue={true}
-        showRange={true}
-      />
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <EnhancedSlider
+            label="Labor Force Participation"
+            description={locks.laborForceParticipationRate?.isLocked ? `🔒 ${locks.laborForceParticipationRate.reason}` : "Percentage of working-age population in labor force"}
+            value={Number(laborEmployment.laborForceParticipationRate) || 0}
+            onChange={(value) => handleLaborChange('laborForceParticipationRate', Number(value))}
+            min={30}
+            max={90}
+            step={0.5}
+            precision={1}
+            unit="%"
+            sectionId="labor"
+            icon={Users}
+            showTicks={true}
+            tickCount={7}
+            showValue={true}
+            showRange={true}
+            disabled={locks.laborForceParticipationRate?.isLocked ?? false}
+          />
+          {isEditMode && <FieldLockIndicator fieldLock={locks.laborForceParticipationRate} />}
+        </div>
+      </div>
 
-      <EnhancedNumberInput
-        label="Average Annual Income"
-        description="Mean yearly earnings across all employed workers"
-        value={Number(laborEmployment.averageAnnualIncome) || 0}
-        onChange={(value) => handleLaborChange('averageAnnualIncome', Number(value))}
-        min={5000}
-        max={120000}
-        step={1000}
-        unit=" $/year"
-        sectionId="labor"
-        icon={DollarSign}
-        showButtons={true}
-        format={(value) => `$${Number(value).toLocaleString()}`}
-      />
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <EnhancedNumberInput
+            label="Average Annual Income"
+            description={locks.averageAnnualIncome?.isLocked ? `🔒 ${locks.averageAnnualIncome.reason}` : "Mean yearly earnings across all employed workers"}
+            value={Number(laborEmployment.averageAnnualIncome) || 0}
+            onChange={(value) => handleLaborChange('averageAnnualIncome', Number(value))}
+            min={5000}
+            max={120000}
+            step={1000}
+            unit=" $/year"
+            sectionId="labor"
+            icon={DollarSign}
+            showButtons={true}
+            format={(value) => `$${Number(value).toLocaleString()}`}
+            disabled={locks.averageAnnualIncome?.isLocked ?? false}
+          />
+          {isEditMode && <FieldLockIndicator fieldLock={locks.averageAnnualIncome} />}
+        </div>
+      </div>
 
       {/* Basic visualization */}
       <div className="md:col-span-2">
@@ -227,43 +258,55 @@ export function LaborEmploymentSection({
         showRange={true}
       />
 
-      <EnhancedNumberInput
-        label="Total Workforce"
-        description="Total number of people employed or seeking employment"
-        value={Number(laborEmployment.totalWorkforce) || 0}
-        onChange={(value) => handleLaborChange('totalWorkforce', Number(value))}
-        min={Number(totalPopulation) * 0.3}
-        max={Number(totalPopulation) * 0.8}
-        step={1000}
-        unit=" people"
-        sectionId="labor"
-        icon={Users}
-        showButtons={true}
-        format={(value) => {
-          const num = Number(value);
-          if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
-          if (num >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
-          return num.toString();
-        }}
-      />
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <EnhancedNumberInput
+            label="Total Workforce"
+            description={locks.totalWorkforce?.isLocked ? `🔒 ${locks.totalWorkforce.reason}` : "Total number of people employed or seeking employment"}
+            value={Number(laborEmployment.totalWorkforce) || 0}
+            onChange={(value) => handleLaborChange('totalWorkforce', Number(value))}
+            min={Number(totalPopulation) * 0.3}
+            max={Number(totalPopulation) * 0.8}
+            step={1000}
+            unit=" people"
+            sectionId="labor"
+            icon={Users}
+            showButtons={true}
+            format={(value) => {
+              const num = Number(value);
+              if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
+              if (num >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
+              return num.toString();
+            }}
+            disabled={locks.totalWorkforce?.isLocked ?? false}
+          />
+          {isEditMode && <FieldLockIndicator fieldLock={locks.totalWorkforce} />}
+        </div>
+      </div>
 
-      <EnhancedSlider
-        label="Employment Rate"
-        description="Percentage of labor force that is employed"
-        value={Number(laborEmployment.employmentRate) || 0}
-        onChange={(value) => handleLaborChange('employmentRate', Number(value))}
-        min={50}
-        max={100}
-        step={0.1}
-        precision={1}
-        unit="%"
-        sectionId="labor"
-        icon={TrendingUp}
-        showTicks={true}
-        tickCount={6}
-        showValue={true}
-        showRange={true}
-      />
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <EnhancedSlider
+            label="Employment Rate"
+            description={locks.employmentRate?.isLocked ? `🔒 ${locks.employmentRate.reason}` : "Percentage of labor force that is employed"}
+            value={Number(laborEmployment.employmentRate) || 0}
+            onChange={(value) => handleLaborChange('employmentRate', Number(value))}
+            min={50}
+            max={100}
+            step={0.1}
+            precision={1}
+            unit="%"
+            sectionId="labor"
+            icon={TrendingUp}
+            showTicks={true}
+            tickCount={6}
+            showValue={true}
+            showRange={true}
+            disabled={locks.employmentRate?.isLocked ?? false}
+          />
+          {isEditMode && <FieldLockIndicator fieldLock={locks.employmentRate} />}
+        </div>
+      </div>
 
       {/* Labor Policy Toggles */}
       <div className="md:col-span-2 space-y-4">
@@ -387,6 +430,7 @@ export function LaborEmploymentSection({
       }}
       className={className}
       hideViewToggle={true}
+      helpContent={<EconomicsHelpSystem />}
     >
       <SectionLayout
         basicContent={basicContent}

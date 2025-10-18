@@ -1,6 +1,16 @@
 # Database Management Guide
 
+**Version**: v1.1.1
+**Last Updated**: October 17, 2025
+
 This guide covers database synchronization between development and production environments.
+
+## Database Statistics
+
+- **Total Models**: 131 models
+- **Total Migrations**: 9 migrations
+- **Latest Migration**: `20251017203807_add_atomic_integration`
+- **Database Type**: SQLite (dev/prod), PostgreSQL (production-ready)
 
 ## Overview
 

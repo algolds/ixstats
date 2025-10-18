@@ -349,5 +349,54 @@ export const intelligenceBriefingRouter = createTRPCRouter({
     .mutation(async ({ ctx }) => {
       await calculateIntelligence({ forceRecalculate: true });
       return { success: true, message: 'Intelligence recalculated for all countries' };
-    })
+    }),
+
+  // Get global intelligence summary for dashboard
+  getGlobalSummary: publicProcedure.query(async ({ ctx }) => {
+    // Get active crises from SDI system
+    const activeCrises = await ctx.db.crisisEvent.count({
+      where: { responseStatus: { not: 'resolved' } }
+    });
+
+    // Get critical crises
+    const criticalCrises = await ctx.db.crisisEvent.count({
+      where: {
+        responseStatus: { not: 'resolved' },
+        severity: 'critical'
+      }
+    });
+
+    // Get active diplomatic missions
+    const diplomaticMissions = await ctx.db.diplomaticEvent.count({
+      where: {
+        status: 'active',
+        eventType: { in: ['summit', 'trade_mission', 'state_visit'] }
+      }
+    });
+
+    // Get intelligence items from last 7 days
+    const recentIntelligence = await ctx.db.intelligenceItem.count({
+      where: {
+        isActive: true,
+        timestamp: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
+      }
+    });
+
+    // Get high priority intelligence
+    const intelligenceAlerts = await ctx.db.intelligenceItem.count({
+      where: {
+        isActive: true,
+        priority: { in: ['HIGH', 'CRITICAL'] }
+      }
+    });
+
+    return {
+      activeCrises,
+      criticalCrises,
+      diplomaticMissions,
+      recentIntelligence,
+      intelligenceAlerts,
+      timestamp: new Date()
+    };
+  })
 });

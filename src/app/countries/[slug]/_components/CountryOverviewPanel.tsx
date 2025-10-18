@@ -7,6 +7,7 @@ import { Button } from "~/components/ui/button";
 import { VitalityRings } from "~/components/mycountry/primitives/VitalityRings";
 import { BookOpen, ExternalLink, Building, Crown, Users, MapPin, Heart, Globe, TrendingUp, Activity } from "lucide-react";
 import type { CountryInfobox } from "~/lib/mediawiki-service";
+import { sanitizeWikiContent } from "~/lib/sanitize-html";
 
 interface CountryOverviewPanelProps {
   country: {
@@ -83,7 +84,8 @@ export function CountryOverviewPanel({
                       {/* First paragraph - always visible */}
                       <p
                         className="mb-3 text-sm leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: wikiIntro[0] }}
+                        // SECURITY: Sanitize wiki content to prevent XSS from external data
+                        dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(wikiIntro[0] ?? '') }}
                       />
 
                       {/* Additional paragraphs - collapsible */}
@@ -95,7 +97,8 @@ export function CountryOverviewPanel({
                                 <p
                                   key={idx}
                                   className="mb-3 text-sm leading-relaxed"
-                                  dangerouslySetInnerHTML={{ __html: paragraph }}
+                                  // SECURITY: Sanitize wiki content to prevent XSS from external data
+                                  dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(paragraph) }}
                                 />
                               ))}
                             </div>

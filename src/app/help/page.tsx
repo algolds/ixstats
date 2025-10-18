@@ -293,25 +293,32 @@ const helpSections: HelpSection[] = [
     ]
   },
   {
-    id: "eci-sdi",
-    title: "ECI & SDI Systems",
-    description: "Economic and Security Development Indices",
+    id: "unified-intelligence",
+    title: "Unified Intelligence System",
+    description: "Executive command and strategic intelligence (formerly ECI/SDI)",
     icon: BarChart3,
     category: "systems",
     articles: [
       {
-        id: "eci-overview",
-        title: "Economic Complexity Index",
-        description: "Understanding the ECI system",
-        path: "/help/eci-sdi/eci",
-        tags: ["eci", "economics", "index"]
+        id: "unified-overview",
+        title: "Unified Intelligence Overview",
+        description: "Understanding the unified intelligence system",
+        path: "/help/intelligence/unified-overview",
+        tags: ["intelligence", "unified", "analytics"]
       },
       {
-        id: "sdi-overview",
-        title: "Security Development Index",
-        description: "Understanding the SDI system",
-        path: "/help/eci-sdi/sdi",
-        tags: ["sdi", "security", "index"]
+        id: "executive-operations",
+        title: "Executive Operations",
+        description: "Command center and strategic operations",
+        path: "/help/intelligence/executive-operations",
+        tags: ["executive", "operations", "command"]
+      },
+      {
+        id: "strategic-intelligence",
+        title: "Strategic Intelligence",
+        description: "Intelligence feeds and crisis management",
+        path: "/help/intelligence/strategic-intelligence",
+        tags: ["intelligence", "crisis", "strategic"]
       }
     ]
   },

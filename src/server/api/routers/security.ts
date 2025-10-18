@@ -740,20 +740,45 @@ export const securityRouter = createTRPCRouter({
         corruptionIndex: economicProfile?.corruptionIndex ?? 30,
       };
 
+      // Get diversity data from Demographics
+      const demographics = await ctx.db.demographics.findUnique({
+        where: { countryId: input.countryId },
+        select: {
+          ethnicDiversity: true,
+          religiousDiversity: true,
+          linguisticDiversity: true,
+          culturalDiversity: true,
+        },
+      });
+
       const demographicData: DemographicData = {
         population: country.currentPopulation,
-        ethnicDiversity: 40, // TODO: Add to Demographics model
-        religiousDiversity: 30, // TODO: Add to Demographics model
+        ethnicDiversity: demographics?.ethnicDiversity ?? 50,
+        religiousDiversity: demographics?.religiousDiversity ?? 50,
         urbanizationRate: country.urbanPopulationPercent ?? 75,
         youthUnemployment: (country.unemploymentRate ?? 5) * 2, // Youth unemployment is typically 2x general
         populationDensity: country.populationDensity ?? 100,
       };
 
+      // Get political metrics from GovernmentStructure
+      const government = await ctx.db.governmentStructure.findUnique({
+        where: { countryId: input.countryId },
+        select: {
+          politicalStability: true,
+          politicalPolarization: true,
+          democracyIndex: true,
+          electionCycle: true,
+          governmentEffectiveness: true,
+          ruleOfLaw: true,
+          corruptionIndex: true,
+        },
+      });
+
       const politicalData: PoliticalData = {
-        politicalStability: 0.5, // TODO: Add to Country or GovernmentStructure model
-        politicalPolarization: 45, // TODO: Add to Country or GovernmentStructure model
-        electionCycle: 2, // TODO: Get from government data
-        democracyIndex: 70, // TODO: Add to GovernmentStructure model
+        politicalStability: government?.politicalStability ?? 0.5,
+        politicalPolarization: government?.politicalPolarization ?? 50,
+        electionCycle: government?.electionCycle ?? 4,
+        democracyIndex: government?.democracyIndex ?? 50,
         protestFrequency: 8, // Will be overwritten by calculation
       };
 

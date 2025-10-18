@@ -140,6 +140,7 @@ interface SectionContainerProps {
   className?: string;
   headerActions?: React.ReactNode;
   hideViewToggle?: boolean;
+  helpContent?: React.ReactNode;
 }
 
 export function SectionContainer({
@@ -152,7 +153,8 @@ export function SectionContainer({
   theme = 'neutral',
   className,
   headerActions,
-  hideViewToggle = false
+  hideViewToggle = false,
+  helpContent
 }: SectionContainerProps) {
   return (
     <div className={cn("space-y-6", className)}>
@@ -169,7 +171,14 @@ export function SectionContainer({
               </div>
             )}
             <div>
-              <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+                {helpContent && (
+                  <div className="flex items-center">
+                    {helpContent}
+                  </div>
+                )}
+              </div>
               {subtitle && (
                 <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
               )}

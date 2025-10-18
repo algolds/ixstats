@@ -921,7 +921,6 @@ Planned features for future releases:
 ## Support
 
 For issues, questions, or feature requests related to the Quick Actions system, please refer to:
-- Main IxStats documentation: `/DOCS/`
-- Government system docs: `/DOCS/GOVERNMENT_SYSTEM.md`
-- IxTime documentation: `/DOCS/IXTIME_SYSTEM.md`
-- API reference: `/DOCS/API_REFERENCE.md`
+- Main IxStats documentation: `/docs/`
+- API reference: `/docs/API_REFERENCE.md`
+- Systems guide: `/docs/SYSTEMS_GUIDE.md`

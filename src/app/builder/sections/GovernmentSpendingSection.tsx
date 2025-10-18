@@ -1,7 +1,7 @@
 // GovernmentSpendingSectionEnhanced - Refactored with modular components
 // Main section component now composes smaller, focused sub-components
-// Extracted components: PolicySelector, SpendingValidationPanel, SpendingPreview,
-// SpendingAnalysis, PolicyPresetSelector
+// Extracted components: PolicySelector, SpendingValidationPanel,
+// PolicyAnalysis, PolicyPresetSelector
 // State management: useGovernmentSpending hook
 // Data: government-spending-policies.ts
 
@@ -20,12 +20,14 @@ import { AtomicIntegrationFeedback } from '../components/AtomicIntegrationFeedba
 // Modular components
 import { PolicySelector } from '../components/spending/PolicySelector';
 import { SpendingValidationPanel } from '../components/spending/SpendingValidationPanel';
-import { SpendingPreview } from '../components/spending/SpendingPreview';
-import { SpendingAnalysis } from '../components/spending/SpendingAnalysis';
+import { PolicyAnalysis } from '../components/spending/PolicyAnalysis';
 import { PolicyPresetSelector } from '../components/spending/PolicyPresetSelector';
 
 // Custom hook for state management
 import { useGovernmentSpending } from '../hooks/useGovernmentSpending';
+
+// Help System
+import { GovernmentSpendingHelpSystem } from '../components/help/GovernmentHelpSystem';
 
 interface GovernmentSpendingSectionProps extends SectionContentProps {
   inputs: EconomicInputs;
@@ -33,6 +35,8 @@ interface GovernmentSpendingSectionProps extends SectionContentProps {
   selectedAtomicComponents?: ComponentType[];
   governmentBuilderData?: GovernmentBuilderState | null;
   countryId?: string;
+  mode?: 'create' | 'edit';
+  fieldLocks?: Record<string, import('../components/enhanced/builderConfig').FieldLockConfig>;
 }
 
 /**
@@ -44,8 +48,14 @@ export function GovernmentSpendingSection({
   onInputsChange,
   selectedAtomicComponents = [],
   governmentBuilderData = null,
-  countryId
+  countryId,
+  mode = 'create',
+  fieldLocks
 }: GovernmentSpendingSectionProps) {
+  const isEditMode = mode === 'edit';
+  const { EDIT_MODE_FIELD_LOCKS } = require('../components/enhanced/builderConfig');
+  const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
+
   // Guard against null inputs
   if (!inputs) {
     return (
@@ -113,11 +123,14 @@ export function GovernmentSpendingSection({
 
       {/* Header with Validation and Preset Selector */}
       <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">Government Policies</h3>
-          <p className="text-sm text-muted-foreground">
-            Select policies that align with your government structure and atomic components
-          </p>
+        <div className="flex items-center gap-2">
+          <div>
+            <h3 className="text-lg font-semibold">Government Policies</h3>
+            <p className="text-sm text-muted-foreground">
+              Select policies that align with your government structure and atomic components
+            </p>
+          </div>
+          <GovernmentSpendingHelpSystem />
         </div>
         <PolicyPresetSelector onApplyPreset={applyPolicyPreset} />
       </div>
@@ -136,18 +149,14 @@ export function GovernmentSpendingSection({
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="policies">
             <Settings className="h-4 w-4 mr-2" />
             Policies
           </TabsTrigger>
-          <TabsTrigger value="preview">
-            <Eye className="h-4 w-4 mr-2" />
-            Preview
-          </TabsTrigger>
           <TabsTrigger value="visualization">
             <TrendingUp className="h-4 w-4 mr-2" />
-            Analysis
+            Policy Analysis
           </TabsTrigger>
         </TabsList>
 
@@ -160,22 +169,11 @@ export function GovernmentSpendingSection({
           />
         </TabsContent>
 
-        {/* Preview Tab - comprehensive preview of government structure */}
-        <TabsContent value="preview" className="mt-6">
-          <SpendingPreview
+        {/* Visualization Tab - policy impact analysis */}
+        <TabsContent value="visualization" className="mt-6">
+          <PolicyAnalysis
             selectedPolicies={selectedPolicies}
             selectedAtomicComponents={selectedAtomicComponents}
-            governmentBuilderData={governmentBuilderData}
-            inputs={inputs}
-          />
-        </TabsContent>
-
-        {/* Visualization Tab - charts and analysis */}
-        <TabsContent value="visualization" className="mt-6">
-          <SpendingAnalysis
-            spendingData={spendingData}
-            totalSpendingPercent={inputs.governmentSpending.totalSpending}
-            selectedPoliciesCount={selectedPolicies.size}
           />
         </TabsContent>
       </Tabs>

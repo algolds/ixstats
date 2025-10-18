@@ -46,7 +46,7 @@ export interface Challenge {
 }
 
 // Component compatibility matrix based on country profiles
-const COUNTRY_COMPONENT_COMPATIBILITY: Record<string, Record<ComponentType, number>> = {
+const COUNTRY_COMPONENT_COMPATIBILITY: Record<string, Partial<Record<ComponentType, number>>> = {
   // Size-based compatibility
   small: {
     [ComponentType.CENTRALIZED_POWER]: 0.9,
@@ -87,7 +87,7 @@ const COUNTRY_COMPONENT_COMPATIBILITY: Record<string, Record<ComponentType, numb
     [ComponentType.MERITOCRATIC_SYSTEM]: 0.8,
     [ComponentType.REGIONAL_DEVELOPMENT]: 0.75
   },
-  
+
   large: {
     [ComponentType.CENTRALIZED_POWER]: 0.6,
     [ComponentType.FEDERAL_SYSTEM]: 0.9,
@@ -581,7 +581,7 @@ export class AtomicRecommendationEngine {
     currentComponents: ComponentType[]
   ): RecommendationImpact {
     // Base effectiveness values (simplified)
-    const componentEffectiveness: Record<ComponentType, number> = {
+    const componentEffectiveness: Partial<Record<ComponentType, number>> = {
       [ComponentType.TECHNOCRATIC_AGENCIES]: 82,
       [ComponentType.RULE_OF_LAW]: 85,
       [ComponentType.PROFESSIONAL_BUREAUCRACY]: 85,

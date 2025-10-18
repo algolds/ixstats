@@ -1,0 +1,31 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    /* Additional build-time optimizations */
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "noEmit": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "scripts",
+    ".next",
+    "dist",
+    "build",
+    "out",
+    "coverage",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "tests/**/*",
+    "playwright.config.ts",
+    "jest.config.js"
+  ]
+}

@@ -166,6 +166,18 @@ model Country {
   fiscalPolicies        FiscalPolicy[]         @relation("CountryFiscalPolicies")
   atomicEconomicImpacts AtomicEconomicImpact[] @relation("AtomicEconomicImpacts")
 
+  // Atomic Economic Components
+  economicComponents    EconomicComponent[]    @relation("CountryEconomicComponents")
+  
+  // Atomic Tax Components
+  taxComponents         TaxComponent[]         @relation("CountryTaxComponents")
+  
+  // Component Change Tracking
+  componentChanges      ComponentChangeLog[]   @relation("CountryComponentChanges")
+  
+  // Cross-Builder Synergies
+  crossBuilderSynergies CrossBuilderSynergy[] @relation("CountryCrossBuilderSynergies")
+
   // Military & Defense Relations
   militaryBranches   MilitaryBranch[]          @relation("CountryMilitaryBranches")
   securityThreats    SecurityThreat[]          @relation("CountrySecurityThreats")
@@ -284,6 +296,17 @@ model Demographics {
   dependencyRatio            Float?
   medianAge                  Float?
   populationGrowthProjection Float?
+
+  // Social diversity metrics
+  ethnicDiversity            Float?   @default(50) // 0-100 scale
+  religiousDiversity         Float?   @default(50) // 0-100 scale
+  linguisticDiversity        Float?   @default(30) // 0-100 scale
+  culturalDiversity          Float?   @default(50) // 0-100 scale
+
+  // Metadata
+  diversityLastUpdated       DateTime?
+  diversitySource            String? // 'manual' | 'calculated' | 'imported'
+
   createdAt                  DateTime @default(now())
   updatedAt                  DateTime @updatedAt
   country                    Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
@@ -785,41 +808,110 @@ model TaxCalculation {
 
 // Atomic Government Component System
 enum ComponentType {
-  // Power Distribution
+  // Power Distribution Components
   CENTRALIZED_POWER
   FEDERAL_SYSTEM
   CONFEDERATE_SYSTEM
   UNITARY_SYSTEM
-
-  // Decision Process
+  
+  // Decision Process Components
   DEMOCRATIC_PROCESS
   AUTOCRATIC_PROCESS
   TECHNOCRATIC_PROCESS
   CONSENSUS_PROCESS
   OLIGARCHIC_PROCESS
-
-  // Legitimacy Sources
+  
+  // Legitimacy Source Components
   ELECTORAL_LEGITIMACY
   TRADITIONAL_LEGITIMACY
   PERFORMANCE_LEGITIMACY
   CHARISMATIC_LEGITIMACY
   RELIGIOUS_LEGITIMACY
   INSTITUTIONAL_LEGITIMACY
-
-  // Institution Types
+  
+  // Institution Components
   PROFESSIONAL_BUREAUCRACY
   MILITARY_ADMINISTRATION
   INDEPENDENT_JUDICIARY
   PARTISAN_INSTITUTIONS
   TECHNOCRATIC_AGENCIES
-  DIGITAL_GOVERNMENT
-
-  // Control Mechanisms
+  
+  // Control Mechanism Components
   RULE_OF_LAW
   SURVEILLANCE_SYSTEM
   ECONOMIC_INCENTIVES
   SOCIAL_PRESSURE
   MILITARY_ENFORCEMENT
+  
+  // Economic Governance Components
+  FREE_MARKET_SYSTEM
+  PLANNED_ECONOMY
+  MIXED_ECONOMY
+  CORPORATIST_SYSTEM
+  SOCIAL_MARKET_ECONOMY
+  STATE_CAPITALISM
+  RESOURCE_BASED_ECONOMY
+  KNOWLEDGE_ECONOMY
+  
+  // Administrative Efficiency Components
+  DIGITAL_GOVERNMENT
+  E_GOVERNANCE
+  ADMINISTRATIVE_DECENTRALIZATION
+  MERIT_BASED_SYSTEM
+  PERFORMANCE_MANAGEMENT
+  QUALITY_ASSURANCE
+  STRATEGIC_PLANNING
+  RISK_MANAGEMENT
+  
+  // Social Policy Components
+  WELFARE_STATE
+  UNIVERSAL_HEALTHCARE
+  PUBLIC_EDUCATION
+  SOCIAL_SAFETY_NET
+  WORKER_PROTECTION
+  ENVIRONMENTAL_PROTECTION
+  CULTURAL_PRESERVATION
+  MINORITY_RIGHTS
+  
+  // International Relations Components
+  MULTILATERAL_DIPLOMACY
+  BILATERAL_RELATIONS
+  REGIONAL_INTEGRATION
+  INTERNATIONAL_LAW
+  DEVELOPMENT_AID
+  HUMANITARIAN_INTERVENTION
+  TRADE_AGREEMENTS
+  SECURITY_ALLIANCES
+  
+  // Innovation and Development Components
+  RESEARCH_AND_DEVELOPMENT
+  INNOVATION_ECOSYSTEM
+  TECHNOLOGY_TRANSFER
+  ENTREPRENEURSHIP_SUPPORT
+  INTELLECTUAL_PROPERTY
+  STARTUP_INCUBATION
+  DIGITAL_INFRASTRUCTURE
+  SMART_CITIES
+  
+  // Crisis Management Components
+  EMERGENCY_RESPONSE
+  DISASTER_PREPAREDNESS
+  PANDEMIC_MANAGEMENT
+  CYBERSECURITY
+  COUNTER_TERRORISM
+  CRISIS_COMMUNICATION
+  RECOVERY_PLANNING
+  RESILIENCE_BUILDING
+
+  // Governance Quality Components
+  ANTI_CORRUPTION
+  TRANSPARENCY_INITIATIVE
+  ACCOUNTABILITY_FRAMEWORK
+  ETHICS_ENFORCEMENT
+  PUBLIC_OVERSIGHT
+  CITIZEN_ENGAGEMENT
+  PARTICIPATORY_DEMOCRACY
+  DIRECT_DEMOCRACY
 
   // Government Systems
   MINIMAL_GOVERNMENT
@@ -830,9 +922,139 @@ enum ComponentType {
   ENVIRONMENTAL_FOCUS
   ECONOMIC_PLANNING
   DEVELOPMENTAL_STATE
-  WORKER_PROTECTION
   REGIONAL_DEVELOPMENT
   MERITOCRATIC_SYSTEM
+}
+
+// Economic Component Types
+enum EconomicComponentType {
+  // Economic Model Components
+  FREE_MARKET_SYSTEM
+  MIXED_ECONOMY
+  STATE_CAPITALISM
+  PLANNED_ECONOMY
+  SOCIAL_MARKET_ECONOMY
+  RESOURCE_BASED_ECONOMY
+  KNOWLEDGE_ECONOMY
+  INNOVATION_ECONOMY
+  
+  // Sector Focus Components
+  AGRICULTURE_LED
+  MANUFACTURING_LED
+  SERVICE_BASED
+  TECHNOLOGY_FOCUSED
+  FINANCE_CENTERED
+  EXPORT_ORIENTED
+  DOMESTIC_FOCUSED
+  TOURISM_BASED
+  
+  // Labor System Components
+  FLEXIBLE_LABOR
+  PROTECTED_WORKERS
+  UNION_BASED
+  GIG_ECONOMY
+  PROFESSIONAL_SERVICES
+  SKILL_BASED
+  EDUCATION_FIRST
+  MERIT_BASED
+  HIGH_SKILLED_WORKERS
+  EDUCATION_FOCUSED
+  HEALTHCARE_FOCUSED
+  VOCATIONAL_TRAINING
+  
+  // Trade Policy Components
+  FREE_TRADE
+  PROTECTIONIST
+  BALANCED_TRADE
+  EXPORT_SUBSIDY
+  IMPORT_SUBSTITUTION
+  TRADE_BLOC
+  BILATERAL_FOCUS
+  MULTILATERAL_FOCUS
+  TRADE_FACILITATION
+  COMPETITIVE_MARKETS
+  
+  // Innovation Components
+  RD_INVESTMENT
+  TECH_TRANSFER
+  STARTUP_ECOSYSTEM
+  PATENT_PROTECTION
+  OPEN_INNOVATION
+  UNIVERSITY_PARTNERSHIPS
+  VENTURE_CAPITAL
+  INTELLECTUAL_PROPERTY
+  RESEARCH_AND_DEVELOPMENT
+  
+  // Resource Management Components
+  SUSTAINABLE_DEVELOPMENT
+  EXTRACTION_FOCUSED
+  RENEWABLE_ENERGY
+  CIRCULAR_ECONOMY
+  LINEAR_ECONOMY
+  CONSERVATION_FIRST
+  GREEN_TECHNOLOGY
+  CARBON_NEUTRAL
+  CARBON_INTENSIVE
+  ECO_FRIENDLY
+  GREEN_ECONOMY
+
+  // Real Estate & Property Components
+  REAL_ESTATE_FOCUSED
+  RULE_OF_LAW
+}
+
+// Tax Component Types
+enum TaxComponentType {
+  // Tax System Components
+  PROGRESSIVE_TAX
+  FLAT_TAX
+  REGRESSIVE_TAX
+  CONSUMPTION_TAX
+  WEALTH_TAX
+  INHERITANCE_TAX
+  CAPITAL_GAINS_TAX
+  CORPORATE_TAX
+  PAYROLL_TAX
+  PROPERTY_TAX
+  SALES_TAX
+  VAT_TAX
+  CARBON_TAX
+  FINANCIAL_TRANSACTION_TAX
+  DIGITAL_SERVICES_TAX
+  
+  // Tax Administration Components
+  AUTOMATED_COLLECTION
+  MANUAL_COLLECTION
+  THIRD_PARTY_REPORTING
+  WITHHOLDING_SYSTEM
+  SELF_ASSESSMENT
+  AUDIT_SYSTEM
+  COMPLIANCE_MONITORING
+  TAX_COURTS
+  APPEALS_PROCESS
+  PENALTY_SYSTEM
+  
+  // Tax Technology Components
+  E_FILING_SYSTEM
+  DIGITAL_PAYMENTS
+  BLOCKCHAIN_TRACKING
+  AI_AUDIT
+  PREDICTIVE_ANALYTICS
+  RISK_ASSESSMENT
+  DATA_MINING
+  CROSS_BORDER_COORDINATION
+  
+  // Tax Policy Components
+  TAX_INCENTIVES
+  TAX_HOLIDAYS
+  TAX_EXEMPTIONS
+  TAX_CREDITS
+  TAX_DEDUCTIONS
+  TAX_AMNESTY
+  TAX_AVOIDANCE_PREVENTION
+  TAX_EVASION_PREVENTION
+  TAX_FAIRNESS
+  TAX_SIMPLIFICATION
 }
 
 model GovernmentComponent {
@@ -878,6 +1100,96 @@ model ComponentSynergy {
   @@unique([primaryComponentId, secondaryComponentId])
   @@index([countryId])
   @@index([synergyType])
+}
+
+// Economic Component Model
+model EconomicComponent {
+  id                 String                @id @default(cuid())
+  countryId          String
+  componentType      EconomicComponentType
+  effectivenessScore Float                 @default(50)
+  implementationDate DateTime              @default(now())
+  implementationCost Float                 @default(0)
+  maintenanceCost    Float                 @default(0)
+  requiredCapacity   Float                 @default(50)
+  isActive           Boolean               @default(true)
+  notes              String?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+
+  // Relations
+  country Country @relation("CountryEconomicComponents", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([componentType])
+  @@index([isActive])
+}
+
+// Tax Component Model
+model TaxComponent {
+  id                 String           @id @default(cuid())
+  countryId          String
+  componentType      TaxComponentType
+  effectivenessScore Float            @default(50)
+  implementationDate DateTime         @default(now())
+  implementationCost Float            @default(0)
+  maintenanceCost    Float            @default(0)
+  requiredCapacity   Float            @default(50)
+  isActive           Boolean          @default(true)
+  notes              String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  // Relations
+  country Country @relation("CountryTaxComponents", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([componentType])
+  @@index([isActive])
+}
+
+// Component Change Log Model
+model ComponentChangeLog {
+  id            String   @id @default(cuid())
+  countryId     String
+  componentType String   // 'GOVERNMENT' | 'ECONOMIC' | 'TAX'
+  componentId   String   // ID of the specific component
+  changeType    String   // 'ADDED' | 'REMOVED' | 'MODIFIED'
+  previousValue String?  // JSON of previous state
+  newValue      String?  // JSON of new state
+  triggeredBy   String?  // User ID who made the change
+  timestamp     DateTime @default(now())
+  description   String?
+
+  // Relations
+  country Country @relation("CountryComponentChanges", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([componentType])
+  @@index([changeType])
+  @@index([timestamp])
+}
+
+// Cross-Builder Synergy Model
+model CrossBuilderSynergy {
+  id                    String   @id @default(cuid())
+  countryId             String
+  governmentComponents  String   // JSON array of ComponentType
+  economicComponents    String   // JSON array of EconomicComponentType
+  taxComponents         String   // JSON array of TaxComponentType
+  synergyType           String   // 'GOV_ECON' | 'GOV_TAX' | 'ECON_TAX' | 'ALL_THREE'
+  effectivenessBonus     Float    @default(0)
+  description           String?
+  isActive              Boolean  @default(true)
+  discoveredAt          DateTime @default(now())
+  createdAt             DateTime @default(now())
+
+  // Relations
+  country Country @relation("CountryCrossBuilderSynergies", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([synergyType])
+  @@index([isActive])
 }
 
 // Note: PolicyEffect already exists in the schema, using existing model
@@ -1789,6 +2101,15 @@ model DiplomaticMessage {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  // Encryption fields
+  encryptedContent String?     // Base64-encoded encrypted content
+  signature        String?     // Base64-encoded signature
+  encryptionVersion String?    // v1, v2
+  iv               String?     // Initialization vector
+  encryptedKey     String?     // RSA-encrypted AES key
+  senderKeyId      String?     // ID of sender's key pair
+  signatureVerified Boolean   @default(false)
+
   // Relations
   channel DiplomaticChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
 
@@ -2077,6 +2398,21 @@ model GovernmentStructure {
   totalBudget      Float    @default(0)
   fiscalYear       String   @default("Calendar Year") // "Calendar Year", "April-March", etc.
   budgetCurrency   String   @default("USD")
+
+  // Political stability metrics
+  politicalStability      Float?   @default(0.5)  // -1 to 1 scale
+  politicalPolarization   Float?   @default(50)   // 0-100 scale
+  democracyIndex          Float?   @default(50)   // 0-100 scale
+  electionCycle           Int?     @default(4)    // Years between elections
+
+  // Government effectiveness
+  governmentEffectiveness Float?   @default(50)   // 0-100 scale
+  ruleOfLaw               Float?   @default(50)   // 0-100 scale
+  corruptionIndex         Float?   @default(50)   // 0-100 scale (0=clean, 100=corrupt)
+
+  // Metadata
+  politicalMetricsUpdated DateTime?
+
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -2419,6 +2755,13 @@ model Policy {
   taxRevenueEffect Float   @default(0)
   customEffects    String? // JSON object of custom effects
 
+  // Enhanced Policy Integration
+  relatedGovernmentComponents String? // JSON array of ComponentType
+  relatedEconomicComponents  String? // JSON array of EconomicComponentType
+  relatedTaxComponents       String? // JSON array of TaxComponentType
+  calculatedEffects          String? // JSON object storing real-time effect calculations
+  lastRecalculated           DateTime? // DateTime for tracking calculation freshness
+
   // Review & Approval
   approvalRequired Boolean   @default(false)
   approvedBy       String?
@@ -2653,6 +2996,38 @@ model IntelligenceAlert {
   @@index([category])
   @@index([isActive])
   @@index([detectedAt])
+}
+
+model IntelligenceAlertThreshold {
+  id          String   @id @default(cuid())
+  countryId   String
+  userId      String
+
+  // Threshold configuration
+  alertType   String   // 'gdp', 'population', 'security', 'diplomatic', etc.
+  metricName  String   // 'gdpGrowthRate', 'diplomaticStanding', etc.
+
+  // Threshold values
+  criticalMin  Float?
+  criticalMax  Float?
+  highMin      Float?
+  highMax      Float?
+  mediumMin    Float?
+  mediumMax    Float?
+
+  // Notification settings
+  notifyOnCritical Boolean @default(true)
+  notifyOnHigh     Boolean @default(true)
+  notifyOnMedium   Boolean @default(false)
+
+  // Metadata
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([countryId, alertType, metricName])
+  @@index([countryId])
+  @@index([userId])
 }
 
 model VitalitySnapshot {
@@ -3273,4 +3648,42 @@ model CustomFieldValue {
   @@index([fieldName, isGlobal]) // Quick lookup for autocomplete
   @@index([userId])
   @@index([usageCount])
+}
+
+// Diplomatic Encryption Models
+
+model EncryptionKey {
+  id                          String   @id
+  countryId                   String
+  publicKey                   String   // Base64-encoded public key
+  encryptedPrivateKey         String   // Encrypted with master password
+  signingPublicKey            String   // For message signatures
+  encryptedSigningPrivateKey  String
+  version                     String   @default("v1")
+  status                      String   @default("ACTIVE") // ACTIVE, REVOKED, EXPIRED
+  expiresAt                   DateTime
+  createdAt                   DateTime @default(now())
+  revokedAt                   DateTime?
+  
+  @@index([countryId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model EncryptionAuditLog {
+  id              String   @id @default(cuid())
+  countryId       String
+  operation       String   // GENERATE_KEY, ENCRYPT_MESSAGE, DECRYPT_MESSAGE, etc.
+  classification  String   // PUBLIC, RESTRICTED, CONFIDENTIAL, SECRET
+  success         Boolean
+  errorMessage    String?
+  metadata        String?  // JSON metadata
+  userId          String?
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime @default(now())
+  
+  @@index([countryId])
+  @@index([operation])
+  @@index([createdAt])
 }
