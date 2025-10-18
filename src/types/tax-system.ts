@@ -88,6 +88,7 @@ export interface TaxCategory {
   description?: string;
   isActive: boolean;
   baseRate?: number;
+  rate?: number;
   calculationMethod: string;
   minimumAmount?: number;
   maximumAmount?: number;
@@ -99,7 +100,7 @@ export interface TaxCategory {
   icon?: string;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Relations
   taxBrackets?: TaxBracket[];
   taxExemptions?: TaxExemption[];
@@ -206,13 +207,15 @@ export interface TaxSystemInput {
   collectionEfficiency?: number;
 }
 
+export type CalculationMethodValue = typeof CALCULATION_METHODS[keyof typeof CALCULATION_METHODS];
+
 export interface TaxCategoryInput {
   categoryName: string;
   categoryType: string;
   description?: string;
   isActive: boolean;
   baseRate?: number;
-  calculationMethod: string;
+  calculationMethod: CalculationMethodValue;
   minimumAmount?: number;
   maximumAmount?: number;
   exemptionAmount?: number;
@@ -326,7 +329,7 @@ export interface TaxCategoryTemplate {
   categoryType: string;
   description: string;
   baseRate: number;
-  calculationMethod: string;
+  calculationMethod: CalculationMethodValue;
   brackets?: TaxBracketTemplate[];
   exemptions?: TaxExemptionTemplate[];
   deductions?: TaxDeductionTemplate[];

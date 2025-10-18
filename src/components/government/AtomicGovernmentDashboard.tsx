@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/components/ui/tooltip';
 import {
   Crown,
   Users,
@@ -32,9 +33,26 @@ import {
   ChevronRight,
   Plus,
   AlertTriangle,
+  HelpCircle,
   CheckCircle,
   Info
 } from 'lucide-react';
+
+// Help tooltip component
+function HelpTooltip({ text }: { text: string }) {
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
+        </TooltipTrigger>
+        <TooltipContent>
+          <p className="max-w-xs">{text}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
 
 interface AtomicGovernmentDashboardProps {
   countryId: string;
@@ -170,7 +188,10 @@ export const AtomicGovernmentDashboard: React.FC<AtomicGovernmentDashboardProps>
                 <Crown className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-2xl">Atomic Government System</CardTitle>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-2xl">Atomic Government System</CardTitle>
+                  <HelpTooltip text="Build your government using atomic components. Each component adds unique characteristics and influences calculations. Use synergies to maximize effectiveness and avoid conflicts." />
+                </div>
                 <p className="text-sm text-muted-foreground mt-1">
                   {countryData?.name || 'Government'} - Component-Based Architecture
                 </p>

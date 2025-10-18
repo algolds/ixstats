@@ -4,44 +4,10 @@ import React from 'react';
 import { Card } from '~/components/ui/card';
 import { ConversationListHeader } from './ConversationListHeader';
 import { ConversationListContent } from './ConversationListContent';
-
-interface ThinkshareConversation {
-  id: string;
-  type: string;
-  name?: string | null;
-  avatar?: string | null;
-  isActive: boolean;
-  lastActivity: Date;
-  otherParticipants: {
-    id: string;
-    accountId: string;
-    account: {
-      id: string;
-      username: string;
-      displayName: string;
-      profileImageUrl?: string | null;
-      accountType: string;
-    };
-    isActive: boolean;
-  }[];
-  lastMessage?: {
-    id: string;
-    accountId: string;
-    content: string;
-    ixTimeTimestamp: Date;
-    createdAt?: Date;
-    account: {
-      id: string;
-      username: string;
-      displayName: string;
-    };
-  };
-  lastReadAt?: Date;
-  unreadCount: number;
-}
+import type { ThinkShareConversation, ThinkShareClientState } from '~/types/thinkshare';
 
 interface ConversationListProps {
-  conversations: ThinkshareConversation[];
+  conversations: ThinkShareConversation[];
   isLoadingConversations: boolean;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -50,7 +16,7 @@ interface ConversationListProps {
   currentAccountId: string;
   onNewConversationClick: () => void;
   getAccountTypeIcon: (type: string) => React.ReactNode;
-  clientState: any; // TODO: Define a proper type for clientState
+  clientState: ThinkShareClientState;
 }
 
 export function ConversationList({
@@ -65,7 +31,7 @@ export function ConversationList({
   getAccountTypeIcon,
   clientState,
 }: ConversationListProps) {
-  const filteredConversations = conversations?.filter((conv: ThinkshareConversation) => 
+  const filteredConversations = conversations?.filter((conv) => 
     searchQuery === '' || 
     conv.otherParticipants.some((p: any) => 
       p.account.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||

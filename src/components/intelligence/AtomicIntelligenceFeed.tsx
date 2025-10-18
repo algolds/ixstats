@@ -26,6 +26,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 import type { ComponentType } from '~/types/government';
+import { ComponentType as PrismaComponentType, EconomicComponentType, TaxComponentType } from '@prisma/client';
 import { 
   generateAtomicIntelligence, 
   calculateAtomicGovernmentStability,
@@ -33,7 +34,9 @@ import {
 } from '~/lib/atomic-intelligence-integration';
 
 interface AtomicIntelligenceFeedProps {
-  components: ComponentType[];
+  components: PrismaComponentType[];
+  economicComponents?: EconomicComponentType[];
+  taxComponents?: TaxComponentType[];
   economicData: {
     gdpGrowthRate: number;
     inflationRate: number;
@@ -47,31 +50,49 @@ interface AtomicIntelligenceFeedProps {
   showDetailedAnalysis?: boolean;
   maxItems?: number;
   className?: string;
+  synergies?: {
+    governmentSynergies?: Array<{ name: string; description: string; }>;
+    crossBuilderSynergies?: Array<{ id: string; description: string; effectivenessBonus: number; }>;
+  };
+  effectiveness?: {
+    governmentEffectiveness?: number;
+    economicEffectiveness?: number;
+    taxEffectiveness?: number;
+    combinedScore?: number;
+  };
 }
 
 export function AtomicIntelligenceFeed({
   components,
+  economicComponents = [],
+  taxComponents = [],
   economicData,
   taxData,
   countryName,
   showDetailedAnalysis = false,
   maxItems = 10,
-  className
+  className,
+  synergies,
+  effectiveness
 }: AtomicIntelligenceFeedProps) {
   
   const [intelligence, setIntelligence] = useState<AtomicIntelligenceItem[]>([]);
 
   useEffect(() => {
     const generateIntelligence = async () => {
-      const intelligenceData = await generateAtomicIntelligence(components, economicData, taxData);
+      // Combine all components for comprehensive analysis
+      const allComponents = [...components, ...economicComponents, ...taxComponents];
+      const intelligenceData = await generateAtomicIntelligence(allComponents as any, economicData, taxData);
       setIntelligence(intelligenceData.slice(0, maxItems));
     };
     generateIntelligence();
-  }, [components, economicData, taxData, maxItems]);
+  }, [components, economicComponents, taxComponents, economicData, taxData, maxItems]);
 
   const stability = useMemo(() => {
-    return calculateAtomicGovernmentStability(components);
-  }, [components]);
+    // Calculate stability based on all component types
+    const allComponents = [...components, ...economicComponents, ...taxComponents];
+    return calculateAtomicGovernmentStability(allComponents as any);
+  }, [components, economicComponents, taxComponents]);
 
   const getTypeIcon = (type: AtomicIntelligenceItem['type']) => {
     switch (type) {
@@ -115,7 +136,7 @@ export function AtomicIntelligenceFeed({
     }
   };
 
-  const formatComponentName = (component: ComponentType) => {
+  const formatComponentName = (component: PrismaComponentType | EconomicComponentType | TaxComponentType) => {
     return component.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
   };
 
@@ -172,6 +193,72 @@ export function AtomicIntelligenceFeed({
               Trend: {stability.stabilityTrend}
             </div>
           </div>
+
+          {/* Effectiveness Metrics */}
+          {effectiveness && (
+            <div className="mt-6">
+              <h4 className="text-sm font-medium text-gray-700 mb-3">System Effectiveness</h4>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {effectiveness.governmentEffectiveness !== undefined && (
+                  <div className="text-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20">
+                    <div className="text-lg font-semibold text-blue-600">
+                      {effectiveness.governmentEffectiveness.toFixed(1)}%
+                    </div>
+                    <div className="text-xs text-muted-foreground">Government</div>
+                  </div>
+                )}
+                {effectiveness.economicEffectiveness !== undefined && (
+                  <div className="text-center p-3 rounded-lg bg-green-50 dark:bg-green-950/20">
+                    <div className="text-lg font-semibold text-green-600">
+                      {effectiveness.economicEffectiveness.toFixed(1)}%
+                    </div>
+                    <div className="text-xs text-muted-foreground">Economic</div>
+                  </div>
+                )}
+                {effectiveness.taxEffectiveness !== undefined && (
+                  <div className="text-center p-3 rounded-lg bg-purple-50 dark:bg-purple-950/20">
+                    <div className="text-lg font-semibold text-purple-600">
+                      {effectiveness.taxEffectiveness.toFixed(1)}%
+                    </div>
+                    <div className="text-xs text-muted-foreground">Tax</div>
+                  </div>
+                )}
+                {effectiveness.combinedScore !== undefined && (
+                  <div className="text-center p-3 rounded-lg bg-orange-50 dark:bg-orange-950/20">
+                    <div className="text-lg font-semibold text-orange-600">
+                      {effectiveness.combinedScore.toFixed(1)}%
+                    </div>
+                    <div className="text-xs text-muted-foreground">Combined</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Synergies Display */}
+          {synergies && ((synergies.governmentSynergies?.length ?? 0) > 0 || (synergies.crossBuilderSynergies?.length ?? 0) > 0) && (
+            <div className="mt-6">
+              <h4 className="text-sm font-medium text-emerald-600 mb-3 flex items-center gap-2">
+                <Zap className="h-4 w-4" />
+                Active Synergies
+              </h4>
+              <div className="space-y-2">
+                {synergies.governmentSynergies?.slice(0, 2).map((synergy, index) => (
+                  <div key={index} className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200">
+                    <div className="text-sm font-medium text-emerald-800">{synergy.name}</div>
+                    <div className="text-xs text-emerald-700">{synergy.description}</div>
+                  </div>
+                ))}
+                {synergies.crossBuilderSynergies?.slice(0, 2).map((synergy) => (
+                  <div key={synergy.id} className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200">
+                    <div className="text-sm font-medium text-emerald-800">Cross-System Synergy</div>
+                    <div className="text-xs text-emerald-700">{synergy.description}</div>
+                    <div className="text-xs text-emerald-600 mt-1">Bonus: +{synergy.effectivenessBonus}%</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

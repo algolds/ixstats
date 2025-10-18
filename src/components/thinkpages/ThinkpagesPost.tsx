@@ -313,8 +313,9 @@ export function ThinkpagesPost({
                 @{post.parentPost.account.username}
               </span>
             </div>
-            <div 
+            <div
               className="text-sm text-muted-foreground line-clamp-3"
+              // SECURITY: formatContentEnhanced now includes sanitizeUserContent to prevent XSS
               dangerouslySetInnerHTML={{ __html: formatContentEnhanced(post.parentPost.content) }}
             />
           </div>
@@ -372,9 +373,11 @@ export function ThinkpagesPost({
                 <div className="text-muted-foreground text-sm mb-1">
                   @{post.repostOf.account.username} · @{post.repostOf.account.displayName}
                 </div>
+                {/* SECURITY: formatContentEnhanced now includes sanitizeUserContent to prevent XSS */}
                 <div dangerouslySetInnerHTML={{ __html: formatContentEnhanced(post.repostOf.content) }} />
               </div>
             ) : (
+              /* SECURITY: formatContentEnhanced now includes sanitizeUserContent to prevent XSS */
               <div dangerouslySetInnerHTML={{ __html: formatContentEnhanced(post.content) }} />
             )}
           </div>

@@ -185,8 +185,28 @@ export const diplomaticIntelligenceRouter = createTRPCRouter({
   getDiplomaticNetwork: publicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ input }) => {
-      // Simplified implementation due to schema differences
-      return [];
+      // Fetch bilateral relations for the country
+      const relations = await db.diplomaticRelation.findMany({
+        where: {
+          OR: [
+            { country1: input.countryId },
+            { country2: input.countryId }
+          ]
+        },
+        orderBy: { updatedAt: 'desc' }
+      });
+
+      // Map to a normalized shape for the client
+      return relations.map(r => ({
+        id: r.id,
+        countryId: r.country1 === input.countryId ? r.country1 : r.country2,
+        relatedCountryId: r.country1 === input.countryId ? r.country2 : r.country1,
+        relationType: (r.relationship as any) ?? 'neutral',
+        strength: r.strength,
+        recentActivity: r.recentActivity ?? undefined,
+        establishedAt: r.establishedAt,
+        updatedAt: r.updatedAt
+      }));
     }),
 
   // Get activity intelligence feed
@@ -201,8 +221,62 @@ export const diplomaticIntelligenceRouter = createTRPCRouter({
         throw new Error('Insufficient clearance level for activity intelligence');
       }
 
-      // Simplified implementation due to schema differences
-      return [];
+      // Leverage notifications and diplomatic events as intelligence activity feed
+      const [notifications, diplomaticEvents] = await Promise.all([
+        db.notification.findMany({
+          where: {
+            OR: [
+              { countryId: input.countryId },
+              { category: { in: ['diplomatic', 'economic', 'security'] } }
+            ]
+          },
+          orderBy: { createdAt: 'desc' },
+          take: input.limit
+        }),
+        db.diplomaticEvent.findMany({
+          where: {
+            OR: [
+              { country1Id: input.countryId },
+              { country2Id: input.countryId }
+            ]
+          },
+          orderBy: { createdAt: 'desc' },
+          take: input.limit
+        })
+      ]);
+
+      const items = [
+        ...notifications.map(n => ({
+          id: n.id,
+          countryId: input.countryId,
+          activityType: (n.category as any) ?? 'diplomatic',
+          description: n.title,
+          relatedCountries: [] as string[],
+          importance: (n.priority as any) ?? 'medium',
+          classification: 'RESTRICTED' as const,
+          timestamp: n.createdAt,
+          ixTimeTimestamp: IxTime.getCurrentIxTime()
+        })),
+        ...diplomaticEvents.map(e => {
+          const isCountry1 = e.country1Id === input.countryId;
+          const otherCountry = isCountry1 ? e.country2Id : e.country1Id;
+          return {
+            id: e.id,
+            countryId: input.countryId,
+            activityType: 'diplomatic' as const,
+            description: e.description ?? e.eventType,
+            relatedCountries: otherCountry ? [otherCountry] : [],
+            importance: 'medium' as const,
+            classification: 'RESTRICTED' as const,
+            timestamp: e.createdAt,
+            ixTimeTimestamp: IxTime.getCurrentIxTime()
+          };
+        })
+      ];
+
+      // Sort and limit
+      items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+      return items.slice(0, input.limit);
     }),
 
   // Create diplomatic action

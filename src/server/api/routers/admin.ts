@@ -4,8 +4,8 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
+import { CONFIG_CONSTANTS, getDefaultEconomicConfig } from "~/lib/config-service";
 import { IxTime } from "~/lib/ixtime";
-import { getDefaultEconomicConfig, CONFIG_CONSTANTS } from "~/lib/config-service";
 import { parseRosterFile } from "~/lib/data-parser";
 import { IxStatsCalculator } from "~/lib/calculations";
 import type { 
@@ -30,26 +30,25 @@ export const adminRouter = createTRPCRouter({
   // Internal calculation formulas management
   getCalculationFormulas: publicProcedure
     .query(async ({ ctx }) => {
-      // Mock implementation - replace with database queries
+      const lastCalc = await ctx.db.calculationLog.findFirst({ orderBy: { timestamp: "desc" } });
+      const lastModified = lastCalc?.timestamp ?? new Date();
+
       return {
         formulas: [
           {
             id: "gdp-growth",
-            name: "GDP Growth Calculation",
-            description: "Core GDP growth formula with tier-based constraints",
+            name: "GDP Effective Growth Rate",
+            description: "Computes effective GDP growth applying global/local factors and tier caps",
             category: "economic",
             isActive: true,
-            version: "2.1.3",
-            lastModified: new Date()
-          },
-          {
-            id: "tax-efficiency", 
-            name: "Tax Collection Efficiency",
-            description: "Government tax collection effectiveness calculation",
-            category: "economic", 
-            isActive: true,
-            version: "1.8.1",
-            lastModified: new Date()
+            version: "1.0.0",
+            lastModified,
+            variables: {
+              baseGrowthRate: 0.02,
+              gdpPerCapita: 20000,
+              globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR,
+              localGrowthFactor: 1.0
+            }
           }
         ]
       };

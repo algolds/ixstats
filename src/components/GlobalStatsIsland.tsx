@@ -49,23 +49,19 @@ import {
   BarChart3,
   PieChart,
   LineChart,
-  TrendingDown
+  TrendingDown,
+  Shield,
+  Building
 } from "lucide-react";
 import { useUser } from "~/context/auth-context";
 import CountryFlag from "~/app/_components/CountryFlag";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
+import { useLiveNotifications } from "~/hooks/useLiveNotifications";
+import { HealthRing } from "~/components/ui/health-ring";
+import { getNationUrl } from "~/lib/slug-utils";
 
 interface GlobalStatsIslandProps {
   className?: string;
-}
-
-interface Notification {
-  id: string;
-  type: "info" | "warning" | "success" | "error";
-  title: string;
-  message: string;
-  timestamp: number;
-  read: boolean;
 }
 
 interface SearchResult {
@@ -81,9 +77,11 @@ function GlobalStatsIslandContent() {
   const { setSize } = useDynamicIslandSize();
   const [mode, setMode] = useState<"compact" | "stats" | "search" | "notifications" | "mycountry">("compact");
   const [searchQuery, setSearchQuery] = useState("");
-  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [mounted, setMounted] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  
+  // Live notifications integration
+  const { notifications, unreadCount, isLoading: notificationsLoading, markAsRead, markAllAsRead } = useLiveNotifications();
   
   // Current time state
   const [currentTime, setCurrentTime] = useState<{
@@ -115,6 +113,14 @@ function GlobalStatsIslandContent() {
   const {
     data: countriesData,
   } = api.countries.getAll.useQuery();
+
+  // Fetch activity rings data for user's country - use the working endpoint!
+  const {
+    data: activityRingsData,
+  } = api.countries.getActivityRingsData.useQuery(
+    { countryId: userProfile?.countryId ?? '' },
+    { enabled: !!userProfile?.countryId }
+  );
 
   // Helper functions
   const getGreeting = (ixTime: number): string => {
@@ -201,7 +207,7 @@ function GlobalStatsIslandContent() {
             subtitle: `${formatCurrency(country.currentGdpPerCapita || 0)} per capita`,
             icon: Globe,
             action: () => {
-              window.location.href = createAbsoluteUrl(`/countries/${country.id}`);
+              window.location.href = createAbsoluteUrl(getNationUrl(country.name));
             }
           });
         });
@@ -235,37 +241,6 @@ function GlobalStatsIslandContent() {
 
     return results.slice(0, 8);
   }, [searchQuery, countriesData]);
-
-  // Mock notifications
-  useEffect(() => {
-    const mockNotifications: Notification[] = [
-      {
-        id: "1",
-        type: "info",
-        title: "Global Economic Update",
-        message: "World GDP increased by 2.1% this quarter",
-        timestamp: Date.now() - 300000, // 5 minutes ago
-        read: false
-      },
-      {
-        id: "2", 
-        type: "success",
-        title: "System Sync Complete",
-        message: "All economic data synchronized successfully",
-        timestamp: Date.now() - 900000, // 15 minutes ago
-        read: false
-      },
-      {
-        id: "3",
-        type: "warning",
-        title: "Market Volatility Alert", 
-        message: "Unusual fluctuations detected in 3 markets",
-        timestamp: Date.now() - 1800000, // 30 minutes ago
-        read: true
-      }
-    ];
-    setNotifications(mockNotifications);
-  }, []);
 
   // Use centralized time context instead of direct IxTime calls
   const { ixTimeTimestamp, multiplier: contextMultiplier } = useIxTime();
@@ -327,8 +302,6 @@ function GlobalStatsIslandContent() {
     setMounted(true);
   }, []);
 
-  const unreadNotifications = notifications.filter(n => !n.read).length;
-
   // Render different modes
   const renderContent = () => {
     if (!mounted) return null;
@@ -363,40 +336,116 @@ function GlobalStatsIslandContent() {
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="text-center p-3 bg-white/5 rounded-lg">
-                          <BarChart3 className="h-6 w-6 text-blue-400 mx-auto mb-2" />
-                          <div className="text-xs text-white/60 mb-1">Economic</div>
-                          <div className="w-8 h-8 mx-auto bg-green-500/20 rounded-full flex items-center justify-center relative">
-                            <div className="w-6 h-6 border-2 border-green-500/30 rounded-full absolute"></div>
-                            <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+                      {activityRingsData ? (
+                        <div className="grid grid-cols-4 gap-3">
+                          <div className="flex flex-col items-center text-center gap-2">
+                            <HealthRing
+                              value={activityRingsData.economicVitality}
+                              size={64}
+                              color="#22c55e"
+                              label="Economic"
+                            />
+                            <div className="space-y-0.5">
+                              <div className="flex items-center justify-center gap-1">
+                                <DollarSign className="h-3 w-3 text-green-400" />
+                                <span className="text-[10px] font-medium text-white">Economic</span>
+                              </div>
+                              <div className="text-[9px] text-white/60">
+                                {Math.round(activityRingsData.economicVitality)}% vitality
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-col items-center text-center gap-2">
+                            <HealthRing
+                              value={activityRingsData.populationWellbeing}
+                              size={64}
+                              color="#3b82f6"
+                              label="Population"
+                            />
+                            <div className="space-y-0.5">
+                              <div className="flex items-center justify-center gap-1">
+                                <Users className="h-3 w-3 text-blue-400" />
+                                <span className="text-[10px] font-medium text-white">Population</span>
+                              </div>
+                              <div className="text-[9px] text-white/60">
+                                {Math.round(activityRingsData.populationWellbeing)}% vitality
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-col items-center text-center gap-2">
+                            <HealthRing
+                              value={activityRingsData.diplomaticStanding}
+                              size={64}
+                              color="#a855f7"
+                              label="Diplomatic"
+                            />
+                            <div className="space-y-0.5">
+                              <div className="flex items-center justify-center gap-1">
+                                <Shield className="h-3 w-3 text-purple-400" />
+                                <span className="text-[10px] font-medium text-white">Diplomatic</span>
+                              </div>
+                              <div className="text-[9px] text-white/60">
+                                {Math.round(activityRingsData.diplomaticStanding)}% vitality
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-col items-center text-center gap-2">
+                            <HealthRing
+                              value={activityRingsData.governmentalEfficiency}
+                              size={64}
+                              color="#f97316"
+                              label="Government"
+                            />
+                            <div className="space-y-0.5">
+                              <div className="flex items-center justify-center gap-1">
+                                <Building className="h-3 w-3 text-orange-400" />
+                                <span className="text-[10px] font-medium text-white">Government</span>
+                              </div>
+                              <div className="text-[9px] text-white/60">
+                                {Math.round(activityRingsData.governmentalEfficiency)}% vitality
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        
-                        <div className="text-center p-3 bg-white/5 rounded-lg">
-                          <Users className="h-6 w-6 text-yellow-400 mx-auto mb-2" />
-                          <div className="text-xs text-white/60 mb-1">Social</div>
-                          <div className="w-8 h-8 mx-auto bg-yellow-500/20 rounded-full flex items-center justify-center relative">
-                            <div className="w-6 h-6 border-2 border-yellow-500/30 rounded-full absolute"></div>
-                            <div className="w-5 h-5 bg-yellow-500 rounded-full"></div>
+                      ) : (
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="text-center p-3 bg-white/5 rounded-lg">
+                            <BarChart3 className="h-6 w-6 text-blue-400 mx-auto mb-2" />
+                            <div className="text-xs text-white/60 mb-1">Economic</div>
+                            <div className="w-8 h-8 mx-auto bg-green-500/20 rounded-full flex items-center justify-center relative">
+                              <div className="w-6 h-6 border-2 border-green-500/30 rounded-full absolute"></div>
+                              <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+                            </div>
+                          </div>
+                          
+                          <div className="text-center p-3 bg-white/5 rounded-lg">
+                            <Users className="h-6 w-6 text-yellow-400 mx-auto mb-2" />
+                            <div className="text-xs text-white/60 mb-1">Social</div>
+                            <div className="w-8 h-8 mx-auto bg-yellow-500/20 rounded-full flex items-center justify-center relative">
+                              <div className="w-6 h-6 border-2 border-yellow-500/30 rounded-full absolute"></div>
+                              <div className="w-5 h-5 bg-yellow-500 rounded-full"></div>
+                            </div>
+                          </div>
+                          
+                          <div className="text-center p-3 bg-white/5 rounded-lg">
+                            <Activity className="h-6 w-6 text-purple-400 mx-auto mb-2" />
+                            <div className="text-xs text-white/60 mb-1">Security</div>
+                            <div className="w-8 h-8 mx-auto bg-purple-500/20 rounded-full flex items-center justify-center relative">
+                              <div className="w-6 h-6 border-2 border-purple-500/30 rounded-full absolute"></div>
+                              <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                            </div>
                           </div>
                         </div>
-                        
-                        <div className="text-center p-3 bg-white/5 rounded-lg">
-                          <Activity className="h-6 w-6 text-purple-400 mx-auto mb-2" />
-                          <div className="text-xs text-white/60 mb-1">Security</div>
-                          <div className="w-8 h-8 mx-auto bg-purple-500/20 rounded-full flex items-center justify-center relative">
-                            <div className="w-6 h-6 border-2 border-purple-500/30 rounded-full absolute"></div>
-                            <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                          </div>
-                        </div>
-                      </div>
+                      )}
                       
                       <div className="flex gap-2 pt-2">
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => userProfile?.country && (window.location.href = createAbsoluteUrl(`/countries/${userProfile.country.id}`))}
+                          onClick={() => userProfile?.country && (window.location.href = createAbsoluteUrl(getNationUrl(userProfile.country.name)))}
                           className="flex-1 text-white/80 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/10"
                         >
                           <Crown className="h-4 w-4 mr-2" />
@@ -418,7 +467,7 @@ function GlobalStatsIslandContent() {
                       <div className="p-4 bg-white/5 rounded-xl">
                         <User className="h-12 w-12 mx-auto mb-3 text-blue-400" />
                         <div className="text-white/70 mb-2">Welcome!</div>
-                        <div className="text-white/50 text-sm mb-4">Complete setup to access your executive dashboard</div>
+                        <div className="text-white/50 text-sm mb-4">Complete setup to access all features</div>
                         <Button
                           size="sm"
                           variant="outline"
@@ -449,9 +498,9 @@ function GlobalStatsIslandContent() {
                 className="h-6 w-6 p-0 text-white/80 hover:text-white hover:bg-white/10 relative flex items-center justify-center"
               >
                 <Bell className="h-3 w-3 md:h-4 md:w-4" />
-                {unreadNotifications > 0 && (
+                {unreadCount > 0 && (
                   <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs bg-red-500 text-white flex items-center justify-center">
-                    {unreadNotifications}
+                    {unreadCount}
                   </Badge>
                 )}
               </Button>
@@ -513,7 +562,7 @@ function GlobalStatsIslandContent() {
                     <div className="pt-3">
                       {setupStatus === 'complete' && userProfile?.country && (
                         <a
-                          href={createUrl(`/countries/${userProfile.country.id}`)}
+                          href={createUrl(getNationUrl(userProfile.country.name))}
                           className="flex items-center gap-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors rounded"
                         >
                           <Crown className="h-4 w-4" />
@@ -721,13 +770,11 @@ function GlobalStatsIslandContent() {
                 Notifications
               </DynamicTitle>
               <div className="flex items-center gap-2">
-                {unreadNotifications > 0 && (
+                {unreadCount > 0 && (
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => {
-                      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-                    }}
+                    onClick={() => markAllAsRead()}
                     className="text-white/80 hover:text-white hover:bg-white/10 text-xs"
                   >
                     Mark all read
@@ -745,29 +792,42 @@ function GlobalStatsIslandContent() {
             </div>
 
             <ScrollArea className="max-h-64">
-              {notifications.length > 0 ? (
+              {notificationsLoading ? (
+                <div className="text-center py-6">
+                  <div className="text-white/60 text-sm">Loading notifications...</div>
+                </div>
+              ) : notifications.length > 0 ? (
                 <div className="space-y-3">
                   {notifications.map((notification) => {
+                    const notificationType = notification.type || 'info';
                     const IconComponent = 
-                      notification.type === "info" ? Info :
-                      notification.type === "warning" ? AlertTriangle :
-                      notification.type === "success" ? CheckCircle : 
+                      notificationType === "info" ? Info :
+                      notificationType === "warning" ? AlertTriangle :
+                      notificationType === "success" ? CheckCircle : 
                       AlertTriangle;
 
                     return (
                       <div
                         key={notification.id}
-                        className={`p-3 rounded-lg border ${
+                        className={`p-3 rounded-lg border cursor-pointer hover:bg-white/5 transition-colors ${
                           notification.read 
                             ? 'bg-white/5 border-white/10' 
                             : 'bg-white/10 border-white/20'
                         }`}
+                        onClick={() => {
+                          if (!notification.read) {
+                            markAsRead(notification.id);
+                          }
+                          if (notification.href) {
+                            window.location.href = notification.href;
+                          }
+                        }}
                       >
                         <div className="flex items-start gap-3">
                           <IconComponent className={`h-4 w-4 mt-0.5 ${
-                            notification.type === "info" ? "text-blue-300" :
-                            notification.type === "warning" ? "text-yellow-300" :
-                            notification.type === "success" ? "text-green-300" :
+                            notificationType === "info" ? "text-blue-300" :
+                            notificationType === "warning" ? "text-yellow-300" :
+                            notificationType === "success" ? "text-green-300" :
                             "text-red-300"
                           }`} />
                           <div className="flex-1">
@@ -775,10 +835,10 @@ function GlobalStatsIslandContent() {
                               {notification.title}
                             </div>
                             <div className="text-xs text-white/70 mt-1">
-                              {notification.message}
+                              {notification.message || notification.description || ''}
                             </div>
                             <div className="text-xs text-white/50 mt-2">
-                              {new Date(notification.timestamp).toLocaleTimeString()}
+                              {new Date(notification.createdAt).toLocaleTimeString()}
                             </div>
                           </div>
                           {!notification.read && (
@@ -829,7 +889,7 @@ function GlobalStatsIslandContent() {
                 <div className="grid grid-cols-2 gap-3">
                   <Button
                     variant="outline"
-                    onClick={() => userProfile?.country && (window.location.href = createAbsoluteUrl(`/countries/${userProfile.country.id}`))}
+                    onClick={() => userProfile?.country && (window.location.href = createAbsoluteUrl(getNationUrl(userProfile.country.name)))}
                     className="flex items-center gap-2 text-white/80 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/10"
                   >
                     <Crown className="h-4 w-4" />

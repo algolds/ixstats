@@ -6,7 +6,7 @@
  * Usage: npx tsx scripts/audit/verify-database-integrity.ts
  */
 
-import { db } from "~/server/db";
+import { db } from "../../src/server/db";
 
 interface IntegrityCheck {
   category: string;
@@ -74,20 +74,20 @@ async function checkReferentialIntegrity() {
       message: "ActivityFeed uses optional userId (clerk IDs), not a strict relation",
     });
 
-    // Check ThinkPages with missing userId (field is non-nullable)
-    const postsWithoutUser = await db.thinkpagesPost.findMany({
+    // Check ThinkPages with missing accountId (non-nullable foreign key)
+    const postsWithoutAccount = await db.thinkpagesPost.findMany({
       where: {
-        userId: { equals: "" },
+        accountId: { equals: "" },
       },
     });
     log({
       category,
-      check: "ThinkPages User References",
-      status: postsWithoutUser.length === 0 ? "PASS" : "WARNING",
+      check: "ThinkPages Account References",
+      status: postsWithoutAccount.length === 0 ? "PASS" : "WARNING",
       message:
-        postsWithoutUser.length === 0
-          ? "All posts have userId references"
-          : `Found ${postsWithoutUser.length} posts without userId`,
+        postsWithoutAccount.length === 0
+          ? "All posts have accountId references"
+          : `Found ${postsWithoutAccount.length} posts without accountId`,
     });
 
     // Check government structures (country relation is non-nullable)
@@ -315,7 +315,7 @@ async function checkIndexPerformance() {
           const country = await db.country.findFirst();
           if (country) {
             const start = Date.now();
-            await db.country.findUnique({ where: { slug: country.slug } });
+            await db.country.findUnique({ where: { slug: country.slug as string } });
             return Date.now() - start;
           }
           return 0;

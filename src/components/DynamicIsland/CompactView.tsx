@@ -31,6 +31,8 @@ import { useGlobalNotificationBridge } from "~/services/GlobalNotificationBridge
 import { usePermissions } from "~/hooks/usePermissions";
 import { withBasePath } from "~/lib/base-path";
 import type { CompactViewProps } from './types';
+import { HealthRing } from "../ui/health-ring";
+import { getNationUrl } from "~/lib/slug-utils";
 
 // Helper functions
 const getGreeting = (ixTime: number): string => {
@@ -70,6 +72,24 @@ export function CompactView({
     undefined,
     { enabled: !!user?.id }
   );
+
+  // Fetch activity rings data for user's country - use the working endpoint!
+  const { data: activityRingsData, isLoading: ringsLoading } = api.countries.getActivityRingsData.useQuery(
+    { countryId: userProfile?.countryId ?? '' },
+    { enabled: !!userProfile?.countryId }
+  );
+
+  // Debug logging
+  React.useEffect(() => {
+    if (activityRingsData) {
+      console.log('[CompactView] Activity Rings Data:', {
+        economicVitality: activityRingsData.economicVitality,
+        populationWellbeing: activityRingsData.populationWellbeing,
+        diplomaticStanding: activityRingsData.diplomaticStanding,
+        governmentalEfficiency: activityRingsData.governmentalEfficiency,
+      });
+    }
+  }, [activityRingsData]);
   const { ixTimeTimestamp } = useIxTime();
   const [mounted, setMounted] = useState(false);
   const [isFlashing, setIsFlashing] = useState(false);
@@ -80,7 +100,45 @@ export function CompactView({
     greeting: "Good morning",
     timeDisplay: "",
   });
-
+  
+  // Economic metric display state - cycles between population, gdpPerCapita, totalGdp
+  const [economicMetric, setEconomicMetric] = useState<'population' | 'gdpPerCapita' | 'totalGdp'>('gdpPerCapita');
+  
+  // Cycle through economic metrics
+  const cycleEconomicMetric = () => {
+    setEconomicMetric((current) => {
+      if (current === 'population') return 'gdpPerCapita';
+      if (current === 'gdpPerCapita') return 'totalGdp';
+      return 'population';
+    });
+  };
+  
+  // Get current economic metric display
+  const getEconomicMetricDisplay = () => {
+    if (!userProfile?.country) return { label: 'GDP/Capita', value: '$0' };
+    
+    const country = userProfile.country;
+    switch (economicMetric) {
+      case 'population':
+        const pop = country.currentPopulation || 0;
+        return {
+          label: 'Population',
+          value: pop >= 1000000 ? `${(pop / 1000000).toFixed(1)}M` : `${(pop / 1000).toFixed(1)}K`
+        };
+      case 'totalGdp':
+        const gdp = country.currentTotalGdp || 0;
+        return {
+          label: 'Total GDP',
+          value: gdp >= 1000000000000 ? `$${(gdp / 1000000000000).toFixed(1)}T` : gdp >= 1000000000 ? `$${(gdp / 1000000000).toFixed(1)}B` : formatCurrency(gdp)
+        };
+      case 'gdpPerCapita':
+      default:
+        return {
+          label: 'GDP/Capita',
+          value: formatCurrency(country.currentGdpPerCapita || 0)
+        };
+    }
+  };
 
   // Enhanced notification system integration
   const enhancedStats = useNotificationStore(state => state.stats);
@@ -329,81 +387,106 @@ export function CompactView({
                             <div className="font-bold text-white drop-shadow-lg"> MyCountry Premium</div>
                             <div className="text-amber-200 dark:text-amber-100 text-sm font-medium">{userProfile.country.name}</div>
                           </div>
-                          <div className="ml-auto">
-                            <div className="text-xs text-amber-300 dark:text-amber-200 opacity-90 dark:opacity-80">GDP/Capita</div>
-                            <div className="font-bold text-amber-200 dark:text-amber-100">{formatCurrency(userProfile.country.currentGdpPerCapita || 0)}</div>
-                          </div>
+                          <button 
+                            onClick={cycleEconomicMetric}
+                            className="ml-auto hover:bg-white/10 px-3 py-2 rounded-lg transition-all hover:scale-105 active:scale-95 cursor-pointer group"
+                            title="Click to cycle: Population → GDP/Capita → Total GDP"
+                          >
+                            <div className="text-xs text-amber-300 dark:text-amber-200 opacity-90 dark:opacity-80 group-hover:opacity-100 transition-opacity">
+                              {getEconomicMetricDisplay().label}
+                            </div>
+                            <div className="font-bold text-amber-200 dark:text-amber-100 group-hover:text-amber-100 dark:group-hover:text-white transition-colors">
+                              {getEconomicMetricDisplay().value}
+                            </div>
+                          </button>
                         </div>
                       </div>
                       
-                      {/* Live metrics with Apple-style indicators */}
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="group cursor-pointer text-center p-4 bg-gradient-to-br from-green-500/20 to-emerald-500/10 dark:from-green-500/10 dark:to-emerald-500/5 rounded-2xl border border-green-300/40 dark:border-green-200/20 hover:border-green-400/60 dark:hover:border-green-300/40 transition-all duration-300 hover:scale-105 hover:shadow-lg">
-                          <BarChart3 className="h-7 w-7 text-green-600 dark:text-green-400 mx-auto mb-3 group-hover:scale-110 transition-transform duration-300" />
-                          <div className="text-xs text-green-700 dark:text-green-300 mb-2 font-medium">Economic Health</div>
-                          <div className="relative w-10 h-10 mx-auto">
-                            <div className="absolute inset-0">
-                              <svg className="w-10 h-10 transform -rotate-90" viewBox="0 0 36 36">
-                                <path className="text-green-200/40 dark:text-green-900/20" strokeWidth="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                <path className="text-green-600 dark:text-green-400" strokeWidth="3" strokeDasharray="85, 100" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                              </svg>
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-xs font-bold text-green-700 dark:text-green-400">85%</span>
-                              </div>
+                      {/* Live National Vitality Rings */}
+                      {activityRingsData && !ringsLoading ? (
+                        <div className="grid grid-cols-4 gap-3">
+                          <div className="flex flex-col items-center text-center gap-2">
+                            <HealthRing
+                              value={activityRingsData.economicVitality || 0}
+                              size={56}
+                              color="#22c55e"
+                              label="Economic"
+                            />
+                            <div className="text-[10px] text-green-700 dark:text-green-300 font-medium">
+                              Economic {activityRingsData.economicVitality}%
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-col items-center text-center gap-2">
+                            <HealthRing
+                              value={activityRingsData.populationWellbeing || 0}
+                              size={56}
+                              color="#3b82f6"
+                              label="Population"
+                            />
+                            <div className="text-[10px] text-blue-700 dark:text-blue-300 font-medium">
+                              Population {activityRingsData.populationWellbeing}%
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-col items-center text-center gap-2">
+                            <HealthRing
+                              value={activityRingsData.diplomaticStanding || 0}
+                              size={56}
+                              color="#a855f7"
+                              label="Diplomatic"
+                            />
+                            <div className="text-[10px] text-purple-700 dark:text-purple-300 font-medium">
+                              Diplomatic {activityRingsData.diplomaticStanding}%
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-col items-center text-center gap-2">
+                            <HealthRing
+                              value={activityRingsData.governmentalEfficiency || 0}
+                              size={56}
+                              color="#f97316"
+                              label="Government"
+                            />
+                            <div className="text-[10px] text-orange-700 dark:text-orange-300 font-medium">
+                              Government {activityRingsData.governmentalEfficiency}%
                             </div>
                           </div>
                         </div>
-                        
-                        <div className="group cursor-pointer text-center p-4 bg-gradient-to-br from-blue-500/20 to-cyan-500/10 dark:from-blue-500/10 dark:to-cyan-500/5 rounded-2xl border border-blue-300/40 dark:border-blue-200/20 hover:border-blue-400/60 dark:hover:border-blue-300/40 transition-all duration-300 hover:scale-105 hover:shadow-lg">
-                          <Users className="h-7 w-7 text-blue-600 dark:text-blue-400 mx-auto mb-3 group-hover:scale-110 transition-transform duration-300" />
-                          <div className="text-xs text-blue-700 dark:text-blue-300 mb-2 font-medium">Social Stability</div>
-                          <div className="relative w-10 h-10 mx-auto">
-                            <div className="absolute inset-0">
-                              <svg className="w-10 h-10 transform -rotate-90" viewBox="0 0 36 36">
-                                <path className="text-blue-200/40 dark:text-blue-900/20" strokeWidth="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                <path className="text-blue-600 dark:text-blue-400" strokeWidth="3" strokeDasharray="72, 100" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                              </svg>
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-xs font-bold text-blue-700 dark:text-blue-400">72%</span>
-                              </div>
-                            </div>
+                      ) : (
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="group cursor-pointer text-center p-4 bg-gradient-to-br from-green-500/20 to-emerald-500/10 dark:from-green-500/10 dark:to-emerald-500/5 rounded-2xl border border-green-300/40 dark:border-green-200/20">
+                            <BarChart3 className="h-7 w-7 text-green-600 dark:text-green-400 mx-auto mb-3" />
+                            <div className="text-xs text-green-700 dark:text-green-300 mb-2 font-medium">Loading...</div>
+                          </div>
+                          <div className="group cursor-pointer text-center p-4 bg-gradient-to-br from-blue-500/20 to-cyan-500/10 dark:from-blue-500/10 dark:to-cyan-500/5 rounded-2xl border border-blue-300/40 dark:border-blue-200/20">
+                            <Users className="h-7 w-7 text-blue-600 dark:text-blue-400 mx-auto mb-3" />
+                            <div className="text-xs text-blue-700 dark:text-blue-300 mb-2 font-medium">Loading...</div>
+                          </div>
+                          <div className="group cursor-pointer text-center p-4 bg-gradient-to-br from-purple-500/20 to-indigo-500/10 dark:from-purple-500/10 dark:to-indigo-500/5 rounded-2xl border border-purple-300/40 dark:border-purple-200/20">
+                            <Activity className="h-7 w-7 text-purple-600 dark:text-purple-400 mx-auto mb-3" />
+                            <div className="text-xs text-purple-700 dark:text-purple-300 mb-2 font-medium">Loading...</div>
                           </div>
                         </div>
-                        
-                        <div className="group cursor-pointer text-center p-4 bg-gradient-to-br from-purple-500/20 to-indigo-500/10 dark:from-purple-500/10 dark:to-indigo-500/5 rounded-2xl border border-purple-300/40 dark:border-purple-200/20 hover:border-purple-400/60 dark:hover:border-purple-300/40 transition-all duration-300 hover:scale-105 hover:shadow-lg">
-                          <Activity className="h-7 w-7 text-purple-600 dark:text-purple-400 mx-auto mb-3 group-hover:scale-110 transition-transform duration-300" />
-                          <div className="text-xs text-purple-700 dark:text-purple-300 mb-2 font-medium">Defense Status</div>
-                          <div className="relative w-10 h-10 mx-auto">
-                            <div className="absolute inset-0">
-                              <svg className="w-10 h-10 transform -rotate-90" viewBox="0 0 36 36">
-                                <path className="text-purple-200/40 dark:text-purple-900/20" strokeWidth="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                <path className="text-purple-600 dark:text-purple-400" strokeWidth="3" strokeDasharray="91, 100" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                              </svg>
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-xs font-bold text-purple-700 dark:text-purple-400">91%</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      )}
                       
                       {/* Action buttons */}
                       <div className="grid grid-cols-2 gap-3">
                         <Button
                           size="sm"
-                          onClick={() => userProfile?.country && (window.location.href = createAbsoluteUrl(`/countries/${userProfile.country.id}`))}
+                          onClick={() => userProfile?.country && (window.location.href = createAbsoluteUrl(getNationUrl(userProfile.country.name)))}
                           className="group relative overflow-hidden bg-gradient-to-r from-amber-500/30 to-orange-500/25 dark:from-amber-500/20 dark:to-orange-500/20 hover:from-amber-500/40 hover:to-orange-500/35 dark:hover:from-amber-500/30 dark:hover:to-orange-500/30 border border-amber-400/50 dark:border-amber-300/30 hover:border-amber-500/70 dark:hover:border-amber-300/50 text-amber-800 dark:text-amber-200 hover:text-amber-900 dark:hover:text-amber-100 transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm"
                         >
                           <Crown className="h-4 w-4 mr-2 relative z-10" />
-                          <span className="relative z-10 font-medium">Country Profile</span>
+                          <span className="relative z-10 font-medium">Profile</span>
                         </Button>
                         <Button
                           size="sm"
-                          onClick={() => window.location.href = createAbsoluteUrl('/eci')}
+                          onClick={() => window.location.href = createAbsoluteUrl('/mycountry')}
                           className="group relative overflow-hidden bg-gradient-to-r from-blue-500/30 to-cyan-500/25 dark:from-blue-500/20 dark:to-cyan-500/20 hover:from-blue-500/40 hover:to-cyan-500/35 dark:hover:from-blue-500/30 dark:hover:to-cyan-500/30 border border-blue-400/50 dark:border-blue-300/30 hover:border-blue-500/70 dark:hover:border-blue-300/50 text-blue-800 dark:text-blue-200 hover:text-blue-900 dark:hover:text-blue-100 transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm"
                         >
                           <Target className="h-4 w-4 mr-2 relative z-10" />
-                          <span className="relative z-10 font-medium">Country Center</span>
+                          <span className="relative z-10 font-medium">MyCountry</span>
                         </Button>
                       </div>
                     </div>
@@ -412,7 +495,7 @@ export function CompactView({
                       <div className="p-4 bg-muted/30 rounded-xl">
                         <User className="h-12 w-12 mx-auto mb-3 text-blue-400" />
                         <div className="text-muted-foreground mb-2">Welcome!</div>
-                        <div className="text-muted-foreground text-sm mb-4">Complete setup to access your executive dashboard</div>
+                        <div className="text-muted-foreground text-sm mb-4">Complete setup to access all features</div>
                         <Button
                           size="sm"
                           variant="outline"

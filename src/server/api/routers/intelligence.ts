@@ -3,6 +3,7 @@ import { createTRPCRouter, publicProcedure, premiumProcedure, adminProcedure } f
 import { standardize } from "~/lib/interface-standardizer";
 import { unifyIntelligenceItem } from "~/lib/transformers/interface-adapters";
 import { calculateIntelligence } from "~/lib/intelligence-calculator";
+import { notificationAPI } from "~/lib/notification-api";
 
 export const intelligenceRouter = createTRPCRouter({
   getFeed: publicProcedure.query(async ({ ctx }) => {
@@ -40,7 +41,7 @@ export const intelligenceRouter = createTRPCRouter({
       affectedCountries: z.string().optional()
     }))
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.intelligenceItem.create({
+      const item = await ctx.db.intelligenceItem.create({
         data: {
           title: input.title,
           content: input.content,
@@ -53,6 +54,52 @@ export const intelligenceRouter = createTRPCRouter({
           isActive: true
         }
       });
+
+      // 🔔 Notify affected countries (or global if none specified)
+      try {
+        const priorityMap: Record<string, 'high' | 'medium' | 'low'> = {
+          'critical': 'high',
+          'high': 'high',
+          'medium': 'medium',
+          'low': 'low'
+        };
+
+        if (input.affectedCountries) {
+          // Parse affected countries and notify each
+          const countryIds = input.affectedCountries.split(',').map(c => c.trim());
+          for (const countryId of countryIds) {
+            await notificationAPI.create({
+              title: '🔍 Intelligence Alert',
+              message: `${input.title} - ${input.priority.toUpperCase()} priority`,
+              countryId,
+              category: 'intelligence',
+              priority: priorityMap[input.priority] || 'medium',
+              type: input.priority === 'critical' ? 'error' : input.priority === 'high' ? 'warning' : 'info',
+              href: '/intelligence',
+              source: 'intelligence-system',
+              actionable: true,
+              metadata: { intelligenceItemId: item.id, category: input.category, region: input.region },
+            });
+          }
+        } else {
+          // Global intelligence notification
+          await notificationAPI.create({
+            title: '🔍 Global Intelligence Alert',
+            message: `${input.title} - ${input.priority.toUpperCase()} priority`,
+            category: 'intelligence',
+            priority: priorityMap[input.priority] || 'medium',
+            type: input.priority === 'critical' ? 'error' : input.priority === 'high' ? 'warning' : 'info',
+            href: '/intelligence',
+            source: 'intelligence-system',
+            actionable: true,
+            metadata: { intelligenceItemId: item.id, category: input.category, region: input.region },
+          });
+        }
+      } catch (error) {
+        console.error('[Intelligence] Failed to send intelligence notification:', error);
+      }
+
+      return item;
     }),
 
   getSecureMessages: premiumProcedure
@@ -210,6 +257,12 @@ if (process.env.NODE_ENV === 'development') {
     return { message: "Intelligence data already exists", count };
   });
 }
+// In production, ensure initializeSampleData is not exposed
+else {
+  // No-op guard to prevent accidental exposure; keep type shape intact
+  // Assign undefined without directive; type cast to maintain router shape
+  (intelligenceRouter as any).initializeSampleData = undefined;
+}
 
 // ===== NEW INTELLIGENCE SYSTEM ENDPOINTS =====
 
@@ -296,5 +349,54 @@ export const intelligenceBriefingRouter = createTRPCRouter({
     .mutation(async ({ ctx }) => {
       await calculateIntelligence({ forceRecalculate: true });
       return { success: true, message: 'Intelligence recalculated for all countries' };
-    })
+    }),
+
+  // Get global intelligence summary for dashboard
+  getGlobalSummary: publicProcedure.query(async ({ ctx }) => {
+    // Get active crises from SDI system
+    const activeCrises = await ctx.db.crisisEvent.count({
+      where: { responseStatus: { not: 'resolved' } }
+    });
+
+    // Get critical crises
+    const criticalCrises = await ctx.db.crisisEvent.count({
+      where: {
+        responseStatus: { not: 'resolved' },
+        severity: 'critical'
+      }
+    });
+
+    // Get active diplomatic missions
+    const diplomaticMissions = await ctx.db.diplomaticEvent.count({
+      where: {
+        status: 'active',
+        eventType: { in: ['summit', 'trade_mission', 'state_visit'] }
+      }
+    });
+
+    // Get intelligence items from last 7 days
+    const recentIntelligence = await ctx.db.intelligenceItem.count({
+      where: {
+        isActive: true,
+        timestamp: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
+      }
+    });
+
+    // Get high priority intelligence
+    const intelligenceAlerts = await ctx.db.intelligenceItem.count({
+      where: {
+        isActive: true,
+        priority: { in: ['HIGH', 'CRITICAL'] }
+      }
+    });
+
+    return {
+      activeCrises,
+      criticalCrises,
+      diplomaticMissions,
+      recentIntelligence,
+      intelligenceAlerts,
+      timestamp: new Date()
+    };
+  })
 });

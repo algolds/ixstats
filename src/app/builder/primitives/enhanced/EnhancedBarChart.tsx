@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, LabelList } from 'recharts';
 import { motion } from 'framer-motion';
 import { cn } from '~/lib/utils';
 import { useSectionTheme, generateSectionChartColors, getGlassClasses } from './theme-utils';
@@ -22,20 +22,37 @@ interface EnhancedBarChartProps extends EnhancedChartProps {
 
 interface ChartTooltipProps {
   active?: boolean;
-  payload?: any[];
+  payload?: Array<{ name: string; value: number; fill?: string; color?: string }>;
   label?: string | number;
   formatValue?: (value: number) => string;
   colors: string[];
 }
 
+interface ChartLabelEntry {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  value?: number;
+  [key: string]: unknown;
+}
+
 // Custom label renderer for bar values
-function renderCustomLabel(entry: any, formatValue?: (value: number) => string) {
+function renderCustomLabel(entry: ChartLabelEntry, formatValue?: (value: number) => string) {
   if (!entry || entry.value === undefined || entry.value === null) return null;
+  
+  // Safely handle NaN values in entry properties with additional validation
+  const safeX = typeof entry.x === 'number' && !isNaN(entry.x) && isFinite(entry.x) ? entry.x : 0;
+  const safeWidth = typeof entry.width === 'number' && !isNaN(entry.width) && isFinite(entry.width) && entry.width > 0 ? entry.width : 1;
+  const safeY = typeof entry.y === 'number' && !isNaN(entry.y) && isFinite(entry.y) ? entry.y : 0;
+  
+  // Ensure the value is also valid
+  const safeValue = typeof entry.value === 'number' && !isNaN(entry.value) && isFinite(entry.value) ? entry.value : 0;
   
   return (
     <text
-      x={entry.x + entry.width / 2}
-      y={entry.y - 5}
+      x={String(safeX + safeWidth / 2)}
+      y={String(safeY - 5)}
       fill="currentColor"
       textAnchor="middle"
       dominantBaseline="bottom"
@@ -43,7 +60,7 @@ function renderCustomLabel(entry: any, formatValue?: (value: number) => string) 
       fontWeight="500"
       className="fill-gray-700 dark:fill-gray-300"
     >
-      {formatValue ? formatValue(entry.value) : entry.value}
+      {formatValue ? formatValue(safeValue) : safeValue}
     </text>
   );
 }
@@ -71,10 +88,10 @@ function ChartTooltip({ active, payload, label, formatValue, colors }: ChartTool
           <div key={index} className="flex items-center gap-2 text-sm">
             <div
               className="w-3 h-3 rounded-sm"
-              style={{ backgroundColor: entry.color || colors[index] }}
+              style={{ backgroundColor: (entry.fill || entry.color || colors[index]) as string }}
             />
             <span className="text-gray-900 dark:text-gray-100">
-              {entry.name}: 
+              {entry.name}:
               <span className="ml-1">
                 {formatValue ? formatValue(entry.value) : entry.value}
               </span>
@@ -125,7 +142,9 @@ export function EnhancedBarChart({
         'red': 'hsl(0, 84%, 60%)', // Red for negative
         'gold': 'hsl(45, 93%, 58%)', // Gold for neutral
         'blue': 'hsl(217, 91%, 60%)', // Blue for info
-        'purple': 'hsl(262, 83%, 58%)' // Purple for special
+        'purple': 'hsl(262, 83%, 58%)', // Purple for special
+        'yellow': 'hsl(45, 93%, 58%)', // Yellow for projection years 4-7
+        'orange': 'hsl(25, 95%, 53%)' // Orange for projection years 8-10
       };
       
       return data.map(item => {
@@ -156,17 +175,90 @@ export function EnhancedBarChart({
 
   // Process and limit data if needed
   const processedData = useMemo(() => {
-    if (data.length <= maxBars) return data;
+    // First, sanitize the data to ensure no NaN values
+    const sanitizedData = data.map((item, index) => {
+      const sanitized = { ...item };
+
+      // Ensure xKey is valid
+      if (xKey in sanitized) {
+        const xValue = sanitized[xKey];
+        if (xValue === null || xValue === undefined || (typeof xValue === 'number' && isNaN(xValue))) {
+          sanitized[xKey] = `Item ${index + 1}`;
+        }
+      }
+
+      // Ensure yKey values are valid numbers
+      if (Array.isArray(yKey)) {
+        yKey.forEach(key => {
+          if (key in sanitized) {
+            const value = sanitized[key];
+            sanitized[key] = (typeof value === 'number' && !isNaN(value) && isFinite(value)) ? value : 0;
+          }
+        });
+      } else {
+        if (yKey in sanitized) {
+          const value = sanitized[yKey];
+          sanitized[yKey] = (typeof value === 'number' && !isNaN(value) && isFinite(value)) ? value : 0;
+        }
+      }
+      return sanitized;
+    });
+
+    // Filter out any items that might still have invalid data
+    const validData = sanitizedData.filter((item, index) => {
+      if (Array.isArray(yKey)) {
+        const isValid = yKey.every(key => {
+          const value = item[key];
+          const valid = typeof value === 'number' && !isNaN(value) && isFinite(value);
+          return valid;
+        });
+        return isValid;
+      } else {
+        const value = item[yKey];
+        return typeof value === 'number' && !isNaN(value) && isFinite(value);
+      }
+    });
+
+    if (validData.length <= maxBars) {
+      return validData;
+    }
     
     // If too many bars, take top N by value
-    const sorted = [...data].sort((a, b) => {
+    const sorted = [...validData].sort((a, b) => {
       const aValue = Array.isArray(yKey) ? yKey.reduce((sum, key) => sum + (a[key] || 0), 0) : (a[yKey] || 0);
       const bValue = Array.isArray(yKey) ? yKey.reduce((sum, key) => sum + (b[key] || 0), 0) : (b[yKey] || 0);
       return bValue - aValue;
     });
-    
+
     return sorted.slice(0, maxBars);
-  }, [data, maxBars, yKey]);
+  }, [data, maxBars, yKey, xKey, title]);
+
+  // Check if we have valid data to render
+  if (!processedData || processedData.length === 0) {
+    return (
+      <div 
+        className={cn('space-y-4', className)}
+        style={cssVars as React.CSSProperties}
+      >
+        {title && (
+          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{title}</h3>
+        )}
+        
+        <div 
+          className={cn(
+            'flex items-center justify-center rounded-lg p-6 text-center',
+            getGlassClasses('base', resolvedTheme, sectionId)
+          )}
+          style={{ height: `${height}px` }}
+        >
+          <div className="space-y-2">
+            <div className="text-gray-400 dark:text-gray-500 text-lg">📊</div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">No data available to display</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Render loading state
   if (loading) {
@@ -256,8 +348,8 @@ export function EnhancedBarChart({
           getGlassClasses('base', resolvedTheme, sectionId)
         )}
         style={{ 
-          height: `${!isNaN(height) ? height + 32 : 300}px`, 
-          width: (width && !isNaN(width)) ? `${width}px` : undefined 
+          height: `${!isNaN(height) && isFinite(height) && height > 0 ? height + 32 : 300}px`, 
+          width: (width && !isNaN(width) && isFinite(width) && width > 0) ? `${width}px` : undefined 
         }}
       >
         <ResponsiveContainer width="100%" height="100%">
@@ -293,18 +385,31 @@ export function EnhancedBarChart({
               axisLine={{ stroke: 'currentColor' }}
               tickLine={{ stroke: 'currentColor' }}
               tickFormatter={horizontal ? formatLabel : formatValue}
-              domain={horizontal ? undefined : ['dataMin * 0.95', 'dataMax * 1.05']}
+              domain={horizontal ? undefined : [0, 'auto']}
               allowDataOverflow={false}
             />
 
             {showTooltip && (
-              <Tooltip 
+              <Tooltip
                 content={(props) => (
-                  <ChartTooltip 
-                    {...props} 
+                  <ChartTooltip
+                    {...props}
                     formatValue={formatValue}
                     colors={chartColors.filter((color): color is string => color !== undefined)}
                   />
+                )}
+              />
+            )}
+
+            {/* Legend for multi-key charts */}
+            {Array.isArray(yKey) && yKey.length > 1 && showLegend && (
+              <Legend
+                wrapperStyle={{ paddingTop: '10px' }}
+                iconType="rect"
+                formatter={(value: string) => (
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    {value.charAt(0).toUpperCase() + value.slice(1).replace(/([A-Z])/g, ' $1')}
+                  </span>
                 )}
               />
             )}
@@ -315,21 +420,20 @@ export function EnhancedBarChart({
                 <Bar
                   key={key}
                   dataKey={key}
-                  fill={chartColors[index]}
-                  stroke={chartColors[index]}
-                  strokeWidth={1}
+                  fill={chartColors[index % chartColors.length]}
                   stackId={stacked ? 'stack' : undefined}
                   animationDuration={animationDuration}
-                  minPointSize={10}
-                  radius={[2, 2, 0, 0]}
+                  radius={[4, 4, 0, 0]}
+                  name={key}
                 >
-                  {/* Individual cell colors if needed */}
+                  {/* Individual cell colors for non-stacked multi-key charts */}
                   {!stacked && processedData.map((entry, cellIndex) => (
-                    <Cell 
-                      key={`cell-${cellIndex}`} 
-                      fill={chartColors[cellIndex % chartColors.length]} 
+                    <Cell
+                      key={`cell-${key}-${cellIndex}`}
+                      fill={chartColors[index % chartColors.length]}
                     />
                   ))}
+
                   {/* Add data labels if showValues is true */}
                   {showValues && (
                     <LabelList
@@ -338,7 +442,10 @@ export function EnhancedBarChart({
                       fontSize={11}
                       fontWeight="500"
                       className="fill-gray-700 dark:fill-gray-300"
-                      formatter={formatValue ? (value: any) => formatValue(Number(value)) : undefined}
+                      formatter={formatValue ? (value: unknown) => {
+                        const numValue = Number(value);
+                        return !isNaN(numValue) && isFinite(numValue) ? formatValue(numValue) : '';
+                      } : undefined}
                     />
                   )}
                 </Bar>
@@ -368,7 +475,10 @@ export function EnhancedBarChart({
                     fontSize={11}
                     fontWeight="500"
                     className="fill-gray-700 dark:fill-gray-300"
-                    formatter={formatValue ? (value: any) => formatValue(Number(value)) : undefined}
+                    formatter={formatValue ? (value: unknown) => {
+                      const numValue = Number(value);
+                      return !isNaN(numValue) && isFinite(numValue) ? formatValue(numValue) : '';
+                    } : undefined}
                   />
                 )}
               </Bar>

@@ -46,7 +46,7 @@ export interface Challenge {
 }
 
 // Component compatibility matrix based on country profiles
-const COUNTRY_COMPONENT_COMPATIBILITY: Record<string, Record<ComponentType, number>> = {
+const COUNTRY_COMPONENT_COMPATIBILITY: Record<string, Partial<Record<ComponentType, number>>> = {
   // Size-based compatibility
   small: {
     [ComponentType.CENTRALIZED_POWER]: 0.9,
@@ -65,6 +65,7 @@ const COUNTRY_COMPONENT_COMPATIBILITY: Record<string, Record<ComponentType, numb
     [ComponentType.TRADITIONAL_LEGITIMACY]: 0.6,
     [ComponentType.CHARISMATIC_LEGITIMACY]: 0.5,
     [ComponentType.RELIGIOUS_LEGITIMACY]: 0.5,
+    [ComponentType.INSTITUTIONAL_LEGITIMACY]: 0.8,
     [ComponentType.AUTOCRATIC_PROCESS]: 0.6,
     [ComponentType.OLIGARCHIC_PROCESS]: 0.4,
     [ComponentType.MILITARY_ADMINISTRATION]: 0.4,
@@ -72,9 +73,21 @@ const COUNTRY_COMPONENT_COMPATIBILITY: Record<string, Record<ComponentType, numb
     [ComponentType.SURVEILLANCE_SYSTEM]: 0.3,
     [ComponentType.ECONOMIC_INCENTIVES]: 0.7,
     [ComponentType.SOCIAL_PRESSURE]: 0.8,
-    [ComponentType.MILITARY_ENFORCEMENT]: 0.3
+    [ComponentType.MILITARY_ENFORCEMENT]: 0.3,
+    [ComponentType.DIGITAL_GOVERNMENT]: 0.8,
+    [ComponentType.MINIMAL_GOVERNMENT]: 0.7,
+    [ComponentType.PRIVATE_SECTOR_LEADERSHIP]: 0.8,
+    [ComponentType.SOCIAL_DEMOCRACY]: 0.7,
+    [ComponentType.COMPREHENSIVE_WELFARE]: 0.6,
+    [ComponentType.PUBLIC_SECTOR_LEADERSHIP]: 0.6,
+    [ComponentType.ENVIRONMENTAL_FOCUS]: 0.7,
+    [ComponentType.ECONOMIC_PLANNING]: 0.6,
+    [ComponentType.DEVELOPMENTAL_STATE]: 0.7,
+    [ComponentType.WORKER_PROTECTION]: 0.7,
+    [ComponentType.MERITOCRATIC_SYSTEM]: 0.8,
+    [ComponentType.REGIONAL_DEVELOPMENT]: 0.75
   },
-  
+
   large: {
     [ComponentType.CENTRALIZED_POWER]: 0.6,
     [ComponentType.FEDERAL_SYSTEM]: 0.9,
@@ -92,6 +105,7 @@ const COUNTRY_COMPONENT_COMPATIBILITY: Record<string, Record<ComponentType, numb
     [ComponentType.TRADITIONAL_LEGITIMACY]: 0.5,
     [ComponentType.CHARISMATIC_LEGITIMACY]: 0.4,
     [ComponentType.RELIGIOUS_LEGITIMACY]: 0.4,
+    [ComponentType.INSTITUTIONAL_LEGITIMACY]: 0.85,
     [ComponentType.AUTOCRATIC_PROCESS]: 0.5,
     [ComponentType.OLIGARCHIC_PROCESS]: 0.6,
     [ComponentType.MILITARY_ADMINISTRATION]: 0.5,
@@ -99,7 +113,19 @@ const COUNTRY_COMPONENT_COMPATIBILITY: Record<string, Record<ComponentType, numb
     [ComponentType.SURVEILLANCE_SYSTEM]: 0.7,
     [ComponentType.ECONOMIC_INCENTIVES]: 0.8,
     [ComponentType.SOCIAL_PRESSURE]: 0.5,
-    [ComponentType.MILITARY_ENFORCEMENT]: 0.6
+    [ComponentType.MILITARY_ENFORCEMENT]: 0.6,
+    [ComponentType.DIGITAL_GOVERNMENT]: 0.9,
+    [ComponentType.MINIMAL_GOVERNMENT]: 0.6,
+    [ComponentType.PRIVATE_SECTOR_LEADERSHIP]: 0.8,
+    [ComponentType.SOCIAL_DEMOCRACY]: 0.8,
+    [ComponentType.COMPREHENSIVE_WELFARE]: 0.7,
+    [ComponentType.PUBLIC_SECTOR_LEADERSHIP]: 0.7,
+    [ComponentType.ENVIRONMENTAL_FOCUS]: 0.7,
+    [ComponentType.ECONOMIC_PLANNING]: 0.7,
+    [ComponentType.DEVELOPMENTAL_STATE]: 0.8,
+    [ComponentType.WORKER_PROTECTION]: 0.7,
+    [ComponentType.MERITOCRATIC_SYSTEM]: 0.9,
+    [ComponentType.REGIONAL_DEVELOPMENT]: 0.85
   },
 
   // Development level compatibility
@@ -112,6 +138,7 @@ const COUNTRY_COMPONENT_COMPATIBILITY: Record<string, Record<ComponentType, numb
     [ComponentType.PERFORMANCE_LEGITIMACY]: 0.9,
     [ComponentType.DEMOCRATIC_PROCESS]: 0.85,
     [ComponentType.ELECTORAL_LEGITIMACY]: 0.85,
+    [ComponentType.INSTITUTIONAL_LEGITIMACY]: 0.9,
     [ComponentType.ECONOMIC_INCENTIVES]: 0.8,
     [ComponentType.FEDERAL_SYSTEM]: 0.8,
     [ComponentType.CENTRALIZED_POWER]: 0.6,
@@ -127,7 +154,19 @@ const COUNTRY_COMPONENT_COMPATIBILITY: Record<string, Record<ComponentType, numb
     [ComponentType.PARTISAN_INSTITUTIONS]: 0.5,
     [ComponentType.SURVEILLANCE_SYSTEM]: 0.6,
     [ComponentType.SOCIAL_PRESSURE]: 0.5,
-    [ComponentType.MILITARY_ENFORCEMENT]: 0.2
+    [ComponentType.MILITARY_ENFORCEMENT]: 0.2,
+    [ComponentType.DIGITAL_GOVERNMENT]: 0.95,
+    [ComponentType.MINIMAL_GOVERNMENT]: 0.7,
+    [ComponentType.PRIVATE_SECTOR_LEADERSHIP]: 0.9,
+    [ComponentType.SOCIAL_DEMOCRACY]: 0.85,
+    [ComponentType.COMPREHENSIVE_WELFARE]: 0.8,
+    [ComponentType.PUBLIC_SECTOR_LEADERSHIP]: 0.7,
+    [ComponentType.ENVIRONMENTAL_FOCUS]: 0.8,
+    [ComponentType.ECONOMIC_PLANNING]: 0.6,
+    [ComponentType.DEVELOPMENTAL_STATE]: 0.7,
+    [ComponentType.WORKER_PROTECTION]: 0.75,
+    [ComponentType.MERITOCRATIC_SYSTEM]: 0.95,
+    [ComponentType.REGIONAL_DEVELOPMENT]: 0.75
   },
 
   developing: {
@@ -149,12 +188,25 @@ const COUNTRY_COMPONENT_COMPATIBILITY: Record<string, Record<ComponentType, numb
     [ComponentType.TECHNOCRATIC_AGENCIES]: 0.4,
     [ComponentType.DEMOCRATIC_PROCESS]: 0.5,
     [ComponentType.ELECTORAL_LEGITIMACY]: 0.5,
+    [ComponentType.INSTITUTIONAL_LEGITIMACY]: 0.4,
     [ComponentType.ECONOMIC_INCENTIVES]: 0.6,
     [ComponentType.FEDERAL_SYSTEM]: 0.3,
     [ComponentType.CONFEDERATE_SYSTEM]: 0.4,
     [ComponentType.UNITARY_SYSTEM]: 0.7,
     [ComponentType.CONSENSUS_PROCESS]: 0.6,
-    [ComponentType.OLIGARCHIC_PROCESS]: 0.6
+    [ComponentType.OLIGARCHIC_PROCESS]: 0.6,
+    [ComponentType.DIGITAL_GOVERNMENT]: 0.5,
+    [ComponentType.MINIMAL_GOVERNMENT]: 0.6,
+    [ComponentType.PRIVATE_SECTOR_LEADERSHIP]: 0.7,
+    [ComponentType.SOCIAL_DEMOCRACY]: 0.6,
+    [ComponentType.COMPREHENSIVE_WELFARE]: 0.5,
+    [ComponentType.PUBLIC_SECTOR_LEADERSHIP]: 0.7,
+    [ComponentType.ENVIRONMENTAL_FOCUS]: 0.6,
+    [ComponentType.ECONOMIC_PLANNING]: 0.8,
+    [ComponentType.DEVELOPMENTAL_STATE]: 0.8,
+    [ComponentType.WORKER_PROTECTION]: 0.6,
+    [ComponentType.MERITOCRATIC_SYSTEM]: 0.6,
+    [ComponentType.REGIONAL_DEVELOPMENT]: 0.8
   }
 };
 
@@ -529,7 +581,7 @@ export class AtomicRecommendationEngine {
     currentComponents: ComponentType[]
   ): RecommendationImpact {
     // Base effectiveness values (simplified)
-    const componentEffectiveness: Record<ComponentType, number> = {
+    const componentEffectiveness: Partial<Record<ComponentType, number>> = {
       [ComponentType.TECHNOCRATIC_AGENCIES]: 82,
       [ComponentType.RULE_OF_LAW]: 85,
       [ComponentType.PROFESSIONAL_BUREAUCRACY]: 85,
@@ -538,6 +590,7 @@ export class AtomicRecommendationEngine {
       [ComponentType.PERFORMANCE_LEGITIMACY]: 80,
       [ComponentType.DEMOCRATIC_PROCESS]: 68,
       [ComponentType.ELECTORAL_LEGITIMACY]: 65,
+      [ComponentType.INSTITUTIONAL_LEGITIMACY]: 83,
       [ComponentType.CENTRALIZED_POWER]: 75,
       [ComponentType.FEDERAL_SYSTEM]: 70,
       [ComponentType.CONFEDERATE_SYSTEM]: 60,
@@ -553,7 +606,19 @@ export class AtomicRecommendationEngine {
       [ComponentType.SURVEILLANCE_SYSTEM]: 78,
       [ComponentType.ECONOMIC_INCENTIVES]: 73,
       [ComponentType.SOCIAL_PRESSURE]: 68,
-      [ComponentType.MILITARY_ENFORCEMENT]: 80
+      [ComponentType.MILITARY_ENFORCEMENT]: 80,
+      [ComponentType.DIGITAL_GOVERNMENT]: 85,
+      [ComponentType.MINIMAL_GOVERNMENT]: 60,
+      [ComponentType.PRIVATE_SECTOR_LEADERSHIP]: 75,
+      [ComponentType.SOCIAL_DEMOCRACY]: 78,
+      [ComponentType.COMPREHENSIVE_WELFARE]: 72,
+      [ComponentType.PUBLIC_SECTOR_LEADERSHIP]: 70,
+      [ComponentType.ENVIRONMENTAL_FOCUS]: 68,
+      [ComponentType.ECONOMIC_PLANNING]: 82,
+      [ComponentType.DEVELOPMENTAL_STATE]: 83,
+      [ComponentType.WORKER_PROTECTION]: 65,
+      [ComponentType.MERITOCRATIC_SYSTEM]: 88,
+      [ComponentType.REGIONAL_DEVELOPMENT]: 67
     };
 
     const effectiveness = componentEffectiveness[component] || 60;

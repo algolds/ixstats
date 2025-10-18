@@ -251,20 +251,21 @@ export class EnhancedNotificationPriority {
   // Private helper methods
 
   private calculateBasePriorityScore(notification: UnifiedNotification): number {
-    const priorityScores = {
+    const priorityScores: Record<NotificationPriority, number> = {
       critical: 90,
       high: 70,
       medium: 50,
       low: 30,
     };
     
-    const severityModifier = {
+    const severityModifier: Record<NotificationSeverity, number> = {
       urgent: 10,
       important: 5,
       informational: 0,
+      info: 0,
     };
     
-    const categoryModifier = {
+    const categoryModifier: Record<NotificationCategory, number> = {
       crisis: 15,
       security: 12,
       achievement: 8,
@@ -274,6 +275,10 @@ export class EnhancedNotificationPriority {
       social: 2,
       system: 1,
       opportunity: 3,
+      policy: 5,
+      intelligence: 7,
+      global: 2,
+      military: 10,
     };
     
     return (priorityScores[notification.priority] || 30) +

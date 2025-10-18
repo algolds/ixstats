@@ -22,7 +22,7 @@ import { cn } from '~/lib/utils';
 import { useAtomicState, useAtomicComponents, useAtomicAnalytics } from './AtomicStateProvider';
 import { AtomicEconomicIndicators } from './AtomicEconomicIndicators';
 import { AtomicIntelligenceCenter } from './AtomicIntelligenceCenter';
-import { AtomicComponentSelector } from './AtomicComponentSelector';
+import { AtomicComponentSelector } from '~/components/government/atoms/AtomicGovernmentComponents';
 
 interface AtomicDashboardProps {
   variant?: 'full' | 'compact' | 'embedded';

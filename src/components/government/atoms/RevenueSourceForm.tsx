@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { usePendingLocks } from '~/app/mycountry/editor/hooks/usePendingLocks';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Input } from '~/components/ui/input';
@@ -20,9 +20,17 @@ import {
   MoreHorizontal,
   TrendingUp,
   TrendingDown,
-  Minus
+  Minus,
+  Zap,
+  Calculator,
+  CreditCard,
+  Shield,
+  FileCheck,
+  AlertTriangle,
+  Mountain
 } from 'lucide-react';
 import type { RevenueSourceInput, RevenueCategory } from '~/types/government';
+import { revenueTaxIntegrationService, type CollectionMethod } from '~/app/builder/services/RevenueTaxIntegrationService';
 
 interface RevenueSourceFormProps {
   data: RevenueSourceInput[];
@@ -95,6 +103,42 @@ const commonRevenueSources = {
   ]
 };
 
+// Icon mapping for collection methods
+const getCollectionMethodIcon = (iconName: string) => {
+  const iconMap: Record<string, any> = {
+    'Zap': Zap,
+    'Calculator': Calculator,
+    'CreditCard': CreditCard,
+    'Shield': Shield,
+    'FileText': FileText,
+    'FileCheck': FileCheck,
+    'AlertTriangle': AlertTriangle,
+    'Mountain': Mountain,
+    'Receipt': Receipt,
+    'DollarSign': DollarSign,
+    'Building2': Building2,
+    'MoreHorizontal': MoreHorizontal
+  };
+  return iconMap[iconName] || MoreHorizontal;
+};
+
+// Get relevant collection methods for a revenue category
+const getCollectionMethodsForCategory = (category: RevenueCategory): CollectionMethod[] => {
+  const allMethods = revenueTaxIntegrationService.COLLECTION_METHODS;
+  
+  if (category === 'Direct Tax') {
+    return allMethods.filter(m => m.isTaxRelated && m.taxCategoryType === 'Direct Tax');
+  } else if (category === 'Indirect Tax') {
+    return allMethods.filter(m => m.isTaxRelated && m.taxCategoryType === 'Indirect Tax');
+  } else if (category === 'Non-Tax Revenue') {
+    return allMethods.filter(m => !m.isTaxRelated && m.taxCategoryType === 'Non-Tax Revenue');
+  } else if (category === 'Fees and Fines') {
+    return allMethods.filter(m => !m.isTaxRelated && m.taxCategoryType === 'Fees and Fines');
+  } else {
+    return allMethods; // Show all for 'Other' category
+  }
+};
+
 export function RevenueSourceForm({ 
   data, 
   onChange, 
@@ -116,6 +160,12 @@ export function RevenueSourceForm({
     administeredBy: ''
   });
 
+  // Use refs to access latest values without causing re-renders
+  const dataRef = useRef(data);
+  dataRef.current = data;
+  const totalRevenueRef = useRef(totalRevenue);
+  totalRevenueRef.current = totalRevenue;
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -135,29 +185,29 @@ export function RevenueSourceForm({
   const totalCalculated = data.reduce((sum, item) => sum + item.revenueAmount, 0);
   const totalPercent = data.reduce((sum, item) => sum + (item.revenuePercent ?? 0), 0);
 
-  const handleUpdate = (index: number, field: keyof RevenueSourceInput, value: any) => {
-    const updated = [...data];
+  const handleUpdate = useCallback((index: number, field: keyof RevenueSourceInput, value: any) => {
+    const updated = [...dataRef.current];
     updated[index] = {
       ...updated[index],
       [field]: value
     };
 
     // Auto-calculate percentage when amount changes
-    if (field === 'revenueAmount' && totalRevenue > 0) {
-      updated[index].revenuePercent = (value / totalRevenue) * 100;
+    if (field === 'revenueAmount' && totalRevenueRef.current > 0) {
+      updated[index].revenuePercent = (value / totalRevenueRef.current) * 100;
     }
 
     onChange(updated);
-  };
+  }, [onChange]);
 
-  const handleAdd = () => {
+  const handleAdd = useCallback(() => {
     if (newRevenue.name.trim()) {
       const revenueToAdd = {
         ...newRevenue,
-        revenuePercent: totalRevenue > 0 ? (newRevenue.revenueAmount / totalRevenue) * 100 : 0
+        revenuePercent: totalRevenueRef.current > 0 ? (newRevenue.revenueAmount / totalRevenueRef.current) * 100 : 0
       };
-      
-      onChange([...data, revenueToAdd]);
+
+      onChange([...dataRef.current, revenueToAdd]);
       setNewRevenue({
         name: '',
         category: selectedCategory,
@@ -169,12 +219,12 @@ export function RevenueSourceForm({
       });
       setIsAddingNew(false);
     }
-  };
+  }, [newRevenue, selectedCategory, onChange]);
 
-  const handleRemove = (index: number) => {
-    const updated = data.filter((_, i) => i !== index);
+  const handleRemove = useCallback((index: number) => {
+    const updated = dataRef.current.filter((_, i) => i !== index);
     onChange(updated);
-  };
+  }, [onChange]);
 
   const addPresetRevenue = (name: string) => {
     const preset: RevenueSourceInput = {
@@ -183,7 +233,7 @@ export function RevenueSourceForm({
       description: `${name} revenue collection`,
       rate: selectedCategory.includes('Tax') ? 10 : undefined,
       revenueAmount: totalRevenue * 0.1,
-      collectionMethod: 'Automatic deduction',
+      collectionMethod: 'automatic_deduction',
       administeredBy: availableDepartments.find(d => d.name.includes('Finance') || d.name.includes('Treasury'))?.name || 'Ministry of Finance'
     };
 
@@ -392,12 +442,31 @@ export function RevenueSourceForm({
                     <div className="space-y-3">
                       <div className="space-y-2">
                         <Label className="text-xs text-[var(--color-text-muted)]">Collection Method</Label>
-                        <Input
+                        <Select
                           value={item.collectionMethod || ''}
-                          onChange={(e) => handleUpdate(index, 'collectionMethod', e.target.value)}
-                          placeholder="How is this collected?"
+                          onValueChange={(value) => handleUpdate(index, 'collectionMethod', value)}
                           disabled={isReadOnly}
-                        />
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select collection method" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getCollectionMethodsForCategory(item.category).map((method) => {
+                              const IconComponent = getCollectionMethodIcon(method.icon);
+                              return (
+                                <SelectItem key={method.id} value={method.id}>
+                                  <div className="flex items-center gap-2">
+                                    <IconComponent className="h-4 w-4" style={{ color: method.color }} />
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">{method.name}</span>
+                                      <span className="text-xs text-muted-foreground">{method.description}</span>
+                                    </div>
+                                  </div>
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       <div className="space-y-2">
@@ -538,6 +607,72 @@ export function RevenueSourceForm({
                         />
                       )}
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm text-[var(--color-text-muted)]">Collection Method</Label>
+                      <Select
+                        value={newRevenue.collectionMethod || ''}
+                        onValueChange={(value) => setNewRevenue(prev => ({ ...prev, collectionMethod: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select collection method" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getCollectionMethodsForCategory(newRevenue.category).map((method) => {
+                            const IconComponent = getCollectionMethodIcon(method.icon);
+                            return (
+                              <SelectItem key={method.id} value={method.id}>
+                                <div className="flex items-center gap-2">
+                                  <IconComponent className="h-4 w-4" style={{ color: method.color }} />
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{method.name}</span>
+                                    <span className="text-xs text-muted-foreground">{method.description}</span>
+                                  </div>
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm text-[var(--color-text-muted)]">Administered By</Label>
+                      {availableDepartments.length > 0 ? (
+                        <Select
+                          value={newRevenue.administeredBy || ''}
+                          onValueChange={(value) => setNewRevenue(prev => ({ ...prev, administeredBy: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select department" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableDepartments.map((dept) => (
+                              <SelectItem key={dept.id} value={dept.name}>
+                                {dept.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          value={newRevenue.administeredBy || ''}
+                          onChange={(e) => setNewRevenue(prev => ({ ...prev, administeredBy: e.target.value }))}
+                          placeholder="Department or agency name"
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 mt-4">
+                    <Label className="text-sm text-[var(--color-text-muted)]">Description</Label>
+                    <Input
+                      value={newRevenue.description || ''}
+                      onChange={(e) => setNewRevenue(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Brief description of this revenue source"
+                    />
                   </div>
 
                   <div className="flex gap-2 mt-4">

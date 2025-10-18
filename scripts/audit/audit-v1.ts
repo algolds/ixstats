@@ -688,6 +688,66 @@ async function runAudit() {
 
     console.log(`\n📄 Detailed report saved to: ${reportPath}\n`);
 
+    // Additionally, emit a concise issues JSON for failures/unwired/not-for-prod
+    try {
+      const issuesDir = 'scripts/audit/reports';
+      await fs.mkdir(issuesDir, { recursive: true });
+      const failures = results.filter(r => r.status === 'FAIL');
+      const warns = results.filter(r => r.status === 'WARN');
+
+      // Try to load latest tRPC wiring audit to include unwired models and CRUD gaps (optional)
+      let unwiredModels: string[] | undefined;
+      let modelsMissingOps: Array<{ model: string; missingOperations: string[] }> | undefined;
+      try {
+        const dirents = await fs.readdir('.', { withFileTypes: true });
+        const candidates = await Promise.all(
+          dirents
+            .filter(d => d.isFile() && /^audit-results-\d{4}-\d{2}-\d{2}\.json$/.test(d.name))
+            .map(async d => {
+              const stat = await fs.stat(d.name);
+              return { name: d.name, mtimeMs: stat.mtimeMs };
+            })
+        );
+        candidates.sort((a, b) => b.mtimeMs - a.mtimeMs);
+        for (const cand of candidates) {
+          try {
+            const raw = await fs.readFile(cand.name, 'utf-8');
+            const parsed = JSON.parse(raw);
+            if (parsed && Array.isArray(parsed.unusedModels)) {
+              unwiredModels = parsed.unusedModels as string[];
+              if (Array.isArray(parsed.coverage)) {
+                modelsMissingOps = (parsed.coverage as any[])
+                  .filter(c => Array.isArray(c.missingOperations) && c.missingOperations.length > 0)
+                  .map(c => ({ model: c.model, missingOperations: c.missingOperations }));
+              }
+              break;
+            }
+          } catch {}
+        }
+      } catch {}
+
+      const issuesPayload = {
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV,
+        summary: {
+          failures: failures.length,
+          warnings: warns.length,
+          unwiredModels: unwiredModels?.length ?? 0,
+          modelsWithCrudGaps: modelsMissingOps?.length ?? 0,
+        },
+        failures,
+        warnings: warns,
+        unwiredModels,
+        modelsMissingOps,
+      };
+
+      const issuesPath = `${issuesDir}/prod-issues-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+      await fs.writeFile(issuesPath, JSON.stringify(issuesPayload, null, 2));
+      console.log(`🧾 Issues summary saved to: ${issuesPath}`);
+    } catch (issuesErr) {
+      console.warn('⚠️  Failed to write issues summary JSON:', issuesErr instanceof Error ? issuesErr.message : issuesErr);
+    }
+
     process.exit(failedTests > 0 ? 1 : 0);
 
   } catch (error) {

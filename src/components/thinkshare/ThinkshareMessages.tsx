@@ -136,7 +136,7 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
 
   // Re-enable WebSocket for real-time ThinkShare
   const {
-    clientState,
+    clientState: rawClientState,
     sendTypingIndicator,
     subscribeToConversation,
     markMessageAsRead
@@ -152,6 +152,15 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
       void refetchConversations();
     }
   });
+
+  // Map ThinkPagesClientState to ThinkShareClientState
+  const clientState = useMemo(() => ({
+    presenceStatus: rawClientState.presenceStatus,
+    typingIndicators: rawClientState.typingIndicators,
+    connectionStatus: rawClientState.connected ? ('connected' as const) : ('disconnected' as const),
+    lastSyncTime: new Date(rawClientState.lastHeartbeat),
+    unreadCount: 0 // Track separately if needed
+  }), [rawClientState]);
 
   // Search for other users to message
   const { data: allUsers, isLoading: isLoadingUsers } = api.thinkpages.searchUsers.useQuery({
@@ -249,7 +258,7 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
             currentAccountId={currentUserId || ''}
             onNewConversationClick={() => setShowNewConversationModal(true)}
             getAccountTypeIcon={getAccountTypeIcon}
-            clientState={clientState}
+            clientState={clientState as any}
           />
         </div>
 
@@ -258,12 +267,12 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
           {selectedConv ? (
             <ChatArea
               selectedConversation={selectedConv as any}
-              currentAccount={currentAccount}
+              currentAccount={currentAccount as any}
               conversationMessages={conversationMessages as any}
               isLoadingMessages={isLoadingMessages}
               refetchMessages={refetchMessages}
               refetchConversations={refetchConversations}
-              clientState={{ isTyping: false, lastSeen: undefined, connectionStatus: "connected" as const }}
+              clientState={clientState as any}
               sendTypingIndicator={sendTypingIndicator}
               markMessagesAsReadMutation={markMessagesAsReadMutation as any}
             />

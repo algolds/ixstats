@@ -6,46 +6,16 @@ import { Loader2, Crown, Hash, Globe } from 'lucide-react';
 // import { BlurFade } from '~/components/magicui/blur-fade'; // Temporarily disabled
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
 import { MessageBubble } from './MessageBubble';
-
-interface ThinkshareMessage {
-  id: string;
-  conversationId: string;
-  accountId: string;
-  account: {
-    id: string;
-    username: string;
-    displayName: string;
-    profileImageUrl?: string | null;
-    accountType: string;
-  };
-  content: string;
-  messageType: string;
-  ixTimeTimestamp: Date;
-  createdAt?: Date;
-  reactions?: any;
-  mentions?: any;
-  attachments?: any;
-  replyTo?: any;
-  readReceipts?: any[];
-  isSystem?: boolean;
-}
-
-interface Account {
-  id: string;
-  username: string;
-  displayName: string;
-  profileImageUrl?: string | null;
-  accountType: string;
-}
+import type { ThinkShareMessage, ThinkShareAccount, ThinkShareClientState, ThinkShareConversation } from '~/types/thinkshare';
 
 interface MessageListProps {
-  conversationMessages: { messages: ThinkshareMessage[] } | undefined;
+  conversationMessages: { messages: ThinkShareMessage[] } | undefined;
   isLoadingMessages: boolean;
-  currentAccount?: Account;
-  clientState: any; // TODO: Define a proper type for clientState
-  selectedConversation: any; // TODO: Define a proper type for selectedConversation
+  currentAccount?: ThinkShareAccount;
+  clientState: ThinkShareClientState;
+  selectedConversation: ThinkShareConversation;
   refetchMessages: () => void;
-  onReply: (message: ThinkshareMessage) => void;
+  onReply: (message: ThinkShareMessage) => void;
 }
 
 export function MessageList({
@@ -103,7 +73,7 @@ export function MessageList({
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            conversationMessages?.messages.map((message: ThinkshareMessage, index: number) => (
+            conversationMessages?.messages.map((message, index: number) => (
               <div
                 key={`message-${message.id}`}
                 className={`flex group ${message.accountId === currentAccount?.id ? 'justify-end' : 'justify-start'}`}
@@ -112,7 +82,7 @@ export function MessageList({
                   message={message}
                   currentAccount={currentAccount!}
                   refetchMessages={refetchMessages}
-                  onReply={onReply}
+                  onReply={onReply as any}
                   getAccountTypeIcon={getAccountTypeIcon}
                 />
               </div>

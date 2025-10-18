@@ -86,7 +86,6 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
       ws.current = new WebSocket(wsUrl);
 
       ws.current.onopen = () => {
-        console.log('ThinkPages WebSocket connected');
         retryCount.current = 0; // Reset retry count on successful connection
         
         setClientState(prev => ({ ...prev, connected: true }));
@@ -184,7 +183,6 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
       };
 
       ws.current.onclose = () => {
-        console.log('ThinkPages WebSocket disconnected');
         setClientState(prev => ({ ...prev, connected: false, authenticated: false }));
         
         if (heartbeatInterval.current) {
@@ -198,7 +196,6 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
         if (options.autoReconnect !== false && retryCount.current < maxRetries) {
           retryCount.current++;
           const backoffDelay = Math.min(1000 * Math.pow(2, retryCount.current), 30000);
-          console.log(`WebSocket: Retrying connection in ${backoffDelay}ms (attempt ${retryCount.current}/${maxRetries})`);
           
           reconnectTimeout.current = setTimeout(() => {
             connect();

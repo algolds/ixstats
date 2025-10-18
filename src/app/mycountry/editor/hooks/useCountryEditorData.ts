@@ -3,6 +3,8 @@ import { useUser } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
 import { createDefaultEconomicInputs, type EconomicInputs } from "~/app/builder/lib/economy-data-service";
 import { type GovernmentBuilderState, type DepartmentInput, type BudgetAllocationInput, type RevenueSourceInput, type GovernmentType } from "~/types/government";
+import { useUserCountry } from "~/hooks/useUserCountry";
+import type { EditorFeedback, ValidationError } from "~/types/editor";
 
 function calculatePopulationTier(population: number): string {
   if (population >= 1_000_000_000) return "Global Power";
@@ -13,15 +15,9 @@ function calculatePopulationTier(population: number): string {
   return "City-State";
 }
 
-interface ValidationError {
-  field: string;
-  message: string;
-  severity: 'error' | 'warning' | 'info';
-}
-
 export function useCountryEditorData() {
-  const { user, isLoaded } = useUser();
-  
+  const { user, isLoaded, userProfile, country, profileLoading, countryLoading } = useUserCountry();
+
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<ValidationError[]>([]);
@@ -31,18 +27,14 @@ export function useCountryEditorData() {
   const [originalInputs, setOriginalInputs] = useState<EconomicInputs | null>(null);
   const [governmentData, setGovernmentData] = useState<GovernmentBuilderState | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [feedback, setFeedback] = useState<any>(null); // TODO: Define a proper type for feedback
+  const [feedback, setFeedback] = useState<EditorFeedback | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [flagUrl, setFlagUrl] = useState<string | null>(null);
   const [econSaveState, setEconSaveState] = useState<{ isSaving: boolean; lastSavedAt: Date | null; pendingChanges: boolean; error: Error | null }>({ isSaving: false, lastSavedAt: null, pendingChanges: false, error: null });
   const econDebounceRef = useRef<NodeJS.Timeout | null>(null);
-  
-  const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
-    undefined,
-    { enabled: !!user?.id }
-  );
 
-  const { data: country, isLoading: countryLoading, refetch: refetchCountry } = api.countries.getByIdAtTime.useQuery(
+  // Get refetch function for country data
+  const { refetch: refetchCountry } = api.countries.getByIdAtTime.useQuery(
     { id: userProfile?.countryId || '' },
     { enabled: !!userProfile?.countryId }
   );
@@ -253,8 +245,8 @@ export function useCountryEditorData() {
           {
             title: "Economic Health",
             metrics: [
-              { label: "Errors", value: errors.filter(e => e.severity === 'error').length, trend: 'stable', status: 'danger' },
-              { label: "Warnings", value: errors.filter(e => e.severity === 'warning').length, trend: 'stable', status: 'warning' },
+              { label: "Errors", value: errors.filter(e => e.severity === 'error').length, trend: 'stable' as const, status: 'danger' as const },
+              { label: "Warnings", value: errors.filter(e => e.severity === 'warning').length, trend: 'stable' as const, status: 'warning' as const },
             ],
           },
         ],

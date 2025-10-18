@@ -22,6 +22,8 @@ import { NumberFlowDisplay } from '~/components/ui/number-flow';
 
 interface DemographicsSectionProps extends ExtendedSectionProps {
   onToggleAdvanced?: () => void;
+  mode?: 'create' | 'edit';
+  fieldLocks?: Record<string, import('../components/enhanced/builderConfig').FieldLockConfig>;
 }
 
 export function DemographicsSection({
@@ -30,8 +32,14 @@ export function DemographicsSection({
   showAdvanced,
   onToggleAdvanced,
   referenceCountry,
-  className
+  className,
+  mode = 'create',
+  fieldLocks
 }: DemographicsSectionProps) {
+  const isEditMode = mode === 'edit';
+  const { EDIT_MODE_FIELD_LOCKS } = require('../components/enhanced/builderConfig');
+  const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
+
   const [selectedView, setSelectedView] = useState<'age' | 'geographic' | 'social'>('age');
   
   const demographics = inputs.demographics;
@@ -367,12 +375,17 @@ export function DemographicsSection({
               <Home className="h-4 w-4" />
               Social Policies
             </h5>
-            <FormGrid columns={2}>
+            {/* Future Enhancement: Social Policy Toggles
+                Universal Healthcare and Free Education toggles will be implemented
+                when the social policy data model is added to support government
+                spending integration. These policies are currently handled through
+                the government spending allocation system in the fiscal section. */}
+            {/* <FormGrid columns={2}>
               <EnhancedToggle
                 label="Universal Healthcare"
                 description="Free healthcare for all citizens"
                 checked={false}
-                onChange={(checked) => {/* TODO: Implement social policy state */}}
+                onChange={(checked) => {}}
                 sectionId="demographics"
                 icon={Heart}
               />
@@ -380,11 +393,11 @@ export function DemographicsSection({
                 label="Free Education"
                 description="Public education through university level"
                 checked={false}
-                onChange={(checked) => {/* TODO: Implement social policy state */}}
+                onChange={(checked) => {}}
                 sectionId="demographics"
                 icon={GraduationCap}
               />
-            </FormGrid>
+            </FormGrid> */}
           </div>
         </>
       )}

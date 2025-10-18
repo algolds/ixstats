@@ -17,7 +17,8 @@ import type {
   NotificationStats,
   NotificationEngagement,
   DeliveryContext,
-  NotificationHistory
+  NotificationHistory,
+  DeliveryMethod,
 } from '~/types/unified-notifications';
 import { 
   calculateEnhancedPriority 
@@ -108,8 +109,12 @@ const defaultUserPreferences: UserNotificationPreferences = {
     system: { enabled: true, minPriority: 'medium', deliveryMethods: ['toast'] },
     achievement: { enabled: true, minPriority: 'low', deliveryMethods: ['toast'] },
     crisis: { enabled: true, minPriority: 'critical', deliveryMethods: ['dynamic-island'] },
-    opportunity: { enabled: true, minPriority: 'medium', deliveryMethods: ['dynamic-island'] }
-  },
+    opportunity: { enabled: true, minPriority: 'medium', deliveryMethods: ['dynamic-island'] },
+    policy: { enabled: true, minPriority: 'medium', deliveryMethods: ['toast'] },
+    intelligence: { enabled: true, minPriority: 'high', deliveryMethods: ['dynamic-island'] },
+    global: { enabled: true, minPriority: 'medium', deliveryMethods: ['toast'] },
+    military: { enabled: true, minPriority: 'high', deliveryMethods: ['dynamic-island'] },
+  } as Record<NotificationCategory, { enabled: boolean, minPriority: NotificationPriority, deliveryMethods: DeliveryMethod[] }>,
   executiveModeFilters: ['economic', 'governance', 'security', 'crisis'],
   publicModeFilters: ['achievement', 'opportunity', 'system'],
   allowMLPersonalization: true,
@@ -429,111 +434,7 @@ export const useNotificationStore = create<NotificationStore>()(
           userAttentionScore: 80
         });
 
-        // Add demo notifications if none exist
-        if (get().notifications.length === 0) {
-          await get().addNotification({
-          source: 'intelligence',
-          title: 'Economic Performance Alert',
-          message: 'GDP growth has exceeded expectations by 12% this quarter, indicating strong economic momentum.',
-          category: 'economic',
-          type: 'alert',
-          priority: 'high',
-          severity: 'important',
-          status: 'pending',
-          deliveryMethod: 'dynamic-island',
-          context: {
-            userId: 'demo-user',
-            isExecutiveMode: false,
-            currentRoute: '/mycountry/new',
-            ixTime: Date.now(),
-            realTime: Date.now(),
-            timeMultiplier: 2,
-            activeFeatures: [],
-            recentActions: [],
-            focusMode: false,
-            sessionDuration: 0,
-            isUserActive: true,
-            lastInteraction: Date.now(),
-            deviceType: 'desktop',
-            screenSize: 'large',
-            networkQuality: 'high',
-            batteryLevel: 100,
-            userPreferences: { 
-              preferredMethods: [],
-              quietHours: { start: '22:00', end: '07:00' },
-              batchingEnabled: false,
-              maxNotificationsPerHour: 10,
-              categories: {} as any,
-              executiveModeFilters: ['economic', 'governance', 'security', 'crisis'],
-              publicModeFilters: ['achievement', 'opportunity', 'system'],
-              allowMLPersonalization: true,
-              trackEngagement: true
-            },
-            historicalEngagement: [],
-            interactionHistory: [],
-            contextualFactors: {},
-            urgencyFactors: [],
-            contextualRelevance: 0.5
-          },
-          triggers: [],
-          relevanceScore: 85,
-          actionable: true,
-          actions: [
-            { id: 'view-details', label: 'View Economic Report', type: 'primary', onClick: () => {} },
-            { id: 'acknowledge', label: 'Acknowledge', type: 'secondary', onClick: () => {} }
-          ]
-        });
-
-          await get().addNotification({
-            source: 'system',
-            title: 'Diplomatic Relations Update',
-            message: 'New trade agreements have been established with three neighboring countries, improving regional stability.',
-            category: 'diplomatic',
-            type: 'update',
-            priority: 'medium',
-            severity: 'informational',
-            status: 'pending',
-            deliveryMethod: 'toast',
-            context: {
-              userId: 'system',
-              isExecutiveMode: false,
-              currentRoute: '/',
-              ixTime: Date.now(),
-              realTime: Date.now(),
-              timeMultiplier: 2,
-              activeFeatures: [],
-              recentActions: [],
-              focusMode: false,
-              sessionDuration: 0,
-              isUserActive: true,
-              lastInteraction: Date.now(),
-              deviceType: 'desktop',
-              screenSize: 'large',
-              networkQuality: 'high',
-              batteryLevel: 100,
-              userPreferences: { 
-              preferredMethods: [],
-              quietHours: { start: '22:00', end: '07:00' },
-              batchingEnabled: false,
-              maxNotificationsPerHour: 10,
-              categories: {} as any,
-              executiveModeFilters: ['economic', 'governance', 'security', 'crisis'],
-              publicModeFilters: ['achievement', 'opportunity', 'system'],
-              allowMLPersonalization: true,
-              trackEngagement: true
-            },
-              historicalEngagement: [],
-              interactionHistory: [],
-              contextualFactors: {},
-              urgencyFactors: [],
-              contextualRelevance: 0.5
-            },
-            triggers: [],
-            relevanceScore: 70,
-            actionable: false
-          });
-        }
-
+        // Note: Demo notifications removed for production - all notifications now come from database
         set({ isLoading: false });
       } catch (error) {
         console.error('Failed to initialize notification store:', error);

@@ -146,10 +146,72 @@ export interface CoreEconomicIndicatorsData {
       color?: string
       description?: string
     }>
+  // Policy flags
   performanceBasedBudgeting: boolean;
   universalBasicServices: boolean;
   greenInvestmentPriority: boolean;
   digitalGovernmentInitiative: boolean;
+  zeroBasedBudgeting: boolean;
+  publicPrivatePartnerships: boolean;
+  participatoryBudgeting: boolean;
+  emergencyReserveFund: boolean;
+  socialImpactBonds: boolean;
+  childWelfareFirstPolicy: boolean;
+  preventiveCareEmphasis: boolean;
+  infrastructureBankFund: boolean;
+  universalBasicIncome: boolean;
+  progressiveTaxation: boolean;
+  carbonTax: boolean;
+  wealthTax: boolean;
+  financialTransactionTax: boolean;
+  universalHealthcare: boolean;
+  freeEducation: boolean;
+  affordableHousing: boolean;
+  elderlyCare: boolean;
+  disabilitySupport: boolean;
+  mentalHealthServices: boolean;
+  stemEducationFocus: boolean;
+  vocationalTraining: boolean;
+  adultEducation: boolean;
+  earlyChildhoodEducation: boolean;
+  smartCityInitiative: boolean;
+  publicTransportExpansion: boolean;
+  renewableEnergyTransition: boolean;
+  highSpeedInternet: boolean;
+  waterInfrastructure: boolean;
+  researchDevelopmentFund: boolean;
+  startupIncubators: boolean;
+  patentReform: boolean;
+  openDataInitiative: boolean;
+  cybersecurityInitiative: boolean;
+  borderSecurity: boolean;
+  disasterPreparedness: boolean;
+  crimePrevention: boolean;
+  carbonNeutrality: boolean;
+  biodiversityProtection: boolean;
+  wasteReduction: boolean;
+  greenBuildingStandards: boolean;
+  sustainableAgriculture: boolean;
+  criminalJusticeReform: boolean;
+  legalAidExpansion: boolean;
+  restorativeJustice: boolean;
+  courtSystemModernization: boolean;
+  artsCultureFunding: boolean;
+  heritagePreservation: boolean;
+  multiculturalPrograms: boolean;
+  languagePreservation: boolean;
+  ruralDevelopment: boolean;
+  ruralHealthcare: boolean;
+  ruralBroadband: boolean;
+  agriculturalSupport: boolean;
+  foreignAidProgram: boolean;
+  refugeeSupport: boolean;
+  diplomaticEngagement: boolean;
+  tradePromotion: boolean;
+  transparencyInitiative: boolean;
+  citizenEngagement: boolean;
+  antiCorruption: boolean;
+  publicServiceReform: boolean;
   }
   
   // Demographics

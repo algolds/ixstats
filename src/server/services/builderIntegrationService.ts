@@ -265,6 +265,58 @@ export async function detectGovernmentConflicts(
         message: `Removing ${deletedDepts.length} department(s): ${deletedDepts.join(', ')}. All associated budget allocations will be deleted.`
       });
     }
+
+    // Budget allocation coverage check
+    const totalPercent = (newData.budgetAllocations || []).reduce((s, a: any) => s + (a.allocatedPercent || 0), 0);
+    if (totalPercent > 100.0001) {
+      warnings.push({
+        field: 'Budget Allocation',
+        currentValue: existingGovStructure.budgetAllocations.length,
+        newValue: (newData.budgetAllocations || []).length,
+        affectedSystems: ['BudgetAllocation', 'GovernmentBudget'],
+        severity: 'critical',
+        message: `Total budget allocation exceeds 100% (${totalPercent.toFixed(1)}%).`
+      });
+    } else if (totalPercent < 99.999) {
+      warnings.push({
+        field: 'Budget Allocation',
+        currentValue: existingGovStructure.budgetAllocations.length,
+        newValue: (newData.budgetAllocations || []).length,
+        affectedSystems: ['BudgetAllocation', 'GovernmentBudget'],
+        severity: 'warning',
+        message: `Total budget allocation below 100% (${totalPercent.toFixed(1)}%). Unallocated budget remains.`
+      });
+    }
+
+    // Parent self-cycle check
+    newData.departments.forEach((dept, index) => {
+      if ((dept as any).parentDepartmentId && parseInt((dept as any).parentDepartmentId as any) === index) {
+        warnings.push({
+          field: `Department Parent (${dept.name})`,
+          currentValue: null,
+          newValue: (dept as any).parentDepartmentId,
+          affectedSystems: ['GovernmentDepartment'],
+          severity: 'critical',
+          message: `Department "${dept.name}" cannot be its own parent.`
+        });
+      }
+    });
+
+    // Revenue vs total budget sanity check
+    const totalRevenue = (newData.revenueSources || []).reduce((s, r: any) => s + (r.revenueAmount || 0), 0);
+    if (newData.structure.totalBudget > 0) {
+      const ratio = totalRevenue / newData.structure.totalBudget;
+      if (ratio > 1.25) {
+        warnings.push({
+          field: 'Revenue Sources',
+          currentValue: existingGovStructure.revenueSources.length,
+          newValue: (newData.revenueSources || []).length,
+          affectedSystems: ['RevenueSource', 'FiscalSystem'],
+          severity: 'warning',
+          message: `Total revenue (${totalRevenue.toLocaleString()}) greatly exceeds total budget (${newData.structure.totalBudget.toLocaleString()}). Verify realism.`
+        });
+      }
+    }
   }
 
   // Check for conflicts with Country table
@@ -434,6 +486,8 @@ export async function syncGovernmentData(
         });
         affectedTables.push('GovernmentBudget');
       }
+
+      // 3. (Optional) Fiscal sync deferred: handled by tax sync and analytics pipelines
     });
 
     return {

@@ -1,12 +1,14 @@
 // Text formatting utilities for SSR compatibility
 // No external dependencies that use 'self' or browser globals
 
+import { sanitizeUserContent, escapeHtml } from './sanitize-html';
+
 // Enhanced text formatting with better mention and hashtag styling
 export function formatContentEnhanced(content: string): string {
   if (!content) return '';
 
-  // Don't escape HTML - we'll be using dangerouslySetInnerHTML
-  let formattedContent = content;
+  // SECURITY: First escape HTML to prevent XSS, then apply formatting
+  let formattedContent = escapeHtml(content);
 
   // Replace URLs first (before hashtags and mentions to avoid conflicts)
   formattedContent = formattedContent.replace(
@@ -26,7 +28,8 @@ export function formatContentEnhanced(content: string): string {
     '<span class="text-purple-500 hover:underline cursor-pointer font-medium">@$1</span>'
   );
 
-  return formattedContent;
+  // SECURITY: Final sanitization pass to ensure safe HTML
+  return sanitizeUserContent(formattedContent);
 }
 
 // Extract hashtags from text

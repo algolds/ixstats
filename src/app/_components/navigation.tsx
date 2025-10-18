@@ -17,11 +17,7 @@ import {
   Database,
   FlaskConical,
   Shield,
-  TrendingUp,
-  Activity,
-  Globe2,
-  MessageSquare,
-  AlertTriangle
+  Activity
 } from "lucide-react";
 import { CommandPalette } from "~/components/DynamicIsland";
 import {
@@ -159,58 +155,12 @@ export function Navigation() {
       description: "Your national dashboard and executive command center",
     },
     {
-      name: "ECI",
-      href: "/eci",
-      icon: TrendingUp,
-      requiresAuth: true,
-      requiresCountry: true,
-      premiumOnly: true,
-      description: "Executive Command Interface - AI-powered policy management",
-    },
-    {
-      name: "SDI",
-      href: "",
+      name: "Intelligence",
+      href: "/mycountry/intelligence",
       icon: Shield,
       requiresAuth: true,
-      premiumOnly: true,
-      isDropdown: true,
-      description: "Sovereign Digital Interface - Intelligence and crisis management",
-      dropdownItems: [
-        {
-          name: "Dashboard",
-          href: "/sdi",
-          icon: Activity,
-          description: "SDI overview and status"
-        },
-        {
-          name: "Intelligence",
-          href: "/sdi/intelligence",
-          icon: Globe2,
-          description: "Global intelligence feeds",
-          premiumOnly: true
-        },
-        {
-          name: "Crisis Monitor",
-          href: "/sdi/crisis",
-          icon: AlertTriangle,
-          description: "Crisis tracking and response",
-          premiumOnly: true
-        },
-        {
-          name: "Diplomatic",
-          href: "/sdi/diplomatic",
-          icon: MessageSquare,
-          description: "Diplomatic communications",
-          premiumOnly: true
-        },
-        {
-          name: "Economic Intel",
-          href: "/sdi/economic",
-          icon: TrendingUp,
-          description: "Economic intelligence analysis",
-          premiumOnly: true
-        }
-      ]
+      requiresCountry: true,
+      description: "Intelligence operations and analytics",
     },
     {
       name: "ThinkPages",
@@ -435,8 +385,7 @@ export function Navigation() {
                                 item.name === "ThinkPages" ? "text-blue-400" :
                                 item.name === "Dashboard" ? "text-emerald-400" :
                                 item.name === "Explore" ? "text-purple-400" :
-                                item.name === "ECI" ? "text-indigo-400" :
-                                item.name === "SDI" ? "text-red-400" :
+                                item.name === "Intelligence" ? "text-indigo-400" :
                                 item.name === "Admin" ? "text-red-400" :
                                 item.name === "Cards" ? "text-cyan-400" :
                                 "text-blue-400"
@@ -477,8 +426,7 @@ export function Navigation() {
                                 item.name === "ThinkPages" ? ["#3b82f6", "#1d4ed8", "#60a5fa"] :
                                 item.name === "Dashboard" ? ["#10b981", "#059669", "#34d399"] :
                                 item.name === "Explore" ? ["#8b5cf6", "#7c3aed", "#a78bfa"] :
-                                item.name === "ECI" ? ["#6366f1", "#4f46e5", "#818cf8"] :
-                                item.name === "SDI" ? ["#ef4444", "#dc2626", "#f87171"] :
+                                item.name === "Intelligence" ? ["#6366f1", "#4f46e5", "#818cf8"] :
                                 item.name === "Admin" ? ["#ef4444", "#dc2626", "#f87171"] :
                                 item.name === "Cards" ? ["#06b6d4", "#0891b2", "#22d3ee"] :
                                 ["#3b82f6", "#8b5cf6", "#06b6d4"]
@@ -497,8 +445,7 @@ export function Navigation() {
                                 item.name === "ThinkPages" ? "text-blue-400" :
                                 item.name === "Dashboard" ? "text-emerald-400" :
                                 item.name === "Explore" ? "text-purple-400" :
-                                item.name === "ECI" ? "text-indigo-400" :
-                                item.name === "SDI" ? "text-red-400" :
+                                item.name === "Intelligence" ? "text-indigo-400" :
                                 item.name === "Admin" ? "text-red-400" :
                                 item.name === "Cards" ? "text-cyan-400" :
                                 "text-blue-400"
@@ -628,8 +575,7 @@ export function Navigation() {
                                 item.name === "ThinkPages" ? "text-blue-400" :
                                 item.name === "Dashboard" ? "text-emerald-400" :
                                 item.name === "Explore" ? "text-purple-400" :
-                                item.name === "ECI" ? "text-indigo-400" :
-                                item.name === "SDI" ? "text-red-400" :
+                                item.name === "Intelligence" ? "text-indigo-400" :
                                 item.name === "Admin" ? "text-red-400" :
                                 item.name === "Cards" ? "text-cyan-400" :
                                 "text-blue-400"
@@ -670,8 +616,7 @@ export function Navigation() {
                                 item.name === "ThinkPages" ? ["#3b82f6", "#1d4ed8", "#60a5fa"] :
                                 item.name === "Dashboard" ? ["#10b981", "#059669", "#34d399"] :
                                 item.name === "Explore" ? ["#8b5cf6", "#7c3aed", "#a78bfa"] :
-                                item.name === "ECI" ? ["#6366f1", "#4f46e5", "#818cf8"] :
-                                item.name === "SDI" ? ["#ef4444", "#dc2626", "#f87171"] :
+                                item.name === "Intelligence" ? ["#6366f1", "#4f46e5", "#818cf8"] :
                                 item.name === "Admin" ? ["#ef4444", "#dc2626", "#f87171"] :
                                 item.name === "Cards" ? ["#06b6d4", "#0891b2", "#22d3ee"] :
                                 ["#3b82f6", "#8b5cf6", "#06b6d4"]
@@ -690,8 +635,7 @@ export function Navigation() {
                                 item.name === "ThinkPages" ? "text-blue-400" :
                                 item.name === "Dashboard" ? "text-emerald-400" :
                                 item.name === "Explore" ? "text-purple-400" :
-                                item.name === "ECI" ? "text-indigo-400" :
-                                item.name === "SDI" ? "text-red-400" :
+                                item.name === "Intelligence" ? "text-indigo-400" :
                                 item.name === "Admin" ? "text-red-400" :
                                 item.name === "Cards" ? "text-cyan-400" :
                                 "text-blue-400"

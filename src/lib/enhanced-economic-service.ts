@@ -140,7 +140,7 @@ export class EnhancedEconomicService {
         metadata: {
           analysisTimestamp: new Date().toISOString(),
           ixTimeEpoch: IxTime.getCurrentIxTime(),
-          version: '1.0.0',
+          version: '9',
           processingTimeMs: Date.now() - startTime
         }
       };

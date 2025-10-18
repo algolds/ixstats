@@ -90,50 +90,62 @@ export default function EconomicCalculationsPage() {
 
             <section>
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Tier-Based Growth Modeling</h2>
-              <p className="text-slate-700 dark:text-slate-300 leading-relaxed mb-4">
-                Each economic tier has specific growth parameters that reflect real-world development patterns:
-              </p>
+            <p className="text-slate-700 dark:text-slate-300 leading-relaxed mb-4">
+              Each economic tier has a maximum annual growth cap. Projections are capped by tier and include diminishing returns once GDP per capita exceeds $60,000.
+            </p>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-slate-100 dark:bg-slate-800">
-                      <th className="text-left p-3 text-slate-900 dark:text-white">Tier</th>
-                      <th className="text-left p-3 text-slate-900 dark:text-white">Base Growth</th>
+                    <th className="text-left p-3 text-slate-900 dark:text-white">Tier</th>
+                    <th className="text-left p-3 text-slate-900 dark:text-white">Max Growth</th>
                       <th className="text-left p-3 text-slate-900 dark:text-white">Volatility</th>
                       <th className="text-left p-3 text-slate-900 dark:text-white">Potential</th>
                     </tr>
                   </thead>
                   <tbody className="text-slate-700 dark:text-slate-300">
-                    <tr className="border-b border-slate-200 dark:border-slate-700">
-                      <td className="p-3">Tier 1</td>
-                      <td className="p-3">4-7%</td>
-                      <td className="p-3">High</td>
-                      <td className="p-3">Very High</td>
-                    </tr>
-                    <tr className="border-b border-slate-200 dark:border-slate-700">
-                      <td className="p-3">Tier 2</td>
-                      <td className="p-3">3-6%</td>
-                      <td className="p-3">Moderate</td>
-                      <td className="p-3">High</td>
-                    </tr>
-                    <tr className="border-b border-slate-200 dark:border-slate-700">
-                      <td className="p-3">Tier 3</td>
-                      <td className="p-3">2-4%</td>
-                      <td className="p-3">Low</td>
-                      <td className="p-3">Moderate</td>
-                    </tr>
-                    <tr className="border-b border-slate-200 dark:border-slate-700">
-                      <td className="p-3">Tier 4</td>
-                      <td className="p-3">1.5-3%</td>
-                      <td className="p-3">Very Low</td>
-                      <td className="p-3">Steady</td>
-                    </tr>
-                    <tr>
-                      <td className="p-3">Tier 5</td>
-                      <td className="p-3">1-2.5%</td>
-                      <td className="p-3">Minimal</td>
-                      <td className="p-3">Stable</td>
-                    </tr>
+                  <tr className="border-b border-slate-200 dark:border-slate-700">
+                    <td className="p-3">Impoverished</td>
+                    <td className="p-3">10%</td>
+                    <td className="p-3">High</td>
+                    <td className="p-3">Very High</td>
+                  </tr>
+                  <tr className="border-b border-slate-200 dark:border-slate-700">
+                    <td className="p-3">Developing</td>
+                    <td className="p-3">7.5%</td>
+                    <td className="p-3">Moderate</td>
+                    <td className="p-3">High</td>
+                  </tr>
+                  <tr className="border-b border-slate-200 dark:border-slate-700">
+                    <td className="p-3">Developed</td>
+                    <td className="p-3">5%</td>
+                    <td className="p-3">Low</td>
+                    <td className="p-3">Moderate</td>
+                  </tr>
+                  <tr className="border-b border-slate-200 dark:border-slate-700">
+                    <td className="p-3">Healthy</td>
+                    <td className="p-3">3.5%</td>
+                    <td className="p-3">Very Low</td>
+                    <td className="p-3">Steady</td>
+                  </tr>
+                  <tr className="border-b border-slate-200 dark:border-slate-700">
+                    <td className="p-3">Strong</td>
+                    <td className="p-3">2.75%</td>
+                    <td className="p-3">Very Low</td>
+                    <td className="p-3">Steady</td>
+                  </tr>
+                  <tr className="border-b border-slate-200 dark:border-slate-700">
+                    <td className="p-3">Very Strong</td>
+                    <td className="p-3">1.5%</td>
+                    <td className="p-3">Minimal</td>
+                    <td className="p-3">Stable</td>
+                  </tr>
+                  <tr>
+                    <td className="p-3">Extravagant</td>
+                    <td className="p-3">0.5%</td>
+                    <td className="p-3">Minimal</td>
+                    <td className="p-3">Stable</td>
+                  </tr>
                   </tbody>
                 </table>
               </div>

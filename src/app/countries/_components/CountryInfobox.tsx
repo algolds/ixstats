@@ -28,6 +28,7 @@ import type { CountryInfobox as CountryInfoboxType } from "~/lib/mediawiki-servi
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Card } from "~/components/ui/card";
+import { sanitizeWikiContent } from "~/lib/sanitize-html";
 import { CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from "~/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Separator } from "~/components/ui/separator";
@@ -513,9 +514,10 @@ export function CountryInfobox({ countryName, flagUrl: preCachedFlagUrl, onToggl
             </Button>
         </div>
         {infobox.native_name && infobox.native_name !== countryName && (
-          <CardDescription 
+          <CardDescription
             className="text-sm italic"
-            dangerouslySetInnerHTML={{ __html: infobox.native_name }}
+            // SECURITY: Sanitize wiki content to prevent XSS from external data
+            dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(infobox.native_name) }}
           />
         )}
       </CardHeader>
@@ -587,10 +589,11 @@ export function CountryInfobox({ countryName, flagUrl: preCachedFlagUrl, onToggl
                       <Icon className="h-4 w-4 mt-0.5 text-primary mr-3 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
                         <span className="text-muted-foreground font-medium mr-2">{field.label}:</span>
-                        <span 
+                        <span
                           className="text-foreground wiki-content"
-                          dangerouslySetInnerHTML={{ __html: field.value }}
-                          title={field.value !== (infobox.parsedTemplateData?.[field.key] || field.value) ? 
+                          // SECURITY: Sanitize wiki content to prevent XSS from external data
+                          dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(field.value) }}
+                          title={field.value !== (infobox.parsedTemplateData?.[field.key] || field.value) ?
                                  `Original: ${infobox.parsedTemplateData?.[field.key] || 'N/A'}` : undefined}
                         />
                       </div>
@@ -634,9 +637,10 @@ export function CountryInfobox({ countryName, flagUrl: preCachedFlagUrl, onToggl
             </TabsContent>
             
             <TabsContent value="html">
-              <div 
+              <div
                 className="wiki-infobox prose prose-sm max-w-none mt-4 overflow-x-auto styled-infobox"
-                dangerouslySetInnerHTML={{ __html: infobox.renderedHtml || '' }}
+                // SECURITY: Sanitize wiki content to prevent XSS from external data
+                dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(infobox.renderedHtml || '') }}
               />
               <style jsx global>{`
                 .styled-infobox table.infobox,
@@ -731,10 +735,11 @@ export function CountryInfobox({ countryName, flagUrl: preCachedFlagUrl, onToggl
                     <Icon className="h-4 w-4 mt-0.5 text-primary mr-3 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
                       <span className="text-muted-foreground font-medium mr-2">{field.label}:</span>
-                      <span 
+                      <span
                         className="text-foreground wiki-content"
-                        dangerouslySetInnerHTML={{ __html: field.value }}
-                        title={field.value !== (infobox.parsedTemplateData?.[field.key] || field.value) ? 
+                        // SECURITY: Sanitize wiki content to prevent XSS from external data
+                        dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(field.value) }}
+                        title={field.value !== (infobox.parsedTemplateData?.[field.key] || field.value) ?
                                `Original: ${infobox.parsedTemplateData?.[field.key] || 'N/A'}` : undefined}
                       />
                     </div>

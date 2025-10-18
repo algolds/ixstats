@@ -37,6 +37,7 @@ import {
   Users,
   Building2
 } from 'lucide-react';
+import { IxTime } from '~/lib/ixtime';
 import type { 
   GovernmentStructure, 
   GovernmentDepartment, 
@@ -64,7 +65,7 @@ export function BudgetManagementDashboard({
   isReadOnly = false
 }: BudgetManagementDashboardProps) {
   const [selectedView, setSelectedView] = useState<'overview' | 'departments' | 'revenue' | 'analysis'>('overview');
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState(new Date(IxTime.getCurrentIxTime()).getFullYear());
 
   // Calculate budget summary
   const budgetSummary: BudgetSummary = useMemo(() => {
@@ -203,7 +204,10 @@ export function BudgetManagementDashboard({
             onChange={(e) => setSelectedYear(parseInt(e.target.value))}
             className="px-3 py-2 border border-[var(--color-border-primary)] rounded-md bg-[var(--color-bg-primary)]"
           >
-            {[2024, 2023, 2022, 2021, 2020].map(year => (
+            {Array.from({ length: 5 }, (_, i) => {
+              const currentIxYear = new Date(IxTime.getCurrentIxTime()).getFullYear();
+              return currentIxYear - i;
+            }).map(year => (
               <option key={year} value={year}>{year}</option>
             ))}
           </select>

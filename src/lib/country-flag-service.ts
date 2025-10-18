@@ -16,10 +16,22 @@ interface FlagSearchResult {
   description?: string;
 }
 
+interface CountryFlagServiceOptions {
+  enableIiwikiFallback?: boolean;
+}
+
 class CountryFlagService {
   private flagCache = new Map<string, CountryFlag>();
   private readonly CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
   private readonly WIKIMEDIA_COMMONS_API = 'https://commons.wikimedia.org/w/api.php';
+  private options: CountryFlagServiceOptions;
+
+  constructor(options: CountryFlagServiceOptions = {}) {
+    this.options = {
+      enableIiwikiFallback: true, // Default to true for backward compatibility
+      ...options
+    };
+  }
 
   /**
    * Get flag URL for a country, trying multiple sources
@@ -59,21 +71,23 @@ class CountryFlagService {
 
       
 
-      // Method 3: Try IIWiki search as fallback
-      try {
-        const iiwikiFlags = await searchWikiImages(`flag ${countryName}`, 'iiwiki');
-        if (iiwikiFlags.length > 0 && iiwikiFlags[0]?.url) {
-          result = {
-            country: countryName,
-            flagUrl: iiwikiFlags[0].url,
-            source: 'ixwiki',
-            timestamp: Date.now() // Add timestamp
-          };
-          this.flagCache.set(normalizedName, result);
-          return result;
+      // Method 3: Try IIWiki search as fallback (only if enabled)
+      if (this.options.enableIiwikiFallback) {
+        try {
+          const iiwikiFlags = await searchWikiImages(`flag ${countryName}`, 'iiwiki');
+          if (iiwikiFlags.length > 0 && iiwikiFlags[0]?.url) {
+            result = {
+              country: countryName,
+              flagUrl: iiwikiFlags[0].url,
+              source: 'ixwiki',
+              timestamp: Date.now() // Add timestamp
+            };
+            this.flagCache.set(normalizedName, result);
+            return result;
+          }
+        } catch (error) {
+          console.warn(`[CountryFlag] IIWiki search failed for ${countryName}:`, error);
         }
-      } catch (error) {
-        console.warn(`[CountryFlag] IIWiki search failed for ${countryName}:`, error);
       }
 
       // No flag found
@@ -400,6 +414,7 @@ class CountryFlagService {
   }
 }
 
-// Export singleton instance
-export const countryFlagService = new CountryFlagService();
-export type { CountryFlag, FlagSearchResult };
+// Export singleton instances
+export const countryFlagService = new CountryFlagService(); // Default with IIWiki fallback
+export const countryFlagServiceCommonsOnly = new CountryFlagService({ enableIiwikiFallback: false }); // Commons only
+export type { CountryFlag, FlagSearchResult, CountryFlagServiceOptions };

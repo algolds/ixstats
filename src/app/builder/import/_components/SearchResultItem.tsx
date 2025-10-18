@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Search, Globe, ExternalLink, Users, DollarSign, MapPin, Building } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { sanitizeWikiContent } from "~/lib/sanitize-html";
 
 interface SearchResult {
   title: string;
@@ -122,7 +123,8 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
               <span
                 className="truncate"
                 style={{ color: 'var(--color-text-muted)' }}
-                dangerouslySetInnerHTML={{ __html: result.capital }}
+                // SECURITY: Sanitize wiki search result content
+                dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(result.capital) }}
               />
             </div>
           )}
@@ -132,7 +134,8 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
               <span
                 className="truncate"
                 style={{ color: 'var(--color-text-muted)' }}
-                dangerouslySetInnerHTML={{ __html: result.government }}
+                // SECURITY: Sanitize wiki search result content
+                dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(result.government) }}
               />
             </div>
           )}
@@ -140,7 +143,8 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
       ) : (
         <p
           className="text-sm text-text-muted ml-9"
-          dangerouslySetInnerHTML={{ __html: result.snippet }}
+          // SECURITY: Sanitize wiki search result snippet
+          dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(result.snippet) }}
         />
       )}
       </div>

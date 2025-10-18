@@ -11,7 +11,7 @@ const notificationEmitter = new EventEmitter();
 
 const NotificationLevel = z.enum(['low', 'medium', 'high', 'critical']);
 const NotificationType = z.enum(['info', 'warning', 'success', 'error', 'alert', 'update', 'economic', 'crisis', 'diplomatic', 'system']);
-const NotificationCategory = z.enum(['economic', 'diplomatic', 'governance', 'social', 'security', 'system', 'achievement', 'crisis', 'opportunity']);
+const NotificationCategory = z.enum(['economic', 'diplomatic', 'governance', 'social', 'security', 'system', 'achievement', 'crisis', 'opportunity', 'intelligence', 'policy', 'global', 'military']);
 
 export const notificationsRouter = createTRPCRouter({
   // Get notifications for current user (using auth context)

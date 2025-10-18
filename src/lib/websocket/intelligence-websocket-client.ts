@@ -62,7 +62,6 @@ export class IntelligenceWebSocketClient {
       }
 
       const serverUrl = this.getServerUrl();
-      console.log('Connecting to Intelligence WebSocket:', serverUrl);
 
       this.socket = io(serverUrl, {
         transports: ['websocket', 'polling'],
@@ -73,7 +72,6 @@ export class IntelligenceWebSocketClient {
 
       // Connection established
       this.socket.on('connect', () => {
-        console.log('Intelligence WebSocket connected:', this.socket?.id);
         this.state.connected = true;
         this.state.connectionId = this.socket?.id;
         this.connectionAttempts = 0;
@@ -103,7 +101,6 @@ export class IntelligenceWebSocketClient {
 
       // Disconnection
       this.socket.on('disconnect', (reason: any) => {
-        console.log('Intelligence WebSocket disconnected:', reason);
         this.state.connected = false;
         this.state.authenticated = false;
         this.stopHeartbeat();
@@ -174,7 +171,6 @@ export class IntelligenceWebSocketClient {
 
     // Intelligence updates
     this.socket.on('intelligence:update', (event: WebSocketIntelligenceEvent) => {
-      console.log('Received intelligence update:', event.type, event.data);
       this.options.onUpdate(event.data);
     });
 
@@ -404,7 +400,6 @@ export class IntelligenceWebSocketClient {
     this.state.subscriptions.clear();
     this.connectionAttempts = 0;
     
-    console.log('Intelligence WebSocket disconnected');
   }
 
   /**

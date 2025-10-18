@@ -50,6 +50,7 @@ import { Progress } from "~/components/ui/progress";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import type { CoreEconomicIndicatorsData, SpendingCategory, GovernmentSpendingData } from "~/types/economics";
+import { createDefaultGovernmentSpendingData } from "~/lib/government-spending-defaults";
 import { Button } from "~/components/ui/button";
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 
@@ -98,7 +99,7 @@ export function GovernmentSpending({
   onIndicatorsChangeAction
 }: GovernmentSpendingProps) {
   // Reconstruct spendingData object for compatibility
-  const spendingData: GovernmentSpendingData = {
+  const spendingData: GovernmentSpendingData = createDefaultGovernmentSpendingData({
     education,
     healthcare,
     socialSafety,
@@ -111,7 +112,7 @@ export function GovernmentSpending({
     universalBasicServices,
     greenInvestmentPriority,
     digitalGovernmentInitiative
-  };
+  });
   const [selectedView, setSelectedView] = useState<'overview' | 'breakdown' | 'efficiency' | 'analysis'>('overview');
   const [editMode, setEditMode] = useState(false);
 

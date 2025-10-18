@@ -2,18 +2,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  Database, 
-  Server, 
-  Activity, 
-  Cpu, 
-  MemoryStick, 
-  HardDrive, 
-  Globe, 
+import {
+  Database,
+  Server,
+  Activity,
+  Globe,
   Clock,
   AlertTriangle,
-  CheckCircle,
-  XCircle,
   RefreshCw,
   Eye,
   Settings
@@ -21,39 +16,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Progress } from "~/components/ui/progress";
-import { Separator } from "~/components/ui/separator";
 import { api } from "~/trpc/react";
 import { formatDistanceToNow } from "date-fns";
 import { DatabaseExplorer } from "./DatabaseExplorer";
 import { SystemLogs } from "./SystemLogs";
-
-interface SystemMetrics {
-  database: {
-    connectionCount: number;
-    queryCount: number;
-    averageResponseTime: number;
-    tableCount: number;
-    totalRecords: number;
-    diskUsage: number;
-  };
-  server: {
-    uptime: number;
-    memoryUsage: number;
-    cpuUsage: number;
-    diskUsage: number;
-    requestCount: number;
-    errorRate: number;
-  };
-  application: {
-    activeUsers: number;
-    totalCalculations: number;
-    cacheHitRate: number;
-    botConnectionStatus: boolean;
-    lastBackup: Date;
-    configVersion: string;
-  };
-}
 
 interface InternalFormula {
   id: string;
@@ -67,7 +33,6 @@ interface InternalFormula {
 }
 
 export function SystemOverview() {
-  const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
   const [formulas, setFormulas] = useState<InternalFormula[]>([]);
   const [selectedFormula, setSelectedFormula] = useState<InternalFormula | null>(null);
   const [isEditingFormula, setIsEditingFormula] = useState(false);
@@ -76,6 +41,11 @@ export function SystemOverview() {
   const { data: systemStatus, refetch: refetchSystemStatus } = api.admin.getSystemStatus.useQuery(
     undefined,
     { refetchInterval: 5000 }
+  );
+
+  const { data: systemHealth } = api.admin.getSystemHealth.useQuery(
+    undefined,
+    { refetchInterval: 30000 }
   );
 
   const { data: calculationFormulasData, error: formulasError } = api.admin.getCalculationFormulas.useQuery(
@@ -93,150 +63,22 @@ export function SystemOverview() {
     }
   }, [formulasError]);
 
-  // Mock metrics for demonstration - replace with real API calls
+  // Process formula data from API
   useEffect(() => {
-    const mockMetrics: SystemMetrics = {
-      database: {
-        connectionCount: 12,
-        queryCount: 1543,
-        averageResponseTime: 23.5,
-        tableCount: 47,
-        totalRecords: 89234,
-        diskUsage: 67.8
-      },
-      server: {
-        uptime: Date.now() - (24 * 60 * 60 * 1000), // 24 hours ago
-        memoryUsage: 72.3,
-        cpuUsage: 34.7,
-        diskUsage: 45.2,
-        requestCount: 5678,
-        errorRate: 0.12
-      },
-      application: {
-        activeUsers: 8,
-        totalCalculations: 234567,
-        cacheHitRate: 94.6,
-        botConnectionStatus: true,
-        lastBackup: new Date(Date.now() - (2 * 60 * 60 * 1000)), // 2 hours ago
-        configVersion: "1.0.0"
-      }
-    };
-
-    const mockFormulas: InternalFormula[] = [
-      {
-        id: "gdp-growth",
-        name: "GDP Growth Calculation",
-        description: "Core GDP growth formula with tier-based constraints",
-        formula: "(baseGDP * globalGrowthFactor * tierMultiplier) + dmModifiers - inflationAdjustment",
-        variables: {
-          globalGrowthFactor: 1.0321,
-          baseInflationRate: 0.025,
-          tierMultiplierMax: 0.10,
-          populationGrowthWeight: 0.3
-        },
-        lastModified: new Date(),
-        isActive: true,
-        category: "Economic"
-      },
-      {
-        id: "tax-efficiency",
-        name: "Tax Collection Efficiency",
-        description: "Government tax collection effectiveness calculation",
-        formula: "baseTaxRate * governmentEfficiency * atomicModifiers * complianceRate",
-        variables: {
-          baseTaxRate: 0.25,
-          governmentEfficiency: 0.85,
-          complianceRate: 0.78,
-          atomicBonus: 1.2
-        },
-        lastModified: new Date(Date.now() - (3 * 24 * 60 * 60 * 1000)),
-        isActive: true,
-        category: "Economic"
-      },
-      {
-        id: "stability-index",
-        name: "Country Stability Index",
-        description: "Overall country stability based on multiple factors",
-        formula: "(economicStability + politicalStability + socialCohesion) / 3 * atomicGovernanceBonus",
-        variables: {
-          economicWeight: 0.4,
-          politicalWeight: 0.35,
-          socialWeight: 0.25,
-          atomicGovernanceBonus: 1.15
-        },
-        lastModified: new Date(Date.now() - (7 * 24 * 60 * 60 * 1000)),
-        isActive: true,
-        category: "Stability"
-      },
-      {
-        id: "population-growth",
-        name: "Population Growth Rate",
-        description: "Natural population growth with migration factors",
-        formula: "naturalGrowthRate + migrationRate - mortalityAdjustment + economicFactors",
-        variables: {
-          naturalGrowthRate: 0.018,
-          baseMigrationRate: 0.005,
-          economicGrowthInfluence: 0.3,
-          healthcareIndex: 0.85
-        },
-        lastModified: new Date(Date.now() - (14 * 24 * 60 * 60 * 1000)),
-        isActive: true,
-        category: "Demographics"
-      }
-    ];
-
-    setMetrics(mockMetrics);
-    // Use API data if available, otherwise fall back to mock data
     if (calculationFormulasData?.formulas) {
       setFormulas(calculationFormulasData.formulas.map(f => ({
         ...f,
-        formula: `function ${f.name.replace(/\s+/g, '')}() { /* ${f.description} */ }`,
-        variables: {
-          globalFactor: 1.0321,
-          baseInflationRate: 0.025,
-          tierMultiplierMax: 0.10,
-          populationGrowthWeight: 0.3
-        },
-        constants: {
-          minGrowthRate: -0.05,
-          maxTierMultipliers: [0.10, 0.075, 0.05, 0.035, 0.0275, 0.015, 0.005]
-        },
-        dependencies: ["dm-modifiers", "economic-tiers"],
-        testCases: [
-          {
-            id: "test-1",
-            name: "Standard Test Case",
-            inputs: { baseGDP: 45000, population: 10000000, tier: 3 },
-            expectedOutput: 0.048,
-            status: "pending" as const
-          }
-        ],
-        modifiedBy: "system"
+        formula: `Effective Growth = (baseGDP * ${f.variables.globalGrowthFactor} * tierMultiplier) + dmModifiers`,
+        variables: f.variables,
+        lastModified: f.lastModified,
+        isActive: f.isActive,
+        category: f.category
       })));
-    } else {
-      setFormulas(mockFormulas);
     }
   }, [calculationFormulasData]);
 
-  const getStatusColor = (value: number, type: 'percentage' | 'inverse' = 'percentage') => {
-    if (type === 'inverse') {
-      value = 100 - value;
-    }
-    if (value >= 80) return "text-green-600 dark:text-green-400";
-    if (value >= 60) return "text-yellow-600 dark:text-yellow-400";
-    return "text-red-600 dark:text-red-400";
-  };
 
-  const getStatusIcon = (value: number, type: 'percentage' | 'inverse' = 'percentage') => {
-    if (type === 'inverse') {
-      value = 100 - value;
-    }
-    if (value >= 80) return <CheckCircle className="h-4 w-4 text-green-500" />;
-    if (value >= 60) return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-    return <XCircle className="h-4 w-4 text-red-500" />;
-  };
-
-  if (!metrics) {
+  if (!systemStatus || !systemHealth) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -278,14 +120,16 @@ export function SystemOverview() {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Server Status</p>
-                    <p className="text-2xl font-bold">Online</p>
+                    <p className="text-sm font-medium text-muted-foreground">Database Status</p>
+                    <p className="text-2xl font-bold">
+                      {systemHealth.database.connected ? "Connected" : "Disconnected"}
+                    </p>
                   </div>
-                  <Server className="h-8 w-8 text-green-500" />
+                  <Database className={`h-8 w-8 ${systemHealth.database.connected ? 'text-green-500' : 'text-red-500'}`} />
                 </div>
                 <div className="mt-2">
                   <p className="text-xs text-muted-foreground">
-                    Uptime: {formatDistanceToNow(metrics.server.uptime)}
+                    Countries: {systemHealth.database.countries}
                   </p>
                 </div>
               </CardContent>
@@ -295,14 +139,14 @@ export function SystemOverview() {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Active Users</p>
-                    <p className="text-2xl font-bold">{metrics.application.activeUsers}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Total Countries</p>
+                    <p className="text-2xl font-bold">{systemStatus.countryCount}</p>
                   </div>
                   <Activity className="h-8 w-8 text-blue-500" />
                 </div>
                 <div className="mt-2">
                   <p className="text-xs text-muted-foreground">
-                    Total calculations: {metrics.application.totalCalculations.toLocaleString()}
+                    Active DM Inputs: {systemStatus.activeDmInputs}
                   </p>
                 </div>
               </CardContent>
@@ -314,14 +158,14 @@ export function SystemOverview() {
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Bot Connection</p>
                     <p className="text-2xl font-bold">
-                      {metrics.application.botConnectionStatus ? "Connected" : "Disconnected"}
+                      {systemHealth.bot.available ? "Connected" : "Unavailable"}
                     </p>
                   </div>
-                  <Globe className={`h-8 w-8 ${metrics.application.botConnectionStatus ? 'text-green-500' : 'text-red-500'}`} />
+                  <Globe className={`h-8 w-8 ${systemHealth.bot.available ? 'text-green-500' : 'text-yellow-500'}`} />
                 </div>
                 <div className="mt-2">
                   <p className="text-xs text-muted-foreground">
-                    Last sync: {formatDistanceToNow(new Date(Date.now() - 300000))} ago
+                    {systemHealth.bot.message || "No message"}
                   </p>
                 </div>
               </CardContent>
@@ -331,16 +175,16 @@ export function SystemOverview() {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Error Rate</p>
-                    <p className={`text-2xl font-bold ${getStatusColor(metrics.server.errorRate, 'inverse')}`}>
-                      {metrics.server.errorRate.toFixed(2)}%
+                    <p className="text-sm font-medium text-muted-foreground">Calculations</p>
+                    <p className="text-2xl font-bold">
+                      {systemHealth.database.recentCalculations}
                     </p>
                   </div>
-                  {getStatusIcon(metrics.server.errorRate, 'inverse')}
+                  <Clock className="h-8 w-8 text-purple-500" />
                 </div>
                 <div className="mt-2">
                   <p className="text-xs text-muted-foreground">
-                    {metrics.server.requestCount.toLocaleString()} total requests
+                    Last 24 hours
                   </p>
                 </div>
               </CardContent>
@@ -349,90 +193,92 @@ export function SystemOverview() {
 
           {/* Detailed Metrics */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Server Resources */}
+            {/* IxTime Status */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Cpu className="h-5 w-5" />
-                  Server Resources
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium">CPU Usage</span>
-                    <span className={`text-sm ${getStatusColor(100 - metrics.server.cpuUsage)}`}>
-                      {metrics.server.cpuUsage.toFixed(1)}%
-                    </span>
-                  </div>
-                  <Progress value={metrics.server.cpuUsage} className="h-2" />
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium">Memory Usage</span>
-                    <span className={`text-sm ${getStatusColor(100 - metrics.server.memoryUsage)}`}>
-                      {metrics.server.memoryUsage.toFixed(1)}%
-                    </span>
-                  </div>
-                  <Progress value={metrics.server.memoryUsage} className="h-2" />
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium">Disk Usage</span>
-                    <span className={`text-sm ${getStatusColor(100 - metrics.server.diskUsage)}`}>
-                      {metrics.server.diskUsage.toFixed(1)}%
-                    </span>
-                  </div>
-                  <Progress value={metrics.server.diskUsage} className="h-2" />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Database Metrics */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Database className="h-5 w-5" />
-                  Database Performance
+                  <Clock className="h-5 w-5" />
+                  IxTime System
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Active Connections</p>
-                    <p className="text-xl font-bold">{metrics.database.connectionCount}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Current IxTime</p>
+                    <p className="text-lg font-bold">{systemHealth.ixTime.formatted}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Query Count</p>
-                    <p className="text-xl font-bold">{metrics.database.queryCount.toLocaleString()}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Multiplier</p>
+                    <p className="text-lg font-bold">{systemHealth.ixTime.multiplier}x</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Avg Response Time</p>
-                    <p className="text-xl font-bold">{metrics.database.averageResponseTime}ms</p>
+                    <p className="text-sm font-medium text-muted-foreground">Status</p>
+                    <p className="text-lg font-bold">
+                      {systemHealth.ixTime.isPaused ? "Paused" : "Running"}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Cache Hit Rate</p>
-                    <p className={`text-xl font-bold ${getStatusColor(metrics.application.cacheHitRate)}`}>
-                      {metrics.application.cacheHitRate.toFixed(1)}%
+                    <p className="text-sm font-medium text-muted-foreground">Last Update</p>
+                    <p className="text-sm font-medium">
+                      {formatDistanceToNow(new Date(systemHealth.lastUpdate))} ago
                     </p>
                   </div>
                 </div>
-                
-                <Separator />
-                
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-2">Database Size</p>
-                  <p className="text-sm">
-                    <span className="font-medium">{metrics.database.tableCount}</span> tables, 
-                    <span className="font-medium ml-1">{metrics.database.totalRecords.toLocaleString()}</span> records
-                  </p>
-                  <div className="mt-2">
-                    <Progress value={metrics.database.diskUsage} className="h-2" />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {metrics.database.diskUsage.toFixed(1)}% disk usage
-                    </p>
+              </CardContent>
+            </Card>
+
+            {/* System Activity */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  System Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Total Countries</p>
+                    <p className="text-xl font-bold">{systemHealth.database.countries}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Recent Calculations</p>
+                    <p className="text-xl font-bold">{systemHealth.database.recentCalculations}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-sm font-medium text-muted-foreground mb-2">Last Calculation</p>
+                    {systemStatus.lastCalculation ? (
+                      <div className="text-sm">
+                        <p>
+                          <span className="font-medium">{systemStatus.lastCalculation.countriesUpdated}</span> countries updated
+                        </p>
+                        <p className="text-muted-foreground">
+                          {formatDistanceToNow(new Date(systemStatus.lastCalculation.timestamp))} ago
+                          ({systemStatus.lastCalculation.executionTimeMs}ms)
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No calculations yet</p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Server Resources - Not Available */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Server className="h-5 w-5" />
+                  Server Resources
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-center py-8 text-muted-foreground">
+                  <div className="text-center">
+                    <AlertTriangle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm font-medium">Server metrics not available</p>
+                    <p className="text-xs mt-1">CPU, memory, and disk usage monitoring requires additional infrastructure setup</p>
                   </div>
                 </div>
               </CardContent>

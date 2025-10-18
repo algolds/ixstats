@@ -10,11 +10,12 @@ import { Switch } from '~/components/ui/switch';
 import { Textarea } from '~/components/ui/textarea';
 import { Badge } from '~/components/ui/badge';
 import { Slider } from '~/components/ui/slider';
-import { 
-  Calculator, 
-  Building, 
-  Calendar, 
-  TrendingUp, 
+import { Autocomplete } from '~/components/ui/autocomplete';
+import {
+  Calculator,
+  Building,
+  Calendar,
+  TrendingUp,
   Shield,
   AlertTriangle,
   CheckCircle,
@@ -22,23 +23,45 @@ import {
 } from 'lucide-react';
 import type { TaxSystemInput } from '~/types/tax-system';
 import { FISCAL_YEARS } from '~/types/tax-system';
+import { api } from '~/trpc/react';
 
 interface TaxSystemFormProps {
   data: TaxSystemInput;
   onChange: (data: TaxSystemInput) => void;
   isReadOnly?: boolean;
   errors?: Record<string, string[]>;
+  countryId?: string;
 }
 
-export function TaxSystemForm({ 
-  data, 
-  onChange, 
+export function TaxSystemForm({
+  data,
+  onChange,
   isReadOnly = false,
-  errors = {}
+  errors = {},
+  countryId
 }: TaxSystemFormProps) {
   const handleChange = (field: keyof TaxSystemInput, value: any) => {
     onChange({ ...data, [field]: value });
   };
+
+  // Fetch government components for tax authority autocomplete
+  const { data: governmentComponents } = api.government.getComponents.useQuery(
+    { countryId: countryId || '' },
+    { enabled: !!countryId }
+  );
+
+  const taxDepartmentOptions = governmentComponents
+    ?.filter((component: any) =>
+      component.componentType?.toLowerCase().includes('finance') ||
+      component.componentType?.toLowerCase().includes('revenue') ||
+      component.componentType?.toLowerCase().includes('tax') ||
+      component.componentType?.toLowerCase().includes('treasury')
+    )
+    ?.map((component: any) => ({
+      id: component.id || component.componentType,
+      value: component.componentType,
+      label: component.componentType
+    })) || [];
 
   const fiscalYearOptions = [
     { value: 'calendar', label: 'Calendar Year (Jan - Dec)' },
@@ -99,13 +122,19 @@ export function TaxSystemForm({
             <Label htmlFor="taxAuthority" className="text-sm font-medium">
               Tax Authority
             </Label>
-            <Input
-              id="taxAuthority"
+            <Autocomplete
+              fieldName="taxAuthority"
               value={data.taxAuthority || ''}
-              onChange={(e) => handleChange('taxAuthority', e.target.value)}
-              placeholder="e.g., Internal Revenue Service"
+              onChange={(value) => handleChange('taxAuthority', value)}
+              globalSuggestions={taxDepartmentOptions}
+              placeholder="e.g., Ministry of Finance"
               disabled={isReadOnly}
             />
+            {taxDepartmentOptions.length === 0 && countryId && (
+              <p className="text-xs text-muted-foreground">
+                Create finance/revenue departments in Government Builder to populate this list
+              </p>
+            )}
           </div>
 
           {/* Fiscal Year */}

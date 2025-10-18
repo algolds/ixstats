@@ -1,13 +1,11 @@
 // src/app/admin/page.tsx
-// FIXED: Updated admin page to work with current system
+// Refactored admin page with extracted hooks and components
 
 "use client";
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useCallback } from "react";
 import {
-  StatusCards,
-  BotStatusBanner,
   BotControlPanel,
   TimeControlPanel,
   EconomicControlPanel,
@@ -19,42 +17,25 @@ import {
   CountryAdminPanel,
   NotificationsAdmin,
   UserManagement,
+  AdminSidebar,
 } from "./_components";
 import { NavigationSettings } from "./_components/NavigationSettings";
-import { AdminDashboardSafe } from "./_components/AdminDashboardSafe";
-// Complex components loaded on-demand to prevent API errors
 import { SystemOverview } from "./_components/SystemOverview";
 import { CalculationEditor } from "./_components/CalculationEditor";
 import { StorytellerControlPanel } from "./_components/StorytellerControlPanel";
 import { IxTimeVisualizer } from "./_components/IxTimeVisualizer";
 import { GlassCard, EnhancedCard } from "~/components/ui/enhanced-card";
-import { withBasePath } from "~/lib/base-path";
-import { BentoGrid } from "~/components/ui/bento-grid";
-import { AnimatedNumber } from "~/components/ui/animated-number";
-import { TrendIndicator } from "~/components/ui/trend-indicator";
-import { HealthRing } from "~/components/ui/health-ring";
 import { FlagCacheManager } from "~/components/FlagCacheManager";
-import { FlagTestComponent } from "~/components/FlagTestComponent";
 import { RealTimeClock } from "~/components/ui/real-time-clock";
 import { api } from "~/trpc/react";
-import { AdminFavoriteButton } from "~/components/admin/AdminFavoriteButton";
-import { IxTime } from "~/lib/ixtime";
-import { CONFIG_CONSTANTS } from "~/lib/config-service";
-import type { 
-  SystemStatus, 
-  AdminPageBotStatusView, 
-  ImportAnalysis,
-  BaseCountryData,
-  CalculationLog
-} from "~/types/ixstats";
 import { AdminErrorBoundary } from "./_components/ErrorBoundary";
-import { SignedIn, SignedOut, SignInButton, useUser, UserButton } from "@clerk/nextjs";
-import { Settings, Clock, TrendingUp, Bot, Database, Upload, List, Shield, Users, Bell, Monitor, Code, Gamepad2, Minimize2, Maximize2 } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
+import { SignInButton, useUser, UserButton } from "@clerk/nextjs";
+import { Settings, Clock, TrendingUp, Bot, Database, Upload, Monitor, Code, Gamepad2, Minimize2, Maximize2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { BarChart3, Users as UsersIcon } from "lucide-react";
-import { formatPopulation, formatCurrency } from '~/lib/chart-utils';
+import { useAdminState } from "./_hooks/useAdminState";
+import { useAdminHandlers } from "./_hooks/useAdminHandlers";
+import { useBotSync } from "./_hooks/useBotSync";
 
 export default function AdminPage() {
   // All hooks must be called unconditionally and at the top
@@ -63,52 +44,29 @@ export default function AdminPage() {
   }, []);
 
   const { user, isLoaded } = useUser();
-  const [config, setConfig] = useState({
-    globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR as number,
-    autoUpdate: true,
-    botSyncEnabled: true,
-    timeMultiplier: 2.0,
-  });
-  const [timeState, setTimeState] = useState({
-    customDate: new Date().toISOString().split('T')[0] || "",
-    customTime: "12:00",
-  });
-  const [importState, setImportState] = useState({
-    isUploading: false,
-    isAnalyzing: false,
-    analyzeError: null as string | null,
-    importError: null as string | null,
-    previewData: null as ImportAnalysis | null,
-    showPreview: false,
-    fileData: null as number[] | null,
-    fileName: null as string | null,
-  });
-  const [actionState, setActionState] = useState({
-    calculationPending: false,
-    setTimePending: false,
-    savePending: false,
-    syncPending: false,
-    pausePending: false,
-    resumePending: false,
-    clearPending: false,
-    syncEpochPending: false,
-    autoSyncPending: false,
-    lastUpdate: null as Date | null,
-    lastBotSync: null as Date | null,
-  });
-  const [selectedSection, setSelectedSection] = useState("overview");
-  const [collapsedCards, setCollapsedCards] = useState<Record<string, boolean>>({
-    temporal: false,
-    discord: false,
-    cache: false
-  });
+
+  // State management from extracted hooks
+  const {
+    config,
+    setConfig,
+    timeState,
+    setTimeState,
+    importState,
+    setImportState,
+    actionState,
+    setActionState,
+    selectedSection,
+    setSelectedSection,
+    collapsedCards,
+    setCollapsedCards,
+  } = useAdminState();
 
   const toggleCardCollapse = useCallback((cardId: string) => {
     setCollapsedCards(prev => ({
       ...prev,
       [cardId]: !prev[cardId]
     }));
-  }, []);
+  }, [setCollapsedCards]);
 
   // TRPC Queries - all called unconditionally
   const { 
@@ -155,364 +113,64 @@ export default function AdminPage() {
   useEffect(() => {
     if (configData) {
       setConfig({
-        globalGrowthFactor: configData.globalGrowthFactor || CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR,
+        globalGrowthFactor: configData.globalGrowthFactor || 1.0,
         autoUpdate: configData.autoUpdate ?? true,
         botSyncEnabled: configData.botSyncEnabled ?? true,
         timeMultiplier: configData.timeMultiplier || 2.0,
       });
     }
-  }, [configData]);
+  }, [configData, setConfig]);
 
-  // Auto-sync with Discord bot when bot multiplier changes
-  useEffect(() => {
-    if (!config.botSyncEnabled || !botStatus || actionState.autoSyncPending) return;
+  // Bot sync from extracted hook
+  useBotSync({
+    botStatus,
+    timeMultiplier: config.timeMultiplier,
+    botSyncEnabled: config.botSyncEnabled,
+    autoSyncPending: actionState.autoSyncPending,
+    setActionState,
+    setTimeMultiplier: (value) => setConfig(prev => ({ ...prev, timeMultiplier: value })),
+    refetchStatus,
+    refetchBotStatus,
+  });
 
-    const currentMultiplier = config.timeMultiplier;
-    // Check if bot multiplier differs from dashboard config
-    const botMultiplier = botStatus.multiplier;
-    const dashboardMultiplier = currentMultiplier;
-    
-    // If bot multiplier differs from what we expect, sync from bot
-    if (botMultiplier && botMultiplier !== dashboardMultiplier) {
-      console.log(`Bot multiplier (${botMultiplier}) differs from dashboard (${dashboardMultiplier}), syncing...`);
-      
-      setActionState(prev => ({ ...prev, autoSyncPending: true }));
-      
-      // Sync from bot to admin panel
-      fetch(withBasePath('/api/ixtime/sync-from-bot'), { method: 'POST' })
-        .then(response => response.json())
-        .then(result => {
-          if (result.success) {
-            console.log('Successfully synced from Discord bot:', result.message);
-            // Update local config to match bot
-            setConfig(prev => ({ ...prev, timeMultiplier: botMultiplier }));
-            setActionState(prev => ({ ...prev, lastBotSync: new Date() }));
-            // Refresh status data
-            refetchStatus();
-            refetchBotStatus();
-          } else {
-            console.warn('Failed to sync from Discord bot:', result.error);
-          }
-        })
-        .catch(error => {
-          console.warn('Error syncing from Discord bot:', error);
-        })
-        .finally(() => {
-          setActionState(prev => ({ ...prev, autoSyncPending: false }));
-        });
-    }
-  }, [botStatus, config.timeMultiplier, config.botSyncEnabled, actionState.autoSyncPending, refetchStatus, refetchBotStatus]);
-
-  // Handlers - all called unconditionally
-  const handleSaveConfig = useCallback(async () => {
-    setActionState(prev => ({ ...prev, savePending: true }));
-    try {
-      await saveConfigMutation.mutateAsync(config);
-      setActionState(prev => ({ ...prev, lastUpdate: new Date() }));
-      await refetchConfig();
-    } catch (error) {
-      console.error("Failed to save config:", error);
-    } finally {
-      setActionState(prev => ({ ...prev, savePending: false }));
-    }
-  }, [config, saveConfigMutation, refetchConfig]);
-
-  const handleForceCalculation = useCallback(async () => {
-    setActionState(prev => ({ ...prev, calculationPending: true }));
-    try {
-      await forceCalculationMutation.mutateAsync({});
-      await refetchStatus();
-    } catch (error) {
-      console.error("Failed to force calculation:", error);
-    } finally {
-      setActionState(prev => ({ ...prev, calculationPending: false }));
-    }
-  }, [forceCalculationMutation, refetchStatus]);
-
-  const handleSetCustomTime = useCallback(async () => {
-    if (!timeState.customDate || !timeState.customTime) return;
-    setActionState(prev => ({ ...prev, setTimePending: true }));
-    try {
-      const ixTime = IxTime.createGameTime(
-        parseInt(timeState.customDate.split('-')[0]!),
-        parseInt(timeState.customDate.split('-')[1]!),
-        parseInt(timeState.customDate.split('-')[2]!),
-        parseInt(timeState.customTime.split(':')[0]!),
-        parseInt(timeState.customTime.split(':')[1]!)
-      );
-      await setCustomTimeMutation.mutateAsync({ 
-        ixTime, 
-        multiplier: config.timeMultiplier 
-      });
-      await refetchStatus();
-      await refetchBotStatus();
-    } catch (error) {
-      console.error("Failed to set custom time:", error);
-    } finally {
-      setActionState(prev => ({ ...prev, setTimePending: false }));
-    }
-  }, [timeState, config.timeMultiplier, setCustomTimeMutation, refetchStatus, refetchBotStatus]);
-
-  const handleResetToRealTime = useCallback(async () => {
-    setActionState(prev => ({ ...prev, setTimePending: true }));
-    try {
-      await setCustomTimeMutation.mutateAsync({ 
-        ixTime: IxTime.getCurrentIxTime(),
-        multiplier: 2.0 
-      });
-      setConfig(prev => ({ ...prev, timeMultiplier: 2.0 }));
-      await refetchStatus();
-      await refetchBotStatus();
-    } catch (error) {
-      console.error("Failed to reset time:", error);
-    } finally {
-      setActionState(prev => ({ ...prev, setTimePending: false }));
-    }
-  }, [setCustomTimeMutation, refetchStatus, refetchBotStatus]);
-
-  const handleTimeMultiplierChange = useCallback(async (value: number) => {
-    // Update local state immediately for UI responsiveness
-    setConfig(prev => ({ ...prev, timeMultiplier: value }));
-    
-    // Apply to bot with current time
-    setActionState(prev => ({ ...prev, setTimePending: true }));
-    try {
-      // Use natural time setting if available, fallback to custom time
-      try {
-        const naturalResponse = await fetch(withBasePath('/api/ixtime/set-natural'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ multiplier: value })
-        });
-        
-        if (naturalResponse.ok) {
-          const naturalResult = await naturalResponse.json();
-          console.log(`Time set naturally: ${naturalResult.message}`);
-        } else {
-          throw new Error('Natural time setting failed');
-        }
-      } catch (naturalError) {
-        console.warn('Natural time setting failed, using override:', naturalError);
-        
-        // Fallback to custom time override
-        await setCustomTimeMutation.mutateAsync({ 
-          ixTime: IxTime.getCurrentIxTime(),
-          multiplier: value 
-        });
-        
-        // Auto-sync with Discord bot
-        try {
-          const syncResponse = await fetch(withBasePath('/api/ixtime/sync-bot'), { method: 'POST' });
-          if (syncResponse.ok) {
-            console.log('Discord bot automatically synced with new time settings');
-          } else {
-            console.warn('Failed to auto-sync with Discord bot');
-          }
-        } catch (syncError) {
-          console.warn('Discord bot sync failed:', syncError);
-        }
-      }
-      
-      await refetchStatus();
-      await refetchBotStatus();
-    } catch (error) {
-      console.error("Failed to set time multiplier:", error);
-      // Revert local state on error
-      setConfig(prev => ({ ...prev, timeMultiplier: 2.0 }));
-    } finally {
-      setActionState(prev => ({ ...prev, setTimePending: false }));
-    }
-  }, [setCustomTimeMutation, refetchStatus, refetchBotStatus]);
-
-  const handleSyncEpoch = useCallback(async (targetEpoch: number) => {
-    setActionState(prev => ({ ...prev, syncEpochPending: true }));
-    try {
-      await syncEpochMutation.mutateAsync({
-        targetEpoch,
-        reason: 'Manual epoch sync from admin panel'
-      });
-      await refetchStatus();
-      await refetchBotStatus();
-    } catch (error) {
-      console.error("Failed to sync epoch:", error);
-    } finally {
-      setActionState(prev => ({ ...prev, syncEpochPending: false }));
-    }
-  }, [syncEpochMutation, refetchStatus, refetchBotStatus]);
-
-  // Bot control handlers
-  const handleSyncBot = useCallback(async () => {
-    setActionState(prev => ({ ...prev, syncPending: true }));
-    try {
-      await syncBotMutation.mutateAsync();
-      await refetchBotStatus();
-      await refetchStatus();
-    } catch (error) {
-      console.error("Failed to sync bot:", error);
-    } finally {
-      setActionState(prev => ({ ...prev, syncPending: false }));
-    }
-  }, [syncBotMutation, refetchBotStatus, refetchStatus]);
-
-  const handleSyncFromBot = useCallback(async () => {
-    setActionState(prev => ({ ...prev, autoSyncPending: true }));
-    try {
-      const response = await fetch(withBasePath('/api/ixtime/sync-from-bot'), { method: 'POST' });
-      const result = await response.json();
-      
-      if (result.success) {
-        console.log('Successfully synced from Discord bot:', result.message);
-        // Update local config to match bot
-        if (result.currentState?.multiplier) {
-          setConfig(prev => ({ ...prev, timeMultiplier: result.currentState.multiplier }));
-        }
-        setActionState(prev => ({ ...prev, lastBotSync: new Date() }));
-        await refetchStatus();
-        await refetchBotStatus();
-      } else {
-        console.error('Failed to sync from Discord bot:', result.error);
-      }
-    } catch (error) {
-      console.error("Error syncing from Discord bot:", error);
-    } finally {
-      setActionState(prev => ({ ...prev, autoSyncPending: false }));
-    }
-  }, [refetchStatus, refetchBotStatus]);
-
-  const handlePauseBot = useCallback(async () => {
-    setActionState(prev => ({ ...prev, pausePending: true }));
-    try {
-      await pauseBotMutation.mutateAsync();
-      await refetchBotStatus();
-    } catch (error) {
-      console.error("Failed to pause bot:", error);
-    } finally {
-      setActionState(prev => ({ ...prev, pausePending: false }));
-    }
-  }, [pauseBotMutation, refetchBotStatus]);
-
-  const handleResumeBot = useCallback(async () => {
-    setActionState(prev => ({ ...prev, resumePending: true }));
-    try {
-      await resumeBotMutation.mutateAsync();
-      await refetchBotStatus();
-    } catch (error) {
-      console.error("Failed to resume bot:", error);
-    } finally {
-      setActionState(prev => ({ ...prev, resumePending: false }));
-    }
-  }, [resumeBotMutation, refetchBotStatus]);
-
-  const handleClearOverrides = useCallback(async () => {
-    setActionState(prev => ({ ...prev, clearPending: true }));
-    try {
-      await clearBotOverridesMutation.mutateAsync();
-      await refetchBotStatus();
-    } catch (error) {
-      console.error("Failed to clear overrides:", error);
-    } finally {
-      setActionState(prev => ({ ...prev, clearPending: false }));
-    }
-  }, [clearBotOverridesMutation, refetchBotStatus]);
-
-  // Import handlers
-  const handleFileSelect = useCallback(async (file: File) => {
-    setImportState(prev => ({ 
-      ...prev, 
-      isAnalyzing: true, 
-      analyzeError: null, 
-      importError: null,
-      fileData: null,
-      fileName: null
-    }));
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const fileData = Array.from(new Uint8Array(arrayBuffer));
-      const fileName = file.name;
-      const analysis = await analyzeImportMutation.mutateAsync({
-        fileData,
-        fileName,
-      });
-      setImportState(prev => ({ 
-        ...prev, 
-        previewData: analysis, 
-        showPreview: true,
-        importError: null,
-        fileData, // Save fileData for later import
-        fileName, // Save fileName for later import
-      }));
-    } catch (error) {
-      setImportState(prev => ({ 
-        ...prev, 
-        analyzeError: error instanceof Error ? error.message : "Failed to analyze file",
-        showPreview: false,
-        previewData: null,
-        fileData: null,
-        fileName: null
-      }));
-    } finally {
-      setImportState(prev => ({ ...prev, isAnalyzing: false }));
-    }
-  }, [analyzeImportMutation]);
-
-  // Only clear previewData/showPreview after user closes dialog, not immediately after import
-  const handleImportConfirm = useCallback(async (replaceExisting: boolean, syncEpoch?: boolean, targetEpoch?: number) => {
-    if (!importState.previewData || !importState.fileData || !importState.fileName) return;
-    setImportState(prev => ({ ...prev, isUploading: true, importError: null }));
-    try {
-      // First, import the data
-      await importDataMutation.mutateAsync({
-        analysisId: importState.previewData.totalCountries.toString(),
-        replaceExisting,
-        fileData: importState.fileData,
-        fileName: importState.fileName
-      });
-      
-      // Then, if epoch sync is requested, sync the epoch time
-      if (syncEpoch && targetEpoch) {
-        await syncEpochMutation.mutateAsync({
-          targetEpoch,
-          reason: `Import sync: ${importState.fileName}`
-        });
-      }
-      
-      setImportState(prev => ({
-        ...prev,
-        isUploading: false,
-        // Do not clear previewData/showPreview here; let user close dialog
-      }));
-      // Optionally, you can show a success message here
-      await refetchStatus();
-      await handleForceCalculation();
-    } catch (error) {
-      setImportState(prev => ({
-        ...prev,
-        importError: error instanceof Error ? error.message : "Failed to import data",
-        isUploading: false
-      }));
-    }
-  }, [importState.previewData, importState.fileData, importState.fileName, importDataMutation, syncEpochMutation, refetchStatus, handleForceCalculation]);
-
-  // Only clear previewData/showPreview when user closes the dialog
-  const handleImportClose = useCallback(() => {
-    setImportState(prev => ({ 
-      ...prev, 
-      showPreview: false, 
-      previewData: null,
-      analyzeError: null,
-      importError: null,
-      fileData: null,
-      fileName: null
-    }));
-  }, []);
-
-  const handleRefreshStatus = useCallback(async () => {
-    await Promise.all([
-      refetchStatus(),
-      refetchBotStatus(),
-      refetchConfig(),
-    ]);
-  }, [refetchStatus, refetchBotStatus, refetchConfig]);
+  // Handlers from extracted hook
+  const {
+    handleSaveConfig,
+    handleForceCalculation,
+    handleSetCustomTime,
+    handleResetToRealTime,
+    handleTimeMultiplierChange,
+    handleSyncEpoch,
+    handleSyncBot,
+    handleSyncFromBot,
+    handlePauseBot,
+    handleResumeBot,
+    handleClearOverrides,
+    handleFileSelect,
+    handleImportConfirm,
+    handleImportClose,
+    handleRefreshStatus,
+  } = useAdminHandlers({
+    config,
+    timeState,
+    importState,
+    setActionState,
+    setConfig,
+    setImportState,
+    saveConfigMutation,
+    forceCalculationMutation,
+    setCustomTimeMutation,
+    analyzeImportMutation,
+    importDataMutation,
+    syncEpochMutation,
+    syncBotMutation,
+    pauseBotMutation,
+    resumeBotMutation,
+    clearBotOverridesMutation,
+    refetchConfig,
+    refetchStatus,
+    refetchBotStatus,
+  });
 
   // Early returns after all hooks are called
   if (!isLoaded) {
@@ -550,158 +208,11 @@ export default function AdminPage() {
     <>
       <AdminErrorBoundary>
         <div className="min-h-screen bg-background text-foreground flex">
-          {/* Modern Admin Sidebar */}
-          <div className="w-72 min-h-screen bg-card/50 backdrop-blur-sm border-r border-border/50 flex flex-col">
-            {/* Header */}
-            <div className="p-6 border-b border-border/50">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
-                  <Shield className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-foreground">Admin Console</h1>
-                  <p className="text-sm text-muted-foreground">System Management</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Navigation */}
-            <div className="flex-1 overflow-y-auto p-4">
-              <nav className="space-y-6">
-                {/* Overview */}
-                <div>
-                  <button
-                    onClick={() => setSelectedSection("overview")}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                      selectedSection === "overview"
-                        ? "bg-primary text-primary-foreground shadow-lg"
-                        : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    <Settings className="h-5 w-5" />
-                    <span className="font-medium">Dashboard</span>
-                  </button>
-                </div>
-
-                {/* Main Functions */}
-                <div>
-                  <h3 className="px-4 mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Core Functions
-                  </h3>
-                  <div className="space-y-1">
-                    {[
-                      { value: "system", icon: <Monitor className="h-5 w-5" />, label: "System Monitor" },
-                      { value: "formulas", icon: <Code className="h-5 w-5" />, label: "Formula Editor" },
-                      { value: "storyteller", icon: <Gamepad2 className="h-5 w-5" />, label: "Storyteller (God Mode)" },
-                      { value: "time", icon: <Clock className="h-5 w-5" />, label: "Time Controls" },
-                      { value: "navigation", icon: <Settings className="h-5 w-5" />, label: "Navigation Settings" }
-                    ].map((item) => (
-                      <button
-                        key={item.value}
-                        onClick={() => setSelectedSection(item.value)}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
-                          selectedSection === item.value
-                            ? "bg-primary/10 text-primary border border-primary/20"
-                            : "hover:bg-muted/30 text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        {item.icon}
-                        <span className="text-sm font-medium">{item.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Data & Integration */}
-                <div>
-                  <h3 className="px-4 mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Data & Integration
-                  </h3>
-                  <div className="space-y-1">
-                    {[
-                      { value: "bot", icon: <Bot className="h-5 w-5" />, label: "Discord Bot" },
-                      { value: "import", icon: <Upload className="h-5 w-5" />, label: "Data Import" },
-                      { value: "ixtime-visualizer", icon: <BarChart3 className="h-5 w-5" />, label: "IxTime Visualizer" }
-                    ].map((item) => (
-                      <button
-                        key={item.value}
-                        onClick={() => setSelectedSection(item.value)}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
-                          selectedSection === item.value
-                            ? "bg-primary/10 text-primary border border-primary/20"
-                            : "hover:bg-muted/30 text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        {item.icon}
-                        <span className="text-sm font-medium">{item.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* User Management */}
-                <div>
-                  <h3 className="px-4 mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    User Management
-                  </h3>
-                  <div className="space-y-1">
-                    {[
-                      { value: "user-management", icon: <Users className="h-5 w-5" />, label: "Users & Roles" },
-                      { value: "country-admin", icon: <UsersIcon className="h-5 w-5" />, label: "Country Admin" },
-                      { value: "notifications", icon: <Bell className="h-5 w-5" />, label: "Notifications" }
-                    ].map((item) => (
-                      <button
-                        key={item.value}
-                        onClick={() => setSelectedSection(item.value)}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
-                          selectedSection === item.value
-                            ? "bg-primary/10 text-primary border border-primary/20"
-                            : "hover:bg-muted/30 text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        {item.icon}
-                        <span className="text-sm font-medium">{item.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Monitoring */}
-                <div>
-                  <h3 className="px-4 mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Monitoring
-                  </h3>
-                  <div className="space-y-1">
-                    {[
-                      { value: "logs", icon: <List className="h-5 w-5" />, label: "System Logs" },
-                      { value: "economic", icon: <TrendingUp className="h-5 w-5" />, label: "Economic Monitor" }
-                    ].map((item) => (
-                      <button
-                        key={item.value}
-                        onClick={() => setSelectedSection(item.value)}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
-                          selectedSection === item.value
-                            ? "bg-primary/10 text-primary border border-primary/20"
-                            : "hover:bg-muted/30 text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        {item.icon}
-                        <span className="text-sm font-medium">{item.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </nav>
-            </div>
-
-            {/* Footer */}
-            <div className="p-4 border-t border-border/50">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                <span>System Online</span>
-              </div>
-            </div>
-          </div>
+          {/* Admin Sidebar - extracted component */}
+          <AdminSidebar
+            selectedSection={selectedSection}
+            onSectionChange={setSelectedSection}
+          />
           <main className="flex-1 min-h-screen px-2 md:px-8 py-6">
             <div className="max-w-[1400px] mx-auto">
               {selectedSection === "overview" && (

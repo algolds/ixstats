@@ -6,6 +6,7 @@
  */
 
 import type { ActionableRecommendation } from '~/app/mycountry/types/intelligence';
+import { notificationAPI } from '~/lib/notification-api';
 
 // ============================================================================
 // TYPES
@@ -223,7 +224,7 @@ class ActionQueueManager {
   /**
    * Complete an action successfully
    */
-  completeAction(actionId: string, actualImpact?: ActionQueueItem['actualImpact']): void {
+  async completeAction(actionId: string, actualImpact?: ActionQueueItem['actualImpact']): Promise<void> {
     const item = this.queue.get(actionId);
     if (!item) throw new Error(`Action ${actionId} not found`);
 
@@ -238,7 +239,7 @@ class ActionQueueManager {
     }
 
     if (!item.notificationsSent.completed) {
-      this.sendNotification(actionId, 'completed');
+      await this.sendNotification(actionId, 'completed');
       item.notificationsSent.completed = true;
     }
 
@@ -251,7 +252,7 @@ class ActionQueueManager {
   /**
    * Mark an action as failed
    */
-  failAction(actionId: string, reason: string): void {
+  async failAction(actionId: string, reason: string): Promise<void> {
     const item = this.queue.get(actionId);
     if (!item) throw new Error(`Action ${actionId} not found`);
 
@@ -261,7 +262,7 @@ class ActionQueueManager {
     item.notes = reason;
 
     if (!item.notificationsSent.failed) {
-      this.sendNotification(actionId, 'failed', reason);
+      await this.sendNotification(actionId, 'failed', reason);
       item.notificationsSent.failed = true;
     }
 
@@ -377,7 +378,9 @@ class ActionQueueManager {
 
       // Send milestone notifications
       if (current.progress === 50 && !current.notificationsSent.milestone) {
-        this.sendNotification(actionId, 'milestone');
+        this.sendNotification(actionId, 'milestone').catch(err =>
+          console.error('Failed to send milestone notification:', err)
+        );
         current.notificationsSent.milestone = true;
       }
 
@@ -389,28 +392,104 @@ class ActionQueueManager {
           social: current.recommendation.impact.social,
           diplomatic: current.recommendation.impact.diplomatic,
           governance: current.recommendation.impact.governance
-        });
+        }).catch(err =>
+          console.error('Failed to complete action:', err)
+        );
       }
 
       this.notifyListeners();
     }, 2000); // Update every 2 seconds
   }
 
-  private sendNotification(actionId: string, type: 'started' | 'milestone' | 'completed' | 'failed', details?: string): void {
+  /**
+   * Send notification through the unified notification center
+   * Integrated with notification API for consistent delivery
+   */
+  private async sendNotification(actionId: string, type: 'started' | 'milestone' | 'completed' | 'failed', details?: string): Promise<void> {
     const item = this.queue.get(actionId);
     if (!item) return;
 
-    // In production, this would integrate with the notification system
-    console.log(`[Action Notification] ${type.toUpperCase()}: ${item.recommendation.title}`, details);
+    // Map action notification types to notification system types
+    const notificationTypeMap = {
+      started: 'info' as const,
+      milestone: 'update' as const,
+      completed: 'success' as const,
+      failed: 'error' as const,
+    };
 
-    // TODO: Integrate with notification center
-    // notificationCenter.send({
-    //   type: 'action_update',
-    //   severity: type === 'failed' ? 'high' : 'medium',
-    //   title: `Action ${type}`,
-    //   message: `${item.recommendation.title} ${type}`,
-    //   actionId
-    // });
+    // Map to priority levels
+    const priorityMap = {
+      started: 'medium' as const,
+      milestone: 'medium' as const,
+      completed: 'high' as const,
+      failed: 'critical' as const,
+    };
+
+    // Determine category based on recommendation category
+    const categoryMap: Record<string, any> = {
+      economic: 'economic',
+      diplomatic: 'diplomatic',
+      governance: 'governance',
+      social: 'social',
+      default: 'intelligence',
+    };
+
+    const category = categoryMap[item.recommendation.category] || 'intelligence';
+
+    // Build notification message
+    let message = '';
+    switch (type) {
+      case 'started':
+        message = `Action "${item.recommendation.title}" has started execution`;
+        break;
+      case 'milestone':
+        message = `Action "${item.recommendation.title}" is ${item.progress}% complete (${item.currentPhase})`;
+        break;
+      case 'completed':
+        message = `Action "${item.recommendation.title}" completed successfully`;
+        if (item.actualImpact) {
+          const impacts = [];
+          if (item.actualImpact.economic) impacts.push(`Economic: ${item.actualImpact.economic > 0 ? '+' : ''}${item.actualImpact.economic}`);
+          if (item.actualImpact.social) impacts.push(`Social: ${item.actualImpact.social > 0 ? '+' : ''}${item.actualImpact.social}`);
+          if (item.actualImpact.diplomatic) impacts.push(`Diplomatic: ${item.actualImpact.diplomatic > 0 ? '+' : ''}${item.actualImpact.diplomatic}`);
+          if (item.actualImpact.governance) impacts.push(`Governance: ${item.actualImpact.governance > 0 ? '+' : ''}${item.actualImpact.governance}`);
+          if (impacts.length > 0) {
+            message += ` - Impact: ${impacts.join(', ')}`;
+          }
+        }
+        break;
+      case 'failed':
+        message = `Action "${item.recommendation.title}" failed${details ? `: ${details}` : ''}`;
+        break;
+    }
+
+    try {
+      await notificationAPI.create({
+        title: `Action ${type.charAt(0).toUpperCase() + type.slice(1)}`,
+        message,
+        category,
+        type: notificationTypeMap[type],
+        priority: priorityMap[type],
+        severity: type === 'failed' ? 'urgent' : type === 'completed' ? 'important' : 'informational',
+        actionable: type === 'started' || type === 'milestone',
+        source: 'action-queue',
+        metadata: {
+          actionId,
+          actionType: type,
+          recommendationId: item.recommendation.id,
+          progress: item.progress,
+          phase: item.currentPhase,
+          estimatedCompletion: item.estimatedCompletionAt,
+          actualImpact: item.actualImpact,
+        },
+      });
+
+      console.log(`[Action Queue] Notification sent: ${type} for action ${actionId}`);
+    } catch (error) {
+      console.error(`[Action Queue] Failed to send notification for ${type}:`, error);
+      // Fallback to console logging if notification fails
+      console.log(`[Action Notification] ${type.toUpperCase()}: ${item.recommendation.title}`, details);
+    }
   }
 
   private parseDuration(duration: string): number {

@@ -4,38 +4,63 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "target": "es2022",
-    "allowJs": true,
+    "allowJs": false,
     "resolveJsonModule": true,
     "moduleDetection": "force",
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
-
     /* Strictness */
     "strict": true,
     "noUncheckedIndexedAccess": false,
     "checkJs": false,
-
     /* Bundled projects */
-    "lib": ["dom", "dom.iterable", "ES2022"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "ES2022"
+    ],
     "noEmit": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "jsx": "preserve",
-    "plugins": [{ "name": "next" }],
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
     "incremental": true,
     "tsBuildInfoFile": ".next/cache/tsbuildinfo",
-
     /* Path Aliases */
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"],
-      "~/components/*": ["./src/components/*"],
-      "~/lib/utils": ["./src/lib/utils"],
-      "~/components/ui/*": ["./src/components/ui/*"],
-      "~/lib/*": ["./src/lib/*"],
-      "~/hooks/*": ["./src/hooks/*"],
-      "@/*": ["./src/*"]
-    }
+      "~/*": [
+        "./src/*"
+      ],
+      "~/components/*": [
+        "./src/components/*"
+      ],
+      "~/lib/utils": [
+        "./src/lib/utils"
+      ],
+      "~/components/ui/*": [
+        "./src/components/ui/*"
+      ],
+      "~/lib/*": [
+        "./src/lib/*"
+      ],
+      "~/hooks/*": [
+        "./src/hooks/*"
+      ],
+      "@/*": [
+        "./src/*"
+      ]
+    },
+    /* Performance Optimizations */
+    "assumeChangesOnlyAffectDirectDependencies": true,
+    "disableSourceOfProjectReferenceRedirect": true,
+    "skipDefaultLibCheck": true,
+    /* Disable expensive type checks */
+    "noPropertyAccessFromIndexSignature": false
   },
   "include": [
     "next-env.d.ts",
@@ -43,5 +68,20 @@
     "src/**/*.tsx",
     ".next/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "scripts"]
+  "exclude": [
+    "node_modules",
+    "scripts",
+    ".next",
+    "dist",
+    "build",
+    "out",
+    "coverage",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "tests/**/*",
+    "playwright.config.ts",
+    "jest.config.js"
+  ]
 }

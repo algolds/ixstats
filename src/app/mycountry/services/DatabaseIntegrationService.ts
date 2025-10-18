@@ -66,7 +66,6 @@ class DatabaseIntegrationService {
       this.websocket = new WebSocket(wsUrl);
 
       this.websocket.onopen = () => {
-        console.log('[DatabaseIntegration] WebSocket connected');
         this.isConnected = true;
         this.processEventQueue();
         
@@ -91,7 +90,6 @@ class DatabaseIntegrationService {
       };
 
       this.websocket.onclose = () => {
-        console.log('[DatabaseIntegration] WebSocket disconnected');
         this.isConnected = false;
         this.scheduleReconnect();
       };

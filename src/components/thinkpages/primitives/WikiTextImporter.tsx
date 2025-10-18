@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { ScrollArea } from '~/components/ui/scroll-area';
 import { parseWikiText, extractWikiImages, extractWikiLinks } from '~/lib/wikitext-parser';
 import { toast } from 'sonner';
+import { sanitizeWikiContent } from '~/lib/sanitize-html';
 
 interface WikiTextImporterProps {
   isOpen: boolean;
@@ -172,7 +173,8 @@ This is '''bold''' and ''italic'' text.
               <ScrollArea className="flex-1 border border-border rounded-lg p-6 bg-background mb-4">
                 <div
                   className="prose prose-sm max-w-none dark:prose-invert"
-                  dangerouslySetInnerHTML={{ __html: previewHtml }}
+                  // SECURITY: Sanitize wiki content to prevent XSS from external data
+                  dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(previewHtml) }}
                 />
               </ScrollArea>
 

@@ -2,6 +2,8 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
+import { notificationAPI } from "~/lib/notification-api";
+import { notificationHooks } from "~/lib/notification-hooks";
 
 export const diplomaticRouter = createTRPCRouter({
   // Get diplomatic relationships for a country
@@ -215,7 +217,7 @@ export const diplomaticRouter = createTRPCRouter({
         throw new Error('You can only establish embassies for your own country.');
       }
 
-      return await ctx.db.embassy.create({
+      const embassy = await ctx.db.embassy.create({
         data: {
           hostCountryId: input.hostCountryId,
           guestCountryId: input.guestCountryId,
@@ -225,6 +227,47 @@ export const diplomaticRouter = createTRPCRouter({
           status: 'active'
         }
       });
+
+      // 🔔 Notify both countries about embassy establishment
+      try {
+        // Get country names for better messaging
+        const [hostCountry, guestCountry] = await Promise.all([
+          ctx.db.country.findUnique({ where: { id: input.hostCountryId }, select: { name: true } }),
+          ctx.db.country.findUnique({ where: { id: input.guestCountryId }, select: { name: true } })
+        ]);
+
+        // Notify host country
+        await notificationAPI.create({
+          title: '🏛️ New Embassy Established',
+          message: `${guestCountry?.name || 'A country'} has established ${input.name} in your nation`,
+          countryId: input.hostCountryId,
+          category: 'diplomatic',
+          priority: 'medium',
+          href: '/diplomatic',
+          source: 'diplomatic-system',
+          actionable: true,
+          metadata: { embassyId: embassy.id, guestCountryId: input.guestCountryId },
+        });
+
+        // Notify guest country (confirmation)
+        await notificationAPI.create({
+          title: '🏛️ Embassy Establishment Confirmed',
+          message: `${input.name} has been successfully established in ${hostCountry?.name || 'the host nation'}`,
+          countryId: input.guestCountryId,
+          category: 'diplomatic',
+          priority: 'low',
+          type: 'success',
+          href: '/diplomatic',
+          source: 'diplomatic-system',
+          actionable: false,
+          metadata: { embassyId: embassy.id, hostCountryId: input.hostCountryId },
+        });
+      } catch (error) {
+        console.error('[Diplomatic] Failed to send embassy notifications:', error);
+        // Don't fail the embassy creation if notifications fail
+      }
+
+      return embassy;
     }),
 
   // Diplomatic Channels
@@ -802,6 +845,24 @@ export const diplomaticRouter = createTRPCRouter({
         }
       });
 
+      // 🔔 Notify country about mission start
+      try {
+        await notificationAPI.create({
+          title: '🎯 Diplomatic Mission Started',
+          message: `${missionData.name} has been initiated at ${embassy.name} (${Math.round(duration)} days)`,
+          countryId: embassy.guestCountryId,
+          category: 'diplomatic',
+          priority: 'low',
+          type: 'info',
+          href: '/diplomatic',
+          source: 'diplomatic-system',
+          actionable: false,
+          metadata: { missionId: mission.id, embassyId: input.embassyId, missionType: input.missionType },
+        });
+      } catch (error) {
+        console.error('[Diplomatic] Failed to send mission start notification:', error);
+      }
+
       return mission;
     }),
 
@@ -874,6 +935,24 @@ export const diplomaticRouter = createTRPCRouter({
           severity: success ? 'positive' : 'warning'
         }
       });
+
+      // 🔔 Notify country about mission completion
+      try {
+        await notificationAPI.create({
+          title: success ? '✅ Mission Successful!' : '❌ Mission Failed',
+          message: `${mission.name} at ${mission.embassy.name} has ${success ? 'completed successfully' : 'failed'}. ${success ? `Rewards: +${experienceGained} XP, +${influenceGained.toFixed(0)} influence` : 'Better luck next time!'}`,
+          countryId: mission.embassy.guestCountryId,
+          category: 'diplomatic',
+          priority: success ? 'medium' : 'low',
+          type: success ? 'success' : 'warning',
+          href: '/diplomatic',
+          source: 'diplomatic-system',
+          actionable: false,
+          metadata: { missionId: mission.id, embassyId: mission.embassyId, success, rewards: { experience: experienceGained, influence: influenceGained } },
+        });
+      } catch (error) {
+        console.error('[Diplomatic] Failed to send mission completion notification:', error);
+      }
 
       return {
         success,
@@ -1051,6 +1130,40 @@ export const diplomaticRouter = createTRPCRouter({
             severity: relationshipImpact > 0 ? 'positive' : 'negative'
           }
         });
+
+        // 🔔 Notify both countries about relationship change
+        try {
+          const priority = relationshipImpact < 0 ? 'high' : 'medium';
+          const type = relationshipImpact > 0 ? 'success' : 'warning';
+          
+          // Notify both countries
+          await Promise.all([
+            notificationAPI.create({
+              title: '🤝 Diplomatic Relationship Changed',
+              message: `Relationship evolved to ${newRelationshipType} (${input.reason})`,
+              countryId: relationship.country1,
+              category: 'diplomatic',
+              priority,
+              type,
+              href: '/diplomatic',
+              source: 'diplomatic-system',
+              actionable: true,
+            }),
+            notificationAPI.create({
+              title: '🤝 Diplomatic Relationship Changed',
+              message: `Relationship evolved to ${newRelationshipType} (${input.reason})`,
+              countryId: relationship.country2,
+              category: 'diplomatic',
+              priority,
+              type,
+              href: '/diplomatic',
+              source: 'diplomatic-system',
+              actionable: true,
+            })
+          ]);
+        } catch (error) {
+          console.error('[Diplomatic] Failed to send relationship change notifications:', error);
+        }
       }
 
       return {
@@ -1138,6 +1251,29 @@ export const diplomaticRouter = createTRPCRouter({
           followedCountryId: input.followedCountryId
         }
       });
+
+      // 🔔 Notify followed country about new follower
+      try {
+        const followerCountry = await ctx.db.country.findUnique({
+          where: { id: input.followerCountryId },
+          select: { name: true }
+        });
+
+        await notificationAPI.create({
+          title: '👁️ New Country Following',
+          message: `${followerCountry?.name || 'A country'} is now following your country`,
+          countryId: input.followedCountryId,
+          category: 'social',
+          priority: 'low',
+          type: 'info',
+          href: '/diplomatic',
+          source: 'diplomatic-system',
+          actionable: false,
+          metadata: { followerCountryId: input.followerCountryId },
+        });
+      } catch (error) {
+        console.error('[Diplomatic] Failed to send follow notification:', error);
+      }
 
       return { success: true, follow };
     }),

@@ -128,7 +128,7 @@ export default function NavigationPage() {
                 </li>
                 <li className="flex gap-2">
                   <span className="text-blue-600 dark:text-blue-400">•</span>
-                  <span><strong className="text-slate-900 dark:text-white">Admin Sidebar:</strong> System management, ECI/SDI configuration (admin only)</span>
+                  <span><strong className="text-slate-900 dark:text-white">Admin Sidebar:</strong> System management and configuration (admin only)</span>
                 </li>
               </ul>
             </section>

@@ -1,9 +1,70 @@
+/**
+ * Economy Data Service - Type Definitions
+ *
+ * Data transformation and parsing utilities for economic data.
+ * Handles real-world country data, economic inputs, and data persistence.
+ *
+ * @module economy-data-service
+ */
+
 // src/app/economy/lib/economy-data-service.ts
 import * as XLSX from 'xlsx';
 import type { SpendingCategory, GovernmentSpendingData } from '~/types/economics';
 
 export type { GovernmentSpendingData };
 
+/**
+ * RealCountryData - Real-world country economic data
+ *
+ * Contains economic and demographic data parsed from real-world datasets
+ * (Excel/CSV files). Used as reference data for country builder and
+ * economic comparisons. Data sourced from World Bank and other international
+ * economic databases.
+ *
+ * @interface RealCountryData
+ * @property {string} name - Country name
+ * @property {string} countryCode - ISO 3166-1 alpha-2 country code (e.g., 'us', 'gb')
+ * @property {number} gdp - Gross Domestic Product in USD
+ * @property {number} gdpPerCapita - GDP per capita in USD
+ * @property {number} [taxRevenuePercent] - Tax revenue as percentage of GDP (0-100)
+ * @property {number} unemploymentRate - Unemployment rate percentage (0-100)
+ * @property {number} [inflationRate] - Annual inflation rate percentage
+ * @property {number} population - Total population count
+ * @property {number} [growthRate] - Annual GDP growth rate percentage
+ * @property {number} [governmentSpending] - Government spending in USD
+ * @property {string} [continent] - Continent name
+ * @property {string} [region] - Geographic region
+ * @property {string} [governmentType] - Type of government system
+ * @property {string} [religion] - Predominant religion
+ * @property {number} [taxesLessSubsidies] - Net taxes less subsidies
+ * @property {string|number} [taxRevenueLcu] - Tax revenue in local currency units
+ * @property {number|string} [womenBeatWifeDinnerPercent] - Social indicator (legacy field)
+ * @property {string} [foundationCountryName] - Original country name for Wiki Commons API
+ * @property {number} [lifeExpectancy] - Life expectancy in years
+ * @property {number} [literacyRate] - Literacy rate percentage (0-100)
+ * @property {number} [urbanizationRate] - Urbanization percentage (0-100)
+ * @property {'Developing'|'Emerging'|'Developed'|'Advanced'} [economicTier] - Economic development tier
+ * @property {number} [baselinePopulation] - Baseline population for calculations
+ * @property {number} [baselineGdpPerCapita] - Baseline GDP per capita for calculations
+ * @property {number} [maxGdpGrowthRate] - Maximum sustainable growth rate
+ * @property {string} [flag] - Flag image URL
+ *
+ * @example
+ * ```ts
+ * const countryData: RealCountryData = {
+ *   name: 'United States',
+ *   countryCode: 'us',
+ *   gdp: 25000000000000,
+ *   gdpPerCapita: 75000,
+ *   taxRevenuePercent: 25,
+ *   unemploymentRate: 3.8,
+ *   inflationRate: 2.5,
+ *   population: 333000000,
+ *   economicTier: 'Advanced',
+ *   flag: 'https://flagcdn.com/w320/us.png'
+ * };
+ * ```
+ */
 export interface RealCountryData {
   name: string;
   countryCode: string;
@@ -34,6 +95,34 @@ export interface RealCountryData {
   flag?: string;
 }
 
+/**
+ * CoreEconomicIndicators - Fundamental economic metrics
+ *
+ * Core economic data points used throughout the economy builder.
+ * These are the primary metrics for economic calculations and comparisons.
+ *
+ * @interface CoreEconomicIndicators
+ * @property {number} totalPopulation - Total population count
+ * @property {number} nominalGDP - Nominal GDP in base currency (not adjusted for inflation)
+ * @property {number} gdpPerCapita - GDP divided by population
+ * @property {number} realGDPGrowthRate - Inflation-adjusted GDP growth percentage
+ * @property {number} inflationRate - Annual inflation rate percentage
+ * @property {number} currencyExchangeRate - Exchange rate to USD (1 USD = X local currency)
+ * @property {number} [giniCoefficient] - Income inequality measure (0-1, lower is more equal)
+ *
+ * @example
+ * ```ts
+ * const indicators: CoreEconomicIndicators = {
+ *   totalPopulation: 50000000,
+ *   nominalGDP: 1000000000000,
+ *   gdpPerCapita: 20000,
+ *   realGDPGrowthRate: 3.5,
+ *   inflationRate: 2.0,
+ *   currencyExchangeRate: 1.0,
+ *   giniCoefficient: 0.35
+ * };
+ * ```
+ */
 export interface CoreEconomicIndicators {
   totalPopulation: number;
   nominalGDP: number;
@@ -44,9 +133,69 @@ export interface CoreEconomicIndicators {
   giniCoefficient?: number;
 }
 
-// Type alias for compatibility
+/**
+ * CoreIndicatorsData - Type alias for compatibility
+ *
+ * @typedef {CoreEconomicIndicators} CoreIndicatorsData
+ */
 export type CoreIndicatorsData = CoreEconomicIndicators;
 
+/**
+ * NationalIdentityData - National identity and symbols
+ *
+ * Contains cultural, political, and administrative information about a nation.
+ * Used for country profile displays and identity configuration.
+ *
+ * @interface NationalIdentityData
+ * @property {string} countryName - Common country name
+ * @property {string} officialName - Official long-form name
+ * @property {string} governmentType - Type of government (e.g., 'Republic', 'Monarchy')
+ * @property {string} motto - National motto in English
+ * @property {string} mottoNative - National motto in native language
+ * @property {string} capitalCity - Capital city name
+ * @property {string} largestCity - Most populous city
+ * @property {string} demonym - Term for citizens (e.g., 'American', 'French')
+ * @property {string} currency - Currency name
+ * @property {string} officialLanguages - Official language(s)
+ * @property {string} nationalLanguage - Most widely spoken language
+ * @property {string} nationalAnthem - National anthem title
+ * @property {string} [nationalReligion] - Official or predominant religion
+ * @property {string} nationalDay - National day/independence day
+ * @property {string} callingCode - International calling code (e.g., '+1', '+44')
+ * @property {string} internetTLD - Top-level domain (e.g., '.us', '.uk')
+ * @property {'left'|'right'} drivingSide - Side of road for driving
+ * @property {string} [currencySymbol] - Currency symbol (e.g., '$', '€')
+ * @property {string} [isoCode] - ISO 3166-1 alpha-3 code
+ * @property {string} [timeZone] - Primary time zone
+ * @property {string} [emergencyNumber] - Emergency services number
+ * @property {string} [postalCodeFormat] - Postal/ZIP code format
+ * @property {string} [weekStartDay] - First day of week (e.g., 'Monday', 'Sunday')
+ * @property {string} [nationalSport] - National sport
+ * @property {string} [coordinatesLatitude] - Capital latitude coordinates
+ * @property {string} [coordinatesLongitude] - Capital longitude coordinates
+ *
+ * @example
+ * ```ts
+ * const identity: NationalIdentityData = {
+ *   countryName: 'United States',
+ *   officialName: 'United States of America',
+ *   governmentType: 'Federal Republic',
+ *   motto: 'In God We Trust',
+ *   mottoNative: 'In God We Trust',
+ *   capitalCity: 'Washington, D.C.',
+ *   largestCity: 'New York City',
+ *   demonym: 'American',
+ *   currency: 'United States Dollar',
+ *   officialLanguages: 'English',
+ *   nationalLanguage: 'English',
+ *   nationalAnthem: 'The Star-Spangled Banner',
+ *   nationalDay: 'July 4',
+ *   callingCode: '+1',
+ *   internetTLD: '.us',
+ *   drivingSide: 'right'
+ * };
+ * ```
+ */
 export interface NationalIdentityData {
   countryName: string;
   officialName: string;
@@ -181,6 +330,50 @@ export interface GeographyData {
   region?: string;
 }
 
+/**
+ * EconomicInputs - Complete economic data structure for country builder
+ *
+ * Central data structure that aggregates all economic, demographic, and fiscal
+ * information for a country. This is the primary interface used throughout the
+ * economy builder and serves as the data contract between UI and backend.
+ *
+ * @interface EconomicInputs
+ * @property {string} countryName - Name of the country
+ * @property {string} [flagUrl] - URL to flag image
+ * @property {string} [coatOfArmsUrl] - URL to coat of arms image
+ * @property {string[]} [flagExtractedColors] - Color palette extracted from flag
+ * @property {NationalIdentityData} [nationalIdentity] - National symbols and identity
+ * @property {GeographyData} [geography] - Geographic information
+ * @property {CoreEconomicIndicators} coreIndicators - Primary economic metrics
+ * @property {LaborEmploymentData} laborEmployment - Labor market data
+ * @property {FiscalSystemData} fiscalSystem - Tax and fiscal policy data
+ * @property {IncomeWealthData} incomeWealth - Income distribution and wealth data
+ * @property {GovernmentSpendingData} governmentSpending - Government budget allocation
+ * @property {DemographicData} demographics - Population and demographic data
+ *
+ * @example
+ * ```ts
+ * const economicInputs: EconomicInputs = {
+ *   countryName: 'Example Nation',
+ *   flagUrl: 'https://example.com/flag.png',
+ *   coreIndicators: {
+ *     totalPopulation: 10000000,
+ *     nominalGDP: 500000000000,
+ *     gdpPerCapita: 50000,
+ *     realGDPGrowthRate: 3.5,
+ *     inflationRate: 2.0,
+ *     currencyExchangeRate: 1.0
+ *   },
+ *   laborEmployment: {
+ *     laborForceParticipationRate: 65,
+ *     employmentRate: 95,
+ *     unemploymentRate: 5,
+ *     // ... additional fields
+ *   },
+ *   // ... other required fields
+ * };
+ * ```
+ */
 export interface EconomicInputs {
   countryName: string;
   flagUrl?: string;
@@ -196,6 +389,36 @@ export interface EconomicInputs {
   demographics: DemographicData;
 }
 
+/**
+ * EconomicComparison - Country comparison analysis result
+ *
+ * Provides comparative analysis of economic metrics against similar countries.
+ * Used to help users understand their country's relative position and tier.
+ *
+ * @interface EconomicComparison
+ * @property {string} metric - Name of the metric being compared
+ * @property {number} userValue - User's country value for this metric
+ * @property {Array} comparableCountries - List of similar countries
+ * @property {string} comparableCountries[].name - Country name
+ * @property {number} comparableCountries[].value - Country's value for this metric
+ * @property {string} comparableCountries[].tier - Economic tier classification
+ * @property {string} analysis - Generated analysis text explaining the comparison
+ * @property {'Developing'|'Emerging'|'Developed'|'Advanced'} tier - User's country tier
+ *
+ * @example
+ * ```ts
+ * const comparison: EconomicComparison = {
+ *   metric: 'GDP per Capita',
+ *   userValue: 45000,
+ *   comparableCountries: [
+ *     { name: 'Spain', value: 43000, tier: 'Developed' },
+ *     { name: 'Italy', value: 42000, tier: 'Developed' }
+ *   ],
+ *   analysis: 'Your GDP per capita is similar to Spain and Italy...',
+ *   tier: 'Developed'
+ * };
+ * ```
+ */
 export interface EconomicComparison {
   metric: string;
   userValue: number;
@@ -335,10 +558,72 @@ export function createDefaultEconomicInputs(referenceCountry?: RealCountryData):
       education: totalSpending * 0.18,
       healthcare: totalSpending * 0.22,
       socialSafety: totalSpending * 0.20,
+      // Policy flags - all default to false for clean slate
       performanceBasedBudgeting: true,
       universalBasicServices: false,
       greenInvestmentPriority: true,
       digitalGovernmentInitiative: true,
+      zeroBasedBudgeting: false,
+      publicPrivatePartnerships: false,
+      participatoryBudgeting: false,
+      emergencyReserveFund: false,
+      socialImpactBonds: false,
+      childWelfareFirstPolicy: false,
+      preventiveCareEmphasis: false,
+      infrastructureBankFund: false,
+      universalBasicIncome: false,
+      progressiveTaxation: false,
+      carbonTax: false,
+      wealthTax: false,
+      financialTransactionTax: false,
+      universalHealthcare: false,
+      freeEducation: false,
+      affordableHousing: false,
+      elderlyCare: false,
+      disabilitySupport: false,
+      mentalHealthServices: false,
+      stemEducationFocus: false,
+      vocationalTraining: false,
+      adultEducation: false,
+      earlyChildhoodEducation: false,
+      smartCityInitiative: false,
+      publicTransportExpansion: false,
+      renewableEnergyTransition: false,
+      highSpeedInternet: false,
+      waterInfrastructure: false,
+      researchDevelopmentFund: false,
+      startupIncubators: false,
+      patentReform: false,
+      openDataInitiative: false,
+      cybersecurityInitiative: false,
+      borderSecurity: false,
+      disasterPreparedness: false,
+      crimePrevention: false,
+      carbonNeutrality: false,
+      biodiversityProtection: false,
+      wasteReduction: false,
+      greenBuildingStandards: false,
+      sustainableAgriculture: false,
+      criminalJusticeReform: false,
+      legalAidExpansion: false,
+      restorativeJustice: false,
+      courtSystemModernization: false,
+      artsCultureFunding: false,
+      heritagePreservation: false,
+      multiculturalPrograms: false,
+      languagePreservation: false,
+      ruralDevelopment: false,
+      ruralHealthcare: false,
+      ruralBroadband: false,
+      agriculturalSupport: false,
+      foreignAidProgram: false,
+      refugeeSupport: false,
+      diplomaticEngagement: false,
+      tradePromotion: false,
+      transparencyInitiative: false,
+      citizenEngagement: false,
+      antiCorruption: false,
+      publicServiceReform: false,
     },
     demographics: {
       ageDistribution: [
@@ -402,12 +687,10 @@ export async function parseEconomyData(): Promise<RealCountryData[]> {
     const sheetJson = XLSX.utils.sheet_to_json(rlDataSheet, { header: 1 });
 
     if (sheetJson.length < 2) {
-        console.warn("RLData sheet has insufficient data.");
         return [];
     }
 
     if (!sheetJson[0]) {
-      console.warn("RLData sheet has no headers.");
       return [];
     }
 
@@ -520,7 +803,6 @@ export async function parseEconomyData(): Promise<RealCountryData[]> {
     cachedCountryData = countries;
     return countries;
   } catch (error) {
-    console.error('Error parsing economy data from Excel sheet:', error);
     throw new Error(`Failed to load economic data from Excel sheet: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -707,7 +989,7 @@ export function saveBaselineToStorage(inputs: EconomicInputs): void {
       }));
     }
   } catch (error) {
-    console.error('Failed to save baseline to localStorage:', error);
+    // Failed to save baseline to localStorage
   }
 }
 
@@ -723,7 +1005,6 @@ export function loadBaselineFromStorage(): EconomicInputs | null {
     }
     return null;
   } catch (error) {
-    console.error('Failed to load baseline from localStorage:', error);
     return null;
   }
 }

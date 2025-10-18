@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -117,7 +117,7 @@ const populationTierConfig = {
   "1": { label: "0-9M", description: "Small population (like Switzerland, Singapore)" },
 };
 
-export function TierVisualization({ countries, isLoading }: TierVisualizationProps) {
+export const TierVisualization = memo(function TierVisualization({ countries, isLoading }: TierVisualizationProps) {
   const [activeTab, setActiveTab] = useState<"economic" | "population">("economic");
 
   if (isLoading) {
@@ -144,7 +144,7 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
     );
   }
 
-  const getEconomicTierDistribution = () => {
+  const economicDistribution = useMemo(() => {
     const distribution: Record<string, { count: number; percentage: number; countries: string[] }> = {};
     
     countries.forEach(country => {
@@ -164,9 +164,9 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
     });
 
     return distribution;
-  };
+  }, [countries]);
 
-  const getPopulationTierDistribution = () => {
+  const populationDistribution = useMemo(() => {
     const distribution: Record<string, { count: number; percentage: number; countries: string[] }> = {};
     
     countries.forEach(country => {
@@ -184,10 +184,7 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
     });
 
     return distribution;
-  };
-
-  const economicDistribution = getEconomicTierDistribution();
-  const populationDistribution = getPopulationTierDistribution();
+  }, [countries]);
 
   const renderEconomicTiers = () => {
     const sortedTiers = Object.keys(tierConfig).filter(tier => economicDistribution[tier]);
@@ -207,39 +204,37 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
           const data = economicDistribution[tier];
           
           return (
-            <TooltipProvider key={tier}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div 
-                    className="space-y-2 cursor-help p-3 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-md"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${config.color}`} />
-                        <span className="font-medium text-sm">{tier}</span>
-                        <Badge variant="secondary" className="text-xs">
-                          {data?.count} countries
-                        </Badge>
-                      </div>
-                      <span className="text-sm text-muted-foreground">
-                        {data?.percentage.toFixed(1)}%
-                      </span>
+            <Tooltip key={tier}>
+              <TooltipTrigger asChild>
+                <div 
+                  className="space-y-2 cursor-help p-3 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-md"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full ${config.color}`} />
+                      <span className="font-medium text-sm">{tier}</span>
+                      <Badge variant="secondary" className="text-xs">
+                        {data?.count} countries
+                      </Badge>
                     </div>
-                    <Progress value={data?.percentage ?? 0} className="h-2" />
+                    <span className="text-sm text-muted-foreground">
+                      {data?.percentage.toFixed(1)}%
+                    </span>
                   </div>
-                </TooltipTrigger>
-                <TooltipContent side="left" className="max-w-xs">
-                  <div className="space-y-2">
-                    <div className="font-semibold">{tier}</div>
-                    <div className="text-sm">{config.description}</div>
-                    <div className="text-xs text-muted-foreground">
-                      Countries: {data?.countries?.slice(0, 5).join(", ") ?? ""}
-                      {data?.countries && data.countries.length > 5 && ` +${data.countries.length - 5} more`}
-                    </div>
+                  <Progress value={data?.percentage ?? 0} className="h-2" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="left" className="max-w-xs">
+                <div className="space-y-2">
+                  <div className="font-semibold">{tier}</div>
+                  <div className="text-sm">{config.description}</div>
+                  <div className="text-xs text-muted-foreground">
+                    Countries: {data?.countries?.slice(0, 5).join(", ") ?? ""}
+                    {data?.countries && data.countries.length > 5 && ` +${data.countries.length - 5} more`}
                   </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                </div>
+              </TooltipContent>
+            </Tooltip>
           );
         })}
       </div>
@@ -264,40 +259,38 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
           const data = populationDistribution[tier];
           
           return (
-            <TooltipProvider key={tier}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div 
-                    className="space-y-2 cursor-help p-3 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-md"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-blue-500" />
-                        <span className="font-medium text-sm">Tier {tier}</span>
-                        <span className="text-xs text-muted-foreground">({config.label})</span>
-                        <Badge variant="secondary" className="text-xs">
-                          {data?.count} countries
-                        </Badge>
-                      </div>
-                      <span className="text-sm text-muted-foreground">
-                        {data?.percentage.toFixed(1)}%
-                      </span>
+            <Tooltip key={tier}>
+              <TooltipTrigger asChild>
+                <div 
+                  className="space-y-2 cursor-help p-3 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-md"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-blue-500" />
+                      <span className="font-medium text-sm">Tier {tier}</span>
+                      <span className="text-xs text-muted-foreground">({config.label})</span>
+                      <Badge variant="secondary" className="text-xs">
+                        {data?.count} countries
+                      </Badge>
                     </div>
-                    <Progress value={data?.percentage ?? 0} className="h-2" />
+                    <span className="text-sm text-muted-foreground">
+                      {data?.percentage.toFixed(1)}%
+                    </span>
                   </div>
-                </TooltipTrigger>
-                <TooltipContent side="left" className="max-w-xs">
-                  <div className="space-y-2">
-                    <div className="font-semibold">Population Tier {tier}</div>
-                    <div className="text-sm">{config.description}</div>
-                    <div className="text-xs text-muted-foreground">
-                      Countries: {data?.countries?.slice(0, 5).join(", ") ?? ""}
-                      {data?.countries && data.countries.length > 5 && ` +${data.countries.length - 5} more`}
-                    </div>
+                  <Progress value={data?.percentage ?? 0} className="h-2" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="left" className="max-w-xs">
+                <div className="space-y-2">
+                  <div className="font-semibold">Population Tier {tier}</div>
+                  <div className="text-sm">{config.description}</div>
+                  <div className="text-xs text-muted-foreground">
+                    Countries: {data?.countries?.slice(0, 5).join(", ") ?? ""}
+                    {data?.countries && data.countries.length > 5 && ` +${data.countries.length - 5} more`}
                   </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                </div>
+              </TooltipContent>
+            </Tooltip>
           );
         })}
       </div>
@@ -305,34 +298,33 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
   };
 
   return (
-    <Card
-      className="transition-all duration-300 hover:scale-[1.01] hover:shadow-xl group/card"
-      style={{
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-        boxShadow: `
-          0 4px 16px rgba(0, 0, 0, 0.1),
-          0 1px 4px rgba(0, 0, 0, 0.05),
-          0 0 0 1px rgba(147, 51, 234, 0.1)
-        `,
-      }}
-    >
+    <TooltipProvider>
+      <Card
+        className="transition-all duration-300 hover:scale-[1.01] hover:shadow-xl group/card"
+        style={{
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          boxShadow: `
+            0 4px 16px rgba(0, 0, 0, 0.1),
+            0 1px 4px rgba(0, 0, 0, 0.05),
+            0 0 0 1px rgba(147, 51, 234, 0.1)
+          `,
+        }}
+      >
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <BarChart3 className="h-5 w-5 text-purple-500 group-hover/card:text-purple-400 transition-colors" />
           Tier Breakdown
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent>
-                <div className="max-w-xs">
-                  <p>Hover over tiers to see detailed information about thresholds, growth rates, and included countries.</p>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="max-w-xs">
+                <p>Hover over tiers to see detailed information about thresholds, growth rates, and included countries.</p>
+              </div>
+            </TooltipContent>
+          </Tooltip>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -370,5 +362,6 @@ export function TierVisualization({ countries, isLoading }: TierVisualizationPro
         {activeTab === "economic" ? renderEconomicTiers() : renderPopulationTiers()}
       </CardContent>
     </Card>
+    </TooltipProvider>
   );
-} 
+}); 

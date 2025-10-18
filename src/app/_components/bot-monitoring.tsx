@@ -41,6 +41,24 @@ interface BotMetrics {
   errorCount: number;
 }
 
+// Interface for sync event details
+interface SyncEventDetails {
+  /** Operation duration in milliseconds */
+  duration?: number;
+
+  /** Number of records synced */
+  recordsAffected?: number;
+
+  /** IxTime before sync */
+  previousIxTime?: string;
+
+  /** IxTime after sync */
+  newIxTime?: string;
+
+  /** Additional metadata */
+  metadata?: Record<string, unknown>;
+}
+
 // Interface for sync events log
 interface SyncEvent {
   timestamp: string;
@@ -48,7 +66,7 @@ interface SyncEvent {
   source: string;
   success: boolean;
   errorMessage?: string;
-  details?: unknown; // TODO: Replace with specific type
+  details?: SyncEventDetails;
 }
 
 export function BotMonitoringDashboard() {

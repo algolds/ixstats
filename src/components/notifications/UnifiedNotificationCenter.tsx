@@ -115,7 +115,7 @@ const priorityConfig = {
   }
 };
 
-const categoryConfig = {
+const categoryConfig: Record<string, { icon: string; color: string }> = {
   economic: { icon: '💰', color: 'text-green-600' },
   diplomatic: { icon: '🌍', color: 'text-blue-600' },
   governance: { icon: '🏛️', color: 'text-purple-600' },
@@ -124,7 +124,11 @@ const categoryConfig = {
   system: { icon: '⚙️', color: 'text-gray-600' },
   achievement: { icon: '🏆', color: 'text-yellow-600' },
   crisis: { icon: '🚨', color: 'text-red-700' },
-  opportunity: { icon: '✨', color: 'text-green-700' }
+  opportunity: { icon: '✨', color: 'text-green-700' },
+  intelligence: { icon: '🧠', color: 'text-indigo-600' },
+  policy: { icon: '📜', color: 'text-gray-700' },
+  global: { icon: '🌐', color: 'text-teal-600' },
+  military: { icon: '⚔️', color: 'text-red-800' }
 };
 
 function NotificationDisplay({ 
@@ -297,68 +301,6 @@ export function UnifiedNotificationCenter({
     }));
   }, [liveNotifications]);
 
-  // Legacy mock notifications (kept for fallback)
-  const mockNotifications: UnifiedNotification[] = React.useMemo(() => [
-      {
-        id: 'notif-1',
-        source: 'intelligence',
-        timestamp: Date.now() - 300000, // 5 minutes ago
-        title: 'Economic Growth Alert',
-        message: 'GDP growth has exceeded expectations by 15% this quarter, suggesting strong economic momentum.',
-        category: 'economic',
-        type: 'alert',
-        priority: 'high',
-        severity: 'important',
-        context: {} as any,
-        triggers: [],
-        relevanceScore: 85,
-        deliveryMethod: 'dynamic-island',
-        status: 'delivered',
-        actionable: true,
-        actions: [
-          { id: 'view-details', label: 'View Details', type: 'primary', onClick: () => console.log('View details') },
-          { id: 'acknowledge', label: 'Acknowledge', type: 'secondary', onClick: () => console.log('Acknowledge') }
-        ]
-      },
-      {
-        id: 'notif-2',
-        source: 'system',
-        timestamp: Date.now() - 900000, // 15 minutes ago
-        title: 'Diplomatic Relations Update',
-        message: 'New trade agreement signed with neighboring countries, improving diplomatic standing.',
-        category: 'diplomatic',
-        type: 'update',
-        priority: 'medium',
-        severity: 'informational',
-        context: {} as any,
-        triggers: [],
-        relevanceScore: 70,
-        deliveryMethod: 'toast',
-        status: 'read',
-        actionable: false,
-      },
-      {
-        id: 'notif-3',
-        source: 'realtime',
-        timestamp: Date.now() - 1800000, // 30 minutes ago
-        title: 'Population Milestone Achieved',
-        message: 'National population has reached 50 million, marking a significant demographic milestone.',
-        category: 'achievement',
-        type: 'success',
-        priority: 'medium',
-        severity: 'informational',
-        context: {} as any,
-        triggers: [],
-        relevanceScore: 60,
-        deliveryMethod: 'toast',
-        status: 'delivered',
-        actionable: true,
-        actions: [
-          { id: 'celebrate', label: 'Share Achievement', type: 'primary', onClick: () => console.log('Celebrate') }
-        ]
-      }
-    ], []);
-
   // Calculate stats
   const stats = useMemo((): NotificationStats => {
     const total = notifications.length;
@@ -497,7 +439,7 @@ export function UnifiedNotificationCenter({
                       animate={{ opacity: 1 }}
                       className="text-center py-8 text-muted-foreground"
                     >
-                      <Eye className="w-12 w-12 mx-auto mb-4 opacity-50" />
+                      <Eye className="w-12 mx-auto mb-4 opacity-50" />
                       <p>No notifications to display</p>
                       <p className="text-xs mt-1">
                         {activeTab === 'unread' ? 'All caught up!' : 'Check back later for updates'}

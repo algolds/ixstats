@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Flag, Shield, Image as ImageIcon, ChevronDown, Palette, Sparkles } from 'lucide-react';
+import { Flag, Shield, Image as ImageIcon, ChevronDown, Palette, Sparkles, Upload } from 'lucide-react';
 import { cn } from '~/lib/utils';
 import { extractColorsFromImage, generateImageThemeCSS, type ExtractedColors } from '~/lib/image-color-extractor';
 import { getFlagColors } from '~/lib/flag-color-extractor';
+import { toast } from 'sonner';
 
 interface CountrySymbolsUploaderProps {
   flagUrl: string;
@@ -34,6 +35,8 @@ export function CountrySymbolsUploader({
   const [extractedColors, setExtractedColors] = useState<ExtractedColors | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [showColorPalette, setShowColorPalette] = useState(false);
+  const [isUploadingFlag, setIsUploadingFlag] = useState(false);
+  const [isUploadingCoA, setIsUploadingCoA] = useState(false);
 
   // Use ref to store the latest callback to avoid dependency issues
   const onColorsExtractedRef = useRef(onColorsExtracted);
@@ -101,6 +104,106 @@ export function CountrySymbolsUploader({
       }
     }
   }, [foundationCountry?.flagUrl, flagUrl, onFlagUrlChange]);
+
+  // Handle file upload for flag
+  const handleFlagUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp', 'image/svg+xml'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Please upload a valid image file (PNG, JPG, GIF, WEBP, or SVG)');
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB');
+      return;
+    }
+
+    setIsUploadingFlag(true);
+
+    try {
+      // Upload to server
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload/image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.dataUrl) {
+        onFlagUrlChange?.(result.dataUrl);
+        toast.success('Flag uploaded successfully!');
+      } else {
+        throw new Error(result.error || 'Upload failed');
+      }
+    } catch (error) {
+      console.error('Failed to upload flag:', error);
+      toast.error('Failed to upload image. Please try again.');
+    } finally {
+      setIsUploadingFlag(false);
+    }
+  };
+
+  // Handle file upload for coat of arms
+  const handleCoatOfArmsUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp', 'image/svg+xml'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Please upload a valid image file (PNG, JPG, GIF, WEBP, or SVG)');
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB');
+      return;
+    }
+
+    setIsUploadingCoA(true);
+
+    try {
+      // Upload to server
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload/image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.dataUrl) {
+        onCoatOfArmsUrlChange?.(result.dataUrl);
+        toast.success('Coat of arms uploaded successfully!');
+      } else {
+        throw new Error(result.error || 'Upload failed');
+      }
+    } catch (error) {
+      console.error('Failed to upload coat of arms:', error);
+      toast.error('Failed to upload image. Please try again.');
+    } finally {
+      setIsUploadingCoA(false);
+    }
+  };
 
   return (
     <div className="pt-4 border-t border-border relative z-10">
@@ -226,12 +329,27 @@ export function CountrySymbolsUploader({
                             <span className="text-muted-foreground text-sm">No Flag Selected</span>
                             )}
                         </div>
-                        <button
-                            onClick={onSelectFlag}
-                            className="w-full px-4 py-2 text-sm font-medium rounded-md transition-colors bg-blue-600/80 text-white hover:bg-blue-500/80"
-                        >
-                            <ImageIcon className="h-4 w-4 inline-block mr-2" /> Select Flag
-                        </button>
+                        <div className="space-y-2">
+                          <button
+                              onClick={onSelectFlag}
+                              className="w-full px-4 py-2 text-sm font-medium rounded-md transition-colors bg-blue-600/80 text-white hover:bg-blue-500/80"
+                          >
+                              <ImageIcon className="h-4 w-4 inline-block mr-2" /> Search Image Repository
+                          </button>
+                          <label className={`w-full block ${isUploadingFlag ? 'opacity-50 pointer-events-none' : ''}`}>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleFlagUpload}
+                              className="hidden"
+                              disabled={isUploadingFlag}
+                            />
+                            <div className="w-full px-4 py-2 text-sm font-medium rounded-md transition-colors bg-green-600/80 text-white hover:bg-green-500/80 cursor-pointer text-center">
+                              <Upload className="h-4 w-4 inline-block mr-2" />
+                              {isUploadingFlag ? 'Uploading...' : 'Upload Custom Flag'}
+                            </div>
+                          </label>
+                        </div>
                         </div>
 
                         {/* Coat of Arms Section */}
@@ -270,12 +388,27 @@ export function CountrySymbolsUploader({
                             <span className="text-muted-foreground text-sm">No Coat of Arms Selected</span>
                             )}
                         </div>
-                        <button
-                            onClick={onSelectCoatOfArms}
-                            className="w-full px-4 py-2 text-sm font-medium rounded-md transition-colors bg-purple-600/80 text-white hover:bg-purple-500/80"
-                        >
-                            <ImageIcon className="h-4 w-4 inline-block mr-2" /> Select Coat of Arms
-                        </button>
+                        <div className="space-y-2">
+                          <button
+                              onClick={onSelectCoatOfArms}
+                              className="w-full px-4 py-2 text-sm font-medium rounded-md transition-colors bg-purple-600/80 text-white hover:bg-purple-500/80"
+                          >
+                              <ImageIcon className="h-4 w-4 inline-block mr-2" /> Search Image Repository
+                          </button>
+                          <label className={`w-full block ${isUploadingCoA ? 'opacity-50 pointer-events-none' : ''}`}>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleCoatOfArmsUpload}
+                              className="hidden"
+                              disabled={isUploadingCoA}
+                            />
+                            <div className="w-full px-4 py-2 text-sm font-medium rounded-md transition-colors bg-green-600/80 text-white hover:bg-green-500/80 cursor-pointer text-center">
+                              <Upload className="h-4 w-4 inline-block mr-2" />
+                              {isUploadingCoA ? 'Uploading...' : 'Upload Custom Coat of Arms'}
+                            </div>
+                          </label>
+                        </div>
                         </div>
                     </div>
                 </div>

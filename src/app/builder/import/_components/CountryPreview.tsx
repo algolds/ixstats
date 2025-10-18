@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Users, DollarSign, MapPin, Building, ExternalLink, Crown, Globe } from "lucide-react";
 import { GlassCard, GlassCardContent, GlassCardHeader } from "~/app/builder/components/glass/GlassCard";
 import { cn } from "~/lib/utils";
+import { sanitizeWikiContent } from "~/lib/sanitize-html";
 
 interface SearchResult {
   title: string;
@@ -238,7 +239,8 @@ export const CountryPreview: React.FC<CountryPreviewProps> = ({
                         <div
                           className="text-sm font-semibold [&_a]:text-brand-primary [&_a]:hover:underline"
                           style={{ color: 'var(--color-text-primary)' }}
-                          dangerouslySetInnerHTML={{ __html: selectedResult.capital || 'Unknown' }}
+                          // SECURITY: Sanitize wiki content
+                          dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(selectedResult.capital || 'Unknown') }}
                         />
                       </motion.div>
                     )}
@@ -262,7 +264,8 @@ export const CountryPreview: React.FC<CountryPreviewProps> = ({
                         <div
                           className="text-sm font-semibold [&_a]:text-brand-primary [&_a]:hover:underline"
                           style={{ color: 'var(--color-text-primary)' }}
-                          dangerouslySetInnerHTML={{ __html: selectedResult.government || 'Unknown' }}
+                          // SECURITY: Sanitize wiki content
+                          dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(selectedResult.government || 'Unknown') }}
                         />
                       </motion.div>
                     )}
@@ -288,7 +291,8 @@ export const CountryPreview: React.FC<CountryPreviewProps> = ({
                 <p
                   className="text-sm leading-relaxed [&_a]:text-brand-primary [&_a]:hover:underline line-clamp-3"
                   style={{ color: 'var(--color-text-secondary)' }}
-                  dangerouslySetInnerHTML={{ __html: selectedResult.snippet }}
+                  // SECURITY: Sanitize wiki snippet
+                  dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(selectedResult.snippet) }}
                 />
               </motion.div>
 

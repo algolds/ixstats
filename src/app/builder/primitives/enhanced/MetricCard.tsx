@@ -27,10 +27,11 @@ export function MetricCard({
   const isNumeric = typeof value === 'number';
   const safeValue = value ?? 0;
   
-  // Animated value for smooth number transitions
+  // Animated value for smooth number transitions with fast response
   const animatedValue = useFormattedAnimatedValue(
     numericValue,
-    isNumeric ? undefined : () => safeValue.toString()
+    isNumeric ? undefined : () => safeValue.toString(),
+    { enabled: true, duration: 400, easing: 'easeOut', delay: 0 } // Fast animation config
   );
 
   // Get trend icon and color

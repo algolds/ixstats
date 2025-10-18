@@ -25,27 +25,9 @@ interface ThinkPagesStatusCardProps {
 }
 
 export function ThinkPagesStatusCard({ userProfile, className = "", onCollapse }: ThinkPagesStatusCardProps) {
-  // TODO: Re-enable when thinkpages and activities routers are available
-  // const { data: postsData } = api.thinkpages.getAllPosts.useQuery(
-  //   { limit: 100 },
-  //   { enabled: !!userProfile }
-  // );
-
-  // const { data: activitiesData } = api.activities.getUserActivities.useQuery(
-  //   { userId: userProfile?.id || '', limit: 50 },
-  //   { enabled: !!userProfile }
-  // );
-
-  // Use placeholder stats until APIs are available
-  const thinkPagesStats = {
-    userPosts: 0,
-    totalViews: 0,
-    activeProjects: 0,
-    weeklyGrowth: 0,
-    lastActivity: "No recent activity",
-    reputation: 100,
-    collaborations: 0
-  };
+  // ThinkPages feature is in preview - APIs not yet available
+  // Show "Coming Soon" state instead of mock data
+  const isComingSoon = true;
 
   function getRelativeTime(date: Date | string): string {
     const now = new Date();
@@ -89,78 +71,37 @@ export function ThinkPagesStatusCard({ userProfile, className = "", onCollapse }
         </CardHeader>
         
         <CardContent className="space-y-4">
-          {/* Account Status */}
-          <div className="glass-hierarchy-interactive rounded-lg p-3 border border-border/50">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Account Status</span>
+          {isComingSoon ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="mb-4 p-4 bg-blue-500/10 rounded-full">
+                <Lightbulb className="h-12 w-12 text-blue-500" />
+              </div>
+              <h4 className="text-lg font-semibold mb-2">Coming Soon</h4>
+              <p className="text-sm text-muted-foreground max-w-md mb-6">
+                ThinkPages is currently in preview. Full integration with collaborative
+                research, think tanks, and academic exchanges will be available soon.
+              </p>
               <Badge variant="outline" className="text-xs">
                 <Zap className="h-3 w-3 mr-1" />
-                Active
+                In Development
               </Badge>
             </div>
-            <div className="text-xs text-muted-foreground">
-              Reputation: {thinkPagesStats.reputation.toLocaleString()}
-            </div>
-          </div>
-
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="glass-hierarchy-interactive rounded-lg p-3 text-center">
-              <div className="flex items-center justify-center mb-1">
-                <FileText className="h-4 w-4 text-blue-500" />
+          ) : (
+            <>
+              {/* This section will be enabled when APIs are available */}
+              <div className="text-center text-muted-foreground text-sm">
+                No data available
               </div>
-              <div className="text-lg font-semibold">{thinkPagesStats.userPosts}</div>
-              <div className="text-xs text-muted-foreground">Posts</div>
-            </div>
-            
-            <div className="glass-hierarchy-interactive rounded-lg p-3 text-center">
-              <div className="flex items-center justify-center mb-1">
-                <Users className="h-4 w-4 text-green-500" />
-              </div>
-              <div className="text-lg font-semibold">{thinkPagesStats.collaborations}</div>
-              <div className="text-xs text-muted-foreground">Collabs</div>
-            </div>
-          </div>
+            </>
+          )}
 
-          {/* Performance Metrics */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Views</span>
-              <span className="font-medium">{thinkPagesStats.totalViews.toLocaleString()}</span>
-            </div>
-            
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Active Projects</span>
-              <span className="font-medium">{thinkPagesStats.activeProjects}</span>
-            </div>
-            
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground flex items-center gap-1">
-                <TrendingUp className="h-3 w-3" />
-                Weekly Growth
-              </span>
-              <span className="font-medium text-green-600">+{thinkPagesStats.weeklyGrowth}%</span>
-            </div>
-          </div>
-
-          {/* Last Activity */}
-          <div className="pt-2 border-t border-border/30">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                Last activity
-              </span>
-              <span>{thinkPagesStats.lastActivity}</span>
-            </div>
-          </div>
-
-          {/* Action Button */}
+          {/* Action Button - Always show */}
           <motion.div
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className="pt-2"
           >
-            <Link 
+            <Link
               href="/thinkpages"
               className="w-full flex items-center justify-between glass-hierarchy-interactive rounded-lg p-3 hover:bg-accent/10 transition-colors group"
             >

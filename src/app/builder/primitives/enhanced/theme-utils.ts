@@ -11,7 +11,9 @@ export const SECTION_THEME_MAP: Record<SectionId, PrimitiveTheme> = {
   fiscal: 'gold',       // Fiscal System - Gold/Warning theme
   government: 'purple', // Government Spending - Purple theme
   demographics: 'red',  // Demographics - Red/Error theme
-  spending: 'purple'    // Government Spending - Purple theme
+  spending: 'purple',   // Government Spending - Purple theme
+  preview: 'blue',      // Preview sections - Blue theme
+  sectors: 'emerald'    // Sectors - Green theme
 };
 
 // Enhanced color schemes with CSS custom properties and glass effects

@@ -40,7 +40,6 @@
 @import "./light-mode-overrides.css";
 @import "./country-theming.css";
 @import "./mycountry-theming.css";
-@import "./sdi-specialized.css";
 @import "./glass-refraction.css";
 @import "./diplomatic-intelligence.css";
 @import "tw-animate-css";
@@ -257,6 +256,13 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Global content width for all sections using Tailwind's container */
+  .container {
+    max-width: 1536px; /* screen-2xl */
   }
 }
 

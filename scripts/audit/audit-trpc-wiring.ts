@@ -582,10 +582,13 @@ async function main() {
 
     console.log('✅ Audit complete!\n');
 
-    // Exit with error code if there are critical issues
+    // Exit with error code if there are critical issues (configurable)
+    const failOnUnwired = process.env.WIRING_FAIL_ON_UNWIRED !== 'false';
     if (results.unusedModels.length > 0) {
       console.log('⚠️  WARNING: Found completely unwired models. Review recommendations above.\n');
-      process.exit(1);
+      if (failOnUnwired) {
+        process.exit(1);
+      }
     }
   } catch (error) {
     console.error('❌ Audit failed:', error);

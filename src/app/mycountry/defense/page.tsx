@@ -5,6 +5,7 @@ import { useUser } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
 import { api } from '~/trpc/react';
 import Link from 'next/link';
+import { useUserCountry } from '~/hooks/useUserCountry';
 import {
   Shield,
   AlertTriangle,
@@ -46,19 +47,8 @@ import { StabilityPanel } from '~/components/defense/StabilityPanel';
 import { CommandPanel } from '~/components/defense/CommandPanel';
 
 export default function MyCountryDefenseDashboard() {
-  const { user } = useUser();
+  const { user, userProfile, country } = useUserCountry();
   const [activeTab, setActiveTab] = useState('overview');
-
-  // Get user profile and country
-  const { data: userProfile } = api.users.getProfile.useQuery(
-    undefined,
-    { enabled: !!user?.id }
-  );
-
-  const { data: country } = api.countries.getByIdAtTime.useQuery(
-    { id: userProfile?.countryId ?? '' },
-    { enabled: !!userProfile?.countryId }
-  );
 
   // Get security assessment
   const { data: securityData, isLoading: securityLoading } = api.security.getSecurityAssessment.useQuery(

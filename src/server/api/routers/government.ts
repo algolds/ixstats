@@ -9,6 +9,8 @@ import {
   syncGovernmentData,
   type ConflictWarning
 } from "~/server/services/builderIntegrationService";
+import { GovernmentBuilderStateSchema } from "~/types/validation/government";
+import { notificationAPI } from "~/lib/notification-api";
 
 // Input validation schemas
 const governmentStructureInputSchema = z.object({
@@ -87,12 +89,7 @@ const revenueSourceInputSchema = z.object({
   administeredBy: z.string().optional(),
 });
 
-const governmentBuilderStateSchema = z.object({
-  structure: governmentStructureInputSchema,
-  departments: z.array(departmentInputSchema),
-  budgetAllocations: z.array(budgetAllocationInputSchema),
-  revenueSources: z.array(revenueSourceInputSchema),
-});
+const governmentBuilderStateSchema = GovernmentBuilderStateSchema;
 
 export const governmentRouter = createTRPCRouter({
   // Get government structure by country ID
@@ -134,7 +131,7 @@ export const governmentRouter = createTRPCRouter({
   checkConflicts: protectedProcedure
     .input(z.object({
       countryId: z.string(),
-      data: governmentBuilderStateSchema
+      data: GovernmentBuilderStateSchema
     }))
     .mutation(async ({ ctx, input }) => {
       const warnings = await detectGovernmentConflicts(ctx.db, input.countryId, input.data);
@@ -145,7 +142,7 @@ export const governmentRouter = createTRPCRouter({
   create: protectedProcedure
     .input(z.object({ 
       countryId: z.string(),
-      data: governmentBuilderStateSchema,
+      data: GovernmentBuilderStateSchema,
       skipConflictCheck: z.boolean().optional().default(false)
     }))
     .mutation(async ({ ctx, input }) => {
@@ -282,7 +279,7 @@ export const governmentRouter = createTRPCRouter({
   update: protectedProcedure
     .input(z.object({
       countryId: z.string(),
-      data: governmentBuilderStateSchema,
+      data: GovernmentBuilderStateSchema,
       skipConflictCheck: z.boolean().optional().default(false)
     }))
     .mutation(async ({ ctx, input }) => {
@@ -539,8 +536,54 @@ export const governmentRouter = createTRPCRouter({
             ? input.data.allocatedAmount - (input.data.spentAmount || 0) - (input.data.encumberedAmount || 0)
             : undefined,
           lastReviewed: new Date()
+        },
+        include: {
+          department: {
+            include: {
+              governmentStructure: true
+            }
+          }
         }
       });
+
+      // 🔔 Check for budget overspending and notify
+      try {
+        const allocated = updated.allocatedAmount || 0;
+        const spent = updated.spentAmount || 0;
+        const utilizationRate = allocated > 0 ? (spent / allocated) * 100 : 0;
+
+        if (utilizationRate > 90 && utilizationRate <= 100) {
+          // Warning: nearing budget limit
+          await notificationAPI.create({
+            title: '⚠️ Budget Alert',
+            message: `${updated.department.name} has used ${utilizationRate.toFixed(1)}% of allocated budget`,
+            countryId: updated.department.governmentStructure.countryId,
+            category: 'economic',
+            priority: 'medium',
+            type: 'warning',
+            href: '/mycountry/government/budget',
+            source: 'budget-system',
+            actionable: true,
+            metadata: { departmentId: updated.departmentId, utilizationRate },
+          });
+        } else if (utilizationRate > 100) {
+          // Critical: budget overspent
+          await notificationAPI.create({
+            title: '🚨 Budget Overspent!',
+            message: `${updated.department.name} has exceeded allocated budget by ${(utilizationRate - 100).toFixed(1)}%`,
+            countryId: updated.department.governmentStructure.countryId,
+            category: 'economic',
+            priority: 'high',
+            type: 'error',
+            href: '/mycountry/government/budget',
+            source: 'budget-system',
+            actionable: true,
+            metadata: { departmentId: updated.departmentId, utilizationRate },
+          });
+        }
+      } catch (error) {
+        console.error('[Government] Failed to send budget alert notification:', error);
+      }
 
       return updated;
     }),

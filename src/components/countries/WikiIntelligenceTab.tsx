@@ -10,6 +10,8 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { CountryProfileInfoBox } from "./CountryProfileInfoBox";
 import { IxTime } from "~/lib/ixtime";
 import { IxnayWikiService, type CountryInfobox } from "~/lib/mediawiki-service";
+import { api } from "~/trpc/react";
+import { sanitizeWikiContent } from "~/lib/sanitize-html";
 import {
   // Wiki Icons
   RiBookOpenLine,
@@ -337,12 +339,15 @@ const parseWikiContent = (content: string, handleWikiLinkClick: (page: string) =
         return (
           <span
             key={index}
+            // SECURITY: Sanitize wiki content to prevent XSS from external data
             dangerouslySetInnerHTML={{
-              __html: part
-                .replace(/'''([^']*)'''/g, '<strong class="font-semibold text-foreground">$1</strong>')
-                .replace(/''([^']*)''/g, '<em class="italic text-muted-foreground">$1</em>')
-                .replace(/^\*\s+(.+)$/gm, '<li class="ml-4">• $1</li>')
-                .replace(/^==\s+([^=]+)\s+==/gm, '<h3 class="text-lg font-semibold text-foreground mt-4 mb-2">$1</h3>')
+              __html: sanitizeWikiContent(
+                part
+                  .replace(/'''([^']*)'''/g, '<strong class="font-semibold text-foreground">$1</strong>')
+                  .replace(/''([^']*)''/g, '<em class="italic text-muted-foreground">$1</em>')
+                  .replace(/^\*\s+(.+)$/gm, '<li class="ml-4">• $1</li>')
+                  .replace(/^==\s+([^=]+)\s+==/gm, '<h3 class="text-lg font-semibold text-foreground mt-4 mb-2">$1</h3>')
+              )
             }}
           />
         );
@@ -357,18 +362,7 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
   viewerClearanceLevel = 'PUBLIC',
   flagColors = { primary: '#3b82f6', secondary: '#6366f1', accent: '#8b5cf6' }
 }) => {
-  const [wikiData, setWikiData] = useState<WikiIntelligenceData>({
-    countryName,
-    infobox: null,
-    sections: [],
-    lastUpdated: 0,
-    confidence: 0,
-    isLoading: true,
-    error: undefined
-  });
-  
   const [activeView, setActiveView] = useState<'sections' | 'conflicts' | 'settings'>('sections');
-  const [refreshing, setRefreshing] = useState(false);
   const [wikiSettings, setWikiSettings] = useState({
     enableIxWiki: true,
     enableIIWiki: false,
@@ -395,7 +389,67 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
     }
   });
 
-  // Initialize wiki service
+  // NEW: Use tRPC cached data (3-layer caching: Redis → Database → API)
+  const { data: profileData, isLoading, error, refetch } = api.wikiCache.getCountryProfile.useQuery({
+    countryName,
+    includePageVariants: wikiSettings.autoDiscovery,
+    maxSections: wikiSettings.maxSections,
+  });
+
+  // NEW: Mutation for refreshing cache
+  const refreshMutation = api.wikiCache.refreshCountryCache.useMutation();
+
+  // Transform cached profile data to component state format
+  const wikiData = useMemo((): WikiIntelligenceData => {
+    if (isLoading) {
+      return {
+        countryName,
+        infobox: null,
+        sections: [],
+        lastUpdated: 0,
+        confidence: 0,
+        isLoading: true,
+        error: undefined
+      };
+    }
+
+    if (error || !profileData) {
+      // Fallback sections when no data is available
+      const fallbackSections: WikiSection[] = [
+        {
+          id: 'overview',
+          title: 'Overview',
+          content: `[[${countryName}]] is a sovereign nation located in ${countryData.continent || 'an undisclosed region'}. With a population of ${countryData.currentPopulation.toLocaleString()} and operating under a ${countryData.governmentType || 'democratic'} system of government, the country plays an important role in regional affairs.`,
+          classification: 'PUBLIC',
+          importance: 'critical',
+          lastModified: new Date().toISOString(),
+          wordCount: 120
+        },
+      ];
+
+      return {
+        countryName,
+        infobox: null,
+        sections: fallbackSections,
+        lastUpdated: Date.now(),
+        confidence: 0,
+        isLoading: false,
+        error: error?.message || 'Failed to load wiki data'
+      };
+    }
+
+    return {
+      countryName,
+      infobox: profileData.infobox,
+      sections: profileData.sections || [],
+      lastUpdated: profileData.lastUpdated || Date.now(),
+      confidence: profileData.confidence || 0,
+      isLoading: false,
+      error: undefined
+    };
+  }, [profileData, isLoading, error, countryName, countryData]);
+
+  // Initialize wiki service (keep for fallback/legacy support)
   const wikiService = useMemo(() => new IxnayWikiService(), []);
 
   // Handle wiki link clicks
@@ -415,235 +469,7 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
     // setRecentWikiPages(prev => [pageName, ...prev.slice(0, 4)]);
   }, []);
 
-  // Real section discovery using actual MediaWiki API with multi-wiki support
-  const discoverSectionsWithSettings = useCallback(async () => {
-    if (!wikiSettings.autoDiscovery) return [];
-    
-    const sections: WikiSection[] = [];
-    
-    // Build page variants based on settings
-    const pageVariants: string[] = [];
-    
-    // Main country page variants
-    if (wikiSettings.pageVariants.useCountryVariants) {
-      pageVariants.push(
-        countryName,
-        `${countryName} (country)`,
-        `${countryName} (nation)`
-      );
-    }
-    
-    // Topic-specific pages
-    if (wikiSettings.pageVariants.useTopicPages) {
-      const topics = [
-        'Economy of', 'Politics of', 'History of', 'Geography of', 
-        'Demographics of', 'Foreign relations of', 'Military of', 
-        'Education in', 'Culture of'
-      ];
-      
-      topics.forEach(topic => {
-        pageVariants.push(`${topic} ${countryName}`);
-      });
-    }
-    
-    // Custom pages from settings
-    pageVariants.push(...wikiSettings.customPages);
-
-    console.log(`[WikiIntelligence] Fetching real wiki data for ${pageVariants.length} page variants`);
-    
-    for (const pageTitle of pageVariants.slice(0, wikiSettings.maxSections)) {
-      try {
-        console.log(`[WikiIntelligence] Fetching: ${pageTitle}`);
-        
-        // Get real wiki content from MediaWiki API
-        const wikitext = await wikiService.getPageWikitext(pageTitle);
-        
-        if (typeof wikitext === 'string' && wikitext.length > 100) {
-          const sectionType = determineSectionType(pageTitle, countryName);
-          const importance = determineImportance(sectionType, wikitext);
-          const classification = determineClassification(sectionType, wikitext);
-          
-          // Extract images before content cleaning
-          const imageMatches = wikitext.match(/\\\[\[File:[^\\]+\]\]/g) || [];
-          const processedContent = extractIntelligentSummary(wikitext, sectionType);
-          
-          sections.push({
-            id: sectionType === 'overview' ? 'overview' : sectionType + '-' + sections.length,
-            title: formatSectionTitle(pageTitle, countryName),
-            content: processedContent,
-            classification,
-            importance,
-            lastModified: new Date().toISOString(),
-            wordCount: wikitext.split(' ').length,
-            images: imageMatches.slice(0, 3) // Store first 3 images
-          });
-          
-          console.log(`[WikiIntelligence] Successfully loaded: ${pageTitle} (${wikitext.length} chars)`);
-        } else {
-          console.log(`[WikiIntelligence] Page not found or too short: ${pageTitle}`);
-        }
-      } catch (error) {
-        console.log(`[WikiIntelligence] Error fetching ${pageTitle}:`, error);
-      }
-    }
-    
-    console.log(`[WikiIntelligence] Discovered ${sections.length} real wiki sections`);
-    return sections;
-  }, [countryName, wikiSettings, wikiService]);
-
-  // Load wiki data
-  useEffect(() => {
-    const abortController = new AbortController();
-    
-    const loadWikiData = async () => {
-      try {
-        if (abortController.signal.aborted) return;
-        setWikiData(prev => ({ ...prev, isLoading: true, error: undefined }));
-        
-        console.log(`[WikiIntelligence] Loading data for: ${countryName}`);
-        
-        // Get country infobox
-        const infobox = await wikiService.getCountryInfobox(countryName);
-        console.log(`[WikiIntelligence] Infobox loaded:`, infobox ? 'Success' : 'Failed');
-        
-        // Intelligent section discovery using settings
-        const intelligentSections: WikiSection[] = wikiSettings.autoDiscovery 
-          ? await discoverSectionsWithSettings()
-          : [];
-        
-        // Ensure there's always an overview section
-        let finalSections: WikiSection[] = [];
-        
-        if (intelligentSections.length > 0) {
-          finalSections = intelligentSections;
-          
-          // Check if we have an overview section, if not, try to get one from the main country page
-          const hasOverview = finalSections.some(section => section.id === 'overview');
-          if (!hasOverview) {
-            try {
-              console.log(`[WikiIntelligence] No overview found in intelligent sections, fetching main country page`);
-              const mainPageWikitext = await wikiService.getPageWikitext(countryName);
-              if (typeof mainPageWikitext === 'string' && mainPageWikitext.length > 100) {
-                const processedContent = extractIntelligentSummary(mainPageWikitext, 'overview');
-                finalSections.unshift({
-                  id: 'overview',
-                  title: 'Overview',
-                  content: processedContent,
-                  classification: 'PUBLIC',
-                  importance: 'critical',
-                  lastModified: new Date().toISOString(),
-                  wordCount: mainPageWikitext.split(' ').length
-                });
-                console.log(`[WikiIntelligence] Added overview section from main country page`);
-              }
-            } catch (error) {
-              console.log(`[WikiIntelligence] Could not fetch main page for overview:`, error);
-            }
-          }
-        }
-        
-        // Fallback sections with enhanced wiki-style content and real links
-        const fallbackSections: WikiSection[] = finalSections.length > 0 ? finalSections : [
-          {
-            id: 'overview',
-            title: 'Overview',
-            content: `[[${countryName}]] is a sovereign nation located in ${countryData.continent || 'an undisclosed region'}. With a population of ${countryData.currentPopulation.toLocaleString()} and operating under a ${countryData.governmentType || 'democratic'} system of government, the country plays an important role in regional affairs. The nation maintains strong economic fundamentals with a GDP per capita of $${countryData.currentGdpPerCapita.toLocaleString()}. Related topics: [[Geography of ${countryName}]], [[Politics of ${countryName}]], and [[Economy of ${countryName}]].`,
-            classification: 'PUBLIC',
-            importance: 'critical',
-            lastModified: new Date().toISOString(),
-            wordCount: 120
-          },
-          {
-            id: 'geography',
-            title: 'Geography',
-            content: `${countryName} is located in ${countryData.continent || 'an undisclosed region'}. See also: [[Geography of ${countryName}]], [[${countryData.continent}]], and [[List of countries by area]]. The country covers a significant area with diverse geographical features including mountains, plains, and coastal regions.`,
-            classification: 'PUBLIC',
-            importance: 'high',
-            lastModified: new Date().toISOString(),
-            wordCount: 150
-          },
-          {
-            id: 'government',
-            title: 'Government & Politics',
-            content: `The government of ${countryName} operates under a ${countryData.governmentType || 'democratic'} system. ${countryData.leader ? `The current leader is [[${countryData.leader}]].` : 'Leadership information is updated regularly.'} Related articles: [[Politics of ${countryName}]], [[Government of ${countryName}]], and [[${countryData.governmentType || 'Democracy'}]].`,
-            classification: 'PUBLIC',
-            importance: 'high',
-            lastModified: new Date().toISOString(),
-            wordCount: 120
-          },
-          {
-            id: 'economy',
-            title: 'Economy',
-            content: `${countryName} maintains a ${countryData.economicTier.toLowerCase()} economy with a GDP per capita of approximately $${countryData.currentGdpPerCapita.toLocaleString()}. The economy demonstrates strong fundamentals with diverse sectors. See: [[Economy of ${countryName}]], [[List of countries by GDP per capita]], and [[${countryData.economicTier} economies]].`,
-            classification: viewerClearanceLevel !== 'PUBLIC' ? 'RESTRICTED' : 'PUBLIC',
-            importance: 'critical',
-            lastModified: new Date().toISOString(),
-            wordCount: 200
-          },
-          {
-            id: 'demographics',
-            title: 'Demographics & Society',
-            content: `${countryName} has a population of ${countryData.currentPopulation.toLocaleString()} citizens, representing a diverse society. The demographic profile shows balanced age distribution. Related: [[Demographics of ${countryName}]], [[Population of ${countryName}]], and [[List of countries by population]].`,
-            classification: 'PUBLIC',
-            importance: 'high',
-            lastModified: new Date().toISOString(),
-            wordCount: 180
-          },
-          {
-            id: 'history',
-            title: 'Historical Context',
-            content: `The historical development of ${countryName} reflects centuries of cultural evolution and strategic positioning. From ancient foundations to modern statehood, the nation has navigated complex geopolitical landscapes. See: [[History of ${countryName}]], [[Timeline of ${countryName}]], and [[Formation of modern ${countryName}]].`,
-            classification: 'PUBLIC',
-            importance: 'medium',
-            lastModified: new Date().toISOString(),
-            wordCount: 165
-          },
-          {
-            id: 'foreign_relations',
-            title: 'Foreign Relations',
-            content: `${countryName} maintains active diplomatic relationships across ${countryData.continent || 'the international community'} and beyond. The nation's foreign policy emphasizes cooperation and trade partnerships. Related: [[Foreign relations of ${countryName}]], [[${countryName} and international law]], and [[Diplomatic missions of ${countryName}]].`,
-            classification: viewerClearanceLevel === 'CONFIDENTIAL' ? 'RESTRICTED' : 'PUBLIC',
-            importance: 'high',
-            lastModified: new Date().toISOString(),
-            wordCount: 140
-          }
-        ];
-        
-        setWikiData({
-          countryName,
-          infobox,
-          sections: fallbackSections,
-          lastUpdated: Date.now(),
-          confidence: infobox ? 85 : 45,
-          isLoading: false,
-          error: undefined
-        });
-        
-      } catch (error) {
-        // Handle abort errors gracefully
-        if (error instanceof Error && error.name === 'AbortError') {
-          console.log(`[WikiIntelligence] Request aborted for ${countryName}`);
-          return; // Don't set error state for aborted requests
-        }
-        
-        console.error(`[WikiIntelligence] Error loading data for ${countryName}:`, error);
-        if (!abortController.signal.aborted) {
-          setWikiData(prev => ({
-            ...prev,
-            isLoading: false,
-            error: error instanceof Error ? error.message : 'Failed to load wiki data'
-          }));
-        }
-      }
-    };
-
-    loadWikiData();
-    
-    // Cleanup function to abort ongoing requests
-    return () => {
-      abortController.abort();
-    };
-  }, [countryName, wikiService.constructor.name, viewerClearanceLevel]);
+  // OLD: Removed discoverSectionsWithSettings and useEffect - now using tRPC cached data
 
   // Calculate data conflicts
   const dataConflicts: DataConflict[] = useMemo(() => {
@@ -695,72 +521,20 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
     return conflicts;
   }, [wikiData.infobox, countryData]);
 
-  // Refresh wiki data with current settings
+  // NEW: Refresh wiki data using tRPC mutation (clears cache and refetches)
   const handleRefresh = async () => {
-    const abortController = new AbortController();
-    setRefreshing(true);
     try {
-      console.log('[WikiIntelligence] Manual refresh triggered with settings:', wikiSettings);
+      console.log('[WikiIntelligence] Manual refresh triggered - clearing cache');
       
-      // Get fresh infobox data
-      const infobox = await wikiService.getCountryInfobox(countryName);
-      console.log(`[WikiIntelligence] Fresh infobox loaded:`, infobox ? 'Success' : 'Failed');
+      // Clear cache and refetch
+      await refreshMutation.mutateAsync({ countryName });
       
-      // Get fresh sections using current settings
-      const freshSections = await discoverSectionsWithSettings();
+      // Refetch the data
+      await refetch();
       
-      // Fallback sections if no results
-      const finalSections = freshSections.length > 0 ? freshSections : [
-        {
-          id: 'overview',
-          title: 'Overview',
-          content: `[[${countryName}]] is a sovereign nation located in ${countryData.continent || 'an undisclosed region'}. With a population of ${countryData.currentPopulation.toLocaleString()} and operating under a ${countryData.governmentType || 'democratic'} system of government, the country plays an important role in regional affairs. Related topics: [[Geography of ${countryName}]], [[Politics of ${countryName}]], and [[Economy of ${countryName}]].`,
-          classification: 'PUBLIC' as const,
-          importance: 'critical' as const,
-          lastModified: new Date().toISOString(),
-          wordCount: 120
-        },
-        {
-          id: 'geography',
-          title: 'Geography',
-          content: `${countryName} is located in ${countryData.continent || 'an undisclosed region'}. See also: [[Geography of ${countryName}]], [[${countryData.continent}]], and [[List of countries by area]].`,
-          classification: 'PUBLIC' as const,
-          importance: 'high' as const,
-          lastModified: new Date().toISOString(),
-          wordCount: 150
-        }
-      ];
-
-      setWikiData({
-        countryName,
-        infobox,
-        sections: finalSections,
-        lastUpdated: Date.now(),
-        confidence: infobox ? 85 : 45,
-        isLoading: false,
-        error: undefined
-      });
-      
-      console.log(`[WikiIntelligence] Refresh complete: ${finalSections.length} sections loaded`);
+      console.log(`[WikiIntelligence] Refresh complete for ${countryName}`);
     } catch (error) {
-      // Handle abort errors gracefully
-      if (error instanceof Error && error.name === 'AbortError') {
-        console.log(`[WikiIntelligence] Refresh aborted for ${countryName}`);
-        return;
-      }
-      
       console.error('[WikiIntelligence] Refresh error:', error);
-      if (!abortController.signal.aborted) {
-        setWikiData(prev => ({
-          ...prev,
-          isLoading: false,
-          error: error instanceof Error ? error.message : 'Refresh failed'
-        }));
-      }
-    } finally {
-      if (!abortController.signal.aborted) {
-        setRefreshing(false);
-      }
     }
   };
 
@@ -848,10 +622,10 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
               variant="outline"
               size="sm"
               onClick={handleRefresh}
-              disabled={refreshing}
+              disabled={refreshMutation.isPending || isLoading}
               className="border-green-500/30 text-green-400 hover:bg-green-500/10"
             >
-              <RiRefreshLine className={cn("h-4 w-4 mr-2", refreshing && "animate-spin")} />
+              <RiRefreshLine className={cn("h-4 w-4 mr-2", (refreshMutation.isPending || isLoading) && "animate-spin")} />
               Refresh
             </Button>
             </div>

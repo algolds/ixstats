@@ -55,92 +55,105 @@ export default function EconomicTiersPage() {
             </div>
 
             <section>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">The Five Economic Tiers</h2>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">The Seven Economic Tiers</h2>
 
               <div className="space-y-4">
                 <div className="p-5 bg-gradient-to-br from-red-500/20 to-orange-500/20 border border-red-500/30 rounded-lg">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="px-3 py-1 bg-red-500/30 rounded-full">
-                      <span className="text-red-200 font-bold">Tier 1</span>
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Low-Income Economy</h3>
-                  </div>
-                  <div className="space-y-2 text-slate-700 dark:text-slate-200">
-                    <p><strong>GDP per Capita:</strong> $0 - $5,000</p>
-                    <p><strong>Growth Rate:</strong> 4-7% annually (high potential, volatile)</p>
-                    <p><strong>Characteristics:</strong> Agricultural focus, limited infrastructure, high growth potential but significant challenges</p>
-                    <p className="text-sm text-slate-700 dark:text-slate-300">
-                      Examples: Developing nations in early industrialization stages
-                    </p>
-                  </div>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="px-3 py-1 bg-red-500/30 rounded-full">
+              <span className="text-red-200 font-bold">Impoverished</span>
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Impoverished Economy</h3>
+          </div>
+          <div className="space-y-2 text-slate-700 dark:text-slate-200">
+            <p><strong>GDP per Capita:</strong> $0 – $9,999</p>
+            <p><strong>Max Growth Cap:</strong> 10% annually</p>
+            <p><strong>Characteristics:</strong> Early-stage development, basic industrialization, high upside with volatility</p>
+          </div>
                 </div>
 
-                <div className="p-5 bg-gradient-to-br from-orange-500/20 to-amber-500/20 border border-orange-500/30 rounded-lg">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="px-3 py-1 bg-orange-500/30 rounded-full">
-                      <span className="text-orange-200 font-bold">Tier 2</span>
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Lower-Middle Income</h3>
-                  </div>
-                  <div className="space-y-2 text-slate-700 dark:text-slate-200">
-                    <p><strong>GDP per Capita:</strong> $5,000 - $15,000</p>
-                    <p><strong>Growth Rate:</strong> 3-6% annually (emerging markets)</p>
-                    <p><strong>Characteristics:</strong> Industrializing, expanding manufacturing, improving infrastructure</p>
-                    <p className="text-sm text-slate-700 dark:text-slate-300">
-                      Examples: Rapidly developing nations with growing middle class
-                    </p>
-                  </div>
+        <div className="p-5 bg-gradient-to-br from-orange-500/20 to-amber-500/20 border border-orange-500/30 rounded-lg">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="px-3 py-1 bg-orange-500/30 rounded-full">
+              <span className="text-orange-200 font-bold">Developing</span>
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Developing Economy</h3>
+          </div>
+          <div className="space-y-2 text-slate-700 dark:text-slate-200">
+            <p><strong>GDP per Capita:</strong> $10,000 – $24,999</p>
+            <p><strong>Max Growth Cap:</strong> 7.5% annually</p>
+            <p><strong>Characteristics:</strong> Industrializing, infrastructure expansion, rising middle class</p>
+          </div>
                 </div>
 
-                <div className="p-5 bg-gradient-to-br from-amber-500/20 to-yellow-500/20 border border-amber-500/30 rounded-lg">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="px-3 py-1 bg-amber-500/30 rounded-full">
-                      <span className="text-amber-200 font-bold">Tier 3</span>
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Upper-Middle Income</h3>
-                  </div>
-                  <div className="space-y-2 text-slate-700 dark:text-slate-200">
-                    <p><strong>GDP per Capita:</strong> $15,000 - $30,000</p>
-                    <p><strong>Growth Rate:</strong> 2-4% annually (stable growth)</p>
-                    <p><strong>Characteristics:</strong> Diversified economy, strong service sector, developed infrastructure</p>
-                    <p className="text-sm text-slate-700 dark:text-slate-300">
-                      Examples: Advanced developing nations approaching developed status
-                    </p>
-                  </div>
+        <div className="p-5 bg-gradient-to-br from-amber-500/20 to-yellow-500/20 border border-amber-500/30 rounded-lg">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="px-3 py-1 bg-amber-500/30 rounded-full">
+              <span className="text-amber-200 font-bold">Developed</span>
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Developed Economy</h3>
+          </div>
+          <div className="space-y-2 text-slate-700 dark:text-slate-200">
+            <p><strong>GDP per Capita:</strong> $25,000 – $34,999</p>
+            <p><strong>Max Growth Cap:</strong> 5% annually</p>
+            <p><strong>Characteristics:</strong> Diversified economy, services strength, strong infrastructure</p>
+          </div>
                 </div>
 
-                <div className="p-5 bg-gradient-to-br from-emerald-500/20 to-green-500/20 border border-emerald-500/30 rounded-lg">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="px-3 py-1 bg-emerald-500/30 rounded-full">
-                      <span className="text-emerald-200 font-bold">Tier 4</span>
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">High-Income Economy</h3>
-                  </div>
-                  <div className="space-y-2 text-slate-700 dark:text-slate-200">
-                    <p><strong>GDP per Capita:</strong> $30,000 - $60,000</p>
-                    <p><strong>Growth Rate:</strong> 1.5-3% annually (mature markets)</p>
-                    <p><strong>Characteristics:</strong> Advanced services, high technology, excellent infrastructure, knowledge economy</p>
-                    <p className="text-sm text-slate-700 dark:text-slate-300">
-                      Examples: Developed nations with high living standards
-                    </p>
-                  </div>
+        <div className="p-5 bg-gradient-to-br from-emerald-500/20 to-green-500/20 border border-emerald-500/30 rounded-lg">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="px-3 py-1 bg-emerald-500/30 rounded-full">
+              <span className="text-emerald-200 font-bold">Healthy</span>
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Healthy High-Income Economy</h3>
+          </div>
+          <div className="space-y-2 text-slate-700 dark:text-slate-200">
+            <p><strong>GDP per Capita:</strong> $35,000 – $44,999</p>
+            <p><strong>Max Growth Cap:</strong> 3.5% annually</p>
+            <p><strong>Characteristics:</strong> Advanced services, strong infrastructure, knowledge economy</p>
+          </div>
                 </div>
 
-                <div className="p-5 bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/30 rounded-lg">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="px-3 py-1 bg-blue-500/30 rounded-full">
-                      <span className="text-blue-200 font-bold">Tier 5</span>
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Very High-Income Economy</h3>
-                  </div>
-                  <div className="space-y-2 text-slate-700 dark:text-slate-200">
-                    <p><strong>GDP per Capita:</strong> $60,000+</p>
-                    <p><strong>Growth Rate:</strong> 1-2.5% annually (highly developed)</p>
-                    <p><strong>Characteristics:</strong> Innovation leaders, financial centers, cutting-edge technology, post-industrial</p>
-                    <p className="text-sm text-slate-700 dark:text-slate-300">
-                      Examples: World's most advanced economies and innovation hubs
-                    </p>
-                  </div>
+        <div className="p-5 bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/30 rounded-lg">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="px-3 py-1 bg-blue-500/30 rounded-full">
+              <span className="text-blue-200 font-bold">Strong</span>
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Strong High-Income Economy</h3>
+          </div>
+          <div className="space-y-2 text-slate-700 dark:text-slate-200">
+            <p><strong>GDP per Capita:</strong> $45,000 – $54,999</p>
+            <p><strong>Max Growth Cap:</strong> 2.75% annually</p>
+            <p><strong>Characteristics:</strong> Mature markets, innovation and finance hubs</p>
+          </div>
+        </div>
+
+        <div className="p-5 bg-gradient-to-br from-indigo-500/20 to-fuchsia-500/20 border border-indigo-500/30 rounded-lg">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="px-3 py-1 bg-indigo-500/30 rounded-full">
+              <span className="text-indigo-200 font-bold">Very Strong</span>
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Very Strong Economy</h3>
+          </div>
+          <div className="space-y-2 text-slate-700 dark:text-slate-200">
+            <p><strong>GDP per Capita:</strong> $55,000 – $64,999</p>
+            <p><strong>Max Growth Cap:</strong> 1.5% annually</p>
+            <p><strong>Characteristics:</strong> Highly developed, cutting-edge technology and services</p>
+          </div>
+        </div>
+
+        <div className="p-5 bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="px-3 py-1 bg-purple-500/30 rounded-full">
+              <span className="text-purple-200 font-bold">Extravagant</span>
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Extravagant Economy</h3>
+          </div>
+          <div className="space-y-2 text-slate-700 dark:text-slate-200">
+            <p><strong>GDP per Capita:</strong> $65,000+</p>
+            <p><strong>Max Growth Cap:</strong> 0.5% annually</p>
+            <p><strong>Characteristics:</strong> Innovation leaders with very high living standards; diminishing returns apply</p>
+          </div>
                 </div>
               </div>
             </section>

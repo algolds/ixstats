@@ -12,11 +12,7 @@ export { ActionPanel } from './ActionPanel';
 export { CalculationLogs } from './CalculationLogs'; // Now properly implemented
 export { DataImportSection } from './DataImportSection';
 export { WarningPanel } from './WarningPanel';
-export { SdiAdminPanel } from './sdi/SdiAdminPanel';
-export { SdiCrisisAdmin } from './sdi/SdiCrisisAdmin';
-export { SdiIntelligenceAdmin } from './sdi/SdiIntelligenceAdmin';
-export { SdiEconomicAdmin } from './sdi/SdiEconomicAdmin';
-export { SdiDiplomaticAdmin } from './sdi/SdiDiplomaticAdmin';
 export { CountryAdminPanel } from './CountryAdminPanel';
 export { NotificationsAdmin } from './NotificationsAdmin';
 export { UserManagement } from './UserManagement';
+export { AdminSidebar } from './AdminSidebar';

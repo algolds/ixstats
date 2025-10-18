@@ -139,6 +139,8 @@ interface SectionContainerProps {
   theme?: 'gold' | 'blue' | 'indigo' | 'red' | 'neutral';
   className?: string;
   headerActions?: React.ReactNode;
+  hideViewToggle?: boolean;
+  helpContent?: React.ReactNode;
 }
 
 export function SectionContainer({
@@ -150,7 +152,9 @@ export function SectionContainer({
   children,
   theme = 'neutral',
   className,
-  headerActions
+  headerActions,
+  hideViewToggle = false,
+  helpContent
 }: SectionContainerProps) {
   return (
     <div className={cn("space-y-6", className)}>
@@ -167,7 +171,14 @@ export function SectionContainer({
               </div>
             )}
             <div>
-              <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+                {helpContent && (
+                  <div className="flex items-center">
+                    {helpContent}
+                  </div>
+                )}
+              </div>
               {subtitle && (
                 <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
               )}
@@ -175,15 +186,17 @@ export function SectionContainer({
           </div>
           {headerActions}
         </div>
-        
+
         {/* View Toggle */}
-        <ViewToggle
-          showAdvanced={showAdvanced}
-          onToggle={onToggleAdvanced}
-          theme={theme}
-        />
+        {!hideViewToggle && (
+          <ViewToggle
+            showAdvanced={showAdvanced}
+            onToggle={onToggleAdvanced}
+            theme={theme}
+          />
+        )}
       </div>
-      
+
       {/* Section Content */}
       <div className="space-y-6">
         {children}

@@ -451,6 +451,6 @@ export async function runPreviewSeeder(): Promise<void> {
 }
 
 // Allow running as script
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   runPreviewSeeder().catch(console.error);
 }

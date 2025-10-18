@@ -2,10 +2,20 @@
 *Comprehensive Guide to Economic Engines, Models, and Calculation Systems*
 
 > **📚 Note**: This document provides detailed economic systems documentation. For a high-level overview of all IxStats systems, see [SYSTEMS_GUIDE.md](../SYSTEMS_GUIDE.md)
+>
+> **🔢 Detailed Formulas**: For comprehensive economic formulas and calculation methodologies, see [FORMULAS_AND_CALCULATIONS.md](./FORMULAS_AND_CALCULATIONS.md)
+>
+> **🏗️ Builder Integration**: For economic builder system integration details, see [BUILDER_SYSTEM.md](./BUILDER_SYSTEM.md)
 
-**Version**: 1.0
-**Last Updated**: January 2025
+**Version**: v1.1.1
+**Last Updated**: October 17, 2025
 **Maturity Level**: Production-Ready Core, Advanced Features In Development
+
+> **🔢 Complete Economic Formulas**: For comprehensive economic calculation documentation (15+ systems with mathematical notation), see [FORMULAS_AND_CALCULATIONS.md](../FORMULAS_AND_CALCULATIONS.md) ✨ NEW (v1.1.0)
+>
+> **🏗️ Builder Integration**: For economic builder system integration and workflow details, see [BUILDER_SYSTEM.md](../BUILDER_SYSTEM.md) ✨ NEW (v1.1.0)
+>
+> **🔗 API Reference**: For economic endpoint documentation, see [API_REFERENCE.md](../API_REFERENCE.md) - Economics section ✨ NEW (v1.1.0)
 
 ---
 
@@ -378,7 +388,7 @@ function generatePrediction(country: Country, scenarios: string[]): Prediction[]
 
 ## 🚀 **NEW: Enhanced Economic Analysis System**
 
-### **Advanced Calculation Frameworks** (January 2025)
+### **Advanced Calculation Frameworks** (October 2025)
 
 #### **1. Enhanced Economic Calculations** (`src/lib/enhanced-economic-calculations.ts`)
 Four comprehensive economic indices with sophisticated analysis:
@@ -580,4 +590,4 @@ const results = await analyzer.analyzeEconomy(countryStats, economyData, histori
 
 ---
 
-**This documentation represents the current state of IxStats economic systems as of January 2025. The platform provides a sophisticated foundation for economic simulation with advanced mathematical modeling, real-time calculation capabilities, and comprehensive data tracking.**
+**This documentation represents the current state of IxStats economic systems as of October 17, 2025. The platform provides a sophisticated foundation for economic simulation with advanced mathematical modeling, real-time calculation capabilities, and comprehensive data tracking. Current system architecture includes 131 models across 36 routers providing comprehensive economic simulation capabilities.**

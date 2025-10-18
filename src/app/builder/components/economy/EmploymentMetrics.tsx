@@ -2,11 +2,17 @@
 
 import React from 'react';
 import { Users, Briefcase, TrendingUp, TrendingDown, Clock, DollarSign, Shield, Activity } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
 import { Progress } from '~/components/ui/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import type { EmploymentData } from '../../types/economy';
 import { MetricCard } from '../../primitives/enhanced';
+import { GlassBarChart, GlassPieChart } from '~/components/charts/RechartsIntegration';
+import {
+  SectionBase,
+  sectionUtils,
+  type ExtendedSectionProps
+} from '../glass/SectionBase';
 
 interface EmploymentMetricsProps {
   data: EmploymentData;

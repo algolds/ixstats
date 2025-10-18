@@ -5,51 +5,17 @@ import React from 'react';
 import { Loader2, MessageSquare } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { ConversationCard } from './ConversationCard';
-
-interface ThinkshareConversation {
-  id: string;
-  type: string;
-  name?: string | null;
-  avatar?: string | null;
-  isActive: boolean;
-  lastActivity: Date;
-  otherParticipants: {
-    id: string;
-    accountId: string;
-    account: {
-      id: string;
-      username: string;
-      displayName: string;
-      profileImageUrl?: string | null;
-      accountType: string;
-    };
-    isActive: boolean;
-  }[];
-  lastMessage?: {
-    id: string;
-    accountId: string;
-    content: string;
-    ixTimeTimestamp: Date;
-    createdAt?: Date;
-    account: {
-      id: string;
-      username: string;
-      displayName: string;
-    };
-  };
-  lastReadAt?: Date;
-  unreadCount: number;
-}
+import type { ThinkShareConversation, ThinkShareClientState } from '~/types/thinkshare';
 
 interface ConversationListContentProps {
-  conversations: ThinkshareConversation[];
+  conversations: ThinkShareConversation[];
   isLoadingConversations: boolean;
   selectedConversation: string | null;
   setSelectedConversation: (id: string) => void;
   currentAccountId: string;
   onNewConversationClick: () => void;
   getAccountTypeIcon: (type: string) => React.ReactNode;
-  clientState: any; // TODO: Define a proper type for clientState
+  clientState: ThinkShareClientState;
 }
 
 export function ConversationListContent({
@@ -84,7 +50,7 @@ export function ConversationListContent({
               </Button>
             </div>
           ) : (
-            conversations.map((conversation: ThinkshareConversation) => (
+            conversations.map((conversation) => (
               <ConversationCard
                 key={conversation.id}
                 conversation={conversation}

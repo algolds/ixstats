@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { EnhancedCommandCenter } from "../_components/EnhancedCommandCenter";
+import { DashboardErrorBoundary } from "~/components/shared/feedback/DashboardErrorBoundary";
 
 export default function DashboardPage() {
   useEffect(() => {
@@ -10,5 +11,12 @@ export default function DashboardPage() {
 
   // Enhanced home page with social activity feed and platform-wide engagement
   // Combines the best of the original CommandCenter with new social features
-  return <EnhancedCommandCenter />;
+  return (
+    <DashboardErrorBoundary
+      title="Dashboard Error"
+      description="An error occurred while loading the dashboard. Please try again."
+    >
+      <EnhancedCommandCenter />
+    </DashboardErrorBoundary>
+  );
 }

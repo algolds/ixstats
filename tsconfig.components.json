@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "noEmit": true
+  },
+  "include": [
+    "src/components/**/*.ts",
+    "src/components/**/*.tsx"
+  ],
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ]
+}

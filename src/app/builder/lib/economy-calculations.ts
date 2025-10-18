@@ -1,5 +1,12 @@
-// Economy Builder Calculation Engine
-// Real-time calculations for economic metrics
+/**
+ * Economy Builder Calculation Engine
+ *
+ * Real-time calculations for economic metrics including employment, income distribution,
+ * sector analysis, trade patterns, productivity measures, business environment, and
+ * economic health indicators.
+ *
+ * @module economy-calculations
+ */
 
 import type {
   EmploymentData,
@@ -14,6 +21,34 @@ import type {
 
 // ==================== DEFAULT DATA GENERATORS ====================
 
+/**
+ * generateDefaultEmploymentData - Generate comprehensive employment statistics
+ *
+ * Creates a complete employment profile including workforce composition, sector distribution,
+ * employment types, working conditions, and labor rights metrics. Uses standard economic
+ * ratios and relationships to generate realistic data from basic inputs.
+ *
+ * Algorithm:
+ * 1. Calculate workforce from population (65% working age, then apply participation rate)
+ * 2. Generate employment rates from unemployment rate
+ * 3. Apply standard ratios for youth/senior/gender participation
+ * 4. Distribute employment across 16 economic sectors
+ * 5. Calculate employment type distribution (full-time, part-time, gig, etc.)
+ * 6. Add working conditions and labor rights metrics
+ *
+ * @param {number} totalPopulation - Total population of the country
+ * @param {number} unemploymentRate - Unemployment rate as percentage (default: 5.0%)
+ * @param {number} participationRate - Labor force participation rate as percentage (default: 63.0%)
+ * @returns {EmploymentData} Complete employment data structure
+ *
+ * @example
+ * ```ts
+ * const employment = generateDefaultEmploymentData(10000000, 4.5, 65.0);
+ * // Returns employment data for 10M population with 4.5% unemployment
+ * // employment.totalWorkforce = 6,500,000
+ * // employment.employmentRate = 95.5
+ * ```
+ */
 export function generateDefaultEmploymentData(
   totalPopulation: number,
   unemploymentRate: number = 5.0,

@@ -81,6 +81,7 @@ import {
   RiFileLine,
   RiEditLine
 } from "react-icons/ri";
+import { sanitizeWikiContent } from "~/lib/sanitize-html";
 
 // Types for enhanced briefing
 interface VitalityMetric {
@@ -510,10 +511,13 @@ export const EnhancedIntelligenceBriefing: React.FC<EnhancedIntelligenceBriefing
     // Add basic line breaks
     parsed = parsed.replace(/\n\n/g, '<br/><br/>');
     parsed = parsed.replace(/\n/g, ' ');
-    
+
+    // SECURITY: Sanitize parsed wiki markup to prevent XSS
+    const sanitized = sanitizeWikiContent(parsed);
+
     return (
-      <div 
-        dangerouslySetInnerHTML={{ __html: parsed }}
+      <div
+        dangerouslySetInnerHTML={{ __html: sanitized }}
         onClick={(e) => {
           const target = e.target as HTMLElement;
           const link = target.getAttribute('data-link');

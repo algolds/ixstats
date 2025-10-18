@@ -448,7 +448,7 @@ export class CommandPaletteDeliveryHandler implements DeliveryHandler {
   }
 
   private getPaletteCategory(notification: UnifiedNotification): string {
-    const categoryMapping = {
+    const categoryMapping: Record<string, string> = {
       economic: 'Economy',
       governance: 'Government',
       diplomatic: 'Diplomacy',
@@ -458,6 +458,10 @@ export class CommandPaletteDeliveryHandler implements DeliveryHandler {
       crisis: 'Crisis Management',
       opportunity: 'Opportunities',
       social: 'Social',
+      policy: 'Policy',
+      intelligence: 'Intelligence',
+      global: 'Global',
+      military: 'Military',
     };
 
     return categoryMapping[notification.category] || 'General';

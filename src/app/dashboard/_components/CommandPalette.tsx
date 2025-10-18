@@ -45,8 +45,7 @@ export function CommandPalette({ commandOpen, setCommandOpen, userProfile }: Com
         group: "Dashboard Sections",
         items: [
           { title: "Go to MyCountry", icon: <Crown className="h-4 w-4" />, action: () => window.location.href = createAbsoluteUrl("/mycountry") },
-          { title: "Open ECI Suite", icon: <Gauge className="h-4 w-4" />, action: () => window.location.href = createAbsoluteUrl("/eci") },
-          { title: "Access SDI Intelligence", icon: <Eye className="h-4 w-4" />, action: () => window.location.href = createAbsoluteUrl("/sdi") },
+          { title: "Intelligence Operations", icon: <Eye className="h-4 w-4" />, action: () => window.location.href = createAbsoluteUrl("/mycountry/intelligence") },
         ]
       });
     } else {

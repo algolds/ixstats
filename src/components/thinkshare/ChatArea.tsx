@@ -12,84 +12,21 @@ import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
 import { ReplyPreview } from './ReplyPreview';
 
-interface ThinkshareConversation {
-  id: string;
-  type: string;
-  name?: string | null;
-  avatar?: string | null;
-  isActive: boolean;
-  lastActivity: Date;
-  otherParticipants: {
-    id: string;
-    accountId: string;
-    account: {
-      id: string;
-      username: string;
-      displayName: string;
-      profileImageUrl?: string | null;
-      accountType: string;
-    };
-    isActive: boolean;
-  }[];
-  lastMessage?: {
-    id: string;
-    accountId: string;
-    content: string;
-    ixTimeTimestamp: Date;
-    createdAt?: Date;
-    account: {
-      id: string;
-      username: string;
-      displayName: string;
-    };
-  };
-  lastReadAt?: Date;
-  unreadCount: number;
-}
-
-interface ThinkshareMessage {
-  id: string;
-  conversationId: string;
-  accountId: string;
-  account: {
-    id: string;
-    username: string;
-    displayName: string;
-    profileImageUrl?: string | null;
-    accountType: string;
-  };
-  content: string;
-  messageType: string;
-  ixTimeTimestamp: Date;
-  createdAt?: Date;
-  reactions?: any;
-  mentions?: any;
-  attachments?: any;
-  replyTo?: any;
-  readReceipts?: any[];
-  isSystem?: boolean;
-}
-
-interface Account {
-  id: string;
-  username: string;
-  displayName: string;
-  profileImageUrl?: string | null;
-  accountType: string;
-}
+import type {
+  ThinkShareConversation,
+  ThinkShareMessage,
+  ThinkShareAccount,
+  ThinkShareClientState
+} from '~/types/thinkshare';
 
 interface ChatAreaProps {
-  selectedConversation: ThinkshareConversation;
-  currentAccount?: Account; // Made optional
-  conversationMessages: { messages: ThinkshareMessage[] } | undefined;
+  selectedConversation: ThinkShareConversation;
+  currentAccount?: ThinkShareAccount;
+  conversationMessages: { messages: ThinkShareMessage[] } | undefined;
   isLoadingMessages: boolean;
   refetchMessages: () => Promise<any>;
   refetchConversations: () => Promise<any>;
-  clientState: {
-    isTyping?: boolean;
-    lastSeen?: string;
-    connectionStatus?: 'connected' | 'disconnected' | 'connecting';
-  };
+  clientState: ThinkShareClientState;
   sendTypingIndicator: (conversationId: string, accountId: string | undefined, isTyping: boolean) => void;
   markMessagesAsReadMutation: {
     mutate: (data: { conversationId: string; userId: string; messageIds?: string[] }) => Promise<void>;
@@ -108,7 +45,7 @@ export function ChatArea({
   sendTypingIndicator,
   markMessagesAsReadMutation,
 }: ChatAreaProps) {
-  const [replyingToMessage, setReplyingToMessage] = useState<ThinkshareMessage | null>(null);
+  const [replyingToMessage, setReplyingToMessage] = useState<ThinkShareMessage | null>(null);
 
   const sendMessageMutation = api.thinkpages.sendMessage.useMutation({
     onSuccess: () => {
@@ -192,7 +129,7 @@ export function ChatArea({
         }}
         isSending={sendMessageMutation.isPending}
         replyingToMessage={replyingToMessage}
-        setReplyingToMessage={setReplyingToMessage}
+        setReplyingToMessage={setReplyingToMessage as any}
       />
     </Card>
   );

@@ -1,10 +1,20 @@
 # MyCountry Builder System
 
+**Version: 1.1.0** | Last Updated: January 2025
+
 ## Overview
 
-The MyCountry Builder is a sophisticated, modern nation-building platform that combines real-world economic data with an intuitive, visually stunning interface for creating detailed models and fictional nations. Tne builder also uses an advanced physics-based design system.
+The MyCountry Builder is a sophisticated, modern nation-building platform that combines real-world economic data with an intuitive, visually stunning interface for creating detailed models and fictional nations. The builder also uses an advanced physics-based design system.
 
-\\
+## 📚 Documentation (v1.1.0)
+
+### Comprehensive Builder Documentation
+- **[BUILDER_SYSTEM.md](../../docs/BUILDER_SYSTEM.md)** - Complete system architecture and 7-step workflow ✨ NEW
+- **[ATOMIC_COMPONENTS_GUIDE.md](../../docs/ATOMIC_COMPONENTS_GUIDE.md)** - Atomic government guide (106 components) ✨ NEW
+- **[DESIGN_SYSTEM.md](../../docs/DESIGN_SYSTEM.md)** - Glass physics framework and UI patterns ✨ NEW
+- **[FORMULAS_AND_CALCULATIONS.md](../../docs/FORMULAS_AND_CALCULATIONS.md)** - Economic calculation formulas ✨ NEW
+- **[API_REFERENCE.md](../../docs/API_REFERENCE.md)** - Builder API endpoints documentation ✨ NEW
+
 ## Purpose & Vision
 
 This advanced builder system serves:
@@ -89,10 +99,10 @@ src/app/builder/
 ├── page.tsx                     # Entry point (Enhanced Builder)
 ├── components/
 │   ├── enhanced/                # Modern glass-based components
-│   │   ├── BuilderPageEnhanced.tsx       # Main orchestrator
-│   │   ├── CountrySelectorEnhanced.tsx   # Country selection orchestrator 
-│   │   ├── EconomicCustomizationHub.tsx # Main hub 
-│   │   ├── InteractivePreview.tsx        # Live preview with vitality rings
+│   │   ├── BuilderPage.tsx              # Main orchestrator
+│   │   ├── CountrySelector.tsx          # Country selection orchestrator
+│   │   ├── EconomicCustomizationHub.tsx # Main hub
+│   │   ├── InteractivePreview.tsx       # Live preview with vitality rings
 │   │   └── NationalSymbolsSection.tsx   # Symbol management component
 │   ├── glass/                   # Glass physics UI components
 │   │   ├── GlassCard.tsx                 # Core glass container

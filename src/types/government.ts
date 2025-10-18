@@ -1,5 +1,7 @@
 // src/types/government.ts
 
+import type { ComponentType } from '@prisma/client';
+
 export interface GovernmentStructure {
   id: string;
   countryId: string;
@@ -186,6 +188,7 @@ export const COMPONENT_TYPE_VALUES = [
   'PERFORMANCE_LEGITIMACY',
   'CHARISMATIC_LEGITIMACY',
   'RELIGIOUS_LEGITIMACY',
+  'INSTITUTIONAL_LEGITIMACY',
 
   // Institution Types
   'PROFESSIONAL_BUREAUCRACY',
@@ -193,6 +196,7 @@ export const COMPONENT_TYPE_VALUES = [
   'INDEPENDENT_JUDICIARY',
   'PARTISAN_INSTITUTIONS',
   'TECHNOCRATIC_AGENCIES',
+  'DIGITAL_GOVERNMENT',
 
   // Control Mechanisms
   'RULE_OF_LAW',
@@ -200,6 +204,19 @@ export const COMPONENT_TYPE_VALUES = [
   'ECONOMIC_INCENTIVES',
   'SOCIAL_PRESSURE',
   'MILITARY_ENFORCEMENT',
+
+  // Government Systems
+  'MINIMAL_GOVERNMENT',
+  'PRIVATE_SECTOR_LEADERSHIP',
+  'SOCIAL_DEMOCRACY',
+  'COMPREHENSIVE_WELFARE',
+  'PUBLIC_SECTOR_LEADERSHIP',
+  'ENVIRONMENTAL_FOCUS',
+  'ECONOMIC_PLANNING',
+  'DEVELOPMENTAL_STATE',
+  'WORKER_PROTECTION',
+  'REGIONAL_DEVELOPMENT',
+  'MERITOCRATIC_SYSTEM',
 ] as const;
 
 // Input/Form Types
@@ -303,12 +320,17 @@ export interface GovernmentBuilderState {
   departments: DepartmentInput[];
   budgetAllocations: BudgetAllocationInput[];
   revenueSources: RevenueSourceInput[];
+  selectedComponents?: ComponentType[];
   isValid: boolean;
   errors: {
     structure?: string[];
     departments?: { [key: number]: string[] };
     budget?: string[];
     revenue?: string[];
+  };
+  atomicComponentCosts?: {
+    annualMaintenanceCost: number;
+    implementationCost: number;
   };
 }
 

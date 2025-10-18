@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 import { EnhancedCommandCenter } from "./_components/EnhancedCommandCenter";
 import { IxStatsSplashPage } from "./_components/IxStatsSplashPage";
 

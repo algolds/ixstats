@@ -11,10 +11,11 @@ import { Textarea } from '~/components/ui/textarea';
 import { Badge } from '~/components/ui/badge';
 import { Slider } from '~/components/ui/slider';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
-import { 
-  Receipt, 
-  Building, 
-  DollarSign, 
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/components/ui/tooltip';
+import {
+  Receipt,
+  Building,
+  DollarSign,
   Home,
   TrendingUp,
   Trash2,
@@ -24,7 +25,19 @@ import {
   Plus,
   Settings,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  Zap,
+  Calculator,
+  CreditCard,
+  Shield,
+  FileText,
+  FileCheck,
+  AlertTriangle,
+  Mountain,
+  Link2,
+  ExternalLink,
+  RefreshCw,
+  Sparkles
 } from 'lucide-react';
 import type { TaxCategoryInput, TaxBracketInput } from '~/types/tax-system';
 import { TAX_CATEGORIES, TAX_TYPES, CALCULATION_METHODS } from '~/types/tax-system';
@@ -39,6 +52,11 @@ interface TaxCategoryFormProps {
   onBracketsChange?: (brackets: TaxBracketInput[]) => void;
   categoryIndex?: number;
   errors?: Record<string, string[]>;
+  collectionMethod?: string;
+  administeredBy?: string;
+  isSyncedFromRevenue?: boolean;
+  onApplyStandardBrackets?: () => void;
+  availableDepartments?: Array<{ id: string; name: string }>;
 }
 
 const categoryIcons = {
@@ -59,6 +77,64 @@ const categoryColors = {
   [TAX_CATEGORIES.OTHER]: '#6b7280'
 };
 
+const collectionMethodIcons: Record<string, any> = {
+  'automatic_deduction': Zap,
+  'self_assessment': Calculator,
+  'point_of_sale': CreditCard,
+  'withholding_tax': Shield,
+  'annual_return': FileText,
+  'direct_billing': Receipt,
+  'licensing_fee': FileCheck,
+  'fine_penalty': AlertTriangle,
+  'royalty_payment': Mountain,
+  'dividend_distribution': TrendingUp
+};
+
+const collectionMethodColors: Record<string, string> = {
+  'automatic_deduction': '#059669',
+  'self_assessment': '#0891b2',
+  'point_of_sale': '#dc2626',
+  'withholding_tax': '#7c3aed',
+  'annual_return': '#ea580c',
+  'direct_billing': '#059669',
+  'licensing_fee': '#0891b2',
+  'fine_penalty': '#dc2626',
+  'royalty_payment': '#7c3aed',
+  'dividend_distribution': '#059669'
+};
+
+const getCollectionMethodName = (methodId: string): string => {
+  const names: Record<string, string> = {
+    'automatic_deduction': 'Automatic Deduction',
+    'self_assessment': 'Self Assessment',
+    'point_of_sale': 'Point of Sale',
+    'withholding_tax': 'Withholding Tax',
+    'annual_return': 'Annual Return',
+    'direct_billing': 'Direct Billing',
+    'licensing_fee': 'Licensing Fee',
+    'fine_penalty': 'Fine/Penalty',
+    'royalty_payment': 'Royalty Payment',
+    'dividend_distribution': 'Dividend Distribution'
+  };
+  return names[methodId] || methodId;
+};
+
+const getCollectionMethodDescription = (methodId: string): string => {
+  const descriptions: Record<string, string> = {
+    'automatic_deduction': 'Automatically deducted from income/salary',
+    'self_assessment': 'Taxpayers calculate and pay themselves',
+    'point_of_sale': 'Collected at time of purchase/transaction',
+    'withholding_tax': 'Deducted at source by payers',
+    'annual_return': 'Filed annually with tax returns',
+    'direct_billing': 'Government bills directly for services',
+    'licensing_fee': 'Periodic fees for licenses/permits',
+    'fine_penalty': 'One-time fines and penalties',
+    'royalty_payment': 'Payments for resource extraction',
+    'dividend_distribution': 'Profits from state-owned enterprises'
+  };
+  return descriptions[methodId] || 'Custom collection method';
+};
+
 export function TaxCategoryForm({
   data,
   onChange,
@@ -68,7 +144,12 @@ export function TaxCategoryForm({
   brackets = [],
   onBracketsChange,
   categoryIndex = 0,
-  errors = {}
+  errors = {},
+  collectionMethod,
+  administeredBy,
+  isSyncedFromRevenue = false,
+  onApplyStandardBrackets,
+  availableDepartments = []
 }: TaxCategoryFormProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -94,7 +175,13 @@ export function TaxCategoryForm({
     if (!onBracketsChange) return;
     
     const newBracket: TaxBracketInput = {
-      minIncome: brackets.length > 0 ? Math.max(...brackets.map(b => b.maxIncome || 0)) : 0,
+      // Use the highest defined boundary as the next min. If an open-ended bracket exists,
+      // fall back to the highest of its minIncome to keep ordering monotonic.
+      minIncome: brackets.length > 0
+        ? Math.max(
+            ...brackets.map(b => (b.maxIncome !== undefined ? b.maxIncome : b.minIncome))
+          )
+        : 0,
       maxIncome: undefined,
       rate: data.baseRate || 0,
       marginalRate: true,
@@ -110,6 +197,22 @@ export function TaxCategoryForm({
     
     const newBrackets = [...brackets];
     newBrackets[index] = bracket;
+
+    // Maintain continuity with adjacent brackets when boundaries change
+    // If this bracket's maxIncome is set, propagate as the minIncome for the next bracket
+    if (bracket.maxIncome !== undefined && index < newBrackets.length - 1) {
+      const next = { ...newBrackets[index + 1] };
+      // Ensure non-decreasing boundary
+      next.minIncome = Math.max(bracket.maxIncome, next.minIncome);
+      newBrackets[index + 1] = next as TaxBracketInput;
+    }
+
+    // If this bracket's minIncome changed, set previous bracket's maxIncome to match
+    if (index > 0) {
+      const prev = { ...newBrackets[index - 1] };
+      prev.maxIncome = bracket.minIncome;
+      newBrackets[index - 1] = prev as TaxBracketInput;
+    }
     onBracketsChange(newBrackets);
   };
 
@@ -122,6 +225,10 @@ export function TaxCategoryForm({
   const hasErrors = Object.keys(errors).length > 0;
   const isValid = data.categoryName && data.categoryType && data.calculationMethod;
 
+  const CollectionMethodIcon = collectionMethod
+    ? collectionMethodIcons[collectionMethod] || Receipt
+    : null;
+
   return (
     <Card className="w-full">
       <CardHeader className="pb-4">
@@ -130,9 +237,9 @@ export function TaxCategoryForm({
             <CollapsibleTrigger asChild>
               <div className="flex items-center justify-between w-full cursor-pointer">
                 <div className="flex items-center gap-3">
-                  <div 
+                  <div
                     className="p-2 rounded-lg"
-                    style={{ 
+                    style={{
                       backgroundColor: `${data.color || '#6b7280'}20`,
                       color: data.color || '#6b7280'
                     }}
@@ -140,13 +247,41 @@ export function TaxCategoryForm({
                     <IconComponent className="h-5 w-5" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg font-semibold">
-                      {data.categoryName || `Tax Category ${categoryIndex + 1}`}
-                    </CardTitle>
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-lg font-semibold">
+                        {data.categoryName || `Tax Category ${categoryIndex + 1}`}
+                      </CardTitle>
+                      {isSyncedFromRevenue && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Badge
+                                variant="outline"
+                                className="bg-green-50 text-green-700 border-green-200"
+                              >
+                                <Link2 className="h-3 w-3 mr-1" />
+                                Synced
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>This tax category is synchronized from a government revenue source</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground">
                       {data.categoryType} • {data.calculationMethod}
                       {data.baseRate && ` • ${data.baseRate}%`}
                     </p>
+                    {administeredBy && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <Building className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">
+                          Administered by: <span className="font-medium">{administeredBy}</span>
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -228,9 +363,36 @@ export function TaxCategoryForm({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="calculationMethod" className="text-sm font-medium">
-                  Calculation Method *
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="calculationMethod" className="text-sm font-medium">
+                    Calculation Method *
+                  </Label>
+                  {collectionMethod && CollectionMethodIcon && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Badge
+                            variant="outline"
+                            style={{
+                              backgroundColor: `${collectionMethodColors[collectionMethod]}15`,
+                              borderColor: collectionMethodColors[collectionMethod],
+                              color: collectionMethodColors[collectionMethod]
+                            }}
+                          >
+                            <CollectionMethodIcon className="h-3 w-3 mr-1" />
+                            {getCollectionMethodName(collectionMethod)}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="font-medium">Collection Method</p>
+                          <p className="text-xs text-muted-foreground">
+                            {getCollectionMethodDescription(collectionMethod)}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
                 <Select
                   value={data.calculationMethod}
                   onValueChange={(value) => handleChange('calculationMethod', value)}
@@ -417,16 +579,38 @@ export function TaxCategoryForm({
               <div className="space-y-4 pt-4 border-t">
                 <div className="flex items-center justify-between">
                   <h5 className="font-medium">Tax Brackets</h5>
-                  {!isReadOnly && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={addBracket}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Bracket
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {isSyncedFromRevenue && onApplyStandardBrackets && !isReadOnly && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={onApplyStandardBrackets}
+                              className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                            >
+                              <Sparkles className="h-4 w-4 mr-2" />
+                              Apply Standard Brackets
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Apply the recommended tax brackets for this revenue source</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                    {!isReadOnly && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={addBracket}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Bracket
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-3">
