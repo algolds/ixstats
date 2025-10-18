@@ -46,14 +46,14 @@ export function EconomicCustomizationHub({
   const [activeSection, setActiveSection] = useState('core'); // Start with Core Indicators
   const [showAdvanced, setShowAdvanced] = useState(false);
 
+  const handleToggleAdvanced = () => {
+    setShowAdvanced(!showAdvanced);
+  };
+
   const activeSectionData = sections.find(s => s.id === activeSection);
 
   const handleSectionChange = (sectionId: string) => {
     setActiveSection(sectionId);
-  };
-
-  const handleToggleAdvanced = () => {
-    setShowAdvanced(!showAdvanced);
   };
 
   const renderSectionContent = () => {
@@ -61,7 +61,7 @@ export function EconomicCustomizationHub({
       inputs,
       onInputsChange,
       showAdvanced,
-      onToggleAdvanced: handleToggleAdvanced,
+      onToggleAdvanced: () => setShowAdvanced(!showAdvanced),
       referenceCountry,
       totalPopulation: inputs.coreIndicators.totalPopulation,
       nominalGDP: inputs.coreIndicators.nominalGDP,

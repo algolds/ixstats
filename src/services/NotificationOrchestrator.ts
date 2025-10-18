@@ -535,7 +535,11 @@ export class NotificationOrchestrator {
         achievement: 0,
         crisis: 0,
         opportunity: 0,
-      },
+        policy: 0,
+        intelligence: 0,
+        global: 0,
+        military: 0,
+      } as Record<NotificationCategory, number>,
       methodEffectiveness: {
         'dynamic-island': { delivered: 0, engaged: 0, rate: 0 },
         'toast': { delivered: 0, engaged: 0, rate: 0 },
@@ -544,7 +548,7 @@ export class NotificationOrchestrator {
         'badge': { delivered: 0, engaged: 0, rate: 0 },
         'silent': { delivered: 0, engaged: 0, rate: 0 },
         'push': { delivered: 0, engaged: 0, rate: 0 },
-      },
+      } as Record<DeliveryMethod, { delivered: number, engaged: number, rate: number }>,
     };
   }
 

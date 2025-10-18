@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, Flag } from 'lucide-react';
 import { Button } from '~/components/ui/button';
-import { useCountryFlag } from '~/hooks/useCountryFlags';
+import { useCountryFlagRouteAware } from '~/hooks/useCountryFlagRouteAware';
 import type { RealCountryData, EconomicInputs } from '../lib/economy-data-service';
 
 // Get the original foundation country name for flag display
@@ -33,7 +33,7 @@ export function EconomicHubHeader({
   onBack
 }: EconomicHubHeaderProps) {
   const foundationCountryName = getFoundationCountryName(referenceCountry);
-  const { flag } = useCountryFlag(foundationCountryName);
+  const { flag } = useCountryFlagRouteAware(foundationCountryName);
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}

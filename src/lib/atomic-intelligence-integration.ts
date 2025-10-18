@@ -58,6 +58,7 @@ const STABILITY_MODIFIERS: Record<ComponentType, { stability: number; legitimacy
   [ComponentType.PERFORMANCE_LEGITIMACY]: { stability: 0.7, legitimacy: 0.85, capacity: 0.8, policy: 0.9 },
   [ComponentType.CHARISMATIC_LEGITIMACY]: { stability: 0.5, legitimacy: 0.9, capacity: 0.6, policy: 0.8 },
   [ComponentType.RELIGIOUS_LEGITIMACY]: { stability: 0.85, legitimacy: 0.9, capacity: 0.6, policy: 0.7 },
+  [ComponentType.INSTITUTIONAL_LEGITIMACY]: { stability: 0.9, legitimacy: 0.95, capacity: 0.85, policy: 0.85 },
 
   // Institutions
   [ComponentType.PROFESSIONAL_BUREAUCRACY]: { stability: 0.9, legitimacy: 0.7, capacity: 0.95, policy: 0.9 },
@@ -71,7 +72,21 @@ const STABILITY_MODIFIERS: Record<ComponentType, { stability: number; legitimacy
   [ComponentType.SURVEILLANCE_SYSTEM]: { stability: 0.6, legitimacy: 0.4, capacity: 0.8, policy: 0.8 },
   [ComponentType.ECONOMIC_INCENTIVES]: { stability: 0.7, legitimacy: 0.6, capacity: 0.7, policy: 0.8 },
   [ComponentType.SOCIAL_PRESSURE]: { stability: 0.5, legitimacy: 0.7, capacity: 0.6, policy: 0.6 },
-  [ComponentType.MILITARY_ENFORCEMENT]: { stability: 0.4, legitimacy: 0.3, capacity: 0.9, policy: 0.8 }
+  [ComponentType.MILITARY_ENFORCEMENT]: { stability: 0.4, legitimacy: 0.3, capacity: 0.9, policy: 0.8 },
+
+  // New Government Type Components
+  [ComponentType.DIGITAL_GOVERNMENT]: { stability: 0.85, legitimacy: 0.75, capacity: 0.9, policy: 0.85 },
+  [ComponentType.MINIMAL_GOVERNMENT]: { stability: 0.6, legitimacy: 0.65, capacity: 0.5, policy: 0.55 },
+  [ComponentType.PRIVATE_SECTOR_LEADERSHIP]: { stability: 0.7, legitimacy: 0.6, capacity: 0.75, policy: 0.7 },
+  [ComponentType.SOCIAL_DEMOCRACY]: { stability: 0.8, legitimacy: 0.85, capacity: 0.75, policy: 0.8 },
+  [ComponentType.COMPREHENSIVE_WELFARE]: { stability: 0.75, legitimacy: 0.8, capacity: 0.7, policy: 0.75 },
+  [ComponentType.PUBLIC_SECTOR_LEADERSHIP]: { stability: 0.7, legitimacy: 0.7, capacity: 0.8, policy: 0.75 },
+  [ComponentType.ENVIRONMENTAL_FOCUS]: { stability: 0.7, legitimacy: 0.75, capacity: 0.65, policy: 0.7 },
+  [ComponentType.ECONOMIC_PLANNING]: { stability: 0.75, legitimacy: 0.65, capacity: 0.85, policy: 0.9 },
+  [ComponentType.DEVELOPMENTAL_STATE]: { stability: 0.8, legitimacy: 0.7, capacity: 0.85, policy: 0.85 },
+  [ComponentType.WORKER_PROTECTION]: { stability: 0.65, legitimacy: 0.75, capacity: 0.6, policy: 0.65 },
+  [ComponentType.MERITOCRATIC_SYSTEM]: { stability: 0.85, legitimacy: 0.8, capacity: 0.9, policy: 0.9 },
+  [ComponentType.REGIONAL_DEVELOPMENT]: { stability: 0.75, legitimacy: 0.7, capacity: 0.8, policy: 0.75 }
 } as const;
 
 // Critical component conflicts that trigger alerts

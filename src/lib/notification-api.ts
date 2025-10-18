@@ -33,7 +33,11 @@ export type NotificationCategory =
   | 'system'
   | 'achievement'
   | 'crisis'
-  | 'opportunity';
+  | 'opportunity'
+  | 'policy'
+  | 'intelligence'
+  | 'global'
+  | 'military';
 export type NotificationType =
   | 'info'
   | 'success'

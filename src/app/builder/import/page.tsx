@@ -39,6 +39,7 @@ import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pa
 import { BorderBeam } from "~/components/magicui/border-beam";
 import { ProgressiveBlur } from "~/components/magicui/progressive-blur";
 import { cn } from "~/lib/utils";
+import { BuilderErrorBoundary } from "../components/BuilderErrorBoundary";
 
 interface WikiSite {
   name: string;
@@ -139,7 +140,8 @@ export default function ImportFromWikiPage() {
   // Use refs to store the latest values without causing re-renders
   const searchTermRef = useRef(searchTerm);
   const selectedSiteRef = useRef(selectedSite);
-  
+  const searchRequestIdRef = useRef(0);
+
   searchTermRef.current = searchTerm;
   selectedSiteRef.current = selectedSite;
 
@@ -156,13 +158,15 @@ export default function ImportFromWikiPage() {
     const timeoutId = setTimeout(async () => {
       const currentSearchTerm = searchTermRef.current;
       const currentSite = selectedSiteRef.current;
-      
+
       if (!currentSearchTerm.trim()) return;
+
+      // Generate unique request ID for this search
+      const requestId = ++searchRequestIdRef.current;
       
       // Check cache first
       const cacheKey = `${currentSite.name}:${currentSearchTerm}:${categoryFilter}`;
       if (searchCache.has(cacheKey)) {
-        console.log('Using cached search results');
         const cachedResults = searchCache.get(cacheKey)!;
         setSearchResults(cachedResults);
         setDisplayedResults(cachedResults.slice(0, resultsPerPage));
@@ -176,12 +180,6 @@ export default function ImportFromWikiPage() {
       setParsedData(null);
       
       try {
-        console.log('Searching with:', {
-          query: currentSearchTerm,
-          site: currentSite.name,
-          categoryFilter: categoryFilter
-        });
-        
         const results = await searchWikiMutation.mutateAsync({
           query: currentSearchTerm,
           // Fix: site must be one of the allowed string literals
@@ -189,8 +187,11 @@ export default function ImportFromWikiPage() {
           categoryFilter: categoryFilter
         });
 
-        console.log('Search results:', results);
-        
+        // Check if this request is still valid (not superseded by a newer search)
+        if (requestId !== searchRequestIdRef.current) {
+          return; // Discard stale results
+        }
+
         // Cache the search results
         searchCache.set(cacheKey, results);
         
@@ -217,7 +218,7 @@ export default function ImportFromWikiPage() {
                     government: countryData?.government
                   };
                 } catch (parseError) {
-                  console.warn(`Failed to parse additional data for ${result.title}:`, parseError);
+                  // Additional data parsing failed, continue without it
                 }
                 
                 return { 
@@ -226,12 +227,16 @@ export default function ImportFromWikiPage() {
                   ...additionalData
                 };
               } catch (error) {
-                console.error(`Failed to get flag for ${result.title}:`, error);
                 return { ...result, flagUrl: null };
               }
             })
           );
-          
+
+          // Check again after async operations
+          if (requestId !== searchRequestIdRef.current) {
+            return; // Discard stale results
+          }
+
           // Update cache with enhanced data
           searchCache.set(cacheKey, resultsWithFlags);
           setSearchResults(resultsWithFlags);
@@ -243,13 +248,18 @@ export default function ImportFromWikiPage() {
           setCurrentPage(1);
         }
       } catch (error) {
-        console.error('Search failed:', error);
-        setError(`Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        setSearchResults([]);
-        setDisplayedResults([]);
-        setCurrentPage(1);
+        // Only show error if this is still the latest request
+        if (requestId === searchRequestIdRef.current) {
+          setError(`Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          setSearchResults([]);
+          setDisplayedResults([]);
+          setCurrentPage(1);
+        }
       } finally {
-        setIsSearching(false);
+        // Only update loading state if this is still the latest request
+        if (requestId === searchRequestIdRef.current) {
+          setIsSearching(false);
+        }
       }
     }, 500); // 500ms debounce
 
@@ -268,17 +278,10 @@ export default function ImportFromWikiPage() {
     }, 200);
 
     try {
-      console.log('Parsing infobox for:', {
-        pageName: result.title,
-        site: selectedSite.name
-      });
-      
       const data = await parseInfoboxMutation.mutateAsync({
         pageName: result.title,
         site: selectedSite.name as "ixwiki" | "iiwiki" | "althistory"
       });
-
-      console.log('Parsed data:', data);
       
       // Store flag URL for dynamic island
       if (data?.flagUrl) {
@@ -291,7 +294,6 @@ export default function ImportFromWikiPage() {
         setError('Could not parse data from this page.');
       }
     } catch (error) {
-      console.error('Parse failed:', error);
       setError(`Failed to parse data: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
@@ -300,7 +302,7 @@ export default function ImportFromWikiPage() {
 
   const handleCountryPreview = (result: SearchResult) => {
     // This is called when a country is selected for preview
-    console.log('Country preview requested for:', result.title);
+    // Preview logic handled in component rendering
   };
 
   const handleContinueWithCountry = (result: SearchResult) => {
@@ -345,11 +347,12 @@ export default function ImportFromWikiPage() {
         _wikiSourceName: selectedSite.name,
       };
 
-      localStorage.setItem('builder_imported_data', JSON.stringify(enhancedData));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('builder_imported_data', JSON.stringify(enhancedData));
+      }
       router.push(createUrl('/builder?import=true'));
 
     } catch (error) {
-      console.error('Wiki import failed:', error);
       setError(`Failed to process wiki import: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
@@ -366,7 +369,7 @@ export default function ImportFromWikiPage() {
 
 
   return (
-    <>
+    <BuilderErrorBoundary>
       {/* Background Pattern - Full viewport */}
       <div className="fixed inset-0 overflow-hidden z-0">
         <InteractiveGridPattern
@@ -379,7 +382,7 @@ export default function ImportFromWikiPage() {
       </div>
 
       <div className="min-h-screen relative z-10" style={{ backgroundColor: 'var(--color-bg-primary)' }}>
-        <div className="container mx-auto p-6 max-w-6xl pt-12">
+        <div className="container mx-auto p-6 max-w-screen-2xl pt-12">
           {/* Header */}
           <ImportPageHeader onBackClick={() => router.push(createUrl('/builder'))} />
 
@@ -496,6 +499,6 @@ export default function ImportFromWikiPage() {
           </div>
         </div>
       </div>
-    </>
+    </BuilderErrorBoundary>
   );
 }

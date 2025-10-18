@@ -2,8 +2,9 @@
 export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect } from 'react';
-import { AtomicBuilderPageEnhanced } from "./components/enhanced/AtomicBuilderPageEnhanced";
+import { AtomicBuilderPage } from "./components/enhanced/AtomicBuilderPage";
 import { BuilderOnboardingWizard } from './components/BuilderOnboardingWizard';
+import { BuilderErrorBoundary } from './components/BuilderErrorBoundary';
 import { useRouter } from 'next/navigation';
 import { createUrl } from "~/lib/url-utils";
 
@@ -27,14 +28,16 @@ export default function CreateCountryBuilder() {
     router.push(createUrl('/builder/import'));
   };
 
-  if (isBuilding) {
-    return <AtomicBuilderPageEnhanced onBackToIntro={handleBackToIntro} />;
-  }
-
   return (
-    <BuilderOnboardingWizard 
-      onStartBuilding={handleStartBuilding}
-      onSkipToImport={handleSkipToImport}
-    />
+    <BuilderErrorBoundary>
+      {isBuilding ? (
+        <AtomicBuilderPage onBackToIntro={handleBackToIntro} />
+      ) : (
+        <BuilderOnboardingWizard
+          onStartBuilding={handleStartBuilding}
+          onSkipToImport={handleSkipToImport}
+        />
+      )}
+    </BuilderErrorBoundary>
   );
 }

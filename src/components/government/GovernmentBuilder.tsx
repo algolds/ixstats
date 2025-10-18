@@ -9,7 +9,6 @@ import { Alert, AlertDescription } from '~/components/ui/alert';
 import { 
   Building2, 
   Plus, 
-  Save, 
   Eye, 
   AlertTriangle, 
   CheckCircle,
@@ -17,10 +16,17 @@ import {
   DollarSign,
   Receipt,
   ArrowLeft,
-  ArrowRight
+  ArrowRight,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useGovernmentBuilderAutoSync } from '~/hooks/useBuilderAutoSync';
 import { ConflictWarningDialog, SyncStatusIndicator } from '~/components/builders/ConflictWarningDialog';
+import { SuggestionsPanel, type SuggestionItem } from '~/components/builders/SuggestionsPanel';
+import { computeGovernmentSuggestions } from '~/components/builders/suggestions/utils';
+import { useIntelligenceWebSocket } from '~/hooks/useIntelligenceWebSocket';
+import { IxTime } from '~/lib/ixtime';
 
 // Import atomic components
 import { GovernmentStructureForm } from './atoms/GovernmentStructureForm';
@@ -39,6 +45,7 @@ import type {
   DepartmentTemplate,
   GovernmentTemplate
 } from '~/types/government';
+import { getGovernmentTemplates } from './templates/governmentTemplates';
 
 interface GovernmentBuilderProps {
   initialData?: Partial<GovernmentBuilderState>;
@@ -49,155 +56,12 @@ interface GovernmentBuilderProps {
   hideSaveButton?: boolean;
   countryId?: string;
   enableAutoSync?: boolean;
+  gdpData?: {
+    nominalGDP: number;
+    countryName?: string;
+  };
 }
 
-// Enhanced Government Templates with Atomic Components
-const governmentTemplates: GovernmentTemplate[] = [
-  {
-    name: 'Caphirian Imperial Administration',
-    governmentType: 'Constitutional Monarchy',
-    description: 'Complex administrative structure with Imperial oversight and provincial autonomy',
-    fiscalYear: 'Calendar Year',
-    departments: [
-      {
-        name: 'Imperial Ministry of State',
-        shortName: 'IMS',
-        category: 'Interior',
-        description: 'Central coordination of imperial policy and provincial oversight',
-        ministerTitle: 'Imperial Chancellor',
-        organizationalLevel: 'Ministry',
-        icon: 'Crown',
-        color: '#7c2d12',
-        priority: 100,
-        functions: ['Imperial Policy Coordination', 'Provincial Relations', 'Constitutional Affairs', 'Imperial Ceremonies'],
-        typicalBudgetPercent: 8,
-        subBudgets: [
-          { name: 'Imperial Court', budgetType: 'Operations', percent: 25, isRecurring: true, priority: 'Critical' },
-          { name: 'Provincial Liaison', budgetType: 'Personnel', percent: 35, isRecurring: true, priority: 'High' },
-          { name: 'Policy Development', budgetType: 'Operations', percent: 40, isRecurring: true, priority: 'High' }
-        ],
-        kpis: [
-          { name: 'Imperial Unity Index', description: 'Measure of provincial cooperation and imperial cohesion', targetValue: 85, unit: '%', frequency: 'Quarterly', trend: 'Up', category: 'Performance' }
-        ]
-      },
-      {
-        name: 'Ministry of Defense',
-        shortName: 'MoD',
-        category: 'Defense',
-        description: 'Imperial military forces and territorial defense',
-        ministerTitle: 'Minister of Defense',
-        organizationalLevel: 'Ministry',
-        icon: 'Shield',
-        color: '#dc2626',
-        priority: 95,
-        functions: ['Military Operations', 'Defense Policy', 'National Security', 'Veterans Affairs'],
-        typicalBudgetPercent: 18,
-        subBudgets: [
-          { name: 'Active Forces', budgetType: 'Personnel', percent: 45, isRecurring: true, priority: 'Critical' },
-          { name: 'Equipment & Procurement', budgetType: 'Capital', percent: 30, isRecurring: false, priority: 'High' },
-          { name: 'Operations & Training', budgetType: 'Operations', percent: 20, isRecurring: true, priority: 'High' },
-          { name: 'Veterans Support', budgetType: 'Personnel', percent: 5, isRecurring: true, priority: 'Medium' }
-        ],
-        kpis: [
-          { name: 'Defense Readiness', description: 'Overall military readiness and capability', targetValue: 90, unit: '%', frequency: 'Monthly', trend: 'Up', category: 'Performance' },
-          { name: 'Recruitment Rate', description: 'Success rate in meeting recruitment targets', targetValue: 95, unit: '%', frequency: 'Monthly', trend: 'Stable', category: 'Performance' }
-        ]
-      },
-      {
-        name: 'Ministry of Imperial Finance',
-        shortName: 'MIF',
-        category: 'Finance',
-        description: 'Economic policy, taxation, and imperial treasury management',
-        ministerTitle: 'Chancellor of the Imperial Treasury',
-        organizationalLevel: 'Ministry',
-        icon: 'Coins',
-        color: '#7c3aed',
-        priority: 98,
-        functions: ['Tax Policy', 'Budget Management', 'Economic Planning', 'Currency Management', 'Trade Policy'],
-        typicalBudgetPercent: 6,
-        subBudgets: [
-          { name: 'Tax Administration', budgetType: 'Personnel', percent: 40, isRecurring: true, priority: 'Critical' },
-          { name: 'Economic Analysis', budgetType: 'Operations', percent: 25, isRecurring: true, priority: 'High' },
-          { name: 'Financial Systems', budgetType: 'Capital', percent: 20, isRecurring: false, priority: 'High' },
-          { name: 'International Relations', budgetType: 'Operations', percent: 15, isRecurring: true, priority: 'Medium' }
-        ],
-        kpis: [
-          { name: 'Tax Collection Efficiency', description: 'Percentage of assessed taxes collected', targetValue: 92, unit: '%', frequency: 'Monthly', trend: 'Up', category: 'Financial' },
-          { name: 'Budget Variance', description: 'Deviation from planned budget allocations', targetValue: 5, unit: '%', frequency: 'Quarterly', trend: 'Down', category: 'Financial' }
-        ]
-      },
-      {
-        name: 'Ministry of Education',
-        shortName: 'MoE',
-        category: 'Education',
-        description: 'Educational policy and administration',
-        ministerTitle: 'Minister of Education',
-        organizationalLevel: 'Ministry',
-        icon: 'GraduationCap',
-        color: '#2563eb',
-        priority: 95,
-        functions: ['Educational Policy', 'School Administration', 'Higher Education'],
-        typicalBudgetPercent: 18,
-        subBudgets: [
-          { name: 'Teacher Salaries', budgetType: 'Personnel', percent: 55, isRecurring: true, priority: 'Critical' },
-          { name: 'Infrastructure', budgetType: 'Capital', percent: 25, isRecurring: false, priority: 'High' },
-          { name: 'Programs', budgetType: 'Operations', percent: 20, isRecurring: true, priority: 'High' }
-        ],
-        kpis: [
-          { name: 'Literacy Rate', description: 'National literacy rate', targetValue: 98, unit: '%', frequency: 'Annually', trend: 'Up', category: 'Performance' }
-        ]
-      },
-      {
-        name: 'Ministry of Health',
-        shortName: 'MoH',
-        category: 'Health',
-        description: 'Public health services and policy',
-        ministerTitle: 'Minister of Health',
-        organizationalLevel: 'Ministry',
-        icon: 'Heart',
-        color: '#059669',
-        priority: 92,
-        functions: ['Healthcare Policy', 'Public Health', 'Medical Services'],
-        typicalBudgetPercent: 16,
-        subBudgets: [
-          { name: 'Medical Staff', budgetType: 'Personnel', percent: 50, isRecurring: true, priority: 'Critical' },
-          { name: 'Medical Equipment', budgetType: 'Capital', percent: 30, isRecurring: false, priority: 'High' },
-          { name: 'Public Health Programs', budgetType: 'Operations', percent: 20, isRecurring: true, priority: 'High' }
-        ],
-        kpis: [
-          { name: 'Life Expectancy', description: 'Average life expectancy', targetValue: 82, unit: 'years', frequency: 'Annually', trend: 'Up', category: 'Performance' }
-        ]
-      },
-      {
-        name: 'Ministry of Finance',
-        shortName: 'MoF',
-        category: 'Finance',
-        description: 'Economic policy and fiscal management',
-        ministerTitle: 'Chancellor of the Exchequer',
-        organizationalLevel: 'Ministry',
-        icon: 'Briefcase',
-        color: '#7c3aed',
-        priority: 98,
-        functions: ['Budget Management', 'Tax Policy', 'Economic Policy'],
-        typicalBudgetPercent: 8,
-        subBudgets: [
-          { name: 'Administration', budgetType: 'Personnel', percent: 40, isRecurring: true, priority: 'High' },
-          { name: 'Economic Programs', budgetType: 'Operations', percent: 35, isRecurring: true, priority: 'High' },
-          { name: 'Infrastructure', budgetType: 'Capital', percent: 25, isRecurring: false, priority: 'Medium' }
-        ],
-        kpis: [
-          { name: 'Fiscal Balance', description: 'Budget surplus/deficit ratio', targetValue: 2, unit: '% GDP', frequency: 'Quarterly', trend: 'Up', category: 'Financial' }
-        ]
-      }
-    ],
-    typicalRevenueSources: [
-      { name: 'Personal Income Tax', category: 'Direct Tax', rate: 25, collectionMethod: 'Payroll Deduction' },
-      { name: 'Corporate Income Tax', category: 'Direct Tax', rate: 20, collectionMethod: 'Annual Filing' },
-      { name: 'Value Added Tax', category: 'Indirect Tax', rate: 15, collectionMethod: 'Point of Sale' },
-      { name: 'Property Tax', category: 'Direct Tax', rate: 1.5, collectionMethod: 'Annual Assessment' }
-    ]
-  }
-];
 
 export function GovernmentBuilder({
   initialData,
@@ -207,9 +71,10 @@ export function GovernmentBuilder({
   isReadOnly = false,
   hideSaveButton = false,
   countryId,
-  enableAutoSync = false
+  enableAutoSync = false,
+  gdpData
 }: GovernmentBuilderProps) {
-  const [currentStep, setCurrentStep] = useState<'structure' | 'departments' | 'budget' | 'revenue' | 'preview'>('structure');
+  const [currentStep, setCurrentStep] = useState<'structure' | 'departments' | 'budget' | 'revenue'>('structure');
   const [localBuilderState, setLocalBuilderState] = useState<GovernmentBuilderState>({
     structure: {
       governmentName: '',
@@ -230,6 +95,8 @@ export function GovernmentBuilder({
   const [showConflictDialog, setShowConflictDialog] = useState(false);
   const [pendingSaveCallback, setPendingSaveCallback] = useState<(() => void) | null>(null);
   const [allCollapsed, setAllCollapsed] = useState(true); // default collapsed
+  const [budgetAllocationsCollapsed, setBudgetAllocationsCollapsed] = useState<Record<number, boolean>>({});
+  const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
 
   // Use auto-sync hook if enabled
   const {
@@ -247,13 +114,14 @@ export function GovernmentBuilder({
       onConflictDetected: (warnings) => {
         if (warnings.some(w => w.severity === 'critical' || w.severity === 'warning')) {
           setShowConflictDialog(true);
+          toast.warning('Government builder warnings detected');
         }
       },
       onSyncSuccess: (result) => {
-        console.log('Auto-sync successful:', result);
+        toast.success('Government changes saved');
       },
       onSyncError: (error) => {
-        console.error('Auto-sync error:', error);
+        toast.error(`Failed to save government changes: ${error.message}`);
       }
     }
   );
@@ -268,35 +136,82 @@ export function GovernmentBuilder({
     }
   }, [enableAutoSync, countryId, setAutoSyncState, setLocalBuilderState]);
 
-  // Validation
+  // Validation (expanded)
   const validateState = useCallback((): { isValid: boolean; errors: any } => {
     const errors: any = {};
 
-    // Validate structure
-    if (!builderState.structure.governmentName.trim()) {
+    // Structure
+    if (!builderState.structure.governmentName?.trim()) {
       errors.structure = errors.structure || [];
       errors.structure.push('Government name is required');
     }
-    if (builderState.structure.totalBudget <= 0) {
+    if ((builderState.structure.totalBudget ?? 0) <= 0) {
       errors.structure = errors.structure || [];
       errors.structure.push('Total budget must be greater than 0');
     }
+    if (!builderState.structure.budgetCurrency) {
+      errors.structure = errors.structure || [];
+      errors.structure.push('Currency is required');
+    }
+    if (!builderState.structure.fiscalYear) {
+      errors.structure = errors.structure || [];
+      errors.structure.push('Fiscal year is required');
+    }
 
-    // Validate departments
+    // Departments
     builderState.departments.forEach((dept, index) => {
-      if (!dept.name.trim()) {
+      const deptErrors: string[] = [];
+      if (!dept.name?.trim()) deptErrors.push('Department name is required');
+      if (!dept.category) deptErrors.push('Department category is required');
+      if (!dept.organizationalLevel) deptErrors.push('Organizational level is required');
+      if (dept.color && !/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(dept.color)) deptErrors.push('Color must be a valid hex');
+      if (dept.priority !== undefined && (dept.priority < 1 || dept.priority > 100)) deptErrors.push('Priority must be 1-100');
+      if (deptErrors.length > 0) {
         errors.departments = errors.departments || {};
-        errors.departments[index] = errors.departments[index] || [];
-        errors.departments[index].push('Department name is required');
+        errors.departments[index] = deptErrors;
       }
     });
 
-    // Validate budget allocations
-    const totalAllocatedPercent = builderState.budgetAllocations.reduce((sum, alloc) => sum + alloc.allocatedPercent, 0);
-    if (totalAllocatedPercent > 100) {
+    // Parent cycles (basic self-check)
+    builderState.departments.forEach((dept, index) => {
+      if (dept.parentDepartmentId && parseInt(dept.parentDepartmentId) === index) {
+        errors.departments = errors.departments || {};
+        errors.departments[index] = errors.departments[index] || [];
+        errors.departments[index].push('Department cannot be its own parent');
+      }
+    });
+
+    // Budget allocations: totals and coherence
+    const totalAllocatedPercent = builderState.budgetAllocations.reduce((sum, alloc) => sum + (alloc.allocatedPercent || 0), 0);
+    if (totalAllocatedPercent > 100 + 1e-6) {
       errors.budget = errors.budget || [];
       errors.budget.push('Total budget allocation exceeds 100%');
     }
+    // Ensure amounts and percents coherent with totalBudget
+    for (const alloc of builderState.budgetAllocations) {
+      const expectedAmount = (builderState.structure.totalBudget * (alloc.allocatedPercent || 0)) / 100;
+      const actualAmount = alloc.allocatedAmount || 0;
+      const tolerance = Math.max(1, builderState.structure.totalBudget * 0.0001); // More tolerant tolerance
+      
+      if (Number.isFinite(expectedAmount) && Math.abs(actualAmount - expectedAmount) > tolerance) {
+        errors.budget = errors.budget || [];
+        errors.budget.push('Allocation amount should match percentage of total budget');
+        break;
+      }
+    }
+
+    // Revenue sources must be non-negative; percent computed later in preview
+    builderState.revenueSources.forEach((r, i) => {
+      const rErrors: string[] = [];
+      if (!r.name?.trim()) rErrors.push('Revenue name is required');
+      if (!r.category) rErrors.push('Revenue category is required');
+      if ((r.revenueAmount ?? 0) < 0) rErrors.push('Revenue amount cannot be negative');
+      if (r.rate !== undefined && (r.rate < 0 || r.rate > 100)) rErrors.push('Tax rate must be between 0 and 100');
+      if (rErrors.length > 0) {
+        errors.revenue = errors.revenue || {};
+        errors.revenue[i] = rErrors;
+      }
+    });
 
     const isValid = Object.keys(errors).length === 0;
     return { isValid, errors };
@@ -309,23 +224,167 @@ export function GovernmentBuilder({
     }
   }, [builderState, onChange]);
 
-  const handleStructureChange = (structure: GovernmentStructureInput) => {
+  const handleStructureChange = React.useCallback((structure: GovernmentStructureInput) => {
     setBuilderState((prev: GovernmentBuilderState) => ({ ...prev, structure }));
-  };
+  }, []);
 
-  const handleDepartmentsChange = (departments: DepartmentInput[]) => {
+  const handleDepartmentsChange = React.useCallback((departments: DepartmentInput[]) => {
     setBuilderState((prev: GovernmentBuilderState) => ({ ...prev, departments }));
-  };
+  }, []);
 
-  const handleBudgetChange = (budgetAllocations: BudgetAllocationInput[]) => {
-    setBuilderState((prev: GovernmentBuilderState) => ({ ...prev, budgetAllocations }));
-  };
+  const handleBudgetChange = React.useCallback((budgetAllocations: BudgetAllocationInput[]) => {
+    setBuilderState((prev: GovernmentBuilderState) => {
+      // Auto-fix any amount/percentage mismatches due to rounding
+      const fixedAllocations = budgetAllocations.map(alloc => {
+        const expectedAmount = Math.round((prev.structure.totalBudget * (alloc.allocatedPercent || 0)) / 100);
+        const actualAmount = alloc.allocatedAmount || 0;
+        const tolerance = Math.max(1, prev.structure.totalBudget * 0.0001);
 
-  const handleRevenueChange = (revenueSources: RevenueSourceInput[]) => {
+        // If there's a small mismatch, fix it by updating the amount to match the percentage
+        if (Math.abs(actualAmount - expectedAmount) <= tolerance && actualAmount !== expectedAmount) {
+          return { ...alloc, allocatedAmount: expectedAmount };
+        }
+
+        return alloc;
+      });
+
+      return { ...prev, budgetAllocations: fixedAllocations };
+    });
+  }, []);
+
+  const handleRevenueChange = React.useCallback((revenueSources: RevenueSourceInput[]) => {
     setBuilderState((prev: GovernmentBuilderState) => ({ ...prev, revenueSources }));
-  };
+  }, []);
 
-  const addDepartment = () => {
+  // Budget allocation collapse functions
+  const toggleBudgetAllocationCollapse = React.useCallback((index: number) => {
+    setBudgetAllocationsCollapsed(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  }, []);
+
+  const collapseAllBudgetAllocations = React.useCallback(() => {
+    setBuilderState((prev: GovernmentBuilderState) => {
+      const collapsed: Record<number, boolean> = {};
+      prev.departments.forEach((_, index) => {
+        collapsed[index] = true;
+      });
+      setBudgetAllocationsCollapsed(collapsed);
+      return prev;
+    });
+  }, []);
+
+  const expandAllBudgetAllocations = React.useCallback(() => {
+    setBudgetAllocationsCollapsed({});
+  }, []);
+
+  const fixBudgetAllocations = React.useCallback(() => {
+    setBuilderState((prev: GovernmentBuilderState) => {
+      const totalBudget = prev.structure.totalBudget;
+      const numDepartments = prev.departments.length;
+
+      if (numDepartments === 0) {
+        toast.error('No departments to allocate budget to');
+        return prev;
+      }
+
+      // Create or update budget allocations for ALL departments
+      // This ensures every department has an allocation entry
+      const allocationMap = new Map<string, BudgetAllocationInput>();
+
+      // First, map existing allocations by departmentId
+      prev.budgetAllocations.forEach(alloc => {
+        allocationMap.set(alloc.departmentId, alloc);
+      });
+
+      // Ensure every department has an allocation entry
+      prev.departments.forEach((dept, index) => {
+        const deptId = index.toString();
+        if (!allocationMap.has(deptId)) {
+          allocationMap.set(deptId, {
+            departmentId: deptId,
+            budgetYear: new Date(IxTime.getCurrentIxTime()).getFullYear(),
+            allocatedAmount: 0,
+            allocatedPercent: 0,
+            notes: ''
+          });
+        }
+      });
+
+      // Convert map back to array, maintaining department order
+      const orderedAllocations = prev.departments.map((dept, index) =>
+        allocationMap.get(index.toString())!
+      );
+
+      // Calculate total current allocation
+      const currentTotalPercent = orderedAllocations.reduce(
+        (sum, alloc) => sum + (alloc.allocatedPercent || 0),
+        0
+      );
+
+      let fixedAllocations: BudgetAllocationInput[];
+
+      // If already at or near 100%, just fix the amounts
+      if (Math.abs(currentTotalPercent - 100) < 0.1) {
+        fixedAllocations = orderedAllocations.map(alloc => {
+          const expectedAmount = Math.round((totalBudget * (alloc.allocatedPercent || 0)) / 100);
+          return { ...alloc, allocatedAmount: expectedAmount };
+        });
+        toast.success('Budget allocations synchronized');
+      }
+      // Auto-balance: distribute percentages to total 100%
+      // If there are existing percentages, scale them proportionally
+      else if (currentTotalPercent > 0) {
+        const scaleFactor = 100 / currentTotalPercent;
+        let runningTotal = 0;
+        fixedAllocations = orderedAllocations.map((alloc, index) => {
+          let expectedPercent: number;
+          if (index === orderedAllocations.length - 1) {
+            // Last department gets remainder to ensure exact 100%
+            expectedPercent = 100 - runningTotal;
+          } else {
+            expectedPercent = (alloc.allocatedPercent || 0) * scaleFactor;
+            runningTotal += expectedPercent;
+          }
+          const expectedAmount = Math.round((totalBudget * expectedPercent) / 100);
+          return {
+            ...alloc,
+            allocatedPercent: expectedPercent,
+            allocatedAmount: expectedAmount
+          };
+        });
+        toast.success(`Budget balanced to 100% across ${numDepartments} departments`);
+      } else {
+        // No existing percentages - distribute evenly
+        const evenPercent = 100 / numDepartments;
+        fixedAllocations = orderedAllocations.map((alloc, index) => {
+          const allocPercent = index === orderedAllocations.length - 1
+            ? 100 - (evenPercent * (numDepartments - 1)) // Last department gets remainder
+            : evenPercent;
+          const expectedAmount = Math.round((totalBudget * allocPercent) / 100);
+          return {
+            ...alloc,
+            allocatedPercent: allocPercent,
+            allocatedAmount: expectedAmount
+          };
+        });
+        toast.success(`Budget distributed evenly: ${evenPercent.toFixed(1)}% per department`);
+      }
+
+      return { ...prev, budgetAllocations: fixedAllocations };
+    });
+  }, []);
+
+  // Auto-collapse budget allocations when departments change
+  React.useEffect(() => {
+    if (builderState.departments.length > 3) {
+      // Auto-collapse if more than 3 departments
+      collapseAllBudgetAllocations();
+    }
+  }, [builderState.departments.length]);
+
+  const addDepartment = React.useCallback(() => {
     const newDepartment: DepartmentInput = {
       name: '',
       category: 'Other',
@@ -340,14 +399,54 @@ export function GovernmentBuilder({
       ...prev,
       departments: [...prev.departments, newDepartment]
     }));
-  };
+  }, []);
 
-  const removeDepartment = (index: number) => {
+  const removeDepartment = React.useCallback((index: number) => {
     setBuilderState((prev: GovernmentBuilderState) => ({
       ...prev,
       departments: prev.departments.filter((_: DepartmentInput, i: number) => i !== index)
     }));
-  };
+  }, []);
+
+  // Memoized handler for updating a single department
+  const updateDepartment = React.useCallback((index: number, updated: DepartmentInput) => {
+    setBuilderState((prev: GovernmentBuilderState) => {
+      const newDepartments = [...prev.departments];
+      newDepartments[index] = updated;
+      return { ...prev, departments: newDepartments };
+    });
+  }, []);
+
+  // Memoized handler for updating a single budget allocation
+  const updateBudgetAllocation = React.useCallback((index: number, updated: BudgetAllocationInput) => {
+    setBuilderState((prev: GovernmentBuilderState) => {
+      const newAllocations = [...prev.budgetAllocations];
+      const existingIndex = newAllocations.findIndex(
+        a => a.departmentId === index.toString()
+      );
+
+      if (existingIndex >= 0) {
+        newAllocations[existingIndex] = updated;
+      } else {
+        newAllocations.push(updated);
+      }
+
+      // Auto-fix any amount/percentage mismatches due to rounding
+      const fixedAllocations = newAllocations.map(alloc => {
+        const expectedAmount = Math.round((prev.structure.totalBudget * (alloc.allocatedPercent || 0)) / 100);
+        const actualAmount = alloc.allocatedAmount || 0;
+        const tolerance = Math.max(1, prev.structure.totalBudget * 0.0001);
+
+        if (Math.abs(actualAmount - expectedAmount) <= tolerance && actualAmount !== expectedAmount) {
+          return { ...alloc, allocatedAmount: expectedAmount };
+        }
+
+        return alloc;
+      });
+
+      return { ...prev, budgetAllocations: fixedAllocations };
+    });
+  }, []);
 
   const applyTemplate = (template: GovernmentTemplate) => {
     setBuilderState((prev: GovernmentBuilderState) => ({
@@ -368,7 +467,7 @@ export function GovernmentBuilder({
       })),
       budgetAllocations: template.departments.map(dept => ({
         departmentId: `temp-${dept.name}`,
-        budgetYear: new Date().getFullYear(),
+        budgetYear: new Date(IxTime.getCurrentIxTime()).getFullYear(),
         allocatedAmount: (prev.structure.totalBudget * dept.typicalBudgetPercent) / 100,
         allocatedPercent: dept.typicalBudgetPercent,
         notes: `Initial allocation for ${dept.name}`
@@ -429,26 +528,30 @@ export function GovernmentBuilder({
     setPendingSaveCallback(null);
   };
 
-  const handlePreview = () => {
-    const validation = validateState();
-    setBuilderState((prev: GovernmentBuilderState) => ({ ...prev, ...validation }));
-    
-    if (onPreview) {
-      onPreview({ ...builderState, ...validation });
-    }
-    setCurrentStep('preview');
-  };
 
   const steps = [
     { id: 'structure', label: 'Government Structure', icon: Building2 },
     { id: 'departments', label: 'Departments', icon: Users },
     { id: 'budget', label: 'Budget Allocation', icon: DollarSign },
-    { id: 'revenue', label: 'Revenue Sources', icon: Receipt },
-    { id: 'preview', label: 'Preview & Save', icon: Eye }
+    { id: 'revenue', label: 'Revenue Sources', icon: Receipt }
   ];
 
   const currentStepIndex = steps.findIndex(step => step.id === currentStep);
   const validation = validateState();
+
+  // Basic, non-destructive suggestions (behind flag)
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS !== 'true') return;
+    setSuggestions(computeGovernmentSuggestions(builderState as any));
+  }, [builderState]);
+
+  // Recompute suggestions on intelligence updates
+  const intel = useIntelligenceWebSocket({ countryId });
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS !== 'true') return;
+    if (!intel.latestUpdate) return;
+    setSuggestions(computeGovernmentSuggestions(builderState as any));
+  }, [intel.latestUpdate, builderState]);
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -464,14 +567,7 @@ export function GovernmentBuilder({
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">
-            Government Builder
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Design and configure your government structure, departments, and budget
-          </p>
-        </div>
+       
         <div className="flex items-center gap-3">
           {enableAutoSync && countryId && (
             <SyncStatusIndicator
@@ -489,23 +585,6 @@ export function GovernmentBuilder({
           >
             Use Template
           </Button>
-          <Button
-            variant="outline"
-            onClick={handlePreview}
-            disabled={builderState.departments.length === 0}
-          >
-            <Eye className="h-4 w-4 mr-2" />
-            Preview
-          </Button>
-          {!hideSaveButton && (
-            <Button
-              onClick={handleSave}
-              disabled={!validation.isValid || isSaving || isReadOnly}
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {isSaving ? 'Saving...' : 'Save'}
-            </Button>
-          )}
         </div>
       </div>
 
@@ -515,23 +594,28 @@ export function GovernmentBuilder({
           const StepIcon = step.icon;
           const isActive = step.id === currentStep;
           const isCompleted = index < currentStepIndex;
+          const hasErrors = validation.errors[step.id] && validation.errors[step.id].length > 0;
+          const hasStepErrors = step.id === 'departments' && validation.errors.departments && Object.keys(validation.errors.departments).length > 0;
 
           return (
             <div key={step.id} className="flex items-center">
               <button
                 onClick={() => setCurrentStep(step.id as any)}
                 disabled={isReadOnly}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors relative ${
                   isActive
                     ? 'bg-primary text-primary-foreground'
-                    : isCompleted
+                    : isCompleted && !hasErrors && !hasStepErrors
                       ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
-                      : 'hover:bg-muted text-muted-foreground'
+                      : hasErrors || hasStepErrors
+                        ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50'
+                        : 'hover:bg-muted text-muted-foreground'
                 }`}
               >
                 <StepIcon className="h-4 w-4" />
                 <span className="text-sm font-medium">{step.label}</span>
-                {isCompleted && <CheckCircle className="h-4 w-4" />}
+                {isCompleted && !hasErrors && !hasStepErrors && <CheckCircle className="h-4 w-4" />}
+                {(hasErrors || hasStepErrors) && <AlertTriangle className="h-4 w-4" />}
               </button>
               {index < steps.length - 1 && (
                 <ArrowRight className="h-4 w-4 mx-2 text-muted-foreground" />
@@ -562,6 +646,31 @@ export function GovernmentBuilder({
         </Alert>
       )}
 
+      {/* Intelligent Suggestions */}
+      {process.env.NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS === 'true' && suggestions.length > 0 && (
+        <SuggestionsPanel
+          suggestions={suggestions}
+          onApply={(s) => {
+            if (s.id === 'budget-cap') {
+              // Simple apply: scale down the largest allocation by the overage amount
+              const over = builderState.budgetAllocations.reduce((sum, a) => sum + (a.allocatedPercent || 0), 0) - 100;
+              if (over > 0) {
+                const idx = builderState.budgetAllocations.reduce((maxIdx, a, i, arr) => (a.allocatedPercent > arr[maxIdx].allocatedPercent ? i : maxIdx), 0);
+                const updated = [...builderState.budgetAllocations];
+                const target = { ...updated[idx] } as any;
+                target.allocatedPercent = Math.max(0, (target.allocatedPercent || 0) - over);
+                target.allocatedAmount = (builderState.structure.totalBudget * target.allocatedPercent) / 100;
+                updated[idx] = target;
+                handleBudgetChange(updated);
+              }
+            }
+            setSuggestions((prev) => prev.filter((x) => x.id !== s.id));
+          }}
+          onDismiss={(id) => setSuggestions((prev) => prev.filter((x) => x.id !== id))}
+          isReadOnly={isReadOnly}
+        />
+      )}
+
       {/* Step Content */}
       <div className="space-y-6">
         {currentStep === 'structure' && (
@@ -569,6 +678,7 @@ export function GovernmentBuilder({
             data={builderState.structure}
             onChange={handleStructureChange}
             isReadOnly={isReadOnly}
+            gdpData={gdpData}
           />
         )}
 
@@ -604,16 +714,13 @@ export function GovernmentBuilder({
                   <div className="p-4">
                     <DepartmentForm
                       data={department}
-                      onChange={(updated) => {
-                        const newDepartments = [...builderState.departments];
-                        newDepartments[index] = updated;
-                        handleDepartmentsChange(newDepartments);
-                      }}
+                      onChange={(updated) => updateDepartment(index, updated)}
                       onDelete={() => removeDepartment(index)}
                       isReadOnly={isReadOnly}
                       availableParents={builderState.departments
                         .map((d, i) => ({ id: i.toString(), name: d.name }))
                         .filter((d, i) => i !== index)}
+                      errors={validation.errors.departments?.[index] ? { name: validation.errors.departments[index] } : {}}
                     />
                   </div>
                 </details>
@@ -644,9 +751,42 @@ export function GovernmentBuilder({
 
         {currentStep === 'budget' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-semibold text-foreground">
-              Budget Allocation
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-semibold text-foreground">
+                Budget Allocation
+              </h2>
+              {builderState.departments.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={expandAllBudgetAllocations}
+                    className="text-xs"
+                  >
+                    <ChevronDown className="h-3 w-3 mr-1" />
+                    Expand All
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={collapseAllBudgetAllocations}
+                    className="text-xs"
+                  >
+                    <ChevronRight className="h-3 w-3 mr-1" />
+                    Collapse All
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={fixBudgetAllocations}
+                    className="text-xs text-blue-600 hover:text-blue-700"
+                  >
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Fix Allocations
+                  </Button>
+                </div>
+              )}
+            </div>
 
             {builderState.departments.length === 0 ? (
               <Alert>
@@ -688,7 +828,7 @@ export function GovernmentBuilder({
                   );
                   const allocation: BudgetAllocationInput = existingAllocation || {
                     departmentId: index.toString(),
-                    budgetYear: new Date().getFullYear(),
+                    budgetYear: new Date(IxTime.getCurrentIxTime()).getFullYear(),
                     allocatedAmount: 0,
                     allocatedPercent: 0,
                     notes: ''
@@ -698,25 +838,14 @@ export function GovernmentBuilder({
                     <BudgetAllocationForm
                       key={index}
                       data={allocation}
-                      onChange={(updated) => {
-                        const newAllocations = [...builderState.budgetAllocations];
-                        const existingIndex = newAllocations.findIndex(
-                          a => a.departmentId === index.toString()
-                        );
-                        
-                        if (existingIndex >= 0) {
-                          newAllocations[existingIndex] = updated;
-                        } else {
-                          newAllocations.push(updated);
-                        }
-                        
-                        handleBudgetChange(newAllocations);
-                      }}
+                      onChange={(updated) => updateBudgetAllocation(index, updated)}
                       departmentName={department.name}
                       departmentColor={department.color}
                       totalBudget={builderState.structure.totalBudget}
                       currency={builderState.structure.budgetCurrency}
                       isReadOnly={isReadOnly}
+                      isCollapsed={budgetAllocationsCollapsed[index] || false}
+                      onToggleCollapse={() => toggleBudgetAllocationCollapse(index)}
                     />
                   );
                 })}
@@ -742,61 +871,6 @@ export function GovernmentBuilder({
           </div>
         )}
 
-        {currentStep === 'preview' && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-semibold text-foreground">
-              Government Overview
-            </h2>
-
-            {/* Mock preview with budget dashboard */}
-            <BudgetManagementDashboard
-              governmentStructure={{
-                id: 'preview',
-                countryId: 'preview',
-                ...builderState.structure,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                departments: [],
-                budgetAllocations: [],
-                revenueSources: []
-              }}
-              departments={builderState.departments.map((d, i) => ({
-                id: i.toString(),
-                governmentStructureId: 'preview',
-                ...d,
-                isActive: true,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                subDepartments: [],
-                budgetAllocations: [],
-                subBudgets: []
-              }))}
-              budgetAllocations={builderState.budgetAllocations.map(a => ({
-                id: a.departmentId,
-                governmentStructureId: 'preview',
-                ...a,
-                spentAmount: a.allocatedAmount * 0.8, // Mock spent amount
-                encumberedAmount: a.allocatedAmount * 0.1,
-                availableAmount: a.allocatedAmount * 0.1,
-                budgetStatus: 'In Use' as const,
-                lastReviewed: new Date(),
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                department: builderState.departments.find((_, i) => i.toString() === a.departmentId)! as any
-              }))}
-              revenueSources={builderState.revenueSources.map((r, i) => ({
-                id: i.toString(),
-                governmentStructureId: 'preview',
-                ...r,
-                isActive: true,
-                revenuePercent: builderState.structure.totalBudget > 0 ? (r.revenueAmount / builderState.structure.totalBudget) * 100 : 0,
-                createdAt: new Date(),
-                updatedAt: new Date()
-              }))}
-              isReadOnly={true}
-            />
-          </div>
-        )}
       </div>
 
       {/* Template Modal */}
@@ -813,7 +887,7 @@ export function GovernmentBuilder({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {governmentTemplates.map((template, index) => (
+              {getGovernmentTemplates().map((template, index) => (
                 <Card key={index} className="hover:shadow-lg transition-shadow cursor-pointer">
                   <CardHeader>
                     <CardTitle>{template.name}</CardTitle>

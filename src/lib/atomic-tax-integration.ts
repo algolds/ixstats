@@ -101,6 +101,12 @@ export const TAX_EFFECTIVENESS_MODIFIERS: Record<ComponentType, {
     auditCapacity: 0.80,
     description: "Religious legitimacy creates moral obligation to pay taxes"
   },
+  [ComponentType.INSTITUTIONAL_LEGITIMACY]: {
+    collectionEfficiency: 1.15,
+    complianceRate: 1.40,
+    auditCapacity: 1.10,
+    description: "Institutional legitimacy builds trust in the tax system"
+  },
 
   // Institution Components
   [ComponentType.PROFESSIONAL_BUREAUCRACY]: {
@@ -164,6 +170,80 @@ export const TAX_EFFECTIVENESS_MODIFIERS: Record<ComponentType, {
     complianceRate: 0.70,
     auditCapacity: 1.30,
     description: "Military enforcement maximizes collection but reduces voluntary compliance"
+  },
+
+  // New Government Type Components
+  [ComponentType.DIGITAL_GOVERNMENT]: {
+    collectionEfficiency: 1.35,
+    complianceRate: 1.15,
+    auditCapacity: 1.40,
+    description: "Digital government enables highly efficient automated tax collection"
+  },
+  [ComponentType.MINIMAL_GOVERNMENT]: {
+    collectionEfficiency: 0.80,
+    complianceRate: 0.90,
+    auditCapacity: 0.70,
+    description: "Minimal government has limited tax collection infrastructure"
+  },
+  [ComponentType.PRIVATE_SECTOR_LEADERSHIP]: {
+    collectionEfficiency: 0.95,
+    complianceRate: 1.05,
+    auditCapacity: 0.85,
+    description: "Private sector focus emphasizes efficiency over enforcement"
+  },
+  [ComponentType.SOCIAL_DEMOCRACY]: {
+    collectionEfficiency: 1.15,
+    complianceRate: 1.30,
+    auditCapacity: 1.10,
+    description: "Social democracy builds strong tax compliance through social contract"
+  },
+  [ComponentType.COMPREHENSIVE_WELFARE]: {
+    collectionEfficiency: 1.10,
+    complianceRate: 1.25,
+    auditCapacity: 1.05,
+    description: "Comprehensive welfare requires effective tax collection systems"
+  },
+  [ComponentType.PUBLIC_SECTOR_LEADERSHIP]: {
+    collectionEfficiency: 1.20,
+    complianceRate: 1.10,
+    auditCapacity: 1.15,
+    description: "Strong public sector enables consistent tax policy implementation"
+  },
+  [ComponentType.ENVIRONMENTAL_FOCUS]: {
+    collectionEfficiency: 0.95,
+    complianceRate: 1.10,
+    auditCapacity: 0.90,
+    description: "Environmental focus may complicate tax structure but builds compliance"
+  },
+  [ComponentType.ECONOMIC_PLANNING]: {
+    collectionEfficiency: 1.25,
+    complianceRate: 1.05,
+    auditCapacity: 1.30,
+    description: "Economic planning requires strong tax revenue capacity"
+  },
+  [ComponentType.DEVELOPMENTAL_STATE]: {
+    collectionEfficiency: 1.22,
+    complianceRate: 1.15,
+    auditCapacity: 1.25,
+    description: "Developmental state prioritizes effective revenue collection for growth"
+  },
+  [ComponentType.WORKER_PROTECTION]: {
+    collectionEfficiency: 0.90,
+    complianceRate: 1.15,
+    auditCapacity: 0.85,
+    description: "Worker protection focus may complicate enforcement but builds trust"
+  },
+  [ComponentType.MERITOCRATIC_SYSTEM]: {
+    collectionEfficiency: 1.30,
+    complianceRate: 1.20,
+    auditCapacity: 1.35,
+    description: "Meritocratic systems maximize tax administration effectiveness"
+  },
+  [ComponentType.REGIONAL_DEVELOPMENT]: {
+    collectionEfficiency: 0.92,
+    complianceRate: 1.08,
+    auditCapacity: 0.88,
+    description: "Regional development focus may complicate central tax collection but builds local compliance"
   }
 } as const;
 

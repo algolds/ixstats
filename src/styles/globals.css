@@ -260,6 +260,13 @@
   }
 }
 
+@layer utilities {
+  /* Global content width for all sections using Tailwind's container */
+  .container {
+    max-width: 1536px; /* screen-2xl */
+  }
+}
+
 /* ====================================
    COMPREHENSIVE Z-INDEX SYSTEM
    ==================================== */

@@ -3,6 +3,7 @@
 import { useMemo } from "react"
 import { api } from "~/trpc/react"
 import { useAtomicState } from "~/components/atomic/AtomicStateProvider"
+import { createDefaultGovernmentSpendingData } from "~/lib/government-spending-defaults"
 import type {
   EconomyData,
   CoreEconomicIndicatorsData,
@@ -184,16 +185,16 @@ export function useEconomyData(countryId: string) {
         incomeInequalityGini: 0.35, // Default value since property doesn't exist
         socialMobilityIndex: 50 // Default value since property doesn't exist
       },
-      spending: {
-        education: 20, // Default percentage
-        healthcare: 25, // Default percentage
-        socialSafety: 18, // Default percentage
+      spending: createDefaultGovernmentSpendingData({
+        education: 20,
+        healthcare: 25,
+        socialSafety: 18,
         totalSpending: countryData.totalGovernmentSpending ?? (countryData.currentTotalGdp || countryData.nominalGDP || 0) * 0.22,
         spendingGDPPercent: countryData.spendingGDPPercent ?? 22,
         spendingPerCapita: countryData.spendingPerCapita ?? ((countryData.currentTotalGdp || countryData.nominalGDP || 0) * 0.22) / (countryData.currentPopulation || countryData.baselinePopulation || 1),
         deficitSurplus: countryData.budgetDeficitSurplus ?? 0,
         spendingCategories: (countryData.governmentBudget && countryData.governmentBudget.spendingCategories
-          ? (typeof countryData.governmentBudget.spendingCategories === 'string' 
+          ? (typeof countryData.governmentBudget.spendingCategories === 'string'
               ? JSON.parse(countryData.governmentBudget.spendingCategories)
               : countryData.governmentBudget.spendingCategories)
           : undefined) || [
@@ -204,11 +205,7 @@ export function useEconomyData(countryId: string) {
               { category: 'Social Welfare', amount: 0, percent: 18, color: '#8b5cf6' },
               { category: 'Other', amount: 0, percent: 10, color: '#6b7280' }
             ],
-        performanceBasedBudgeting: false,
-        universalBasicServices: false,
-        greenInvestmentPriority: false,
-        digitalGovernmentInitiative: false
-      },
+      }),
       demographics: {
         lifeExpectancy: countryData.lifeExpectancy ?? 75,
         urbanRuralSplit: { 

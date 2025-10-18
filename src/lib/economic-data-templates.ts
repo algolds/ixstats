@@ -2,14 +2,15 @@
 // Default economic data templates for countries
 // This provides standardized fallback data that can be easily replaced with live data
 
-import type { 
-  CoreEconomicIndicatorsData, 
-  LaborEmploymentData, 
-  FiscalSystemData, 
-  IncomeWealthDistributionData, 
-  GovernmentSpendingData, 
-  DemographicsData 
+import type {
+  CoreEconomicIndicatorsData,
+  LaborEmploymentData,
+  FiscalSystemData,
+  IncomeWealthDistributionData,
+  GovernmentSpendingData,
+  DemographicsData
 } from "~/types/economics";
+import { createDefaultGovernmentSpendingData } from "~/lib/government-spending-defaults";
 
 /**
  * Country profile for calculating realistic default values
@@ -183,7 +184,7 @@ export function generateGovernmentSpendingData(profile: CountryProfile): Governm
   const healthcare = spendingCategories.find(c => c.category.toLowerCase().includes('health'))?.amount || 0;
   const socialSafety = spendingCategories.find(c => c.category.toLowerCase().includes('social'))?.amount || 0;
 
-  return {
+  return createDefaultGovernmentSpendingData({
     education,
     healthcare,
     socialSafety,
@@ -192,11 +193,7 @@ export function generateGovernmentSpendingData(profile: CountryProfile): Governm
     spendingPerCapita: totalSpending / profile.population,
     deficitSurplus: -deficit,
     spendingCategories: spendingCategories,
-    performanceBasedBudgeting: false,
-    universalBasicServices: false,
-    greenInvestmentPriority: false,
-    digitalGovernmentInitiative: false,
-  };
+  });
 }
 
 /**

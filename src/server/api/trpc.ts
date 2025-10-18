@@ -15,6 +15,7 @@ import type { NextRequest } from "next/server";
 
 import { db } from "~/server/db";
 import { rateLimiter } from "~/lib/rate-limiter";
+import { userLoggingMiddleware } from "~/lib/user-logging-middleware";
 
 /**
  * 1. CONTEXT
@@ -583,18 +584,20 @@ const inputValidationMiddleware = t.middleware(async ({ ctx, next, input, path }
 });
 
 // Export all procedure types with appropriate security layers
-export const publicProcedure = t.procedure.use(timingMiddleware);
-export const protectedProcedure = t.procedure.use(timingMiddleware).use(authMiddleware);
+export const publicProcedure = t.procedure.use(timingMiddleware).use(userLoggingMiddleware.standard);
+export const protectedProcedure = t.procedure.use(timingMiddleware).use(authMiddleware).use(userLoggingMiddleware.standard);
 export const premiumProcedure = t.procedure
   .use(timingMiddleware)
   .use(authMiddleware)
   .use(premiumMiddleware)
-  .use(dataPrivacyMiddleware);
+  .use(dataPrivacyMiddleware)
+  .use(userLoggingMiddleware.withPerformance);
 export const countryOwnerProcedure = t.procedure
   .use(timingMiddleware)
   .use(authMiddleware)
   .use(countryOwnerMiddleware)
-  .use(dataPrivacyMiddleware);
+  .use(dataPrivacyMiddleware)
+  .use(userLoggingMiddleware.standard);
 export const adminProcedure = t.procedure
   .use(timingMiddleware)
   .use(authMiddleware)
@@ -602,7 +605,8 @@ export const adminProcedure = t.procedure
   .use(inputValidationMiddleware)
   .use(rateLimitMiddleware)
   .use(auditLogMiddleware)
-  .use(dataPrivacyMiddleware);
+  .use(dataPrivacyMiddleware)
+  .use(userLoggingMiddleware.admin);
 export const executiveProcedure = t.procedure
   .use(timingMiddleware)
   .use(authMiddleware)
@@ -610,4 +614,5 @@ export const executiveProcedure = t.procedure
   .use(inputValidationMiddleware)
   .use(rateLimitMiddleware)
   .use(auditLogMiddleware)
-  .use(dataPrivacyMiddleware);
+  .use(dataPrivacyMiddleware)
+  .use(userLoggingMiddleware.sensitive);

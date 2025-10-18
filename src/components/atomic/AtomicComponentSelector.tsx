@@ -89,13 +89,13 @@ export const ATOMIC_COMPONENT_CATEGORIES = {
 } as const;
 
 // Component display information
-export const ATOMIC_COMPONENT_INFO: Record<ComponentType, {
+export const ATOMIC_COMPONENT_INFO: Partial<Record<ComponentType, {
   name: string;
   description: string;
   effectiveness: number;
   pros: string[];
   cons: string[];
-}> = {
+}>> = {
   [ComponentType.CENTRALIZED_POWER]: {
     name: 'Centralized Power',
     description: 'Power concentrated in central government',
@@ -193,6 +193,13 @@ export const ATOMIC_COMPONENT_INFO: Record<ComponentType, {
     effectiveness: 72,
     pros: ['Deep cultural roots', 'Moral authority', 'Social cohesion'],
     cons: ['Religious minorities excluded', 'Theocratic tendency', 'Resistance to change']
+  },
+  [ComponentType.INSTITUTIONAL_LEGITIMACY]: {
+    name: 'Institutional Legitimacy',
+    description: 'Authority based on strong institutions and processes',
+    effectiveness: 83,
+    pros: ['Institutional stability', 'Process legitimacy', 'Trust in systems'],
+    cons: ['Bureaucratic inertia', 'Process over outcomes', 'Slow adaptation']
   },
   [ComponentType.PROFESSIONAL_BUREAUCRACY]: {
     name: 'Professional Bureaucracy',
@@ -374,6 +381,8 @@ export function AtomicComponentSelector({
           const info = ATOMIC_COMPONENT_INFO[component];
           const isSelected = selectedComponents.includes(component);
           
+          if (!info) return null;
+
           return (
             <motion.div
               key={component}
@@ -395,16 +404,16 @@ export function AtomicComponentSelector({
                       <CheckCircle className="w-4 h-4 text-primary" />
                     )}
                   </div>
-                  
+
                   <p className="text-sm text-muted-foreground mb-3">
                     {info.description}
                   </p>
-                  
+
                   {/* Effectiveness bar */}
                   <div className="flex items-center space-x-2 mb-2">
                     <span className="text-xs text-muted-foreground">Effectiveness:</span>
                     <div className="flex-1 bg-muted h-1.5 rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className="bg-primary h-full transition-all"
                         style={{ width: `${info.effectiveness}%` }}
                       />
@@ -477,6 +486,7 @@ export function AtomicComponentSelector({
           <div className="flex flex-wrap gap-2">
             {selectedComponents.map((component) => {
               const info = ATOMIC_COMPONENT_INFO[component];
+              if (!info) return null;
               return (
                 <span
                   key={component}

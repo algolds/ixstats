@@ -6,7 +6,7 @@ import { Download, ExternalLink, ArrowLeft, Check } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createUrl } from '~/lib/url-utils';
 import { EnhancedCountryFlag } from '~/components/ui/enhanced-country-flag';
-import { useCountryFlag } from '~/hooks/useCountryFlags';
+import { useCountryFlagRouteAware } from '~/hooks/useCountryFlagRouteAware';
 import { MyCountryLogo } from '~/components/ui/mycountry-logo';
 import { SectionHeader, EmphasisText } from '~/components/ui/text-hierarchy';
 import { ImportButton } from '~/components/ui/glass-button';
@@ -23,7 +23,7 @@ interface CountrySelectorHeaderProps {
 
 export function CountrySelectorHeader({ softSelectedCountry, onBackToIntro }: CountrySelectorHeaderProps) {
   const router = useRouter();
-  const { flag } = useCountryFlag(softSelectedCountry?.foundationCountryName || softSelectedCountry?.name || '');
+  const { flag } = useCountryFlagRouteAware(softSelectedCountry?.foundationCountryName || softSelectedCountry?.name || '');
   const [textStyling, setTextStyling] = useState<{
     color: string;
     textShadow?: string;

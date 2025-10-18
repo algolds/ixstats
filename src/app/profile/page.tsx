@@ -85,6 +85,8 @@ function ProfileContent() {
   // Mutations
   const updateCountryNameMutation = api.countries.updateCountryName.useMutation();
   const updateThinkpagesAccountMutation = api.thinkpages.updateAccount.useMutation();
+  const updateCountryFlagMutation = api.countries.updateCountryFlag.useMutation();
+  const [isUploadingFlag, setIsUploadingFlag] = useState(false);
 
   const handleUpdateCountryName = async () => {
     if (!userProfile?.countryId || !newCountryName.trim()) return;
@@ -98,8 +100,10 @@ function ProfileContent() {
       await refetchProfile();
       setIsEditingCountry(false);
       setNewCountryName("");
+      toast.success('Country name updated successfully!');
     } catch (error) {
       console.error('Failed to update country name:', error);
+      toast.error('Failed to update country name');
     }
   };
 
@@ -107,31 +111,72 @@ function ProfileContent() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Simple validation
-    if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file');
+    // Validate file type
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp', 'image/svg+xml'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Please upload a valid image file (PNG, JPG, GIF, WEBP, or SVG)');
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
-      alert('File size must be less than 5MB');
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB');
       return;
     }
 
-    // Create a temporary URL for preview
-    const tempUrl = URL.createObjectURL(file);
-    setUploadedFlagUrl(tempUrl);
-    
-    // Here you would typically upload to a server
-    // For now, we'll just show the preview
-    console.log('Flag uploaded:', file.name);
+    setIsUploadingFlag(true);
+
+    try {
+      // Upload to server
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload/image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.dataUrl) {
+        // Create a temporary URL for preview
+        setUploadedFlagUrl(result.dataUrl);
+        toast.success('Image uploaded! Click "Save Flag" to apply.');
+      } else {
+        throw new Error(result.error || 'Upload failed');
+      }
+    } catch (error) {
+      console.error('Failed to upload flag:', error);
+      toast.error('Failed to upload image. Please try again.');
+    } finally {
+      setIsUploadingFlag(false);
+    }
   };
 
-  const handleFlagSave = () => {
-    // Here you would save the flag to the backend
-    setFlagUploadMode(false);
-    // In a real implementation, you'd call an API to save the flag
-    console.log('Flag saved for country:', userProfile?.country?.name);
+  const handleFlagSave = async () => {
+    if (!userProfile?.countryId || !uploadedFlagUrl) {
+      toast.error('No flag to save');
+      return;
+    }
+
+    try {
+      await updateCountryFlagMutation.mutateAsync({
+        countryId: userProfile.countryId,
+        flag: uploadedFlagUrl,
+      });
+
+      await refetchProfile();
+      setFlagUploadMode(false);
+      setUploadedFlagUrl(null);
+      toast.success('Flag saved successfully!');
+    } catch (error) {
+      console.error('Failed to save flag:', error);
+      toast.error('Failed to save flag');
+    }
   };
 
   const getSetupStatus = () => {
@@ -394,19 +439,22 @@ function ProfileContent() {
                           </p>
                           <div className="space-y-3">
                             <div className="flex items-center gap-3">
-                              <label className="cursor-pointer">
+                              <label className={`cursor-pointer ${isUploadingFlag ? 'opacity-50 pointer-events-none' : ''}`}>
                                 <input
                                   type="file"
                                   accept="image/*"
                                   onChange={handleFlagUpload}
                                   className="hidden"
+                                  disabled={isUploadingFlag}
                                 />
                                 <div className="flex items-center gap-2 px-3 py-2 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 rounded-md hover:bg-blue-200 dark:hover:bg-blue-700 transition-colors">
                                   <Upload className="h-4 w-4" />
-                                  <span className="text-sm font-medium">Choose File</span>
+                                  <span className="text-sm font-medium">
+                                    {isUploadingFlag ? 'Uploading...' : 'Choose File'}
+                                  </span>
                                 </div>
                               </label>
-                              {uploadedFlagUrl && (
+                              {uploadedFlagUrl && !isUploadingFlag && (
                                 <div className="flex items-center gap-2">
                                   <img 
                                     src={uploadedFlagUrl} 
@@ -415,16 +463,18 @@ function ProfileContent() {
                                   />
                                   <button
                                     onClick={handleFlagSave}
-                                    className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded"
+                                    disabled={updateCountryFlagMutation.isPending}
+                                    className="px-3 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm rounded"
                                   >
-                                    Save
+                                    {updateCountryFlagMutation.isPending ? 'Saving...' : 'Save Flag'}
                                   </button>
                                   <button
                                     onClick={() => {
                                       setUploadedFlagUrl(null);
                                       setFlagUploadMode(false);
                                     }}
-                                    className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-sm rounded"
+                                    disabled={updateCountryFlagMutation.isPending}
+                                    className="px-3 py-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm rounded"
                                   >
                                     Cancel
                                   </button>
@@ -432,7 +482,7 @@ function ProfileContent() {
                               )}
                             </div>
                             <p className="text-xs text-blue-600 dark:text-blue-400">
-                              Supported formats: PNG, JPG, SVG • Max size: 5MB • Recommended dimensions: 2:3 ratio
+                              Supported formats: PNG, JPG, GIF, WEBP, SVG • Max size: 5MB • Recommended dimensions: 2:3 ratio
                             </p>
                           </div>
                         </div>

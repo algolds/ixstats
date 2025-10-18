@@ -94,7 +94,13 @@ export function TaxCategoryForm({
     if (!onBracketsChange) return;
     
     const newBracket: TaxBracketInput = {
-      minIncome: brackets.length > 0 ? Math.max(...brackets.map(b => b.maxIncome || 0)) : 0,
+      // Use the highest defined boundary as the next min. If an open-ended bracket exists,
+      // fall back to the highest of its minIncome to keep ordering monotonic.
+      minIncome: brackets.length > 0
+        ? Math.max(
+            ...brackets.map(b => (b.maxIncome !== undefined ? b.maxIncome : b.minIncome))
+          )
+        : 0,
       maxIncome: undefined,
       rate: data.baseRate || 0,
       marginalRate: true,
@@ -110,6 +116,22 @@ export function TaxCategoryForm({
     
     const newBrackets = [...brackets];
     newBrackets[index] = bracket;
+
+    // Maintain continuity with adjacent brackets when boundaries change
+    // If this bracket's maxIncome is set, propagate as the minIncome for the next bracket
+    if (bracket.maxIncome !== undefined && index < newBrackets.length - 1) {
+      const next = { ...newBrackets[index + 1] };
+      // Ensure non-decreasing boundary
+      next.minIncome = Math.max(bracket.maxIncome, next.minIncome);
+      newBrackets[index + 1] = next as TaxBracketInput;
+    }
+
+    // If this bracket's minIncome changed, set previous bracket's maxIncome to match
+    if (index > 0) {
+      const prev = { ...newBrackets[index - 1] };
+      prev.maxIncome = bracket.minIncome;
+      newBrackets[index - 1] = prev as TaxBracketInput;
+    }
     onBracketsChange(newBrackets);
   };
 

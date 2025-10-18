@@ -27,15 +27,24 @@ export function generateSlug(name: string): string {
 
 /**
  * Get the display URL path for a country
- * Uses slug if available, falls back to ID
+ * Uses pretty /nation/ URLs with slug
  */
 export function getCountryPath(country: { slug?: string | null; id: string; name?: string }): string {
   if (country.slug) {
-    return `/countries/${country.slug}`;
+    return `/nation/${country.slug}`;
   }
-  // Fallback: generate slug from name if available, otherwise use ID
+  // Fallback: generate slug from name if available
   if (country.name) {
-    return `/countries/${generateSlug(country.name)}`;
+    return `/nation/${generateSlug(country.name)}`;
   }
+  // Last resort: use ID with /countries/ (legacy)
   return `/countries/${country.id}`;
+}
+
+/**
+ * Get a nation URL from a country name
+ * Convenience function for direct name-to-URL conversion
+ */
+export function getNationUrl(countryName: string): string {
+  return `/nation/${generateSlug(countryName)}`;
 }

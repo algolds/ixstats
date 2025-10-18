@@ -11,11 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
 import { Slider } from '~/components/ui/slider';
-import { 
-  DollarSign, 
-  TrendingUp, 
+import {
+  DollarSign,
+  TrendingUp,
   TrendingDown,
-  AlertTriangle, 
+  AlertTriangle,
   CheckCircle,
   Target,
   PieChart,
@@ -36,6 +36,8 @@ import {
   Equal,
   Info
 } from 'lucide-react';
+import { BlurFade } from '~/components/magicui/blur-fade';
+import { ProgressiveBlur } from '~/components/ui/progressive-blur';
 
 // Advanced Budget Types
 interface BudgetCategory {
@@ -741,66 +743,153 @@ export function AdvancedBudgetDashboard({
               </p>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {policies.map(policy => (
-                  <Card key={policy.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h4 className="font-medium">{policy.name}</h4>
-                          <p className="text-sm text-muted-foreground">{policy.description}</p>
-                        </div>
-                        
-                        <Badge variant="outline">
-                          {policy.type.replace('_', ' ')}
-                        </Badge>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div>
-                          <p className="text-xs text-muted-foreground">Impact</p>
-                          <p className="font-medium">+{policy.impact}%</p>
-                        </div>
-                        
-                        <div>
-                          <p className="text-xs text-muted-foreground">Cost</p>
-                          <p className="font-medium text-red-600">{formatCurrency(policy.cost)}</p>
-                        </div>
-                        
-                        <div>
-                          <p className="text-xs text-muted-foreground">Benefits</p>
-                          <p className="font-medium text-green-600">{formatCurrency(policy.benefits)}</p>
-                        </div>
-                        
-                        <div>
-                          <p className="text-xs text-muted-foreground">Timeline</p>
-                          <p className="font-medium">{policy.implementation.replace('_', ' ')}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between mt-4">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm">ROI:</span>
-                          <span className={`font-medium ${
-                            policy.benefits > policy.cost ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {((policy.benefits - policy.cost) / policy.cost * 100).toFixed(1)}%
-                          </span>
-                        </div>
-                        
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onPolicyApply?.(policy)}
-                          disabled={isReadOnly}
-                        >
-                          Apply Policy
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <ProgressiveBlur
+                className="space-y-4"
+                blurIntensity={10}
+                gradientHeight={150}
+                arrowPosition="center"
+                revealContent={
+                  <div className="space-y-4">
+                    {policies.slice(5).map((policy, index) => (
+                      <BlurFade
+                        key={policy.id}
+                        delay={index * 0.05}
+                        duration={0.5}
+                        offset={10}
+                        direction="up"
+                      >
+                        <Card>
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between mb-3">
+                              <div>
+                                <h4 className="font-medium">{policy.name}</h4>
+                                <p className="text-sm text-muted-foreground">{policy.description}</p>
+                              </div>
+
+                              <Badge variant="outline">
+                                {policy.type.replace('_', ' ')}
+                              </Badge>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                              <div>
+                                <p className="text-xs text-muted-foreground">Impact</p>
+                                <p className="font-medium">+{policy.impact}%</p>
+                              </div>
+
+                              <div>
+                                <p className="text-xs text-muted-foreground">Cost</p>
+                                <p className="font-medium text-red-600">{formatCurrency(policy.cost)}</p>
+                              </div>
+
+                              <div>
+                                <p className="text-xs text-muted-foreground">Benefits</p>
+                                <p className="font-medium text-green-600">{formatCurrency(policy.benefits)}</p>
+                              </div>
+
+                              <div>
+                                <p className="text-xs text-muted-foreground">Timeline</p>
+                                <p className="font-medium">{policy.implementation.replace('_', ' ')}</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between mt-4">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm">ROI:</span>
+                                <span className={`font-medium ${
+                                  policy.benefits > policy.cost ? 'text-green-600' : 'text-red-600'
+                                }`}>
+                                  {((policy.benefits - policy.cost) / policy.cost * 100).toFixed(1)}%
+                                </span>
+                              </div>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => onPolicyApply?.(policy)}
+                                disabled={isReadOnly}
+                              >
+                                Apply Policy
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </BlurFade>
+                    ))}
+                  </div>
+                }
+              >
+                <div className="space-y-4">
+                  {policies.slice(0, 5).map((policy, index) => (
+                    <BlurFade
+                      key={policy.id}
+                      delay={index * 0.08}
+                      duration={0.5}
+                      offset={10}
+                      direction="up"
+                      inView
+                      inViewMargin="-100px"
+                    >
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <h4 className="font-medium">{policy.name}</h4>
+                              <p className="text-sm text-muted-foreground">{policy.description}</p>
+                            </div>
+
+                            <Badge variant="outline">
+                              {policy.type.replace('_', ' ')}
+                            </Badge>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Impact</p>
+                              <p className="font-medium">+{policy.impact}%</p>
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-muted-foreground">Cost</p>
+                              <p className="font-medium text-red-600">{formatCurrency(policy.cost)}</p>
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-muted-foreground">Benefits</p>
+                              <p className="font-medium text-green-600">{formatCurrency(policy.benefits)}</p>
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-muted-foreground">Timeline</p>
+                              <p className="font-medium">{policy.implementation.replace('_', ' ')}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between mt-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm">ROI:</span>
+                              <span className={`font-medium ${
+                                policy.benefits > policy.cost ? 'text-green-600' : 'text-red-600'
+                              }`}>
+                                {((policy.benefits - policy.cost) / policy.cost * 100).toFixed(1)}%
+                              </span>
+                            </div>
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => onPolicyApply?.(policy)}
+                              disabled={isReadOnly}
+                            >
+                              Apply Policy
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </BlurFade>
+                  ))}
+                </div>
+              </ProgressiveBlur>
             </CardContent>
           </Card>
         </TabsContent>

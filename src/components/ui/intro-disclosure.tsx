@@ -133,10 +133,10 @@ function StepPreview({ step, direction }: { step: Step; direction: 1 | -1 }) {
             animate={controls}
             className="absolute bottom-0 left-0 right-0 p-6"
           >
-            <h3 className="mb-2 text-2xl font-semibold text-white">
+            <h3 className="mb-2 text-xl font-semibold text-white">
               {step.title}
             </h3>
-            <p className="text-white hidden md:block">
+            <p className="text-white/90 text-sm leading-relaxed max-h-32 overflow-y-auto">
               {step.full_description}
             </p>
           </motion.div>
@@ -146,12 +146,14 @@ function StepPreview({ step, direction }: { step: Step; direction: 1 | -1 }) {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={controls}
-            className="text-center"
+            className="w-full max-w-none"
           >
-            <h3 className="mb-2 text-2xl font-semibold text-primary">
+            <h3 className="mb-4 text-2xl font-semibold text-primary text-center">
               {step.title}
             </h3>
-            <p className="text-muted-foreground">{step.full_description}</p>
+            <div className="text-muted-foreground text-base leading-relaxed max-h-96 overflow-y-auto whitespace-pre-line">
+              {step.full_description}
+            </div>
           </motion.div>
         </div>
       )}
@@ -279,7 +281,7 @@ function StepContent({
   }
 
   return (
-    <div className="flex h-full flex-col max-w-3xl mx-auto">
+    <div className="flex h-full flex-col max-w-5xl mx-auto">
       {isDesktop && (
         <div className="flex-1  px-2 py-3">
           <motion.div
@@ -490,7 +492,7 @@ export function IntroDisclosure({
     return (
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
-          className="max-w-5xl p-0 gap-0 overflow-hidden "
+          className="max-w-4xl p-0 gap-0 overflow-hidden"
           onKeyDown={handleKeyDown}
         >
           <DialogHeader className="p-6 space-y-2 bg-muted border-b border-border">
@@ -544,7 +546,7 @@ export function IntroDisclosure({
           dragConstraints={{ left: 0, right: 0 }}
           onDragEnd={handleDragEnd}
           onKeyDown={handleKeyDown}
-          className="h-full flex flex-col max-w-3xl mx-auto"
+          className="h-full flex flex-col max-w-5xl mx-auto"
         >
           <DialogHeader className="p-6 space-y-2 bg-muted border-b border-border">
             <DialogTitle>Feature Tour - {steps[currentStep]?.title}</DialogTitle>
@@ -581,8 +583,11 @@ export function IntroDisclosure({
 
               {/* Step content */}
               <div className="space-y-4 border border-border p-3 rounded-lg">
-                <p className="text-muted-foreground">
-                  {steps[currentStep]?.short_description}
+                <h3 className="text-lg font-semibold text-foreground">
+                  {steps[currentStep]?.title}
+                </h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  {steps[currentStep]?.full_description}
                 </p>
                 {steps[currentStep]?.action && (
                   <Button

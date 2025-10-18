@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { ActivityHooks } from "~/lib/activity-hooks";
+import { notificationHooks } from "~/lib/notification-hooks";
 
 export const achievementsRouter = createTRPCRouter({
   // Get recent achievements for a country
@@ -187,6 +188,20 @@ export const achievementsRouter = createTRPCRouter({
           input.title,
           input.description || `Unlocked ${input.rarity || 'Common'} achievement worth ${input.points || 10} points`
         ).catch(err => console.error('Failed to create achievement activity:', err));
+      }
+
+      // 🔔 Notify user about achievement unlock
+      try {
+        await notificationHooks.onAchievementUnlock({
+          userId: input.userId,
+          achievementId: input.achievementId,
+          name: input.title,
+          description: input.description || `You've unlocked a ${input.rarity || 'Common'} achievement!`,
+          category: input.category || 'General',
+          rarity: (input.rarity?.toLowerCase() as 'common' | 'rare' | 'epic' | 'legendary') || 'common',
+        });
+      } catch (error) {
+        console.error('[Achievements] Failed to send achievement notification:', error);
       }
 
       return achievement;

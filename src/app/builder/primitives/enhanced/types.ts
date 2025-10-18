@@ -1,6 +1,6 @@
 // Enhanced Primitive Types
 
-export type SectionId = 'symbols' | 'core' | 'labor' | 'fiscal' | 'government' | 'demographics' | 'spending';
+export type SectionId = 'symbols' | 'core' | 'labor' | 'fiscal' | 'government' | 'demographics' | 'spending' | 'sectors' | 'preview';
 
 export interface SectionColorScheme {
   primary: string;

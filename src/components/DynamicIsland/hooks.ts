@@ -255,8 +255,11 @@ export function useDynamicIslandState() {
   // Cycling timeout ref
   const cyclingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   
-  // Start cycling mode after 10 seconds of inactivity
+  // Start cycling mode after inactivity; relax on wide screens
   useEffect(() => {
+    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
+    const isWide = viewportWidth >= 1440; // 1440p and up
+    const idleMs = isWide ? 20000 : 10000;
     // Clear existing cycling timeout
     if (cyclingTimeoutRef.current) {
       clearTimeout(cyclingTimeoutRef.current);
@@ -265,7 +268,7 @@ export function useDynamicIslandState() {
     if (mode === "compact" && !isUserInteracting) {
       cyclingTimeoutRef.current = setTimeout(() => {
         switchMode("cycling");
-      }, 10000);
+      }, idleMs);
     }
     
     return () => {

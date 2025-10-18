@@ -34,6 +34,8 @@ import type {
   TaxDeductionAmount,
   TaxExemptionAmount
 } from '~/types/tax-system';
+import type { CoreEconomicIndicatorsData } from '~/types/economics';
+import type { GovernmentBuilderState } from '~/types/government';
 import { TaxCalculatorEngine } from '~/lib/tax-calculator';
 
 interface TaxCalculatorProps {
@@ -43,6 +45,9 @@ interface TaxCalculatorProps {
   exemptions: TaxExemption[];
   deductions: TaxDeduction[];
   onCalculationChange?: (result: TaxCalculationResult | null) => void;
+  economicData?: CoreEconomicIndicatorsData;
+  governmentData?: GovernmentBuilderState;
+  calculationMode?: 'individual' | 'corporate' | 'both';
 }
 
 export function TaxCalculator({
@@ -51,13 +56,20 @@ export function TaxCalculator({
   brackets,
   exemptions,
   deductions,
-  onCalculationChange
+  onCalculationChange,
+  economicData,
+  governmentData,
+  calculationMode: initialCalculationMode = 'individual'
 }: TaxCalculatorProps) {
   const [income, setIncome] = useState<string>('100000');
+  const [corporateIncome, setCorporateIncome] = useState<string>('500000');
   const [taxYear, setTaxYear] = useState<number>(new Date().getFullYear());
   const [selectedDeductions, setSelectedDeductions] = useState<TaxDeductionAmount[]>([]);
   const [selectedExemptions, setSelectedExemptions] = useState<TaxExemptionAmount[]>([]);
+  const [selectedCorporateDeductions, setSelectedCorporateDeductions] = useState<TaxDeductionAmount[]>([]);
+  const [selectedCorporateExemptions, setSelectedCorporateExemptions] = useState<TaxExemptionAmount[]>([]);
   const [activeTab, setActiveTab] = useState<'calculator' | 'breakdown' | 'suggestions'>('calculator');
+  const [calculatorMode, setCalculatorMode] = useState<'individual' | 'corporate' | 'both'>(initialCalculationMode);
 
   // Create calculator engine
   const calculatorEngine = useMemo(() => {
@@ -70,7 +82,7 @@ export function TaxCalculator({
     );
   }, [taxSystem, categories, brackets, exemptions, deductions]);
 
-  // Calculate tax result
+  // Calculate tax result for individuals
   const calculationResult = useMemo(() => {
     const incomeValue = parseFloat(income) || 0;
     if (incomeValue <= 0) return null;
@@ -91,9 +103,33 @@ export function TaxCalculator({
     }
   }, [income, taxYear, selectedDeductions, selectedExemptions, calculatorEngine, taxSystem.id]);
 
+  // Calculate tax result for corporations
+  const corporateCalculationResult = useMemo(() => {
+    const corporateIncomeValue = parseFloat(corporateIncome) || 0;
+    if (corporateIncomeValue <= 0) return null;
+
+    const request: TaxCalculationRequest = {
+      taxSystemId: taxSystem.id,
+      taxYear,
+      income: corporateIncomeValue,
+      deductions: selectedCorporateDeductions,
+      exemptions: selectedCorporateExemptions
+    };
+
+    try {
+      return calculatorEngine.calculate(request);
+    } catch (error) {
+      console.error('Corporate tax calculation error:', error);
+      return null;
+    }
+  }, [corporateIncome, taxYear, selectedCorporateDeductions, selectedCorporateExemptions, calculatorEngine, taxSystem.id]);
+
   useEffect(() => {
-    onCalculationChange?.(calculationResult);
-  }, [calculationResult, onCalculationChange]);
+    if (onCalculationChange) {
+      onCalculationChange(calculationResult);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [calculationResult]);
 
   // Validation
   const validation = useMemo(() => {
@@ -195,13 +231,31 @@ export function TaxCalculator({
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <Calculator className="h-5 w-5 text-blue-600" />
+        <div className="space-y-4">
+          <CardTitle className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Calculator className="h-5 w-5 text-blue-600" />
+            </div>
+            Tax Calculator
+            <Badge variant="outline">{taxSystem.taxSystemName}</Badge>
+          </CardTitle>
+
+          {/* Calculator Mode Selector */}
+          <div className="flex items-center gap-2">
+            <Label className="text-sm font-medium">Calculator Mode:</Label>
+            <Tabs value={calculatorMode} onValueChange={(value) => setCalculatorMode(value as 'individual' | 'corporate')} className="w-auto">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="individual">Individual</TabsTrigger>
+                <TabsTrigger value="corporate">Corporate</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            {economicData && (
+              <Badge variant="secondary" className="ml-auto">
+                GDP/capita: ${(economicData.gdpPerCapita || (economicData.nominalGDP / economicData.totalPopulation)).toFixed(0)}
+              </Badge>
+            )}
           </div>
-          Tax Calculator
-          <Badge variant="outline">{taxSystem.taxSystemName}</Badge>
-        </CardTitle>
+        </div>
       </CardHeader>
 
       <CardContent>
@@ -218,15 +272,22 @@ export function TaxCalculator({
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="income">Annual Income</Label>
+                  <Label htmlFor="income">
+                    {calculatorMode === 'individual' ? 'Annual Income' : 'Corporate Revenue'}
+                  </Label>
                   <Input
                     id="income"
                     type="number"
                     value={income}
                     onChange={(e) => setIncome(e.target.value)}
-                    placeholder="Enter annual income"
+                    placeholder={calculatorMode === 'individual' ? 'Enter annual income' : 'Enter corporate revenue'}
                     className="text-lg"
                   />
+                  {governmentData && (
+                    <p className="text-xs text-muted-foreground">
+                      Government revenue target: ${(governmentData.structure?.totalBudget || 0).toLocaleString()}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">

@@ -143,6 +143,14 @@ export class AtomicEffectivenessService {
       stabilityImpact: 20,
       legitimacyImpact: 18
     },
+    [ComponentType.INSTITUTIONAL_LEGITIMACY]: {
+      type: ComponentType.INSTITUTIONAL_LEGITIMACY,
+      baseEffectiveness: 83,
+      taxImpact: 1.18,
+      economicImpact: 1.12,
+      stabilityImpact: 15,
+      legitimacyImpact: 22
+    },
 
     // Institution Types
     [ComponentType.PROFESSIONAL_BUREAUCRACY]: {
@@ -226,6 +234,104 @@ export class AtomicEffectivenessService {
       economicImpact: 1.02,
       stabilityImpact: 25,
       legitimacyImpact: -20
+    },
+
+    // New Government Type Components
+    [ComponentType.DIGITAL_GOVERNMENT]: {
+      type: ComponentType.DIGITAL_GOVERNMENT,
+      baseEffectiveness: 85,
+      taxImpact: 1.35,
+      economicImpact: 1.22,
+      stabilityImpact: 15,
+      legitimacyImpact: 12
+    },
+    [ComponentType.MINIMAL_GOVERNMENT]: {
+      type: ComponentType.MINIMAL_GOVERNMENT,
+      baseEffectiveness: 60,
+      taxImpact: 0.80,
+      economicImpact: 1.15,
+      stabilityImpact: 5,
+      legitimacyImpact: 10
+    },
+    [ComponentType.PRIVATE_SECTOR_LEADERSHIP]: {
+      type: ComponentType.PRIVATE_SECTOR_LEADERSHIP,
+      baseEffectiveness: 75,
+      taxImpact: 0.95,
+      economicImpact: 1.20,
+      stabilityImpact: 8,
+      legitimacyImpact: 5
+    },
+    [ComponentType.SOCIAL_DEMOCRACY]: {
+      type: ComponentType.SOCIAL_DEMOCRACY,
+      baseEffectiveness: 78,
+      taxImpact: 1.15,
+      economicImpact: 1.10,
+      stabilityImpact: 18,
+      legitimacyImpact: 22
+    },
+    [ComponentType.COMPREHENSIVE_WELFARE]: {
+      type: ComponentType.COMPREHENSIVE_WELFARE,
+      baseEffectiveness: 72,
+      taxImpact: 1.10,
+      economicImpact: 1.05,
+      stabilityImpact: 15,
+      legitimacyImpact: 18
+    },
+    [ComponentType.PUBLIC_SECTOR_LEADERSHIP]: {
+      type: ComponentType.PUBLIC_SECTOR_LEADERSHIP,
+      baseEffectiveness: 70,
+      taxImpact: 1.20,
+      economicImpact: 1.08,
+      stabilityImpact: 12,
+      legitimacyImpact: 8
+    },
+    [ComponentType.ENVIRONMENTAL_FOCUS]: {
+      type: ComponentType.ENVIRONMENTAL_FOCUS,
+      baseEffectiveness: 68,
+      taxImpact: 0.95,
+      economicImpact: 1.12,
+      stabilityImpact: 10,
+      legitimacyImpact: 15
+    },
+    [ComponentType.ECONOMIC_PLANNING]: {
+      type: ComponentType.ECONOMIC_PLANNING,
+      baseEffectiveness: 82,
+      taxImpact: 1.25,
+      economicImpact: 1.18,
+      stabilityImpact: 15,
+      legitimacyImpact: 5
+    },
+    [ComponentType.DEVELOPMENTAL_STATE]: {
+      type: ComponentType.DEVELOPMENTAL_STATE,
+      baseEffectiveness: 83,
+      taxImpact: 1.22,
+      economicImpact: 1.25,
+      stabilityImpact: 18,
+      legitimacyImpact: 10
+    },
+    [ComponentType.WORKER_PROTECTION]: {
+      type: ComponentType.WORKER_PROTECTION,
+      baseEffectiveness: 65,
+      taxImpact: 0.90,
+      economicImpact: 1.05,
+      stabilityImpact: 8,
+      legitimacyImpact: 15
+    },
+    [ComponentType.MERITOCRATIC_SYSTEM]: {
+      type: ComponentType.MERITOCRATIC_SYSTEM,
+      baseEffectiveness: 88,
+      taxImpact: 1.30,
+      economicImpact: 1.20,
+      stabilityImpact: 20,
+      legitimacyImpact: 18
+    },
+    [ComponentType.REGIONAL_DEVELOPMENT]: {
+      type: ComponentType.REGIONAL_DEVELOPMENT,
+      baseEffectiveness: 67,
+      taxImpact: 0.92,
+      economicImpact: 1.12,
+      stabilityImpact: 10,
+      legitimacyImpact: 12
     }
   };
 

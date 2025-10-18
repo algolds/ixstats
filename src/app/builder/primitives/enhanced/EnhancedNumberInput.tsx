@@ -6,6 +6,7 @@ import { Minus, Plus, RotateCcw, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '~/lib/utils';
 import { useSectionTheme, getGlassClasses } from './theme-utils';
 import { useFormattedAnimatedValue, DEFAULT_ANIMATIONS } from './animation-utils';
+import { parseNumberInput } from '~/lib/format-utils';
 import type { EnhancedInputProps } from './types';
 
 interface EnhancedNumberInputProps extends Omit<EnhancedInputProps, 'value' | 'onChange'> {
@@ -86,7 +87,7 @@ export function EnhancedNumberInput({
 
   // Update display value when value prop changes
   useEffect(() => {
-    if (!isEditing) {
+    if (!isEditing && !isFocused) {
       // Force convert any value to number or string
       let processedValue = value;
       
@@ -116,27 +117,44 @@ export function EnhancedNumberInput({
         setDisplayValue(String(processedValue || ''));
       }
     }
-  }, [value, precision, isEditing, acceptText]);
+  }, [value, precision, isEditing, isFocused, acceptText, format]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDisplayValue(e.target.value);
+    const newValue = e.target.value;
+    setDisplayValue(newValue);
+    // Don't call onChange here - wait for blur to avoid feedback loops
   };
 
   const handleInputBlur = () => {
     setIsEditing(false);
     setIsFocused(false);
-    
+
     if (acceptText || typeof value === 'string') {
       onChange(displayValue);
     } else {
-      const numericValue = parseFloat(displayValue);
+      // Use smart number parser to handle "1.5M", "50k", "1,000,000", etc.
+      const numericValue = parseNumberInput(displayValue);
+
       if (!isNaN(numericValue)) {
-        const clampedValue = Math.max(min, Math.min(max, numericValue));
+        // Only clamp if the value is extremely outside bounds
+        // Allow values between 0 and max, but warn if below min
+        const clampedValue = numericValue < 0 ? 0 :
+                            numericValue > max ? max :
+                            numericValue;
         onChange(clampedValue);
-        setDisplayValue(clampedValue.toFixed(precision));
+
+        // Keep the exact number as-is (don't format until focus for better UX)
+        // This preserves the user's exact input like "1500000" instead of converting to "1.5M"
+        setDisplayValue(clampedValue.toLocaleString('en-US', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }));
       } else {
         const fallbackValue = typeof value === 'number' ? value : 0;
-        setDisplayValue(fallbackValue.toFixed(precision));
+        setDisplayValue(fallbackValue.toLocaleString('en-US', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }));
       }
     }
   };
@@ -144,6 +162,12 @@ export function EnhancedNumberInput({
   const handleInputFocus = () => {
     setIsEditing(true);
     setIsFocused(true);
+    // Select all text when focusing for easier editing
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.select();
+      }
+    }, 0);
   };
 
   const handleIncrement = () => {
@@ -174,6 +198,17 @@ export function EnhancedNumberInput({
       e.preventDefault();
       handleDecrement();
     } else if (e.key === 'Enter') {
+      inputRef.current?.blur();
+    } else if (e.key === 'Escape') {
+      // Reset to original value on escape
+      setIsEditing(false);
+      setIsFocused(false);
+      const originalValue = typeof value === 'number' ? value : 0;
+      if (typeof format === 'function') {
+        setDisplayValue(format(originalValue));
+      } else {
+        setDisplayValue(originalValue.toFixed(precision));
+      }
       inputRef.current?.blur();
     }
   };
@@ -220,6 +255,7 @@ export function EnhancedNumberInput({
           'hover:border-gray-300/70 dark:hover:border-gray-500/70',
           'focus-within:border-[var(--primitive-primary)] focus-within:shadow-lg',
           'focus-within:shadow-[var(--primitive-primary)]/20',
+          isEditing && 'border-[var(--primitive-primary)] shadow-lg shadow-[var(--primitive-primary)]/20',
           glassFocusClass,
           disabled && 'opacity-50 cursor-not-allowed'
         )}>
@@ -236,12 +272,12 @@ export function EnhancedNumberInput({
             <input
               ref={inputRef}
               type="text"
-              value={isEditing ? displayValue : ''}
+              value={displayValue}
               onChange={handleInputChange}
               onFocus={handleInputFocus}
               onBlur={handleInputBlur}
               onKeyDown={handleKeyDown}
-              placeholder={isEditing ? (placeholder || '') : ''}
+              placeholder={placeholder || (acceptText ? 'Enter text...' : 'Enter number...')}
               disabled={disabled}
               className={cn(
                 'w-full bg-transparent border-none outline-none',
@@ -249,27 +285,14 @@ export function EnhancedNumberInput({
                 'text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400',
                 'font-medium',
                 sizeClasses[size],
-                showButtons && 'pr-2'
+                showButtons && 'pr-2',
+                !isEditing && 'cursor-pointer'
               )}
             />
 
-            {/* Animated Value Display */}
-            {!isEditing && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className={cn(
-                  'absolute inset-0 flex items-center pointer-events-none',
-                  acceptText ? 'font-sans' : 'font-mono',
-                  sizeClasses[size],
-                  'text-gray-900 dark:text-gray-100 font-medium'
-                )}
-              >
-                <motion.span>
-                  {displayValue || (placeholder && !String(value || '').trim() ? placeholder : '')}
-                </motion.span>
-                {unit && displayValue && <span className="ml-1 text-muted-foreground">{unit}</span>}
-              </motion.div>
+            {/* Unit Display */}
+            {unit && displayValue && !isEditing && (
+              <span className="ml-1 text-muted-foreground text-sm">{unit}</span>
             )}
           </div>
         </div>

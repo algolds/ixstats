@@ -10,7 +10,10 @@ import {
   ViewTransition
 } from '../primitives/enhanced';
 import { HealthRing } from '~/components/ui/health-ring';
+import { Badge } from '~/components/ui/badge';
+import { cn } from '~/lib/utils';
 import { StandardSectionTemplate, SECTION_THEMES } from '../primitives/StandardSectionTemplate';
+import { getEconomicTier } from '../lib/economy-data-service';
 import type { StandardSectionProps } from '../primitives/StandardSectionTemplate';
 import type { CoreIndicatorsData } from '../lib/economy-data-service';
 
@@ -238,23 +241,52 @@ export function CoreIndicatorsSectionModern({
           showComparison={true}
         />
 
-        <EnhancedSlider
-          label="GDP Growth Rate"
-          description={`Annual real GDP growth percentage (Max: ${economicAnalysis.maxGrowthRate.toFixed(1)}% for ${economicAnalysis.economicTier} ${economicAnalysis.populationScale} economy)`}
-          value={coreIndicators.realGDPGrowthRate}
-          onChange={(value) => handleCoreChange('realGDPGrowthRate', Math.min(Number(value), economicAnalysis.maxGrowthRate))}
-          min={-10}
-          max={economicAnalysis.maxGrowthRate}
-          step={0.1}
-          unit="%"
-          sectionId="core"
-          icon={TrendingUp}
-          showTicks={true}
-          tickCount={6}
-          referenceValue={referenceCountry?.growthRate}
-          referenceLabel={referenceCountry?.name}
-          showComparison={true}
-        />
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <TrendingUp className="h-4 w-4" />
+            Economic Growth Profile
+          </label>
+          <p className="text-xs text-muted-foreground">
+            Calculated based on your country's economic tier and population size
+          </p>
+          <div className="p-4 bg-card/50 backdrop-blur-sm border rounded-lg border-border">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <div className="text-lg font-semibold text-foreground">{economicAnalysis.economicTier}</div>
+                <div className="text-sm text-muted-foreground">Economic Development Tier</div>
+              </div>
+              <Badge 
+                variant="secondary" 
+                className={cn(
+                  "text-xs font-medium",
+                  economicAnalysis.economicTier === 'developed' && "bg-green-500/20 text-green-600 border-green-500/30",
+                  economicAnalysis.economicTier === 'emerging' && "bg-blue-500/20 text-blue-600 border-blue-500/30",
+                  economicAnalysis.economicTier === 'developing' && "bg-orange-500/20 text-orange-600 border-orange-500/30",
+                  economicAnalysis.economicTier === 'low-income' && "bg-yellow-500/20 text-yellow-600 border-yellow-500/30"
+                )}
+              >
+                {economicAnalysis.economicTier}
+              </Badge>
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-muted-foreground">Expected Growth Rate:</span>
+                <div className="font-medium text-foreground">{economicAnalysis.maxGrowthRate.toFixed(1)}%</div>
+              </div>
+              <div>
+                <span className="text-muted-foreground">GDP per Capita:</span>
+                <div className="font-medium text-foreground">${Number(coreIndicators.gdpPerCapita).toLocaleString()}</div>
+              </div>
+            </div>
+            {referenceCountry && (
+              <div className="mt-3 pt-3 border-t border-border">
+                <div className="text-xs text-muted-foreground">
+                  vs {referenceCountry.name}: {getEconomicTier(referenceCountry.gdpPerCapita)} tier
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
 
         <EnhancedSlider
           label="Inflation Rate"
