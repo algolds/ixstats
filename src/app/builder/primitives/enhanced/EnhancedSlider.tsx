@@ -6,6 +6,7 @@ import { cn } from '~/lib/utils';
 import { useSectionTheme, getGlassClasses } from './theme-utils';
 import { useAnimatedPercentage, DEFAULT_ANIMATIONS } from './animation-utils';
 import type { EnhancedInputProps } from './types';
+import { FieldHelpTooltip } from '../../components/help/GovernmentHelpSystem';
 
 interface EnhancedSliderProps extends EnhancedInputProps {
   orientation?: 'horizontal' | 'vertical';
@@ -16,6 +17,8 @@ interface EnhancedSliderProps extends EnhancedInputProps {
   trackHeight?: number;
   thumbSize?: number;
   icon?: React.ComponentType<any>;
+  helpContent?: React.ReactNode;
+  helpTitle?: string;
 }
 
 export function EnhancedSlider({
@@ -45,7 +48,9 @@ export function EnhancedSlider({
   showRange = false,
   trackHeight,
   thumbSize,
-  icon: Icon
+  icon: Icon,
+  helpContent,
+  helpTitle
 }: EnhancedSliderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -199,6 +204,12 @@ export function EnhancedSlider({
                   {Icon && <Icon className="h-4 w-4" />}
                   {label}
                   {required && <span className="text-red-400">*</span>}
+                  {helpContent && (
+                    <FieldHelpTooltip 
+                      content={helpContent} 
+                      title={helpTitle || label}
+                    />
+                  )}
                 </label>
               )}
               {showValue && (

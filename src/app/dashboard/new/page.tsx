@@ -1,6 +1,6 @@
 'use client';
 
-import Dashboard from '../_components/Dashboard';
+import { EnhancedCommandCenter } from '~/app/_components/EnhancedCommandCenter';
 import { DashboardErrorBoundary } from '~/components/shared/feedback/DashboardErrorBoundary';
 
 export default function NewDashboardPage() {
@@ -9,7 +9,7 @@ export default function NewDashboardPage() {
       title="New Dashboard Error"
       description="An error occurred while loading the new dashboard. Please try again."
     >
-      <Dashboard />
+      <EnhancedCommandCenter />
     </DashboardErrorBoundary>
   );
 }

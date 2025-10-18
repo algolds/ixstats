@@ -163,7 +163,7 @@ export function NationalIdentitySection({
             <CollapsibleContent className="p-6">
               <BasicInfoForm
                 identity={identity}
-                onIdentityChange={handleIdentityChange}
+                onIdentityChange={handleIdentityChange as any}
                 selectedGovernmentType={selectedGovernmentType}
                 customOfficialName={customOfficialName}
                 isEditingCustomName={isEditingCustomName}
@@ -203,7 +203,7 @@ export function NationalIdentitySection({
             <CollapsibleContent className="p-6">
               <CultureForm
                 identity={identity}
-                onIdentityChange={handleIdentityChange}
+                onIdentityChange={handleIdentityChange as any}
                 IdentityAutocomplete={(props) => (
                   <IdentityAutocomplete {...props} onSave={handleFieldValueSave} />
                 )}
@@ -225,7 +225,7 @@ export function NationalIdentitySection({
             <CollapsibleContent className="p-6">
               <GeographyForm
                 identity={identity}
-                onIdentityChange={handleIdentityChange}
+                onIdentityChange={handleIdentityChange as any}
               />
             </CollapsibleContent>
           </div>

@@ -1,12 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { Progress } from '~/components/ui/progress';
+import React from 'react';
 import {
   Receipt,
   Smartphone,
@@ -16,12 +10,6 @@ import {
   Scale,
   Award,
   Target,
-  CheckCircle,
-  AlertCircle,
-  Info,
-  Plus,
-  Minus,
-  Zap,
   Users,
   Building2,
   Globe,
@@ -32,9 +20,9 @@ import {
   Search,
   BookOpen,
   Landmark,
-  BarChart3
+  BarChart3,
+  Zap
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 // ==================== TYPE DEFINITIONS ====================
 
@@ -1163,6 +1151,9 @@ const COMPONENT_ICONS: Record<string, React.ReactNode> = {
 
 // ==================== REACT COMPONENT ====================
 
+import { UnifiedAtomicComponentSelector } from '~/components/atomic/shared/UnifiedAtomicComponentSelector';
+import { TAX_THEME } from '~/components/atomic/shared/themes';
+
 interface AtomicTaxComponentSelectorProps {
   selectedComponents: string[];
   onComponentChange: (componentIds: string[]) => void;
@@ -1176,325 +1167,20 @@ export function AtomicTaxComponentSelector({
   maxComponents = 15,
   isReadOnly = false
 }: AtomicTaxComponentSelectorProps) {
-  const [activeCategory, setActiveCategory] = useState<TaxComponentCategory>('Collection Methods');
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const effectiveness = useMemo(
-    () => calculateTotalTaxEffectiveness(selectedComponents),
-    [selectedComponents]
-  );
-
-  const toggleComponent = (componentId: string) => {
-    if (isReadOnly) return;
-
-    if (selectedComponents.includes(componentId)) {
-      onComponentChange(selectedComponents.filter(c => c !== componentId));
-    } else if (selectedComponents.length < maxComponents) {
-      onComponentChange([...selectedComponents, componentId]);
-    }
-  };
-
-  const totalImplementationCost = selectedComponents.reduce(
-    (sum, id) => sum + (ATOMIC_TAX_COMPONENTS[id]?.implementationCost || 0),
-    0
-  );
-
-  const totalMaintenanceCost = selectedComponents.reduce(
-    (sum, id) => sum + (ATOMIC_TAX_COMPONENTS[id]?.maintenanceCost || 0),
-    0
-  );
-
-  const filteredComponents = useMemo(() => {
-    const categoryComponents = TAX_COMPONENT_CATEGORIES[activeCategory];
-    if (!searchQuery) return categoryComponents;
-
-    return categoryComponents.filter(id => {
-      const component = ATOMIC_TAX_COMPONENTS[id];
-      return component?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-             component?.description.toLowerCase().includes(searchQuery.toLowerCase());
-    });
-  }, [activeCategory, searchQuery]);
-
   return (
-    <Card className="w-full glass-card-parent">
-      <CardHeader>
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-gold-500/20 to-gold-600/20 rounded-lg backdrop-blur-sm border border-gold-400/30">
-              <Receipt className="h-5 w-5 text-gold-600 dark:text-gold-400" />
-            </div>
-            <div>
-              <CardTitle className="text-foreground">Atomic Tax Components</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                Build your tax system using modular components with synergies and conflicts
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gold-600 dark:text-gold-400">
-                {effectiveness.totalEffectiveness.toFixed(0)}
-              </div>
-              <div className="text-xs text-muted-foreground">Effectiveness</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                +{effectiveness.synergyBonus.toFixed(0)}
-              </div>
-              <div className="text-xs text-muted-foreground">Synergies</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                -{effectiveness.conflictPenalty.toFixed(0)}
-              </div>
-              <div className="text-xs text-muted-foreground">Conflicts</div>
-            </div>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-6">
-        {/* Progress Bar */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="font-medium text-foreground">
-              Components: {selectedComponents.length} / {maxComponents}
-            </span>
-            <span className="text-muted-foreground">
-              {((selectedComponents.length / maxComponents) * 100).toFixed(0)}%
-            </span>
-          </div>
-          <Progress
-            value={(selectedComponents.length / maxComponents) * 100}
-            className="h-2"
-          />
-        </div>
-
-        {/* Category Tabs */}
-        <Tabs value={activeCategory} onValueChange={(value) => setActiveCategory(value as TaxComponentCategory)}>
-          <TabsList className="grid w-full grid-cols-5 bg-muted/50">
-            {Object.keys(TAX_COMPONENT_CATEGORIES).map(category => (
-              <TabsTrigger
-                key={category}
-                value={category}
-                className="text-xs data-[state=active]:bg-background data-[state=active]:text-foreground"
-              >
-                <span className="hidden md:inline">{category}</span>
-                <span className="md:hidden">{category.split(' ')[0]}</span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          {Object.entries(TAX_COMPONENT_CATEGORIES).map(([category, componentIds]) => (
-            <TabsContent key={category} value={category} className="space-y-4 mt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <AnimatePresence>
-                  {filteredComponents.map(componentId => {
-                    const component = ATOMIC_TAX_COMPONENTS[componentId];
-                    if (!component) return null;
-
-                    const isSelected = selectedComponents.includes(componentId);
-                    const hasConflict = selectedComponents.some(id => checkTaxConflicts(componentId, id));
-                    const hasSynergy = selectedComponents.some(id => {
-                      const synergy = checkTaxSynergy(componentId, id);
-                      return synergy > 0 && !isSelected;
-                    });
-                    const isDisabled = selectedComponents.length >= maxComponents && !isSelected;
-
-                    return (
-                      <motion.div
-                        key={componentId}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ duration: 0.2 }}
-                        className={`
-                          p-4 rounded-lg border-2 cursor-pointer transition-all
-                          ${isSelected
-                            ? 'border-gold-500 dark:border-gold-400 bg-gold-50 dark:bg-gold-950/30 shadow-lg'
-                            : hasConflict && !isSelected
-                              ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/20 opacity-60'
-                              : hasSynergy
-                                ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-950/20'
-                                : isDisabled
-                                  ? 'border-border opacity-50 cursor-not-allowed'
-                                  : 'border-border hover:border-gold-400/50 hover:shadow-md'
-                          }
-                          ${isReadOnly ? 'cursor-not-allowed opacity-60' : ''}
-                        `}
-                        onClick={() => !isDisabled && toggleComponent(componentId)}
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <div className="text-gold-600 dark:text-gold-400">
-                              {COMPONENT_ICONS[componentId] || <Receipt className="h-4 w-4" />}
-                            </div>
-                            <h4 className="font-semibold text-sm text-foreground">{component.name}</h4>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Badge variant="outline" className="text-xs">
-                              {component.effectiveness}%
-                            </Badge>
-                            {isSelected && <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />}
-                            {hasConflict && !isSelected && <AlertCircle className="h-4 w-4 text-red-500 dark:text-red-400" />}
-                            {hasSynergy && <TrendingUp className="h-4 w-4 text-green-500 dark:text-green-400" />}
-                          </div>
-                        </div>
-
-                        <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
-                          {component.description}
-                        </p>
-
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">Implementation:</span>
-                            <span className="font-medium">${(component.implementationCost / 1000).toFixed(0)}k</span>
-                          </div>
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">Annual:</span>
-                            <span className="font-medium">${(component.maintenanceCost / 1000).toFixed(0)}k</span>
-                          </div>
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">Complexity:</span>
-                            <Badge variant="secondary" className="text-xs">
-                              {component.metadata.complexity}
-                            </Badge>
-                          </div>
-                        </div>
-
-                        {component.prerequisites.length > 0 && (
-                          <div className="mt-2 pt-2 border-t border-border/50">
-                            <p className="text-xs text-muted-foreground">
-                              Requires: {component.prerequisites.map(id => ATOMIC_TAX_COMPONENTS[id]?.name).filter(Boolean).join(', ')}
-                            </p>
-                          </div>
-                        )}
-                      </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
-              </div>
-            </TabsContent>
-          ))}
-        </Tabs>
-
-        {/* Selected Components Summary */}
-        {selectedComponents.length > 0 && (
-          <div className="space-y-4 p-4 bg-muted/30 rounded-lg backdrop-blur-sm">
-            <h4 className="font-semibold text-foreground flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-gold-600 dark:text-gold-400" />
-              Selected Components ({selectedComponents.length})
-            </h4>
-
-            <div className="flex flex-wrap gap-2">
-              {selectedComponents.map(componentId => {
-                const component = ATOMIC_TAX_COMPONENTS[componentId];
-                if (!component) return null;
-
-                return (
-                  <Badge
-                    key={componentId}
-                    variant="default"
-                    className="flex items-center gap-1 bg-gold-600 dark:bg-gold-500 text-white"
-                  >
-                    {component.name}
-                    {!isReadOnly && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleComponent(componentId);
-                        }}
-                        className="ml-1 hover:bg-red-500 rounded-full p-0.5 transition-colors"
-                      >
-                        <Minus className="h-3 w-3" />
-                      </button>
-                    )}
-                  </Badge>
-                );
-              })}
-            </div>
-
-            {/* System Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-border/50">
-              <div className="text-center">
-                <div className="text-lg font-bold text-foreground">
-                  {effectiveness.totalEffectiveness.toFixed(0)}%
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Total Effectiveness
-                </div>
-              </div>
-
-              <div className="text-center">
-                <div className="text-lg font-bold text-green-600 dark:text-green-400">
-                  {effectiveness.synergyCount}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Active Synergies
-                </div>
-              </div>
-
-              <div className="text-center">
-                <div className="text-lg font-bold text-gold-600 dark:text-gold-400">
-                  ${(totalImplementationCost / 1000).toFixed(0)}k
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Implementation Cost
-                </div>
-              </div>
-
-              <div className="text-center">
-                <div className="text-lg font-bold text-gold-600 dark:text-gold-400">
-                  ${(totalMaintenanceCost / 1000).toFixed(0)}k
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Annual Cost
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* System Analysis */}
-        {selectedComponents.length > 0 && (
-          <Alert className="border-gold-300 dark:border-gold-700 bg-gold-50/50 dark:bg-gold-950/20">
-            <Info className="h-4 w-4 text-gold-600 dark:text-gold-400" />
-            <AlertDescription>
-              <div className="space-y-2">
-                <p className="font-medium text-foreground">System Analysis:</p>
-                <ul className="text-sm space-y-1">
-                  {effectiveness.synergyCount > effectiveness.conflictCount && (
-                    <li className="text-green-700 dark:text-green-400">
-                      ✓ Strong component synergies detected - system efficiency increased by {effectiveness.synergyBonus.toFixed(0)}%
-                    </li>
-                  )}
-                  {effectiveness.conflictCount > 0 && (
-                    <li className="text-red-700 dark:text-red-400">
-                      ⚠ {effectiveness.conflictCount} conflict(s) detected - effectiveness reduced by {effectiveness.conflictPenalty.toFixed(0)}%
-                    </li>
-                  )}
-                  {effectiveness.baseEffectiveness > 85 && (
-                    <li className="text-green-700 dark:text-green-400">
-                      ✓ High-effectiveness components selected (avg {effectiveness.baseEffectiveness.toFixed(0)}%)
-                    </li>
-                  )}
-                  {effectiveness.baseEffectiveness < 75 && (
-                    <li className="text-yellow-700 dark:text-yellow-400">
-                      ⚠ Consider adding higher effectiveness components
-                    </li>
-                  )}
-                  {totalImplementationCost > 1000000 && (
-                    <li className="text-yellow-700 dark:text-yellow-400">
-                      ⚠ High implementation costs - consider phased rollout
-                    </li>
-                  )}
-                </ul>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
-      </CardContent>
-    </Card>
+    <UnifiedAtomicComponentSelector
+      components={ATOMIC_TAX_COMPONENTS}
+      categories={TAX_COMPONENT_CATEGORIES}
+      selectedComponents={selectedComponents}
+      onComponentChange={onComponentChange}
+      maxComponents={maxComponents}
+      isReadOnly={isReadOnly}
+      theme={TAX_THEME}
+      systemName="Atomic Tax Components"
+      systemIcon={Receipt}
+      calculateEffectiveness={calculateTotalTaxEffectiveness}
+      checkSynergy={checkTaxSynergy}
+      checkConflict={checkTaxConflicts}
+    />
   );
 }

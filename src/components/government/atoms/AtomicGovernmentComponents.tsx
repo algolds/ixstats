@@ -1,32 +1,68 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
-import { Input } from '~/components/ui/input';
-import { Label } from '~/components/ui/label';
-import { Textarea } from '~/components/ui/textarea';
-import { Switch } from '~/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { 
-  Crown, 
-  Users, 
-  Scale, 
-  Building2, 
-  Zap, 
-  Target, 
-  Plus, 
-  Minus,
-  AlertCircle,
-  CheckCircle,
-  Info,
+import {
   Settings,
+  Building2,
+  Users,
+  Shield,
+  Crown,
+  Vote,
+  Clock,
   TrendingUp,
-  Shield
+  Star,
+  Cross,
+  Briefcase,
+  Scale,
+  Flag,
+  Cpu,
+  Eye,
+  DollarSign,
+  Target,
+  BarChart3,
+  Heart,
+  Leaf,
+  Brain,
+  Monitor,
+  Globe,
+  Network,
+  Award,
+  CheckCircle,
+  AlertTriangle,
+  GraduationCap,
+  BookOpen,
+  Handshake,
+  Microscope,
+  Lightbulb,
+  ArrowRightLeft,
+  Copyright,
+  Zap,
+  Wifi,
+  MessageSquare,
+  RefreshCw,
+  HelpCircle,
+  Atom,
+  Info,
+  Blocks,
+  ExternalLink
 } from 'lucide-react';
+import Link from 'next/link';
+import { UnifiedAtomicComponentSelector } from '~/components/atomic/shared/UnifiedAtomicComponentSelector';
+import { GOVERNMENT_THEME } from '~/components/atomic/shared/themes';
+import type { EffectivenessMetrics } from '~/components/atomic/shared/types';
+import { ComponentType } from '@prisma/client';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
+import { Button } from "~/components/ui/button";
+
+// Re-export ComponentType for convenience
+export { ComponentType };
 
 // Atomic Government Component Types
 export interface AtomicGovernmentComponent {
@@ -35,124 +71,21 @@ export interface AtomicGovernmentComponent {
   name: string;
   description: string;
   effectiveness: number;
-  synergies: string[];
-  conflicts: string[];
+  synergies: ComponentType[];
+  conflicts: ComponentType[];
   implementationCost: number;
   maintenanceCost: number;
   requiredCapacity: number;
-}
-
-export enum ComponentType {
-  // Power Distribution Components
-  CENTRALIZED_POWER = "CENTRALIZED_POWER",
-  FEDERAL_SYSTEM = "FEDERAL_SYSTEM",
-  CONFEDERATE_SYSTEM = "CONFEDERATE_SYSTEM",
-  UNITARY_SYSTEM = "UNITARY_SYSTEM",
-  
-  // Decision Process Components
-  DEMOCRATIC_PROCESS = "DEMOCRATIC_PROCESS",
-  AUTOCRATIC_PROCESS = "AUTOCRATIC_PROCESS",
-  TECHNOCRATIC_PROCESS = "TECHNOCRATIC_PROCESS",
-  CONSENSUS_PROCESS = "CONSENSUS_PROCESS",
-  OLIGARCHIC_PROCESS = "OLIGARCHIC_PROCESS",
-  
-  // Legitimacy Source Components
-  ELECTORAL_LEGITIMACY = "ELECTORAL_LEGITIMACY",
-  TRADITIONAL_LEGITIMACY = "TRADITIONAL_LEGITIMACY",
-  PERFORMANCE_LEGITIMACY = "PERFORMANCE_LEGITIMACY",
-  CHARISMATIC_LEGITIMACY = "CHARISMATIC_LEGITIMACY",
-  RELIGIOUS_LEGITIMACY = "RELIGIOUS_LEGITIMACY",
-  INSTITUTIONAL_LEGITIMACY = "INSTITUTIONAL_LEGITIMACY",
-  
-  // Institution Components
-  PROFESSIONAL_BUREAUCRACY = "PROFESSIONAL_BUREAUCRACY",
-  MILITARY_ADMINISTRATION = "MILITARY_ADMINISTRATION",
-  INDEPENDENT_JUDICIARY = "INDEPENDENT_JUDICIARY",
-  PARTISAN_INSTITUTIONS = "PARTISAN_INSTITUTIONS",
-  TECHNOCRATIC_AGENCIES = "TECHNOCRATIC_AGENCIES",
-  
-  // Control Mechanism Components
-  RULE_OF_LAW = "RULE_OF_LAW",
-  SURVEILLANCE_SYSTEM = "SURVEILLANCE_SYSTEM",
-  ECONOMIC_INCENTIVES = "ECONOMIC_INCENTIVES",
-  SOCIAL_PRESSURE = "SOCIAL_PRESSURE",
-  MILITARY_ENFORCEMENT = "MILITARY_ENFORCEMENT",
-  
-  // Economic Governance Components
-  FREE_MARKET_SYSTEM = "FREE_MARKET_SYSTEM",
-  PLANNED_ECONOMY = "PLANNED_ECONOMY",
-  MIXED_ECONOMY = "MIXED_ECONOMY",
-  CORPORATIST_SYSTEM = "CORPORATIST_SYSTEM",
-  SOCIAL_MARKET_ECONOMY = "SOCIAL_MARKET_ECONOMY",
-  STATE_CAPITALISM = "STATE_CAPITALISM",
-  RESOURCE_BASED_ECONOMY = "RESOURCE_BASED_ECONOMY",
-  KNOWLEDGE_ECONOMY = "KNOWLEDGE_ECONOMY",
-  
-  // Administrative Efficiency Components
-  DIGITAL_GOVERNMENT = "DIGITAL_GOVERNMENT",
-  E_GOVERNANCE = "E_GOVERNANCE",
-  ADMINISTRATIVE_DECENTRALIZATION = "ADMINISTRATIVE_DECENTRALIZATION",
-  MERIT_BASED_SYSTEM = "MERIT_BASED_SYSTEM",
-  PERFORMANCE_MANAGEMENT = "PERFORMANCE_MANAGEMENT",
-  QUALITY_ASSURANCE = "QUALITY_ASSURANCE",
-  STRATEGIC_PLANNING = "STRATEGIC_PLANNING",
-  RISK_MANAGEMENT = "RISK_MANAGEMENT",
-  
-  // Social Policy Components
-  WELFARE_STATE = "WELFARE_STATE",
-  UNIVERSAL_HEALTHCARE = "UNIVERSAL_HEALTHCARE",
-  PUBLIC_EDUCATION = "PUBLIC_EDUCATION",
-  SOCIAL_SAFETY_NET = "SOCIAL_SAFETY_NET",
-  WORKER_PROTECTION = "WORKER_PROTECTION",
-  ENVIRONMENTAL_PROTECTION = "ENVIRONMENTAL_PROTECTION",
-  CULTURAL_PRESERVATION = "CULTURAL_PRESERVATION",
-  MINORITY_RIGHTS = "MINORITY_RIGHTS",
-  
-  // International Relations Components
-  MULTILATERAL_DIPLOMACY = "MULTILATERAL_DIPLOMACY",
-  BILATERAL_RELATIONS = "BILATERAL_RELATIONS",
-  REGIONAL_INTEGRATION = "REGIONAL_INTEGRATION",
-  INTERNATIONAL_LAW = "INTERNATIONAL_LAW",
-  DEVELOPMENT_AID = "DEVELOPMENT_AID",
-  HUMANITARIAN_INTERVENTION = "HUMANITARIAN_INTERVENTION",
-  TRADE_AGREEMENTS = "TRADE_AGREEMENTS",
-  SECURITY_ALLIANCES = "SECURITY_ALLIANCES",
-  
-  // Innovation and Development Components
-  RESEARCH_AND_DEVELOPMENT = "RESEARCH_AND_DEVELOPMENT",
-  INNOVATION_ECOSYSTEM = "INNOVATION_ECOSYSTEM",
-  TECHNOLOGY_TRANSFER = "TECHNOLOGY_TRANSFER",
-  ENTREPRENEURSHIP_SUPPORT = "ENTREPRENEURSHIP_SUPPORT",
-  INTELLECTUAL_PROPERTY = "INTELLECTUAL_PROPERTY",
-  STARTUP_INCUBATION = "STARTUP_INCUBATION",
-  DIGITAL_INFRASTRUCTURE = "DIGITAL_INFRASTRUCTURE",
-  SMART_CITIES = "SMART_CITIES",
-  
-  // Crisis Management Components
-  EMERGENCY_RESPONSE = "EMERGENCY_RESPONSE",
-  DISASTER_PREPAREDNESS = "DISASTER_PREPAREDNESS",
-  PANDEMIC_MANAGEMENT = "PANDEMIC_MANAGEMENT",
-  CYBERSECURITY = "CYBERSECURITY",
-  COUNTER_TERRORISM = "COUNTER_TERRORISM",
-  CRISIS_COMMUNICATION = "CRISIS_COMMUNICATION",
-  RECOVERY_PLANNING = "RECOVERY_PLANNING",
-  RESILIENCE_BUILDING = "RESILIENCE_BUILDING",
-
-  // Governance Quality Components
-  ANTI_CORRUPTION = "ANTI_CORRUPTION",
-  TRANSPARENCY_INITIATIVE = "TRANSPARENCY_INITIATIVE",
-
-  // Additional Government Systems (from Prisma schema)
-  MINIMAL_GOVERNMENT = "MINIMAL_GOVERNMENT",
-  PRIVATE_SECTOR_LEADERSHIP = "PRIVATE_SECTOR_LEADERSHIP",
-  SOCIAL_DEMOCRACY = "SOCIAL_DEMOCRACY",
-  COMPREHENSIVE_WELFARE = "COMPREHENSIVE_WELFARE",
-  PUBLIC_SECTOR_LEADERSHIP = "PUBLIC_SECTOR_LEADERSHIP",
-  ENVIRONMENTAL_FOCUS = "ENVIRONMENTAL_FOCUS",
-  ECONOMIC_PLANNING = "ECONOMIC_PLANNING",
-  DEVELOPMENTAL_STATE = "DEVELOPMENTAL_STATE",
-  MERITOCRATIC_SYSTEM = "MERITOCRATIC_SYSTEM",
-  REGIONAL_DEVELOPMENT = "REGIONAL_DEVELOPMENT"
+  category: string;
+  prerequisites: string[];
+  color: string;
+  icon: React.ComponentType<{ className?: string }>;
+  metadata: {
+    complexity: 'Low' | 'Medium' | 'High';
+    timeToImplement: string;
+    staffRequired: number;
+    technologyRequired: boolean;
+  };
 }
 
 // Atomic Component Library
@@ -168,7 +101,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.FEDERAL_SYSTEM, ComponentType.CONSENSUS_PROCESS],
     implementationCost: 100000,
     maintenanceCost: 50000,
-    requiredCapacity: 75
+    requiredCapacity: 75,
+    category: 'general',
+    prerequisites: [],
+    color: 'blue',
+    icon: Settings,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 25,
+      technologyRequired: false
+    }
   },
   
   [ComponentType.FEDERAL_SYSTEM]: {
@@ -181,7 +124,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.CENTRALIZED_POWER, ComponentType.AUTOCRATIC_PROCESS],
     implementationCost: 150000,
     maintenanceCost: 75000,
-    requiredCapacity: 85
+    requiredCapacity: 85,
+    category: 'governance',
+    prerequisites: [],
+    color: 'blue',
+    icon: Building2,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24 months',
+      staffRequired: 40,
+      technologyRequired: true
+    }
   },
   
   [ComponentType.CONFEDERATE_SYSTEM]: {
@@ -194,7 +147,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.CENTRALIZED_POWER, ComponentType.PROFESSIONAL_BUREAUCRACY],
     implementationCost: 80000,
     maintenanceCost: 40000,
-    requiredCapacity: 60
+    requiredCapacity: 60,
+    category: 'governance',
+    prerequisites: [],
+    color: 'blue',
+    icon: Building2,
+    metadata: {
+      complexity: 'Low',
+      timeToImplement: '12 months',
+      staffRequired: 15,
+      technologyRequired: false
+    }
   },
   
   [ComponentType.UNITARY_SYSTEM]: {
@@ -207,7 +170,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.FEDERAL_SYSTEM, ComponentType.CONFEDERATE_SYSTEM],
     implementationCost: 90000,
     maintenanceCost: 45000,
-    requiredCapacity: 70
+    requiredCapacity: 70,
+    category: 'governance',
+    prerequisites: [],
+    color: 'blue',
+    icon: Building2,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 10,
+      technologyRequired: false
+    }
   },
   
   // Decision Process
@@ -221,7 +194,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.AUTOCRATIC_PROCESS, ComponentType.MILITARY_ADMINISTRATION],
     implementationCost: 120000,
     maintenanceCost: 60000,
-    requiredCapacity: 80
+    requiredCapacity: 80,
+    category: 'process',
+    prerequisites: [],
+    color: 'green',
+    icon: Users,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 12,
+      technologyRequired: true
+    }
   },
   
   [ComponentType.AUTOCRATIC_PROCESS]: {
@@ -234,7 +217,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.DEMOCRATIC_PROCESS, ComponentType.CONSENSUS_PROCESS],
     implementationCost: 80000,
     maintenanceCost: 40000,
-    requiredCapacity: 65
+    requiredCapacity: 65,
+    category: 'process',
+    prerequisites: [],
+    color: 'red',
+    icon: Shield,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: false
+    }
   },
   
   [ComponentType.TECHNOCRATIC_PROCESS]: {
@@ -247,7 +240,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.CHARISMATIC_LEGITIMACY, ComponentType.TRADITIONAL_LEGITIMACY],
     implementationCost: 140000,
     maintenanceCost: 70000,
-    requiredCapacity: 90
+    requiredCapacity: 90,
+    category: 'process',
+    prerequisites: [],
+    color: 'purple',
+    icon: Settings,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
   
   [ComponentType.CONSENSUS_PROCESS]: {
@@ -260,7 +263,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.AUTOCRATIC_PROCESS, ComponentType.CENTRALIZED_POWER],
     implementationCost: 100000,
     maintenanceCost: 80000,
-    requiredCapacity: 75
+    requiredCapacity: 75,
+    category: 'process',
+    prerequisites: [],
+    color: 'green',
+    icon: Users,
+    metadata: {
+      complexity: 'Low',
+      timeToImplement: '6-12 months',
+      staffRequired: 5,
+      technologyRequired: false
+    }
   },
   
   [ComponentType.OLIGARCHIC_PROCESS]: {
@@ -273,7 +286,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.DEMOCRATIC_PROCESS, ComponentType.ELECTORAL_LEGITIMACY],
     implementationCost: 90000,
     maintenanceCost: 45000,
-    requiredCapacity: 70
+    requiredCapacity: 70,
+    category: 'process',
+    prerequisites: [],
+    color: 'orange',
+    icon: Crown,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 10,
+      technologyRequired: false
+    }
   },
   
   // Legitimacy Sources
@@ -287,7 +310,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.AUTOCRATIC_PROCESS, ComponentType.MILITARY_ADMINISTRATION],
     implementationCost: 110000,
     maintenanceCost: 70000,
-    requiredCapacity: 85
+    requiredCapacity: 85,
+    category: 'legitimacy',
+    prerequisites: [],
+    color: 'green',
+    icon: Vote,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 11,
+      technologyRequired: true
+    }
   },
   
   [ComponentType.TRADITIONAL_LEGITIMACY]: {
@@ -300,7 +333,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.TECHNOCRATIC_PROCESS, ComponentType.PERFORMANCE_LEGITIMACY],
     implementationCost: 70000,
     maintenanceCost: 30000,
-    requiredCapacity: 60
+    requiredCapacity: 60,
+    category: 'legitimacy',
+    prerequisites: [],
+    color: 'amber',
+    icon: Clock,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 10,
+      technologyRequired: false
+    }
   },
   
   [ComponentType.PERFORMANCE_LEGITIMACY]: {
@@ -313,7 +356,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.TRADITIONAL_LEGITIMACY, ComponentType.CHARISMATIC_LEGITIMACY],
     implementationCost: 130000,
     maintenanceCost: 80000,
-    requiredCapacity: 90
+    requiredCapacity: 90,
+    category: 'legitimacy',
+    prerequisites: [],
+    color: 'blue',
+    icon: TrendingUp,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
   
   [ComponentType.CHARISMATIC_LEGITIMACY]: {
@@ -326,7 +379,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.TECHNOCRATIC_PROCESS, ComponentType.INSTITUTIONAL_LEGITIMACY],
     implementationCost: 60000,
     maintenanceCost: 90000,
-    requiredCapacity: 70
+    requiredCapacity: 70,
+    category: 'legitimacy',
+    prerequisites: [],
+    color: 'purple',
+    icon: Star,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 10,
+      technologyRequired: false
+    }
   },
   
   [ComponentType.RELIGIOUS_LEGITIMACY]: {
@@ -339,7 +402,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.TECHNOCRATIC_PROCESS, ComponentType.RULE_OF_LAW],
     implementationCost: 80000,
     maintenanceCost: 40000,
-    requiredCapacity: 65
+    requiredCapacity: 65,
+    category: 'legitimacy',
+    prerequisites: [],
+    color: 'amber',
+    icon: Cross,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 10,
+      technologyRequired: false
+    }
   },
   
   // Institution Components
@@ -353,7 +426,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.PARTISAN_INSTITUTIONS, ComponentType.MILITARY_ADMINISTRATION],
     implementationCost: 150000,
     maintenanceCost: 100000,
-    requiredCapacity: 95
+    requiredCapacity: 95,
+    category: 'administration',
+    prerequisites: [],
+    color: 'blue',
+    icon: Briefcase,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
   
   [ComponentType.MILITARY_ADMINISTRATION]: {
@@ -366,7 +449,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.DEMOCRATIC_PROCESS, ComponentType.INDEPENDENT_JUDICIARY],
     implementationCost: 100000,
     maintenanceCost: 60000,
-    requiredCapacity: 80
+    requiredCapacity: 80,
+    category: 'administration',
+    prerequisites: [],
+    color: 'red',
+    icon: Shield,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
   
   [ComponentType.INDEPENDENT_JUDICIARY]: {
@@ -379,7 +472,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.AUTOCRATIC_PROCESS, ComponentType.MILITARY_ADMINISTRATION],
     implementationCost: 120000,
     maintenanceCost: 80000,
-    requiredCapacity: 85
+    requiredCapacity: 85,
+    category: 'administration',
+    prerequisites: [],
+    color: 'green',
+    icon: Scale,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
   
   [ComponentType.PARTISAN_INSTITUTIONS]: {
@@ -392,7 +495,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.PROFESSIONAL_BUREAUCRACY, ComponentType.INDEPENDENT_JUDICIARY],
     implementationCost: 80000,
     maintenanceCost: 50000,
-    requiredCapacity: 65
+    requiredCapacity: 65,
+    category: 'administration',
+    prerequisites: [],
+    color: 'orange',
+    icon: Flag,
+    metadata: {
+      complexity: 'Low',
+      timeToImplement: '6-12 months',
+      staffRequired: 5,
+      technologyRequired: false
+    }
   },
   
   [ComponentType.TECHNOCRATIC_AGENCIES]: {
@@ -405,7 +518,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.TRADITIONAL_LEGITIMACY, ComponentType.PARTISAN_INSTITUTIONS],
     implementationCost: 160000,
     maintenanceCost: 120000,
-    requiredCapacity: 95
+    requiredCapacity: 95,
+    category: 'administration',
+    prerequisites: [],
+    color: 'purple',
+    icon: Cpu,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
   
   // Control Mechanisms
@@ -419,7 +542,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.AUTOCRATIC_PROCESS, ComponentType.MILITARY_ENFORCEMENT],
     implementationCost: 140000,
     maintenanceCost: 90000,
-    requiredCapacity: 90
+    requiredCapacity: 90,
+    category: 'legal',
+    prerequisites: [],
+    color: 'green',
+    icon: Scale,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
   
   [ComponentType.SURVEILLANCE_SYSTEM]: {
@@ -432,7 +565,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.DEMOCRATIC_PROCESS, ComponentType.RULE_OF_LAW],
     implementationCost: 120000,
     maintenanceCost: 80000,
-    requiredCapacity: 75
+    requiredCapacity: 75,
+    category: 'security',
+    prerequisites: [],
+    color: 'red',
+    icon: Eye,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: false
+    }
   },
   
   [ComponentType.ECONOMIC_INCENTIVES]: {
@@ -445,7 +588,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.TRADITIONAL_LEGITIMACY, ComponentType.RELIGIOUS_LEGITIMACY],
     implementationCost: 110000,
     maintenanceCost: 70000,
-    requiredCapacity: 75
+    requiredCapacity: 75,
+    category: 'economic',
+    prerequisites: [],
+    color: 'green',
+    icon: DollarSign,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 11,
+      technologyRequired: false
+    }
   },
   
   [ComponentType.SOCIAL_PRESSURE]: {
@@ -458,7 +611,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.TECHNOCRATIC_PROCESS, ComponentType.SURVEILLANCE_SYSTEM],
     implementationCost: 60000,
     maintenanceCost: 30000,
-    requiredCapacity: 55
+    requiredCapacity: 55,
+    category: 'social',
+    prerequisites: [],
+    color: 'purple',
+    icon: Users,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 10,
+      technologyRequired: false
+    }
   },
   
   [ComponentType.MILITARY_ENFORCEMENT]: {
@@ -471,7 +634,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.DEMOCRATIC_PROCESS, ComponentType.RULE_OF_LAW],
     implementationCost: 100000,
     maintenanceCost: 80000,
-    requiredCapacity: 85
+    requiredCapacity: 85,
+    category: 'security',
+    prerequisites: [],
+    color: 'red',
+    icon: Shield,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   // Economic Governance Components
@@ -485,7 +658,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.PLANNED_ECONOMY, ComponentType.WELFARE_STATE],
     implementationCost: 80000,
     maintenanceCost: 40000,
-    requiredCapacity: 70
+    requiredCapacity: 70,
+    category: 'economic',
+    prerequisites: [],
+    color: 'green',
+    icon: TrendingUp,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: false
+    }
   },
 
   [ComponentType.PLANNED_ECONOMY]: {
@@ -498,7 +681,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.FREE_MARKET_SYSTEM, ComponentType.ECONOMIC_INCENTIVES],
     implementationCost: 120000,
     maintenanceCost: 90000,
-    requiredCapacity: 85
+    requiredCapacity: 85,
+    category: 'economic',
+    prerequisites: [],
+    color: 'red',
+    icon: Target,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 12,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.MIXED_ECONOMY]: {
@@ -511,7 +704,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.PLANNED_ECONOMY, ComponentType.FREE_MARKET_SYSTEM],
     implementationCost: 90000,
     maintenanceCost: 60000,
-    requiredCapacity: 75
+    requiredCapacity: 75,
+    category: 'economic',
+    prerequisites: [],
+    color: 'blue',
+    icon: BarChart3,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 10,
+      technologyRequired: false
+    }
   },
 
   [ComponentType.CORPORATIST_SYSTEM]: {
@@ -524,7 +727,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.DEMOCRATIC_PROCESS, ComponentType.FREE_MARKET_SYSTEM],
     implementationCost: 95000,
     maintenanceCost: 70000,
-    requiredCapacity: 80
+    requiredCapacity: 80,
+    category: 'economic',
+    prerequisites: [],
+    color: 'orange',
+    icon: Building2,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 10,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.SOCIAL_MARKET_ECONOMY]: {
@@ -537,7 +750,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.FREE_MARKET_SYSTEM, ComponentType.PLANNED_ECONOMY],
     implementationCost: 110000,
     maintenanceCost: 80000,
-    requiredCapacity: 85
+    requiredCapacity: 85,
+    category: 'economic',
+    prerequisites: [],
+    color: 'blue',
+    icon: Heart,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.STATE_CAPITALISM]: {
@@ -550,7 +773,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.FREE_MARKET_SYSTEM, ComponentType.DEMOCRATIC_PROCESS],
     implementationCost: 100000,
     maintenanceCost: 75000,
-    requiredCapacity: 80
+    requiredCapacity: 80,
+    category: 'economic',
+    prerequisites: [],
+    color: 'red',
+    icon: Building2,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 10,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.RESOURCE_BASED_ECONOMY]: {
@@ -563,7 +796,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.KNOWLEDGE_ECONOMY, ComponentType.INNOVATION_ECOSYSTEM],
     implementationCost: 85000,
     maintenanceCost: 60000,
-    requiredCapacity: 75
+    requiredCapacity: 75,
+    category: 'economic',
+    prerequisites: [],
+    color: 'amber',
+    icon: Leaf,
+    metadata: {
+      complexity: 'Low',
+      timeToImplement: '6-12 months',
+      staffRequired: 5,
+      technologyRequired: false
+    }
   },
 
   [ComponentType.KNOWLEDGE_ECONOMY]: {
@@ -576,7 +819,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.RESOURCE_BASED_ECONOMY, ComponentType.TRADITIONAL_LEGITIMACY],
     implementationCost: 140000,
     maintenanceCost: 120000,
-    requiredCapacity: 95
+    requiredCapacity: 95,
+    category: 'economic',
+    prerequisites: [],
+    color: 'purple',
+    icon: Brain,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   // Administrative Efficiency Components
@@ -590,7 +843,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.TRADITIONAL_LEGITIMACY, ComponentType.SOCIAL_PRESSURE],
     implementationCost: 130000,
     maintenanceCost: 100000,
-    requiredCapacity: 90
+    requiredCapacity: 90,
+    category: 'technology',
+    prerequisites: [],
+    color: 'purple',
+    icon: Monitor,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.E_GOVERNANCE]: {
@@ -603,7 +866,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.AUTOCRATIC_PROCESS, ComponentType.TRADITIONAL_LEGITIMACY],
     implementationCost: 120000,
     maintenanceCost: 90000,
-    requiredCapacity: 85
+    requiredCapacity: 85,
+    category: 'technology',
+    prerequisites: [],
+    color: 'blue',
+    icon: Globe,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.ADMINISTRATIVE_DECENTRALIZATION]: {
@@ -616,7 +889,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.CENTRALIZED_POWER, ComponentType.AUTOCRATIC_PROCESS],
     implementationCost: 90000,
     maintenanceCost: 70000,
-    requiredCapacity: 80
+    requiredCapacity: 80,
+    category: 'administration',
+    prerequisites: [],
+    color: 'green',
+    icon: Network,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 10,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.MERIT_BASED_SYSTEM]: {
@@ -629,7 +912,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.PARTISAN_INSTITUTIONS, ComponentType.TRADITIONAL_LEGITIMACY],
     implementationCost: 110000,
     maintenanceCost: 85000,
-    requiredCapacity: 90
+    requiredCapacity: 90,
+    category: 'administration',
+    prerequisites: [],
+    color: 'blue',
+    icon: Award,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.PERFORMANCE_MANAGEMENT]: {
@@ -642,7 +935,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.TRADITIONAL_LEGITIMACY, ComponentType.CHARISMATIC_LEGITIMACY],
     implementationCost: 100000,
     maintenanceCost: 80000,
-    requiredCapacity: 85
+    requiredCapacity: 85,
+    category: 'administration',
+    prerequisites: [],
+    color: 'blue',
+    icon: BarChart3,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.QUALITY_ASSURANCE]: {
@@ -655,7 +958,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.PARTISAN_INSTITUTIONS, ComponentType.TRADITIONAL_LEGITIMACY],
     implementationCost: 95000,
     maintenanceCost: 75000,
-    requiredCapacity: 80
+    requiredCapacity: 80,
+    category: 'administration',
+    prerequisites: [],
+    color: 'green',
+    icon: CheckCircle,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.STRATEGIC_PLANNING]: {
@@ -668,7 +981,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.CONSENSUS_PROCESS, ComponentType.CHARISMATIC_LEGITIMACY],
     implementationCost: 105000,
     maintenanceCost: 85000,
-    requiredCapacity: 85
+    requiredCapacity: 85,
+    category: 'planning',
+    prerequisites: [],
+    color: 'purple',
+    icon: Target,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.RISK_MANAGEMENT]: {
@@ -681,7 +1004,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.CHARISMATIC_LEGITIMACY, ComponentType.TRADITIONAL_LEGITIMACY],
     implementationCost: 90000,
     maintenanceCost: 70000,
-    requiredCapacity: 80
+    requiredCapacity: 80,
+    category: 'planning',
+    prerequisites: [],
+    color: 'orange',
+    icon: AlertTriangle,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 10,
+      technologyRequired: true
+    }
   },
 
   // Social Policy Components
@@ -695,7 +1028,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.FREE_MARKET_SYSTEM, ComponentType.AUTOCRATIC_PROCESS],
     implementationCost: 120000,
     maintenanceCost: 100000,
-    requiredCapacity: 85
+    requiredCapacity: 85,
+    category: 'social',
+    prerequisites: [],
+    color: 'blue',
+    icon: Heart,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.UNIVERSAL_HEALTHCARE]: {
@@ -708,7 +1051,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.FREE_MARKET_SYSTEM, ComponentType.ECONOMIC_INCENTIVES],
     implementationCost: 130000,
     maintenanceCost: 110000,
-    requiredCapacity: 90
+    requiredCapacity: 90,
+    category: 'social',
+    prerequisites: [],
+    color: 'green',
+    icon: Heart,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.PUBLIC_EDUCATION]: {
@@ -721,7 +1074,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.FREE_MARKET_SYSTEM, ComponentType.TRADITIONAL_LEGITIMACY],
     implementationCost: 115000,
     maintenanceCost: 95000,
-    requiredCapacity: 85
+    requiredCapacity: 85,
+    category: 'social',
+    prerequisites: [],
+    color: 'blue',
+    icon: GraduationCap,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.SOCIAL_SAFETY_NET]: {
@@ -734,7 +1097,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.FREE_MARKET_SYSTEM, ComponentType.ECONOMIC_INCENTIVES],
     implementationCost: 100000,
     maintenanceCost: 80000,
-    requiredCapacity: 80
+    requiredCapacity: 80,
+    category: 'social',
+    prerequisites: [],
+    color: 'green',
+    icon: Shield,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 10,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.WORKER_PROTECTION]: {
@@ -747,7 +1120,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.FREE_MARKET_SYSTEM, ComponentType.CORPORATIST_SYSTEM],
     implementationCost: 85000,
     maintenanceCost: 70000,
-    requiredCapacity: 75
+    requiredCapacity: 75,
+    category: 'social',
+    prerequisites: [],
+    color: 'green',
+    icon: Shield,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 10,
+      technologyRequired: false
+    }
   },
 
   [ComponentType.ENVIRONMENTAL_PROTECTION]: {
@@ -760,7 +1143,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.RESOURCE_BASED_ECONOMY, ComponentType.FREE_MARKET_SYSTEM],
     implementationCost: 90000,
     maintenanceCost: 75000,
-    requiredCapacity: 80
+    requiredCapacity: 80,
+    category: 'environment',
+    prerequisites: [],
+    color: 'green',
+    icon: Leaf,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 10,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.CULTURAL_PRESERVATION]: {
@@ -773,7 +1166,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.TECHNOCRATIC_PROCESS, ComponentType.INNOVATION_ECOSYSTEM],
     implementationCost: 70000,
     maintenanceCost: 55000,
-    requiredCapacity: 70
+    requiredCapacity: 70,
+    category: 'cultural',
+    prerequisites: [],
+    color: 'amber',
+    icon: BookOpen,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 10,
+      technologyRequired: false
+    }
   },
 
   [ComponentType.MINORITY_RIGHTS]: {
@@ -786,7 +1189,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.AUTOCRATIC_PROCESS, ComponentType.TRADITIONAL_LEGITIMACY],
     implementationCost: 80000,
     maintenanceCost: 65000,
-    requiredCapacity: 75
+    requiredCapacity: 75,
+    category: 'social',
+    prerequisites: [],
+    color: 'green',
+    icon: Users,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 10,
+      technologyRequired: false
+    }
   },
 
   // International Relations Components
@@ -800,7 +1213,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.AUTOCRATIC_PROCESS, ComponentType.MILITARY_ENFORCEMENT],
     implementationCost: 110000,
     maintenanceCost: 90000,
-    requiredCapacity: 85
+    requiredCapacity: 85,
+    category: 'diplomacy',
+    prerequisites: [],
+    color: 'blue',
+    icon: Globe,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.BILATERAL_RELATIONS]: {
@@ -813,7 +1236,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.REGIONAL_INTEGRATION, ComponentType.MULTILATERAL_DIPLOMACY],
     implementationCost: 90000,
     maintenanceCost: 75000,
-    requiredCapacity: 80
+    requiredCapacity: 80,
+    category: 'diplomacy',
+    prerequisites: [],
+    color: 'blue',
+    icon: Handshake,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 10,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.REGIONAL_INTEGRATION]: {
@@ -826,7 +1259,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.BILATERAL_RELATIONS, ComponentType.AUTOCRATIC_PROCESS],
     implementationCost: 120000,
     maintenanceCost: 100000,
-    requiredCapacity: 90
+    requiredCapacity: 90,
+    category: 'diplomacy',
+    prerequisites: [],
+    color: 'purple',
+    icon: Globe,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.INTERNATIONAL_LAW]: {
@@ -839,7 +1282,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.AUTOCRATIC_PROCESS, ComponentType.MILITARY_ENFORCEMENT],
     implementationCost: 100000,
     maintenanceCost: 80000,
-    requiredCapacity: 85
+    requiredCapacity: 85,
+    category: 'legal',
+    prerequisites: [],
+    color: 'blue',
+    icon: Scale,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.DEVELOPMENT_AID]: {
@@ -852,7 +1305,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.AUTOCRATIC_PROCESS, ComponentType.FREE_MARKET_SYSTEM],
     implementationCost: 95000,
     maintenanceCost: 80000,
-    requiredCapacity: 80
+    requiredCapacity: 80,
+    category: 'diplomacy',
+    prerequisites: [],
+    color: 'green',
+    icon: Heart,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 10,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.HUMANITARIAN_INTERVENTION]: {
@@ -865,7 +1328,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.AUTOCRATIC_PROCESS, ComponentType.BILATERAL_RELATIONS],
     implementationCost: 130000,
     maintenanceCost: 110000,
-    requiredCapacity: 90
+    requiredCapacity: 90,
+    category: 'diplomacy',
+    prerequisites: [],
+    color: 'green',
+    icon: Heart,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 13,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.TRADE_AGREEMENTS]: {
@@ -878,7 +1351,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.PLANNED_ECONOMY, ComponentType.RESOURCE_BASED_ECONOMY],
     implementationCost: 85000,
     maintenanceCost: 65000,
-    requiredCapacity: 80
+    requiredCapacity: 80,
+    category: 'economic',
+    prerequisites: [],
+    color: 'green',
+    icon: Handshake,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.SECURITY_ALLIANCES]: {
@@ -891,7 +1374,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.MULTILATERAL_DIPLOMACY, ComponentType.REGIONAL_INTEGRATION],
     implementationCost: 140000,
     maintenanceCost: 120000,
-    requiredCapacity: 90
+    requiredCapacity: 90,
+    category: 'security',
+    prerequisites: [],
+    color: 'red',
+    icon: Shield,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   // Innovation and Development Components
@@ -905,7 +1398,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.TRADITIONAL_LEGITIMACY, ComponentType.RESOURCE_BASED_ECONOMY],
     implementationCost: 150000,
     maintenanceCost: 130000,
-    requiredCapacity: 95
+    requiredCapacity: 95,
+    category: 'innovation',
+    prerequisites: [],
+    color: 'purple',
+    icon: Microscope,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.INNOVATION_ECOSYSTEM]: {
@@ -918,7 +1421,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.TRADITIONAL_LEGITIMACY, ComponentType.CULTURAL_PRESERVATION],
     implementationCost: 140000,
     maintenanceCost: 120000,
-    requiredCapacity: 95
+    requiredCapacity: 95,
+    category: 'innovation',
+    prerequisites: [],
+    color: 'purple',
+    icon: Lightbulb,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.TECHNOLOGY_TRANSFER]: {
@@ -931,7 +1444,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.INTELLECTUAL_PROPERTY, ComponentType.RESOURCE_BASED_ECONOMY],
     implementationCost: 110000,
     maintenanceCost: 90000,
-    requiredCapacity: 85
+    requiredCapacity: 85,
+    category: 'innovation',
+    prerequisites: [],
+    color: 'blue',
+    icon: ArrowRightLeft,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.ENTREPRENEURSHIP_SUPPORT]: {
@@ -944,7 +1467,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.PLANNED_ECONOMY, ComponentType.CORPORATIST_SYSTEM],
     implementationCost: 120000,
     maintenanceCost: 100000,
-    requiredCapacity: 85
+    requiredCapacity: 85,
+    category: 'economic',
+    prerequisites: [],
+    color: 'green',
+    icon: TrendingUp,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.INTELLECTUAL_PROPERTY]: {
@@ -957,7 +1490,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.TECHNOLOGY_TRANSFER, ComponentType.FREE_MARKET_SYSTEM],
     implementationCost: 95000,
     maintenanceCost: 75000,
-    requiredCapacity: 80
+    requiredCapacity: 80,
+    category: 'legal',
+    prerequisites: [],
+    color: 'blue',
+    icon: Copyright,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 10,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.STARTUP_INCUBATION]: {
@@ -970,7 +1513,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.PLANNED_ECONOMY, ComponentType.TRADITIONAL_LEGITIMACY],
     implementationCost: 115000,
     maintenanceCost: 95000,
-    requiredCapacity: 85
+    requiredCapacity: 85,
+    category: 'innovation',
+    prerequisites: [],
+    color: 'purple',
+    icon: Zap,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.DIGITAL_INFRASTRUCTURE]: {
@@ -983,7 +1536,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.TRADITIONAL_LEGITIMACY, ComponentType.RESOURCE_BASED_ECONOMY],
     implementationCost: 160000,
     maintenanceCost: 140000,
-    requiredCapacity: 95
+    requiredCapacity: 95,
+    category: 'technology',
+    prerequisites: [],
+    color: 'purple',
+    icon: Wifi,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.SMART_CITIES]: {
@@ -996,7 +1559,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.TRADITIONAL_LEGITIMACY, ComponentType.CULTURAL_PRESERVATION],
     implementationCost: 180000,
     maintenanceCost: 160000,
-    requiredCapacity: 95
+    requiredCapacity: 95,
+    category: 'technology',
+    prerequisites: [],
+    color: 'purple',
+    icon: Building2,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   // Crisis Management Components
@@ -1010,7 +1583,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.CONSENSUS_PROCESS, ComponentType.ADMINISTRATIVE_DECENTRALIZATION],
     implementationCost: 120000,
     maintenanceCost: 100000,
-    requiredCapacity: 90
+    requiredCapacity: 90,
+    category: 'crisis',
+    prerequisites: [],
+    color: 'red',
+    icon: AlertTriangle,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.DISASTER_PREPAREDNESS]: {
@@ -1023,7 +1606,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.CHARISMATIC_LEGITIMACY, ComponentType.TRADITIONAL_LEGITIMACY],
     implementationCost: 110000,
     maintenanceCost: 90000,
-    requiredCapacity: 85
+    requiredCapacity: 85,
+    category: 'crisis',
+    prerequisites: [],
+    color: 'orange',
+    icon: AlertTriangle,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.PANDEMIC_MANAGEMENT]: {
@@ -1036,7 +1629,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.FREE_MARKET_SYSTEM, ComponentType.ECONOMIC_INCENTIVES],
     implementationCost: 130000,
     maintenanceCost: 110000,
-    requiredCapacity: 90
+    requiredCapacity: 90,
+    category: 'crisis',
+    prerequisites: [],
+    color: 'red',
+    icon: Heart,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.CYBERSECURITY]: {
@@ -1049,7 +1652,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.TRADITIONAL_LEGITIMACY, ComponentType.SOCIAL_PRESSURE],
     implementationCost: 140000,
     maintenanceCost: 120000,
-    requiredCapacity: 95
+    requiredCapacity: 95,
+    category: 'security',
+    prerequisites: [],
+    color: 'purple',
+    icon: Shield,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.COUNTER_TERRORISM]: {
@@ -1062,7 +1675,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.DEMOCRATIC_PROCESS, ComponentType.RULE_OF_LAW],
     implementationCost: 125000,
     maintenanceCost: 105000,
-    requiredCapacity: 90
+    requiredCapacity: 90,
+    category: 'security',
+    prerequisites: [],
+    color: 'red',
+    icon: Shield,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.CRISIS_COMMUNICATION]: {
@@ -1075,7 +1698,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.TRADITIONAL_LEGITIMACY, ComponentType.SOCIAL_PRESSURE],
     implementationCost: 95000,
     maintenanceCost: 75000,
-    requiredCapacity: 80
+    requiredCapacity: 80,
+    category: 'crisis',
+    prerequisites: [],
+    color: 'blue',
+    icon: MessageSquare,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 10,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.RECOVERY_PLANNING]: {
@@ -1088,7 +1721,17 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.AUTOCRATIC_PROCESS, ComponentType.TRADITIONAL_LEGITIMACY],
     implementationCost: 100000,
     maintenanceCost: 80000,
-    requiredCapacity: 80
+    requiredCapacity: 80,
+    category: 'planning',
+    prerequisites: [],
+    color: 'green',
+    icon: RefreshCw,
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '18 months',
+      staffRequired: 10,
+      technologyRequired: true
+    }
   },
 
   [ComponentType.RESILIENCE_BUILDING]: {
@@ -1101,26 +1744,36 @@ export const ATOMIC_COMPONENTS: Partial<Record<ComponentType, AtomicGovernmentCo
     conflicts: [ComponentType.AUTOCRATIC_PROCESS, ComponentType.FREE_MARKET_SYSTEM],
     implementationCost: 115000,
     maintenanceCost: 95000,
-    requiredCapacity: 85
+    requiredCapacity: 85,
+    category: 'planning',
+    prerequisites: [],
+    color: 'green',
+    icon: Shield,
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '24-36 months',
+      staffRequired: 20,
+      technologyRequired: true
+    }
   }
 };
 
-// Component Category Groupings
+// Component Category Groupings with Display Names
 export const COMPONENT_CATEGORIES = {
-  powerDistribution: [
+  'Power Distribution': [
     ComponentType.CENTRALIZED_POWER,
     ComponentType.FEDERAL_SYSTEM,
     ComponentType.CONFEDERATE_SYSTEM,
     ComponentType.UNITARY_SYSTEM
   ],
-  decisionProcess: [
+  'Decision Process': [
     ComponentType.DEMOCRATIC_PROCESS,
     ComponentType.AUTOCRATIC_PROCESS,
     ComponentType.TECHNOCRATIC_PROCESS,
     ComponentType.CONSENSUS_PROCESS,
     ComponentType.OLIGARCHIC_PROCESS
   ],
-  legitimacySources: [
+  'Legitimacy Sources': [
     ComponentType.ELECTORAL_LEGITIMACY,
     ComponentType.TRADITIONAL_LEGITIMACY,
     ComponentType.PERFORMANCE_LEGITIMACY,
@@ -1128,21 +1781,21 @@ export const COMPONENT_CATEGORIES = {
     ComponentType.RELIGIOUS_LEGITIMACY,
     ComponentType.INSTITUTIONAL_LEGITIMACY
   ],
-  institutions: [
+  'Institutions': [
     ComponentType.PROFESSIONAL_BUREAUCRACY,
     ComponentType.MILITARY_ADMINISTRATION,
     ComponentType.INDEPENDENT_JUDICIARY,
     ComponentType.PARTISAN_INSTITUTIONS,
     ComponentType.TECHNOCRATIC_AGENCIES
   ],
-  controlMechanisms: [
+  'Control Mechanisms': [
     ComponentType.RULE_OF_LAW,
     ComponentType.SURVEILLANCE_SYSTEM,
     ComponentType.ECONOMIC_INCENTIVES,
     ComponentType.SOCIAL_PRESSURE,
     ComponentType.MILITARY_ENFORCEMENT
   ],
-  economicGovernance: [
+  'Economic Governance': [
     ComponentType.FREE_MARKET_SYSTEM,
     ComponentType.PLANNED_ECONOMY,
     ComponentType.MIXED_ECONOMY,
@@ -1152,7 +1805,7 @@ export const COMPONENT_CATEGORIES = {
     ComponentType.RESOURCE_BASED_ECONOMY,
     ComponentType.KNOWLEDGE_ECONOMY
   ],
-  administrativeEfficiency: [
+  'Administrative Efficiency': [
     ComponentType.DIGITAL_GOVERNMENT,
     ComponentType.E_GOVERNANCE,
     ComponentType.ADMINISTRATIVE_DECENTRALIZATION,
@@ -1162,7 +1815,7 @@ export const COMPONENT_CATEGORIES = {
     ComponentType.STRATEGIC_PLANNING,
     ComponentType.RISK_MANAGEMENT
   ],
-  socialPolicy: [
+  'Social Policy': [
     ComponentType.WELFARE_STATE,
     ComponentType.UNIVERSAL_HEALTHCARE,
     ComponentType.PUBLIC_EDUCATION,
@@ -1172,7 +1825,7 @@ export const COMPONENT_CATEGORIES = {
     ComponentType.CULTURAL_PRESERVATION,
     ComponentType.MINORITY_RIGHTS
   ],
-  internationalRelations: [
+  'International Relations': [
     ComponentType.MULTILATERAL_DIPLOMACY,
     ComponentType.BILATERAL_RELATIONS,
     ComponentType.REGIONAL_INTEGRATION,
@@ -1182,7 +1835,7 @@ export const COMPONENT_CATEGORIES = {
     ComponentType.TRADE_AGREEMENTS,
     ComponentType.SECURITY_ALLIANCES
   ],
-  innovationAndDevelopment: [
+  'Innovation & Development': [
     ComponentType.RESEARCH_AND_DEVELOPMENT,
     ComponentType.INNOVATION_ECOSYSTEM,
     ComponentType.TECHNOLOGY_TRANSFER,
@@ -1192,7 +1845,7 @@ export const COMPONENT_CATEGORIES = {
     ComponentType.DIGITAL_INFRASTRUCTURE,
     ComponentType.SMART_CITIES
   ],
-  crisisManagement: [
+  'Crisis Management': [
     ComponentType.EMERGENCY_RESPONSE,
     ComponentType.DISASTER_PREPAREDNESS,
     ComponentType.PANDEMIC_MANAGEMENT,
@@ -1204,6 +1857,73 @@ export const COMPONENT_CATEGORIES = {
   ]
 };
 
+// ==================== HELPER FUNCTIONS ====================
+
+export function calculateGovernmentEffectiveness(selectedComponents: ComponentType[]): EffectivenessMetrics {
+  const components = selectedComponents
+    .map(type => ATOMIC_COMPONENTS[type])
+    .filter((comp): comp is AtomicGovernmentComponent => comp !== undefined);
+  
+  const baseEffectiveness = components.reduce((sum, comp) => sum + comp.effectiveness, 0) / (components.length || 1);
+  
+  let synergyBonus = 0;
+  let synergyCount = 0;
+  let conflictPenalty = 0;
+  let conflictCount = 0;
+  
+  for (let i = 0; i < selectedComponents.length; i++) {
+    for (let j = i + 1; j < selectedComponents.length; j++) {
+      const comp1 = selectedComponents[i];
+      const comp2 = selectedComponents[j];
+      
+      const synergy = checkGovernmentSynergy(comp1, comp2);
+      if (synergy > 0) {
+        synergyBonus += synergy;
+        synergyCount++;
+      }
+      
+      if (checkGovernmentConflict(comp1, comp2)) {
+        conflictPenalty += 15;
+        conflictCount++;
+      }
+    }
+  }
+  
+  const totalEffectiveness = Math.max(0, Math.min(100, baseEffectiveness + synergyBonus - conflictPenalty));
+  
+  return {
+    baseEffectiveness,
+    synergyBonus,
+    conflictPenalty,
+    totalEffectiveness,
+    synergyCount,
+    conflictCount
+  };
+}
+
+export function checkGovernmentSynergy(comp1: string, comp2: string): number {
+  const component1 = ATOMIC_COMPONENTS[comp1 as ComponentType];
+  const component2 = ATOMIC_COMPONENTS[comp2 as ComponentType];
+  
+  if (!component1 || !component2) return 0;
+  
+  if (component1.synergies.includes(comp2 as ComponentType)) return 10;
+  if (component2.synergies.includes(comp1 as ComponentType)) return 10;
+  
+  return 0;
+}
+
+export function checkGovernmentConflict(comp1: string, comp2: string): boolean {
+  const component1 = ATOMIC_COMPONENTS[comp1 as ComponentType];
+  const component2 = ATOMIC_COMPONENTS[comp2 as ComponentType];
+  
+  if (!component1 || !component2) return false;
+  
+  return component1.conflicts.includes(comp2 as ComponentType) || component2.conflicts.includes(comp1 as ComponentType);
+}
+
+// ==================== COMPONENT SELECTOR ====================
+
 interface AtomicComponentSelectorProps {
   selectedComponents: ComponentType[];
   onComponentChange: (components: ComponentType[]) => void;
@@ -1211,258 +1931,238 @@ interface AtomicComponentSelectorProps {
   isReadOnly?: boolean;
 }
 
-export function AtomicComponentSelector({ 
-  selectedComponents, 
-  onComponentChange, 
-  maxComponents = 10,
-  isReadOnly = false 
-}: AtomicComponentSelectorProps) {
-  const [activeCategory, setActiveCategory] = useState<keyof typeof COMPONENT_CATEGORIES>('powerDistribution');
-  
-  const calculateSynergies = (components: ComponentType[]) => {
-    let synergyScore = 0;
-    let conflictScore = 0;
-    
-    components.forEach(comp1 => {
-      components.forEach(comp2 => {
-        if (comp1 !== comp2) {
-          const component1 = ATOMIC_COMPONENTS[comp1];
-          const component2 = ATOMIC_COMPONENTS[comp2];
-          
-          if (component1?.synergies.includes(comp2)) synergyScore += 10;
-          if (component1?.conflicts.includes(comp2)) conflictScore += 10;
-        }
-      });
-    });
-    
-    return { synergyScore, conflictScore };
-  };
-  
-  const toggleComponent = (componentType: ComponentType) => {
-    if (isReadOnly) return;
-    
-    if (selectedComponents.includes(componentType)) {
-      onComponentChange(selectedComponents.filter(c => c !== componentType));
-    } else if (selectedComponents.length < maxComponents) {
-      onComponentChange([...selectedComponents, componentType]);
+// Convert AtomicGovernmentComponent to UnifiedAtomicComponent
+function convertToUnifiedComponents(components: Partial<Record<ComponentType, AtomicGovernmentComponent>>): Record<string, any> {
+  const converted: Record<string, any> = {};
+
+  Object.entries(components).forEach(([key, component]) => {
+    if (component) {
+      converted[key] = {
+        id: component.id,
+        name: component.name,
+        category: component.category,
+        description: component.description,
+        effectiveness: component.effectiveness,
+        implementationCost: component.implementationCost,
+        maintenanceCost: component.maintenanceCost,
+        prerequisites: component.prerequisites,
+        synergies: component.synergies.map(s => s.toString()),
+        conflicts: component.conflicts.map(c => c.toString()),
+        metadata: component.metadata,
+        icon: component.icon,
+        color: component.color
+      };
     }
-  };
-  
-  const { synergyScore, conflictScore } = calculateSynergies(selectedComponents);
-  const effectivenessScore = selectedComponents.reduce(
-    (sum, comp) => sum + (ATOMIC_COMPONENTS[comp]?.effectiveness || 0), 0
-  ) / selectedComponents.length || 0;
-  
+  });
+
+  return converted;
+}
+
+// ==================== HELP MODAL ====================
+
+export function AtomicGovernmentHelp() {
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Settings className="h-5 w-5 text-blue-600" />
-            </div>
-            <div>
-              <CardTitle>Atomic Government Components</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Build your government using atomic components that interact and create emergent complexity
-              </p>
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950"
+        >
+          <HelpCircle className="h-4 w-4" />
+          What are Atomic Components?
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-2xl">
+            <Atom className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            Atomic Government Components
+          </DialogTitle>
+          <DialogDescription className="text-base">
+            Revolutionary modular governance with 80+ building blocks
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6 mt-4">
+          <section>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+              What are Atomic Components?
+            </h3>
+            <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+              Atomic Components break governance into fundamental building blocks. Instead of choosing
+              a pre-defined government type, you assemble a custom structure from modular components.
+              This enables unprecedented government customization and experimentation.
+            </p>
+          </section>
+
+          <div className="bg-purple-50 border border-purple-200 dark:bg-purple-500/10 dark:border-purple-500/30 rounded-lg p-4">
+            <div className="flex gap-3">
+              <Info className="w-5 h-5 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-purple-900 dark:text-purple-300 font-semibold mb-1">
+                  Innovation Hub
+                </h4>
+                <p className="text-purple-800 dark:text-purple-100/80 text-sm">
+                  The Atomic Government system is unique to IxStats and allows political configurations
+                  impossible in traditional systems.
+                </p>
+              </div>
             </div>
           </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{effectivenessScore.toFixed(0)}</div>
-              <div className="text-xs text-muted-foreground">Effectiveness</div>
+
+          <section>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-3">
+              Core Principles
+            </h3>
+            <div className="space-y-3">
+              <div className="flex gap-3">
+                <div className="p-2 bg-purple-500/20 rounded-lg h-fit">
+                  <Blocks className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-slate-900 dark:text-white mb-1">Modularity</h4>
+                  <p className="text-sm text-slate-700 dark:text-slate-300">
+                    Each component is independent. Mix and match Power Distribution, Decision Process,
+                    Legitimacy, Institutions, and Control components freely.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="p-2 bg-blue-500/20 rounded-lg h-fit">
+                  <Zap className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-slate-900 dark:text-white mb-1">Synergy Effects</h4>
+                  <p className="text-sm text-slate-700 dark:text-slate-300">
+                    Components interact dynamically. Certain combinations unlock bonuses (+10% effectiveness)
+                    while others create conflicts (-15% effectiveness) requiring careful management.
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">+{synergyScore}</div>
-              <div className="text-xs text-muted-foreground">Synergies</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">-{conflictScore}</div>
-              <div className="text-xs text-muted-foreground">Conflicts</div>
+          </section>
+
+          <section>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+              Component Categories
+            </h3>
+            <p className="text-slate-700 dark:text-slate-300 text-sm mb-3">
+              The 80+ atomic components are organized into 11 major categories:
+            </p>
+            <ul className="space-y-1.5 text-sm text-slate-700 dark:text-slate-300">
+              <li className="flex gap-2">
+                <span className="text-purple-600 dark:text-purple-400">•</span>
+                <span><strong>Power Distribution:</strong> Centralized, Federal, Confederate, Unitary</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-purple-600 dark:text-purple-400">•</span>
+                <span><strong>Decision Process:</strong> Democratic, Autocratic, Technocratic, Consensus, Oligarchic</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-purple-600 dark:text-purple-400">•</span>
+                <span><strong>Legitimacy Sources:</strong> Electoral, Traditional, Performance, Charismatic, Religious</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-purple-600 dark:text-purple-400">•</span>
+                <span><strong>Institutions:</strong> Professional Bureaucracy, Military Admin, Independent Judiciary</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-purple-600 dark:text-purple-400">•</span>
+                <span><strong>Economic Governance:</strong> Free Market, Planned Economy, Mixed, Knowledge Economy</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-purple-600 dark:text-purple-400">•</span>
+                <span className="text-slate-500 dark:text-slate-400">...and 6 more categories including Social Policy, International Relations, and Crisis Management</span>
+              </li>
+            </ul>
+          </section>
+
+          <section>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+              How to Use
+            </h3>
+            <ol className="space-y-2 text-sm text-slate-700 dark:text-slate-300">
+              <li className="flex gap-2">
+                <span className="font-semibold text-purple-600 dark:text-purple-400">1.</span>
+                <span>Select 3-10 components to create a functional government</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="font-semibold text-purple-600 dark:text-purple-400">2.</span>
+                <span>Watch for synergy bonuses (green indicators) and conflicts (red warnings)</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="font-semibold text-purple-600 dark:text-purple-400">3.</span>
+                <span>Check effectiveness score and adjust components for optimal performance</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="font-semibold text-purple-600 dark:text-purple-400">4.</span>
+                <span>Review implementation costs and prerequisites before finalizing</span>
+              </li>
+            </ol>
+          </section>
+
+          <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+            <Link
+              href="/help/government/atomic"
+              className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium transition-colors"
+            >
+              <BookOpen className="w-4 h-4" />
+              Read Full Documentation
+              <ExternalLink className="w-3.5 h-3.5" />
+            </Link>
+            <div className="mt-2 flex gap-3">
+              <Link
+                href="/help/government/components"
+                className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                Component Reference
+              </Link>
+              <span className="text-slate-300 dark:text-slate-700">•</span>
+              <Link
+                href="/help/government/synergy"
+                className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                Synergy Guide
+              </Link>
             </div>
           </div>
         </div>
-      </CardHeader>
-      
-      <CardContent className="space-y-6">
-        {/* Component Selection Progress */}
-        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-          <span className="text-sm font-medium text-foreground">
-            Components Selected: {selectedComponents.length} / {maxComponents}
-          </span>
-          <div className="w-32 bg-muted-foreground/20 rounded-full h-2">
-            <div
-              className="bg-primary h-2 rounded-full transition-all"
-              style={{ width: `${maxComponents > 0 ? Math.min(100, (selectedComponents.length / maxComponents) * 100) : 0}%` }}
-            />
-          </div>
-        </div>
-        
-        {/* Category Tabs */}
-        <Tabs value={activeCategory} onValueChange={(value) => setActiveCategory(value as keyof typeof COMPONENT_CATEGORIES)}>
-          <TabsList className="grid w-full grid-cols-6 lg:grid-cols-11 bg-muted/50 overflow-x-auto">
-            <TabsTrigger value="powerDistribution" className="text-xs data-[state=active]:bg-background data-[state=active]:text-foreground">Power</TabsTrigger>
-            <TabsTrigger value="decisionProcess" className="text-xs data-[state=active]:bg-background data-[state=active]:text-foreground">Decisions</TabsTrigger>
-            <TabsTrigger value="legitimacySources" className="text-xs data-[state=active]:bg-background data-[state=active]:text-foreground">Legitimacy</TabsTrigger>
-            <TabsTrigger value="institutions" className="text-xs data-[state=active]:bg-background data-[state=active]:text-foreground">Institutions</TabsTrigger>
-            <TabsTrigger value="controlMechanisms" className="text-xs data-[state=active]:bg-background data-[state=active]:text-foreground">Control</TabsTrigger>
-            <TabsTrigger value="economicGovernance" className="text-xs data-[state=active]:bg-background data-[state=active]:text-foreground">Economic</TabsTrigger>
-            <TabsTrigger value="administrativeEfficiency" className="text-xs data-[state=active]:bg-background data-[state=active]:text-foreground">Admin</TabsTrigger>
-            <TabsTrigger value="socialPolicy" className="text-xs data-[state=active]:bg-background data-[state=active]:text-foreground">Social</TabsTrigger>
-            <TabsTrigger value="internationalRelations" className="text-xs data-[state=active]:bg-background data-[state=active]:text-foreground">International</TabsTrigger>
-            <TabsTrigger value="innovationAndDevelopment" className="text-xs data-[state=active]:bg-background data-[state=active]:text-foreground">Innovation</TabsTrigger>
-            <TabsTrigger value="crisisManagement" className="text-xs data-[state=active]:bg-background data-[state=active]:text-foreground">Crisis</TabsTrigger>
-          </TabsList>
-          
-          {Object.entries(COMPONENT_CATEGORIES).map(([categoryKey, components]) => (
-            <TabsContent key={categoryKey} value={categoryKey} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {components.map(componentType => {
-                  const component = ATOMIC_COMPONENTS[componentType];
-                  const isSelected = selectedComponents.includes(componentType);
-                  const hasConflict = selectedComponents.some(selected => 
-                    component?.conflicts.includes(selected) || ATOMIC_COMPONENTS[selected]?.conflicts.includes(componentType)
-                  );
-                  const hasSynergy = selectedComponents.some(selected => 
-                    component?.synergies.includes(selected) || ATOMIC_COMPONENTS[selected]?.synergies.includes(componentType)
-                  );
-                  
-                  return (
-                    <div
-                      key={componentType}
-                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                        isSelected
-                          ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-950/30'
-                          : hasConflict && !isSelected
-                            ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 opacity-60'
-                            : hasSynergy && !isSelected
-                              ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30'
-                              : 'border-border hover:border-foreground/30'
-                      } ${isReadOnly ? 'cursor-not-allowed opacity-60' : ''}`}
-                      onClick={() => toggleComponent(componentType)}
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <h4 className="font-medium text-sm text-foreground">{component?.name}</h4>
-                        <div className="flex items-center gap-1">
-                          <Badge variant="outline" className="text-xs">
-                            {component?.effectiveness}%
-                          </Badge>
-                          {isSelected && <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />}
-                          {hasConflict && !isSelected && <AlertCircle className="h-4 w-4 text-red-500 dark:text-red-400" />}
-                          {hasSynergy && !isSelected && <TrendingUp className="h-4 w-4 text-green-500 dark:text-green-400" />}
-                        </div>
-                      </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
-                      <p className="text-xs text-muted-foreground mb-3">
-                        {component?.description}
-                      </p>
+// ==================== COMPONENT SELECTOR ====================
 
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <div className="flex items-center gap-4">
-                          <span>Cost: ${((component?.implementationCost || 0) / 1000).toFixed(0)}k</span>
-                          <span>Capacity: {component?.requiredCapacity}%</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </TabsContent>
-          ))}
-        </Tabs>
-        
-        {/* Selected Components Summary */}
-        {selectedComponents.length > 0 && (
-          <div className="space-y-4">
-            <h4 className="font-semibold text-foreground">Selected Components</h4>
-            <div className="flex flex-wrap gap-2">
-              {selectedComponents.map(componentType => (
-                <Badge
-                  key={componentType}
-                  variant="default"
-                  className="flex items-center gap-1 bg-primary text-primary-foreground"
-                >
-                  {ATOMIC_COMPONENTS[componentType]?.name}
-                  {!isReadOnly && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleComponent(componentType);
-                      }}
-                      className="ml-1 hover:bg-red-500 rounded-full p-0.5"
-                    >
-                      <Minus className="h-3 w-3" />
-                    </button>
-                  )}
-                </Badge>
-              ))}
-            </div>
-            
-            {/* System Analysis */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
-              <div className="text-center">
-                <div className="text-lg font-bold">
-                  {effectivenessScore.toFixed(0)}%
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  System Effectiveness
-                </div>
-              </div>
-              
-              <div className="text-center">
-                <div className={`text-lg font-bold ${
-                  synergyScore - conflictScore > 0 ? 'text-green-600' : 
-                  synergyScore - conflictScore < 0 ? 'text-red-600' : 'text-gray-600'
-                }`}>
-                  {synergyScore - conflictScore > 0 ? '+' : ''}{synergyScore - conflictScore}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Net Synergy
-                </div>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-lg font-bold">
-                  ${Math.round(selectedComponents.reduce(
-                    (sum, comp) => sum + (ATOMIC_COMPONENTS[comp]?.maintenanceCost || 0), 0
-                  ) / 1000)}k
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Annual Cost
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* System Recommendations */}
-        {selectedComponents.length > 0 && (
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              <div className="space-y-2">
-                <p className="font-medium">System Analysis:</p>
-                <ul className="text-sm space-y-1">
-                  {synergyScore > conflictScore && (
-                    <li className="text-green-700">✓ Strong component synergies detected - system should be highly effective</li>
-                  )}
-                  {conflictScore > synergyScore && (
-                    <li className="text-red-700">⚠ Component conflicts detected - may reduce system effectiveness</li>
-                  )}
-                  {effectivenessScore > 85 && (
-                    <li className="text-green-700">✓ High effectiveness components selected</li>
-                  )}
-                  {effectivenessScore < 70 && (
-                    <li className="text-yellow-700">⚠ Consider adding higher effectiveness components</li>
-                  )}
-                </ul>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
-      </CardContent>
-    </Card>
+export function AtomicComponentSelector({
+  selectedComponents,
+  onComponentChange,
+  maxComponents = 10,
+  isReadOnly = false
+}: AtomicComponentSelectorProps) {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+          Select Government Components
+        </h3>
+        <AtomicGovernmentHelp />
+      </div>
+      <UnifiedAtomicComponentSelector
+        components={convertToUnifiedComponents(ATOMIC_COMPONENTS)}
+        categories={COMPONENT_CATEGORIES}
+        selectedComponents={selectedComponents.map(s => s.toString())}
+        onComponentChange={(components) => onComponentChange(components.map(c => c as ComponentType))}
+        maxComponents={maxComponents}
+        isReadOnly={isReadOnly}
+        theme={GOVERNMENT_THEME}
+        systemName="Atomic Government Components"
+        systemIcon={Settings}
+        calculateEffectiveness={(components) => calculateGovernmentEffectiveness(components.map(c => c as ComponentType))}
+        checkSynergy={checkGovernmentSynergy}
+        checkConflict={checkGovernmentConflict}
+      />
+    </div>
   );
 }

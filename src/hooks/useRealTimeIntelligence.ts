@@ -64,16 +64,13 @@ export function useRealTimeIntelligence(
 
   const connect = useCallback(() => {
     if (!countryId || !user?.id) {
-      console.log('⏸️ Real-time intelligence: Missing countryId or userId');
       return;
     }
 
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      console.log('⏸️ Real-time intelligence: Already connected');
       return;
     }
 
-    console.log('🔄 Connecting to real-time intelligence server...');
     setConnectionState(prev => ({ ...prev, status: 'connecting' }));
 
     try {
@@ -82,7 +79,6 @@ export function useRealTimeIntelligence(
       wsRef.current = new WebSocket(wsUrl);
 
       wsRef.current.onopen = () => {
-        console.log('✅ Connected to real-time intelligence server');
         setConnectionState({
           status: 'connected',
           lastUpdate: new Date(),
@@ -141,7 +137,6 @@ export function useRealTimeIntelligence(
         // Attempt reconnection if enabled
         if (autoReconnect && connectionState.reconnectAttempts < maxReconnectAttempts) {
           const delay = Math.min(1000 * Math.pow(2, connectionState.reconnectAttempts), 30000);
-          console.log(`🔄 Reconnecting in ${delay}ms (attempt ${connectionState.reconnectAttempts + 1})`);
           
           reconnectTimeoutRef.current = setTimeout(() => {
             setConnectionState(prev => ({

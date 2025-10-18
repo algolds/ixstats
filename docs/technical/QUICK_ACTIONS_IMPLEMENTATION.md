@@ -494,7 +494,7 @@ const [scheduledIxTime, setScheduledIxTime] = useState(
 
 ### Documentation
 ```
-/DOCS/
+/docs/technical/
 ├── QUICK_ACTIONS_SYSTEM.md       # Original comprehensive docs
 └── QUICK_ACTIONS_IMPLEMENTATION.md # This file
 ```

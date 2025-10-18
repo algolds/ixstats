@@ -65,7 +65,7 @@ export function DiplomaticOperationsCard({
     { enabled: !!userProfile?.countryId, refetchInterval: 60000 }
   );
 
-  // Use live embassy data or fallback to mock
+  // Use live embassy data or show empty state
   const embassyNetworks = useMemo(() => {
     if (liveEmbassies && liveEmbassies.length > 0) {
       return liveEmbassies.map((embassy, index) => ({
@@ -75,13 +75,9 @@ export function DiplomaticOperationsCard({
         strength: embassy.strength
       }));
     }
-    
-    // Fallback mock data
-    return [
-      { id: 1, country: "Caphiria", status: "active", strength: 85 },
-      { id: 2, country: "Urcea", status: "strengthening", strength: 72 },
-      { id: 3, country: "Burgundie", status: "neutral", strength: 45 },
-    ];
+
+    // Return empty array if no real data
+    return [];
   }, [liveEmbassies]);
 
   const activeTreaties = [
@@ -168,41 +164,53 @@ export function DiplomaticOperationsCard({
                 <div className="w-3 h-3 border border-blue-400/20 border-t-blue-400 rounded-full animate-spin" />
               )}
             </div>
-            
-            <div className="space-y-2">
-              {embassyNetworks.slice(0, isExpanded ? embassyNetworks.length : 3).map((embassy) => (
-                <div 
-                  key={embassy.id} 
-                  className="glass-hierarchy-child p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
-                  onClick={() => setFocusedSection(focusedSection === `embassy-${embassy.id}` ? null : `embassy-${embassy.id}`)}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className={cn("p-1 rounded border", getStatusColor(embassy.status))}>
-                        {getStatusIcon(embassy.status)}
+
+            {embassyNetworks.length > 0 ? (
+              <div className="space-y-2">
+                {embassyNetworks.slice(0, isExpanded ? embassyNetworks.length : 3).map((embassy) => (
+                  <div
+                    key={embassy.id}
+                    className="glass-hierarchy-child p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
+                    onClick={() => setFocusedSection(focusedSection === `embassy-${embassy.id}` ? null : `embassy-${embassy.id}`)}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className={cn("p-1 rounded border", getStatusColor(embassy.status))}>
+                          {getStatusIcon(embassy.status)}
+                        </div>
+                        <span className="font-medium text-sm">{embassy.country}</span>
                       </div>
-                      <span className="font-medium text-sm">{embassy.country}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {embassy.strength}%
+                      </Badge>
                     </div>
-                    <Badge variant="outline" className="text-xs">
-                      {embassy.strength}%
-                    </Badge>
+                    <Progress value={embassy.strength} className="h-2" />
+
+                    {focusedSection === `embassy-${embassy.id}` && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        className="mt-3 pt-3 border-t border-white/10"
+                      >
+                        <div className="text-xs text-muted-foreground">
+                          Status: {embassy.status} • Diplomatic strength at {embassy.strength}%
+                        </div>
+                      </motion.div>
+                    )}
                   </div>
-                  <Progress value={embassy.strength} className="h-2" />
-                  
-                  {focusedSection === `embassy-${embassy.id}` && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      className="mt-3 pt-3 border-t border-white/10"
-                    >
-                      <div className="text-xs text-muted-foreground">
-                        Status: {embassy.status} • Diplomatic strength at {embassy.strength}%
-                      </div>
-                    </motion.div>
-                  )}
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="glass-hierarchy-child p-6 rounded-lg text-center">
+                <Building2 className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                <p className="text-sm text-muted-foreground">
+                  No embassies established yet
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Build diplomatic relations to establish embassies
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Active Treaties */}

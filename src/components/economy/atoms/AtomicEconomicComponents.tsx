@@ -11,6 +11,8 @@ import { Textarea } from '~/components/ui/textarea';
 import { Switch } from '~/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { Alert, AlertDescription } from '~/components/ui/alert';
+import { UnifiedAtomicComponentSelector } from '~/components/atomic/shared/UnifiedAtomicComponentSelector';
+import { ECONOMY_THEME } from '~/components/atomic/shared/themes';
 import {
   Building2,
   Factory,
@@ -52,6 +54,18 @@ import {
   ShieldAlert
 } from 'lucide-react';
 
+/**
+ * Format component type to display name
+ * Converts SCREAMING_SNAKE_CASE to Title Case
+ * Example: "FREE_MARKET_SYSTEM" -> "Free Market System"
+ */
+export function formatComponentName(componentType: string): string {
+  return componentType
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
 // Atomic Economic Component Types
 export interface AtomicEconomicComponent {
   id: string;
@@ -80,6 +94,12 @@ export interface AtomicEconomicComponent {
   category: EconomicCategory;
   icon: React.ComponentType<{ className?: string }>;
   color: string;
+  metadata: {
+    complexity: 'Low' | 'Medium' | 'High';
+    timeToImplement: string;
+    staffRequired: number;
+    technologyRequired: boolean;
+  };
 }
 
 export enum EconomicComponentType {
@@ -154,16 +174,17 @@ export enum EconomicComponentType {
   GREEN_ECONOMY = "GREEN_ECONOMY",
 
   // Real Estate & Property Components
-  REAL_ESTATE_FOCUSED = "REAL_ESTATE_FOCUSED"
+  REAL_ESTATE_FOCUSED = "REAL_ESTATE_FOCUSED",
+  RULE_OF_LAW = "RULE_OF_LAW"
 }
 
 export enum EconomicCategory {
-  ECONOMIC_MODEL = "economicModel",
-  SECTOR_FOCUS = "sectorFocus", 
-  LABOR_SYSTEM = "laborSystem",
-  TRADE_POLICY = "tradePolicy",
-  INNOVATION = "innovation",
-  RESOURCE_MANAGEMENT = "resourceManagement"
+  ECONOMIC_MODEL = "Economic Model",
+  SECTOR_FOCUS = "Sector Focus",
+  LABOR_SYSTEM = "Labor System",
+  TRADE_POLICY = "Trade Policy",
+  INNOVATION = "Innovation",
+  RESOURCE_MANAGEMENT = "Resource Management"
 }
 
 // Atomic Component Library
@@ -172,7 +193,7 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
   [EconomicComponentType.FREE_MARKET_SYSTEM]: {
     id: 'free_market_system',
     type: EconomicComponentType.FREE_MARKET_SYSTEM,
-    name: 'Free Market System',
+    name: formatComponentName(EconomicComponentType.FREE_MARKET_SYSTEM),
     description: 'Minimal government intervention, market-driven resource allocation',
     effectiveness: 85,
     synergies: [EconomicComponentType.FLEXIBLE_LABOR, EconomicComponentType.FREE_TRADE, EconomicComponentType.STARTUP_ECOSYSTEM],
@@ -202,13 +223,19 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 60,
     category: EconomicCategory.ECONOMIC_MODEL,
     icon: DollarSign,
-    color: 'green'
+    color: 'emerald',
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '2-3 years',
+      staffRequired: 150,
+      technologyRequired: true
+    }
   },
   
   [EconomicComponentType.MIXED_ECONOMY]: {
     id: 'mixed_economy',
     type: EconomicComponentType.MIXED_ECONOMY,
-    name: 'Mixed Economy',
+    name: formatComponentName(EconomicComponentType.MIXED_ECONOMY),
     description: 'Balance of market forces and government intervention',
     effectiveness: 78,
     synergies: [EconomicComponentType.BALANCED_TRADE, EconomicComponentType.SOCIAL_MARKET_ECONOMY, EconomicComponentType.PROTECTED_WORKERS],
@@ -238,13 +265,19 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 70,
     category: EconomicCategory.ECONOMIC_MODEL,
     icon: BarChart3,
-    color: 'blue'
+    color: 'emerald',
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '3-4 years',
+      staffRequired: 200,
+      technologyRequired: true
+    }
   },
   
   [EconomicComponentType.STATE_CAPITALISM]: {
     id: 'state_capitalism',
     type: EconomicComponentType.STATE_CAPITALISM,
-    name: 'State Capitalism',
+    name: formatComponentName(EconomicComponentType.STATE_CAPITALISM),
     description: 'Government controls strategic sectors while allowing market forces in others',
     effectiveness: 72,
     synergies: [EconomicComponentType.EXPORT_ORIENTED, EconomicComponentType.MANUFACTURING_LED, EconomicComponentType.PLANNED_ECONOMY],
@@ -274,13 +307,19 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 80,
     category: EconomicCategory.ECONOMIC_MODEL,
     icon: Building2,
-    color: 'red'
+    color: 'emerald',
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '4-5 years',
+      staffRequired: 300,
+      technologyRequired: true
+    }
   },
   
   [EconomicComponentType.PLANNED_ECONOMY]: {
     id: 'planned_economy',
     type: EconomicComponentType.PLANNED_ECONOMY,
-    name: 'Planned Economy',
+    name: formatComponentName(EconomicComponentType.PLANNED_ECONOMY),
     description: 'Government controls all major economic decisions and resource allocation',
     effectiveness: 65,
     synergies: [EconomicComponentType.STATE_CAPITALISM, EconomicComponentType.PROTECTED_WORKERS, EconomicComponentType.IMPORT_SUBSTITUTION],
@@ -311,13 +350,19 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 90,
     category: EconomicCategory.ECONOMIC_MODEL,
     icon: Target,
-    color: 'purple'
+    color: 'purple',
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '2-3 years',
+      staffRequired: 180,
+      technologyRequired: true
+    }
   },
   
   [EconomicComponentType.SOCIAL_MARKET_ECONOMY]: {
     id: 'social_market_economy',
     type: EconomicComponentType.SOCIAL_MARKET_ECONOMY,
-    name: 'Social Market Economy',
+    name: formatComponentName(EconomicComponentType.SOCIAL_MARKET_ECONOMY),
     description: 'Market economy with strong social safety nets and worker protections',
     effectiveness: 82,
     synergies: [EconomicComponentType.PROTECTED_WORKERS, EconomicComponentType.UNION_BASED, EconomicComponentType.EDUCATION_FIRST],
@@ -347,13 +392,19 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 85,
     category: EconomicCategory.ECONOMIC_MODEL,
     icon: Heart,
-    color: 'pink'
+    color: 'amber',
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '2-3 years',
+      staffRequired: 160,
+      technologyRequired: true
+    }
   },
   
   [EconomicComponentType.KNOWLEDGE_ECONOMY]: {
     id: 'knowledge_economy',
     type: EconomicComponentType.KNOWLEDGE_ECONOMY,
-    name: 'Knowledge Economy',
+    name: formatComponentName(EconomicComponentType.KNOWLEDGE_ECONOMY),
     description: 'Economy driven by knowledge, innovation, and intellectual capital',
     effectiveness: 88,
     synergies: [EconomicComponentType.TECHNOLOGY_FOCUSED, EconomicComponentType.RD_INVESTMENT, EconomicComponentType.UNIVERSITY_PARTNERSHIPS],
@@ -384,13 +435,19 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 95,
     category: EconomicCategory.ECONOMIC_MODEL,
     icon: Brain,
-    color: 'cyan'
+    color: 'cyan',
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '2-3 years',
+      staffRequired: 170,
+      technologyRequired: true
+    }
   },
   
   [EconomicComponentType.INNOVATION_ECONOMY]: {
     id: 'innovation_economy',
     type: EconomicComponentType.INNOVATION_ECONOMY,
-    name: 'Innovation Economy',
+    name: formatComponentName(EconomicComponentType.INNOVATION_ECONOMY),
     description: 'Economy focused on continuous innovation and technological advancement',
     effectiveness: 90,
     synergies: [EconomicComponentType.STARTUP_ECOSYSTEM, EconomicComponentType.VENTURE_CAPITAL, EconomicComponentType.PATENT_PROTECTION],
@@ -420,13 +477,19 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 98,
     category: EconomicCategory.ECONOMIC_MODEL,
     icon: Lightbulb,
-    color: 'yellow'
+    color: 'amber',
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '2-3 years',
+      staffRequired: 160,
+      technologyRequired: true
+    }
   },
   
   [EconomicComponentType.RESOURCE_BASED_ECONOMY]: {
     id: 'resource_based_economy',
     type: EconomicComponentType.RESOURCE_BASED_ECONOMY,
-    name: 'Resource-Based Economy',
+    name: formatComponentName(EconomicComponentType.RESOURCE_BASED_ECONOMY),
     description: 'Economy dependent on natural resource extraction and export',
     effectiveness: 70,
     synergies: [EconomicComponentType.EXPORT_ORIENTED, EconomicComponentType.EXTRACTION_FOCUSED, EconomicComponentType.MANUFACTURING_LED],
@@ -456,14 +519,20 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 65,
     category: EconomicCategory.ECONOMIC_MODEL,
     icon: Wrench,
-    color: 'orange'
+    color: 'teal',
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '2-3 years',
+      staffRequired: 160,
+      technologyRequired: true
+    }
   },
   
   // Sector Focus Components
   [EconomicComponentType.AGRICULTURE_LED]: {
     id: 'agriculture_led',
     type: EconomicComponentType.AGRICULTURE_LED,
-    name: 'Agriculture-Led Development',
+    name: formatComponentName(EconomicComponentType.AGRICULTURE_LED),
     description: 'Economy focused on agricultural production and food security',
     effectiveness: 68,
     synergies: [EconomicComponentType.RESOURCE_BASED_ECONOMY, EconomicComponentType.EXPORT_ORIENTED, EconomicComponentType.DOMESTIC_FOCUSED],
@@ -492,13 +561,19 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 55,
     category: EconomicCategory.SECTOR_FOCUS,
     icon: Leaf,
-    color: 'green'
+    color: 'green',
+    metadata: {
+      complexity: 'Low',
+      timeToImplement: '1-2 years',
+      staffRequired: 120,
+      technologyRequired: false
+    }
   },
   
   [EconomicComponentType.MANUFACTURING_LED]: {
     id: 'manufacturing_led',
     type: EconomicComponentType.MANUFACTURING_LED,
-    name: 'Manufacturing-Led Growth',
+    name: formatComponentName(EconomicComponentType.MANUFACTURING_LED),
     description: 'Economy driven by industrial production and manufacturing',
     effectiveness: 75,
     synergies: [EconomicComponentType.EXPORT_ORIENTED, EconomicComponentType.TECHNOLOGY_FOCUSED, EconomicComponentType.SKILL_BASED],
@@ -527,13 +602,19 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 75,
     category: EconomicCategory.SECTOR_FOCUS,
     icon: Factory,
-    color: 'blue'
+    color: 'indigo',
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '4-5 years',
+      staffRequired: 300,
+      technologyRequired: true
+    }
   },
   
   [EconomicComponentType.SERVICE_BASED]: {
     id: 'service_based',
     type: EconomicComponentType.SERVICE_BASED,
-    name: 'Service-Based Economy',
+    name: formatComponentName(EconomicComponentType.SERVICE_BASED),
     description: 'Economy dominated by service sector activities',
     effectiveness: 80,
     synergies: [EconomicComponentType.FINANCE_CENTERED, EconomicComponentType.PROFESSIONAL_SERVICES, EconomicComponentType.KNOWLEDGE_ECONOMY],
@@ -564,13 +645,19 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 80,
     category: EconomicCategory.SECTOR_FOCUS,
     icon: Users,
-    color: 'purple'
+    color: 'purple',
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '2-3 years',
+      staffRequired: 180,
+      technologyRequired: true
+    }
   },
   
   [EconomicComponentType.TECHNOLOGY_FOCUSED]: {
     id: 'technology_focused',
     type: EconomicComponentType.TECHNOLOGY_FOCUSED,
-    name: 'Technology-Focused Economy',
+    name: formatComponentName(EconomicComponentType.TECHNOLOGY_FOCUSED),
     description: 'Economy centered on technology development and digital services',
     effectiveness: 92,
     synergies: [EconomicComponentType.KNOWLEDGE_ECONOMY, EconomicComponentType.INNOVATION_ECONOMY, EconomicComponentType.STARTUP_ECOSYSTEM],
@@ -601,13 +688,19 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 95,
     category: EconomicCategory.SECTOR_FOCUS,
     icon: Zap,
-    color: 'cyan'
+    color: 'cyan',
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '2-3 years',
+      staffRequired: 170,
+      technologyRequired: true
+    }
   },
   
   [EconomicComponentType.FINANCE_CENTERED]: {
     id: 'finance_centered',
     type: EconomicComponentType.FINANCE_CENTERED,
-    name: 'Finance-Centered Economy',
+    name: formatComponentName(EconomicComponentType.FINANCE_CENTERED),
     description: 'Economy focused on financial services and banking',
     effectiveness: 85,
     synergies: [EconomicComponentType.FREE_MARKET_SYSTEM, EconomicComponentType.FREE_TRADE, EconomicComponentType.PROFESSIONAL_SERVICES],
@@ -637,14 +730,20 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 90,
     category: EconomicCategory.SECTOR_FOCUS,
     icon: DollarSign,
-    color: 'green'
+    color: 'green',
+    metadata: {
+      complexity: 'Low',
+      timeToImplement: '1-2 years',
+      staffRequired: 120,
+      technologyRequired: false
+    }
   },
   
   // Labor System Components
   [EconomicComponentType.FLEXIBLE_LABOR]: {
     id: 'flexible_labor',
     type: EconomicComponentType.FLEXIBLE_LABOR,
-    name: 'Flexible Labor Market',
+    name: formatComponentName(EconomicComponentType.FLEXIBLE_LABOR),
     description: 'Labor market with minimal restrictions on hiring and firing',
     effectiveness: 82,
     synergies: [EconomicComponentType.FREE_MARKET_SYSTEM, EconomicComponentType.GIG_ECONOMY, EconomicComponentType.STARTUP_ECOSYSTEM],
@@ -673,13 +772,19 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 50,
     category: EconomicCategory.LABOR_SYSTEM,
     icon: Unlock,
-    color: 'green'
+    color: 'green',
+    metadata: {
+      complexity: 'Low',
+      timeToImplement: '1-2 years',
+      staffRequired: 120,
+      technologyRequired: false
+    }
   },
   
   [EconomicComponentType.PROTECTED_WORKERS]: {
     id: 'protected_workers',
     type: EconomicComponentType.PROTECTED_WORKERS,
-    name: 'Protected Worker Rights',
+    name: formatComponentName(EconomicComponentType.PROTECTED_WORKERS),
     description: 'Strong labor protections and worker rights',
     effectiveness: 75,
     synergies: [EconomicComponentType.UNION_BASED, EconomicComponentType.SOCIAL_MARKET_ECONOMY, EconomicComponentType.EDUCATION_FIRST],
@@ -709,13 +814,19 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 70,
     category: EconomicCategory.LABOR_SYSTEM,
     icon: Shield,
-    color: 'blue'
+    color: 'indigo',
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '4-5 years',
+      staffRequired: 300,
+      technologyRequired: true
+    }
   },
   
   [EconomicComponentType.GIG_ECONOMY]: {
     id: 'gig_economy',
     type: EconomicComponentType.GIG_ECONOMY,
-    name: 'Gig Economy',
+    name: formatComponentName(EconomicComponentType.GIG_ECONOMY),
     description: 'Economy based on short-term contracts and freelance work',
     effectiveness: 78,
     synergies: [EconomicComponentType.FLEXIBLE_LABOR, EconomicComponentType.TECHNOLOGY_FOCUSED, EconomicComponentType.STARTUP_ECOSYSTEM],
@@ -745,13 +856,19 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 60,
     category: EconomicCategory.LABOR_SYSTEM,
     icon: Briefcase,
-    color: 'orange'
+    color: 'teal',
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '2-3 years',
+      staffRequired: 160,
+      technologyRequired: true
+    }
   },
   
   [EconomicComponentType.EDUCATION_FIRST]: {
     id: 'education_first',
     type: EconomicComponentType.EDUCATION_FIRST,
-    name: 'Education-First Strategy',
+    name: formatComponentName(EconomicComponentType.EDUCATION_FIRST),
     description: 'Priority on education and human capital development',
     effectiveness: 88,
     synergies: [EconomicComponentType.KNOWLEDGE_ECONOMY, EconomicComponentType.SKILL_BASED, EconomicComponentType.UNIVERSITY_PARTNERSHIPS],
@@ -781,14 +898,20 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 90,
     category: EconomicCategory.LABOR_SYSTEM,
     icon: GraduationCap,
-    color: 'purple'
+    color: 'purple',
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '2-3 years',
+      staffRequired: 180,
+      technologyRequired: true
+    }
   },
   
   // Trade Policy Components
   [EconomicComponentType.FREE_TRADE]: {
     id: 'free_trade',
     type: EconomicComponentType.FREE_TRADE,
-    name: 'Free Trade Policy',
+    name: formatComponentName(EconomicComponentType.FREE_TRADE),
     description: 'Minimal trade barriers and open international markets',
     effectiveness: 85,
     synergies: [EconomicComponentType.FREE_MARKET_SYSTEM, EconomicComponentType.EXPORT_ORIENTED, EconomicComponentType.FINANCE_CENTERED],
@@ -817,13 +940,19 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 70,
     category: EconomicCategory.TRADE_POLICY,
     icon: Globe,
-    color: 'blue'
+    color: 'indigo',
+    metadata: {
+      complexity: 'High',
+      timeToImplement: '4-5 years',
+      staffRequired: 300,
+      technologyRequired: true
+    }
   },
   
   [EconomicComponentType.PROTECTIONIST]: {
     id: 'protectionist',
     type: EconomicComponentType.PROTECTIONIST,
-    name: 'Protectionist Trade Policy',
+    name: formatComponentName(EconomicComponentType.PROTECTIONIST),
     description: 'Trade barriers to protect domestic industries',
     effectiveness: 65,
     synergies: [EconomicComponentType.DOMESTIC_FOCUSED, EconomicComponentType.IMPORT_SUBSTITUTION, EconomicComponentType.MANUFACTURING_LED],
@@ -852,13 +981,19 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 75,
     category: EconomicCategory.TRADE_POLICY,
     icon: Lock,
-    color: 'red'
+    color: 'emerald',
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '2-3 years',
+      staffRequired: 160,
+      technologyRequired: true
+    }
   },
   
   [EconomicComponentType.EXPORT_ORIENTED]: {
     id: 'export_oriented',
     type: EconomicComponentType.EXPORT_ORIENTED,
-    name: 'Export-Oriented Growth',
+    name: formatComponentName(EconomicComponentType.EXPORT_ORIENTED),
     description: 'Focus on producing goods and services for international markets',
     effectiveness: 80,
     synergies: [EconomicComponentType.FREE_TRADE, EconomicComponentType.MANUFACTURING_LED, EconomicComponentType.TECHNOLOGY_FOCUSED],
@@ -887,14 +1022,20 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 80,
     category: EconomicCategory.TRADE_POLICY,
     icon: ArrowUpDown,
-    color: 'green'
+    color: 'green',
+    metadata: {
+      complexity: 'Low',
+      timeToImplement: '1-2 years',
+      staffRequired: 120,
+      technologyRequired: false
+    }
   },
   
   // Innovation Components
   [EconomicComponentType.RD_INVESTMENT]: {
     id: 'rd_investment',
     type: EconomicComponentType.RD_INVESTMENT,
-    name: 'R&D Investment Priority',
+    name: formatComponentName(EconomicComponentType.RD_INVESTMENT),
     description: 'High investment in research and development activities',
     effectiveness: 90,
     synergies: [EconomicComponentType.KNOWLEDGE_ECONOMY, EconomicComponentType.INNOVATION_ECONOMY, EconomicComponentType.UNIVERSITY_PARTNERSHIPS],
@@ -924,13 +1065,19 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 95,
     category: EconomicCategory.INNOVATION,
     icon: Lightbulb,
-    color: 'yellow'
+    color: 'amber',
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '2-3 years',
+      staffRequired: 160,
+      technologyRequired: true
+    }
   },
   
   [EconomicComponentType.STARTUP_ECOSYSTEM]: {
     id: 'startup_ecosystem',
     type: EconomicComponentType.STARTUP_ECOSYSTEM,
-    name: 'Startup Ecosystem',
+    name: formatComponentName(EconomicComponentType.STARTUP_ECOSYSTEM),
     description: 'Supportive environment for new business creation and growth',
     effectiveness: 87,
     synergies: [EconomicComponentType.INNOVATION_ECONOMY, EconomicComponentType.VENTURE_CAPITAL, EconomicComponentType.FLEXIBLE_LABOR],
@@ -960,13 +1107,19 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 85,
     category: EconomicCategory.INNOVATION,
     icon: Zap,
-    color: 'cyan'
+    color: 'cyan',
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '2-3 years',
+      staffRequired: 170,
+      technologyRequired: true
+    }
   },
   
   [EconomicComponentType.UNIVERSITY_PARTNERSHIPS]: {
     id: 'university_partnerships',
     type: EconomicComponentType.UNIVERSITY_PARTNERSHIPS,
-    name: 'University-Industry Partnerships',
+    name: formatComponentName(EconomicComponentType.UNIVERSITY_PARTNERSHIPS),
     description: 'Strong collaboration between universities and industry',
     effectiveness: 86,
     synergies: [EconomicComponentType.EDUCATION_FIRST, EconomicComponentType.RD_INVESTMENT, EconomicComponentType.TECH_TRANSFER],
@@ -996,14 +1149,20 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 88,
     category: EconomicCategory.INNOVATION,
     icon: GraduationCap,
-    color: 'purple'
+    color: 'purple',
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '2-3 years',
+      staffRequired: 180,
+      technologyRequired: true
+    }
   },
   
   // Resource Management Components
   [EconomicComponentType.SUSTAINABLE_DEVELOPMENT]: {
     id: 'sustainable_development',
     type: EconomicComponentType.SUSTAINABLE_DEVELOPMENT,
-    name: 'Sustainable Development',
+    name: formatComponentName(EconomicComponentType.SUSTAINABLE_DEVELOPMENT),
     description: 'Development that meets present needs without compromising future generations',
     effectiveness: 83,
     synergies: [EconomicComponentType.RENEWABLE_ENERGY, EconomicComponentType.CIRCULAR_ECONOMY, EconomicComponentType.GREEN_TECHNOLOGY],
@@ -1033,13 +1192,19 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 82,
     category: EconomicCategory.RESOURCE_MANAGEMENT,
     icon: Leaf,
-    color: 'green'
+    color: 'green',
+    metadata: {
+      complexity: 'Low',
+      timeToImplement: '1-2 years',
+      staffRequired: 120,
+      technologyRequired: false
+    }
   },
   
   [EconomicComponentType.EXTRACTION_FOCUSED]: {
     id: 'extraction_focused',
     type: EconomicComponentType.EXTRACTION_FOCUSED,
-    name: 'Resource Extraction Focus',
+    name: formatComponentName(EconomicComponentType.EXTRACTION_FOCUSED),
     description: 'Economy centered on natural resource extraction and processing',
     effectiveness: 72,
     synergies: [EconomicComponentType.RESOURCE_BASED_ECONOMY, EconomicComponentType.EXPORT_ORIENTED, EconomicComponentType.MANUFACTURING_LED],
@@ -1069,13 +1234,19 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 70,
     category: EconomicCategory.RESOURCE_MANAGEMENT,
     icon: Wrench,
-    color: 'orange'
+    color: 'teal',
+    metadata: {
+      complexity: 'Medium',
+      timeToImplement: '2-3 years',
+      staffRequired: 160,
+      technologyRequired: true
+    }
   },
   
   [EconomicComponentType.RENEWABLE_ENERGY]: {
     id: 'renewable_energy',
     type: EconomicComponentType.RENEWABLE_ENERGY,
-    name: 'Renewable Energy Transition',
+    name: formatComponentName(EconomicComponentType.RENEWABLE_ENERGY),
     description: 'Focus on renewable energy sources and clean technology',
     effectiveness: 85,
     synergies: [EconomicComponentType.SUSTAINABLE_DEVELOPMENT, EconomicComponentType.GREEN_TECHNOLOGY, EconomicComponentType.CIRCULAR_ECONOMY],
@@ -1105,13 +1276,19 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 85,
     category: EconomicCategory.RESOURCE_MANAGEMENT,
     icon: Leaf,
-    color: 'green'
+    color: 'green',
+    metadata: {
+      complexity: 'Low',
+      timeToImplement: '1-2 years',
+      staffRequired: 120,
+      technologyRequired: false
+    }
   },
   
   [EconomicComponentType.CIRCULAR_ECONOMY]: {
     id: 'circular_economy',
     type: EconomicComponentType.CIRCULAR_ECONOMY,
-    name: 'Circular Economy',
+    name: formatComponentName(EconomicComponentType.CIRCULAR_ECONOMY),
     description: 'Economy focused on reducing waste and reusing resources',
     effectiveness: 84,
     synergies: [EconomicComponentType.SUSTAINABLE_DEVELOPMENT, EconomicComponentType.GREEN_TECHNOLOGY, EconomicComponentType.RENEWABLE_ENERGY],
@@ -1141,13 +1318,19 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<Record<EconomicComponentType, A
     requiredCapacity: 83,
     category: EconomicCategory.RESOURCE_MANAGEMENT,
     icon: Leaf,
-    color: 'green'
+    color: 'green',
+    metadata: {
+      complexity: 'Low',
+      timeToImplement: '1-2 years',
+      staffRequired: 120,
+      technologyRequired: false
+    }
   }
 };
 
 // Component Categories
 export const COMPONENT_CATEGORIES = {
-  economicModel: {
+  "Economic Model": {
     name: 'Economic Model',
     description: 'Fundamental economic system and philosophy',
     icon: BarChart3,
@@ -1162,7 +1345,7 @@ export const COMPONENT_CATEGORIES = {
       EconomicComponentType.RESOURCE_BASED_ECONOMY
     ]
   },
-  sectorFocus: {
+  "Sector Focus": {
     name: 'Sector Focus',
     description: 'Primary economic sectors and specializations',
     icon: Factory,
@@ -1177,7 +1360,7 @@ export const COMPONENT_CATEGORIES = {
       EconomicComponentType.TOURISM_BASED
     ]
   },
-  laborSystem: {
+  "Labor System": {
     name: 'Labor System',
     description: 'Labor market structure and worker rights',
     icon: Users,
@@ -1192,7 +1375,7 @@ export const COMPONENT_CATEGORIES = {
       EconomicComponentType.MERIT_BASED
     ]
   },
-  tradePolicy: {
+  "Trade Policy": {
     name: 'Trade Policy',
     description: 'International trade and commerce approach',
     icon: Globe,
@@ -1207,7 +1390,7 @@ export const COMPONENT_CATEGORIES = {
       EconomicComponentType.MULTILATERAL_FOCUS
     ]
   },
-  innovation: {
+  "Innovation": {
     name: 'Innovation',
     description: 'Research, development, and innovation ecosystem',
     icon: Lightbulb,
@@ -1222,7 +1405,7 @@ export const COMPONENT_CATEGORIES = {
       EconomicComponentType.INTELLECTUAL_PROPERTY
     ]
   },
-  resourceManagement: {
+  "Resource Management": {
     name: 'Resource Management',
     description: 'Natural resource use and environmental approach',
     icon: Leaf,
@@ -1240,6 +1423,78 @@ export const COMPONENT_CATEGORIES = {
 };
 
 // Component Selection Interface
+// Utility Functions
+export function calculateEconomicEffectiveness(selectedComponents: EconomicComponentType[]): {
+  baseEffectiveness: number;
+  synergyBonus: number;
+  conflictPenalty: number;
+  totalEffectiveness: number;
+  synergyCount: number;
+  conflictCount: number;
+} {
+  const components = selectedComponents
+    .map(id => ATOMIC_ECONOMIC_COMPONENTS[id])
+    .filter((comp): comp is AtomicEconomicComponent => comp !== undefined);
+
+  const baseEffectiveness = components.reduce((sum, comp) => sum + comp.effectiveness, 0) / (components.length || 1);
+
+  let synergyBonus = 0;
+  let synergyCount = 0;
+  let conflictPenalty = 0;
+  let conflictCount = 0;
+
+  for (let i = 0; i < selectedComponents.length; i++) {
+    for (let j = i + 1; j < selectedComponents.length; j++) {
+      const comp1 = selectedComponents[i];
+      const comp2 = selectedComponents[j];
+
+      const synergy = checkEconomicSynergy(comp1!, comp2!);
+      if (synergy > 0) {
+        synergyBonus += synergy;
+        synergyCount++;
+      }
+
+      if (checkEconomicConflict(comp1!, comp2!)) {
+        conflictPenalty += 15;
+        conflictCount++;
+      }
+    }
+  }
+
+  const totalEffectiveness = Math.max(0, Math.min(100, baseEffectiveness + synergyBonus - conflictPenalty));
+
+  return {
+    baseEffectiveness,
+    synergyBonus,
+    conflictPenalty,
+    totalEffectiveness,
+    synergyCount,
+    conflictCount
+  };
+}
+
+export function checkEconomicSynergy(component1Id: string, component2Id: string): number {
+  const component1 = ATOMIC_ECONOMIC_COMPONENTS[component1Id as EconomicComponentType];
+  const component2 = ATOMIC_ECONOMIC_COMPONENTS[component2Id as EconomicComponentType];
+  
+  if (!component1 || !component2) return 0;
+  
+  const synergy1 = component1.synergies.includes(component2Id as EconomicComponentType) ? 5 : 0;
+  const synergy2 = component2.synergies.includes(component1Id as EconomicComponentType) ? 5 : 0;
+  
+  return Math.max(synergy1, synergy2);
+}
+
+export function checkEconomicConflict(component1Id: string, component2Id: string): boolean {
+  const component1 = ATOMIC_ECONOMIC_COMPONENTS[component1Id as EconomicComponentType];
+  const component2 = ATOMIC_ECONOMIC_COMPONENTS[component2Id as EconomicComponentType];
+  
+  if (!component1 || !component2) return false;
+  
+  return component1.conflicts.includes(component2Id as EconomicComponentType) || 
+         component2.conflicts.includes(component1Id as EconomicComponentType);
+}
+
 interface AtomicEconomicComponentSelectorProps {
   selectedComponents: EconomicComponentType[];
   onComponentChange: (components: EconomicComponentType[]) => void;
@@ -1248,6 +1503,42 @@ interface AtomicEconomicComponentSelectorProps {
   governmentComponents?: string[]; // Government atomic components for cross-builder synergies
 }
 
+// Convert AtomicEconomicComponent to UnifiedAtomicComponent
+function convertEconomicToUnifiedComponents(components: Partial<Record<EconomicComponentType, AtomicEconomicComponent>>): Record<string, any> {
+  const converted: Record<string, any> = {};
+  
+  Object.entries(components).forEach(([key, component]) => {
+    if (component) {
+      converted[key] = {
+        id: component.id,
+        name: component.name,
+        category: component.category,
+        description: component.description,
+        effectiveness: component.effectiveness,
+        implementationCost: component.implementationCost,
+        maintenanceCost: component.maintenanceCost,
+        prerequisites: [], // Default empty array
+        synergies: component.synergies.map(s => s.toString()),
+        conflicts: component.conflicts.map(c => c.toString()),
+        metadata: component.metadata,
+        icon: component.icon
+      };
+    }
+  });
+  
+  return converted;
+}
+
+// Convert categories to the expected format
+const convertedCategories: Record<string, string[]> = {
+  "Economic Model": COMPONENT_CATEGORIES["Economic Model"].components.map(c => c.toString()),
+  "Sector Focus": COMPONENT_CATEGORIES["Sector Focus"].components.map(c => c.toString()),
+  "Labor System": COMPONENT_CATEGORIES["Labor System"].components.map(c => c.toString()),
+  "Trade Policy": COMPONENT_CATEGORIES["Trade Policy"].components.map(c => c.toString()),
+  "Innovation": COMPONENT_CATEGORIES["Innovation"].components.map(c => c.toString()),
+  "Resource Management": COMPONENT_CATEGORIES["Resource Management"].components.map(c => c.toString())
+};
+
 export function AtomicEconomicComponentSelector({
   selectedComponents,
   onComponentChange,
@@ -1255,243 +1546,20 @@ export function AtomicEconomicComponentSelector({
   isReadOnly = false,
   governmentComponents = []
 }: AtomicEconomicComponentSelectorProps) {
-  const [activeCategory, setActiveCategory] = useState<keyof typeof COMPONENT_CATEGORIES>('economicModel');
-  const [expandedSynergies, setExpandedSynergies] = useState<Set<string>>(new Set());
-  const [expandedConflicts, setExpandedConflicts] = useState<Set<string>>(new Set());
-
-  const calculateSynergies = (components: EconomicComponentType[], govComponents: string[] = []) => {
-    let synergyScore = 0;
-    let conflictScore = 0;
-    let synergyCount = 0;
-    let conflictCount = 0;
-
-    // Internal economic component synergies and conflicts
-    components.forEach(comp1 => {
-      components.forEach(comp2 => {
-        if (comp1 !== comp2) {
-          const component1 = ATOMIC_ECONOMIC_COMPONENTS[comp1];
-          const component2 = ATOMIC_ECONOMIC_COMPONENTS[comp2];
-
-          if (component1?.synergies.includes(comp2)) {
-            synergyScore += 10;
-            synergyCount++;
-          }
-          if (component1?.conflicts.includes(comp2)) {
-            conflictScore += 10;
-            conflictCount++;
-          }
-        }
-      });
-
-      // Cross-builder synergies with government components
-      const economicComp = ATOMIC_ECONOMIC_COMPONENTS[comp1];
-      if (economicComp && govComponents.length > 0) {
-        govComponents.forEach(govComp => {
-          if (economicComp.governmentSynergies?.includes(govComp)) {
-            synergyScore += 15; // Cross-builder synergies worth more
-            synergyCount++;
-          }
-          if (economicComp.governmentConflicts?.includes(govComp)) {
-            conflictScore += 15; // Cross-builder conflicts penalize more
-            conflictCount++;
-          }
-        });
-      }
-    });
-
-    return { synergyScore, conflictScore, synergyCount, conflictCount };
-  };
-  
-  const toggleComponent = (componentType: EconomicComponentType) => {
-    if (isReadOnly) return;
-
-    if (selectedComponents.includes(componentType)) {
-      onComponentChange(selectedComponents.filter(c => c !== componentType));
-    } else if (selectedComponents.length < maxComponents) {
-      onComponentChange([...selectedComponents, componentType]);
-    }
-  };
-
-  const { synergyScore, conflictScore, synergyCount, conflictCount } = calculateSynergies(selectedComponents, governmentComponents);
-  const effectivenessScore = selectedComponents.reduce(
-    (sum, comp) => sum + (ATOMIC_ECONOMIC_COMPONENTS[comp]?.effectiveness || 0), 0
-  ) / selectedComponents.length || 0;
-
   return (
-    <div className="space-y-6">
-      {/* Effectiveness Summary */}
-      <div className="grid grid-cols-3 gap-4 p-4 bg-gradient-to-br from-white/60 to-white/40 dark:from-slate-800/60 dark:to-slate-800/40 backdrop-blur-sm border border-white/30 dark:border-slate-700/30 rounded-xl shadow-lg">
-        <div className="text-center space-y-2">
-          <div className="flex items-center justify-center gap-2">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/30">
-              <Gauge className="h-5 w-5 text-green-600 dark:text-green-400" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold bg-gradient-to-br from-green-600 to-emerald-600 dark:from-green-400 dark:to-emerald-400 bg-clip-text text-transparent">
-            {effectivenessScore.toFixed(0)}%
-          </div>
-          <div className="text-sm font-semibold text-muted-foreground">Effectiveness</div>
-        </div>
-        <div className="text-center space-y-2">
-          <div className="flex items-center justify-center gap-2">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30">
-              <Sparkles className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold bg-gradient-to-br from-blue-600 to-cyan-600 dark:from-blue-400 dark:to-cyan-400 bg-clip-text text-transparent">
-            +{synergyCount}
-          </div>
-          <div className="text-sm font-semibold text-muted-foreground">Synergies</div>
-          <div className="text-xs text-blue-600/70 dark:text-blue-400/70 font-medium">{synergyScore} pts bonus</div>
-        </div>
-        <div className="text-center space-y-2">
-          <div className="flex items-center justify-center gap-2">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-red-500/20 to-orange-500/20 border border-red-500/30">
-              <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold bg-gradient-to-br from-red-600 to-orange-600 dark:from-red-400 dark:to-orange-400 bg-clip-text text-transparent">
-            {conflictCount > 0 ? '-' : ''}{conflictCount}
-          </div>
-          <div className="text-sm font-semibold text-muted-foreground">Conflicts</div>
-          <div className="text-xs text-red-600/70 dark:text-red-400/70 font-medium">{conflictScore} pts penalty</div>
-        </div>
-      </div>
-
-      {/* Category Tabs */}
-      <Tabs value={activeCategory} onValueChange={(value) => setActiveCategory(value as keyof typeof COMPONENT_CATEGORIES)}>
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
-          {Object.entries(COMPONENT_CATEGORIES).map(([key, category]) => (
-            <TabsTrigger key={key} value={key} className="text-xs">
-              <category.icon className="h-4 w-4 mr-1" />
-              {category.name}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        {Object.entries(COMPONENT_CATEGORIES).map(([key, category]) => (
-          <TabsContent key={key} value={key} className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {category.components.map(componentType => {
-                const component = ATOMIC_ECONOMIC_COMPONENTS[componentType];
-                if (!component) return null;
-                
-                const isSelected = selectedComponents.includes(componentType);
-                const canSelect = !isSelected && selectedComponents.length < maxComponents;
-                
-                return (
-                  <Card 
-                    key={componentType}
-                    className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
-                      isSelected 
-                        ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                        : canSelect 
-                          ? 'hover:ring-2 hover:ring-gray-300' 
-                          : 'opacity-50 cursor-not-allowed'
-                    }`}
-                    onClick={() => toggleComponent(componentType)}
-                  >
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <div className={`p-2 rounded-lg bg-${component.color}-100 dark:bg-${component.color}-900/20`}>
-                          <component.icon className={`h-5 w-5 text-${component.color}-600 dark:text-${component.color}-400`} />
-                        </div>
-                        <Badge variant={isSelected ? "default" : "secondary"}>
-                          {component.effectiveness}%
-                        </Badge>
-                      </div>
-                      <CardTitle className="text-sm">{component.name}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <p className="text-xs text-muted-foreground mb-3">
-                        {component.description}
-                      </p>
-                      
-                      {/* Synergies */}
-                      {component.synergies.length > 0 && (
-                        <div className="mb-2">
-                          <div className="flex flex-wrap gap-1">
-                            {(expandedSynergies.has(componentType) ? component.synergies : component.synergies.slice(0, 2)).map(synergy => {
-                              const synergyActive = selectedComponents.includes(synergy);
-                              const synergyName = ATOMIC_ECONOMIC_COMPONENTS[synergy]?.name ||
-                                synergy.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
-                              return (
-                                <Badge
-                                  key={synergy}
-                                  variant="outline"
-                                  className={`text-[10px] px-1.5 py-0 h-5 ${
-                                    synergyActive
-                                      ? 'bg-green-500/15 border-green-500/30 text-green-700 dark:text-green-300'
-                                      : 'border-green-500/20 text-green-600/80 dark:text-green-400/80'
-                                  }`}
-                                >
-                                  {synergyActive && '★ '}
-                                  {synergyName}
-                                </Badge>
-                              );
-                            })}
-                            {component.synergies.length > 2 && !expandedSynergies.has(componentType) && (
-                              <Badge
-                                variant="outline"
-                                className="text-[10px] px-1.5 py-0 h-5 border-green-500/20 text-green-600/70 dark:text-green-400/70 cursor-pointer hover:bg-green-500/10"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setExpandedSynergies(prev => new Set([...prev, componentType]));
-                                }}
-                              >
-                                +{component.synergies.length - 2}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Conflicts */}
-                      {component.conflicts.length > 0 && (
-                        <div>
-                          <div className="flex flex-wrap gap-1">
-                            {(expandedConflicts.has(componentType) ? component.conflicts : component.conflicts.slice(0, 2)).map(conflict => {
-                              const conflictActive = selectedComponents.includes(conflict);
-                              const conflictName = ATOMIC_ECONOMIC_COMPONENTS[conflict]?.name ||
-                                conflict.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
-                              return (
-                                <Badge
-                                  key={conflict}
-                                  variant="outline"
-                                  className={`text-[10px] px-1.5 py-0 h-5 ${
-                                    conflictActive
-                                      ? 'bg-red-500/15 border-red-500/30 text-red-700 dark:text-red-300'
-                                      : 'border-red-500/20 text-red-600/80 dark:text-red-400/80'
-                                  }`}
-                                >
-                                  {conflictActive && '⚠ '}
-                                  {conflictName}
-                                </Badge>
-                              );
-                            })}
-                            {component.conflicts.length > 2 && !expandedConflicts.has(componentType) && (
-                              <Badge
-                                variant="outline"
-                                className="text-[10px] px-1.5 py-0 h-5 border-red-500/20 text-red-600/70 dark:text-red-400/70 cursor-pointer hover:bg-red-500/10"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setExpandedConflicts(prev => new Set([...prev, componentType]));
-                                }}
-                              >
-                                +{component.conflicts.length - 2}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </TabsContent>
-        ))}
-      </Tabs>
-    </div>
+    <UnifiedAtomicComponentSelector
+      components={convertEconomicToUnifiedComponents(ATOMIC_ECONOMIC_COMPONENTS)}
+      categories={convertedCategories}
+      selectedComponents={selectedComponents.map(s => s.toString())}
+      onComponentChange={(components) => onComponentChange(components.map(c => c as EconomicComponentType))}
+      maxComponents={maxComponents}
+      isReadOnly={isReadOnly}
+      theme={ECONOMY_THEME}
+      systemName="Atomic Economic Components"
+      systemIcon={DollarSign}
+      calculateEffectiveness={(components) => calculateEconomicEffectiveness(components.map(c => c as EconomicComponentType))}
+      checkSynergy={checkEconomicSynergy}
+      checkConflict={checkEconomicConflict}
+    />
   );
 }

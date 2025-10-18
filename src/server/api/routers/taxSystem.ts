@@ -764,4 +764,379 @@ export const taxSystemRouter = createTRPCRouter({
         }
       };
     }),
+
+  // Real-time live tax calculation with full atomic component integration
+  calculateLiveTax: publicProcedure
+    .input(z.object({
+      taxSystemId: z.string(),
+      countryId: z.string(),
+      income: z.number(),
+      corporateIncome: z.number().optional(),
+      deductions: z.array(z.object({
+        deductionId: z.string(),
+        amount: z.number(),
+        description: z.string().optional()
+      })).optional(),
+      exemptions: z.array(z.object({
+        exemptionId: z.string(),
+        amount: z.number(),
+        description: z.string().optional()
+      })).optional(),
+      taxYear: z.number().optional(),
+      // Sector data for corporate calculations
+      sectorData: z.array(z.object({
+        id: z.string(),
+        name: z.string(),
+        gdpContribution: z.number(),
+        taxRate: z.number().optional()
+      })).optional()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Fetch tax system with all components
+      const taxSystem = await ctx.db.taxSystem.findUnique({
+        where: { id: input.taxSystemId },
+        include: {
+          taxCategories: {
+            include: {
+              taxBrackets: true,
+              taxExemptions: true,
+              taxDeductions: true
+            }
+          },
+          country: {
+            include: {
+              governmentComponents: true,
+              economicComponents: true
+            }
+          }
+        }
+      });
+
+      if (!taxSystem) {
+        throw new Error('Tax system not found');
+      }
+
+      // Fetch government components
+      const governmentComponents = await ctx.db.governmentComponent.findMany({
+        where: { countryId: input.countryId },
+        select: { componentType: true }
+      });
+
+      // Fetch economic components
+      const economicComponents = await ctx.db.economicComponent.findMany({
+        where: { countryId: input.countryId },
+        select: { componentType: true }
+      });
+
+      // Get economic data
+      const economicData = {
+        gdpPerCapita: taxSystem.country.currentGdpPerCapita,
+        nominalGDP: taxSystem.country.currentGdpPerCapita * taxSystem.country.currentPopulation,
+        population: taxSystem.country.currentPopulation,
+        giniCoefficient: 0.35, // Default
+        gdpGrowthRate: taxSystem.country.realGDPGrowthRate || 0.03,
+        formalEconomyShare: 0.80,
+        consumptionGDPPercent: 60,
+        exportsGDPPercent: 30
+      };
+
+      // Calculate base tax using TaxCalculatorEngine logic
+      const activeTaxCategories = taxSystem.taxCategories.filter(c => c.isActive);
+      const activeBrackets = taxSystem.taxCategories.flatMap(c =>
+        c.taxBrackets.filter(b => b.isActive)
+      );
+      const activeExemptions = taxSystem.taxCategories.flatMap(c =>
+        c.taxExemptions.filter(e => e.isActive)
+      );
+      const activeDeductions = taxSystem.taxCategories.flatMap(c =>
+        c.taxDeductions.filter(d => d.isActive)
+      );
+
+      // Calculate total exemptions
+      let totalExemptions = 0;
+      const systemExemptions = activeExemptions.filter(e => !e.categoryId);
+      for (const exemption of systemExemptions) {
+        if (exemption.exemptionAmount) {
+          totalExemptions += exemption.exemptionAmount;
+        } else if (exemption.exemptionRate) {
+          totalExemptions += (input.income * exemption.exemptionRate) / 100;
+        }
+      }
+
+      for (const requested of input.exemptions || []) {
+        const exemption = activeExemptions.find(e => e.id === requested.exemptionId);
+        if (exemption) {
+          totalExemptions += requested.amount;
+        }
+      }
+
+      // Calculate total deductions
+      let totalDeductions = 0;
+      for (const category of activeTaxCategories) {
+        if (category.deductionAllowed && category.standardDeduction) {
+          totalDeductions += category.standardDeduction;
+        }
+      }
+
+      for (const requested of input.deductions || []) {
+        const deduction = activeDeductions.find(d => d.id === requested.deductionId);
+        if (deduction) {
+          let deductionAmount = requested.amount;
+
+          if (deduction.maximumAmount) {
+            deductionAmount = Math.min(deductionAmount, deduction.maximumAmount);
+          }
+
+          if (deduction.percentage) {
+            const percentageLimit = (input.income * deduction.percentage) / 100;
+            deductionAmount = Math.min(deductionAmount, percentageLimit);
+          }
+
+          totalDeductions += deductionAmount;
+        }
+      }
+
+      // Calculate adjusted gross income
+      const adjustedGrossIncome = Math.max(0, input.income - totalExemptions);
+      const taxableIncome = Math.max(0, adjustedGrossIncome - totalDeductions);
+
+      // Calculate government component modifiers
+      const governmentComponentTypes = governmentComponents
+        .map(gc => gc.componentType)
+        .filter((ct): ct is ComponentType => Object.values(ComponentType).includes(ct as ComponentType));
+      let governmentBonus = 0;
+      const taxBoostComponents: ComponentType[] = [
+        ComponentType.PROFESSIONAL_BUREAUCRACY,
+        ComponentType.RULE_OF_LAW,
+        ComponentType.TECHNOCRATIC_AGENCIES,
+        ComponentType.DIGITAL_GOVERNMENT
+      ];
+
+      for (const comp of governmentComponentTypes) {
+        if (taxBoostComponents.includes(comp)) {
+          governmentBonus += 0.08; // 8% boost for tax-efficient components
+        } else {
+          governmentBonus += 0.02; // 2% baseline boost
+        }
+      }
+
+      // Calculate economic component modifiers
+      const economicComponentTypes = economicComponents.map(ec => ec.componentType);
+      const economicBonus = economicComponentTypes.length * 0.05; // 5% boost per component
+
+      // Calculate unified effectiveness multiplier
+      const economicTierMultiplier = economicData.gdpPerCapita > 50000 ? 1.1 :
+                                      economicData.gdpPerCapita > 25000 ? 1.05 : 1.0;
+
+      const taxCollectionEfficiency = (1 + governmentBonus + economicBonus) * economicTierMultiplier;
+
+      // Calculate base tax effectiveness
+      const effectiveness = getUnifiedTaxEffectiveness(
+        {
+          ...taxSystem,
+          taxAuthority: taxSystem.taxAuthority ?? undefined,
+          taxCode: taxSystem.taxCode ?? undefined,
+          baseRate: taxSystem.baseRate ?? undefined,
+          flatTaxRate: taxSystem.flatTaxRate ?? undefined,
+          alternativeMinRate: taxSystem.alternativeMinRate ?? undefined,
+          taxHolidays: taxSystem.taxHolidays ?? undefined,
+          complianceRate: taxSystem.complianceRate ?? undefined,
+          collectionEfficiency: taxSystem.collectionEfficiency ?? undefined,
+          lastReform: taxSystem.lastReform ?? undefined,
+          taxCategories: activeTaxCategories.map(cat => ({
+            ...cat,
+            description: cat.description ?? undefined,
+            baseRate: cat.baseRate ?? undefined,
+            color: cat.color ?? undefined,
+            icon: cat.icon ?? undefined,
+            maximumAmount: cat.maximumAmount ?? undefined,
+            exemptionAmount: cat.exemptionAmount ?? undefined,
+            standardDeduction: cat.standardDeduction ?? undefined,
+            minimumAmount: cat.minimumAmount ?? undefined,
+            taxBrackets: cat.taxBrackets?.map(bracket => ({
+              ...bracket,
+              bracketName: bracket.bracketName ?? undefined,
+              maxIncome: bracket.maxIncome ?? undefined,
+              flatAmount: bracket.flatAmount ?? undefined
+            })),
+            taxExemptions: cat.taxExemptions?.map(exemption => ({
+              ...exemption,
+              description: exemption.description ?? undefined,
+              startDate: exemption.startDate ?? undefined,
+              endDate: exemption.endDate ?? undefined,
+              categoryId: exemption.categoryId ?? undefined,
+              exemptionName: exemption.exemptionName ?? undefined,
+              exemptionAmount: exemption.exemptionAmount ?? undefined,
+              exemptionRate: exemption.exemptionRate ?? undefined,
+              qualifications: exemption.qualifications ?? undefined
+            })),
+            taxDeductions: cat.taxDeductions?.map(deduction => ({
+              ...deduction,
+              description: deduction.description ?? undefined,
+              categoryId: deduction.categoryId ?? undefined,
+              deductionName: deduction.deductionName ?? undefined,
+              maximumAmount: deduction.maximumAmount ?? undefined,
+              percentage: deduction.percentage ?? undefined,
+              qualifications: deduction.qualifications ?? undefined
+            }))
+          }))
+        },
+        governmentComponentTypes,
+        economicData
+      );
+
+      // Calculate tax by category
+      const breakdown: Array<{
+        categoryId: string;
+        categoryName: string;
+        taxableAmount: number;
+        taxOwed: number;
+        rate: number;
+        exemptions: number;
+        deductions: number;
+      }> = [];
+
+      let baseTaxOwed = 0;
+
+      for (const category of activeTaxCategories) {
+        let categoryTaxableAmount = taxableIncome;
+        let categoryExemptions = 0;
+        let categoryDeductions = 0;
+
+        // Apply category-specific minimums and maximums
+        if (category.minimumAmount && categoryTaxableAmount < category.minimumAmount) {
+          categoryTaxableAmount = 0;
+        }
+
+        if (category.maximumAmount && categoryTaxableAmount > category.maximumAmount) {
+          categoryTaxableAmount = category.maximumAmount;
+        }
+
+        // Apply category-specific exemptions
+        if (category.exemptionAmount) {
+          categoryExemptions = category.exemptionAmount;
+          categoryTaxableAmount = Math.max(0, categoryTaxableAmount - categoryExemptions);
+        }
+
+        // Apply category-specific deductions
+        if (category.deductionAllowed && category.standardDeduction) {
+          categoryDeductions = category.standardDeduction;
+          categoryTaxableAmount = Math.max(0, categoryTaxableAmount - categoryDeductions);
+        }
+
+        // Calculate tax based on method
+        let categoryTaxOwed = 0;
+        if (category.calculationMethod === 'percentage') {
+          const rate = (category.baseRate || 0) / 100;
+          categoryTaxOwed = categoryTaxableAmount * rate;
+        } else if (category.calculationMethod === 'progressive' || category.calculationMethod === 'tiered') {
+          const categoryBrackets = activeBrackets
+            .filter(b => b.categoryId === category.id)
+            .sort((a, b) => a.minIncome - b.minIncome);
+
+          let remainingIncome = categoryTaxableAmount;
+          for (const bracket of categoryBrackets) {
+            if (remainingIncome <= 0) break;
+
+            const bracketMin = bracket.minIncome;
+            const bracketMax = bracket.maxIncome || Infinity;
+
+            if (categoryTaxableAmount <= bracketMin) continue;
+
+            const taxableInThisBracket = Math.min(
+              remainingIncome,
+              bracketMax - bracketMin,
+              categoryTaxableAmount - bracketMin
+            );
+
+            if (taxableInThisBracket > 0) {
+              const bracketTax = bracket.flatAmount ||
+                (taxableInThisBracket * bracket.rate / 100);
+
+              categoryTaxOwed += bracketTax;
+              remainingIncome -= taxableInThisBracket;
+            }
+          }
+        }
+
+        breakdown.push({
+          categoryId: category.id,
+          categoryName: category.categoryName,
+          taxableAmount: categoryTaxableAmount,
+          taxOwed: categoryTaxOwed,
+          rate: category.baseRate || 0,
+          exemptions: categoryExemptions,
+          deductions: categoryDeductions
+        });
+
+        baseTaxOwed += categoryTaxOwed;
+      }
+
+      // Apply atomic component modifiers to tax owed
+      const modifiedTaxOwed = baseTaxOwed * taxCollectionEfficiency;
+      const effectiveRate = input.income > 0 ? (modifiedTaxOwed / input.income) * 100 : 0;
+
+      // Calculate marginal rate
+      let marginalRate = 0;
+      for (const category of activeTaxCategories) {
+        const categoryBrackets = activeBrackets
+          .filter(b => b.categoryId === category.id)
+          .sort((a, b) => b.minIncome - a.minIncome);
+
+        for (const bracket of categoryBrackets) {
+          if (taxableIncome >= bracket.minIncome) {
+            marginalRate = Math.max(marginalRate, bracket.rate);
+            break;
+          }
+        }
+
+        if (categoryBrackets.length === 0 && category.baseRate) {
+          marginalRate = Math.max(marginalRate, category.baseRate);
+        }
+      }
+
+      // Sector breakdown for corporate calculations
+      let sectorBreakdown;
+      if (input.sectorData && input.sectorData.length > 0 && economicData.nominalGDP) {
+        sectorBreakdown = input.sectorData.map(sector => {
+          const sectorIncome = ((input.corporateIncome || input.income) * sector.gdpContribution) / 100;
+          const sectorTaxRate = sector.taxRate || effectiveRate;
+          const sectorTaxOwed = (sectorIncome * sectorTaxRate) / 100;
+
+          return {
+            sector: sector.name,
+            income: sectorIncome,
+            taxOwed: sectorTaxOwed * taxCollectionEfficiency,
+            effectiveRate: sectorTaxRate
+          };
+        });
+      }
+
+      return {
+        taxableIncome,
+        totalDeductions,
+        totalExemptions,
+        adjustedGrossIncome,
+        taxOwed: modifiedTaxOwed,
+        effectiveRate,
+        marginalRate,
+        breakdown: breakdown.map(cat => ({
+          ...cat,
+          taxOwed: cat.taxOwed * taxCollectionEfficiency
+        })),
+        appliedBrackets: [],
+        // Atomic component data
+        atomicModifiers: {
+          taxCollectionEfficiency,
+          governmentBonus,
+          economicBonus,
+          economicTierMultiplier,
+          governmentComponents: governmentComponentTypes.length,
+          economicComponents: economicComponentTypes.length
+        },
+        effectiveness,
+        sectorBreakdown,
+        timestamp: new Date().toISOString()
+      };
+    }),
 });

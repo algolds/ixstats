@@ -1,5 +1,5 @@
 // Government Step - Atomic components and structure for Atomic Builder
-// Extracted from AtomicBuilderPageEnhanced.tsx for modularity (contains government tabs and dialogs)
+// Extracted from AtomicBuilderPage.tsx for modularity (contains government tabs and dialogs)
 
 "use client";
 
@@ -20,9 +20,12 @@ import { cn } from '~/lib/utils';
 import { stepConfig } from '../builderConfig';
 import { AtomicComponentSelector, type ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
 import { GovernmentBuilder } from '~/components/government/GovernmentBuilder';
-import { GovernmentSpendingSectionEnhanced } from '~/app/builder/sections/GovernmentSpendingSectionEnhanced';
+import { GovernmentSpendingSection } from '~/app/builder/sections/GovernmentSpendingSection';
 import { GovernmentStructurePreview } from '../GovernmentStructurePreview';
 import type { EconomicInputs, RealCountryData } from '~/app/builder/lib/economy-data-service';
+
+// Help System
+// import { GovernmentHelpSystem } from '../help/GovernmentHelpSystem';
 
 interface GovernmentStepProps {
   economicInputs: EconomicInputs;
@@ -123,50 +126,45 @@ export function GovernmentStep({
           <Building2 className="h-8 w-8 text-white" />
         </div>
         <div className="flex items-center justify-center gap-2">
-          <h2 className="text-3xl font-bold">Design Government Structure</h2>
+          <h2 className="text-3xl font-bold">MyGovernment Builder</h2>
           <HelpTooltip text={stepConfig.government.help} />
         </div>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Build your government using atomic components and configure spending priorities
-        </p>
+        
       </motion.div>
 
-      <Alert className="border-amber-200/50 bg-amber-50/30 backdrop-blur-sm">
-        <Shield className="h-4 w-4" />
-        <AlertDescription>
-          <strong>Government Configuration:</strong> Select atomic components that will influence your nation's behavior.
-          Each component affects economic parameters and creates unique emergent properties.
-        </AlertDescription>
-      </Alert>
+     
 
       <Tabs value={activeGovernmentTab} onValueChange={onTabChange} className="space-y-6">
-        <EnhancedTabsList className="grid-cols-4">
-          <EnhancedTabsTrigger
-            value="components"
-            icon={Settings}
-            badge={governmentComponents.length}
-          >
-            Atomic Components
-          </EnhancedTabsTrigger>
-          <EnhancedTabsTrigger
-            value="structure"
-            icon={Crown}
-          >
-            MyGovernment Builder
-          </EnhancedTabsTrigger>
-          <EnhancedTabsTrigger
-            value="spending"
-            icon={Coins}
-          >
-            Policies
-          </EnhancedTabsTrigger>
-          <EnhancedTabsTrigger
-            value="preview"
-            icon={Eye}
-          >
-            Preview
-          </EnhancedTabsTrigger>
-        </EnhancedTabsList>
+        <div className="flex items-center justify-between">
+          <EnhancedTabsList className="grid-cols-4">
+            <EnhancedTabsTrigger
+              value="components"
+              icon={Settings}
+              badge={governmentComponents.length}
+            >
+              Atomic Components
+            </EnhancedTabsTrigger>
+            <EnhancedTabsTrigger
+              value="structure"
+              icon={Crown}
+            >
+              MyGovernment Builder
+            </EnhancedTabsTrigger>
+            <EnhancedTabsTrigger
+              value="spending"
+              icon={Coins}
+            >
+              Policies
+            </EnhancedTabsTrigger>
+            <EnhancedTabsTrigger
+              value="preview"
+              icon={Eye}
+            >
+              Preview
+            </EnhancedTabsTrigger>
+          </EnhancedTabsList>
+          {/* <GovernmentHelpSystem section={activeGovernmentTab as 'components' | 'structure' | 'spending' | 'preview'} /> */}
+        </div>
 
         {/* COMPONENTS TAB */}
         <TabsContent value="components" className="mt-6">
@@ -238,7 +236,7 @@ export function GovernmentStep({
                 <PoliciesHelpDialog />
               </div>
             </div>
-            <GovernmentSpendingSectionEnhanced
+            <GovernmentSpendingSection
               inputs={economicInputs}
               onInputsChange={onEconomicInputsChange}
               selectedAtomicComponents={governmentComponents}
@@ -426,20 +424,7 @@ function GovernmentPreviewTab({
       transition={{ delay: 0.1 }}
       className="space-y-6"
     >
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-2xl font-semibold text-foreground">
-            Government Structure Preview
-          </h3>
-          <p className="text-muted-foreground mt-1">
-            Review your government configuration before saving
-          </p>
-        </div>
-        <Badge variant="outline" className="bg-blue-50 text-blue-700">
-          <Eye className="h-3 w-3 mr-1" />
-          Preview Mode
-        </Badge>
-      </div>
+     
 
       <GovernmentStructurePreview
         governmentStructure={governmentStructure}

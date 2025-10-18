@@ -473,8 +473,9 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
                               : 'bg-background/50 border border-orange-200/30 mr-4'
                           }`}
                         >
-                          <div 
+                          <div
                             className="text-sm whitespace-pre-wrap"
+                            // SECURITY: formatContentEnhanced now includes sanitizeUserContent to prevent XSS
                             dangerouslySetInnerHTML={{ __html: formatContentEnhanced(message.content) }}
                           />
                         </div>

@@ -1,7 +1,7 @@
 # Diplomatic Systems - Complete Implementation Guide
 
-**Version**: v1.1.0
-**Last Updated**: October 2025
+**Version**: v1.1.1
+**Last Updated**: October 17, 2025
 **Implementation Status**: 90% Complete (Production-Ready)
 
 > **📚 Note**: This document provides comprehensive diplomatic systems documentation. For a high-level overview of all IxStats systems, see [SYSTEMS_GUIDE.md](../SYSTEMS_GUIDE.md)
@@ -41,8 +41,8 @@ The IxStats Diplomatic Systems provide a comprehensive diplomatic strategy and i
 
 ### Technical Stack
 - **Frontend**: React 18 with TypeScript, Framer Motion animations
-- **Backend**: tRPC API layer with Prisma ORM
-- **Database**: PostgreSQL with comprehensive diplomatic models
+- **Backend**: tRPC API layer (36 routers including diplomatic and diplomaticIntelligence) with Prisma ORM
+- **Database**: PostgreSQL with 131 comprehensive models including full diplomatic suite
 - **Real-time**: Live data updates with 5-30 second refresh intervals
 - **Security**: Multi-level clearance system (PUBLIC/RESTRICTED/CONFIDENTIAL)
 - **UI/UX**: Glass Physics design system with responsive mobile support
@@ -399,6 +399,7 @@ const optimization = await optimizeBudgetAllocation({
 
 ---
 
-**Version**: 1.0.0  
-**Last Updated**: January 2025  
-**Compatibility**: IxStats v1.0+, Next.js 15, React 18
+**Version**: v1.1.1
+**Last Updated**: October 17, 2025
+**Compatibility**: IxStats v1.1.1+, Next.js 15, React 18
+**Database**: 131 Prisma models, 36 tRPC routers (diplomatic + diplomaticIntelligence)

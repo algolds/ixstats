@@ -13,7 +13,7 @@ import type { EconomicComponentType } from '~/components/economy/atoms/AtomicEco
 interface ComponentSelectionStepProps {
   selectedComponents: EconomicComponentType[];
   maxComponents?: number;
-  onComponentToggle: (component: EconomicComponentType) => void;
+  onComponentToggle: (components: EconomicComponentType[]) => void;
 }
 
 export function ComponentSelectionStep({
@@ -43,7 +43,7 @@ export function ComponentSelectionStep({
         <CardContent>
           <AtomicEconomicComponentSelector
             selectedComponents={selectedComponents}
-            onComponentToggle={onComponentToggle}
+            onComponentChange={onComponentToggle}
             maxComponents={maxComponents}
           />
         </CardContent>

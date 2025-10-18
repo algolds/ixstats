@@ -34,6 +34,7 @@ export class AtomicIntegrationService {
   private updateQueue: AtomicUpdateEvent[] = [];
   private isProcessingQueue = false;
   private updateTimeout: NodeJS.Timeout | null = null;
+  private lastNotifiedState: AtomicIntegrationState | null = null;
 
   constructor() {
     this.state = {
@@ -454,13 +455,19 @@ export class AtomicIntegrationService {
    * Notify all listeners of state changes
    */
   private notifyListeners(): void {
-    this.listeners.forEach(listener => {
-      try {
-        listener(this.state);
-      } catch (error) {
-        console.error('Error in atomic integration listener:', error);
-      }
-    });
+    const newState = { ...this.state };
+    
+    // Only notify if state actually changed (deep equality check)
+    if (!this.lastNotifiedState || JSON.stringify(newState) !== JSON.stringify(this.lastNotifiedState)) {
+      this.lastNotifiedState = newState;
+      this.listeners.forEach(listener => {
+        try {
+          listener(newState);
+        } catch (error) {
+          console.error('Error in atomic integration listener:', error);
+        }
+      });
+    }
   }
 }
 

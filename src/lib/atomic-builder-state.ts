@@ -460,7 +460,7 @@ export class AtomicBuilderStateManager {
   private getComponentInfo() {
     // This would typically import from the component info file
     // For now, return basic effectiveness values
-    const info: Record<ComponentType, { effectiveness: number }> = {
+    const info: Partial<Record<ComponentType, { effectiveness: number }>> = {
       [ComponentType.CENTRALIZED_POWER]: { effectiveness: 75 },
       [ComponentType.FEDERAL_SYSTEM]: { effectiveness: 70 },
       [ComponentType.CONFEDERATE_SYSTEM]: { effectiveness: 60 },

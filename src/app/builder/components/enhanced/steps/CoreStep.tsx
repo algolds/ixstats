@@ -1,5 +1,5 @@
 // Core Step - National identity and core indicators for Atomic Builder
-// Extracted from AtomicBuilderPageEnhanced.tsx for modularity
+// Extracted from AtomicBuilderPage.tsx for modularity
 
 "use client";
 

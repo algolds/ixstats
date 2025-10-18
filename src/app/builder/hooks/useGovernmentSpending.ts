@@ -1,8 +1,17 @@
-// Custom hook for government spending state management
-// Refactored from GovernmentSpendingSectionEnhanced.tsx
-// Centralizes all spending-related state and logic
+/**
+ * Government Spending State Management Hook.
+ *
+ * Centralizes all spending-related state and logic, integrating:
+ * - Budget allocations and utilization tracking
+ * - Policy selection and presets
+ * - Atomic component integration
+ * - Government builder synchronization
+ * - Spending visualization data
+ *
+ * Refactored from GovernmentSpendingSectionEnhanced.tsx for modularity and reusability.
+ */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
 import { atomicIntegrationService } from '../services/AtomicIntegrationService';
 import { generateGovernmentBuilderFromAtomicComponents } from '../utils/atomicGovernmentIntegration';
@@ -10,15 +19,152 @@ import { validateGovernmentSpendingSource } from '../utils/governmentValidation'
 import type { EconomicInputs } from '../lib/economy-data-service';
 import type { GovernmentBuilderState } from '~/types/government';
 import { SPENDING_POLICIES } from '../data/government-spending-policies';
+import { api } from '~/trpc/react';
 
+/**
+ * Props interface for useGovernmentSpending hook.
+ */
 export interface UseGovernmentSpendingProps {
+  /** Economic inputs containing spending data */
   inputs: EconomicInputs;
+  /** Callback when inputs change */
   onInputsChange: (inputs: EconomicInputs) => void;
+  /** Selected atomic government components */
   selectedAtomicComponents?: ComponentType[];
+  /** Traditional government builder state */
   governmentBuilderData?: GovernmentBuilderState | null;
+  /** Country ID for tracking (optional) */
   countryId?: string;
 }
 
+/**
+ * Government spending state management hook.
+ *
+ * Manages comprehensive government spending workflow:
+ * - Budget tracking (total, allocated, revenue, utilization)
+ * - Policy selection with atomic component integration
+ * - Policy presets (welfare state, free market, etc.)
+ * - Automatic government builder generation
+ * - Spending category visualization data
+ * - Validation and error states
+ * - Integration service synchronization
+ *
+ * Automatically detects and applies policies based on selected atomic components,
+ * ensuring consistency between component-based and traditional builder approaches.
+ *
+ * @hook
+ * @param {UseGovernmentSpendingProps} props - Spending configuration
+ * @param {EconomicInputs} props.inputs - Economic inputs with spending data
+ * @param {Function} props.onInputsChange - Callback for input updates
+ * @param {ComponentType[]} props.selectedAtomicComponents - Atomic components
+ * @param {GovernmentBuilderState|null} props.governmentBuilderData - Builder state
+ * @param {string} props.countryId - Country identifier (optional)
+ * @returns {Object} Spending state and methods
+ *
+ * @example
+ * ```tsx
+ * function GovernmentSpendingSection() {
+ *   const [economicInputs, setEconomicInputs] = useState<EconomicInputs>(defaults);
+ *   const {
+ *     selectedPolicies,
+ *     togglePolicy,
+ *     totalBudget,
+ *     totalAllocated,
+ *     budgetUtilization,
+ *     isValidBudget,
+ *     spendingData,
+ *     validation
+ *   } = useGovernmentSpending({
+ *     inputs: economicInputs,
+ *     onInputsChange: setEconomicInputs,
+ *     selectedAtomicComponents: [ComponentType.WELFARE_STATE],
+ *     governmentBuilderData: null
+ *   });
+ *
+ *   return (
+ *     <div>
+ *       <h3>Budget: ${totalBudget.toLocaleString()}</h3>
+ *       <p>Utilization: {budgetUtilization.toFixed(1)}%</p>
+ *       {!isValidBudget && (
+ *         <p className="text-red-500">Budget must be within 5% of 100%</p>
+ *       )}
+ *       <SpendingChart data={spendingData} />
+ *       <PolicySelector
+ *         selected={selectedPolicies}
+ *         onToggle={togglePolicy}
+ *       />
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Policy preset application
+ * function PolicyPresetSelector() {
+ *   const { applyPolicyPreset } = useGovernmentSpending({
+ *     inputs,
+ *     onInputsChange: setInputs
+ *   });
+ *
+ *   const presets = [
+ *     { name: 'Welfare State', policies: ['universalBasicServices', 'progressiveTaxation'] },
+ *     { name: 'Free Market', policies: ['publicPrivatePartnerships', 'performanceBasedBudgeting'] }
+ *   ];
+ *
+ *   return (
+ *     <div>
+ *       {presets.map(preset => (
+ *         <button
+ *           key={preset.name}
+ *           onClick={() => applyPolicyPreset(preset.policies)}
+ *         >
+ *           {preset.name}
+ *         </button>
+ *       ))}
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Atomic component integration
+ * function AutomatedPolicyDetection() {
+ *   const {
+ *     selectedPolicies,
+ *     handleAtomicComponentUpdate,
+ *     autoGeneratedBuilder
+ *   } = useGovernmentSpending({
+ *     inputs,
+ *     onInputsChange: setInputs,
+ *     selectedAtomicComponents: [
+ *       ComponentType.WELFARE_STATE,
+ *       ComponentType.ENVIRONMENTAL_PROTECTION,
+ *       ComponentType.DIGITAL_INFRASTRUCTURE
+ *     ]
+ *   });
+ *
+ *   useEffect(() => {
+ *     handleAtomicComponentUpdate();
+ *     // Automatically selects policies based on atomic components:
+ *     // - universalBasicServices (from WELFARE_STATE)
+ *     // - greenInvestmentPriority (from ENVIRONMENTAL_PROTECTION)
+ *     // - digitalGovernmentInitiative (from DIGITAL_INFRASTRUCTURE)
+ *   }, []);
+ *
+ *   return (
+ *     <div>
+ *       <h4>Auto-Selected Policies:</h4>
+ *       {Array.from(selectedPolicies).map(policy => (
+ *         <span key={policy}>{policy}</span>
+ *       ))}
+ *       {autoGeneratedBuilder && <p>Builder generated from components</p>}
+ *     </div>
+ *   );
+ * }
+ * ```
+ */
 export function useGovernmentSpending({
   inputs,
   onInputsChange,
@@ -30,6 +176,13 @@ export function useGovernmentSpending({
   const [selectedPolicies, setSelectedPolicies] = useState<Set<string>>(new Set());
   const [autoGeneratedBuilder, setAutoGeneratedBuilder] = useState<GovernmentBuilderState | null>(null);
   const [integrationState, setIntegrationState] = useState(atomicIntegrationService.getState());
+
+  // tRPC mutations for database operations
+  const savePolicySelectionsMutation = api.policies.savePolicySelections.useMutation();
+  const calculatePolicyEffectsQuery = api.policies.calculatePolicyEffects.useQuery(
+    { countryId: countryId || '' },
+    { enabled: !!countryId }
+  );
 
   // Validation
   const validation = useMemo(() =>
@@ -80,28 +233,40 @@ export function useGovernmentSpending({
     return [];
   }, [governmentBuilderData, inputs.governmentSpending.spendingCategories]);
 
-  // Subscribe to atomic integration service
+  // Track last sent values to prevent redundant updates
+  const lastSentComponentsRef = useRef<ComponentType[]>([]);
+  const lastSentGovernmentBuilderRef = useRef<any>(null);
+  const lastSentInputsRef = useRef<EconomicInputs | null>(null);
+
+  // Subscribe to atomic integration service once
   useEffect(() => {
     const unsubscribe = atomicIntegrationService.subscribe(setIntegrationState);
     return unsubscribe;
   }, []);
 
-  // Update atomic integration service when props change
+  // Consolidated effect for updating service with guards
   useEffect(() => {
-    if (selectedAtomicComponents.length > 0) {
+    // Update components if changed
+    if (selectedAtomicComponents.length > 0 && 
+        JSON.stringify(selectedAtomicComponents) !== JSON.stringify(lastSentComponentsRef.current)) {
+      lastSentComponentsRef.current = [...selectedAtomicComponents];
       atomicIntegrationService.updateComponents(selectedAtomicComponents);
     }
-  }, [selectedAtomicComponents]);
 
-  useEffect(() => {
-    if (governmentBuilderData) {
+    // Update government builder if changed
+    if (governmentBuilderData && 
+        JSON.stringify(governmentBuilderData) !== JSON.stringify(lastSentGovernmentBuilderRef.current)) {
+      lastSentGovernmentBuilderRef.current = governmentBuilderData;
       atomicIntegrationService.updateGovernmentBuilder(governmentBuilderData);
     }
-  }, [governmentBuilderData]);
 
-  useEffect(() => {
-    atomicIntegrationService.updateEconomicInputs(inputs);
-  }, [inputs]);
+    // Update inputs if changed
+    if (inputs && 
+        JSON.stringify(inputs) !== JSON.stringify(lastSentInputsRef.current)) {
+      lastSentInputsRef.current = inputs;
+      atomicIntegrationService.updateEconomicInputs(inputs);
+    }
+  }, [selectedAtomicComponents, governmentBuilderData, inputs]);
 
   // Auto-generate government builder from atomic components
   useEffect(() => {
@@ -115,8 +280,20 @@ export function useGovernmentSpending({
     }
   }, [selectedAtomicComponents, governmentBuilderData, validation.hasGovernmentBuilder, inputs]);
 
+  // Track previous values to prevent unnecessary updates
+  const prevSelectedComponentsRef = useRef<ComponentType[]>([]);
+  const prevGovernmentSpendingRef = useRef<any>(null);
+
   // Initialize selected policies from atomic components and current state
   useEffect(() => {
+    // Check if dependencies have actually changed
+    const componentsChanged = JSON.stringify(selectedAtomicComponents) !== JSON.stringify(prevSelectedComponentsRef.current);
+    const spendingChanged = JSON.stringify(inputs.governmentSpending) !== JSON.stringify(prevGovernmentSpendingRef.current);
+    
+    if (!componentsChanged && !spendingChanged) {
+      return; // No changes, skip update
+    }
+
     const policies = new Set<string>();
 
     // Auto-select policies based on atomic components
@@ -149,6 +326,10 @@ export function useGovernmentSpending({
     });
 
     setSelectedPolicies(policies);
+
+    // Update refs with current values
+    prevSelectedComponentsRef.current = [...selectedAtomicComponents];
+    prevGovernmentSpendingRef.current = { ...inputs.governmentSpending };
   }, [selectedAtomicComponents, inputs.governmentSpending]);
 
   // Toggle policy selection
@@ -227,6 +408,37 @@ export function useGovernmentSpending({
     }
   };
 
+  // Save policy selections to database
+  const savePolicySelections = async () => {
+    if (!countryId || selectedPolicies.size === 0) return;
+
+    try {
+        const policySelections = Array.from(selectedPolicies).map(policyId => {
+          const policy = SPENDING_POLICIES.find(p => p.id === policyId);
+          return {
+            name: policy?.name || policyId,
+            description: policy?.description || '',
+            policyType: 'economic',
+            category: 'spending', // Default category for spending policies
+            relatedGovernmentComponents: selectedAtomicComponents,
+            gdpEffect: policy?.impact?.efficiency ? policy.impact.efficiency * 0.1 : 0, // Convert impact to percentage
+            employmentEffect: policy?.impact?.efficiency ? policy.impact.efficiency * 0.05 : 0,
+            inflationEffect: policy?.impact?.stability ? -policy.impact.stability * 0.02 : 0, // Stability reduces inflation
+            taxRevenueEffect: policy?.impact?.efficiency ? policy.impact.efficiency * 0.08 : 0,
+            implementationCost: 0, // Default implementation cost
+            maintenanceCost: 0, // Default maintenance cost
+          };
+        });
+
+      await savePolicySelectionsMutation.mutateAsync({
+        countryId,
+        policySelections,
+      });
+    } catch (error) {
+      console.error('Failed to save policy selections:', error);
+    }
+  };
+
   return {
     // State
     selectedPolicies,
@@ -242,10 +454,13 @@ export function useGovernmentSpending({
     isValidBudget,
     isSurplus,
     spendingData,
+    policyEffects: calculatePolicyEffectsQuery.data,
 
     // Actions
     togglePolicy,
     applyPolicyPreset,
-    handleAtomicComponentUpdate
+    handleAtomicComponentUpdate,
+    savePolicySelections,
+    isSavingPolicies: savePolicySelectionsMutation.isPending,
   };
 }

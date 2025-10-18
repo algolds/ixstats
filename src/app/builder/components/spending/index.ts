@@ -4,5 +4,5 @@
 export { PolicySelector } from './PolicySelector';
 export { SpendingValidationPanel } from './SpendingValidationPanel';
 export { SpendingPreview } from './SpendingPreview';
-export { SpendingAnalysis } from './SpendingAnalysis';
+export { PolicyAnalysis } from './PolicyAnalysis';
 export { PolicyPresetSelector } from './PolicyPresetSelector';

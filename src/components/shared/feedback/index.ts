@@ -22,3 +22,9 @@ export {
   type ValidationMessage,
   type ValidationFeedbackProps
 } from './ValidationFeedback';
+
+export {
+  DashboardErrorBoundary,
+  useErrorBoundary,
+  withErrorBoundary,
+} from './DashboardErrorBoundary';

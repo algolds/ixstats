@@ -46,6 +46,8 @@ import type {
   GovernmentTemplate
 } from '~/types/government';
 import { getGovernmentTemplates } from './templates/governmentTemplates';
+import { revenueTaxIntegrationService } from '~/app/builder/services/RevenueTaxIntegrationService';
+import type { TaxCategoryInput } from '~/types/tax-system';
 
 interface GovernmentBuilderProps {
   initialData?: Partial<GovernmentBuilderState>;
@@ -255,6 +257,51 @@ export function GovernmentBuilder({
   const handleRevenueChange = React.useCallback((revenueSources: RevenueSourceInput[]) => {
     setBuilderState((prev: GovernmentBuilderState) => ({ ...prev, revenueSources }));
   }, []);
+
+  // Tax data import handler - converts tax categories to revenue sources
+  const handleTaxDataImport = React.useCallback((taxCategories: TaxCategoryInput[]) => {
+    try {
+      const totalBudget = builderState.structure.totalBudget;
+      const newRevenueSources = revenueTaxIntegrationService.taxCategoriesToRevenueSources(
+        taxCategories,
+        totalBudget
+      );
+
+      // Merge with existing revenue sources (avoid duplicates)
+      setBuilderState((prev: GovernmentBuilderState) => {
+        const existingNames = new Set(prev.revenueSources.map(r => r.name));
+        const uniqueNewSources = newRevenueSources.filter(r => !existingNames.has(r.name));
+
+        return {
+          ...prev,
+          revenueSources: [...prev.revenueSources, ...uniqueNewSources]
+        };
+      });
+
+      toast.success(`Imported ${newRevenueSources.length} revenue sources from tax system`);
+    } catch (error) {
+      console.error('Failed to import tax data:', error);
+      toast.error('Failed to import tax data');
+    }
+  }, [builderState.structure.totalBudget]);
+
+  // Export revenue sources to tax categories
+  const handleExportToTaxSystem = React.useCallback(() => {
+    try {
+      const taxCategories = revenueTaxIntegrationService.revenueSourcesToTaxCategories(
+        builderState.revenueSources
+      );
+
+      // This would trigger tax builder update (placeholder for now)
+      toast.info(`Generated ${taxCategories.length} tax categories from revenue sources`);
+
+      return taxCategories;
+    } catch (error) {
+      console.error('Failed to export to tax system:', error);
+      toast.error('Failed to export to tax system');
+      return [];
+    }
+  }, [builderState.revenueSources]);
 
   // Budget allocation collapse functions
   const toggleBudgetAllocationCollapse = React.useCallback((index: number) => {

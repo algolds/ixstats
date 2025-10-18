@@ -1,6 +1,17 @@
 // src/server/api/routers/sdi.ts
 // Sovereign Digital Interface tRPC Router
 
+/**
+ * @deprecated This router is deprecated. Use unifiedIntelligence router instead.
+ * Maintained for backward compatibility only.
+ * Will be removed in v2.0.0
+ *
+ * Migration Guide:
+ * - Replace api.sdi.* calls with api.unifiedIntelligence.*
+ * - The unified intelligence router provides all SDI functionality with improved performance
+ * - See /docs/API_REFERENCE.md for updated endpoint documentation
+ */
+
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure, premiumProcedure } from "../trpc";
 import type { IntelligenceItem, CrisisEvent, DiplomaticRelation, Treaty, EconomicIndicator } from "~/types/sdi";
@@ -1103,6 +1114,51 @@ export const sdiRouter = createTRPCRouter({
         rarity: a.rarity
       }));
     }),
+
+  // Get SDI Overview for dashboard
+  getOverview: publicProcedure.query(async ({ ctx }) => {
+    // Get active crises
+    const activeCrises = await ctx.db.crisisEvent.findMany({
+      where: { responseStatus: { not: 'resolved' } }
+    });
+
+    // Calculate crisis severity levels
+    const criticalCrises = activeCrises.filter(c => c.severity === 'critical').length;
+    const highCrises = activeCrises.filter(c => c.severity === 'high').length;
+    const mediumCrises = activeCrises.filter(c => c.severity === 'medium').length;
+
+    // Calculate crisis level
+    let crisisLevel: 'low' | 'medium' | 'high' | 'critical' = 'low';
+    if (criticalCrises > 0) crisisLevel = 'critical';
+    else if (highCrises > 2) crisisLevel = 'high';
+    else if (highCrises > 0 || mediumCrises > 3) crisisLevel = 'medium';
+
+    // Calculate threat assessment
+    const threatScore = Math.min(100, criticalCrises * 30 + highCrises * 15 + mediumCrises * 5);
+    const threatAssessment = threatScore >= 70 ? 'Critical' : threatScore >= 40 ? 'Elevated' : threatScore >= 20 ? 'Moderate' : 'Low';
+
+    // Calculate defense readiness (inverse of threat level)
+    const defenseReadiness = Math.max(0, 100 - threatScore);
+
+    // Calculate SDI score (composite metric)
+    const sdiScore = Math.round(
+      (defenseReadiness * 0.4) + // Defense readiness weight: 40%
+      ((100 - (activeCrises.length * 5)) * 0.3) + // Crisis count weight: 30%
+      (Math.max(0, 100 - criticalCrises * 20) * 0.3) // Critical crisis weight: 30%
+    );
+
+    return {
+      sdiScore: Math.max(0, Math.min(100, sdiScore)),
+      crisisLevel,
+      threatAssessment,
+      defenseReadiness: Math.round(defenseReadiness),
+      activeCrises: activeCrises.length,
+      criticalCrises,
+      highCrises,
+      mediumCrises,
+      timestamp: new Date()
+    };
+  })
 });
 
 // Helper function to trigger a notification (for use in other routers)

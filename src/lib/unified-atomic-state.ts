@@ -939,7 +939,7 @@ export class UnifiedAtomicStateManager {
     };
   }
 
-  private getComponentEffectivenessData(): Record<ComponentType, { effectiveness: number }> {
+  private getComponentEffectivenessData(): Partial<Record<ComponentType, { effectiveness: number }>> {
     return {
       [ComponentType.CENTRALIZED_POWER]: { effectiveness: 75 },
       [ComponentType.FEDERAL_SYSTEM]: { effectiveness: 70 },

@@ -4,6 +4,7 @@ import { useMemo } from "react"
 import { api } from "~/trpc/react"
 import { useAtomicState } from "~/components/atomic/AtomicStateProvider"
 import { createDefaultGovernmentSpendingData } from "~/lib/government-spending-defaults"
+import { calculateRealTimeAtomicEffects, applyRealTimeEffects } from "~/lib/real-time-atomic-effects"
 import type {
   EconomyData,
   CoreEconomicIndicatorsData,
@@ -36,43 +37,68 @@ export function useEconomyData(countryId: string) {
     // Type assertion to access country properties
     const countryData = data as any;
 
-    // Get atomic modifiers if available
-    const atomicModifiers = atomicState?.state?.economicModifiers;
-    const atomicTaxEffectiveness = atomicState?.state?.taxEffectiveness;
+    // Get comprehensive atomic components data
+    const { data: allComponents } = api.unifiedAtomic.getAll.useQuery(
+      { countryId },
+      { enabled: !!countryId }
+    );
 
-    // Apply atomic modifiers to base economic data
+    // Base economic data
     const baseGdpGrowthRate = countryData.adjustedGdpGrowth || countryData.maxGdpGrowthRate || 0.03;
     const baseGdp = countryData.currentTotalGdp || countryData.nominalGDP || 0;
     const baseTaxRevenuePercent = countryData.taxRevenueGDPPercent ?? 20;
-    
-    // Enhanced GDP calculations with atomic government effectiveness
-    const enhancedGdpGrowthRate = atomicModifiers 
-      ? baseGdpGrowthRate * atomicModifiers.gdpGrowthModifier
-      : baseGdpGrowthRate;
-    
-    const enhancedGdp = atomicModifiers
-      ? baseGdp * (1 + (atomicModifiers.gdpGrowthModifier - 1) * 0.5) // Apply partial multiplier effect
-      : baseGdp;
-    
-    // Enhanced tax collection with atomic effectiveness
-    const enhancedTaxRevenuePercent = atomicTaxEffectiveness
-      ? baseTaxRevenuePercent * atomicTaxEffectiveness.overallMultiplier
-      : baseTaxRevenuePercent;
+    const baseUnemploymentRate = countryData.unemploymentRate || 5.0;
+    const baseInflationRate = countryData.inflationRate || 0.02;
+    const basePopulation = countryData.currentPopulation || countryData.baselinePopulation || 0;
+
+    // Calculate real-time atomic effects if components are available
+    let enhancedData = {
+      enhancedGdpGrowthRate: baseGdpGrowthRate,
+      enhancedNominalGDP: baseGdp,
+      enhancedGdpPerCapita: countryData.currentGdpPerCapita || countryData.baselineGdpPerCapita || 0,
+      enhancedTaxRevenueGDPPercent: baseTaxRevenuePercent,
+      enhancedUnemploymentRate: baseUnemploymentRate,
+      enhancedInflationRate: baseInflationRate,
+      enhancedPopulation: basePopulation,
+      totalSynergyBonus: 0,
+      totalConflictPenalty: 0
+    };
+
+    if (allComponents) {
+      const atomicComponents = {
+        government: allComponents.government?.map(c => c.componentType) || [],
+        economic: allComponents.economic?.map(c => c.componentType) || [],
+        tax: allComponents.tax?.map(c => c.componentType) || []
+      };
+
+      const baseEconomicData = {
+        gdpGrowthRate: baseGdpGrowthRate,
+        nominalGDP: baseGdp,
+        gdpPerCapita: countryData.currentGdpPerCapita || countryData.baselineGdpPerCapita || 0,
+        taxRevenueGDPPercent: baseTaxRevenuePercent,
+        unemploymentRate: baseUnemploymentRate,
+        inflationRate: baseInflationRate,
+        population: basePopulation
+      };
+
+      const realTimeEffects = calculateRealTimeAtomicEffects(atomicComponents, baseEconomicData);
+      enhancedData = applyRealTimeEffects(baseEconomicData, realTimeEffects);
+    }
 
     const economyData: EconomyData = {
       core: {
-        totalPopulation: countryData.currentPopulation || countryData.baselinePopulation || 0,
-        nominalGDP: enhancedGdp,
-        gdpPerCapita: countryData.currentGdpPerCapita || countryData.baselineGdpPerCapita || 0,
-        realGDPGrowthRate: enhancedGdpGrowthRate,
-        inflationRate: countryData.inflationRate || 0.02,
+        totalPopulation: enhancedData.enhancedPopulation,
+        nominalGDP: enhancedData.enhancedNominalGDP,
+        gdpPerCapita: enhancedData.enhancedGdpPerCapita,
+        realGDPGrowthRate: enhancedData.enhancedGdpGrowthRate,
+        inflationRate: enhancedData.enhancedInflationRate,
         currencyExchangeRate: countryData.currencyExchangeRate || 1.0
       },
       labor: {
         laborForceParticipationRate: 65.0,
-        employmentRate: 95.0,
-        unemploymentRate: countryData.unemploymentRate || 5.0,
-        totalWorkforce: Math.floor((countryData.currentPopulation || countryData.baselinePopulation || 0) * 0.65),
+        employmentRate: 100 - enhancedData.enhancedUnemploymentRate,
+        unemploymentRate: enhancedData.enhancedUnemploymentRate,
+        totalWorkforce: Math.floor(enhancedData.enhancedPopulation * 0.65),
         averageWorkweekHours: 40,
         minimumWage: Math.floor((countryData.currentGdpPerCapita || countryData.baselineGdpPerCapita || 0) / 52 / 40),
         averageAnnualIncome: countryData.currentGdpPerCapita || countryData.baselineGdpPerCapita || 0,
@@ -126,9 +152,9 @@ export function useEconomyData(countryId: string) {
         }
       },
       fiscal: {
-        taxRevenueGDPPercent: enhancedTaxRevenuePercent,
-        governmentRevenueTotal: countryData.governmentRevenueTotal ?? enhancedGdp * (enhancedTaxRevenuePercent / 100),
-        taxRevenuePerCapita: countryData.taxRevenuePerCapita ?? (enhancedGdp * (enhancedTaxRevenuePercent / 100)) / (countryData.currentPopulation || countryData.baselinePopulation || 1),
+        taxRevenueGDPPercent: enhancedData.enhancedTaxRevenueGDPPercent,
+        governmentRevenueTotal: countryData.governmentRevenueTotal ?? enhancedData.enhancedNominalGDP * (enhancedData.enhancedTaxRevenueGDPPercent / 100),
+        taxRevenuePerCapita: countryData.taxRevenuePerCapita ?? (enhancedData.enhancedNominalGDP * (enhancedData.enhancedTaxRevenueGDPPercent / 100)) / (enhancedData.enhancedPopulation || 1),
         governmentBudgetGDPPercent: countryData.governmentBudgetGDPPercent ?? 22,
         budgetDeficitSurplus: countryData.budgetDeficitSurplus ?? 0,
         internalDebtGDPPercent: countryData.internalDebtGDPPercent ?? 30,

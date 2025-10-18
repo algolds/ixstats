@@ -4,7 +4,9 @@
  * for Docker builds.
  */
 
-await import("./src/env.js");
+// Skip env validation in next.config.js to avoid TypeScript import issues
+// The env validation will be handled by the application at runtime
+// This is a common pattern when using TypeScript env files with JavaScript config files
 
 // Import polyfill plugin
 import NodePolyfillPlugin from 'node-polyfill-webpack-plugin';

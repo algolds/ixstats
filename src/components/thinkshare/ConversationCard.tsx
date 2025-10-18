@@ -6,49 +6,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
 import { Badge } from '~/components/ui/badge';
 import { MessageTimestamp } from './MessageTimestamp'; // Assuming this will be a separate component
 import { Users, MessageSquare } from 'lucide-react';
-
-interface ThinkshareConversation {
-  id: string;
-  type: string;
-  name?: string | null;
-  avatar?: string | null;
-  isActive: boolean;
-  lastActivity: Date;
-  otherParticipants: {
-    id: string;
-    accountId: string;
-    account: {
-      id: string;
-      username: string;
-      displayName: string;
-      profileImageUrl?: string | null;
-      accountType: string;
-    };
-    isActive: boolean;
-  }[];
-  lastMessage?: {
-    id: string;
-    accountId: string;
-    content: string;
-    ixTimeTimestamp: Date;
-    createdAt?: Date;
-    account: {
-      id: string;
-      username: string;
-      displayName: string;
-    };
-  };
-  lastReadAt?: Date;
-  unreadCount: number;
-}
+import type { ThinkShareConversation, ThinkShareClientState } from '~/types/thinkshare';
 
 interface ConversationCardProps {
-  conversation: ThinkshareConversation;
+  conversation: ThinkShareConversation;
   isSelected: boolean;
   onClick: () => void;
   currentAccountId: string;
   getAccountTypeIcon: (type: string) => React.ReactNode;
-  clientState: any; // TODO: Define a proper type for clientState
+  clientState: ThinkShareClientState;
 }
 
 export function ConversationCard({
