@@ -10,8 +10,8 @@ export type { AnimationConfig };
 export const DEFAULT_ANIMATIONS: Record<string, AnimationConfig> = {
   numberFlow: {
     enabled: true,
-    duration: 800,
-    easing: 'easeInOut',
+    duration: 400, // Reduced to 400ms for much faster response
+    easing: 'easeOut', // Changed from easeInOut to easeOut for faster start
     delay: 0
   },
   slideIn: {
@@ -44,9 +44,9 @@ export function useAnimatedValue(
   const motionValue = useMotionValue(safeTargetValue);
   
   const animatedValue = useSpring(motionValue, {
-    stiffness: safeConfig?.duration ? 1000 / safeConfig.duration : 125,
-    damping: safeConfig?.easing === 'linear' ? 100 : 25,
-    mass: 1,
+    stiffness: safeConfig?.duration ? 1000 / safeConfig.duration : 250, // Much higher stiffness for instant response
+    damping: safeConfig?.easing === 'linear' ? 100 : 30, // Increased damping to prevent overshoot
+    mass: 0.5, // Very light mass for near-instant movement
   });
 
   useEffect(() => {

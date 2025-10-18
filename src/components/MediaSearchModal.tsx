@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '~/lib/utils';
-import { X, Search, Loader2, Check } from 'lucide-react';
+import { X, Search, Loader2, Check, Download } from 'lucide-react';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
 import * as SelectPrimitive from '@radix-ui/react-select';
@@ -12,6 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { api } from '~/trpc/react';
 import { toast } from 'sonner';
 import { useInView } from 'react-intersection-observer';
+import { processImageSelection, isExternalImageUrl } from '~/lib/image-download-service';
+import type { BaseImageResult, WikiImageResult } from '~/types/media-search';
 
 interface MediaSearchModalProps {
   isOpen: boolean;
@@ -23,6 +25,7 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'repository' | 'wiki-commons' | 'wiki'>('repository');
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const [wikiCommonsSearchQuery, setWikiCommonsSearchQuery] = useState('');
   const [wikiSearchQuery, setWikiSearchQuery] = useState('');
@@ -47,54 +50,65 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
   const { ref: commonsRef, inView: commonsInView } = useInView();
   const { ref: wikiRef, inView: wikiInView } = useInView();
 
-  const { 
+  const [repoPage, setRepoPage] = useState(1);
+  const [commonsPage, setCommonsPage] = useState(1);
+
+  const {
     data: imagesData,
-    fetchNextPage: fetchNextRepoPage,
-    hasNextPage: hasNextRepoPage,
     isLoading: isLoadingRepo,
-    isFetchingNextPage: isFetchingNextRepoPage,
+    isFetching: isFetchingNextRepoPage,
   } = api.thinkpages.searchUnsplashImages.useQuery(
-    { query: debouncedRepoQuery, per_page: 6, page: 1 },
+    { query: debouncedRepoQuery, per_page: 6, page: repoPage },
     {
       enabled: activeTab === 'repository' && !!debouncedRepoQuery,
       staleTime: 5 * 60 * 1000, // 5 minutes cache
-      refetchOnWindowFocus: false
+      refetchOnWindowFocus: false,
     }
-  ) as any; // TODO: Fix type properly
+  );
 
-  const { 
+  const fetchNextRepoPage = () => setRepoPage(prev => prev + 1);
+  const hasNextRepoPage = true; // Simplified - could be based on data length
+
+  const {
     data: wikiCommonsImagesData,
-    fetchNextPage: fetchNextCommonsPage,
-    hasNextPage: hasNextCommonsPage,
     isLoading: isLoadingWikiCommons,
-    isFetchingNextPage: isFetchingNextCommonsPage,
+    isFetching: isFetchingNextCommonsPage,
   } = api.thinkpages.searchWikiCommonsImages.useQuery(
-    { query: debouncedCommonsQuery, per_page: 6, page: 1 },
+    { query: debouncedCommonsQuery, per_page: 6, page: commonsPage },
     {
       enabled: activeTab === 'wiki-commons' && !!debouncedCommonsQuery,
       staleTime: 5 * 60 * 1000, // 5 minutes cache
-      refetchOnWindowFocus: false
+      refetchOnWindowFocus: false,
     }
-  ) as any; // TODO: Fix type properly
+  );
 
-  const { 
+  const fetchNextCommonsPage = () => setCommonsPage(prev => prev + 1);
+  const hasNextCommonsPage = true; // Simplified - could be based on data length
+
+  const [wikiCursor, setWikiCursor] = useState<string | undefined>(undefined);
+
+  const {
     data: wikiData,
     isLoading: isLoadingWiki,
-    fetchNextPage: fetchNextWikiPage,
-    hasNextPage: hasNextWikiPage,
-    isFetchingNextPage: isFetchingNextWikiPage,
+    isFetching: isFetchingNextWikiPage,
     refetch: refetchWiki,
-  } = api.thinkpages.searchWiki.useInfiniteQuery(
-    { query: wikiSearchQuery, wiki: wikiSource, limit: 30 },
+  } = api.thinkpages.searchWiki.useQuery(
+    { query: wikiSearchQuery, wiki: wikiSource, limit: 30, cursor: wikiCursor },
     {
       enabled: activeTab === 'wiki' && !!wikiSearchQuery,
-      getNextPageParam: (lastPage) => lastPage.nextCursor,
       staleTime: 5 * 60 * 1000, // 5 minutes cache
       refetchOnWindowFocus: false
     }
   );
 
-  const wikiImages = wikiData?.pages.flatMap(page => page.images) || [];
+  const fetchNextWikiPage = () => {
+    if (wikiData?.nextCursor) {
+      setWikiCursor(wikiData.nextCursor);
+    }
+  };
+  const hasNextWikiPage = wikiData?.hasMore ?? false;
+
+  const wikiImages = wikiData?.images || [];
 
   // Throttled infinite scroll to prevent excessive API calls
   useEffect(() => {
@@ -147,16 +161,41 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
     };
   }, [isOpen]);
 
-  const handleSelectImage = () => {
-    if (selectedImage) {
-      onImageSelect(selectedImage);
-    } else {
+  const handleSelectImage = async () => {
+    if (!selectedImage) {
       toast.error('Please select an image first.');
+      return;
+    }
+
+    try {
+      // Check if image needs to be downloaded
+      if (isExternalImageUrl(selectedImage)) {
+        setIsDownloading(true);
+        toast.info('Downloading image...');
+
+        const processedUrl = await processImageSelection(selectedImage, {
+          onProgress: (message) => console.log('[MediaSearchModal]', message),
+          onError: (error) => console.error('[MediaSearchModal]', error),
+        });
+
+        toast.success('Image downloaded and ready to use!');
+        onImageSelect(processedUrl);
+      } else {
+        // Already a data URL or local path
+        onImageSelect(selectedImage);
+      }
+      
+      onClose();
+    } catch (error) {
+      console.error('[MediaSearchModal] Failed to process image:', error);
+      toast.error('Failed to download image. Please try again.');
+    } finally {
+      setIsDownloading(false);
     }
   };
 
-  const images = (imagesData as { id: string; url: string; photographer: string; description?: string; }[] ?? []) as { id: string; url: string; photographer: string; description?: string; }[];
-  const wikiCommonsImages = (wikiCommonsImagesData as { id: string; url: string; photographer: string; description?: string; }[] ?? []) as { id: string; url: string; photographer: string; description?: string; }[];
+  const images = (imagesData ?? []) as BaseImageResult[];
+  const wikiCommonsImages = (wikiCommonsImagesData ?? []) as BaseImageResult[];
 
   // Create portal element
   const [portalElement, setPortalElement] = useState<HTMLElement | null>(null);
@@ -223,7 +262,7 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
                     </div>
                   ) : images.length > 0 ? (
                     <>
-                      {images.map((image: { id: string; url: string; photographer: string; description?: string; }, index: number) => (
+                      {images.map((image: BaseImageResult, index: number) => (
                         <div
                           key={`repo-${image.id}-${index}`}
                           className={cn(
@@ -282,7 +321,7 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
                     </div>
                   ) : wikiCommonsImages.length > 0 ? (
                     <>
-                      {wikiCommonsImages.map((image: { id: string; url: string; photographer: string; description?: string; }, index: number) => (
+                      {wikiCommonsImages.map((image: BaseImageResult, index: number) => (
                         <div
                           key={`commons-${image.id}-${index}`}
                           className={cn(
@@ -388,7 +427,7 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
                     </div>
                   ) : wikiImages.length > 0 ? (
                     <>
-                      {wikiImages.map((image: { path: string; name: string; url?: string; description?: string; }, index: number) => (
+                      {wikiImages.map((image: WikiImageResult, index: number) => (
                         <div
                           key={`wiki-${image.path}-${index}`}
                           className={cn(
@@ -443,9 +482,25 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
             </Tabs>
 
             {/* Always visible Select Image button */}
-            <div className="p-4 border-t border-white/10 flex justify-end items-center">
-              <Button onClick={handleSelectImage} disabled={!selectedImage}>
-                Select Image
+            <div className="p-4 border-t border-white/10 flex justify-end items-center gap-3">
+              {isDownloading && (
+                <div className="flex items-center gap-2 text-sm text-blue-400">
+                  <Download className="h-4 w-4 animate-bounce" />
+                  <span>Downloading image...</span>
+                </div>
+              )}
+              <Button 
+                onClick={handleSelectImage} 
+                disabled={!selectedImage || isDownloading}
+              >
+                {isDownloading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Downloading...
+                  </>
+                ) : (
+                  'Select Image'
+                )}
               </Button>
             </div>
           </motion.div>

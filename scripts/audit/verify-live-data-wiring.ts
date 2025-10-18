@@ -57,6 +57,8 @@ const componentsToCheck = [
   "src/components/thinkpages",
   "src/components/eci",
   "src/components/sdi",
+  "src/components/tax-system",
+  "src/app/mycountry/new",
 ];
 
 function analyzeFile(filePath: string): WiringCheck {

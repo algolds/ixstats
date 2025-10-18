@@ -9,6 +9,7 @@ import { searchWiki as wikiSearchService } from "~/lib/wiki-search-service"; // 
 import { notificationHooks } from "~/lib/notification-hooks";
 import { getThinkPagesServer } from "~/server/websocket-server";
 import { notificationAPI } from "~/lib/notification-api";
+import { validateNoXSS } from "~/lib/sanitize-html";
 import fs from "fs/promises";
 import path from "path";
 
@@ -38,7 +39,15 @@ const CreateAccountSchema = z.object({
 
 const CreatePostSchema = z.object({
   accountId: z.string(), // ThinkpagesAccount ID for feed posts
-  content: z.string().min(1).max(280),
+  content: z.string().min(1).max(280).refine(
+    (content) => {
+      const validation = validateNoXSS(content);
+      return validation.valid;
+    },
+    {
+      message: "Content contains potentially unsafe HTML. Please avoid using script tags, javascript: URLs, or event handlers."
+    }
+  ),
   hashtags: z.array(z.string()).optional(),
   mentions: z.array(z.string()).optional(),
   visibility: z.enum(['public', 'private', 'unlisted']).default('public'),
@@ -1463,7 +1472,10 @@ export const thinkpagesRouter = createTRPCRouter({
     .input(z.object({
       groupId: z.string(),
       userId: z.string(), // Changed to userId (clerkUserId)
-      content: z.string().min(1),
+      content: z.string().min(1).refine(
+        (content) => validateNoXSS(content).valid,
+        { message: "Content contains potentially unsafe HTML" }
+      ),
       messageType: z.enum(['text', 'image', 'file', 'system']).default('text'),
       replyToId: z.string().optional(),
       mentions: z.array(z.string()).optional(),
@@ -1637,7 +1649,10 @@ export const thinkpagesRouter = createTRPCRouter({
       groupId: z.string(),
       title: z.string().min(1).max(200),
       createdBy: z.string(), // userId (clerkUserId)
-      content: z.string().optional(),
+      content: z.string().optional().refine(
+        (content) => !content || validateNoXSS(content).valid,
+        { message: "Content contains potentially unsafe HTML" }
+      ),
       isPublic: z.boolean().default(false)
     }))
     .mutation(async ({ ctx, input }) => {
@@ -1693,7 +1708,10 @@ export const thinkpagesRouter = createTRPCRouter({
       documentId: z.string(),
       userId: z.string(),
       title: z.string().min(1).max(200).optional(),
-      content: z.string().optional(),
+      content: z.string().optional().refine(
+        (content) => !content || validateNoXSS(content).valid,
+        { message: "Content contains potentially unsafe HTML" }
+      ),
       isPublic: z.boolean().optional()
     }))
     .mutation(async ({ ctx, input }) => {
@@ -1896,7 +1914,10 @@ export const thinkpagesRouter = createTRPCRouter({
   editMessage: protectedProcedure
     .input(z.object({
       messageId: z.string(),
-      content: z.string().min(1),
+      content: z.string().min(1).refine(
+        (content) => validateNoXSS(content).valid,
+        { message: "Content contains potentially unsafe HTML" }
+      ),
     }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
@@ -2261,7 +2282,10 @@ export const thinkpagesRouter = createTRPCRouter({
     .input(z.object({
       conversationId: z.string(),
       userId: z.string(), // Changed to userId (clerkUserId)
-      content: z.string().min(1),
+      content: z.string().min(1).refine(
+        (content) => validateNoXSS(content).valid,
+        { message: "Content contains potentially unsafe HTML" }
+      ),
       messageType: z.enum(['text', 'image', 'file', 'system']).default('text'),
       replyToId: z.string().optional(),
       mentions: z.array(z.string()).optional(),

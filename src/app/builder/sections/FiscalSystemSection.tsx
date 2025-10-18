@@ -21,19 +21,27 @@ import {
   SectionLayout, 
   sectionConfigs, 
   sectionUtils,
-  type ExtendedSectionProps 
+  type ExtendedSectionProps
 } from '../components/glass/SectionBase';
-// import { TaxSystemBuilder } from '~/components/tax-system'; // TODO: Create TaxSystemBuilder component
+
+// Help System
+import { EconomicsHelpSystem } from '../components/help/GovernmentHelpSystem';
+import { EconomicsHelpContent } from '../components/help/EconomicsHelpContent';
+
+// Note: Tax system building is now handled by the atomic tax builder component
+// integrated into the unified builder workflow via TaxSystemStep component
 
 interface FiscalSystemSectionProps extends ExtendedSectionProps {
   nominalGDP: number;
   totalPopulation: number;
   countryId?: string;
   showAtomicIntegration?: boolean;
+  mode?: 'create' | 'edit';
+  fieldLocks?: Record<string, import('../components/enhanced/builderConfig').FieldLockConfig>;
 }
 
-export function FiscalSystemSection({ 
-  inputs, 
+export function FiscalSystemSection({
+  inputs,
   onInputsChange,
   showAdvanced = false,
   onToggleAdvanced,
@@ -42,8 +50,14 @@ export function FiscalSystemSection({
   totalPopulation,
   className,
   countryId,
-  showAtomicIntegration = false
+  showAtomicIntegration = false,
+  mode = 'create',
+  fieldLocks
 }: FiscalSystemSectionProps) {
+  const isEditMode = mode === 'edit';
+  const { EDIT_MODE_FIELD_LOCKS } = require('../components/enhanced/builderConfig');
+  const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
+
   const [selectedView, setSelectedView] = useState<'overview' | 'revenue' | 'spending' | 'debt' | 'atomic' | 'builder'>('overview');
   
   // Atomic component integration
@@ -693,6 +707,7 @@ export function FiscalSystemSection({
         ]
       }}
       className={className}
+      helpContent={<EconomicsHelpSystem />}
     >
       <SectionLayout
         basicContent={basicContent}

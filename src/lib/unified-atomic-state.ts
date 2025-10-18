@@ -939,7 +939,7 @@ export class UnifiedAtomicStateManager {
     };
   }
 
-  private getComponentEffectivenessData(): Record<ComponentType, { effectiveness: number }> {
+  private getComponentEffectivenessData(): Partial<Record<ComponentType, { effectiveness: number }>> {
     return {
       [ComponentType.CENTRALIZED_POWER]: { effectiveness: 75 },
       [ComponentType.FEDERAL_SYSTEM]: { effectiveness: 70 },
@@ -955,6 +955,7 @@ export class UnifiedAtomicStateManager {
       [ComponentType.PERFORMANCE_LEGITIMACY]: { effectiveness: 80 },
       [ComponentType.CHARISMATIC_LEGITIMACY]: { effectiveness: 75 },
       [ComponentType.RELIGIOUS_LEGITIMACY]: { effectiveness: 72 },
+      [ComponentType.INSTITUTIONAL_LEGITIMACY]: { effectiveness: 83 },
       [ComponentType.PROFESSIONAL_BUREAUCRACY]: { effectiveness: 85 },
       [ComponentType.MILITARY_ADMINISTRATION]: { effectiveness: 78 },
       [ComponentType.INDEPENDENT_JUDICIARY]: { effectiveness: 80 },
@@ -964,7 +965,21 @@ export class UnifiedAtomicStateManager {
       [ComponentType.SURVEILLANCE_SYSTEM]: { effectiveness: 78 },
       [ComponentType.ECONOMIC_INCENTIVES]: { effectiveness: 73 },
       [ComponentType.SOCIAL_PRESSURE]: { effectiveness: 68 },
-      [ComponentType.MILITARY_ENFORCEMENT]: { effectiveness: 80 }
+      [ComponentType.MILITARY_ENFORCEMENT]: { effectiveness: 80 },
+
+      // New Government Type Components
+      [ComponentType.DIGITAL_GOVERNMENT]: { effectiveness: 85 },
+      [ComponentType.MINIMAL_GOVERNMENT]: { effectiveness: 60 },
+      [ComponentType.PRIVATE_SECTOR_LEADERSHIP]: { effectiveness: 75 },
+      [ComponentType.SOCIAL_DEMOCRACY]: { effectiveness: 78 },
+      [ComponentType.COMPREHENSIVE_WELFARE]: { effectiveness: 72 },
+      [ComponentType.PUBLIC_SECTOR_LEADERSHIP]: { effectiveness: 70 },
+      [ComponentType.ENVIRONMENTAL_FOCUS]: { effectiveness: 68 },
+      [ComponentType.ECONOMIC_PLANNING]: { effectiveness: 82 },
+      [ComponentType.DEVELOPMENTAL_STATE]: { effectiveness: 83 },
+      [ComponentType.WORKER_PROTECTION]: { effectiveness: 65 },
+      [ComponentType.MERITOCRATIC_SYSTEM]: { effectiveness: 88 },
+      [ComponentType.REGIONAL_DEVELOPMENT]: { effectiveness: 67 }
     };
   }
 

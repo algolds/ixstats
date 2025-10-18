@@ -2,17 +2,17 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Status & Context (October 2025)
+## Project Status & Context (October 17, 2025)
 
-### 🎯 **Current Maturity: 100% Complete (Grade A+ - v1.0.0 Release)** ✅
-IxStats is a production-ready economic simulation platform with comprehensive V1 compliance audit completed and all critical systems operational.
+### 🎯 **Current Maturity: 100% Complete (Grade A+ - v1.1.1 Release)** ✅
+IxStats is a production-ready economic simulation platform with comprehensive V1 compliance audit completed, all critical systems operational, and extensive documentation coverage.
 
 #### ✅ **Production-Ready Systems (100%)**
-- **Core Infrastructure**: Next.js 15, Prisma ORM (110 models), 22 tRPC routers (304 endpoints), IxTime synchronization
+- **Core Infrastructure**: Next.js 15, Prisma ORM (131 models), 36 tRPC routers (304 endpoints), IxTime synchronization
 - **Security & Authentication**: Clerk integration, 13 security fixes, 8-layer middleware, audit logging, Redis rate limiting
 - **Design System**: Glass physics framework with 100+ UI components
 - **Economic Engine**: Tier-based modeling, real-time calculations, historical tracking
-- **Database**: 110 models, 6 migrations applied, PostgreSQL/SQLite support
+- **Database**: 131 models, 9 migrations applied, PostgreSQL/SQLite support
 - **External Integrations**: IxWiki API, Discord webhooks, flag services, monitoring systems
 
 #### ✅ **Feature Complete (90-95%)**
@@ -44,7 +44,7 @@ IxStats is a production-ready economic simulation platform with comprehensive V1
 - **Color Theming**: Section-specific themes (MyCountry=Gold, Global=Blue, ECI=Indigo, SDI=Red)
 - **Component Architecture**: Follow atomic design with glass physics integration
 - **Responsive Design**: Mobile-first with desktop enhancements
-- Reference `/DOCS/UNIFIED_DESIGN_FRAMEWORK.md` for complete specifications
+- Reference `/docs/DESIGN_SYSTEM.md` for complete specifications
 
 ### Styling Guidelines
 - **Tailwind v4**: All styling must use Tailwind CSS v4 syntax
@@ -76,7 +76,7 @@ IxStats is a production-ready economic simulation platform with comprehensive V1
 - ✅ **Rate Limiting**: Redis-based with in-memory fallback implemented
 
 **Production-Ready Systems:**
-- Core platform infrastructure with Next.js 15, Prisma ORM (110 models), and 22 tRPC routers (304 endpoints)
+- Core platform infrastructure with Next.js 15, Prisma ORM (131 models), and 36 tRPC routers (304 endpoints)
 - Authentication system with 8-layer middleware and database audit logging
 - Economic calculation engine with tier-based modeling and historical tracking
 - Glass physics design system with 100+ components
@@ -91,9 +91,9 @@ IxStats is a production-ready economic simulation platform with comprehensive V1
 
 ### Key File Locations
 **Intelligence System:**
-- Components: `/src/app/mycountry/new/components/`
-- Types: `/src/app/mycountry/new/types/intelligence.ts`
-- Data Transformers: `/src/app/mycountry/new/utils/dataTransformers.ts`
+- Components: `/src/app/mycountry/components/`
+- Types: `/src/app/mycountry/types/intelligence.ts`
+- Data Transformers: `/src/app/mycountry/utils/dataTransformers.ts`
 
 **API Layer:**
 - tRPC Routers: `/src/server/api/routers/`
@@ -101,7 +101,7 @@ IxStats is a production-ready economic simulation platform with comprehensive V1
 
 **Design System:**
 - UI Components: `/src/components/ui/`
-- Design Documentation: `/DOCS/UNIFIED_DESIGN_FRAMEWORK.md`
+- Design Documentation: `/docs/DESIGN_SYSTEM.md`
 
 ### Testing & Validation
 - Run `npm run check` for full validation (lint + typecheck)
@@ -122,7 +122,17 @@ IxStats is a production-ready economic simulation platform with comprehensive V1
 - **Solid Data Foundation**: Comprehensive Prisma schema with economic modeling
 - **Performance Optimized**: React best practices with memoization and error boundaries
 
-### Development Focus Areas (v1.0.0 Status)
+### Key Documentation Resources (v1.1.1)
+- **[API_REFERENCE.md](./docs/API_REFERENCE.md)** - Complete tRPC API catalog (304 endpoints across 36 routers)
+- **[ATOMIC_COMPONENTS_GUIDE.md](./docs/ATOMIC_COMPONENTS_GUIDE.md)** - Atomic government system guide (106 components)
+- **[FORMULAS_AND_CALCULATIONS.md](./docs/FORMULAS_AND_CALCULATIONS.md)** - Economic calculation engine (15+ systems)
+- **[DESIGN_SYSTEM.md](./docs/DESIGN_SYSTEM.md)** - Glass physics UI framework
+- **[BUILDER_SYSTEM.md](./docs/BUILDER_SYSTEM.md)** - Country builder system (7-step workflow)
+- **[MYCOUNTRY_SYSTEM.md](./docs/MYCOUNTRY_SYSTEM.md)** - Executive intelligence dashboard (8 tabs)
+- **[INTELLIGENCE_SYSTEM.md](./docs/INTELLIGENCE_SYSTEM.md)** - Intelligence operations and analytics
+- **[SOCIAL_PLATFORM_GUIDE.md](./docs/SOCIAL_PLATFORM_GUIDE.md)** - ThinkPages/ThinkShare/ThinkTanks guide
+
+### Development Focus Areas (v1.1.1 Status)
 - ✅ **Authentication System**: COMPLETE - 13 security fixes, 8-layer middleware, audit logging
 - ✅ **Data Connectivity**: COMPLETE - 62.9% live data wiring (304 endpoints), all critical paths operational
 - ✅ **Security Hardening**: COMPLETE - Admin endpoints secured, production guards in place
@@ -134,8 +144,8 @@ IxStats is a production-ready economic simulation platform with comprehensive V1
 - 📋 **Mobile Experience**: RESPONSIVE - Desktop-optimized, native feel enhancements for v1.1
 - 📋 **Advanced Features**: FRAMEWORK COMPLETE - ECI/SDI admin UI polish for v1.1
 
-### Current Development Status (October 2025)
-**Production Released - V1.0.0** ✅
+### Current Development Status (October 17, 2025)
+**Production Released - V1.1.1** ✅
 - ✅ **Security**: 13 critical fixes implemented, production guards active, Redis rate limiting
 - ✅ **Authentication**: Full RBAC with Clerk, admin middleware, audit logging
 - ✅ **Data Wiring**: 62.9% live integration (304 active endpoints), all critical systems operational
@@ -145,4 +155,4 @@ IxStats is a production-ready economic simulation platform with comprehensive V1
 - ✅ **Social Platform**: ThinkPages, ThinkShare, ThinkTanks operational
 - ✅ **Production Infrastructure**: Discord webhooks, compression, caching, monitoring
 
-The IxStats platform has achieved **v1.0.0 production release (100% complete, Grade A+)** with comprehensive audit completed and all critical systems operational. Future development focuses on v1.1 enhancements and polish.
+The IxStats platform has achieved **v1.1.1 production release (100% complete, Grade A+)** with comprehensive audit completed, all critical systems operational, and extensive documentation (22 new guides, 8,000+ lines). The platform features complete API documentation, atomic component guides, economic formulas, design system specs, and comprehensive system guides for all major features.

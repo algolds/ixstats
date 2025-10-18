@@ -40,6 +40,7 @@ interface BarChartProps extends BaseChartProps {
   yKey: string | string[];
   colors?: string[];
   stacked?: boolean;
+  valueFormatter?: (value: number) => string;
 }
 
 interface LineChartProps extends BaseChartProps {
@@ -110,7 +111,8 @@ export function GlassBarChart({
   className,
   loading,
   error,
-  theme = 'default'
+  theme = 'default',
+  valueFormatter
 }: BarChartProps) {
   const chartColors = useMemo(() => {
     if (colors) return colors;
@@ -120,6 +122,7 @@ export function GlassBarChart({
 
   const formatYAxis = (value: any) => {
     if (typeof value === 'number') {
+      if (valueFormatter) return valueFormatter(value);
       if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
       if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
       if (value >= 1e3) return `${(value / 1e3).toFixed(1)}K`;
@@ -157,7 +160,7 @@ export function GlassBarChart({
             tickLine={{ stroke: chartTheme.grid.stroke }}
             tickFormatter={formatYAxis}
           />
-          <Tooltip content={<GlassTooltip />} />
+          <Tooltip content={<GlassTooltip formatter={valueFormatter ? (value: number) => valueFormatter(value) : undefined} />} />
           <Legend
             wrapperStyle={{ color: chartTheme.text.secondary }}
           />
@@ -169,14 +172,29 @@ export function GlassBarChart({
                 fill={chartColors[index % chartColors.length]}
                 stackId={stacked ? 'stack' : undefined}
                 radius={[2, 2, 0, 0]}
-              />
+              >
+                {/* Individual cell colors for non-stacked multi-key charts */}
+                {!stacked && data.map((entry, cellIndex) => (
+                  <Cell 
+                    key={`cell-${key}-${cellIndex}`} 
+                    fill={chartColors[index % chartColors.length]} 
+                  />
+                ))}
+              </Bar>
             ))
           ) : (
             <Bar
               dataKey={yKey}
               fill={chartColors[0]}
               radius={[4, 4, 0, 0]}
-            />
+            >
+              {data.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={chartColors[index % chartColors.length]}
+                />
+              ))}
+            </Bar>
           )}
         </BarChart>
       </ResponsiveContainer>

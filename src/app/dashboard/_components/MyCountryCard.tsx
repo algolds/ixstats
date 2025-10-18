@@ -311,13 +311,13 @@ export function MyCountryCard({
               </DropdownMenu>
             </div>
 
-            {/* Activity Rings Section */}
+            {/* National Vitality Rings Section */}
             {countryData && activityRingsData && (
               <ThemedTabContent theme="executive" className="tab-content-enter mb-5">
                 <div className="space-y-4">
                   <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
                     <BarChart3 className="h-5 w-5 text-green-400" />
-                    National Performance Metrics
+                    National Vitality Index
                   </h4>
 
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
@@ -327,7 +327,7 @@ export function MyCountryCard({
                         <TooltipTrigger asChild>
                           <div>
                             <HealthRing
-                              value={vitalityMetrics?.economic.score ?? 0}
+                              value={activityRingsData.economicVitality}
                               size={80}
                               color="#22c55e"
                               label="Economic Health"
@@ -341,37 +341,12 @@ export function MyCountryCard({
                               <span className="font-semibold">Economic Vitality</span>
                             </div>
                             <p className="text-sm text-muted-foreground">Overall economic health including GDP growth, trade balance, and economic stability</p>
-
-                            {vitalityMetrics && (
-                              <>
-                                <div className="space-y-1">
-                                  <div className="flex justify-between text-sm">
-                                    <span>Score:</span>
-                                    <span className="font-medium">{vitalityMetrics.economic.score}/100</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span>Primary:</span>
-                                    <span className="font-medium">{vitalityMetrics.economic.primary}</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span>Secondary:</span>
-                                    <span className="font-medium">{vitalityMetrics.economic.secondary}</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span>Trend:</span>
-                                    <span className={`font-medium flex items-center gap-1 ${vitalityMetrics.economic.trendColor}`}>
-                                      {vitalityMetrics.economic.trendArrow} {vitalityMetrics.economic.tier}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <div className="pt-2 border-t border-border">
-                                  <p className="text-xs text-muted-foreground">
-                                    {vitalityMetrics.economic.assessment}
-                                  </p>
-                                </div>
-                              </>
-                            )}
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-sm">
+                                <span>Score:</span>
+                                <span className="font-medium">{Math.round(activityRingsData.economicVitality)}/100</span>
+                              </div>
+                            </div>
                           </div>
                         </TooltipContent>
                       </Tooltip>
@@ -381,7 +356,7 @@ export function MyCountryCard({
                           <span className="font-medium text-sm">Economic Health</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {vitalityMetrics?.economic.score.toFixed(1) ?? '0.0'}% performance
+                          {Math.round(activityRingsData.economicVitality)}% vitality
                         </div>
                       </div>
                     </div>
@@ -392,7 +367,7 @@ export function MyCountryCard({
                         <TooltipTrigger asChild>
                           <div>
                             <HealthRing
-                              value={vitalityMetrics?.population.score ?? 0}
+                              value={activityRingsData.populationWellbeing}
                               size={80}
                               color="#3b82f6"
                               label="Population Wellbeing"
@@ -406,37 +381,12 @@ export function MyCountryCard({
                               <span className="font-semibold">Population Wellbeing</span>
                             </div>
                             <p className="text-sm text-muted-foreground">Demographics health, quality of life, education, and social cohesion indicators</p>
-
-                            {vitalityMetrics && (
-                              <>
-                                <div className="space-y-1">
-                                  <div className="flex justify-between text-sm">
-                                    <span>Score:</span>
-                                    <span className="font-medium">{vitalityMetrics.population.score}/100</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span>Primary:</span>
-                                    <span className="font-medium">{vitalityMetrics.population.primary}</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span>Secondary:</span>
-                                    <span className="font-medium">{vitalityMetrics.population.secondary}</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span>Trend:</span>
-                                    <span className={`font-medium flex items-center gap-1 ${vitalityMetrics.population.trendColor}`}>
-                                      {vitalityMetrics.population.trendArrow} Tier {vitalityMetrics.population.tier}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <div className="pt-2 border-t border-border">
-                                  <p className="text-xs text-muted-foreground">
-                                    {vitalityMetrics.population.assessment}
-                                  </p>
-                                </div>
-                              </>
-                            )}
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-sm">
+                                <span>Score:</span>
+                                <span className="font-medium">{Math.round(activityRingsData.populationWellbeing)}/100</span>
+                              </div>
+                            </div>
                           </div>
                         </TooltipContent>
                       </Tooltip>
@@ -446,7 +396,7 @@ export function MyCountryCard({
                           <span className="font-medium text-sm">Population Wellbeing</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {vitalityMetrics?.population.score.toFixed(1) ?? '0.0'}% performance
+                          {Math.round(activityRingsData.populationWellbeing)}% vitality
                         </div>
                       </div>
                     </div>
@@ -457,7 +407,7 @@ export function MyCountryCard({
                         <TooltipTrigger asChild>
                           <div>
                             <HealthRing
-                              value={vitalityMetrics?.diplomatic.score ?? 0}
+                              value={activityRingsData.diplomaticStanding}
                               size={80}
                               color="#a855f7"
                               label="Diplomatic Standing"
@@ -471,37 +421,12 @@ export function MyCountryCard({
                               <span className="font-semibold">Diplomatic Standing</span>
                             </div>
                             <p className="text-sm text-muted-foreground">International relationships, treaties, trade partnerships, and global reputation</p>
-
-                            {vitalityMetrics && (
-                              <>
-                                <div className="space-y-1">
-                                  <div className="flex justify-between text-sm">
-                                    <span>Score:</span>
-                                    <span className="font-medium">{vitalityMetrics.diplomatic.score}/100</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span>Primary:</span>
-                                    <span className="font-medium">{vitalityMetrics.diplomatic.primary}</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span>Secondary:</span>
-                                    <span className="font-medium">{vitalityMetrics.diplomatic.secondary}</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span>Trend:</span>
-                                    <span className={`font-medium flex items-center gap-1 ${vitalityMetrics.diplomatic.trendColor}`}>
-                                      {vitalityMetrics.diplomatic.trendArrow} {vitalityMetrics.diplomatic.treaties}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <div className="pt-2 border-t border-border">
-                                  <p className="text-xs text-muted-foreground">
-                                    {vitalityMetrics.diplomatic.assessment}
-                                  </p>
-                                </div>
-                              </>
-                            )}
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-sm">
+                                <span>Score:</span>
+                                <span className="font-medium">{Math.round(activityRingsData.diplomaticStanding)}/100</span>
+                              </div>
+                            </div>
                           </div>
                         </TooltipContent>
                       </Tooltip>
@@ -511,7 +436,7 @@ export function MyCountryCard({
                           <span className="font-medium text-sm">Diplomatic Standing</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {vitalityMetrics?.diplomatic.score.toFixed(1) ?? '0.0'}% performance
+                          {Math.round(activityRingsData.diplomaticStanding)}% vitality
                         </div>
                       </div>
                     </div>
@@ -522,7 +447,7 @@ export function MyCountryCard({
                         <TooltipTrigger asChild>
                           <div>
                             <HealthRing
-                              value={vitalityMetrics?.government.score ?? 0}
+                              value={activityRingsData.governmentalEfficiency}
                               size={80}
                               color="#f97316"
                               label="Government Efficiency"
@@ -536,37 +461,12 @@ export function MyCountryCard({
                               <span className="font-semibold">Government Efficiency</span>
                             </div>
                             <p className="text-sm text-muted-foreground">Policy effectiveness, administrative efficiency, public approval, and governance quality</p>
-
-                            {vitalityMetrics && (
-                              <>
-                                <div className="space-y-1">
-                                  <div className="flex justify-between text-sm">
-                                    <span>Score:</span>
-                                    <span className="font-medium">{vitalityMetrics.government.score}/100</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span>Primary:</span>
-                                    <span className="font-medium">{vitalityMetrics.government.primary}</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span>Secondary:</span>
-                                    <span className="font-medium">{vitalityMetrics.government.secondary}</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span>Trend:</span>
-                                    <span className={`font-medium flex items-center gap-1 ${vitalityMetrics.government.trendColor}`}>
-                                      {vitalityMetrics.government.trendArrow} {vitalityMetrics.government.status}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <div className="pt-2 border-t border-border">
-                                  <p className="text-xs text-muted-foreground">
-                                    {vitalityMetrics.government.assessment}
-                                  </p>
-                                </div>
-                              </>
-                            )}
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-sm">
+                                <span>Score:</span>
+                                <span className="font-medium">{Math.round(activityRingsData.governmentalEfficiency)}/100</span>
+                              </div>
+                            </div>
                           </div>
                         </TooltipContent>
                       </Tooltip>
@@ -576,7 +476,7 @@ export function MyCountryCard({
                           <span className="font-medium text-sm">Government Efficiency</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {vitalityMetrics?.government.score.toFixed(1) ?? '0.0'}% performance
+                          {Math.round(activityRingsData.governmentalEfficiency)}% vitality
                         </div>
                       </div>
                     </div>

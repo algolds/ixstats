@@ -9,15 +9,13 @@ import {
   Rocket
 } from 'lucide-react';
 import { Button } from '~/components/ui/button';
-// IntroDisclosure now handled by main builder page
-// Removed apple cards - using direct path selection instead
 import { GlassCard, GlassCardContent, GlassCardHeader } from './glass/GlassCard';
 import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
 import { BorderBeam } from "~/components/magicui/border-beam";
 import { PathGlareCard } from "~/components/ui/path-glare-card";
 import { MyCountryLogo } from '~/components/ui/mycountry-logo';
 import { SectionHelpIcon } from '~/components/ui/help-icon';
-// Tutorial data now imported by main builder page
+import { safeSetItemSync, safeGetItemSync } from '~/lib/localStorageMutex';
 
 type OnboardingFlow = 'welcome' | 'tutorial' | 'quick-start' | 'import-guide' | 'advanced';
 
@@ -31,8 +29,8 @@ const pathOptions = [
   {
     id: 'tutorial',
     title: 'Complete Tutorial',
-    description: 'Full walkthrough of all features and capabilities',
-    duration: '10 steps • 5-10 minutes',
+    description: 'Comprehensive walkthrough covering all major systems, features, and advanced capabilities with detailed tips',
+    duration: '8 steps • 5-8 minutes',
     icon: BookOpen,
     color: 'blue',
     gradient: 'from-blue-500/20 to-purple-600/20 hover:from-blue-500/30 hover:to-purple-600/30',
@@ -43,8 +41,8 @@ const pathOptions = [
   {
     id: 'quick-start',
     title: 'Quick Start',
-    description: 'Brief tutorial explaining how the builder works',
-    duration: 'Interactive guide • Start at Core Identity',
+    description: 'Essential guide covering the basics with key tips to get you building quickly',
+    duration: '4 steps • 2-4 minutes • Starts at National Identity',
     icon: Zap,
     color: 'emerald',
     gradient: 'from-emerald-500/20 to-teal-600/20 hover:from-emerald-500/30 hover:to-teal-600/30',
@@ -66,7 +64,7 @@ const pathOptions = [
     id: 'skip',
     title: 'Jump In',
     description: 'Start building from scratch without any tutorial',
-    duration: 'Begin at Core Identity section',
+    duration: 'Begin at National Identity section',
     icon: Rocket,
     color: 'purple',
     gradient: 'from-purple-500/60 to-pink-600/60 hover:from-purple-600/70 hover:to-pink-700/70',
@@ -81,7 +79,7 @@ export const BuilderOnboardingWizard = ({ onStartBuilding, onSkipToImport }: Bui
 
   // Check if user has seen onboarding before
   useEffect(() => {
-    const hasSeenOnboarding = localStorage.getItem('builder_onboarding_completed');
+    const hasSeenOnboarding = safeGetItemSync('builder_onboarding_completed');
     if (hasSeenOnboarding) {
       // Skip to building for returning users, but still show welcome
       setCurrentFlow('welcome');
@@ -89,17 +87,19 @@ export const BuilderOnboardingWizard = ({ onStartBuilding, onSkipToImport }: Bui
   }, []);
 
   const handleStartTutorial = () => {
-    // Set tutorial flag and navigate to builder
-    localStorage.setItem('builder_tutorial_mode', 'full');
-    localStorage.setItem('builder_onboarding_completed', 'true');
+    // Set tutorial flag and navigate to builder - Intro Disclosure will show there
+    // Complete Tutorial starts at Foundation step
+    safeSetItemSync('builder_tutorial_mode', 'full');
+    safeSetItemSync('builder_onboarding_completed', 'true');
     onStartBuilding();
   };
 
   const handleStartQuickStart = () => {
-    // Set quick start flag with core identity focus and navigate to builder
-    localStorage.setItem('builder_tutorial_mode', 'quick');
-    localStorage.setItem('builder_quick_start_section', 'core'); // Start at Core Identity
-    localStorage.setItem('builder_onboarding_completed', 'true');
+    // Set quick start flag and navigate to builder - Intro Disclosure will show there
+    // Quick Start starts at National Identity tab (bypasses foundation)
+    safeSetItemSync('builder_tutorial_mode', 'quick');
+    safeSetItemSync('builder_quick_start_section', 'core');
+    safeSetItemSync('builder_onboarding_completed', 'true');
     onStartBuilding();
   };
 
@@ -112,10 +112,10 @@ export const BuilderOnboardingWizard = ({ onStartBuilding, onSkipToImport }: Bui
 
   const handleSkipOnboarding = () => {
     // Skip all tutorials and go straight to builder
-    localStorage.setItem('builder_onboarding_completed', 'true');
-    // Ensure we start at Core Identity when jumping in
-    localStorage.setItem('builder_quick_start_section', 'core');
-    localStorage.removeItem('builder_tutorial_mode');
+    safeSetItemSync('builder_onboarding_completed', 'true');
+    // Jump In starts at National Identity tab (bypasses foundation)
+    safeSetItemSync('builder_quick_start_section', 'core');
+    safeSetItemSync('builder_tutorial_mode', ''); // Clear tutorial mode
     onStartBuilding();
   };
 
@@ -140,7 +140,7 @@ export const BuilderOnboardingWizard = ({ onStartBuilding, onSkipToImport }: Bui
   };
 
   return (
-    <>
+    <div className="fixed inset-0 z-[10010] bg-background">
       <div className="relative min-h-screen bg-background">
         {/* Interactive Grid Pattern Background */}
         <InteractiveGridPattern
@@ -159,7 +159,7 @@ export const BuilderOnboardingWizard = ({ onStartBuilding, onSkipToImport }: Bui
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.8, ease: 'easeInOut' }}
-              className="relative z-10"
+              className="relative z-[10010]"
             >
               <div className="w-full min-h-screen flex flex-col items-center justify-center px-4 py-8">
                 {/* Header Section */}
@@ -175,7 +175,7 @@ export const BuilderOnboardingWizard = ({ onStartBuilding, onSkipToImport }: Bui
                   transition={{ duration: 0.8, ease: 'easeInOut', delay: 0.3 }}
                   className="w-full max-w-4xl mx-auto"
                 >
-                  <GlassCard depth="elevated" blur="medium" className="p-8 relative">
+                  <GlassCard depth="elevated" blur="medium" className="p-8 relative z-[10010]">
                     {/* Border Beam Effects */}
                     <BorderBeam
                       size={120}
@@ -212,7 +212,7 @@ export const BuilderOnboardingWizard = ({ onStartBuilding, onSkipToImport }: Bui
                           Choose Your Path
                           <SectionHelpIcon
                             title="Builder Modes"
-                            content="Select your preferred way to create your country. The Complete Tutorial provides step-by-step guidance, Quick Start gives you a brief overview, Import allows you to bring in existing data from IIWiki, and Jump In lets you build freely."
+                            content="Select your preferred way to create your country. The Complete Tutorial provides comprehensive step-by-step guidance through all major systems with detailed tips, Quick Start gives you essential guidance with key tips, Import allows you to bring in existing data from IIWiki, and Jump In lets you build freely."
                           />
                         </h2>
                         <p className="text-muted-foreground">
@@ -263,7 +263,7 @@ export const BuilderOnboardingWizard = ({ onStartBuilding, onSkipToImport }: Bui
                       {/* Help Text */}
                       <div className="mt-6 text-center">
                         <p className="text-muted-foreground text-sm">
-                          First time here? We recommend starting with the Complete Tutorial to learn all features.
+                          First time here? We recommend starting with the Complete Tutorial to learn all major systems and features with detailed tips and explanations.
                         </p>
                       </div>
                     </GlassCardContent>
@@ -276,6 +276,6 @@ export const BuilderOnboardingWizard = ({ onStartBuilding, onSkipToImport }: Bui
       </div>
 
       {/* Tutorial modals removed - they now appear on the builder page */}
-    </>
+    </div>
   );
 };

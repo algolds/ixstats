@@ -1,7 +1,15 @@
 'use client';
 
-import DashboardRefactored from '../_components/DashboardRefactored';
+import { EnhancedCommandCenter } from '~/app/_components/EnhancedCommandCenter';
+import { DashboardErrorBoundary } from '~/components/shared/feedback/DashboardErrorBoundary';
 
 export default function NewDashboardPage() {
-  return <DashboardRefactored />;
+  return (
+    <DashboardErrorBoundary
+      title="New Dashboard Error"
+      description="An error occurred while loading the new dashboard. Please try again."
+    >
+      <EnhancedCommandCenter />
+    </DashboardErrorBoundary>
+  );
 }

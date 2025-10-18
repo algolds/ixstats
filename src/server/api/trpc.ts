@@ -15,6 +15,7 @@ import type { NextRequest } from "next/server";
 
 import { db } from "~/server/db";
 import { rateLimiter } from "~/lib/rate-limiter";
+import { userLoggingMiddleware } from "~/lib/user-logging-middleware";
 
 /**
  * 1. CONTEXT
@@ -88,9 +89,15 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
               where: { name: 'user' }
             });
 
-            // Create user with default role
-            user = await db.user.create({
-              data: {
+            // Use upsert to handle race conditions safely
+            // This will create the user if it doesn't exist, or return existing user if it does
+            user = await db.user.upsert({
+              where: { clerkUserId: auth.userId },
+              update: {
+                // If user exists but was somehow not found in initial query, just return them
+                // This handles edge cases where user was created between our queries
+              },
+              create: {
                 clerkUserId: auth.userId,
                 roleId: defaultRole?.id || null,
               },
@@ -108,10 +115,36 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
               }
             });
 
-            console.log(`[TRPC Context] Auto-created user ${auth.userId} with role: ${(user as any).role?.name || 'NO_ROLE'}`);
+            console.log(`[TRPC Context] Auto-created/retrieved user ${auth.userId} with role: ${(user as any).role?.name || 'NO_ROLE'}`);
           } catch (createError) {
             console.error('[TRPC Context] Failed to auto-create user:', createError);
-            // Continue without user rather than failing
+            
+            // If upsert still fails, try to fetch the user one more time
+            // This handles the case where another process created the user
+            try {
+              user = await db.user.findUnique({
+                where: { clerkUserId: auth.userId },
+                include: {
+                  country: true,
+                  role: {
+                    include: {
+                      rolePermissions: {
+                        include: {
+                          permission: true
+                        }
+                      }
+                    }
+                  }
+                }
+              });
+              
+              if (user) {
+                console.log(`[TRPC Context] Retrieved existing user ${auth.userId} after creation failure`);
+              }
+            } catch (retryError) {
+              console.error('[TRPC Context] Failed to retrieve user after creation failure:', retryError);
+              // Continue without user rather than failing
+            }
           }
         }
       } catch (dbError) {
@@ -583,18 +616,20 @@ const inputValidationMiddleware = t.middleware(async ({ ctx, next, input, path }
 });
 
 // Export all procedure types with appropriate security layers
-export const publicProcedure = t.procedure.use(timingMiddleware);
-export const protectedProcedure = t.procedure.use(timingMiddleware).use(authMiddleware);
+export const publicProcedure = t.procedure.use(timingMiddleware).use(userLoggingMiddleware.standard);
+export const protectedProcedure = t.procedure.use(timingMiddleware).use(authMiddleware).use(userLoggingMiddleware.standard);
 export const premiumProcedure = t.procedure
   .use(timingMiddleware)
   .use(authMiddleware)
   .use(premiumMiddleware)
-  .use(dataPrivacyMiddleware);
+  .use(dataPrivacyMiddleware)
+  .use(userLoggingMiddleware.withPerformance);
 export const countryOwnerProcedure = t.procedure
   .use(timingMiddleware)
   .use(authMiddleware)
   .use(countryOwnerMiddleware)
-  .use(dataPrivacyMiddleware);
+  .use(dataPrivacyMiddleware)
+  .use(userLoggingMiddleware.standard);
 export const adminProcedure = t.procedure
   .use(timingMiddleware)
   .use(authMiddleware)
@@ -602,7 +637,8 @@ export const adminProcedure = t.procedure
   .use(inputValidationMiddleware)
   .use(rateLimitMiddleware)
   .use(auditLogMiddleware)
-  .use(dataPrivacyMiddleware);
+  .use(dataPrivacyMiddleware)
+  .use(userLoggingMiddleware.admin);
 export const executiveProcedure = t.procedure
   .use(timingMiddleware)
   .use(authMiddleware)
@@ -610,4 +646,5 @@ export const executiveProcedure = t.procedure
   .use(inputValidationMiddleware)
   .use(rateLimitMiddleware)
   .use(auditLogMiddleware)
-  .use(dataPrivacyMiddleware);
+  .use(dataPrivacyMiddleware)
+  .use(userLoggingMiddleware.sensitive);

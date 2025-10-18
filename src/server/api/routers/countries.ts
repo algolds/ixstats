@@ -15,6 +15,7 @@ import { type CountryWithAtomicComponents } from "~/lib/atomic-economic-integrat
 import { getAtomicEffectivenessService } from "~/services/AtomicEffectivenessService";
 import { ComponentType } from "@prisma/client";
 import { calculateAllVitalityScores } from "~/lib/vitality-calculator";
+import { notificationAPI } from "~/lib/notification-api";
 import type { 
   SystemStatus, 
   AdminPageBotStatusView, 
@@ -1359,6 +1360,20 @@ const countriesRouter = createTRPCRouter({
               res.newStats.economicTier.toString(),
               userId
             );
+
+            // 🔔 Notify country about economic tier change
+            try {
+              const tierDirection = parseInt(res.newStats.economicTier.toString()) > parseInt(oldEconomicTier) ? 'advanced' : 'changed';
+              await notificationAPI.notifyCountry({
+                countryId: c.id,
+                title: `📈 Economic Tier ${tierDirection === 'advanced' ? 'Advancement!' : 'Change'}`,
+                message: `Your country ${tierDirection} from tier ${oldEconomicTier} to tier ${res.newStats.economicTier}`,
+                category: 'economic',
+                priority: tierDirection === 'advanced' ? 'high' : 'medium',
+              });
+            } catch (error) {
+              console.error('[Countries] Failed to send tier change notification:', error);
+            }
           }
 
           // Check for population tier changes
@@ -1370,6 +1385,20 @@ const countriesRouter = createTRPCRouter({
               res.newStats.populationTier.toString(),
               userId
             );
+
+            // 🔔 Notify country about population tier change
+            try {
+              const tierDirection = parseInt(res.newStats.populationTier.toString()) > parseInt(oldPopulationTier) ? 'advanced' : 'changed';
+              await notificationAPI.notifyCountry({
+                countryId: c.id,
+                title: `👥 Population Tier ${tierDirection === 'advanced' ? 'Advancement!' : 'Change'}`,
+                message: `Your country ${tierDirection} from tier ${oldPopulationTier} to tier ${res.newStats.populationTier}`,
+                category: 'social',
+                priority: tierDirection === 'advanced' ? 'high' : 'medium',
+              });
+            } catch (error) {
+              console.error('[Countries] Failed to send tier change notification:', error);
+            }
           }
 
           // Check for significant GDP milestones (every 100B, 500B, 1T, etc.)
@@ -1383,6 +1412,26 @@ const countriesRouter = createTRPCRouter({
                 milestone,
                 userId
               );
+
+              // 🔔 Notify country about GDP milestone
+              try {
+                const formatGDP = (val: number) => {
+                  if (val >= 1e12) return `$${(val / 1e12).toFixed(1)}T`;
+                  if (val >= 1e9) return `$${(val / 1e9).toFixed(0)}B`;
+                  return `$${(val / 1e6).toFixed(0)}M`;
+                };
+
+                await notificationAPI.notifyCountry({
+                  countryId: c.id,
+                  title: `🎉 GDP Milestone Reached!`,
+                  message: `Your country's GDP has reached ${formatGDP(milestone)}! A major economic achievement.`,
+                  category: 'achievement',
+                  priority: 'high',
+                });
+              } catch (error) {
+                console.error('[Countries] Failed to send GDP milestone notification:', error);
+              }
+
               break; // Only trigger one milestone per update
             }
           }
@@ -1397,6 +1446,26 @@ const countriesRouter = createTRPCRouter({
                 milestone,
                 userId
               );
+
+              // 🔔 Notify country about population milestone
+              try {
+                const formatPop = (val: number) => {
+                  if (val >= 1e9) return `${(val / 1e9).toFixed(1)}B`;
+                  if (val >= 1e6) return `${(val / 1e6).toFixed(0)}M`;
+                  return `${(val / 1e3).toFixed(0)}K`;
+                };
+
+                await notificationAPI.notifyCountry({
+                  countryId: c.id,
+                  title: `🎊 Population Milestone Reached!`,
+                  message: `Your country's population has reached ${formatPop(milestone)} citizens! A demographic milestone.`,
+                  category: 'achievement',
+                  priority: 'high',
+                });
+              } catch (error) {
+                console.error('[Countries] Failed to send population milestone notification:', error);
+              }
+
               break; // Only trigger one milestone per update
             }
           }
@@ -1763,6 +1832,121 @@ const countriesRouter = createTRPCRouter({
       } catch (error) {
         console.error("Failed to update profile visibility:", error);
         throw new Error("Failed to update profile visibility");
+      }
+    }),
+
+  updateCountryFlag: countryOwnerProcedure
+    .input(z.object({
+      countryId: z.string(),
+      flag: z.string().min(1), // Data URL or external URL
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Verify user owns this country
+        if (ctx.user?.countryId !== input.countryId) {
+          throw new Error('You do not have permission to update this country.');
+        }
+
+        // Validate that it's either a data URL or a valid URL
+        if (!input.flag.startsWith('data:') && !input.flag.startsWith('http')) {
+          throw new Error('Invalid flag URL format');
+        }
+
+        const updatedCountry = await ctx.db.country.update({
+          where: { id: input.countryId },
+          data: {
+            flag: input.flag,
+            updatedAt: new Date(),
+          },
+        });
+
+        console.log(`[CountryUpdate] Updated flag for country ${updatedCountry.name} (${updatedCountry.id})`);
+
+        return updatedCountry;
+      } catch (error) {
+        console.error("Failed to update country flag:", error);
+        throw new Error("Failed to update country flag");
+      }
+    }),
+
+  updateCountryCoatOfArms: countryOwnerProcedure
+    .input(z.object({
+      countryId: z.string(),
+      coatOfArms: z.string().min(1), // Data URL or external URL
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Verify user owns this country
+        if (ctx.user?.countryId !== input.countryId) {
+          throw new Error('You do not have permission to update this country.');
+        }
+
+        // Validate that it's either a data URL or a valid URL
+        if (!input.coatOfArms.startsWith('data:') && !input.coatOfArms.startsWith('http')) {
+          throw new Error('Invalid coat of arms URL format');
+        }
+
+        const updatedCountry = await ctx.db.country.update({
+          where: { id: input.countryId },
+          data: {
+            coatOfArms: input.coatOfArms,
+            updatedAt: new Date(),
+          },
+        });
+
+        console.log(`[CountryUpdate] Updated coat of arms for country ${updatedCountry.name} (${updatedCountry.id})`);
+
+        return updatedCountry;
+      } catch (error) {
+        console.error("Failed to update coat of arms:", error);
+        throw new Error("Failed to update coat of arms");
+      }
+    }),
+
+  updateCountrySymbols: countryOwnerProcedure
+    .input(z.object({
+      countryId: z.string(),
+      flag: z.string().optional(),
+      coatOfArms: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Verify user owns this country
+        if (ctx.user?.countryId !== input.countryId) {
+          throw new Error('You do not have permission to update this country.');
+        }
+
+        const updateData: any = {
+          updatedAt: new Date(),
+        };
+
+        // Validate and add flag if provided
+        if (input.flag !== undefined) {
+          if (!input.flag.startsWith('data:') && !input.flag.startsWith('http')) {
+            throw new Error('Invalid flag URL format');
+          }
+          updateData.flag = input.flag;
+        }
+
+        // Validate and add coat of arms if provided
+        if (input.coatOfArms !== undefined) {
+          if (!input.coatOfArms.startsWith('data:') && !input.coatOfArms.startsWith('http')) {
+            throw new Error('Invalid coat of arms URL format');
+          }
+          updateData.coatOfArms = input.coatOfArms;
+        }
+
+        const updatedCountry = await ctx.db.country.update({
+          where: { id: input.countryId },
+          data: updateData,
+        });
+
+        console.log(`[CountryUpdate] Updated symbols for country ${updatedCountry.name} (${updatedCountry.id})`);
+
+        return updatedCountry;
+      } catch (error) {
+        console.error("Failed to update country symbols:", error);
+        throw new Error("Failed to update country symbols");
       }
     }),
 
@@ -2337,13 +2521,64 @@ const countriesRouter = createTRPCRouter({
         }));
         const currentStats = calc.calculateTimeProgression(baselineStats, currentTime, dmInputs);
 
-        // Use stored vitality scores from database (calculated by vitality-calculator)
-        // These are automatically updated when countries are recalculated
-        const economicVitality = country.economicVitality ?? 0;
-        const populationWellbeing = country.populationWellbeing ?? 0;
-        const diplomaticStanding = country.diplomaticStanding ?? 0;
-        const governmentalEfficiency = country.governmentalEfficiency ?? 0;
+        // Use stored vitality scores from database, with live calculation fallback
         const popGrowthRate = currentStats.newStats.populationGrowthRate || 0;
+        
+        // Calculate live vitality scores if database values are not set
+        const calculateEconomicVitality = () => {
+          const gdpScore = Math.min(100, (currentStats.newStats.currentGdpPerCapita / 50000) * 100);
+          const growthBonus = Math.min(20, Math.max(-20, currentStats.newStats.adjustedGdpGrowth * 400));
+          return Math.min(100, Math.max(0, gdpScore * 0.7 + growthBonus + 30));
+        };
+        
+        const calculatePopulationWellbeing = () => {
+          const growthHealth = popGrowthRate > 0 ? 70 : 40;
+          const densityFactor = country.populationDensity
+            ? Math.max(50, 100 - (country.populationDensity / 500))
+            : 60;
+          return (growthHealth + densityFactor) / 2;
+        };
+        
+        const calculateDiplomaticStanding = () => {
+          return Math.min(100, Math.max(40, 
+            ((country as any).globalDiplomaticInfluence || 50) + 
+            ((country as any).tradeRelationshipStrength || 10) + 
+            ((country as any).allianceStrength || 15) - 
+            ((country as any).diplomaticTensions || 5)
+          ));
+        };
+        
+        const calculateGovernmentalEfficiency = () => {
+          const economicTierScore = {
+            "Extravagant": 95,
+            "Very Strong": 85,
+            "Strong": 75,
+            "Healthy": 65,
+            "Developed": 50,
+            "Developing": 35,
+            "Impoverished": 25,
+          }[currentStats.newStats.economicTier] || 25;
+          return economicTierScore * 0.8;
+        };
+        
+        // Always calculate live - use database values only if they exist and are reasonable
+        const economicVitality = (country.economicVitality && country.economicVitality > 5)
+          ? country.economicVitality
+          : calculateEconomicVitality();
+          
+        const populationWellbeing = (country.populationWellbeing && country.populationWellbeing > 5)
+          ? country.populationWellbeing
+          : calculatePopulationWellbeing();
+          
+        const diplomaticStanding = (country.diplomaticStanding && country.diplomaticStanding > 5)
+          ? country.diplomaticStanding
+          : calculateDiplomaticStanding();
+          
+        const governmentalEfficiency = (country.governmentalEfficiency && country.governmentalEfficiency > 5)
+          ? country.governmentalEfficiency
+          : calculateGovernmentalEfficiency();
+
+        console.log(`[getFocusCardsData] Country: ${country.name}, GDP: ${currentStats.newStats.currentGdpPerCapita}, Economic: ${Math.round(economicVitality)}, Pop: ${Math.round(populationWellbeing)}, Diplo: ${Math.round(diplomaticStanding)}, Gov: ${Math.round(governmentalEfficiency)}`);
 
         return {
           economicVitality: Math.round(economicVitality),
@@ -3198,6 +3433,48 @@ const countriesRouter = createTRPCRouter({
       console.log(`✅ Country created successfully: ${result.name} (ID: ${result.id})`);
       return result;
     }),
+
+  // Get global analytics for dashboard
+  getGlobalAnalytics: publicProcedure.query(async ({ ctx }) => {
+    // Get all countries
+    const countries = await ctx.db.country.findMany({
+      select: {
+        id: true,
+        currentTotalGdp: true,
+        currentGdpPerCapita: true,
+        currentPopulation: true,
+        economicTier: true,
+        adjustedGdpGrowth: true,
+        populationGrowthRate: true
+      }
+    });
+
+    const totalCountries = countries.length;
+    const totalGdp = countries.reduce((sum, c) => sum + (c.currentTotalGdp || 0), 0);
+    const totalPopulation = countries.reduce((sum, c) => sum + (c.currentPopulation || 0), 0);
+    const avgGdpPerCapita = totalPopulation > 0 ? totalGdp / totalPopulation : 0;
+
+    // Calculate average growth rate
+    const totalGrowth = countries.reduce((sum, c) => sum + (c.adjustedGdpGrowth || 0), 0);
+    const avgGrowthRate = totalCountries > 0 ? totalGrowth / totalCountries : 0;
+
+    // Calculate tier distribution
+    const tierDistribution: Record<string, number> = {};
+    countries.forEach(c => {
+      const tier = c.economicTier || 'Unknown';
+      tierDistribution[tier] = (tierDistribution[tier] || 0) + 1;
+    });
+
+    return {
+      totalCountries,
+      totalGdp,
+      totalPopulation,
+      avgGdpPerCapita,
+      avgGrowthRate,
+      tierDistribution,
+      timestamp: new Date()
+    };
+  })
 });
 
 export { countriesRouter };

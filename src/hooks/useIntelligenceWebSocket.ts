@@ -58,6 +58,10 @@ export function useIntelligenceWebSocket(
   const [updateCount, setUpdateCount] = useState(0);
   const [alertCount, setAlertCount] = useState(0);
 
+  // Store options in ref to prevent dependency issues
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+
   /**
    * Initialize WebSocket client with enhanced options
    */
@@ -67,39 +71,39 @@ export function useIntelligenceWebSocket(
     }
 
     const enhancedOptions: IntelligenceWebSocketHookOptions = {
-      ...options,
+      ...optionsRef.current,
       onUpdate: (update: IntelligenceUpdate) => {
         setLatestUpdate(update);
         setUpdateCount(prev => prev + 1);
-        options.onUpdate?.(update);
+        optionsRef.current.onUpdate?.(update);
       },
       onAlert: (alert: IntelligenceUpdate) => {
         setLatestAlert(alert);
         setAlertCount(prev => prev + 1);
-        options.onAlert?.(alert);
+        optionsRef.current.onAlert?.(alert);
       },
       onConnect: () => {
         setConnected(true);
         setAuthenticated(true);
         setConnecting(false);
         setError(null);
-        options.onConnect?.();
+        optionsRef.current.onConnect?.();
       },
       onDisconnect: () => {
         setConnected(false);
         setAuthenticated(false);
         setConnecting(false);
-        options.onDisconnect?.();
+        optionsRef.current.onDisconnect?.();
       },
       onError: (err: Error) => {
         setError(err.message);
         setConnecting(false);
-        options.onError?.(err);
+        optionsRef.current.onError?.(err);
       }
     };
 
     clientRef.current = new IntelligenceWebSocketClient(enhancedOptions);
-  }, [options]);
+  }, []);
 
   /**
    * Connect to WebSocket server
@@ -121,14 +125,14 @@ export function useIntelligenceWebSocket(
         initializeClient();
       }
 
-      await clientRef.current!.connect(user.id, options.countryId);
+      await clientRef.current!.connect(user.id, optionsRef.current.countryId);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Connection failed';
       setError(errorMessage);
       setConnecting(false);
       throw err;
     }
-  }, [user?.id, isLoaded, options.countryId, connecting, connected, initializeClient]);
+  }, [user?.id, isLoaded, connecting, connected, initializeClient]);
 
   /**
    * Disconnect from WebSocket server
@@ -208,12 +212,12 @@ export function useIntelligenceWebSocket(
    * Auto-connect when user is loaded and countryId is available
    */
   useEffect(() => {
-    if (isLoaded && user?.id && options.countryId && !connected && !connecting) {
+    if (isLoaded && user?.id && optionsRef.current.countryId && !connected && !connecting) {
       connect().catch((err) => {
         console.error('Auto-connect failed:', err);
       });
     }
-  }, [isLoaded, user?.id, options.countryId, connected, connecting, connect]);
+  }, [isLoaded, user?.id, connected, connecting, connect]);
 
   /**
    * Handle countryId changes

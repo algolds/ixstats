@@ -8,6 +8,7 @@ import { BookOpen, ExternalLink, RefreshCw } from "lucide-react";
 import { IxnayWikiService } from "~/lib/mediawiki-service";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/url-utils";
+import { sanitizeWikiContent } from "~/lib/sanitize-html";
 
 interface FeaturedArticleProps {
   className?: string;
@@ -806,7 +807,8 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
                 maxWidth: '100%',
                 width: '100%'
               }}
-              dangerouslySetInnerHTML={{ __html: htmlContent }}
+              // SECURITY: Sanitize wiki content to prevent XSS from external data
+              dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(htmlContent) }}
             />
             
             {/* Additional controls */}

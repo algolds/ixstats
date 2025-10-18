@@ -2,13 +2,16 @@
 export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect } from 'react';
-import { AtomicBuilderPageEnhanced } from "./components/enhanced/AtomicBuilderPageEnhanced";
+import { AtomicBuilderPage } from "./components/enhanced/AtomicBuilderPage";
 import { BuilderOnboardingWizard } from './components/BuilderOnboardingWizard';
+import { BuilderErrorBoundary } from './components/BuilderErrorBoundary';
+import { GlobalBuilderLoading } from './components/GlobalBuilderLoading';
 import { useRouter } from 'next/navigation';
 import { createUrl } from "~/lib/url-utils";
 
 export default function CreateCountryBuilder() {
   const [isBuilding, setIsBuilding] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -16,7 +19,12 @@ export default function CreateCountryBuilder() {
   }, []);
 
   const handleStartBuilding = () => {
-    setIsBuilding(true);
+    setIsLoading(true);
+    // Simulate loading time for the builder initialization
+    setTimeout(() => {
+      setIsBuilding(true);
+      setIsLoading(false);
+    }, 2000);
   };
 
   const handleBackToIntro = () => {
@@ -27,14 +35,22 @@ export default function CreateCountryBuilder() {
     router.push(createUrl('/builder/import'));
   };
 
-  if (isBuilding) {
-    return <AtomicBuilderPageEnhanced onBackToIntro={handleBackToIntro} />;
-  }
-
   return (
-    <BuilderOnboardingWizard 
-      onStartBuilding={handleStartBuilding}
-      onSkipToImport={handleSkipToImport}
-    />
+    <BuilderErrorBoundary>
+      {isLoading ? (
+        <GlobalBuilderLoading 
+          message="Initializing MyCountry builder..."
+          variant="full"
+          showSubsystems={true}
+        />
+      ) : isBuilding ? (
+        <AtomicBuilderPage onBackToIntro={handleBackToIntro} />
+      ) : (
+        <BuilderOnboardingWizard
+          onStartBuilding={handleStartBuilding}
+          onSkipToImport={handleSkipToImport}
+        />
+      )}
+    </BuilderErrorBoundary>
   );
 }

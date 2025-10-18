@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import {
   AlertCircle,
   TrendingUp,
   TrendingDown,
@@ -14,7 +14,9 @@ import {
   Eye,
   Clock,
   Target,
-  AlertTriangle
+  AlertTriangle,
+  Brain,
+  Sparkles
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Button } from '~/components/ui/button';
@@ -29,7 +31,7 @@ import type {
   IntelligenceComponentProps 
 } from '../types/intelligence';
 import { getIntelligenceEconomicData, getQuickEconomicHealth } from '~/lib/enhanced-economic-service';
-import type { CountryStats } from '~/types/ixstats';
+import type { CountryWithEconomicData } from '~/types/ixstats';
 import type { EconomyData } from '~/types/economics';
 import { api } from '~/trpc/react';
 import { useUser } from '@clerk/nextjs';
@@ -43,11 +45,14 @@ interface ExecutiveCommandCenterProps extends IntelligenceComponentProps {
     leader: string;
   };
   isOwner: boolean;
-  countryStats?: CountryStats;
+  countryStats?: CountryWithEconomicData;
   economyData?: EconomyData;
   onActionClick?: (action: ActionableRecommendation) => void;
   onAlertClick?: (alert: CriticalAlert) => void;
   onPrivateAccess?: () => void;
+  onNavigateToIntelligence?: () => void;
+  onNavigateToMeetings?: () => void;
+  onNavigateToPolicy?: () => void;
 }
 
 const severityConfig = {
@@ -80,12 +85,14 @@ const urgencyConfig = {
   future: { color: 'text-gray-600', icon: Target }
 } as const;
 
-function CriticalAlertsSection({ 
-  alerts, 
-  onAlertClick 
-}: { 
-  alerts: CriticalAlert[]; 
-  onAlertClick?: (alert: CriticalAlert) => void; 
+function CriticalAlertsSection({
+  alerts,
+  onAlertClick,
+  onNavigateToFeed
+}: {
+  alerts: CriticalAlert[];
+  onAlertClick?: (alert: CriticalAlert) => void;
+  onNavigateToFeed?: () => void;
 }) {
   if (alerts.length === 0) return null;
 
@@ -96,12 +103,22 @@ function CriticalAlertsSection({
       transition={{ duration: 0.3 }}
       className="mb-6"
     >
-      <div className="flex items-center gap-2 mb-3">
-        <AlertTriangle className="h-4 w-4 text-red-600" />
-        <span className="font-semibold text-red-600">Critical Alerts</span>
-        <Badge variant="destructive" className="text-xs">
-          {alerts.length}
-        </Badge>
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-red-600" />
+          <span className="font-semibold text-red-600">Critical Alerts</span>
+          <Badge variant="destructive" className="text-xs">
+            {alerts.length}
+          </Badge>
+        </div>
+        {onNavigateToFeed && alerts.length > 0 && (
+          <button
+            onClick={onNavigateToFeed}
+            className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
+          >
+            View Intelligence Feed
+          </button>
+        )}
       </div>
       
       <div className="space-y-2">
@@ -221,12 +238,14 @@ function TrendingInsightsSection({
   );
 }
 
-function QuickActionsSection({ 
-  actions, 
-  onActionClick 
-}: { 
-  actions: ActionableRecommendation[]; 
-  onActionClick?: (action: ActionableRecommendation) => void; 
+function QuickActionsSection({
+  actions,
+  onActionClick,
+  onNavigateToPolicy
+}: {
+  actions: ActionableRecommendation[];
+  onActionClick?: (action: ActionableRecommendation) => void;
+  onNavigateToPolicy?: () => void;
 }) {
   if (actions.length === 0) return null;
 
@@ -237,12 +256,22 @@ function QuickActionsSection({
       transition={{ duration: 0.3, delay: 0.2 }}
       className="mb-6"
     >
-      <div className="flex items-center gap-2 mb-3">
-        <Zap className="h-4 w-4 text-purple-600" />
-        <span className="font-semibold text-purple-600">Recommended Actions</span>
-        <Badge variant="secondary" className="text-xs">
-          {actions.length}
-        </Badge>
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2">
+          <Zap className="h-4 w-4 text-purple-600" />
+          <span className="font-semibold text-purple-600">Recommended Actions</span>
+          <Badge variant="secondary" className="text-xs">
+            {actions.length}
+          </Badge>
+        </div>
+        {onNavigateToPolicy && actions.length > 0 && (
+          <button
+            onClick={onNavigateToPolicy}
+            className="text-xs text-purple-600 hover:text-purple-800 hover:underline"
+          >
+            Create Custom Policy
+          </button>
+        )}
       </div>
       
       <div className="space-y-2">
@@ -300,20 +329,26 @@ export function ExecutiveCommandCenter({
   onActionClick,
   onAlertClick,
   onPrivateAccess,
+  onNavigateToIntelligence,
+  onNavigateToMeetings,
+  onNavigateToPolicy,
   className = '',
   loading = false
 }: ExecutiveCommandCenterProps) {
   const { user } = useUser();
   const [viewMode, setViewMode] = useState<'overview' | 'detailed'>('overview');
-  
-  // Get live quick actions from API
-  const { data: quickActions, refetch: refetchActions } = api.eci.getQuickActions.useQuery(
-    { userId: user?.id || 'placeholder-disabled' },
-    { enabled: !!user?.id }
+
+  // Get country ID from countryStats
+  const countryId = countryStats?.id || '';
+
+  // Get live quick actions from unified intelligence API
+  const { data: quickActionsData, refetch: refetchActions } = api.unifiedIntelligence.getQuickActions.useQuery(
+    { countryId: countryId },
+    { enabled: !!countryId }
   );
-  
-  // Execute quick action mutation
-  const executeAction = api.eci.executeQuickAction.useMutation({
+
+  // Execute quick action mutation using unified intelligence API
+  const executeAction = api.unifiedIntelligence.executeAction.useMutation({
     onSuccess: (result) => {
       toast.success(`Action executed: ${result.message}`);
       void refetchActions();
@@ -322,24 +357,87 @@ export function ExecutiveCommandCenter({
       toast.error(`Failed to execute action: ${error.message}`);
     }
   });
-  
+
   // Handle quick action execution
   const handleQuickActionClick = (action: ActionableRecommendation) => {
-    if (action.id && user?.id) {
+    if (action.id && countryId) {
+      // Map action ID to action type
+      const actionType = action.id.includes('infrastructure') ? 'infrastructure_boost' :
+                         action.id.includes('security') ? 'security_review' :
+                         action.id.includes('education') ? 'education_expansion' :
+                         action.id.includes('trade') ? 'trade_mission' :
+                         action.id.includes('diplomatic') ? 'diplomatic_outreach' :
+                         action.id.includes('economic') ? 'economic_stimulus' :
+                         action.id.includes('recommendation') ? 'policy_implementation' :
+                         'policy_implementation';
+
       executeAction.mutate({
-        userId: user.id,
-        actionType: action.id,
-        parameters: {}
+        countryId: countryId,
+        actionType: actionType as any,
+        parameters: {},
+        priority: 'NORMAL',
+        notes: action.description
       });
     }
+
+    // Also call the original onActionClick if provided
+    onActionClick?.(action);
   };
   
   // Enhanced economic intelligence
   const enhancedEconomicData = useMemo(() => {
     if (countryStats && economyData) {
       try {
-        const healthCheck = getQuickEconomicHealth(countryStats, economyData);
-        const intelligenceData = getIntelligenceEconomicData(countryStats, economyData);
+        // Convert CountryWithEconomicData to CountryStats format
+        const mappedCountryStats = {
+          id: countryStats.id,
+          name: countryStats.name,
+          country: countryStats.name,
+          continent: countryStats.continent,
+          region: countryStats.region,
+          governmentType: countryStats.governmentType,
+          religion: countryStats.religion,
+          leader: countryStats.leader,
+          areaSqMi: countryStats.areaSqMi,
+          population: countryStats.currentPopulation,
+          gdpPerCapita: countryStats.currentGdpPerCapita,
+          landArea: countryStats.landArea,
+          maxGdpGrowthRate: countryStats.maxGdpGrowthRate,
+          adjustedGdpGrowth: countryStats.adjustedGdpGrowth,
+          populationGrowthRate: countryStats.populationGrowthRate,
+          actualGdpGrowth: countryStats.adjustedGdpGrowth,
+          projected2040Population: countryStats.currentPopulation * 1.2, // Estimate
+          projected2040Gdp: countryStats.currentTotalGdp * 1.2, // Estimate
+          projected2040GdpPerCapita: countryStats.currentGdpPerCapita * 1.2, // Estimate
+          localGrowthFactor: countryStats.localGrowthFactor,
+          totalGdp: countryStats.currentTotalGdp,
+          currentPopulation: countryStats.currentPopulation,
+          currentGdpPerCapita: countryStats.currentGdpPerCapita,
+          currentTotalGdp: countryStats.currentTotalGdp,
+          lastCalculated: countryStats.lastCalculated,
+          baselineDate: countryStats.baselineDate,
+          economicTier: countryStats.economicTier as any,
+          populationTier: countryStats.populationTier as any,
+          populationDensity: countryStats.populationDensity,
+          gdpDensity: countryStats.gdpDensity,
+          globalGrowthFactor: 1.0, // Default value
+          historicalData: (countryStats.historical || []).map(h => ({
+            id: `historical-${h.year}`,
+            countryId: countryStats.id,
+            ixTimeTimestamp: new Date(h.year, 0, 1).getTime(),
+            population: h.population,
+            gdpPerCapita: h.gdp / h.population,
+            totalGdp: h.gdp,
+            populationGrowthRate: 0, // Not available in HistoricalData
+            gdpGrowthRate: 0, // Not available in HistoricalData
+            landArea: countryStats.landArea,
+            populationDensity: h.population / (countryStats.landArea || 1),
+            gdpDensity: h.gdp / (countryStats.landArea || 1)
+          }))
+        };
+
+        const healthCheck = getQuickEconomicHealth(mappedCountryStats, economyData);
+        const intelligenceData = getIntelligenceEconomicData(mappedCountryStats, economyData);
         return { healthCheck, intelligenceData, hasData: true };
       } catch (error) {
         console.warn('Enhanced economic data unavailable:', error);
@@ -464,17 +562,18 @@ export function ExecutiveCommandCenter({
                 exit={{ opacity: 0, y: -10 }}
                 className="space-y-6"
               >
-                <CriticalAlertsSection 
+                <CriticalAlertsSection
                   alerts={intelligence.criticalAlerts}
                   onAlertClick={onAlertClick}
+                  onNavigateToFeed={onNavigateToIntelligence}
                 />
                 
                 <TrendingInsightsSection 
                   insights={intelligence.trendingInsights}
                 />
                 
-                <QuickActionsSection 
-                  actions={quickActions ? quickActions.map((action: any) => ({
+                <QuickActionsSection
+                  actions={quickActionsData?.actions ? quickActionsData.actions.map((action: any) => ({
                     id: action.id,
                     title: action.title,
                     description: action.description,
@@ -485,13 +584,14 @@ export function ExecutiveCommandCenter({
                     estimatedCost: action.estimatedCost || 0,
                     successProbability: action.successProbability,
                     estimatedBenefit: action.estimatedBenefit,
-                    prerequisites: action.prerequisites || [],
-                    expectedOutcome: action.expectedOutcome || 'Improved system performance',
+                    prerequisites: action.requirements || [],
+                    expectedOutcome: action.estimatedBenefit || 'Improved system performance',
                     risks: action.risks || ['Implementation complexity'],
                     impact: action.impact || 'medium',
                     context: { confidence: action.successProbability }
                   })) : intelligence.urgentActions}
                   onActionClick={handleQuickActionClick}
+                  onNavigateToPolicy={onNavigateToPolicy}
                 />
 
                 {/* Enhanced Economic Intelligence */}
@@ -615,14 +715,37 @@ export function ExecutiveCommandCenter({
           </AnimatePresence>
           
           {isOwner && (
-            <div className="pt-4 border-t border-border">
-              <Button 
-                onClick={onPrivateAccess}
-                className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white"
+            <div className="pt-4 border-t border-border space-y-2">
+              <Button
+                onClick={onNavigateToIntelligence || onPrivateAccess}
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white"
               >
-                <Crown className="h-4 w-4 mr-2" />
-                Access Full Executive Dashboard
+                <Brain className="h-4 w-4 mr-2" />
+                Access Full Intelligence Dashboard
               </Button>
+
+              {viewMode === 'overview' && (
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onNavigateToMeetings}
+                    className="text-xs"
+                  >
+                    <Target className="h-3 w-3 mr-1" />
+                    Schedule Meeting
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onNavigateToPolicy}
+                    className="text-xs"
+                  >
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    Create Policy
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </CardContent>

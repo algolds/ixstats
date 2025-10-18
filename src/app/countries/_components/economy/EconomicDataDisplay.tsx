@@ -28,6 +28,7 @@ import { Badge } from "~/components/ui/badge";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import { api } from "~/trpc/react";
+import { createDefaultGovernmentSpendingData } from "~/lib/government-spending-defaults";
 import { CoreEconomicIndicators } from "./CoreEconomicIndicators";
 import { LaborEmployment } from "./LaborEmployment";
 import { FiscalSystemComponent } from "./FiscalSystemComponent";
@@ -232,20 +233,16 @@ export function EconomicDataDisplay({
                 incomeInequalityGini: 0.35, // Default value since property doesn't exist
                 socialMobilityIndex: 50, // Default value since property doesn't exist
             },
-            spending: {
+            spending: createDefaultGovernmentSpendingData({
               education: 0,
               healthcare: 0,
               socialSafety: 0,
               totalSpending: 0,
-              spendingGDPPercent: 22, // Default value since property doesn't exist
-              spendingPerCapita: 0, // Default value since property doesn't exist
-              deficitSurplus: 0, // Default value since property doesn't exist
+              spendingGDPPercent: 22,
+              spendingPerCapita: 0,
+              deficitSurplus: 0,
               spendingCategories: [],
-              performanceBasedBudgeting: false,
-              universalBasicServices: false,
-              greenInvestmentPriority: false,
-              digitalGovernmentInitiative: false
-            },
+            }),
             demographics: {
               lifeExpectancy: 75, // Default value since property doesn't exist
               literacyRate: 90, // Default value since property doesn't exist

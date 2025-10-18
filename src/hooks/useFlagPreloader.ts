@@ -69,21 +69,17 @@ export function useGlobalFlagPreloader(): GlobalFlagPreloader {
     const startTime = Date.now();
     
     try {
-      console.log(`[FlagPreloader] Starting intelligent preload for ${countryNames.length} countries`);
       
       // Check which countries already have cached flags
       const cacheStats = ixnayWiki.getCacheStats();
-      console.log(`[FlagPreloader] Current cache state: ${cacheStats.flags} flags cached`);
       
       // The service will handle filtering out already cached items
       await ixnayWiki.preloadCountryFlags(countryNames);
       
       const endTime = Date.now();
-      console.log(`[FlagPreloader] Intelligent preload completed in ${endTime - startTime}ms`);
       
       // Update cache stats
       const newCacheStats = ixnayWiki.getCacheStats();
-      console.log(`[FlagPreloader] Cache after preload: ${newCacheStats.flags} flags cached (added ${newCacheStats.flags - cacheStats.flags})`);
       
       setLastPreloadTime(endTime);
     } catch (error) {

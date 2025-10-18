@@ -17,8 +17,6 @@ import { MyCountryCard } from "~/app/dashboard/_components/MyCountryCard";
 import { AdminQuickAccess } from "./AdminQuickAccess";
 
 // Dashboard Components - Only the essential ones for MyCountry
-import { ECICard } from "~/app/dashboard/_components/ECICard";
-import { SDICard } from "~/app/dashboard/_components/SDICard";
 import { StrategicOperationsSuite } from "~/app/dashboard/_components/StrategicOperationsSuite";
 
 // UI Components
@@ -88,33 +86,34 @@ function CountryCard({ country, index }: CountryCardProps) {
   const { flagUrl } = useFlag(country.name);
   
   return (
-    <Card key={country.id} className="glass-hierarchy-interactive hover:scale-[1.02] transition-all duration-200 overflow-hidden relative">
-      {/* Flag Background */}
-      {flagUrl && (
-        <div className="absolute inset-0 opacity-10">
-          <img 
-            src={flagUrl} 
-            alt={`${country.name} flag`}
-            className="w-full h-full object-cover"
-          />
-        </div>
-      )}
-      <CardContent className="p-4 relative z-10">
-        <div className="flex items-center gap-3">
-          <div className={cn(
-            "w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm",
-            index < 3 ? "bg-gradient-to-br from-yellow-400 to-yellow-600" : "bg-gradient-to-br from-gray-400 to-gray-600"
-          )}>
-            #{index + 1}
+    <Link href={createUrl(`/countries/${country.id}`)} className="block">
+      <Card key={country.id} className="glass-hierarchy-interactive hover:scale-[1.02] transition-all duration-200 overflow-hidden relative cursor-pointer">
+        {/* Flag Background */}
+        {flagUrl && (
+          <div className="absolute inset-0 opacity-10">
+            <img 
+              src={flagUrl} 
+              alt={`${country.name} flag`}
+              className="w-full h-full object-cover"
+            />
           </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-foreground truncate">
-              {country.name.replace(/_/g, ' ')}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {country.economicTier}
-            </p>
-          </div>
+        )}
+        <CardContent className="p-4 relative z-10">
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              "w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm",
+              index < 3 ? "bg-gradient-to-br from-yellow-400 to-yellow-600" : "bg-gradient-to-br from-gray-400 to-gray-600"
+            )}>
+              #{index + 1}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-foreground truncate">
+                {country.name.replace(/_/g, ' ')}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {country.economicTier}
+              </p>
+            </div>
         </div>
         
         <div className="mt-3 space-y-2">
@@ -139,6 +138,7 @@ function CountryCard({ country, index }: CountryCardProps) {
         </div>
       </CardContent>
     </Card>
+    </Link>
   );
 }
 
@@ -1038,7 +1038,7 @@ export function EnhancedCommandCenter() {
           className="opacity-30 dark:opacity-20"
           squaresClassName="fill-slate-200/20 dark:fill-slate-700/20 stroke-slate-300/30 dark:stroke-slate-600/30"
         />
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 mt-16">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 mt-16 max-w-screen-2xl">
           <div className="h-20 glass-hierarchy-parent rounded-xl animate-pulse" />
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             <div className="lg:col-span-4 space-y-6">
@@ -1063,7 +1063,7 @@ export function EnhancedCommandCenter() {
         squaresClassName="fill-slate-200/20 dark:fill-slate-700/20 stroke-slate-300/30 dark:stroke-slate-600/30 [&:nth-child(4n+1):hover]:fill-yellow-600/40 [&:nth-child(4n+1):hover]:stroke-yellow-600/60 [&:nth-child(4n+2):hover]:fill-blue-600/40 [&:nth-child(4n+2):hover]:stroke-blue-600/60 [&:nth-child(4n+3):hover]:fill-indigo-600/40 [&:nth-child(4n+3):hover]:stroke-indigo-600/60 [&:nth-child(4n+4):hover]:fill-red-600/40 [&:nth-child(4n+4):hover]:stroke-red-600/60 transition-all duration-200"
       />
       
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 mt-16 relative z-10">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 mt-16 relative z-10 max-w-screen-2xl">
         {/* Main Layout - Left Sidebar + Main Content + Right Sidebar */}
         <div className={cn(
           "grid grid-cols-1 gap-6 lg:gap-8 transition-all duration-300 ease-in-out",

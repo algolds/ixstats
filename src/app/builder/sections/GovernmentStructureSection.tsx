@@ -26,7 +26,7 @@ export function GovernmentStructureSection({
       governmentType: 'Constitutional Monarchy',
       totalBudget: inputs.coreIndicators.nominalGDP * 0.35, // 35% of GDP as default
       fiscalYear: 'Calendar Year',
-      budgetCurrency: 'USD',
+      budgetCurrency: inputs.nationalIdentity?.currency || 'USD',
       headOfState: '',
       headOfGovernment: ''
     },

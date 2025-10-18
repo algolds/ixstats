@@ -1,0 +1,106 @@
+{
+  "timestamp": "2025-10-14T01:50:35.826Z",
+  "environment": "development",
+  "summary": {
+    "failures": 0,
+    "warnings": 12,
+    "unwiredModels": 0,
+    "modelsWithCrudGaps": 0
+  },
+  "failures": [],
+  "warnings": [
+    {
+      "category": "Database",
+      "test": "Table: Country",
+      "status": "WARN",
+      "message": "0 records found",
+      "details": {
+        "count": 0
+      }
+    },
+    {
+      "category": "Database",
+      "test": "Table: GovernmentComponent",
+      "status": "WARN",
+      "message": "0 records found",
+      "details": {
+        "count": 0
+      }
+    },
+    {
+      "category": "Database",
+      "test": "Table: IntelligenceAlert",
+      "status": "WARN",
+      "message": "0 records found",
+      "details": {
+        "count": 0
+      }
+    },
+    {
+      "category": "Database",
+      "test": "Table: Embassy",
+      "status": "WARN",
+      "message": "0 records found",
+      "details": {
+        "count": 0
+      }
+    },
+    {
+      "category": "Database",
+      "test": "Table: EmbassyMission",
+      "status": "WARN",
+      "message": "0 records found",
+      "details": {
+        "count": 0
+      }
+    },
+    {
+      "category": "Database",
+      "test": "Foreign Key Relations",
+      "status": "WARN",
+      "message": "No test data with relationships found"
+    },
+    {
+      "category": "API Security",
+      "test": "Rate Limiting",
+      "status": "WARN",
+      "message": "Rate limiting not enabled (in-memory fallback active)"
+    },
+    {
+      "category": "API Security",
+      "test": "Audit Logging",
+      "status": "WARN",
+      "message": "0 audit log entries found",
+      "details": {
+        "auditLogCount": 0
+      }
+    },
+    {
+      "category": "Authentication",
+      "test": "Clerk Configuration",
+      "status": "WARN",
+      "message": "Missing Clerk keys (demo mode may be active)"
+    },
+    {
+      "category": "Economic Calculations",
+      "test": "Historical Tracking",
+      "status": "WARN",
+      "message": "0 historical data points found",
+      "details": {
+        "historicalRecords": 0
+      }
+    },
+    {
+      "category": "External Integrations",
+      "test": "Discord Bot Integration",
+      "status": "WARN",
+      "message": "Discord webhook not configured"
+    },
+    {
+      "category": "External Integrations",
+      "test": "Flag Service",
+      "status": "WARN",
+      "message": "Using default flag service"
+    }
+  ]
+}

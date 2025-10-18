@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
@@ -39,6 +39,7 @@ interface DepartmentFormProps {
   onDelete?: () => void;
   isReadOnly?: boolean;
   availableParents?: { id: string; name: string }[];
+  errors?: Record<string, string[]>;
 }
 
 const departmentCategories: DepartmentCategory[] = [
@@ -107,16 +108,21 @@ export function DepartmentForm({
   onChange, 
   onDelete,
   isReadOnly = false,
-  availableParents = []
+  availableParents = [],
+  errors = {}
 }: DepartmentFormProps) {
   const [newFunction, setNewFunction] = useState('');
 
-  const handleChange = (field: keyof DepartmentInput, value: any) => {
+  // Use a ref to access latest data without causing re-renders
+  const dataRef = useRef(data);
+  dataRef.current = data;
+
+  const handleChange = useCallback((field: keyof DepartmentInput, value: any) => {
     onChange({
-      ...data,
+      ...dataRef.current,
       [field]: value
     });
-  };
+  }, [onChange]);
 
   const addFunction = () => {
     if (newFunction.trim()) {
@@ -167,6 +173,9 @@ export function DepartmentForm({
               placeholder="e.g., Ministry of Defense"
               disabled={isReadOnly}
             />
+            {errors.name && (
+              <p className="text-xs text-red-500">{errors.name[0]}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -191,9 +200,12 @@ export function DepartmentForm({
             <Select
               value={data.category}
               onValueChange={(value: DepartmentCategory) => {
-                handleChange('category', value);
-                // Auto-update color when category changes
-                handleChange('color', categoryColors[value]);
+                // Batch update to avoid overwriting due to stale props
+                onChange({
+                  ...data,
+                  category: value,
+                  color: categoryColors[value]
+                });
               }}
               disabled={isReadOnly}
             >
@@ -214,6 +226,9 @@ export function DepartmentForm({
                 })}
               </SelectContent>
             </Select>
+            {errors.category && (
+              <p className="text-xs text-red-500">{errors.category[0]}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -370,6 +385,9 @@ export function DepartmentForm({
               className="max-w-32"
             />
           </div>
+            {errors.color && (
+              <p className="text-xs text-red-500">{errors.color[0]}</p>
+            )}
         </div>
 
         {/* Parent Department */}

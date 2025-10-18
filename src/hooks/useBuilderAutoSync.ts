@@ -123,6 +123,8 @@ export function useGovernmentBuilderAutoSync(
               isSyncing: false,
               pendingChanges: true 
             }));
+            // Surface a durable error to the UI layer for hard-block UX
+            setSyncState(prev => ({ ...prev, syncError: new Error('Critical conflicts detected. Please resolve before saving.') }));
             return;
           }
         }

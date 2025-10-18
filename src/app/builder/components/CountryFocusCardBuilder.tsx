@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "~/lib/utils";
-import { useCountryFlag } from "~/hooks/useCountryFlags"; // Import useCountryFlag
+import { useCountryFlagRouteAware } from "~/hooks/useCountryFlagRouteAware"; // Import route-aware flag hook
 import { Globe } from "lucide-react"; // Import Globe icon for fallback
 
 export interface CountryCardData {
@@ -28,7 +28,7 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(({
   softSelectedCountryId,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const { flag, loading, error } = useCountryFlag(country.name); // Fetch flag data
+  const { flag, loading, error } = useCountryFlagRouteAware(country.name); // Fetch flag data with route awareness
 
   const cardHeightClass = cardSize === 'small' ? 'h-48' : 'h-80'; // h-80 for default, h-48 for small
 

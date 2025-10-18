@@ -20,7 +20,7 @@ import {
   type SmartRecommendation,
   type CountryProfile 
 } from '~/lib/atomic-recommendations';
-import { ATOMIC_COMPONENT_INFO } from './AtomicComponentSelector';
+import { ATOMIC_COMPONENTS } from '~/components/government/atoms/AtomicGovernmentComponents';
 
 interface SmartRecommendationsProps {
   selectedComponents: ComponentType[];
@@ -43,7 +43,7 @@ function RecommendationCard({
   isExpanded, 
   onToggleExpand 
 }: RecommendationCardProps) {
-  const componentInfo = ATOMIC_COMPONENT_INFO[recommendation.component];
+  const componentInfo = ATOMIC_COMPONENTS[recommendation.component];
   
   const typeConfig = {
     synergy_complete: {
@@ -222,24 +222,40 @@ function RecommendationCard({
               <div>
                 <div className="text-green-600 font-medium mb-1">Advantages:</div>
                 <ul className="space-y-0.5 text-muted-foreground">
-                  {componentInfo?.pros.slice(0, 2).map((pro, idx) => (
-                    <li key={idx} className="flex items-start space-x-1">
-                      <span>•</span>
-                      <span>{pro}</span>
-                    </li>
-                  ))}
+                  {componentInfo && (
+                    <>
+                      <li className="flex items-start space-x-1">
+                        <span>•</span>
+                        <span>High effectiveness ({componentInfo.effectiveness}%)</span>
+                      </li>
+                      {componentInfo.synergies.length > 0 && (
+                        <li className="flex items-start space-x-1">
+                          <span>•</span>
+                          <span>Works well with {componentInfo.synergies.length} other components</span>
+                        </li>
+                      )}
+                    </>
+                  )}
                 </ul>
               </div>
               
               <div>
                 <div className="text-red-600 font-medium mb-1">Considerations:</div>
                 <ul className="space-y-0.5 text-muted-foreground">
-                  {componentInfo?.cons.slice(0, 2).map((con, idx) => (
-                    <li key={idx} className="flex items-start space-x-1">
-                      <span>•</span>
-                      <span>{con}</span>
-                    </li>
-                  ))}
+                  {componentInfo && (
+                    <>
+                      {componentInfo.conflicts.length > 0 && (
+                        <li className="flex items-start space-x-1">
+                          <span>•</span>
+                          <span>Conflicts with {componentInfo.conflicts.length} components</span>
+                        </li>
+                      )}
+                      <li className="flex items-start space-x-1">
+                        <span>•</span>
+                        <span>Implementation cost: ${componentInfo.implementationCost.toLocaleString()}</span>
+                      </li>
+                    </>
+                  )}
                 </ul>
               </div>
             </div>

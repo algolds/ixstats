@@ -16,7 +16,7 @@
  * - Provide unified data interface to child components
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { 
   TrendingUp, 
@@ -99,7 +99,6 @@ export function MyCountryDataWrapper({
     subscribeToGlobal: viewMode === 'executive',
     subscribeToAlerts: true,
     onUpdate: (update) => {
-      console.log('Real-time intelligence update:', update);
       // Handle real-time intelligence updates
       if (update.severity === 'critical' || update.priority === 'urgent') {
         createNotification({
@@ -162,7 +161,6 @@ export function MyCountryDataWrapper({
       }
     },
     onConnect: () => {
-      console.log('Intelligence WebSocket connected');
       createNotification({
         source: 'system',
         title: '🔗 Real-time Intelligence Connected',
@@ -178,7 +176,6 @@ export function MyCountryDataWrapper({
       });
     },
     onDisconnect: () => {
-      console.log('Intelligence WebSocket disconnected');
       createNotification({
         source: 'system',
         title: '⚠️ Real-time Intelligence Disconnected',
@@ -257,22 +254,32 @@ export function MyCountryDataWrapper({
     return createNotification(notification);
   };
   
+  // Track previous feed length to prevent unnecessary updates
+  const prevFeedLengthRef = useRef(0);
+
   // Set executive mode and notifications based on view mode
   React.useEffect(() => {
     console.log('[MyCountryDataWrapper] Setting executive mode:', viewMode === 'executive');
     
     setExecutiveMode(viewMode === 'executive');
-    if (viewMode === 'executive' && intelligenceFeed && intelligenceFeed.length > 0) {
-      const processedNotifications = intelligenceFeed.map(item => ({
-        ...item,
-        read: false // Mark all as unread initially
-      }));
-      setNotifications(processedNotifications);
+    
+    const currentLength = intelligenceFeed?.length || 0;
+    if (viewMode === 'executive' && intelligenceFeed && currentLength > 0) {
+      // Only process notifications if feed length actually changed
+      if (currentLength !== prevFeedLengthRef.current) {
+        prevFeedLengthRef.current = currentLength;
+        const processedNotifications = intelligenceFeed.map(item => ({
+          ...item,
+          read: false // Mark all as unread initially
+        }));
+        setNotifications(processedNotifications);
+      }
     } else if (viewMode !== 'executive') {
       // Clear executive notifications when not in executive mode
       setNotifications([]);
+      prevFeedLengthRef.current = 0;
     }
-  }, [viewMode, intelligenceFeed?.length]); // Only depend on length to prevent infinite loops
+  }, [viewMode, intelligenceFeed]);
   
   // Real-time data sync integration - simplified to prevent infinite loops
   const { 

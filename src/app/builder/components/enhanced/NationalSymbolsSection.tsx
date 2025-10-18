@@ -51,13 +51,6 @@ export function NationalSymbolsSection({
       const foundationCountryName = getFoundationCountryName(referenceCountry);
       
       if (foundationCountryName) {
-        console.log(`[NationalSymbolsSection] DEBUG - Reference Country:`, referenceCountry);
-        console.log(`[NationalSymbolsSection] DEBUG - Inputs countryName: ${inputs.countryName}`);
-        console.log(`[NationalSymbolsSection] DEBUG - Corrupted referenceCountry.name: ${referenceCountry.name}`);
-        console.log(`[NationalSymbolsSection] DEBUG - Preserved foundationCountryName: ${referenceCountry.foundationCountryName || 'not available'}`);
-        console.log(`[NationalSymbolsSection] DEBUG - Final foundation country name: ${foundationCountryName}`);
-        console.log(`[NationalSymbolsSection] Fetching symbols for foundation country: ${foundationCountryName}`);
-        
         try {
           // Fetch flag from unified service (cache-first) and coat of arms from wiki commons
           const [flagUrl, coatOfArmsResult] = await Promise.all([
@@ -67,22 +60,17 @@ export function NationalSymbolsSection({
           
           if (flagUrl) {
             setFoundationFlagUrl(flagUrl);
-            console.log(`[NationalSymbolsSection] Found foundation flag: ${flagUrl}`);
           } else {
             setFoundationFlagUrl(undefined);
-            console.log(`[NationalSymbolsSection] No foundation flag found for ${foundationCountryName}`);
           }
 
           if (coatOfArmsResult) {
             setFoundationCoatOfArmsUrl(coatOfArmsResult);
-            console.log(`[NationalSymbolsSection] Found foundation coat of arms: ${coatOfArmsResult}`);
           } else {
             setFoundationCoatOfArmsUrl(undefined);
-            console.log(`[NationalSymbolsSection] No foundation coat of arms found for ${foundationCountryName}`);
           }
 
         } catch (error) {
-          console.error(`[NationalSymbolsSection] Exception fetching symbols for ${foundationCountryName}:`, error);
           setFoundationFlagUrl(undefined);
           setFoundationCoatOfArmsUrl(undefined);
         }
@@ -93,19 +81,10 @@ export function NationalSymbolsSection({
 
   // Auto-fill flag and coat of arms from foundation country when available
   useEffect(() => {
-    console.log('[NationalSymbolsSection] Auto-fill check:', {
-      foundationFlagUrl,
-      foundationCoatOfArmsUrl,
-      currentFlagUrl: inputs.flagUrl,
-      currentCoatOfArmsUrl: inputs.coatOfArmsUrl
-    });
-    
     if (foundationFlagUrl && (!inputs.flagUrl || inputs.flagUrl === '')) {
-      console.log('[NationalSymbolsSection] Auto-filling flag with:', foundationFlagUrl);
       handleFlagUrlChange(foundationFlagUrl);
     }
     if (foundationCoatOfArmsUrl && (!inputs.coatOfArmsUrl || inputs.coatOfArmsUrl === '')) {
-      console.log('[NationalSymbolsSection] Auto-filling coat of arms with:', foundationCoatOfArmsUrl);
       handleCoatOfArmsUrlChange(foundationCoatOfArmsUrl);
     }
   }, [foundationFlagUrl, foundationCoatOfArmsUrl, inputs.flagUrl, inputs.coatOfArmsUrl]);

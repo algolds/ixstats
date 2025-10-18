@@ -4,6 +4,7 @@ import { Import, CheckCircle, Users, DollarSign, MapPin, Building } from "lucide
 import { GlassCard, GlassCardContent, GlassCardHeader } from "../../components/glass/GlassCard";
 import { cn } from "~/lib/utils";
 import type { CountryInfoboxWithDynamicProps } from "~/lib/mediawiki-service";
+import { sanitizeWikiContent } from "~/lib/sanitize-html";
 
 interface ParsedCountryData {
   name: string;
@@ -154,7 +155,8 @@ export const ParsedDataPreview: React.FC<ParsedDataPreviewProps> = ({
             <div
               className="text-lg font-semibold [&_a]:text-brand-primary [&_a]:hover:underline"
               style={{ color: 'var(--color-text-primary)' }}
-              dangerouslySetInnerHTML={{ __html: parsedData.capital || 'Unknown' }}
+              // SECURITY: Sanitize wiki content
+              dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(parsedData.capital || 'Unknown') }}
             />
           </div>
 
@@ -173,7 +175,8 @@ export const ParsedDataPreview: React.FC<ParsedDataPreviewProps> = ({
             <div
               className="text-lg font-semibold [&_a]:text-brand-primary [&_a]:hover:underline"
               style={{ color: 'var(--color-text-primary)' }}
-              dangerouslySetInnerHTML={{ __html: parsedData.government || 'Unknown' }}
+              // SECURITY: Sanitize wiki content
+              dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(parsedData.government || 'Unknown') }}
             />
           </div>
         </div>
@@ -187,7 +190,8 @@ export const ParsedDataPreview: React.FC<ParsedDataPreviewProps> = ({
                 <span className="font-medium text-text-primary">Currency:</span>
                 <span
                   className="ml-2 text-text-muted [&_a]:text-text-secondary [&_a]:hover:underline"
-                  dangerouslySetInnerHTML={{ __html: parsedData.currency }}
+                  // SECURITY: Sanitize wiki content
+                  dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(parsedData.currency) }}
                 />
               </div>
             )}
@@ -196,7 +200,8 @@ export const ParsedDataPreview: React.FC<ParsedDataPreviewProps> = ({
                 <span className="font-medium text-text-primary">Languages:</span>
                 <span
                   className="ml-2 text-text-muted [&_a]:text-text-secondary [&_a]:hover:underline"
-                  dangerouslySetInnerHTML={{ __html: parsedData.languages }}
+                  // SECURITY: Sanitize wiki content
+                  dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(parsedData.languages) }}
                 />
               </div>
             )}

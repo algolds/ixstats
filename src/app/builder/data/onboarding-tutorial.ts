@@ -16,46 +16,37 @@ interface Step {
 
 export const builderTutorialSteps: Step[] = [
   {
+    title: "Welcome to MyCountry Builder",
+    short_description: "The world's most advanced nation creation platform",
+    full_description: "Create a fully functional country with atomic government systems, real-time economic calculations, and comprehensive diplomatic frameworks. This tutorial will guide you through the key features."
+  },
+  {
     title: "Choose Your Foundation",
-    short_description: "Select from 180+ real countries as your economic starting point",
-    full_description: "Every great nation starts with a foundation. Browse our database of real countries and choose one that matches your vision. Each foundation provides authentic economic data that you can customize.",
-    media: {
-      type: "image", 
-      src: "https://images.unsplash.com/photo-1535483102974-fa1e64d0ca86?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-    }
+    short_description: "Select from 180+ real countries as your starting point",
+    full_description: "Browse our database of real countries and choose one that matches your vision. Each foundation provides authentic economic data including GDP, population, and growth rates.\n\n**Pro Tip:** Choose countries with similar economic structures to save time in customization."
   },
   {
-    title: "Design Your Economy",
-    short_description: "Customize GDP, population, and core economic indicators",
-    full_description: "Shape your nation's economic foundation. Adjust population size, GDP per capita, growth rates, and watch as the system calculates related metrics in real-time.",
-    media: {
-      type: "image",
-      src: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      alt: "Economic charts and analysis"
-    }
+    title: "Core Identity & Economic Indicators",
+    short_description: "Set your nation's identity and fundamental economic metrics",
+    full_description: "Configure your country name, national symbols, population, GDP per capita, and growth rates. The system uses a tier-based economic engine that automatically calculates related metrics.\n\n**Key Features:** Real-time calculations and economic projections.\n**Pro Tip:** Start with realistic numbers - the system provides validation ranges."
   },
   {
-    title: "Define Your Identity",
-    short_description: "Upload symbols and customize your nation's character",
-    full_description: "Upload your flag and coat of arms to give your nation visual identity. The system will extract colors to theme your experience, making it uniquely yours.",
-    media: {
-      type: "image",
-      src: "https://images.unsplash.com/photo-1529019828431-c67133e9b99a?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      alt: "Various national flags"
-    }
+    title: "Atomic Government System",
+    short_description: "Build your government with 24 components",
+    full_description: "Choose from 24 government components across 5 categories: Executive, Legislative, Judicial, Administrative, and Specialized. Each component has unique effects and synergies.\n\n**Pro Tip:** Start with core components (Executive, Legislature, Judiciary) then add specialized ones."
   },
   {
-    title: "Monitor Your Nation",
-    short_description: "Track economic health with interactive vitality rings",
-    full_description: "See your nation's health at a glance with Apple-inspired vitality rings. Economic, Social, and Government indicators update in real-time as you make changes.",
+    title: "Economic Systems & Policies",
+    short_description: "Configure your nation's economic framework",
+    full_description: "Set up sector distributions, trade relationships, tax policies, and demographic settings. The system provides real-time feedback on economic health and government spending allocations.\n\n**Pro Tip:** Balance your sectors carefully - too much focus on one sector can create vulnerabilities."
+  },
+  {
+    title: "Preview & Launch Your Nation",
+    short_description: "Review your nation and launch into MyCountry",
+    full_description: "Review all your choices in the comprehensive preview system. Check economic indicators, government structure, and overall nation health.\n\n**What's Next:** You'll gain access to the MyCountry Executive Dashboard with diplomatic systems and intelligence operations.",
     action: {
-      label: "Start Building Now",
+      label: "Launch MyCountry",
       onClick: () => {} // Will be set by parent component
-    },
-    media: {
-      type: "image",
-      src: "https://images.unsplash.com/photo-1557426272-fc759fdf7a8d?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      alt: "Data visualization dashboard"
     }
   }
 ];
@@ -63,46 +54,26 @@ export const builderTutorialSteps: Step[] = [
 export const quickStartSteps: Step[] = [
   {
     title: "Quick Start Guide",
-    short_description: "Get building in 3 simple steps",
-    full_description: "New to nation building? Follow this quick guide to create your first country in minutes.",
-    media: {
-      type: "image",
-      src: "https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      alt: "Getting started"
-    }
+    short_description: "Get building in 4 simple steps",
+    full_description: "This quick guide will get you up and running in minutes. We'll focus on the essentials: core economic setup and basic government configuration.\n\n**Pro Tip:** You can always explore advanced features later - start simple and build complexity over time."
   },
   {
-    title: "Step 1: Choose Your Foundation",
-    short_description: "Pick a country similar to what you want to create",
-    full_description: "Browse by economic tier, region, or population size. Popular foundations include Luxembourg (high-tech), Norway (social democracy), and Germany (manufacturing hub).",
-    media: {
-      type: "image",
-      src: "https://images.unsplash.com/photo-1589519160142-77d1a51b1c5e?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      alt: "Country selection"
-    }
+    title: "Step 1: Core Economic Indicators",
+    short_description: "Set your country name and key economic metrics",
+    full_description: "Configure your country name and adjust the basics: population size, GDP per capita, and growth rate. The system automatically calculates related metrics.\n\n**Pro Tip:** Start with realistic numbers - the system provides validation ranges."
   },
   {
-    title: "Step 2: Customize Key Metrics",
-    short_description: "Adjust population, GDP, and basic economic settings",
-    full_description: "Start with Core Indicators: set your country name, adjust population and GDP to your desired size, and set growth rates. The system will auto-calculate related metrics.",
-    media: {
-      type: "image",
-      src: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2015&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      alt: "Economic metrics dashboard"
-    }
+    title: "Step 2: Basic Government Setup",
+    short_description: "Choose essential government components",
+    full_description: "Select core government components: Executive (President/Prime Minister), Legislature (Parliament/Congress), and Judiciary (Supreme Court). These provide the foundation for your government.\n\n**Pro Tip:** Start with these three core components - you can add specialized components later."
   },
   {
-    title: "Step 3: Preview & Create",
+    title: "Step 3: Preview & Launch",
     short_description: "Review your nation and launch into MyCountry",
-    full_description: "Check the vitality rings to ensure your economy is healthy. Review the economic summary, then create your nation to begin the full MyCountry simulation experience.",
+    full_description: "Check the vitality rings to ensure your economy is healthy (aim for green rings). Review the economic summary, then create your nation to begin the full MyCountry simulation experience.\n\n**Pro Tip:** You can always return to the builder later to make adjustments - don't worry about perfection on your first try.",
     action: {
       label: "Begin Quick Start",
       onClick: () => {} // Will be set by parent component  
-    },
-    media: {
-      type: "image",
-      src: "https://images.unsplash.com/photo-1551836022-8b2858c9c69b?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      alt: "Final review and creation"
     }
   }
 ];
@@ -111,12 +82,7 @@ export const importGuideSteps: Step[] = [
   {
     title: "Import Your Data",
     short_description: "Already have country data? Import it directly",
-    full_description: "If you have existing country data in a spreadsheet or from another source, you can import it directly to get started quickly.",
-    media: {
-      type: "image",
-      src: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      alt: "Data import process"
-    }
+    full_description: "If you have existing country data in a spreadsheet or from another source, you can import it directly to get started quickly."
   },
   {
     title: "Supported Data Formats",
@@ -125,11 +91,6 @@ export const importGuideSteps: Step[] = [
     action: {
       label: "Go to Import Page",
       href: "/builder/import"
-    },
-    media: {
-      type: "image", 
-      src: "https://images.unsplash.com/photo-1586953208448-b95a79798f07?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      alt: "Spreadsheet and data files"
     }
   }
 ];
