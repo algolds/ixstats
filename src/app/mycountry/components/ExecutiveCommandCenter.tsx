@@ -368,13 +368,19 @@ export function ExecutiveCommandCenter({
                          action.id.includes('trade') ? 'trade_mission' :
                          action.id.includes('diplomatic') ? 'diplomatic_outreach' :
                          action.id.includes('economic') ? 'economic_stimulus' :
+                         action.id.includes('meeting') || action.id.includes('schedule') ? 'schedule_meeting' :
+                         action.id.includes('policy') || action.id.includes('create_policy') ? 'create_policy' :
+                         action.id.includes('planning') ? 'strategic_planning' :
                          action.id.includes('recommendation') ? 'policy_implementation' :
                          'policy_implementation';
 
       executeAction.mutate({
         countryId: countryId,
         actionType: actionType as any,
-        parameters: {},
+        parameters: {
+          title: action.title,
+          description: action.description
+        },
         priority: 'NORMAL',
         notes: action.description
       });

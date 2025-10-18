@@ -100,22 +100,28 @@ export function NationalSecurityModal({
     estimatedImpact: ""
   });
 
+  // Get user profile for countryId
+  const { data: userProfile } = api.users.getProfile.useQuery(
+    undefined,
+    { enabled: !!user?.id && open }
+  );
+
   // Get security dashboard data
-  const { data: securityDashboard, isLoading: dashboardLoading, refetch: refetchDashboard } = 
-    api.eci.getSecurityDashboard.useQuery(
-      { userId: user?.id || 'placeholder-disabled' },
-      { enabled: !!user?.id && open }
+  const { data: securityDashboard, isLoading: dashboardLoading, refetch: refetchDashboard } =
+    api.unifiedIntelligence.getSecurityDashboard.useQuery(
+      { countryId: userProfile?.countryId || '' },
+      { enabled: !!userProfile?.countryId && open }
     );
 
   // Get security threats
-  const { data: threats, isLoading: threatsLoading, refetch: refetchThreats } = 
-    api.eci.getSecurityThreats.useQuery(
-      { userId: user?.id || 'placeholder-disabled' },
-      { enabled: !!user?.id && open }
+  const { data: threats, isLoading: threatsLoading, refetch: refetchThreats } =
+    api.unifiedIntelligence.getSecurityThreats.useQuery(
+      { countryId: userProfile?.countryId || '' },
+      { enabled: !!userProfile?.countryId && open }
     );
 
   // Create threat mutation
-  const createThreat = api.eci.createSecurityThreat.useMutation({
+  const createThreat = api.unifiedIntelligence.createSecurityThreat.useMutation({
     onSuccess: () => {
       toast.success("Security threat reported successfully!");
       resetThreatForm();
@@ -148,7 +154,7 @@ export function NationalSecurityModal({
     }
 
     createThreat.mutate({
-      userId: user?.id || 'placeholder-disabled',
+      countryId: userProfile?.countryId || '',
       title: newThreatForm.title,
       description: newThreatForm.description,
       severity: newThreatForm.severity,
@@ -244,8 +250,8 @@ export function NationalSecurityModal({
                     </div>
                     <div className="p-6">
                       <div className="text-center">
-                        <div className={`text-4xl font-bold mb-2 ${getThreatLevelColor(securityDashboard?.overallThreatLevel || 'low')}`}>
-                          {(securityDashboard?.overallThreatLevel || 'low').toUpperCase()}
+                        <div className={`text-4xl font-bold mb-2 ${getThreatLevelColor(securityDashboard?.threatLevel || 'low')}`}>
+                          {(securityDashboard?.threatLevel || 'low').toUpperCase()}
                         </div>
                         <div className="text-lg text-muted-foreground mb-4">
                           Overall Threat Level
@@ -253,13 +259,13 @@ export function NationalSecurityModal({
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                           <div>
                             <div className="text-2xl font-bold text-red-600">
-                              {securityDashboard?.activeThreats || 0}
+                              {securityDashboard?.activeThreatsCount || 0}
                             </div>
                             <div className="text-sm text-muted-foreground">Active Threats</div>
                           </div>
                           <div>
                             <div className="text-2xl font-bold text-red-800">
-                              {securityDashboard?.criticalThreats || 0}
+                              {securityDashboard?.criticalThreatsCount || 0}
                             </div>
                             <div className="text-sm text-muted-foreground">Critical</div>
                           </div>
@@ -290,9 +296,9 @@ export function NationalSecurityModal({
                       <p className="text-sm text-muted-foreground mt-1">Latest reported threats and incidents</p>
                     </div>
                     <div className="p-6">
-                      {securityDashboard?.recentThreats && securityDashboard.recentThreats.length > 0 ? (
+                      {securityDashboard?.threats && securityDashboard.threats.length > 0 ? (
                         <div className="space-y-3">
-                          {securityDashboard.recentThreats.map((threat: any) => (
+                          {securityDashboard.threats.map((threat: any) => (
                             <div key={threat.id ? `threat-${threat.id}` : `threat-fallback-${Math.random()}`} className="p-3 border rounded-lg">
                               <div className="flex justify-between items-start mb-2">
                                 <div className="flex items-center gap-2">

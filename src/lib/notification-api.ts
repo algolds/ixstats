@@ -461,6 +461,187 @@ class NotificationAPIService {
       source: 'system',
     });
   }
+
+  /**
+   * Notify about economic milestone (convenience method)
+   */
+  async notifyEconomicMilestone(params: {
+    userId?: string;
+    countryId: string;
+    milestone: string;
+    value: number;
+    metric?: string;
+  }): Promise<string> {
+    return this.create({
+      title: `Economic Milestone: ${params.milestone}`,
+      message: params.metric
+        ? `${params.metric} has reached ${params.value.toLocaleString()}`
+        : `Milestone achieved: ${params.milestone}`,
+      userId: params.userId ?? null,
+      countryId: params.countryId,
+      category: 'economic',
+      type: 'success',
+      priority: 'high',
+      severity: 'important',
+      href: '/mycountry/new?tab=economy',
+      source: 'economic-system',
+      actionable: true,
+      metadata: {
+        milestone: params.milestone,
+        value: params.value,
+        metric: params.metric,
+      },
+    });
+  }
+
+  /**
+   * Notify about vitality score change (convenience method)
+   */
+  async notifyVitalityChange(params: {
+    userId?: string;
+    countryId: string;
+    dimension: string;
+    currentScore: number;
+    previousScore: number;
+  }): Promise<string> {
+    const change = params.currentScore - params.previousScore;
+    const isImprovement = change > 0;
+
+    return this.create({
+      title: `Vitality ${isImprovement ? 'Improved' : 'Declined'}: ${params.dimension}`,
+      message: `${params.dimension} ${isImprovement ? 'increased' : 'decreased'} by ${Math.abs(change).toFixed(1)} points`,
+      userId: params.userId ?? null,
+      countryId: params.countryId,
+      category: 'governance',
+      type: isImprovement ? 'success' : 'warning',
+      priority: Math.abs(change) > 15 ? 'high' : 'medium',
+      href: '/mycountry/new?tab=vitality',
+      source: 'vitality-system',
+      actionable: true,
+      metadata: {
+        dimension: params.dimension,
+        currentScore: params.currentScore,
+        previousScore: params.previousScore,
+        change,
+      },
+    });
+  }
+
+  /**
+   * Notify about ThinkTank activity (convenience method)
+   */
+  async notifyThinktankActivity(params: {
+    userId: string;
+    groupId: string;
+    groupName: string;
+    activityType: string;
+    message: string;
+  }): Promise<string> {
+    return this.create({
+      title: `ThinkTank: ${params.groupName}`,
+      message: params.message,
+      userId: params.userId,
+      category: 'social',
+      type: 'info',
+      priority: 'low',
+      href: `/thinkpages/thinktanks?group=${params.groupId}`,
+      source: 'thinktank',
+      actionable: true,
+      metadata: {
+        groupId: params.groupId,
+        activityType: params.activityType,
+      },
+    });
+  }
+
+  /**
+   * Notify about quick action result (convenience method)
+   */
+  async notifyQuickActionResult(params: {
+    userId?: string;
+    countryId: string;
+    actionName: string;
+    status: 'success' | 'failure' | 'scheduled';
+    details?: string;
+  }): Promise<string> {
+    const statusTitles = {
+      success: 'Action Completed',
+      failure: 'Action Failed',
+      scheduled: 'Action Scheduled',
+    };
+
+    const statusTypes = {
+      success: 'success' as const,
+      failure: 'error' as const,
+      scheduled: 'info' as const,
+    };
+
+    const priorities = {
+      success: 'medium' as const,
+      failure: 'high' as const,
+      scheduled: 'low' as const,
+    };
+
+    return this.create({
+      title: `${statusTitles[params.status]}: ${params.actionName}`,
+      message: params.details ?? statusTitles[params.status],
+      userId: params.userId ?? null,
+      countryId: params.countryId,
+      category: 'governance',
+      type: statusTypes[params.status],
+      priority: priorities[params.status],
+      href: '/mycountry/quickactions',
+      source: 'quickactions',
+      actionable: params.status === 'failure',
+      metadata: {
+        actionName: params.actionName,
+        status: params.status,
+      },
+    });
+  }
+
+  /**
+   * Notify about admin action (convenience method)
+   */
+  async notifyAdminAction(params: {
+    userId?: string;
+    countryId?: string;
+    title: string;
+    message: string;
+    severity: 'urgent' | 'important' | 'informational';
+    adminId: string;
+    adminName?: string;
+  }): Promise<string> {
+    const priorityMap = {
+      urgent: 'critical' as const,
+      important: 'high' as const,
+      informational: 'medium' as const,
+    };
+
+    const deliveryMap = {
+      urgent: 'modal' as const,
+      important: 'dynamic-island' as const,
+      informational: 'toast' as const,
+    };
+
+    return this.create({
+      title: params.title,
+      message: params.message,
+      userId: params.userId ?? null,
+      countryId: params.countryId ?? null,
+      category: 'system',
+      type: 'alert',
+      priority: priorityMap[params.severity],
+      severity: params.severity,
+      deliveryMethod: deliveryMap[params.severity],
+      source: 'admin',
+      actionable: true,
+      metadata: {
+        adminId: params.adminId,
+        adminName: params.adminName,
+      },
+    });
+  }
 }
 
 // Export singleton instance

@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { usePageTitle } from "~/hooks/usePageTitle";
 import { EnhancedCommandCenter } from "../_components/EnhancedCommandCenter";
 import { DashboardErrorBoundary } from "~/components/shared/feedback/DashboardErrorBoundary";
 
 export default function DashboardPage() {
-  useEffect(() => {
-    document.title = "Dashboard - IxStats";
-  }, []);
+  usePageTitle({ title: "Dashboard" });
 
   // Enhanced home page with social activity feed and platform-wide engagement
   // Combines the best of the original CommandCenter with new social features

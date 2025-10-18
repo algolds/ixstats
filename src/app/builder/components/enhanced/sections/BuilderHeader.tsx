@@ -11,6 +11,7 @@ import { useBuilderContext } from '../context/BuilderStateContext';
 interface BuilderHeaderProps {
   onBackToIntro?: () => void;
   onClearDraft?: () => void;
+  mode?: 'create' | 'edit';
 }
 
 /**
@@ -18,14 +19,15 @@ interface BuilderHeaderProps {
  *
  * Displays:
  * - MyCountry logo
- * - Version badge
+ * - Mode badge (Builder/Editor)
  * - Auto-save indicator
  * - Clear draft button
  * - Advanced mode toggle
  * - Back button
  */
-export function BuilderHeader({ onBackToIntro, onClearDraft }: BuilderHeaderProps) {
+export function BuilderHeader({ onBackToIntro, onClearDraft, mode = 'create' }: BuilderHeaderProps) {
   const { builderState, setBuilderState, lastSaved, isAutoSaving } = useBuilderContext();
+  const isEditMode = mode === 'edit';
 
   return (
     <motion.div
@@ -37,11 +39,11 @@ export function BuilderHeader({ onBackToIntro, onClearDraft }: BuilderHeaderProp
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <motion.div className="flex items-center gap-3" whileHover={{ scale: 1.02 }}>
-              <MyCountryLogo size="lg" animated />
+              <MyCountryLogo size="lg" animated mode={mode} />
             </motion.div>
             <Badge variant="outline" className="hidden md:flex items-center gap-1 border-amber-500/20">
               <Zap className="h-3 w-3 text-amber-500" />
-              Builder v1.1
+              {isEditMode ? 'Editor' : 'Builder'} v1.1
             </Badge>
           </div>
           <div className="flex items-center gap-3">

@@ -1,8 +1,12 @@
 // src/server/api/routers/economics.ts
 // FIXED: Core economic data management router matching Prisma schema exactly
+// SECURITY: All mutation endpoints validate country ownership
 
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { notificationAPI } from "~/lib/notification-api";
+import { notificationHooks } from "~/lib/notification-hooks";
 
 const economicsRouter = createTRPCRouter({
   // ==================== ECONOMIC PROFILE ====================
@@ -36,21 +40,45 @@ const economicsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, ...data } = input;
 
-      // Verify user owns this country
-      if (ctx.auth?.userId) {
-        const userProfile = await ctx.db.user.findUnique({
-          where: { clerkUserId: ctx.auth.userId }
+      // SECURITY: Verify user owns this country
+      if (ctx.user?.countryId !== countryId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Cannot access other countries\' economic data'
         });
-        if (!userProfile || userProfile.countryId !== countryId) {
-          throw new Error('You do not have permission to edit this country.');
-        }
       }
 
-      return await ctx.db.economicProfile.upsert({
+      // Get previous values for comparison
+      const previous = await ctx.db.economicProfile.findUnique({
+        where: { countryId }
+      });
+
+      const result = await ctx.db.economicProfile.upsert({
         where: { countryId },
         update: data,
         create: { countryId, ...data }
       });
+
+      // Notify about economic vitality changes
+      try {
+        if (previous && data.economicComplexity !== undefined && previous.economicComplexity !== null) {
+          const change = Math.abs(data.economicComplexity - previous.economicComplexity);
+          if (change > 10) {
+            await notificationHooks.onVitalityScoreChange({
+              countryId,
+              userId: ctx.user?.id,
+              dimension: 'economic',
+              currentScore: data.economicComplexity,
+              previousScore: previous.economicComplexity,
+              threshold: 10,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('[Economics] Failed to send notification:', error);
+      }
+
+      return result;
     }),
 
   // ==================== LABOR MARKET ====================
@@ -81,14 +109,12 @@ const economicsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, ...data } = input;
 
-      // Verify user owns this country
-      if (ctx.auth?.userId) {
-        const userProfile = await ctx.db.user.findUnique({
-          where: { clerkUserId: ctx.auth.userId }
+      // SECURITY: Verify user owns this country
+      if (ctx.user?.countryId !== countryId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Cannot access other countries\' economic data'
         });
-        if (!userProfile || userProfile.countryId !== countryId) {
-          throw new Error('You do not have permission to edit this country.');
-        }
       }
 
       return await ctx.db.laborMarket.upsert({
@@ -131,14 +157,12 @@ const economicsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, ...data } = input;
 
-      // Verify user owns this country
-      if (ctx.auth?.userId) {
-        const userProfile = await ctx.db.user.findUnique({
-          where: { clerkUserId: ctx.auth.userId }
+      // SECURITY: Verify user owns this country
+      if (ctx.user?.countryId !== countryId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Cannot access other countries\' economic data'
         });
-        if (!userProfile || userProfile.countryId !== countryId) {
-          throw new Error('You do not have permission to edit this country.');
-        }
       }
 
       return await ctx.db.fiscalSystem.upsert({
@@ -175,14 +199,12 @@ const economicsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, ...data } = input;
 
-      // Verify user owns this country
-      if (ctx.auth?.userId) {
-        const userProfile = await ctx.db.user.findUnique({
-          where: { clerkUserId: ctx.auth.userId }
+      // SECURITY: Verify user owns this country
+      if (ctx.user?.countryId !== countryId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Cannot access other countries\' economic data'
         });
-        if (!userProfile || userProfile.countryId !== countryId) {
-          throw new Error('You do not have permission to edit this country.');
-        }
       }
 
       return await ctx.db.incomeDistribution.upsert({
@@ -277,13 +299,12 @@ const economicsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, configuration } = input;
 
-      // Verify user owns this country
-      const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId! }
-      });
-
-      if (!userProfile || userProfile.countryId !== countryId) {
-        throw new Error('You do not have permission to edit this country.');
+      // SECURITY: Verify user owns this country
+      if (ctx.user?.countryId !== countryId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Cannot access other countries\' economic data'
+        });
       }
 
       // Start transaction to update multiple tables
@@ -463,14 +484,12 @@ const economicsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, ...data } = input;
 
-      // Verify user owns this country
-      if (ctx.auth?.userId) {
-        const userProfile = await ctx.db.user.findUnique({
-          where: { clerkUserId: ctx.auth.userId }
+      // SECURITY: Verify user owns this country
+      if (ctx.user?.countryId !== countryId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Cannot access other countries\' economic data'
         });
-        if (!userProfile || userProfile.countryId !== countryId) {
-          throw new Error('You do not have permission to edit this country.');
-        }
       }
 
       return await ctx.db.governmentBudget.upsert({
@@ -511,14 +530,12 @@ const economicsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, ...data } = input;
 
-      // Verify user owns this country
-      if (ctx.auth?.userId) {
-        const userProfile = await ctx.db.user.findUnique({
-          where: { clerkUserId: ctx.auth.userId }
+      // SECURITY: Verify user owns this country
+      if (ctx.user?.countryId !== countryId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Cannot access other countries\' economic data'
         });
-        if (!userProfile || userProfile.countryId !== countryId) {
-          throw new Error('You do not have permission to edit this country.');
-        }
       }
 
       return await ctx.db.demographics.upsert({
@@ -603,14 +620,25 @@ const economicsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, economyBuilder } = input;
 
-      // Verify user owns this country
-      const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId! }
-      });
-
-      if (!userProfile || userProfile.countryId !== countryId) {
-        throw new Error('You do not have permission to edit this country.');
+      // SECURITY: Verify user owns this country
+      if (ctx.user?.countryId !== countryId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Cannot access other countries\' economic data'
+        });
       }
+
+      // Get previous values for notifications
+      const previousCountry = await ctx.db.country.findUnique({
+        where: { id: countryId },
+        select: {
+          currentTotalGdp: true,
+          currentGdpPerCapita: true,
+          actualGdpGrowth: true,
+          economicTier: true,
+          populationTier: true,
+        }
+      });
 
       // Start transaction to update multiple tables atomically
       const result = await ctx.db.$transaction(async (tx) => {
@@ -750,6 +778,83 @@ const economicsRouter = createTRPCRouter({
         return { economicProfile, laborMarket, demographics, country };
       });
 
+      // Send notifications for significant changes (non-blocking)
+      const newGdpPerCapita = economyBuilder.structure.totalGDP / economyBuilder.demographics.totalPopulation;
+      const newTotalGdp = economyBuilder.structure.totalGDP;
+      const newEconomicTier = economyBuilder.structure.economicTier;
+
+      try {
+        // GDP per capita change notification
+        if (previousCountry && previousCountry.currentGdpPerCapita) {
+          const gdpPerCapitaChange = ((newGdpPerCapita - previousCountry.currentGdpPerCapita) / previousCountry.currentGdpPerCapita) * 100;
+
+          if (Math.abs(gdpPerCapitaChange) > 5) {
+            await notificationHooks.onEconomicCalculation({
+              countryId,
+              userId: ctx.user?.id,
+              calculationType: 'gdp',
+              metric: 'GDP per Capita',
+              currentValue: newGdpPerCapita,
+              previousValue: previousCountry.currentGdpPerCapita,
+              changePercent: gdpPerCapitaChange,
+            });
+          }
+        }
+
+        // Total GDP milestone notification
+        if (previousCountry && previousCountry.currentTotalGdp) {
+          const totalGdpChange = ((newTotalGdp - previousCountry.currentTotalGdp) / previousCountry.currentTotalGdp) * 100;
+
+          if (Math.abs(totalGdpChange) > 5) {
+            await notificationHooks.onEconomicCalculation({
+              countryId,
+              userId: ctx.user?.id,
+              calculationType: 'gdp',
+              metric: 'Total GDP',
+              currentValue: newTotalGdp,
+              previousValue: previousCountry.currentTotalGdp,
+              changePercent: totalGdpChange,
+            });
+          }
+        }
+
+        // Economic tier transition notification
+        if (previousCountry && previousCountry.economicTier && previousCountry.economicTier !== newEconomicTier) {
+          await notificationHooks.onTierTransition({
+            countryId,
+            userId: ctx.user?.id,
+            tierType: 'economic',
+            fromTier: previousCountry.economicTier,
+            toTier: newEconomicTier,
+            metric: 'GDP per Capita',
+            currentValue: newGdpPerCapita,
+          });
+        }
+
+        // Recession detection (negative growth for 2+ consecutive periods)
+        const currentGrowth = economyBuilder.sectors.reduce((sum, s) => sum + (s.growthRate * s.gdpContribution / 100), 0);
+        if (previousCountry && previousCountry.actualGdpGrowth < 0 && currentGrowth < 0) {
+          await notificationAPI.create({
+            title: '⚠️ Recession Alert',
+            message: `Your economy has experienced negative growth for consecutive periods (${currentGrowth.toFixed(2)}%)`,
+            userId: ctx.user?.id || null,
+            countryId,
+            category: 'economic',
+            type: 'warning',
+            priority: 'critical',
+            severity: 'urgent',
+            href: '/mycountry/new?tab=economy',
+            actionable: true,
+            metadata: {
+              currentGrowth,
+              previousGrowth: previousCountry.actualGdpGrowth,
+            },
+          });
+        }
+      } catch (error) {
+        console.error('[Economics] Failed to send notifications:', error);
+      }
+
       return {
         success: true,
         countryId,
@@ -856,18 +961,23 @@ const economicsRouter = createTRPCRouter({
   autoSaveEconomyBuilder: protectedProcedure
     .input(z.object({
       countryId: z.string(),
-      changes: z.record(z.string(), z.any()) // Flexible changes object
+      changes: z.record(z.string(), z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.null(),
+        z.date(),
+      ])) // Economic field changes
     }))
     .mutation(async ({ ctx, input }) => {
       const { countryId, changes } = input;
 
-      // Verify user owns this country
-      const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId! }
-      });
-
-      if (!userProfile || userProfile.countryId !== countryId) {
-        throw new Error('You do not have permission to edit this country.');
+      // SECURITY: Verify user owns this country
+      if (ctx.user?.countryId !== countryId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Cannot access other countries\' economic data'
+        });
       }
 
       // Update country with changes
@@ -896,13 +1006,12 @@ const economicsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, governmentComponents } = input;
 
-      // Verify user owns this country
-      const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId! }
-      });
-
-      if (!userProfile || userProfile.countryId !== countryId) {
-        throw new Error('You do not have permission to edit this country.');
+      // SECURITY: Verify user owns this country
+      if (ctx.user?.countryId !== countryId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Cannot access other countries\' economic data'
+        });
       }
 
       // Update country with government components
@@ -925,18 +1034,22 @@ const economicsRouter = createTRPCRouter({
   syncEconomyWithTax: protectedProcedure
     .input(z.object({
       countryId: z.string(),
-      taxData: z.record(z.string(), z.any())
+      taxData: z.record(z.string(), z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.null(),
+      ]))
     }))
     .mutation(async ({ ctx, input }) => {
       const { countryId, taxData } = input;
 
-      // Verify user owns this country
-      const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId! }
-      });
-
-      if (!userProfile || userProfile.countryId !== countryId) {
-        throw new Error('You do not have permission to edit this country.');
+      // SECURITY: Verify user owns this country
+      if (ctx.user?.countryId !== countryId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Cannot access other countries\' economic data'
+        });
       }
 
       // Update fiscal system with tax data

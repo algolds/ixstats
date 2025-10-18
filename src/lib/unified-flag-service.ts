@@ -208,6 +208,27 @@ class UnifiedFlagService {
   }
 
   /**
+   * Cache a database flag URL for a country
+   * Use this to cache flags that are stored in the database
+   */
+  cacheDatabaseFlag(countryName: string, flagUrl: string): void {
+    if (!countryName || !flagUrl) return;
+
+    const cacheKey = countryName.toLowerCase();
+
+    // Cache in memory with database source
+    this.memoryCache[cacheKey] = {
+      url: flagUrl,
+      source: { name: 'Database', baseUrl: '', priority: 0 },
+      cachedAt: Date.now(),
+      lastAccessed: Date.now(),
+    };
+
+    // Save to localStorage (debounced)
+    this.saveLocalMetadata();
+  }
+
+  /**
    * Get local flag URL if file exists
    */
   getLocalFlagUrl(countryName: string): string | null {

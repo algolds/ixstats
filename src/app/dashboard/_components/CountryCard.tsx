@@ -154,7 +154,7 @@ export function CountryCard({
         </div>
       )}
 
-      <Link href={createUrl(`/countries/${country.id}`)} className="flex flex-col h-full">
+      <Link href={createUrl(`/nation/${country.slug || country.id}`)} className="flex flex-col h-full">
         <CardHeader className="pb-4">
           <div className="flex justify-between items-start">
             <div className="flex items-center space-x-3 min-w-0">

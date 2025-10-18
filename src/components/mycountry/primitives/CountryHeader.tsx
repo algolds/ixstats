@@ -60,7 +60,7 @@ export function CountryHeader({
       </div>
       
       <div className="flex items-center gap-3">
-        <Link href={createUrl(`/countries/${countryId}`)}>
+        <Link href={createUrl(`/nation/${countryId}`)}>
           <Button variant="outline" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Public View

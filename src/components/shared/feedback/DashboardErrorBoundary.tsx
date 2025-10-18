@@ -7,7 +7,6 @@ import { Button } from '~/components/ui/button';
 import { Alert, AlertDescription } from '~/components/ui/alert';
 import { createUrl } from "~/lib/url-utils";
 import { logger, LogCategory } from '~/lib/logger';
-import { discordWebhook } from '~/lib/discord-webhook';
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -135,10 +134,8 @@ export class DashboardErrorBoundary extends React.Component<
         },
       });
 
-      // Also send directly to Discord webhook for immediate visibility
-      discordWebhook.sendError(error, `React Error Boundary - Error Count: ${this.state.errorCount}`).catch(err => {
-        console.error('[Error Boundary] Failed to send Discord alert:', err);
-      });
+      // Discord webhook notification is handled by logger.critical() above
+      // No need to call discordWebhook directly from client component
     } catch (loggingError) {
       // Fallback if logging fails - don't let logging errors crash the error handler
       console.error('[Error Boundary] Failed to log error to monitoring:', loggingError);

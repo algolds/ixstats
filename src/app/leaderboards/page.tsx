@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { usePageTitle } from "~/hooks/usePageTitle";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -26,9 +27,7 @@ import { createUrl } from "~/lib/url-utils";
 
 
 export default function LeaderboardsPage() {
-  useEffect(() => {
-    document.title = "Leaderboards - IxStats";
-  }, []);
+  usePageTitle({ title: "Leaderboards" });
 
   const { user } = useUser();
   const [selectedMetric, setSelectedMetric] = useState<string>("gdp");
@@ -208,7 +207,7 @@ export default function LeaderboardsPage() {
                 return (
                   <Link
                     key={entry.id}
-                    href={createUrl(`/countries/${entry.id}`)}
+                    href={createUrl(`/nation/${entry.slug || entry.id}`)}
                   >
                     <div
                       className={cn(

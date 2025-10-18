@@ -56,7 +56,18 @@ const CreatePostSchema = z.object({
   visualizations: z.array(z.object({
     type: z.enum(['economic_chart', 'diplomatic_map', 'trade_flow', 'gdp_growth']),
     title: z.string(),
-    config: z.any(),
+    config: z.object({
+      chartType: z.string().optional(),
+      dataSource: z.string().optional(),
+      timeRange: z.object({
+        start: z.string().optional(),
+        end: z.string().optional(),
+      }).optional(),
+      metrics: z.array(z.string()).optional(),
+      countries: z.array(z.string()).optional(),
+      colors: z.array(z.string()).optional(),
+      displayOptions: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
+    }).passthrough(), // Allow additional custom properties
   })).optional(), // Data visualizations embedded in post
 });
 
@@ -1309,6 +1320,9 @@ export const thinkpagesRouter = createTRPCRouter({
         });
       }
 
+      // Generate display name (User model doesn't have firstName/lastName - uses Clerk)
+      const userDisplayName = `User ${input.userId.slice(0, 8)}`;
+
       // Check if user is already a member
       const existingMember = await db.thinktankMember.findUnique({
         where: {
@@ -1348,6 +1362,33 @@ export const thinkpagesRouter = createTRPCRouter({
         where: { id: input.groupId },
         data: { memberCount: { increment: 1 } }
       });
+
+      // Notify group admins about new member
+      try {
+        const admins = await db.thinktankMember.findMany({
+          where: {
+            groupId: input.groupId,
+            role: { in: ['admin', 'owner'] },
+            isActive: true,
+            userId: { not: input.userId }
+          },
+          select: { userId: true }
+        });
+
+        if (admins.length > 0) {
+          await notificationHooks.onThinktankActivity({
+            activityType: 'member_joined',
+            groupId: input.groupId,
+            groupName: group.name,
+            groupType: group.type as 'public' | 'private' | 'invite_only',
+            actorUserId: input.userId,
+            actorUserName: userDisplayName,
+            targetUserIds: admins.map(a => a.userId),
+          });
+        }
+      } catch (e) {
+        console.warn('[ThinkTanks] Failed to send join notifications:', e);
+      }
 
       return { success: true, message: 'Successfully joined group' };
     }),
@@ -1402,10 +1443,43 @@ export const thinkpagesRouter = createTRPCRouter({
       });
 
       // Update member count
-      await db.thinktankGroup.update({
+      const updatedGroup = await db.thinktankGroup.update({
         where: { id: input.groupId },
-        data: { memberCount: { decrement: 1 } }
+        data: { memberCount: { decrement: 1 } },
+        select: { name: true, type: true }
       });
+
+      // Notify group admins about member leaving
+      try {
+        const admins = await db.thinktankMember.findMany({
+          where: {
+            groupId: input.groupId,
+            role: { in: ['admin', 'owner'] },
+            isActive: true,
+            userId: { not: input.userId }
+          },
+          select: { userId: true }
+        });
+
+        const leavingUser = await db.user.findUnique({
+          where: { clerkUserId: input.userId }
+        });
+
+        if (admins.length > 0 && leavingUser) {
+          const leavingUserDisplayName = `User ${input.userId.slice(0, 8)}`;
+          await notificationHooks.onThinktankActivity({
+            activityType: 'member_left',
+            groupId: input.groupId,
+            groupName: updatedGroup.name,
+            groupType: updatedGroup.type as 'public' | 'private' | 'invite_only',
+            actorUserId: input.userId,
+            actorUserName: leavingUserDisplayName,
+            targetUserIds: admins.map(a => a.userId),
+          });
+        }
+      } catch (e) {
+        console.warn('[ThinkTanks] Failed to send leave notifications:', e);
+      }
 
       return { success: true, message: 'Successfully left group' };
     }),
@@ -1506,6 +1580,17 @@ export const thinkpagesRouter = createTRPCRouter({
         });
       }
 
+      // Get group details for notifications
+      const group = await db.thinktankGroup.findUnique({
+        where: { id: input.groupId },
+        include: {
+          members: {
+            where: { isActive: true, userId: { not: input.userId } },
+            select: { userId: true }
+          }
+        }
+      });
+
       // Create the message
       const message = await db.thinktankMessage.create({
         data: {
@@ -1522,6 +1607,33 @@ export const thinkpagesRouter = createTRPCRouter({
           replyTo: true
         }
       });
+
+      // Notify all active members (excluding sender)
+      if (group && group.members.length > 0) {
+        try {
+          const sender = await db.user.findUnique({
+            where: { clerkUserId: input.userId }
+          });
+
+          if (sender) {
+            const senderDisplayName = `User ${input.userId.slice(0, 8)}`;
+            const contentPreview = input.content.replace(/<[^>]*>/g, '').slice(0, 100);
+            await notificationHooks.onThinktankActivity({
+              activityType: 'new_message',
+              groupId: input.groupId,
+              groupName: group.name,
+              groupType: group.type as 'public' | 'private' | 'invite_only',
+              actorUserId: input.userId,
+              actorUserName: senderDisplayName,
+              targetUserIds: group.members.map(m => m.userId),
+              contentTitle: contentPreview,
+              contentId: message.id,
+            });
+          }
+        } catch (e) {
+          console.warn('[ThinkTanks] Failed to send message notifications:', e);
+        }
+      }
 
       return message;
     }),
@@ -1548,6 +1660,37 @@ export const thinkpagesRouter = createTRPCRouter({
           tags: updateData.tags ? JSON.stringify(updateData.tags) : undefined,
         },
       });
+
+      // Notify all members about settings change
+      try {
+        const members = await db.thinktankMember.findMany({
+          where: {
+            groupId: groupId,
+            isActive: true,
+            userId: { not: ctx.user?.clerkUserId }
+          },
+          select: { userId: true }
+        });
+
+        const actor = await db.user.findUnique({
+          where: { clerkUserId: ctx.user?.clerkUserId }
+        });
+
+        if (members.length > 0 && actor) {
+          const actorDisplayName = ctx.user?.clerkUserId ? `User ${ctx.user.clerkUserId.slice(0, 8)}` : 'System';
+          await notificationHooks.onThinktankActivity({
+            activityType: 'settings_changed',
+            groupId: groupId,
+            groupName: group.name,
+            groupType: group.type as 'public' | 'private' | 'invite_only',
+            actorUserId: ctx.user?.clerkUserId || 'system',
+            actorUserName: actorDisplayName,
+            targetUserIds: members.map(m => m.userId),
+          });
+        }
+      } catch (e) {
+        console.warn('[ThinkTanks] Failed to send settings change notifications:', e);
+      }
 
       return group;
     }),
@@ -1580,6 +1723,29 @@ export const thinkpagesRouter = createTRPCRouter({
         },
         data: { role: input.role },
       });
+
+      // Notify the user about their role change
+      try {
+        const group = await db.thinktankGroup.findUnique({
+          where: { id: input.groupId },
+          select: { name: true, type: true }
+        });
+
+        if (group) {
+          await notificationHooks.onThinktankActivity({
+            activityType: 'role_changed',
+            groupId: input.groupId,
+            groupName: group.name,
+            groupType: group.type as 'public' | 'private' | 'invite_only',
+            actorUserId: ctx.user?.clerkUserId || 'system',
+            targetUserId: input.userId,
+            metadata: { newRole: input.role }
+          });
+        }
+      } catch (e) {
+        console.warn('[ThinkTanks] Failed to send role change notification:', e);
+      }
+
       return { success: true };
     }),
 
@@ -1590,6 +1756,13 @@ export const thinkpagesRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
+
+      // Get group info before deletion for notification
+      const group = await db.thinktankGroup.findUnique({
+        where: { id: input.groupId },
+        select: { name: true, type: true }
+      });
+
       await db.thinktankMember.delete({
         where: {
           groupId_userId: {
@@ -1598,11 +1771,38 @@ export const thinkpagesRouter = createTRPCRouter({
           },
         },
       });
+
       // Decrement member count
       await db.thinktankGroup.update({
         where: { id: input.groupId },
         data: { memberCount: { decrement: 1 } },
       });
+
+      // Notify the removed user
+      if (group) {
+        try {
+          await notificationAPI.create({
+            title: `Removed from ${group.name}`,
+            message: 'You have been removed from this ThinkTank group',
+            userId: input.userId,
+            category: 'social',
+            type: 'warning',
+            priority: 'medium',
+            href: '/thinkpages/thinktanks',
+            source: 'thinktank',
+            actionable: false,
+            metadata: {
+              groupId: input.groupId,
+              groupName: group.name,
+              groupType: group.type,
+              activityType: 'member_removed'
+            }
+          });
+        } catch (e) {
+          console.warn('[ThinkTanks] Failed to send removal notification:', e);
+        }
+      }
+
       return { success: true };
     }),
 
@@ -1616,6 +1816,17 @@ export const thinkpagesRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
+      // Get group details for notifications
+      const group = await db.thinktankGroup.findUnique({
+        where: { id: input.groupId },
+        select: { name: true, type: true }
+      });
+
+      // Get inviter details for notification
+      const inviter = await db.user.findUnique({
+        where: { clerkUserId: input.invitedBy }
+      });
+
       const invites = await db.thinktankInvite.createMany({
         data: input.userIds.map(userId => ({
           groupId: input.groupId,
@@ -1623,6 +1834,20 @@ export const thinkpagesRouter = createTRPCRouter({
           invitedBy: input.invitedBy,
         })),
       });
+
+      // Send notifications to all invited users
+      if (group && inviter) {
+        const inviterName = `User ${input.invitedBy.slice(0, 8)}`;
+        await notificationHooks.onThinktankActivity({
+          activityType: 'group_invite',
+          groupId: input.groupId,
+          groupName: group.name,
+          groupType: group.type as 'public' | 'private' | 'invite_only',
+          actorUserId: input.invitedBy,
+          actorUserName: inviterName,
+          targetUserIds: input.userIds,
+        }).catch((e) => console.warn('[ThinkTanks] Failed to send invite notifications:', e));
+      }
 
       return invites;
     }),
@@ -1699,6 +1924,40 @@ export const thinkpagesRouter = createTRPCRouter({
         },
       });
 
+      // Notify all group members about new document
+      try {
+        const group = await db.thinktankGroup.findUnique({
+          where: { id: input.groupId },
+          include: {
+            members: {
+              where: { isActive: true, userId: { not: input.createdBy } },
+              select: { userId: true }
+            }
+          }
+        });
+
+        const creator = await db.user.findUnique({
+          where: { clerkUserId: input.createdBy }
+        });
+
+        if (group && group.members.length > 0 && creator) {
+          const creatorDisplayName = `User ${input.createdBy.slice(0, 8)}`;
+          await notificationHooks.onThinktankActivity({
+            activityType: 'document_created',
+            groupId: input.groupId,
+            groupName: group.name,
+            groupType: group.type as 'public' | 'private' | 'invite_only',
+            actorUserId: input.createdBy,
+            actorUserName: creatorDisplayName,
+            targetUserIds: group.members.map(m => m.userId),
+            contentTitle: input.title,
+            contentId: document.id,
+          });
+        }
+      } catch (e) {
+        console.warn('[ThinkTanks] Failed to send document creation notifications:', e);
+      }
+
       return document;
     }),
 
@@ -1755,6 +2014,40 @@ export const thinkpagesRouter = createTRPCRouter({
         where: { id: input.documentId },
         data: updateData
       });
+
+      // Notify all group members about document update
+      try {
+        const group = await db.thinktankGroup.findUnique({
+          where: { id: document.groupId },
+          include: {
+            members: {
+              where: { isActive: true, userId: { not: input.userId } },
+              select: { userId: true }
+            }
+          }
+        });
+
+        const editor = await db.user.findUnique({
+          where: { clerkUserId: input.userId }
+        });
+
+        if (group && group.members.length > 0 && editor) {
+          const editorDisplayName = `User ${input.userId.slice(0, 8)}`;
+          await notificationHooks.onThinktankActivity({
+            activityType: 'document_updated',
+            groupId: document.groupId,
+            groupName: group.name,
+            groupType: group.type as 'public' | 'private' | 'invite_only',
+            actorUserId: input.userId,
+            actorUserName: editorDisplayName,
+            targetUserIds: group.members.map(m => m.userId),
+            contentTitle: updatedDocument.title,
+            contentId: updatedDocument.id,
+          });
+        }
+      } catch (e) {
+        console.warn('[ThinkTanks] Failed to send document update notifications:', e);
+      }
 
       return updatedDocument;
     }),
@@ -2039,6 +2332,39 @@ export const thinkpagesRouter = createTRPCRouter({
           }
         }
       });
+
+      // Notify other participant(s) about new conversation
+      if (uniqueParticipantIds.length === 2) {
+        try {
+          const initiatorId = uniqueParticipantIds[0];
+          const otherUserId = uniqueParticipantIds[1];
+
+          const initiator = await db.user.findUnique({
+            where: { clerkUserId: initiatorId }
+          });
+
+          if (initiator) {
+            const initiatorDisplayName = `User ${initiatorId.slice(0, 8)}`;
+            await notificationAPI.create({
+              title: 'New conversation started',
+              message: `${initiatorDisplayName} started a conversation with you`,
+              userId: otherUserId,
+              category: 'social',
+              type: 'update',
+              priority: 'low',
+              href: `/thinkpages/thinkshare?conversation=${conversation.id}`,
+              source: 'thinkshare',
+              actionable: true,
+              metadata: {
+                conversationId: conversation.id,
+                fromUserId: initiatorId
+              }
+            }).catch(() => {});
+          }
+        } catch (e) {
+          console.warn('[ThinkShare] Failed to send conversation start notification:', e);
+        }
+      }
 
       return conversation;
     }),

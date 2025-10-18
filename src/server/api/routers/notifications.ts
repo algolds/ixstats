@@ -1,7 +1,14 @@
 // src/server/api/routers/notifications.ts
+// UPDATED: Added rate limiting to all mutation endpoints (v1.1.1)
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  adminProcedure,
+  lightMutationProcedure,
+  readOnlyProcedure
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { observable } from '@trpc/server/observable';
 import { EventEmitter } from 'events';
@@ -93,7 +100,8 @@ export const notificationsRouter = createTRPCRouter({
     }),
 
   // Mark notification as read
-  markAsRead: publicProcedure
+  // RATE LIMITED: Light mutation (100 req/min) - simple toggle operation
+  markAsRead: lightMutationProcedure
     .input(z.object({
       notificationId: z.string(),
       userId: z.string().optional(),
@@ -148,7 +156,8 @@ export const notificationsRouter = createTRPCRouter({
     }),
 
   // Dismiss notification (hides it from view)
-  dismissNotification: publicProcedure
+  // RATE LIMITED: Light mutation (100 req/min) - simple toggle operation
+  dismissNotification: lightMutationProcedure
     .input(z.object({
       notificationId: z.string(),
       userId: z.string().optional(),
@@ -203,7 +212,8 @@ export const notificationsRouter = createTRPCRouter({
     }),
 
   // Mark all notifications as read
-  markAllAsRead: publicProcedure
+  // RATE LIMITED: Light mutation (100 req/min) - batch operation but lightweight
+  markAllAsRead: lightMutationProcedure
     .input(z.object({
       userId: z.string(),
     }))
@@ -327,7 +337,8 @@ export const notificationsRouter = createTRPCRouter({
     }),
 
   // Update notification preferences
-  updateUserPreferences: publicProcedure
+  // RATE LIMITED: Light mutation (100 req/min) - simple preference updates
+  updateUserPreferences: lightMutationProcedure
     .input(z.object({
       userId: z.string(),
       emailNotifications: z.boolean().optional(),
@@ -486,7 +497,8 @@ export const notificationsRouter = createTRPCRouter({
     }),
 
   // Get unread count (for badge display)
-  getUnreadCount: publicProcedure
+  // RATE LIMITED: Read-only (120 req/min) - frequently called for UI updates
+  getUnreadCount: readOnlyProcedure
     .input(z.object({
       userId: z.string().optional(),
     }).optional())

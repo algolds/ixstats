@@ -94,7 +94,7 @@ export function UserProfileMenu({ user, userProfile, setupStatus, userCountryFla
           <div className="py-1">
             {setupStatus === 'complete' && userProfile?.country && (
               <Link
-                href={`/countries/${userProfile.country.id}`}
+                href={`/nation/${userProfile.country.slug || userProfile.country.id}`}
                 className="flex items-center gap-3 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-colors"
               >
                 <Crown className="h-4 w-4" />

@@ -93,12 +93,6 @@ export function EconomicPolicyModal({
     expectedBenefit: ""
   });
 
-  // Get existing policies for context
-  const { data: policies, isLoading: policiesLoading, refetch } = api.eci.getEconomicPolicies.useQuery(
-    { userId: user?.id || 'placeholder-disabled' },
-    { enabled: !!user?.id && open }
-  );
-
   // Get country data for impact calculations
   const { data: userProfile } = api.users.getProfile.useQuery(
     undefined,
@@ -110,8 +104,14 @@ export function EconomicPolicyModal({
     { enabled: !!userProfile?.countryId }
   );
 
+  // Get existing policies for context
+  const { data: policies, isLoading: policiesLoading, refetch } = api.unifiedIntelligence.getEconomicPolicies.useQuery(
+    { countryId: userProfile?.countryId || '' },
+    { enabled: !!userProfile?.countryId && open }
+  );
+
   // Create policy mutation
-  const createPolicy = api.eci.createEconomicPolicy.useMutation({
+  const createPolicy = api.unifiedIntelligence.createEconomicPolicy.useMutation({
     onSuccess: () => {
       toast.success("Economic policy created successfully!");
       setOpen(false);
@@ -150,7 +150,7 @@ export function EconomicPolicyModal({
     }
 
     createPolicy.mutate({
-      userId: user?.id || 'placeholder-disabled',
+      countryId: userProfile?.countryId || '',
       title: formData.title,
       description: formData.description,
       category: formData.category as PolicyCategory,

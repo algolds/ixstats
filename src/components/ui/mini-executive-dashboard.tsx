@@ -77,7 +77,7 @@ export const MiniExecutiveDashboard: React.FC<MiniExecutiveDashboardProps> = ({
       title: "Economic Analysis", 
       description: "Detailed economic metrics",
       icon: <BarChart3 className="h-5 w-5" />,
-      href: createUrl(`/countries/${countryData.id}`),
+      href: createUrl(`/nation/${countryData.slug || countryData.id}`),
       color: "text-green-500",
       bg: "bg-green-500/10"
     },

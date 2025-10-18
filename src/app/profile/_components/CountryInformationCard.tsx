@@ -57,7 +57,7 @@ export function CountryInformationCard({
           </h2>
         </div>
         <Link
-          href={createUrl(`/countries/${country.id}`)}
+          href={createUrl(`/nation/${country.slug || country.id}`)}
           className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-sm font-medium"
         >
           View Details →

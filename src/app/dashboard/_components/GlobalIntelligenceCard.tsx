@@ -48,13 +48,13 @@ export function GlobalIntelligenceCard({
   isGlobalCardSlid,
   className
 }: GlobalIntelligenceCardProps) {
-  // Wire to live data via tRPC
-  const { data: activeCrises, isLoading: crisesLoading } = api.sdi.getActiveCrises.useQuery();
-  const { data: intelligenceFeed, isLoading: intelLoading } = api.sdi.getIntelligenceFeed.useQuery({
+  // Wire to live data via tRPC (migrated from deprecated SDI router to unified intelligence)
+  const { data: activeCrises, isLoading: crisesLoading } = api.unifiedIntelligence.getActiveCrises.useQuery();
+  const { data: intelligenceFeed, isLoading: intelLoading } = api.unifiedIntelligence.getIntelligenceFeed.useQuery({
     limit: 10,
     offset: 0
   });
-  const { data: economicIndicators, isLoading: economicLoading } = api.sdi.getEconomicIndicators.useQuery();
+  const { data: economicIndicators, isLoading: economicLoading } = api.unifiedIntelligence.getEconomicIndicators.useQuery();
 
   const isLoading = crisesLoading || intelLoading || economicLoading;
 
@@ -180,7 +180,7 @@ export function GlobalIntelligenceCard({
                       </div>
                       <div className="glass-hierarchy-child p-3 rounded text-center">
                         <div className="text-lg font-bold text-blue-400">
-                          {intelligenceFeed?.total || 0}
+                          {intelligenceFeed?.pagination?.total || 0}
                         </div>
                         <div className="text-xs text-muted-foreground">Intel Items</div>
                       </div>

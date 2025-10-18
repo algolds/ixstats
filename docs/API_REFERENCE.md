@@ -6,7 +6,7 @@
 
 ## Overview
 
-IxStats exposes **304 type-safe API endpoints** across **36 tRPC routers**. All endpoints use tRPC for end-to-end type safety between client and server.
+IxStats exposes **545 type-safe API endpoints** across **36 tRPC routers**. All endpoints use tRPC for end-to-end type safety between client and server.
 
 ### Base URL
 - **Development**: `http://localhost:3000/api/trpc`
@@ -33,41 +33,43 @@ Most endpoints require Clerk authentication. Procedures are protected with:
 
 | Router | Endpoints | Purpose | Authentication |
 |--------|-----------|---------|----------------|
-| [achievements](#achievements-router) | 15 | Achievement system | Protected |
-| [activities](#activities-router) | 8 | Live activity feed | Protected |
-| [admin](#admin-router) | 24 | System administration | Admin |
-| [archetypes](#archetypes-router) | 8 | Country archetypes | Public |
-| [atomicEconomic](#atomic-economic-router) | 10 | Atomic economic components | Protected |
+| [achievements](#achievements-router) | 4 | Achievement system | Protected |
+| [activities](#activities-router) | 10 | Live activity feed | Protected |
+| [admin](#admin-router) | 31 | System administration | Admin |
+| [archetypes](#archetypes-router) | 10 | Country archetypes | Public |
+| [atomicEconomic](#atomic-economic-router) | 6 | Atomic economic components | Protected |
 | [atomicGovernment](#atomic-government-router) | 12 | Atomic government components | Protected |
-| [atomicTax](#atomic-tax-router) | 8 | Atomic tax components | Protected |
-| [countries](#countries-router) | 32 | Country management | Mixed |
-| [customTypes](#custom-types-router) | 6 | Custom government types | Protected |
-| [diplomatic](#diplomatic-router) | 28 | Diplomatic relations | Protected |
-| [diplomaticIntelligence](#diplomatic-intelligence-router) | 16 | Diplomatic intelligence | Protected |
-| [economics](#economics-router) | 18 | Economic data | Protected |
+| [atomicTax](#atomic-tax-router) | 6 | Atomic tax components | Protected |
+| [countries](#countries-router) | 47 | Country management | Mixed |
+| [customTypes](#custom-types-router) | 5 | Custom government types | Protected |
+| [diplomatic](#diplomatic-router) | 26 | Diplomatic relations | Protected |
+| [diplomaticIntelligence](#diplomatic-intelligence-router) | 5 | Diplomatic intelligence | Protected |
+| [eci](#eci-router) | 19 | Executive Command Intelligence | Premium |
+| [economics](#economics-router) | 19 | Economic data | Protected |
 | [enhancedEconomics](#enhanced-economics-router) | 6 | Advanced economic indices | Protected |
-| [formulas](#formulas-router) | 4 | Economic formulas | Public |
+| [formulas](#formulas-router) | 6 | Economic formulas | Public |
 | [government](#government-router) | 14 | Government structures | Protected |
-| [intelligence](#intelligence-router) | 12 | Intelligence system | Protected |
-| [intelligenceBriefing](#intelligence-briefing-router) | 10 | Stored intelligence briefings | Protected |
-| [meetings](#meetings-router) | 12 | Cabinet meetings | Protected |
-| [mycountry](#mycountry-router) | 10 | MyCountry dashboard | Country Owner |
-| [notifications](#notifications-router) | 18 | Notification system | Protected |
-| [policies](#policies-router) | 8 | Policy management | Protected |
-| [quickActions](#quick-actions-router) | 14 | Quick action system | Protected |
-| [roles](#roles-router) | 8 | Role management | Admin |
-| [scheduledChanges](#scheduled-changes-router) | 6 | Delayed impact system | Protected |
-| [security](#security-router) | 22 | Defense & security | Protected |
-| [taxSystem](#tax-system-router) | 16 | Tax configuration | Protected |
-| [thinkpages](#thinkpages-router) | 54 | Social platform | Protected |
-| [unifiedAtomic](#unified-atomic-router) | 12 | Cross-builder components | Protected |
-| [unifiedIntelligence](#unified-intelligence-router) | 26 | Unified intelligence system | Protected |
-| [userLogging](#user-logging-router) | 6 | Activity logging | Protected |
-| [users](#users-router) | 10 | User management | Protected |
-| [wikiCache](#wiki-cache-router) | 8 | Wiki cache management | Admin |
+| [intelligence](#intelligence-router) | 11 | Intelligence system | Protected |
+| [intelligenceBriefing](#intelligence-briefing-router) | 3 | Stored intelligence briefings | Protected |
+| [meetings](#meetings-router) | 27 | Cabinet meetings | Protected |
+| [mycountry](#mycountry-router) | 5 | MyCountry dashboard | Country Owner |
+| [notifications](#notifications-router) | 11 | Notification system | Protected |
+| [policies](#policies-router) | 23 | Policy management | Protected |
+| [quickActions](#quick-actions-router) | 21 | Quick action system | Protected |
+| [roles](#roles-router) | 10 | Role management | Admin |
+| [scheduledChanges](#scheduled-changes-router) | 7 | Delayed impact system | Protected |
+| [sdi](#sdi-router) | 33 | Strategic Defense Intelligence | Premium |
+| [security](#security-router) | 34 | Defense & security | Protected |
+| [taxSystem](#tax-system-router) | 11 | Tax configuration | Protected |
+| [thinkpages](#thinkpages-router) | 56 | Social platform | Protected |
+| [unifiedAtomic](#unified-atomic-router) | 6 | Cross-builder components | Protected |
+| [unifiedIntelligence](#unified-intelligence-router) | 9 | Unified intelligence system | Protected |
+| [userLogging](#user-logging-router) | 10 | Activity logging | Protected |
+| [users](#users-router) | 19 | User management | Protected |
+| [wikiCache](#wiki-cache-router) | 11 | Wiki cache management | Admin |
 | [wikiImporter](#wiki-importer-router) | 5 | Wiki data import | Protected |
 
-**Total**: 304 endpoints across 36 routers (33 active + 3 system routers)
+**Total**: 545 endpoints across 36 routers (35 active + 1 alias)
 
 > **Note**: The `system` router is an alias for `admin` router and provides the same endpoints.
 
@@ -882,6 +884,380 @@ Current API version: **v1**
 
 ---
 
+## Notifications Router
+
+**Purpose**: Comprehensive notification system for real-time user updates
+**Endpoints**: 11 (7 queries, 4 mutations, 1 subscription)
+**Authentication**: Protected
+
+### Overview
+
+The notifications router provides a complete notification delivery system with:
+- User-specific and country-wide notifications
+- Priority-based delivery (critical/high/medium/low)
+- Multiple delivery methods (modal/dynamic-island/toast/command-palette)
+- Real-time subscriptions via tRPC
+- Rich metadata support
+- Actionable notifications with deep links
+
+### Queries
+
+#### getUserNotifications
+
+Get user's notifications with filtering and pagination.
+
+```typescript
+const { data } = api.notifications.getUserNotifications.useQuery({
+  limit: 20,
+  offset: 0,
+  includeRead: false,
+  category: 'economic',
+  priority: 'high'
+});
+```
+
+**Parameters:**
+- `limit` (optional, default: 20): Max notifications to return
+- `offset` (optional, default: 0): Pagination offset
+- `includeRead` (optional, default: false): Include read notifications
+- `category` (optional): Filter by category (economic, diplomatic, governance, social, security, system)
+- `priority` (optional): Filter by priority (critical, high, medium, low)
+
+**Returns:**
+```typescript
+{
+  notifications: Notification[],
+  total: number,
+  unread: number
+}
+```
+
+#### getUnreadCount
+
+Get count of unread notifications (used for badges).
+
+```typescript
+const { data } = api.notifications.getUnreadCount.useQuery();
+// Returns: { count: 5 }
+```
+
+**Returns:**
+- `count` (number): Unread notification count
+
+#### getNotificationStats
+
+Get notification statistics and breakdown.
+
+```typescript
+const { data } = api.notifications.getNotificationStats.useQuery();
+```
+
+**Returns:**
+```typescript
+{
+  total: number,
+  unread: number,
+  byCategory: Record<string, number>,
+  byPriority: Record<string, number>,
+  recent: number
+}
+```
+
+#### getCountryNotifications
+
+Get country-wide notifications (visible to all country members).
+
+```typescript
+const { data } = api.notifications.getCountryNotifications.useQuery({
+  countryId: 'country-001',
+  limit: 10
+});
+```
+
+**Parameters:**
+- `countryId` (required): Country ID
+- `limit` (optional, default: 10): Max notifications
+
+**Returns:** Array of Notification objects
+
+### Mutations
+
+#### markAsRead
+
+Mark single notification as read.
+
+```typescript
+await api.notifications.markAsRead.mutate({
+  id: 'notif-123'
+});
+```
+
+**Parameters:**
+- `id` (required): Notification ID
+
+**Returns:**
+```typescript
+{
+  success: boolean,
+  notification: Notification
+}
+```
+
+#### markAllAsRead
+
+Mark all user notifications as read.
+
+```typescript
+await api.notifications.markAllAsRead.mutate();
+```
+
+**Returns:**
+```typescript
+{
+  success: boolean,
+  count: number  // Number of notifications marked as read
+}
+```
+
+#### dismiss
+
+Dismiss (hide) a notification without marking as read.
+
+```typescript
+await api.notifications.dismiss.mutate({
+  id: 'notif-123'
+});
+```
+
+**Parameters:**
+- `id` (required): Notification ID
+
+**Returns:**
+```typescript
+{
+  success: boolean
+}
+```
+
+#### dismissAll
+
+Dismiss all user notifications.
+
+```typescript
+await api.notifications.dismissAll.mutate();
+```
+
+**Returns:**
+```typescript
+{
+  success: boolean,
+  count: number
+}
+```
+
+#### createNotification (Admin Only)
+
+Manually create a notification (admin use).
+
+```typescript
+await api.notifications.createNotification.mutate({
+  title: 'System Maintenance',
+  message: 'Platform will be down Sunday 2AM-4AM',
+  userId: 'user_123', // or null for global
+  category: 'system',
+  priority: 'high',
+  severity: 'important',
+  deliveryMethod: 'dynamic-island',
+  href: '/system-status',
+  actionable: true
+});
+```
+
+**Parameters:**
+- `title` (required): Notification title
+- `message` (optional): Detailed message
+- `userId` (optional): Target user (null for global)
+- `countryId` (optional): Target country
+- `category` (optional): economic, diplomatic, governance, social, security, system, achievement, crisis
+- `type` (optional): info, success, warning, error, alert, update
+- `priority` (optional, default: medium): critical, high, medium, low
+- `severity` (optional, default: informational): urgent, important, informational
+- `deliveryMethod` (optional): modal, dynamic-island, toast, command-palette
+- `href` (optional): Action link
+- `actionable` (optional, default: false): Can user act on it
+- `metadata` (optional): JSON metadata
+
+**Returns:**
+```typescript
+{
+  success: boolean,
+  notification: Notification
+}
+```
+
+#### updatePreferences
+
+Update user notification preferences.
+
+```typescript
+await api.notifications.updatePreferences.mutate({
+  emailNotifications: true,
+  pushNotifications: false,
+  categoryPreferences: {
+    economic: true,
+    social: false,
+    diplomatic: true
+  },
+  quietHours: {
+    enabled: true,
+    start: '22:00',
+    end: '08:00'
+  }
+});
+```
+
+**Parameters:**
+- `emailNotifications` (optional): Enable email notifications
+- `pushNotifications` (optional): Enable push notifications
+- `categoryPreferences` (optional): Category-specific settings
+- `quietHours` (optional): Quiet hours schedule
+
+**Returns:**
+```typescript
+{
+  success: boolean,
+  preferences: UserPreferences
+}
+```
+
+### Subscriptions
+
+#### onNotificationAdded
+
+Real-time notification subscription (WebSocket/SSE).
+
+```typescript
+api.notifications.onNotificationAdded.useSubscription(undefined, {
+  onData: (notification) => {
+    console.log('New notification:', notification);
+    // Update UI, play sound, etc.
+  },
+  onError: (error) => {
+    console.error('Subscription error:', error);
+  }
+});
+```
+
+**Events:**
+- Fires when new notification is created for user
+- Includes full notification object
+- Auto-reconnects on disconnect
+
+### Notification Schema
+
+```typescript
+interface Notification {
+  id: string;
+  userId: string | null;
+  countryId: string | null;
+  title: string;
+  description: string | null;
+  message: string | null;
+  read: boolean;
+  dismissed: boolean;
+  href: string | null;
+  type: 'info' | 'success' | 'warning' | 'error' | 'alert' | 'update' | null;
+  category: 'economic' | 'diplomatic' | 'governance' | 'social' | 'security' | 'system' | 'achievement' | 'crisis' | 'opportunity' | null;
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  severity: 'urgent' | 'important' | 'informational';
+  source: string | null;
+  actionable: boolean;
+  metadata: string | null; // JSON
+  relevanceScore: number | null;
+  deliveryMethod: 'toast' | 'dynamic-island' | 'modal' | 'command-palette' | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
+
+### Integration Examples
+
+#### Example 1: React Component
+
+```typescript
+'use client';
+
+import { useLiveNotifications } from '~/hooks/useLiveNotifications';
+
+export function NotificationCenter() {
+  const {
+    notifications,
+    unreadCount,
+    isLoading,
+    markAsRead,
+    markAllAsRead,
+  } = useLiveNotifications();
+
+  return (
+    <div>
+      <h2>Notifications ({unreadCount})</h2>
+      {notifications.map(notif => (
+        <div key={notif.id} onClick={() => markAsRead(notif.id)}>
+          <h3>{notif.title}</h3>
+          <p>{notif.message}</p>
+        </div>
+      ))}
+      <button onClick={markAllAsRead}>Mark All Read</button>
+    </div>
+  );
+}
+```
+
+#### Example 2: Server-Side Notification Creation
+
+```typescript
+// In your tRPC router
+import { notificationHooks } from '~/lib/notification-hooks';
+
+export const myRouter = createTRPCRouter({
+  doSomething: protectedProcedure
+    .mutation(async ({ ctx, input }) => {
+      // Your business logic
+      const result = await performAction();
+
+      // Send notification
+      try {
+        await notificationHooks.onEconomicDataChange({
+          countryId: ctx.country.id,
+          metric: 'GDP',
+          currentValue: result.newGdp,
+          previousValue: result.oldGdp,
+        });
+      } catch (error) {
+        console.error('Notification failed:', error);
+      }
+
+      return result;
+    })
+});
+```
+
+### Performance Considerations
+
+- **Polling**: Default 30-second interval
+- **Caching**: React Query with 1-minute stale time
+- **Indexing**: Optimized for userId + read + dismissed queries
+- **Batch Operations**: Use markAllAsRead for bulk actions
+- **Real-time**: EventEmitter-based (lightweight)
+
+### Related Documentation
+
+- [NOTIFICATION_SYSTEM.md](./NOTIFICATION_SYSTEM.md) - Complete system overview
+- [NOTIFICATION_HOOKS_GUIDE.md](./NOTIFICATION_HOOKS_GUIDE.md) - Developer integration guide
+- [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) - Dynamic Island UI specs
+
+---
+
 ## Support
 
 - **Documentation**: [/docs/DOCUMENTATION_INDEX.md](./DOCUMENTATION_INDEX.md)
@@ -890,5 +1266,5 @@ Current API version: **v1**
 
 ---
 
-**Last Updated**: October 17, 2025
+**Last Updated**: October 18, 2025
 **Version**: 1.1.1

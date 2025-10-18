@@ -147,9 +147,9 @@ export function PredictiveModelsModal({
 
   // Get predictive models
   const { data: predictiveModels, isLoading: modelsLoading } =
-    api.eci.getPredictiveModels.useQuery(
+    api.unifiedIntelligence.getPredictiveModels.useQuery(
       {
-        userId: countryId || 'disabled', // Using countryId as userId for now
+        countryId: countryId || 'disabled',
         timeframe: '5_years',
         scenarios: ['optimistic', 'realistic', 'pessimistic']
       },

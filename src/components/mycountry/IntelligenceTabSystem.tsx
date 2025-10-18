@@ -21,7 +21,7 @@ import { DiplomaticOperationsHub } from "~/app/mycountry/intelligence/_component
 import { AlertThresholdSettings } from "~/app/mycountry/intelligence/_components/AlertThresholdSettings";
 
 // Import hooks
-import { useUnifiedIntelligence } from '~/hooks/useUnifiedIntelligence';
+import { useUnifiedIntelligence, type IntelligenceTab } from '~/hooks/useUnifiedIntelligence';
 import { api } from '~/trpc/react';
 
 interface IntelligenceTabSystemProps {
@@ -52,6 +52,33 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
     { id: country?.id || '' },
     { enabled: !!country?.id }
   );
+
+  // Fetch real diplomatic data
+  const { data: diplomaticRelations } = api.diplomatic.getRelationships.useQuery(
+    { countryId: country?.id || '' },
+    { enabled: !!country?.id }
+  );
+
+  // Calculate diplomatic metrics from real data
+  const diplomaticMetrics = React.useMemo(() => {
+    if (!diplomaticRelations) {
+      return { treatyCount: 0, tradePartnerCount: 0, relationshipsCount: 0 };
+    }
+
+    const treatyCount = diplomaticRelations.filter(rel =>
+      rel.treaties && rel.treaties.length > 0
+    ).length;
+
+    const tradePartnerCount = diplomaticRelations.filter(rel =>
+      rel.tradeVolume > 0
+    ).length;
+
+    return {
+      treatyCount,
+      tradePartnerCount,
+      relationshipsCount: diplomaticRelations.length
+    };
+  }, [diplomaticRelations]);
 
   // Transform overview data for ExecutiveCommandCenter
   const executiveIntelligence = React.useMemo(() => {
@@ -85,7 +112,7 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
     const vitalityIntelligence = [
       {
         area: 'economic' as const,
-        score: (overview as any).vitality?.economic || 0,
+        score: overview?.vitality?.economic || 0,
         trend: 'stable' as const,
         change: { 
           value: 0, 
@@ -108,7 +135,7 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
           { 
             id: 'economic-tier',
             label: 'Economic Tier', 
-            value: (overview as any).country?.economicTier || 'N/A', 
+            value: overview?.country?.economicTier || 'N/A', 
             unit: '',
             trend: 'stable' as const,
             changeValue: 0,
@@ -121,12 +148,12 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
         recommendations: [],
         forecast: {
           shortTerm: {
-            projected: (overview as any).vitality?.economic || 0,
+            projected: overview?.vitality?.economic || 0,
             confidence: 70,
             factors: ['Current economic indicators', 'Historical trends']
           },
           longTerm: {
-            projected: (overview as any).vitality?.economic || 0,
+            projected: overview?.vitality?.economic || 0,
             confidence: 50,
             factors: ['Long-term growth patterns', 'Global economic outlook']
           }
@@ -141,7 +168,7 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
       },
       {
         area: 'population' as const,
-        score: (overview as any).vitality?.social || 0,
+        score: overview?.vitality?.social || 0,
         trend: 'stable' as const,
         change: { 
           value: 0, 
@@ -153,7 +180,7 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
           { 
             id: 'population-tier',
             label: 'Population Tier', 
-            value: (overview as any).country?.populationTier || 'N/A', 
+            value: overview?.country?.populationTier || 'N/A', 
             unit: '',
             trend: 'stable' as const,
             changeValue: 0,
@@ -164,7 +191,7 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
           { 
             id: 'wellbeing',
             label: 'Wellbeing', 
-            value: String((overview as any).country?.overallNationalHealth || 0), 
+            value: String(overview?.country?.overallNationalHealth || 0), 
             unit: '/100',
             trend: 'stable' as const,
             changeValue: 0,
@@ -177,12 +204,12 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
         recommendations: [],
         forecast: {
           shortTerm: {
-            projected: (overview as any).vitality?.social || 0,
+            projected: overview?.vitality?.social || 0,
             confidence: 70,
             factors: ['Social indicators', 'Population trends']
           },
           longTerm: {
-            projected: (overview as any).vitality?.social || 0,
+            projected: overview?.vitality?.social || 0,
             confidence: 50,
             factors: ['Demographic projections', 'Social policy impact']
           }
@@ -197,48 +224,58 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
       },
       {
         area: 'diplomatic' as const,
-        score: (overview as any).vitality?.diplomatic || 0,
+        score: overview?.vitality?.diplomatic || 0,
         trend: 'stable' as const,
-        change: { 
-          value: 0, 
+        change: {
+          value: 0,
           period: 'week' as const,
           reason: 'No significant changes detected'
         },
         status: 'good' as const,
         keyMetrics: [
-          { 
-            id: 'active-embassies',
-            label: 'Active Embassies', 
-            value: '0', 
+          {
+            id: 'active-treaties',
+            label: 'Active Treaties',
+            value: String(diplomaticMetrics.treatyCount),
             unit: '',
-            trend: 'stable' as const,
+            trend: diplomaticMetrics.treatyCount > 5 ? 'up' as const :
+                   diplomaticMetrics.treatyCount < 3 ? 'down' as const :
+                   'stable' as const,
             changeValue: 0,
             changePercent: 0,
             changePeriod: 'week',
-            status: 'good' as const
+            status: diplomaticMetrics.treatyCount >= 8 ? 'excellent' as const :
+                    diplomaticMetrics.treatyCount >= 5 ? 'good' as const :
+                    diplomaticMetrics.treatyCount >= 2 ? 'concerning' as const :
+                    'critical' as const
           },
-          { 
-            id: 'relationships',
-            label: 'Relationships', 
-            value: '0', 
+          {
+            id: 'trade-partners',
+            label: 'Trade Partners',
+            value: String(diplomaticMetrics.tradePartnerCount),
             unit: '',
-            trend: 'stable' as const,
+            trend: diplomaticMetrics.tradePartnerCount > 15 ? 'up' as const :
+                   diplomaticMetrics.tradePartnerCount < 8 ? 'down' as const :
+                   'stable' as const,
             changeValue: 0,
             changePercent: 0,
             changePeriod: 'week',
-            status: 'good' as const
+            status: diplomaticMetrics.tradePartnerCount >= 20 ? 'excellent' as const :
+                    diplomaticMetrics.tradePartnerCount >= 10 ? 'good' as const :
+                    diplomaticMetrics.tradePartnerCount >= 5 ? 'concerning' as const :
+                    'critical' as const
           }
         ],
         criticalAlerts: [],
         recommendations: [],
         forecast: {
           shortTerm: {
-            projected: (overview as any).vitality?.diplomatic || 0,
+            projected: overview?.vitality?.diplomatic || 0,
             confidence: 70,
             factors: ['Current diplomatic relations', 'International standing']
           },
           longTerm: {
-            projected: (overview as any).vitality?.diplomatic || 0,
+            projected: overview?.vitality?.diplomatic || 0,
             confidence: 50,
             factors: ['Geopolitical trends', 'Alliance developments']
           }
@@ -253,7 +290,7 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
       },
       {
         area: 'governance' as const,
-        score: (overview as any).vitality?.governance || 0,
+        score: overview?.vitality?.governance || 0,
         trend: 'stable' as const,
         change: { 
           value: 0, 
@@ -265,7 +302,7 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
           { 
             id: 'active-policies',
             label: 'Active Policies', 
-            value: String((overview as any).activity?.activePolicies || 0), 
+            value: String(overview?.activity?.activePolicies || 0), 
             unit: '',
             trend: 'stable' as const,
             changeValue: 0,
@@ -276,7 +313,7 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
           { 
             id: 'pending-decisions',
             label: 'Pending Decisions', 
-            value: String((overview as any).activity?.pendingDecisions || 0), 
+            value: String(overview?.activity?.pendingDecisions || 0), 
             unit: '',
             trend: 'stable' as const,
             changeValue: 0,
@@ -289,12 +326,12 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
         recommendations: [],
         forecast: {
           shortTerm: {
-            projected: (overview as any).vitality?.governance || 0,
+            projected: overview?.vitality?.governance || 0,
             confidence: 70,
             factors: ['Policy effectiveness', 'Administrative efficiency']
           },
           longTerm: {
-            projected: (overview as any).vitality?.governance || 0,
+            projected: overview?.vitality?.governance || 0,
             confidence: 50,
             factors: ['Institutional stability', 'Reform initiatives']
           }
@@ -309,7 +346,8 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
       }
     ];
 
-    const criticalAlerts = ((overview as any).alerts?.items || []).slice(0, 5).map((alert: any) => ({
+    type AlertItem = { id: string; title: string; description: string; severity: string; category: string; detectedAt: Date | string };
+    const criticalAlerts = (overview?.alerts?.items || []).slice(0, 5).map((alert: AlertItem) => ({
       id: alert.id,
       title: alert.title,
       message: alert.description,
@@ -327,7 +365,8 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
       expiresAt: new Date(alert.detectedAt).getTime() + (7 * 24 * 60 * 60 * 1000) // 7 days
     }));
 
-    const trendingInsights = ((overview as any).briefings?.items || []).slice(0, 3).map((briefing: any) => ({
+    type BriefingItem = { id: string; title: string; description: string; priority: string; urgency: string; confidence: number; generatedAt: Date | string };
+    const trendingInsights = (overview?.briefings?.items || []).slice(0, 3).map((briefing: BriefingItem) => ({
       id: briefing.id,
       title: briefing.title,
       description: briefing.description,
@@ -345,13 +384,14 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
       nextReview: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days
     }));
 
-    const urgentActions = ((quickActions as any) || []).slice(0, 3).map((action: any) => ({
+    type QuickAction = { id: string; title: string; description: string; category: string; urgency: string; difficulty?: string; estimatedDuration: string; estimatedCost?: number; estimatedBenefit: string; requirements?: string[]; risks?: string[]; successProbability: number };
+    const urgentActions = ((quickActions?.actions as QuickAction[]) || []).slice(0, 3).map((action: QuickAction) => ({
       id: action.id,
       title: action.title,
       description: action.description,
       category: action.category as 'economic' | 'population' | 'diplomatic' | 'governance',
       urgency: action.urgency as 'urgent' | 'important' | 'routine' | 'future',
-      difficulty: action.difficulty || 'moderate',
+      difficulty: (action.difficulty as 'easy' | 'moderate' | 'complex' | 'major') || 'moderate',
       estimatedDuration: action.estimatedDuration,
       estimatedCost: String(action.estimatedCost || 0),
       estimatedBenefit: action.estimatedBenefit,
@@ -394,7 +434,7 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
       trendingInsights,
       urgentActions
     };
-  }, [overview, quickActions, metrics, country?.id]);
+  }, [overview, quickActions, metrics, country?.id, diplomaticMetrics]);
 
   if (!country) return null;
 
@@ -440,7 +480,7 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
   };
 
   return (
-    <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="space-y-4">
+    <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as IntelligenceTab)} className="space-y-4">
       {renderTabsList()}
 
       {/* Overview Tab - Executive Command Center */}

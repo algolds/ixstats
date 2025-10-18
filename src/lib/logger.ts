@@ -13,8 +13,11 @@
  * - System metrics
  */
 
-import { db } from "~/server/db";
-import { discordWebhook } from "./discord-webhook";
+// Conditionally import server-only dependencies
+// This allows logger to be imported in client components without errors
+const isServer = typeof window === "undefined";
+const db = isServer ? require("~/server/db").db : null;
+const discordWebhook = isServer ? require("./discord-webhook").discordWebhook : null;
 
 // Log levels
 export enum LogLevel {
@@ -273,6 +276,11 @@ class Logger {
    * Persist logs to database
    */
   private async persistToDatabase(entries: LogEntry[]): Promise<void> {
+    if (!db) {
+      // Client-side or db not available - skip database persistence
+      return;
+    }
+
     try {
       await db.systemLog.createMany({
         data: entries.map(entry => ({
@@ -305,6 +313,11 @@ class Logger {
    * Send critical logs to Discord
    */
   private async sendToDiscord(entry: LogEntry): Promise<void> {
+    if (!discordWebhook) {
+      // Client-side or Discord webhook not available - skip Discord notification
+      return;
+    }
+
     const levelName = LogLevel[entry.level];
     const emoji = this.getLevelEmoji(entry.level);
 

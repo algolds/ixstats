@@ -119,7 +119,7 @@ function simpleMiddleware(req: NextRequest) {
 
 export default isClerkConfigured
   ? clerkMiddleware(async (auth, req) => {
-      const { userId } = await auth();
+      const { userId, sessionClaims } = await auth();
 
       // Allow public routes to pass through without auth
       if (isPublicRoute(req)) {
@@ -148,6 +148,32 @@ export default isClerkConfigured
 
           console.log(`[Middleware] Redirecting to: ${signInUrl}`);
           return NextResponse.redirect(new URL(signInUrl));
+        }
+
+        // Check for admin role on /admin routes
+        if (req.nextUrl.pathname.startsWith('/admin')) {
+          // Hardcoded system owner IDs - always grant full admin access
+          const SYSTEM_OWNERS = [
+            'user_2zqmDdZvhpNQWGLdAIj2YwH8MLo', // Dev environment
+            'user_3078Ja62W7yJDlBjjwNppfzceEz', // Production environment
+          ];
+
+          const isSystemOwner = SYSTEM_OWNERS.includes(userId);
+
+          if (!isSystemOwner) {
+            const publicMetadata = sessionClaims?.publicMetadata as { role?: string } | undefined;
+            const userRole = publicMetadata?.role;
+
+            if (userRole !== 'admin') {
+              console.log(`[Middleware] Access denied to /admin for user ${userId} with role ${userRole || 'none'}`);
+              // Redirect to home page with access denied message
+              const homeUrl = new URL(`${BASE_PATH}/`, req.nextUrl.origin);
+              homeUrl.searchParams.set('error', 'access_denied');
+              return NextResponse.redirect(homeUrl);
+            }
+          } else {
+            console.log(`[Middleware] System owner ${userId} granted admin access`);
+          }
         }
       }
 

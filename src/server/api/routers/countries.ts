@@ -16,6 +16,16 @@ import { getAtomicEffectivenessService } from "~/services/AtomicEffectivenessSer
 import { ComponentType } from "@prisma/client";
 import { calculateAllVitalityScores } from "~/lib/vitality-calculator";
 import { notificationAPI } from "~/lib/notification-api";
+import type {
+  CoreEconomicIndicators,
+  LaborEmploymentData,
+  FiscalSystemData,
+  DemographicData,
+  IncomeWealthData,
+  GovernmentSpendingData,
+  NationalIdentityData,
+  GeographyData
+} from "~/app/builder/lib/economy-data-service";
 import type { 
   SystemStatus, 
   AdminPageBotStatusView, 
@@ -43,6 +53,7 @@ import type {
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { detectEconomicMilestoneAndTriggerNarrative } from "~/lib/auto-post-service";
 import { ActivityGenerator } from "~/lib/activity-generator";
+import { achievementService } from "~/lib/achievement-service";
 
 // Simple in-memory cache for frequently accessed data
 const cache = new Map<string, { data: unknown; timestamp: number; ttl: number }>();
@@ -232,6 +243,7 @@ const countriesRouter = createTRPCRouter({
               where: { isActive: true },
               orderBy: { ixTimeTimestamp: "desc" },
             },
+            nationalIdentity: true,
           },
           }),
         ctx.db.country.count({ where }),
@@ -668,8 +680,20 @@ const countriesRouter = createTRPCRouter({
           data: filteredBasicFields,
         });
 
-        return { 
-          success: true, 
+        // 🏆 Auto-unlock economic achievements (non-blocking)
+        if (ctx.auth?.userId && countryId) {
+          achievementService
+            .checkAndUnlockCategory(ctx.auth.userId, countryId, ctx.db, 'Economic')
+            .then((unlocked) => {
+              if (unlocked.length > 0) {
+                console.log(`[Achievements] Unlocked ${unlocked.length} economic achievements:`, unlocked);
+              }
+            })
+            .catch((err) => console.error('[Achievements] Auto-unlock failed:', err));
+        }
+
+        return {
+          success: true,
           message: "Economic data updated successfully",
           country: updatedCountry
         };
@@ -3126,10 +3150,68 @@ const countriesRouter = createTRPCRouter({
     .input(z.object({
       name: z.string(),
       foundationCountry: z.string().nullable(),
-      economicInputs: z.any(), // Economic data from builder
-      governmentComponents: z.array(z.any()).optional(),
-      taxSystemData: z.any().optional(),
-      governmentStructure: z.any().optional(),
+      economicInputs: z.object({
+        coreIndicators: z.object({
+          totalPopulation: z.number().min(0),
+          gdpPerCapita: z.number().min(0),
+          nominalGDP: z.number().min(0),
+        }).optional(),
+        laborEmployment: z.object({
+          laborForceParticipationRate: z.number().min(0).max(100),
+          unemploymentRate: z.number().min(0).max(100),
+        }).optional(),
+        fiscalSystem: z.object({
+          taxRevenueGDPPercent: z.number().optional(),
+          governmentSpendingGDPPercent: z.number().optional(),
+        }).optional(),
+        demographics: z.object({
+          urbanPopulationPercent: z.number().min(0).max(100).optional(),
+          lifeExpectancy: z.number().optional(),
+          literacyRate: z.number().min(0).max(100).optional(),
+        }).optional(),
+        incomeWealth: z.object({
+          giniIndex: z.number().min(0).max(100).optional(),
+        }).optional(),
+        governmentSpending: z.record(z.string(), z.number()).optional(),
+        nationalIdentity: z.object({
+          governmentType: z.string().optional(),
+          nationalReligion: z.string().optional(),
+          leader: z.string().optional(),
+          capitalCity: z.string().optional(),
+          currency: z.string().optional(),
+        }).optional(),
+        geography: z.object({
+          continent: z.string().optional(),
+          region: z.string().optional(),
+        }).optional(),
+        flagUrl: z.string().optional(),
+        coatOfArmsUrl: z.string().optional(),
+      }).optional(),
+      governmentComponents: z.array(z.object({
+        componentType: z.string(),
+        effectivenessScore: z.number().min(0).max(100).optional(),
+        implementationCost: z.number().optional(),
+        maintenanceCost: z.number().optional(),
+        requiredCapacity: z.number().min(0).max(100).optional(),
+        isActive: z.boolean().optional(),
+        notes: z.string().optional(),
+      })).optional(),
+      taxSystemData: z.object({
+        taxSystemName: z.string().optional(),
+        baseRate: z.number().min(0).max(100).optional(),
+        progressiveTax: z.boolean().optional(),
+        flatTaxRate: z.number().min(0).max(100).optional(),
+        complianceRate: z.number().min(0).max(100).optional(),
+        collectionEfficiency: z.number().min(0).max(100).optional(),
+      }).optional(),
+      governmentStructure: z.object({
+        governmentType: z.string().optional(),
+        governmentName: z.string().optional(),
+        headOfState: z.string().optional(),
+        headOfGovernment: z.string().optional(),
+        legislatureName: z.string().optional(),
+        totalBudget: z.number().optional(),
+      }).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       // Get user ID from context
@@ -3176,14 +3258,14 @@ const countriesRouter = createTRPCRouter({
 
       // Extract economic inputs with proper nested structure access
       const econ = input.economicInputs || {};
-      const coreIndicators = econ.coreIndicators || {};
-      const laborEmployment = econ.laborEmployment || {};
-      const fiscalSystem = econ.fiscalSystem || {};
-      const demographics = econ.demographics || {};
-      const incomeWealth = econ.incomeWealth || {};
-      const governmentSpending = econ.governmentSpending || {};
-      const nationalIdentity = econ.nationalIdentity || {};
-      const geography = econ.geography || {};
+      const coreIndicators = (econ.coreIndicators || {}) as Partial<CoreEconomicIndicators>;
+      const laborEmployment = (econ.laborEmployment || {}) as Partial<LaborEmploymentData>;
+      const fiscalSystem = (econ.fiscalSystem || {}) as Partial<FiscalSystemData>;
+      const demographics = (econ.demographics || {}) as Partial<DemographicData>;
+      const incomeWealth = (econ.incomeWealth || {}) as Partial<IncomeWealthData>;
+      const governmentSpending = (econ.governmentSpending || {}) as Partial<GovernmentSpendingData>;
+      const nationalIdentity = (econ.nationalIdentity || {}) as Partial<NationalIdentityData>;
+      const geography = (econ.geography || {}) as Partial<GeographyData>;
       
       // Calculate derived values
       const population = coreIndicators.totalPopulation || foundationData?.baselinePopulation || 10000000;
@@ -3211,7 +3293,7 @@ const countriesRouter = createTRPCRouter({
             region: geography.region || foundationData?.region || "Unknown",
             governmentType: nationalIdentity.governmentType || input.governmentStructure?.governmentType || "Republic",
             religion: nationalIdentity.nationalReligion || "Secular",
-            leader: nationalIdentity.leader || "Unknown",
+            leader: (nationalIdentity as any).leader || "Unknown",
             flag: econ.flagUrl || foundationData?.flag || undefined,
             coatOfArms: econ.coatOfArmsUrl || foundationData?.coatOfArms || undefined,
             landArea: foundationData?.landArea || 100000,
@@ -3254,7 +3336,7 @@ const countriesRouter = createTRPCRouter({
             averageAnnualIncome: laborEmployment.averageAnnualIncome || Math.round(gdpPerCapita * 0.8),
             
             // Fiscal System
-            taxRevenueGDPPercent: fiscalSystem.taxRevenueGDPPercent || input.taxSystemData?.totalTaxRate || 20,
+            taxRevenueGDPPercent: fiscalSystem.taxRevenueGDPPercent || (input.taxSystemData as any)?.totalTaxRate || 20,
             governmentRevenueTotal: fiscalSystem.governmentRevenueTotal || (nominalGDP * 0.20),
             taxRevenuePerCapita: fiscalSystem.taxRevenuePerCapita || ((nominalGDP * 0.20) / population),
             governmentBudgetGDPPercent: fiscalSystem.governmentBudgetGDPPercent || 22,
@@ -3331,11 +3413,11 @@ const countriesRouter = createTRPCRouter({
               countryId: country.id,
               ageDistribution: JSON.stringify(demographics.ageDistribution || []),
               educationLevels: JSON.stringify(demographics.educationLevels || []),
-              birthRate: demographics.birthRate,
-              deathRate: demographics.deathRate,
-              migrationRate: demographics.migrationRate,
-              dependencyRatio: demographics.dependencyRatio,
-              medianAge: demographics.medianAge,
+              birthRate: (demographics as any).birthRate,
+              deathRate: (demographics as any).deathRate,
+              migrationRate: (demographics as any).migrationRate,
+              dependencyRatio: (demographics as any).dependencyRatio,
+              medianAge: (demographics as any).medianAge,
               populationGrowthProjection: demographics.populationGrowthRate,
             }
           });
@@ -3346,17 +3428,17 @@ const countriesRouter = createTRPCRouter({
           await tx.fiscalSystem.create({
             data: {
               countryId: country.id,
-              personalIncomeTaxRates: fiscalSystem.personalIncomeTaxRates,
-              corporateTaxRates: fiscalSystem.corporateTaxRates,
+              personalIncomeTaxRates: (fiscalSystem as any).personalIncomeTaxRates,
+              corporateTaxRates: (fiscalSystem as any).corporateTaxRates,
               salesTaxRate: fiscalSystem.salesTaxRate,
-              propertyTaxRate: fiscalSystem.propertyTaxRate,
-              payrollTaxRate: fiscalSystem.payrollTaxRate,
-              exciseTaxRates: fiscalSystem.exciseTaxRates,
-              wealthTaxRate: fiscalSystem.wealthTaxRate,
-              spendingByCategory: fiscalSystem.spendingByCategory,
-              fiscalBalanceGDPPercent: fiscalSystem.fiscalBalanceGDPPercent,
-              primaryBalanceGDPPercent: fiscalSystem.primaryBalanceGDPPercent,
-              taxEfficiency: fiscalSystem.taxEfficiency,
+              propertyTaxRate: (fiscalSystem as any).propertyTaxRate,
+              payrollTaxRate: (fiscalSystem as any).payrollTaxRate,
+              exciseTaxRates: (fiscalSystem as any).exciseTaxRates,
+              wealthTaxRate: (fiscalSystem as any).wealthTaxRate,
+              spendingByCategory: (fiscalSystem as any).spendingByCategory,
+              fiscalBalanceGDPPercent: (fiscalSystem as any).fiscalBalanceGDPPercent,
+              primaryBalanceGDPPercent: (fiscalSystem as any).primaryBalanceGDPPercent,
+              taxEfficiency: (fiscalSystem as any).taxEfficiency,
             }
           });
         }
@@ -3366,13 +3448,13 @@ const countriesRouter = createTRPCRouter({
           await tx.laborMarket.create({
             data: {
               countryId: country.id,
-              employmentBySector: laborEmployment.employmentBySector,
-              youthUnemploymentRate: laborEmployment.youthUnemploymentRate,
-              femaleParticipationRate: laborEmployment.femaleParticipationRate,
-              informalEmploymentRate: laborEmployment.informalEmploymentRate,
-              medianWage: laborEmployment.medianWage,
-              wageGrowthRate: laborEmployment.wageGrowthRate,
-              wageBySector: laborEmployment.wageBySector,
+              employmentBySector: (laborEmployment as any).employmentBySector,
+              youthUnemploymentRate: (laborEmployment as any).youthUnemploymentRate,
+              femaleParticipationRate: (laborEmployment as any).femaleParticipationRate,
+              informalEmploymentRate: (laborEmployment as any).informalEmploymentRate,
+              medianWage: (laborEmployment as any).medianWage,
+              wageGrowthRate: (laborEmployment as any).wageGrowthRate,
+              wageBySector: (laborEmployment as any).wageBySector,
             }
           });
         }
@@ -3383,11 +3465,11 @@ const countriesRouter = createTRPCRouter({
             data: {
               countryId: country.id,
               economicClasses: JSON.stringify(incomeWealth.economicClasses || []),
-              top10PercentWealth: incomeWealth.top10PercentWealth,
-              bottom50PercentWealth: incomeWealth.bottom50PercentWealth,
-              middleClassPercent: incomeWealth.middleClassPercent,
-              intergenerationalMobility: incomeWealth.intergenerationalMobility,
-              educationMobility: incomeWealth.educationMobility,
+              top10PercentWealth: (incomeWealth as any).top10PercentWealth,
+              bottom50PercentWealth: (incomeWealth as any).bottom50PercentWealth,
+              middleClassPercent: (incomeWealth as any).middleClassPercent,
+              intergenerationalMobility: (incomeWealth as any).intergenerationalMobility,
+              educationMobility: (incomeWealth as any).educationMobility,
             }
           });
         }
@@ -3398,9 +3480,9 @@ const countriesRouter = createTRPCRouter({
             data: {
               countryId: country.id,
               spendingCategories: JSON.stringify(governmentSpending.spendingCategories || []),
-              spendingEfficiency: governmentSpending.spendingEfficiency,
-              publicInvestmentRate: governmentSpending.publicInvestmentRate,
-              socialSpendingPercent: governmentSpending.socialSpendingPercent,
+              spendingEfficiency: (governmentSpending as any).spendingEfficiency,
+              publicInvestmentRate: (governmentSpending as any).publicInvestmentRate,
+              socialSpendingPercent: (governmentSpending as any).socialSpendingPercent,
             }
           });
         }

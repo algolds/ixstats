@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
 import { cn } from '~/lib/utils';
 import {
@@ -48,6 +48,8 @@ export function Autocomplete({
   allowCustom = true,
 }: AutocompleteProps) {
   const [open, setOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const preventBlurRef = useRef(false);
 
   // Notify parent when open state changes
   const handleOpenChange = (newOpen: boolean) => {
@@ -69,13 +71,20 @@ export function Autocomplete({
   );
 
   const handleSelect = (selectedValue: string) => {
+    preventBlurRef.current = true;
     onChange(selectedValue);
     handleOpenChange(false);
+    // Restore focus after selection
+    setTimeout(() => {
+      inputRef.current?.focus();
+      preventBlurRef.current = false;
+    }, 0);
   };
 
   return (
     <div className="relative">
       <input
+        ref={inputRef}
         type="text"
         value={value}
         onChange={(e) => {
@@ -84,6 +93,10 @@ export function Autocomplete({
         }}
         onFocus={() => handleOpenChange(true)}
         onBlur={() => {
+          // Don't blur if we're selecting from dropdown
+          if (preventBlurRef.current) {
+            return;
+          }
           // Delay closing to allow clicking on suggestions
           setTimeout(() => {
             handleOpenChange(false);
@@ -125,6 +138,10 @@ export function Autocomplete({
                         <CommandItem
                           key={suggestion.id}
                           value={suggestion.value}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            handleSelect(suggestion.value);
+                          }}
                           onSelect={() => handleSelect(suggestion.value)}
                         >
                           <Check
@@ -151,6 +168,10 @@ export function Autocomplete({
                         <CommandItem
                           key={suggestion.id}
                           value={suggestion.value}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            handleSelect(suggestion.value);
+                          }}
                           onSelect={() => handleSelect(suggestion.value)}
                         >
                           <Check

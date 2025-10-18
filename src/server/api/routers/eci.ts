@@ -637,7 +637,13 @@ export const eciRouter = createTRPCRouter({
     .input(z.object({
       userId: z.string(),
       actionType: z.string(),
-      parameters: z.record(z.string(), z.any()).optional()
+      parameters: z.record(z.string(), z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.null(),
+        z.array(z.string()),
+      ])).optional()
     }))
     .mutation(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({

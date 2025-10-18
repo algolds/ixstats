@@ -4,13 +4,14 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { COMPONENT_TYPE_VALUES } from "~/types/government";
-import { 
-  detectGovernmentConflicts, 
+import {
+  detectGovernmentConflicts,
   syncGovernmentData,
   type ConflictWarning
 } from "~/server/services/builderIntegrationService";
 import { GovernmentBuilderStateSchema } from "~/types/validation/government";
 import { notificationAPI } from "~/lib/notification-api";
+import { notificationHooks } from "~/lib/notification-hooks";
 
 // Input validation schemas
 const governmentStructureInputSchema = z.object({
@@ -268,6 +269,18 @@ export const governmentRouter = createTRPCRouter({
       // Sync with other tables (Country, GovernmentBudget, etc.)
       const syncResult = await syncGovernmentData(ctx.db, countryId, data);
 
+      // Notify about government structure creation
+      try {
+        await notificationHooks.onGovernmentStructureChange({
+          countryId,
+          changeType: 'component_added',
+          componentName: data.structure.governmentName,
+          details: `Government structure created with ${data.departments.length} departments`,
+        });
+      } catch (error) {
+        console.error('[Government] Failed to send government structure creation notification:', error);
+      }
+
       return {
         governmentStructure: result,
         syncResult,
@@ -398,6 +411,18 @@ export const governmentRouter = createTRPCRouter({
 
       // Sync with other tables (Country, GovernmentBudget, etc.)
       const syncResult = await syncGovernmentData(ctx.db, countryId, data);
+
+      // Notify about government structure update
+      try {
+        await notificationHooks.onGovernmentStructureChange({
+          countryId,
+          changeType: 'component_added',
+          componentName: data.structure.governmentName,
+          details: `Government structure updated with ${data.departments.length} departments`,
+        });
+      } catch (error) {
+        console.error('[Government] Failed to send government structure update notification:', error);
+      }
 
       return {
         governmentStructure: result,
@@ -704,6 +729,18 @@ export const governmentRouter = createTRPCRouter({
         }
       });
 
+      // Notify about component addition
+      try {
+        await notificationHooks.onGovernmentStructureChange({
+          countryId: input.countryId,
+          changeType: 'component_added',
+          componentName: input.componentType,
+          details: `Atomic government component added: ${input.componentType}`,
+        });
+      } catch (error) {
+        console.error('[Government] Failed to send component addition notification:', error);
+      }
+
       return component;
     }),
 
@@ -720,6 +757,20 @@ export const governmentRouter = createTRPCRouter({
           componentType: input.componentType
         }
       });
+
+      // Notify about component removal
+      try {
+        if (deleted.count > 0) {
+          await notificationHooks.onGovernmentStructureChange({
+            countryId: input.countryId,
+            changeType: 'component_removed',
+            componentName: input.componentType,
+            details: `Atomic government component removed: ${input.componentType}`,
+          });
+        }
+      } catch (error) {
+        console.error('[Government] Failed to send component removal notification:', error);
+      }
 
       return { success: deleted.count > 0 };
     }),
@@ -771,6 +822,41 @@ export const governmentRouter = createTRPCRouter({
 
       const averageScore = components.length > 0 ? totalScore / components.length : 0;
       const finalScore = Math.max(0, Math.min(100, averageScore + synergyBonus - conflictPenalty));
+
+      // Check for synergies and notify
+      try {
+        for (const component of components) {
+          const activeSynergies = component.synergies.filter(
+            s => s.synergyType === 'SYNERGY' && s.secondaryComponent.isActive
+          );
+
+          if (activeSynergies.length > 0) {
+            const synergyBonusPerComponent = activeSynergies.length * 5;
+            await notificationHooks.onGovernmentStructureChange({
+              countryId: input.countryId,
+              changeType: 'synergy_detected',
+              componentName: component.componentType,
+              synergyBonus: synergyBonusPerComponent,
+              details: `${activeSynergies.length} synergies detected`,
+            });
+          }
+        }
+
+        // Notify about significant effectiveness changes
+        // Note: Would need to track previous score in database for accurate comparison
+        const previousEffectiveness = 50; // Placeholder - should be fetched from history
+        if (Math.abs(finalScore - previousEffectiveness) > 10) {
+          await notificationHooks.onGovernmentStructureChange({
+            countryId: input.countryId,
+            changeType: 'effectiveness_change',
+            componentName: 'Government',
+            effectivenessScore: finalScore,
+            previousScore: previousEffectiveness,
+          });
+        }
+      } catch (error) {
+        console.error('[Government] Failed to send effectiveness analysis notification:', error);
+      }
 
       return {
         overallEffectiveness: finalScore,

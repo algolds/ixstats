@@ -68,14 +68,20 @@ export function CabinetMeetingModal({
   const [newAttendee, setNewAttendee] = useState("");
   const [showAgendaSelector, setShowAgendaSelector] = useState(false);
 
+  // Get user profile for countryId
+  const { data: userProfile } = api.users.getProfile.useQuery(
+    undefined,
+    { enabled: !!user?.id }
+  );
+
   // Get existing meetings for context
-  const { data: meetings, isLoading: meetingsLoading, refetch } = api.eci.getCabinetMeetings.useQuery(
-    { userId: user?.id || 'placeholder-disabled' },
-    { enabled: !!user?.id && open }
+  const { data: meetings, isLoading: meetingsLoading, refetch } = api.unifiedIntelligence.getCabinetMeetings.useQuery(
+    { countryId: userProfile?.countryId || '' },
+    { enabled: !!userProfile?.countryId && open }
   );
 
   // Create meeting mutation
-  const createMeeting = api.eci.createCabinetMeeting.useMutation({
+  const createMeeting = api.unifiedIntelligence.createCabinetMeeting.useMutation({
     onSuccess: () => {
       toast.success("Cabinet meeting scheduled successfully!");
       setOpen(false);
@@ -153,7 +159,7 @@ export function CabinetMeetingModal({
     }
 
     createMeeting.mutate({
-      userId: user?.id || 'placeholder-disabled',
+      countryId: userProfile?.countryId || '',
       title: formData.title,
       description: formData.description,
       scheduledDate: new Date(scheduledIxTime).toISOString(), // IxTime date as ISO string for tRPC

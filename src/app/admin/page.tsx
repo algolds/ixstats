@@ -4,7 +4,8 @@
 "use client";
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useCallback } from "react";
+import { useCallback, useEffect } from "react";
+import { usePageTitle } from "~/hooks/usePageTitle";
 import {
   BotControlPanel,
   TimeControlPanel,
@@ -39,9 +40,7 @@ import { useBotSync } from "./_hooks/useBotSync";
 
 export default function AdminPage() {
   // All hooks must be called unconditionally and at the top
-  useEffect(() => {
-    document.title = "Admin Panel - IxStats";
-  }, []);
+  usePageTitle({ title: "Admin" });
 
   const { user, isLoaded } = useUser();
 

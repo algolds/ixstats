@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { usePageTitle } from "~/hooks/usePageTitle";
 import { useUser } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { 
@@ -65,6 +66,8 @@ import { createUrl } from "~/lib/url-utils";
 import { api } from "~/trpc/react";
 
 export default function ThinkPagesMainPage() {
+  usePageTitle({ title: "ThinkPages" });
+  
   const { user } = useUser();
   const [activeView, setActiveView] = useState<'feed' | 'thinktanks' | 'messages'>('feed');
   const [selectedAccount, setSelectedAccount] = useState<any>(null);

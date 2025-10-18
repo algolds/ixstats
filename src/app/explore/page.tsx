@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { usePageTitle } from '~/hooks/usePageTitle';
 import { useRouter } from 'next/navigation';
 import {
   CountriesPageHeader,
@@ -23,6 +24,8 @@ import { createUrl } from '~/lib/url-utils';
 import type { PageCountryData } from '../countries/_components/CountriesGrid';
 
 export default function ExplorePage() {
+  usePageTitle({ title: "Explore" });
+  
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [tierFilter, setTierFilter] =
@@ -258,7 +261,7 @@ export default function ExplorePage() {
   // Handle country selection from comparison modal
   const handleCountrySelect = (countryId: string) => {
     // Navigate to country detail page
-    router.push(createUrl(`/countries/${countryId}`));
+    router.push(createUrl(`/nation/${countryId}`));
   };
 
   return (

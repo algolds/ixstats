@@ -129,7 +129,11 @@ export const formulasRouter = createTRPCRouter({
       description: z.string().optional(),
       formula: z.string().optional(),
       variables: z.record(z.string(), z.number()).optional(),
-      constants: z.record(z.string(), z.any()).optional(),
+      constants: z.record(z.string(), z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+      ])).optional(),
       isActive: z.boolean().optional()
     }))
     .mutation(async ({ ctx, input }) => {

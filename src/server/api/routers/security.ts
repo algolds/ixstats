@@ -186,11 +186,19 @@ export const securityRouter = createTRPCRouter({
       };
     }),
 
-  updateSecurityAssessment: publicProcedure
+  updateSecurityAssessment: protectedProcedure
     .input(z.object({
       countryId: z.string(),
     }))
     .mutation(async ({ ctx, input }) => {
+      // Validate ownership
+      if (ctx.user?.countryId !== input.countryId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Cannot modify other countries\' security assessments',
+        });
+      }
+
       // Calculate security score based on components
       const [
         internalStability,
@@ -1436,15 +1444,47 @@ export const securityRouter = createTRPCRouter({
   // Integration Endpoints
   // ===========================
 
-  getDefenseOverview: publicProcedure
+  getDefenseOverview: protectedProcedure
     .input(z.object({ countryId: z.string() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      // Validate ownership - users can only view their own defense data unless admin
+      const userProfile = await ctx.db.user.findUnique({
+        where: { clerkUserId: ctx.auth.userId },
+        select: { countryId: true, role: true },
+      });
+
+      // Check if user is admin (role level <= 20)
+      const isAdmin = userProfile?.role && (userProfile.role as any).level <= 20;
+
+      if (!isAdmin && userProfile?.countryId !== input.countryId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Cannot view other countries\' defense overview',
+        });
+      }
+
       return getDefenseOverviewMetrics(input.countryId);
     }),
 
-  getDefenseIntelligenceMetrics: publicProcedure
+  getDefenseIntelligenceMetrics: protectedProcedure
     .input(z.object({ countryId: z.string() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      // Validate ownership - users can only view their own defense data unless admin
+      const userProfile = await ctx.db.user.findUnique({
+        where: { clerkUserId: ctx.auth.userId },
+        select: { countryId: true, role: true },
+      });
+
+      // Check if user is admin (role level <= 20)
+      const isAdmin = userProfile?.role && (userProfile.role as any).level <= 20;
+
+      if (!isAdmin && userProfile?.countryId !== input.countryId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Cannot view other countries\' defense intelligence metrics',
+        });
+      }
+
       return getDefenseMetricsForIntelligence(input.countryId);
     }),
 

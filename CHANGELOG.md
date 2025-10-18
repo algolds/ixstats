@@ -5,6 +5,33 @@ All notable changes to IxStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2025-10-18
+
+### Removed
+- Backup files and development artifacts (9 files, ~3.85 MB freed):
+  - `.env.production.backup`, `.env.local.backup`
+  - `src/app/mycountry/intelligence/page.tsx.backup`, `src/app/profile/page.tsx.backup`
+  - `dev.db`, `dev.log`, `cookies.txt`, `test-component-type.js`, `tsconfig.tsbuildinfo`
+- Duplicate unused components (2 files):
+  - `src/components/atomic/AtomicEconomicComponents.tsx` (18 KB unused prototype)
+  - `src/components/quick-actions/QuickActionsPanel.tsx` (11 KB legacy ECI version)
+
+### Changed
+- Updated IMPLEMENTATION_STATUS.md to reflect active deprecated router usage counts
+- Updated README.md with migration status for deprecated routers (42 usages, 12-week timeline)
+
+### Documentation
+- Added comprehensive codebase audit findings
+- Documented deprecated router migration plan (14 files, 42 usages)
+- Identified duplicate component canonical versions
+- Created archive index recommendations
+
+### Metrics
+- Disk space freed: ~3.85 MB
+- Files removed: 11 total (9 artifacts + 2 duplicates)
+- Documentation accuracy: Improved deprecation clarity
+- Component consolidation: 2 of 3 duplicate pairs resolved
+
 ## [1.1.1] - 2025-10-16
 
 ### Added

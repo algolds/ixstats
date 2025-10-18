@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
+import { usePageTitle } from "~/hooks/usePageTitle";
 import { AuthenticationGuard, CountryDataProvider, useCountryData } from "~/components/mycountry";
 import { EnhancedMyCountryContent } from "~/components/mycountry/EnhancedMyCountryContent";
 import { AtomicStateProvider } from "~/components/atomic/AtomicStateProvider";
@@ -14,9 +14,10 @@ function MyCountryWithAtomicState() {
   const { user } = useUser();
   const { country } = useCountryData();
 
-  useEffect(() => {
-    document.title = country?.name ? `${country.name} - MyCountry` : "MyCountry - IxStats";
-  }, [country?.name]);
+  // Set page title based on country name
+  usePageTitle({ 
+    title: country?.name ? `${country.name} - MyCountry` : "MyCountry" 
+  });
 
   if (!country?.id) {
     return (

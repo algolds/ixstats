@@ -303,7 +303,7 @@ export function ActivityFeed({ countries, isLoading }: ActivityFeedProps) {
                     </span>
                     {activity.country && activity.countryId && (
                       <Link
-                        href={createUrl(`/countries/${activity.countryId}`)}
+                        href={createUrl(`/nation/${activity.countryId}`)}
                         className="text-xs text-primary hover:underline"
                       >
                         View {activity.country}

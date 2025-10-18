@@ -61,7 +61,7 @@ export default function ModelingPage({ params }: ModelingPageProps) {
           style={flagThemeCSS}
         >
           <div className="mb-6">
-            <Link href={createUrl(`/countries/${country.name.replace(/\s+/g, '_')}`)} className="text-primary hover:underline">&larr; Back to {country.name}</Link>
+            <Link href={createUrl(`/nation/${country.slug || country.id}`)} className="text-primary hover:underline">&larr; Back to {country.name}</Link>
           </div>
           <Card>
             <CardHeader>

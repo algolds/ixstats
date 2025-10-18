@@ -10,11 +10,11 @@
 
 IxStats has achieved **v1.1.1 production release** with comprehensive audit completed, all critical systems operational, and extensive documentation coverage. The platform features:
 
-- **36 tRPC routers** with **304 endpoints** (162 queries, 142 mutations)
+- **36 tRPC routers** with **545 endpoints** (257 queries, 261 mutations, 27 unknown)
 - **131 database models** across 9 migrations
 - **100+ UI components** with glass physics design system
-- **62.9% live data integration** - all critical paths operational
-- **22 new documentation guides** totaling 8,000+ lines
+- **78-82% live data integration** - all critical paths operational
+- **22+ documentation guides** totaling 10,000+ lines
 - **Complete API, component, and system documentation**
 
 ---
@@ -27,7 +27,7 @@ IxStats has achieved **v1.1.1 production release** with comprehensive audit comp
 |---------|--------|----------|-------|
 | Next.js 15 Framework | ✅ Complete | 100% | App Router, Turbopack, TypeScript |
 | Prisma ORM | ✅ Complete | 100% | 131 models, 9 migrations, PostgreSQL/SQLite |
-| tRPC API Layer | ✅ Complete | 100% | 36 routers, 304 endpoints, Zod validation |
+| tRPC API Layer | ✅ Complete | 100% | 36 routers, 545 endpoints, Zod validation |
 | Authentication | ✅ Complete | 100% | Clerk RBAC, 8-layer middleware, audit logging |
 | IxTime System | ✅ Complete | 100% | 2x acceleration, Discord bot sync |
 | Rate Limiting | ✅ Complete | 100% | Redis-based with in-memory fallback |
@@ -68,8 +68,8 @@ IxStats has achieved **v1.1.1 production release** with comprehensive audit comp
 | Live Data Wiring | ✅ Complete | 95% | Real-time database integration |
 | WebSocket Integration | ✅ Complete | 90% | Real-time updates operational |
 | Unified Intelligence Router | ✅ Complete | 100% | Consolidated ECI/SDI router (v1.1.0) |
-| ECI Router | 🔴 Deprecated | 100% | Legacy router, use unifiedIntelligence instead |
-| SDI Router | 🔴 Deprecated | 100% | Legacy router, use unifiedIntelligence instead |
+| ECI Router | 🔴 Deprecated | 100% | Legacy router with 30 active usages - see migration plan |
+| SDI Router | 🔴 Deprecated | 100% | Legacy router with 12 active usages - see migration plan |
 
 ### Diplomatic Systems (90% Complete) ✅
 

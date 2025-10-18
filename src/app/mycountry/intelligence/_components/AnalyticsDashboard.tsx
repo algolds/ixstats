@@ -127,9 +127,9 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
     { enabled: !!countryId }
   );
 
-  const { data: policyEffectiveness } = api.eci.getPolicyEffectiveness.useQuery(
-    { userId, category: 'all' },
-    { enabled: !!userId }
+  const { data: policyEffectiveness } = api.unifiedIntelligence.getPolicyEffectiveness.useQuery(
+    { countryId, category: 'all' },
+    { enabled: !!countryId }
   );
 
   const { data: diplomaticInfluence } = api.diplomatic.getRelationships.useQuery(
@@ -137,14 +137,14 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
     { enabled: !!countryId }
   );
 
-  const { data: predictiveModels } = api.eci.getPredictiveModels.useQuery(
-    { userId, timeframe: dateRange === '6months' ? '6_months' : dateRange === '2years' ? '2_years' : dateRange === '5years' ? '5_years' : '1_year', scenarios: selectedScenarios },
-    { enabled: !!userId }
+  const { data: predictiveModels } = api.unifiedIntelligence.getPredictiveModels.useQuery(
+    { countryId, timeframe: dateRange === '6months' ? '6_months' : dateRange === '2years' ? '2_years' : dateRange === '5years' ? '5_years' : '1_year', scenarios: selectedScenarios },
+    { enabled: !!countryId }
   );
 
-  const { data: analytics } = api.eci.getAdvancedAnalytics.useQuery(
-    { userId },
-    { enabled: !!userId }
+  const { data: analytics } = api.unifiedIntelligence.getAdvancedAnalytics.useQuery(
+    { countryId },
+    { enabled: !!countryId }
   );
 
   // Process historical data for charts
@@ -804,7 +804,7 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
                       <Badge variant="default" className="bg-green-600">High</Badge>
                     </div>
                     <p className="text-3xl font-bold text-green-600">
-                      {policyEffectiveness?.effectiveness ? (policyEffectiveness.effectiveness * 100).toFixed(1) : '78.5'}%
+                      {policyEffectiveness?.effectivenessScore ? (policyEffectiveness.effectivenessScore / 100 * 100).toFixed(1) : '78.5'}%
                     </p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">

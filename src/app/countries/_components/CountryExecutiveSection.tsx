@@ -43,30 +43,30 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
   const [showPolicyCreator, setShowPolicyCreator] = React.useState(false);
   const [showDefenseModal, setShowDefenseModal] = React.useState(false);
 
-  // Get ECI data for this country
-  const { data: cabinetMeetings, isLoading: meetingsLoading } = api.eci.getCabinetMeetings.useQuery(
-    { userId: userId || 'disabled' },
-    { enabled: !!userId }
+  // Get unified intelligence data for this country
+  const { data: cabinetMeetings, isLoading: meetingsLoading } = api.unifiedIntelligence.getCabinetMeetings.useQuery(
+    { countryId: countryId },
+    { enabled: !!countryId }
   );
-  const { data: economicPolicies, isLoading: policiesLoading } = api.eci.getEconomicPolicies.useQuery(
-    { userId: userId || 'disabled' },
-    { enabled: !!userId }
+  const { data: economicPolicies, isLoading: policiesLoading } = api.unifiedIntelligence.getEconomicPolicies.useQuery(
+    { countryId: countryId },
+    { enabled: !!countryId }
   );
-  const { data: strategicPlans, isLoading: plansLoading } = api.eci.getStrategicPlans.useQuery(
-    { userId: userId || 'disabled' },
-    { enabled: !!userId }
+  const { data: strategicPlans, isLoading: plansLoading } = api.unifiedIntelligence.getStrategicPlans.useQuery(
+    { countryId: countryId },
+    { enabled: !!countryId }
   );
-  const { data: securityThreats, isLoading: threatsLoading } = api.eci.getSecurityThreats.useQuery(
-    { userId: userId || 'disabled' },
-    { enabled: !!userId }
+  const { data: securityThreats, isLoading: threatsLoading } = api.unifiedIntelligence.getSecurityThreats.useQuery(
+    { countryId: countryId },
+    { enabled: !!countryId }
   );
-  const { data: realTimeMetrics, isLoading: metricsLoading } = api.eci.getRealTimeMetrics.useQuery(
-    { userId: userId || 'disabled' },
-    { enabled: !!userId }
+  const { data: realTimeMetrics, isLoading: metricsLoading } = api.unifiedIntelligence.getRealTimeMetrics.useQuery(
+    { countryId: countryId },
+    { enabled: !!countryId }
   );
-  const { data: aiRecommendations, isLoading: aiLoading } = api.eci.getAIRecommendations.useQuery(
-    { userId: userId || 'disabled' },
-    { enabled: !!userId }
+  const { data: aiRecommendations, isLoading: aiLoading } = api.unifiedIntelligence.getAIRecommendations.useQuery(
+    { countryId: countryId },
+    { enabled: !!countryId }
   );
 
   const isLoading = meetingsLoading || policiesLoading || plansLoading || threatsLoading || metricsLoading || aiLoading;

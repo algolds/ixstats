@@ -1,7 +1,8 @@
 "use client";
 export const dynamic = 'force-dynamic';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { usePageTitle } from '~/hooks/usePageTitle';
 import { AtomicBuilderPage } from "./components/enhanced/AtomicBuilderPage";
 import { BuilderOnboardingWizard } from './components/BuilderOnboardingWizard';
 import { BuilderErrorBoundary } from './components/BuilderErrorBoundary';
@@ -10,13 +11,11 @@ import { useRouter } from 'next/navigation';
 import { createUrl } from "~/lib/url-utils";
 
 export default function CreateCountryBuilder() {
+  usePageTitle({ title: "Country Builder" });
+  
   const [isBuilding, setIsBuilding] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-
-  useEffect(() => {
-    document.title = "Country Builder - IxStats";
-  }, []);
 
   const handleStartBuilding = () => {
     setIsLoading(true);

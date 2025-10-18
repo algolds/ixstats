@@ -49,12 +49,9 @@ export function DiplomaticOperationsCard({
     { enabled: !!userProfile?.countryId }
   ) || { data: [] };
 
-  const { data: activeCrises } = api.sdi.getActiveCrises.useQuery(
-    undefined,
-    { enabled: !!userProfile?.countryId }
-  );
+  const { data: activeCrises } = api.unifiedIntelligence.getActiveCrises.useQuery();
 
-  const { data: diplomaticIntelligence } = api.sdi.getDiplomaticIntelligence?.useQuery(
+  const { data: diplomaticIntelligence } = api.unifiedIntelligence.getEnhancedDiplomaticIntelligence?.useQuery(
     { countryId: userProfile?.countryId || '' },
     { enabled: !!userProfile?.countryId }
   ) || { data: null };

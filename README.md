@@ -19,15 +19,15 @@ IxStats is a worldbuilding and nation simulation platform featuring comprehensiv
 
 ### V1 Compliance Audit Results
 - ✅ **Authentication**: Production-ready with 13 security fixes implemented
-- ✅ **Data Wiring**: 62.9% live integration (304 endpoints), all critical paths operational
-- ✅ **API Security**: 36 tRPC routers with 304 endpoints verified, all secured
+- ✅ **Data Wiring**: 78-82% live integration (545 endpoints), all critical paths operational
+- ✅ **API Security**: 36 tRPC routers with 545 endpoints verified, all critical issues fixed
 - ✅ **Database**: 131 models with 9 migrations applied, production-ready schema
 - ✅ **Codebase**: Zero technical debt, optimized architecture, 100% type safety
 - ✅ **Production Guards**: Demo/preview systems disabled in production
 - ✅ **Documentation**: Comprehensive system documentation (24+ guides covering all major systems)
 
 #### ✅ **Production-Ready Systems (100%)**
-- **Core Infrastructure**: Next.js 15, Prisma ORM, 36 tRPC routers with 304 endpoints, IxTime synchronization
+- **Core Infrastructure**: Next.js 15, Prisma ORM, 36 tRPC routers with 545 endpoints, IxTime synchronization
 - **Authentication & Security**: Clerk integration, 8-layer middleware, database audit logging, Redis rate limiting
 - **Design System**: Glass physics framework with 100+ UI components
 - **Economic Engine**: Tier-based growth modeling with real-time calculations
@@ -80,7 +80,7 @@ Your nation's executive intelligence and management platform
 
 ### 🌐 Intelligence & Analytics Systems
 
-> **⚠️ Note**: As of v1.1.0, the intelligence system has been unified. The legacy ECI and SDI routers are deprecated in favor of the `unifiedIntelligence` router, which provides improved performance and a single API surface. See [API_REFERENCE.md](./docs/API_REFERENCE.md#unified-intelligence-router) for migration guide.
+> **⚠️ Note**: As of v1.1.0, the intelligence system has been unified. The legacy ECI and SDI routers are deprecated in favor of the `unifiedIntelligence` router, which provides improved performance and a single API surface. **Migration Status**: 42 active usages remain across 14 files (estimated 12-week migration). See [API_REFERENCE.md](./docs/API_REFERENCE.md#unified-intelligence-router) for migration guide.
 
 #### **Unified Intelligence System**
 - **Executive Command Center**: Real-time strategic intelligence and command operations
@@ -304,7 +304,7 @@ npm run db:sync:check    # Verify prod database is in sync
 ### Tech Stack
 - **Framework**: Next.js 15 with App Router and Turbopack
 - **Database**: SQLite (development) / PostgreSQL (production) with Prisma ORM (131 models)
-- **API**: tRPC for type-safe API layer with 36 routers (304 endpoints) and Zod validation
+- **API**: tRPC for type-safe API layer with 36 routers (545 endpoints) and Zod validation
 - **Authentication**: Clerk with RBAC, 8-layer middleware, and audit logging
 - **UI**: Tailwind CSS v4 with Radix UI components and Glass Physics design system
 - **Time System**: Custom IxTime system (2x speed) with Discord bot synchronization
@@ -430,7 +430,7 @@ kill $(lsof -ti:3000)
 ### 🎯 **Project Maturity: 100% Complete (Grade A+ - v1.1.1 Release)**
 
 #### ✅ **Production-Ready Systems (100%)**
-- **Core Infrastructure**: Next.js 15, Prisma ORM (131 models), 36 tRPC routers (304 endpoints), IxTime synchronization
+- **Core Infrastructure**: Next.js 15, Prisma ORM (131 models), 36 tRPC routers (545 endpoints), IxTime synchronization
 - **Security & Authentication**: Clerk integration, 13 security fixes, 8-layer middleware, audit logging, Redis rate limiting
 - **Economic Engine**: Tier-based modeling, real-time calculations, historical tracking
 - **Intelligence System**: Live data wiring, executive dashboards, vitality analytics
@@ -499,7 +499,7 @@ kill $(lsof -ti:3000)
 - **[IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md)** - Detailed feature completion status
 
 ### 🏗️ Architecture & Technical Reference
-- **[API_REFERENCE.md](docs/API_REFERENCE.md)** - Complete tRPC API documentation (36 routers, 304 endpoints) ✨ NEW
+- **[API_REFERENCE.md](docs/API_REFERENCE.md)** - Complete tRPC API documentation (36 routers, 545 endpoints) ✨ UPDATED
 - **[ATOMIC_COMPONENTS_GUIDE.md](docs/ATOMIC_COMPONENTS_GUIDE.md)** - Revolutionary atomic government system guide (106 components) ✨ NEW
 - **[FORMULAS_AND_CALCULATIONS.md](docs/FORMULAS_AND_CALCULATIONS.md)** - Economic calculation engine documentation (15+ systems) ✨ NEW
 - **[DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md)** - Glass physics UI framework and component library ✨ NEW

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import type { TaxBuilderState } from "~/components/tax-system/TaxBuilder";
+import type { GovernmentBuilderState } from "~/types/government";
 import {
   detectTaxConflicts,
   syncTaxData,
@@ -10,6 +11,7 @@ import { TaxBuilderStateSchema } from "~/types/validation/tax";
 import { parseEconomicDataForTaxSystem, calculateRecommendedTaxRevenue } from "~/lib/tax-data-parser";
 import { getUnifiedTaxEffectiveness, getTaxEconomyImpact } from "~/lib/unified-atomic-tax-integration";
 import { ComponentType } from "@prisma/client";
+import { notificationHooks } from "~/lib/notification-hooks";
 
 // Validation helpers for brackets
 function validateBracketsState(state: TaxBuilderState): { ok: true } | { ok: false; errors: Array<{ categoryIndex: number; message: string }> } {
@@ -52,7 +54,14 @@ export const taxSystemRouter = createTRPCRouter({
         nominalGDP: z.number(),
         population: z.number(),
       }),
-      governmentData: z.any().optional(),
+      governmentData: z.object({
+        totalBudget: z.number().optional(),
+        spendingByCategory: z.record(z.string(), z.number()).optional(),
+        governmentType: z.string().optional(),
+        governmentEffectiveness: z.number().min(0).max(100).optional(),
+        ruleOfLaw: z.number().min(0).max(100).optional(),
+        corruptionIndex: z.number().min(0).max(100).optional(),
+      }).optional(),
       options: z.object({
         useAggressiveParsing: z.boolean().optional(),
         includeGovernmentPolicies: z.boolean().optional(),
@@ -61,16 +70,32 @@ export const taxSystemRouter = createTRPCRouter({
       }).optional()
     }))
     .mutation(async ({ input }) => {
+      // Convert partial governmentData to GovernmentBuilderState format
+      const governmentBuilderData: GovernmentBuilderState | undefined = input.governmentData ? {
+        structure: {
+          governmentName: 'National Government',
+          governmentType: (input.governmentData.governmentType || 'Federal Republic') as GovernmentBuilderState['structure']['governmentType'],
+          totalBudget: input.governmentData.totalBudget || 0,
+          fiscalYear: 'calendar',
+          budgetCurrency: 'USD',
+        },
+        departments: [],
+        budgetAllocations: [],
+        revenueSources: [],
+        isValid: true,
+        errors: {},
+      } : undefined;
+
       const parsedData = parseEconomicDataForTaxSystem(
         input.coreIndicators as any,
-        input.governmentData,
+        governmentBuilderData,
         input.options
       );
 
       let revenueRecommendations = null;
-      if (input.governmentData) {
+      if (governmentBuilderData) {
         revenueRecommendations = calculateRecommendedTaxRevenue(
-          input.governmentData,
+          governmentBuilderData,
           input.coreIndicators as any
         );
       }
@@ -416,6 +441,18 @@ export const taxSystemRouter = createTRPCRouter({
       // Sync with FiscalSystem table
       const syncResult = await syncTaxData(ctx.db, input.countryId, data);
 
+      // Notify about tax system creation
+      try {
+        await notificationHooks.onTaxSystemChange({
+          countryId: input.countryId,
+          changeType: 'created',
+          systemName: data.taxSystem.taxSystemName,
+          details: `Tax system created with ${data.categories.length} categories`,
+        });
+      } catch (error) {
+        console.error('[TaxSystem] Failed to send tax system creation notification:', error);
+      }
+
       return {
         taxSystem,
         syncResult,
@@ -539,6 +576,48 @@ export const taxSystemRouter = createTRPCRouter({
       // Sync with FiscalSystem table
       const syncResult = await syncTaxData(ctx.db, input.countryId, data);
 
+      // Check for significant revenue projection changes
+      try {
+        const country = await ctx.db.country.findUnique({
+          where: { id: input.countryId },
+          select: {
+            taxRevenueGDPPercent: true,
+            currentGdpPerCapita: true,
+            currentPopulation: true
+          }
+        });
+
+        if (country && data.taxSystem.collectionEfficiency) {
+          const previousRevenue = country.taxRevenueGDPPercent || 0;
+          const newRevenue = data.taxSystem.collectionEfficiency;
+          const changePercent = previousRevenue > 0
+            ? ((newRevenue - previousRevenue) / previousRevenue) * 100
+            : 0;
+
+          // Notify if revenue projection changed by more than 10%
+          if (Math.abs(changePercent) > 10) {
+            await notificationHooks.onTaxSystemChange({
+              countryId: input.countryId,
+              changeType: 'revenue_projection_change',
+              systemName: data.taxSystem.taxSystemName,
+              previousValue: previousRevenue,
+              newValue: newRevenue,
+              changePercent,
+            });
+          }
+        }
+
+        // Notify about tax system update
+        await notificationHooks.onTaxSystemChange({
+          countryId: input.countryId,
+          changeType: 'updated',
+          systemName: data.taxSystem.taxSystemName,
+          details: `Tax system updated with ${data.categories.length} categories`,
+        });
+      } catch (error) {
+        console.error('[TaxSystem] Failed to send tax system update notification:', error);
+      }
+
       return {
         taxSystem,
         syncResult,
@@ -564,7 +643,14 @@ export const taxSystemRouter = createTRPCRouter({
         nominalGDP: z.number(),
         population: z.number(),
       }),
-      governmentData: z.any().optional(),
+      governmentData: z.object({
+        totalBudget: z.number().optional(),
+        spendingByCategory: z.record(z.string(), z.number()).optional(),
+        governmentType: z.string().optional(),
+        governmentEffectiveness: z.number().min(0).max(100).optional(),
+        ruleOfLaw: z.number().min(0).max(100).optional(),
+        corruptionIndex: z.number().min(0).max(100).optional(),
+      }).optional(),
       options: z.object({
         useAggressiveParsing: z.boolean().optional(),
         includeGovernmentPolicies: z.boolean().optional(),
@@ -573,18 +659,34 @@ export const taxSystemRouter = createTRPCRouter({
       }).optional()
     }))
     .mutation(async ({ input }) => {
+      // Convert partial governmentData to GovernmentBuilderState format
+      const governmentBuilderData: GovernmentBuilderState | undefined = input.governmentData ? {
+        structure: {
+          governmentName: 'National Government',
+          governmentType: (input.governmentData.governmentType || 'Federal Republic') as GovernmentBuilderState['structure']['governmentType'],
+          totalBudget: input.governmentData.totalBudget || 0,
+          fiscalYear: 'calendar',
+          budgetCurrency: 'USD',
+        },
+        departments: [],
+        budgetAllocations: [],
+        revenueSources: [],
+        isValid: true,
+        errors: {},
+      } : undefined;
+
       // Call the parser function from tax-data-parser
       const parsedData = parseEconomicDataForTaxSystem(
         input.economicData as any,
-        input.governmentData,
+        governmentBuilderData,
         input.options
       );
 
       // Calculate revenue recommendations if government data provided
       let revenueRecommendations = null;
-      if (input.governmentData) {
+      if (governmentBuilderData) {
         revenueRecommendations = calculateRecommendedTaxRevenue(
-          input.governmentData,
+          governmentBuilderData,
           input.economicData as any
         );
       }
@@ -666,6 +768,30 @@ export const taxSystemRouter = createTRPCRouter({
         componentTypes,
         economicData
       );
+
+      // Check for significant effectiveness changes and notify
+      try {
+        // Get previous effectiveness calculation (if exists in metadata or cache)
+        const previousEffectiveness = taxSystem.collectionEfficiency || 75; // Default baseline
+        const currentEffectiveness = effectiveness.overallScore || 0;
+        const changePercent = previousEffectiveness > 0
+          ? ((currentEffectiveness - previousEffectiveness) / previousEffectiveness) * 100
+          : 0;
+
+        // Notify if effectiveness changed significantly
+        if (Math.abs(changePercent) > 10) {
+          await notificationHooks.onTaxSystemChange({
+            countryId: taxSystem.countryId,
+            changeType: 'effectiveness_change',
+            systemName: taxSystem.taxSystemName,
+            previousValue: previousEffectiveness,
+            newValue: currentEffectiveness,
+            changePercent,
+          });
+        }
+      } catch (error) {
+        console.error('[TaxSystem] Failed to send effectiveness change notification:', error);
+      }
 
       return effectiveness;
     }),

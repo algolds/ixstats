@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { usePageTitle } from "~/hooks/usePageTitle";
 import { useRouter } from "next/navigation";
 import { useUser, SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import Link from "next/link";
@@ -220,9 +221,7 @@ function ProfileContent() {
 }
 
 export default function ProfilePage() {
-  useEffect(() => {
-    document.title = "Profile - IxStats";
-  }, []);
+  usePageTitle({ title: "Profile" });
 
   if (!isClerkConfigured) {
     return (

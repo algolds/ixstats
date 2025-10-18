@@ -1,7 +1,8 @@
 "use client";
 
 // Refactored CountryPage - now uses modular panel components for better maintainability
-import { use, useEffect, useMemo } from "react";
+import { use, useMemo } from "react";
+import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import {
   Breadcrumb,
@@ -44,10 +45,6 @@ interface PublicCountryPageProps {
 }
 
 export default function PublicCountryPage({ params }: PublicCountryPageProps) {
-  useEffect(() => {
-    document.title = "Country Profile - IxStats";
-  }, []);
-
   const { slug } = use(params);
   const { user, userProfile } = useUserCountry();
 
@@ -62,6 +59,11 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
     { countryId: country?.id || "" },
     { enabled: !!country?.id }
   );
+
+  // Set page title based on country name
+  usePageTitle({ 
+    title: country ? `${country.name.replace(/_/g, ' ')}` : "Country Profile" 
+  });
 
   // Flag loading
   const { flagUrl, isLoading: flagLoading } = useFlag(country?.name || "");

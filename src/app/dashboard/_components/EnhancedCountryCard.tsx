@@ -139,7 +139,7 @@ export function EnhancedCountryCard({
             <div className="min-w-0 flex-1">
               <CardTitle className="text-lg font-semibold truncate">
                 <Link 
-                  href={createUrl(`/countries/${country.id}`)}
+                  href={createUrl(`/nation/${country.id}`)}
                   className="hover:text-primary transition-colors"
                 >
                   {country.name.replace(/_/g, ' ')}
@@ -282,7 +282,7 @@ export function EnhancedCountryCard({
             Updated: {new Date(country.lastCalculated).toLocaleDateString()}
           </div>
           
-          <Link href={createUrl(`/countries/${country.id}`)}>
+          <Link href={createUrl(`/nation/${country.id}`)}>
             <Button variant="outline" size="sm">
               View Details
             </Button>

@@ -124,8 +124,8 @@ export class IntelligenceWebSocketClient {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       return `${protocol}//${window.location.host}`;
     }
-    // Always use development WebSocket configuration (port 3555)
-    return process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3555';
+    // Use the same port as Next.js server (3000 dev, 3550 prod)
+    return process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3000';
   }
 
   /**

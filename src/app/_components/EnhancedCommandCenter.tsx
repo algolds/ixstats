@@ -86,7 +86,7 @@ function CountryCard({ country, index }: CountryCardProps) {
   const { flagUrl } = useFlag(country.name);
   
   return (
-    <Link href={createUrl(`/countries/${country.id}`)} className="block">
+    <Link href={createUrl(`/nation/${country.slug || country.id}`)} className="block">
       <Card key={country.id} className="glass-hierarchy-interactive hover:scale-[1.02] transition-all duration-200 overflow-hidden relative cursor-pointer">
         {/* Flag Background */}
         {flagUrl && (

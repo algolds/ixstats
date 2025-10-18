@@ -92,17 +92,30 @@ class UnsplashService {
     });
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
       const response = await fetch(`${this.baseUrl}/search/photos?${searchParams}`, {
         headers: {
           'Authorization': `Client-ID ${this.accessKey}`,
         },
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
-        throw new Error(`Unsplash API error: ${response.status} ${response.statusText}`);
+        console.warn(`Unsplash API returned ${response.status}, using fallback images`);
+        return this.getFallbackImages(params.query);
       }
 
       const data = await response.json();
+
+      if (!data.results || data.results.length === 0) {
+        console.warn('No Unsplash images found, using fallback images');
+        return this.getFallbackImages(params.query);
+      }
+
       const images: UnsplashImageData[] = data.results.map((photo: any) => ({
         id: photo.id,
         url: photo.urls[params.size || 'regular'],
@@ -114,10 +127,17 @@ class UnsplashService {
 
       // Cache the results
       this.cache.set(cacheKey, { data: images, timestamp: Date.now() });
-      
+
       return images;
     } catch (error) {
-      console.error('Failed to fetch Unsplash images:', error);
+      // Silently fall back to default images - this is not a critical error
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.warn('Unsplash API request timed out, using fallback images');
+      } else if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        console.warn('Network error fetching Unsplash images (CORS/network issue), using fallback images');
+      } else {
+        console.warn('Unsplash API error, using fallback images:', error);
+      }
       return this.getFallbackImages(params.query);
     }
   }

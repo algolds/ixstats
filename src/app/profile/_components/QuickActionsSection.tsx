@@ -24,7 +24,7 @@ export function QuickActionsSection({ setupStatus, countryId }: QuickActionsSect
 
         {setupStatus === 'complete' && countryId && (
           <Link
-            href={createUrl(`/countries/${countryId}`)}
+            href={createUrl(`/nation/${countryId}`)}
             className="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
           >
             <Crown className="h-4 w-4 mr-2" />

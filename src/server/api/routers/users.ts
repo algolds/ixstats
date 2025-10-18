@@ -2,11 +2,12 @@
 // Simplified users router with profile management and country linking
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure, adminProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { getDefaultEconomicConfig } from "~/lib/config-service";
 import { IxStatsCalculator } from "~/lib/calculations";
 import { generateSlug } from "~/lib/slug-utils";
+import { notificationHooks } from "~/lib/notification-hooks";
 import type {
   Country,
   CountryStats,
@@ -122,7 +123,7 @@ export const usersRouter = createTRPCRouter({
     }),
 
   // Link user to existing country
-  linkCountry: publicProcedure
+  linkCountry: protectedProcedure
     .input(
       z.object({
         userId: z.string(),
@@ -131,6 +132,10 @@ export const usersRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
+        // Verify the userId matches the authenticated user
+        if (input.userId !== ctx.auth?.userId) {
+          throw new Error("UNAUTHORIZED: Cannot link country for different user");
+        }
         // Check if user already has a country
         const user = await ctx.db.user.findUnique({ where: { clerkUserId: input.userId } });
         if (user && user.countryId) {
@@ -162,6 +167,24 @@ export const usersRouter = createTRPCRouter({
             },
           },
         });
+
+        // Send notification to user
+        try {
+          await notificationHooks.onUserAccountChange({
+            userId: input.userId,
+            changeType: 'country_assigned',
+            title: 'Country Assigned',
+            description: `You have been assigned to ${updatedCountry?.name || 'a country'}. You can now manage your country from the MyCountry dashboard.`,
+            metadata: {
+              countryId: input.countryId,
+              countryName: updatedCountry?.name,
+            },
+          });
+        } catch (notifError) {
+          console.error("Failed to send country assignment notification:", notifError);
+          // Don't fail the whole operation if notification fails
+        }
+
         return {
           success: true,
           country: updatedCountry,
@@ -174,7 +197,7 @@ export const usersRouter = createTRPCRouter({
     }),
 
   // Create new country for user (LEGACY - Use countries.createCountry for new builder)
-  createCountry: publicProcedure
+  createCountry: protectedProcedure
     .input(
       z.object({
         userId: z.string(),
@@ -372,7 +395,7 @@ export const usersRouter = createTRPCRouter({
     }),
 
   // Unlink country from user
-  unlinkCountry: publicProcedure
+  unlinkCountry: protectedProcedure
     .input(
       z.object({
         userId: z.string(),
@@ -381,6 +404,10 @@ export const usersRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
+        // Verify the userId matches the authenticated user
+        if (input.userId !== ctx.auth?.userId) {
+          throw new Error("UNAUTHORIZED: Cannot unlink country for different user");
+        }
         // Check if user is linked to the country
         const user = await ctx.db.user.findUnique({ where: { clerkUserId: input.userId } });
         if (!user || user.countryId !== input.countryId) {
@@ -642,7 +669,7 @@ export const usersRouter = createTRPCRouter({
     }),
 
   // Create user record if it doesn't exist and ensure roles exist
-  createUserRecord: publicProcedure
+  createUserRecord: protectedProcedure
     .mutation(async ({ ctx }) => {
       try {
         // Check if auth context exists
@@ -757,7 +784,7 @@ export const usersRouter = createTRPCRouter({
     }),
 
   // Setup database with roles and permissions
-  setupDatabase: publicProcedure
+  setupDatabase: adminProcedure
     .mutation(async ({ ctx }) => {
       try {
         // Create basic permissions
@@ -1117,7 +1144,7 @@ export const usersRouter = createTRPCRouter({
     }),
 
   // Update user's membership tier (for admin use)
-  updateMembershipTier: publicProcedure
+  updateMembershipTier: adminProcedure
     .input(z.object({
       userId: z.string(),
       tier: z.enum(['basic', 'mycountry_premium']),
@@ -1132,6 +1159,33 @@ export const usersRouter = createTRPCRouter({
             membershipTier: input.tier
           },
         });
+
+        // Send notification to user about tier change
+        try {
+          const tierNames = {
+            basic: 'Basic',
+            mycountry_premium: 'MyCountry Premium',
+          };
+
+          const isUpgrade = input.tier === 'mycountry_premium';
+          const message = isUpgrade
+            ? 'You now have access to SDI, ECI, Intelligence, and advanced analytics features.'
+            : 'Your membership has been changed to Basic tier.';
+
+          await notificationHooks.onUserAccountChange({
+            userId: input.userId,
+            changeType: 'role_changed',
+            title: `Membership Updated: ${tierNames[input.tier]}`,
+            description: message,
+            priority: isUpgrade ? 'high' : 'medium',
+            metadata: {
+              tier: input.tier,
+              isUpgrade,
+            },
+          });
+        } catch (notifError) {
+          console.error("Failed to send membership tier notification:", notifError);
+        }
 
         return {
           success: true,

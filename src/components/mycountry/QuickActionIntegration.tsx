@@ -38,21 +38,21 @@ export function QuickActionIntegration({ className }: QuickActionIntegrationProp
   const [showDefenseModal, setShowDefenseModal] = React.useState(false);
 
   // Get real-time metrics
-  const { data: metrics } = api.eci.getRealTimeMetrics.useQuery(
-    { userId: user?.id ?? 'placeholder-disabled' },
-    { enabled: !!user?.id, refetchInterval: 30000 } // Refetch every 30 seconds
+  const { data: metrics } = api.unifiedIntelligence.getRealTimeMetrics.useQuery(
+    { countryId: country?.id ?? 'placeholder-disabled' },
+    { enabled: !!country?.id, refetchInterval: 30000 } // Refetch every 30 seconds
   );
 
   // Get policy statistics
-  const { data: policies } = api.eci.getEconomicPolicies.useQuery(
-    { userId: user?.id ?? 'placeholder-disabled' },
-    { enabled: !!user?.id }
+  const { data: policies } = api.unifiedIntelligence.getEconomicPolicies.useQuery(
+    { countryId: country?.id ?? 'placeholder-disabled' },
+    { enabled: !!country?.id }
   );
 
   // Get meeting statistics
-  const { data: meetings } = api.eci.getCabinetMeetings.useQuery(
-    { userId: user?.id ?? 'placeholder-disabled' },
-    { enabled: !!user?.id }
+  const { data: meetings } = api.unifiedIntelligence.getCabinetMeetings.useQuery(
+    { countryId: country?.id ?? 'placeholder-disabled' },
+    { enabled: !!country?.id }
   );
 
   // Implementation status

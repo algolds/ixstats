@@ -8,9 +8,10 @@ import { CONFIG_CONSTANTS, getDefaultEconomicConfig } from "~/lib/config-service
 import { IxTime } from "~/lib/ixtime";
 import { parseRosterFile } from "~/lib/data-parser";
 import { IxStatsCalculator } from "~/lib/calculations";
-import type { 
-  SystemStatus, 
-  AdminPageBotStatusView, 
+import { notificationHooks } from "~/lib/notification-hooks";
+import type {
+  SystemStatus,
+  AdminPageBotStatusView,
   ImportAnalysis,
   BaseCountryData,
   CalculationLog,
@@ -18,10 +19,10 @@ import type {
 } from "~/types/ixstats";
 import { generateSlug } from "~/lib/slug-utils";
 import {
-  getEconomicTierFromGdpPerCapita, 
-  getPopulationTierFromPopulation, 
-  EconomicTier, 
-  PopulationTier 
+  getEconomicTierFromGdpPerCapita,
+  getPopulationTierFromPopulation,
+  EconomicTier,
+  PopulationTier
 } from "~/types/ixstats";
 
 // Remove unused import - we use ctx.db instead
@@ -509,7 +510,12 @@ export const adminRouter = createTRPCRouter({
       replaceExisting: z.boolean(),
       fileData: z.array(z.number()).optional(), // Accept fileData for now
       fileName: z.string().optional(),
-      changes: z.any().optional(), // Accept changes directly for now
+      changes: z.object({
+        updateMode: z.enum(['create', 'update', 'upsert']).optional(),
+        skipValidation: z.boolean().optional(),
+        preserveExisting: z.boolean().optional(),
+        fieldMappings: z.record(z.string(), z.string()).optional(),
+      }).optional(), // Import configuration options
     }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -670,7 +676,7 @@ export const adminRouter = createTRPCRouter({
     }),
 
   // Sync epoch time with imported data
-  syncEpochWithData: publicProcedure
+  syncEpochWithData: adminProcedure
     .input(z.object({
       targetEpoch: z.number(), // The target epoch timestamp to sync to
       reason: z.string().optional(),
@@ -723,7 +729,7 @@ export const adminRouter = createTRPCRouter({
     }),
 
   // Force recalculation of all countries
-  forceRecalculation: publicProcedure
+  forceRecalculation: adminProcedure
     .mutation(async ({ ctx }) => {
       try {
         const startTime = Date.now();
@@ -917,7 +923,7 @@ export const adminRouter = createTRPCRouter({
   // === ADMIN USER/COUNTRY MANAGEMENT ENDPOINTS ===
 
   // List all users and their claimed countries
-  listUsersWithCountries: publicProcedure.query(async ({ ctx }) => {
+  listUsersWithCountries: adminProcedure.query(async ({ ctx }) => {
     const users = await ctx.db.user.findMany({
       include: { country: true, role: true },
       orderBy: { createdAt: 'asc' },
@@ -932,7 +938,7 @@ export const adminRouter = createTRPCRouter({
   }),
 
   // List all countries and their assigned users
-  listCountriesWithUsers: publicProcedure.query(async ({ ctx }) => {
+  listCountriesWithUsers: adminProcedure.query(async ({ ctx }) => {
     const countries = await ctx.db.country.findMany({
       include: { user: true },
       orderBy: { name: 'asc' },
@@ -947,7 +953,7 @@ export const adminRouter = createTRPCRouter({
   }),
 
   // Assign a user to a country (admin override)
-  assignUserToCountry: publicProcedure
+  assignUserToCountry: adminProcedure
     .input(z.object({ userId: z.string(), countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       // Unlink any user currently assigned to this country
@@ -964,7 +970,7 @@ export const adminRouter = createTRPCRouter({
     }),
 
   // Unassign a user from a country (admin override)
-  unassignUserFromCountry: publicProcedure
+  unassignUserFromCountry: adminProcedure
     .input(z.object({ userId: z.string(), countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       await ctx.db.user.updateMany({ where: { clerkUserId: input.userId, countryId: input.countryId }, data: { countryId: null } });
@@ -1164,6 +1170,33 @@ export const adminRouter = createTRPCRouter({
           }
         });
 
+        // Notify the country owner about admin intervention
+        try {
+          const countryUser = await ctx.db.user.findFirst({
+            where: { countryId: id },
+            select: { clerkUserId: true }
+          });
+
+          if (countryUser) {
+            await notificationHooks.onAdminAction({
+              actionType: 'data_intervention',
+              title: 'Admin Data Update',
+              description: `An administrator has updated data for ${updated.name}. Please review your country dashboard for changes.`,
+              affectedUserIds: [countryUser.clerkUserId],
+              adminId: ctx.user?.id || "system",
+              adminName: ctx.user?.clerkUserId || "System Administrator",
+              severity: 'important',
+              metadata: {
+                countryId: id,
+                countryName: updated.name,
+                fieldsChanged: Object.keys(data),
+              },
+            });
+          }
+        } catch (notifError) {
+          console.error("Failed to send admin intervention notification:", notifError);
+        }
+
         return {
           success: true,
           message: `Successfully updated ${updated.name}`,
@@ -1186,7 +1219,13 @@ export const adminRouter = createTRPCRouter({
       z.object({
         updates: z.array(z.object({
           id: z.string(),
-          data: z.record(z.string(), z.any())
+          data: z.record(z.string(), z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.null(),
+            z.array(z.union([z.string(), z.number(), z.boolean()])),
+          ]))
         }))
       })
     )
@@ -1347,6 +1386,108 @@ export const adminRouter = createTRPCRouter({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to create custom scenario"
+        });
+      }
+    }),
+
+  /**
+   * Create global system announcement
+   */
+  createGlobalAnnouncement: adminProcedure
+    .input(
+      z.object({
+        title: z.string(),
+        message: z.string(),
+        severity: z.enum(['urgent', 'important', 'informational']),
+        category: z.enum(['maintenance', 'feature', 'security', 'general']).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        await notificationHooks.onAdminAction({
+          actionType: 'global_announcement',
+          title: input.title,
+          description: input.message,
+          adminId: ctx.user?.id || "system",
+          adminName: ctx.user?.clerkUserId || "System Administrator",
+          severity: input.severity,
+          metadata: {
+            category: input.category || 'general',
+          },
+        });
+
+        // Log the announcement
+        await ctx.db.adminAuditLog.create({
+          data: {
+            action: "GLOBAL_ANNOUNCEMENT",
+            targetType: "system",
+            targetId: "global",
+            targetName: "All Users",
+            changes: JSON.stringify({ title: input.title, severity: input.severity }),
+            adminId: ctx.user?.id || "system",
+            adminName: ctx.user?.clerkUserId || "System",
+            timestamp: new Date(),
+          }
+        });
+
+        return {
+          success: true,
+          message: "Global announcement sent successfully"
+        };
+      } catch (error) {
+        console.error("Failed to create global announcement:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create global announcement"
+        });
+      }
+    }),
+
+  /**
+   * Create system maintenance notification
+   */
+  createMaintenanceNotification: adminProcedure
+    .input(
+      z.object({
+        title: z.string(),
+        message: z.string(),
+        scheduledTime: z.string().optional(),
+        duration: z.string().optional(),
+        severity: z.enum(['urgent', 'important', 'informational']).default('important'),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        let fullMessage = input.message;
+        if (input.scheduledTime) {
+          fullMessage += ` Scheduled for: ${input.scheduledTime}`;
+        }
+        if (input.duration) {
+          fullMessage += ` (Expected duration: ${input.duration})`;
+        }
+
+        await notificationHooks.onAdminAction({
+          actionType: 'maintenance',
+          title: input.title,
+          description: fullMessage,
+          adminId: ctx.user?.id || "system",
+          adminName: ctx.user?.clerkUserId || "System Administrator",
+          severity: input.severity,
+          metadata: {
+            scheduledTime: input.scheduledTime,
+            duration: input.duration,
+          },
+        });
+
+        return {
+          success: true,
+          message: "Maintenance notification sent successfully"
+        };
+      } catch (error) {
+        console.error("Failed to create maintenance notification:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create maintenance notification"
         });
       }
     }),

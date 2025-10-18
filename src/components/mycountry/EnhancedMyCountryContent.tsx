@@ -17,7 +17,6 @@ import { MyCountryTabSystem } from './MyCountryTabSystem';
 import { CrisisStatusBanner } from "~/app/countries/_components/CrisisStatusBanner";
 import { useFlag } from "~/hooks/useFlag";
 import { AtomicComponentSelector } from '~/components/government/atoms/AtomicGovernmentComponents';
-import { AdvancedBudgetDashboard } from '~/components/government/AdvancedBudgetDashboard';
 import { TaxBuilder } from '~/components/tax-system/TaxBuilder';
 import { GovernmentBuilder } from '~/components/government/GovernmentBuilder';
 import { api } from '~/trpc/react';
@@ -45,78 +44,6 @@ function smartNormalizeGrowthRate(value: number | null | undefined, fallback = 3
   
   return normalizedValue;
 }
-
-// Mock budget categories for demo purposes
-const mockBudgetCategories = [
-  {
-    id: 'defense',
-    name: 'Defense & Security',
-    type: 'MANDATORY' as const,
-    allocatedAmount: 150000000,
-    allocatedPercent: 15,
-    spentAmount: 140000000,
-    encumberedAmount: 8000000,
-    availableAmount: 2000000,
-    priority: 'CRITICAL' as const,
-    department: 'Ministry of Defense',
-    color: '#dc2626',
-    icon: 'Shield',
-    efficiency: 88,
-    performance: 92,
-    growthRate: 3.2
-  },
-  {
-    id: 'education',
-    name: 'Education & Research',
-    type: 'MANDATORY' as const,
-    allocatedAmount: 200000000,
-    allocatedPercent: 20,
-    spentAmount: 180000000,
-    encumberedAmount: 15000000,
-    availableAmount: 5000000,
-    priority: 'HIGH' as const,
-    department: 'Ministry of Education',
-    color: '#059669',
-    icon: 'GraduationCap',
-    efficiency: 78,
-    performance: 85,
-    growthRate: 5.1
-  },
-  {
-    id: 'healthcare',
-    name: 'Healthcare & Social Services',
-    type: 'MANDATORY' as const,
-    allocatedAmount: 180000000,
-    allocatedPercent: 18,
-    spentAmount: 175000000,
-    encumberedAmount: 3000000,
-    availableAmount: 2000000,
-    priority: 'CRITICAL' as const,
-    department: 'Ministry of Health',
-    color: '#7c3aed',
-    icon: 'Heart',
-    efficiency: 82,
-    performance: 88,
-    growthRate: 4.7
-  },
-  {
-    id: 'infrastructure',
-    name: 'Infrastructure & Development',
-    type: 'DISCRETIONARY' as const,
-    allocatedAmount: 120000000,
-    allocatedPercent: 12,
-    spentAmount: 95000000,
-    encumberedAmount: 20000000,
-    availableAmount: 5000000,
-    priority: 'HIGH' as const,
-    department: 'Ministry of Infrastructure',
-    color: '#ea580c',
-    icon: 'Building2',
-    efficiency: 75,
-    performance: 80,
-    growthRate: 8.3
-  }
-];
 
 export function EnhancedMyCountryContent({ variant = 'unified', title }: EnhancedMyCountryContentProps) {
   const { user } = useUser();

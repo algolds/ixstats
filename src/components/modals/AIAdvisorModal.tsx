@@ -130,15 +130,15 @@ export function AIAdvisorModal({
 
   // Get AI recommendations
   const { data: aiRecommendations, isLoading: recommendationsLoading } =
-    api.eci.getAIRecommendations.useQuery(
-      { userId: countryId || 'disabled' }, // Using countryId as userId for now
+    api.unifiedIntelligence.getAIRecommendations.useQuery(
+      { countryId: countryId },
       { enabled: isOpen && !!countryId }
     );
 
   // Get advanced analytics for context
   const { data: advancedAnalytics, isLoading: analyticsLoading } =
-    api.eci.getAdvancedAnalytics.useQuery(
-      { userId: countryId || 'disabled' },
+    api.unifiedIntelligence.getAdvancedAnalytics.useQuery(
+      { countryId: countryId },
       { enabled: isOpen && !!countryId }
     );
 

@@ -39,11 +39,20 @@ interface ExistingCountryData {
   baselineDate: number;
 }
 
+// Type for diplomatic data
+interface DiplomaticDataInput {
+  treatyCount?: number;
+  tradePartnerCount?: number;
+  diplomaticRelationsCount?: number;
+  recentDiplomaticActivity?: string | null;
+}
+
 // Convert existing country data to VitalityIntelligence format
 export function transformToVitalityIntelligence(
   country: ExistingCountryData,
   previousCountry?: ExistingCountryData,
-  peerData?: ExistingCountryData[]
+  peerData?: ExistingCountryData[],
+  diplomaticData?: DiplomaticDataInput
 ): VitalityIntelligence[] {
   const now = Date.now();
   const peerAverages = calculatePeerAverages(peerData || []);
@@ -216,32 +225,54 @@ export function transformToVitalityIntelligence(
         {
           id: 'diplomatic-treaties',
           label: 'Active Treaties',
-          value: 12, // Mock data - would come from actual diplomatic data
-          trend: 'up' as StandardTrend,
-          changeValue: 2,
-          changePercent: 20,
+          value: diplomaticData?.treatyCount ?? 0,
+          trend: (diplomaticData?.treatyCount ?? 0) > 5 ? 'up' as StandardTrend :
+                 (diplomaticData?.treatyCount ?? 0) < 3 ? 'down' as StandardTrend :
+                 'stable' as StandardTrend,
+          changeValue: previousCountry ? Math.max(0, (diplomaticData?.treatyCount ?? 0) - 10) : 0,
+          changePercent: previousCountry ?
+            ((diplomaticData?.treatyCount ?? 0) > 10 ?
+              (((diplomaticData?.treatyCount ?? 0) - 10) / 10) * 100 : 0) : 0,
           changePeriod: 'this year',
-          status: 'good' as const
+          status: (diplomaticData?.treatyCount ?? 0) >= 8 ? 'excellent' as const :
+                  (diplomaticData?.treatyCount ?? 0) >= 5 ? 'good' as const :
+                  (diplomaticData?.treatyCount ?? 0) >= 2 ? 'concerning' as const :
+                  'critical' as const
         },
         {
           id: 'trade-partners',
           label: 'Trade Partners',
-          value: 34,
-          trend: 'up' as StandardTrend,
-          changeValue: 5,
-          changePercent: 17,
+          value: diplomaticData?.tradePartnerCount ?? 0,
+          trend: (diplomaticData?.tradePartnerCount ?? 0) > 15 ? 'up' as StandardTrend :
+                 (diplomaticData?.tradePartnerCount ?? 0) < 8 ? 'down' as StandardTrend :
+                 'stable' as StandardTrend,
+          changeValue: previousCountry ? Math.max(0, (diplomaticData?.tradePartnerCount ?? 0) - 20) : 0,
+          changePercent: previousCountry ?
+            ((diplomaticData?.tradePartnerCount ?? 0) > 20 ?
+              (((diplomaticData?.tradePartnerCount ?? 0) - 20) / 20) * 100 : 0) : 0,
           changePeriod: 'this year',
-          status: 'good' as const
+          status: (diplomaticData?.tradePartnerCount ?? 0) >= 20 ? 'excellent' as const :
+                  (diplomaticData?.tradePartnerCount ?? 0) >= 10 ? 'good' as const :
+                  (diplomaticData?.tradePartnerCount ?? 0) >= 5 ? 'concerning' as const :
+                  'critical' as const
         },
         {
           id: 'diplomatic-reputation',
           label: 'Global Reputation',
-          value: 'Rising',
-          trend: 'up' as StandardTrend,
-          changeValue: 0,
-          changePercent: 8,
+          value: country.diplomaticStanding >= 75 ? 'Rising' :
+                 country.diplomaticStanding >= 50 ? 'Stable' :
+                 country.diplomaticStanding >= 30 ? 'Declining' : 'Weak',
+          trend: previousCountry
+            ? calculateTrend(country.diplomaticStanding, previousCountry.diplomaticStanding)
+            : 'stable' as StandardTrend,
+          changeValue: previousCountry ? country.diplomaticStanding - previousCountry.diplomaticStanding : 0,
+          changePercent: previousCountry ?
+            ((country.diplomaticStanding - previousCountry.diplomaticStanding) / previousCountry.diplomaticStanding) * 100 : 0,
           changePeriod: 'recent',
-          status: 'good' as const
+          status: country.diplomaticStanding >= 75 ? 'excellent' as const :
+                  country.diplomaticStanding >= 50 ? 'good' as const :
+                  country.diplomaticStanding >= 30 ? 'concerning' as const :
+                  'critical' as const
         }
       ],
       criticalAlerts: [],
@@ -352,9 +383,10 @@ export function transformToVitalityIntelligence(
 export function transformToExecutiveIntelligence(
   country: ExistingCountryData,
   previousCountry?: ExistingCountryData,
-  peerData?: ExistingCountryData[]
+  peerData?: ExistingCountryData[],
+  diplomaticData?: DiplomaticDataInput
 ): ExecutiveIntelligence {
-  const vitalityData = transformToVitalityIntelligence(country, previousCountry, peerData);
+  const vitalityData = transformToVitalityIntelligence(country, previousCountry, peerData, diplomaticData);
   return createExecutiveIntelligence(country.id, vitalityData);
 }
 

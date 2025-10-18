@@ -378,6 +378,87 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
         return;
       }
 
+      // Check for wiki import data
+      const importedData = safeGetItemSync('builder_imported_data');
+      if (importedData && !quickStartProcessed.current) {
+        quickStartProcessed.current = true;
+
+        try {
+          const wikiData = JSON.parse(importedData);
+
+          // Create default inputs and populate with wiki data
+          const inputs = createDefaultEconomicInputs();
+
+          // Map wiki data to economic inputs
+          if (wikiData.name) inputs.countryName = wikiData.name;
+
+          // Core indicators
+          if (wikiData.population) {
+            inputs.coreIndicators.totalPopulation = Number(wikiData.population) || 10000000;
+          }
+          if (wikiData.gdpPerCapita) {
+            inputs.coreIndicators.gdpPerCapita = Number(wikiData.gdpPerCapita) || 25000;
+          }
+
+          // National identity (ensure object exists)
+          if (!inputs.nationalIdentity) {
+            inputs.nationalIdentity = {
+              countryName: '',
+              officialName: '',
+              governmentType: 'republic',
+              motto: '',
+              mottoNative: '',
+              capitalCity: '',
+              largestCity: '',
+              demonym: '',
+              currency: '',
+              officialLanguages: '',
+              nationalLanguage: '',
+              nationalAnthem: '',
+              nationalDay: '',
+              callingCode: '',
+              internetTLD: '',
+              drivingSide: 'right',
+            };
+          }
+
+          if (wikiData.capital) {
+            inputs.nationalIdentity.capitalCity = wikiData.capital;
+          }
+          if (wikiData.currency) {
+            inputs.nationalIdentity.currency = wikiData.currency;
+          }
+          if (wikiData.languages) {
+            inputs.nationalIdentity.officialLanguages = wikiData.languages;
+          }
+          if (wikiData.name) {
+            inputs.nationalIdentity.countryName = wikiData.name;
+          }
+
+          // Flag URL
+          if (wikiData.flagUrl) {
+            inputs.flagUrl = wikiData.flagUrl;
+          }
+
+          // Set builder state with imported data
+          setBuilderState(prev => ({
+            ...prev,
+            step: 'core',
+            economicInputs: inputs,
+            completedSteps: ['foundation']
+          }));
+
+          // Clean up imported data
+          safeRemoveItemSync('builder_imported_data');
+
+          console.log('[useBuilderState] Wiki import data loaded:', wikiData.name);
+          return;
+        } catch (parseError) {
+          console.error('[useBuilderState] Failed to parse wiki import data:', parseError);
+          // Continue to normal state loading
+        }
+      }
+
       if (!quickStartProcessed.current) {
         const savedState = safeGetItemSync('builder_state');
         const savedLastSaved = safeGetItemSync('builder_last_saved');

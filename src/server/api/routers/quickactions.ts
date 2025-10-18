@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
+import { notificationHooks } from "~/lib/notification-hooks";
 
 /**
  * QUICK ACTIONS ROUTER
@@ -65,7 +66,11 @@ const policyInputSchema = z.object({
   category: z.string().min(1, "Category is required"),
   priority: z.enum(['critical', 'high', 'medium', 'low']).default('medium'),
   objectives: z.array(z.string()).optional().default([]),
-  targetMetrics: z.record(z.string(), z.any()).optional(),
+  targetMetrics: z.record(z.string(), z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+  ])).optional(),
   implementationCost: z.number().min(0).default(0),
   maintenanceCost: z.number().min(0).default(0),
   estimatedBenefit: z.string().optional().nullable(),
@@ -400,6 +405,21 @@ export const quickActionsRouter = createTRPCRouter({
         },
       });
 
+      // Notify about meeting scheduled
+      try {
+        await notificationHooks.onQuickActionComplete({
+          userId: input.userId,
+          countryId: input.countryId,
+          actionType: 'meeting',
+          actionName: input.meeting.title,
+          status: 'scheduled',
+          impactSummary: `Scheduled for ${input.meeting.scheduledDate.toLocaleDateString()} with ${input.meeting.attendeeIds.length} attendees`,
+          href: '/mycountry/quickactions',
+        });
+      } catch (error) {
+        console.error('[QuickActions] Failed to send meeting scheduled notification:', error);
+      }
+
       return { meeting, success: true, message: 'Cabinet meeting scheduled successfully' };
     }),
 
@@ -591,6 +611,21 @@ export const quickActionsRouter = createTRPCRouter({
         },
       });
 
+      // Notify about policy creation
+      try {
+        await notificationHooks.onQuickActionComplete({
+          userId: input.userId,
+          countryId: input.countryId,
+          actionType: 'policy',
+          actionName: input.policy.name,
+          status: 'scheduled',
+          impactSummary: `Draft policy created (${input.policy.policyType})`,
+          href: '/mycountry/quickactions',
+        });
+      } catch (error) {
+        console.error('[QuickActions] Failed to send policy created notification:', error);
+      }
+
       return { policy, success: true, message: 'Policy created successfully' };
     }),
 
@@ -698,11 +733,45 @@ export const quickActionsRouter = createTRPCRouter({
           },
         });
 
+        // Notify about policy activation with impact summary
+        try {
+          const impactDetails = [
+            `GDP/capita: ${actualEffect.gdpPerCapitaChange > 0 ? '+' : ''}${actualEffect.gdpPerCapitaChange.toFixed(2)}`,
+            `Unemployment: ${actualEffect.unemploymentRateChange > 0 ? '+' : ''}${actualEffect.unemploymentRateChange.toFixed(2)}%`,
+            `Tax Revenue: ${actualEffect.taxRevenueChange > 0 ? '+' : ''}${actualEffect.taxRevenueChange.toFixed(2)}%`,
+          ].join(', ');
+
+          await notificationHooks.onQuickActionComplete({
+            countryId: policy.countryId,
+            actionType: 'policy',
+            actionName: policy.name,
+            status: 'completed',
+            impactSummary: `Policy activated with effects: ${impactDetails}`,
+            href: '/mycountry/quickactions',
+          });
+        } catch (error) {
+          console.error('[QuickActions] Failed to send policy activation notification:', error);
+        }
+
         return {
           success: true,
           message: 'Policy activated and effects applied',
           effectSummary: actualEffect,
         };
+      }
+
+      // Notify about policy activation without effects
+      try {
+        await notificationHooks.onQuickActionComplete({
+          countryId: policy.countryId,
+          actionType: 'policy',
+          actionName: policy.name,
+          status: 'completed',
+          impactSummary: 'Policy activated (effects not applied)',
+          href: '/mycountry/quickactions',
+        });
+      } catch (error) {
+        console.error('[QuickActions] Failed to send policy activation notification:', error);
       }
 
       return { success: true, message: 'Policy activated' };
@@ -810,6 +879,22 @@ export const quickActionsRouter = createTRPCRouter({
           status: 'scheduled',
         },
       });
+
+      // Notify about activity scheduled
+      try {
+        const isUrgent = input.activity.priority === 'urgent';
+        await notificationHooks.onQuickActionComplete({
+          userId: input.userId,
+          countryId: input.countryId,
+          actionType: 'activity',
+          actionName: input.activity.title,
+          status: 'scheduled',
+          impactSummary: `${input.activity.activityType} scheduled for ${input.activity.scheduledDate.toLocaleDateString()}`,
+          href: '/mycountry/quickactions',
+        });
+      } catch (error) {
+        console.error('[QuickActions] Failed to send activity scheduled notification:', error);
+      }
 
       return { activity, success: true };
     }),
@@ -978,6 +1063,21 @@ export const quickActionsRouter = createTRPCRouter({
           notes: input.notes ?? null,
         },
       });
+
+      // Notify about meeting completion
+      try {
+        const discussedCount = meeting.agendaItems.filter(i => i.status === 'discussed').length;
+        await notificationHooks.onQuickActionComplete({
+          countryId: meeting.countryId,
+          actionType: 'meeting',
+          actionName: meeting.title,
+          status: 'completed',
+          impactSummary: `Meeting completed with ${discussedCount} items discussed`,
+          href: '/mycountry/quickactions',
+        });
+      } catch (error) {
+        console.error('[QuickActions] Failed to send meeting completion notification:', error);
+      }
 
       // Generate suggested decisions based on agenda items
       const suggestedDecisions: Array<{

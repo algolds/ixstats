@@ -1,16 +1,17 @@
 "use client";
 
-import { useEffect } from "react";
 import { useUser } from "~/context/auth-context";
+import { usePageTitle } from "~/hooks/usePageTitle";
 import { EnhancedCommandCenter } from "./_components/EnhancedCommandCenter";
 import { IxStatsSplashPage } from "./_components/IxStatsSplashPage";
 
 export default function Home() {
   const { isSignedIn, isLoaded } = useUser();
 
-  useEffect(() => {
-    document.title = isSignedIn ? "Command Center - IxStats" : "IxStats - Economic Simulation Platform";
-  }, [isSignedIn]);
+  // Set page title based on authentication state
+  usePageTitle({ 
+    title: isSignedIn ? "Command Center" : "Home" 
+  });
 
   // Show loading state while checking auth
   if (!isLoaded) {

@@ -49,46 +49,11 @@ export const diplomaticRouter = createTRPCRouter({
         return transformedRelations;
       } catch (error) {
         console.error('Error fetching diplomatic relations:', error);
-        
-        // Fallback to mock data if database query fails
-        const mockRelations = [
-          {
-            id: '1',
-            targetCountry: 'Allied Nation',
-            targetCountryId: 'ally_1',
-            relationship: 'alliance',
-            strength: 85,
-            treaties: ['Trade Agreement', 'Defense Pact'],
-            lastContact: new Date().toISOString(),
-            status: 'active',
-            diplomaticChannels: ['Embassy', 'Trade Mission'],
-            tradeVolume: 1500000000,
-            culturalExchange: 'High',
-            recentActivity: 'Trade delegation visit',
-            economicTier: 'High Income',
-            flagUrl: null,
-            establishedAt: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            id: '2',
-            targetCountry: 'Neutral State',
-            targetCountryId: 'neutral_1',
-            relationship: 'neutral',
-            strength: 50,
-            treaties: ['Non-Aggression Pact'],
-            lastContact: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-            status: 'active',
-            diplomaticChannels: ['Embassy'],
-            tradeVolume: 800000000,
-            culturalExchange: 'Medium',
-            recentActivity: null,
-            economicTier: 'Middle Income',
-            flagUrl: null,
-            establishedAt: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString()
-          }
-        ];
-
-        return mockRelations;
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch diplomatic relations',
+          cause: error,
+        });
       }
     }),
 

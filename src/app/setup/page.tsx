@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect } from "react";
+import { usePageTitle } from "~/hooks/usePageTitle";
 import { useRouter } from "next/navigation";
 import { useUser, SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
 import { api } from "~/trpc/react";
@@ -80,6 +81,8 @@ const setupIntroSteps = [
 ];
 
 export default function SetupPage() {
+  usePageTitle({ title: "Country Setup" });
+  
   const { user, isLoaded, userProfile, isLoading: profileLoading } = useUserCountry();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<SetupStep>('welcome');
@@ -102,7 +105,7 @@ export default function SetupPage() {
     if (isLoaded && user && userProfile) {
       if (userProfile.countryId) {
         // User already has a country linked, redirect to their country page
-        navigateTo(router, `/countries/${userProfile.countryId}`);
+        navigateTo(router, `/nation/${userProfile.countryId}`);
       }
     }
   }, [isLoaded, user, userProfile, router]);
@@ -165,7 +168,7 @@ export default function SetupPage() {
     const countryId = updatedProfile.data?.countryId;
     
     if (countryId) {
-      navigateTo(router, `/countries/${countryId}`);
+      navigateTo(router, `/nation/${countryId}`);
     } else {
       navigateTo(router, '/dashboard');
     }

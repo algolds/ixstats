@@ -195,7 +195,7 @@ export const CountriesFocusGrid: React.FC<CountriesFocusGridProps> = ({
   }, [loadMore]);
 
   const handleCountryClick = (countryId: string) => {
-    window.location.href = createAbsoluteUrl(`/countries/${countryId}`);
+    window.location.href = createAbsoluteUrl(`/nation/${countryId}`);
   };
 
   const onCountryClick = handleCountryClick;
@@ -460,7 +460,7 @@ export const CountriesFocusGrid: React.FC<CountriesFocusGridProps> = ({
                         size="lg"
                       >
                         <span className="relative z-10">🍀 I'm Feeling Lucky</span>
-                        <kbd className="relative z-10 px-2 py-1 bg-black/30 rounded text-xs border-border border-white/30">Ctrl+Tab</kbd>
+                        <kbd className="relative z-10 px-2 py-1 bg-black/30 rounded text-xs border border-white/30">Ctrl+Tab</kbd>
                       </RainbowButton>
                     </div>
 

@@ -122,8 +122,8 @@ export function AdvancedAnalyticsModal({
 
   // Get advanced analytics
   const { data: advancedAnalytics, isLoading: analyticsLoading } =
-    api.eci.getAdvancedAnalytics.useQuery(
-      { userId: countryId || 'disabled' }, // Using countryId as userId for now
+    api.unifiedIntelligence.getAdvancedAnalytics.useQuery(
+      { countryId: countryId || 'disabled' },
       { enabled: isOpen && !!countryId }
     );
 

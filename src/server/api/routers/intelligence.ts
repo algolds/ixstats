@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, premiumProcedure, adminProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure, premiumProcedure, adminProcedure } from "~/server/api/trpc";
 import { standardize } from "~/lib/interface-standardizer";
 import { unifyIntelligenceItem } from "~/lib/transformers/interface-adapters";
 import { calculateIntelligence } from "~/lib/intelligence-calculator";
@@ -30,7 +30,7 @@ export const intelligenceRouter = createTRPCRouter({
     return items.map(unifyIntelligenceItem);
   }),
 
-  createIntelligenceItem: publicProcedure
+  createIntelligenceItem: protectedProcedure
     .input(z.object({
       title: z.string().min(1).max(200),
       content: z.string().min(1),
@@ -208,7 +208,7 @@ export const intelligenceRouter = createTRPCRouter({
 
 // Only allow initializeSampleData in development
 if (process.env.NODE_ENV === 'development') {
-  intelligenceRouter.initializeSampleData = publicProcedure.mutation(async ({ ctx }) => {
+  intelligenceRouter.initializeSampleData = adminProcedure.mutation(async ({ ctx }) => {
     const count = await ctx.db.intelligenceItem.count();
     
     if (count === 0) {

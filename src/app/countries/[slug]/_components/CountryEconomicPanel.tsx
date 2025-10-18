@@ -18,6 +18,7 @@ import type {
   GovernmentSpendingData,
 } from "~/types/economics";
 import type { CountryInfobox } from "~/lib/mediawiki-service";
+import { NationalIdentityDisplay } from "~/components/countries/NationalIdentityDisplay";
 
 // Dynamic imports for chart-heavy components
 const LaborEmployment = dynamic(
@@ -254,6 +255,13 @@ export function CountryEconomicPanel({
 
         {/* Government Tab */}
         <TabsContent value="government" className="space-y-4 mt-6">
+          {/* National Identity Display */}
+          <NationalIdentityDisplay 
+            nationalIdentity={country?.nationalIdentity}
+            wikiInfobox={wikiInfobox}
+            showTitle={true}
+          />
+
           <Card className="backdrop-blur-sm bg-card/50">
             <CardContent className="pt-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

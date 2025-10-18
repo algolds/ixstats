@@ -123,10 +123,10 @@ export function Demographics({
   }
 
   function handleAgeDistributionChange(index: number, percent: number) {
-    const newAgeDistribution = [...demographicData.ageDistribution];
+    const newAgeDistribution = [...(demographicData.ageDistribution ?? [])];
     if (newAgeDistribution[index]) {
       newAgeDistribution[index] = { ...newAgeDistribution[index], percent };
-      
+
       // Normalize percentages to ensure they add up to 100
       const total = newAgeDistribution.reduce((sum, group) => sum + group.percent, 0);
       if (total !== 100 && total > 0) {
@@ -135,13 +135,13 @@ export function Demographics({
           group.percent = group.percent * factor;
         });
       }
-      
+
       handleField('ageDistribution', newAgeDistribution);
     }
   }
 
   function handleEducationLevelChange(index: number, percent: number) {
-    const newEducationLevels = [...demographicData.educationLevels];
+    const newEducationLevels = [...(demographicData.educationLevels ?? [])];
     if (newEducationLevels[index]) {
       newEducationLevels[index] = { ...newEducationLevels[index], percent };
       
@@ -160,7 +160,7 @@ export function Demographics({
 
   // Health assessment functions
   function getUrbanizationHealth() {
-    const urbanPercent = demographicData.urbanRuralSplit.urban;
+    const urbanPercent = demographicData.urbanRuralSplit?.urban ?? 0;
     if (urbanPercent >= 80) return { label: "Highly Urbanized", color: "text-purple-600", variant: "default" as const };
     if (urbanPercent >= 60) return { label: "Urbanized", color: "text-blue-600", variant: "secondary" as const };
     if (urbanPercent >= 40) return { label: "Moderately Urban", color: "text-green-600", variant: "default" as const };
@@ -169,7 +169,7 @@ export function Demographics({
   }
 
   function getLiteracyHealth() {
-    const rate = demographicData.literacyRate;
+    const rate = demographicData.literacyRate ?? 0;
     if (rate >= 99) return { label: "Universal", color: "text-green-600", variant: "default" as const };
     if (rate >= 90) return { label: "Very High", color: "text-blue-600", variant: "secondary" as const };
     if (rate >= 70) return { label: "High", color: "text-yellow-600", variant: "default" as const };
@@ -178,7 +178,7 @@ export function Demographics({
   }
 
   function getLifeExpectancyHealth() {
-    const expectancy = demographicData.lifeExpectancy;
+    const expectancy = demographicData.lifeExpectancy ?? 0;
     if (expectancy >= 80) return { label: "Excellent", color: "text-green-600" };
     if (expectancy >= 75) return { label: "Good", color: "text-blue-600" };
     if (expectancy >= 70) return { label: "Fair", color: "text-yellow-600" };
@@ -188,27 +188,29 @@ export function Demographics({
 
   function getDemographicHealth() {
     let score = 70;
-    
+
     // Life expectancy factor
-    if (demographicData.lifeExpectancy >= 80) score += 10;
-    else if (demographicData.lifeExpectancy >= 70) score += 5;
-    else if (demographicData.lifeExpectancy < 60) score -= 10;
-    
+    const lifeExpectancy = demographicData.lifeExpectancy ?? 0;
+    if (lifeExpectancy >= 80) score += 10;
+    else if (lifeExpectancy >= 70) score += 5;
+    else if (lifeExpectancy < 60) score -= 10;
+
     // Literacy factor
-    if (demographicData.literacyRate >= 95) score += 10;
-    else if (demographicData.literacyRate >= 85) score += 5;
-    else if (demographicData.literacyRate < 70) score -= 10;
-    
+    const literacyRate = demographicData.literacyRate ?? 0;
+    if (literacyRate >= 95) score += 10;
+    else if (literacyRate >= 85) score += 5;
+    else if (literacyRate < 70) score -= 10;
+
     // Age distribution balance
-    const workingAge = demographicData.ageDistribution.find(g => g.group.includes('16-64') || g.group.includes('15-64'))?.percent || 0;
+    const workingAge = demographicData.ageDistribution?.find(g => g.group.includes('16-64') || g.group.includes('15-64'))?.percent || 0;
     if (workingAge >= 60 && workingAge <= 70) score += 5;
     else if (workingAge < 50 || workingAge > 75) score -= 5;
-    
+
     // Education factor
-    const higherEd = demographicData.educationLevels.find(l => l.level.toLowerCase().includes('higher'))?.percent || 0;
+    const higherEd = demographicData.educationLevels?.find(l => l.level.toLowerCase().includes('higher'))?.percent || 0;
     if (higherEd >= 30) score += 5;
     else if (higherEd < 15) score -= 5;
-    
+
     return {
       score: Math.max(0, Math.min(100, Math.round(score))),
       label: score >= 85 ? "Excellent" : score >= 70 ? "Good" : score >= 55 ? "Fair" : "Needs Attention",
@@ -227,7 +229,7 @@ export function Demographics({
   };
 
   // Prepare data for visualizations
-  const ageData = demographicData.ageDistribution.map((group, index) => ({
+  const ageData = (demographicData.ageDistribution ?? []).map((group, index) => ({
     ...group,
     value: group.percent,
     population: calculatePopulationInGroup(group.percent),
@@ -235,18 +237,18 @@ export function Demographics({
   }));
 
   const urbanRuralData = [
-    { name: 'Urban', value: demographicData.urbanRuralSplit.urban, color: '#3b82f6' },
-    { name: 'Rural', value: demographicData.urbanRuralSplit.rural, color: '#10b981' },
+    { name: 'Urban', value: demographicData.urbanRuralSplit?.urban ?? 0, color: '#3b82f6' },
+    { name: 'Rural', value: demographicData.urbanRuralSplit?.rural ?? 0, color: '#10b981' },
   ];
 
-  const educationData = demographicData.educationLevels.map((level, index) => ({
+  const educationData = (demographicData.educationLevels ?? []).map((level, index) => ({
     ...level,
     value: level.percent,
     population: calculatePopulationInGroup(level.percent),
     color: level.color || COLORS[index % COLORS.length],
   }));
 
-  const regionData = demographicData.regions.map((region, index) => ({
+  const regionData = (demographicData.regions ?? []).map((region, index) => ({
     ...region,
     color: region.color || COLORS[index % COLORS.length],
     urbanPopulation: Math.round(region.population * (region.urbanPercent / 100)),
@@ -262,7 +264,7 @@ export function Demographics({
       reverse: false,
       description: "Average life span in years",
       icon: Heart,
-      format: (v: number) => `${v.toFixed(1)} years`,
+      format: (v: number | null) => v != null ? `${v.toFixed(1)} years` : 'N/A',
     },
     {
       label: "Literacy Rate",
@@ -272,17 +274,17 @@ export function Demographics({
       reverse: false,
       description: "% of population that can read/write",
       icon: GraduationCap,
-      format: (v: number) => formatPercentage(v),
+      format: (v: number | null) => v != null ? formatPercentage(v) : 'N/A',
     },
     {
       label: "Urbanization",
       field: "urbanRuralSplit" as const,
-      value: demographicData.urbanRuralSplit.urban,
+      value: demographicData.urbanRuralSplit?.urban,
       target: 70,
       reverse: false,
       description: "% living in urban areas",
       icon: Building2,
-      format: (v: number) => formatPercentage(v),
+      format: (v: number | null) => v != null ? formatPercentage(v) : 'N/A',
     },
   ];
 
@@ -333,7 +335,7 @@ export function Demographics({
               </span>
             </span>
             <Badge variant={literacyHealth.variant}>
-              {formatPercentage(demographicData.literacyRate)} Literacy
+              {formatPercentage(demographicData.literacyRate ?? 0)} Literacy
             </Badge>
           </AlertDescription>
         </Alert>
@@ -354,15 +356,15 @@ export function Demographics({
                 <div className="text-xs text-muted-foreground">Total Population</div>
               </div>
               <div className="text-center space-y-1">
-                <div className="text-2xl font-bold text-red-600">{demographicData.lifeExpectancy.toFixed(1)}</div>
+                <div className="text-2xl font-bold text-red-600">{demographicData.lifeExpectancy?.toFixed(1) ?? 'N/A'}</div>
                 <div className="text-xs text-muted-foreground">Life Expectancy</div>
               </div>
               <div className="text-center space-y-1">
-                <div className="text-2xl font-bold text-green-600">{demographicData.literacyRate.toFixed(1)}%</div>
+                <div className="text-2xl font-bold text-green-600">{demographicData.literacyRate?.toFixed(1) ?? 'N/A'}%</div>
                 <div className="text-xs text-muted-foreground">Literacy Rate</div>
               </div>
               <div className="text-center space-y-1">
-                <div className="text-2xl font-bold text-purple-600">{demographicData.urbanRuralSplit.urban.toFixed(0)}%</div>
+                <div className="text-2xl font-bold text-purple-600">{demographicData.urbanRuralSplit?.urban?.toFixed(0) ?? 'N/A'}%</div>
                 <div className="text-xs text-muted-foreground">Urban Population</div>
               </div>
             </div>
@@ -376,10 +378,11 @@ export function Demographics({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {basicMetrics.map((metric) => {
                 const Icon = metric.icon;
+                const metricValue = metric.value ?? 0;
                 const progress = metric.reverse
-                  ? Math.max(0, 100 - (metric.value / metric.target) * 100)
-                  : Math.min(100, (metric.value / metric.target) * 100);
-                
+                  ? Math.max(0, 100 - (metricValue / metric.target) * 100)
+                  : Math.min(100, (metricValue / metric.target) * 100);
+
                 return (
                   <Card key={metric.field}>
                     <CardContent className="p-4">
@@ -405,7 +408,7 @@ export function Demographics({
                           {editMode ? (
                             <Input
                               type="number"
-                              value={metric.value}
+                              value={metricValue}
                               onChange={(e) => {
                                 if (metric.field === "urbanRuralSplit") {
                                   handleUrbanRuralChange(parseFloat(e.target.value) || 0);
@@ -524,11 +527,11 @@ export function Demographics({
                 <div className="grid grid-cols-2 gap-4 text-sm mt-4">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Life Expectancy:</span>
-                    <span className="font-medium">{demographicData.lifeExpectancy >= 70 ? "✓" : "✗"} Good</span>
+                    <span className="font-medium">{(demographicData.lifeExpectancy ?? 0) >= 70 ? "✓" : "✗"} Good</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Literacy Rate:</span>
-                    <span className="font-medium">{demographicData.literacyRate >= 85 ? "✓" : "✗"} High</span>
+                    <span className="font-medium">{(demographicData.literacyRate ?? 0) >= 85 ? "✓" : "✗"} High</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Working Age Pop:</span>
@@ -554,10 +557,10 @@ export function Demographics({
                       <div className="flex justify-between items-center text-sm">
                         <span>Life Expectancy:</span>
                         <div className="space-x-2">
-                          <Badge variant="outline">{referenceCountry.lifeExpectancy.toFixed(1)} years</Badge>
+                          <Badge variant="outline">{referenceCountry.lifeExpectancy?.toFixed(1) ?? 'N/A'} years</Badge>
                           <span>vs</span>
-                          <Badge variant={demographicData.lifeExpectancy >= referenceCountry.lifeExpectancy ? "default" : "secondary"}>
-                            {demographicData.lifeExpectancy.toFixed(1)} years
+                          <Badge variant={(demographicData.lifeExpectancy ?? 0) >= (referenceCountry.lifeExpectancy ?? 0) ? "default" : "secondary"}>
+                            {demographicData.lifeExpectancy?.toFixed(1) ?? 'N/A'} years
                           </Badge>
                         </div>
                       </div>
@@ -568,8 +571,8 @@ export function Demographics({
                         <div className="space-x-2">
                           <Badge variant="outline">{formatPercentage(referenceCountry.literacyRate)}</Badge>
                           <span>vs</span>
-                          <Badge variant={demographicData.literacyRate >= referenceCountry.literacyRate ? "default" : "secondary"}>
-                            {formatPercentage(demographicData.literacyRate)}
+                          <Badge variant={(demographicData.literacyRate ?? 0) >= (referenceCountry.literacyRate ?? 0) ? "default" : "secondary"}>
+                            {formatPercentage(demographicData.literacyRate ?? 0)}
                           </Badge>
                         </div>
                       </div>
@@ -580,8 +583,8 @@ export function Demographics({
                         <div className="space-x-2">
                           <Badge variant="outline">{formatPercentage(referenceCountry.urbanizationRate)}</Badge>
                           <span>vs</span>
-                          <Badge variant={demographicData.urbanRuralSplit.urban >= referenceCountry.urbanizationRate ? "default" : "secondary"}>
-                            {formatPercentage(demographicData.urbanRuralSplit.urban)}
+                          <Badge variant={(demographicData.urbanRuralSplit?.urban ?? 0) >= (referenceCountry.urbanizationRate ?? 0) ? "default" : "secondary"}>
+                            {formatPercentage(demographicData.urbanRuralSplit?.urban ?? 0)}
                           </Badge>
                         </div>
                       </div>
@@ -677,18 +680,18 @@ export function Demographics({
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="text-3xl font-bold">{demographicData.lifeExpectancy.toFixed(1)} years</div>
+                          <div className="text-3xl font-bold">{demographicData.lifeExpectancy?.toFixed(1) ?? 'N/A'} years</div>
                           <div className="text-sm text-muted-foreground">Average life expectancy</div>
                         </div>
                         <Heart className="h-12 w-12 text-red-500 opacity-20" />
                       </div>
-                      
+
                       {editMode && (
                         <div>
                           <Label>Life Expectancy (years)</Label>
                           <Input
                             type="number"
-                            value={demographicData.lifeExpectancy}
+                            value={demographicData.lifeExpectancy ?? 0}
                             onChange={(e) => handleField('lifeExpectancy', parseFloat(e.target.value) || 0)}
                             step="0.1"
                             min="40"
@@ -696,14 +699,14 @@ export function Demographics({
                           />
                         </div>
                       )}
-                      
+
                       <Alert>
                         <Info className="h-4 w-4" />
                         <AlertDescription>
-                          Life expectancy of {demographicData.lifeExpectancy.toFixed(1)} years indicates a 
-                          {demographicData.lifeExpectancy >= 80 ? " highly developed healthcare system" :
-                           demographicData.lifeExpectancy >= 70 ? " moderately developed healthcare system" :
-                           demographicData.lifeExpectancy >= 60 ? " developing healthcare system" :
+                          Life expectancy of {demographicData.lifeExpectancy?.toFixed(1) ?? 'N/A'} years indicates a
+                          {(demographicData.lifeExpectancy ?? 0) >= 80 ? " highly developed healthcare system" :
+                           (demographicData.lifeExpectancy ?? 0) >= 70 ? " moderately developed healthcare system" :
+                           (demographicData.lifeExpectancy ?? 0) >= 60 ? " developing healthcare system" :
                            " healthcare system that needs significant investment"}.
                         </AlertDescription>
                       </Alert>
@@ -783,10 +786,10 @@ export function Demographics({
                         <Label>Literacy Rate</Label>
                         <Badge className={literacyHealth.color}>{literacyHealth.label}</Badge>
                       </div>
-                      <Progress value={demographicData.literacyRate} className="h-3" />
+                      <Progress value={demographicData.literacyRate ?? 0} className="h-3" />
                       <div className="flex justify-between text-xs text-muted-foreground mt-1">
                         <span>0%</span>
-                        <span className="font-medium">{demographicData.literacyRate.toFixed(1)}%</span>
+                        <span className="font-medium">{demographicData.literacyRate?.toFixed(1) ?? 'N/A'}%</span>
                         <span>100%</span>
                       </div>
                     </div>
@@ -796,7 +799,7 @@ export function Demographics({
                         <Label>Adjust Literacy Rate</Label>
                         <Input
                           type="number"
-                          value={demographicData.literacyRate}
+                          value={demographicData.literacyRate ?? 0}
                           onChange={(e) => handleField('literacyRate', parseFloat(e.target.value) || 0)}
                           step="0.1"
                           min="0"
@@ -808,11 +811,11 @@ export function Demographics({
                     <Alert>
                       <GraduationCap className="h-4 w-4" />
                       <AlertDescription>
-                        {demographicData.literacyRate >= 95 
+                        {(demographicData.literacyRate ?? 0) >= 95
                           ? "Near-universal literacy indicates excellent educational infrastructure."
-                          : demographicData.literacyRate >= 85
+                          : (demographicData.literacyRate ?? 0) >= 85
                           ? "High literacy rate shows good educational access for most citizens."
-                          : demographicData.literacyRate >= 70
+                          : (demographicData.literacyRate ?? 0) >= 70
                           ? "Moderate literacy suggests room for educational improvement."
                           : "Low literacy rate indicates significant educational challenges."}
                       </AlertDescription>
@@ -887,14 +890,14 @@ export function Demographics({
                           <Label>Urban Population Percentage</Label>
                           <div className="flex items-center gap-4">
                             <Slider
-                              value={[demographicData.urbanRuralSplit.urban]}
+                              value={[demographicData.urbanRuralSplit?.urban ?? 50]}
                               onValueChange={([value]) => handleUrbanRuralChange(value ?? 0)}
                               max={100}
                               step={1}
                               className="flex-1"
                             />
                             <span className="w-16 text-right font-medium">
-                              {demographicData.urbanRuralSplit.urban.toFixed(0)}%
+                              {demographicData.urbanRuralSplit?.urban?.toFixed(0) ?? 'N/A'}%
                             </span>
                           </div>
                         </div>
@@ -943,14 +946,14 @@ export function Demographics({
           <AlertDescription>
             <div className="font-medium">Demographic Summary</div>
             <p className="text-sm mt-1">
-              Population of {formatPopulation(totalPopulation)} with {demographicData.lifeExpectancy.toFixed(1)} year life expectancy.
-              {demographicData.urbanRuralSplit.urban > 70 
+              Population of {formatPopulation(totalPopulation)} with {demographicData.lifeExpectancy?.toFixed(1) ?? 'N/A'} year life expectancy.
+              {(demographicData.urbanRuralSplit?.urban ?? 0) > 70
                 ? " Highly urbanized society"
-                : demographicData.urbanRuralSplit.urban > 50
+                : (demographicData.urbanRuralSplit?.urban ?? 0) > 50
                 ? " Moderately urban society"
                 : " Predominantly rural society"}
-              with {demographicData.literacyRate.toFixed(1)}% literacy rate.
-              {demographicData.educationLevels.find(l => l.level.toLowerCase().includes('higher'))?.percent || 0 > 25
+              with {demographicData.literacyRate?.toFixed(1) ?? 'N/A'}% literacy rate.
+              {(demographicData.educationLevels?.find(l => l.level.toLowerCase().includes('higher'))?.percent || 0) > 25
                 ? " Well-educated population."
                 : " Educational development opportunities exist."}
             </p>

@@ -70,13 +70,13 @@ export function UnifiedSidebar({
   const router = useRouter();
   const { user } = useUser();
   // Fetch notifications and unread count from backend
-  const { data: notificationsData = [] } = api.sdi.getNotifications?.useQuery?.(
-    { userId: user?.id || "" },
-    { enabled: !!user?.id, refetchInterval: 10000 }
-  ) || { data: [] };
-  const { data: unreadCount = 0 } = api.sdi.getUnreadNotifications?.useQuery?.(
-    { userId: user?.id || "" },
-    { enabled: !!user?.id, refetchInterval: 10000 }
+  const { data: notificationsData } = api.unifiedIntelligence.getIntelligenceFeed?.useQuery?.(
+    { countryId: countryId || "" },
+    { enabled: !!countryId, refetchInterval: 10000 }
+  ) || { data: undefined };
+  const { data: unreadCount = 0 } = api.unifiedIntelligence.getIntelligenceFeed?.useQuery?.(
+    { countryId: countryId || "" },
+    { enabled: !!countryId, refetchInterval: 10000, select: (data: any) => data?.filter((n: any) => !n.read).length || 0 }
   ) || { data: 0 };
   // Determine activeKey from route if not provided
   let computedActiveKey = activeKey;
@@ -143,10 +143,10 @@ export function UnifiedSidebar({
                 onClick={e => e.stopPropagation()}
               >
                 <div className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Notifications</div>
-                {notificationsData.length === 0 && (
+                {(!notificationsData?.items || notificationsData.items.length === 0) && (
                   <div className="text-sm text-muted-foreground py-6 text-center">No notifications</div>
                 )}
-                {notificationsData.slice(0, 6).map((n: any) => (
+                {(notificationsData?.items || []).slice(0, 6).map((n: any) => (
                   <Link
                     key={n.id}
                     href={n.href || '#'}

@@ -29,7 +29,7 @@ export function CrisisStatusBanner({ countryId }: CrisisStatusBannerProps) {
   );
 
   // Get crisis events affecting this country
-  const { data: crisisEvents, isLoading } = api.sdi.getCrisisEvents.useQuery();
+  const { data: crisisEvents, isLoading } = api.unifiedIntelligence.getCrisisEvents.useQuery();
 
   if (isLoading) {
     return null; // Don't show loading state for this banner

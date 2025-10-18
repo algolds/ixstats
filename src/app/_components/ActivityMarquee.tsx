@@ -253,7 +253,7 @@ export const ActivityMarquee = memo(function ActivityMarquee({ countries, isLoad
               
               {activity.country && activity.countryId && (
                 <Link
-                  href={`/countries/${activity.countryId}`}
+                  href={`/nation/${activity.countryId}`}
                   className="text-sm text-primary hover:text-primary/80 transition-colors ml-1 font-medium"
                   onClick={(e) => e.stopPropagation()}
                 >

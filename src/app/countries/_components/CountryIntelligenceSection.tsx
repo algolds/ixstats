@@ -38,10 +38,14 @@ export function CountryIntelligenceSection({ countryId }: CountryIntelligenceSec
     { enabled: !!user?.id }
   );
 
-  // Get SDI data related to this country
-  const { data: crisisEvents, isLoading: crisisLoading } = api.sdi.getCrisisEvents.useQuery();
-  const { data: diplomaticRelations, isLoading: diplomacyLoading } = api.sdi.getDiplomaticRelations.useQuery();
-  const { data: economicAlerts, isLoading: economicLoading } = api.sdi.getEconomicAlerts.useQuery();
+  // Get unified intelligence data related to this country
+  const { data: crisisEvents, isLoading: crisisLoading } = api.unifiedIntelligence.getCrisisEvents.useQuery();
+  const { data: diplomaticData, isLoading: diplomacyLoading } = api.unifiedIntelligence.getEnhancedDiplomaticIntelligence.useQuery({ countryId });
+  const { data: economicIntelligence, isLoading: economicLoading } = api.unifiedIntelligence.getIntelligenceFeed.useQuery({
+    countryId,
+    category: 'ECONOMIC',
+    limit: 20
+  });
   const { data: intelligenceItems, isLoading: intelligenceLoading } = api.intelligence.getLatestIntelligence.useQuery();
 
   const isLoading = crisisLoading || diplomacyLoading || economicLoading || intelligenceLoading;
@@ -51,22 +55,20 @@ export function CountryIntelligenceSection({ countryId }: CountryIntelligenceSec
   const canAccessECI = userProfile ? hasInterfaceAccess((userProfile as UserProfile).role || 'user', userProfile.countryId || undefined, 'eci') : false;
 
   // Filter data relevant to this country
-  const relevantCrises = crisisEvents?.filter(crisis => 
+  const relevantCrises = crisisEvents?.filter(crisis =>
     crisis.affectedCountries?.includes(countryId)
   ) || [];
 
-  const relevantDiplomacy = diplomaticRelations?.filter(relation => 
-    relation.country1 === countryId || relation.country2 === countryId
-  ) || [];
+  // diplomaticData already filtered by countryId in the query
+  const relevantDiplomacy = diplomaticData?.relations || [];
 
-  const relevantIntelligence = intelligenceItems?.filter(item => 
-    item.relatedCountries?.includes(countryId) || 
+  const relevantIntelligence = intelligenceItems?.filter(item =>
+    item.relatedCountries?.includes(countryId) ||
     item.source?.toLowerCase().includes('country') // Basic filtering
   ) || [];
 
-  const relevantEconomicAlerts = economicAlerts?.filter(alert => 
-    alert.affectedCountries?.includes(countryId)
-  ) || [];
+  // economicIntelligence already filtered by countryId and category in the query
+  const relevantEconomicAlerts = economicIntelligence?.items || [];
 
   if (isLoading) {
     return (
@@ -228,14 +230,14 @@ export function CountryIntelligenceSection({ countryId }: CountryIntelligenceSec
                     <div className="flex justify-between items-start mb-2">
                       <h4 className="font-semibold text-yellow-900 dark:text-yellow-300">{alert.title}</h4>
                       <Badge variant="outline" className="text-yellow-700 border-yellow-400">
-                        {alert.severity}
+                        {alert.severity || alert.priority}
                       </Badge>
                     </div>
-                    {alert.description && (
-                      <p className="text-sm text-yellow-800 dark:text-yellow-400 mb-2">{alert.description}</p>
+                    {alert.content && (
+                      <p className="text-sm text-yellow-800 dark:text-yellow-400 mb-2">{alert.content}</p>
                     )}
                     <div className="text-xs text-yellow-600 dark:text-yellow-500">
-                      Type: {alert.type} | {new Date(alert.timestamp).toLocaleDateString()}
+                      Source: {alert.source} | {new Date(alert.timestamp).toLocaleDateString()}
                     </div>
                   </div>
                 ))}

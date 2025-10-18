@@ -16,7 +16,9 @@ import { IxTime } from "~/lib/ixtime";
 import { db } from "~/server/db";
 import { standardize } from "~/lib/interface-standardizer";
 import { unifyIntelligenceItem, adaptExecutiveToQuick } from "~/lib/transformers/interface-adapters";
-import type { 
+import { notificationAPI } from "~/lib/notification-api";
+import { notificationHooks } from "~/lib/notification-hooks";
+import type {
   CountryWithEconomicData,
   IntelligenceItem,
   Achievement,
@@ -518,6 +520,114 @@ export const myCountryRouter = createTRPCRouter({
     }),
 
   /**
+   * Update and track vitality scores with notifications
+   */
+  updateVitalityTracking: protectedProcedure
+    .input(z.object({
+      countryId: z.string(),
+      vitalityScores: z.object({
+        economicVitality: z.number(),
+        populationWellbeing: z.number(),
+        diplomaticStanding: z.number(),
+        governmentalEfficiency: z.number(),
+        overallScore: z.number(),
+      }),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // SECURITY: Verify user owns this country
+      if (ctx.user?.countryId !== input.countryId) {
+        throw new Error('FORBIDDEN: Cannot access other countries\' vitality data');
+      }
+
+      try {
+        // Get previous vitality scores from most recent snapshots
+        const previousSnapshots = await ctx.db.vitalitySnapshot.findMany({
+          where: { countryId: input.countryId },
+          orderBy: { calculatedAt: 'desc' },
+          take: 4,
+          select: {
+            area: true,
+            score: true,
+          }
+        });
+
+        // Map snapshots to vitality data structure
+        const previousData = previousSnapshots.length > 0 ? {
+          economicVitality: previousSnapshots.find(s => s.area === 'ECONOMIC' || s.area === 'economic')?.score ?? null,
+          populationWellbeing: previousSnapshots.find(s => s.area === 'SOCIAL' || s.area === 'social')?.score ?? null,
+          diplomaticStanding: previousSnapshots.find(s => s.area === 'DIPLOMATIC' || s.area === 'diplomatic')?.score ?? null,
+          governmentalEfficiency: previousSnapshots.find(s => s.area === 'GOVERNANCE' || s.area === 'governance')?.score ?? null,
+        } : null;
+
+        // Send notifications for significant changes (non-blocking)
+        if (previousData) {
+          const overallPrevious = (
+            (previousData.economicVitality ?? 0) +
+            (previousData.populationWellbeing ?? 0) +
+            (previousData.diplomaticStanding ?? 0) +
+            (previousData.governmentalEfficiency ?? 0)
+          ) / 4;
+
+          const dimensions = [
+            { key: 'economic' as const, current: input.vitalityScores.economicVitality, previous: previousData.economicVitality },
+            { key: 'population' as const, current: input.vitalityScores.populationWellbeing, previous: previousData.populationWellbeing },
+            { key: 'diplomatic' as const, current: input.vitalityScores.diplomaticStanding, previous: previousData.diplomaticStanding },
+            { key: 'governmental' as const, current: input.vitalityScores.governmentalEfficiency, previous: previousData.governmentalEfficiency },
+            { key: 'overall' as const, current: input.vitalityScores.overallScore, previous: overallPrevious },
+          ];
+
+          for (const dimension of dimensions) {
+            if (dimension.previous !== null && dimension.current !== null) {
+              try {
+                await notificationHooks.onVitalityScoreChange({
+                  countryId: input.countryId,
+                  userId: ctx.user?.id,
+                  dimension: dimension.key,
+                  currentScore: dimension.current,
+                  previousScore: dimension.previous,
+                  threshold: 10,
+                });
+              } catch (error) {
+                console.error(`[MyCountry] Failed to send notification for ${dimension.key}:`, error);
+              }
+            }
+          }
+
+          // Critical alert if overall score drops below 40
+          if (input.vitalityScores.overallScore < 40 && (previousData.economicVitality ?? 0) >= 40) {
+            try {
+              await notificationAPI.create({
+                title: '🚨 Critical National Health Alert',
+                message: `Overall national health has fallen to ${input.vitalityScores.overallScore.toFixed(1)}. Immediate action recommended.`,
+                userId: ctx.user?.id || null,
+                countryId: input.countryId,
+                category: 'crisis',
+                type: 'error',
+                priority: 'critical',
+                severity: 'urgent',
+                href: '/mycountry/new?tab=vitality',
+                actionable: true,
+                deliveryMethod: 'modal',
+              });
+            } catch (error) {
+              console.error('[MyCountry] Failed to send critical alert:', error);
+            }
+          }
+        }
+
+        return {
+          success: true,
+          message: 'Vitality tracking updated',
+          notificationsSent: previousData ? true : false,
+        };
+
+      } catch (error) {
+        console.error('[MyCountry] Vitality tracking error:', error);
+        throw new Error('Failed to update vitality tracking');
+      }
+    }),
+
+  /**
    * Get intelligence feed for executive dashboard - Requires country ownership
    */
   getIntelligenceFeed: countryOwnerProcedure
@@ -638,7 +748,13 @@ export const myCountryRouter = createTRPCRouter({
     .input(z.object({
       countryId: z.string().min(1),
       actionId: z.string().min(1).max(50),
-      parameters: z.record(z.string(), z.any()).optional(),
+      parameters: z.record(z.string(), z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.null(),
+        z.array(z.string()),
+      ])).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       // Additional security: Verify the requested country matches user's country

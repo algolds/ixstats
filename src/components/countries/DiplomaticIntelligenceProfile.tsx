@@ -804,14 +804,14 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                 {createConversationMutation.isPending ? 'Starting...' : 'Secure Message'}
               </button>
               <button
-                onClick={() => window.location.href = createAbsoluteUrl(`/countries/${country.id}`)}
+                onClick={() => window.location.href = createAbsoluteUrl(`/nation/${country.slug || country.id}`)}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm bg-[--intel-gold]/20 hover:bg-[--intel-gold]/30 text-[--intel-gold] rounded-lg transition-colors"
               >
                 <RiMapPinLine className="h-4 w-4" />
                 Open IxMaps
               </button>
               <button
-                onClick={() => window.location.href = createAbsoluteUrl(`/countries/${country.id}`)}
+                onClick={() => window.location.href = createAbsoluteUrl(`/nation/${country.slug || country.id}`)}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm bg-[--intel-gold]/20 hover:bg-[--intel-gold]/30 text-[--intel-gold] rounded-lg transition-colors"
               >
                 <RiExternalLinkLine className="h-4 w-4" />

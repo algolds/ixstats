@@ -1,18 +1,18 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { usePageTitle } from '~/hooks/usePageTitle';
 import { api } from '~/trpc/react';
 import { CountriesPageModular } from './_components/CountriesPageModular';
 import type { CountryCardData } from '~/components/countries/CountryFocusCard';
 import { useBulkFlagCache } from '~/hooks/useBulkFlagCache';
+import { unifiedFlagService } from '~/lib/unified-flag-service';
 
 export default function CountriesPage() {
-  useEffect(() => {
-    document.title = "Countries - IxStats";
-  }, []);
+  usePageTitle({ title: "Countries" });
 
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Fetch countries data
   const {
     data: countriesResult,
@@ -30,13 +30,32 @@ export default function CountriesPage() {
     return countriesResult?.countries?.map(c => c.name) || [];
   }, [countriesResult]);
 
-  // Bulk fetch flags
+  // Prefetch flags in the background as soon as we have country names
+  useEffect(() => {
+    if (countryNames.length > 0) {
+      console.log(`[CountriesPage] Starting background prefetch for ${countryNames.length} flags`);
+
+      // First, cache any database flags we have
+      if (countriesResult?.countries) {
+        countriesResult.countries.forEach(country => {
+          if ((country as any).flag) {
+            unifiedFlagService.cacheDatabaseFlag(country.name, (country as any).flag);
+          }
+        });
+      }
+
+      // Then prefetch the rest
+      unifiedFlagService.prefetchFlags(countryNames);
+    }
+  }, [countryNames, countriesResult]);
+
+  // Bulk fetch flags (will use prefetched cache)
   const { flagUrls, isLoading: flagsLoading } = useBulkFlagCache(countryNames);
 
   // Process countries data for the focus grid
   const processedCountries: CountryCardData[] = useMemo(() => {
     if (!countriesResult?.countries) return [];
-    
+
     return countriesResult.countries.map((country): CountryCardData => ({
       id: country.id,
       name: country.name,
@@ -50,7 +69,8 @@ export default function CountriesPage() {
       gdpDensity: country.gdpDensity || undefined,
       adjustedGdpGrowth: country.adjustedGdpGrowth || undefined,
       populationGrowthRate: country.populationGrowthRate || undefined,
-      flagUrl: flagUrls[country.name] || undefined
+      // Use cached flag first, then database flag, then undefined
+      flagUrl: flagUrls[country.name] || (country as any).flag || undefined
     }));
   }, [countriesResult, flagUrls]);
 

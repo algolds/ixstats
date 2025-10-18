@@ -72,23 +72,23 @@ const VOLATILITY_COLORS = {
 
 export function TrendRiskAnalytics({ countryId, userId }: TrendRiskAnalyticsProps) {
   // Get advanced analytics data
-  const { data: analytics, isLoading: analyticsLoading, refetch: refetchAnalytics } = 
-    api.eci.getAdvancedAnalytics.useQuery(
-      { userId: userId || '' },
-      { enabled: !!userId }
+  const { data: analytics, isLoading: analyticsLoading, refetch: refetchAnalytics } =
+    api.unifiedIntelligence.getAdvancedAnalytics.useQuery(
+      { countryId },
+      { enabled: !!countryId }
     );
 
   // Get historical data for trend analysis
-  const { data: historicalData, isLoading: historicalLoading } = 
+  const { data: historicalData, isLoading: historicalLoading } =
     api.countries.getHistoricalData.useQuery(
       { countryId },
       { enabled: !!countryId }
     );
 
   // Get security dashboard for risk assessment
-  const { data: securityDashboard, isLoading: securityLoading } = 
+  const { data: securityDashboard, isLoading: securityLoading } =
     api.eci.getSecurityDashboard.useQuery(
-      { userId: userId || '' },
+      { userId: userId ?? "" },
       { enabled: !!userId }
     );
 

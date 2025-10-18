@@ -1,7 +1,7 @@
 // src/app/dashboard/_components/CountriesSection.tsx
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { RefreshCw, Globe } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { useBulkFlagCache } from "~/hooks/useBulkFlagCache";
 import { useMemo } from "react";
 import { createUrl } from "~/lib/url-utils";
+import { unifiedFlagService } from "~/lib/unified-flag-service";
 
 interface CountriesSectionProps {
   // Rename to end with Action so Next.js knows it's a client callback
@@ -105,6 +106,15 @@ function CountriesSectionImpl({
 
   // Use bulk flag cache for all countries - moved before early return
   const countryNames = useMemo(() => transformedCountries.map(c => c.name), [transformedCountries]);
+
+  // Prefetch flags in the background
+  useEffect(() => {
+    if (countryNames.length > 0) {
+      console.log(`[Dashboard] Prefetching ${countryNames.length} country flags`);
+      unifiedFlagService.prefetchFlags(countryNames);
+    }
+  }, [countryNames]);
+
   const { flagUrls, isLoading: flagsLoading } = useBulkFlagCache(countryNames);
 
   const handleRefreshCountries = () => {
@@ -188,7 +198,7 @@ function CountriesSectionImpl({
               key={country.id}
               country={country}
               onUpdateAction={handleIndividualUpdate}
-              flagUrl={flagUrls[country.name] || null}
+              flagUrl={flagUrls[country.name] || (rawCountries.find(c => c.id === country.id) as any)?.flag || null}
               flagLoading={flagsLoading}
             />
           ))}

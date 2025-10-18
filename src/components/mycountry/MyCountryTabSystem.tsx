@@ -31,6 +31,7 @@ import { createUrl } from '~/lib/url-utils';
 import { GovernmentStructureDisplay } from './GovernmentStructureDisplay';
 import { IntelligenceOverview } from './IntelligenceOverview';
 import { InlineHelpIcon } from '~/components/ui/help-icon';
+import { NationalIdentityDisplay } from '~/components/countries/NationalIdentityDisplay';
 
 interface MyCountryTabSystemProps {
   variant?: 'unified' | 'standard' | 'premium';
@@ -313,6 +314,12 @@ export function MyCountryTabSystem({ variant = 'unified' }: MyCountryTabSystemPr
 
       {/* Overview Tab */}
       <TabsContent value="overview" className="space-y-6" id="overview">
+        {/* National Identity Display */}
+        <NationalIdentityDisplay 
+          nationalIdentity={country?.nationalIdentity}
+          showTitle={true}
+        />
+
         <CountryAtGlance 
           country={{
             ...country,

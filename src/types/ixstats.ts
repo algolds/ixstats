@@ -67,6 +67,7 @@ export interface CountryStats extends BaseCountryData {
   // Database fields
   id?: string;
   name: string; // Will be same as 'country' from BaseCountryData
+  slug?: string;
 
   // Descriptive fields from Excel, carried over
   continent?: string | null;

@@ -366,7 +366,7 @@ function AtomicBuilderPageInner({ onBackToIntro, mode = 'create', countryId }: A
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-amber-50/10">
       {/* Header */}
-      <BuilderHeader onBackToIntro={onBackToIntro} onClearDraft={clearDraft} />
+      <BuilderHeader onBackToIntro={onBackToIntro} onClearDraft={clearDraft} mode={mode} />
 
       <div className="container mx-auto px-4 py-8">
         {/* Step Progress Indicator */}

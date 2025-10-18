@@ -93,6 +93,7 @@ cypress/videos/
 *.log
 *.bak
 *.old
+*.backup
 *.claude.md
 # clerk configuration (can include secrets)
 /.clerk/

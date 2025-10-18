@@ -29,6 +29,7 @@ import {
 export interface CountryCardData {
   id: string;
   name: string;
+  slug?: string;
   currentPopulation: number;
   currentGdpPerCapita: number;
   currentTotalGdp: number;

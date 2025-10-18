@@ -13,6 +13,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import { usePageTitle } from "~/hooks/usePageTitle";
 import { createUrl } from "~/lib/url-utils";
 import { LoadingState } from "~/components/shared/feedback/LoadingState";
 import { useUserCountry } from "~/hooks/useUserCountry";
@@ -32,6 +33,8 @@ export const dynamic = "force-dynamic";
  * - Redirects to builder if no country exists
  */
 export default function MyCountryEditor() {
+  usePageTitle({ title: "Country Editor" });
+  
   const { user, isLoaded } = useUser();
   const router = useRouter();
   const { country, profileLoading, countryLoading, userProfile } = useUserCountry();

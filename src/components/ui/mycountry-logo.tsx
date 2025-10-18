@@ -10,6 +10,7 @@ interface MyCountryLogoProps {
   variant?: 'full' | 'icon-only' | 'text-only';
   animated?: boolean;
   className?: string;
+  mode?: 'create' | 'edit';
 }
 
 const sizeConfig = {
@@ -50,13 +51,15 @@ const sizeConfig = {
   }
 };
 
-export function MyCountryLogo({ 
-  size = 'md', 
+export function MyCountryLogo({
+  size = 'md',
   variant = 'full',
   animated = true,
-  className 
+  className,
+  mode = 'create'
 }: MyCountryLogoProps) {
   const config = sizeConfig[size];
+  const isEditMode = mode === 'edit';
 
   const iconVariants = {
     initial: { scale: 1, rotate: 0 },
@@ -162,7 +165,7 @@ export function MyCountryLogo({
         "text-xs text-amber-600/80 font-medium tracking-wider",
         size === 'xl' ? 'text-sm' : 'text-xs'
       )}>
-        BUILDER®
+        {isEditMode ? 'EDITOR®' : 'BUILDER®'}
       </span>
     </motion.div>
   );

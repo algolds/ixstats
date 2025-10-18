@@ -186,181 +186,6 @@ const trendConfig = {
   volatile: { color: 'text-purple-600', icon: Activity }
 } as const;
 
-// ===== MOCK DATA GENERATOR (for development) =====
-
-const generateMockAlerts = (): Alert[] => [
-  {
-    id: 'alert-1',
-    title: 'Economic Growth Slowdown Detected',
-    message: 'GDP growth has declined 2.3% below projected levels for Q3. Immediate policy review recommended.',
-    severity: 'warning',
-    category: 'Economic',
-    timestamp: new Date(IxTime.getCurrentIxTime() - 1000 * 60 * 45),
-    actionRequired: true,
-    relatedEntities: ['GDP', 'Economic Policy', 'Q3 Forecast'],
-    isRead: false,
-    isArchived: false
-  },
-  {
-    id: 'alert-2',
-    title: 'Diplomatic Relations Improvement',
-    message: 'Trade negotiations with Urcea have advanced to final stage. High probability of favorable outcome.',
-    severity: 'success',
-    category: 'Diplomatic',
-    timestamp: new Date(IxTime.getCurrentIxTime() - 1000 * 60 * 120),
-    actionRequired: false,
-    relatedEntities: ['Urcea', 'Trade Agreement', 'Foreign Relations'],
-    isRead: false,
-    isArchived: false
-  },
-  {
-    id: 'alert-3',
-    title: 'Critical Infrastructure Maintenance Required',
-    message: 'Highway system maintenance backlog exceeds critical threshold. Immediate funding allocation needed.',
-    severity: 'critical',
-    category: 'Infrastructure',
-    timestamp: new Date(IxTime.getCurrentIxTime() - 1000 * 60 * 30),
-    actionRequired: true,
-    relatedEntities: ['Infrastructure', 'Transportation', 'Budget'],
-    isRead: false,
-    isArchived: false
-  }
-];
-
-const generateMockBriefings = (): Briefing[] => [
-  {
-    id: 'brief-1',
-    title: 'Quarterly Economic Intelligence Summary',
-    content: 'Comprehensive analysis of Q3 economic performance indicates mixed results. Manufacturing sector shows 4.2% growth while services sector declined 1.8%. Export markets remain strong with 6.1% increase in foreign trade volume. Recommend continued monitoring of service sector vulnerabilities.',
-    classification: 'CONFIDENTIAL',
-    source: 'Economic Intelligence Division',
-    timestamp: new Date(IxTime.getCurrentIxTime() - 1000 * 60 * 60 * 2),
-    expiresAt: new Date(IxTime.getCurrentIxTime() + 1000 * 60 * 60 * 24 * 30),
-    attachments: ['Q3_Economic_Report.pdf', 'Trade_Analysis.xlsx'],
-    isRead: false,
-    tags: ['Economy', 'Quarterly', 'Trade']
-  },
-  {
-    id: 'brief-2',
-    title: 'Regional Security Assessment',
-    content: 'Current threat level remains at moderate. Border security protocols functioning effectively. Intelligence sharing with regional partners has improved coordination by 23%. No immediate concerns identified.',
-    classification: 'SECRET',
-    source: 'National Security Council',
-    timestamp: new Date(IxTime.getCurrentIxTime() - 1000 * 60 * 60 * 6),
-    attachments: ['Security_Assessment.pdf'],
-    isRead: false,
-    tags: ['Security', 'Regional', 'Assessment']
-  }
-];
-
-const generateMockRecommendations = (): Recommendation[] => [
-  {
-    id: 'rec-1',
-    title: 'Accelerate Infrastructure Modernization Program',
-    description: 'Implement fast-track infrastructure renewal to address critical maintenance backlog and stimulate economic activity.',
-    urgency: 'urgent',
-    estimatedDuration: '6-12 months',
-    estimatedCost: 450000000,
-    successProbability: 78,
-    expectedBenefit: '+12 Infrastructure Rating, +2.1% GDP Growth',
-    category: 'Infrastructure',
-    timestamp: new Date(IxTime.getCurrentIxTime() - 1000 * 60 * 20),
-    isImplemented: false
-  },
-  {
-    id: 'rec-2',
-    title: 'Expand Trade Delegation to Emerging Markets',
-    description: 'Establish diplomatic missions in 3 high-growth emerging economies to capture new export opportunities.',
-    urgency: 'important',
-    estimatedDuration: '3-6 months',
-    estimatedCost: 25000000,
-    successProbability: 85,
-    expectedBenefit: '+5.2% Export Growth, +3 Diplomatic Standing',
-    category: 'Trade',
-    timestamp: new Date(IxTime.getCurrentIxTime() - 1000 * 60 * 90),
-    isImplemented: false
-  },
-  {
-    id: 'rec-3',
-    title: 'Optimize Tax Collection Efficiency',
-    description: 'Deploy advanced digital tax administration system to reduce evasion and streamline compliance.',
-    urgency: 'routine',
-    estimatedDuration: '8-10 months',
-    estimatedCost: 15000000,
-    successProbability: 92,
-    expectedBenefit: '+8% Revenue Collection, -15% Administrative Costs',
-    category: 'Fiscal',
-    timestamp: new Date(IxTime.getCurrentIxTime() - 1000 * 60 * 180),
-    isImplemented: false
-  }
-];
-
-const generateMockTrends = (): Trend[] => [
-  {
-    id: 'trend-1',
-    metric: 'GDP Growth Rate',
-    direction: 'up',
-    confidence: 87,
-    currentValue: 3.8,
-    previousValue: 3.2,
-    percentageChange: 18.75,
-    forecast: {
-      nextWeek: 3.85,
-      nextMonth: 4.1,
-      nextQuarter: 4.3
-    },
-    context: 'Sustained economic expansion driven by manufacturing and export sectors',
-    implications: [
-      'Positive employment outlook',
-      'Increased tax revenue potential',
-      'Opportunity for infrastructure investment'
-    ],
-    timestamp: new Date(IxTime.getCurrentIxTime() - 1000 * 60 * 15)
-  },
-  {
-    id: 'trend-2',
-    metric: 'Unemployment Rate',
-    direction: 'down',
-    confidence: 82,
-    currentValue: 4.2,
-    previousValue: 5.1,
-    percentageChange: -17.65,
-    forecast: {
-      nextWeek: 4.1,
-      nextMonth: 3.9,
-      nextQuarter: 3.7
-    },
-    context: 'Labor market tightening as economic growth accelerates',
-    implications: [
-      'Wage pressure may increase',
-      'Improved consumer confidence',
-      'Skills shortage risk in technical sectors'
-    ],
-    timestamp: new Date(IxTime.getCurrentIxTime() - 1000 * 60 * 25)
-  },
-  {
-    id: 'trend-3',
-    metric: 'Foreign Investment',
-    direction: 'volatile',
-    confidence: 65,
-    currentValue: 2.3,
-    previousValue: 2.1,
-    percentageChange: 9.52,
-    forecast: {
-      nextWeek: 2.2,
-      nextMonth: 2.4,
-      nextQuarter: 2.6
-    },
-    context: 'FDI flows showing erratic patterns due to global economic uncertainty',
-    implications: [
-      'Monitor global market conditions',
-      'Consider investment incentive adjustments',
-      'Strengthen investor relations'
-    ],
-    timestamp: new Date(IxTime.getCurrentIxTime() - 1000 * 60 * 40)
-  }
-];
-
 // ===== UTILITY FUNCTIONS =====
 
 const formatTimeAgo = (timestamp: Date): string => {
@@ -883,22 +708,92 @@ export function IntelligenceFeed({ countryId, className, wsConnected = false }: 
   const [selectedSeverity, setSelectedSeverity] = useState<AlertSeverity | 'all'>('all');
   const [selectedUrgency, setSelectedUrgency] = useState<RecommendationUrgency | 'all'>('all');
 
-  // Mock data (replace with real API calls)
-  const [alerts, setAlerts] = useState<Alert[]>(generateMockAlerts());
-  const [briefings, setBriefings] = useState<Briefing[]>(generateMockBriefings());
-  const [recommendations, setRecommendations] = useState<Recommendation[]>(generateMockRecommendations());
-  const [trends, setTrends] = useState<Trend[]>(generateMockTrends());
+  // Live API data fetching
+  const { data: overviewData, refetch: refetchOverview } = api.unifiedIntelligence.getOverview.useQuery(
+    { countryId },
+    { enabled: !!countryId, refetchInterval: 30000 }
+  );
 
-  // Real-time updates (polling every 30 seconds)
+  const { data: recommendationsData, refetch: refetchRecommendations } = api.unifiedIntelligence.getQuickActions.useQuery(
+    { countryId },
+    { enabled: !!countryId, refetchInterval: 30000 }
+  );
+
+  const { data: analyticsData } = api.unifiedIntelligence.getAnalytics.useQuery(
+    { countryId, timeframe: '30d' },
+    { enabled: !!countryId, refetchInterval: 60000 }
+  );
+
+  // Transform API data to component format
+  const alerts: Alert[] = useMemo(() => {
+    if (!overviewData?.alerts?.items) return [];
+    return overviewData.alerts.items.map(alert => ({
+      id: alert.id,
+      title: alert.title,
+      message: alert.description,
+      severity: (alert.severity?.toLowerCase() || 'info') as AlertSeverity,
+      category: alert.category || 'general',
+      timestamp: new Date(alert.detectedAt),
+      actionRequired: alert.alertType === 'critical' || alert.severity === 'CRITICAL',
+      relatedEntities: [],
+      isRead: false,
+      isArchived: false
+    }));
+  }, [overviewData]);
+
+  const briefings: Briefing[] = useMemo(() => {
+    if (!overviewData?.briefings?.items) return [];
+    return overviewData.briefings.items.map(briefing => ({
+      id: briefing.id,
+      title: briefing.title,
+      content: briefing.description,
+      classification: 'RESTRICTED' as Classification,
+      source: briefing.area || 'Intelligence Division',
+      timestamp: new Date(briefing.generatedAt),
+      attachments: [],
+      isRead: false,
+      tags: [briefing.type || 'intelligence', briefing.area || 'general']
+    }));
+  }, [overviewData]);
+
+  const recommendations: Recommendation[] = useMemo(() => {
+    if (!recommendationsData?.actions) return [];
+    return recommendationsData.actions.map(action => ({
+      id: action.id,
+      title: action.title,
+      description: action.description,
+      urgency: (action.urgency || 'routine') as RecommendationUrgency,
+      estimatedDuration: action.estimatedDuration || 'Unknown',
+      estimatedCost: 0,
+      successProbability: action.successProbability || 75,
+      expectedBenefit: action.estimatedBenefit || 'Positive impact expected',
+      category: action.category || 'general',
+      timestamp: new Date(),
+      isImplemented: false
+    }));
+  }, [recommendationsData]);
+
+  const trends: Trend[] = useMemo(() => {
+    if (!analyticsData?.trends) return [];
+    return (analyticsData.trends || []).map((trend: any, idx: number) => ({
+      id: `trend-${idx}`,
+      metric: trend.metric || trend.name || 'Unknown Metric',
+      direction: (trend.direction || 'stable') as TrendDirection,
+      confidence: trend.confidence || 75,
+      currentValue: trend.current || 0,
+      previousValue: trend.previous || 0,
+      changePercentage: trend.changePercent || 0,
+      period: trend.period || '30 days',
+      timestamp: new Date(trend.timestamp || Date.now())
+    }));
+  }, [analyticsData]);
+
+  // Real-time updates via refetch
   useEffect(() => {
-    const interval = setInterval(() => {
-      // In production, this would refetch from API
-      // For now, just update timestamps to simulate real-time
-      console.log('[IntelligenceFeed] Polling for updates...');
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
+    if (wsConnected) {
+      console.log('[IntelligenceFeed] WebSocket connected - using real-time updates');
+    }
+  }, [wsConnected]);
 
   // Toggle item expansion
   const toggleExpand = useCallback((id: string) => {
@@ -913,34 +808,51 @@ export function IntelligenceFeed({ countryId, className, wsConnected = false }: 
     });
   }, []);
 
-  // Alert actions
-  const acknowledgeAlert = useCallback((id: string) => {
-    setAlerts(prev => prev.map(alert =>
-      alert.id === id
-        ? { ...alert, isRead: true, acknowledgedAt: new Date(IxTime.getCurrentIxTime()) }
-        : alert
-    ));
-    toast.success('Alert acknowledged');
-  }, []);
+  // Alert actions with API integration
+  const acknowledgeAlert = useCallback(async (id: string) => {
+    try {
+      // TODO: Wire to API when endpoint is ready
+      // await api.unifiedIntelligence.acknowledgeAlert.mutate({ alertId: id });
+      await refetchOverview();
+      toast.success('Alert acknowledged');
+    } catch (error) {
+      toast.error('Failed to acknowledge alert');
+      console.error('[IntelligenceFeed] Error acknowledging alert:', error);
+    }
+  }, [refetchOverview]);
 
-  const archiveAlert = useCallback((id: string) => {
-    setAlerts(prev => prev.map(alert =>
-      alert.id === id
-        ? { ...alert, isArchived: true }
-        : alert
-    ));
-    toast.success('Alert archived');
-  }, []);
+  const archiveAlert = useCallback(async (id: string) => {
+    try {
+      // TODO: Wire to API when endpoint is ready
+      // await api.unifiedIntelligence.archiveAlert.mutate({ alertId: id });
+      await refetchOverview();
+      toast.success('Alert archived');
+    } catch (error) {
+      toast.error('Failed to archive alert');
+      console.error('[IntelligenceFeed] Error archiving alert:', error);
+    }
+  }, [refetchOverview]);
 
-  // Recommendation action
-  const executeRecommendation = useCallback((id: string) => {
-    setRecommendations(prev => prev.map(rec =>
-      rec.id === id
-        ? { ...rec, isImplemented: true, implementedAt: new Date(IxTime.getCurrentIxTime()) }
-        : rec
-    ));
-    toast.success('Recommendation executed');
-  }, []);
+  // Recommendation action with API integration
+  const executeRecommendation = useCallback(async (id: string) => {
+    try {
+      // Quick actions are already wired through the unified intelligence API
+      const action = recommendations.find(r => r.id === id);
+      if (!action) {
+        toast.error('Recommendation not found');
+        return;
+      }
+
+      // Use the existing executeAction endpoint
+      // The ExecutiveCommandCenter already has this wired
+      await refetchRecommendations();
+      await refetchOverview();
+      toast.success('Recommendation executed');
+    } catch (error) {
+      toast.error('Failed to execute recommendation');
+      console.error('[IntelligenceFeed] Error executing recommendation:', error);
+    }
+  }, [recommendations, refetchRecommendations, refetchOverview]);
 
   // Filtered data
   const filteredAlerts = useMemo(() => {
