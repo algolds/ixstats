@@ -380,7 +380,6 @@ export const policiesRouter = createTRPCRouter({
     }))
     .query(async ({ ctx, input }) => {
       const where: any = { countryId: input.countryId };
-      if (input.policyId) where.policyId = input.policyId;
       if (input.status) where.status = input.status;
       if (input.startDate || input.endDate) {
         where.scheduledDate = {};
@@ -388,9 +387,24 @@ export const policiesRouter = createTRPCRouter({
         if (input.endDate) where.scheduledDate.lte = input.endDate;
       }
 
-      return await ctx.db.activitySchedule.findMany({
+      const activities = await ctx.db.activitySchedule.findMany({
         where,
         orderBy: { scheduledDate: 'asc' }
+      });
+
+      if (!input.policyId) {
+        return activities;
+      }
+
+      return activities.filter(activity => {
+        if (!activity.relatedIds) return false;
+        try {
+          const related = JSON.parse(activity.relatedIds) as { policyId?: string };
+          return related?.policyId === input.policyId;
+        } catch (error) {
+          console.warn('[Policies] Failed to parse relatedIds for activity', activity.id, error);
+          return false;
+        }
       });
     }),
 

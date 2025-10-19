@@ -86,6 +86,7 @@ export interface UseUnifiedIntelligenceReturn {
   setPagination: (pagination: Partial<PaginationState>) => void;
   executeQuickAction: (actionId: string, parameters?: Record<string, any>) => Promise<void>;
   acknowledgeAlert: (alertId: string) => Promise<void>;
+  archiveAlert: (alertId: string) => Promise<void>;
   executeRecommendation: (recommendationId: string) => Promise<void>;
   sendSecureMessage: (messageData: any) => Promise<void>;
   refreshAll: () => Promise<void>;
@@ -215,6 +216,26 @@ export function useUnifiedIntelligence({
     }
   });
 
+  const acknowledgeAlertMutation = api.unifiedIntelligence.acknowledgeAlert.useMutation({
+    onSuccess: () => {
+      toast.success('Alert Acknowledged');
+      void refetchOverview();
+    },
+    onError: (error) => {
+      toast.error('Failed to acknowledge alert', { description: error.message });
+    }
+  });
+
+  const archiveAlertMutation = api.unifiedIntelligence.archiveAlert.useMutation({
+    onSuccess: () => {
+      toast.success('Alert archived');
+      void refetchOverview();
+    },
+    onError: (error) => {
+      toast.error('Failed to archive alert', { description: error.message });
+    }
+  });
+
   const sendMessageMutation = api.unifiedIntelligence.sendSecureMessage.useMutation({
     onSuccess: (result) => {
       toast.success('Message Sent', {
@@ -274,10 +295,22 @@ export function useUnifiedIntelligence({
   }, [countryId, executeActionMutation]);
 
   const acknowledgeAlert = useCallback(async (alertId: string) => {
-    toast.info('Acknowledging Alert', { description: 'Marking alert as read...' });
-    // Note: This would need a dedicated endpoint in the API
-    await refetchOverview();
-  }, [refetchOverview]);
+    try {
+      await acknowledgeAlertMutation.mutateAsync({ alertId });
+      await refetchFeed();
+    } catch (error) {
+      console.error('[useUnifiedIntelligence] Failed to acknowledge alert:', error);
+    }
+  }, [acknowledgeAlertMutation, refetchFeed]);
+
+  const archiveAlert = useCallback(async (alertId: string) => {
+    try {
+      await archiveAlertMutation.mutateAsync({ alertId });
+      await Promise.all([refetchOverview(), refetchFeed()]);
+    } catch (error) {
+      console.error('[useUnifiedIntelligence] Failed to archive alert:', error);
+    }
+  }, [archiveAlertMutation, refetchOverview, refetchFeed]);
 
   const executeRecommendation = useCallback(async (recommendationId: string) => {
     await executeQuickAction(`recommendation_${recommendationId}`, {
@@ -419,6 +452,7 @@ export function useUnifiedIntelligence({
     setPagination,
     executeQuickAction,
     acknowledgeAlert,
+    archiveAlert,
     executeRecommendation,
     sendSecureMessage,
     refreshAll,
