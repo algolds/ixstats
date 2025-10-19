@@ -839,7 +839,6 @@ export function IntelligenceFeed({ countryId, className, wsConnected = false }: 
     try {
       await acknowledgeAlertMutation.mutateAsync({ alertId: id });
       await refetchOverview();
-      toast.success('Alert acknowledged');
     } catch (error) {
       toast.error('Failed to acknowledge alert');
       console.error('[IntelligenceFeed] Error acknowledging alert:', error);
@@ -850,7 +849,6 @@ export function IntelligenceFeed({ countryId, className, wsConnected = false }: 
     try {
       await archiveAlertMutation.mutateAsync({ alertId: id });
       await refetchOverview();
-      toast.success('Alert archived');
     } catch (error) {
       toast.error('Failed to archive alert');
       console.error('[IntelligenceFeed] Error archiving alert:', error);
