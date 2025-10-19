@@ -252,7 +252,10 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
               currentValue: alert.currentValue,
               expectedValue: alert.expectedValue,
               deviation: alert.deviation,
-              detectedAt: alert.detectedAt
+              detectedAt: alert.detectedAt,
+              isActive: alert.isActive,
+              isResolved: alert.isResolved,
+              resolvedAt: alert.resolvedAt
             }))
           },
           briefings: {
@@ -808,6 +811,89 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to execute action'
         });
+      }
+    }),
+
+  // ===== ALERT ACTIONS =====
+
+  acknowledgeAlert: protectedProcedure
+    .input(z.object({
+      alertId: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const alert = await ctx.db.intelligenceAlert.findUnique({
+          where: { id: input.alertId },
+        });
+
+        if (!alert) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Alert not found' });
+        }
+
+        if (ctx.user?.countryId && alert.countryId !== ctx.user.countryId) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Cannot acknowledge alerts for other countries' });
+        }
+
+        const updated = await ctx.db.intelligenceAlert.update({
+          where: { id: input.alertId },
+          data: {
+            isResolved: true,
+            isActive: false,
+            resolvedAt: new Date(),
+            updatedAt: new Date(),
+          },
+        });
+
+        return {
+          id: updated.id,
+          isResolved: updated.isResolved,
+          resolvedAt: updated.resolvedAt,
+        };
+      } catch (error) {
+        console.error('[Unified Intelligence] Failed to acknowledge alert:', error);
+        throw error instanceof TRPCError
+          ? error
+          : new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to acknowledge alert' });
+      }
+    }),
+
+  archiveAlert: protectedProcedure
+    .input(z.object({
+      alertId: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const alert = await ctx.db.intelligenceAlert.findUnique({
+          where: { id: input.alertId },
+        });
+
+        if (!alert) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Alert not found' });
+        }
+
+        if (ctx.user?.countryId && alert.countryId !== ctx.user.countryId) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Cannot archive alerts for other countries' });
+        }
+
+        const updated = await ctx.db.intelligenceAlert.update({
+          where: { id: input.alertId },
+          data: {
+            isActive: false,
+            resolvedAt: alert.resolvedAt ?? new Date(),
+            updatedAt: new Date(),
+          },
+        });
+
+        return {
+          id: updated.id,
+          isResolved: updated.isResolved,
+          resolvedAt: updated.resolvedAt,
+        };
+      } catch (error) {
+        console.error('[Unified Intelligence] Failed to archive alert:', error);
+        throw error instanceof TRPCError
+          ? error
+          : new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to archive alert' });
       }
     }),
 

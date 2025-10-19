@@ -59,7 +59,8 @@ interface Alert {
   actionRequired: boolean;
   relatedEntities: string[];
   isRead: boolean;
-  isArchived: boolean;
+  isActive: boolean;
+  isResolved: boolean;
   acknowledgedAt?: Date;
 }
 
@@ -724,6 +725,26 @@ export function IntelligenceFeed({ countryId, className, wsConnected = false }: 
     { enabled: !!countryId, refetchInterval: 60000 }
   );
 
+  const acknowledgeAlertMutation = api.unifiedIntelligence.acknowledgeAlert.useMutation({
+    onSuccess: () => {
+      toast.success('Alert acknowledged');
+      void refetchOverview();
+    },
+    onError: (error) => {
+      toast.error('Failed to acknowledge alert', { description: error.message });
+    }
+  });
+
+  const archiveAlertMutation = api.unifiedIntelligence.archiveAlert.useMutation({
+    onSuccess: () => {
+      toast.success('Alert archived');
+      void refetchOverview();
+    },
+    onError: (error) => {
+      toast.error('Failed to archive alert', { description: error.message });
+    }
+  });
+
   // Transform API data to component format
   const alerts: Alert[] = useMemo(() => {
     if (!overviewData?.alerts?.items) return [];
@@ -731,13 +752,18 @@ export function IntelligenceFeed({ countryId, className, wsConnected = false }: 
       id: alert.id,
       title: alert.title,
       message: alert.description,
-      severity: (alert.severity?.toLowerCase() || 'info') as AlertSeverity,
+      severity: (alert.severity?.toString().toLowerCase() || 'info') as AlertSeverity,
       category: alert.category || 'general',
       timestamp: new Date(alert.detectedAt),
-      actionRequired: alert.alertType === 'critical' || alert.severity === 'CRITICAL',
+      actionRequired:
+        !alert.isResolved &&
+        ((alert.severity?.toString().toUpperCase() === 'CRITICAL') ||
+          alert.alertType?.toString().toLowerCase() === 'critical'),
       relatedEntities: [],
-      isRead: false,
-      isArchived: false
+      isRead: Boolean(alert.isResolved),
+      isActive: alert.isActive ?? true,
+      isResolved: Boolean(alert.isResolved),
+      acknowledgedAt: alert.resolvedAt ? new Date(alert.resolvedAt) : undefined
     }));
   }, [overviewData]);
 
@@ -811,27 +837,25 @@ export function IntelligenceFeed({ countryId, className, wsConnected = false }: 
   // Alert actions with API integration
   const acknowledgeAlert = useCallback(async (id: string) => {
     try {
-      // TODO: Wire to API when endpoint is ready
-      // await api.unifiedIntelligence.acknowledgeAlert.mutate({ alertId: id });
+      await acknowledgeAlertMutation.mutateAsync({ alertId: id });
       await refetchOverview();
       toast.success('Alert acknowledged');
     } catch (error) {
       toast.error('Failed to acknowledge alert');
       console.error('[IntelligenceFeed] Error acknowledging alert:', error);
     }
-  }, [refetchOverview]);
+  }, [acknowledgeAlertMutation, refetchOverview]);
 
   const archiveAlert = useCallback(async (id: string) => {
     try {
-      // TODO: Wire to API when endpoint is ready
-      // await api.unifiedIntelligence.archiveAlert.mutate({ alertId: id });
+      await archiveAlertMutation.mutateAsync({ alertId: id });
       await refetchOverview();
       toast.success('Alert archived');
     } catch (error) {
       toast.error('Failed to archive alert');
       console.error('[IntelligenceFeed] Error archiving alert:', error);
     }
-  }, [refetchOverview]);
+  }, [archiveAlertMutation, refetchOverview]);
 
   // Recommendation action with API integration
   const executeRecommendation = useCallback(async (id: string) => {
@@ -857,7 +881,7 @@ export function IntelligenceFeed({ countryId, className, wsConnected = false }: 
   // Filtered data
   const filteredAlerts = useMemo(() => {
     return alerts.filter(alert => {
-      if (!showArchived && alert.isArchived) return false;
+      if (!showArchived && !alert.isActive) return false;
       if (selectedSeverity !== 'all' && alert.severity !== selectedSeverity) return false;
       if (searchQuery && !alert.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
           !alert.message.toLowerCase().includes(searchQuery.toLowerCase())) return false;
@@ -890,8 +914,8 @@ export function IntelligenceFeed({ countryId, className, wsConnected = false }: 
   }, [trends, searchQuery]);
 
   // Stats
-  const unreadAlerts = alerts.filter(a => !a.isRead && !a.isArchived).length;
-  const criticalAlerts = alerts.filter(a => a.severity === 'critical' && !a.isArchived).length;
+  const unreadAlerts = alerts.filter(a => !a.isRead && a.isActive).length;
+  const criticalAlerts = alerts.filter(a => a.severity === 'critical' && a.isActive).length;
   const urgentRecommendations = recommendations.filter(r => r.urgency === 'urgent' && !r.isImplemented).length;
 
   return (

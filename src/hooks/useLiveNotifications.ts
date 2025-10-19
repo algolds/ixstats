@@ -104,12 +104,52 @@ export function useLiveNotifications(
     },
   });
 
+  const dismissMutation = api.notifications.dismissNotification.useMutation({
+    onSuccess: () => {
+      void refetch();
+      void refetchUnreadCount();
+    },
+  });
+
   // Update notifications when data changes
   useEffect(() => {
     if (notificationsData?.notifications) {
       setNotifications(notificationsData.notifications as LiveNotification[]);
     }
   }, [notificationsData]);
+
+  api.notifications.onNotificationAdded.useSubscription(
+    { userId },
+    {
+      enabled: enableRealtime && !!userId,
+      onData: (notification) => {
+        setNotifications(prev => {
+          const normalized: LiveNotification = {
+            ...(notification as LiveNotification),
+            createdAt: new Date(notification.createdAt),
+            updatedAt: new Date(notification.updatedAt),
+          };
+
+          const existingIndex = prev.findIndex(item => item.id === normalized.id);
+          if (existingIndex !== -1) {
+            const next = [...prev];
+            next[existingIndex] = normalized;
+            return next;
+          }
+
+          const next = [normalized, ...prev];
+          return next.slice(0, 50);
+        });
+
+        if (!notification.read && !notification.dismissed) {
+          setUnreadCount(count => count + 1);
+        }
+      },
+      onError: (error) => {
+        console.error('[useLiveNotifications] Subscription error:', error);
+      },
+    }
+  );
 
   // Update unread count when data changes
   useEffect(() => {
@@ -178,7 +218,7 @@ export function useLiveNotifications(
         )
       );
 
-      await markAsReadMutation.mutateAsync({
+      await dismissMutation.mutateAsync({
         notificationId,
         userId,
       });
@@ -187,7 +227,7 @@ export function useLiveNotifications(
       // Revert optimistic update on error
       void refetch();
     }
-  }, [userId, markAsReadMutation, refetch]);
+  }, [userId, dismissMutation, refetch]);
 
   const refresh = useCallback(async () => {
     await Promise.all([
