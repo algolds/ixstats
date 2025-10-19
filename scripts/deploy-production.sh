@@ -25,6 +25,10 @@ else
     exit 1
 fi
 
+# Ensure base path variables are present before build/start so chunks map correctly.
+export BASE_PATH="${BASE_PATH:-/projects/ixstats}"
+export NEXT_PUBLIC_BASE_PATH="${NEXT_PUBLIC_BASE_PATH:-$BASE_PATH}"
+
 # Check required environment variables
 required_vars=("DATABASE_URL")
 missing_vars=()
@@ -69,6 +73,8 @@ else
 fi
 
 echo "✅ Environment variables validated"
+echo "   BASE_PATH: $BASE_PATH"
+echo "   NEXT_PUBLIC_BASE_PATH: $NEXT_PUBLIC_BASE_PATH"
 
 # Clean previous build
 echo "🧹 Cleaning previous build..."
@@ -109,7 +115,7 @@ fi
 # Display production configuration
 echo ""
 echo "🎯 Production Configuration:"
-echo "   Base URL: https://ixwiki.com/projects/ixstats"
+echo "   Base URL: https://ixwiki.com$BASE_PATH"
 echo "   Node Environment: $NODE_ENV"
 echo "   Database: Configured"
 if [ -n "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" ] && [ -n "$CLERK_SECRET_KEY" ]; then
@@ -121,7 +127,7 @@ echo ""
 
 # Start the production server
 echo "🚀 Starting production server..."
-echo "   The application will be available at: https://ixwiki.com/projects/ixstats"
+echo "   The application will be available at: https://ixwiki.com$BASE_PATH"
 echo "   Production server will run on port: $PORT"
 echo "   Press Ctrl+C to stop the server"
 echo ""

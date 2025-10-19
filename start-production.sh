@@ -22,11 +22,17 @@ else
     exit 1
 fi
 
+# Ensure base path variables are configured for production deployments.
+export BASE_PATH="${BASE_PATH:-/projects/ixstats}"
+export NEXT_PUBLIC_BASE_PATH="${NEXT_PUBLIC_BASE_PATH:-$BASE_PATH}"
+
 # Set default port if not specified
 PRODUCTION_PORT=${PORT:-3550}
 
 echo "🔍 Environment Summary:"
 echo "   NODE_ENV: $NODE_ENV"
+echo "   BASE_PATH: $BASE_PATH"
+echo "   NEXT_PUBLIC_BASE_PATH: $NEXT_PUBLIC_BASE_PATH"
 echo "   Database: $DATABASE_URL"
 echo "   Port: $PRODUCTION_PORT"
 echo "   MediaWiki URL: $NEXT_PUBLIC_MEDIAWIKI_URL"
@@ -63,8 +69,8 @@ echo ""
 
 # Start the server
 echo "🌐 Starting Next.js production server..."
-echo "   Local URL:      http://localhost:$PRODUCTION_PORT/projects/ixstats"
-echo "   Production URL: https://ixwiki.com/projects/ixstats"
+echo "   Local URL:      http://localhost:$PRODUCTION_PORT$BASE_PATH"
+echo "   Production URL: https://ixwiki.com$BASE_PATH"
 echo ""
 echo "   Note: Production URL requires reverse proxy configuration"
 echo "   Press Ctrl+C to stop the server"
