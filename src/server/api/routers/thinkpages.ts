@@ -1617,7 +1617,7 @@ export const thinkpagesRouter = createTRPCRouter({
 
           if (sender) {
             const senderDisplayName = `User ${input.userId.slice(0, 8)}`;
-            const contentPreview = input.content.replace(/<[^>]*>/g, '').slice(0, 100);
+            const contentPreview = validateNoXSS(input.content).slice(0, 100);
             await notificationHooks.onThinktankActivity({
               activityType: 'new_message',
               groupId: input.groupId,
