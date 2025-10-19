@@ -227,11 +227,22 @@ Your nation's executive intelligence and management platform
    cp .env.example .env.local
    # Edit .env.local with your configuration
    ```
+   - For local audits without production credentials, export the minimal variables before running database or test scripts:
+     ```bash
+     export SKIP_ENV_VALIDATION=1
+     export DATABASE_URL="file:./prisma/dev.db"
+     export CLERK_SECRET_KEY="sk_test"
+     export NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test"
+     ```
 
 3. **Initialize database**
    ```bash
    npm run db:setup
    ```
+   - Populate the preview dataset with seeded countries and users:
+     ```bash
+     npm run db:init
+     ```
 
 4. **Start development server**
    ```bash

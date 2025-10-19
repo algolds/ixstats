@@ -111,11 +111,259 @@ export class PreviewSeeder {
   }
 
   private async seedCountries(count: number): Promise<any[]> {
-    // TODO: Re-enable when mock data generators are available
-    // const mockCountries = generatePreviewCountries(count);
-    const countries: any[] = [];
+    if (count <= 0) {
+      return [];
+    }
 
-    // Temporarily disabled - mock data generators not available
+    const countryTemplates = [
+      {
+        name: "Asteria Federation",
+        continent: "North America",
+        region: "Northern Reach",
+        governmentType: "Federal Republic",
+        religion: "Pluralistic",
+        leader: "Elena Marquez",
+        landArea: 652_000,
+        baselinePopulation: 52_000_000,
+        baselineGdpPerCapita: 45_800,
+        economicTier: "Developed",
+        populationTier: "Large",
+        realGDPGrowthRate: 0.032,
+        inflationRate: 0.021,
+        currencyExchangeRate: 1.0,
+        populationGrowthRate: 0.011,
+        diplomaticStanding: 82,
+        publicApproval: 71,
+        governmentalEfficiencyScore: 84,
+      },
+      {
+        name: "Helios Union",
+        continent: "Europe",
+        region: "Mediterranean Arc",
+        governmentType: "Parliamentary Democracy",
+        religion: "Secular",
+        leader: "Amelia Kovács",
+        landArea: 412_300,
+        baselinePopulation: 34_500_000,
+        baselineGdpPerCapita: 53_200,
+        economicTier: "Very Strong",
+        populationTier: "Medium",
+        realGDPGrowthRate: 0.028,
+        inflationRate: 0.018,
+        currencyExchangeRate: 0.92,
+        populationGrowthRate: 0.009,
+        diplomaticStanding: 88,
+        publicApproval: 69,
+        governmentalEfficiencyScore: 86,
+      },
+      {
+        name: "Solaria Alliance",
+        continent: "Asia",
+        region: "Pacific Crescent",
+        governmentType: "Technocratic Council",
+        religion: "Pluralistic",
+        leader: "Ren Ito",
+        landArea: 298_400,
+        baselinePopulation: 61_200_000,
+        baselineGdpPerCapita: 38_400,
+        economicTier: "Strong",
+        populationTier: "Large",
+        realGDPGrowthRate: 0.035,
+        inflationRate: 0.024,
+        currencyExchangeRate: 115.0,
+        populationGrowthRate: 0.013,
+        diplomaticStanding: 79,
+        publicApproval: 74,
+        governmentalEfficiencyScore: 81,
+      },
+      {
+        name: "Verdantia Coalition",
+        continent: "South America",
+        region: "Andean Corridor",
+        governmentType: "Federal Republic",
+        religion: "Pluralistic",
+        leader: "Isabela Duarte",
+        landArea: 905_600,
+        baselinePopulation: 41_800_000,
+        baselineGdpPerCapita: 27_600,
+        economicTier: "Healthy",
+        populationTier: "Medium",
+        realGDPGrowthRate: 0.041,
+        inflationRate: 0.032,
+        currencyExchangeRate: 4.2,
+        populationGrowthRate: 0.016,
+        diplomaticStanding: 72,
+        publicApproval: 67,
+        governmentalEfficiencyScore: 76,
+      },
+      {
+        name: "Aurora Confederacy",
+        continent: "Africa",
+        region: "Great Lakes Nexus",
+        governmentType: "Coalition Government",
+        religion: "Pluralistic",
+        leader: "Nia Okoye",
+        landArea: 1_120_000,
+        baselinePopulation: 58_900_000,
+        baselineGdpPerCapita: 21_400,
+        economicTier: "Developing",
+        populationTier: "Large",
+        realGDPGrowthRate: 0.048,
+        inflationRate: 0.038,
+        currencyExchangeRate: 3.7,
+        populationGrowthRate: 0.018,
+        diplomaticStanding: 68,
+        publicApproval: 61,
+        governmentalEfficiencyScore: 73,
+      },
+      {
+        name: "Meridian Compact",
+        continent: "Oceania",
+        region: "Coral Frontier",
+        governmentType: "Constitutional Monarchy",
+        religion: "Pluralistic",
+        leader: "Ari Thompson",
+        landArea: 186_400,
+        baselinePopulation: 9_800_000,
+        baselineGdpPerCapita: 61_500,
+        economicTier: "Extravagant",
+        populationTier: "Small",
+        realGDPGrowthRate: 0.026,
+        inflationRate: 0.016,
+        currencyExchangeRate: 1.4,
+        populationGrowthRate: 0.007,
+        diplomaticStanding: 91,
+        publicApproval: 78,
+        governmentalEfficiencyScore: 88,
+      },
+    ];
+
+    const countries: any[] = [];
+    const now = IxTime.getCurrentIxTime();
+    const baselineDate = new Date(IxTime.getInGameEpoch());
+
+    for (let i = 0; i < count; i++) {
+      const template = countryTemplates[i % countryTemplates.length];
+      const replicationIndex = Math.floor(i / countryTemplates.length);
+      const nameSuffix = replicationIndex === 0 ? "" : ` ${replicationIndex + 1}`;
+      const countryName = `${template.name}${nameSuffix}`;
+
+      const populationScale = 1 + replicationIndex * 0.035;
+      const growthRate = template.realGDPGrowthRate ?? 0.03;
+      const populationGrowthRate = template.populationGrowthRate ?? 0.012;
+      const baselinePopulation = Math.round(template.baselinePopulation * populationScale);
+      const baselineGdpPerCapita = template.baselineGdpPerCapita * (1 + replicationIndex * 0.02);
+      const nominalGDP = baselinePopulation * baselineGdpPerCapita;
+      const currentPopulation = Math.round(baselinePopulation * (1 + populationGrowthRate));
+      const currentGdpPerCapita = baselineGdpPerCapita * (1 + growthRate);
+      const currentTotalGdp = currentPopulation * currentGdpPerCapita;
+      const landArea = template.landArea ?? 500_000;
+      const populationDensity = landArea ? currentPopulation / landArea : null;
+      const gdpDensity = landArea ? currentTotalGdp / landArea : null;
+      const adjustedGdpGrowth = (template.realGDPGrowthRate ?? growthRate) * 0.92;
+      const maxGdpGrowthRate = Math.max(growthRate + 0.01, adjustedGdpGrowth + 0.015);
+      const laborForceParticipationRate = 63.5;
+      const unemploymentRate = 5.1;
+      const employmentRate = 100 - unemploymentRate;
+      const totalWorkforce = (currentPopulation * laborForceParticipationRate) / 100;
+      const averageAnnualIncome = baselineGdpPerCapita * 0.78;
+      const minimumWage = (averageAnnualIncome / 2080) * 0.45;
+      const taxRevenueGDPPercent = 32.5;
+      const governmentRevenueTotal = (currentTotalGdp * taxRevenueGDPPercent) / 100;
+      const taxRevenuePerCapita = governmentRevenueTotal / currentPopulation;
+      const governmentBudgetGDPPercent = 34.2;
+      const budgetDeficitSurplus = currentTotalGdp * 0.018;
+      const internalDebtGDPPercent = 46.3;
+      const externalDebtGDPPercent = 23.1;
+      const totalDebtGDPRatio = internalDebtGDPPercent + externalDebtGDPPercent;
+      const debtPerCapita = (currentTotalGdp * totalDebtGDPRatio) / 100 / currentPopulation;
+      const spendingGDPPercent = 35.4;
+      const totalGovernmentSpending = (currentTotalGdp * spendingGDPPercent) / 100;
+      const spendingPerCapita = totalGovernmentSpending / currentPopulation;
+      const economicVitality = template.governmentalEfficiencyScore + 6;
+      const populationWellbeing = template.publicApproval + 15;
+      const diplomaticStanding = template.diplomaticStanding ?? 75;
+      const governmentalEfficiency = template.governmentalEfficiencyScore;
+      const overallNationalHealth = Math.round(
+        (economicVitality + populationWellbeing + diplomaticStanding + governmentalEfficiency) / 4
+      );
+
+      const createdCountry = await this.db.country.create({
+        data: {
+          name: countryName,
+          slug: generateSlug(countryName),
+          continent: template.continent,
+          region: template.region,
+          governmentType: template.governmentType,
+          religion: template.religion,
+          leader: template.leader,
+          landArea,
+          areaSqMi: landArea * 0.386102,
+          baselinePopulation,
+          baselineGdpPerCapita,
+          currentPopulation,
+          currentGdpPerCapita,
+          currentTotalGdp,
+          maxGdpGrowthRate,
+          adjustedGdpGrowth,
+          populationGrowthRate,
+          populationDensity: populationDensity ?? undefined,
+          gdpDensity: gdpDensity ?? undefined,
+          economicTier: template.economicTier,
+          populationTier: template.populationTier,
+          nominalGDP: currentTotalGdp,
+          realGDPGrowthRate: growthRate,
+          inflationRate: template.inflationRate ?? 0.02,
+          currencyExchangeRate: template.currencyExchangeRate ?? 1,
+          laborForceParticipationRate,
+          employmentRate,
+          unemploymentRate,
+          totalWorkforce,
+          averageWorkweekHours: 39.5,
+          minimumWage,
+          averageAnnualIncome,
+          taxRevenueGDPPercent,
+          governmentRevenueTotal,
+          taxRevenuePerCapita,
+          governmentBudgetGDPPercent,
+          budgetDeficitSurplus,
+          internalDebtGDPPercent,
+          externalDebtGDPPercent,
+          totalDebtGDPRatio,
+          debtPerCapita,
+          interestRates: 3.15,
+          debtServiceCosts: (totalDebtGDPRatio / 100) * currentTotalGdp * 0.025,
+          povertyRate: 12.4,
+          incomeInequalityGini: 36.2,
+          socialMobilityIndex: 58.3,
+          totalGovernmentSpending,
+          spendingGDPPercent,
+          spendingPerCapita,
+          lifeExpectancy: 78.6,
+          urbanPopulationPercent: 68.4,
+          ruralPopulationPercent: 31.6,
+          literacyRate: 97.2,
+          economicVitality,
+          populationWellbeing,
+          diplomaticStanding,
+          governmentalEfficiency,
+          overallNationalHealth,
+          activeAlliances: 6 + replicationIndex,
+          activeTreaties: 12 + replicationIndex * 2,
+          diplomaticReputation: diplomaticStanding > 85 ? "Exemplary" : diplomaticStanding > 75 ? "Strong" : "Stable",
+          publicApproval: template.publicApproval,
+          governmentEfficiency: governmentalEfficiency > 85 ? "Exceptional" : governmentalEfficiency > 75 ? "High" : "Moderate",
+          politicalStability: governmentalEfficiency > 80 ? "Stable" : "Emerging",
+          tradeBalance: currentTotalGdp * 0.015,
+          infrastructureRating: 72 + replicationIndex * 2,
+          lastCalculated: new Date(now),
+          baselineDate,
+        }
+      });
+
+      countries.push(createdCountry);
+    }
+
     return countries;
 
     /* for (const mockCountry of mockCountries) {
