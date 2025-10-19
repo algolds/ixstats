@@ -3,15 +3,15 @@
 import React, { useState, useEffect } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { useUser } from "@clerk/nextjs";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   MessageSquare, 
   Users, 
   Settings,
   ArrowLeft,
   Send,
-  Home,
-  Globe
+  Menu,
+  X
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
@@ -65,6 +65,27 @@ const ThinkshareMessages = dynamic(
 import { createUrl } from "~/lib/url-utils";
 import { api } from "~/trpc/react";
 
+const WORKSPACE_LINKS = [
+  {
+    key: 'feed',
+    label: 'Social Feed',
+    description: 'Broadcast national updates and highlight key narratives.',
+    icon: MessageSquare
+  },
+  {
+    key: 'thinktanks',
+    label: 'ThinkTanks',
+    description: 'Coordinate research groups and collaborative workstreams.',
+    icon: Users
+  },
+  {
+    key: 'messages',
+    label: 'ThinkShare Messages',
+    description: 'Manage direct messages and rapid coordination.',
+    icon: Send
+  }
+] as const;
+
 export default function ThinkPagesMainPage() {
   usePageTitle({ title: "ThinkPages" });
   
@@ -75,21 +96,63 @@ export default function ThinkPagesMainPage() {
   const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [settingsAccount, setSettingsAccount] = useState<any>(null);
   const [showGlobalSettings, setShowGlobalSettings] = useState(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
-  // Handle URL parameters for auto-selecting view and conversation
+  // Handle URL parameters for auto-selecting view and contextual panels
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      const viewParam = urlParams.get('view');
-      const conversationParam = urlParams.get('conversation');
-      
-      if (viewParam === 'messages') {
-        setActiveView('messages');
-      }
-      
-      // The conversation parameter will be handled by the ThinkshareMessages component
+    if (typeof window === 'undefined') return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewParam = urlParams.get('view');
+    const panelParam = urlParams.get('panel');
+
+    if (viewParam === 'thinktanks' || viewParam === 'messages' || viewParam === 'feed') {
+      setActiveView(viewParam);
     }
+
+    if (panelParam === 'account-manager') {
+      setActiveView('feed');
+      if (window.innerWidth < 1024) {
+        setShowMobileSidebar(true);
+      }
+    }
+
+    if (panelParam === 'settings') {
+      setShowGlobalSettings(true);
+    }
+    // Conversation-specific handling remains within ThinkshareMessages
   }, []);
+
+  // Persist view selection in the URL for deep linking
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('view', activeView);
+    url.searchParams.delete('panel');
+    window.history.replaceState({}, '', url.toString());
+  }, [activeView]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setShowMobileSidebar(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!showMobileSidebar) return;
+    if (typeof document === 'undefined') return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [showMobileSidebar]);
 
   // Get user profile and country data
   const { data: userProfile } = api.users.getProfile.useQuery(
@@ -118,6 +181,105 @@ export default function ThinkPagesMainPage() {
                            userProfile.countryId && userProfile.countryId.trim() !== '' &&
                            countryData.id && countryData.id.trim() !== '' &&
                            countryData.name && countryData.name.trim() !== '';
+
+  const renderWorkspaceMenu = (onNavigate?: () => void) => (
+    <div className="space-y-6">
+      <nav className="rounded-2xl border border-border/60 bg-card/70 p-4 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground/80">
+          Workspace Views
+        </p>
+        <div className="mt-3 space-y-2">
+          {WORKSPACE_LINKS.map((link) => {
+            const Icon = link.icon;
+            const isActive = activeView === link.key;
+            return (
+              <button
+                key={link.key}
+                type="button"
+                className={`flex w-full items-start gap-3 rounded-xl border px-3 py-3 text-left transition-colors ${
+                  isActive
+                    ? "border-primary/50 bg-primary/10 text-foreground shadow-sm"
+                    : "border-border/50 text-muted-foreground hover:border-border hover:bg-accent/10 hover:text-foreground"
+                }`}
+                onClick={() => {
+                  setActiveView(link.key);
+                  onNavigate?.();
+                }}
+                aria-current={isActive ? "page" : undefined}
+              >
+                <span
+                  className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+                    isActive ? "bg-primary text-primary-foreground" : "bg-muted/60 text-foreground"
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-semibold leading-snug">{link.label}</span>
+                  <span className="mt-1 block text-xs leading-tight text-muted-foreground">
+                    {link.description}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
+      {isUserAuthenticated && isCountryDataReady ? (
+        <div className="rounded-2xl border border-border/60 bg-card/70 p-4 shadow-sm">
+          <EnhancedAccountManager
+            countryId={countryData.id}
+            accounts={accounts || []}
+            selectedAccount={selectedAccount}
+            onAccountSelect={(account) => {
+              handleAccountSelect(account);
+              onNavigate?.();
+            }}
+            onAccountSettings={(account) => {
+              handleAccountSettings(account);
+              onNavigate?.();
+            }}
+            onCreateAccount={() => {
+              handleCreateAccount();
+              onNavigate?.();
+            }}
+            isOwner={true}
+          />
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-border/60 bg-muted/30 px-4 py-4 text-sm text-muted-foreground">
+          <p className="font-medium text-foreground">Account manager unavailable</p>
+          <p className="mt-1 leading-snug">
+            Sign in and complete your country setup to manage ThinkPages personas.
+          </p>
+        </div>
+      )}
+
+      <div className="rounded-2xl border border-border/60 bg-card/70 p-4 shadow-sm">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-foreground">Workspace preferences</p>
+            <p className="text-xs text-muted-foreground leading-tight">
+              Tune notifications, auto-sharing, and collaboration defaults.
+            </p>
+          </div>
+          <Settings className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-3"
+          onClick={() => {
+            setShowGlobalSettings(true);
+            onNavigate?.();
+          }}
+        >
+          Open Settings
+        </Button>
+      </div>
+    </div>
+  );
 
   // Account management handlers
   const handleAccountSelect = (account: any) => {
@@ -203,189 +365,189 @@ export default function ThinkPagesMainPage() {
                   </Link>
                 </div>
               )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="lg:hidden"
+                onClick={() => setShowMobileSidebar(true)}
+              >
+                <Menu className="h-4 w-4 mr-2" />
+                Workspace Menu
+              </Button>
             </div>
           </div>
 
-          {/* Main Navigation */}
-          <div className="flex items-center gap-4 p-2 glass-hierarchy-child rounded-xl">
-            <Link href="/thinkpages/feed" className="flex-1">
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                <Button
-                  variant="ghost"
-                  className={`flex items-center gap-2 w-full transition-all ${
-                    activeView === 'feed'
-                      ? 'bg-[#0050a1] text-white hover:bg-[#003d7a]'
-                      : 'hover:bg-[#0050a1]/10'
-                  }`}
-                >
-                  <Home className="h-4 w-4" />
-                  Feed
-                </Button>
-              </motion.div>
-            </Link>
-            <Link href="/thinkpages/thinktanks" className="flex-1">
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                <Button
-                  variant="ghost"
-                  className={`flex items-center gap-2 w-full transition-all ${
-                    activeView === 'thinktanks'
-                      ? 'bg-[#fcc309] text-black hover:bg-[#e5b008]'
-                      : 'hover:bg-[#fcc309]/10'
-                  }`}
-                >
-                  <Globe className="h-4 w-4" />
-                  ThinkTanks
-                </Button>
-              </motion.div>
-            </Link>
-            <Link href="/thinkpages/thinkshare" className="flex-1">
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                <Button
-                  variant="ghost"
-                  className={`flex items-center gap-2 w-full transition-all ${
-                    activeView === 'messages'
-                      ? 'bg-[#10b981] text-white hover:bg-[#059669]'
-                      : 'hover:bg-[#10b981]/10'
-                  }`}
-                >
-                  <Send className="h-4 w-4" />
-                  ThinkShare
-                </Button>
-              </motion.div>
-            </Link>
-          </div>
-          
         </motion.div>
-        {/* Main Content with Account Manager Sidebar */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`grid grid-cols-1 ${activeView === 'feed' ? 'lg:grid-cols-4' : 'lg:grid-cols-1'} gap-6`}
-        >
-          {/* Left Sidebar - Account Manager (only for authenticated users) */}
-          {activeView === 'feed' && isUserAuthenticated && isCountryDataReady && (
-            <div className="lg:col-span-1 space-y-4">
-              <EnhancedAccountManager
-                countryId={countryData.id}
-                accounts={accounts || []}
-                selectedAccount={selectedAccount}
-                onAccountSelect={handleAccountSelect}
-                onAccountSettings={handleAccountSettings}
-                onCreateAccount={handleCreateAccount}
-                isOwner={true}
-              />
-            </div>
-          )}
 
-          {/* Main Content Area */}
-          <div className={activeView === 'feed' && isUserAuthenticated && isCountryDataReady ? "lg:col-span-3" : "lg:col-span-4"}>
+        <div className="lg:hidden mb-5">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {WORKSPACE_LINKS.map((link) => {
+              const Icon = link.icon;
+              const isActive = activeView === link.key;
+              return (
+                <Button
+                  key={link.key}
+                  variant={isActive ? "default" : "outline"}
+                  className="justify-start gap-2"
+                  onClick={() => setActiveView(link.key)}
+                >
+                  <Icon className="h-4 w-4" />
+                  {link.label}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
 
-            {/* Feed Content */}
-            {activeView === 'feed' && isUserAuthenticated && isCountryDataReady && (
-              <ThinkpagesSocialPlatform
-                countryId={countryData.id}
-                countryName={countryData.name}
-                isOwner={true}
-                selectedAccount={selectedAccount}
-              />
-            )}
+        <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+          <aside className="hidden lg:block">
+            {renderWorkspaceMenu()}
+          </aside>
 
-            {activeView === 'feed' && isUserAuthenticated && !isCountryDataReady && (
-              <Card className="glass-hierarchy-parent">
-                <CardContent className="p-8 text-center">
-                  <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Country Setup Required</h3>
-                  <p className="text-muted-foreground mb-4">
-                    To access the social feed, please complete your country setup first.
-                  </p>
-                  <Link href={createUrl("/setup")}>
-                    <Button>
-                      Complete Setup
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            )}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeView}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-6"
+            >
+              {activeView === 'feed' && isUserAuthenticated && isCountryDataReady && (
+                <ThinkpagesSocialPlatform
+                  countryId={countryData.id}
+                  countryName={countryData.name}
+                  isOwner={true}
+                  selectedAccount={selectedAccount}
+                />
+              )}
 
-            {activeView === 'feed' && !isUserAuthenticated && (
-              <div className="space-y-6">
+              {activeView === 'feed' && isUserAuthenticated && !isCountryDataReady && (
                 <Card className="glass-hierarchy-parent">
-                  <CardContent className="p-6 flex items-start gap-4">
-                    <MessageSquare className="h-8 w-8 text-blue-500 flex-shrink-0 mt-1" />
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg mb-2">Welcome to Thinkpages</h3>
-                      <p className="text-muted-foreground mb-3">
-                        You're viewing Thinkpages in read-only mode. To participate in discussions, create posts, and join groups, please sign in or create an account.
-                      </p>
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <Link href={createUrl("/setup")}>
-                          <Button size="sm">
-                            Sign In / Sign Up
-                          </Button>
-                        </Link>
-                        <Button variant="outline" size="sm" onClick={() => setActiveView('thinktanks')}>
-                          Browse Groups
-                        </Button>
-                      </div>
-                    </div>
+                  <CardContent className="p-8 text-center">
+                    <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Country Setup Required</h3>
+                    <p className="text-muted-foreground mb-4">
+                      To access the social feed, please complete your country setup first.
+                    </p>
+                    <Link href={createUrl("/setup")}>
+                      <Button>
+                        Complete Setup
+                      </Button>
+                    </Link>
                   </CardContent>
                 </Card>
-                {/* Show the global feed to anonymous users */}
-                <ThinkpagesSocialPlatform
-                  countryId="global"
-                  countryName="Global Community"
-                  isOwner={false}
+              )}
+
+              {activeView === 'feed' && !isUserAuthenticated && (
+                <div className="space-y-6">
+                  <Card className="glass-hierarchy-parent">
+                    <CardContent className="p-6 flex items-start gap-4">
+                      <MessageSquare className="h-8 w-8 text-blue-500 flex-shrink-0 mt-1" />
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg mb-2">Welcome to Thinkpages</h3>
+                        <p className="text-muted-foreground mb-3">
+                          You're viewing Thinkpages in read-only mode. To participate in discussions, create posts, and join groups, please sign in or create an account.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-3">
+                          <Link href={createUrl("/setup")}>
+                            <Button size="sm">
+                              Sign In / Sign Up
+                            </Button>
+                          </Link>
+                          <Button variant="outline" size="sm" onClick={() => setActiveView('thinktanks')}>
+                            Browse Groups
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <ThinkpagesSocialPlatform
+                    countryId="global"
+                    countryName="Global Community"
+                    isOwner={false}
+                  />
+                </div>
+              )}
+
+              {activeView === 'thinktanks' && (
+                <ThinktankGroups
+                  userId={user?.id || null}
+                  userAccounts={accounts || []}
+                  viewOnly={!isUserAuthenticated}
                 />
-              </div>
-            )}
+              )}
 
-            {/* ThinkTanks - Available to all users (read-only for anonymous) */}
-            {activeView === 'thinktanks' && (
-              <ThinktankGroups
-                userId={user?.id || null}
-                userAccounts={accounts || []}
-                viewOnly={!isUserAuthenticated}
+              {activeView === 'messages' && isUserAuthenticated && (
+                <ThinkshareMessages
+                  userId={user.id}
+                  userAccounts={accounts || []}
+                />
+              )}
+
+              {activeView === 'messages' && !isUserAuthenticated && (
+                <Card className="glass-hierarchy-parent">
+                  <CardContent className="p-8 text-center">
+                    <Send className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Sign In Required</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Messages are private. Please sign in to access your conversations.
+                    </p>
+                    <Link href={createUrl("/setup")}>
+                      <Button>
+                        Sign In / Sign Up
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        <AnimatePresence>
+          {showMobileSidebar && (
+            <motion.div
+              className="fixed inset-0 z-50"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <motion.div
+                className="absolute inset-0 bg-black/60"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowMobileSidebar(false)}
               />
-            )}
-
-            {/* Messages - Only for authenticated users */}
-            {activeView === 'messages' && isUserAuthenticated && (
-              <ThinkshareMessages
-                userId={user.id}
-                userAccounts={accounts || []}
-              />
-            )}
-
-            {activeView === 'messages' && !isUserAuthenticated && (
-              <Card className="glass-hierarchy-parent">
-                <CardContent className="p-8 text-center">
-                  <Send className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Sign In Required</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Messages are private. Please sign in to access your conversations.
-                  </p>
-                  <Link href={createUrl("/setup")}>
-                    <Button>
-                      Sign In / Sign Up
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </motion.div>
+              <motion.aside
+                role="dialog"
+                aria-modal="true"
+                className="absolute left-0 top-0 h-full w-[min(88vw,360px)] max-w-[360px] overflow-y-auto border-r border-border/40 bg-background/98 px-5 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-[calc(env(safe-area-inset-top)+1rem)] shadow-2xl backdrop-blur-xl"
+                initial={{ x: "-100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "-100%" }}
+                transition={{ type: "tween", duration: 0.28 }}
+              >
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground/80">ThinkPages</p>
+                    <h2 className="text-lg font-semibold text-foreground">Workspace Menu</h2>
+                  </div>
+                  <button
+                    type="button"
+                    className="rounded-full border border-border/50 p-2 text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
+                    onClick={() => setShowMobileSidebar(false)}
+                    aria-label="Close workspace menu"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                {renderWorkspaceMenu(() => setShowMobileSidebar(false))}
+              </motion.aside>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Account Management Modals */}
         {showAccountCreation && isCountryDataReady && (

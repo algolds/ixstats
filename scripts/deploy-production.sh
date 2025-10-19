@@ -26,8 +26,38 @@ else
 fi
 
 # Ensure base path variables are present before build/start so chunks map correctly.
-export BASE_PATH="${BASE_PATH:-/projects/ixstats}"
-export NEXT_PUBLIC_BASE_PATH="${NEXT_PUBLIC_BASE_PATH:-$BASE_PATH}"
+normalize_base_path() {
+    local value="$1"
+
+    if [ -z "$value" ]; then
+        echo ""
+        return
+    fi
+
+    if [[ "$value" != /* ]]; then
+        value="/$value"
+    fi
+
+    if [[ "$value" != "/" ]]; then
+        value="${value%/}"
+    fi
+
+    echo "$value"
+}
+
+if [ -z "${BASE_PATH+x}" ]; then
+    BASE_PATH="/projects/ixstats"
+fi
+
+BASE_PATH="$(normalize_base_path "$BASE_PATH")"
+
+if [ -z "${NEXT_PUBLIC_BASE_PATH+x}" ]; then
+    NEXT_PUBLIC_BASE_PATH="$BASE_PATH"
+fi
+
+NEXT_PUBLIC_BASE_PATH="$(normalize_base_path "$NEXT_PUBLIC_BASE_PATH")"
+
+export BASE_PATH NEXT_PUBLIC_BASE_PATH
 
 # Check required environment variables
 required_vars=("DATABASE_URL")

@@ -21,7 +21,6 @@ export const usersRouter = createTRPCRouter({
   getProfile: publicProcedure
     .query(async ({ ctx }) => {
       try {
-        // Check if user is authenticated
         if (!ctx.auth?.userId) {
           return {
             userId: null,
@@ -31,36 +30,97 @@ export const usersRouter = createTRPCRouter({
           };
         }
 
-        const userId = ctx.auth.userId;
+        const clerkUserId = ctx.auth.userId;
 
-        // Get user from DB
-        const user = await ctx.db.user.findUnique({
-          where: { clerkUserId: userId },
-          include: { country: true },
-        });
-        if (!user || !user.countryId) {
-          return {
-            userId: userId,
-            countryId: null,
-            country: null,
-            hasCompletedSetup: false,
-          };
-        }
-        // Get country details
-        const country = await ctx.db.country.findUnique({
-          where: { id: user.countryId },
+        // Re-use user from context when available to avoid duplicate queries
+        let userRecord = ctx.user ?? null;
+
+        const countryInclude = {
           include: {
             dmInputs: {
               where: { isActive: true },
               orderBy: { ixTimeTimestamp: "desc" },
             },
           },
-        });
+        } as const;
+
+        if (!userRecord) {
+          userRecord = await ctx.db.user.findUnique({
+            where: { clerkUserId },
+            include: {
+              country: countryInclude.include,
+            },
+          });
+        }
+
+        // Auto-create user record if missing (handles first-time logins)
+        if (!userRecord) {
+          userRecord = await ctx.db.user.upsert({
+            where: { clerkUserId },
+            update: {},
+            create: {
+              clerkUserId,
+            },
+            include: {
+              country: countryInclude.include,
+            },
+          });
+        }
+
+        // Attempt to hydrate country details when we have an ID but no relation loaded
+        let countryRecord = userRecord.country ?? null;
+
+        if (userRecord.countryId && !countryRecord) {
+          countryRecord = await ctx.db.country.findUnique({
+            where: { id: userRecord.countryId },
+            ...countryInclude,
+          });
+        }
+
+        // Fallback: detect existing country link via ThinkPages accounts or other records
+        if (!userRecord.countryId || !countryRecord) {
+          const linkedAccount = await ctx.db.thinkpagesAccount.findFirst({
+            where: {
+              clerkUserId,
+              isActive: true,
+            },
+            select: {
+              countryId: true,
+            },
+          });
+
+          if (linkedAccount?.countryId) {
+            try {
+              userRecord = await ctx.db.user.update({
+                where: { clerkUserId },
+                data: {
+                  countryId: linkedAccount.countryId,
+                },
+                include: {
+                  country: countryInclude.include,
+                },
+              });
+
+              countryRecord = userRecord.country;
+            } catch (linkError) {
+              console.error("Failed to reconcile user country link:", linkError);
+            }
+          }
+        }
+
+        // If we still don't have country details, attempt to load with dmInputs for completeness
+        if (!countryRecord && userRecord.countryId) {
+          countryRecord = await ctx.db.country.findUnique({
+            where: { id: userRecord.countryId },
+            ...countryInclude,
+          });
+        }
+
         return {
-          userId: userId,
-          countryId: country?.id || null,
-          country: country,
-          hasCompletedSetup: !!country,
+          userId: clerkUserId,
+          countryId: countryRecord?.id ?? null,
+          country: countryRecord,
+          hasCompletedSetup: Boolean(countryRecord),
         };
       } catch (error) {
         console.error("Error fetching user profile:", error);

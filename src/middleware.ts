@@ -132,19 +132,18 @@ export default isClerkConfigured
         if (!userId) {
           // Build the redirect URL with the return path
           const currentPath = req.nextUrl.pathname + req.nextUrl.search;
-          const returnUrl = encodeURIComponent(`${BASE_PATH}${currentPath}`);
+          const prefixedPath =
+            BASE_PATH && currentPath.startsWith(BASE_PATH)
+              ? currentPath
+              : `${BASE_PATH}${currentPath.startsWith('/') ? currentPath : `/${currentPath}`}`;
+          const returnUrl = encodeURIComponent(prefixedPath);
 
           // Build absolute sign-in URL based on environment
           const baseUrl = req.nextUrl.origin;
           let signInUrl: string;
 
-          if (process.env.NODE_ENV === "production") {
-            signInUrl = `https://accounts.ixwiki.com/sign-in?redirect_url=${returnUrl}`;
-          } else {
-            // For development, ensure we construct a proper absolute URL
-            const signInPath = `${BASE_PATH}/sign-in`;
-            signInUrl = `${baseUrl}${signInPath}?redirect_url=${returnUrl}`;
-          }
+          const signInPath = `${BASE_PATH}/sign-in`;
+          signInUrl = `${baseUrl}${signInPath}?redirect_url=${returnUrl}`;
 
           console.log(`[Middleware] Redirecting to: ${signInUrl}`);
           return NextResponse.redirect(new URL(signInUrl));

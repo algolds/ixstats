@@ -30,7 +30,8 @@ export function AuthenticationGuard({
   useEffect(() => {
     if (isLoaded && !user && isClerkConfigured) {
       const returnUrl = encodeURIComponent(createAbsoluteUrl(redirectPath));
-      window.location.href = `https://accounts.ixwiki.com/sign-in?redirect_url=${returnUrl}`;
+      const signInUrl = createAbsoluteUrl('/sign-in');
+      window.location.href = `${signInUrl}?redirect_url=${returnUrl}`;
     }
   }, [isLoaded, user, redirectPath]);
 
