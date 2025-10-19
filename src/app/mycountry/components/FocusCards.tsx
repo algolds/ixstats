@@ -428,63 +428,80 @@ export function FocusCards({
 // Default focus cards for MyCountry
 export function createDefaultFocusCards(countryData: {
   economic: {
-    healthScore: number;
-    gdpPerCapita: number;
-    growthRate: number;
-    economicTier: string;
+    healthScore: number | null | undefined;
+    gdpPerCapita: number | null | undefined;
+    growthRate: number | null | undefined;
+    economicTier: string | null | undefined;
     alerts: CriticalAlert[];
   };
   population: {
-    healthScore: number;
-    population: number;
-    growthRate: number;
-    populationTier: string;
+    healthScore: number | null | undefined;
+    population: number | null | undefined;
+    growthRate: number | null | undefined;
+    populationTier: string | null | undefined;
     alerts: CriticalAlert[];
   };
   diplomatic: {
-    healthScore: number;
-    allies: number;
-    reputation: string;
-    treaties: number;
+    healthScore: number | null | undefined;
+    allies: number | null | undefined;
+    reputation: string | null | undefined;
+    treaties: number | null | undefined;
     alerts: CriticalAlert[];
   };
   government: {
-    healthScore: number;
-    approval: number;
-    efficiency: string;
-    stability: string;
+    healthScore: number | null | undefined;
+    approval: number | null | undefined;
+    efficiency: string | null | undefined;
+    stability: string | null | undefined;
     alerts: CriticalAlert[];
   };
 }): FocusCard[] {
+  const safeNumber = (value: number | null | undefined): number | null =>
+    typeof value === 'number' && Number.isFinite(value) ? value : null;
+
+  const safeString = (value: string | null | undefined, fallback = 'Unknown'): string =>
+    typeof value === 'string' && value.trim().length > 0 ? value : fallback;
+
+  const safeScore = (value: number | null | undefined): number => safeNumber(value) ?? 0;
+
+  const formatPopulationMillions = (populationValue: number | null | undefined): string => {
+    const numeric = safeNumber(populationValue);
+    if (numeric == null) {
+      return 'N/A';
+    }
+
+    const millions = numeric / 1_000_000;
+    return `${millions.toFixed(1)}M`;
+  };
   return [
     {
       id: 'economic-command',
       title: 'Economic Command Center',
       description: 'Monitor and manage your nation\'s economic health and growth',
       icon: TrendingUp,
-      healthScore: countryData.economic.healthScore,
-      status: countryData.economic.healthScore >= 80 ? 'excellent' : 
-              countryData.economic.healthScore >= 60 ? 'good' :
-              countryData.economic.healthScore >= 40 ? 'concerning' : 'critical',
+      healthScore: safeScore(countryData.economic.healthScore),
+      status: safeScore(countryData.economic.healthScore) >= 80 ? 'excellent' :
+              safeScore(countryData.economic.healthScore) >= 60 ? 'good' :
+              safeScore(countryData.economic.healthScore) >= 40 ? 'concerning' : 'critical',
       priority: 'high',
       metrics: [
         {
           label: 'GDP per Capita',
-          value: countryData.economic.gdpPerCapita,
+          value: safeNumber(countryData.economic.gdpPerCapita) ?? 0,
           trend: 'up',
           change: '+3.2% this quarter',
           format: 'currency',
         },
         {
           label: 'Growth Rate',
-          value: countryData.economic.growthRate,
+          value: safeNumber(countryData.economic.growthRate) ?? 0,
           trend: 'up',
           change: 'Above target',
           format: 'percentage',
         },
         {
           label: 'Economic Tier',
-          value: countryData.economic.economicTier,
+          value: safeString(countryData.economic.economicTier, 'Unclassified'),
           trend: 'stable',
           change: 'Next milestone: 2.3 years',
           format: 'text',
@@ -543,29 +560,29 @@ export function createDefaultFocusCards(countryData: {
       title: 'Population & Demographics',
       description: 'Oversee population health, growth, and social wellbeing',
       icon: Users,
-      healthScore: countryData.population.healthScore,
-      status: countryData.population.healthScore >= 80 ? 'excellent' : 
-              countryData.population.healthScore >= 60 ? 'good' :
-              countryData.population.healthScore >= 40 ? 'concerning' : 'critical',
+      healthScore: safeScore(countryData.population.healthScore),
+      status: safeScore(countryData.population.healthScore) >= 80 ? 'excellent' :
+              safeScore(countryData.population.healthScore) >= 60 ? 'good' :
+              safeScore(countryData.population.healthScore) >= 40 ? 'concerning' : 'critical',
       priority: 'high',
       metrics: [
         {
           label: 'Population',
-          value: (countryData.population.population / 1000000).toFixed(1) + 'M',
+          value: formatPopulationMillions(countryData.population.population),
           trend: 'up',
           change: '+1.2% annually',
           format: 'text',
         },
         {
           label: 'Growth Rate',
-          value: countryData.population.growthRate,
+          value: safeNumber(countryData.population.growthRate) ?? 0,
           trend: 'stable',
           change: 'Optimal range',
           format: 'percentage',
         },
         {
           label: 'Population Tier',
-          value: `Tier ${countryData.population.populationTier}`,
+          value: `Tier ${safeString(countryData.population.populationTier, 'Unknown')}`,
           trend: 'stable',
           change: 'Stable classification',
           format: 'text',
@@ -624,29 +641,29 @@ export function createDefaultFocusCards(countryData: {
       title: 'Diplomatic Relations',
       description: 'Manage international relationships and foreign affairs',
       icon: Globe,
-      healthScore: countryData.diplomatic.healthScore,
-      status: countryData.diplomatic.healthScore >= 80 ? 'excellent' : 
-              countryData.diplomatic.healthScore >= 60 ? 'good' :
-              countryData.diplomatic.healthScore >= 40 ? 'concerning' : 'critical',
+      healthScore: safeScore(countryData.diplomatic.healthScore),
+      status: safeScore(countryData.diplomatic.healthScore) >= 80 ? 'excellent' :
+              safeScore(countryData.diplomatic.healthScore) >= 60 ? 'good' :
+              safeScore(countryData.diplomatic.healthScore) >= 40 ? 'concerning' : 'critical',
       priority: 'medium',
       metrics: [
         {
           label: 'Active Allies',
-          value: countryData.diplomatic.allies,
+          value: safeNumber(countryData.diplomatic.allies) ?? 0,
           trend: 'up',
           change: '+2 this year',
           format: 'number',
         },
         {
           label: 'Reputation',
-          value: countryData.diplomatic.reputation,
+          value: safeString(countryData.diplomatic.reputation, 'Developing'),
           trend: 'up',
           change: 'Rising globally',
           format: 'text',
         },
         {
           label: 'Treaties',
-          value: countryData.diplomatic.treaties,
+          value: safeNumber(countryData.diplomatic.treaties) ?? 0,
           trend: 'stable',
           change: 'Active agreements',
           format: 'number',
@@ -705,29 +722,29 @@ export function createDefaultFocusCards(countryData: {
       title: 'Government Operations',
       description: 'Oversee internal governance and policy effectiveness',
       icon: Building2,
-      healthScore: countryData.government.healthScore,
-      status: countryData.government.healthScore >= 80 ? 'excellent' : 
-              countryData.government.healthScore >= 60 ? 'good' :
-              countryData.government.healthScore >= 40 ? 'concerning' : 'critical',
+      healthScore: safeScore(countryData.government.healthScore),
+      status: safeScore(countryData.government.healthScore) >= 80 ? 'excellent' :
+              safeScore(countryData.government.healthScore) >= 60 ? 'good' :
+              safeScore(countryData.government.healthScore) >= 40 ? 'concerning' : 'critical',
       priority: 'high',
       metrics: [
         {
           label: 'Public Approval',
-          value: countryData.government.approval,
+          value: safeNumber(countryData.government.approval) ?? 0,
           trend: 'up',
           change: '+5% this month',
           format: 'percentage',
         },
         {
           label: 'Efficiency',
-          value: countryData.government.efficiency,
+          value: safeString(countryData.government.efficiency, 'Monitoring'),
           trend: 'stable',
           change: 'Consistent performance',
           format: 'text',
         },
         {
           label: 'Stability',
-          value: countryData.government.stability,
+          value: safeString(countryData.government.stability, 'Monitored'),
           trend: 'stable',
           change: 'Secure governance',
           format: 'text',
