@@ -102,7 +102,7 @@ const columns: Column<CountryData>[] = [
   searchKeys={['name', 'region']}
   paginated
   pageSize={20}
-  onRowClick={(row) => navigate(`/countries/${row.id}`)}
+  onRowClick={(row) => navigate(`/countries/${row.slug}`)}
 />
 ```
 

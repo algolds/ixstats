@@ -5,9 +5,10 @@ import { createUrl } from "~/lib/url-utils";
 interface QuickActionsSectionProps {
   setupStatus: 'loading' | 'unauthenticated' | 'needs-setup' | 'complete';
   countryId?: string;
+  countrySlug?: string;
 }
 
-export function QuickActionsSection({ setupStatus, countryId }: QuickActionsSectionProps) {
+export function QuickActionsSection({ setupStatus, countryId, countrySlug }: QuickActionsSectionProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -24,7 +25,7 @@ export function QuickActionsSection({ setupStatus, countryId }: QuickActionsSect
 
         {setupStatus === 'complete' && countryId && (
           <Link
-            href={createUrl(`/nation/${countryId}`)}
+            href={createUrl(`/countries/${countrySlug || countryId}`)}
             className="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
           >
             <Crown className="h-4 w-4 mr-2" />

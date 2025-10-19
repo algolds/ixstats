@@ -727,7 +727,7 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
                 priority: input.priority?.toLowerCase() as any || 'medium',
                 implementationCost: (input.parameters?.cost as number) || 0,
                 effectiveDate: new Date(),
-                createdBy: ctx.user.id
+                userId: ctx.user.id
               }
             });
 

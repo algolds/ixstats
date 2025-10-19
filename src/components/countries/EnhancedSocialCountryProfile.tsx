@@ -8,6 +8,7 @@ import { HealthRing } from "~/components/ui/health-ring";
 import { TextReveal, FadeIn } from "~/components/ui/text-reveal";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { createAbsoluteUrl } from "~/lib/url-utils";
+import { getCountryPath } from "~/lib/slug-utils";
 import { 
   RiStarLine, 
   RiEyeLine, 
@@ -41,6 +42,11 @@ const EnhancedSocialCountryProfileComponent: React.FC<EnhancedSocialCountryProfi
   const [profileState, setProfileState] = useState<'basic' | 'hover' | 'expanded'>('basic');
   const [activeTab, setActiveTab] = useState<'overview' | 'achievements' | 'diplomacy' | 'activity'>('overview');
   const [showSocialPalette, setShowSocialPalette] = useState(false);
+  const countryPath = getCountryPath({
+    id: country.id,
+    name: country.name,
+    slug: country.slug
+  });
 
   // Calculate enhanced metrics with memoization for performance
   const economicScore = useMemo(() => 
@@ -666,7 +672,7 @@ const EnhancedSocialCountryProfileComponent: React.FC<EnhancedSocialCountryProfi
                     <motion.button
                       onClick={(e) => {
                         e.stopPropagation();
-                        window.location.href = createAbsoluteUrl(`/nation/${country.slug || country.id}`);
+                        window.location.href = createAbsoluteUrl(countryPath);
                       }}
                       className="flex-1 flex items-center justify-center gap-2 glass-hierarchy-interactive bg-blue-500/20 hover:bg-blue-500/30 text-white px-6 py-3 rounded-lg font-medium [text-shadow:0_0_10px_rgba(0,0,0,0.8)]"
                       whileHover={{ scale: 1.02 }}

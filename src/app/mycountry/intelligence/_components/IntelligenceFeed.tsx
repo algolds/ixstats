@@ -774,8 +774,8 @@ export function IntelligenceFeed({ countryId, className, wsConnected = false }: 
   }, [recommendationsData]);
 
   const trends: Trend[] = useMemo(() => {
-    if (!analyticsData?.trends) return [];
-    return (analyticsData.trends || []).map((trend: any, idx: number) => ({
+    if (!(analyticsData as any)?.trends) return [];
+    return ((analyticsData as any).trends || []).map((trend: any, idx: number) => ({
       id: `trend-${idx}`,
       metric: trend.metric || trend.name || 'Unknown Metric',
       direction: (trend.direction || 'stable') as TrendDirection,

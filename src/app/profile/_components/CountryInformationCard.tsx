@@ -1,6 +1,7 @@
 import { Crown, Edit3, Save, X } from "lucide-react";
 import Link from "next/link";
 import { createUrl } from "~/lib/url-utils";
+import { getCountryPath } from "~/lib/slug-utils";
 import { FlagUploadSection } from "./FlagUploadSection";
 import CountryFlag from "~/app/_components/CountryFlag";
 
@@ -11,6 +12,7 @@ interface CountryInformationCardProps {
     economicTier: string | null;
     currentPopulation: number | null;
     currentGdpPerCapita: number | null;
+    slug?: string | null;
   };
   uploadedFlagUrl: string | null;
   flagUploadMode: boolean;
@@ -47,6 +49,12 @@ export function CountryInformationCard({
   isUploadingFlag,
   updateCountryFlagMutation
 }: CountryInformationCardProps) {
+  const countryPath = getCountryPath({
+    id: country.id,
+    name: country.name,
+    slug: country.slug
+  });
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
       <div className="flex items-center justify-between mb-4">
@@ -57,7 +65,7 @@ export function CountryInformationCard({
           </h2>
         </div>
         <Link
-          href={createUrl(`/nation/${country.slug || country.id}`)}
+          href={createUrl(countryPath)}
           className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-sm font-medium"
         >
           View Details →

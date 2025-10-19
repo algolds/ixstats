@@ -9,6 +9,7 @@ import { createUrl } from '~/lib/url-utils';
 interface CountryHeaderProps {
   countryName: string;
   countryId: string;
+  countrySlug?: string;
   economicTier?: string;
   populationTier?: string;
   variant?: 'unified' | 'standard' | 'premium';
@@ -17,6 +18,7 @@ interface CountryHeaderProps {
 export function CountryHeader({ 
   countryName, 
   countryId,
+  countrySlug,
   economicTier, 
   populationTier,
   variant = 'unified' 
@@ -60,7 +62,7 @@ export function CountryHeader({
       </div>
       
       <div className="flex items-center gap-3">
-        <Link href={createUrl(`/nation/${countryId}`)}>
+        <Link href={createUrl(`/countries/${countrySlug || countryId}`)}>
           <Button variant="outline" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Public View

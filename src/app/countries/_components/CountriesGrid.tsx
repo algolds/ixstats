@@ -16,6 +16,7 @@ import { useMemo } from 'react';
 export interface PageCountryData {
   id: string;
   name: string;
+  slug?: string;
   continent: string | null;
   region: string | null;
   economicTier: string | null;

@@ -34,6 +34,7 @@ import { createUrl } from '~/lib/url-utils';
 interface CountryData {
   id: string;
   name: string;
+  slug?: string;
   currentGdpPerCapita: number;
   currentTotalGdp: number;
   currentPopulation: number;
@@ -77,7 +78,7 @@ export const MiniExecutiveDashboard: React.FC<MiniExecutiveDashboardProps> = ({
       title: "Economic Analysis", 
       description: "Detailed economic metrics",
       icon: <BarChart3 className="h-5 w-5" />,
-      href: createUrl(`/nation/${countryData.slug || countryData.id}`),
+      href: createUrl(`/countries/${countryData.slug}`),
       color: "text-green-500",
       bg: "bg-green-500/10"
     },

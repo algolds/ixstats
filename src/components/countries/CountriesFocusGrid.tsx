@@ -195,7 +195,11 @@ export const CountriesFocusGrid: React.FC<CountriesFocusGridProps> = ({
   }, [loadMore]);
 
   const handleCountryClick = (countryId: string) => {
-    window.location.href = createAbsoluteUrl(`/nation/${countryId}`);
+    // Find country by ID to get slug
+    const country = countries.find(c => c.id === countryId);
+    if (country?.slug) {
+      window.location.href = createAbsoluteUrl(`/countries/${country.slug}`);
+    }
   };
 
   const onCountryClick = handleCountryClick;

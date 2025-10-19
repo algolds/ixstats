@@ -44,6 +44,7 @@ interface ActivityItem {
   description: string;
   country?: string;
   countryId?: string;
+  countrySlug?: string;
   value?: number;
   previousValue?: number;
   timestamp: Date;
@@ -303,7 +304,7 @@ export function ActivityFeed({ countries, isLoading }: ActivityFeedProps) {
                     </span>
                     {activity.country && activity.countryId && (
                       <Link
-                        href={createUrl(`/nation/${activity.countryId}`)}
+                        href={createUrl(`/countries/${activity.countrySlug || activity.countryId}`)}
                         className="text-xs text-primary hover:underline"
                       >
                         View {activity.country}

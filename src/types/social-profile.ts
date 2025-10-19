@@ -277,6 +277,7 @@ export interface EnhancedCountryProfileData {
   // Basic country information
   id: string;
   name: string;
+  slug?: string | null;
   flagUrl?: string;
   unsplashImageUrl?: string; // Dynamic tier-based image
   continent?: string;

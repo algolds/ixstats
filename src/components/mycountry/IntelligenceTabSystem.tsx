@@ -112,7 +112,7 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
     const vitalityIntelligence = [
       {
         area: 'economic' as const,
-        score: overview?.vitality?.economic || 0,
+        score: (overview as any)?.vitality?.economic || 0,
         trend: 'stable' as const,
         change: { 
           value: 0, 
@@ -135,7 +135,7 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
           { 
             id: 'economic-tier',
             label: 'Economic Tier', 
-            value: overview?.country?.economicTier || 'N/A', 
+            value: (overview as any)?.country?.economicTier || 'N/A', 
             unit: '',
             trend: 'stable' as const,
             changeValue: 0,
@@ -148,12 +148,12 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
         recommendations: [],
         forecast: {
           shortTerm: {
-            projected: overview?.vitality?.economic || 0,
+            projected: (overview as any)?.vitality?.economic || 0,
             confidence: 70,
             factors: ['Current economic indicators', 'Historical trends']
           },
           longTerm: {
-            projected: overview?.vitality?.economic || 0,
+            projected: (overview as any)?.vitality?.economic || 0,
             confidence: 50,
             factors: ['Long-term growth patterns', 'Global economic outlook']
           }
@@ -168,7 +168,7 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
       },
       {
         area: 'population' as const,
-        score: overview?.vitality?.social || 0,
+        score: (overview as any)?.vitality?.social || 0,
         trend: 'stable' as const,
         change: { 
           value: 0, 
@@ -180,7 +180,7 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
           { 
             id: 'population-tier',
             label: 'Population Tier', 
-            value: overview?.country?.populationTier || 'N/A', 
+            value: (overview as any)?.country?.populationTier || 'N/A', 
             unit: '',
             trend: 'stable' as const,
             changeValue: 0,
@@ -191,7 +191,7 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
           { 
             id: 'wellbeing',
             label: 'Wellbeing', 
-            value: String(overview?.country?.overallNationalHealth || 0), 
+            value: String((overview as any)?.country?.overallNationalHealth || 0), 
             unit: '/100',
             trend: 'stable' as const,
             changeValue: 0,
@@ -204,12 +204,12 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
         recommendations: [],
         forecast: {
           shortTerm: {
-            projected: overview?.vitality?.social || 0,
+            projected: (overview as any)?.vitality?.social || 0,
             confidence: 70,
             factors: ['Social indicators', 'Population trends']
           },
           longTerm: {
-            projected: overview?.vitality?.social || 0,
+            projected: (overview as any)?.vitality?.social || 0,
             confidence: 50,
             factors: ['Demographic projections', 'Social policy impact']
           }
@@ -224,7 +224,7 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
       },
       {
         area: 'diplomatic' as const,
-        score: overview?.vitality?.diplomatic || 0,
+        score: (overview as any)?.vitality?.diplomatic || 0,
         trend: 'stable' as const,
         change: {
           value: 0,
@@ -270,12 +270,12 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
         recommendations: [],
         forecast: {
           shortTerm: {
-            projected: overview?.vitality?.diplomatic || 0,
+            projected: (overview as any)?.vitality?.diplomatic || 0,
             confidence: 70,
             factors: ['Current diplomatic relations', 'International standing']
           },
           longTerm: {
-            projected: overview?.vitality?.diplomatic || 0,
+            projected: (overview as any)?.vitality?.diplomatic || 0,
             confidence: 50,
             factors: ['Geopolitical trends', 'Alliance developments']
           }
@@ -290,7 +290,7 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
       },
       {
         area: 'governance' as const,
-        score: overview?.vitality?.governance || 0,
+        score: (overview as any)?.vitality?.governance || 0,
         trend: 'stable' as const,
         change: { 
           value: 0, 
@@ -302,7 +302,7 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
           { 
             id: 'active-policies',
             label: 'Active Policies', 
-            value: String(overview?.activity?.activePolicies || 0), 
+            value: String((overview as any)?.activity?.activePolicies || 0), 
             unit: '',
             trend: 'stable' as const,
             changeValue: 0,
@@ -313,7 +313,7 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
           { 
             id: 'pending-decisions',
             label: 'Pending Decisions', 
-            value: String(overview?.activity?.pendingDecisions || 0), 
+            value: String((overview as any)?.activity?.pendingDecisions || 0), 
             unit: '',
             trend: 'stable' as const,
             changeValue: 0,
@@ -326,12 +326,12 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
         recommendations: [],
         forecast: {
           shortTerm: {
-            projected: overview?.vitality?.governance || 0,
+            projected: (overview as any)?.vitality?.governance || 0,
             confidence: 70,
             factors: ['Policy effectiveness', 'Administrative efficiency']
           },
           longTerm: {
-            projected: overview?.vitality?.governance || 0,
+            projected: (overview as any)?.vitality?.governance || 0,
             confidence: 50,
             factors: ['Institutional stability', 'Reform initiatives']
           }
@@ -347,7 +347,7 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
     ];
 
     type AlertItem = { id: string; title: string; description: string; severity: string; category: string; detectedAt: Date | string };
-    const criticalAlerts = (overview?.alerts?.items || []).slice(0, 5).map((alert: AlertItem) => ({
+    const criticalAlerts = ((overview as any)?.alerts?.items || []).slice(0, 5).map((alert: AlertItem) => ({
       id: alert.id,
       title: alert.title,
       message: alert.description,
@@ -366,7 +366,7 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
     }));
 
     type BriefingItem = { id: string; title: string; description: string; priority: string; urgency: string; confidence: number; generatedAt: Date | string };
-    const trendingInsights = (overview?.briefings?.items || []).slice(0, 3).map((briefing: BriefingItem) => ({
+    const trendingInsights = ((overview as any)?.briefings?.items || []).slice(0, 3).map((briefing: BriefingItem) => ({
       id: briefing.id,
       title: briefing.title,
       description: briefing.description,
@@ -385,7 +385,7 @@ export function IntelligenceTabSystem({ variant = 'unified' }: IntelligenceTabSy
     }));
 
     type QuickAction = { id: string; title: string; description: string; category: string; urgency: string; difficulty?: string; estimatedDuration: string; estimatedCost?: number; estimatedBenefit: string; requirements?: string[]; risks?: string[]; successProbability: number };
-    const urgentActions = ((quickActions?.actions as QuickAction[]) || []).slice(0, 3).map((action: QuickAction) => ({
+    const urgentActions = ((quickActions as any)?.actions || []).slice(0, 3).map((action: any) => ({
       id: action.id,
       title: action.title,
       description: action.description,

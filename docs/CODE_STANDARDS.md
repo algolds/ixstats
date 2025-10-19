@@ -560,7 +560,7 @@ export function CreateCountryForm() {
 // ✅ Good: Comprehensive error handling
 async function fetchCountryData(id: string): Promise<CountryData> {
   try {
-    const response = await fetch(`/api/countries/${id}`);
+    const response = await fetch(`/api/countries/${slug}`);
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);

@@ -42,6 +42,7 @@ interface ActivityItem {
   description: string;
   country?: string;
   countryId?: string;
+  countrySlug?: string;
   value?: number;
   previousValue?: number;
   timestamp: Date;
@@ -253,7 +254,7 @@ export const ActivityMarquee = memo(function ActivityMarquee({ countries, isLoad
               
               {activity.country && activity.countryId && (
                 <Link
-                  href={`/nation/${activity.countryId}`}
+                  href={`/countries/${activity.countrySlug || activity.countryId}`}
                   className="text-sm text-primary hover:text-primary/80 transition-colors ml-1 font-medium"
                   onClick={(e) => e.stopPropagation()}
                 >

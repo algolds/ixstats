@@ -200,7 +200,7 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
           return (
             <Link
               key={country.id}
-              href={createUrl(`/nation/${country.slug || country.id}`)}
+              href={createUrl(`/countries/${country.slug}`)}
               className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg group"
             >
               <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted">

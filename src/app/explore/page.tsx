@@ -261,7 +261,11 @@ export default function ExplorePage() {
   // Handle country selection from comparison modal
   const handleCountrySelect = (countryId: string) => {
     // Navigate to country detail page
-    router.push(createUrl(`/nation/${countryId}`));
+    // Find country by ID to get slug, then navigate
+    const country = processed.find(c => c.id === countryId);
+    if (country?.slug) {
+      router.push(createUrl(`/countries/${country.slug}`));
+    }
   };
 
   return (

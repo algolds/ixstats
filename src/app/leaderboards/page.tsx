@@ -201,13 +201,15 @@ export default function LeaderboardsPage() {
             </div>
           ) : leaderboardData.length > 0 ? (
             <div className="space-y-2">
-              {leaderboardData.slice(0, 20).map((entry: { id: string; name: string; formatted: string; extra?: string }, index: number) => {
+              {leaderboardData.slice(0, 20).map((entry: {
+                [x: string]: any; id: string; name: string; formatted: string; extra?: string 
+}, index: number) => {
                 const isUserCountry = entry.id === userProfile?.countryId;
 
                 return (
                   <Link
                     key={entry.id}
-                    href={createUrl(`/nation/${entry.slug || entry.id}`)}
+                    href={createUrl(`/countries/${entry.slug}`)}
                   >
                     <div
                       className={cn(

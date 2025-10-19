@@ -27,18 +27,20 @@ export function generateSlug(name: string): string {
 
 /**
  * Get the display URL path for a country
- * Uses pretty /nation/ URLs with slug
+ * Uses pretty /countries/ URLs with slug
  */
 export function getCountryPath(country: { slug?: string | null; id: string; name?: string }): string {
+  // Always prefer slug
   if (country.slug) {
-    return `/nation/${country.slug}`;
+    return `/countries/${country.slug}`;
   }
-  // Fallback: generate slug from name if available
+  // Fallback: generate slug from name
   if (country.name) {
-    return `/nation/${generateSlug(country.name)}`;
+    return `/countries/${generateSlug(country.name)}`;
   }
-  // Last resort: use ID with /countries/ (legacy)
-  return `/countries/${country.id}`;
+  // Error case: log warning and throw error
+  console.error(`Country ${country.id} missing both slug and name`);
+  throw new Error(`Country missing slug and name: ${country.id}`);
 }
 
 /**
@@ -46,5 +48,5 @@ export function getCountryPath(country: { slug?: string | null; id: string; name
  * Convenience function for direct name-to-URL conversion
  */
 export function getNationUrl(countryName: string): string {
-  return `/nation/${generateSlug(countryName)}`;
+  return `/countries/${generateSlug(countryName)}`;
 }

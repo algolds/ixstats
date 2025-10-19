@@ -83,7 +83,7 @@ export function CountryListCard({ country, flagUrl: propFlagUrl, flagLoading: pr
   )}`;
 
   const goToDetail = () => {
-    router.push(createUrl(getCountryPath(country)));
+    router.push(createUrl(`/countries/${country.slug}`));
   };
 
   return (

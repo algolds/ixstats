@@ -65,6 +65,7 @@ import {
 import { cn } from "~/lib/utils";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { createUrl } from "~/lib/url-utils";
+import { getCountryPath } from "~/lib/slug-utils";
 import { usePermissions } from "~/hooks/usePermissions";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
@@ -78,15 +79,21 @@ interface CountryCardProps {
     currentPopulation: number;
     currentGdpPerCapita: number;
     economicTier: string;
+    slug?: string | null;
   };
   index: number;
 }
 
 function CountryCard({ country, index }: CountryCardProps) {
   const { flagUrl } = useFlag(country.name);
+  const countryPath = getCountryPath({
+    id: country.id,
+    name: country.name,
+    slug: country.slug
+  });
   
   return (
-    <Link href={createUrl(`/nation/${country.slug || country.id}`)} className="block">
+    <Link href={createUrl(countryPath)} className="block">
       <Card key={country.id} className="glass-hierarchy-interactive hover:scale-[1.02] transition-all duration-200 overflow-hidden relative cursor-pointer">
         {/* Flag Background */}
         {flagUrl && (
@@ -1004,6 +1011,7 @@ export function EnhancedCommandCenter() {
   const processedCountries = countries.map((country) => ({
     id: country.id,
     name: country.name,
+    slug: country.slug,
     currentPopulation: country.currentPopulation ?? 0,
     currentGdpPerCapita: country.currentGdpPerCapita ?? 0,
     currentTotalGdp: country.currentTotalGdp ?? 0,

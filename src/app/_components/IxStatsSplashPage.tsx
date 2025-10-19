@@ -153,7 +153,7 @@ function CountryShowcaseCard({ country }: { country: any }) {
   }, [country.name]);
 
   const wikiUrl = `https://ixwiki.com/wiki/${encodeURIComponent(country.name.replace(/ /g, '_'))}`;
-  const ixstatsUrl = `/nation/${country.slug || country.id}`;
+  const ixstatsUrl = `/countries/${country.slug}`;
 
   return (
     <div className="relative w-full h-full p-8 overflow-y-auto">
@@ -263,7 +263,7 @@ export function IxStatsSplashPage() {
     if (countriesData?.countries && countriesData.countries.length > 0) {
       const topCountryNames = countriesData.countries
         .slice(0, 20) // Just prefetch top 20 for splash page
-        .map(c => c.name);
+        .map((c: { name: any; }) => c.name);
       console.log(`[SplashPage] Prefetching ${topCountryNames.length} top country flags`);
       import('~/lib/unified-flag-service').then(({ unifiedFlagService }) => {
         unifiedFlagService.prefetchFlags(topCountryNames);

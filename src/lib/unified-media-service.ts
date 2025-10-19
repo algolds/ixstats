@@ -26,6 +26,7 @@ export interface CountryInfobox {
   government?: string;
   population?: string;
   gdp?: string;
+  isoCode?: string | null;
   [key: string]: any;
 }
 

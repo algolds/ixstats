@@ -21,6 +21,10 @@ import {
 } from "lucide-react";
 import type { CountryInfobox } from "~/lib/mediawiki-service";
 
+type ExtendedCountryInfobox = CountryInfobox & {
+  isoCode?: string | null;
+};
+
 interface NationalIdentity {
   countryName?: string | null;
   officialName?: string | null;
@@ -51,7 +55,7 @@ interface NationalIdentity {
 
 interface NationalIdentityDisplayProps {
   nationalIdentity?: NationalIdentity | null;
-  wikiInfobox?: CountryInfobox | null;
+  wikiInfobox?: ExtendedCountryInfobox | null;
   showTitle?: boolean;
   className?: string;
 }

@@ -154,7 +154,7 @@ export function useDynamicIslandState() {
               gdpPerCapita: country.currentGdpPerCapita,
               economicTier: country.economicTier
             },
-            action: () => window.location.href = createAbsoluteUrl(`/nation/${country.slug || country.id}`)
+            action: () => window.location.href = createAbsoluteUrl(`/countries/${country.slug}`)
           });
         }
       });
@@ -189,8 +189,8 @@ export function useDynamicIslandState() {
         const countryId = pathname.split('/countries/')[1]?.split('/')[0];
         if (countryId) {
           contextualCommands.push(
-            { name: "Country Profile", path: `/nation/${countryId}/profile`, icon: Globe, description: "View detailed country profile" },
-            { name: "Economic Modeling", path: `/nation/${countryId}/modeling`, icon: BarChart3, description: "Economic modeling and analysis" }
+            { name: "Country Profile", path: `/countries/${countryId}/profile`, icon: Globe, description: "View detailed country profile" },
+            { name: "Economic Modeling", path: `/countries/${countryId}/modeling`, icon: BarChart3, description: "Economic modeling and analysis" }
           );
         }
       }

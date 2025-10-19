@@ -48,12 +48,9 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
   const { slug } = use(params);
   const { user, userProfile } = useUserCountry();
 
-  // Replace underscores with spaces for pretty URLs
-  const querySlug = slug.replace(/_/g, " ");
-
-  // Data fetching
+  // Data fetching - pass slug directly
   const { data: country, isLoading, error } = api.countries.getByIdWithEconomicData.useQuery({
-    id: querySlug,
+    id: slug,
   });
   const { data: governmentStructure } = api.government.getByCountryId.useQuery(
     { countryId: country?.id || "" },

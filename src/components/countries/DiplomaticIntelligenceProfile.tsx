@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useCallback } from "react";
 import { createAbsoluteUrl } from "~/lib/url-utils";
+import { getCountryPath } from "~/lib/slug-utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { HealthRing } from "~/components/ui/health-ring";
@@ -51,6 +52,11 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
   const [selectedAchievement, setSelectedAchievement] = useState<DiplomaticAchievement | null>(null);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const countryPath = getCountryPath({
+    id: country.id,
+    name: country.name,
+    slug: country.slug
+  });
 
   // ThinkShare integration
   const { data: viewerAccounts } = api.thinkpages.getAccountsByCountry.useQuery(
@@ -804,14 +810,14 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                 {createConversationMutation.isPending ? 'Starting...' : 'Secure Message'}
               </button>
               <button
-                onClick={() => window.location.href = createAbsoluteUrl(`/nation/${country.slug || country.id}`)}
+                onClick={() => window.location.href = createAbsoluteUrl(countryPath)}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm bg-[--intel-gold]/20 hover:bg-[--intel-gold]/30 text-[--intel-gold] rounded-lg transition-colors"
               >
                 <RiMapPinLine className="h-4 w-4" />
                 Open IxMaps
               </button>
               <button
-                onClick={() => window.location.href = createAbsoluteUrl(`/nation/${country.slug || country.id}`)}
+                onClick={() => window.location.href = createAbsoluteUrl(countryPath)}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm bg-[--intel-gold]/20 hover:bg-[--intel-gold]/30 text-[--intel-gold] rounded-lg transition-colors"
               >
                 <RiExternalLinkLine className="h-4 w-4" />

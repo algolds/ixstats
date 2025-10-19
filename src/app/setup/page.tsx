@@ -105,7 +105,11 @@ export default function SetupPage() {
     if (isLoaded && user && userProfile) {
       if (userProfile.countryId) {
         // User already has a country linked, redirect to their country page
-        navigateTo(router, `/nation/${userProfile.countryId}`);
+        // Find country by ID to get slug, then navigate
+        const country = countries?.countries.find(c => c.id === userProfile.countryId);
+        if (country?.slug) {
+          navigateTo(router, `/countries/${country.slug}`);
+        }
       }
     }
   }, [isLoaded, user, userProfile, router]);
@@ -168,7 +172,11 @@ export default function SetupPage() {
     const countryId = updatedProfile.data?.countryId;
     
     if (countryId) {
-      navigateTo(router, `/nation/${countryId}`);
+      // Find country by ID to get slug, then navigate
+      const country = countries?.countries.find(c => c.id === countryId);
+      if (country?.slug) {
+        navigateTo(router, `/countries/${country.slug}`);
+      }
     } else {
       navigateTo(router, '/dashboard');
     }

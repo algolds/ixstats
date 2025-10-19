@@ -33,6 +33,7 @@ export interface CountryInfobox {
   
   // Geographic data
   capital?: string;
+  isoCode?: string | null;
   capital_city?: string;
   largest_city?: string;
   area_km2?: string;

@@ -23,6 +23,7 @@ import { IxTime } from "~/lib/ixtime";
 interface CountryDataInput {
   id: string;
   name: string;
+  slug?: string | null;
   currentPopulation: number;
   currentGdpPerCapita: number;
   currentTotalGdp: number;
