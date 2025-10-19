@@ -82,6 +82,8 @@ function GlobalStatsIslandContent() {
   
   // Live notifications integration
   const { notifications, unreadCount, isLoading: notificationsLoading, markAsRead, markAllAsRead } = useLiveNotifications();
+  const latestNotificationRef = useRef<string | null>(null);
+  const hasInitializedNotificationsRef = useRef(false);
   
   // Current time state
   const [currentTime, setCurrentTime] = useState<{
@@ -293,6 +295,35 @@ function GlobalStatsIslandContent() {
         break;
     }
   }, [setSize]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    if (!notifications || notifications.length === 0) {
+      return;
+    }
+
+    const newest = notifications[0];
+    if (!newest) return;
+
+    const newestId = newest.id;
+
+    if (!hasInitializedNotificationsRef.current) {
+      hasInitializedNotificationsRef.current = true;
+      latestNotificationRef.current = newestId;
+      return;
+    }
+
+    if (latestNotificationRef.current === newestId) {
+      return;
+    }
+
+    latestNotificationRef.current = newestId;
+
+    const priority = (newest.priority || '').toString().toLowerCase();
+    if (['critical', 'high'].includes(priority) && mode !== 'notifications') {
+      switchMode('notifications');
+    }
+  }, [notifications, mounted, switchMode, mode]);
 
 
   // Removed global keyboard shortcuts to prevent conflicts with universal command palette

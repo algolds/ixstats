@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
@@ -400,12 +400,14 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
   const [startMissionOpen, setStartMissionOpen] = useState(false);
   const [createExchangeOpen, setCreateExchangeOpen] = useState(false);
   const [allocateBudgetOpen, setAllocateBudgetOpen] = useState(false);
+  const [upgradeEmbassyOpen, setUpgradeEmbassyOpen] = useState(false);
 
   // Form states
   const [newEmbassyData, setNewEmbassyData] = useState({ hostCountry: '', name: '', location: '', ambassador: '' });
   const [newMissionData, setNewMissionData] = useState({ type: 'trade_negotiation', staff: 1, priority: 'normal' });
   const [newExchangeData, setNewExchangeData] = useState({ title: '', type: 'festival', description: '', startDate: '', endDate: '' });
   const [budgetAmount, setBudgetAmount] = useState(10000);
+  const [selectedUpgradeType, setSelectedUpgradeType] = useState<string>('staff_expansion');
 
   // Fetch data
   const { data: embassies, isLoading: embassiesLoading, refetch: refetchEmbassies } = api.diplomatic.getEmbassies.useQuery({ countryId });
@@ -415,6 +417,17 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
   );
   const { data: exchanges, isLoading: exchangesLoading, refetch: refetchExchanges } = api.diplomatic.getCulturalExchanges.useQuery({ countryId });
   const { data: relationships } = api.diplomatic.getRelationships.useQuery({ countryId });
+  const { data: availableUpgrades, isLoading: upgradesLoading } = api.diplomatic.getAvailableUpgrades.useQuery(
+    { embassyId: selectedEmbassy || '' },
+    { enabled: upgradeEmbassyOpen && !!selectedEmbassy }
+  );
+
+  useEffect(() => {
+    if (!upgradeEmbassyOpen || !availableUpgrades || availableUpgrades.length === 0) return;
+    if (!availableUpgrades.some(upgrade => upgrade?.upgradeType === selectedUpgradeType)) {
+      setSelectedUpgradeType(availableUpgrades[0]?.upgradeType ?? 'staff_expansion');
+    }
+  }, [availableUpgrades, upgradeEmbassyOpen, selectedUpgradeType]);
 
   // Mutations
   const establishEmbassyMutation = api.diplomatic.establishEmbassy.useMutation({
@@ -477,6 +490,20 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
     },
     onError: (error) => {
       toast.error('Failed to Allocate Budget', { description: error.message });
+    }
+  });
+
+  const upgradeEmbassyMutation = api.diplomatic.upgradeEmbassy.useMutation({
+    onSuccess: (upgrade) => {
+      toast.success('Upgrade Initiated', {
+        description: `${upgrade.name || 'Embassy upgrade'} will complete in ${upgrade.duration} days.`,
+      });
+      setUpgradeEmbassyOpen(false);
+      setSelectedUpgradeType('staff_expansion');
+      refetchEmbassies();
+    },
+    onError: (error) => {
+      toast.error('Failed to upgrade embassy', { description: error.message });
     }
   });
 
@@ -543,6 +570,25 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
     });
   }, [selectedEmbassy, budgetAmount, allocateBudgetMutation]);
 
+  const handleUpgradeEmbassy = useCallback(() => {
+    if (!selectedEmbassy) {
+      toast.error('No Embassy Selected', { description: 'Please select an embassy to upgrade.' });
+      return;
+    }
+
+    const upgrade = availableUpgrades?.find(option => option?.upgradeType === selectedUpgradeType);
+    if (!upgrade) {
+      toast.error('Upgrade Unavailable', { description: 'No upgrades available for this embassy.' });
+      return;
+    }
+
+    upgradeEmbassyMutation.mutate({
+      embassyId: selectedEmbassy,
+      upgradeType: upgrade.upgradeType as any,
+      level: upgrade.nextLevel,
+    });
+  }, [selectedEmbassy, availableUpgrades, selectedUpgradeType, upgradeEmbassyMutation]);
+
   // Computed values
   const networkMetrics = useMemo(() => {
     if (!embassies || embassies.length === 0) return null;
@@ -572,6 +618,11 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
     if (exchangeFilter === 'all') return exchanges;
     return exchanges.filter(e => (e as any).status === exchangeFilter);
   }, [exchanges, exchangeFilter]);
+
+  const selectedUpgrade = useMemo(() => {
+    if (!availableUpgrades) return null;
+    return availableUpgrades.find(upgrade => upgrade?.upgradeType === selectedUpgradeType) ?? null;
+  }, [availableUpgrades, selectedUpgradeType]);
 
   if (embassiesLoading && !embassies) {
     return <LoadingState variant="spinner" size="lg" message="Loading diplomatic operations..." />;
@@ -691,7 +742,7 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
                   onToggle={() => setExpandedEmbassy(expandedEmbassy === embassy.id ? null : embassy.id)}
                   onUpgrade={() => {
                     setSelectedEmbassy(embassy.id);
-                    toast.info('Upgrade System', { description: 'Embassy upgrade system coming soon!' });
+                    setUpgradeEmbassyOpen(true);
                   }}
                   onStartMission={() => {
                     setSelectedEmbassy(embassy.id);
@@ -1063,14 +1114,122 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
               {startMissionMutation.isPending ? 'Starting...' : 'Start Mission'}
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      </DialogContent>
+    </Dialog>
 
-      {/* Create Cultural Exchange Dialog */}
-      <Dialog open={createExchangeOpen} onOpenChange={setCreateExchangeOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Create Cultural Exchange</DialogTitle>
+    {/* Upgrade Embassy Dialog */}
+    <Dialog open={upgradeEmbassyOpen} onOpenChange={setUpgradeEmbassyOpen}>
+      <DialogContent className="sm:max-w-[520px]">
+        <DialogHeader>
+          <DialogTitle>Upgrade Embassy</DialogTitle>
+          <DialogDescription>
+            Invest in targeted upgrades to improve embassy effectiveness and mission success.
+          </DialogDescription>
+        </DialogHeader>
+
+        {!selectedEmbassy ? (
+          <div className="py-6 text-center text-sm text-muted-foreground">
+            Select an embassy from the network list to view upgrade options.
+          </div>
+        ) : upgradesLoading ? (
+          <LoadingState variant="spinner" message="Loading upgrade options..." />
+        ) : availableUpgrades && availableUpgrades.length > 0 ? (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="upgrade-type">Upgrade Focus</Label>
+              <Select value={selectedUpgradeType} onValueChange={setSelectedUpgradeType}>
+                <SelectTrigger id="upgrade-type">
+                  <SelectValue placeholder="Select upgrade" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableUpgrades.map(upgrade => (
+                    <SelectItem key={upgrade.upgradeType} value={upgrade.upgradeType}>
+                      {upgrade.upgradeType.replace(/_/g, ' ')} (Lvl {upgrade.nextLevel})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedUpgrade && (
+              <div className="grid gap-3 rounded-lg border border-purple-200/60 bg-purple-50/40 p-4 dark:border-purple-900/60 dark:bg-purple-950/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold capitalize">{selectedUpgrade.upgradeType.replace(/_/g, ' ')}</p>
+                    <p className="text-xs text-muted-foreground">Level {selectedUpgrade.nextLevel} upgrade</p>
+                  </div>
+                  <Badge variant="outline">{selectedUpgrade.duration} day project</Badge>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="rounded-md bg-white/60 p-3 dark:bg-black/40">
+                    <p className="text-xs text-muted-foreground">Cost</p>
+                    <p className="font-semibold">${selectedUpgrade.cost.toLocaleString()}</p>
+                  </div>
+                  <div className="rounded-md bg-white/60 p-3 dark:bg-black/40">
+                    <p className="text-xs text-muted-foreground">Requirements</p>
+                    <p className="font-semibold">Level {selectedUpgrade.requirements.embassyLevel}+ | Budget ${selectedUpgrade.requirements.budget.toLocaleString()}</p>
+                  </div>
+                </div>
+
+                {selectedUpgrade.effects && (
+                  <div className="rounded-md bg-muted/50 p-3 text-xs">
+                    <p className="mb-1 font-semibold">Projected Effects</p>
+                    <ul className="space-y-1">
+                      {Object.entries(selectedUpgrade.effects).map(([key, value]) => (
+                        <li key={key} className="flex items-center gap-2">
+                          <Badge variant="secondary" className="capitalize">
+                            {key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ')}
+                          </Badge>
+                          <span className="font-medium">+{String(value)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="rounded-md border border-dashed border-green-300/60 p-3 text-green-700 dark:border-green-700/60 dark:text-green-300">
+                    {selectedUpgrade.canAfford ? 'Budget available' : 'Insufficient budget'}
+                  </div>
+                  <div className="rounded-md border border-dashed border-blue-300/60 p-3 text-blue-700 dark:border-blue-700/60 dark:text-blue-300">
+                    {selectedUpgrade.meetsLevelReq ? 'Level requirement met' : `Requires embassy level ${selectedUpgrade.requirements.embassyLevel}`}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="py-6 text-center text-sm text-muted-foreground">
+            No upgrades are currently available for this embassy.
+          </div>
+        )}
+
+        <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+          <Button variant="outline" onClick={() => setUpgradeEmbassyOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleUpgradeEmbassy}
+            disabled={
+              upgradeEmbassyMutation.isPending ||
+              !selectedEmbassy ||
+              !selectedUpgrade ||
+              !selectedUpgrade.canAfford ||
+              !selectedUpgrade.meetsLevelReq
+            }
+          >
+            {upgradeEmbassyMutation.isPending ? 'Starting Upgrade...' : 'Start Upgrade'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {/* Create Cultural Exchange Dialog */}
+    <Dialog open={createExchangeOpen} onOpenChange={setCreateExchangeOpen}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Create Cultural Exchange</DialogTitle>
             <DialogDescription>
               Organize a new cultural exchange program
             </DialogDescription>
