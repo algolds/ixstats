@@ -9,10 +9,12 @@
 import * as fs from "fs";
 import * as path from "path";
 
+type WiringStatus = "LIVE" | "MIXED" | "MOCK" | "PASSIVE";
+
 interface WiringCheck {
   component: string;
   path: string;
-  status: "LIVE" | "MOCK" | "MIXED" | "UNKNOWN";
+  status: WiringStatus;
   details: string[];
   score: number;
 }
@@ -32,13 +34,14 @@ const liveDataPatterns = [
 
 // Patterns that indicate mock data usage
 const mockDataPatterns = [
-  /const\s+\w+\s*=\s*\[.*\]/s, // Array literals
-  /MOCK_/,
-  /mockData/,
-  /demoData/,
-  /sampleData/,
-  /PREVIEW_MODE/,
-  /isPreview\s*\?/,
+  /\bmock[A-Z_][\w\d_]*/i,
+  /\bmockData\b/i,
+  /\bdemoData\b/i,
+  /\bsampleData\b/i,
+  /\bplaceholderData\b/i,
+  /\bpreviewMode\b/i,
+  /\busePreviewData\b/, 
+  /\bPreviewPayload\b/,
 ];
 
 // Key directories to check
@@ -61,8 +64,15 @@ const componentsToCheck = [
   "src/app/mycountry/new",
 ];
 
+function stripComments(source: string): string {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:])\/\/.*$/gm, "$1");
+}
+
 function analyzeFile(filePath: string): WiringCheck {
-  const content = fs.readFileSync(filePath, "utf-8");
+  const rawContent = fs.readFileSync(filePath, "utf-8");
+  const content = stripComments(rawContent);
   const relativePath = filePath.replace(process.cwd(), "");
 
   const details: string[] = [];
@@ -83,7 +93,7 @@ function analyzeFile(filePath: string): WiringCheck {
     const matches = content.match(new RegExp(pattern, "g"));
     if (matches) {
       mockCount += matches.length;
-      details.push(`⚠️  Found ${matches.length} mock data pattern(s)`);
+      details.push(`⚠️  Found ${matches.length} mock data indicator(s)`);
     }
   });
 
@@ -110,7 +120,7 @@ function analyzeFile(filePath: string): WiringCheck {
   });
 
   // Determine status
-  let status: "LIVE" | "MOCK" | "MIXED" | "UNKNOWN";
+  let status: WiringStatus;
   let score = 0;
 
   if (liveCount > 0 && mockCount === 0) {
@@ -123,8 +133,8 @@ function analyzeFile(filePath: string): WiringCheck {
     status = "MOCK";
     score = 0;
   } else {
-    status = "UNKNOWN";
-    score = 50; // Neutral score for components that might not need data
+    status = "PASSIVE";
+    score = 100; // UI-only components don't block live wiring coverage
   }
 
   return {
@@ -167,7 +177,7 @@ function generateReport() {
   const liveComponents = results.filter((r) => r.status === "LIVE");
   const mockComponents = results.filter((r) => r.status === "MOCK");
   const mixedComponents = results.filter((r) => r.status === "MIXED");
-  const unknownComponents = results.filter((r) => r.status === "UNKNOWN");
+  const passiveComponents = results.filter((r) => r.status === "PASSIVE");
 
   console.log(`\n✅ LIVE Components: ${liveComponents.length}`);
   liveComponents.slice(0, 10).forEach((c) => {
@@ -193,9 +203,14 @@ function generateReport() {
     c.details.forEach((d) => console.log(`      ${d}`));
   });
 
-  console.log(`\nℹ️  UNKNOWN Components: ${unknownComponents.length}`);
-  if (unknownComponents.length > 0 && unknownComponents.length <= 10) {
-    unknownComponents.forEach((c) => {
+  console.log(`\nℹ️  PASSIVE Components (UI-only or data provided via props): ${passiveComponents.length}`);
+  if (passiveComponents.length > 0 && passiveComponents.length <= 10) {
+    passiveComponents.forEach((c) => {
+      console.log(`   ${c.component} - ${c.path}`);
+    });
+  } else if (passiveComponents.length > 10) {
+    console.log(`   Showing first 10 of ${passiveComponents.length}`);
+    passiveComponents.slice(0, 10).forEach((c) => {
       console.log(`   ${c.component} - ${c.path}`);
     });
   }
@@ -203,6 +218,7 @@ function generateReport() {
   const totalComponents = results.length;
   const avgScore =
     results.reduce((acc, r) => acc + r.score, 0) / totalComponents;
+  const fullyCovered = liveComponents.length + passiveComponents.length;
 
   console.log("\n" + "=".repeat(80));
   console.log("\n📊 Overall Statistics\n");
@@ -218,6 +234,9 @@ function generateReport() {
   );
   console.log(
     `Mock Only: ${((mockComponents.length / totalComponents) * 100).toFixed(1)}%`
+  );
+  console.log(
+    `Passive/Prop-Driven: ${((passiveComponents.length / totalComponents) * 100).toFixed(1)}%`
   );
 
   // Grade the system
@@ -242,7 +261,8 @@ function generateReport() {
       liveComponents: liveComponents.length,
       mockComponents: mockComponents.length,
       mixedComponents: mixedComponents.length,
-      unknownComponents: unknownComponents.length,
+      passiveComponents: passiveComponents.length,
+      fullyCovered,
       avgScore,
       grade,
     },

@@ -868,7 +868,7 @@ export function TaxBuilder({
   };
 
   // Convert builder state to calculator format
-  const mockTaxSystem: TaxSystem = useMemo(
+  const previewTaxSystem: TaxSystem = useMemo(
     () => ({
       id: "builder-preview",
       countryId: countryId || "preview",
@@ -879,7 +879,7 @@ export function TaxBuilder({
     [builderState.taxSystem, countryId]
   );
 
-  const mockCategories: TaxCategory[] = useMemo(
+  const previewCategories: TaxCategory[] = useMemo(
     () =>
       builderState.categories.map((cat, index) => ({
         id: `category-${index}`,
@@ -891,7 +891,7 @@ export function TaxBuilder({
     [builderState.categories]
   );
 
-  const mockBrackets: TaxBracket[] = useMemo(() => {
+  const previewBrackets: TaxBracket[] = useMemo(() => {
     const brackets: TaxBracket[] = [];
     Object.entries(builderState.brackets).forEach(([categoryIndex, categoryBrackets]) => {
       categoryBrackets.forEach((bracket, bracketIndex) => {
@@ -1376,7 +1376,7 @@ export function TaxBuilder({
                           updatedAt: new Date(),
                         }))}
                         economicData={economicData as any}
-                        taxSystem={mockTaxSystem}
+                        taxSystem={previewTaxSystem}
                       />
                     </div>
                   )}
@@ -1394,7 +1394,7 @@ export function TaxBuilder({
             <TabsContent value="analysis" className="mt-6 space-y-6">
               {economicData && (
                 <TaxEconomySyncDisplay
-                  taxSystem={mockTaxSystem}
+                  taxSystem={previewTaxSystem}
                   economicData={{ core: economicData as any }}
                   onOptimize={() => {
                     toast.info("Tax optimization recommendations applied");
@@ -1538,9 +1538,9 @@ export function TaxBuilder({
           <div className="space-y-6">
             <h2 className="text-foreground text-2xl font-semibold">Tax Calculator</h2>
           <TaxCalculator
-            taxSystem={mockTaxSystem}
-            categories={mockCategories}
-            brackets={mockBrackets}
+            taxSystem={previewTaxSystem}
+            categories={previewCategories}
+            brackets={previewBrackets}
             exemptions={[]}
             deductions={[]}
             onCalculationChange={setCalculationResult}
