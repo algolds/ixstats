@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
-import { Loader2, Navigation, Eye, EyeOff, Save, Check } from "lucide-react";
+import { Loader2, Navigation, Eye, EyeOff, Save, Check, Shield } from "lucide-react";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";
 
@@ -14,6 +14,7 @@ export function NavigationSettings() {
     showWikiTab: true,
     showCardsTab: true,
     showLabsTab: true,
+    showIntelligenceTab: false,
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -23,7 +24,10 @@ export function NavigationSettings() {
   // Update local settings when data arrives
   useEffect(() => {
     if (navigationSettings) {
-      setLocalSettings(navigationSettings);
+      setLocalSettings(prev => ({
+        ...prev,
+        ...navigationSettings
+      }));
     }
   }, [navigationSettings]);
 
@@ -55,7 +59,8 @@ export function NavigationSettings() {
   const hasChanges = navigationSettings && (
     navigationSettings.showWikiTab !== localSettings.showWikiTab ||
     navigationSettings.showCardsTab !== localSettings.showCardsTab ||
-    navigationSettings.showLabsTab !== localSettings.showLabsTab
+    navigationSettings.showLabsTab !== localSettings.showLabsTab ||
+    navigationSettings.showIntelligenceTab !== localSettings.showIntelligenceTab
   );
 
   if (isLoading) {
@@ -163,6 +168,33 @@ export function NavigationSettings() {
             id="labs-tab"
             checked={localSettings.showLabsTab}
             onCheckedChange={(checked) => handleToggle('showLabsTab', checked)}
+          />
+        </div>
+
+        {/* Intelligence Tab Setting */}
+        <div className="flex items-center justify-between p-4 rounded-lg bg-card/50 border border-border/50">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              {localSettings.showIntelligenceTab ? (
+                <Eye className="h-4 w-4 text-emerald-500" />
+              ) : (
+                <EyeOff className="h-4 w-4 text-muted-foreground" />
+              )}
+            </div>
+            <div>
+              <Label htmlFor="intelligence-tab" className="text-sm font-medium flex items-center gap-1">
+                <Shield className="h-4 w-4 text-muted-foreground" />
+                Intelligence Tab
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Show/hide the Intelligence navigation tab
+              </p>
+            </div>
+          </div>
+          <Switch
+            id="intelligence-tab"
+            checked={localSettings.showIntelligenceTab}
+            onCheckedChange={(checked) => handleToggle('showIntelligenceTab', checked)}
           />
         </div>
 

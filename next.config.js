@@ -11,14 +11,37 @@
 // Import polyfill plugin
 import NodePolyfillPlugin from 'node-polyfill-webpack-plugin';
 
-// Define basePath from an environment variable to allow for dynamic deployment paths.
-// It defaults to an empty string, which works for local development or root deployments.
-const basePath = process.env.BASE_PATH || '';
+// Normalize base path so we can deploy under https://ixwiki.com/projects/ixstats
+const normalizeBasePath = (value) => {
+  if (!value) {
+    return '';
+  }
+  let normalized = value.startsWith('/') ? value : `/${value}`;
+  if (normalized.length > 1 && normalized.endsWith('/')) {
+    normalized = normalized.slice(0, -1);
+  }
+  return normalized;
+};
+
+const resolveBasePath = () => {
+  const hasBasePathEnv = Object.prototype.hasOwnProperty.call(process.env, 'BASE_PATH');
+  const rawBasePath = hasBasePathEnv
+    ? process.env.BASE_PATH
+    : process.env.NODE_ENV === 'production'
+      ? '/projects/ixstats'
+      : '';
+
+  return normalizeBasePath(rawBasePath);
+};
+
+const basePath = resolveBasePath();
+const assetPrefix = basePath || undefined;
 
 /** @type {import("next").NextConfig} */
 const config = {
   // Use the dynamic basePath.
   basePath: basePath,
+  assetPrefix,
 
   trailingSlash: false,
   reactStrictMode: true,

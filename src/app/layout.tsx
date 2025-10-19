@@ -19,6 +19,7 @@ import { ExecutiveNotificationProvider } from "~/contexts/ExecutiveNotificationC
 import { GlobalNotificationSystem } from "~/components/notifications/GlobalNotificationSystem";
 import { ToastProvider } from "~/components/ui/toast";
 import { NotificationBadgeProvider } from "~/components/notifications/NotificationBadgeProvider";
+import { withBasePath } from "~/lib/base-path";
 
 export const dynamic = 'force-dynamic';
 
@@ -44,6 +45,10 @@ const geist = Geist({
 const RootLayout = ({
   children,
 }: Readonly<{ children: React.ReactNode }>) => {
+  const dashboardPath = withBasePath('/dashboard');
+  const signInPath = withBasePath('/sign-in');
+  const signUpPath = withBasePath('/sign-up');
+
   const AppContent = () => (
     <TRPCReactProvider>
       <ThemeProvider>
@@ -78,15 +83,10 @@ const RootLayout = ({
         {isClerkConfigured ? (
           <ClerkProvider
             publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-            {...(process.env.NODE_ENV === "production" ? {
-              signInUrl: "https://accounts.ixwiki.com/sign-in",
-              signUpUrl: "https://accounts.ixwiki.com/sign-up",
-              fallbackRedirectUrl: "https://ixwiki.com/projects/ixstats/dashboard",
-              forceRedirectUrl: "https://ixwiki.com/projects/ixstats/dashboard"
-            } : {
-              fallbackRedirectUrl: "/dashboard",
-              forceRedirectUrl: "/dashboard"
-            })}
+            signInUrl={signInPath}
+            signUpUrl={signUpPath}
+            fallbackRedirectUrl={dashboardPath}
+            forceRedirectUrl={dashboardPath}
           >
             <AppContent />
           </ClerkProvider>

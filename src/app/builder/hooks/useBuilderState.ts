@@ -81,7 +81,7 @@ export interface UseBuilderStateReturn {
   canAccessStep: (step: BuilderStep) => boolean;
 }
 
-const initialState: BuilderState = {
+const baseInitialState: BuilderState = {
   step: 'foundation',
   selectedCountry: null,
   economicInputs: null,
@@ -93,6 +93,19 @@ const initialState: BuilderState = {
   activeGovernmentTab: 'components',
   activeEconomicsTab: 'economy',
   showAdvancedMode: false,
+};
+
+const getInitialState = (mode: 'create' | 'edit' = 'create'): BuilderState => {
+  if (mode === 'edit') {
+    return {
+      ...baseInitialState,
+      step: 'core',
+      completedSteps: ['foundation'],
+      activeCoreTab: 'identity',
+    };
+  }
+
+  return { ...baseInitialState };
 };
 
 /**
@@ -153,7 +166,7 @@ const initialState: BuilderState = {
  * }
  */
 export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: string): UseBuilderStateReturn {
-  const [builderState, setBuilderState] = useState<BuilderState>(initialState);
+  const [builderState, setBuilderState] = useState<BuilderState>(() => getInitialState(mode));
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const quickStartProcessed = useRef(false);
@@ -657,7 +670,7 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
         localStorage.removeItem(savedKey);
       }
       setLastSaved(null);
-      setBuilderState(initialState);
+      setBuilderState(getInitialState(mode));
     } catch (error) {
       // Failed to clear draft
     }

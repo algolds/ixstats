@@ -10,7 +10,9 @@ import next from 'next';
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = process.env.HOSTNAME || 'localhost';
-const port = parseInt(process.env.PORT || '3000', 10);
+// Default to port 3550 in production to avoid clashing with dev servers
+const defaultPort = process.env.NODE_ENV === 'production' ? '3550' : '3000';
+const port = parseInt(process.env.PORT || defaultPort, 10);
 
 // Initialize Next.js
 const app = next({ dev, hostname, port });

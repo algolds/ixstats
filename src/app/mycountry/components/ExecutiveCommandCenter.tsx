@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 import {
   AlertCircle,
   TrendingUp,
@@ -36,6 +37,7 @@ import type { EconomyData } from '~/types/economics';
 import { api } from '~/trpc/react';
 import { useUser } from '@clerk/nextjs';
 import { toast } from 'sonner';
+import { withBasePath } from '~/lib/base-path';
 
 interface ExecutiveCommandCenterProps extends IntelligenceComponentProps {
   intelligence: ExecutiveIntelligence;
@@ -578,27 +580,41 @@ export function ExecutiveCommandCenter({
                   insights={intelligence.trendingInsights}
                 />
                 
-                <QuickActionsSection
-                  actions={quickActionsData?.actions ? quickActionsData.actions.map((action: any) => ({
-                    id: action.id,
-                    title: action.title,
-                    description: action.description,
-                    category: action.category || 'governance',
-                    urgency: action.urgency as 'urgent' | 'important' | 'routine' | 'future',
-                    difficulty: action.difficulty || 'moderate',
-                    estimatedDuration: action.estimatedDuration,
-                    estimatedCost: action.estimatedCost || 0,
-                    successProbability: action.successProbability,
-                    estimatedBenefit: action.estimatedBenefit,
-                    prerequisites: action.requirements || [],
-                    expectedOutcome: action.estimatedBenefit || 'Improved system performance',
-                    risks: action.risks || ['Implementation complexity'],
-                    impact: action.impact || 'medium',
-                    context: { confidence: action.successProbability }
-                  })) : intelligence.urgentActions}
-                  onActionClick={handleQuickActionClick}
-                  onNavigateToPolicy={onNavigateToPolicy}
-                />
+                <div className="hidden md:block">
+                  <QuickActionsSection
+                    actions={quickActionsData?.actions ? quickActionsData.actions.map((action: any) => ({
+                      id: action.id,
+                      title: action.title,
+                      description: action.description,
+                      category: action.category || 'governance',
+                      urgency: action.urgency as 'urgent' | 'important' | 'routine' | 'future',
+                      difficulty: action.difficulty || 'moderate',
+                      estimatedDuration: action.estimatedDuration,
+                      estimatedCost: action.estimatedCost || 0,
+                      successProbability: action.successProbability,
+                      estimatedBenefit: action.estimatedBenefit,
+                      prerequisites: action.requirements || [],
+                      expectedOutcome: action.estimatedBenefit || 'Improved system performance',
+                      risks: action.risks || ['Implementation complexity'],
+                      impact: action.impact || 'medium',
+                      context: { confidence: action.successProbability }
+                    })) : intelligence.urgentActions}
+                    onActionClick={handleQuickActionClick}
+                    onNavigateToPolicy={onNavigateToPolicy}
+                  />
+                </div>
+
+                <div className="md:hidden rounded-xl border border-dashed border-border/60 bg-muted/40 p-4 text-sm text-muted-foreground">
+                  <p className="font-medium text-foreground">Quick actions moved</p>
+                  <p className="mt-1 leading-snug">Access actionable plays from the Intelligence Center via the mobile menu.</p>
+                  <Link
+                    href={withBasePath("/mycountry/intelligence")}
+                    className="mt-3 inline-flex items-center gap-2 text-primary hover:underline"
+                  >
+                    <Shield className="h-4 w-4" />
+                    <span>Open Intelligence Center</span>
+                  </Link>
+                </div>
 
                 {/* Enhanced Economic Intelligence */}
                 {enhancedEconomicData.hasData && (

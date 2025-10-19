@@ -5,12 +5,23 @@ import { useRouter, usePathname } from "next/navigation";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { navigateTo } from "~/lib/url-utils";
+import { usePermissions, ROLE_LEVELS } from "~/hooks/usePermissions";
 
 export function SetupRedirect() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
   const pathname = usePathname();
   const hasRedirected = useRef(false);
+  const { user: permissionUser, isLoading: permissionsLoading } = usePermissions();
+
+  const SYSTEM_OWNER_IDS = [
+    "user_2zqmDdZvhpNQWGLdAIj2YwH8MLo", // Dev environment owner
+    "user_3078Ja62W7yJDlBjjwNppfzceEz", // Production environment owner
+  ];
+
+  const isSystemOwner = user ? SYSTEM_OWNER_IDS.includes(user.id) : false;
+  const isAdminOrHigher =
+    permissionUser?.role ? permissionUser.role.level <= ROLE_LEVELS.ADMIN : false;
 
   // Skip setup redirect for these paths
   const skipSetupPaths = [
@@ -45,6 +56,14 @@ export function SetupRedirect() {
 
     // Only proceed if user is loaded and we're not on a skip path
     if (isLoaded && user && !shouldSkipSetup) {
+      // Wait for permission data to load before making decisions
+      if (permissionsLoading) return;
+
+      // System owners or admins may not need a linked country—skip redirect
+      if (isSystemOwner || isAdminOrHigher) {
+        return;
+      }
+
       // If profile is still loading, wait
       if (profileLoading) return;
 
